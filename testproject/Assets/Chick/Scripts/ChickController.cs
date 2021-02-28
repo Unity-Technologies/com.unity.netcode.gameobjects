@@ -2,7 +2,7 @@
 using UnityEngine;
 
 [RequireComponent(typeof(Animator))]
-public class ChickController : NetworkedBehaviour
+public class ChickController : NetworkBehaviour
 {
     private Animator m_Animator;
 

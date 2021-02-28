@@ -197,18 +197,18 @@ namespace MLAPI.Serialization
                 return null;
             }
 
-            if (typeof(NetworkedBehaviour).IsAssignableFrom(type))
+            if (typeof(NetworkBehaviour).IsAssignableFrom(type))
             {
                 ulong networkId = ReadUInt64Packed();
                 ushort behaviourId = ReadUInt16Packed();
                 if (SpawnManager.SpawnedObjects.ContainsKey(networkId))
                 {
-                    return SpawnManager.SpawnedObjects[networkId].GetBehaviourAtOrderIndex(behaviourId);
+                    return SpawnManager.SpawnedObjects[networkId].GetNetworkBehaviourAtOrderIndex(behaviourId);
                 }
 
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                 {
-                    NetworkLog.LogWarning($"BitReader cannot find the NetworkedBehaviour sent in the SpawnedObjects list, it may have been destroyed. NetworkId: {networkId}");
+                    NetworkLog.LogWarning($"BitReader cannot find the {nameof(NetworkBehaviour)} sent in the SpawnedObjects list, it may have been destroyed. NetworkId: {networkId}");
                 }
 
                 return null;

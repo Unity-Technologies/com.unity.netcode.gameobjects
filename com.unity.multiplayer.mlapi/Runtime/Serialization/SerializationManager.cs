@@ -131,7 +131,7 @@ namespace MLAPI.Serialization
             typeof(char),
             typeof(GameObject),
             typeof(NetworkObject),
-            typeof(NetworkedBehaviour)
+            typeof(NetworkBehaviour)
         };
 
         /// <summary>

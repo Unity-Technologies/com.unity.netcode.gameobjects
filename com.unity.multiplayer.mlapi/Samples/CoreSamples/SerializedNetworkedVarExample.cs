@@ -3,7 +3,7 @@ using MLAPI.NetworkedVar;
 
 namespace MLAPI_Examples
 {
-    public class SerializedNetworkedVarExample : NetworkedBehaviour
+    public class SerializedNetworkedVarExample : NetworkBehaviour
     {
         // Default settings, default value
         public NetworkedVarInt SerializedNetworkedVarInt = new NetworkedVarInt();

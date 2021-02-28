@@ -24,7 +24,7 @@ namespace MLAPI
     /// <summary>
     /// The base class to override to write networked code. Inherits MonoBehaviour
     /// </summary>
-    public abstract class NetworkedBehaviour : MonoBehaviour
+    public abstract class NetworkBehaviour : MonoBehaviour
     {
         [Browsable(false)]
         [EditorBrowsable(EditorBrowsableState.Never)]
@@ -92,7 +92,7 @@ namespace MLAPI
             }
 
             writer.WriteUInt64Packed(NetworkId); // NetworkObjectId
-            writer.WriteUInt16Packed(GetBehaviourId()); // NetworkBehaviourId
+            writer.WriteUInt16Packed(GetNetworkBehaviourId()); // NetworkBehaviourId
             writer.WriteByte((byte)serverRpcParams.Send.UpdateStage); // NetworkUpdateStage
 
             return writer.Serializer;
@@ -190,7 +190,7 @@ namespace MLAPI
             }
 
             writer.WriteUInt64Packed(NetworkId); // NetworkObjectId
-            writer.WriteUInt16Packed(GetBehaviourId()); // NetworkBehaviourId
+            writer.WriteUInt16Packed(GetNetworkBehaviourId()); // NetworkBehaviourId
             writer.WriteByte((byte)clientRpcParams.Send.UpdateStage); // NetworkUpdateStage
 
             return writer.Serializer;
@@ -230,7 +230,7 @@ namespace MLAPI
         }
 
         /// <summary>
-        /// Gets the NetworkManager that owns this NetworkedBehaviour instance
+        /// Gets the NetworkManager that owns this NetworkBehaviour instance
         /// </summary>
         public NetworkManager NetworkManager => NetworkObject.NetworkManager;
         /// <summary>
@@ -295,13 +295,13 @@ namespace MLAPI
         /// </summary>
         public bool IsOwnedByServer => NetworkObject.IsOwnedByServer;
         /// <summary>
-        /// Gets the NetworkObject that owns this NetworkedBehaviour instance
+        /// Gets the NetworkObject that owns this NetworkBehaviour instance
         /// </summary>
         [EditorBrowsable(EditorBrowsableState.Never)]
         [Obsolete("Use NetworkObject instead", false)]
         public NetworkObject networkObject => NetworkObject;
         /// <summary>
-        /// Gets the NetworkObject that owns this NetworkedBehaviour instance
+        /// Gets the NetworkObject that owns this NetworkBehaviour instance
         /// </summary>
         public NetworkObject NetworkObject
         {
@@ -314,14 +314,14 @@ namespace MLAPI
 
                 if (ReferenceEquals(_networkObject, null))
                 {
-                    throw new NullReferenceException($"Could not get {nameof(NetworkObject)} for the NetworkedBehaviour. Are you missing a {nameof(NetworkObject)} component?");
+                    throw new NullReferenceException($"Could not get {nameof(NetworkObject)} for the {nameof(NetworkBehaviour)}. Are you missing a {nameof(NetworkObject)} component?");
                 }
 
                 return _networkObject;
             }
         }
         /// <summary>
-        /// Gets whether or not this NetworkedBehaviour instance has a NetworkObject owner.
+        /// Gets whether or not this NetworkBehaviour instance has a NetworkObject owner.
         /// </summary>
         public bool HasNetworkObject
         {
@@ -338,13 +338,13 @@ namespace MLAPI
 
         private NetworkObject _networkObject = null;
         /// <summary>
-        /// Gets the NetworkId of the NetworkObject that owns the NetworkedBehaviour instance
+        /// Gets the NetworkId of the NetworkObject that owns the NetworkBehaviour instance
         /// </summary>
         [EditorBrowsable(EditorBrowsableState.Never)]
         [Obsolete("Use NetworkId instead", false)]
         public ulong networkId => NetworkId;
         /// <summary>
-        /// Gets the NetworkId of the NetworkObject that owns the NetworkedBehaviour instance
+        /// Gets the NetworkId of the NetworkObject that owns the NetworkBehaviour instance
         /// </summary>
         public ulong NetworkId => NetworkObject.NetworkId;
         /// <summary>
@@ -355,7 +355,7 @@ namespace MLAPI
         internal bool networkedStartInvoked = false;
         internal bool internalNetworkedStartInvoked = false;
         /// <summary>
-        /// Stores the network tick at the NetworkedBehaviourUpdate time
+        /// Stores the network tick at the NetworkBehaviourUpdate time
         /// This allows sending NetworkedVars not more often than once per network tick, regardless of the update rate
         /// </summary>
         public static ushort currentTick { get; private set; }
@@ -397,22 +397,22 @@ namespace MLAPI
         }
 
         /// <summary>
-        /// Gets behaviourId for this NetworkedBehaviour on this NetworkObject
+        /// Gets BehaviourId for this NetworkBehaviour on this NetworkObject
         /// </summary>
-        /// <returns>The behaviourId for the current NetworkedBehaviour</returns>
-        public ushort GetBehaviourId()
+        /// <returns>The behaviourId for the current NetworkBehaviour</returns>
+        public ushort GetNetworkBehaviourId()
         {
             return NetworkObject.GetOrderIndex(this);
         }
 
         /// <summary>
-        /// Returns a the NetworkedBehaviour with a given BehaviourId for the current NetworkObject
+        /// Returns a the NetworkBehaviour with a given BehaviourId for the current NetworkObject
         /// </summary>
         /// <param name="id">The behaviourId to return</param>
-        /// <returns>Returns NetworkedBehaviour with given behaviourId</returns>
-        protected NetworkedBehaviour GetBehaviour(ushort id)
+        /// <returns>Returns NetworkBehaviour with given behaviourId</returns>
+        protected NetworkBehaviour GetNetworkBehaviour(ushort id)
         {
-            return NetworkObject.GetBehaviourAtOrderIndex(id);
+            return NetworkObject.GetNetworkBehaviourAtOrderIndex(id);
         }
 
         #region NetworkedVar
@@ -446,7 +446,7 @@ namespace MLAPI
                 list.AddRange(type.GetFields(BindingFlags.NonPublic | BindingFlags.Instance));
             }
 
-            if (type.BaseType != null && type.BaseType != typeof(NetworkedBehaviour))
+            if (type.BaseType != null && type.BaseType != typeof(NetworkBehaviour))
             {
                 return GetFieldInfoForTypeRecursive(type.BaseType, list);
             }
@@ -478,7 +478,7 @@ namespace MLAPI
                         sortedFields[i].SetValue(this, instance);
                     }
 
-                    instance.SetNetworkedBehaviour(this);
+                    instance.SetNetworkBehaviour(this);
                     networkedVarFields.Add(instance);
                 }
             }
@@ -510,12 +510,12 @@ namespace MLAPI
         }
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-        public static ProfilerMarker s_NetworkedBehaviourUpdate = new ProfilerMarker("NetworkedBehaviourUpdate");
+        public static ProfilerMarker s_NetworkBehaviourUpdate = new ProfilerMarker(nameof(NetworkBehaviourUpdate));
 #endif
 
-        internal static void NetworkedBehaviourUpdate()
+        internal static void NetworkBehaviourUpdate()
         {
-            // Don't NetworkedBehaviourUpdate more than once per network tick
+            // Do not execute NetworkBehaviourUpdate more than once per network tick
             ushort tick = NetworkManager.Singleton.networkTickSystem.GetTick();
             if (tick == currentTick)
             {
@@ -524,7 +524,7 @@ namespace MLAPI
             currentTick = tick;
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            s_NetworkedBehaviourUpdate.Begin();
+            s_NetworkBehaviourUpdate.Begin();
 #endif
             try
             {
@@ -539,9 +539,9 @@ namespace MLAPI
                         foreach (var sobj in spawnedObjs)
                         {
                             // Sync just the variables for just the objects this client sees
-                            for (int k = 0; k < sobj.childNetworkedBehaviours.Count; k++)
+                            for (int k = 0; k < sobj.childNetworkBehaviours.Count; k++)
                             {
-                                sobj.childNetworkedBehaviours[k].VarUpdate(client.ClientId);
+                                sobj.childNetworkBehaviours[k].VarUpdate(client.ClientId);
                             }
                         }
                     }
@@ -549,9 +549,9 @@ namespace MLAPI
                     // Now, reset all the no-longer-dirty variables
                     foreach (var sobj in touched)
                     {
-                        for (int k = 0; k < sobj.childNetworkedBehaviours.Count; k++)
+                        for (int k = 0; k < sobj.childNetworkBehaviours.Count; k++)
                         {
-                            sobj.childNetworkedBehaviours[k].PostNetworkVariableWrite();
+                            sobj.childNetworkBehaviours[k].PostNetworkVariableWrite();
                         }
                     }
                 }
@@ -561,18 +561,18 @@ namespace MLAPI
                     // when client updates the sever, it tells it about all its objects
                     foreach (var sobj in SpawnManager.SpawnedObjectsList)
                     {
-                        for (int k = 0; k < sobj.childNetworkedBehaviours.Count; k++)
+                        for (int k = 0; k < sobj.childNetworkBehaviours.Count; k++)
                         {
-                           sobj.childNetworkedBehaviours[k].VarUpdate(NetworkManager.Singleton.ServerClientId);
+                           sobj.childNetworkBehaviours[k].VarUpdate(NetworkManager.Singleton.ServerClientId);
                         }
                     }
 
                     // Now, reset all the no-longer-dirty variables
                     foreach (var sobj in SpawnManager.SpawnedObjectsList)
                     {
-                        for (int k = 0; k < sobj.childNetworkedBehaviours.Count; k++)
+                        for (int k = 0; k < sobj.childNetworkBehaviours.Count; k++)
                         {
-                            sobj.childNetworkedBehaviours[k].PostNetworkVariableWrite();
+                            sobj.childNetworkBehaviours[k].PostNetworkVariableWrite();
                         }
                     }
                 }
@@ -580,7 +580,7 @@ namespace MLAPI
             finally
             {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-                s_NetworkedBehaviourUpdate.End();
+                s_NetworkBehaviourUpdate.End();
 #endif
             }
         }
@@ -715,7 +715,7 @@ namespace MLAPI
             return false;
         }
 
-        internal static void HandleNetworkedVarDeltas(List<INetworkedVar> networkedVarList, Stream stream, ulong clientId, NetworkedBehaviour logInstance)
+        internal static void HandleNetworkedVarDeltas(List<INetworkedVar> networkedVarList, Stream stream, ulong clientId, NetworkBehaviour logInstance)
         {
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
@@ -802,7 +802,7 @@ namespace MLAPI
             }
         }
 
-        internal static void HandleNetworkedVarUpdate(List<INetworkedVar> networkedVarList, Stream stream, ulong clientId, NetworkedBehaviour logInstance)
+        internal static void HandleNetworkedVarUpdate(List<INetworkedVar> networkedVarList, Stream stream, ulong clientId, NetworkBehaviour logInstance)
         {
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {

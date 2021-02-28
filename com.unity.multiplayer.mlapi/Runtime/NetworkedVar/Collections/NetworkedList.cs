@@ -15,7 +15,7 @@ namespace MLAPI.NetworkedVar.Collections
     {
         private readonly IList<T> list = new List<T>();
         private readonly List<NetworkedListEvent<T>> dirtyEvents = new List<NetworkedListEvent<T>>();
-        private NetworkedBehaviour networkedBehaviour;
+        private NetworkBehaviour networkBehaviour;
 
         /// <summary>
         /// Gets the last time the variable was synced
@@ -108,7 +108,7 @@ namespace MLAPI.NetworkedVar.Collections
                 case NetworkedVarPermission.ServerOnly:
                     return false;
                 case NetworkedVarPermission.OwnerOnly:
-                    return networkedBehaviour.OwnerClientId == clientId;
+                    return networkBehaviour.OwnerClientId == clientId;
                 case NetworkedVarPermission.Custom:
                 {
                     if (Settings.WritePermissionCallback == null) return false;
@@ -129,7 +129,7 @@ namespace MLAPI.NetworkedVar.Collections
                 case NetworkedVarPermission.ServerOnly:
                     return false;
                 case NetworkedVarPermission.OwnerOnly:
-                    return networkedBehaviour.OwnerClientId == clientId;
+                    return networkBehaviour.OwnerClientId == clientId;
                 case NetworkedVarPermission.Custom:
                 {
                     if (Settings.ReadPermissionCallback == null) return false;
@@ -387,9 +387,9 @@ namespace MLAPI.NetworkedVar.Collections
         }
 
         /// <inheritdoc />
-        public void SetNetworkedBehaviour(NetworkedBehaviour behaviour)
+        public void SetNetworkBehaviour(NetworkBehaviour behaviour)
         {
-            networkedBehaviour = behaviour;
+            networkBehaviour = behaviour;
         }
 
         /// <inheritdoc />

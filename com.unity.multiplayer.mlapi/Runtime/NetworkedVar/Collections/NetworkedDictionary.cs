@@ -25,7 +25,7 @@ namespace MLAPI.NetworkedVar.Collections
         public readonly NetworkedVarSettings Settings = new NetworkedVarSettings();
 
         private readonly IDictionary<TKey, TValue> dictionary = new Dictionary<TKey, TValue>();
-        private NetworkedBehaviour networkedBehaviour;
+        private NetworkBehaviour networkBehaviour;
         private readonly List<NetworkedDictionaryEvent<TKey, TValue>> dirtyEvents = new List<NetworkedDictionaryEvent<TKey, TValue>>();
 
         /// <summary>
@@ -255,9 +255,9 @@ namespace MLAPI.NetworkedVar.Collections
         }
 
         /// <inheritdoc />
-        public void SetNetworkedBehaviour(NetworkedBehaviour behaviour)
+        public void SetNetworkBehaviour(NetworkBehaviour behaviour)
         {
-            networkedBehaviour = behaviour;
+            networkBehaviour = behaviour;
         }
 
         /// <inheritdoc />
@@ -336,7 +336,7 @@ namespace MLAPI.NetworkedVar.Collections
                 case NetworkedVarPermission.ServerOnly:
                     return false;
                 case NetworkedVarPermission.OwnerOnly:
-                    return networkedBehaviour.OwnerClientId == clientId;
+                    return networkBehaviour.OwnerClientId == clientId;
                 case NetworkedVarPermission.Custom:
                 {
                     if (Settings.WritePermissionCallback == null) return false;
@@ -357,7 +357,7 @@ namespace MLAPI.NetworkedVar.Collections
                 case NetworkedVarPermission.ServerOnly:
                     return false;
                 case NetworkedVarPermission.OwnerOnly:
-                    return networkedBehaviour.OwnerClientId == clientId;
+                    return networkBehaviour.OwnerClientId == clientId;
                 case NetworkedVarPermission.Custom:
                 {
                     if (Settings.ReadPermissionCallback == null) return false;

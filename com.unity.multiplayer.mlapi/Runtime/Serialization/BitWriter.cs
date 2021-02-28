@@ -216,15 +216,15 @@ namespace MLAPI.Serialization
                 WriteUInt64Packed(((NetworkObject)value).NetworkId);
                 return;
             }
-            else if (value is NetworkedBehaviour)
+            else if (value is NetworkBehaviour)
             {
-                if (!((NetworkedBehaviour)value).HasNetworkObject || !((NetworkedBehaviour)value).NetworkObject.IsSpawned)
+                if (!((NetworkBehaviour)value).HasNetworkObject || !((NetworkBehaviour)value).NetworkObject.IsSpawned)
                 {
-                    throw new ArgumentException($"BitWriter cannot write NetworkedBehaviour types that are not spawned. GameObject: {((GameObject)value).name}");
+                    throw new ArgumentException($"BitWriter cannot write {nameof(NetworkBehaviour)} types that are not spawned. GameObject: {((GameObject)value).name}");
                 }
 
-                WriteUInt64Packed(((NetworkedBehaviour)value).NetworkId);
-                WriteUInt16Packed(((NetworkedBehaviour)value).GetBehaviourId());
+                WriteUInt64Packed(((NetworkBehaviour)value).NetworkId);
+                WriteUInt16Packed(((NetworkBehaviour)value).GetNetworkBehaviourId());
                 return;
             }
             else if (value is IBitWritable)

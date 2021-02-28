@@ -10,7 +10,7 @@ namespace MLAPI.Prototyping
     /// A prototype component for syncing navmeshagents
     /// </summary>
     [AddComponentMenu("MLAPI/NetworkedNavMeshAgent")]
-    public class NetworkedNavMeshAgent : NetworkedBehaviour
+    public class NetworkedNavMeshAgent : NetworkBehaviour
     {
         private NavMeshAgent agent;
 

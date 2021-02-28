@@ -44,7 +44,7 @@ If you have an issue, bug or feature request, please follow the information in o
 Here is a sample MonoBehaviour showing a chat script where everyone can write and read from. This shows the basis of the MLAPI and the abstractions it adds.
 
 ```csharp
-public class Chat : NetworkedBehaviour
+public class Chat : NetworkBehaviour
 {
     private NetworkedList<string> ChatMessages = new NetworkedList<string>(new MLAPI.NetworkedVar.NetworkedVarSettings()
     {

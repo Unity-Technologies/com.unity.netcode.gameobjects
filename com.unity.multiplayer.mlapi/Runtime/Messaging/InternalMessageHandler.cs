@@ -440,7 +440,7 @@ namespace MLAPI.Messaging
 
                 if (SpawnManager.SpawnedObjects.ContainsKey(networkId))
                 {
-                    NetworkedBehaviour instance = SpawnManager.SpawnedObjects[networkId].GetBehaviourAtOrderIndex(orderIndex);
+                    NetworkBehaviour instance = SpawnManager.SpawnedObjects[networkId].GetNetworkBehaviourAtOrderIndex(orderIndex);
 
                     if (instance == null)
                     {
@@ -448,7 +448,7 @@ namespace MLAPI.Messaging
                     }
                     else
                     {
-                        NetworkedBehaviour.HandleNetworkedVarDeltas(instance.networkedVarFields, stream, clientId, instance);
+                        NetworkBehaviour.HandleNetworkedVarDeltas(instance.networkedVarFields, stream, clientId, instance);
                     }
                 }
                 else if (NetworkManager.Singleton.IsServer || !NetworkManager.Singleton.NetworkConfig.EnableMessageBuffering)
@@ -484,7 +484,7 @@ namespace MLAPI.Messaging
 
                 if (SpawnManager.SpawnedObjects.ContainsKey(networkId))
                 {
-                    NetworkedBehaviour instance = SpawnManager.SpawnedObjects[networkId].GetBehaviourAtOrderIndex(orderIndex);
+                    NetworkBehaviour instance = SpawnManager.SpawnedObjects[networkId].GetNetworkBehaviourAtOrderIndex(orderIndex);
 
                     if (instance == null)
                     {
@@ -492,7 +492,7 @@ namespace MLAPI.Messaging
                     }
                     else
                     {
-                        NetworkedBehaviour.HandleNetworkedVarUpdate(instance.networkedVarFields, stream, clientId, instance);
+                        NetworkBehaviour.HandleNetworkedVarUpdate(instance.networkedVarFields, stream, clientId, instance);
                     }
                 }
                 else if (NetworkManager.Singleton.IsServer || !NetworkManager.Singleton.NetworkConfig.EnableMessageBuffering)

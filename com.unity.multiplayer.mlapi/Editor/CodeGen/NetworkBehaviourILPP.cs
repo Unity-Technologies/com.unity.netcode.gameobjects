@@ -150,14 +150,14 @@ namespace MLAPI.Editor.CodeGen
 #pragma warning disable 618
         private const string k_NetworkManager_ntable = nameof(NetworkManager.__ntable);
 
-        private const string k_NetworkBehaviour_BeginSendServerRpc = nameof(NetworkedBehaviour.__beginSendServerRpc);
-        private const string k_NetworkBehaviour_EndSendServerRpc = nameof(NetworkedBehaviour.__endSendServerRpc);
-        private const string k_NetworkBehaviour_BeginSendClientRpc = nameof(NetworkedBehaviour.__beginSendClientRpc);
-        private const string k_NetworkBehaviour_EndSendClientRpc = nameof(NetworkedBehaviour.__endSendClientRpc);
-        private const string k_NetworkBehaviour_nexec = nameof(NetworkedBehaviour.__nexec);
+        private const string k_NetworkBehaviour_BeginSendServerRpc = nameof(NetworkBehaviour.__beginSendServerRpc);
+        private const string k_NetworkBehaviour_EndSendServerRpc = nameof(NetworkBehaviour.__endSendServerRpc);
+        private const string k_NetworkBehaviour_BeginSendClientRpc = nameof(NetworkBehaviour.__beginSendClientRpc);
+        private const string k_NetworkBehaviour_EndSendClientRpc = nameof(NetworkBehaviour.__endSendClientRpc);
+        private const string k_NetworkBehaviour_nexec = nameof(NetworkBehaviour.__nexec);
 #pragma warning restore 618
-        private const string k_NetworkBehaviour_NetworkManager = nameof(NetworkedBehaviour.NetworkManager);
-        private const string k_NetworkBehaviour_OwnerClientId = nameof(NetworkedBehaviour.OwnerClientId);
+        private const string k_NetworkBehaviour_NetworkManager = nameof(NetworkBehaviour.NetworkManager);
+        private const string k_NetworkBehaviour_OwnerClientId = nameof(NetworkBehaviour.OwnerClientId);
 
         private const string k_RpcAttribute_Delivery = nameof(RpcAttribute.Delivery);
         private const string k_ServerRpcAttribute_RequireOwnership = nameof(ServerRpcAttribute.RequireOwnership);
@@ -205,7 +205,7 @@ namespace MLAPI.Editor.CodeGen
                 }
             }
 
-            var networkBehaviourType = typeof(NetworkedBehaviour);
+            var networkBehaviourType = typeof(NetworkBehaviour);
             NetworkBehaviour_TypeRef = moduleDefinition.ImportReference(networkBehaviourType);
             foreach (var propertyInfo in networkBehaviourType.GetProperties())
             {
@@ -250,7 +250,7 @@ namespace MLAPI.Editor.CodeGen
             }
 
 #pragma warning disable 618
-            var networkHandlerDelegateType = typeof(Action<NetworkedBehaviour, BitSerializer, __RpcParams>);
+            var networkHandlerDelegateType = typeof(Action<NetworkBehaviour, BitSerializer, __RpcParams>);
             NetworkHandlerDelegateCtor_MethodRef = moduleDefinition.ImportReference(networkHandlerDelegateType.GetConstructor(new[] { typeof(object), typeof(IntPtr) }));
 
             var rpcParamsType = typeof(__RpcParams);
@@ -569,7 +569,7 @@ namespace MLAPI.Editor.CodeGen
                 instructions.Add(processor.Create(OpCodes.Ldarg_0));
                 instructions.Add(processor.Create(OpCodes.Ldfld, NetworkBehaviour_nexec_FieldRef));
 #pragma warning disable 618
-                instructions.Add(processor.Create(OpCodes.Ldc_I4, (int)(isServerRpc ? NetworkedBehaviour.__NExec.Server : NetworkedBehaviour.__NExec.Client)));
+                instructions.Add(processor.Create(OpCodes.Ldc_I4, (int)(isServerRpc ? NetworkBehaviour.__NExec.Server : NetworkBehaviour.__NExec.Client)));
 #pragma warning restore 618
                 instructions.Add(processor.Create(OpCodes.Ceq));
                 instructions.Add(processor.Create(OpCodes.Ldc_I4, 0));
@@ -1496,7 +1496,7 @@ namespace MLAPI.Editor.CodeGen
                 instructions.Add(processor.Create(OpCodes.Ldarg_0));
                 instructions.Add(processor.Create(OpCodes.Ldfld, NetworkBehaviour_nexec_FieldRef));
 #pragma warning disable 618
-                instructions.Add(processor.Create(OpCodes.Ldc_I4, (int)(isServerRpc ? NetworkedBehaviour.__NExec.Server : NetworkedBehaviour.__NExec.Client)));
+                instructions.Add(processor.Create(OpCodes.Ldc_I4, (int)(isServerRpc ? NetworkBehaviour.__NExec.Server : NetworkBehaviour.__NExec.Client)));
 #pragma warning restore 618
                 instructions.Add(processor.Create(OpCodes.Ceq));
                 instructions.Add(processor.Create(OpCodes.Brfalse, returnInstr));
@@ -2372,7 +2372,7 @@ namespace MLAPI.Editor.CodeGen
             // NetworkBehaviour.__nexec = NExec.Client; -> ClientRpc
             processor.Emit(OpCodes.Ldarg_0);
 #pragma warning disable 618
-            processor.Emit(OpCodes.Ldc_I4, (int)(isServerRpc ? NetworkedBehaviour.__NExec.Server : NetworkedBehaviour.__NExec.Client));
+            processor.Emit(OpCodes.Ldc_I4, (int)(isServerRpc ? NetworkBehaviour.__NExec.Server : NetworkBehaviour.__NExec.Client));
 #pragma warning restore 618
             processor.Emit(OpCodes.Stfld, NetworkBehaviour_nexec_FieldRef);
 
@@ -2385,7 +2385,7 @@ namespace MLAPI.Editor.CodeGen
             // NetworkBehaviour.__nexec = NExec.None;
             processor.Emit(OpCodes.Ldarg_0);
 #pragma warning disable 618
-            processor.Emit(OpCodes.Ldc_I4, (int)NetworkedBehaviour.__NExec.None);
+            processor.Emit(OpCodes.Ldc_I4, (int)NetworkBehaviour.__NExec.None);
 #pragma warning restore 618
             processor.Emit(OpCodes.Stfld, NetworkBehaviour_nexec_FieldRef);
 

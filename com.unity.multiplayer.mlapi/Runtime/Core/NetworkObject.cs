@@ -481,104 +481,104 @@ namespace MLAPI
 
         internal void InvokeBehaviourOnLostOwnership()
         {
-            for (int i = 0; i < childNetworkedBehaviours.Count; i++)
+            for (int i = 0; i < childNetworkBehaviours.Count; i++)
             {
-                childNetworkedBehaviours[i].OnLostOwnership();
+                childNetworkBehaviours[i].OnLostOwnership();
             }
         }
 
         internal void InvokeBehaviourOnGainedOwnership()
         {
-            for (int i = 0; i < childNetworkedBehaviours.Count; i++)
+            for (int i = 0; i < childNetworkBehaviours.Count; i++)
             {
-                childNetworkedBehaviours[i].OnGainedOwnership();
+                childNetworkBehaviours[i].OnGainedOwnership();
             }
         }
 
         internal void ResetNetworkedStartInvoked()
         {
-            if(childNetworkedBehaviours != null)
+            if(childNetworkBehaviours != null)
             {
-                for (int i = 0; i < childNetworkedBehaviours.Count; i++)
+                for (int i = 0; i < childNetworkBehaviours.Count; i++)
                 {
-                    childNetworkedBehaviours[i].networkedStartInvoked = false;
+                    childNetworkBehaviours[i].networkedStartInvoked = false;
                 }
             }
         }
 
         internal void InvokeBehaviourNetworkSpawn(Stream stream)
         {
-            for (int i = 0; i < childNetworkedBehaviours.Count; i++)
+            for (int i = 0; i < childNetworkBehaviours.Count; i++)
             {
                 //We check if we are it's NetworkObject owner incase a NetworkObject exists as a child of our NetworkObject
-                if(!childNetworkedBehaviours[i].networkedStartInvoked)
+                if(!childNetworkBehaviours[i].networkedStartInvoked)
                 {
-                    if(!childNetworkedBehaviours[i].internalNetworkedStartInvoked)
+                    if(!childNetworkBehaviours[i].internalNetworkedStartInvoked)
                     {
-                        childNetworkedBehaviours[i].InternalNetworkStart();
-                        childNetworkedBehaviours[i].internalNetworkedStartInvoked = true;
+                        childNetworkBehaviours[i].InternalNetworkStart();
+                        childNetworkBehaviours[i].internalNetworkedStartInvoked = true;
                     }
-                    childNetworkedBehaviours[i].NetworkStart(stream);
-                    childNetworkedBehaviours[i].networkedStartInvoked = true;
+                    childNetworkBehaviours[i].NetworkStart(stream);
+                    childNetworkBehaviours[i].networkedStartInvoked = true;
                 }
             }
         }
 
-        private List<NetworkedBehaviour> _childNetworkedBehaviours;
-        internal List<NetworkedBehaviour> childNetworkedBehaviours
+        private List<NetworkBehaviour> _childNetworkBehaviours;
+        internal List<NetworkBehaviour> childNetworkBehaviours
         {
             get
             {
-                if(_childNetworkedBehaviours == null)
+                if(_childNetworkBehaviours == null)
                 {
-                    _childNetworkedBehaviours = new List<NetworkedBehaviour>();
-                    NetworkedBehaviour[] behaviours = GetComponentsInChildren<NetworkedBehaviour>(true);
+                    _childNetworkBehaviours = new List<NetworkBehaviour>();
+                    NetworkBehaviour[] behaviours = GetComponentsInChildren<NetworkBehaviour>(true);
                     for (int i = 0; i < behaviours.Length; i++)
                     {
                         if (behaviours[i].NetworkObject == this)
-                            _childNetworkedBehaviours.Add(behaviours[i]);
+                            _childNetworkBehaviours.Add(behaviours[i]);
                     }
                 }
-                return _childNetworkedBehaviours;
+                return _childNetworkBehaviours;
             }
         }
 
         internal void WriteNetworkedVarData(Stream stream, ulong clientId)
         {
-            for (int i = 0; i < childNetworkedBehaviours.Count; i++)
+            for (int i = 0; i < childNetworkBehaviours.Count; i++)
             {
-                childNetworkedBehaviours[i].InitializeVars();
-                NetworkedBehaviour.WriteNetworkedVarData(childNetworkedBehaviours[i].networkedVarFields, stream, clientId);
+                childNetworkBehaviours[i].InitializeVars();
+                NetworkBehaviour.WriteNetworkedVarData(childNetworkBehaviours[i].networkedVarFields, stream, clientId);
             }
         }
 
         internal void SetNetworkedVarData(Stream stream)
         {
-            for (int i = 0; i < childNetworkedBehaviours.Count; i++)
+            for (int i = 0; i < childNetworkBehaviours.Count; i++)
             {
-                childNetworkedBehaviours[i].InitializeVars();
-                NetworkedBehaviour.SetNetworkedVarData(childNetworkedBehaviours[i].networkedVarFields, stream);
+                childNetworkBehaviours[i].InitializeVars();
+                NetworkBehaviour.SetNetworkedVarData(childNetworkBehaviours[i].networkedVarFields, stream);
             }
         }
 
-        internal ushort GetOrderIndex(NetworkedBehaviour instance)
+        internal ushort GetOrderIndex(NetworkBehaviour instance)
         {
-            for (ushort i = 0; i < childNetworkedBehaviours.Count; i++)
+            for (ushort i = 0; i < childNetworkBehaviours.Count; i++)
             {
-                if (childNetworkedBehaviours[i] == instance)
+                if (childNetworkBehaviours[i] == instance)
                     return i;
             }
             return 0;
         }
 
-        internal NetworkedBehaviour GetBehaviourAtOrderIndex(ushort index)
+        internal NetworkBehaviour GetNetworkBehaviourAtOrderIndex(ushort index)
         {
-            if (index >= childNetworkedBehaviours.Count)
+            if (index >= childNetworkBehaviours.Count)
             {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogError("Behaviour index was out of bounds. Did you mess up the order of your NetworkedBehaviours?");
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogError($"Behaviour index was out of bounds. Did you mess up the order of your {nameof(NetworkBehaviour)}s?");
                 return null;
             }
-            return childNetworkedBehaviours[index];
+            return childNetworkBehaviours[index];
         }
     }
 }

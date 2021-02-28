@@ -9,8 +9,8 @@ namespace MLAPI
     /// with variables updating at specific place in the frame
     /// </summary>
     [AddComponentMenu("MLAPI/SyncTransform")]
-    // todo: check inheriting from NetworkedBehaviour. Currently needed for IsOwner, to synchronize position
-    public class SyncTransform : NetworkedBehaviour
+    // todo: check inheriting from NetworkBehaviour. Currently needed for IsOwner, to synchronize position
+    public class SyncTransform : NetworkBehaviour
     {
         private NetworkedVar<Vector3> m_VarPos = new NetworkedVar<Vector3>();
         private NetworkedVarQuaternion m_VarRot = new NetworkedVarQuaternion();

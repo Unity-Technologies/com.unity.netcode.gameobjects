@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace MLAPI_Examples
 {
-    // Note that the script invoking doesn't have to be a NetworkedBehaviour
+    // Note that the script invoking doesn't have to be a NetworkBehaviour
     public class RunRpcOnOtherGameObject : MonoBehaviour
     {
         public ConvenienceMessagingPing Target;

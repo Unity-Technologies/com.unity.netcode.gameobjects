@@ -7,9 +7,9 @@ using UnityEngine;
 
 namespace UnityEditor
 {
-    [CustomEditor(typeof(NetworkedBehaviour), true)]
+    [CustomEditor(typeof(NetworkBehaviour), true)]
     [CanEditMultipleObjects]
-    public class NetworkedBehaviourEditor : Editor
+    public class NetworkBehaviourEditor : Editor
     {
         private bool initialized;
         private List<string> networkedVarNames = new List<string>();
@@ -72,7 +72,7 @@ namespace UnityEditor
             }
             else if (genericType.IsValueType)
             {
-                MethodInfo method = typeof(NetworkedBehaviourEditor).GetMethod("RenderNetworkedVarValueType", BindingFlags.Public | BindingFlags.Instance | BindingFlags.FlattenHierarchy | BindingFlags.NonPublic);
+                MethodInfo method = typeof(NetworkBehaviourEditor).GetMethod("RenderNetworkedVarValueType", BindingFlags.Public | BindingFlags.Instance | BindingFlags.FlattenHierarchy | BindingFlags.NonPublic);
                 MethodInfo genericMethod = method.MakeGenericMethod(genericType);
                 genericMethod.Invoke(this, new object[] { (object)index });
             }

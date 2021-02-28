@@ -8,7 +8,7 @@ namespace MLAPI
     /// A prototype component for syncing transforms
     /// </summary>
     [AddComponentMenu("MLAPI/ManualNetworkedVarTest")]
-    public class ManualNetworkedVarTest : NetworkedBehaviour
+    public class ManualNetworkedVarTest : NetworkBehaviour
     {
         private NetworkedVar<int> m_TestVar;
         private int m_MinDelta = 0;

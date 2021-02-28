@@ -40,7 +40,7 @@ namespace MLAPI.NetworkedVar
         /// The callback to be invoked when the value gets changed
         /// </summary>
         public OnValueChangedDelegate OnValueChanged;
-        private NetworkedBehaviour networkedBehaviour;
+        private NetworkBehaviour networkBehaviour;
 
         /// <summary>
         /// Creates a NetworkedVar with the default value and settings
@@ -129,7 +129,7 @@ namespace MLAPI.NetworkedVar
                 case NetworkedVarPermission.ServerOnly:
                     return false;
                 case NetworkedVarPermission.OwnerOnly:
-                    return networkedBehaviour.OwnerClientId == clientId;
+                    return networkBehaviour.OwnerClientId == clientId;
                 case NetworkedVarPermission.Custom:
                 {
                     if (Settings.ReadPermissionCallback == null) return false;
@@ -166,7 +166,7 @@ namespace MLAPI.NetworkedVar
                 case NetworkedVarPermission.ServerOnly:
                     return false;
                 case NetworkedVarPermission.OwnerOnly:
-                    return networkedBehaviour.OwnerClientId == clientId;
+                    return networkBehaviour.OwnerClientId == clientId;
                 case NetworkedVarPermission.Custom:
                 {
                     if (Settings.WritePermissionCallback == null) return false;
@@ -202,9 +202,9 @@ namespace MLAPI.NetworkedVar
         }
 
         /// <inheritdoc />
-        public void SetNetworkedBehaviour(NetworkedBehaviour behaviour)
+        public void SetNetworkBehaviour(NetworkBehaviour behaviour)
         {
-            networkedBehaviour = behaviour;
+            networkBehaviour = behaviour;
         }
 
         /// <inheritdoc />
@@ -217,7 +217,7 @@ namespace MLAPI.NetworkedVar
         public void WriteField(Stream stream)
         {
             // Store the local tick at which this NetworkedVar was modified
-            LocalTick = NetworkedBehaviour.currentTick;
+            LocalTick = NetworkBehaviour.currentTick;
             using (PooledBitWriter writer = PooledBitWriter.Get(stream))
             {
                 writer.WriteObjectPacked(InternalValue); //BOX

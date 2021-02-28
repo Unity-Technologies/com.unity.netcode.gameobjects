@@ -6,7 +6,7 @@ using MLAPI.Spawning;
 namespace MLAPI_Examples
 {
     // Features example calls for things often needed for things like Game managers
-    public class ManagerExamples : NetworkedBehaviour
+    public class ManagerExamples : NetworkBehaviour
     {
         public NetworkObject GetPlayerGameObject(ulong clientId)
         {

@@ -39,10 +39,10 @@ namespace MLAPI
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
 #if UNITY_2020_2_OR_NEWER
         // RuntimeAccessModifiersILPP will make this `public`
-        internal static readonly Dictionary<uint, Action<NetworkedBehaviour, BitSerializer, __RpcParams>> __ntable = new Dictionary<uint, Action<NetworkedBehaviour, BitSerializer, __RpcParams>>();
+        internal static readonly Dictionary<uint, Action<NetworkBehaviour, BitSerializer, __RpcParams>> __ntable = new Dictionary<uint, Action<NetworkBehaviour, BitSerializer, __RpcParams>>();
 #else
         [Obsolete("Please do not use, will no longer be exposed in the future versions (framework internal)")]
-        public static readonly Dictionary<uint, Action<NetworkedBehaviour, BitSerializer, __RpcParams>> __ntable = new Dictionary<uint, Action<NetworkedBehaviour, BitSerializer, __RpcParams>>();
+        public static readonly Dictionary<uint, Action<NetworkBehaviour, BitSerializer, __RpcParams>> __ntable = new Dictionary<uint, Action<NetworkBehaviour, BitSerializer, __RpcParams>>();
 #endif
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
@@ -773,7 +773,7 @@ namespace MLAPI
                     if (NetworkConfig.EnableNetworkedVar)
                     {
                         // Do NetworkedVar updates
-                        NetworkedBehaviour.NetworkedBehaviourUpdate();
+                        NetworkBehaviour.NetworkBehaviourUpdate();
                     }
 
                     if (!IsServer && NetworkConfig.EnableMessageBuffering)
@@ -1161,7 +1161,7 @@ namespace MLAPI
                 if (!SpawnManager.SpawnedObjects.ContainsKey(networkObjectId)) return;
                 var networkObject = SpawnManager.SpawnedObjects[networkObjectId];
 
-                var networkBehaviour = networkObject.GetBehaviourAtOrderIndex(networkBehaviourId);
+                var networkBehaviour = networkObject.GetNetworkBehaviourAtOrderIndex(networkBehaviourId);
                 if (ReferenceEquals(networkBehaviour, null)) return;
 
                 var rpcParams = new __RpcParams();
