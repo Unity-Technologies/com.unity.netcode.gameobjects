@@ -7,9 +7,6 @@ namespace MLAPI.Configuration
     {
         internal const string MLAPI_PROTOCOL_VERSION = "13.0.0";
 
-        internal const byte MLAPI_CERTIFICATE_HAIL = 0;
-        internal const byte MLAPI_CERTIFICATE_HAIL_RESPONSE = 1;
-        internal const byte MLAPI_GREETINGS = 2;
         internal const byte MLAPI_CONNECTION_REQUEST = 3;
         internal const byte MLAPI_CONNECTION_APPROVED = 4;
         internal const byte MLAPI_ADD_OBJECT = 5;
@@ -29,10 +26,11 @@ namespace MLAPI.Configuration
         internal const byte MLAPI_CLIENT_RPC = 31;
         internal const byte INVALID = 32;
 
-        internal static readonly string[] MESSAGE_NAMES = {
-            "MLAPI_CERTIFICATE_HAIL", // 0
-            "MLAPI_CERTIFICATE_HAIL_RESPONSE",
-            "MLAPI_GREETINGS",
+        internal static readonly string[] MESSAGE_NAMES =
+        {
+            "", // 0
+            "",
+            "",
             "MLAPI_CONNECTION_REQUEST",
             "MLAPI_CONNECTION_APPROVED",
             "MLAPI_ADD_OBJECT",

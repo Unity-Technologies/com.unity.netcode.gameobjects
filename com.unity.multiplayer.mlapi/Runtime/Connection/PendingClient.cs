@@ -26,10 +26,6 @@
         public enum State
         {
             /// <summary>
-            /// Client is in the process of doing the hail handshake
-            /// </summary>
-            PendingHail,
-            /// <summary>
             /// Client is in the process of doing the connection handshake
             /// </summary>
             PendingConnection
