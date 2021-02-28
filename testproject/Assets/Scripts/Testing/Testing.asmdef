@@ -1,0 +1,8 @@
+{
+    "name": "Testing",
+    "references": [
+        "Unity.Multiplayer.MLAPI.Runtime"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": []
+}
