@@ -91,7 +91,7 @@ namespace UnityEditor
             object val = var.Value;
             string name = networkedVarNames[index];
 
-            if (NetworkingManager.Singleton != null && NetworkingManager.Singleton.IsListening)
+            if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
             {
                 if (type == typeof(int))
                     val = EditorGUILayout.IntField(name, (int)val);

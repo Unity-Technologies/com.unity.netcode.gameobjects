@@ -7,9 +7,9 @@ using UnityEditorInternal;
 using MLAPI;
 using MLAPI.Transports;
 
-[CustomEditor(typeof(NetworkingManager), true)]
+[CustomEditor(typeof(NetworkManager), true)]
 [CanEditMultipleObjects]
-public class NetworkingManagerEditor : Editor
+public class NetworkManagerEditor : Editor
 {
     // Properties
     private SerializedProperty dontDestroyOnLoadProperty;
@@ -48,7 +48,7 @@ public class NetworkingManagerEditor : Editor
     private ReorderableList networkPrefabsList;
     private ReorderableList registeredScenesList;
 
-    private NetworkingManager networkingManager;
+    private NetworkManager networkManager;
     private bool initialized;
 
     private readonly List<Type> transportTypes = new List<Type>();
@@ -89,7 +89,7 @@ public class NetworkingManagerEditor : Editor
             return;
 
         initialized = true;
-        networkingManager = (NetworkingManager)target;
+        networkManager = (NetworkManager)target;
 
         // Base properties
         dontDestroyOnLoadProperty = serializedObject.FindProperty("DontDestroy");
@@ -179,9 +179,9 @@ public class NetworkingManagerEditor : Editor
 
             int playerPrefabIndex = -1;
 
-            for (int i = 0; i < networkingManager.NetworkConfig.NetworkedPrefabs.Count; i++)
+            for (int i = 0; i < networkManager.NetworkConfig.NetworkedPrefabs.Count; i++)
             {
-                if (networkingManager.NetworkConfig.NetworkedPrefabs[i].PlayerPrefab)
+                if (networkManager.NetworkConfig.NetworkedPrefabs[i].PlayerPrefab)
                 {
                     playerPrefabIndex = i;
                     break;
@@ -236,7 +236,7 @@ public class NetworkingManagerEditor : Editor
         }
 
 
-        if (!networkingManager.IsServer && !networkingManager.IsClient)
+        if (!networkManager.IsServer && !networkManager.IsClient)
         {
             serializedObject.Update();
             EditorGUILayout.PropertyField(dontDestroyOnLoadProperty);
@@ -246,7 +246,7 @@ public class NetworkingManagerEditor : Editor
             EditorGUILayout.Space();
             networkPrefabsList.DoLayoutList();
 
-            using (new EditorGUI.DisabledScope(!networkingManager.NetworkConfig.EnableSceneManagement))
+            using (new EditorGUI.DisabledScope(!networkManager.NetworkConfig.EnableSceneManagement))
             {
                 registeredScenesList.DoLayoutList();
                 EditorGUILayout.Space();
@@ -268,11 +268,11 @@ public class NetworkingManagerEditor : Editor
                 {
                     ReloadTransports();
 
-                    Component transport = networkingManager.gameObject.GetComponent(transportTypes[selection - 1]);
+                    Component transport = networkManager.gameObject.GetComponent(transportTypes[selection - 1]);
 
                     if (transport == null)
                     {
-                        transport = networkingManager.gameObject.AddComponent(transportTypes[selection - 1]);
+                        transport = networkManager.gameObject.AddComponent(transportTypes[selection - 1]);
                     }
 
                     networkTransportProperty.objectReferenceValue = transport;
@@ -283,7 +283,7 @@ public class NetworkingManagerEditor : Editor
 
             EditorGUILayout.PropertyField(enableTimeResyncProperty);
 
-            using (new EditorGUI.DisabledScope(!networkingManager.NetworkConfig.EnableTimeResync))
+            using (new EditorGUI.DisabledScope(!networkManager.NetworkConfig.EnableTimeResync))
             {
                 EditorGUILayout.PropertyField(timeResyncIntervalProperty);
             }
@@ -294,7 +294,7 @@ public class NetworkingManagerEditor : Editor
             EditorGUILayout.PropertyField(eventTickrateProperty);
             EditorGUILayout.PropertyField(enableNetworkedVarProperty);
 
-            using (new EditorGUI.DisabledScope(!networkingManager.NetworkConfig.EnableNetworkedVar))
+            using (new EditorGUI.DisabledScope(!networkManager.NetworkConfig.EnableNetworkedVar))
             {
                 if(maxObjectUpdatesPerTickProperty != null)
                 {
@@ -307,7 +307,7 @@ public class NetworkingManagerEditor : Editor
             EditorGUILayout.LabelField("Connection", EditorStyles.boldLabel);
             EditorGUILayout.PropertyField(connectionApprovalProperty);
 
-            using (new EditorGUI.DisabledScope(!networkingManager.NetworkConfig.ConnectionApproval))
+            using (new EditorGUI.DisabledScope(!networkManager.NetworkConfig.ConnectionApproval))
             {
                 EditorGUILayout.PropertyField(clientConnectionBufferTimeoutProperty);
             }
@@ -319,18 +319,18 @@ public class NetworkingManagerEditor : Editor
             EditorGUILayout.PropertyField(createPlayerPrefabProperty);
             EditorGUILayout.PropertyField(forceSamePrefabsProperty);
 
-            using (new EditorGUI.DisabledScope(!networkingManager.NetworkConfig.EnableSceneManagement))
+            using (new EditorGUI.DisabledScope(!networkManager.NetworkConfig.EnableSceneManagement))
             {
-                bool value = networkingManager.NetworkConfig.UsePrefabSync;
+                bool value = networkManager.NetworkConfig.UsePrefabSync;
 
-                if (!networkingManager.NetworkConfig.EnableSceneManagement)
+                if (!networkManager.NetworkConfig.EnableSceneManagement)
                 {
                     usePrefabSyncProperty.boolValue = true;
                 }
 
                 EditorGUILayout.PropertyField(usePrefabSyncProperty);
 
-                if (!networkingManager.NetworkConfig.EnableSceneManagement)
+                if (!networkManager.NetworkConfig.EnableSceneManagement)
                 {
                     usePrefabSyncProperty.boolValue = value;
                 }
@@ -338,14 +338,14 @@ public class NetworkingManagerEditor : Editor
 
             EditorGUILayout.PropertyField(recycleNetworkIdsProperty);
 
-            using (new EditorGUI.DisabledScope(!networkingManager.NetworkConfig.RecycleNetworkIds))
+            using (new EditorGUI.DisabledScope(!networkManager.NetworkConfig.RecycleNetworkIds))
             {
                 EditorGUILayout.PropertyField(networkIdRecycleDelayProperty);
             }
 
             EditorGUILayout.PropertyField(enableMessageBufferingProperty);
 
-            using (new EditorGUI.DisabledScope(!networkingManager.NetworkConfig.EnableMessageBuffering))
+            using (new EditorGUI.DisabledScope(!networkManager.NetworkConfig.EnableMessageBuffering))
             {
                 EditorGUILayout.PropertyField(messageBufferTimeoutProperty);
             }
@@ -356,7 +356,7 @@ public class NetworkingManagerEditor : Editor
             EditorGUILayout.LabelField("Scene Management", EditorStyles.boldLabel);
             EditorGUILayout.PropertyField(enableSceneManagementProperty);
 
-            using (new EditorGUI.DisabledScope(!networkingManager.NetworkConfig.EnableSceneManagement))
+            using (new EditorGUI.DisabledScope(!networkManager.NetworkConfig.EnableSceneManagement))
             {
                 EditorGUILayout.PropertyField(loadSceneTimeOutProperty);
                 EditorGUILayout.PropertyField(allowRuntimeSceneChangesProperty);
@@ -377,17 +377,17 @@ public class NetworkingManagerEditor : Editor
 
                 if (GUILayout.Button(new GUIContent("Start Host", "Starts a host instance" + buttonDisabledReasonSuffix)))
                 {
-                    networkingManager.StartHost();
+                    networkManager.StartHost();
                 }
 
                 if (GUILayout.Button(new GUIContent("Start Server", "Starts a server instance" + buttonDisabledReasonSuffix)))
                 {
-                    networkingManager.StartServer();
+                    networkManager.StartServer();
                 }
 
                 if (GUILayout.Button(new GUIContent("Start Client", "Starts a client instance" + buttonDisabledReasonSuffix)))
                 {
-                    networkingManager.StartClient();
+                    networkManager.StartClient();
                 }
 
                 if (!EditorApplication.isPlaying)
@@ -400,23 +400,23 @@ public class NetworkingManagerEditor : Editor
         {
             string instanceType = "";
 
-            if (networkingManager.IsHost)
+            if (networkManager.IsHost)
                 instanceType = "Host";
-            else if (networkingManager.IsServer)
+            else if (networkManager.IsServer)
                 instanceType = "Server";
-            else if (networkingManager.IsClient)
+            else if (networkManager.IsClient)
                 instanceType = "Client";
 
             EditorGUILayout.HelpBox("You cannot edit the NetworkConfig when a " + instanceType + " is running.", MessageType.Info);
 
             if (GUILayout.Button(new GUIContent("Stop " + instanceType, "Stops the " + instanceType + " instance.")))
             {
-                if (networkingManager.IsHost)
-                    networkingManager.StopHost();
-                else if (networkingManager.IsServer)
-                    networkingManager.StopServer();
-                else if (networkingManager.IsClient)
-                    networkingManager.StopClient();
+                if (networkManager.IsHost)
+                    networkManager.StopHost();
+                else if (networkManager.IsServer)
+                    networkManager.StopServer();
+                else if (networkManager.IsClient)
+                    networkManager.StopClient();
             }
         }
     }

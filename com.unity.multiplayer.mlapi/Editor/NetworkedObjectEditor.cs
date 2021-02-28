@@ -24,7 +24,7 @@ namespace UnityEditor
         {
             Init();
 
-            if (!networkedObject.IsSpawned && NetworkingManager.Singleton != null && NetworkingManager.Singleton.IsServer)
+            if (!networkedObject.IsSpawned && NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer)
             {
                 EditorGUILayout.BeginHorizontal();
                 EditorGUILayout.LabelField(new GUIContent("Spawn", "Spawns the object across the network"));
@@ -49,7 +49,7 @@ namespace UnityEditor
                 EditorGUILayout.LabelField("IsPlayerObject: ", networkedObject.IsPlayerObject.ToString(), EditorStyles.label);
                 EditorGUILayout.LabelField("IsSceneObject: ", (networkedObject.IsSceneObject == null ? "Null" : networkedObject.IsSceneObject.Value.ToString()), EditorStyles.label);
 
-                if (NetworkingManager.Singleton != null && NetworkingManager.Singleton.IsServer)
+                if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer)
                 {
                     showObservers = EditorGUILayout.Foldout(showObservers, "Observers");
 
@@ -61,8 +61,8 @@ namespace UnityEditor
 
                         while (observerClientIds.MoveNext())
                         {
-                            if (NetworkingManager.Singleton.ConnectedClients[observerClientIds.Current].PlayerObject != null)
-                                EditorGUILayout.ObjectField("ClientId: " + observerClientIds.Current, NetworkingManager.Singleton.ConnectedClients[observerClientIds.Current].PlayerObject, typeof(GameObject), false);
+                            if (NetworkManager.Singleton.ConnectedClients[observerClientIds.Current].PlayerObject != null)
+                                EditorGUILayout.ObjectField("ClientId: " + observerClientIds.Current, NetworkManager.Singleton.ConnectedClients[observerClientIds.Current].PlayerObject, typeof(GameObject), false);
                             else
                                 EditorGUILayout.TextField("ClientId: " + observerClientIds.Current, EditorStyles.label);
                         }

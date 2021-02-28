@@ -17,7 +17,7 @@ namespace MLAPI_Examples
         private void ExecuteRemoteRpc()
         {
             // Long version of IsServer
-            if (Target != null && NetworkingManager.Singleton.IsClient)
+            if (Target != null && NetworkManager.Singleton.IsClient)
             {
                 int rnd = Random.Range(0, int.MaxValue);
                 

@@ -31,8 +31,8 @@ namespace MLAPI
     /// <summary>
     /// The main component of the library
     /// </summary>
-    [AddComponentMenu("MLAPI/NetworkingManager", -100)]
-    public class NetworkingManager : MonoBehaviour, INetworkUpdateSystem
+    [AddComponentMenu("MLAPI/NetworkManager", -100)]
+    public class NetworkManager : MonoBehaviour, INetworkUpdateSystem
     {
         [Browsable(false)]
         [EditorBrowsable(EditorBrowsableState.Never)]
@@ -72,7 +72,7 @@ namespace MLAPI
         private float networkTimeOffset;
         private float currentNetworkTimeOffset;
         /// <summary>
-        /// Gets or sets if the NetworkingManager should be marked as DontDestroyOnLoad
+        /// Gets or sets if the NetworkManager should be marked as DontDestroyOnLoad
         /// </summary>
         [HideInInspector]
         public bool DontDestroy = true;
@@ -87,15 +87,15 @@ namespace MLAPI
         [HideInInspector]
         public LogLevel LogLevel = LogLevel.Normal;
         /// <summary>
-        /// The singleton instance of the NetworkingManager
+        /// The singleton instance of the NetworkManager
         /// </summary>
         [EditorBrowsable(EditorBrowsableState.Never)]
         [Obsolete("Use Singleton instead", false)]
-        public static NetworkingManager singleton => Singleton;
+        public static NetworkManager singleton => Singleton;
         /// <summary>
-        /// The singleton instance of the NetworkingManager
+        /// The singleton instance of the NetworkManager
         /// </summary>
-        public static NetworkingManager Singleton { get; private set; }
+        public static NetworkManager Singleton { get; private set; }
         /// <summary>
         /// Gets the networkId of the server
         /// </summary>
@@ -275,12 +275,12 @@ namespace MLAPI
 
             if (GetComponentInChildren<NetworkedObject>() != null)
             {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("The NetworkingManager cannot be a NetworkedObject. This will lead to weird side effects.");
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning($"{nameof(NetworkManager)} cannot be a NetworkedObject. This will lead to weird side effects.");
             }
 
             if (!NetworkConfig.RegisteredScenes.Contains(SceneManager.GetActiveScene().name))
             {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("The active scene is not registered as a networked scene. The MLAPI has added it");
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Active scene is not registered as a networked scene. The MLAPI has added it");
                 NetworkConfig.RegisteredScenes.Add(SceneManager.GetActiveScene().name);
             }
 
@@ -290,7 +290,7 @@ namespace MLAPI
                 {
                     if (NetworkConfig.NetworkedPrefabs[i].Prefab.GetComponent<NetworkedObject>() == null)
                     {
-                        if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("The network prefab [" + i + "] does not have a NetworkedObject component");
+                        if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Network prefab [" + i + "] does not have a NetworkedObject component");
                     }
                     else
                     {

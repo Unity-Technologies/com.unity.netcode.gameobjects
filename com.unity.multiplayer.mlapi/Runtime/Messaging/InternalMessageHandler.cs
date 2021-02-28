@@ -45,21 +45,21 @@ namespace MLAPI.Messaging
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
                 ulong configHash = reader.ReadUInt64Packed();
-                if (!NetworkingManager.Singleton.NetworkConfig.CompareConfig(configHash))
+                if (!NetworkManager.Singleton.NetworkConfig.CompareConfig(configHash))
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("NetworkConfiguration mismatch. The configuration between the server and client does not match");
-                    NetworkingManager.Singleton.DisconnectClient(clientId);
+                    NetworkManager.Singleton.DisconnectClient(clientId);
                     return;
                 }
 
-                if (NetworkingManager.Singleton.NetworkConfig.ConnectionApproval)
+                if (NetworkManager.Singleton.NetworkConfig.ConnectionApproval)
                 {
                     byte[] connectionBuffer = reader.ReadByteArray();
-                    NetworkingManager.Singleton.InvokeConnectionApproval(connectionBuffer, clientId, (createPlayerObject, playerPrefabHash, approved, position, rotation) => { NetworkingManager.Singleton.HandleApproval(clientId, createPlayerObject, playerPrefabHash, approved, position, rotation); });
+                    NetworkManager.Singleton.InvokeConnectionApproval(connectionBuffer, clientId, (createPlayerObject, playerPrefabHash, approved, position, rotation) => { NetworkManager.Singleton.HandleApproval(clientId, createPlayerObject, playerPrefabHash, approved, position, rotation); });
                 }
                 else
                 {
-                    NetworkingManager.Singleton.HandleApproval(clientId, NetworkingManager.Singleton.NetworkConfig.CreatePlayerPrefab, null, true, null, null);
+                    NetworkManager.Singleton.HandleApproval(clientId, NetworkManager.Singleton.NetworkConfig.CreatePlayerPrefab, null, true, null, null);
                 }
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
@@ -74,30 +74,30 @@ namespace MLAPI.Messaging
 #endif
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
-                NetworkingManager.Singleton.LocalClientId = reader.ReadUInt64Packed();
+                NetworkManager.Singleton.LocalClientId = reader.ReadUInt64Packed();
 
                 uint sceneIndex = 0;
                 Guid sceneSwitchProgressGuid = new Guid();
 
-                if (NetworkingManager.Singleton.NetworkConfig.EnableSceneManagement)
+                if (NetworkManager.Singleton.NetworkConfig.EnableSceneManagement)
                 {
                     sceneIndex = reader.ReadUInt32Packed();
                     sceneSwitchProgressGuid = new Guid(reader.ReadByteArray());
                 }
 
-                bool sceneSwitch = NetworkingManager.Singleton.NetworkConfig.EnableSceneManagement && NetworkSceneManager.HasSceneMismatch(sceneIndex);
+                bool sceneSwitch = NetworkManager.Singleton.NetworkConfig.EnableSceneManagement && NetworkSceneManager.HasSceneMismatch(sceneIndex);
 
                 float netTime = reader.ReadSinglePacked();
-                NetworkingManager.Singleton.UpdateNetworkTime(clientId, netTime, receiveTime, true);
+                NetworkManager.Singleton.UpdateNetworkTime(clientId, netTime, receiveTime, true);
 
-                NetworkingManager.Singleton.ConnectedClients.Add(NetworkingManager.Singleton.LocalClientId, new NetworkedClient() { ClientId = NetworkingManager.Singleton.LocalClientId });
+                NetworkManager.Singleton.ConnectedClients.Add(NetworkManager.Singleton.LocalClientId, new NetworkedClient() { ClientId = NetworkManager.Singleton.LocalClientId });
 
 
                 void DelayedSpawnAction(Stream continuationStream)
                 {
                     using (PooledBitReader continuationReader = PooledBitReader.Get(continuationStream))
                     {
-                        if (!NetworkingManager.Singleton.NetworkConfig.EnableSceneManagement || NetworkingManager.Singleton.NetworkConfig.UsePrefabSync)
+                        if (!NetworkManager.Singleton.NetworkConfig.EnableSceneManagement || NetworkManager.Singleton.NetworkConfig.UsePrefabSync)
                         {
                             SpawnManager.DestroySceneObjects();
                         }
@@ -124,7 +124,7 @@ namespace MLAPI.Messaging
                             ulong instanceId;
                             bool softSync;
 
-                            if (!NetworkingManager.Singleton.NetworkConfig.EnableSceneManagement || NetworkingManager.Singleton.NetworkConfig.UsePrefabSync)
+                            if (!NetworkManager.Singleton.NetworkConfig.EnableSceneManagement || NetworkManager.Singleton.NetworkConfig.UsePrefabSync)
                             {
                                 softSync = false;
                                 instanceId = 0;
@@ -166,7 +166,7 @@ namespace MLAPI.Messaging
                                 {
                                     BufferManager.BufferedMessage message = bufferQueue.Dequeue();
 
-                                    NetworkingManager.Singleton.HandleIncomingData(message.sender, message.channel, new ArraySegment<byte>(message.payload.GetBuffer(), (int)message.payload.Position, (int)message.payload.Length), message.receiveTime, false);
+                                    NetworkManager.Singleton.HandleIncomingData(message.sender, message.channel, new ArraySegment<byte>(message.payload.GetBuffer(), (int)message.payload.Position, (int)message.payload.Length), message.receiveTime, false);
 
                                     BufferManager.RecycleConsumedBufferedMessage(message);
                                 }
@@ -175,9 +175,9 @@ namespace MLAPI.Messaging
 
                         SpawnManager.CleanDiffedSceneObjects();
 
-                        NetworkingManager.Singleton.IsConnectedClient = true;
+                        NetworkManager.Singleton.IsConnectedClient = true;
 
-                        NetworkingManager.Singleton.InvokeOnClientConnectedCallback(NetworkingManager.Singleton.LocalClientId);
+                        NetworkManager.Singleton.InvokeOnClientConnectedCallback(NetworkManager.Singleton.LocalClientId);
                     }
                 }
 
@@ -234,7 +234,7 @@ namespace MLAPI.Messaging
                 ulong instanceId;
                 bool softSync;
 
-                if (!NetworkingManager.Singleton.NetworkConfig.EnableSceneManagement || NetworkingManager.Singleton.NetworkConfig.UsePrefabSync)
+                if (!NetworkManager.Singleton.NetworkConfig.EnableSceneManagement || NetworkManager.Singleton.NetworkConfig.UsePrefabSync)
                 {
                     softSync = false;
                     instanceId = 0;
@@ -279,7 +279,7 @@ namespace MLAPI.Messaging
                     {
                         BufferManager.BufferedMessage message = bufferQueue.Dequeue();
 
-                        NetworkingManager.Singleton.HandleIncomingData(message.sender, message.channel, new ArraySegment<byte>(message.payload.GetBuffer(), (int)message.payload.Position, (int)message.payload.Length), message.receiveTime, false);
+                        NetworkManager.Singleton.HandleIncomingData(message.sender, message.channel, new ArraySegment<byte>(message.payload.GetBuffer(), (int)message.payload.Position, (int)message.payload.Length), message.receiveTime, false);
 
                         BufferManager.RecycleConsumedBufferedMessage(message);
                     }
@@ -350,13 +350,13 @@ namespace MLAPI.Messaging
                 ulong networkId = reader.ReadUInt64Packed();
                 ulong ownerClientId = reader.ReadUInt64Packed();
 
-                if (SpawnManager.SpawnedObjects[networkId].OwnerClientId == NetworkingManager.Singleton.LocalClientId)
+                if (SpawnManager.SpawnedObjects[networkId].OwnerClientId == NetworkManager.Singleton.LocalClientId)
                 {
                     //We are current owner.
                     SpawnManager.SpawnedObjects[networkId].InvokeBehaviourOnLostOwnership();
                 }
 
-                if (ownerClientId == NetworkingManager.Singleton.LocalClientId)
+                if (ownerClientId == NetworkManager.Singleton.LocalClientId)
                 {
                     //We are new owner.
                     SpawnManager.SpawnedObjects[networkId].InvokeBehaviourOnGainedOwnership();
@@ -415,7 +415,7 @@ namespace MLAPI.Messaging
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
                 float netTime = reader.ReadSinglePacked();
-                NetworkingManager.Singleton.UpdateNetworkTime(clientId, netTime, receiveTime);
+                NetworkManager.Singleton.UpdateNetworkTime(clientId, netTime, receiveTime);
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleTimeSync.End();
@@ -427,7 +427,7 @@ namespace MLAPI.Messaging
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleNetworkedVarDelta.Begin();
 #endif
-            if (!NetworkingManager.Singleton.NetworkConfig.EnableNetworkedVar)
+            if (!NetworkManager.Singleton.NetworkConfig.EnableNetworkedVar)
             {
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("NetworkedVar delta received but EnableNetworkedVar is false");
                 return;
@@ -451,7 +451,7 @@ namespace MLAPI.Messaging
                         NetworkedBehaviour.HandleNetworkedVarDeltas(instance.networkedVarFields, stream, clientId, instance);
                     }
                 }
-                else if (NetworkingManager.Singleton.IsServer || !NetworkingManager.Singleton.NetworkConfig.EnableMessageBuffering)
+                else if (NetworkManager.Singleton.IsServer || !NetworkManager.Singleton.NetworkConfig.EnableMessageBuffering)
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("NetworkedVarDelta message received for a non-existent object with id: " + networkId + ". This delta was lost.");
                 }
@@ -471,7 +471,7 @@ namespace MLAPI.Messaging
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleNetworkedVarUpdate.Begin();
 #endif
-            if (!NetworkingManager.Singleton.NetworkConfig.EnableNetworkedVar)
+            if (!NetworkManager.Singleton.NetworkConfig.EnableNetworkedVar)
             {
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("NetworkedVar update received but EnableNetworkedVar is false");
                 return;
@@ -495,7 +495,7 @@ namespace MLAPI.Messaging
                         NetworkedBehaviour.HandleNetworkedVarUpdate(instance.networkedVarFields, stream, clientId, instance);
                     }
                 }
-                else if (NetworkingManager.Singleton.IsServer || !NetworkingManager.Singleton.NetworkConfig.EnableMessageBuffering)
+                else if (NetworkManager.Singleton.IsServer || !NetworkManager.Singleton.NetworkConfig.EnableMessageBuffering)
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("NetworkedVarUpdate message received for a non-existent object with id: " + networkId + ". This delta was lost.");
                 }
@@ -518,7 +518,7 @@ namespace MLAPI.Messaging
         /// <param name="receiveTime"></param>
         internal static void RpcReceiveQueueItem(ulong clientId, Stream stream, float receiveTime, RpcQueueContainer.QueueItemType queueItemType)
         {
-            if (NetworkingManager.Singleton.IsServer && clientId == NetworkingManager.Singleton.ServerClientId)
+            if (NetworkManager.Singleton.IsServer && clientId == NetworkManager.Singleton.ServerClientId)
             {
                 return;
             }
@@ -526,7 +526,7 @@ namespace MLAPI.Messaging
             ProfilerStatManager.rpcsRcvd.Record();
             PerformanceDataManager.Increment(ProfilerConstants.NumberOfRPCsReceived);
 
-            var rpcQueueContainer = NetworkingManager.Singleton.rpcQueueContainer;
+            var rpcQueueContainer = NetworkManager.Singleton.rpcQueueContainer;
             rpcQueueContainer.AddQueueItemToInboundFrame(queueItemType, receiveTime, clientId, (BitStream)stream);
         }
 

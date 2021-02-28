@@ -7,7 +7,7 @@ public class ChickSpawner : MonoBehaviour
     
     private void Start()
     {
-        NetworkingManager.Singleton.OnServerStarted += () =>
+        NetworkManager.Singleton.OnServerStarted += () =>
         {
             var chickGameObj = Instantiate(chickPrefab);
             var chickNetObj = chickGameObj.GetComponent<NetworkedObject>();

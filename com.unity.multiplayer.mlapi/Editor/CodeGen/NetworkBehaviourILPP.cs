@@ -142,13 +142,13 @@ namespace MLAPI.Editor.CodeGen
         private MethodReference BitSerializer_SerializeRayArray_MethodRef;
         private MethodReference BitSerializer_SerializeRay2DArray_MethodRef;
 
-        private const string k_NetworkManager_LocalClientId = nameof(NetworkingManager.LocalClientId);
-        private const string k_NetworkManager_IsListening = nameof(NetworkingManager.IsListening);
-        private const string k_NetworkManager_IsHost = nameof(NetworkingManager.IsHost);
-        private const string k_NetworkManager_IsServer = nameof(NetworkingManager.IsServer);
-        private const string k_NetworkManager_IsClient = nameof(NetworkingManager.IsClient);
+        private const string k_NetworkManager_LocalClientId = nameof(NetworkManager.LocalClientId);
+        private const string k_NetworkManager_IsListening = nameof(NetworkManager.IsListening);
+        private const string k_NetworkManager_IsHost = nameof(NetworkManager.IsHost);
+        private const string k_NetworkManager_IsServer = nameof(NetworkManager.IsServer);
+        private const string k_NetworkManager_IsClient = nameof(NetworkManager.IsClient);
 #pragma warning disable 618
-        private const string k_NetworkManager_ntable = nameof(NetworkingManager.__ntable);
+        private const string k_NetworkManager_ntable = nameof(NetworkManager.__ntable);
 
         private const string k_NetworkBehaviour_BeginSendServerRpc = nameof(NetworkedBehaviour.__beginSendServerRpc);
         private const string k_NetworkBehaviour_EndSendServerRpc = nameof(NetworkedBehaviour.__endSendServerRpc);
@@ -170,7 +170,7 @@ namespace MLAPI.Editor.CodeGen
 
         private bool ImportReferences(ModuleDefinition moduleDefinition)
         {
-            var networkManagerType = typeof(NetworkingManager);
+            var networkManagerType = typeof(NetworkManager);
             NetworkManager_TypeRef = moduleDefinition.ImportReference(networkManagerType);
             foreach (var propertyInfo in networkManagerType.GetProperties())
             {

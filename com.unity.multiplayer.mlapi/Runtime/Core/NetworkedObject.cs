@@ -38,9 +38,9 @@ namespace MLAPI
         }
 
         /// <summary>
-        /// Gets the NetworkingManager that owns this NetworkedObject instance
+        /// Gets the NetworkManager that owns this NetworkedObject instance
         /// </summary>
-        public NetworkingManager NetworkManager => NetworkingManager.Singleton;
+        public NetworkManager NetworkManager => NetworkManager.Singleton;
         /// <summary>
         /// Gets the unique ID of this object that is synced across the network
         /// </summary>
@@ -53,13 +53,13 @@ namespace MLAPI
             get
             {
                 if (_ownerClientId == null)
-					return NetworkingManager.Singleton != null ? NetworkingManager.Singleton.ServerClientId : 0;
+					return NetworkManager.Singleton != null ? NetworkManager.Singleton.ServerClientId : 0;
                 else
                     return _ownerClientId.Value;
             }
             internal set
             {
-				if (NetworkingManager.Singleton != null && value == NetworkingManager.Singleton.ServerClientId)
+				if (NetworkManager.Singleton != null && value == NetworkManager.Singleton.ServerClientId)
                     _ownerClientId = null;
                 else
                     _ownerClientId = value;
@@ -112,7 +112,7 @@ namespace MLAPI
         /// <summary>
         /// Gets if the object is the the personal clients player object
         /// </summary>
-        public bool IsLocalPlayer => NetworkingManager.Singleton != null && IsPlayerObject && OwnerClientId == NetworkingManager.Singleton.LocalClientId;
+        public bool IsLocalPlayer => NetworkManager.Singleton != null && IsPlayerObject && OwnerClientId == NetworkManager.Singleton.LocalClientId;
         /// <summary>
         /// Gets if the object is owned by the local player or if the object is the local player object
         /// </summary>
@@ -122,7 +122,7 @@ namespace MLAPI
         /// <summary>
         /// Gets if the object is owned by the local player or if the object is the local player object
         /// </summary>
-        public bool IsOwner => NetworkingManager.Singleton != null && OwnerClientId == NetworkingManager.Singleton.LocalClientId;
+        public bool IsOwner => NetworkManager.Singleton != null && OwnerClientId == NetworkManager.Singleton.LocalClientId;
         /// <summary>
         /// Gets Whether or not the object is owned by anyone
         /// </summary>
@@ -132,7 +132,7 @@ namespace MLAPI
         /// <summary>
         /// Gets Whether or not the object is owned by anyone
         /// </summary>
-        public bool IsOwnedByServer => NetworkingManager.Singleton != null && OwnerClientId == NetworkingManager.Singleton.ServerClientId;
+        public bool IsOwnedByServer => NetworkManager.Singleton != null && OwnerClientId == NetworkManager.Singleton.ServerClientId;
         /// <summary>
         /// Gets if the object has yet been spawned across the network
         /// </summary>
@@ -223,7 +223,7 @@ namespace MLAPI
                 throw new SpawnStateException("Object is not spawned");
             }
 
-            if (!NetworkingManager.Singleton.IsServer)
+            if (!NetworkManager.Singleton.IsServer)
             {
                 throw new NotServerException("Only server can change visibility");
             }
@@ -247,7 +247,7 @@ namespace MLAPI
         /// <param name="payload">An optional payload to send as part of the spawns</param>
         public static void NetworkShow(List<NetworkedObject> networkedObjects, ulong clientId, Stream payload = null)
         {
-            if (!NetworkingManager.Singleton.IsServer)
+            if (!NetworkManager.Singleton.IsServer)
             {
                 throw new NotServerException("Only server can change visibility");
             }
@@ -296,7 +296,7 @@ namespace MLAPI
                 throw new SpawnStateException("Object is not spawned");
             }
 
-            if (!NetworkingManager.Singleton.IsServer)
+            if (!NetworkManager.Singleton.IsServer)
             {
                 throw new NotServerException("Only server can change visibility");
             }
@@ -306,7 +306,7 @@ namespace MLAPI
                 throw new VisibilityChangeException("The object is already hidden");
             }
 
-            if (clientId == NetworkingManager.Singleton.ServerClientId)
+            if (clientId == NetworkManager.Singleton.ServerClientId)
             {
                 throw new VisibilityChangeException("Cannot hide an object from the server");
             }
@@ -333,12 +333,12 @@ namespace MLAPI
         /// <param name="clientId">The client to hide the objects from</param>
         public static void NetworkHide(List<NetworkedObject> networkedObjects, ulong clientId)
         {
-            if (!NetworkingManager.Singleton.IsServer)
+            if (!NetworkManager.Singleton.IsServer)
             {
                 throw new NotServerException("Only server can change visibility");
             }
 
-            if (clientId == NetworkingManager.Singleton.ServerClientId)
+            if (clientId == NetworkManager.Singleton.ServerClientId)
             {
                 throw new VisibilityChangeException("Cannot hide an object from the server");
             }
@@ -379,7 +379,7 @@ namespace MLAPI
 
         private void OnDestroy()
         {
-            if (NetworkingManager.Singleton != null)
+            if (NetworkManager.Singleton != null)
             {
                 SpawnManager.OnDestroyObject(NetworkId, false);
             }
@@ -392,9 +392,9 @@ namespace MLAPI
         /// <param name="destroyWithScene">Should the object be destroyd when the scene is changed</param>
         public void Spawn(Stream spawnPayload = null, bool destroyWithScene = false)
         {
-            if (!NetworkingManager.Singleton.IsListening)
+            if (!NetworkManager.Singleton.IsListening)
             {
-                throw new NotListeningException("NetworkingManager isn't listening, start a server, client or host before spawning objects.");
+                throw new NotListeningException($"{nameof(NetworkManager)} isn't listening, start a server, client or host before spawning objects.");
             }
 
             if (spawnPayload != null)
@@ -402,11 +402,11 @@ namespace MLAPI
 
             SpawnManager.SpawnNetworkedObjectLocally(this,SpawnManager.GetNetworkObjectId(), false, false, null, spawnPayload, spawnPayload != null, spawnPayload == null ? 0 : (int)spawnPayload.Length, false, destroyWithScene);
 
-            for (int i = 0; i < NetworkingManager.Singleton.ConnectedClientsList.Count; i++)
+            for (int i = 0; i < NetworkManager.Singleton.ConnectedClientsList.Count; i++)
             {
-                if (observers.Contains(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId))
+                if (observers.Contains(NetworkManager.Singleton.ConnectedClientsList[i].ClientId))
                 {
-                    SpawnManager.SendSpawnCallForObject(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId, this, spawnPayload);
+                    SpawnManager.SendSpawnCallForObject(NetworkManager.Singleton.ConnectedClientsList[i].ClientId, this, spawnPayload);
                 }
             }
         }
@@ -432,11 +432,11 @@ namespace MLAPI
 
             SpawnManager.SpawnNetworkedObjectLocally(this, SpawnManager.GetNetworkObjectId(), false, false, clientId, spawnPayload, spawnPayload != null, spawnPayload == null ? 0 : (int)spawnPayload.Length, false, destroyWithScene);
 
-            for (int i = 0; i < NetworkingManager.Singleton.ConnectedClientsList.Count; i++)
+            for (int i = 0; i < NetworkManager.Singleton.ConnectedClientsList.Count; i++)
             {
-                if (observers.Contains(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId))
+                if (observers.Contains(NetworkManager.Singleton.ConnectedClientsList[i].ClientId))
                 {
-                    SpawnManager.SendSpawnCallForObject(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId, this, spawnPayload);
+                    SpawnManager.SendSpawnCallForObject(NetworkManager.Singleton.ConnectedClientsList[i].ClientId, this, spawnPayload);
                 }
             }
         }
@@ -454,11 +454,11 @@ namespace MLAPI
 
             SpawnManager.SpawnNetworkedObjectLocally(this, SpawnManager.GetNetworkObjectId(), false, true, clientId, spawnPayload, spawnPayload != null, spawnPayload == null ? 0 : (int)spawnPayload.Length, false, destroyWithScene);
 
-            for (int i = 0; i < NetworkingManager.Singleton.ConnectedClientsList.Count; i++)
+            for (int i = 0; i < NetworkManager.Singleton.ConnectedClientsList.Count; i++)
             {
-                if (observers.Contains(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId))
+                if (observers.Contains(NetworkManager.Singleton.ConnectedClientsList[i].ClientId))
                 {
-                    SpawnManager.SendSpawnCallForObject(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId, this, spawnPayload);
+                    SpawnManager.SendSpawnCallForObject(NetworkManager.Singleton.ConnectedClientsList[i].ClientId, this, spawnPayload);
                 }
             }
         }

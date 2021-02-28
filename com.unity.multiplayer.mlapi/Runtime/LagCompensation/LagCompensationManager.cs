@@ -40,7 +40,7 @@ namespace MLAPI.LagCompensation
         /// <param name="action">The action to invoke when time is turned back</param>
         public static void Simulate(float secondsAgo, IList<TrackedObject> simulatedObjects, Action action)
         {
-            if (!NetworkingManager.Singleton.IsServer)
+            if (!NetworkManager.Singleton.IsServer)
             {
                 throw new NotServerException("Only the server can perform lag compensation");
             }
@@ -65,12 +65,12 @@ namespace MLAPI.LagCompensation
         /// <param name="action">The action to invoke when time is turned back</param>
         public static void Simulate(ulong clientId, Action action)
         {
-            if (!NetworkingManager.Singleton.IsServer)
+            if (!NetworkManager.Singleton.IsServer)
             {
                 throw new NotServerException("Only the server can perform lag compensation");
             }
             
-            float millisecondsDelay = NetworkingManager.Singleton.NetworkConfig.NetworkTransport.GetCurrentRtt(clientId) / 2f;
+            float millisecondsDelay = NetworkManager.Singleton.NetworkConfig.NetworkTransport.GetCurrentRtt(clientId) / 2f;
             Simulate(millisecondsDelay * 1000f, action);
         }
 

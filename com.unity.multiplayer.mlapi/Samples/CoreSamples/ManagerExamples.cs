@@ -36,7 +36,7 @@ namespace MLAPI_Examples
         // Contains player object, owned objects, cryptography keys and more
         public NetworkedClient GetClient(ulong clientId)
         {
-            return NetworkingManager.Singleton.ConnectedClients[clientId];
+            return NetworkManager.Singleton.ConnectedClients[clientId];
         }
     }
 }

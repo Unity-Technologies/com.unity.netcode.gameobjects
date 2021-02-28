@@ -35,7 +35,7 @@ namespace MLAPI.Messaging
         public void ProcessReceiveQueue(NetworkUpdateStage currentStage)
         {
             bool AdvanceFrameHistory = false;
-            var rpcQueueContainer = NetworkingManager.Singleton.rpcQueueContainer;
+            var rpcQueueContainer = NetworkManager.Singleton.rpcQueueContainer;
             if (rpcQueueContainer != null)
             {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
@@ -60,7 +60,7 @@ namespace MLAPI.Messaging
                             Debug.Log("RPC invoked during the " + currentStage.ToString() + " update stage.");
                         }
 
-                        NetworkingManager.InvokeRpc(currentQueueItem);
+                        NetworkManager.InvokeRpc(currentQueueItem);
                         ProfilerStatManager.rpcsQueueProc.Record();
                         PerformanceDataManager.Increment(ProfilerConstants.NumberOfRPCQueueProcessed);
                         currentQueueItem = CurrentFrame.GetNextQueueItem();
@@ -120,7 +120,7 @@ namespace MLAPI.Messaging
 
                 var PoolStream = queueItem.itemStream;
 
-                if(NetworkingManager.Singleton.IsListening)
+                if(NetworkManager.Singleton.IsListening)
                 {
                     switch (queueItem.queueItemType)
                     {
@@ -161,7 +161,7 @@ namespace MLAPI.Messaging
         private void RpcQueueSendAndFlush()
         {
             var AdvanceFrameHistory = false;
-            var rpcQueueContainer = NetworkingManager.Singleton.rpcQueueContainer;
+            var rpcQueueContainer = NetworkManager.Singleton.rpcQueueContainer;
             if (rpcQueueContainer != null)
             {
                 var CurrentFrame = rpcQueueContainer.GetCurrentFrame(QueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
@@ -214,7 +214,7 @@ namespace MLAPI.Messaging
             var bytes = sendStream.Stream.GetBuffer();
             ArraySegment<byte> sendBuffer = new ArraySegment<byte>(bytes, 0, length);
 
-            NetworkingManager.Singleton.NetworkConfig.NetworkTransport.Send(clientId, sendBuffer, sendStream.Channel);
+            NetworkManager.Singleton.NetworkConfig.NetworkTransport.Send(clientId, sendBuffer, sendStream.Channel);
         }
 
         /// <summary>
@@ -228,7 +228,7 @@ namespace MLAPI.Messaging
             {
                 case RpcQueueContainer.QueueItemType.ServerRpc:
                 {
-                    NetworkingManager.Singleton.NetworkConfig.NetworkTransport.Send(queueItem.networkId, queueItem.messageData, queueItem.channel);
+                    NetworkManager.Singleton.NetworkConfig.NetworkTransport.Send(queueItem.networkId, queueItem.messageData, queueItem.channel);
 
                     //For each packet sent, we want to record how much data we have sent
 
@@ -242,7 +242,7 @@ namespace MLAPI.Messaging
                 {
                     foreach (ulong clientid in queueItem.clientIds)
                     {
-                        NetworkingManager.Singleton.NetworkConfig.NetworkTransport.Send(clientid, queueItem.messageData, queueItem.channel);
+                        NetworkManager.Singleton.NetworkConfig.NetworkTransport.Send(clientid, queueItem.messageData, queueItem.channel);
 
                         //For each packet sent, we want to record how much data we have sent
                         PerformanceDataManager.Increment(ProfilerConstants.NumberBytesSent, (int)queueItem.streamSize);

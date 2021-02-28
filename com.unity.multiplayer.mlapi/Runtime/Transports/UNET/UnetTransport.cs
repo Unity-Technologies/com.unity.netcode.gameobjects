@@ -67,13 +67,13 @@ namespace MLAPI.Transports.UNET
         protected void LateUpdate()
         {
             if (NetworkTransport.IsStarted  && MessageSendMode == SendMode.Queued) {
-                if (NetworkingManager.Singleton.IsServer) {
-                    for (int i = 0; i < NetworkingManager.Singleton.ConnectedClientsList.Count; i++) {
-                        SendQueued(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId);
+                if (NetworkManager.Singleton.IsServer) {
+                    for (int i = 0; i < NetworkManager.Singleton.ConnectedClientsList.Count; i++) {
+                        SendQueued(NetworkManager.Singleton.ConnectedClientsList[i].ClientId);
                     }
                 }
                 else {
-                    SendQueued(NetworkingManager.Singleton.LocalClientId);
+                    SendQueued(NetworkManager.Singleton.LocalClientId);
                 }
             }
         }

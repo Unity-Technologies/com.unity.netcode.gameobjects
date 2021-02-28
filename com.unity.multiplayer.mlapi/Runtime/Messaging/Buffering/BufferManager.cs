@@ -77,7 +77,7 @@ namespace MLAPI.Messaging.Buffering
 #endif
             foreach (KeyValuePair<ulong, Queue<BufferedMessage>> pair in bufferQueues)
             {
-                while (pair.Value.Count > 0 && Time.realtimeSinceStartup - pair.Value.Peek().bufferTime >= NetworkingManager.Singleton.NetworkConfig.MessageBufferTimeout)
+                while (pair.Value.Count > 0 && Time.realtimeSinceStartup - pair.Value.Peek().bufferTime >= NetworkManager.Singleton.NetworkConfig.MessageBufferTimeout)
                 {
                     BufferedMessage message = pair.Value.Dequeue();
 
