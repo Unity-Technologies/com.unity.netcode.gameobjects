@@ -5,11 +5,11 @@ using UnityEngine;
 
 namespace UnityEditor
 {
-    [CustomEditor(typeof(NetworkedAnimator), true)]
+    [CustomEditor(typeof(NetworkAnimator), true)]
     [CanEditMultipleObjects]
     public class NetworkAnimatorEditor : Editor
     {
-        private NetworkedAnimator m_Target;
+        private NetworkAnimator m_Target;
 
         [NonSerialized]
         private bool m_Initialized;
@@ -22,7 +22,7 @@ namespace UnityEditor
             if (m_Initialized) return;
 
             m_Initialized = true;
-            m_Target = target as NetworkedAnimator;
+            m_Target = target as NetworkAnimator;
 
             m_AnimatorProperty = serializedObject.FindProperty("m_Animator");
             m_AnimatorLabel = new GUIContent("Animator", "The Animator component to synchronize.");
