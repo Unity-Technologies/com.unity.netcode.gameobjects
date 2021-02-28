@@ -17,9 +17,9 @@ namespace MLAPI
     /// <summary>
     /// A component used to identify that a GameObject is networked
     /// </summary>
-    [AddComponentMenu("MLAPI/NetworkedObject", -99)]
+    [AddComponentMenu("MLAPI/NetworkObject", -99)]
     [DisallowMultipleComponent]
-    public sealed class NetworkedObject : MonoBehaviour
+    public sealed class NetworkObject : MonoBehaviour
     {
         private void OnValidate()
         {
@@ -38,7 +38,7 @@ namespace MLAPI
         }
 
         /// <summary>
-        /// Gets the NetworkManager that owns this NetworkedObject instance
+        /// Gets the NetworkManager that owns this NetworkObject instance
         /// </summary>
         public NetworkManager NetworkManager => NetworkManager.Singleton;
         /// <summary>
@@ -46,7 +46,7 @@ namespace MLAPI
         /// </summary>
         public ulong NetworkId { get; internal set; }
         /// <summary>
-        /// Gets the clientId of the owner of this NetworkedObject
+        /// Gets the clientId of the owner of this NetworkObject
         /// </summary>
         public ulong OwnerClientId
         {
@@ -242,10 +242,10 @@ namespace MLAPI
         /// <summary>
         /// Shows a list of previously hidden objects to a client
         /// </summary>
-        /// <param name="networkedObjects">The objects to show</param>
+        /// <param name="networkObjects">The objects to show</param>
         /// <param name="clientId">The client to show the objects to</param>
         /// <param name="payload">An optional payload to send as part of the spawns</param>
-        public static void NetworkShow(List<NetworkedObject> networkedObjects, ulong clientId, Stream payload = null)
+        public static void NetworkShow(List<NetworkObject> networkObjects, ulong clientId, Stream payload = null)
         {
             if (!NetworkManager.Singleton.IsServer)
             {
@@ -253,16 +253,16 @@ namespace MLAPI
             }
 
             // Do the safety loop first to prevent putting the MLAPI in an invalid state.
-            for (int i = 0; i < networkedObjects.Count; i++)
+            for (int i = 0; i < networkObjects.Count; i++)
             {
-                if (!networkedObjects[i].IsSpawned)
+                if (!networkObjects[i].IsSpawned)
                 {
                     throw new SpawnStateException("Object is not spawned");
                 }
 
-                if (networkedObjects[i].observers.Contains(clientId))
+                if (networkObjects[i].observers.Contains(clientId))
                 {
-                    throw new VisibilityChangeException("NetworkedObject with NetworkId: " + networkedObjects[i].NetworkId + " is already visible");
+                    throw new VisibilityChangeException($"{nameof(NetworkObject)} with NetworkId: {networkObjects[i].NetworkId} is already visible");
                 }
             }
 
@@ -270,15 +270,15 @@ namespace MLAPI
             {
                 using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                 {
-                    writer.WriteUInt16Packed((ushort)networkedObjects.Count);
+                    writer.WriteUInt16Packed((ushort)networkObjects.Count);
                 }
 
-                for (int i = 0; i < networkedObjects.Count; i++)
+                for (int i = 0; i < networkObjects.Count; i++)
                 {
                     // Send spawn call
-                    networkedObjects[i].observers.Add(clientId);
+                    networkObjects[i].observers.Add(clientId);
 
-                    SpawnManager.WriteSpawnCallForObject(stream, clientId, networkedObjects[i], payload);
+                    SpawnManager.WriteSpawnCallForObject(stream, clientId, networkObjects[i], payload);
                 }
 
                 InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_ADD_OBJECTS, Channel.Internal, stream);
@@ -329,9 +329,9 @@ namespace MLAPI
         /// <summary>
         /// Hides a list of objects from a client
         /// </summary>
-        /// <param name="networkedObjects">The objects to hide</param>
+        /// <param name="networkObjects">The objects to hide</param>
         /// <param name="clientId">The client to hide the objects from</param>
-        public static void NetworkHide(List<NetworkedObject> networkedObjects, ulong clientId)
+        public static void NetworkHide(List<NetworkObject> networkObjects, ulong clientId)
         {
             if (!NetworkManager.Singleton.IsServer)
             {
@@ -344,16 +344,16 @@ namespace MLAPI
             }
 
             // Do the safety loop first to prevent putting the MLAPI in an invalid state.
-            for (int i = 0; i < networkedObjects.Count; i++)
+            for (int i = 0; i < networkObjects.Count; i++)
             {
-                if (!networkedObjects[i].IsSpawned)
+                if (!networkObjects[i].IsSpawned)
                 {
                     throw new SpawnStateException("Object is not spawned");
                 }
 
-                if (!networkedObjects[i].observers.Contains(clientId))
+                if (!networkObjects[i].observers.Contains(clientId))
                 {
-                    throw new VisibilityChangeException("NetworkedObject with NetworkId: " + networkedObjects[i].NetworkId + " is already hidden");
+                    throw new VisibilityChangeException($"{nameof(NetworkObject)} with NetworkId: {networkObjects[i].NetworkId} is already hidden");
                 }
             }
 
@@ -362,14 +362,14 @@ namespace MLAPI
             {
                 using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                 {
-                    writer.WriteUInt16Packed((ushort)networkedObjects.Count);
+                    writer.WriteUInt16Packed((ushort)networkObjects.Count);
 
-                    for (int i = 0; i < networkedObjects.Count; i++)
+                    for (int i = 0; i < networkObjects.Count; i++)
                     {
                         // Send destroy call
-                        networkedObjects[i].observers.Remove(clientId);
+                        networkObjects[i].observers.Remove(clientId);
 
-                        writer.WriteUInt64Packed(networkedObjects[i].NetworkId);
+                        writer.WriteUInt64Packed(networkObjects[i].NetworkId);
                     }
                 }
 
@@ -400,7 +400,7 @@ namespace MLAPI
             if (spawnPayload != null)
                 spawnPayload.Position = 0;
 
-            SpawnManager.SpawnNetworkedObjectLocally(this,SpawnManager.GetNetworkObjectId(), false, false, null, spawnPayload, spawnPayload != null, spawnPayload == null ? 0 : (int)spawnPayload.Length, false, destroyWithScene);
+            SpawnManager.SpawnNetworkObjectLocally(this,SpawnManager.GetNetworkObjectId(), false, false, null, spawnPayload, spawnPayload != null, spawnPayload == null ? 0 : (int)spawnPayload.Length, false, destroyWithScene);
 
             for (int i = 0; i < NetworkManager.Singleton.ConnectedClientsList.Count; i++)
             {
@@ -430,7 +430,7 @@ namespace MLAPI
             if (spawnPayload != null)
                 spawnPayload.Position = 0;
 
-            SpawnManager.SpawnNetworkedObjectLocally(this, SpawnManager.GetNetworkObjectId(), false, false, clientId, spawnPayload, spawnPayload != null, spawnPayload == null ? 0 : (int)spawnPayload.Length, false, destroyWithScene);
+            SpawnManager.SpawnNetworkObjectLocally(this, SpawnManager.GetNetworkObjectId(), false, false, clientId, spawnPayload, spawnPayload != null, spawnPayload == null ? 0 : (int)spawnPayload.Length, false, destroyWithScene);
 
             for (int i = 0; i < NetworkManager.Singleton.ConnectedClientsList.Count; i++)
             {
@@ -452,7 +452,7 @@ namespace MLAPI
             if (spawnPayload != null)
                 spawnPayload.Position = 0;
 
-            SpawnManager.SpawnNetworkedObjectLocally(this, SpawnManager.GetNetworkObjectId(), false, true, clientId, spawnPayload, spawnPayload != null, spawnPayload == null ? 0 : (int)spawnPayload.Length, false, destroyWithScene);
+            SpawnManager.SpawnNetworkObjectLocally(this, SpawnManager.GetNetworkObjectId(), false, true, clientId, spawnPayload, spawnPayload != null, spawnPayload == null ? 0 : (int)spawnPayload.Length, false, destroyWithScene);
 
             for (int i = 0; i < NetworkManager.Singleton.ConnectedClientsList.Count; i++)
             {
@@ -510,7 +510,7 @@ namespace MLAPI
         {
             for (int i = 0; i < childNetworkedBehaviours.Count; i++)
             {
-                //We check if we are it's networkedObject owner incase a networkedObject exists as a child of our networkedObject.
+                //We check if we are it's NetworkObject owner incase a NetworkObject exists as a child of our NetworkObject
                 if(!childNetworkedBehaviours[i].networkedStartInvoked)
                 {
                     if(!childNetworkedBehaviours[i].internalNetworkedStartInvoked)
@@ -535,7 +535,7 @@ namespace MLAPI
                     NetworkedBehaviour[] behaviours = GetComponentsInChildren<NetworkedBehaviour>(true);
                     for (int i = 0; i < behaviours.Length; i++)
                     {
-                        if (behaviours[i].NetworkedObject == this)
+                        if (behaviours[i].NetworkObject == this)
                             _childNetworkedBehaviours.Add(behaviours[i]);
                     }
                 }

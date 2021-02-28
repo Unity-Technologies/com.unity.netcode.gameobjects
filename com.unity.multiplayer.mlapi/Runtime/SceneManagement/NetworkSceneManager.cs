@@ -107,7 +107,7 @@ namespace MLAPI.SceneManagement
             sceneSwitchProgresses.Add(switchSceneProgress.guid, switchSceneProgress);
             currentSceneSwitchProgressGuid = switchSceneProgress.guid;
 
-            // Move ALL networked objects to the temp scene
+            // Move ALL NetworkObjects to the temp scene
             MoveObjectsToDontDestroyOnLoad();
 
             isSpawnedObjectsPendingInDontDestroyOnLoad = true;
@@ -140,7 +140,7 @@ namespace MLAPI.SceneManagement
 
             lastScene = SceneManager.GetActiveScene();
 
-            // Move ALL networked objects to the temp scene
+            // Move ALL NetworkObjects to the temp scene
             MoveObjectsToDontDestroyOnLoad();
 
             isSpawnedObjectsPendingInDontDestroyOnLoad = true;
@@ -220,22 +220,18 @@ namespace MLAPI.SceneManagement
         private static void OnSceneUnloadServer(Guid switchSceneGuid)
         {
             // Justification: Rare alloc, could(should?) reuse
-            List<NetworkedObject> newSceneObjects = new List<NetworkedObject>();
-
+            var newSceneObjects = new List<NetworkObject>();
             {
-                NetworkedObject[] networkedObjects = MonoBehaviour.FindObjectsOfType<NetworkedObject>();
-
-                for (int i = 0; i < networkedObjects.Length; i++)
+                var networkObjects = MonoBehaviour.FindObjectsOfType<NetworkObject>();
+                for (int i = 0; i < networkObjects.Length; i++)
                 {
-                    if (networkedObjects[i].IsSceneObject == null)
+                    if (networkObjects[i].IsSceneObject == null)
                     {
-                        SpawnManager.SpawnNetworkedObjectLocally(networkedObjects[i], SpawnManager.GetNetworkObjectId(), true, false, null, null, false, 0, false, true);
-
-                        newSceneObjects.Add(networkedObjects[i]);
+                        SpawnManager.SpawnNetworkObjectLocally(networkObjects[i], SpawnManager.GetNetworkObjectId(), true, false, null, null, false, 0, false, true);
+                        newSceneObjects.Add(networkObjects[i]);
                     }
                 }
             }
-
 
             for (int j = 0; j < NetworkManager.Singleton.ConnectedClientsList.Count; j++)
             {
@@ -265,11 +261,11 @@ namespace MLAPI.SceneManagement
                                     writer.WriteUInt64Packed(newSceneObjects[i].NetworkId);
                                     writer.WriteUInt64Packed(newSceneObjects[i].OwnerClientId);
 
-                                    NetworkedObject parent = null;
+                                    NetworkObject parent = null;
 
                                     if (!newSceneObjects[i].AlwaysReplicateAsRoot && newSceneObjects[i].transform.parent != null)
                                     {
-                                        parent = newSceneObjects[i].transform.parent.GetComponent<NetworkedObject>();
+                                        parent = newSceneObjects[i].transform.parent.GetComponent<NetworkObject>();
                                     }
 
                                     if (parent == null)
@@ -359,8 +355,8 @@ namespace MLAPI.SceneManagement
                             rotation = Quaternion.Euler(reader.ReadSinglePacked(), reader.ReadSinglePacked(), reader.ReadSinglePacked());
                         }
 
-                        NetworkedObject networkedObject = SpawnManager.CreateLocalNetworkedObject(false, 0, prefabHash, parentNetworkId, position, rotation);
-                        SpawnManager.SpawnNetworkedObjectLocally(networkedObject, networkId, true, isPlayerObject, owner, objectStream, false, 0, true, false);
+                        NetworkObject networkObject = SpawnManager.CreateLocalNetworkObject(false, 0, prefabHash, parentNetworkId, position, rotation);
+                        SpawnManager.SpawnNetworkObjectLocally(networkObject, networkId, true, isPlayerObject, owner, objectStream, false, 0, true, false);
 
                         Queue<BufferManager.BufferedMessage> bufferQueue = BufferManager.ConsumeBuffersForNetworkId(networkId);
 
@@ -381,9 +377,8 @@ namespace MLAPI.SceneManagement
             }
             else
             {
-                NetworkedObject[] networkedObjects = MonoBehaviour.FindObjectsOfType<NetworkedObject>();
-
-                SpawnManager.ClientCollectSoftSyncSceneObjectSweep(networkedObjects);
+                var networkObjects = MonoBehaviour.FindObjectsOfType<NetworkObject>();
+                SpawnManager.ClientCollectSoftSyncSceneObjectSweep(networkObjects);
 
                 using (PooledBitReader reader = PooledBitReader.Get(objectStream))
                 {
@@ -404,8 +399,8 @@ namespace MLAPI.SceneManagement
 
                         ulong instanceId = reader.ReadUInt64Packed();
 
-                        NetworkedObject networkedObject = SpawnManager.CreateLocalNetworkedObject(true, instanceId, 0, parentNetworkId, null, null);
-                        SpawnManager.SpawnNetworkedObjectLocally(networkedObject, networkId, true, isPlayerObject, owner, objectStream, false, 0, true, false);
+                        NetworkObject networkObject = SpawnManager.CreateLocalNetworkObject(true, instanceId, 0, parentNetworkId, null, null);
+                        SpawnManager.SpawnNetworkObjectLocally(networkObject, networkId, true, isPlayerObject, owner, objectStream, false, 0, true, false);
 
                         Queue<BufferManager.BufferedMessage> bufferQueue = BufferManager.ConsumeBuffersForNetworkId(networkId);
 
@@ -474,8 +469,8 @@ namespace MLAPI.SceneManagement
 
         private static void MoveObjectsToDontDestroyOnLoad()
         {
-            // Move ALL networked objects to the temp scene
-            HashSet<NetworkedObject> objectsToKeep = SpawnManager.SpawnedObjectsList;
+            // Move ALL NetworkObjects to the temp scene
+            HashSet<NetworkObject> objectsToKeep = SpawnManager.SpawnedObjectsList;
 
             foreach (var sobj in objectsToKeep)
             {
@@ -491,8 +486,8 @@ namespace MLAPI.SceneManagement
 
         private static void MoveObjectsToScene(Scene scene)
         {
-            // Move ALL networked objects to the temp scene
-            HashSet<NetworkedObject> objectsToKeep = SpawnManager.SpawnedObjectsList;
+            // Move ALL NetworkObjects to the temp scene
+            HashSet<NetworkObject> objectsToKeep = SpawnManager.SpawnedObjectsList;
 
             foreach (var sobj in objectsToKeep)
             {

@@ -179,7 +179,8 @@ namespace MLAPI.Serialization
                     return null;
                 }
             }
-            if (type == typeof(NetworkedObject))
+
+            if (type == typeof(NetworkObject))
             {
                 ulong networkId = ReadUInt64Packed();
 
@@ -187,13 +188,15 @@ namespace MLAPI.Serialization
                 {
                     return SpawnManager.SpawnedObjects[networkId];
                 }
-                else
+
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                        NetworkLog.LogWarning("BitReader cannot find the NetworkedObject sent in the SpawnedObjects list, it may have been destroyed. NetworkId: " + networkId.ToString());
-                    return null;
+                    NetworkLog.LogWarning($"BitReader cannot find the {nameof(NetworkObject)} sent in the SpawnedObjects list, it may have been destroyed. NetworkId: {networkId}");
                 }
+
+                return null;
             }
+
             if (typeof(NetworkedBehaviour).IsAssignableFrom(type))
             {
                 ulong networkId = ReadUInt64Packed();
@@ -202,13 +205,15 @@ namespace MLAPI.Serialization
                 {
                     return SpawnManager.SpawnedObjects[networkId].GetBehaviourAtOrderIndex(behaviourId);
                 }
-                else
+
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                        NetworkLog.LogWarning("BitReader cannot find the NetworkedBehaviour sent in the SpawnedObjects list, it may have been destroyed. NetworkId: " + networkId.ToString());
-                    return null;
+                    NetworkLog.LogWarning($"BitReader cannot find the NetworkedBehaviour sent in the SpawnedObjects list, it may have been destroyed. NetworkId: {networkId}");
                 }
+
+                return null;
             }
+
             if (typeof(IBitWritable).IsAssignableFrom(type))
             {
                 object instance = Activator.CreateInstance(type);

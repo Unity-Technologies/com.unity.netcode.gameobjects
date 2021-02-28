@@ -17,7 +17,7 @@ namespace UnityEditor
                 return;
             }
 
-            List<NetworkedObject> traverseSortedObjects = MonoBehaviour.FindObjectsOfType<NetworkedObject>().ToList();
+            List<NetworkObject> traverseSortedObjects = MonoBehaviour.FindObjectsOfType<NetworkObject>().ToList();
 
             traverseSortedObjects.Sort((x, y) =>
             {
@@ -46,11 +46,11 @@ namespace UnityEditor
 
     internal static class PrefabHelpers
     {
-        internal static List<int> TraversedSiblingIndex(this NetworkedObject networkedObject)
+        internal static List<int> TraversedSiblingIndex(this NetworkObject networkObject)
         {
             List<int> paths = new List<int>();
 
-            Transform transform = networkedObject.transform;
+            Transform transform = networkObject.transform;
 
             while (transform != null)
             {

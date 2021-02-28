@@ -8,13 +8,13 @@ namespace MLAPI_Examples
     // Features example calls for things often needed for things like Game managers
     public class ManagerExamples : NetworkedBehaviour
     {
-        public NetworkedObject GetPlayerGameObject(ulong clientId)
+        public NetworkObject GetPlayerGameObject(ulong clientId)
         {
             return SpawnManager.GetPlayerObject(clientId);
         }
         
         // Only runs on host and client
-        public NetworkedObject GetLocalPlayerObject()
+        public NetworkObject GetLocalPlayerObject()
         {
             return SpawnManager.GetLocalPlayerObject();
         }

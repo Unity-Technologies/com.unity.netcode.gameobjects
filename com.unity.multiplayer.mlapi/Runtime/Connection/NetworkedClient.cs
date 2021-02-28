@@ -15,11 +15,11 @@ namespace MLAPI.Connection
         /// <summary>
         /// The PlayerObject of the Client
         /// </summary>
-        public NetworkedObject PlayerObject;
+        public NetworkObject PlayerObject;
 
         /// <summary>
-        /// The NetworkedObject's owned by this Client
+        /// The NetworkObject's owned by this Client
         /// </summary>
-        public readonly List<NetworkedObject> OwnedObjects = new List<NetworkedObject>();
+        public readonly List<NetworkObject> OwnedObjects = new List<NetworkObject>();
     }
 }

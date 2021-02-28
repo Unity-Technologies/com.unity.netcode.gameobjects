@@ -273,9 +273,9 @@ namespace MLAPI
             if (NetworkConfig == null)
                 return; //May occur when the component is added
 
-            if (GetComponentInChildren<NetworkedObject>() != null)
+            if (GetComponentInChildren<NetworkObject>() != null)
             {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning($"{nameof(NetworkManager)} cannot be a NetworkedObject. This will lead to weird side effects.");
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning($"{nameof(NetworkManager)} cannot be a {nameof(NetworkObject)}. This will lead to weird side effects.");
             }
 
             if (!NetworkConfig.RegisteredScenes.Contains(SceneManager.GetActiveScene().name))
@@ -288,13 +288,13 @@ namespace MLAPI
             {
                 if (NetworkConfig.NetworkedPrefabs[i] != null && NetworkConfig.NetworkedPrefabs[i].Prefab != null)
                 {
-                    if (NetworkConfig.NetworkedPrefabs[i].Prefab.GetComponent<NetworkedObject>() == null)
+                    if (NetworkConfig.NetworkedPrefabs[i].Prefab.GetComponent<NetworkObject>() == null)
                     {
-                        if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Network prefab [" + i + "] does not have a NetworkedObject component");
+                        if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning($"Network prefab [{i}] does not have a {nameof(NetworkObject)} component");
                     }
                     else
                     {
-                        NetworkConfig.NetworkedPrefabs[i].Prefab.GetComponent<NetworkedObject>().ValidateHash();
+                        NetworkConfig.NetworkedPrefabs[i].Prefab.GetComponent<NetworkObject>().ValidateHash();
                     }
                 }
             }
@@ -308,7 +308,7 @@ namespace MLAPI
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                     {
-                        var prefabHashGenerator = NetworkConfig.NetworkedPrefabs[i].Prefab.GetComponent<NetworkedObject>().PrefabHashGenerator;
+                        var prefabHashGenerator = NetworkConfig.NetworkedPrefabs[i].Prefab.GetComponent<NetworkObject>().PrefabHashGenerator;
                         NetworkLog.LogError($"PrefabHash collision! You have two prefabs with the same hash (PrefabHashGenerator = {prefabHashGenerator}). This is not supported");
                     }
 
@@ -416,17 +416,17 @@ namespace MLAPI
 
             for (int i = 0; i < NetworkConfig.NetworkedPrefabs.Count; i++)
             {
-                if (NetworkConfig.NetworkedPrefabs[i] == null || NetworkConfig.NetworkedPrefabs[i].Prefab == null)
+                if (NetworkConfig.NetworkedPrefabs[i] == null || ReferenceEquals(NetworkConfig.NetworkedPrefabs[i].Prefab, null))
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogError("Networked prefab cannot be null");
                 }
-                else if (NetworkConfig.NetworkedPrefabs[i].Prefab.GetComponent<NetworkedObject>() == null)
+                else if (ReferenceEquals(NetworkConfig.NetworkedPrefabs[i].Prefab.GetComponent<NetworkObject>(), null))
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogError("Networked prefab is missing a NetworkedObject component");
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogError($"Networked prefab is missing a {nameof(NetworkObject)} component");
                 }
                 else
                 {
-                    NetworkConfig.NetworkedPrefabs[i].Prefab.GetComponent<NetworkedObject>().ValidateHash();
+                    NetworkConfig.NetworkedPrefabs[i].Prefab.GetComponent<NetworkObject>().ValidateHash();
                 }
             }
 
@@ -599,8 +599,8 @@ namespace MLAPI
 
             if ((createPlayerObject == null && NetworkConfig.CreatePlayerPrefab) || (createPlayerObject != null && createPlayerObject.Value))
             {
-                NetworkedObject netObject = SpawnManager.CreateLocalNetworkedObject(false, 0, (prefabHash == null ? NetworkConfig.PlayerPrefabHash.Value : prefabHash.Value), null, position, rotation);
-                SpawnManager.SpawnNetworkedObjectLocally(netObject, SpawnManager.GetNetworkObjectId(), false, true, hostClientId, payloadStream, payloadStream != null, payloadStream == null ? 0 : (int)payloadStream.Length, false, false);
+                NetworkObject netObject = SpawnManager.CreateLocalNetworkObject(false, 0, (prefabHash == null ? NetworkConfig.PlayerPrefabHash.Value : prefabHash.Value), null, position, rotation);
+                SpawnManager.SpawnNetworkObjectLocally(netObject, SpawnManager.GetNetworkObjectId(), false, true, hostClientId, payloadStream, payloadStream != null, payloadStream == null ? 0 : (int)payloadStream.Length, false, false);
 
                 if (netObject.CheckObjectVisibility == null || netObject.CheckObjectVisibility(hostClientId))
                 {
@@ -1335,7 +1335,7 @@ namespace MLAPI
 #endif
         }
 
-        private readonly List<NetworkedObject> _observedObjects = new List<NetworkedObject>();
+        private readonly List<NetworkObject> _observedObjects = new List<NetworkObject>();
 
         internal void HandleApproval(ulong clientId, bool createPlayerObject, ulong? playerPrefabHash, bool approved, Vector3? position, Quaternion? rotation)
         {
@@ -1360,8 +1360,8 @@ namespace MLAPI
 
                 if (createPlayerObject)
                 {
-                    NetworkedObject netObject = SpawnManager.CreateLocalNetworkedObject(false, 0, (playerPrefabHash == null ? NetworkConfig.PlayerPrefabHash.Value : playerPrefabHash.Value), null, position, rotation);
-                    SpawnManager.SpawnNetworkedObjectLocally(netObject, SpawnManager.GetNetworkObjectId(), false, true, clientId, null, false, 0, false, false);
+                    NetworkObject netObject = SpawnManager.CreateLocalNetworkObject(false, 0, (playerPrefabHash == null ? NetworkConfig.PlayerPrefabHash.Value : playerPrefabHash.Value), null, position, rotation);
+                    SpawnManager.SpawnNetworkObjectLocally(netObject, SpawnManager.GetNetworkObjectId(), false, true, clientId, null, false, 0, false, false);
 
                     ConnectedClients[clientId].PlayerObject = netObject;
                 }
@@ -1395,16 +1395,16 @@ namespace MLAPI
 
                         for (int i = 0; i < _observedObjects.Count; i++)
                         {
-                            NetworkedObject observedObject = _observedObjects[i];
+                            NetworkObject observedObject = _observedObjects[i];
                             writer.WriteBool(observedObject.IsPlayerObject);
                             writer.WriteUInt64Packed(observedObject.NetworkId);
                             writer.WriteUInt64Packed(observedObject.OwnerClientId);
 
-                            NetworkedObject parent = null;
+                            NetworkObject parent = null;
 
                             if (!observedObject.AlwaysReplicateAsRoot && observedObject.transform.parent != null)
                             {
-                                parent = observedObject.transform.parent.GetComponent<NetworkedObject>();
+                                parent = observedObject.transform.parent.GetComponent<NetworkObject>();
                             }
 
                             if (parent == null)

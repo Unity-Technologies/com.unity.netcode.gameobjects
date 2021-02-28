@@ -130,7 +130,7 @@ namespace MLAPI.Serialization
             typeof(Quaternion),
             typeof(char),
             typeof(GameObject),
-            typeof(NetworkedObject),
+            typeof(NetworkObject),
             typeof(NetworkedBehaviour)
         };
 

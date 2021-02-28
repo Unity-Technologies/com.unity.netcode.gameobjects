@@ -9,14 +9,14 @@ using UnityEngine.Networking;
 
 public class TransportTest : MonoBehaviour
 {
-    // hack, remove any NetworkedObject's from the scene to avoid spawning scene objects
+    // hack, remove any NetworkObject's from the scene to avoid spawning scene objects
     //  which themselves might not be able initialize themselves properly
     private void ForceNetworkObjectShutdown()
     {
-        NetworkedObject[] networkedObjects = FindObjectsOfType<NetworkedObject>();
-        for (int i = 0; i < networkedObjects.Length; i++)
+        NetworkObject[] networkObjects = FindObjectsOfType<NetworkObject>();
+        for (int i = 0; i < networkObjects.Length; i++)
         {
-            DestroyImmediate(networkedObjects[i]);
+            DestroyImmediate(networkObjects[i]);
         }
     }
 

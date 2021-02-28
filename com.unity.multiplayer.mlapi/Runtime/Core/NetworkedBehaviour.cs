@@ -232,7 +232,7 @@ namespace MLAPI
         /// <summary>
         /// Gets the NetworkManager that owns this NetworkedBehaviour instance
         /// </summary>
-        public NetworkManager NetworkManager => NetworkedObject.NetworkManager;
+        public NetworkManager NetworkManager => NetworkObject.NetworkManager;
         /// <summary>
         /// Gets if the object is the the personal clients player object
         /// </summary>
@@ -242,7 +242,7 @@ namespace MLAPI
         /// <summary>
         /// Gets if the object is the the personal clients player object
         /// </summary>
-        public bool IsLocalPlayer => NetworkedObject.IsLocalPlayer;
+        public bool IsLocalPlayer => NetworkObject.IsLocalPlayer;
         /// <summary>
         /// Gets if the object is owned by the local player or if the object is the local player object
         /// </summary>
@@ -252,7 +252,7 @@ namespace MLAPI
         /// <summary>
         /// Gets if the object is owned by the local player or if the object is the local player object
         /// </summary>
-        public bool IsOwner => NetworkedObject.IsOwner;
+        public bool IsOwner => NetworkObject.IsOwner;
         /// <summary>
         /// Gets if we are executing as server
         /// </summary>
@@ -293,64 +293,64 @@ namespace MLAPI
         /// <summary>
         /// Gets Whether or not the object has a owner
         /// </summary>
-        public bool IsOwnedByServer => NetworkedObject.IsOwnedByServer;
+        public bool IsOwnedByServer => NetworkObject.IsOwnedByServer;
         /// <summary>
-        /// Gets the NetworkedObject that owns this NetworkedBehaviour instance
+        /// Gets the NetworkObject that owns this NetworkedBehaviour instance
         /// </summary>
         [EditorBrowsable(EditorBrowsableState.Never)]
-        [Obsolete("Use NetworkedObject instead", false)]
-        public NetworkedObject networkedObject => NetworkedObject;
+        [Obsolete("Use NetworkObject instead", false)]
+        public NetworkObject networkObject => NetworkObject;
         /// <summary>
-        /// Gets the NetworkedObject that owns this NetworkedBehaviour instance
+        /// Gets the NetworkObject that owns this NetworkedBehaviour instance
         /// </summary>
-        public NetworkedObject NetworkedObject
+        public NetworkObject NetworkObject
         {
             get
             {
-                if (_networkedObject == null)
+                if (ReferenceEquals(_networkObject, null))
                 {
-                    _networkedObject = GetComponentInParent<NetworkedObject>();
+                    _networkObject = GetComponentInParent<NetworkObject>();
                 }
 
-                if (_networkedObject == null)
+                if (ReferenceEquals(_networkObject, null))
                 {
-                    throw new NullReferenceException("Could not get NetworkedObject for the NetworkedBehaviour. Are you missing a NetworkedObject component?");
+                    throw new NullReferenceException($"Could not get {nameof(NetworkObject)} for the NetworkedBehaviour. Are you missing a {nameof(NetworkObject)} component?");
                 }
 
-                return _networkedObject;
+                return _networkObject;
             }
         }
         /// <summary>
-        /// Gets whether or not this NetworkedBehaviour instance has a NetworkedObject owner.
+        /// Gets whether or not this NetworkedBehaviour instance has a NetworkObject owner.
         /// </summary>
-        public bool HasNetworkedObject
+        public bool HasNetworkObject
         {
             get
             {
-                if (_networkedObject == null)
+                if (ReferenceEquals(_networkObject, null))
                 {
-                    _networkedObject = GetComponentInParent<NetworkedObject>();
+                    _networkObject = GetComponentInParent<NetworkObject>();
                 }
 
-                return _networkedObject != null;
+                return !ReferenceEquals(_networkObject, null);
             }
         }
 
-        private NetworkedObject _networkedObject = null;
+        private NetworkObject _networkObject = null;
         /// <summary>
-        /// Gets the NetworkId of the NetworkedObject that owns the NetworkedBehaviour instance
+        /// Gets the NetworkId of the NetworkObject that owns the NetworkedBehaviour instance
         /// </summary>
         [EditorBrowsable(EditorBrowsableState.Never)]
         [Obsolete("Use NetworkId instead", false)]
         public ulong networkId => NetworkId;
         /// <summary>
-        /// Gets the NetworkId of the NetworkedObject that owns the NetworkedBehaviour instance
+        /// Gets the NetworkId of the NetworkObject that owns the NetworkedBehaviour instance
         /// </summary>
-        public ulong NetworkId => NetworkedObject.NetworkId;
+        public ulong NetworkId => NetworkObject.NetworkId;
         /// <summary>
-        /// Gets the clientId that owns the NetworkedObject
+        /// Gets the clientId that owns the NetworkObject
         /// </summary>
-        public ulong OwnerClientId => NetworkedObject.OwnerClientId;
+        public ulong OwnerClientId => NetworkObject.OwnerClientId;
 
         internal bool networkedStartInvoked = false;
         internal bool internalNetworkedStartInvoked = false;
@@ -397,22 +397,22 @@ namespace MLAPI
         }
 
         /// <summary>
-        /// Gets behaviourId for this NetworkedBehaviour on this NetworkedObject
+        /// Gets behaviourId for this NetworkedBehaviour on this NetworkObject
         /// </summary>
         /// <returns>The behaviourId for the current NetworkedBehaviour</returns>
         public ushort GetBehaviourId()
         {
-            return NetworkedObject.GetOrderIndex(this);
+            return NetworkObject.GetOrderIndex(this);
         }
 
         /// <summary>
-        /// Returns a the NetworkedBehaviour with a given behaviourId for the current networkedObject
+        /// Returns a the NetworkedBehaviour with a given BehaviourId for the current NetworkObject
         /// </summary>
         /// <param name="id">The behaviourId to return</param>
         /// <returns>Returns NetworkedBehaviour with given behaviourId</returns>
         protected NetworkedBehaviour GetBehaviour(ushort id)
         {
-            return NetworkedObject.GetBehaviourAtOrderIndex(id);
+            return NetworkObject.GetBehaviourAtOrderIndex(id);
         }
 
         #region NetworkedVar
@@ -423,7 +423,7 @@ namespace MLAPI
         private readonly List<Channel> channelsForNetworkedVarGroups = new List<Channel>();
         internal readonly List<INetworkedVar> networkedVarFields = new List<INetworkedVar>();
 
-        private static HashSet<MLAPI.NetworkedObject> touched = new HashSet<MLAPI.NetworkedObject>();
+        private static HashSet<MLAPI.NetworkObject> touched = new HashSet<MLAPI.NetworkObject>();
         private static readonly Dictionary<Type, FieldInfo[]> fieldTypes = new Dictionary<Type, FieldInfo[]>();
 
         private static FieldInfo[] GetFieldInfoForType(Type type)
@@ -510,7 +510,7 @@ namespace MLAPI
         }
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-        public static ProfilerMarker s_NetworkedBehaviourUpdate = new ProfilerMarker("MLAPI.NetworkedObject.NetworkedBehaviourUpdate");
+        public static ProfilerMarker s_NetworkedBehaviourUpdate = new ProfilerMarker("NetworkedBehaviourUpdate");
 #endif
 
         internal static void NetworkedBehaviourUpdate()
@@ -626,7 +626,7 @@ namespace MLAPI
                     using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                     {
                         writer.WriteUInt64Packed(NetworkId);
-                        writer.WriteUInt16Packed(NetworkedObject.GetOrderIndex(this));
+                        writer.WriteUInt16Packed(NetworkObject.GetOrderIndex(this));
 
                         // Write the current tick frame
                         // todo: this is currently done per channel, per tick. The snapshot system might improve on this
@@ -745,7 +745,7 @@ namespace MLAPI
                         {
                             if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                             {
-                                NetworkLog.LogWarning("Client wrote to NetworkedVar without permission. " + (logInstance != null ? ("NetworkId: " + logInstance.NetworkId + " BehaviourIndex: " + logInstance.NetworkedObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
+                                NetworkLog.LogWarning("Client wrote to NetworkedVar without permission. " + (logInstance != null ? ("NetworkId: " + logInstance.NetworkId + " BehaviourIndex: " + logInstance.NetworkObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
                                 NetworkLog.LogError("[" + networkedVarList[i].GetType().Name + "]");
                             }
 
@@ -765,7 +765,7 @@ namespace MLAPI
 
                             if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
                             {
-                                NetworkLog.LogError("Client wrote to NetworkedVar without permission. No more variables can be read. This is critical. " + (logInstance != null ? ("NetworkId: " + logInstance.NetworkId + " BehaviourIndex: " + logInstance.NetworkedObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
+                                NetworkLog.LogError("Client wrote to NetworkedVar without permission. No more variables can be read. This is critical. " + (logInstance != null ? ("NetworkId: " + logInstance.NetworkId + " BehaviourIndex: " + logInstance.NetworkObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
                                 NetworkLog.LogError("[" + networkedVarList[i].GetType().Name + "]");
                             }
                             return;
@@ -789,12 +789,12 @@ namespace MLAPI
 
                         if (stream.Position > (readStartPos + varSize))
                         {
-                            if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Var delta read too far. " + (stream.Position - (readStartPos + varSize)) + " bytes." + (logInstance != null ? ("NetworkId: " + logInstance.NetworkId + " BehaviourIndex: " + logInstance.NetworkedObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
+                            if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Var delta read too far. " + (stream.Position - (readStartPos + varSize)) + " bytes." + (logInstance != null ? ("NetworkId: " + logInstance.NetworkId + " BehaviourIndex: " + logInstance.NetworkObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
                             stream.Position = readStartPos + varSize;
                         }
                         else if (stream.Position < (readStartPos + varSize))
                         {
-                            if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Var delta read too little. " + ((readStartPos + varSize) - stream.Position) + " bytes." + (logInstance != null ? ("NetworkId: " + logInstance.NetworkId + " BehaviourIndex: " + logInstance.NetworkedObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
+                            if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Var delta read too little. " + ((readStartPos + varSize) - stream.Position) + " bytes." + (logInstance != null ? ("NetworkId: " + logInstance.NetworkId + " BehaviourIndex: " + logInstance.NetworkObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
                             stream.Position = readStartPos + varSize;
                         }
                     }
@@ -827,7 +827,7 @@ namespace MLAPI
                     {
                         if (NetworkManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
                         {
-                            if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Client wrote to NetworkedVar without permission. " + (logInstance != null ? ("NetworkId: " + logInstance.NetworkId + " BehaviourIndex: " + logInstance.NetworkedObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
+                            if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Client wrote to NetworkedVar without permission. " + (logInstance != null ? ("NetworkId: " + logInstance.NetworkId + " BehaviourIndex: " + logInstance.NetworkObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
                             stream.Position += varSize;
                             continue;
                         }
@@ -840,7 +840,7 @@ namespace MLAPI
                             //A dummy read COULD be added to the interface for this situation, but it's just being too nice.
                             //This is after all a developer fault. A critical error should be fine.
                             // - TwoTen
-                            if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogError("Client wrote to NetworkedVar without permission. No more variables can be read. This is critical. " + (logInstance != null ? ("NetworkId: " + logInstance.NetworkId + " BehaviourIndex: " + logInstance.NetworkedObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
+                            if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogError("Client wrote to NetworkedVar without permission. No more variables can be read. This is critical. " + (logInstance != null ? ("NetworkId: " + logInstance.NetworkId + " BehaviourIndex: " + logInstance.NetworkObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
                             return;
                         }
                     }
@@ -861,12 +861,12 @@ namespace MLAPI
 
                         if (stream.Position > (readStartPos + varSize))
                         {
-                            if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Var update read too far. " + (stream.Position - (readStartPos + varSize)) + " bytes." + (logInstance != null ? ("NetworkId: " + logInstance.NetworkId + " BehaviourIndex: " + logInstance.NetworkedObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
+                            if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Var update read too far. " + (stream.Position - (readStartPos + varSize)) + " bytes." + (logInstance != null ? ("NetworkId: " + logInstance.NetworkId + " BehaviourIndex: " + logInstance.NetworkObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
                             stream.Position = readStartPos + varSize;
                         }
                         else if (stream.Position < (readStartPos + varSize))
                         {
-                            if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Var update read too little. " + ((readStartPos + varSize) - stream.Position) + " bytes." + (logInstance != null ? ("NetworkId: " + logInstance.NetworkId + " BehaviourIndex: " + logInstance.NetworkedObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
+                            if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Var update read too little. " + ((readStartPos + varSize) - stream.Position) + " bytes." + (logInstance != null ? ("NetworkId: " + logInstance.NetworkId + " BehaviourIndex: " + logInstance.NetworkObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
                             stream.Position = readStartPos + varSize;
                         }
                     }
@@ -976,11 +976,6 @@ namespace MLAPI
         /// </summary>
         /// <param name="networkId"></param>
         /// <returns></returns>
-        protected NetworkedObject GetNetworkedObject(ulong networkId)
-        {
-            if(SpawnManager.SpawnedObjects.ContainsKey(networkId))
-                return SpawnManager.SpawnedObjects[networkId];
-            return null;
-        }
+        protected NetworkObject GetNetworkObject(ulong networkId) => SpawnManager.SpawnedObjects.ContainsKey(networkId) ? SpawnManager.SpawnedObjects[networkId] : null;
     }
 }
