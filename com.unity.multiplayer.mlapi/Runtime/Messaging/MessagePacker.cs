@@ -5,7 +5,6 @@ using MLAPI.Serialization.Pooled;
 
 namespace MLAPI.Internal
 {
-    // TODO @mfatihmar: remove entirely
     internal static class MessagePacker
     {
         // This method is responsible for unwrapping a message, that is extracting the messagebody.
