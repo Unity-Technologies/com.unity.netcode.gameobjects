@@ -534,7 +534,7 @@ namespace MLAPI
                     for (int i = 0; i < NetworkManager.Singleton.ConnectedClientsList.Count; i++)
                     {
                         var client = NetworkManager.Singleton.ConnectedClientsList[i];
-                        var spawnedObjs = SpawnManager.SpawnedObjectsList;
+                        var spawnedObjs = NetworkSpawnManager.SpawnedObjectsList;
                         touched.UnionWith(spawnedObjs);
                         foreach (var sobj in spawnedObjs)
                         {
@@ -559,7 +559,7 @@ namespace MLAPI
                 {
 
                     // when client updates the sever, it tells it about all its objects
-                    foreach (var sobj in SpawnManager.SpawnedObjectsList)
+                    foreach (var sobj in NetworkSpawnManager.SpawnedObjectsList)
                     {
                         for (int k = 0; k < sobj.childNetworkBehaviours.Count; k++)
                         {
@@ -568,7 +568,7 @@ namespace MLAPI
                     }
 
                     // Now, reset all the no-longer-dirty variables
-                    foreach (var sobj in SpawnManager.SpawnedObjectsList)
+                    foreach (var sobj in NetworkSpawnManager.SpawnedObjectsList)
                     {
                         for (int k = 0; k < sobj.childNetworkBehaviours.Count; k++)
                         {
@@ -966,6 +966,6 @@ namespace MLAPI
         /// </summary>
         /// <param name="networkId"></param>
         /// <returns></returns>
-        protected NetworkObject GetNetworkObject(ulong networkId) => SpawnManager.SpawnedObjects.ContainsKey(networkId) ? SpawnManager.SpawnedObjects[networkId] : null;
+        protected NetworkObject GetNetworkObject(ulong networkId) => NetworkSpawnManager.SpawnedObjects.ContainsKey(networkId) ? NetworkSpawnManager.SpawnedObjects[networkId] : null;
     }
 }

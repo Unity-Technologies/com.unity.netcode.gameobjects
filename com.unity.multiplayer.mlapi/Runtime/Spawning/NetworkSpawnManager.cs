@@ -17,7 +17,7 @@ namespace MLAPI.Spawning
     /// <summary>
     /// Class that handles object spawning
     /// </summary>
-    public static class SpawnManager
+    public static class NetworkSpawnManager
     {
         /// <summary>
         /// The currently spawned objects
@@ -256,7 +256,7 @@ namespace MLAPI.Spawning
                 {
                     NetworkObject networkObject = customSpawnHandlers[prefabHash](position.GetValueOrDefault(Vector3.zero), rotation.GetValueOrDefault(Quaternion.identity));
 
-                    if (parent != null)
+                    if (!ReferenceEquals(parent, null))
                     {
                         networkObject.transform.SetParent(parent.transform, true);
                     }
@@ -274,7 +274,10 @@ namespace MLAPI.Spawning
 
                     if (prefabIndex < 0)
                     {
-                        if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogError("Failed to create object locally. [PrefabHash=" + prefabHash + "]. Hash could not be found. Is the prefab registered?");
+                        if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
+                        {
+                            NetworkLog.LogError("Failed to create object locally. [PrefabHash=" + prefabHash + "]. Hash could not be found. Is the prefab registered?");
+                        }
 
                         return null;
                     }
@@ -284,7 +287,7 @@ namespace MLAPI.Spawning
 
                         NetworkObject networkObject = ((position == null && rotation == null) ? MonoBehaviour.Instantiate(prefab) : MonoBehaviour.Instantiate(prefab, position.GetValueOrDefault(Vector3.zero), rotation.GetValueOrDefault(Quaternion.identity))).GetComponent<NetworkObject>();
 
-                        if (parent != null)
+                        if (!ReferenceEquals(parent, null))
                         {
                             networkObject.transform.SetParent(parent.transform, true);
                         }
@@ -311,7 +314,7 @@ namespace MLAPI.Spawning
                 NetworkObject networkObject = pendingSoftSyncObjects[instanceId];
                 pendingSoftSyncObjects.Remove(instanceId);
 
-                if (parent != null)
+                if (!ReferenceEquals(parent, null))
                 {
                     networkObject.transform.SetParent(parent.transform, true);
                 }
@@ -323,7 +326,7 @@ namespace MLAPI.Spawning
         // Ran on both server and client
         internal static void SpawnNetworkObjectLocally(NetworkObject netObject, ulong networkId, bool sceneObject, bool playerObject, ulong? ownerClientId, Stream dataStream, bool readPayload, int payloadLength, bool readNetworkVariable, bool destroyWithScene)
         {
-            if (netObject == null)
+            if (ReferenceEquals(netObject, null))
             {
                 throw new ArgumentNullException(nameof(netObject), "Cannot spawn null object");
             }
@@ -502,7 +505,7 @@ namespace MLAPI.Spawning
             }
         }
 
-        internal static void UnSpawnObject(NetworkObject netObject, bool destroyObject = false)
+        internal static void DespawnObject(NetworkObject netObject, bool destroyObject = false)
         {
             if (!netObject.IsSpawned)
             {
@@ -511,7 +514,7 @@ namespace MLAPI.Spawning
 
             if (!NetworkManager.Singleton.IsServer)
             {
-                throw new NotServerException("Only server unspawn objects");
+                throw new NotServerException("Only server can despawn objects");
             }
 
             OnDestroyObject(netObject.NetworkId, destroyObject);
@@ -540,7 +543,7 @@ namespace MLAPI.Spawning
                     if (customDestroyHandlers.ContainsKey(sobj.PrefabHash))
                     {
                         customDestroyHandlers[sobj.PrefabHash](sobj);
-                        SpawnManager.OnDestroyObject(sobj.NetworkId, false);
+                        OnDestroyObject(sobj.NetworkId, false);
                     }
                     else
                     {
@@ -561,7 +564,7 @@ namespace MLAPI.Spawning
                     if (customDestroyHandlers.ContainsKey(netObjects[i].PrefabHash))
                     {
                         customDestroyHandlers[netObjects[i].PrefabHash](netObjects[i]);
-                        SpawnManager.OnDestroyObject(netObjects[i].NetworkId, false);
+                        OnDestroyObject(netObjects[i].NetworkId, false);
                     }
                     else
                     {
@@ -582,7 +585,7 @@ namespace MLAPI.Spawning
                     if (customDestroyHandlers.ContainsKey(netObjects[i].PrefabHash))
                     {
                         customDestroyHandlers[netObjects[i].PrefabHash](netObjects[i]);
-                        SpawnManager.OnDestroyObject(netObjects[i].NetworkId, false);
+                        OnDestroyObject(netObjects[i].NetworkId, false);
                     }
                     else
                     {
@@ -651,9 +654,7 @@ namespace MLAPI.Spawning
             }
 
             var sobj = SpawnedObjects[networkId];
-
-            if (!sobj.IsOwnedByServer && !sobj.IsPlayerObject &&
-                NetworkManager.Singleton.ConnectedClients.ContainsKey(sobj.OwnerClientId))
+            if (!sobj.IsOwnedByServer && !sobj.IsPlayerObject && NetworkManager.Singleton.ConnectedClients.ContainsKey(sobj.OwnerClientId))
             {
                 //Someone owns it.
                 for (int i = NetworkManager.Singleton.ConnectedClients[sobj.OwnerClientId].OwnedObjects.Count - 1; i > -1; i--)
@@ -705,18 +706,17 @@ namespace MLAPI.Spawning
                 }
             }
 
-            GameObject go = sobj.gameObject;
-
-            if (destroyGameObject && go != null)
+            var gobj = sobj.gameObject;
+            if (destroyGameObject && gobj != null)
             {
                 if (customDestroyHandlers.ContainsKey(sobj.PrefabHash))
                 {
                     customDestroyHandlers[sobj.PrefabHash](sobj);
-                    SpawnManager.OnDestroyObject(networkId, false);
+                    OnDestroyObject(networkId, false);
                 }
                 else
                 {
-                    MonoBehaviour.Destroy(go);
+                    MonoBehaviour.Destroy(gobj);
                 }
             }
 

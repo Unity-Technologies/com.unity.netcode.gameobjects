@@ -358,10 +358,10 @@ namespace MLAPI
             ConnectedClients.Clear();
             ConnectedClientsList.Clear();
 
-            SpawnManager.SpawnedObjects.Clear();
-            SpawnManager.SpawnedObjectsList.Clear();
-            SpawnManager.releasedNetworkObjectIds.Clear();
-            SpawnManager.pendingSoftSyncObjects.Clear();
+            NetworkSpawnManager.SpawnedObjects.Clear();
+            NetworkSpawnManager.SpawnedObjectsList.Clear();
+            NetworkSpawnManager.releasedNetworkObjectIds.Clear();
+            NetworkSpawnManager.pendingSoftSyncObjects.Clear();
             NetworkSceneManager.registeredSceneNames.Clear();
             NetworkSceneManager.sceneIndexToString.Clear();
             NetworkSceneManager.sceneNameToIndex.Clear();
@@ -465,7 +465,7 @@ namespace MLAPI
             IsClient = false;
             IsListening = true;
 
-            SpawnManager.ServerSpawnSceneObjectsOnStartSweep();
+            NetworkSpawnManager.ServerSpawnSceneObjectsOnStartSweep();
 
             if (OnServerStarted != null)
                 OnServerStarted.Invoke();
@@ -599,8 +599,8 @@ namespace MLAPI
 
             if ((createPlayerObject == null && NetworkConfig.CreatePlayerPrefab) || (createPlayerObject != null && createPlayerObject.Value))
             {
-                NetworkObject netObject = SpawnManager.CreateLocalNetworkObject(false, 0, (prefabHash == null ? NetworkConfig.PlayerPrefabHash.Value : prefabHash.Value), null, position, rotation);
-                SpawnManager.SpawnNetworkObjectLocally(netObject, SpawnManager.GetNetworkObjectId(), false, true, hostClientId, payloadStream, payloadStream != null, payloadStream == null ? 0 : (int)payloadStream.Length, false, false);
+                NetworkObject netObject = NetworkSpawnManager.CreateLocalNetworkObject(false, 0, (prefabHash == null ? NetworkConfig.PlayerPrefabHash.Value : prefabHash.Value), null, position, rotation);
+                NetworkSpawnManager.SpawnNetworkObjectLocally(netObject, NetworkSpawnManager.GetNetworkObjectId(), false, true, hostClientId, payloadStream, payloadStream != null, payloadStream == null ? 0 : (int)payloadStream.Length, false, false);
 
                 if (netObject.CheckObjectVisibility == null || netObject.CheckObjectVisibility(hostClientId))
                 {
@@ -608,10 +608,9 @@ namespace MLAPI
                 }
             }
 
-            SpawnManager.ServerSpawnSceneObjectsOnStartSweep();
+            NetworkSpawnManager.ServerSpawnSceneObjectsOnStartSweep();
 
-            if (OnServerStarted != null)
-                OnServerStarted.Invoke();
+            OnServerStarted?.Invoke();
 
             return tasks;
         }
@@ -673,8 +672,8 @@ namespace MLAPI
             IsServer = false;
             IsClient = false;
             NetworkConfig.NetworkTransport.OnTransportEvent -= HandleRawTransportPoll;
-            SpawnManager.DestroyNonSceneObjects();
-            SpawnManager.ServerResetShudownStateForSceneObjects();
+            NetworkSpawnManager.DestroyNonSceneObjects();
+            NetworkSpawnManager.ServerResetShudownStateForSceneObjects();
 
             //The Transport is set during Init time, thus it is possible for the Transport to be null
             if (NetworkConfig != null && NetworkConfig.NetworkTransport != null)
@@ -1158,8 +1157,8 @@ namespace MLAPI
 
             if (__ntable.ContainsKey(networkMethodId))
             {
-                if (!SpawnManager.SpawnedObjects.ContainsKey(networkObjectId)) return;
-                var networkObject = SpawnManager.SpawnedObjects[networkObjectId];
+                if (!NetworkSpawnManager.SpawnedObjects.ContainsKey(networkObjectId)) return;
+                var networkObject = NetworkSpawnManager.SpawnedObjects[networkObjectId];
 
                 var networkBehaviour = networkObject.GetNetworkBehaviourAtOrderIndex(networkBehaviourId);
                 if (ReferenceEquals(networkBehaviour, null)) return;
@@ -1259,10 +1258,10 @@ namespace MLAPI
                 {
                     if (ConnectedClients[clientId].PlayerObject != null)
                     {
-                        if (SpawnManager.customDestroyHandlers.ContainsKey(ConnectedClients[clientId].PlayerObject.PrefabHash))
+                        if (NetworkSpawnManager.customDestroyHandlers.ContainsKey(ConnectedClients[clientId].PlayerObject.PrefabHash))
                         {
-                            SpawnManager.customDestroyHandlers[ConnectedClients[clientId].PlayerObject.PrefabHash](ConnectedClients[clientId].PlayerObject);
-                            SpawnManager.OnDestroyObject(ConnectedClients[clientId].PlayerObject.NetworkId, false);
+                            NetworkSpawnManager.customDestroyHandlers[ConnectedClients[clientId].PlayerObject.PrefabHash](ConnectedClients[clientId].PlayerObject);
+                            NetworkSpawnManager.OnDestroyObject(ConnectedClients[clientId].PlayerObject.NetworkId, false);
                         }
                         else
                         {
@@ -1276,10 +1275,10 @@ namespace MLAPI
                         {
                             if (!ConnectedClients[clientId].OwnedObjects[i].DontDestroyWithOwner)
                             {
-                                if (SpawnManager.customDestroyHandlers.ContainsKey(ConnectedClients[clientId].OwnedObjects[i].PrefabHash))
+                                if (NetworkSpawnManager.customDestroyHandlers.ContainsKey(ConnectedClients[clientId].OwnedObjects[i].PrefabHash))
                                 {
-                                    SpawnManager.customDestroyHandlers[ConnectedClients[clientId].OwnedObjects[i].PrefabHash](ConnectedClients[clientId].OwnedObjects[i]);
-                                    SpawnManager.OnDestroyObject(ConnectedClients[clientId].OwnedObjects[i].NetworkId, false);
+                                    NetworkSpawnManager.customDestroyHandlers[ConnectedClients[clientId].OwnedObjects[i].PrefabHash](ConnectedClients[clientId].OwnedObjects[i]);
+                                    NetworkSpawnManager.OnDestroyObject(ConnectedClients[clientId].OwnedObjects[i].NetworkId, false);
                                 }
                                 else
                                 {
@@ -1295,7 +1294,7 @@ namespace MLAPI
 
                     // TODO: Could(should?) be replaced with more memory per client, by storing the visiblity
 
-                    foreach (var sobj in SpawnManager.SpawnedObjectsList)
+                    foreach (var sobj in NetworkSpawnManager.SpawnedObjectsList)
                     {
                         sobj.observers.Remove(clientId);
                     }
@@ -1360,15 +1359,15 @@ namespace MLAPI
 
                 if (createPlayerObject)
                 {
-                    NetworkObject netObject = SpawnManager.CreateLocalNetworkObject(false, 0, (playerPrefabHash == null ? NetworkConfig.PlayerPrefabHash.Value : playerPrefabHash.Value), null, position, rotation);
-                    SpawnManager.SpawnNetworkObjectLocally(netObject, SpawnManager.GetNetworkObjectId(), false, true, clientId, null, false, 0, false, false);
+                    NetworkObject netObject = NetworkSpawnManager.CreateLocalNetworkObject(false, 0, (playerPrefabHash == null ? NetworkConfig.PlayerPrefabHash.Value : playerPrefabHash.Value), null, position, rotation);
+                    NetworkSpawnManager.SpawnNetworkObjectLocally(netObject, NetworkSpawnManager.GetNetworkObjectId(), false, true, clientId, null, false, 0, false, false);
 
                     ConnectedClients[clientId].PlayerObject = netObject;
                 }
 
                 _observedObjects.Clear();
 
-                foreach (var sobj in SpawnManager.SpawnedObjectsList)
+                foreach (var sobj in NetworkSpawnManager.SpawnedObjectsList)
                 {
                     if (clientId == ServerClientId || sobj.CheckObjectVisibility == null || sobj.CheckObjectVisibility(clientId))
                     {

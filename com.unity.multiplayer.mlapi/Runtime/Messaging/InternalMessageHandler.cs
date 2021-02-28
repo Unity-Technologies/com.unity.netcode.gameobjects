@@ -99,11 +99,11 @@ namespace MLAPI.Messaging
                     {
                         if (!NetworkManager.Singleton.NetworkConfig.EnableSceneManagement || NetworkManager.Singleton.NetworkConfig.UsePrefabSync)
                         {
-                            SpawnManager.DestroySceneObjects();
+                            NetworkSpawnManager.DestroySceneObjects();
                         }
                         else
                         {
-                            SpawnManager.ClientCollectSoftSyncSceneObjectSweep(null);
+                            NetworkSpawnManager.ClientCollectSoftSyncSceneObjectSweep(null);
                         }
 
                         uint objectCount = continuationReader.ReadUInt32Packed();
@@ -154,8 +154,8 @@ namespace MLAPI.Messaging
                                 rot = Quaternion.Euler(continuationReader.ReadSinglePacked(), continuationReader.ReadSinglePacked(), continuationReader.ReadSinglePacked());
                             }
 
-                            NetworkObject netObject = SpawnManager.CreateLocalNetworkObject(softSync, instanceId, prefabHash, parentNetworkId, pos, rot);
-                            SpawnManager.SpawnNetworkObjectLocally(netObject, networkId, softSync, isPlayerObject, ownerId, continuationStream, false, 0, true, false);
+                            NetworkObject netObject = NetworkSpawnManager.CreateLocalNetworkObject(softSync, instanceId, prefabHash, parentNetworkId, pos, rot);
+                            NetworkSpawnManager.SpawnNetworkObjectLocally(netObject, networkId, softSync, isPlayerObject, ownerId, continuationStream, false, 0, true, false);
 
                             Queue<BufferManager.BufferedMessage> bufferQueue = BufferManager.ConsumeBuffersForNetworkId(networkId);
 
@@ -173,7 +173,7 @@ namespace MLAPI.Messaging
                             }
                         }
 
-                        SpawnManager.CleanDiffedSceneObjects();
+                        NetworkSpawnManager.CleanDiffedSceneObjects();
 
                         NetworkManager.Singleton.IsConnectedClient = true;
 
@@ -267,8 +267,8 @@ namespace MLAPI.Messaging
                 bool hasPayload = reader.ReadBool();
                 int payLoadLength = hasPayload ? reader.ReadInt32Packed() : 0;
 
-                NetworkObject netObject = SpawnManager.CreateLocalNetworkObject(softSync, instanceId, prefabHash, parentNetworkId, pos, rot);
-                SpawnManager.SpawnNetworkObjectLocally(netObject, networkId, softSync, isPlayerObject, ownerId, stream, hasPayload, payLoadLength, true, false);
+                NetworkObject netObject = NetworkSpawnManager.CreateLocalNetworkObject(softSync, instanceId, prefabHash, parentNetworkId, pos, rot);
+                NetworkSpawnManager.SpawnNetworkObjectLocally(netObject, networkId, softSync, isPlayerObject, ownerId, stream, hasPayload, payLoadLength, true, false);
 
                 Queue<BufferManager.BufferedMessage> bufferQueue = BufferManager.ConsumeBuffersForNetworkId(networkId);
 
@@ -298,7 +298,7 @@ namespace MLAPI.Messaging
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
                 ulong networkId = reader.ReadUInt64Packed();
-                SpawnManager.OnDestroyObject(networkId, true);
+                NetworkSpawnManager.OnDestroyObject(networkId, true);
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleDestroyObject.End();
@@ -350,19 +350,19 @@ namespace MLAPI.Messaging
                 ulong networkId = reader.ReadUInt64Packed();
                 ulong ownerClientId = reader.ReadUInt64Packed();
 
-                if (SpawnManager.SpawnedObjects[networkId].OwnerClientId == NetworkManager.Singleton.LocalClientId)
+                if (NetworkSpawnManager.SpawnedObjects[networkId].OwnerClientId == NetworkManager.Singleton.LocalClientId)
                 {
                     //We are current owner.
-                    SpawnManager.SpawnedObjects[networkId].InvokeBehaviourOnLostOwnership();
+                    NetworkSpawnManager.SpawnedObjects[networkId].InvokeBehaviourOnLostOwnership();
                 }
 
                 if (ownerClientId == NetworkManager.Singleton.LocalClientId)
                 {
                     //We are new owner.
-                    SpawnManager.SpawnedObjects[networkId].InvokeBehaviourOnGainedOwnership();
+                    NetworkSpawnManager.SpawnedObjects[networkId].InvokeBehaviourOnGainedOwnership();
                 }
 
-                SpawnManager.SpawnedObjects[networkId].OwnerClientId = ownerClientId;
+                NetworkSpawnManager.SpawnedObjects[networkId].OwnerClientId = ownerClientId;
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleChangeOwner.End();
@@ -438,9 +438,9 @@ namespace MLAPI.Messaging
                 ulong networkId = reader.ReadUInt64Packed();
                 ushort orderIndex = reader.ReadUInt16Packed();
 
-                if (SpawnManager.SpawnedObjects.ContainsKey(networkId))
+                if (NetworkSpawnManager.SpawnedObjects.ContainsKey(networkId))
                 {
-                    NetworkBehaviour instance = SpawnManager.SpawnedObjects[networkId].GetNetworkBehaviourAtOrderIndex(orderIndex);
+                    NetworkBehaviour instance = NetworkSpawnManager.SpawnedObjects[networkId].GetNetworkBehaviourAtOrderIndex(orderIndex);
 
                     if (instance == null)
                     {
@@ -482,9 +482,9 @@ namespace MLAPI.Messaging
                 ulong networkId = reader.ReadUInt64Packed();
                 ushort orderIndex = reader.ReadUInt16Packed();
 
-                if (SpawnManager.SpawnedObjects.ContainsKey(networkId))
+                if (NetworkSpawnManager.SpawnedObjects.ContainsKey(networkId))
                 {
-                    NetworkBehaviour instance = SpawnManager.SpawnedObjects[networkId].GetNetworkBehaviourAtOrderIndex(orderIndex);
+                    NetworkBehaviour instance = NetworkSpawnManager.SpawnedObjects[networkId].GetNetworkBehaviourAtOrderIndex(orderIndex);
 
                     if (instance == null)
                     {
