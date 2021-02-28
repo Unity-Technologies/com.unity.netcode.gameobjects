@@ -53,6 +53,21 @@ namespace MLAPI.Transports.Multiplex
 
         private byte m_LastProcessedTransportIndex;
 
+        /// <inheritdoc />
+        public override string NetworkAddress
+        {
+            get => Transports.Any() ? Transports.First().NetworkAddress : default;
+            set => Array.ForEach(Transports, t => t.NetworkAddress = value);
+        }
+
+        /// <inheritdoc />
+        public override ushort NetworkPort
+        {
+            get => Transports.Any() ? Transports.First().NetworkPort : default;
+            set => Array.ForEach(Transports, t => t.NetworkPort = value);
+        }
+
+
         public override bool IsSupported => true;
 
         public override void DisconnectLocalClient()
