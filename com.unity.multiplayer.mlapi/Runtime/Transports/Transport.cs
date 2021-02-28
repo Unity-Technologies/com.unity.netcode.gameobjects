@@ -43,6 +43,19 @@ namespace MLAPI.Transports
         public abstract ulong ServerClientId { get; }
 
         /// <summary>
+        /// Gets or sets the IP address the client uses to connect to the server.
+        /// For transports which don't use an IP address to connect this property is used to pass a transport specific connection identifier such as a room name.
+        /// </summary>
+        public abstract string NetworkAddress { get; set; }
+
+        /// <summary>
+        /// Gets or sets the port this transport should use for networking.
+        /// In server/host mode this is the port on which the server is exposed.
+        /// In client mode this is the port
+        /// </summary>
+        public abstract ushort NetworkPort { get; set; }
+
+        /// <summary>
         /// Gets a value indicating whether this <see cref="T:MLAPI.Transports.Transport"/> is supported in the current runtime context.
         /// This is used by multiplex adapters.
         /// </summary>

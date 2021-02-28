@@ -6,6 +6,7 @@ using MLAPI.Exceptions;
 using MLAPI.Logging;
 using MLAPI.Profiling;
 using MLAPI.Transports.Tasks;
+using UnityEngine;
 using UnityEngine.Networking;
 
 namespace MLAPI.Transports.UNET
@@ -26,8 +27,10 @@ namespace MLAPI.Transports.UNET
         public int MaxConnections = 100;
         public int MaxSentMessageQueueSize = 128;
 
-        public string ConnectAddress = "127.0.0.1";
-        public int ConnectPort = 7777;
+        [SerializeField]
+        string m_ConnectAddress = "127.0.0.1";
+        [SerializeField]
+        ushort m_ConnectPort = 7777;
         public int ServerListenPort = 7777;
         public int ServerWebsocketListenPort = 8887;
         public bool SupportWebsocket = false;
@@ -64,15 +67,25 @@ namespace MLAPI.Transports.UNET
         private SocketTask connectTask;
         public override ulong ServerClientId => GetMLAPIClientId(0, 0, true);
 
+        /// <inheritdoc />
+        public override string NetworkAddress { get { return m_ConnectAddress; } set { m_ConnectAddress = value; } }
+
+        /// <inheritdoc />
+        public override ushort NetworkPort { get { return m_ConnectPort; } set { m_ConnectPort = value; } }
+
         protected void LateUpdate()
         {
-            if (NetworkTransport.IsStarted  && MessageSendMode == SendMode.Queued) {
-                if (NetworkingManager.Singleton.IsServer) {
-                    for (int i = 0; i < NetworkingManager.Singleton.ConnectedClientsList.Count; i++) {
+            if (NetworkTransport.IsStarted && MessageSendMode == SendMode.Queued)
+            {
+                if (NetworkingManager.Singleton.IsServer)
+                {
+                    for (int i = 0; i < NetworkingManager.Singleton.ConnectedClientsList.Count; i++)
+                    {
                         SendQueued(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId);
                     }
                 }
-                else {
+                else
+                {
                     SendQueued(NetworkingManager.Singleton.LocalClientId);
                 }
             }
@@ -129,14 +142,15 @@ namespace MLAPI.Transports.UNET
                 buffer = data.Array;
             }
 
-            if (MessageSendMode == SendMode.Queued) {
+            if (MessageSendMode == SendMode.Queued)
+            {
                 RelayTransport.QueueMessageForSending(hostId, connectionId, channelId, buffer, data.Count, out byte error);
             }
-            else {
+            else
+            {
                 RelayTransport.Send(hostId, connectionId, channelId, buffer, data.Count, out byte error);
             }
         }
-
 
         public void SendQueued(ulong clientId)
         {
@@ -154,17 +168,17 @@ namespace MLAPI.Transports.UNET
         {
             NetworkEventType eventType = RelayTransport.Receive(out int hostId, out int connectionId, out int channelId, messageBuffer, messageBuffer.Length, out int receivedSize, out byte error);
 
-            clientId = GetMLAPIClientId((byte) hostId, (ushort) connectionId, false);
+            clientId = GetMLAPIClientId((byte)hostId, (ushort)connectionId, false);
 
             receiveTime = UnityEngine.Time.realtimeSinceStartup;
 
-            NetworkError networkError = (NetworkError) error;
+            NetworkError networkError = (NetworkError)error;
 
             if (networkError == NetworkError.MessageToLong)
             {
                 byte[] tempBuffer;
 
-                if (temporaryBufferReference != null && temporaryBufferReference.IsAlive && ((byte[]) temporaryBufferReference.Target).Length >= receivedSize)
+                if (temporaryBufferReference != null && temporaryBufferReference.IsAlive && ((byte[])temporaryBufferReference.Target).Length >= receivedSize)
                 {
                     tempBuffer = (byte[])temporaryBufferReference.Target;
                 }
@@ -250,7 +264,7 @@ namespace MLAPI.Transports.UNET
             SocketTask task = SocketTask.Working;
 
             serverHostId = RelayTransport.AddHost(new HostTopology(GetConfig(), 1), false);
-            serverConnectionId = RelayTransport.Connect(serverHostId, ConnectAddress, ConnectPort, 0, out byte error);
+            serverConnectionId = RelayTransport.Connect(serverHostId, m_ConnectAddress, m_ConnectPort, 0, out byte error);
 
             NetworkError connectError = (NetworkError)error;
 
@@ -290,7 +304,6 @@ namespace MLAPI.Transports.UNET
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogError("Cannot create websocket host when using MLAPI relay");
                 }
-
             }
 
             int normalHostId = RelayTransport.AddHost(topology, ServerListenPort, true);
@@ -302,7 +315,7 @@ namespace MLAPI.Transports.UNET
         {
             GetUnetConnectionDetails(clientId, out byte hostId, out ushort connectionId);
 
-            RelayTransport.Disconnect((int) hostId, (int) connectionId, out byte error);
+            RelayTransport.Disconnect((int)hostId, (int)connectionId, out byte error);
         }
 
         public override void DisconnectLocalClient()
@@ -320,7 +333,7 @@ namespace MLAPI.Transports.UNET
             }
             else
             {
-                return (ulong)NetworkTransport.GetCurrentRTT((int) hostId, (int) connectionId, out byte error);
+                return (ulong)NetworkTransport.GetCurrentRTT((int)hostId, (int)connectionId, out byte error);
             }
         }
 
@@ -363,8 +376,8 @@ namespace MLAPI.Transports.UNET
             }
             else
             {
-                hostId = (byte) ((clientId - 1) >> 16);
-                connectionId = (ushort) ((clientId - 1));
+                hostId = (byte)((clientId - 1) >> 16);
+                connectionId = (ushort)((clientId - 1));
             }
         }
 
@@ -390,6 +403,7 @@ namespace MLAPI.Transports.UNET
                 {
                     throw new InvalidChannelException("Channel " + channelId + " already exists");
                 }
+
                 channelIdToName.Add(channelId, Channels[i].Id);
                 channelNameToId.Add(Channels[i].Id, channelId);
             }
