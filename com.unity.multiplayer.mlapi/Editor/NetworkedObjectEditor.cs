@@ -33,7 +33,7 @@ namespace UnityEditor
                 EditorGUILayout.LabelField(new GUIContent("Spawn", "Spawns the object across the network"));
                 if (GUILayout.Toggle(false, "Spawn", EditorStyles.miniButtonLeft))
                 {
-                    networkedObject.Spawn();
+                    networkedObject.Spawn(networkedObject.NetManager);
                     EditorUtility.SetDirty(target);
                 }
                 EditorGUILayout.EndHorizontal();

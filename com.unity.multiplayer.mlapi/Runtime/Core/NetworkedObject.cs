@@ -348,6 +348,7 @@ namespace MLAPI
                 return;
             }
 
+            // ugh, this isn't right
             NetworkingManager networkingManager = networkedObjects[0].NetManager;
 
             if (!networkingManager.IsServer)
