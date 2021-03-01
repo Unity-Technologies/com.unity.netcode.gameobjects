@@ -194,7 +194,7 @@ namespace MLAPI.Spawning
                     writer.WriteUInt64Packed(netObject.NetworkId);
                     writer.WriteUInt64Packed(netObject.OwnerClientId);
 
-                    InternalMessageSender.Send(MLAPIConstants.MLAPI_CHANGE_OWNER, NetworkChannel.Internal, stream);
+                    InternalMessageSender.Send(NetworkConstants.k_CHANGE_OWNER, NetworkChannel.Internal, stream);
                 }
             }
         }
@@ -230,7 +230,7 @@ namespace MLAPI.Spawning
                     writer.WriteUInt64Packed(netObject.NetworkId);
                     writer.WriteUInt64Packed(clientId);
 
-                    InternalMessageSender.Send(MLAPIConstants.MLAPI_CHANGE_OWNER, NetworkChannel.Internal, stream);
+                    InternalMessageSender.Send(NetworkConstants.k_CHANGE_OWNER, NetworkChannel.Internal, stream);
                 }
             }
         }

@@ -77,7 +77,7 @@ namespace MLAPI
 
                 if (!isUsingBatching)
                 {
-                    writer.WriteByte(MLAPIConstants.MLAPI_SERVER_RPC); // MessageType
+                    writer.WriteByte(NetworkConstants.k_SERVER_RPC); // MessageType
                 }
             }
             else
@@ -86,7 +86,7 @@ namespace MLAPI
                     MLAPI.NetworkManager.Singleton.ServerClientId, null, QueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
                 if (!isUsingBatching)
                 {
-                    writer.WriteByte(MLAPIConstants.MLAPI_SERVER_RPC); // MessageType
+                    writer.WriteByte(NetworkConstants.k_SERVER_RPC); // MessageType
                 }
             }
 
@@ -166,14 +166,14 @@ namespace MLAPI
 
                     if (!isUsingBatching)
                     {
-                        writer.WriteByte(MLAPIConstants.MLAPI_CLIENT_RPC); // MessageType
+                        writer.WriteByte(NetworkConstants.k_CLIENT_RPC); // MessageType
                     }
                 }
                 else
                 {
                     if (!isUsingBatching)
                     {
-                        writer.WriteByte(MLAPIConstants.MLAPI_CLIENT_RPC); // MessageType
+                        writer.WriteByte(NetworkConstants.k_CLIENT_RPC); // MessageType
                     }
                 }
             }
@@ -184,7 +184,7 @@ namespace MLAPI
 
                 if (!isUsingBatching)
                 {
-                    writer.WriteByte(MLAPIConstants.MLAPI_CLIENT_RPC); // MessageType
+                    writer.WriteByte(NetworkConstants.k_CLIENT_RPC); // MessageType
                 }
             }
 
@@ -651,7 +651,7 @@ namespace MLAPI
 
                         if (writtenAny)
                         {
-                            InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_NETWORK_VARIABLE_DELTA, channelsForNetworkVariableGroups[j], stream);
+                            InternalMessageSender.Send(clientId, NetworkConstants.k_NETWORK_VARIABLE_DELTA, channelsForNetworkVariableGroups[j], stream);
                         }
                     }
                 }

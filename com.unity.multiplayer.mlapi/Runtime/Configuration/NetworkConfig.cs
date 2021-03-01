@@ -283,7 +283,7 @@ namespace MLAPI.Configuration
                 using (PooledNetworkWriter writer = PooledNetworkWriter.Get(stream))
                 {
                     writer.WriteUInt16Packed(ProtocolVersion);
-                    writer.WriteString(MLAPIConstants.MLAPI_PROTOCOL_VERSION);
+                    writer.WriteString(NetworkConstants.k_PROTOCOL_VERSION);
 
                     if (EnableSceneManagement && !AllowRuntimeSceneChanges)
                     {

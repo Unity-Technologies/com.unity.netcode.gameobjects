@@ -75,7 +75,7 @@ namespace MLAPI.Logging
 
                         writer.WriteStringPacked(message);
 
-                        InternalMessageSender.Send(NetworkManager.Singleton.ServerClientId, MLAPIConstants.MLAPI_SERVER_LOG, NetworkChannel.Internal, stream);
+                        InternalMessageSender.Send(NetworkManager.Singleton.ServerClientId, NetworkConstants.k_SERVER_LOG, NetworkChannel.Internal, stream);
                     }
                 }
             }
