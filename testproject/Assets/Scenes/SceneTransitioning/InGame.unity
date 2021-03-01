@@ -243,7 +243,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d8c99cb1d836e464e99ea031efe86214, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_LaunchAsHostInEditor: 0
+  m_LaunchAsHostInEditor: 1
   m_ExitIfNoPlayers: 0
   m_WaitingForPlayers: {fileID: 380317542}
   m_GameIsPaused: {fileID: 948914281}
