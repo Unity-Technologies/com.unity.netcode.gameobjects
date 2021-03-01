@@ -94,10 +94,10 @@ namespace MLAPI.NetworkVariable.Collections
                 ushort deltaCount = reader.ReadUInt16Packed();
                 for (int i = 0; i < deltaCount; i++)
                 {
-                    NetworkDictionaryEvent<TKey, TValue>.NetworkedListEventType eventType = (NetworkDictionaryEvent<TKey, TValue>.NetworkedListEventType)reader.ReadBits(3);
+                    NetworkDictionaryEvent<TKey, TValue>.NetworkListEventType eventType = (NetworkDictionaryEvent<TKey, TValue>.NetworkListEventType)reader.ReadBits(3);
                     switch (eventType)
                     {
-                        case NetworkDictionaryEvent<TKey, TValue>.NetworkedListEventType.Add:
+                        case NetworkDictionaryEvent<TKey, TValue>.NetworkListEventType.Add:
                         {
                             TKey key = (TKey)reader.ReadObjectPacked(typeof(TKey));
                             TValue value = (TValue)reader.ReadObjectPacked(typeof(TValue));
@@ -124,7 +124,7 @@ namespace MLAPI.NetworkVariable.Collections
                             }
                         }
                             break;
-                        case NetworkDictionaryEvent<TKey, TValue>.NetworkedListEventType.Remove:
+                        case NetworkDictionaryEvent<TKey, TValue>.NetworkListEventType.Remove:
                         {
                             TKey key = (TKey)reader.ReadObjectPacked(typeof(TKey));
                             TValue value;
@@ -152,7 +152,7 @@ namespace MLAPI.NetworkVariable.Collections
                             }
                         }
                             break;
-                        case NetworkDictionaryEvent<TKey, TValue>.NetworkedListEventType.RemovePair:
+                        case NetworkDictionaryEvent<TKey, TValue>.NetworkListEventType.RemovePair:
                         {
                             TKey key = (TKey)reader.ReadObjectPacked(typeof(TKey));
                             TValue value = (TValue)reader.ReadObjectPacked(typeof(TValue));
@@ -179,7 +179,7 @@ namespace MLAPI.NetworkVariable.Collections
                             }
                         }
                             break;
-                        case NetworkDictionaryEvent<TKey, TValue>.NetworkedListEventType.Clear:
+                        case NetworkDictionaryEvent<TKey, TValue>.NetworkListEventType.Clear:
                         {
                             //read nothing
                             dictionary.Clear();
@@ -201,7 +201,7 @@ namespace MLAPI.NetworkVariable.Collections
                             }
                         }
                             break;
-                        case NetworkDictionaryEvent<TKey, TValue>.NetworkedListEventType.Value:
+                        case NetworkDictionaryEvent<TKey, TValue>.NetworkListEventType.Value:
                         {
                             TKey key = (TKey)reader.ReadObjectPacked(typeof(TKey));
                             TValue value = (TValue)reader.ReadObjectPacked(typeof(TValue));
@@ -273,29 +273,29 @@ namespace MLAPI.NetworkVariable.Collections
                     writer.WriteBits((byte)dirtyEvents[i].eventType, 3);
                     switch (dirtyEvents[i].eventType)
                     {
-                        case NetworkDictionaryEvent<TKey, TValue>.NetworkedListEventType.Add:
+                        case NetworkDictionaryEvent<TKey, TValue>.NetworkListEventType.Add:
                         {
                             writer.WriteObjectPacked(dirtyEvents[i].key);
                             writer.WriteObjectPacked(dirtyEvents[i].value);
                         }
                             break;
-                        case NetworkDictionaryEvent<TKey, TValue>.NetworkedListEventType.Remove:
+                        case NetworkDictionaryEvent<TKey, TValue>.NetworkListEventType.Remove:
                         {
                             writer.WriteObjectPacked(dirtyEvents[i].key);
                         }
                             break;
-                        case NetworkDictionaryEvent<TKey, TValue>.NetworkedListEventType.RemovePair:
+                        case NetworkDictionaryEvent<TKey, TValue>.NetworkListEventType.RemovePair:
                         {
                             writer.WriteObjectPacked(dirtyEvents[i].key);
                             writer.WriteObjectPacked(dirtyEvents[i].value);
                         }
                             break;
-                        case NetworkDictionaryEvent<TKey, TValue>.NetworkedListEventType.Clear:
+                        case NetworkDictionaryEvent<TKey, TValue>.NetworkListEventType.Clear:
                         {
                             //write nothing
                         }
                             break;
-                        case NetworkDictionaryEvent<TKey, TValue>.NetworkedListEventType.Value:
+                        case NetworkDictionaryEvent<TKey, TValue>.NetworkListEventType.Value:
                         {
                             writer.WriteObjectPacked(dirtyEvents[i].key);
                             writer.WriteObjectPacked(dirtyEvents[i].value);
@@ -383,7 +383,7 @@ namespace MLAPI.NetworkVariable.Collections
 
                 NetworkDictionaryEvent<TKey, TValue> dictionaryEvent = new NetworkDictionaryEvent<TKey, TValue>()
                 {
-                    eventType = NetworkDictionaryEvent<TKey, TValue>.NetworkedListEventType.Value,
+                    eventType = NetworkDictionaryEvent<TKey, TValue>.NetworkListEventType.Value,
                     key = key,
                     value = value
                 };
@@ -411,7 +411,7 @@ namespace MLAPI.NetworkVariable.Collections
 
             NetworkDictionaryEvent<TKey, TValue> dictionaryEvent = new NetworkDictionaryEvent<TKey, TValue>()
             {
-                eventType = NetworkDictionaryEvent<TKey, TValue>.NetworkedListEventType.Add,
+                eventType = NetworkDictionaryEvent<TKey, TValue>.NetworkListEventType.Add,
                 key = key,
                 value = value
             };
@@ -426,7 +426,7 @@ namespace MLAPI.NetworkVariable.Collections
 
             NetworkDictionaryEvent<TKey, TValue> dictionaryEvent = new NetworkDictionaryEvent<TKey, TValue>()
             {
-                eventType = NetworkDictionaryEvent<TKey, TValue>.NetworkedListEventType.Add,
+                eventType = NetworkDictionaryEvent<TKey, TValue>.NetworkListEventType.Add,
                 key = item.Key,
                 value = item.Value
             };
@@ -441,7 +441,7 @@ namespace MLAPI.NetworkVariable.Collections
 
             NetworkDictionaryEvent<TKey, TValue> dictionaryEvent = new NetworkDictionaryEvent<TKey, TValue>()
             {
-                eventType = NetworkDictionaryEvent<TKey, TValue>.NetworkedListEventType.Clear
+                eventType = NetworkDictionaryEvent<TKey, TValue>.NetworkListEventType.Clear
             };
 
             HandleAddDictionaryEvent(dictionaryEvent);
@@ -482,7 +482,7 @@ namespace MLAPI.NetworkVariable.Collections
 
             NetworkDictionaryEvent<TKey, TValue> dictionaryEvent = new NetworkDictionaryEvent<TKey, TValue>()
             {
-                eventType = NetworkDictionaryEvent<TKey, TValue>.NetworkedListEventType.Remove,
+                eventType = NetworkDictionaryEvent<TKey, TValue>.NetworkListEventType.Remove,
                 key = key,
                 value = value
             };
@@ -500,7 +500,7 @@ namespace MLAPI.NetworkVariable.Collections
 
             NetworkDictionaryEvent<TKey, TValue> dictionaryEvent = new NetworkDictionaryEvent<TKey, TValue>()
             {
-                eventType = NetworkDictionaryEvent<TKey, TValue>.NetworkedListEventType.RemovePair,
+                eventType = NetworkDictionaryEvent<TKey, TValue>.NetworkListEventType.RemovePair,
                 key = item.Key,
                 value = item.Value
             };
@@ -543,7 +543,7 @@ namespace MLAPI.NetworkVariable.Collections
         /// <summary>
         /// Enum representing the different operations available for triggering an event.
         /// </summary>
-        public enum NetworkedListEventType
+        public enum NetworkListEventType
         {
             /// <summary>
             /// Add
@@ -574,7 +574,7 @@ namespace MLAPI.NetworkVariable.Collections
         /// <summary>
         /// Enum representing the operation made to the dictionary.
         /// </summary>
-        public NetworkedListEventType eventType;
+        public NetworkListEventType eventType;
 
         /// <summary>
         /// the key changed, added or removed if available.

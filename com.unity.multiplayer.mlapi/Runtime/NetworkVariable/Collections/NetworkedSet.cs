@@ -49,7 +49,7 @@ namespace MLAPI.NetworkVariable.Collections
         /// <summary>
         /// Creates a NetworkedSet with the default value and custom settings
         /// </summary>
-        /// <param name="settings">The settings to use for the NetworkedList</param>
+        /// <param name="settings">The settings to use for the NetworkList</param>
         public NetworkedSet(NetworkVariableSettings settings)
         {
             this.Settings = settings;
@@ -69,7 +69,7 @@ namespace MLAPI.NetworkVariable.Collections
         /// <summary>
         /// Creates a NetworkedSet with a custom value and the default settings
         /// </summary>
-        /// <param name="value">The initial value to use for the NetworkedList</param>
+        /// <param name="value">The initial value to use for the NetworkList</param>
         public NetworkedSet(ISet<T> value)
         {
             this.set = value;
