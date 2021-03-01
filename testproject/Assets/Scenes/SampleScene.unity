@@ -869,9 +869,6 @@ MonoBehaviour:
     EnableMessageBuffering: 1
     MessageBufferTimeout: 20
     EnableNetworkLogs: 1
-    EnableEncryption: 0
-    SignKeyExchange: 0
-    ServerBase64PfxCertificate: 
   references:
     version: 1
     00000000:

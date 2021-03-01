@@ -217,7 +217,7 @@ namespace MLAPI
             }
         }
         /// <summary>
-        /// The current NetworkingConfiguration
+        /// The current NetworkConfig
         /// </summary>
         [HideInInspector]
         public NetworkConfig NetworkConfig;
@@ -279,7 +279,7 @@ namespace MLAPI
 
             if (!NetworkConfig.RegisteredScenes.Contains(SceneManager.GetActiveScene().name))
             {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Active scene is not registered as a networked scene. The MLAPI has added it");
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Active scene is not registered as a network scene. The MLAPI has added it");
                 NetworkConfig.RegisteredScenes.Add(SceneManager.GetActiveScene().name);
             }
 
@@ -1019,7 +1019,7 @@ namespace MLAPI
                     case MLAPIConstants.MLAPI_TIME_SYNC:
                         if (IsClient) InternalMessageHandler.HandleTimeSync(clientId, messageStream, receiveTime);
                         break;
-                    case MLAPIConstants.MLAPI_NETWORKED_VAR_DELTA:
+                    case MLAPIConstants.MLAPI_NETWORK_VARIABLE_DELTA:
                         InternalMessageHandler.HandleNetworkVariableDelta(clientId, messageStream, BufferCallback, new PreBufferPreset()
                         {
                             AllowBuffer = allowBuffer,
@@ -1030,7 +1030,7 @@ namespace MLAPI
                             ReceiveTime = receiveTime
                         });
                         break;
-                    case MLAPIConstants.MLAPI_NETWORKED_VAR_UPDATE:
+                    case MLAPIConstants.MLAPI_NETWORK_VARIABLE_UPDATE:
                         InternalMessageHandler.HandleNetworkVariableUpdate(clientId, messageStream, BufferCallback, new PreBufferPreset()
                         {
                             AllowBuffer = allowBuffer,
@@ -1426,7 +1426,7 @@ namespace MLAPI
 
                                 if (observedObject.IsSceneObject == null || observedObject.IsSceneObject.Value == true)
                                 {
-                                    writer.WriteUInt64Packed(observedObject.NetworkedInstanceId);
+                                    writer.WriteUInt64Packed(observedObject.NetworkInstanceId);
                                 }
                                 else
                                 {

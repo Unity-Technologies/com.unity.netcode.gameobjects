@@ -15,7 +15,7 @@ using UnityEngine;
 namespace MLAPI
 {
     /// <summary>
-    /// A component used to identify that a GameObject is networked
+    /// A component used to identify that a GameObject in the network
     /// </summary>
     [AddComponentMenu("MLAPI/NetworkObject", -99)]
     [DisallowMultipleComponent]
@@ -75,7 +75,7 @@ namespace MLAPI
         /// </summary>
         [HideInInspector]
         [SerializeField]
-        public ulong NetworkedInstanceId;
+        public ulong NetworkInstanceId;
         /// <summary>
         /// The Prefab unique hash. This should not be set my the user but rather changed by editing the PrefabHashGenerator.
         /// It has to be the same for all instances of a prefab
@@ -495,13 +495,13 @@ namespace MLAPI
             }
         }
 
-        internal void ResetNetworkedStartInvoked()
+        internal void ResetNetworkStartInvoked()
         {
             if(childNetworkBehaviours != null)
             {
                 for (int i = 0; i < childNetworkBehaviours.Count; i++)
                 {
-                    childNetworkBehaviours[i].networkedStartInvoked = false;
+                    childNetworkBehaviours[i].networkStartInvoked = false;
                 }
             }
         }
@@ -511,15 +511,15 @@ namespace MLAPI
             for (int i = 0; i < childNetworkBehaviours.Count; i++)
             {
                 //We check if we are it's NetworkObject owner incase a NetworkObject exists as a child of our NetworkObject
-                if(!childNetworkBehaviours[i].networkedStartInvoked)
+                if(!childNetworkBehaviours[i].networkStartInvoked)
                 {
-                    if(!childNetworkBehaviours[i].internalNetworkedStartInvoked)
+                    if(!childNetworkBehaviours[i].internalNetworkStartInvoked)
                     {
                         childNetworkBehaviours[i].InternalNetworkStart();
-                        childNetworkBehaviours[i].internalNetworkedStartInvoked = true;
+                        childNetworkBehaviours[i].internalNetworkStartInvoked = true;
                     }
                     childNetworkBehaviours[i].NetworkStart(stream);
-                    childNetworkBehaviours[i].networkedStartInvoked = true;
+                    childNetworkBehaviours[i].networkStartInvoked = true;
                 }
             }
         }

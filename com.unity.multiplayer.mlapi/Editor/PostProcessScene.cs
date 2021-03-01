@@ -40,7 +40,7 @@ namespace UnityEditor
             });
 
             for (ulong i = 0; i < (ulong)traverseSortedObjects.Count; i++)
-                traverseSortedObjects[(int)i].NetworkedInstanceId = i;
+                traverseSortedObjects[(int)i].NetworkInstanceId = i;
         }
     }
 

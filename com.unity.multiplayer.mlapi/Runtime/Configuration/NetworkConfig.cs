@@ -95,14 +95,14 @@ namespace MLAPI.Configuration
         [Tooltip("The amount of seconds to keep lag compensation position history")]
         public int SecondsHistory = 5;
         /// <summary>
-        /// If your logic uses the NetworkedTime, this should probably be turned off. If however it's needed to maximize accuracy, this is recommended to be turned on
+        /// If your logic uses the NetworkTime, this should probably be turned off. If however it's needed to maximize accuracy, this is recommended to be turned on
         /// </summary>
-        [Tooltip("Enable this to resync the NetworkedTime after the initial sync")]
+        [Tooltip("Enable this to resync the NetworkTime after the initial sync")]
         public bool EnableTimeResync = false;
         /// <summary>
         /// If time resync is turned on, this specifies the interval between syncs in seconds.
         /// </summary>
-        [Tooltip("The amount of seconds between resyncs of NetworkedTime, if enabled")]
+        [Tooltip("The amount of seconds between resyncs of NetworkTime, if enabled")]
         public int TimeResyncInterval = 30;
         /// <summary>
         /// Whether or not to enable the NetworkVariable system. This system runs in the Update loop and will degrade performance, but it can be a huge convenience.
@@ -267,7 +267,7 @@ namespace MLAPI.Configuration
 
         private ulong? ConfigHash = null;
         /// <summary>
-        /// Gets a SHA256 hash of parts of the NetworkingConfiguration instance
+        /// Gets a SHA256 hash of parts of the NetworkConfig instance
         /// </summary>
         /// <param name="cache"></param>
         /// <returns></returns>
@@ -322,7 +322,7 @@ namespace MLAPI.Configuration
         }
 
         /// <summary>
-        /// Compares a SHA256 hash with the current NetworkingConfiguration instances hash
+        /// Compares a SHA256 hash with the current NetworkConfig instances hash
         /// </summary>
         /// <param name="hash"></param>
         /// <returns></returns>

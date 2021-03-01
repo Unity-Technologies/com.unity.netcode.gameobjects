@@ -21,7 +21,7 @@ using Unity.Profiling;
 namespace MLAPI
 {
     /// <summary>
-    /// The base class to override to write networked code. Inherits MonoBehaviour
+    /// The base class to override to write network code. Inherits MonoBehaviour
     /// </summary>
     public abstract class NetworkBehaviour : MonoBehaviour
     {
@@ -351,15 +351,15 @@ namespace MLAPI
         /// </summary>
         public ulong OwnerClientId => NetworkObject.OwnerClientId;
 
-        internal bool networkedStartInvoked = false;
-        internal bool internalNetworkedStartInvoked = false;
+        internal bool networkStartInvoked = false;
+        internal bool internalNetworkStartInvoked = false;
         /// <summary>
         /// Stores the network tick at the NetworkBehaviourUpdate time
         /// This allows sending NetworkVariables not more often than once per network tick, regardless of the update rate
         /// </summary>
         public static ushort currentTick { get; private set; }
         /// <summary>
-        /// Gets called when message handlers are ready to be registered and the networking is setup
+        /// Gets called when message handlers are ready to be registered and the network is setup
         /// </summary>
         public virtual void NetworkStart()
         {
@@ -367,7 +367,7 @@ namespace MLAPI
         }
 
         /// <summary>
-        /// Gets called when message handlers are ready to be registered and the networking is setup. Provides a Payload if it was provided
+        /// Gets called when message handlers are ready to be registered and the network is setup. Provides a Payload if it was provided
         /// </summary>
         /// <param name="stream">The stream containing the spawn payload</param>
         public virtual void NetworkStart(Stream stream)
@@ -694,7 +694,7 @@ namespace MLAPI
 
                         if (writtenAny)
                         {
-                            InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_NETWORKED_VAR_DELTA, channelsForNetworkVariableGroups[j], stream);
+                            InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_NETWORK_VARIABLE_DELTA, channelsForNetworkVariableGroups[j], stream);
                         }
                     }
                 }

@@ -4,7 +4,7 @@ using MLAPI.Transports;
 namespace MLAPI.NetworkVariable
 {
     /// <summary>
-    /// Interface for networked value containers
+    /// Interface for network value containers
     /// </summary>
     public interface INetworkVariable
     {

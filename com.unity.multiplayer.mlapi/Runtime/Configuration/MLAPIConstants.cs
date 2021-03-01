@@ -16,8 +16,8 @@ namespace MLAPI.Configuration
         internal const byte MLAPI_CHANGE_OWNER = 9;
         internal const byte MLAPI_ADD_OBJECTS = 10;
         internal const byte MLAPI_TIME_SYNC = 11;
-        internal const byte MLAPI_NETWORKED_VAR_DELTA = 12;
-        internal const byte MLAPI_NETWORKED_VAR_UPDATE = 13;
+        internal const byte MLAPI_NETWORK_VARIABLE_DELTA = 12;
+        internal const byte MLAPI_NETWORK_VARIABLE_UPDATE = 13;
         internal const byte MLAPI_UNNAMED_MESSAGE = 20;
         internal const byte MLAPI_DESTROY_OBJECTS = 21;
         internal const byte MLAPI_NAMED_MESSAGE = 22;
@@ -40,8 +40,8 @@ namespace MLAPI.Configuration
             "MLAPI_CHANGE_OWNER",
             "MLAPI_ADD_OBJECTS",
             "MLAPI_TIME_SYNC",
-            "MLAPI_NETWORKED_VAR_DELTA",
-            "MLAPI_NETWORKED_VAR_UPDATE",
+            "MLAPI_NETWORK_VARIABLE_DELTA",
+            "MLAPI_NETWORK_VARIABLE_UPDATE",
             "",
             "",
             "", // 16

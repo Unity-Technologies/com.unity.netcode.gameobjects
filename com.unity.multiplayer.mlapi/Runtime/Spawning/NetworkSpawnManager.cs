@@ -386,7 +386,7 @@ namespace MLAPI.Spawning
                 }
             }
 
-            netObject.ResetNetworkedStartInvoked();
+            netObject.ResetNetworkStartInvoked();
 
             if (readPayload)
             {
@@ -466,7 +466,7 @@ namespace MLAPI.Spawning
 
                     if (netObject.IsSceneObject == null || netObject.IsSceneObject.Value)
                     {
-                        writer.WriteUInt64Packed(netObject.NetworkedInstanceId);
+                        writer.WriteUInt64Packed(netObject.NetworkInstanceId);
                     }
                     else
                     {
@@ -637,7 +637,7 @@ namespace MLAPI.Spawning
             {
                 if (networkObjects[i].IsSceneObject == null)
                 {
-                    pendingSoftSyncObjects.Add(networkObjects[i].NetworkedInstanceId, networkObjects[i]);
+                    pendingSoftSyncObjects.Add(networkObjects[i].NetworkInstanceId, networkObjects[i]);
                 }
             }
         }
