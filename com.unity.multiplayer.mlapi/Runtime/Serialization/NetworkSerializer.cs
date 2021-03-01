@@ -1,26 +1,25 @@
 using System;
-using MLAPI.Spawning;
 using UnityEngine;
 
 namespace MLAPI.Serialization
 {
-    public sealed class BitSerializer
+    public sealed class NetworkSerializer
     {
-        private readonly BitReader m_Reader;
-        private readonly BitWriter m_Writer;
+        private readonly NetworkReader m_Reader;
+        private readonly NetworkWriter m_Writer;
 
-        public BitReader Reader => m_Reader;
-        public BitWriter Writer => m_Writer;
+        public NetworkReader Reader => m_Reader;
+        public NetworkWriter Writer => m_Writer;
 
         public bool IsReading { get; }
 
-        public BitSerializer(BitReader reader)
+        public NetworkSerializer(NetworkReader reader)
         {
             m_Reader = reader;
             IsReading = true;
         }
 
-        public BitSerializer(BitWriter writer)
+        public NetworkSerializer(NetworkWriter writer)
         {
             m_Writer = writer;
             IsReading = false;

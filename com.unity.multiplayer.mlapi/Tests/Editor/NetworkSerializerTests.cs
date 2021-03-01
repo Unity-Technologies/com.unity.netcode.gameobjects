@@ -6,20 +6,20 @@ using UnityEngine;
 
 namespace MLAPI.EditorTests
 {
-    public class BitSerializerTests
+    public class NetworkSerializerTests
     {
         [Test]
         public void SerializeBool()
         {
-            using (var outStream = PooledBitStream.Get())
-            using (var outWriter = PooledBitWriter.Get(outStream))
-            using (var inStream = PooledBitStream.Get())
-            using (var inReader = PooledBitReader.Get(inStream))
+            using (var outStream = PooledNetworkStream.Get())
+            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var inStream = PooledNetworkStream.Get())
+            using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
                 bool outValueA = true;
                 bool outValueB = false;
-                var outSerializer = new BitSerializer(outWriter);
+                var outSerializer = new NetworkSerializer(outWriter);
                 outSerializer.Serialize(ref outValueA);
                 outSerializer.Serialize(ref outValueB);
 
@@ -28,7 +28,7 @@ namespace MLAPI.EditorTests
                 bool inValueB = default;
                 inStream.Write(outStream.ToArray());
                 inStream.Position = 0;
-                var inSerializer = new BitSerializer(inReader);
+                var inSerializer = new NetworkSerializer(inReader);
                 inSerializer.Serialize(ref inValueA);
                 inSerializer.Serialize(ref inValueB);
 
@@ -41,16 +41,16 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeChar()
         {
-            using (var outStream = PooledBitStream.Get())
-            using (var outWriter = PooledBitWriter.Get(outStream))
-            using (var inStream = PooledBitStream.Get())
-            using (var inReader = PooledBitReader.Get(inStream))
+            using (var outStream = PooledNetworkStream.Get())
+            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var inStream = PooledNetworkStream.Get())
+            using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
                 char outValueA = 'U';
                 char outValueB = char.MinValue;
                 char outValueC = char.MaxValue;
-                var outSerializer = new BitSerializer(outWriter);
+                var outSerializer = new NetworkSerializer(outWriter);
                 outSerializer.Serialize(ref outValueA);
                 outSerializer.Serialize(ref outValueB);
                 outSerializer.Serialize(ref outValueC);
@@ -61,7 +61,7 @@ namespace MLAPI.EditorTests
                 char inValueC = default;
                 inStream.Write(outStream.ToArray());
                 inStream.Position = 0;
-                var inSerializer = new BitSerializer(inReader);
+                var inSerializer = new NetworkSerializer(inReader);
                 inSerializer.Serialize(ref inValueA);
                 inSerializer.Serialize(ref inValueB);
                 inSerializer.Serialize(ref inValueC);
@@ -76,16 +76,16 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeSbyte()
         {
-            using (var outStream = PooledBitStream.Get())
-            using (var outWriter = PooledBitWriter.Get(outStream))
-            using (var inStream = PooledBitStream.Get())
-            using (var inReader = PooledBitReader.Get(inStream))
+            using (var outStream = PooledNetworkStream.Get())
+            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var inStream = PooledNetworkStream.Get())
+            using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
                 sbyte outValueA = -123;
                 sbyte outValueB = sbyte.MinValue;
                 sbyte outValueC = sbyte.MaxValue;
-                var outSerializer = new BitSerializer(outWriter);
+                var outSerializer = new NetworkSerializer(outWriter);
                 outSerializer.Serialize(ref outValueA);
                 outSerializer.Serialize(ref outValueB);
                 outSerializer.Serialize(ref outValueC);
@@ -96,7 +96,7 @@ namespace MLAPI.EditorTests
                 sbyte inValueC = default;
                 inStream.Write(outStream.ToArray());
                 inStream.Position = 0;
-                var inSerializer = new BitSerializer(inReader);
+                var inSerializer = new NetworkSerializer(inReader);
                 inSerializer.Serialize(ref inValueA);
                 inSerializer.Serialize(ref inValueB);
                 inSerializer.Serialize(ref inValueC);
@@ -111,16 +111,16 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeByte()
         {
-            using (var outStream = PooledBitStream.Get())
-            using (var outWriter = PooledBitWriter.Get(outStream))
-            using (var inStream = PooledBitStream.Get())
-            using (var inReader = PooledBitReader.Get(inStream))
+            using (var outStream = PooledNetworkStream.Get())
+            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var inStream = PooledNetworkStream.Get())
+            using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
                 byte outValueA = 123;
                 byte outValueB = byte.MinValue;
                 byte outValueC = byte.MaxValue;
-                var outSerializer = new BitSerializer(outWriter);
+                var outSerializer = new NetworkSerializer(outWriter);
                 outSerializer.Serialize(ref outValueA);
                 outSerializer.Serialize(ref outValueB);
                 outSerializer.Serialize(ref outValueC);
@@ -131,7 +131,7 @@ namespace MLAPI.EditorTests
                 byte inValueC = default;
                 inStream.Write(outStream.ToArray());
                 inStream.Position = 0;
-                var inSerializer = new BitSerializer(inReader);
+                var inSerializer = new NetworkSerializer(inReader);
                 inSerializer.Serialize(ref inValueA);
                 inSerializer.Serialize(ref inValueB);
                 inSerializer.Serialize(ref inValueC);
@@ -146,16 +146,16 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeShort()
         {
-            using (var outStream = PooledBitStream.Get())
-            using (var outWriter = PooledBitWriter.Get(outStream))
-            using (var inStream = PooledBitStream.Get())
-            using (var inReader = PooledBitReader.Get(inStream))
+            using (var outStream = PooledNetworkStream.Get())
+            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var inStream = PooledNetworkStream.Get())
+            using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
                 short outValueA = 12345;
                 short outValueB = short.MinValue;
                 short outValueC = short.MaxValue;
-                var outSerializer = new BitSerializer(outWriter);
+                var outSerializer = new NetworkSerializer(outWriter);
                 outSerializer.Serialize(ref outValueA);
                 outSerializer.Serialize(ref outValueB);
                 outSerializer.Serialize(ref outValueC);
@@ -166,7 +166,7 @@ namespace MLAPI.EditorTests
                 short inValueC = default;
                 inStream.Write(outStream.ToArray());
                 inStream.Position = 0;
-                var inSerializer = new BitSerializer(inReader);
+                var inSerializer = new NetworkSerializer(inReader);
                 inSerializer.Serialize(ref inValueA);
                 inSerializer.Serialize(ref inValueB);
                 inSerializer.Serialize(ref inValueC);
@@ -181,16 +181,16 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeUshort()
         {
-            using (var outStream = PooledBitStream.Get())
-            using (var outWriter = PooledBitWriter.Get(outStream))
-            using (var inStream = PooledBitStream.Get())
-            using (var inReader = PooledBitReader.Get(inStream))
+            using (var outStream = PooledNetworkStream.Get())
+            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var inStream = PooledNetworkStream.Get())
+            using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
                 ushort outValueA = 12345;
                 ushort outValueB = ushort.MinValue;
                 ushort outValueC = ushort.MaxValue;
-                var outSerializer = new BitSerializer(outWriter);
+                var outSerializer = new NetworkSerializer(outWriter);
                 outSerializer.Serialize(ref outValueA);
                 outSerializer.Serialize(ref outValueB);
                 outSerializer.Serialize(ref outValueC);
@@ -201,7 +201,7 @@ namespace MLAPI.EditorTests
                 ushort inValueC = default;
                 inStream.Write(outStream.ToArray());
                 inStream.Position = 0;
-                var inSerializer = new BitSerializer(inReader);
+                var inSerializer = new NetworkSerializer(inReader);
                 inSerializer.Serialize(ref inValueA);
                 inSerializer.Serialize(ref inValueB);
                 inSerializer.Serialize(ref inValueC);
@@ -216,16 +216,16 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeInt()
         {
-            using (var outStream = PooledBitStream.Get())
-            using (var outWriter = PooledBitWriter.Get(outStream))
-            using (var inStream = PooledBitStream.Get())
-            using (var inReader = PooledBitReader.Get(inStream))
+            using (var outStream = PooledNetworkStream.Get())
+            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var inStream = PooledNetworkStream.Get())
+            using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
                 int outValueA = 1234567890;
                 int outValueB = int.MinValue;
                 int outValueC = int.MaxValue;
-                var outSerializer = new BitSerializer(outWriter);
+                var outSerializer = new NetworkSerializer(outWriter);
                 outSerializer.Serialize(ref outValueA);
                 outSerializer.Serialize(ref outValueB);
                 outSerializer.Serialize(ref outValueC);
@@ -236,7 +236,7 @@ namespace MLAPI.EditorTests
                 int inValueC = default;
                 inStream.Write(outStream.ToArray());
                 inStream.Position = 0;
-                var inSerializer = new BitSerializer(inReader);
+                var inSerializer = new NetworkSerializer(inReader);
                 inSerializer.Serialize(ref inValueA);
                 inSerializer.Serialize(ref inValueB);
                 inSerializer.Serialize(ref inValueC);
@@ -251,16 +251,16 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeUint()
         {
-            using (var outStream = PooledBitStream.Get())
-            using (var outWriter = PooledBitWriter.Get(outStream))
-            using (var inStream = PooledBitStream.Get())
-            using (var inReader = PooledBitReader.Get(inStream))
+            using (var outStream = PooledNetworkStream.Get())
+            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var inStream = PooledNetworkStream.Get())
+            using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
                 uint outValueA = 1234567890;
                 uint outValueB = uint.MinValue;
                 uint outValueC = uint.MaxValue;
-                var outSerializer = new BitSerializer(outWriter);
+                var outSerializer = new NetworkSerializer(outWriter);
                 outSerializer.Serialize(ref outValueA);
                 outSerializer.Serialize(ref outValueB);
                 outSerializer.Serialize(ref outValueC);
@@ -271,7 +271,7 @@ namespace MLAPI.EditorTests
                 uint inValueC = default;
                 inStream.Write(outStream.ToArray());
                 inStream.Position = 0;
-                var inSerializer = new BitSerializer(inReader);
+                var inSerializer = new NetworkSerializer(inReader);
                 inSerializer.Serialize(ref inValueA);
                 inSerializer.Serialize(ref inValueB);
                 inSerializer.Serialize(ref inValueC);
@@ -286,16 +286,16 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeLong()
         {
-            using (var outStream = PooledBitStream.Get())
-            using (var outWriter = PooledBitWriter.Get(outStream))
-            using (var inStream = PooledBitStream.Get())
-            using (var inReader = PooledBitReader.Get(inStream))
+            using (var outStream = PooledNetworkStream.Get())
+            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var inStream = PooledNetworkStream.Get())
+            using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
                 long outValueA = 9876543210;
                 long outValueB = long.MinValue;
                 long outValueC = long.MaxValue;
-                var outSerializer = new BitSerializer(outWriter);
+                var outSerializer = new NetworkSerializer(outWriter);
                 outSerializer.Serialize(ref outValueA);
                 outSerializer.Serialize(ref outValueB);
                 outSerializer.Serialize(ref outValueC);
@@ -306,7 +306,7 @@ namespace MLAPI.EditorTests
                 long inValueC = default;
                 inStream.Write(outStream.ToArray());
                 inStream.Position = 0;
-                var inSerializer = new BitSerializer(inReader);
+                var inSerializer = new NetworkSerializer(inReader);
                 inSerializer.Serialize(ref inValueA);
                 inSerializer.Serialize(ref inValueB);
                 inSerializer.Serialize(ref inValueC);
@@ -321,16 +321,16 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeUlong()
         {
-            using (var outStream = PooledBitStream.Get())
-            using (var outWriter = PooledBitWriter.Get(outStream))
-            using (var inStream = PooledBitStream.Get())
-            using (var inReader = PooledBitReader.Get(inStream))
+            using (var outStream = PooledNetworkStream.Get())
+            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var inStream = PooledNetworkStream.Get())
+            using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
                 ulong outValueA = 9876543210;
                 ulong outValueB = ulong.MinValue;
                 ulong outValueC = ulong.MaxValue;
-                var outSerializer = new BitSerializer(outWriter);
+                var outSerializer = new NetworkSerializer(outWriter);
                 outSerializer.Serialize(ref outValueA);
                 outSerializer.Serialize(ref outValueB);
                 outSerializer.Serialize(ref outValueC);
@@ -341,7 +341,7 @@ namespace MLAPI.EditorTests
                 ulong inValueC = default;
                 inStream.Write(outStream.ToArray());
                 inStream.Position = 0;
-                var inSerializer = new BitSerializer(inReader);
+                var inSerializer = new NetworkSerializer(inReader);
                 inSerializer.Serialize(ref inValueA);
                 inSerializer.Serialize(ref inValueB);
                 inSerializer.Serialize(ref inValueC);
@@ -356,16 +356,16 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeFloat()
         {
-            using (var outStream = PooledBitStream.Get())
-            using (var outWriter = PooledBitWriter.Get(outStream))
-            using (var inStream = PooledBitStream.Get())
-            using (var inReader = PooledBitReader.Get(inStream))
+            using (var outStream = PooledNetworkStream.Get())
+            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var inStream = PooledNetworkStream.Get())
+            using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
                 float outValueA = 12345.6789f;
                 float outValueB = float.MinValue;
                 float outValueC = float.MaxValue;
-                var outSerializer = new BitSerializer(outWriter);
+                var outSerializer = new NetworkSerializer(outWriter);
                 outSerializer.Serialize(ref outValueA);
                 outSerializer.Serialize(ref outValueB);
                 outSerializer.Serialize(ref outValueC);
@@ -376,7 +376,7 @@ namespace MLAPI.EditorTests
                 float inValueC = default;
                 inStream.Write(outStream.ToArray());
                 inStream.Position = 0;
-                var inSerializer = new BitSerializer(inReader);
+                var inSerializer = new NetworkSerializer(inReader);
                 inSerializer.Serialize(ref inValueA);
                 inSerializer.Serialize(ref inValueB);
                 inSerializer.Serialize(ref inValueC);
@@ -391,16 +391,16 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeDouble()
         {
-            using (var outStream = PooledBitStream.Get())
-            using (var outWriter = PooledBitWriter.Get(outStream))
-            using (var inStream = PooledBitStream.Get())
-            using (var inReader = PooledBitReader.Get(inStream))
+            using (var outStream = PooledNetworkStream.Get())
+            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var inStream = PooledNetworkStream.Get())
+            using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
                 double outValueA = 12345.6789;
                 double outValueB = double.MinValue;
                 double outValueC = double.MaxValue;
-                var outSerializer = new BitSerializer(outWriter);
+                var outSerializer = new NetworkSerializer(outWriter);
                 outSerializer.Serialize(ref outValueA);
                 outSerializer.Serialize(ref outValueB);
                 outSerializer.Serialize(ref outValueC);
@@ -411,7 +411,7 @@ namespace MLAPI.EditorTests
                 double inValueC = default;
                 inStream.Write(outStream.ToArray());
                 inStream.Position = 0;
-                var inSerializer = new BitSerializer(inReader);
+                var inSerializer = new NetworkSerializer(inReader);
                 inSerializer.Serialize(ref inValueA);
                 inSerializer.Serialize(ref inValueB);
                 inSerializer.Serialize(ref inValueC);
@@ -426,16 +426,16 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeString()
         {
-            using (var outStream = PooledBitStream.Get())
-            using (var outWriter = PooledBitWriter.Get(outStream))
-            using (var inStream = PooledBitStream.Get())
-            using (var inReader = PooledBitReader.Get(inStream))
+            using (var outStream = PooledNetworkStream.Get())
+            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var inStream = PooledNetworkStream.Get())
+            using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
                 string outValueA = Guid.NewGuid().ToString("N");
                 string outValueB = string.Empty;
                 string outValueC = null;
-                var outSerializer = new BitSerializer(outWriter);
+                var outSerializer = new NetworkSerializer(outWriter);
                 outSerializer.Serialize(ref outValueA);
                 outSerializer.Serialize(ref outValueB);
                 outSerializer.Serialize(ref outValueC);
@@ -446,7 +446,7 @@ namespace MLAPI.EditorTests
                 string inValueC = default;
                 inStream.Write(outStream.ToArray());
                 inStream.Position = 0;
-                var inSerializer = new BitSerializer(inReader);
+                var inSerializer = new NetworkSerializer(inReader);
                 inSerializer.Serialize(ref inValueA);
                 inSerializer.Serialize(ref inValueB);
                 inSerializer.Serialize(ref inValueC);
@@ -461,16 +461,16 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeColor()
         {
-            using (var outStream = PooledBitStream.Get())
-            using (var outWriter = PooledBitWriter.Get(outStream))
-            using (var inStream = PooledBitStream.Get())
-            using (var inReader = PooledBitReader.Get(inStream))
+            using (var outStream = PooledNetworkStream.Get())
+            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var inStream = PooledNetworkStream.Get())
+            using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
                 Color outValueA = Color.black;
                 Color outValueB = Color.white;
                 Color outValueC = Color.red;
-                var outSerializer = new BitSerializer(outWriter);
+                var outSerializer = new NetworkSerializer(outWriter);
                 outSerializer.Serialize(ref outValueA);
                 outSerializer.Serialize(ref outValueB);
                 outSerializer.Serialize(ref outValueC);
@@ -481,7 +481,7 @@ namespace MLAPI.EditorTests
                 Color inValueC = default;
                 inStream.Write(outStream.ToArray());
                 inStream.Position = 0;
-                var inSerializer = new BitSerializer(inReader);
+                var inSerializer = new NetworkSerializer(inReader);
                 inSerializer.Serialize(ref inValueA);
                 inSerializer.Serialize(ref inValueB);
                 inSerializer.Serialize(ref inValueC);
@@ -496,16 +496,16 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeColor32()
         {
-            using (var outStream = PooledBitStream.Get())
-            using (var outWriter = PooledBitWriter.Get(outStream))
-            using (var inStream = PooledBitStream.Get())
-            using (var inReader = PooledBitReader.Get(inStream))
+            using (var outStream = PooledNetworkStream.Get())
+            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var inStream = PooledNetworkStream.Get())
+            using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
                 Color32 outValueA = new Color32(0, 0, 0, byte.MaxValue);
                 Color32 outValueB = new Color32(byte.MaxValue, byte.MaxValue, byte.MaxValue, byte.MaxValue);
                 Color32 outValueC = new Color32(Byte.MaxValue, 0, 0, byte.MaxValue);
-                var outSerializer = new BitSerializer(outWriter);
+                var outSerializer = new NetworkSerializer(outWriter);
                 outSerializer.Serialize(ref outValueA);
                 outSerializer.Serialize(ref outValueB);
                 outSerializer.Serialize(ref outValueC);
@@ -516,7 +516,7 @@ namespace MLAPI.EditorTests
                 Color32 inValueC = default;
                 inStream.Write(outStream.ToArray());
                 inStream.Position = 0;
-                var inSerializer = new BitSerializer(inReader);
+                var inSerializer = new NetworkSerializer(inReader);
                 inSerializer.Serialize(ref inValueA);
                 inSerializer.Serialize(ref inValueB);
                 inSerializer.Serialize(ref inValueC);
@@ -531,16 +531,16 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeVector2()
         {
-            using (var outStream = PooledBitStream.Get())
-            using (var outWriter = PooledBitWriter.Get(outStream))
-            using (var inStream = PooledBitStream.Get())
-            using (var inReader = PooledBitReader.Get(inStream))
+            using (var outStream = PooledNetworkStream.Get())
+            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var inStream = PooledNetworkStream.Get())
+            using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
                 Vector2 outValueA = Vector2.up;
                 Vector2 outValueB = Vector2.negativeInfinity;
                 Vector2 outValueC = Vector2.positiveInfinity;
-                var outSerializer = new BitSerializer(outWriter);
+                var outSerializer = new NetworkSerializer(outWriter);
                 outSerializer.Serialize(ref outValueA);
                 outSerializer.Serialize(ref outValueB);
                 outSerializer.Serialize(ref outValueC);
@@ -551,7 +551,7 @@ namespace MLAPI.EditorTests
                 Vector2 inValueC = default;
                 inStream.Write(outStream.ToArray());
                 inStream.Position = 0;
-                var inSerializer = new BitSerializer(inReader);
+                var inSerializer = new NetworkSerializer(inReader);
                 inSerializer.Serialize(ref inValueA);
                 inSerializer.Serialize(ref inValueB);
                 inSerializer.Serialize(ref inValueC);
@@ -566,16 +566,16 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeVector3()
         {
-            using (var outStream = PooledBitStream.Get())
-            using (var outWriter = PooledBitWriter.Get(outStream))
-            using (var inStream = PooledBitStream.Get())
-            using (var inReader = PooledBitReader.Get(inStream))
+            using (var outStream = PooledNetworkStream.Get())
+            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var inStream = PooledNetworkStream.Get())
+            using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
                 Vector3 outValueA = Vector3.forward;
                 Vector3 outValueB = Vector3.negativeInfinity;
                 Vector3 outValueC = Vector3.positiveInfinity;
-                var outSerializer = new BitSerializer(outWriter);
+                var outSerializer = new NetworkSerializer(outWriter);
                 outSerializer.Serialize(ref outValueA);
                 outSerializer.Serialize(ref outValueB);
                 outSerializer.Serialize(ref outValueC);
@@ -586,7 +586,7 @@ namespace MLAPI.EditorTests
                 Vector3 inValueC = default;
                 inStream.Write(outStream.ToArray());
                 inStream.Position = 0;
-                var inSerializer = new BitSerializer(inReader);
+                var inSerializer = new NetworkSerializer(inReader);
                 inSerializer.Serialize(ref inValueA);
                 inSerializer.Serialize(ref inValueB);
                 inSerializer.Serialize(ref inValueC);
@@ -601,16 +601,16 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeVector4()
         {
-            using (var outStream = PooledBitStream.Get())
-            using (var outWriter = PooledBitWriter.Get(outStream))
-            using (var inStream = PooledBitStream.Get())
-            using (var inReader = PooledBitReader.Get(inStream))
+            using (var outStream = PooledNetworkStream.Get())
+            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var inStream = PooledNetworkStream.Get())
+            using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
                 Vector4 outValueA = Vector4.one;
                 Vector4 outValueB = Vector4.negativeInfinity;
                 Vector4 outValueC = Vector4.positiveInfinity;
-                var outSerializer = new BitSerializer(outWriter);
+                var outSerializer = new NetworkSerializer(outWriter);
                 outSerializer.Serialize(ref outValueA);
                 outSerializer.Serialize(ref outValueB);
                 outSerializer.Serialize(ref outValueC);
@@ -621,7 +621,7 @@ namespace MLAPI.EditorTests
                 Vector4 inValueC = default;
                 inStream.Write(outStream.ToArray());
                 inStream.Position = 0;
-                var inSerializer = new BitSerializer(inReader);
+                var inSerializer = new NetworkSerializer(inReader);
                 inSerializer.Serialize(ref inValueA);
                 inSerializer.Serialize(ref inValueB);
                 inSerializer.Serialize(ref inValueC);
@@ -636,16 +636,16 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeQuaternion()
         {
-            using (var outStream = PooledBitStream.Get())
-            using (var outWriter = PooledBitWriter.Get(outStream))
-            using (var inStream = PooledBitStream.Get())
-            using (var inReader = PooledBitReader.Get(inStream))
+            using (var outStream = PooledNetworkStream.Get())
+            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var inStream = PooledNetworkStream.Get())
+            using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
                 Quaternion outValueA = Quaternion.identity;
                 Quaternion outValueB = Quaternion.Euler(new Vector3(30, 45, -60));
                 Quaternion outValueC = Quaternion.Euler(new Vector3(90, -90, 180));
-                var outSerializer = new BitSerializer(outWriter);
+                var outSerializer = new NetworkSerializer(outWriter);
                 outSerializer.Serialize(ref outValueA);
                 outSerializer.Serialize(ref outValueB);
                 outSerializer.Serialize(ref outValueC);
@@ -656,7 +656,7 @@ namespace MLAPI.EditorTests
                 Quaternion inValueC = default;
                 inStream.Write(outStream.ToArray());
                 inStream.Position = 0;
-                var inSerializer = new BitSerializer(inReader);
+                var inSerializer = new NetworkSerializer(inReader);
                 inSerializer.Serialize(ref inValueA);
                 inSerializer.Serialize(ref inValueB);
                 inSerializer.Serialize(ref inValueC);
@@ -671,16 +671,16 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeRay()
         {
-            using (var outStream = PooledBitStream.Get())
-            using (var outWriter = PooledBitWriter.Get(outStream))
-            using (var inStream = PooledBitStream.Get())
-            using (var inReader = PooledBitReader.Get(inStream))
+            using (var outStream = PooledNetworkStream.Get())
+            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var inStream = PooledNetworkStream.Get())
+            using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
                 Ray outValueA = new Ray(Vector3.zero, Vector3.forward);
                 Ray outValueB = new Ray(Vector3.zero, Vector3.left);
                 Ray outValueC = new Ray(Vector3.zero, Vector3.up);
-                var outSerializer = new BitSerializer(outWriter);
+                var outSerializer = new NetworkSerializer(outWriter);
                 outSerializer.Serialize(ref outValueA);
                 outSerializer.Serialize(ref outValueB);
                 outSerializer.Serialize(ref outValueC);
@@ -691,7 +691,7 @@ namespace MLAPI.EditorTests
                 Ray inValueC = default;
                 inStream.Write(outStream.ToArray());
                 inStream.Position = 0;
-                var inSerializer = new BitSerializer(inReader);
+                var inSerializer = new NetworkSerializer(inReader);
                 inSerializer.Serialize(ref inValueA);
                 inSerializer.Serialize(ref inValueB);
                 inSerializer.Serialize(ref inValueC);
@@ -706,16 +706,16 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeRay2D()
         {
-            using (var outStream = PooledBitStream.Get())
-            using (var outWriter = PooledBitWriter.Get(outStream))
-            using (var inStream = PooledBitStream.Get())
-            using (var inReader = PooledBitReader.Get(inStream))
+            using (var outStream = PooledNetworkStream.Get())
+            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var inStream = PooledNetworkStream.Get())
+            using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
                 Ray2D outValueA = new Ray2D(Vector2.zero, Vector2.up);
                 Ray2D outValueB = new Ray2D(Vector2.zero, Vector2.left);
                 Ray2D outValueC = new Ray2D(Vector2.zero, Vector2.right);
-                var outSerializer = new BitSerializer(outWriter);
+                var outSerializer = new NetworkSerializer(outWriter);
                 outSerializer.Serialize(ref outValueA);
                 outSerializer.Serialize(ref outValueB);
                 outSerializer.Serialize(ref outValueC);
@@ -726,7 +726,7 @@ namespace MLAPI.EditorTests
                 Ray2D inValueC = default;
                 inStream.Write(outStream.ToArray());
                 inStream.Position = 0;
-                var inSerializer = new BitSerializer(inReader);
+                var inSerializer = new NetworkSerializer(inReader);
                 inSerializer.Serialize(ref inValueA);
                 inSerializer.Serialize(ref inValueB);
                 inSerializer.Serialize(ref inValueC);
@@ -771,10 +771,10 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeEnum()
         {
-            using (var outStream = PooledBitStream.Get())
-            using (var outWriter = PooledBitWriter.Get(outStream))
-            using (var inStream = PooledBitStream.Get())
-            using (var inReader = PooledBitReader.Get(inStream))
+            using (var outStream = PooledNetworkStream.Get())
+            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var inStream = PooledNetworkStream.Get())
+            using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
                 EnumA outValueA = EnumA.C;
@@ -782,7 +782,7 @@ namespace MLAPI.EditorTests
                 EnumC outValueC = EnumC.N;
                 EnumD outValueD = EnumD.T;
                 EnumD outValueX = (EnumD)123;
-                var outSerializer = new BitSerializer(outWriter);
+                var outSerializer = new NetworkSerializer(outWriter);
                 outSerializer.Serialize(ref outValueA);
                 outSerializer.Serialize(ref outValueB);
                 outSerializer.Serialize(ref outValueC);
@@ -797,7 +797,7 @@ namespace MLAPI.EditorTests
                 EnumD inValueX = default;
                 inStream.Write(outStream.ToArray());
                 inStream.Position = 0;
-                var inSerializer = new BitSerializer(inReader);
+                var inSerializer = new NetworkSerializer(inReader);
                 inSerializer.Serialize(ref inValueA);
                 inSerializer.Serialize(ref inValueB);
                 inSerializer.Serialize(ref inValueC);
@@ -816,16 +816,16 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeBoolArray()
         {
-            using (var outStream = PooledBitStream.Get())
-            using (var outWriter = PooledBitWriter.Get(outStream))
-            using (var inStream = PooledBitStream.Get())
-            using (var inReader = PooledBitReader.Get(inStream))
+            using (var outStream = PooledNetworkStream.Get())
+            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var inStream = PooledNetworkStream.Get())
+            using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
                 bool[] outArrayA = null;
                 bool[] outArrayB = new bool[0];
                 bool[] outArrayC = { true, false, true };
-                var outSerializer = new BitSerializer(outWriter);
+                var outSerializer = new NetworkSerializer(outWriter);
                 outSerializer.Serialize(ref outArrayA);
                 outSerializer.Serialize(ref outArrayB);
                 outSerializer.Serialize(ref outArrayC);
@@ -836,7 +836,7 @@ namespace MLAPI.EditorTests
                 bool[] inArrayC = default;
                 inStream.Write(outStream.ToArray());
                 inStream.Position = 0;
-                var inSerializer = new BitSerializer(inReader);
+                var inSerializer = new NetworkSerializer(inReader);
                 inSerializer.Serialize(ref inArrayA);
                 inSerializer.Serialize(ref inArrayB);
                 inSerializer.Serialize(ref inArrayC);
@@ -851,16 +851,16 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeCharArray()
         {
-            using (var outStream = PooledBitStream.Get())
-            using (var outWriter = PooledBitWriter.Get(outStream))
-            using (var inStream = PooledBitStream.Get())
-            using (var inReader = PooledBitReader.Get(inStream))
+            using (var outStream = PooledNetworkStream.Get())
+            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var inStream = PooledNetworkStream.Get())
+            using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
                 char[] outArrayA = null;
                 char[] outArrayB = new char[0];
                 char[] outArrayC = { 'U', 'N', 'I', 'T', 'Y', '\0' };
-                var outSerializer = new BitSerializer(outWriter);
+                var outSerializer = new NetworkSerializer(outWriter);
                 outSerializer.Serialize(ref outArrayA);
                 outSerializer.Serialize(ref outArrayB);
                 outSerializer.Serialize(ref outArrayC);
@@ -871,7 +871,7 @@ namespace MLAPI.EditorTests
                 char[] inArrayC = default;
                 inStream.Write(outStream.ToArray());
                 inStream.Position = 0;
-                var inSerializer = new BitSerializer(inReader);
+                var inSerializer = new NetworkSerializer(inReader);
                 inSerializer.Serialize(ref inArrayA);
                 inSerializer.Serialize(ref inArrayB);
                 inSerializer.Serialize(ref inArrayC);
@@ -886,16 +886,16 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeSbyteArray()
         {
-            using (var outStream = PooledBitStream.Get())
-            using (var outWriter = PooledBitWriter.Get(outStream))
-            using (var inStream = PooledBitStream.Get())
-            using (var inReader = PooledBitReader.Get(inStream))
+            using (var outStream = PooledNetworkStream.Get())
+            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var inStream = PooledNetworkStream.Get())
+            using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
                 sbyte[] outArrayA = null;
                 sbyte[] outArrayB = new sbyte[0];
                 sbyte[] outArrayC = { -123, sbyte.MinValue, sbyte.MaxValue };
-                var outSerializer = new BitSerializer(outWriter);
+                var outSerializer = new NetworkSerializer(outWriter);
                 outSerializer.Serialize(ref outArrayA);
                 outSerializer.Serialize(ref outArrayB);
                 outSerializer.Serialize(ref outArrayC);
@@ -906,7 +906,7 @@ namespace MLAPI.EditorTests
                 sbyte[] inArrayC = default;
                 inStream.Write(outStream.ToArray());
                 inStream.Position = 0;
-                var inSerializer = new BitSerializer(inReader);
+                var inSerializer = new NetworkSerializer(inReader);
                 inSerializer.Serialize(ref inArrayA);
                 inSerializer.Serialize(ref inArrayB);
                 inSerializer.Serialize(ref inArrayC);
@@ -921,16 +921,16 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeByteArray()
         {
-            using (var outStream = PooledBitStream.Get())
-            using (var outWriter = PooledBitWriter.Get(outStream))
-            using (var inStream = PooledBitStream.Get())
-            using (var inReader = PooledBitReader.Get(inStream))
+            using (var outStream = PooledNetworkStream.Get())
+            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var inStream = PooledNetworkStream.Get())
+            using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
                 byte[] outArrayA = null;
                 byte[] outArrayB = new byte[0];
                 byte[] outArrayC = { 123, byte.MinValue, byte.MaxValue };
-                var outSerializer = new BitSerializer(outWriter);
+                var outSerializer = new NetworkSerializer(outWriter);
                 outSerializer.Serialize(ref outArrayA);
                 outSerializer.Serialize(ref outArrayB);
                 outSerializer.Serialize(ref outArrayC);
@@ -941,7 +941,7 @@ namespace MLAPI.EditorTests
                 byte[] inArrayC = default;
                 inStream.Write(outStream.ToArray());
                 inStream.Position = 0;
-                var inSerializer = new BitSerializer(inReader);
+                var inSerializer = new NetworkSerializer(inReader);
                 inSerializer.Serialize(ref inArrayA);
                 inSerializer.Serialize(ref inArrayB);
                 inSerializer.Serialize(ref inArrayC);
@@ -956,16 +956,16 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeShortArray()
         {
-            using (var outStream = PooledBitStream.Get())
-            using (var outWriter = PooledBitWriter.Get(outStream))
-            using (var inStream = PooledBitStream.Get())
-            using (var inReader = PooledBitReader.Get(inStream))
+            using (var outStream = PooledNetworkStream.Get())
+            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var inStream = PooledNetworkStream.Get())
+            using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
                 short[] outArrayA = null;
                 short[] outArrayB = new short[0];
                 short[] outArrayC = { 12345, short.MinValue, short.MaxValue };
-                var outSerializer = new BitSerializer(outWriter);
+                var outSerializer = new NetworkSerializer(outWriter);
                 outSerializer.Serialize(ref outArrayA);
                 outSerializer.Serialize(ref outArrayB);
                 outSerializer.Serialize(ref outArrayC);
@@ -976,7 +976,7 @@ namespace MLAPI.EditorTests
                 short[] inArrayC = default;
                 inStream.Write(outStream.ToArray());
                 inStream.Position = 0;
-                var inSerializer = new BitSerializer(inReader);
+                var inSerializer = new NetworkSerializer(inReader);
                 inSerializer.Serialize(ref inArrayA);
                 inSerializer.Serialize(ref inArrayB);
                 inSerializer.Serialize(ref inArrayC);
@@ -991,16 +991,16 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeUshortArray()
         {
-            using (var outStream = PooledBitStream.Get())
-            using (var outWriter = PooledBitWriter.Get(outStream))
-            using (var inStream = PooledBitStream.Get())
-            using (var inReader = PooledBitReader.Get(inStream))
+            using (var outStream = PooledNetworkStream.Get())
+            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var inStream = PooledNetworkStream.Get())
+            using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
                 ushort[] outArrayA = null;
                 ushort[] outArrayB = new ushort[0];
                 ushort[] outArrayC = { 12345, ushort.MinValue, ushort.MaxValue };
-                var outSerializer = new BitSerializer(outWriter);
+                var outSerializer = new NetworkSerializer(outWriter);
                 outSerializer.Serialize(ref outArrayA);
                 outSerializer.Serialize(ref outArrayB);
                 outSerializer.Serialize(ref outArrayC);
@@ -1011,7 +1011,7 @@ namespace MLAPI.EditorTests
                 ushort[] inArrayC = default;
                 inStream.Write(outStream.ToArray());
                 inStream.Position = 0;
-                var inSerializer = new BitSerializer(inReader);
+                var inSerializer = new NetworkSerializer(inReader);
                 inSerializer.Serialize(ref inArrayA);
                 inSerializer.Serialize(ref inArrayB);
                 inSerializer.Serialize(ref inArrayC);
@@ -1026,16 +1026,16 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeIntArray()
         {
-            using (var outStream = PooledBitStream.Get())
-            using (var outWriter = PooledBitWriter.Get(outStream))
-            using (var inStream = PooledBitStream.Get())
-            using (var inReader = PooledBitReader.Get(inStream))
+            using (var outStream = PooledNetworkStream.Get())
+            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var inStream = PooledNetworkStream.Get())
+            using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
                 int[] outArrayA = null;
                 int[] outArrayB = new int[0];
                 int[] outArrayC = { 1234567890, int.MinValue, int.MaxValue };
-                var outSerializer = new BitSerializer(outWriter);
+                var outSerializer = new NetworkSerializer(outWriter);
                 outSerializer.Serialize(ref outArrayA);
                 outSerializer.Serialize(ref outArrayB);
                 outSerializer.Serialize(ref outArrayC);
@@ -1046,7 +1046,7 @@ namespace MLAPI.EditorTests
                 int[] inArrayC = default;
                 inStream.Write(outStream.ToArray());
                 inStream.Position = 0;
-                var inSerializer = new BitSerializer(inReader);
+                var inSerializer = new NetworkSerializer(inReader);
                 inSerializer.Serialize(ref inArrayA);
                 inSerializer.Serialize(ref inArrayB);
                 inSerializer.Serialize(ref inArrayC);
@@ -1061,16 +1061,16 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeUintArray()
         {
-            using (var outStream = PooledBitStream.Get())
-            using (var outWriter = PooledBitWriter.Get(outStream))
-            using (var inStream = PooledBitStream.Get())
-            using (var inReader = PooledBitReader.Get(inStream))
+            using (var outStream = PooledNetworkStream.Get())
+            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var inStream = PooledNetworkStream.Get())
+            using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
                 uint[] outArrayA = null;
                 uint[] outArrayB = new uint[0];
                 uint[] outArrayC = { 1234567890, uint.MinValue, uint.MaxValue };
-                var outSerializer = new BitSerializer(outWriter);
+                var outSerializer = new NetworkSerializer(outWriter);
                 outSerializer.Serialize(ref outArrayA);
                 outSerializer.Serialize(ref outArrayB);
                 outSerializer.Serialize(ref outArrayC);
@@ -1081,7 +1081,7 @@ namespace MLAPI.EditorTests
                 uint[] inArrayC = default;
                 inStream.Write(outStream.ToArray());
                 inStream.Position = 0;
-                var inSerializer = new BitSerializer(inReader);
+                var inSerializer = new NetworkSerializer(inReader);
                 inSerializer.Serialize(ref inArrayA);
                 inSerializer.Serialize(ref inArrayB);
                 inSerializer.Serialize(ref inArrayC);
@@ -1096,16 +1096,16 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeLongArray()
         {
-            using (var outStream = PooledBitStream.Get())
-            using (var outWriter = PooledBitWriter.Get(outStream))
-            using (var inStream = PooledBitStream.Get())
-            using (var inReader = PooledBitReader.Get(inStream))
+            using (var outStream = PooledNetworkStream.Get())
+            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var inStream = PooledNetworkStream.Get())
+            using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
                 long[] outArrayA = null;
                 long[] outArrayB = new long[0];
                 long[] outArrayC = { 9876543210, long.MinValue, long.MaxValue };
-                var outSerializer = new BitSerializer(outWriter);
+                var outSerializer = new NetworkSerializer(outWriter);
                 outSerializer.Serialize(ref outArrayA);
                 outSerializer.Serialize(ref outArrayB);
                 outSerializer.Serialize(ref outArrayC);
@@ -1116,7 +1116,7 @@ namespace MLAPI.EditorTests
                 long[] inArrayC = default;
                 inStream.Write(outStream.ToArray());
                 inStream.Position = 0;
-                var inSerializer = new BitSerializer(inReader);
+                var inSerializer = new NetworkSerializer(inReader);
                 inSerializer.Serialize(ref inArrayA);
                 inSerializer.Serialize(ref inArrayB);
                 inSerializer.Serialize(ref inArrayC);
@@ -1131,16 +1131,16 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeUlongArray()
         {
-            using (var outStream = PooledBitStream.Get())
-            using (var outWriter = PooledBitWriter.Get(outStream))
-            using (var inStream = PooledBitStream.Get())
-            using (var inReader = PooledBitReader.Get(inStream))
+            using (var outStream = PooledNetworkStream.Get())
+            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var inStream = PooledNetworkStream.Get())
+            using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
                 ulong[] outArrayA = null;
                 ulong[] outArrayB = new ulong[0];
                 ulong[] outArrayC = { 9876543210, ulong.MinValue, ulong.MaxValue };
-                var outSerializer = new BitSerializer(outWriter);
+                var outSerializer = new NetworkSerializer(outWriter);
                 outSerializer.Serialize(ref outArrayA);
                 outSerializer.Serialize(ref outArrayB);
                 outSerializer.Serialize(ref outArrayC);
@@ -1151,7 +1151,7 @@ namespace MLAPI.EditorTests
                 ulong[] inArrayC = default;
                 inStream.Write(outStream.ToArray());
                 inStream.Position = 0;
-                var inSerializer = new BitSerializer(inReader);
+                var inSerializer = new NetworkSerializer(inReader);
                 inSerializer.Serialize(ref inArrayA);
                 inSerializer.Serialize(ref inArrayB);
                 inSerializer.Serialize(ref inArrayC);
@@ -1166,16 +1166,16 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeFloatArray()
         {
-            using (var outStream = PooledBitStream.Get())
-            using (var outWriter = PooledBitWriter.Get(outStream))
-            using (var inStream = PooledBitStream.Get())
-            using (var inReader = PooledBitReader.Get(inStream))
+            using (var outStream = PooledNetworkStream.Get())
+            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var inStream = PooledNetworkStream.Get())
+            using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
                 float[] outArrayA = null;
                 float[] outArrayB = new float[0];
                 float[] outArrayC = { 12345.6789f, float.MinValue, float.MaxValue };
-                var outSerializer = new BitSerializer(outWriter);
+                var outSerializer = new NetworkSerializer(outWriter);
                 outSerializer.Serialize(ref outArrayA);
                 outSerializer.Serialize(ref outArrayB);
                 outSerializer.Serialize(ref outArrayC);
@@ -1186,7 +1186,7 @@ namespace MLAPI.EditorTests
                 float[] inArrayC = default;
                 inStream.Write(outStream.ToArray());
                 inStream.Position = 0;
-                var inSerializer = new BitSerializer(inReader);
+                var inSerializer = new NetworkSerializer(inReader);
                 inSerializer.Serialize(ref inArrayA);
                 inSerializer.Serialize(ref inArrayB);
                 inSerializer.Serialize(ref inArrayC);
@@ -1201,16 +1201,16 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeDoubleArray()
         {
-            using (var outStream = PooledBitStream.Get())
-            using (var outWriter = PooledBitWriter.Get(outStream))
-            using (var inStream = PooledBitStream.Get())
-            using (var inReader = PooledBitReader.Get(inStream))
+            using (var outStream = PooledNetworkStream.Get())
+            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var inStream = PooledNetworkStream.Get())
+            using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
                 double[] outArrayA = null;
                 double[] outArrayB = new double[0];
                 double[] outArrayC = { 12345.6789, double.MinValue, double.MaxValue };
-                var outSerializer = new BitSerializer(outWriter);
+                var outSerializer = new NetworkSerializer(outWriter);
                 outSerializer.Serialize(ref outArrayA);
                 outSerializer.Serialize(ref outArrayB);
                 outSerializer.Serialize(ref outArrayC);
@@ -1221,7 +1221,7 @@ namespace MLAPI.EditorTests
                 double[] inArrayC = default;
                 inStream.Write(outStream.ToArray());
                 inStream.Position = 0;
-                var inSerializer = new BitSerializer(inReader);
+                var inSerializer = new NetworkSerializer(inReader);
                 inSerializer.Serialize(ref inArrayA);
                 inSerializer.Serialize(ref inArrayB);
                 inSerializer.Serialize(ref inArrayC);
@@ -1236,16 +1236,16 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeStringArray()
         {
-            using (var outStream = PooledBitStream.Get())
-            using (var outWriter = PooledBitWriter.Get(outStream))
-            using (var inStream = PooledBitStream.Get())
-            using (var inReader = PooledBitReader.Get(inStream))
+            using (var outStream = PooledNetworkStream.Get())
+            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var inStream = PooledNetworkStream.Get())
+            using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
                 string[] outArrayA = null;
                 string[] outArrayB = new string[0];
                 string[] outArrayC = { Guid.NewGuid().ToString("N"), String.Empty, null };
-                var outSerializer = new BitSerializer(outWriter);
+                var outSerializer = new NetworkSerializer(outWriter);
                 outSerializer.Serialize(ref outArrayA);
                 outSerializer.Serialize(ref outArrayB);
                 outSerializer.Serialize(ref outArrayC);
@@ -1256,7 +1256,7 @@ namespace MLAPI.EditorTests
                 string[] inArrayC = default;
                 inStream.Write(outStream.ToArray());
                 inStream.Position = 0;
-                var inSerializer = new BitSerializer(inReader);
+                var inSerializer = new NetworkSerializer(inReader);
                 inSerializer.Serialize(ref inArrayA);
                 inSerializer.Serialize(ref inArrayB);
                 inSerializer.Serialize(ref inArrayC);
@@ -1271,16 +1271,16 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeColorArray()
         {
-            using (var outStream = PooledBitStream.Get())
-            using (var outWriter = PooledBitWriter.Get(outStream))
-            using (var inStream = PooledBitStream.Get())
-            using (var inReader = PooledBitReader.Get(inStream))
+            using (var outStream = PooledNetworkStream.Get())
+            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var inStream = PooledNetworkStream.Get())
+            using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
                 Color[] outArrayA = null;
                 Color[] outArrayB = new Color[0];
                 Color[] outArrayC = { Color.black, Color.red, Color.white };
-                var outSerializer = new BitSerializer(outWriter);
+                var outSerializer = new NetworkSerializer(outWriter);
                 outSerializer.Serialize(ref outArrayA);
                 outSerializer.Serialize(ref outArrayB);
                 outSerializer.Serialize(ref outArrayC);
@@ -1291,7 +1291,7 @@ namespace MLAPI.EditorTests
                 Color[] inArrayC = default;
                 inStream.Write(outStream.ToArray());
                 inStream.Position = 0;
-                var inSerializer = new BitSerializer(inReader);
+                var inSerializer = new NetworkSerializer(inReader);
                 inSerializer.Serialize(ref inArrayA);
                 inSerializer.Serialize(ref inArrayB);
                 inSerializer.Serialize(ref inArrayC);
@@ -1306,10 +1306,10 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeColor32Array()
         {
-            using (var outStream = PooledBitStream.Get())
-            using (var outWriter = PooledBitWriter.Get(outStream))
-            using (var inStream = PooledBitStream.Get())
-            using (var inReader = PooledBitReader.Get(inStream))
+            using (var outStream = PooledNetworkStream.Get())
+            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var inStream = PooledNetworkStream.Get())
+            using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
                 Color32[] outArrayA = null;
@@ -1320,7 +1320,7 @@ namespace MLAPI.EditorTests
                     new Color32(byte.MaxValue, byte.MaxValue, byte.MaxValue, byte.MaxValue),
                     new Color32(Byte.MaxValue, 0, 0, byte.MaxValue)
                 };
-                var outSerializer = new BitSerializer(outWriter);
+                var outSerializer = new NetworkSerializer(outWriter);
                 outSerializer.Serialize(ref outArrayA);
                 outSerializer.Serialize(ref outArrayB);
                 outSerializer.Serialize(ref outArrayC);
@@ -1331,7 +1331,7 @@ namespace MLAPI.EditorTests
                 Color32[] inArrayC = default;
                 inStream.Write(outStream.ToArray());
                 inStream.Position = 0;
-                var inSerializer = new BitSerializer(inReader);
+                var inSerializer = new NetworkSerializer(inReader);
                 inSerializer.Serialize(ref inArrayA);
                 inSerializer.Serialize(ref inArrayB);
                 inSerializer.Serialize(ref inArrayC);
@@ -1346,16 +1346,16 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeVector2Array()
         {
-            using (var outStream = PooledBitStream.Get())
-            using (var outWriter = PooledBitWriter.Get(outStream))
-            using (var inStream = PooledBitStream.Get())
-            using (var inReader = PooledBitReader.Get(inStream))
+            using (var outStream = PooledNetworkStream.Get())
+            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var inStream = PooledNetworkStream.Get())
+            using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
                 Vector2[] outArrayA = null;
                 Vector2[] outArrayB = new Vector2[0];
                 Vector2[] outArrayC = { Vector2.up, Vector2.negativeInfinity, Vector2.positiveInfinity };
-                var outSerializer = new BitSerializer(outWriter);
+                var outSerializer = new NetworkSerializer(outWriter);
                 outSerializer.Serialize(ref outArrayA);
                 outSerializer.Serialize(ref outArrayB);
                 outSerializer.Serialize(ref outArrayC);
@@ -1366,7 +1366,7 @@ namespace MLAPI.EditorTests
                 Vector2[] inArrayC = default;
                 inStream.Write(outStream.ToArray());
                 inStream.Position = 0;
-                var inSerializer = new BitSerializer(inReader);
+                var inSerializer = new NetworkSerializer(inReader);
                 inSerializer.Serialize(ref inArrayA);
                 inSerializer.Serialize(ref inArrayB);
                 inSerializer.Serialize(ref inArrayC);
@@ -1381,16 +1381,16 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeVector3Array()
         {
-            using (var outStream = PooledBitStream.Get())
-            using (var outWriter = PooledBitWriter.Get(outStream))
-            using (var inStream = PooledBitStream.Get())
-            using (var inReader = PooledBitReader.Get(inStream))
+            using (var outStream = PooledNetworkStream.Get())
+            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var inStream = PooledNetworkStream.Get())
+            using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
                 Vector3[] outArrayA = null;
                 Vector3[] outArrayB = new Vector3[0];
                 Vector3[] outArrayC = { Vector3.forward, Vector3.negativeInfinity, Vector3.positiveInfinity };
-                var outSerializer = new BitSerializer(outWriter);
+                var outSerializer = new NetworkSerializer(outWriter);
                 outSerializer.Serialize(ref outArrayA);
                 outSerializer.Serialize(ref outArrayB);
                 outSerializer.Serialize(ref outArrayC);
@@ -1401,7 +1401,7 @@ namespace MLAPI.EditorTests
                 Vector3[] inArrayC = default;
                 inStream.Write(outStream.ToArray());
                 inStream.Position = 0;
-                var inSerializer = new BitSerializer(inReader);
+                var inSerializer = new NetworkSerializer(inReader);
                 inSerializer.Serialize(ref inArrayA);
                 inSerializer.Serialize(ref inArrayB);
                 inSerializer.Serialize(ref inArrayC);
@@ -1416,16 +1416,16 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeVector4Array()
         {
-            using (var outStream = PooledBitStream.Get())
-            using (var outWriter = PooledBitWriter.Get(outStream))
-            using (var inStream = PooledBitStream.Get())
-            using (var inReader = PooledBitReader.Get(inStream))
+            using (var outStream = PooledNetworkStream.Get())
+            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var inStream = PooledNetworkStream.Get())
+            using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
                 Vector4[] outArrayA = null;
                 Vector4[] outArrayB = new Vector4[0];
                 Vector4[] outArrayC = { Vector4.one, Vector4.negativeInfinity, Vector4.positiveInfinity };
-                var outSerializer = new BitSerializer(outWriter);
+                var outSerializer = new NetworkSerializer(outWriter);
                 outSerializer.Serialize(ref outArrayA);
                 outSerializer.Serialize(ref outArrayB);
                 outSerializer.Serialize(ref outArrayC);
@@ -1436,7 +1436,7 @@ namespace MLAPI.EditorTests
                 Vector4[] inArrayC = default;
                 inStream.Write(outStream.ToArray());
                 inStream.Position = 0;
-                var inSerializer = new BitSerializer(inReader);
+                var inSerializer = new NetworkSerializer(inReader);
                 inSerializer.Serialize(ref inArrayA);
                 inSerializer.Serialize(ref inArrayB);
                 inSerializer.Serialize(ref inArrayC);
@@ -1451,16 +1451,16 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeQuaternionArray()
         {
-            using (var outStream = PooledBitStream.Get())
-            using (var outWriter = PooledBitWriter.Get(outStream))
-            using (var inStream = PooledBitStream.Get())
-            using (var inReader = PooledBitReader.Get(inStream))
+            using (var outStream = PooledNetworkStream.Get())
+            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var inStream = PooledNetworkStream.Get())
+            using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
                 Quaternion[] outArrayA = null;
                 Quaternion[] outArrayB = new Quaternion[0];
                 Quaternion[] outArrayC = { Quaternion.identity, Quaternion.Euler(new Vector3(30, 45, -60)), Quaternion.Euler(new Vector3(90, -90, 180)) };
-                var outSerializer = new BitSerializer(outWriter);
+                var outSerializer = new NetworkSerializer(outWriter);
                 outSerializer.Serialize(ref outArrayA);
                 outSerializer.Serialize(ref outArrayB);
                 outSerializer.Serialize(ref outArrayC);
@@ -1471,7 +1471,7 @@ namespace MLAPI.EditorTests
                 Quaternion[] inArrayC = default;
                 inStream.Write(outStream.ToArray());
                 inStream.Position = 0;
-                var inSerializer = new BitSerializer(inReader);
+                var inSerializer = new NetworkSerializer(inReader);
                 inSerializer.Serialize(ref inArrayA);
                 inSerializer.Serialize(ref inArrayB);
                 inSerializer.Serialize(ref inArrayC);
@@ -1489,10 +1489,10 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeRayArray()
         {
-            using (var outStream = PooledBitStream.Get())
-            using (var outWriter = PooledBitWriter.Get(outStream))
-            using (var inStream = PooledBitStream.Get())
-            using (var inReader = PooledBitReader.Get(inStream))
+            using (var outStream = PooledNetworkStream.Get())
+            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var inStream = PooledNetworkStream.Get())
+            using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
                 Ray[] outArrayA = null;
@@ -1503,7 +1503,7 @@ namespace MLAPI.EditorTests
                     new Ray(Vector3.zero, Vector3.left),
                     new Ray(Vector3.zero, Vector3.up)
                 };
-                var outSerializer = new BitSerializer(outWriter);
+                var outSerializer = new NetworkSerializer(outWriter);
                 outSerializer.Serialize(ref outArrayA);
                 outSerializer.Serialize(ref outArrayB);
                 outSerializer.Serialize(ref outArrayC);
@@ -1514,7 +1514,7 @@ namespace MLAPI.EditorTests
                 Ray[] inArrayC = default;
                 inStream.Write(outStream.ToArray());
                 inStream.Position = 0;
-                var inSerializer = new BitSerializer(inReader);
+                var inSerializer = new NetworkSerializer(inReader);
                 inSerializer.Serialize(ref inArrayA);
                 inSerializer.Serialize(ref inArrayB);
                 inSerializer.Serialize(ref inArrayC);
@@ -1529,10 +1529,10 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeRay2DArray()
         {
-            using (var outStream = PooledBitStream.Get())
-            using (var outWriter = PooledBitWriter.Get(outStream))
-            using (var inStream = PooledBitStream.Get())
-            using (var inReader = PooledBitReader.Get(inStream))
+            using (var outStream = PooledNetworkStream.Get())
+            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var inStream = PooledNetworkStream.Get())
+            using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
                 Ray2D[] outArrayA = null;
@@ -1543,7 +1543,7 @@ namespace MLAPI.EditorTests
                     new Ray2D(Vector2.zero, Vector2.left),
                     new Ray2D(Vector2.zero, Vector2.right)
                 };
-                var outSerializer = new BitSerializer(outWriter);
+                var outSerializer = new NetworkSerializer(outWriter);
                 outSerializer.Serialize(ref outArrayA);
                 outSerializer.Serialize(ref outArrayB);
                 outSerializer.Serialize(ref outArrayC);
@@ -1554,7 +1554,7 @@ namespace MLAPI.EditorTests
                 Ray2D[] inArrayC = default;
                 inStream.Write(outStream.ToArray());
                 inStream.Position = 0;
-                var inSerializer = new BitSerializer(inReader);
+                var inSerializer = new NetworkSerializer(inReader);
                 inSerializer.Serialize(ref inArrayA);
                 inSerializer.Serialize(ref inArrayB);
                 inSerializer.Serialize(ref inArrayC);
@@ -1569,16 +1569,16 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeEnumArray()
         {
-            using (var outStream = PooledBitStream.Get())
-            using (var outWriter = PooledBitWriter.Get(outStream))
-            using (var inStream = PooledBitStream.Get())
-            using (var inReader = PooledBitReader.Get(inStream))
+            using (var outStream = PooledNetworkStream.Get())
+            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var inStream = PooledNetworkStream.Get())
+            using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
                 EnumA[] outArrayA = null;
                 EnumB[] outArrayB = new EnumB[0];
                 EnumC[] outArrayC = { EnumC.U, EnumC.N, EnumC.I, EnumC.T, EnumC.Y, (EnumC)128 };
-                var outSerializer = new BitSerializer(outWriter);
+                var outSerializer = new NetworkSerializer(outWriter);
                 outSerializer.Serialize(ref outArrayA);
                 outSerializer.Serialize(ref outArrayB);
                 outSerializer.Serialize(ref outArrayC);
@@ -1589,7 +1589,7 @@ namespace MLAPI.EditorTests
                 EnumC[] inArrayC = default;
                 inStream.Write(outStream.ToArray());
                 inStream.Position = 0;
-                var inSerializer = new BitSerializer(inReader);
+                var inSerializer = new NetworkSerializer(inReader);
                 inSerializer.Serialize(ref inArrayA);
                 inSerializer.Serialize(ref inArrayB);
                 inSerializer.Serialize(ref inArrayC);

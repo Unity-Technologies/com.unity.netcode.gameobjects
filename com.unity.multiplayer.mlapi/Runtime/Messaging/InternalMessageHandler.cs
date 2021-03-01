@@ -11,8 +11,8 @@ using UnityEngine.SceneManagement;
 using System.Collections.Generic;
 using MLAPI.Messaging.Buffering;
 using MLAPI.Profiling;
+using MLAPI.Serialization;
 using Unity.Profiling;
-using BitStream = MLAPI.Serialization.BitStream;
 
 namespace MLAPI.Messaging
 {
@@ -42,7 +42,7 @@ namespace MLAPI.Messaging
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleConnectionRequest.Begin();
 #endif
-            using (PooledBitReader reader = PooledBitReader.Get(stream))
+            using (PooledNetworkReader reader = PooledNetworkReader.Get(stream))
             {
                 ulong configHash = reader.ReadUInt64Packed();
                 if (!NetworkManager.Singleton.NetworkConfig.CompareConfig(configHash))
@@ -72,7 +72,7 @@ namespace MLAPI.Messaging
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleConnectionApproved.Begin();
 #endif
-            using (PooledBitReader reader = PooledBitReader.Get(stream))
+            using (PooledNetworkReader reader = PooledNetworkReader.Get(stream))
             {
                 NetworkManager.Singleton.LocalClientId = reader.ReadUInt64Packed();
 
@@ -95,7 +95,7 @@ namespace MLAPI.Messaging
 
                 void DelayedSpawnAction(Stream continuationStream)
                 {
-                    using (PooledBitReader continuationReader = PooledBitReader.Get(continuationStream))
+                    using (PooledNetworkReader continuationReader = PooledNetworkReader.Get(continuationStream))
                     {
                         if (!NetworkManager.Singleton.NetworkConfig.EnableSceneManagement || NetworkManager.Singleton.NetworkConfig.UsePrefabSync)
                         {
@@ -185,7 +185,7 @@ namespace MLAPI.Messaging
                 {
                     UnityAction<Scene, Scene> onSceneLoaded = null;
 
-                    Serialization.BitStream continuationStream = new Serialization.BitStream();
+                    Serialization.NetworkStream continuationStream = new Serialization.NetworkStream();
                     continuationStream.CopyUnreadFrom(stream);
                     continuationStream.Position = 0;
 
@@ -217,7 +217,7 @@ namespace MLAPI.Messaging
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleAddObject.Begin();
 #endif
-            using (PooledBitReader reader = PooledBitReader.Get(stream))
+            using (PooledNetworkReader reader = PooledNetworkReader.Get(stream))
             {
                 bool isPlayerObject = reader.ReadBool();
                 ulong networkId = reader.ReadUInt64Packed();
@@ -295,7 +295,7 @@ namespace MLAPI.Messaging
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleDestroyObject.Begin();
 #endif
-            using (PooledBitReader reader = PooledBitReader.Get(stream))
+            using (PooledNetworkReader reader = PooledNetworkReader.Get(stream))
             {
                 ulong networkId = reader.ReadUInt64Packed();
                 NetworkSpawnManager.OnDestroyObject(networkId, true);
@@ -310,12 +310,12 @@ namespace MLAPI.Messaging
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleSwitchScene.Begin();
 #endif
-            using (PooledBitReader reader = PooledBitReader.Get(stream))
+            using (PooledNetworkReader reader = PooledNetworkReader.Get(stream))
             {
                 uint sceneIndex = reader.ReadUInt32Packed();
                 Guid switchSceneGuid = new Guid(reader.ReadByteArray());
 
-                Serialization.BitStream objectStream = new Serialization.BitStream();
+                Serialization.NetworkStream objectStream = new Serialization.NetworkStream();
                 objectStream.CopyUnreadFrom(stream);
                 objectStream.Position = 0;
 
@@ -331,7 +331,7 @@ namespace MLAPI.Messaging
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleClientSwitchSceneCompleted.Begin();
 #endif
-            using (PooledBitReader reader = PooledBitReader.Get(stream))
+            using (PooledNetworkReader reader = PooledNetworkReader.Get(stream))
             {
                 NetworkSceneManager.OnClientSwitchSceneCompleted(clientId, new Guid(reader.ReadByteArray()));
             }
@@ -345,7 +345,7 @@ namespace MLAPI.Messaging
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleChangeOwner.Begin();
 #endif
-            using (PooledBitReader reader = PooledBitReader.Get(stream))
+            using (PooledNetworkReader reader = PooledNetworkReader.Get(stream))
             {
                 ulong networkId = reader.ReadUInt64Packed();
                 ulong ownerClientId = reader.ReadUInt64Packed();
@@ -374,7 +374,7 @@ namespace MLAPI.Messaging
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleAddObjects.Begin();
 #endif
-            using (PooledBitReader reader = PooledBitReader.Get(stream))
+            using (PooledNetworkReader reader = PooledNetworkReader.Get(stream))
             {
                 ushort objectCount = reader.ReadUInt16Packed();
 
@@ -393,7 +393,7 @@ namespace MLAPI.Messaging
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleDestroyObjects.Begin();
 #endif
-            using (PooledBitReader reader = PooledBitReader.Get(stream))
+            using (PooledNetworkReader reader = PooledNetworkReader.Get(stream))
             {
                 ushort objectCount = reader.ReadUInt16Packed();
 
@@ -412,7 +412,7 @@ namespace MLAPI.Messaging
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleTimeSync.Begin();
 #endif
-            using (PooledBitReader reader = PooledBitReader.Get(stream))
+            using (PooledNetworkReader reader = PooledNetworkReader.Get(stream))
             {
                 float netTime = reader.ReadSinglePacked();
                 NetworkManager.Singleton.UpdateNetworkTime(clientId, netTime, receiveTime);
@@ -433,7 +433,7 @@ namespace MLAPI.Messaging
                 return;
             }
 
-            using (PooledBitReader reader = PooledBitReader.Get(stream))
+            using (PooledNetworkReader reader = PooledNetworkReader.Get(stream))
             {
                 ulong networkId = reader.ReadUInt64Packed();
                 ushort orderIndex = reader.ReadUInt16Packed();
@@ -477,7 +477,7 @@ namespace MLAPI.Messaging
                 return;
             }
 
-            using (PooledBitReader reader = PooledBitReader.Get(stream))
+            using (PooledNetworkReader reader = PooledNetworkReader.Get(stream))
             {
                 ulong networkId = reader.ReadUInt64Packed();
                 ushort orderIndex = reader.ReadUInt16Packed();
@@ -527,7 +527,7 @@ namespace MLAPI.Messaging
             PerformanceDataManager.Increment(ProfilerConstants.NumberOfRPCsReceived);
 
             var rpcQueueContainer = NetworkManager.Singleton.rpcQueueContainer;
-            rpcQueueContainer.AddQueueItemToInboundFrame(queueItemType, receiveTime, clientId, (BitStream)stream);
+            rpcQueueContainer.AddQueueItemToInboundFrame(queueItemType, receiveTime, clientId, (NetworkStream)stream);
         }
 
         internal static void HandleUnnamedMessage(ulong clientId, Stream stream)
@@ -550,7 +550,7 @@ namespace MLAPI.Messaging
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleNamedMessage.Begin();
 #endif
-            using (PooledBitReader reader = PooledBitReader.Get(stream))
+            using (PooledNetworkReader reader = PooledNetworkReader.Get(stream))
             {
                 ulong hash = reader.ReadUInt64Packed();
 
@@ -566,7 +566,7 @@ namespace MLAPI.Messaging
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleNetworkLog.Begin();
 #endif
-            using (PooledBitReader reader = PooledBitReader.Get(stream))
+            using (PooledNetworkReader reader = PooledNetworkReader.Get(stream))
             {
                 NetworkLog.LogType logType = (NetworkLog.LogType)reader.ReadByte();
                 string message = reader.ReadStringPacked().ToString();

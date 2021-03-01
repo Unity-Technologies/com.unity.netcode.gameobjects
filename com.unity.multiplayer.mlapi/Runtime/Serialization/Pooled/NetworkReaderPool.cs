@@ -5,19 +5,19 @@ using MLAPI.Logging;
 namespace MLAPI.Serialization.Pooled
 {
     /// <summary>
-    /// Static class containing PooledBitReaders
+    /// Static class containing PooledNetworkReaders
     /// </summary>
-    public static class BitReaderPool
+    public static class NetworkReaderPool
     {
         private static byte createdReaders = 0;
-        private static readonly Queue<PooledBitReader> readers = new Queue<PooledBitReader>();
+        private static readonly Queue<PooledNetworkReader> readers = new Queue<PooledNetworkReader>();
 
         /// <summary>
-        /// Retrieves a PooledBitReader
+        /// Retrieves a PooledNetworkReader
         /// </summary>
         /// <param name="stream">The stream the reader should read from</param>
-        /// <returns>A PooledBitReader</returns>
-        public static PooledBitReader GetReader(Stream stream)
+        /// <returns>A PooledNetworkReader</returns>
+        public static PooledNetworkReader GetReader(Stream stream)
         {
             if (readers.Count == 0)
             {
@@ -27,23 +27,26 @@ namespace MLAPI.Serialization.Pooled
                 }
                 else if (createdReaders < 255) createdReaders++;
 
-                return new PooledBitReader(stream);
+                return new PooledNetworkReader(stream);
             }
 
-            PooledBitReader reader = readers.Dequeue();
+            PooledNetworkReader reader = readers.Dequeue();
             reader.SetStream(stream);
 
             return reader;
         }
 
         /// <summary>
-        /// Puts a PooledBitReader back into the pool
+        /// Puts a PooledNetworkReader back into the pool
         /// </summary>
         /// <param name="reader">The reader to put in the pool</param>
-        public static void PutBackInPool(PooledBitReader reader)
+        public static void PutBackInPool(PooledNetworkReader reader)
         {
             if (readers.Count < 64) readers.Enqueue(reader);
-            else if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogInfo("BitReaderPool already has 64 queued. Throwing to GC. Did you forget to dispose?");
+            else if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+            {
+                NetworkLog.LogInfo($"{nameof(NetworkReaderPool)} already has 64 queued. Throwing to GC. Did you forget to dispose?");
+            }
         }
     }
 }

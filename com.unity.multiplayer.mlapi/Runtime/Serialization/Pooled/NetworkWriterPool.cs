@@ -5,19 +5,19 @@ using MLAPI.Logging;
 namespace MLAPI.Serialization.Pooled
 {
     /// <summary>
-    /// Static class containing PooledBitWriters
+    /// Static class containing PooledNetworkWriters
     /// </summary>
-    public static class BitWriterPool
+    public static class NetworkWriterPool
     {
         private static byte createdWriters = 0;
-        private static readonly Queue<PooledBitWriter> writers = new Queue<PooledBitWriter>();
+        private static readonly Queue<PooledNetworkWriter> writers = new Queue<PooledNetworkWriter>();
 
         /// <summary>
-        /// Retrieves a PooledBitWriter
+        /// Retrieves a PooledNetworkWriter
         /// </summary>
         /// <param name="stream">The stream the writer should write to</param>
-        /// <returns>A PooledBitWriter</returns>
-        public static PooledBitWriter GetWriter(Stream stream)
+        /// <returns>A PooledNetworkWriter</returns>
+        public static PooledNetworkWriter GetWriter(Stream stream)
         {
             if (writers.Count == 0)
             {
@@ -27,23 +27,26 @@ namespace MLAPI.Serialization.Pooled
                 }
                 else if (createdWriters < 255) createdWriters++;
 
-                return new PooledBitWriter(stream);
+                return new PooledNetworkWriter(stream);
             }
 
-            PooledBitWriter writer = writers.Dequeue();
+            PooledNetworkWriter writer = writers.Dequeue();
             writer.SetStream(stream);
 
             return writer;
         }
 
         /// <summary>
-        /// Puts a PooledBitWriter back into the pool
+        /// Puts a PooledNetworkWriter back into the pool
         /// </summary>
         /// <param name="writer">The writer to put in the pool</param>
-        public static void PutBackInPool(PooledBitWriter writer)
+        public static void PutBackInPool(PooledNetworkWriter writer)
         {
             if (writers.Count < 64) writers.Enqueue(writer);
-            else if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogInfo("BitWriterPool already has 64 queued. Throwing to GC. Did you forget to dispose?");
+            else if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+            {
+                NetworkLog.LogInfo($"{nameof(NetworkWriterPool)} already has 64 queued. Throwing to GC. Did you forget to dispose?");
+            }
         }
     }
 }

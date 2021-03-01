@@ -2,26 +2,26 @@ using System;
 using System.IO;
 using static MLAPI.Serialization.Arithmetic;
 
-
 namespace MLAPI.Serialization
 {
     /// <summary>
     /// A stream that can be used at the bit level
     /// </summary>
-    public class BitStream : Stream
+    public class NetworkStream : Stream
     {
-        const int initialCapacity = 16;
-        const float initialGrowthFactor = 2.0f;
-        private byte[] target;
+        private const int k_InitialCapacity = 16;
+        private const float k_InitialGrowthFactor = 2.0f;
+
+        private byte[] m_Target;
 
         /// <summary>
         /// A stream that supports writing data smaller than a single byte. This stream also has a built-in compression algorithm that can (optionally) be used to write compressed data.
         /// </summary>
         /// <param name="capacity">Initial capacity of buffer in bytes.</param>
         /// <param name="growthFactor">Factor by which buffer should grow when necessary.</param>
-        public BitStream(int capacity, float growthFactor)
+        public NetworkStream(int capacity, float growthFactor)
         {
-            target = new byte[capacity];
+            m_Target = new byte[capacity];
             GrowthFactor = growthFactor;
             Resizable = true;
         }
@@ -30,33 +30,34 @@ namespace MLAPI.Serialization
         /// A stream that supports writing data smaller than a single byte. This stream also has a built-in compression algorithm that can (optionally) be used to write compressed data.
         /// </summary>
         /// <param name="growthFactor">Factor by which buffer should grow when necessary.</param>
-        public BitStream(float growthFactor) : this(initialCapacity, growthFactor) { }
-        /// <summary>
-        /// A stream that supports writing data smaller than a single byte. This stream also has a built-in compression algorithm that can (optionally) be used to write compressed data.
-        /// </summary>
-        /// <param name="capacity"></param>
-        public BitStream(int capacity) : this(capacity, initialGrowthFactor) { }
+        public NetworkStream(float growthFactor) : this(k_InitialCapacity, growthFactor) { }
 
         /// <summary>
         /// A stream that supports writing data smaller than a single byte. This stream also has a built-in compression algorithm that can (optionally) be used to write compressed data.
         /// </summary>
-        public BitStream() : this(initialCapacity, initialGrowthFactor) { }
+        /// <param name="capacity"></param>
+        public NetworkStream(int capacity) : this(capacity, k_InitialGrowthFactor) { }
+
+        /// <summary>
+        /// A stream that supports writing data smaller than a single byte. This stream also has a built-in compression algorithm that can (optionally) be used to write compressed data.
+        /// </summary>
+        public NetworkStream() : this(k_InitialCapacity, k_InitialGrowthFactor) { }
 
         /// <summary>
         /// A stream that supports writing data smaller than a single byte. This stream also has a built-in compression algorithm that can (optionally) be used to write compressed data.
         /// NOTE: when using a pre-allocated buffer, the stream will not grow!
         /// </summary>
         /// <param name="target">Pre-allocated buffer to write to</param>
-        public BitStream(byte[] target)
+        public NetworkStream(byte[] target)
         {
-            this.target = target;
+            m_Target = target;
             Resizable = false;
             BitLength = (ulong)(target.Length << 3);
         }
 
         internal void SetTarget(byte[] target)
         {
-            this.target = target;
+            m_Target = target;
             BitLength = (ulong)(target.Length << 3);
             Position = 0;
         }
@@ -67,6 +68,7 @@ namespace MLAPI.Serialization
         public bool Resizable { get; }
 
         private float _growthFactor;
+
         /// <summary>
         /// Factor by which buffer should grow when necessary.
         /// </summary>
@@ -90,14 +92,14 @@ namespace MLAPI.Serialization
         /// <summary>
         /// Whether or not this stream can accept new data. NOTE: this will return true even if only fewer than 8 bits can be written!
         /// </summary>
-        public override bool CanWrite => !BitAligned || Position < target.LongLength || Resizable;
+        public override bool CanWrite => !BitAligned || Position < m_Target.LongLength || Resizable;
 
         /// <summary>
         /// Current buffer size. The buffer will not be resized (if possible) until Position is equal to Capacity and an attempt to write data is made.
         /// </summary>
         public long Capacity
         {
-            get => target.LongLength; // Optimized CeilingExact
+            get => m_Target.LongLength; // Optimized CeilingExact
             set
             {
                 if (value < Length) throw new ArgumentOutOfRangeException("New capcity too small!");
@@ -148,22 +150,18 @@ namespace MLAPI.Serialization
             SetCapacity((Capacity + 64) * (long)grow);
         }
         */
-
         private void Grow(long newContent)
         {
             long value = newContent + Capacity;
             long newCapacity = value;
 
-            if (newCapacity < 256)
-                newCapacity = 256;
+            if (newCapacity < 256) newCapacity = 256;
             // We are ok with this overflowing since the next statement will deal
             // with the cases where _capacity*2 overflows.
-            if (newCapacity < Capacity * 2)
-                newCapacity = Capacity * 2;
+            if (newCapacity < Capacity * 2) newCapacity = Capacity * 2;
             // We want to expand the array up to Array.MaxArrayLengthOneDimensional
             // And we want to give the user the value that they asked for
-            if ((uint)(Capacity * 2) > int.MaxValue)
-                newCapacity = value > int.MaxValue ? value : int.MaxValue;
+            if ((uint)(Capacity * 2) > int.MaxValue) newCapacity = value > int.MaxValue ? value : int.MaxValue;
 
             SetCapacity(newCapacity);
         }
@@ -176,13 +174,14 @@ namespace MLAPI.Serialization
         private byte ReadByteMisaligned()
         {
             int mod = (int)(BitPosition & 7);
-            return (byte)((target[(int)Position] >> mod) | (target[(int)(BitPosition += 8) >> 3] << (8 - mod)));
+            return (byte)((m_Target[(int)Position] >> mod) | (m_Target[(int)(BitPosition += 8) >> 3] << (8 - mod)));
         }
+
         /// <summary>
         /// Read an aligned byte from the buffer. It's recommended to not use this when the BitPosition is byte-misaligned.
         /// </summary>
         /// <returns>The byte stored at the current Position index</returns>
-        private byte ReadByteAligned() => target[Position++];
+        private byte ReadByteAligned() => m_Target[Position++];
 
         /// <summary>
         /// Read a byte as a byte. This is just for internal use so as to minimize casts (cuz they ugly af).
@@ -201,17 +200,16 @@ namespace MLAPI.Serialization
         /// </summary>
         /// <returns>The peeked byte</returns>
         public int PeekByte() =>
-            HasDataToRead ?
-                BitAligned ?
-                    target[Position] :
-                    (byte)((target[(int)Position] >> (int)(BitPosition & 7)) | (target[(int)(BitPosition + 8) >> 3] << (8 - (int)(BitPosition & 7)))) :
-                -1;
+            HasDataToRead
+                ? BitAligned ? m_Target[Position] :
+                (byte)((m_Target[(int)Position] >> (int)(BitPosition & 7)) | (m_Target[(int)(BitPosition + 8) >> 3] << (8 - (int)(BitPosition & 7))))
+                : -1;
 
         /// <summary>
         /// Read a single bit from the stream.
         /// </summary>
         /// <returns>A bit in bool format. (True represents 1, False represents 0)</returns>
-        public bool ReadBit() => (target[Position] & (1 << (int)(BitPosition++ & 7))) != 0;
+        public bool ReadBit() => (m_Target[Position] & (1 << (int)(BitPosition++ & 7))) != 0;
 
         /// <summary>
         /// Read a subset of the stream buffer and write the contents to the supplied buffer.
@@ -222,7 +220,7 @@ namespace MLAPI.Serialization
         /// <returns>Amount of bytes read.</returns>
         public override int Read(byte[] buffer, int offset, int count)
         {
-            int tLen = Math.Min(count, (int)(target.LongLength - Position) - ((BitPosition & 7) == 0 ? 0 : 1));
+            int tLen = Math.Min(count, (int)(m_Target.LongLength - Position) - ((BitPosition & 7) == 0 ? 0 : 1));
             for (int i = 0; i < tLen; ++i) buffer[offset + i] = _ReadByte();
             return tLen;
         }
@@ -237,17 +235,13 @@ namespace MLAPI.Serialization
         {
             return (long)((
                 BitPosition =
-                    (
-                    origin == SeekOrigin.Current ?
-                        offset > 0 ?
-                            Math.Min(BitPosition + ((ulong)offset << 3), (ulong)target.Length << 3) :
-                            (offset ^ SIGN_BIT_64) > Position ?
-                                0UL :
-                                BitPosition - (ulong)((offset ^ SIGN_BIT_64) << 3) :
-                    origin == SeekOrigin.Begin ?
-                        (ulong)Math.Max(0, offset) << 3 :
-                        (ulong)Math.Max(target.Length - offset, 0) << 3
-                    )) >> 3) + (long)((BitPosition & 1UL) | ((BitPosition >> 1) & 1UL) | ((BitPosition >> 2) & 1UL));
+                (
+                    origin == SeekOrigin.Current ? offset > 0 ? Math.Min(BitPosition + ((ulong)offset << 3), (ulong)m_Target.Length << 3) :
+                    (offset ^ SIGN_BIT_64) > Position ? 0UL :
+                    BitPosition - (ulong)((offset ^ SIGN_BIT_64) << 3) :
+                    origin == SeekOrigin.Begin ? (ulong)Math.Max(0, offset) << 3 :
+                    (ulong)Math.Max(m_Target.Length - offset, 0) << 3
+                )) >> 3) + (long)((BitPosition & 1UL) | ((BitPosition >> 1) & 1UL) | ((BitPosition >> 2) & 1UL));
         }
 
         /// <summary>
@@ -258,10 +252,10 @@ namespace MLAPI.Serialization
         {
             if (!Resizable) throw new NotSupportedException("Can't resize non resizable buffer"); // Don't do shit because fuck you (comment by @GabrielTofvesson -TwoTen)
             byte[] newTarg = new byte[value];
-            long len = Math.Min(value, target.LongLength);
-            Buffer.BlockCopy(target, 0, newTarg, 0, (int)len);
-            if (value < target.LongLength) BitPosition = (ulong)value << 3;
-            target = newTarg;
+            long len = Math.Min(value, m_Target.LongLength);
+            Buffer.BlockCopy(m_Target, 0, newTarg, 0, (int)len);
+            if (value < m_Target.LongLength) BitPosition = (ulong)value << 3;
+            m_Target = newTarg;
         }
 
         /// <summary>
@@ -287,15 +281,16 @@ namespace MLAPI.Serialization
             // Check bit alignment. If misaligned, each byte written has to be misaligned
             if (BitAligned)
             {
-                if (Position + count >= target.Length) Grow(count);
-                Buffer.BlockCopy(buffer, offset, target, (int)Position, count);
+                if (Position + count >= m_Target.Length) Grow(count);
+                Buffer.BlockCopy(buffer, offset, m_Target, (int)Position, count);
                 Position += count;
             }
             else
             {
-                if (Position + count + 1 >= target.Length) Grow(count);
+                if (Position + count + 1 >= m_Target.Length) Grow(count);
                 for (int i = 0; i < count; ++i) _WriteMisaligned(buffer[offset + i]);
             }
+
             if (BitPosition > BitLength) BitLength = BitPosition;
         }
 
@@ -308,15 +303,16 @@ namespace MLAPI.Serialization
             // Check bit alignment. If misaligned, each byte written has to be misaligned
             if (BitAligned)
             {
-                if (Position + 1 >= target.Length) Grow(1);
-                target[Position] = value;
+                if (Position + 1 >= m_Target.Length) Grow(1);
+                m_Target[Position] = value;
                 Position += 1;
             }
             else
             {
-                if (Position + 1 + 1 >= target.Length) Grow(1);
+                if (Position + 1 + 1 >= m_Target.Length) Grow(1);
                 _WriteMisaligned(value);
             }
+
             if (BitPosition > BitLength) BitLength = BitPosition;
         }
 
@@ -328,8 +324,8 @@ namespace MLAPI.Serialization
         {
             int off = (int)(BitPosition & 7);
             int shift1 = 8 - off;
-            target[Position + 1] = (byte)((target[Position + 1] & (0xFF << off)) | (value >> shift1));
-            target[Position] = (byte)((target[Position] & (0xFF >> shift1)) | (value << off));
+            m_Target[Position + 1] = (byte)((m_Target[Position + 1] & (0xFF << off)) | (value >> shift1));
+            m_Target[Position] = (byte)((m_Target[Position] & (0xFF >> shift1)) | (value << off));
 
             BitPosition += 8;
         }
@@ -340,24 +336,27 @@ namespace MLAPI.Serialization
         /// </summary>
         /// <param name="value">Value to write</param>
         private void _WriteIntByte(int value) => _WriteByte((byte)value);
+
         /// <summary>
         /// Write a byte (in a ulong format) to the stream. This does not update the current Length of the stream.
         /// </summary>
         /// <param name="byteValue">Value to write</param>
         private void _WriteULongByte(ulong byteValue) => _WriteByte((byte)byteValue);
+
         /// <summary>
         /// Write a byte to the stream. This does not update the current Length of the stream.
         /// </summary>
         /// <param name="value">Value to write</param>
         private void _WriteByte(byte value)
         {
-            if (Div8Ceil(BitPosition) == target.LongLength) Grow(1);
+            if (Div8Ceil(BitPosition) == m_Target.LongLength) Grow(1);
             if (BitAligned)
             {
-                target[Position] = value;
+                m_Target[Position] = value;
                 BitPosition += 8;
             }
             else _WriteMisaligned(value);
+
             UpdateLength();
         }
 
@@ -373,11 +372,11 @@ namespace MLAPI.Serialization
         /// <param name="bit">Value of the bit. True represents 1, False represents 0</param>
         public void WriteBit(bool bit)
         {
-            if (BitAligned && Position == target.Length) Grow(1);
+            if (BitAligned && Position == m_Target.Length) Grow(1);
             int offset = (int)(BitPosition & 7);
             long pos = Position;
             ++BitPosition;
-            target[pos] = (byte)(bit ? (target[pos] & ~(1 << offset)) | (1 << offset) : (target[pos] & ~(1 << offset)));
+            m_Target[pos] = (byte)(bit ? (m_Target[pos] & ~(1 << offset)) | (1 << offset) : (m_Target[pos] & ~(1 << offset)));
             UpdateLength();
         }
 
@@ -388,7 +387,7 @@ namespace MLAPI.Serialization
         /// <param name="count">How many bytes to read. Set to value less than one to read until ReadByte returns -1</param>
         public void CopyFrom(Stream s, int count = -1)
         {
-            if (s is BitStream b) Write(b.target, 0, count < 0 ? (int)b.Length : count);
+            if (s is NetworkStream b) Write(b.m_Target, 0, count < 0 ? (int)b.Length : count);
             else
             {
                 long currentPosition = s.Position;
@@ -415,7 +414,7 @@ namespace MLAPI.Serialization
         public void CopyTo(Stream stream, int count = -1)
 #endif
         {
-            stream.Write(target, 0, count < 0 ? (int) Length : count);
+            stream.Write(m_Target, 0, count < 0 ? (int)Length : count);
         }
 
         /// <summary>
@@ -429,21 +428,20 @@ namespace MLAPI.Serialization
 
             int read;
             bool readToEnd = count < 0;
-            while ((readToEnd || count-- > 0) && (read = s.ReadByte()) != -1)
-                _WriteIntByte(read);
+            while ((readToEnd || count-- > 0) && (read = s.ReadByte()) != -1) _WriteIntByte(read);
             UpdateLength();
 
             s.Position = currentPosition;
         }
 
-        // TODO: Implement CopyFrom() for BitStream with bitCount parameter
+        // TODO: Implement CopyFrom() for NetworkStream with bitCount parameter
         /// <summary>
-        /// Copys the bits from the provided BitStream
+        /// Copys the bits from the provided NetworkStream
         /// </summary>
         /// <param name="stream">The stream to copy from</param>
         /// <param name="dataCount">The amount of data evel</param>
         /// <param name="copyBits">Whether or not to copy at the bit level rather than the byte level</param>
-        public void CopyFrom(BitStream stream, int dataCount, bool copyBits)
+        public void CopyFrom(NetworkStream stream, int dataCount, bool copyBits)
         {
             if (!copyBits)
             {
@@ -465,11 +463,12 @@ namespace MLAPI.Serialization
         {
             if (BitPosition > BitLength) BitLength = BitPosition;
         }
+
         /// <summary>
         /// Get the internal buffer being written to by this stream.
         /// </summary>
         /// <returns></returns>
-        public byte[] GetBuffer() => target;
+        public byte[] GetBuffer() => m_Target;
 
         /// <summary>
         /// Creates a copy of the internal buffer. This only contains the used bytes
@@ -478,7 +477,7 @@ namespace MLAPI.Serialization
         public byte[] ToArray()
         {
             byte[] copy = new byte[Length];
-            Buffer.BlockCopy(target, 0, copy, 0, (int)Length);
+            Buffer.BlockCopy(m_Target, 0, copy, 0, (int)Length);
             return copy;
         }
 
@@ -508,6 +507,6 @@ namespace MLAPI.Serialization
         /// Returns hex encoded version of the buffer
         /// </summary>
         /// <returns>Hex encoded version of the buffer</returns>
-        public override string ToString() => BitConverter.ToString(target, 0, (int)Length);
+        public override string ToString() => BitConverter.ToString(m_Target, 0, (int)Length);
     }
 }

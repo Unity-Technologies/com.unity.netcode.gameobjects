@@ -138,7 +138,7 @@ namespace MLAPI.NetworkVariable
         /// <param name="stream">The stream to write the value to</param>
         public void WriteDelta(Stream stream)
         {
-            using (var writer = PooledBitWriter.Get(stream))
+            using (var writer = PooledNetworkWriter.Get(stream))
             {
                 // write the network tick at which this NetworkVariable was modified remotely
                 // this will allow lag-compensation
@@ -182,7 +182,7 @@ namespace MLAPI.NetworkVariable
             LocalTick = localTick;
             RemoteTick = remoteTick;
 
-            using (var reader = PooledBitReader.Get(stream))
+            using (var reader = PooledNetworkReader.Get(stream))
             {
                 T previousValue = InternalValue;
                 InternalValue = (T)reader.ReadObjectPacked(typeof(T));
@@ -210,7 +210,7 @@ namespace MLAPI.NetworkVariable
         {
             // Store the local tick at which this NetworkVariable was modified
             LocalTick = NetworkBehaviour.currentTick;
-            using (PooledBitWriter writer = PooledBitWriter.Get(stream))
+            using (PooledNetworkWriter writer = PooledNetworkWriter.Get(stream))
             {
                 writer.WriteObjectPacked(InternalValue); //BOX
             }

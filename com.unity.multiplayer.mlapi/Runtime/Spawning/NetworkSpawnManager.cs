@@ -187,9 +187,9 @@ namespace MLAPI.Spawning
 
 			netObject._ownerClientId = null;
 
-            using (PooledBitStream stream = PooledBitStream.Get())
+            using (PooledNetworkStream stream = PooledNetworkStream.Get())
             {
-                using (PooledBitWriter writer = PooledBitWriter.Get(stream))
+                using (PooledNetworkWriter writer = PooledNetworkWriter.Get(stream))
                 {
                     writer.WriteUInt64Packed(netObject.NetworkId);
                     writer.WriteUInt64Packed(netObject.OwnerClientId);
@@ -223,9 +223,9 @@ namespace MLAPI.Spawning
             NetworkManager.Singleton.ConnectedClients[clientId].OwnedObjects.Add(netObject);
             netObject.OwnerClientId = clientId;
 
-            using (PooledBitStream stream = PooledBitStream.Get())
+            using (PooledNetworkStream stream = PooledNetworkStream.Get())
             {
-                using (PooledBitWriter writer = PooledBitWriter.Get(stream))
+                using (PooledNetworkWriter writer = PooledNetworkWriter.Get(stream))
                 {
                     writer.WriteUInt64Packed(netObject.NetworkId);
                     writer.WriteUInt64Packed(clientId);
@@ -390,7 +390,7 @@ namespace MLAPI.Spawning
 
             if (readPayload)
             {
-                using (PooledBitStream payloadStream = PooledBitStream.Get())
+                using (PooledNetworkStream payloadStream = PooledNetworkStream.Get())
                 {
                     payloadStream.CopyUnreadFrom(dataStream, payloadLength);
                     dataStream.Position += payloadLength;
@@ -407,7 +407,7 @@ namespace MLAPI.Spawning
         internal static void SendSpawnCallForObject(ulong clientId, NetworkObject netObject, Stream payload)
         {
             //Currently, if this is called and the clientId (destination) is the server's client Id, this case
-            //will be checked within the below Send function.  To avoid unwarranted allocation of a PooledBitStream
+            //will be checked within the below Send function.  To avoid unwarranted allocation of a PooledNetworkStream
             //placing this check here. [NSS]
             if (NetworkManager.Singleton.IsServer && clientId == NetworkManager.Singleton.ServerClientId)
             {
@@ -416,7 +416,7 @@ namespace MLAPI.Spawning
 
             RpcQueueContainer rpcQueueContainer = NetworkManager.Singleton.rpcQueueContainer;
 
-            var stream = PooledBitStream.Get();
+            var stream = PooledNetworkStream.Get();
             WriteSpawnCallForObject(stream, clientId, netObject, payload);
 
             var queueItem = new RpcFrameQueueItem
@@ -431,9 +431,9 @@ namespace MLAPI.Spawning
             rpcQueueContainer.AddToInternalMLAPISendQueue(queueItem);
         }
 
-        internal static void WriteSpawnCallForObject(Serialization.BitStream stream, ulong clientId, NetworkObject netObject, Stream payload)
+        internal static void WriteSpawnCallForObject(Serialization.NetworkStream stream, ulong clientId, NetworkObject netObject, Stream payload)
         {
-            using (PooledBitWriter writer = PooledBitWriter.Get(stream))
+            using (PooledNetworkWriter writer = PooledNetworkWriter.Get(stream))
             {
                 writer.WriteBool(netObject.IsPlayerObject);
                 writer.WriteUInt64Packed(netObject.NetworkId);
@@ -685,8 +685,8 @@ namespace MLAPI.Spawning
                         // As long as we have any remaining clients, then notify of the object being destroy.
                         if (NetworkManager.Singleton.ConnectedClientsList.Count > 0)
                         {
-                            var stream = PooledBitStream.Get();
-                            using (var writer = PooledBitWriter.Get(stream))
+                            var stream = PooledNetworkStream.Get();
+                            using (var writer = PooledNetworkWriter.Get(stream))
                             {
                                 writer.WriteUInt64Packed(networkId);
 

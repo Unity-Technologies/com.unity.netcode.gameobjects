@@ -13,7 +13,6 @@ using MLAPI.Internal;
 using MLAPI.Profiling;
 using MLAPI.Serialization;
 using MLAPI.Transports;
-using BitStream = MLAPI.Serialization.BitStream;
 using MLAPI.Connection;
 using MLAPI.LagCompensation;
 using MLAPI.Messaging;
@@ -39,10 +38,10 @@ namespace MLAPI
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
 #if UNITY_2020_2_OR_NEWER
         // RuntimeAccessModifiersILPP will make this `public`
-        internal static readonly Dictionary<uint, Action<NetworkBehaviour, BitSerializer, __RpcParams>> __ntable = new Dictionary<uint, Action<NetworkBehaviour, BitSerializer, __RpcParams>>();
+        internal static readonly Dictionary<uint, Action<NetworkBehaviour, NetworkSerializer, __RpcParams>> __ntable = new Dictionary<uint, Action<NetworkBehaviour, NetworkSerializer, __RpcParams>>();
 #else
         [Obsolete("Please do not use, will no longer be exposed in the future versions (framework internal)")]
-        public static readonly Dictionary<uint, Action<NetworkBehaviour, BitSerializer, __RpcParams>> __ntable = new Dictionary<uint, Action<NetworkBehaviour, BitSerializer, __RpcParams>>();
+        public static readonly Dictionary<uint, Action<NetworkBehaviour, NetworkSerializer, __RpcParams>> __ntable = new Dictionary<uint, Action<NetworkBehaviour, NetworkSerializer, __RpcParams>>();
 #endif
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
@@ -245,7 +244,7 @@ namespace MLAPI
         /// <param name="stream">The message stream containing the data</param>
         /// <param name="channel">The channel to send the data on</param>
         [Obsolete("Use CustomMessagingManager.SendUnnamedMessage instead")]
-        public void SendCustomMessage(List<ulong> clientIds, BitStream stream, Channel channel = Channel.Internal)
+        public void SendCustomMessage(List<ulong> clientIds, NetworkStream stream, Channel channel = Channel.Internal)
         {
             if (!IsServer)
             {
@@ -263,7 +262,7 @@ namespace MLAPI
         /// <param name="stream">The message stream containing the data</param>
         /// <param name="channel">The channel tos end the data on</param>
         [Obsolete("Use CustomMessagingManager.SendUnnamedMessage instead")]
-        public void SendCustomMessage(ulong clientId, BitStream stream, Channel channel = Channel.Internal)
+        public void SendCustomMessage(ulong clientId, NetworkStream stream, Channel channel = Channel.Internal)
         {
             InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_UNNAMED_MESSAGE, channel, stream);
         }
@@ -846,9 +845,9 @@ namespace MLAPI
 
         internal void SendConnectionRequest()
         {
-            using (PooledBitStream stream = PooledBitStream.Get())
+            using (PooledNetworkStream stream = PooledNetworkStream.Get())
             {
-                using (PooledBitWriter writer = PooledBitWriter.Get(stream))
+                using (PooledNetworkWriter writer = PooledNetworkWriter.Get(stream))
                 {
                     writer.WriteUInt64Packed(NetworkConfig.GetConfig());
 
@@ -949,7 +948,7 @@ namespace MLAPI
             }
         }
 
-        private readonly BitStream m_InputStreamWrapper = new BitStream(new byte[0]);
+        private readonly NetworkStream m_InputStreamWrapper = new NetworkStream(new byte[0]);
         private readonly RpcBatcher m_RpcBatcher = new RpcBatcher();
 
         internal void HandleIncomingData(ulong clientId, Channel channel, ArraySegment<byte> data, float receiveTime, bool allowBuffer)
@@ -1114,7 +1113,7 @@ namespace MLAPI
 #endif
         }
 
-        private static void ReceiveCallback(BitStream messageStream, RpcQueueContainer.QueueItemType messageType, ulong clientId, float receiveTime)
+        private static void ReceiveCallback(NetworkStream messageStream, RpcQueueContainer.QueueItemType messageType, ulong clientId, float receiveTime)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (messageType == RpcQueueContainer.QueueItemType.ServerRpc)
@@ -1187,7 +1186,7 @@ namespace MLAPI
                         break;
                 }
 
-                __ntable[networkMethodId](networkBehaviour, new BitSerializer(queueItem.streamReader), rpcParams);
+                __ntable[networkMethodId](networkBehaviour, new NetworkSerializer(queueItem.streamReader), rpcParams);
             }
 #pragma warning restore 618
 
@@ -1321,9 +1320,9 @@ namespace MLAPI
             s_SyncTime.Begin();
 #endif
             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogInfo("Syncing Time To Clients");
-            using (PooledBitStream stream = PooledBitStream.Get())
+            using (PooledNetworkStream stream = PooledNetworkStream.Get())
             {
-                using (PooledBitWriter writer = PooledBitWriter.Get(stream))
+                using (PooledNetworkWriter writer = PooledNetworkWriter.Get(stream))
                 {
                     writer.WriteSinglePacked(Time.realtimeSinceStartup);
                     InternalMessageSender.Send(MLAPIConstants.MLAPI_TIME_SYNC, Channel.SyncChannel, stream);
@@ -1376,9 +1375,9 @@ namespace MLAPI
                     }
                 }
 
-                using (PooledBitStream stream = PooledBitStream.Get())
+                using (PooledNetworkStream stream = PooledNetworkStream.Get())
                 {
-                    using (PooledBitWriter writer = PooledBitWriter.Get(stream))
+                    using (PooledNetworkWriter writer = PooledNetworkWriter.Get(stream))
                     {
                         writer.WriteUInt64Packed(clientId);
 
@@ -1474,9 +1473,9 @@ namespace MLAPI
                     if (clientPair.Key == clientId || ConnectedClients[clientId].PlayerObject == null || !ConnectedClients[clientId].PlayerObject.observers.Contains(clientPair.Key))
                         continue; //The new client.
 
-                    using (PooledBitStream stream = PooledBitStream.Get())
+                    using (PooledNetworkStream stream = PooledNetworkStream.Get())
                     {
-                        using (PooledBitWriter writer = PooledBitWriter.Get(stream))
+                        using (PooledNetworkWriter writer = PooledNetworkWriter.Get(stream))
                         {
                             writer.WriteBool(true);
                             writer.WriteUInt64Packed(ConnectedClients[clientId].PlayerObject.NetworkId);

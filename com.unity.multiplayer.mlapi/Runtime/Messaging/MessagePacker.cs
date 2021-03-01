@@ -8,9 +8,9 @@ namespace MLAPI.Internal
     internal static class MessagePacker
     {
         // This method is responsible for unwrapping a message, that is extracting the messagebody.
-        internal static BitStream UnwrapMessage(BitStream inputStream, out byte messageType)
+        internal static NetworkStream UnwrapMessage(NetworkStream inputStream, out byte messageType)
         {
-            using (var inputHeaderReader = PooledBitReader.Get(inputStream))
+            using (var inputHeaderReader = PooledNetworkReader.Get(inputStream))
             {
                 if (inputStream.Length < 1)
                 {
@@ -25,11 +25,11 @@ namespace MLAPI.Internal
             }
         }
 
-        internal static BitStream WrapMessage(byte messageType, BitStream messageBody)
+        internal static NetworkStream WrapMessage(byte messageType, NetworkStream messageBody)
         {
-            var outStream = PooledBitStream.Get();
+            var outStream = PooledNetworkStream.Get();
 
-            using (var outWriter = PooledBitWriter.Get(outStream))
+            using (var outWriter = PooledNetworkWriter.Get(outStream))
             {
                 outWriter.WriteByte(messageType);
                 outStream.Write(messageBody.GetBuffer(), 0, (int)messageBody.Length);

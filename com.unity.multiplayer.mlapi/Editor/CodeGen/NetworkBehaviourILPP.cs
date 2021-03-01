@@ -98,49 +98,49 @@ namespace MLAPI.Editor.CodeGen
         private FieldReference ServerRpcParams_Receive_FieldRef;
         private FieldReference ServerRpcParams_Receive_SenderClientId_FieldRef;
         private TypeReference ClientRpcParams_TypeRef;
-        private TypeReference BitSerializer_TypeRef;
-        private MethodReference BitSerializer_SerializeBool_MethodRef;
-        private MethodReference BitSerializer_SerializeChar_MethodRef;
-        private MethodReference BitSerializer_SerializeSbyte_MethodRef;
-        private MethodReference BitSerializer_SerializeByte_MethodRef;
-        private MethodReference BitSerializer_SerializeShort_MethodRef;
-        private MethodReference BitSerializer_SerializeUshort_MethodRef;
-        private MethodReference BitSerializer_SerializeInt_MethodRef;
-        private MethodReference BitSerializer_SerializeUint_MethodRef;
-        private MethodReference BitSerializer_SerializeLong_MethodRef;
-        private MethodReference BitSerializer_SerializeUlong_MethodRef;
-        private MethodReference BitSerializer_SerializeFloat_MethodRef;
-        private MethodReference BitSerializer_SerializeDouble_MethodRef;
-        private MethodReference BitSerializer_SerializeString_MethodRef;
-        private MethodReference BitSerializer_SerializeColor_MethodRef;
-        private MethodReference BitSerializer_SerializeColor32_MethodRef;
-        private MethodReference BitSerializer_SerializeVector2_MethodRef;
-        private MethodReference BitSerializer_SerializeVector3_MethodRef;
-        private MethodReference BitSerializer_SerializeVector4_MethodRef;
-        private MethodReference BitSerializer_SerializeQuaternion_MethodRef;
-        private MethodReference BitSerializer_SerializeRay_MethodRef;
-        private MethodReference BitSerializer_SerializeRay2D_MethodRef;
-        private MethodReference BitSerializer_SerializeBoolArray_MethodRef;
-        private MethodReference BitSerializer_SerializeCharArray_MethodRef;
-        private MethodReference BitSerializer_SerializeSbyteArray_MethodRef;
-        private MethodReference BitSerializer_SerializeByteArray_MethodRef;
-        private MethodReference BitSerializer_SerializeShortArray_MethodRef;
-        private MethodReference BitSerializer_SerializeUshortArray_MethodRef;
-        private MethodReference BitSerializer_SerializeIntArray_MethodRef;
-        private MethodReference BitSerializer_SerializeUintArray_MethodRef;
-        private MethodReference BitSerializer_SerializeLongArray_MethodRef;
-        private MethodReference BitSerializer_SerializeUlongArray_MethodRef;
-        private MethodReference BitSerializer_SerializeFloatArray_MethodRef;
-        private MethodReference BitSerializer_SerializeDoubleArray_MethodRef;
-        private MethodReference BitSerializer_SerializeStringArray_MethodRef;
-        private MethodReference BitSerializer_SerializeColorArray_MethodRef;
-        private MethodReference BitSerializer_SerializeColor32Array_MethodRef;
-        private MethodReference BitSerializer_SerializeVector2Array_MethodRef;
-        private MethodReference BitSerializer_SerializeVector3Array_MethodRef;
-        private MethodReference BitSerializer_SerializeVector4Array_MethodRef;
-        private MethodReference BitSerializer_SerializeQuaternionArray_MethodRef;
-        private MethodReference BitSerializer_SerializeRayArray_MethodRef;
-        private MethodReference BitSerializer_SerializeRay2DArray_MethodRef;
+        private TypeReference NetworkSerializer_TypeRef;
+        private MethodReference NetworkSerializer_SerializeBool_MethodRef;
+        private MethodReference NetworkSerializer_SerializeChar_MethodRef;
+        private MethodReference NetworkSerializer_SerializeSbyte_MethodRef;
+        private MethodReference NetworkSerializer_SerializeByte_MethodRef;
+        private MethodReference NetworkSerializer_SerializeShort_MethodRef;
+        private MethodReference NetworkSerializer_SerializeUshort_MethodRef;
+        private MethodReference NetworkSerializer_SerializeInt_MethodRef;
+        private MethodReference NetworkSerializer_SerializeUint_MethodRef;
+        private MethodReference NetworkSerializer_SerializeLong_MethodRef;
+        private MethodReference NetworkSerializer_SerializeUlong_MethodRef;
+        private MethodReference NetworkSerializer_SerializeFloat_MethodRef;
+        private MethodReference NetworkSerializer_SerializeDouble_MethodRef;
+        private MethodReference NetworkSerializer_SerializeString_MethodRef;
+        private MethodReference NetworkSerializer_SerializeColor_MethodRef;
+        private MethodReference NetworkSerializer_SerializeColor32_MethodRef;
+        private MethodReference NetworkSerializer_SerializeVector2_MethodRef;
+        private MethodReference NetworkSerializer_SerializeVector3_MethodRef;
+        private MethodReference NetworkSerializer_SerializeVector4_MethodRef;
+        private MethodReference NetworkSerializer_SerializeQuaternion_MethodRef;
+        private MethodReference NetworkSerializer_SerializeRay_MethodRef;
+        private MethodReference NetworkSerializer_SerializeRay2D_MethodRef;
+        private MethodReference NetworkSerializer_SerializeBoolArray_MethodRef;
+        private MethodReference NetworkSerializer_SerializeCharArray_MethodRef;
+        private MethodReference NetworkSerializer_SerializeSbyteArray_MethodRef;
+        private MethodReference NetworkSerializer_SerializeByteArray_MethodRef;
+        private MethodReference NetworkSerializer_SerializeShortArray_MethodRef;
+        private MethodReference NetworkSerializer_SerializeUshortArray_MethodRef;
+        private MethodReference NetworkSerializer_SerializeIntArray_MethodRef;
+        private MethodReference NetworkSerializer_SerializeUintArray_MethodRef;
+        private MethodReference NetworkSerializer_SerializeLongArray_MethodRef;
+        private MethodReference NetworkSerializer_SerializeUlongArray_MethodRef;
+        private MethodReference NetworkSerializer_SerializeFloatArray_MethodRef;
+        private MethodReference NetworkSerializer_SerializeDoubleArray_MethodRef;
+        private MethodReference NetworkSerializer_SerializeStringArray_MethodRef;
+        private MethodReference NetworkSerializer_SerializeColorArray_MethodRef;
+        private MethodReference NetworkSerializer_SerializeColor32Array_MethodRef;
+        private MethodReference NetworkSerializer_SerializeVector2Array_MethodRef;
+        private MethodReference NetworkSerializer_SerializeVector3Array_MethodRef;
+        private MethodReference NetworkSerializer_SerializeVector4Array_MethodRef;
+        private MethodReference NetworkSerializer_SerializeQuaternionArray_MethodRef;
+        private MethodReference NetworkSerializer_SerializeRayArray_MethodRef;
+        private MethodReference NetworkSerializer_SerializeRay2DArray_MethodRef;
 
         private const string k_NetworkManager_LocalClientId = nameof(NetworkManager.LocalClientId);
         private const string k_NetworkManager_IsListening = nameof(NetworkManager.IsListening);
@@ -250,7 +250,7 @@ namespace MLAPI.Editor.CodeGen
             }
 
 #pragma warning disable 618
-            var networkHandlerDelegateType = typeof(Action<NetworkBehaviour, BitSerializer, __RpcParams>);
+            var networkHandlerDelegateType = typeof(Action<NetworkBehaviour, NetworkSerializer, __RpcParams>);
             NetworkHandlerDelegateCtor_MethodRef = moduleDefinition.ImportReference(networkHandlerDelegateType.GetConstructor(new[] { typeof(object), typeof(IntPtr) }));
 
             var rpcParamsType = typeof(__RpcParams);
@@ -294,59 +294,59 @@ namespace MLAPI.Editor.CodeGen
             var clientRpcParamsType = typeof(ClientRpcParams);
             ClientRpcParams_TypeRef = moduleDefinition.ImportReference(clientRpcParamsType);
 
-            var bitSerializerType = typeof(BitSerializer);
-            BitSerializer_TypeRef = moduleDefinition.ImportReference(bitSerializerType);
-            foreach (var methodInfo in bitSerializerType.GetMethods())
+            var networkSerializerType = typeof(NetworkSerializer);
+            NetworkSerializer_TypeRef = moduleDefinition.ImportReference(networkSerializerType);
+            foreach (var methodInfo in networkSerializerType.GetMethods())
             {
-                if (methodInfo.Name != nameof(BitSerializer.Serialize)) continue;
+                if (methodInfo.Name != nameof(NetworkSerializer.Serialize)) continue;
                 var methodParams = methodInfo.GetParameters();
                 if (methodParams.Length != 1) continue;
                 var paramType = methodParams[0].ParameterType;
                 if (paramType.IsByRef == false) continue;
                 var paramTypeName = paramType.Name;
 
-                if (paramTypeName == typeof(bool).MakeByRefType().Name) BitSerializer_SerializeBool_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(char).MakeByRefType().Name) BitSerializer_SerializeChar_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(sbyte).MakeByRefType().Name) BitSerializer_SerializeSbyte_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(byte).MakeByRefType().Name) BitSerializer_SerializeByte_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(short).MakeByRefType().Name) BitSerializer_SerializeShort_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(ushort).MakeByRefType().Name) BitSerializer_SerializeUshort_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(int).MakeByRefType().Name) BitSerializer_SerializeInt_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(uint).MakeByRefType().Name) BitSerializer_SerializeUint_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(long).MakeByRefType().Name) BitSerializer_SerializeLong_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(ulong).MakeByRefType().Name) BitSerializer_SerializeUlong_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(float).MakeByRefType().Name) BitSerializer_SerializeFloat_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(double).MakeByRefType().Name) BitSerializer_SerializeDouble_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(string).MakeByRefType().Name) BitSerializer_SerializeString_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(Color).MakeByRefType().Name) BitSerializer_SerializeColor_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(Color32).MakeByRefType().Name) BitSerializer_SerializeColor32_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(Vector2).MakeByRefType().Name) BitSerializer_SerializeVector2_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(Vector3).MakeByRefType().Name) BitSerializer_SerializeVector3_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(Vector4).MakeByRefType().Name) BitSerializer_SerializeVector4_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(Quaternion).MakeByRefType().Name) BitSerializer_SerializeQuaternion_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(Ray).MakeByRefType().Name) BitSerializer_SerializeRay_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(Ray2D).MakeByRefType().Name) BitSerializer_SerializeRay2D_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(bool[]).MakeByRefType().Name) BitSerializer_SerializeBoolArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(char[]).MakeByRefType().Name) BitSerializer_SerializeCharArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(sbyte[]).MakeByRefType().Name) BitSerializer_SerializeSbyteArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(byte[]).MakeByRefType().Name) BitSerializer_SerializeByteArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(short[]).MakeByRefType().Name) BitSerializer_SerializeShortArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(ushort[]).MakeByRefType().Name) BitSerializer_SerializeUshortArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(int[]).MakeByRefType().Name) BitSerializer_SerializeIntArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(uint[]).MakeByRefType().Name) BitSerializer_SerializeUintArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(long[]).MakeByRefType().Name) BitSerializer_SerializeLongArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(ulong[]).MakeByRefType().Name) BitSerializer_SerializeUlongArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(float[]).MakeByRefType().Name) BitSerializer_SerializeFloatArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(double[]).MakeByRefType().Name) BitSerializer_SerializeDoubleArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(string[]).MakeByRefType().Name) BitSerializer_SerializeStringArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(Color[]).MakeByRefType().Name) BitSerializer_SerializeColorArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(Color32[]).MakeByRefType().Name) BitSerializer_SerializeColor32Array_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(Vector2[]).MakeByRefType().Name) BitSerializer_SerializeVector2Array_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(Vector3[]).MakeByRefType().Name) BitSerializer_SerializeVector3Array_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(Vector4[]).MakeByRefType().Name) BitSerializer_SerializeVector4Array_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(Quaternion[]).MakeByRefType().Name) BitSerializer_SerializeQuaternionArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(Ray[]).MakeByRefType().Name) BitSerializer_SerializeRayArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(Ray2D[]).MakeByRefType().Name) BitSerializer_SerializeRay2DArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                if (paramTypeName == typeof(bool).MakeByRefType().Name) NetworkSerializer_SerializeBool_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(char).MakeByRefType().Name) NetworkSerializer_SerializeChar_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(sbyte).MakeByRefType().Name) NetworkSerializer_SerializeSbyte_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(byte).MakeByRefType().Name) NetworkSerializer_SerializeByte_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(short).MakeByRefType().Name) NetworkSerializer_SerializeShort_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(ushort).MakeByRefType().Name) NetworkSerializer_SerializeUshort_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(int).MakeByRefType().Name) NetworkSerializer_SerializeInt_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(uint).MakeByRefType().Name) NetworkSerializer_SerializeUint_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(long).MakeByRefType().Name) NetworkSerializer_SerializeLong_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(ulong).MakeByRefType().Name) NetworkSerializer_SerializeUlong_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(float).MakeByRefType().Name) NetworkSerializer_SerializeFloat_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(double).MakeByRefType().Name) NetworkSerializer_SerializeDouble_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(string).MakeByRefType().Name) NetworkSerializer_SerializeString_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(Color).MakeByRefType().Name) NetworkSerializer_SerializeColor_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(Color32).MakeByRefType().Name) NetworkSerializer_SerializeColor32_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(Vector2).MakeByRefType().Name) NetworkSerializer_SerializeVector2_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(Vector3).MakeByRefType().Name) NetworkSerializer_SerializeVector3_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(Vector4).MakeByRefType().Name) NetworkSerializer_SerializeVector4_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(Quaternion).MakeByRefType().Name) NetworkSerializer_SerializeQuaternion_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(Ray).MakeByRefType().Name) NetworkSerializer_SerializeRay_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(Ray2D).MakeByRefType().Name) NetworkSerializer_SerializeRay2D_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(bool[]).MakeByRefType().Name) NetworkSerializer_SerializeBoolArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(char[]).MakeByRefType().Name) NetworkSerializer_SerializeCharArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(sbyte[]).MakeByRefType().Name) NetworkSerializer_SerializeSbyteArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(byte[]).MakeByRefType().Name) NetworkSerializer_SerializeByteArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(short[]).MakeByRefType().Name) NetworkSerializer_SerializeShortArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(ushort[]).MakeByRefType().Name) NetworkSerializer_SerializeUshortArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(int[]).MakeByRefType().Name) NetworkSerializer_SerializeIntArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(uint[]).MakeByRefType().Name) NetworkSerializer_SerializeUintArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(long[]).MakeByRefType().Name) NetworkSerializer_SerializeLongArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(ulong[]).MakeByRefType().Name) NetworkSerializer_SerializeUlongArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(float[]).MakeByRefType().Name) NetworkSerializer_SerializeFloatArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(double[]).MakeByRefType().Name) NetworkSerializer_SerializeDoubleArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(string[]).MakeByRefType().Name) NetworkSerializer_SerializeStringArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(Color[]).MakeByRefType().Name) NetworkSerializer_SerializeColorArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(Color32[]).MakeByRefType().Name) NetworkSerializer_SerializeColor32Array_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(Vector2[]).MakeByRefType().Name) NetworkSerializer_SerializeVector2Array_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(Vector3[]).MakeByRefType().Name) NetworkSerializer_SerializeVector3Array_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(Vector4[]).MakeByRefType().Name) NetworkSerializer_SerializeVector4Array_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(Quaternion[]).MakeByRefType().Name) NetworkSerializer_SerializeQuaternionArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(Ray[]).MakeByRefType().Name) NetworkSerializer_SerializeRayArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(Ray2D[]).MakeByRefType().Name) NetworkSerializer_SerializeRay2DArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
             }
 
             return true;
@@ -529,8 +529,8 @@ namespace MLAPI.Editor.CodeGen
             // NetworkManager networkManager;
             methodDefinition.Body.Variables.Add(new VariableDefinition(NetworkManager_TypeRef));
             int netManLocIdx = methodDefinition.Body.Variables.Count - 1;
-            // BitSerializer serializer;
-            methodDefinition.Body.Variables.Add(new VariableDefinition(BitSerializer_TypeRef));
+            // NetworkSerializer serializer;
+            methodDefinition.Body.Variables.Add(new VariableDefinition(NetworkSerializer_TypeRef));
             int serializerLocIdx = methodDefinition.Body.Variables.Count - 1;
             // uint methodHash;
             methodDefinition.Body.Variables.Add(new VariableDefinition(typeSystem.UInt32));
@@ -652,7 +652,7 @@ namespace MLAPI.Editor.CodeGen
                 // serializer.Serialize(ref methodHash); // NetworkMethodId
                 instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                 instructions.Add(processor.Create(OpCodes.Ldloca, methodHashLocIdx));
-                instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeUint_MethodRef));
+                instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeUint_MethodRef));
 
                 // write method parameters into stream
                 for (int paramIndex = 0; paramIndex < paramCount; ++paramIndex)
@@ -666,7 +666,7 @@ namespace MLAPI.Editor.CodeGen
                     {
                         instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                         instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeBool_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeBool_MethodRef));
                         continue;
                     }
 
@@ -674,7 +674,7 @@ namespace MLAPI.Editor.CodeGen
                     {
                         instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                         instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeBoolArray_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeBoolArray_MethodRef));
                         continue;
                     }
 
@@ -682,7 +682,7 @@ namespace MLAPI.Editor.CodeGen
                     {
                         instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                         instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeChar_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeChar_MethodRef));
                         continue;
                     }
 
@@ -690,7 +690,7 @@ namespace MLAPI.Editor.CodeGen
                     {
                         instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                         instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeCharArray_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeCharArray_MethodRef));
                         continue;
                     }
 
@@ -698,7 +698,7 @@ namespace MLAPI.Editor.CodeGen
                     {
                         instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                         instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeSbyte_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeSbyte_MethodRef));
                         continue;
                     }
 
@@ -706,7 +706,7 @@ namespace MLAPI.Editor.CodeGen
                     {
                         instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                         instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeSbyteArray_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeSbyteArray_MethodRef));
                         continue;
                     }
 
@@ -714,7 +714,7 @@ namespace MLAPI.Editor.CodeGen
                     {
                         instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                         instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeByte_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeByte_MethodRef));
                         continue;
                     }
 
@@ -722,7 +722,7 @@ namespace MLAPI.Editor.CodeGen
                     {
                         instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                         instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeByteArray_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeByteArray_MethodRef));
                         continue;
                     }
 
@@ -730,7 +730,7 @@ namespace MLAPI.Editor.CodeGen
                     {
                         instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                         instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeShort_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeShort_MethodRef));
                         continue;
                     }
 
@@ -738,7 +738,7 @@ namespace MLAPI.Editor.CodeGen
                     {
                         instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                         instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeShortArray_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeShortArray_MethodRef));
                         continue;
                     }
 
@@ -746,7 +746,7 @@ namespace MLAPI.Editor.CodeGen
                     {
                         instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                         instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeUshort_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeUshort_MethodRef));
                         continue;
                     }
 
@@ -754,7 +754,7 @@ namespace MLAPI.Editor.CodeGen
                     {
                         instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                         instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeUshortArray_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeUshortArray_MethodRef));
                         continue;
                     }
 
@@ -762,7 +762,7 @@ namespace MLAPI.Editor.CodeGen
                     {
                         instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                         instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeInt_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeInt_MethodRef));
                         continue;
                     }
 
@@ -770,7 +770,7 @@ namespace MLAPI.Editor.CodeGen
                     {
                         instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                         instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeIntArray_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeIntArray_MethodRef));
                         continue;
                     }
 
@@ -778,7 +778,7 @@ namespace MLAPI.Editor.CodeGen
                     {
                         instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                         instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeUint_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeUint_MethodRef));
                         continue;
                     }
 
@@ -786,7 +786,7 @@ namespace MLAPI.Editor.CodeGen
                     {
                         instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                         instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeUintArray_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeUintArray_MethodRef));
                         continue;
                     }
 
@@ -794,7 +794,7 @@ namespace MLAPI.Editor.CodeGen
                     {
                         instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                         instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeLong_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeLong_MethodRef));
                         continue;
                     }
 
@@ -802,7 +802,7 @@ namespace MLAPI.Editor.CodeGen
                     {
                         instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                         instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeLongArray_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeLongArray_MethodRef));
                         continue;
                     }
 
@@ -810,7 +810,7 @@ namespace MLAPI.Editor.CodeGen
                     {
                         instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                         instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeUlong_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeUlong_MethodRef));
                         continue;
                     }
 
@@ -818,7 +818,7 @@ namespace MLAPI.Editor.CodeGen
                     {
                         instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                         instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeUlongArray_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeUlongArray_MethodRef));
                         continue;
                     }
 
@@ -826,7 +826,7 @@ namespace MLAPI.Editor.CodeGen
                     {
                         instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                         instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeFloat_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeFloat_MethodRef));
                         continue;
                     }
 
@@ -834,7 +834,7 @@ namespace MLAPI.Editor.CodeGen
                     {
                         instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                         instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeFloatArray_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeFloatArray_MethodRef));
                         continue;
                     }
 
@@ -842,7 +842,7 @@ namespace MLAPI.Editor.CodeGen
                     {
                         instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                         instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeDouble_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeDouble_MethodRef));
                         continue;
                     }
 
@@ -850,7 +850,7 @@ namespace MLAPI.Editor.CodeGen
                     {
                         instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                         instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeDoubleArray_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeDoubleArray_MethodRef));
                         continue;
                     }
 
@@ -858,7 +858,7 @@ namespace MLAPI.Editor.CodeGen
                     {
                         instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                         instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeString_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeString_MethodRef));
                         continue;
                     }
 
@@ -866,7 +866,7 @@ namespace MLAPI.Editor.CodeGen
                     {
                         instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                         instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeStringArray_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeStringArray_MethodRef));
                         continue;
                     }
 
@@ -876,7 +876,7 @@ namespace MLAPI.Editor.CodeGen
                     {
                         instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                         instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeColor_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeColor_MethodRef));
                         continue;
                     }
 
@@ -884,7 +884,7 @@ namespace MLAPI.Editor.CodeGen
                     {
                         instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                         instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeColorArray_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeColorArray_MethodRef));
                         continue;
                     }
 
@@ -892,7 +892,7 @@ namespace MLAPI.Editor.CodeGen
                     {
                         instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                         instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeColor32_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeColor32_MethodRef));
                         continue;
                     }
 
@@ -900,7 +900,7 @@ namespace MLAPI.Editor.CodeGen
                     {
                         instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                         instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeColor32Array_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeColor32Array_MethodRef));
                         continue;
                     }
 
@@ -908,7 +908,7 @@ namespace MLAPI.Editor.CodeGen
                     {
                         instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                         instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeVector2_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeVector2_MethodRef));
                         continue;
                     }
 
@@ -916,7 +916,7 @@ namespace MLAPI.Editor.CodeGen
                     {
                         instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                         instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeVector2Array_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeVector2Array_MethodRef));
                         continue;
                     }
 
@@ -924,7 +924,7 @@ namespace MLAPI.Editor.CodeGen
                     {
                         instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                         instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeVector3_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeVector3_MethodRef));
                         continue;
                     }
 
@@ -932,7 +932,7 @@ namespace MLAPI.Editor.CodeGen
                     {
                         instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                         instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeVector3Array_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeVector3Array_MethodRef));
                         continue;
                     }
 
@@ -940,7 +940,7 @@ namespace MLAPI.Editor.CodeGen
                     {
                         instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                         instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeVector4_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeVector4_MethodRef));
                         continue;
                     }
 
@@ -948,7 +948,7 @@ namespace MLAPI.Editor.CodeGen
                     {
                         instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                         instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeVector4Array_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeVector4Array_MethodRef));
                         continue;
                     }
 
@@ -956,7 +956,7 @@ namespace MLAPI.Editor.CodeGen
                     {
                         instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                         instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeQuaternion_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeQuaternion_MethodRef));
                         continue;
                     }
 
@@ -964,7 +964,7 @@ namespace MLAPI.Editor.CodeGen
                     {
                         instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                         instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeQuaternionArray_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeQuaternionArray_MethodRef));
                         continue;
                     }
 
@@ -972,7 +972,7 @@ namespace MLAPI.Editor.CodeGen
                     {
                         instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                         instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeRay_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeRay_MethodRef));
                         continue;
                     }
 
@@ -980,7 +980,7 @@ namespace MLAPI.Editor.CodeGen
                     {
                         instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                         instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeRayArray_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeRayArray_MethodRef));
                         continue;
                     }
 
@@ -988,7 +988,7 @@ namespace MLAPI.Editor.CodeGen
                     {
                         instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                         instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeRay2D_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeRay2D_MethodRef));
                         continue;
                     }
 
@@ -996,7 +996,7 @@ namespace MLAPI.Editor.CodeGen
                     {
                         instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                         instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeRay2DArray_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeRay2DArray_MethodRef));
                         continue;
                     }
 
@@ -1016,7 +1016,7 @@ namespace MLAPI.Editor.CodeGen
 
                                 instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                                 instructions.Add(processor.Create(OpCodes.Ldloca, localIndex));
-                                instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeInt_MethodRef));
+                                instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeInt_MethodRef));
                                 continue;
                             }
 
@@ -1030,7 +1030,7 @@ namespace MLAPI.Editor.CodeGen
 
                                 instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                                 instructions.Add(processor.Create(OpCodes.Ldloca, localIndex));
-                                instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeUint_MethodRef));
+                                instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeUint_MethodRef));
                                 continue;
                             }
 
@@ -1044,7 +1044,7 @@ namespace MLAPI.Editor.CodeGen
 
                                 instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                                 instructions.Add(processor.Create(OpCodes.Ldloca, localIndex));
-                                instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeByte_MethodRef));
+                                instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeByte_MethodRef));
                                 continue;
                             }
 
@@ -1058,7 +1058,7 @@ namespace MLAPI.Editor.CodeGen
 
                                 instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                                 instructions.Add(processor.Create(OpCodes.Ldloca, localIndex));
-                                instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeSbyte_MethodRef));
+                                instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeSbyte_MethodRef));
                                 continue;
                             }
 
@@ -1072,7 +1072,7 @@ namespace MLAPI.Editor.CodeGen
 
                                 instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                                 instructions.Add(processor.Create(OpCodes.Ldloca, localIndex));
-                                instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeShort_MethodRef));
+                                instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeShort_MethodRef));
                                 continue;
                             }
 
@@ -1086,7 +1086,7 @@ namespace MLAPI.Editor.CodeGen
 
                                 instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                                 instructions.Add(processor.Create(OpCodes.Ldloca, localIndex));
-                                instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeUshort_MethodRef));
+                                instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeUshort_MethodRef));
                                 continue;
                             }
 
@@ -1100,7 +1100,7 @@ namespace MLAPI.Editor.CodeGen
 
                                 instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                                 instructions.Add(processor.Create(OpCodes.Ldloca, localIndex));
-                                instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeLong_MethodRef));
+                                instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeLong_MethodRef));
                                 continue;
                             }
 
@@ -1114,7 +1114,7 @@ namespace MLAPI.Editor.CodeGen
 
                                 instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                                 instructions.Add(processor.Create(OpCodes.Ldloca, localIndex));
-                                instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeUlong_MethodRef));
+                                instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeUlong_MethodRef));
                                 continue;
                             }
                         }
@@ -1146,7 +1146,7 @@ namespace MLAPI.Editor.CodeGen
 
                             instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                             instructions.Add(processor.Create(OpCodes.Ldloca, arrLenLocalIndex));
-                            instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeInt_MethodRef));
+                            instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeInt_MethodRef));
 
                             methodDefinition.Body.Variables.Add(new VariableDefinition(typeSystem.Int32));
                             int counterLocalIndex = methodDefinition.Body.Variables.Count - 1;
@@ -1171,7 +1171,7 @@ namespace MLAPI.Editor.CodeGen
 
                                 instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                                 instructions.Add(processor.Create(OpCodes.Ldloca, enumValLocalIndex));
-                                instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeInt_MethodRef));
+                                instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeInt_MethodRef));
                             }
                             else if (paramElemEnumIntType == typeSystem.UInt32)
                             {
@@ -1185,7 +1185,7 @@ namespace MLAPI.Editor.CodeGen
 
                                 instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                                 instructions.Add(processor.Create(OpCodes.Ldloca, enumValLocalIndex));
-                                instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeUint_MethodRef));
+                                instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeUint_MethodRef));
                             }
                             else if (paramElemEnumIntType == typeSystem.Byte)
                             {
@@ -1199,7 +1199,7 @@ namespace MLAPI.Editor.CodeGen
 
                                 instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                                 instructions.Add(processor.Create(OpCodes.Ldloca, enumValLocalIndex));
-                                instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeByte_MethodRef));
+                                instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeByte_MethodRef));
                             }
                             else if (paramElemEnumIntType == typeSystem.SByte)
                             {
@@ -1213,7 +1213,7 @@ namespace MLAPI.Editor.CodeGen
 
                                 instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                                 instructions.Add(processor.Create(OpCodes.Ldloca, enumValLocalIndex));
-                                instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeSbyte_MethodRef));
+                                instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeSbyte_MethodRef));
                             }
                             else if (paramElemEnumIntType == typeSystem.Int16)
                             {
@@ -1227,7 +1227,7 @@ namespace MLAPI.Editor.CodeGen
 
                                 instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                                 instructions.Add(processor.Create(OpCodes.Ldloca, enumValLocalIndex));
-                                instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeShort_MethodRef));
+                                instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeShort_MethodRef));
                             }
                             else if (paramElemEnumIntType == typeSystem.UInt16)
                             {
@@ -1241,7 +1241,7 @@ namespace MLAPI.Editor.CodeGen
 
                                 instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                                 instructions.Add(processor.Create(OpCodes.Ldloca, enumValLocalIndex));
-                                instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeUshort_MethodRef));
+                                instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeUshort_MethodRef));
                             }
                             else if (paramElemEnumIntType == typeSystem.Int64)
                             {
@@ -1255,7 +1255,7 @@ namespace MLAPI.Editor.CodeGen
 
                                 instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                                 instructions.Add(processor.Create(OpCodes.Ldloca, enumValLocalIndex));
-                                instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeLong_MethodRef));
+                                instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeLong_MethodRef));
                             }
                             else if (paramElemEnumIntType == typeSystem.UInt64)
                             {
@@ -1269,7 +1269,7 @@ namespace MLAPI.Editor.CodeGen
 
                                 instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                                 instructions.Add(processor.Create(OpCodes.Ldloca, enumValLocalIndex));
-                                instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeUlong_MethodRef));
+                                instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeUlong_MethodRef));
                             }
 
                             instructions.Add(processor.Create(OpCodes.Ldloc, counterLocalIndex));
@@ -1314,7 +1314,7 @@ namespace MLAPI.Editor.CodeGen
 
                                 instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                                 instructions.Add(processor.Create(OpCodes.Ldloca, isSetLocalIndex));
-                                instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeBool_MethodRef));
+                                instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeBool_MethodRef));
 
                                 var notSetInstr = processor.Create(OpCodes.Nop);
 
@@ -1359,7 +1359,7 @@ namespace MLAPI.Editor.CodeGen
 
                             instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                             instructions.Add(processor.Create(OpCodes.Ldloca, arrLenLocalIndex));
-                            instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeInt_MethodRef));
+                            instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeInt_MethodRef));
 
                             methodDefinition.Body.Variables.Add(new VariableDefinition(typeSystem.Int32));
                             int counterLocalIndex = methodDefinition.Body.Variables.Count - 1;
@@ -1396,7 +1396,7 @@ namespace MLAPI.Editor.CodeGen
 
                                 instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                                 instructions.Add(processor.Create(OpCodes.Ldloca, isSetLocalIndex));
-                                instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeBool_MethodRef));
+                                instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeBool_MethodRef));
 
                                 var notSetInstr = processor.Create(OpCodes.Nop);
 
@@ -1526,7 +1526,7 @@ namespace MLAPI.Editor.CodeGen
                 MethodAttributes.Private | MethodAttributes.Static | MethodAttributes.HideBySig,
                 methodDefinition.Module.TypeSystem.Void);
             nhandler.Parameters.Add(new ParameterDefinition("target", ParameterAttributes.None, NetworkBehaviour_TypeRef));
-            nhandler.Parameters.Add(new ParameterDefinition("serializer", ParameterAttributes.None, BitSerializer_TypeRef));
+            nhandler.Parameters.Add(new ParameterDefinition("serializer", ParameterAttributes.None, NetworkSerializer_TypeRef));
             nhandler.Parameters.Add(new ParameterDefinition("rpcParams", ParameterAttributes.None, RpcParams_TypeRef));
 
             var processor = nhandler.Body.GetILProcessor();
@@ -1584,7 +1584,7 @@ namespace MLAPI.Editor.CodeGen
                 {
                     processor.Emit(OpCodes.Ldarg_1);
                     processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeBool_MethodRef);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeBool_MethodRef);
                     continue;
                 }
 
@@ -1592,7 +1592,7 @@ namespace MLAPI.Editor.CodeGen
                 {
                     processor.Emit(OpCodes.Ldarg_1);
                     processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeBoolArray_MethodRef);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeBoolArray_MethodRef);
                     continue;
                 }
 
@@ -1600,7 +1600,7 @@ namespace MLAPI.Editor.CodeGen
                 {
                     processor.Emit(OpCodes.Ldarg_1);
                     processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeChar_MethodRef);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeChar_MethodRef);
                     continue;
                 }
 
@@ -1608,7 +1608,7 @@ namespace MLAPI.Editor.CodeGen
                 {
                     processor.Emit(OpCodes.Ldarg_1);
                     processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeCharArray_MethodRef);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeCharArray_MethodRef);
                     continue;
                 }
 
@@ -1616,7 +1616,7 @@ namespace MLAPI.Editor.CodeGen
                 {
                     processor.Emit(OpCodes.Ldarg_1);
                     processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeSbyte_MethodRef);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeSbyte_MethodRef);
                     continue;
                 }
 
@@ -1624,7 +1624,7 @@ namespace MLAPI.Editor.CodeGen
                 {
                     processor.Emit(OpCodes.Ldarg_1);
                     processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeSbyteArray_MethodRef);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeSbyteArray_MethodRef);
                     continue;
                 }
 
@@ -1632,7 +1632,7 @@ namespace MLAPI.Editor.CodeGen
                 {
                     processor.Emit(OpCodes.Ldarg_1);
                     processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeByte_MethodRef);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeByte_MethodRef);
                     continue;
                 }
 
@@ -1640,7 +1640,7 @@ namespace MLAPI.Editor.CodeGen
                 {
                     processor.Emit(OpCodes.Ldarg_1);
                     processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeByteArray_MethodRef);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeByteArray_MethodRef);
                     continue;
                 }
 
@@ -1648,7 +1648,7 @@ namespace MLAPI.Editor.CodeGen
                 {
                     processor.Emit(OpCodes.Ldarg_1);
                     processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeShort_MethodRef);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeShort_MethodRef);
                     continue;
                 }
 
@@ -1656,7 +1656,7 @@ namespace MLAPI.Editor.CodeGen
                 {
                     processor.Emit(OpCodes.Ldarg_1);
                     processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeShortArray_MethodRef);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeShortArray_MethodRef);
                     continue;
                 }
 
@@ -1664,7 +1664,7 @@ namespace MLAPI.Editor.CodeGen
                 {
                     processor.Emit(OpCodes.Ldarg_1);
                     processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeUshort_MethodRef);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeUshort_MethodRef);
                     continue;
                 }
 
@@ -1672,7 +1672,7 @@ namespace MLAPI.Editor.CodeGen
                 {
                     processor.Emit(OpCodes.Ldarg_1);
                     processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeUshortArray_MethodRef);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeUshortArray_MethodRef);
                     continue;
                 }
 
@@ -1680,7 +1680,7 @@ namespace MLAPI.Editor.CodeGen
                 {
                     processor.Emit(OpCodes.Ldarg_1);
                     processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeInt_MethodRef);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeInt_MethodRef);
                     continue;
                 }
 
@@ -1688,7 +1688,7 @@ namespace MLAPI.Editor.CodeGen
                 {
                     processor.Emit(OpCodes.Ldarg_1);
                     processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeIntArray_MethodRef);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeIntArray_MethodRef);
                     continue;
                 }
 
@@ -1696,7 +1696,7 @@ namespace MLAPI.Editor.CodeGen
                 {
                     processor.Emit(OpCodes.Ldarg_1);
                     processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeUint_MethodRef);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeUint_MethodRef);
                     continue;
                 }
 
@@ -1704,7 +1704,7 @@ namespace MLAPI.Editor.CodeGen
                 {
                     processor.Emit(OpCodes.Ldarg_1);
                     processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeUintArray_MethodRef);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeUintArray_MethodRef);
                     continue;
                 }
 
@@ -1712,7 +1712,7 @@ namespace MLAPI.Editor.CodeGen
                 {
                     processor.Emit(OpCodes.Ldarg_1);
                     processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeLong_MethodRef);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeLong_MethodRef);
                     continue;
                 }
 
@@ -1720,7 +1720,7 @@ namespace MLAPI.Editor.CodeGen
                 {
                     processor.Emit(OpCodes.Ldarg_1);
                     processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeLongArray_MethodRef);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeLongArray_MethodRef);
                     continue;
                 }
 
@@ -1728,7 +1728,7 @@ namespace MLAPI.Editor.CodeGen
                 {
                     processor.Emit(OpCodes.Ldarg_1);
                     processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeUlong_MethodRef);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeUlong_MethodRef);
                     continue;
                 }
 
@@ -1736,7 +1736,7 @@ namespace MLAPI.Editor.CodeGen
                 {
                     processor.Emit(OpCodes.Ldarg_1);
                     processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeUlongArray_MethodRef);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeUlongArray_MethodRef);
                     continue;
                 }
 
@@ -1744,7 +1744,7 @@ namespace MLAPI.Editor.CodeGen
                 {
                     processor.Emit(OpCodes.Ldarg_1);
                     processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeFloat_MethodRef);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeFloat_MethodRef);
                     continue;
                 }
 
@@ -1752,7 +1752,7 @@ namespace MLAPI.Editor.CodeGen
                 {
                     processor.Emit(OpCodes.Ldarg_1);
                     processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeFloatArray_MethodRef);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeFloatArray_MethodRef);
                     continue;
                 }
 
@@ -1760,7 +1760,7 @@ namespace MLAPI.Editor.CodeGen
                 {
                     processor.Emit(OpCodes.Ldarg_1);
                     processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeDouble_MethodRef);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeDouble_MethodRef);
                     continue;
                 }
 
@@ -1768,7 +1768,7 @@ namespace MLAPI.Editor.CodeGen
                 {
                     processor.Emit(OpCodes.Ldarg_1);
                     processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeDoubleArray_MethodRef);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeDoubleArray_MethodRef);
                     continue;
                 }
 
@@ -1776,7 +1776,7 @@ namespace MLAPI.Editor.CodeGen
                 {
                     processor.Emit(OpCodes.Ldarg_1);
                     processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeString_MethodRef);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeString_MethodRef);
                     continue;
                 }
 
@@ -1784,7 +1784,7 @@ namespace MLAPI.Editor.CodeGen
                 {
                     processor.Emit(OpCodes.Ldarg_1);
                     processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeStringArray_MethodRef);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeStringArray_MethodRef);
                     continue;
                 }
 
@@ -1794,7 +1794,7 @@ namespace MLAPI.Editor.CodeGen
                 {
                     processor.Emit(OpCodes.Ldarg_1);
                     processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeColor_MethodRef);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeColor_MethodRef);
                     continue;
                 }
 
@@ -1802,7 +1802,7 @@ namespace MLAPI.Editor.CodeGen
                 {
                     processor.Emit(OpCodes.Ldarg_1);
                     processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeColorArray_MethodRef);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeColorArray_MethodRef);
                     continue;
                 }
 
@@ -1810,7 +1810,7 @@ namespace MLAPI.Editor.CodeGen
                 {
                     processor.Emit(OpCodes.Ldarg_1);
                     processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeColor32_MethodRef);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeColor32_MethodRef);
                     continue;
                 }
 
@@ -1818,7 +1818,7 @@ namespace MLAPI.Editor.CodeGen
                 {
                     processor.Emit(OpCodes.Ldarg_1);
                     processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeColor32Array_MethodRef);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeColor32Array_MethodRef);
                     continue;
                 }
 
@@ -1826,7 +1826,7 @@ namespace MLAPI.Editor.CodeGen
                 {
                     processor.Emit(OpCodes.Ldarg_1);
                     processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeVector2_MethodRef);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeVector2_MethodRef);
                     continue;
                 }
 
@@ -1834,7 +1834,7 @@ namespace MLAPI.Editor.CodeGen
                 {
                     processor.Emit(OpCodes.Ldarg_1);
                     processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeVector2Array_MethodRef);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeVector2Array_MethodRef);
                     continue;
                 }
 
@@ -1842,7 +1842,7 @@ namespace MLAPI.Editor.CodeGen
                 {
                     processor.Emit(OpCodes.Ldarg_1);
                     processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeVector3_MethodRef);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeVector3_MethodRef);
                     continue;
                 }
 
@@ -1850,7 +1850,7 @@ namespace MLAPI.Editor.CodeGen
                 {
                     processor.Emit(OpCodes.Ldarg_1);
                     processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeVector3Array_MethodRef);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeVector3Array_MethodRef);
                     continue;
                 }
 
@@ -1858,7 +1858,7 @@ namespace MLAPI.Editor.CodeGen
                 {
                     processor.Emit(OpCodes.Ldarg_1);
                     processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeVector4_MethodRef);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeVector4_MethodRef);
                     continue;
                 }
 
@@ -1866,7 +1866,7 @@ namespace MLAPI.Editor.CodeGen
                 {
                     processor.Emit(OpCodes.Ldarg_1);
                     processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeVector4Array_MethodRef);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeVector4Array_MethodRef);
                     continue;
                 }
 
@@ -1874,7 +1874,7 @@ namespace MLAPI.Editor.CodeGen
                 {
                     processor.Emit(OpCodes.Ldarg_1);
                     processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeQuaternion_MethodRef);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeQuaternion_MethodRef);
                     continue;
                 }
 
@@ -1882,7 +1882,7 @@ namespace MLAPI.Editor.CodeGen
                 {
                     processor.Emit(OpCodes.Ldarg_1);
                     processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeQuaternionArray_MethodRef);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeQuaternionArray_MethodRef);
                     continue;
                 }
 
@@ -1890,7 +1890,7 @@ namespace MLAPI.Editor.CodeGen
                 {
                     processor.Emit(OpCodes.Ldarg_1);
                     processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeRay_MethodRef);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeRay_MethodRef);
                     continue;
                 }
 
@@ -1898,7 +1898,7 @@ namespace MLAPI.Editor.CodeGen
                 {
                     processor.Emit(OpCodes.Ldarg_1);
                     processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeRayArray_MethodRef);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeRayArray_MethodRef);
                     continue;
                 }
 
@@ -1906,7 +1906,7 @@ namespace MLAPI.Editor.CodeGen
                 {
                     processor.Emit(OpCodes.Ldarg_1);
                     processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeRay2D_MethodRef);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeRay2D_MethodRef);
                     continue;
                 }
 
@@ -1914,7 +1914,7 @@ namespace MLAPI.Editor.CodeGen
                 {
                     processor.Emit(OpCodes.Ldarg_1);
                     processor.Emit(OpCodes.Ldloca, localIndex);
-                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeRay2DArray_MethodRef);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeRay2DArray_MethodRef);
                     continue;
                 }
 
@@ -1931,7 +1931,7 @@ namespace MLAPI.Editor.CodeGen
 
                             processor.Emit(OpCodes.Ldarg_1);
                             processor.Emit(OpCodes.Ldloca, enumLocalIndex);
-                            processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeInt_MethodRef);
+                            processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeInt_MethodRef);
 
                             processor.Emit(OpCodes.Ldloc, enumLocalIndex);
                             processor.Emit(OpCodes.Stloc, localIndex);
@@ -1945,7 +1945,7 @@ namespace MLAPI.Editor.CodeGen
 
                             processor.Emit(OpCodes.Ldarg_1);
                             processor.Emit(OpCodes.Ldloca, enumLocalIndex);
-                            processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeUint_MethodRef);
+                            processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeUint_MethodRef);
 
                             processor.Emit(OpCodes.Ldloc, enumLocalIndex);
                             processor.Emit(OpCodes.Stloc, localIndex);
@@ -1959,7 +1959,7 @@ namespace MLAPI.Editor.CodeGen
 
                             processor.Emit(OpCodes.Ldarg_1);
                             processor.Emit(OpCodes.Ldloca, enumLocalIndex);
-                            processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeByte_MethodRef);
+                            processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeByte_MethodRef);
 
                             processor.Emit(OpCodes.Ldloc, enumLocalIndex);
                             processor.Emit(OpCodes.Stloc, localIndex);
@@ -1973,7 +1973,7 @@ namespace MLAPI.Editor.CodeGen
 
                             processor.Emit(OpCodes.Ldarg_1);
                             processor.Emit(OpCodes.Ldloca, enumLocalIndex);
-                            processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeSbyte_MethodRef);
+                            processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeSbyte_MethodRef);
 
                             processor.Emit(OpCodes.Ldloc, enumLocalIndex);
                             processor.Emit(OpCodes.Stloc, localIndex);
@@ -1987,7 +1987,7 @@ namespace MLAPI.Editor.CodeGen
 
                             processor.Emit(OpCodes.Ldarg_1);
                             processor.Emit(OpCodes.Ldloca, enumLocalIndex);
-                            processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeShort_MethodRef);
+                            processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeShort_MethodRef);
 
                             processor.Emit(OpCodes.Ldloc, enumLocalIndex);
                             processor.Emit(OpCodes.Stloc, localIndex);
@@ -2001,7 +2001,7 @@ namespace MLAPI.Editor.CodeGen
 
                             processor.Emit(OpCodes.Ldarg_1);
                             processor.Emit(OpCodes.Ldloca, enumLocalIndex);
-                            processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeUshort_MethodRef);
+                            processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeUshort_MethodRef);
 
                             processor.Emit(OpCodes.Ldloc, enumLocalIndex);
                             processor.Emit(OpCodes.Stloc, localIndex);
@@ -2015,7 +2015,7 @@ namespace MLAPI.Editor.CodeGen
 
                             processor.Emit(OpCodes.Ldarg_1);
                             processor.Emit(OpCodes.Ldloca, enumLocalIndex);
-                            processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeLong_MethodRef);
+                            processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeLong_MethodRef);
 
                             processor.Emit(OpCodes.Ldloc, enumLocalIndex);
                             processor.Emit(OpCodes.Stloc, localIndex);
@@ -2029,7 +2029,7 @@ namespace MLAPI.Editor.CodeGen
 
                             processor.Emit(OpCodes.Ldarg_1);
                             processor.Emit(OpCodes.Ldloca, enumLocalIndex);
-                            processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeUlong_MethodRef);
+                            processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeUlong_MethodRef);
 
                             processor.Emit(OpCodes.Ldloc, enumLocalIndex);
                             processor.Emit(OpCodes.Stloc, localIndex);
@@ -2050,7 +2050,7 @@ namespace MLAPI.Editor.CodeGen
 
                         processor.Emit(OpCodes.Ldarg_1);
                         processor.Emit(OpCodes.Ldloca, arrLenLocalIndex);
-                        processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeInt_MethodRef);
+                        processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeInt_MethodRef);
 
                         var postForInstr = processor.Create(OpCodes.Nop);
 
@@ -2081,7 +2081,7 @@ namespace MLAPI.Editor.CodeGen
 
                             processor.Emit(OpCodes.Ldarg_1);
                             processor.Emit(OpCodes.Ldloca, enumValLocalIndex);
-                            processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeInt_MethodRef);
+                            processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeInt_MethodRef);
 
                             processor.Emit(OpCodes.Ldloc, localIndex);
                             processor.Emit(OpCodes.Ldloc, counterLocalIndex);
@@ -2095,7 +2095,7 @@ namespace MLAPI.Editor.CodeGen
 
                             processor.Emit(OpCodes.Ldarg_1);
                             processor.Emit(OpCodes.Ldloca, enumValLocalIndex);
-                            processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeUint_MethodRef);
+                            processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeUint_MethodRef);
 
                             processor.Emit(OpCodes.Ldloc, localIndex);
                             processor.Emit(OpCodes.Ldloc, counterLocalIndex);
@@ -2109,7 +2109,7 @@ namespace MLAPI.Editor.CodeGen
 
                             processor.Emit(OpCodes.Ldarg_1);
                             processor.Emit(OpCodes.Ldloca, enumValLocalIndex);
-                            processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeByte_MethodRef);
+                            processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeByte_MethodRef);
 
                             processor.Emit(OpCodes.Ldloc, localIndex);
                             processor.Emit(OpCodes.Ldloc, counterLocalIndex);
@@ -2123,7 +2123,7 @@ namespace MLAPI.Editor.CodeGen
 
                             processor.Emit(OpCodes.Ldarg_1);
                             processor.Emit(OpCodes.Ldloca, enumValLocalIndex);
-                            processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeSbyte_MethodRef);
+                            processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeSbyte_MethodRef);
 
                             processor.Emit(OpCodes.Ldloc, localIndex);
                             processor.Emit(OpCodes.Ldloc, counterLocalIndex);
@@ -2137,7 +2137,7 @@ namespace MLAPI.Editor.CodeGen
 
                             processor.Emit(OpCodes.Ldarg_1);
                             processor.Emit(OpCodes.Ldloca, enumValLocalIndex);
-                            processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeShort_MethodRef);
+                            processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeShort_MethodRef);
 
                             processor.Emit(OpCodes.Ldloc, localIndex);
                             processor.Emit(OpCodes.Ldloc, counterLocalIndex);
@@ -2151,7 +2151,7 @@ namespace MLAPI.Editor.CodeGen
 
                             processor.Emit(OpCodes.Ldarg_1);
                             processor.Emit(OpCodes.Ldloca, enumValLocalIndex);
-                            processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeUshort_MethodRef);
+                            processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeUshort_MethodRef);
 
                             processor.Emit(OpCodes.Ldloc, localIndex);
                             processor.Emit(OpCodes.Ldloc, counterLocalIndex);
@@ -2165,7 +2165,7 @@ namespace MLAPI.Editor.CodeGen
 
                             processor.Emit(OpCodes.Ldarg_1);
                             processor.Emit(OpCodes.Ldloca, enumValLocalIndex);
-                            processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeLong_MethodRef);
+                            processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeLong_MethodRef);
 
                             processor.Emit(OpCodes.Ldloc, localIndex);
                             processor.Emit(OpCodes.Ldloc, counterLocalIndex);
@@ -2179,7 +2179,7 @@ namespace MLAPI.Editor.CodeGen
 
                             processor.Emit(OpCodes.Ldarg_1);
                             processor.Emit(OpCodes.Ldloca, enumValLocalIndex);
-                            processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeUlong_MethodRef);
+                            processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeUlong_MethodRef);
 
                             processor.Emit(OpCodes.Ldloc, localIndex);
                             processor.Emit(OpCodes.Ldloc, counterLocalIndex);
@@ -2228,7 +2228,7 @@ namespace MLAPI.Editor.CodeGen
 
                                 processor.Emit(OpCodes.Ldarg_1);
                                 processor.Emit(OpCodes.Ldloca, isSetLocalIndex);
-                                processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeBool_MethodRef);
+                                processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeBool_MethodRef);
 
                                 var notSetInstr = processor.Create(OpCodes.Nop);
 
@@ -2265,7 +2265,7 @@ namespace MLAPI.Editor.CodeGen
 
                         processor.Emit(OpCodes.Ldarg_1);
                         processor.Emit(OpCodes.Ldloca, arrLenLocalIndex);
-                        processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeInt_MethodRef);
+                        processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeInt_MethodRef);
 
                         var postForInstr = processor.Create(OpCodes.Nop);
 
@@ -2309,7 +2309,7 @@ namespace MLAPI.Editor.CodeGen
 
                                 processor.Emit(OpCodes.Ldarg_1);
                                 processor.Emit(OpCodes.Ldloca, isSetLocalIndex);
-                                processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeBool_MethodRef);
+                                processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeBool_MethodRef);
 
                                 var notSetInstr = processor.Create(OpCodes.Nop);
 

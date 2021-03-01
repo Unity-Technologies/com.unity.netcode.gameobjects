@@ -266,9 +266,9 @@ namespace MLAPI
                 }
             }
 
-            using (PooledBitStream stream = PooledBitStream.Get())
+            using (PooledNetworkStream stream = PooledNetworkStream.Get())
             {
-                using (PooledBitWriter writer = PooledBitWriter.Get(stream))
+                using (PooledNetworkWriter writer = PooledNetworkWriter.Get(stream))
                 {
                     writer.WriteUInt16Packed((ushort)networkObjects.Count);
                 }
@@ -315,9 +315,9 @@ namespace MLAPI
             // Send destroy call
             observers.Remove(clientId);
 
-            using (PooledBitStream stream = PooledBitStream.Get())
+            using (PooledNetworkStream stream = PooledNetworkStream.Get())
             {
-                using (PooledBitWriter writer = PooledBitWriter.Get(stream))
+                using (PooledNetworkWriter writer = PooledNetworkWriter.Get(stream))
                 {
                     writer.WriteUInt64Packed(NetworkId);
 
@@ -358,9 +358,9 @@ namespace MLAPI
             }
 
 
-            using (PooledBitStream stream = PooledBitStream.Get())
+            using (PooledNetworkStream stream = PooledNetworkStream.Get())
             {
-                using (PooledBitWriter writer = PooledBitWriter.Get(stream))
+                using (PooledNetworkWriter writer = PooledNetworkWriter.Get(stream))
                 {
                     writer.WriteUInt16Packed((ushort)networkObjects.Count);
 

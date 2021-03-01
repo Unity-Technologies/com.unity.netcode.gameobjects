@@ -67,9 +67,9 @@ namespace MLAPI.Logging
 
             if (NetworkManager.Singleton != null && !NetworkManager.Singleton.IsServer && NetworkManager.Singleton.NetworkConfig.EnableNetworkLogs)
             {
-                using (PooledBitStream stream = PooledBitStream.Get())
+                using (PooledNetworkStream stream = PooledNetworkStream.Get())
                 {
-                    using (PooledBitWriter writer = PooledBitWriter.Get(stream))
+                    using (PooledNetworkWriter writer = PooledNetworkWriter.Get(stream))
                     {
                         writer.WriteByte((byte)logType);
 

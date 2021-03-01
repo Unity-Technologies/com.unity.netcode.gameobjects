@@ -45,7 +45,7 @@ namespace MLAPI.Messaging
         /// <param name="clientIds">The clients to send to, sends to everyone if null</param>
         /// <param name="stream">The message stream containing the data</param>
         /// <param name="channel">The channel to send the data on</param>
-        public static void SendUnnamedMessage(List<ulong> clientIds, BitStream stream, Channel channel = Channel.Internal)
+        public static void SendUnnamedMessage(List<ulong> clientIds, NetworkStream stream, Channel channel = Channel.Internal)
         {
             if (!NetworkManager.Singleton.IsServer)
             {
@@ -62,7 +62,7 @@ namespace MLAPI.Messaging
         /// <param name="clientId">The client to send the message to</param>
         /// <param name="stream">The message stream containing the data</param>
         /// <param name="channel">The channel tos end the data on</param>
-        public static void SendUnnamedMessage(ulong clientId, BitStream stream, Channel channel = Channel.Internal)
+        public static void SendUnnamedMessage(ulong clientId, NetworkStream stream, Channel channel = Channel.Internal)
         {
             InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_UNNAMED_MESSAGE, channel, stream);
         }
@@ -171,9 +171,9 @@ namespace MLAPI.Messaging
                     break;
             }
 
-            using (PooledBitStream messageStream = PooledBitStream.Get())
+            using (PooledNetworkStream messageStream = PooledNetworkStream.Get())
             {
-                using (PooledBitWriter writer = PooledBitWriter.Get(messageStream))
+                using (PooledNetworkWriter writer = PooledNetworkWriter.Get(messageStream))
                 {
                     writer.WriteUInt64Packed(hash);
                 }
@@ -207,9 +207,9 @@ namespace MLAPI.Messaging
                     break;
             }
 
-            using (PooledBitStream messageStream = PooledBitStream.Get())
+            using (PooledNetworkStream messageStream = PooledNetworkStream.Get())
             {
-                using (PooledBitWriter writer = PooledBitWriter.Get(messageStream))
+                using (PooledNetworkWriter writer = PooledNetworkWriter.Get(messageStream))
                 {
                     writer.WriteUInt64Packed(hash);
                 }

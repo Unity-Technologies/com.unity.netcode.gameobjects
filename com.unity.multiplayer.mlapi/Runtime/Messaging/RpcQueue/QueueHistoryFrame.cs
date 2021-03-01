@@ -7,7 +7,7 @@ namespace MLAPI.Messaging
     /// <summary>
     /// QueueHistoryFrame
     /// Used by the RpcQueueContainer to hold queued RPCs
-    /// All queued Rpcs end up in a PooledBitStream within a QueueHistoryFrame instance.
+    /// All queued Rpcs end up in a PooledNetworkStream within a QueueHistoryFrame instance.
     /// </summary>
     public class QueueHistoryFrame
     {
@@ -22,12 +22,12 @@ namespace MLAPI.Messaging
         public uint            totalSize;
         public List<uint>      queueItemOffsets;
 
-        public PooledBitStream queueStream;
-        public PooledBitWriter queueWriter;
+        public PooledNetworkStream queueStream;
+        public PooledNetworkWriter queueWriter;
         public QueueHistoryFrame loopbackHistoryFrame;  //Temporary fix for Host mode loopback work around.
 
 
-        public PooledBitReader queueReader;
+        public PooledNetworkReader queueReader;
 
         private int                                      m_QueueItemOffsetIndex;
         private RpcFrameQueueItem                        m_CurrentQueueItem;
@@ -188,17 +188,17 @@ namespace MLAPI.Messaging
                 {
                     if(m_CurrentQueueItem.itemStream == null)
                     {
-                        m_CurrentQueueItem.itemStream = PooledBitStream.Get();
+                        m_CurrentQueueItem.itemStream = PooledNetworkStream.Get();
                     }
 
                     if(m_CurrentQueueItem.streamWriter == null)
                     {
-                        m_CurrentQueueItem.streamWriter = PooledBitWriter.Get(m_CurrentQueueItem.itemStream);
+                        m_CurrentQueueItem.streamWriter = PooledNetworkWriter.Get(m_CurrentQueueItem.itemStream);
                     }
 
                     if(m_CurrentQueueItem.streamReader == null)
                     {
-                        m_CurrentQueueItem.streamReader = PooledBitReader.Get(m_CurrentQueueItem.itemStream);
+                        m_CurrentQueueItem.streamReader = PooledNetworkReader.Get(m_CurrentQueueItem.itemStream);
                     }
 
                 }

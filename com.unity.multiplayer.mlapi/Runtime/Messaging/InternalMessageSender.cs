@@ -3,20 +3,20 @@ using System.Collections.Generic;
 using MLAPI.Configuration;
 using MLAPI.Internal;
 using MLAPI.Profiling;
+using MLAPI.Serialization;
 using MLAPI.Transports;
-using BitStream = MLAPI.Serialization.BitStream;
 
 namespace MLAPI.Messaging
 {
     internal static class InternalMessageSender
     {
-        internal static void Send(ulong clientId, byte messageType, Channel channel, BitStream messageStream)
+        internal static void Send(ulong clientId, byte messageType, Channel channel, NetworkStream messageStream)
         {
             messageStream.PadStream();
 
             if (NetworkManager.Singleton.IsServer && clientId == NetworkManager.Singleton.ServerClientId) return;
 
-            using (BitStream stream = MessagePacker.WrapMessage(messageType, messageStream))
+            using (NetworkStream stream = MessagePacker.WrapMessage(messageType, messageStream))
             {
                 NetworkProfiler.StartEvent(TickType.Send, (uint)stream.Length, channel, MLAPIConstants.MESSAGE_NAMES[messageType]);
 
@@ -28,11 +28,11 @@ namespace MLAPI.Messaging
             }
         }
 
-        internal static void Send(byte messageType, Channel channel, BitStream messageStream)
+        internal static void Send(byte messageType, Channel channel, NetworkStream messageStream)
         {
             messageStream.PadStream();
 
-            using (BitStream stream = MessagePacker.WrapMessage(messageType, messageStream))
+            using (NetworkStream stream = MessagePacker.WrapMessage(messageType, messageStream))
             {
                 NetworkProfiler.StartEvent(TickType.Send, (uint)stream.Length, channel, MLAPIConstants.MESSAGE_NAMES[messageType]);
                 for (int i = 0; i < NetworkManager.Singleton.ConnectedClientsList.Count; i++)
@@ -49,7 +49,7 @@ namespace MLAPI.Messaging
             }
         }
 
-        internal static void Send(byte messageType, Channel channel, List<ulong> clientIds, BitStream messageStream)
+        internal static void Send(byte messageType, Channel channel, List<ulong> clientIds, NetworkStream messageStream)
         {
             if (clientIds == null)
             {
@@ -59,7 +59,7 @@ namespace MLAPI.Messaging
 
             messageStream.PadStream();
 
-            using (BitStream stream = MessagePacker.WrapMessage(messageType, messageStream))
+            using (NetworkStream stream = MessagePacker.WrapMessage(messageType, messageStream))
             {
                 NetworkProfiler.StartEvent(TickType.Send, (uint)stream.Length, channel, MLAPIConstants.MESSAGE_NAMES[messageType]);
                 for (int i = 0; i < clientIds.Count; i++)
@@ -76,11 +76,11 @@ namespace MLAPI.Messaging
             }
         }
 
-        internal static void Send(byte messageType, Channel channel, ulong clientIdToIgnore, BitStream messageStream)
+        internal static void Send(byte messageType, Channel channel, ulong clientIdToIgnore, NetworkStream messageStream)
         {
             messageStream.PadStream();
 
-            using (BitStream stream = MessagePacker.WrapMessage(messageType, messageStream))
+            using (NetworkStream stream = MessagePacker.WrapMessage(messageType, messageStream))
             {
                 NetworkProfiler.StartEvent(TickType.Send, (uint)stream.Length, channel, MLAPIConstants.MESSAGE_NAMES[messageType]);
                 for (int i = 0; i < NetworkManager.Singleton.ConnectedClientsList.Count; i++)

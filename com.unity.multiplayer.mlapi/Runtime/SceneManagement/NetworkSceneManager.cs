@@ -182,9 +182,9 @@ namespace MLAPI.SceneManagement
             isSpawnedObjectsPendingInDontDestroyOnLoad = true;
             SceneManager.LoadScene(sceneName);
 
-            using (PooledBitStream stream = PooledBitStream.Get())
+            using (PooledNetworkStream stream = PooledNetworkStream.Get())
             {
-                using (PooledBitWriter writer = PooledBitWriter.Get(stream))
+                using (PooledNetworkWriter writer = PooledNetworkWriter.Get(stream))
                 {
                     writer.WriteByteArray(switchSceneGuid.ToByteArray());
                     InternalMessageSender.Send(NetworkManager.Singleton.ServerClientId, MLAPIConstants.MLAPI_CLIENT_SWITCH_SCENE_COMPLETED, Channel.Internal, stream);
@@ -237,9 +237,9 @@ namespace MLAPI.SceneManagement
             {
                 if (NetworkManager.Singleton.ConnectedClientsList[j].ClientId != NetworkManager.Singleton.ServerClientId)
                 {
-                    using (PooledBitStream stream = PooledBitStream.Get())
+                    using (PooledNetworkStream stream = PooledNetworkStream.Get())
                     {
-                        using (PooledBitWriter writer = PooledBitWriter.Get(stream))
+                        using (PooledNetworkWriter writer = PooledNetworkWriter.Get(stream))
                         {
                             writer.WriteUInt32Packed(CurrentActiveSceneIndex);
                             writer.WriteByteArray(switchSceneGuid.ToByteArray());
@@ -328,7 +328,7 @@ namespace MLAPI.SceneManagement
             {
                 NetworkSpawnManager.DestroySceneObjects();
 
-                using (PooledBitReader reader = PooledBitReader.Get(objectStream))
+                using (PooledNetworkReader reader = PooledNetworkReader.Get(objectStream))
                 {
                     uint newObjectsCount = reader.ReadUInt32Packed();
 
@@ -380,7 +380,7 @@ namespace MLAPI.SceneManagement
                 var networkObjects = MonoBehaviour.FindObjectsOfType<NetworkObject>();
                 NetworkSpawnManager.ClientCollectSoftSyncSceneObjectSweep(networkObjects);
 
-                using (PooledBitReader reader = PooledBitReader.Get(objectStream))
+                using (PooledNetworkReader reader = PooledNetworkReader.Get(objectStream))
                 {
                     uint newObjectsCount = reader.ReadUInt32Packed();
 
@@ -420,9 +420,9 @@ namespace MLAPI.SceneManagement
                 }
             }
 
-            using (PooledBitStream stream = PooledBitStream.Get())
+            using (PooledNetworkStream stream = PooledNetworkStream.Get())
             {
-                using (PooledBitWriter writer = PooledBitWriter.Get(stream))
+                using (PooledNetworkWriter writer = PooledNetworkWriter.Get(stream))
                 {
                     writer.WriteByteArray(switchSceneGuid.ToByteArray());
                     InternalMessageSender.Send(NetworkManager.Singleton.ServerClientId, MLAPIConstants.MLAPI_CLIENT_SWITCH_SCENE_COMPLETED, Channel.Internal, stream);

@@ -3,7 +3,6 @@ using System.IO;
 using MLAPI.Profiling;
 using MLAPI.Serialization;
 using UnityEngine;
-using BitStream = MLAPI.Serialization.BitStream;
 
 namespace UnityEditor
 {
@@ -41,8 +40,8 @@ namespace UnityEditor
 
             public byte[] ToBytes()
 			{
-				BitStream stream = new BitStream();
-				BitWriter writer = new BitWriter(stream);
+				NetworkStream stream = new NetworkStream();
+				NetworkWriter writer = new NetworkWriter(stream);
 				writer.WriteUInt16Packed((ushort)ticks.Length);
 
 				for (int i = 0; i < ticks.Length; i++)
@@ -56,8 +55,8 @@ namespace UnityEditor
 			public static ProfilerContainer FromBytes(byte[] bytes)
 			{
 				ProfilerContainer container = new ProfilerContainer();
-				BitStream stream = new BitStream(bytes);
-				BitReader reader = new BitReader(stream);
+				NetworkStream stream = new NetworkStream(bytes);
+				NetworkReader reader = new NetworkReader(stream);
 				ushort count = reader.ReadUInt16Packed();
 				container.ticks = new ProfilerTick[count];
                 for (int i = 0; i < count; i++)

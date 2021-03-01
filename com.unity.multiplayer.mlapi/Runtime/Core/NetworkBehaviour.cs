@@ -16,7 +16,6 @@ using MLAPI.Serialization;
 using MLAPI.Serialization.Pooled;
 using MLAPI.Spawning;
 using MLAPI.Transports;
-using BitStream = MLAPI.Serialization.BitStream;
 using Unity.Profiling;
 
 namespace MLAPI
@@ -59,13 +58,13 @@ namespace MLAPI
         [EditorBrowsable(EditorBrowsableState.Never)]
 #if UNITY_2020_2_OR_NEWER
         // RuntimeAccessModifiersILPP will make this `protected`
-        internal BitSerializer __beginSendServerRpc(ServerRpcParams serverRpcParams, RpcDelivery rpcDelivery)
+        internal NetworkSerializer __beginSendServerRpc(ServerRpcParams serverRpcParams, RpcDelivery rpcDelivery)
 #else
         [Obsolete("Please do not use, will no longer be exposed in the future versions (framework internal)")]
-        public BitSerializer __beginSendServerRpc(ServerRpcParams serverRpcParams, RpcDelivery rpcDelivery)
+        public NetworkSerializer __beginSendServerRpc(ServerRpcParams serverRpcParams, RpcDelivery rpcDelivery)
 #endif
         {
-            PooledBitWriter writer;
+            PooledNetworkWriter writer;
 
             var rpcQueueContainer = MLAPI.NetworkManager.Singleton.rpcQueueContainer;
             var isUsingBatching = rpcQueueContainer.IsUsingBatching();
@@ -102,10 +101,10 @@ namespace MLAPI
         [EditorBrowsable(EditorBrowsableState.Never)]
 #if UNITY_2020_2_OR_NEWER
         // RuntimeAccessModifiersILPP will make this `protected`
-        internal void __endSendServerRpc(BitSerializer serializer, ServerRpcParams serverRpcParams, RpcDelivery rpcDelivery)
+        internal void __endSendServerRpc(NetworkSerializer serializer, ServerRpcParams serverRpcParams, RpcDelivery rpcDelivery)
 #else
         [Obsolete("Please do not use, will no longer be exposed in the future versions (framework internal)")]
-        public void __endSendServerRpc(BitSerializer serializer, ServerRpcParams serverRpcParams, RpcDelivery rpcDelivery)
+        public void __endSendServerRpc(NetworkSerializer serializer, ServerRpcParams serverRpcParams, RpcDelivery rpcDelivery)
 #endif
         {
             if (serializer == null) return;
@@ -125,13 +124,13 @@ namespace MLAPI
         [EditorBrowsable(EditorBrowsableState.Never)]
 #if UNITY_2020_2_OR_NEWER
         // RuntimeAccessModifiersILPP will make this `protected`
-        internal BitSerializer __beginSendClientRpc(ClientRpcParams clientRpcParams, RpcDelivery rpcDelivery)
+        internal NetworkSerializer __beginSendClientRpc(ClientRpcParams clientRpcParams, RpcDelivery rpcDelivery)
 #else
         [Obsolete("Please do not use, will no longer be exposed in the future versions (framework internal)")]
-        public BitSerializer __beginSendClientRpc(ClientRpcParams clientRpcParams, RpcDelivery rpcDelivery)
+        public NetworkSerializer __beginSendClientRpc(ClientRpcParams clientRpcParams, RpcDelivery rpcDelivery)
 #endif
         {
-            PooledBitWriter writer;
+            PooledNetworkWriter writer;
 
             // This will start a new queue item entry and will then return the writer to the current frame's stream
             var rpcQueueContainer = MLAPI.NetworkManager.Singleton.rpcQueueContainer;
@@ -147,8 +146,8 @@ namespace MLAPI
             //NOTES ON BELOW CHANGES:
             //The following checks for IsHost and whether the host client id is part of the clients to recieve the RPC
             //Is part of a patch-fix to handle looping back RPCs into the next frame's inbound queue.
-            //!!! This code is temporary and will change (soon) when bitserializer can be configured for mutliple BitWriters!!!
-            var ContainsServerClientId = ClientIds.Contains(MLAPI.NetworkManager.Singleton.ServerClientId);
+            //!!! This code is temporary and will change (soon) when NetworkSerializer can be configured for mutliple NetworkWriters!!!
+            var ContainsServerClientId = ClientIds.Contains(NetworkManager.Singleton.ServerClientId);
             if (IsHost && ContainsServerClientId)
             {
                 //Always write to the next frame's inbound queue
@@ -200,10 +199,10 @@ namespace MLAPI
         [EditorBrowsable(EditorBrowsableState.Never)]
 #if UNITY_2020_2_OR_NEWER
         // RuntimeAccessModifiersILPP will make this `protected`
-        internal void __endSendClientRpc(BitSerializer serializer, ClientRpcParams clientRpcParams, RpcDelivery rpcDelivery)
+        internal void __endSendClientRpc(NetworkSerializer serializer, ClientRpcParams clientRpcParams, RpcDelivery rpcDelivery)
 #else
         [Obsolete("Please do not use, will no longer be exposed in the future versions (framework internal)")]
-        public void __endSendClientRpc(BitSerializer serializer, ClientRpcParams clientRpcParams, RpcDelivery rpcDelivery)
+        public void __endSendClientRpc(NetworkSerializer serializer, ClientRpcParams clientRpcParams, RpcDelivery rpcDelivery)
 #endif
         {
             if (serializer == null) return;
@@ -619,9 +618,9 @@ namespace MLAPI
 
             for (int j = 0; j < channelMappedNetworkVariableIndexes.Count; j++)
             {
-                using (PooledBitStream stream = PooledBitStream.Get())
+                using (PooledNetworkStream stream = PooledNetworkStream.Get())
                 {
-                    using (PooledBitWriter writer = PooledBitWriter.Get(stream))
+                    using (PooledNetworkWriter writer = PooledNetworkWriter.Get(stream))
                     {
                         writer.WriteUInt64Packed(NetworkId);
                         writer.WriteUInt16Packed(NetworkObject.GetOrderIndex(this));
@@ -671,7 +670,7 @@ namespace MLAPI
 
                                 if (NetworkManager.Singleton.NetworkConfig.EnsureNetworkVariableLengthSafety)
                                 {
-                                    using (PooledBitStream varStream = PooledBitStream.Get())
+                                    using (PooledNetworkStream varStream = PooledNetworkStream.Get())
                                     {
                                         networkVariableFields[k].WriteDelta(varStream);
                                         varStream.PadStream();
@@ -715,7 +714,7 @@ namespace MLAPI
 
         internal static void HandleNetworkVariableDeltas(List<INetworkVariable> networkVariableList, Stream stream, ulong clientId, NetworkBehaviour logInstance)
         {
-            using (PooledBitReader reader = PooledBitReader.Get(stream))
+            using (PooledNetworkReader reader = PooledNetworkReader.Get(stream))
             {
                 // read the remote network tick at which this variable was written.
                 ushort remoteTick = reader.ReadUInt16Packed();
@@ -779,7 +778,7 @@ namespace MLAPI
 
                     if (NetworkManager.Singleton.NetworkConfig.EnsureNetworkVariableLengthSafety)
                     {
-                        (stream as BitStream).SkipPadBits();
+                        (stream as NetworkStream).SkipPadBits();
 
                         if (stream.Position > (readStartPos + varSize))
                         {
@@ -798,7 +797,7 @@ namespace MLAPI
 
         internal static void HandleNetworkVariableUpdate(List<INetworkVariable> networkVariableList, Stream stream, ulong clientId, NetworkBehaviour logInstance)
         {
-            using (PooledBitReader reader = PooledBitReader.Get(stream))
+            using (PooledNetworkReader reader = PooledNetworkReader.Get(stream))
             {
                 for (int i = 0; i < networkVariableList.Count; i++)
                 {
@@ -848,9 +847,9 @@ namespace MLAPI
 
                     if (NetworkManager.Singleton.NetworkConfig.EnsureNetworkVariableLengthSafety)
                     {
-                        if (stream is BitStream bitStream)
+                        if (stream is NetworkStream networkStream)
                         {
-                            bitStream.SkipPadBits();
+                            networkStream.SkipPadBits();
                         }
 
                         if (stream.Position > (readStartPos + varSize))
@@ -873,7 +872,7 @@ namespace MLAPI
         {
             if (networkVariableList.Count == 0) return;
 
-            using (PooledBitWriter writer = PooledBitWriter.Get(stream))
+            using (PooledNetworkWriter writer = PooledNetworkWriter.Get(stream))
             {
                 for (int j = 0; j < networkVariableList.Count; j++)
                 {
@@ -895,7 +894,7 @@ namespace MLAPI
                     {
                         if (NetworkManager.Singleton.NetworkConfig.EnsureNetworkVariableLengthSafety)
                         {
-                            using (PooledBitStream varStream = PooledBitStream.Get())
+                            using (PooledNetworkStream varStream = PooledNetworkStream.Get())
                             {
                                 networkVariableList[j].WriteField(varStream);
                                 varStream.PadStream();
@@ -917,7 +916,7 @@ namespace MLAPI
         {
             if (networkVariableList.Count == 0) return;
 
-            using (PooledBitReader reader = PooledBitReader.Get(stream))
+            using (PooledNetworkReader reader = PooledNetworkReader.Get(stream))
             {
                 for (int j = 0; j < networkVariableList.Count; j++)
                 {
@@ -940,9 +939,9 @@ namespace MLAPI
 
                     if (NetworkManager.Singleton.NetworkConfig.EnsureNetworkVariableLengthSafety)
                     {
-                        if (stream is BitStream bitStream)
+                        if (stream is NetworkStream networkStream)
                         {
-                            bitStream.SkipPadBits();
+                            networkStream.SkipPadBits();
                         }
 
                         if (stream.Position > (readStartPos + varSize))

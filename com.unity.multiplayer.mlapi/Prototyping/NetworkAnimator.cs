@@ -16,7 +16,7 @@ namespace MLAPI.Prototyping
         {
             public Dictionary<int, (AnimatorControllerParameterType Type, object Boxed)> Parameters;
 
-            public void NetworkSerialize(BitSerializer serializer)
+            public void NetworkSerialize(NetworkSerializer serializer)
             {
                 int paramCount = serializer.IsReading ? 0 : Parameters.Count;
                 serializer.Serialize(ref paramCount);

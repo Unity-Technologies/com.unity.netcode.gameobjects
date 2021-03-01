@@ -23,6 +23,7 @@ namespace MLAPI.Serialization
         /// <param name="stream">The stream to read the data required to construct the type.</param>
         /// <typeparam name="T">The type to deserialize.</typeparam>
         public delegate T CustomDeserializationDelegate<T>(Stream stream);
+
         /// <summary>
         /// The delegate used when registering custom serialization for a type.
         /// </summary>
@@ -33,6 +34,7 @@ namespace MLAPI.Serialization
 
         // These two are what we use internally. They box the value.
         private delegate void BoxedSerializationDelegate(Stream stream, object instance);
+
         private delegate object BoxedDeserializationDelegate(Stream stream);
 
         /// <summary>
@@ -44,8 +46,8 @@ namespace MLAPI.Serialization
         /// <typeparam name="T">The type to register.</typeparam>
         public static void RegisterSerializationHandlers<T>(CustomSerializationDelegate<T> onSerialize, CustomDeserializationDelegate<T> onDeserialize)
         {
-            cachedExternalSerializers[typeof(T)] = delegate(Stream stream, object instance) { onSerialize(stream, (T)instance); };
-            cachedExternalDeserializers[typeof(T)] = delegate(Stream stream) { return onDeserialize(stream); };
+            cachedExternalSerializers[typeof(T)] = (stream, instance) => onSerialize(stream, (T)instance);
+            cachedExternalDeserializers[typeof(T)] = stream => onDeserialize(stream);
         }
 
         /// <summary>
@@ -61,7 +63,7 @@ namespace MLAPI.Serialization
 
             return serializationRemoval || deserializationRemoval;
         }
-        
+
         internal static bool TrySerialize(Stream stream, object obj)
         {
             if (cachedExternalSerializers.ContainsKey(obj.GetType()))
@@ -69,10 +71,8 @@ namespace MLAPI.Serialization
                 cachedExternalSerializers[obj.GetType()](stream, obj);
                 return true;
             }
-            else
-            {
-                return false;
-            }
+
+            return false;
         }
 
         internal static bool TryDeserialize(Stream stream, Type type, out object obj)
@@ -82,28 +82,23 @@ namespace MLAPI.Serialization
                 obj = cachedExternalDeserializers[type](stream);
                 return true;
             }
-            else
-            {
-                obj = null;
-                return false;
-            }
+
+            obj = null;
+            return false;
         }
-        
+
         internal static FieldInfo[] GetFieldsForType(Type type)
         {
-            if (fieldCache.ContainsKey(type))
-                return fieldCache[type];
-            else
-            {
-                FieldInfo[] fields = type
-                    .GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
-                    .Where(x => (x.IsPublic || x.GetCustomAttributes(typeof(SerializeField), true).Length > 0) && IsTypeSupported(x.FieldType))
-                    .OrderBy(x => x.Name, StringComparer.Ordinal).ToArray();
-                
-                fieldCache.Add(type, fields);
+            if (fieldCache.ContainsKey(type)) return fieldCache[type];
 
-                return fields;
-            }
+            FieldInfo[] fields = type
+                .GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
+                .Where(x => (x.IsPublic || x.GetCustomAttributes(typeof(SerializeField), true).Length > 0) && IsTypeSupported(x.FieldType))
+                .OrderBy(x => x.Name, StringComparer.Ordinal).ToArray();
+
+            fieldCache.Add(type, fields);
+
+            return fields;
         }
 
         private static readonly HashSet<Type> SupportedTypes = new HashSet<Type>()
@@ -141,9 +136,9 @@ namespace MLAPI.Serialization
         /// <returns>Whether or not the type is supported</returns>
         public static bool IsTypeSupported(Type type)
         {
-            return type.IsEnum || SupportedTypes.Contains(type) || type.HasInterface(typeof(IBitWritable)) ||
+            return type.IsEnum || SupportedTypes.Contains(type) || type.HasInterface(typeof(INetworkSerializable)) ||
                    (cachedExternalSerializers.ContainsKey(type) && cachedExternalDeserializers.ContainsKey(type)) ||
-                    (type.IsArray && type.HasElementType && IsTypeSupported(type.GetElementType()));
+                   (type.IsArray && type.HasElementType && IsTypeSupported(type.GetElementType()));
         }
     }
 }

@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
 using MLAPI.Transports;
-using BitStream = MLAPI.Serialization.BitStream;
 using MLAPI.Hashing;
+using MLAPI.Serialization;
 using MLAPI.Serialization.Pooled;
 
 namespace MLAPI.Configuration
@@ -182,9 +182,9 @@ namespace MLAPI.Configuration
         public string ToBase64()
         {
             NetworkConfig config = this;
-            using (PooledBitStream stream = PooledBitStream.Get())
+            using (PooledNetworkStream stream = PooledNetworkStream.Get())
             {
-                using (PooledBitWriter writer = PooledBitWriter.Get(stream))
+                using (PooledNetworkWriter writer = PooledNetworkWriter.Get(stream))
                 {
                     writer.WriteUInt16Packed(config.ProtocolVersion);
 
@@ -228,9 +228,9 @@ namespace MLAPI.Configuration
         {
             NetworkConfig config = this;
             byte[] binary = Convert.FromBase64String(base64);
-            using (BitStream stream = new BitStream(binary))
+            using (NetworkStream stream = new NetworkStream(binary))
             {
-                using (PooledBitReader reader = PooledBitReader.Get(stream))
+                using (PooledNetworkReader reader = PooledNetworkReader.Get(stream))
                 {
                     config.ProtocolVersion = reader.ReadUInt16Packed();
 
@@ -278,9 +278,9 @@ namespace MLAPI.Configuration
 
             Sort();
 
-            using (PooledBitStream stream = PooledBitStream.Get())
+            using (PooledNetworkStream stream = PooledNetworkStream.Get())
             {
-                using (PooledBitWriter writer = PooledBitWriter.Get(stream))
+                using (PooledNetworkWriter writer = PooledNetworkWriter.Get(stream))
                 {
                     writer.WriteUInt16Packed(ProtocolVersion);
                     writer.WriteString(MLAPIConstants.MLAPI_PROTOCOL_VERSION);

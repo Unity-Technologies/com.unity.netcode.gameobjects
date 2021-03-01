@@ -15,14 +15,14 @@ namespace MLAPI.Messaging
         public class SendStream
         {
             public Channel Channel;
-            public PooledBitStream Stream;
-            public PooledBitWriter Writer;
+            public PooledNetworkStream Stream;
+            public PooledNetworkWriter Writer;
             public bool IsEmpty = true;
 
             public SendStream()
             {
-                Stream = PooledBitStream.Get();
-                Writer = PooledBitWriter.Get(Stream);
+                Stream = PooledNetworkStream.Get();
+                Writer = PooledNetworkWriter.Get(Stream);
             }
         }
 
@@ -35,7 +35,7 @@ namespace MLAPI.Messaging
         // Used to mark longer lengths. Works because we can't have zero-sized messages
         private const byte k_LongLenMarker = 0;
 
-        private void PushLength(int length, ref PooledBitWriter writer)
+        private void PushLength(int length, ref PooledNetworkWriter writer)
         {
             // If length is single byte we write it
             if (length < 256)
@@ -51,7 +51,7 @@ namespace MLAPI.Messaging
             }
         }
 
-        private int PopLength(in BitStream messageStream)
+        private int PopLength(in NetworkStream messageStream)
         {
             int read = messageStream.ReadByte();
             // if we read a non-zero value, we have a single byte length
@@ -152,7 +152,7 @@ namespace MLAPI.Messaging
         }
 
         public delegate void SendCallbackType(ulong clientId, SendStream messageStream);
-        public delegate void ReceiveCallbackType(BitStream messageStream, RpcQueueContainer.QueueItemType messageType, ulong clientId, float receiveTime);
+        public delegate void ReceiveCallbackType(NetworkStream messageStream, RpcQueueContainer.QueueItemType messageType, ulong clientId, float receiveTime);
 
         /// <summary>
         /// SendItems
@@ -192,9 +192,9 @@ namespace MLAPI.Messaging
         /// <param name="messageType"> the message type to pass back to callback</param>
         /// <param name="clientId"> the clientId to pass back to callback</param>
         /// <param name="receiveTime"> the packet receive time to pass back to callback</param>
-        public void ReceiveItems(in BitStream messageStream, ReceiveCallbackType receiveCallback, RpcQueueContainer.QueueItemType messageType, ulong clientId, float receiveTime)
+        public void ReceiveItems(in NetworkStream messageStream, ReceiveCallbackType receiveCallback, RpcQueueContainer.QueueItemType messageType, ulong clientId, float receiveTime)
         {
-            using (var copy = PooledBitStream.Get())
+            using (var copy = PooledNetworkStream.Get())
             {
                 do
                 {

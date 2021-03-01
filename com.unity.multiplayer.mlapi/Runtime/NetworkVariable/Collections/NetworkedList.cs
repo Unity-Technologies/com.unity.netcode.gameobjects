@@ -142,7 +142,7 @@ namespace MLAPI.NetworkVariable.Collections
         /// <inheritdoc />
         public void WriteDelta(Stream stream)
         {
-            using (PooledBitWriter writer = PooledBitWriter.Get(stream))
+            using (PooledNetworkWriter writer = PooledNetworkWriter.Get(stream))
             {
                 writer.WriteUInt16Packed((ushort) dirtyEvents.Count);
                 for (int i = 0; i < dirtyEvents.Count; i++)
@@ -191,7 +191,7 @@ namespace MLAPI.NetworkVariable.Collections
         /// <inheritdoc />
         public void WriteField(Stream stream)
         {
-            using (PooledBitWriter writer = PooledBitWriter.Get(stream))
+            using (PooledNetworkWriter writer = PooledNetworkWriter.Get(stream))
             {
                 writer.WriteUInt16Packed((ushort) list.Count);
                 for (int i = 0; i < list.Count; i++)
@@ -204,7 +204,7 @@ namespace MLAPI.NetworkVariable.Collections
         /// <inheritdoc />
         public void ReadField(Stream stream, ushort localTick, ushort remoteTick)
         {
-            using (PooledBitReader reader = PooledBitReader.Get(stream))
+            using (PooledNetworkReader reader = PooledNetworkReader.Get(stream))
             {
                 list.Clear();
                 ushort count = reader.ReadUInt16Packed();
@@ -218,7 +218,7 @@ namespace MLAPI.NetworkVariable.Collections
         /// <inheritdoc />
         public void ReadDelta(Stream stream, bool keepDirtyDelta, ushort localTick, ushort remoteTick)
         {
-            using (PooledBitReader reader = PooledBitReader.Get(stream))
+            using (PooledNetworkReader reader = PooledNetworkReader.Get(stream))
             {
                 ushort deltaCount = reader.ReadUInt16Packed();
                 for (int i = 0; i < deltaCount; i++)
