@@ -23,7 +23,7 @@ public class RandomPlayerMover : NetworkedBehaviour
     private RigidbodyConstraints m_DefaultConstraints;
 
     [SerializeField]
-    Vector3 m_PlayerStartOffset;
+    private Vector3 m_PlayerStartOffset;
 
     [SerializeField]
     private GameObject m_PlayerSpawnPoints;
@@ -60,7 +60,6 @@ public class RandomPlayerMover : NetworkedBehaviour
     /// </summary>
     private void Start()
     {
-
         m_NetworkTransform = GetComponent<SyncTransform>();
 
         m_Rigidbody = GetComponent<Rigidbody>();
@@ -86,7 +85,7 @@ public class RandomPlayerMover : NetworkedBehaviour
         }
 
         //All instances register to this in order to change their state according to the global game state
-        GlobalGameState.Singleton.gameStateChanged += GlobalGameStateChanged;
+        GlobalGameState.Singleton.GameStateChanged += GlobalGameStateChanged;
 
         SetPlayerColor();
     }
@@ -119,23 +118,15 @@ public class RandomPlayerMover : NetworkedBehaviour
     /// as a child on the player prefab (PlayerObject). Using this method, you can set the camera's transform's
     /// parent to be the m_CameraRoot.transform
     /// </summary>
-    public void SetPlayerCamera()
+    public void SetPlayerCamera(bool isActive = true)
     {
         if (IsLocalPlayer)
         {
             Camera camera = m_CameraRoot.GetComponentInChildren<Camera>();
             if (camera)
             {
-                camera.enabled = true;
+                camera.enabled = isActive;
             }
-
-            //if (mainCamera && Camera.main.transform.parent == null)
-            //{
-            //    mainCamera.transform.parent = m_CameraRoot.transform;
-            //    mainCamera.transform.localPosition = Vector3.zero;
-            //    mainCamera.transform.localRotation = Quaternion.identity;
-            //    mainCamera.enabled = true;
-            //}
         }
     }
 

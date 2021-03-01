@@ -114,7 +114,7 @@ public class PlayerControl : NetworkedBehaviour
 
         m_Health.OnValueChanged += OnHealthChanged;
 
-        GlobalGameState.Singleton.gameStateChanged += GameStateChanged;
+        GlobalGameState.Singleton.GameStateChanged += GameStateChanged;
     }
 
     /// <summary>
@@ -129,7 +129,7 @@ public class PlayerControl : NetworkedBehaviour
 
     protected void OnDestroy()
     {
-        GlobalGameState.Singleton.gameStateChanged -= GameStateChanged;
+        GlobalGameState.Singleton.GameStateChanged -= GameStateChanged;
         m_Health.OnValueChanged -= OnHealthChanged;
     }
 

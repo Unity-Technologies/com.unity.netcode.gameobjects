@@ -32,7 +32,7 @@ namespace MLAPIGlobalGameState
         [SerializeField]
         private GlobalGameState.GameStates m_StateToLoadScene;
 
-        public String sceneToLoad
+        public String SceneToLoad
         {
             get
             {
@@ -76,7 +76,7 @@ namespace MLAPIGlobalGameState
                 //We need to parse these each time as the user might re-order the links
                 foreach(StateToSceneTransitionLinks entry in results)
                 {
-                    if(entry.sceneToLoad == sceneName)
+                    if(entry.SceneToLoad == sceneName)
                     {
                         return IndexCounter;
                     }
@@ -98,7 +98,7 @@ namespace MLAPIGlobalGameState
             var results = m_StateToSceneList.Where(entry => entry.stateToLoadScene == gameState);
             if (results != null && ( (results.Count() - 1) >= currentindex) )
             {
-                return results.ElementAt(currentindex).sceneToLoad;
+                return results.ElementAt(currentindex).SceneToLoad;
             }
             return String.Empty;
         }
@@ -111,7 +111,7 @@ namespace MLAPIGlobalGameState
         /// <returns>GlobalGameState.GameStates</returns>
         public GlobalGameState.GameStates GetGameStateLinkedToScene(String sceneName)
         {
-            var results = m_StateToSceneList.Where(entry => entry.sceneToLoad == sceneName);
+            var results = m_StateToSceneList.Where(entry => entry.SceneToLoad == sceneName);
             if (results != null)
             {
                 return results.First().stateToLoadScene;

@@ -49,7 +49,7 @@ public class GlobalGameState : NetworkedBehaviour
     /// when each individual player has loaded a scene
     /// </summary>
     [HideInInspector]
-    public event ClientLoadedSceneDelegateHandler clientLoadedScene;
+    public event ClientLoadedSceneDelegateHandler ClientLoadedScene;
 
     [HideInInspector]
     public delegate void GameStateChangedDelegateHandler(GameStates previousState, GameStates newState);
@@ -60,7 +60,7 @@ public class GlobalGameState : NetworkedBehaviour
     /// to be notified when the global game state changes
     /// </summary>
     [HideInInspector]
-    public event GameStateChangedDelegateHandler gameStateChanged;
+    public event GameStateChangedDelegateHandler GameStateChanged;
 
     [HideInInspector]
     public delegate void AllPlayersLoadedSceneDelegateHandler();
@@ -99,12 +99,12 @@ public class GlobalGameState : NetworkedBehaviour
     /// One way to expose a global value that can be updated regularly
     /// Clients only have read access
     /// </summary>
-    public float inGameTime { get{ return m_InGameTime.Value; } }
+    public float InGameTime { get{ return m_InGameTime.Value; } }
     #endregion
 
     //This is set prior to setting any game state that activates MLAPI
     [HideInInspector]
-    public bool isHostingGame;
+    public bool IsHostingGame;
 
     //Used to determine the current state of MLAPI (Global Game State Relative)
     private StateToSceneTransitionLinks.MLAPIStates m_CurrentMLAPIState;
@@ -187,9 +187,9 @@ public class GlobalGameState : NetworkedBehaviour
     /// <param name="newState">to state</param>
     private void OnGameStateChanged(GameStates previousState, GameStates newState)
     {
-        if (gameStateChanged != null)
+        if (GameStateChanged != null)
         {
-            gameStateChanged.Invoke(previousState, newState);
+            GameStateChanged.Invoke(previousState, newState);
         }
     }
 
@@ -255,7 +255,7 @@ public class GlobalGameState : NetworkedBehaviour
                             if (!NetworkingManager.Singleton.IsListening)
                             {
                                 //If we are host, then start the host
-                                if (isHostingGame)
+                                if (IsHostingGame)
                                 {
                                     NetworkingManager.Singleton.StartHost();  //Spin up the host
                                 }
@@ -274,9 +274,9 @@ public class GlobalGameState : NetworkedBehaviour
                             if (NetworkingManager.Singleton.IsListening)
                             {
                                 //If we are host, then stop the host
-                                if (isHostingGame)
+                                if (IsHostingGame)
                                 {
-                                    isHostingGame = false;
+                                    IsHostingGame = false;
                                     NetworkingManager.Singleton.StopHost();  //shutdown the host
                                 }
                                 else //otherwise stop the client
@@ -289,9 +289,9 @@ public class GlobalGameState : NetworkedBehaviour
                                 {
                                     m_SceneProgress = null;
                                 }
-                                if (clientLoadedScene != null)
+                                if (ClientLoadedScene != null)
                                 {
-                                    clientLoadedScene = null;
+                                    ClientLoadedScene = null;
                                 }
                             }
                         }
@@ -443,9 +443,9 @@ public class GlobalGameState : NetworkedBehaviour
     /// <param name="clientId"></param>
     private void SceneProgress_OnClientLoadedScene(ulong clientId)
     {
-        if (clientLoadedScene != null)
+        if (ClientLoadedScene != null)
         {
-            clientLoadedScene.Invoke(clientId);
+            ClientLoadedScene.Invoke(clientId);
         }
 
     }
@@ -461,20 +461,20 @@ public class GlobalGameState : NetworkedBehaviour
     }
 
 #if UNITY_EDITOR
-    private static string BootStrapToScene;
-    public static bool EditorLaunchingAsHost;
+    private static string s_BootStrapToScene;
+    public static bool s_EditorLaunchingAsHost;
 #endif
 
     public static bool CheckForBootStrappedScene()
     {
 #if UNITY_EDITOR
-        if (BootStrapToScene != null && BootStrapToScene != string.Empty)
+        if (s_BootStrapToScene != null && s_BootStrapToScene != string.Empty)
         {
-            GameStates BootStrappedGameState = Singleton.m_SceneToStateLinks.GetGameStateLinkedToScene(BootStrapToScene);
-            BootStrapToScene = string.Empty;
+            GameStates BootStrappedGameState = Singleton.m_SceneToStateLinks.GetGameStateLinkedToScene(s_BootStrapToScene);
+            s_BootStrapToScene = string.Empty;
             if (BootStrappedGameState != GameStates.None)
             {
-                Singleton.isHostingGame = EditorLaunchingAsHost;
+                Singleton.IsHostingGame = s_EditorLaunchingAsHost;
                 Singleton.UpdateMLAPIState(BootStrappedGameState);
                 Singleton.SetGameState(BootStrappedGameState);
                 return true;
@@ -498,7 +498,7 @@ public class GlobalGameState : NetworkedBehaviour
                     Scene currentScene = SceneManager.GetActiveScene();
                     if (currentScene != null)
                     {
-                        BootStrapToScene = currentScene.name;
+                        s_BootStrapToScene = currentScene.name;
                     }
                     SceneManager.LoadScene(SplitSceneFileName[0]);
                 }

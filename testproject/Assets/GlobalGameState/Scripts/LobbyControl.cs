@@ -7,7 +7,7 @@ using UnityEngine.UI;
 public class LobbyControl : NetworkedBehaviour
 {
     [SerializeField]
-    bool m_LaunchAsHostInEditor;
+    private bool m_LaunchAsHostInEditor;
 
     [SerializeField]
     private Text m_LobbyText;
@@ -31,7 +31,7 @@ public class LobbyControl : NetworkedBehaviour
 #if UNITY_EDITOR
         if ( NetworkingManager.Singleton == null)
         {
-            GlobalGameState.EditorLaunchingAsHost = m_LaunchAsHostInEditor;
+            GlobalGameState.s_EditorLaunchingAsHost = m_LaunchAsHostInEditor;
             //This will automatically launch the MLAPIBootStrap and then transition directly to the scene this control is contained within (for easy development of scenes)
             GlobalGameState.LoadBootStrapScene();
             return;
@@ -51,7 +51,7 @@ public class LobbyControl : NetworkedBehaviour
                 m_AllPlayersInLobby = false;
                 //Server will be notified when a client connects
 
-                GlobalGameState.Singleton.clientLoadedScene += ClientLoadedScene;
+                GlobalGameState.Singleton.ClientLoadedScene += ClientLoadedScene;
             }
             //Update our lobby
             GenerateUserStatsForLobby();
@@ -243,7 +243,7 @@ public class LobbyControl : NetworkedBehaviour
                 NetworkingManager.Singleton.OnClientConnectedCallback -= OnClientConnectedCallback;
 
                 //Remove our scene loaded callback
-                GlobalGameState.Singleton.clientLoadedScene -= ClientLoadedScene;
+                GlobalGameState.Singleton.ClientLoadedScene -= ClientLoadedScene;
 
                 //Transition to the ingame scene
                 GlobalGameState.Singleton.SetGameState(GlobalGameState.GameStates.InGame);
@@ -307,7 +307,7 @@ public class LobbyControl : NetworkedBehaviour
             NetworkingManager.Singleton.OnClientConnectedCallback -= OnClientConnectedCallback;
             if (IsServer)
             {
-                GlobalGameState.Singleton.clientLoadedScene -= ClientLoadedScene;
+                GlobalGameState.Singleton.ClientLoadedScene -= ClientLoadedScene;
             }
         }
     }

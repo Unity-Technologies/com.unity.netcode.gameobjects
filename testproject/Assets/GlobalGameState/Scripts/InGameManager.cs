@@ -72,7 +72,7 @@ public class InGameManager : NetworkedBehaviour
 #if UNITY_EDITOR
         if ( NetworkingManager.Singleton == null)
         {
-            GlobalGameState.EditorLaunchingAsHost = m_LaunchAsHostInEditor;
+            GlobalGameState.s_EditorLaunchingAsHost = m_LaunchAsHostInEditor;
             //This will automatically launch the MLAPIBootStrap and then transition directly to the scene this control is contained within (for easy development of scenes)
             GlobalGameState.LoadBootStrapScene();
             return;

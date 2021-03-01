@@ -43,14 +43,14 @@ public class MenuControl : MonoBehaviour
 
     public void StartLocalGame()
     {
-        GlobalGameState.Singleton.isHostingGame = true;
+        GlobalGameState.Singleton.IsHostingGame = true;
         m_CurrentTransport.ConnectAddress = m_HostIpInput.text;
         GlobalGameState.Singleton.SetGameState(GlobalGameState.GameStates.Lobby);
     }
 
     public void JoinLocalGame()
     {
-        GlobalGameState.Singleton.isHostingGame = false;
+        GlobalGameState.Singleton.IsHostingGame = false;
         m_CurrentTransport.ConnectAddress = m_HostIpInput.text;
         GlobalGameState.Singleton.SetGameState(GlobalGameState.GameStates.Lobby);
     }
