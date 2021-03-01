@@ -1077,11 +1077,11 @@ namespace MLAPI
                                 else
                                 {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-                                    s_MLAPIServerRPCQueued.Begin();
+                                    s_MLAPIServerSTDRPCQueued.Begin();
 #endif
                                     InternalMessageHandler.RPCReceiveQueueItem(clientId, messageStream, receiveTime,RpcQueueContainer.QueueItemType.ServerRpc);
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-                                    s_MLAPIServerRPCQueued.End();
+                                    s_MLAPIServerSTDRPCQueued.End();
 #endif
                                 }
                             }
@@ -1100,11 +1100,11 @@ namespace MLAPI
                                 else
                                 {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-                                    s_MLAPIClientRPCQueued.Begin();
+                                    s_MLAPIClientSTDRPCQueued.Begin();
 #endif
                                     InternalMessageHandler.RPCReceiveQueueItem(clientId, messageStream,receiveTime,RpcQueueContainer.QueueItemType.ClientRpc);
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-                                    s_MLAPIClientRPCQueued.End();
+                                    s_MLAPIClientSTDRPCQueued.End();
 #endif
                                 }
                             }
@@ -1129,22 +1129,22 @@ namespace MLAPI
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (messageType == RpcQueueContainer.QueueItemType.ServerRpc)
             {
-                s_MLAPIServerRPCQueued.Begin();
+                s_MLAPIServerSTDRPCQueued.Begin();
             }
             else
             {
-                s_MLAPIClientRPCQueued.Begin();
+                s_MLAPIClientSTDRPCQueued.Begin();
             }
 #endif
             InternalMessageHandler.RPCReceiveQueueItem(clientId, messageStream, receiveTime, messageType);
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (messageType == RpcQueueContainer.QueueItemType.ServerRpc)
             {
-                s_MLAPIServerRPCQueued.End();
+                s_MLAPIServerSTDRPCQueued.End();
             }
             else
             {
-                s_MLAPIClientRPCQueued.End();
+                s_MLAPIClientSTDRPCQueued.End();
             }
 #endif
         }
