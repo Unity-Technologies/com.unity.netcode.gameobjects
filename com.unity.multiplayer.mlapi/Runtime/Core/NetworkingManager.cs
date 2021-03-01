@@ -643,8 +643,8 @@ namespace MLAPI
         {
             if (Singleton != null && Singleton == this)
             {
-                Shutdown();
                 Singleton = null;
+                Shutdown();
             }
         }
 
