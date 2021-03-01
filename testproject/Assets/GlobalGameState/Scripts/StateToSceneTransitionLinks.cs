@@ -61,18 +61,44 @@ namespace MLAPIGlobalGameState
         public List<StateToSceneTransitionLinks> StateToSceneList { get { return m_StateToSceneList; } set { m_StateToSceneList = value; } }
 
         /// <summary>
+        /// GetInSessionSceneNameIndex
+        /// Returns the associated index of the InSession linked scene name
+        /// </summary>
+        /// <param name="sceneName"></param>
+        /// <returns></returns>
+        public int GetStateToSceneNameIndex(StateToSceneTransitionLinks.MLAPIStates mlapiState, String sceneName)
+        {
+            //Get all of the scenes marked with MLAPIStates.InSession
+            var results = m_StateToSceneList.Where(entry => entry.MLAPIState == mlapiState);
+            if (results != null)
+            {
+                int IndexCounter = 0;
+                //We need to parse these each time as the user might re-order the links
+                foreach(StateToSceneTransitionLinks entry in results)
+                {
+                    if(entry.sceneToLoad == sceneName)
+                    {
+                        return IndexCounter;
+                    }
+                    IndexCounter++;
+                }
+            }
+            return -1;
+        }
+
+        /// <summary>
         /// GetSceneLinkedToState
         /// Returns the scene associated with the state
         /// </summary>
-        /// <param name="gameState">GlobalGameState.GameStates</param>
-        /// <returns>String</returns>
-        public String GetSceneNameLinkedToState(GlobalGameState.GameStates gameState)
+        /// <param name="gameState">game state</param>
+        /// <param name="currentindex">the expected index</param>
+        /// <returns></returns>
+        public String GetSceneNameLinkedToState(GlobalGameState.GameStates gameState, int currentindex = 0)
         {
-
             var results = m_StateToSceneList.Where(entry => entry.stateToLoadScene == gameState);
-            if (results != null)
+            if (results != null && ( (results.Count() - 1) >= currentindex) )
             {
-                return results.First().sceneToLoad;
+                return results.ElementAt(currentindex).sceneToLoad;
             }
             return String.Empty;
         }

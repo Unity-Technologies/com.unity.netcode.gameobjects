@@ -302,6 +302,7 @@ public class GlobalGameState : NetworkedBehaviour
         }
     }
 
+    private int m_MLAPIStateSceneIndex = 0;
     /// <summary>
     /// GameStateChangedUpdate
     /// Any additional processing we might want to do globally depending upon the current state
@@ -310,30 +311,38 @@ public class GlobalGameState : NetworkedBehaviour
     /// <param name="newState">to state</param>
     private void GameStateChangedUpdate(GameStates previousState, GameStates newState)
     {
-        //We only should update once per changed state
-        if (previousState != newState)
+        string SceneName;
+        if(previousState == newState)
         {
-
-            string SceneName = m_SceneToStateLinks.GetSceneNameLinkedToState(newState);
-
-            if (SceneName != string.Empty)
+            m_MLAPIStateSceneIndex++;
+            SceneName = m_SceneToStateLinks.GetSceneNameLinkedToState(newState, m_MLAPIStateSceneIndex);
+        }
+        else
+        {
+            SceneName = m_SceneToStateLinks.GetSceneNameLinkedToState(newState);
+            if(SceneName != string.Empty)
             {
-                if (m_CurrentMLAPIState == StateToSceneTransitionLinks.MLAPIStates.InSession || m_CurrentMLAPIState == StateToSceneTransitionLinks.MLAPIStates.Connecting)
-                {
-                    //If we are in a session or connecting, then update the state first then switch scenes
-                    UpdateMLAPIState(newState);
-                    //Start the scene switch first
-                    SwitchScene(SceneName, newState);
+                m_MLAPIStateSceneIndex = 0;
+            }
+        }
 
-                }
-                else
-                {
-                    //Then update the MLAPI state
-                    UpdateMLAPIState(newState);
+        //We only should update once per changed state
+        if (SceneName != string.Empty)
+        {
+            if (m_CurrentMLAPIState == StateToSceneTransitionLinks.MLAPIStates.InSession || m_CurrentMLAPIState == StateToSceneTransitionLinks.MLAPIStates.Connecting)
+            {
+                //If we are in a session or connecting, then update the state first then switch scenes
+                UpdateMLAPIState(newState);
+                //Start the scene switch first
+                SwitchScene(SceneName);
+            }
+            else
+            {
+                //Then update the MLAPI state
+                UpdateMLAPIState(newState);
 
-                    //Start the scene switch first
-                    SwitchScene(SceneName, newState);
-                }
+                //Start the scene switch first
+                SwitchScene(SceneName);
             }
 
             //make sure we can set this networked variable
@@ -347,7 +356,6 @@ public class GlobalGameState : NetworkedBehaviour
                 //Now set the state so all clients will receive the message
                 m_GameState.Value = newState;
             }
-
         }
     }
 
@@ -375,7 +383,7 @@ public class GlobalGameState : NetworkedBehaviour
     /// Switches to a new scene
     /// </summary>
     /// <param name="scenename"></param>
-    private void SwitchScene(string scenename,GameStates transitionState )
+    private void SwitchScene(string scenename)
     {
         // If we have started our network transport (connecting, connected, in game session, etc)
         if (NetworkingManager.Singleton.IsListening && IsServer)

@@ -118,9 +118,7 @@ public class InGameManager : NetworkedBehaviour
 
         SetAndInitializeLocalPlayer();
         FreezeAndShowPlayers();
-
     }
-
 
     /// <summary>
     /// SetAndInitializeLocalPlayer
@@ -411,6 +409,14 @@ public class InGameManager : NetworkedBehaviour
         {
             //Clients always exit immediately
             GlobalGameState.Singleton.SetGameState(GlobalGameState.GameStates.ExitGame);
+        }
+    }
+
+    public void OnNextLevel()
+    {
+        if(IsServer)
+        {
+            GlobalGameState.Singleton.SetGameState(GlobalGameState.GameStates.InGame);
         }
     }
 

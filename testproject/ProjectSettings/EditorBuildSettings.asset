@@ -21,6 +21,12 @@ EditorBuildSettings:
     path: Assets/GlobalGameState/Scenes/InGame.unity
     guid: ebee135e52c197349959dc7546e30261
   - enabled: 1
+    path: Assets/GlobalGameState/Scenes/InGame2.unity
+    guid: 9d13b5a268947a044bc4f1a710bb3959
+  - enabled: 1
+    path: Assets/GlobalGameState/Scenes/InGame3.unity
+    guid: d7f7bc7d9a8dede4c85f461f67eea05c
+  - enabled: 1
     path: Assets/Scenes/SampleScene.unity
     guid: 9fc0d4010bbf28b4594072e72b8655ab
   m_configObjects: {}

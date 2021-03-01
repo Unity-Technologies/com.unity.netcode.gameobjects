@@ -121,14 +121,21 @@ public class RandomPlayerMover : NetworkedBehaviour
     /// </summary>
     public void SetPlayerCamera()
     {
-        if (m_CameraRoot && IsLocalPlayer)
+        if (IsLocalPlayer)
         {
-            if (Camera.main && Camera.main.transform.parent == null)
+            Camera camera = m_CameraRoot.GetComponentInChildren<Camera>();
+            if (camera)
             {
-                Camera.main.transform.parent = m_CameraRoot.transform;
-                Camera.main.transform.localPosition = Vector3.zero;
-                Camera.main.transform.localRotation = Quaternion.identity;
+                camera.enabled = true;
             }
+
+            //if (mainCamera && Camera.main.transform.parent == null)
+            //{
+            //    mainCamera.transform.parent = m_CameraRoot.transform;
+            //    mainCamera.transform.localPosition = Vector3.zero;
+            //    mainCamera.transform.localRotation = Quaternion.identity;
+            //    mainCamera.enabled = true;
+            //}
         }
     }
 
@@ -159,12 +166,12 @@ public class RandomPlayerMover : NetworkedBehaviour
         {
             case GlobalGameState.GameStates.Lobby:
                 {
-
                     OnIsHidden(isTransitioningTo);
                     break;
                 }
             case GlobalGameState.GameStates.InGame:
                 {
+
                     break;
                 }
         }
