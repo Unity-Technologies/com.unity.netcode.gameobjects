@@ -105,7 +105,7 @@ namespace MLAPI.Transports
         /// <summary>
         /// Delegate for transport events.
         /// </summary>
-        public delegate void TransportEventDelegate(NetEventType type, ulong clientId, Channel channel, ArraySegment<byte> payload, float receiveTime);
+        public delegate void TransportEventDelegate(NetworkEvent type, ulong clientId, Channel channel, ArraySegment<byte> payload, float receiveTime);
 
         /// <summary>
         /// Occurs when the transport has a new transport event. Can be used to make an event based transport instead of a poll based.
@@ -121,7 +121,7 @@ namespace MLAPI.Transports
         /// <param name="channelName">The channel the data arrived at. This is usually used when responding to things like RPCs</param>
         /// <param name="payload">The incoming data payload</param>
         /// <param name="receiveTime">The time the event was received, as reported by Time.realtimeSinceStartup.</param>
-        protected void InvokeOnTransportEvent(NetEventType type, ulong clientId, Channel channel, ArraySegment<byte> payload, float receiveTime)
+        protected void InvokeOnTransportEvent(NetworkEvent type, ulong clientId, Channel channel, ArraySegment<byte> payload, float receiveTime)
         {
             OnTransportEvent?.Invoke(type, clientId, channel, payload, receiveTime);
         }
@@ -142,7 +142,7 @@ namespace MLAPI.Transports
         /// <param name="payload">The incoming data payload</param>
         /// <param name="receiveTime">The time the event was received, as reported by Time.realtimeSinceStartup.</param>
         /// <returns>Returns the event type</returns>
-        public abstract NetEventType PollEvent(out ulong clientId, out Channel channel, out ArraySegment<byte> payload, out float receiveTime);
+        public abstract NetworkEvent PollEvent(out ulong clientId, out Channel channel, out ArraySegment<byte> payload, out float receiveTime);
 
         /// <summary>
         /// Connects client to server

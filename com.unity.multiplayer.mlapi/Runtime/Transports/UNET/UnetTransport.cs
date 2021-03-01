@@ -150,7 +150,7 @@ namespace MLAPI.Transports.UNET
             RelayTransport.SendQueuedMessages(hostId, connectionId, out byte error);
         }
 
-        public override NetEventType PollEvent(out ulong clientId, out Channel channel, out ArraySegment<byte> payload, out float receiveTime)
+        public override NetworkEvent PollEvent(out ulong clientId, out Channel channel, out ArraySegment<byte> payload, out float receiveTime)
         {
             NetworkEventType eventType = RelayTransport.Receive(out int hostId, out int connectionId, out int channelId, messageBuffer, messageBuffer.Length, out int receivedSize, out byte error);
 
@@ -231,18 +231,18 @@ namespace MLAPI.Transports.UNET
             switch (eventType)
             {
                 case NetworkEventType.DataEvent:
-                    return NetEventType.Data;
+                    return NetworkEvent.Data;
                 case NetworkEventType.ConnectEvent:
-                    return NetEventType.Connect;
+                    return NetworkEvent.Connect;
                 case NetworkEventType.DisconnectEvent:
-                    return NetEventType.Disconnect;
+                    return NetworkEvent.Disconnect;
                 case NetworkEventType.Nothing:
-                    return NetEventType.Nothing;
+                    return NetworkEvent.Nothing;
                 case NetworkEventType.BroadcastEvent:
-                    return NetEventType.Nothing;
+                    return NetworkEvent.Nothing;
             }
 
-            return NetEventType.Nothing;
+            return NetworkEvent.Nothing;
         }
 
         public override SocketTasks StartClient()

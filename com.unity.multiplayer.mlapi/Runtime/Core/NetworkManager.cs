@@ -725,16 +725,16 @@ namespace MLAPI
                     //If we are in loopback mode, we don't need to touch the transport
                     if (!IsLoopBack)
                     {
-                        NetEventType eventType;
+                        NetworkEvent networkEvent;
                         int processedEvents = 0;
                         do
                         {
                             processedEvents++;
-                            eventType = NetworkConfig.NetworkTransport.PollEvent(out ulong clientId, out Channel channel, out ArraySegment<byte> payload, out float receiveTime);
-                            HandleRawTransportPoll(eventType, clientId, channel, payload, receiveTime);
+                            networkEvent = NetworkConfig.NetworkTransport.PollEvent(out ulong clientId, out Channel channel, out ArraySegment<byte> payload, out float receiveTime);
+                            HandleRawTransportPoll(networkEvent, clientId, channel, payload, receiveTime);
 
                             // Only do another iteration if: there are no more messages AND (there is no limit to max events or we have processed less than the maximum)
-                        } while (IsListening && (eventType != NetEventType.Nothing) && (NetworkConfig.MaxReceiveEventsPerTickRate <= 0 || processedEvents < NetworkConfig.MaxReceiveEventsPerTickRate));
+                        } while (IsListening && (networkEvent != NetworkEvent.Nothing) && (NetworkConfig.MaxReceiveEventsPerTickRate <= 0 || processedEvents < NetworkConfig.MaxReceiveEventsPerTickRate));
                     }
 
                     m_LastReceiveTickTime = NetworkTime;
@@ -882,13 +882,13 @@ namespace MLAPI
             switchSceneProgress.SetTimedOut();
         }
 
-        private void HandleRawTransportPoll(NetEventType eventType, ulong clientId, Channel channel, ArraySegment<byte> payload, float receiveTime)
+        private void HandleRawTransportPoll(NetworkEvent networkEvent, ulong clientId, Channel channel, ArraySegment<byte> payload, float receiveTime)
         {
             PerformanceDataManager.Increment(ProfilerConstants.NumberBytesReceived, payload.Count);
             ProfilerStatManager.bytesRcvd.Record(payload.Count);
-            switch (eventType)
+            switch (networkEvent)
             {
-                case NetEventType.Connect:
+                case NetworkEvent.Connect:
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                     s_TransportConnect.Begin();
 #endif
@@ -916,13 +916,13 @@ namespace MLAPI
                     s_TransportConnect.End();
 #endif
                     break;
-                case NetEventType.Data:
+                case NetworkEvent.Data:
                     {
                         if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogInfo($"Incoming Data From {clientId} : {payload.Count} bytes");
                         HandleIncomingData(clientId, channel, payload, receiveTime, true);
                         break;
                     }
-                case NetEventType.Disconnect:
+                case NetworkEvent.Disconnect:
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                     s_TransportDisconnect.Begin();
 #endif
