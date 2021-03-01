@@ -6,19 +6,19 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Scenes/SceneTransitioning/MLAPIBootStrap.unity
+    path: Assets/GlobalGameState/Scenes/MLAPIBootStrap.unity
     guid: f1b57d687e6023144852eb0403e851d6
   - enabled: 1
-    path: Assets/Scenes/SceneTransitioning/GameIntro.unity
+    path: Assets/GlobalGameState/Scenes/GameIntro.unity
     guid: 558f5edadd3fbfe4094deb4425db5b5f
   - enabled: 1
-    path: Assets/Scenes/SceneTransitioning/MainMenu.unity
+    path: Assets/GlobalGameState/Scenes/MainMenu.unity
     guid: 66ac83b9757b2c041a24a6bdd2ea0051
   - enabled: 1
-    path: Assets/Scenes/SceneTransitioning/GameLobby.unity
+    path: Assets/GlobalGameState/Scenes/GameLobby.unity
     guid: e5ad5460121db3243abe93100d6ee520
   - enabled: 1
-    path: Assets/Scenes/SceneTransitioning/InGame.unity
+    path: Assets/GlobalGameState/Scenes/InGame.unity
     guid: ebee135e52c197349959dc7546e30261
   - enabled: 1
     path: Assets/Scenes/SampleScene.unity
