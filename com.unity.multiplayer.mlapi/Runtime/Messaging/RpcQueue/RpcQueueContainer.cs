@@ -345,11 +345,11 @@ namespace MLAPI.Messaging
         /// </summary>
         /// <param name="qItemType">type of rpc (client or server)</param>
         /// <param name="timeStamp">when it was scheduled to be sent</param>
-        /// <param name="channel">the channel to send it on</param>
+        /// <param name="networkChannel">the channel to send it on</param>
         /// <param name="sourceNetworkId">who is sending the rpc</param>
         /// <param name="targetNetworkIds">who the rpc is being sent to</param>
         /// <returns></returns>
-        public PooledNetworkWriter BeginAddQueueItemToFrame(QueueItemType qItemType, float timeStamp, Channel channel, ulong sourceNetworkId, ulong[] targetNetworkIds,
+        public PooledNetworkWriter BeginAddQueueItemToFrame(QueueItemType qItemType, float timeStamp, NetworkChannel networkChannel, ulong sourceNetworkId, ulong[] targetNetworkIds,
             QueueHistoryFrame.QueueFrameType queueFrameType, NetworkUpdateStage updateStage)
         {
             bool getNextFrame = NetworkManager.Singleton.IsHost && queueFrameType == QueueHistoryFrame.QueueFrameType.Inbound;
@@ -364,7 +364,7 @@ namespace MLAPI.Messaging
 
             if (queueFrameType != QueueHistoryFrame.QueueFrameType.Inbound)
             {
-                queueHistoryItem.queueWriter.WriteByte((byte)channel);
+                queueHistoryItem.queueWriter.WriteByte((byte)networkChannel);
 
                 if (targetNetworkIds != null && targetNetworkIds.Length != 0)
                 {

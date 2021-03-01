@@ -92,7 +92,7 @@ namespace MLAPI.Messaging
             if (m_QueueFrameType == QueueFrameType.Outbound)
             {
                 //Outbound we care about both channel and clients
-                m_CurrentQueueItem.channel = (Channel)queueReader.ReadByteDirect();
+                m_CurrentQueueItem.networkChannel = (NetworkChannel)queueReader.ReadByteDirect();
                 int NumClients = queueReader.ReadInt32();
                 if (NumClients > 0 && NumClients < m_MaximumClients)
                 {

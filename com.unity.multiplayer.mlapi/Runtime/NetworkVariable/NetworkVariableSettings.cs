@@ -40,7 +40,7 @@ namespace MLAPI.NetworkVariable
         /// The name of the channel to use for this variable.
         /// Variables with different channels will be split into different packets
         /// </summary>
-        public Channel SendChannel = Channel.DefaultMessage;
+        public NetworkChannel SendNetworkChannel = NetworkChannel.DefaultMessage;
 
         /// <summary>
         /// Constructs a new NetworkVariableSettings instance

@@ -44,8 +44,8 @@ namespace MLAPI.Messaging
         /// </summary>
         /// <param name="clientIds">The clients to send to, sends to everyone if null</param>
         /// <param name="stream">The message stream containing the data</param>
-        /// <param name="channel">The channel to send the data on</param>
-        public static void SendUnnamedMessage(List<ulong> clientIds, NetworkStream stream, Channel channel = Channel.Internal)
+        /// <param name="networkChannel">The channel to send the data on</param>
+        public static void SendUnnamedMessage(List<ulong> clientIds, NetworkStream stream, NetworkChannel networkChannel = NetworkChannel.Internal)
         {
             if (!NetworkManager.Singleton.IsServer)
             {
@@ -53,7 +53,7 @@ namespace MLAPI.Messaging
                 return;
             }
 
-            InternalMessageSender.Send(MLAPIConstants.MLAPI_UNNAMED_MESSAGE, channel, clientIds, stream);
+            InternalMessageSender.Send(MLAPIConstants.MLAPI_UNNAMED_MESSAGE, networkChannel, clientIds, stream);
         }
 
         /// <summary>
@@ -61,10 +61,10 @@ namespace MLAPI.Messaging
         /// </summary>
         /// <param name="clientId">The client to send the message to</param>
         /// <param name="stream">The message stream containing the data</param>
-        /// <param name="channel">The channel tos end the data on</param>
-        public static void SendUnnamedMessage(ulong clientId, NetworkStream stream, Channel channel = Channel.Internal)
+        /// <param name="networkChannel">The channel tos end the data on</param>
+        public static void SendUnnamedMessage(ulong clientId, NetworkStream stream, NetworkChannel networkChannel = NetworkChannel.Internal)
         {
-            InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_UNNAMED_MESSAGE, channel, stream);
+            InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_UNNAMED_MESSAGE, networkChannel, stream);
         }
         #endregion
         #region Named
@@ -154,8 +154,8 @@ namespace MLAPI.Messaging
         /// <param name="name">The message name to send</param>
         /// <param name="clientId">The client to send the message to</param>
         /// <param name="stream">The message stream containing the data</param>
-        /// <param name="channel">The channel to send the data on</param>
-        public static void SendNamedMessage(string name, ulong clientId, Stream stream, Channel channel = Channel.Internal)
+        /// <param name="networkChannel">The channel to send the data on</param>
+        public static void SendNamedMessage(string name, ulong clientId, Stream stream, NetworkChannel networkChannel = NetworkChannel.Internal)
         {
             ulong hash = 0;
             switch (NetworkManager.Singleton.NetworkConfig.RpcHashSize)
@@ -180,7 +180,7 @@ namespace MLAPI.Messaging
 
                 messageStream.CopyFrom(stream);
 
-                InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_NAMED_MESSAGE, channel, messageStream);
+                InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_NAMED_MESSAGE, networkChannel, messageStream);
             }
         }
 
@@ -190,8 +190,8 @@ namespace MLAPI.Messaging
         /// <param name="name">The message name to send</param>
         /// <param name="clientIds">The clients to send to, sends to everyone if null</param>
         /// <param name="stream">The message stream containing the data</param>
-        /// <param name="channel">The channel to send the data on</param>
-        public static void SendNamedMessage(string name, List<ulong> clientIds, Stream stream, Channel channel = Channel.Internal)
+        /// <param name="networkChannel">The channel to send the data on</param>
+        public static void SendNamedMessage(string name, List<ulong> clientIds, Stream stream, NetworkChannel networkChannel = NetworkChannel.Internal)
         {
             ulong hash = 0;
             switch (NetworkManager.Singleton.NetworkConfig.RpcHashSize)
@@ -222,7 +222,7 @@ namespace MLAPI.Messaging
                     return;
                 }
 
-                InternalMessageSender.Send(MLAPIConstants.MLAPI_NAMED_MESSAGE, channel, clientIds, messageStream);
+                InternalMessageSender.Send(MLAPIConstants.MLAPI_NAMED_MESSAGE, networkChannel, clientIds, messageStream);
             }
         }
         #endregion

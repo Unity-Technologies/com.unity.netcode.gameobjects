@@ -56,8 +56,8 @@ namespace MLAPI.Transports.UNET
         private WeakReference temporaryBufferReference;
 
         // Lookup / translation
-        private readonly Dictionary<Channel, int> channelNameToId = new Dictionary<Channel, int>();
-        private readonly Dictionary<int, Channel> channelIdToName = new Dictionary<int, Channel>();
+        private readonly Dictionary<NetworkChannel, int> channelNameToId = new Dictionary<NetworkChannel, int>();
+        private readonly Dictionary<int, NetworkChannel> channelIdToName = new Dictionary<int, NetworkChannel>();
         private int serverConnectionId;
         private int serverHostId;
 
@@ -78,7 +78,7 @@ namespace MLAPI.Transports.UNET
             }
         }
 
-        public override void Send(ulong clientId, ArraySegment<byte> data, Channel channel)
+        public override void Send(ulong clientId, ArraySegment<byte> data, NetworkChannel networkChannel)
         {
             if (profilerEnabled)
             {
@@ -89,13 +89,13 @@ namespace MLAPI.Transports.UNET
 
             int channelId = 0;
 
-            if (channelNameToId.ContainsKey(channel))
+            if (channelNameToId.ContainsKey(networkChannel))
             {
-                channelId = channelNameToId[channel];
+                channelId = channelNameToId[networkChannel];
             }
             else
             {
-                channelId = channelNameToId[Channel.Internal];
+                channelId = channelNameToId[NetworkChannel.Internal];
             }
 
             byte[] buffer;
@@ -150,7 +150,7 @@ namespace MLAPI.Transports.UNET
             RelayTransport.SendQueuedMessages(hostId, connectionId, out byte error);
         }
 
-        public override NetworkEvent PollEvent(out ulong clientId, out Channel channel, out ArraySegment<byte> payload, out float receiveTime)
+        public override NetworkEvent PollEvent(out ulong clientId, out NetworkChannel networkChannel, out ArraySegment<byte> payload, out float receiveTime)
         {
             NetworkEventType eventType = RelayTransport.Receive(out int hostId, out int connectionId, out int channelId, messageBuffer, messageBuffer.Length, out int receivedSize, out byte error);
 
@@ -184,11 +184,11 @@ namespace MLAPI.Transports.UNET
 
             if (channelIdToName.ContainsKey(channelId))
             {
-                channel = channelIdToName[channelId];
+                networkChannel = channelIdToName[channelId];
             }
             else
             {
-                channel = Channel.Internal;
+                networkChannel = NetworkChannel.Internal;
             }
 
             if (connectTask != null && hostId == serverHostId && connectionId == serverConnectionId)

@@ -68,7 +68,7 @@ namespace MLAPI
 
             var rpcQueueContainer = MLAPI.NetworkManager.Singleton.rpcQueueContainer;
             var isUsingBatching = rpcQueueContainer.IsUsingBatching();
-            var transportChannel = rpcDelivery == RpcDelivery.Reliable ? Channel.ReliableRpc : Channel.UnreliableRpc;
+            var transportChannel = rpcDelivery == RpcDelivery.Reliable ? NetworkChannel.ReliableRpc : NetworkChannel.UnreliableRpc;
 
             if (IsHost)
             {
@@ -135,7 +135,7 @@ namespace MLAPI
             // This will start a new queue item entry and will then return the writer to the current frame's stream
             var rpcQueueContainer = MLAPI.NetworkManager.Singleton.rpcQueueContainer;
             var isUsingBatching = rpcQueueContainer.IsUsingBatching();
-            var transportChannel = rpcDelivery == RpcDelivery.Reliable ? Channel.ReliableRpc : Channel.UnreliableRpc;
+            var transportChannel = rpcDelivery == RpcDelivery.Reliable ? NetworkChannel.ReliableRpc : NetworkChannel.UnreliableRpc;
 
             ulong[] ClientIds = clientRpcParams.Send.TargetClientIds ?? MLAPI.NetworkManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray();
             if (clientRpcParams.Send.TargetClientIds != null && clientRpcParams.Send.TargetClientIds.Length == 0)
@@ -161,7 +161,7 @@ namespace MLAPI
                     rpcQueueContainer.SetLoopBackFrameItem(clientRpcParams.Send.UpdateStage);
 
                     //Switch to the outbound queue
-                    writer = rpcQueueContainer.BeginAddQueueItemToFrame(RpcQueueContainer.QueueItemType.ClientRpc, Time.realtimeSinceStartup, Channel.ReliableRpc, NetworkId,
+                    writer = rpcQueueContainer.BeginAddQueueItemToFrame(RpcQueueContainer.QueueItemType.ClientRpc, Time.realtimeSinceStartup, NetworkChannel.ReliableRpc, NetworkId,
                         ClientIds, QueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
 
                     if (!isUsingBatching)
@@ -419,7 +419,7 @@ namespace MLAPI
         private bool varInit = false;
 
         private readonly List<HashSet<int>> channelMappedNetworkVariableIndexes = new List<HashSet<int>>();
-        private readonly List<Channel> channelsForNetworkVariableGroups = new List<Channel>();
+        private readonly List<NetworkChannel> channelsForNetworkVariableGroups = new List<NetworkChannel>();
         internal readonly List<INetworkVariable> networkVariableFields = new List<INetworkVariable>();
 
         private static HashSet<NetworkObject> touched = new HashSet<NetworkObject>();
@@ -484,26 +484,26 @@ namespace MLAPI
 
             {
                 // Create index map for channels
-                Dictionary<Channel, int> firstLevelIndex = new Dictionary<Channel, int>();
+                Dictionary<NetworkChannel, int> firstLevelIndex = new Dictionary<NetworkChannel, int>();
                 int secondLevelCounter = 0;
 
                 for (int i = 0; i < networkVariableFields.Count; i++)
                 {
-                    Channel channel = networkVariableFields[i].GetChannel();
+                    NetworkChannel networkChannel = networkVariableFields[i].GetChannel();
 
-                    if (!firstLevelIndex.ContainsKey(channel))
+                    if (!firstLevelIndex.ContainsKey(networkChannel))
                     {
-                        firstLevelIndex.Add(channel, secondLevelCounter);
-                        channelsForNetworkVariableGroups.Add(channel);
+                        firstLevelIndex.Add(networkChannel, secondLevelCounter);
+                        channelsForNetworkVariableGroups.Add(networkChannel);
                         secondLevelCounter++;
                     }
 
-                    if (firstLevelIndex[channel] >= channelMappedNetworkVariableIndexes.Count)
+                    if (firstLevelIndex[networkChannel] >= channelMappedNetworkVariableIndexes.Count)
                     {
                         channelMappedNetworkVariableIndexes.Add(new HashSet<int>());
                     }
 
-                    channelMappedNetworkVariableIndexes[firstLevelIndex[channel]].Add(i);
+                    channelMappedNetworkVariableIndexes[firstLevelIndex[networkChannel]].Add(i);
                 }
             }
         }

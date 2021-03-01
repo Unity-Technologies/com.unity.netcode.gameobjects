@@ -187,7 +187,7 @@ namespace MLAPI.SceneManagement
                 using (PooledNetworkWriter writer = PooledNetworkWriter.Get(stream))
                 {
                     writer.WriteByteArray(switchSceneGuid.ToByteArray());
-                    InternalMessageSender.Send(NetworkManager.Singleton.ServerClientId, MLAPIConstants.MLAPI_CLIENT_SWITCH_SCENE_COMPLETED, Channel.Internal, stream);
+                    InternalMessageSender.Send(NetworkManager.Singleton.ServerClientId, MLAPIConstants.MLAPI_CLIENT_SWITCH_SCENE_COMPLETED, NetworkChannel.Internal, stream);
                 }
             }
 
@@ -303,7 +303,7 @@ namespace MLAPI.SceneManagement
                             }
                         }
 
-                        InternalMessageSender.Send(NetworkManager.Singleton.ConnectedClientsList[j].ClientId, MLAPIConstants.MLAPI_SWITCH_SCENE, Channel.Internal, stream);
+                        InternalMessageSender.Send(NetworkManager.Singleton.ConnectedClientsList[j].ClientId, MLAPIConstants.MLAPI_SWITCH_SCENE, NetworkChannel.Internal, stream);
                     }
                 }
             }
@@ -367,7 +367,7 @@ namespace MLAPI.SceneManagement
                             {
                                 BufferManager.BufferedMessage message = bufferQueue.Dequeue();
 
-                                NetworkManager.Singleton.HandleIncomingData(message.sender, message.channel, new ArraySegment<byte>(message.payload.GetBuffer(), (int)message.payload.Position, (int)message.payload.Length), message.receiveTime, false);
+                                NetworkManager.Singleton.HandleIncomingData(message.sender, message.networkChannel, new ArraySegment<byte>(message.payload.GetBuffer(), (int)message.payload.Position, (int)message.payload.Length), message.receiveTime, false);
 
                                 BufferManager.RecycleConsumedBufferedMessage(message);
                             }
@@ -411,7 +411,7 @@ namespace MLAPI.SceneManagement
                             {
                                 BufferManager.BufferedMessage message = bufferQueue.Dequeue();
 
-                                NetworkManager.Singleton.HandleIncomingData(message.sender, message.channel, new ArraySegment<byte>(message.payload.GetBuffer(), (int)message.payload.Position, (int)message.payload.Length), message.receiveTime, false);
+                                NetworkManager.Singleton.HandleIncomingData(message.sender, message.networkChannel, new ArraySegment<byte>(message.payload.GetBuffer(), (int)message.payload.Position, (int)message.payload.Length), message.receiveTime, false);
 
                                 BufferManager.RecycleConsumedBufferedMessage(message);
                             }
@@ -425,7 +425,7 @@ namespace MLAPI.SceneManagement
                 using (PooledNetworkWriter writer = PooledNetworkWriter.Get(stream))
                 {
                     writer.WriteByteArray(switchSceneGuid.ToByteArray());
-                    InternalMessageSender.Send(NetworkManager.Singleton.ServerClientId, MLAPIConstants.MLAPI_CLIENT_SWITCH_SCENE_COMPLETED, Channel.Internal, stream);
+                    InternalMessageSender.Send(NetworkManager.Singleton.ServerClientId, MLAPIConstants.MLAPI_CLIENT_SWITCH_SCENE_COMPLETED, NetworkChannel.Internal, stream);
                 }
             }
 

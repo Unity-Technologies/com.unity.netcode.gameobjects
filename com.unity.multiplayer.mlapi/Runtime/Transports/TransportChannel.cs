@@ -1,6 +1,4 @@
 using System;
-using System.Collections.Generic;
-using UnityEngine;
 
 namespace MLAPI.Transports
 {
@@ -10,7 +8,7 @@ namespace MLAPI.Transports
     [Serializable]
     public class TransportChannel
     {
-        public TransportChannel(Channel id, NetworkDelivery type)
+        public TransportChannel(NetworkChannel id, NetworkDelivery type)
         {
             Id = id;
             Type = type;
@@ -19,7 +17,7 @@ namespace MLAPI.Transports
         /// <summary>
         /// Channel identifier
         /// </summary>
-        public Channel Id;
+        public NetworkChannel Id;
 
         /// <summary>
         /// Channel type

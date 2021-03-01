@@ -14,7 +14,7 @@ namespace MLAPI.Messaging
     {
         public class SendStream
         {
-            public Channel Channel;
+            public NetworkChannel NetworkChannel;
             public PooledNetworkStream Stream;
             public PooledNetworkWriter Writer;
             public bool IsEmpty = true;
@@ -124,7 +124,7 @@ namespace MLAPI.Messaging
                 if (SendDict[clientId].IsEmpty)
                 {
                     SendDict[clientId].IsEmpty = false;
-                    SendDict[clientId].Channel = queueItem.channel;
+                    SendDict[clientId].NetworkChannel = queueItem.networkChannel;
 
                     switch (queueItem.queueItemType)
                     {

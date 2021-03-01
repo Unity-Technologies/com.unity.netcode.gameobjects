@@ -194,7 +194,7 @@ namespace MLAPI.Spawning
                     writer.WriteUInt64Packed(netObject.NetworkId);
                     writer.WriteUInt64Packed(netObject.OwnerClientId);
 
-                    InternalMessageSender.Send(MLAPIConstants.MLAPI_CHANGE_OWNER, Channel.Internal, stream);
+                    InternalMessageSender.Send(MLAPIConstants.MLAPI_CHANGE_OWNER, NetworkChannel.Internal, stream);
                 }
             }
         }
@@ -230,7 +230,7 @@ namespace MLAPI.Spawning
                     writer.WriteUInt64Packed(netObject.NetworkId);
                     writer.WriteUInt64Packed(clientId);
 
-                    InternalMessageSender.Send(MLAPIConstants.MLAPI_CHANGE_OWNER, Channel.Internal, stream);
+                    InternalMessageSender.Send(MLAPIConstants.MLAPI_CHANGE_OWNER, NetworkChannel.Internal, stream);
                 }
             }
         }
@@ -425,7 +425,7 @@ namespace MLAPI.Spawning
                 queueItemType = RpcQueueContainer.QueueItemType.CreateObject,
                 networkId = 0,
                 itemStream = stream,
-                channel = Channel.Internal,
+                networkChannel = NetworkChannel.Internal,
                 clientIds = new[] {clientId}
             };
             rpcQueueContainer.AddToInternalMLAPISendQueue(queueItem);
@@ -696,7 +696,7 @@ namespace MLAPI.Spawning
                                     queueItemType = RpcQueueContainer.QueueItemType.DestroyObject,
                                     networkId = networkId,
                                     itemStream = stream,
-                                    channel = Channel.Internal,
+                                    networkChannel = NetworkChannel.Internal,
                                     clientIds = NetworkManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray()
                                 };
                                 rpcQueueContainer.AddToInternalMLAPISendQueue(queueItem);

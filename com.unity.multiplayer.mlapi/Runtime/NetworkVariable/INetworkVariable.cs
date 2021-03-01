@@ -12,7 +12,7 @@ namespace MLAPI.NetworkVariable
         /// Returns the name of the channel to be used for syncing
         /// </summary>
         /// <returns>The name of the channel to be used for syncing</returns>
-        Channel GetChannel();
+        NetworkChannel GetChannel();
 
         /// <summary>
         /// Resets the dirty state and marks the variable as synced / clean

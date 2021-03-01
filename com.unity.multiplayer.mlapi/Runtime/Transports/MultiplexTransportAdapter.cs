@@ -82,7 +82,7 @@ namespace MLAPI.Transports.Multiplex
             }
         }
 
-        public override NetworkEvent PollEvent(out ulong clientId, out Channel channel, out ArraySegment<byte> payload, out float receiveTime)
+        public override NetworkEvent PollEvent(out ulong clientId, out NetworkChannel networkChannel, out ArraySegment<byte> payload, out float receiveTime)
         {
             if (_lastProcessedTransportIndex >= Transports.Length - 1)
                 _lastProcessedTransportIndex = 0;
@@ -93,7 +93,7 @@ namespace MLAPI.Transports.Multiplex
 
                 if (Transports[i].IsSupported)
                 {
-                    NetworkEvent networkEvent = Transports[i].PollEvent(out ulong connectionId, out channel, out payload, out receiveTime);
+                    NetworkEvent networkEvent = Transports[i].PollEvent(out ulong connectionId, out networkChannel, out payload, out receiveTime);
 
                     if (networkEvent != NetworkEvent.Nothing)
                     {
@@ -105,18 +105,18 @@ namespace MLAPI.Transports.Multiplex
             }
 
             clientId = 0;
-            channel = 0;
+            networkChannel = 0;
             payload = new ArraySegment<byte>();
             receiveTime = 0;
 
             return NetworkEvent.Nothing;
         }
 
-        public override void Send(ulong clientId, ArraySegment<byte> data, Channel channel)
+        public override void Send(ulong clientId, ArraySegment<byte> data, NetworkChannel networkChannel)
         {
             GetMultiplexTransportDetails(clientId, out byte transportId, out ulong connectionId);
 
-            Transports[transportId].Send(connectionId, data, channel);
+            Transports[transportId].Send(connectionId, data, networkChannel);
         }
 
         public override void Shutdown()
