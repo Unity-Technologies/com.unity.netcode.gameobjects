@@ -357,7 +357,7 @@ namespace MLAPI.Editor.CodeGen
             var staticHandlers = new List<(uint Hash, MethodDefinition Method)>();
             foreach (var methodDefinition in typeDefinition.Methods)
             {
-                var rpcAttribute = CheckAndGetRpcAttribute(methodDefinition);
+                var rpcAttribute = CheckAndGetRPCAttribute(methodDefinition);
                 if (rpcAttribute == null) continue;
 
                 var methodDefHash = methodDefinition.Hash();
@@ -411,7 +411,7 @@ namespace MLAPI.Editor.CodeGen
                 .ForEach(ProcessNetworkBehaviour);
         }
 
-        private CustomAttribute CheckAndGetRpcAttribute(MethodDefinition methodDefinition)
+        private CustomAttribute CheckAndGetRPCAttribute(MethodDefinition methodDefinition)
         {
             CustomAttribute rpcAttribute = null;
             bool isServerRpc = false;

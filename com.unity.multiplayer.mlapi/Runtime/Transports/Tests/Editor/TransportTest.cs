@@ -11,9 +11,9 @@ public class TransportTest : MonoBehaviour
 {
     // hack, remove any NetworkedObject's from the scene to avoid spawning scene objects
     //  which themselves might not be able initialize themselves properly
-    private void ForceNetworkObjectShutdown()
+    private void ForceNetowrkObjectShutdown()
     {
-        NetworkedObject[] networkedObjects = FindObjectsOfType<NetworkedObject>();
+        NetworkedObject[] networkedObjects = MonoBehaviour.FindObjectsOfType<NetworkedObject>();
         for (int i = 0; i < networkedObjects.Length; i++)
         {
             DestroyImmediate(networkedObjects[i]);
@@ -24,7 +24,7 @@ public class TransportTest : MonoBehaviour
     [Test]
     public void UNetCustomChannelRegistrationTest()
     {
-        ForceNetworkObjectShutdown();
+        ForceNetowrkObjectShutdown();
 
         GameObject o = new GameObject();
         NetworkingManager nm = (NetworkingManager)o.AddComponent(typeof(NetworkingManager));

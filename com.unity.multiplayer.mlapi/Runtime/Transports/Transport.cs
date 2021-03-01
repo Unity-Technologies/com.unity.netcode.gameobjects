@@ -9,8 +9,8 @@ namespace MLAPI.Transports
     {
         Internal,
         TimeSync,
-        ReliableRpc,
-        UnreliableRpc,
+        ReliableRPC,
+        UnreliableRPC,
         SyncChannel,
         DefaultMessage,
         PositionUpdate,
@@ -91,8 +91,8 @@ namespace MLAPI.Transports
         private readonly TransportChannel[] MLAPI_INTERNAL_CHANNELS =
         {
             new TransportChannel(Channel.Internal, ChannelType.ReliableFragmentedSequenced),
-            new TransportChannel(Channel.ReliableRpc, ChannelType.ReliableSequenced),
-            new TransportChannel(Channel.UnreliableRpc, ChannelType.UnreliableSequenced),
+            new TransportChannel(Channel.ReliableRPC, ChannelType.ReliableSequenced),
+            new TransportChannel(Channel.UnreliableRPC, ChannelType.UnreliableSequenced),
             new TransportChannel(Channel.TimeSync, ChannelType.Unreliable),
             new TransportChannel(Channel.SyncChannel, ChannelType.Unreliable),
             new TransportChannel(Channel.DefaultMessage, ChannelType.Reliable),
