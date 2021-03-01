@@ -67,12 +67,12 @@ namespace MLAPI.Serialization
         /// </summary>
         public bool Resizable { get; }
 
-        private float _growthFactor;
+        private float m_GrowthFactor;
 
         /// <summary>
         /// Factor by which buffer should grow when necessary.
         /// </summary>
-        public float GrowthFactor { set { _growthFactor = value <= 1 ? 1.5f : value; } get { return _growthFactor; } }
+        public float GrowthFactor { set { m_GrowthFactor = value <= 1 ? 1.5f : value; } get { return m_GrowthFactor; } }
 
         /// <summary>
         /// Whether or not stream supports reading. (Always true)
@@ -187,7 +187,7 @@ namespace MLAPI.Serialization
         /// Read a byte as a byte. This is just for internal use so as to minimize casts (cuz they ugly af).
         /// </summary>
         /// <returns></returns>
-        internal byte _ReadByte() => BitAligned ? ReadByteAligned() : ReadByteMisaligned();
+        internal byte ReadByteInternal() => BitAligned ? ReadByteAligned() : ReadByteMisaligned();
 
         /// <summary>
         /// Read a byte from the buffer. This takes into account possible byte misalignment.
@@ -221,7 +221,7 @@ namespace MLAPI.Serialization
         public override int Read(byte[] buffer, int offset, int count)
         {
             int tLen = Math.Min(count, (int)(m_Target.LongLength - Position) - ((BitPosition & 7) == 0 ? 0 : 1));
-            for (int i = 0; i < tLen; ++i) buffer[offset + i] = _ReadByte();
+            for (int i = 0; i < tLen; ++i) buffer[offset + i] = ReadByteInternal();
             return tLen;
         }
 
@@ -237,8 +237,8 @@ namespace MLAPI.Serialization
                 BitPosition =
                 (
                     origin == SeekOrigin.Current ? offset > 0 ? Math.Min(BitPosition + ((ulong)offset << 3), (ulong)m_Target.Length << 3) :
-                    (offset ^ SIGN_BIT_64) > Position ? 0UL :
-                    BitPosition - (ulong)((offset ^ SIGN_BIT_64) << 3) :
+                    (offset ^ k_SIGN_BIT_64) > Position ? 0UL :
+                    BitPosition - (ulong)((offset ^ k_SIGN_BIT_64) << 3) :
                     origin == SeekOrigin.Begin ? (ulong)Math.Max(0, offset) << 3 :
                     (ulong)Math.Max(m_Target.Length - offset, 0) << 3
                 )) >> 3) + (long)((BitPosition & 1UL) | ((BitPosition >> 1) & 1UL) | ((BitPosition >> 2) & 1UL));
@@ -288,7 +288,7 @@ namespace MLAPI.Serialization
             else
             {
                 if (Position + count + 1 >= m_Target.Length) Grow(count);
-                for (int i = 0; i < count; ++i) _WriteMisaligned(buffer[offset + i]);
+                for (int i = 0; i < count; ++i) WriteMisaligned(buffer[offset + i]);
             }
 
             if (BitPosition > BitLength) BitLength = BitPosition;
@@ -310,7 +310,7 @@ namespace MLAPI.Serialization
             else
             {
                 if (Position + 1 + 1 >= m_Target.Length) Grow(1);
-                _WriteMisaligned(value);
+                WriteMisaligned(value);
             }
 
             if (BitPosition > BitLength) BitLength = BitPosition;
@@ -320,7 +320,7 @@ namespace MLAPI.Serialization
         /// Write a misaligned byte. NOTE: Using this when the bit position isn't byte-misaligned may cause an IndexOutOfBoundsException! This does not update the current Length of the stream.
         /// </summary>
         /// <param name="value">Value to write</param>
-        private void _WriteMisaligned(byte value)
+        private void WriteMisaligned(byte value)
         {
             int off = (int)(BitPosition & 7);
             int shift1 = 8 - off;
@@ -335,19 +335,19 @@ namespace MLAPI.Serialization
         /// Write a byte (in an int format) to the stream. This does not update the current Length of the stream.
         /// </summary>
         /// <param name="value">Value to write</param>
-        private void _WriteIntByte(int value) => _WriteByte((byte)value);
+        private void WriteIntByte(int value) => WriteBytePrivate((byte)value);
 
         /// <summary>
         /// Write a byte (in a ulong format) to the stream. This does not update the current Length of the stream.
         /// </summary>
         /// <param name="byteValue">Value to write</param>
-        private void _WriteULongByte(ulong byteValue) => _WriteByte((byte)byteValue);
+        private void WriteULongByte(ulong byteValue) => WriteBytePrivate((byte)byteValue);
 
         /// <summary>
         /// Write a byte to the stream. This does not update the current Length of the stream.
         /// </summary>
         /// <param name="value">Value to write</param>
-        private void _WriteByte(byte value)
+        private void WriteBytePrivate(byte value)
         {
             if (Div8Ceil(BitPosition) == m_Target.LongLength) Grow(1);
             if (BitAligned)
@@ -355,7 +355,7 @@ namespace MLAPI.Serialization
                 m_Target[Position] = value;
                 BitPosition += 8;
             }
-            else _WriteMisaligned(value);
+            else WriteMisaligned(value);
 
             UpdateLength();
         }
@@ -396,7 +396,7 @@ namespace MLAPI.Serialization
                 int read;
                 bool readToEnd = count < 0;
                 while ((readToEnd || count-- > 0) && (read = s.ReadByte()) != -1)
-                    _WriteIntByte(read);
+                    WriteIntByte(read);
                 UpdateLength();
 
                 s.Position = currentPosition;
@@ -428,7 +428,7 @@ namespace MLAPI.Serialization
 
             int read;
             bool readToEnd = count < 0;
-            while ((readToEnd || count-- > 0) && (read = s.ReadByte()) != -1) _WriteIntByte(read);
+            while ((readToEnd || count-- > 0) && (read = s.ReadByte()) != -1) WriteIntByte(read);
             UpdateLength();
 
             s.Position = currentPosition;

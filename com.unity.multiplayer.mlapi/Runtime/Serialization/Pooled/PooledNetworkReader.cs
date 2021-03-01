@@ -11,7 +11,7 @@ namespace MLAPI.Serialization.Pooled
         private NetworkSerializer m_Serializer;
         public NetworkSerializer Serializer => m_Serializer ?? (m_Serializer = new NetworkSerializer(this));
 
-        private bool isDisposed = false;
+        private bool m_IsDisposed = false;
 
         internal PooledNetworkReader(Stream stream) : base(stream) { }
 
@@ -22,7 +22,7 @@ namespace MLAPI.Serialization.Pooled
         public static PooledNetworkReader Get(Stream stream)
         {
             PooledNetworkReader reader = NetworkReaderPool.GetReader(stream);
-            reader.isDisposed = false;
+            reader.m_IsDisposed = false;
             return reader;
         }
 
@@ -31,9 +31,9 @@ namespace MLAPI.Serialization.Pooled
         /// </summary>
         public void Dispose()
         {
-            if (!isDisposed)
+            if (!m_IsDisposed)
             {
-                isDisposed = true;
+                m_IsDisposed = true;
                 NetworkReaderPool.PutBackInPool(this);
             }
             else

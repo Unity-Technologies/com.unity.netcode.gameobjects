@@ -48,18 +48,18 @@ namespace MLAPI.Transports
         /// <value><c>true</c> if is supported; otherwise, <c>false</c>.</value>
         public virtual bool IsSupported => true;
 
-        private TransportChannel[] _channelsCache = null;
+        private TransportChannel[] m_ChannelsCache = null;
 
         internal void ResetChannelCache()
         {
-            _channelsCache = null;
+            m_ChannelsCache = null;
         }
 
         public TransportChannel[] MLAPI_CHANNELS
         {
             get
             {
-                if (_channelsCache == null)
+                if (m_ChannelsCache == null)
                 {
                     List<TransportChannel> channels = new List<TransportChannel>();
 
@@ -68,20 +68,20 @@ namespace MLAPI.Transports
                         OnChannelRegistration(channels);
                     }
 
-                    _channelsCache = new TransportChannel[MLAPI_INTERNAL_CHANNELS.Length + channels.Count];
+                    m_ChannelsCache = new TransportChannel[MLAPI_INTERNAL_CHANNELS.Length + channels.Count];
 
                     for (int i = 0; i < MLAPI_INTERNAL_CHANNELS.Length; i++)
                     {
-                        _channelsCache[i] = MLAPI_INTERNAL_CHANNELS[i];
+                        m_ChannelsCache[i] = MLAPI_INTERNAL_CHANNELS[i];
                     }
 
                     for (int i = 0; i < channels.Count; i++)
                     {
-                        _channelsCache[i + MLAPI_INTERNAL_CHANNELS.Length] = channels[i];
+                        m_ChannelsCache[i + MLAPI_INTERNAL_CHANNELS.Length] = channels[i];
                     }
                 }
 
-                return _channelsCache;
+                return m_ChannelsCache;
             }
         }
 

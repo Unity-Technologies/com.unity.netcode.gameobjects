@@ -1,104 +1,107 @@
-using System;
 using System.Collections.Generic;
 using UnityEngine;
-using static System.DateTime;
 
 namespace MLAPI.Profiling
 {
-   public struct Sample
-   {
-      public int count;
-      public float t_recorded;
-   }
+    public struct Sample
+    {
+        public int Count;
+        public float TimeRecorded;
+    }
 
-   public class ProfilerStat
-   {
-      public ProfilerStat(string name)
-      {
-         prettyPrintName = name;
-         ProfilerStatManager.Add(this);
-      }
+    public class ProfilerStat
+    {
+        public ProfilerStat(string name)
+        {
+            PrettyPrintName = name;
+            ProfilerStatManager.Add(this);
+        }
 
-      public string prettyPrintName;
-      protected int maxSamples = 10;
+        public string PrettyPrintName;
+        protected int MaxSamples = 10;
 
-      protected LinkedList<Sample> data = new LinkedList<Sample>();
+        protected LinkedList<Sample> Data = new LinkedList<Sample>();
 
-      private bool dirty = true;
+        private bool m_IsDirty = true;
 
-      protected float lastCount;
-      protected float lastT;
-            
-      public virtual void Record(int amt = 1)
-       {
-          dirty = true;
-          var t_now = Time.time;
-      // 'Record' can get called many times in the same frame (for the same exact timestamp)
-      //   This not only blows out the samples but makes the rate computation break since we 
-      //   have n samples with a time delta of zero.
-      // 
-      //   Instead, if we want to record a value at the same exact time as our last
-      //   sample, just adjust that sample
-          if (data.First != null && data.First.Value.t_recorded == t_now)
-          {
-             data.First.Value = new Sample() {count = data.First.Value.count + amt,
-                t_recorded = data.First.Value.t_recorded};
-          }
-          else
-          {
-             data.AddFirst(new Sample() {count = amt, t_recorded = Time.time});
-             while (data.Count > maxSamples)
-             {
-                data.RemoveLast();
-             }
-          }
-       }
+        protected float LastCount;
+        protected float LastTime;
 
-       public virtual float SampleRate()
-       {
-          if (dirty)
-          {
-             LinkedListNode<Sample> node = data.First;
-             lastCount = 0;
-             lastT = (data.Last != null) ? data.Last.Value.t_recorded : 0.0f;
+        public virtual void Record(int amt = 1)
+        {
+            m_IsDirty = true;
+            var t_now = Time.time;
+            // 'Record' can get called many times in the same frame (for the same exact timestamp)
+            //   This not only blows out the samples but makes the rate computation break since we 
+            //   have n samples with a time delta of zero.
+            // 
+            //   Instead, if we want to record a value at the same exact time as our last
+            //   sample, just adjust that sample
+            if (Data.First != null && Data.First.Value.TimeRecorded == t_now)
+            {
+                Data.First.Value = new Sample()
+                {
+                    Count = Data.First.Value.Count + amt,
+                    TimeRecorded = Data.First.Value.TimeRecorded
+                };
+            }
+            else
+            {
+                Data.AddFirst(new Sample() { Count = amt, TimeRecorded = Time.time });
+                while (Data.Count > MaxSamples)
+                {
+                    Data.RemoveLast();
+                }
+            }
+        }
 
-             while (node != null)
-             {
-                lastCount += node.Value.count;
-                node = node.Next;
-             }
-             dirty = false;
-          }
+        public virtual float SampleRate()
+        {
+            if (m_IsDirty)
+            {
+                LinkedListNode<Sample> node = Data.First;
+                LastCount = 0;
+                LastTime = (Data.Last != null) ? Data.Last.Value.TimeRecorded : 0.0f;
 
-          float delta = Time.time - lastT;
-          if (delta == 0.0f)
-          {
-             return 0.0f;
-          }
+                while (node != null)
+                {
+                    LastCount += node.Value.Count;
+                    node = node.Next;
+                }
 
-          return lastCount / delta;
-       }
+                m_IsDirty = false;
+            }
+
+            float delta = Time.time - LastTime;
+            if (delta == 0.0f)
+            {
+                return 0.0f;
+            }
+
+            return LastCount / delta;
+        }
     }
 
     public class ProfilerIncStat : ProfilerStat
     {
         public ProfilerIncStat(string name) : base(name) { }
 
-        private float internalValue = 0f;
+        private float m_InternalValue = 0f;
 
         public override void Record(int amt = 1)
         {
-            data.AddFirst(new Sample() { count = amt, t_recorded = Time.time });
-            while (data.Count > maxSamples) {
-                data.RemoveLast();
+            Data.AddFirst(new Sample() { Count = amt, TimeRecorded = Time.time });
+            while (Data.Count > MaxSamples)
+            {
+                Data.RemoveLast();
             }
 
-            internalValue += amt;
+            m_InternalValue += amt;
         }
 
         public override float SampleRate()
         {
-            return internalValue;
+            return m_InternalValue;
         }
     }
 }

@@ -106,6 +106,7 @@ namespace MLAPI.Transports.Tasks
         /// </summary>
         /// <value><c>true</c> if is done; otherwise, <c>false</c>.</value>
         public bool IsDone { get; set; }
+
         /// <summary>
         /// Gets or sets a value indicating whether this <see cref="T:MLAPI.Transports.Tasks.SocketTask"/> is success.
         /// </summary>
@@ -118,21 +119,25 @@ namespace MLAPI.Transports.Tasks
         /// </summary>
         /// <value>The transport exception.</value>
         public Exception TransportException { get; set; }
+
         /// <summary>
         /// Gets or sets the socket error.
         /// </summary>
         /// <value>The socket error.</value>
         public SocketError SocketError { get; set; }
+
         /// <summary>
         /// Gets or sets the transport code.
         /// </summary>
         /// <value>The transport code.</value>
         public int TransportCode { get; set; }
+
         /// <summary>
         /// Gets or sets the message.
         /// </summary>
         /// <value>The message.</value>
         public string Message { get; set; }
+
         /// <summary>
         /// Gets or sets the state.
         /// </summary>

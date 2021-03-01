@@ -15,32 +15,25 @@ namespace MLAPI.Logging
         /// Gets the current log level.
         /// </summary>
         /// <value>The current log level.</value>
-        internal static LogLevel CurrentLogLevel
-        {
-            get
-            {
-                if (NetworkManager.Singleton == null)
-                    return LogLevel.Normal;
-                else
-                    return NetworkManager.Singleton.LogLevel;
-            }
-        }
+        internal static LogLevel CurrentLogLevel => ReferenceEquals(NetworkManager.Singleton, null) ? LogLevel.Normal : NetworkManager.Singleton.LogLevel;
 
         // MLAPI internal logging
-        internal static void LogInfo(string message) => Debug.Log("[MLAPI] " + message);
-        internal static void LogWarning(string message) => Debug.LogWarning("[MLAPI] " + message);
-        internal static void LogError(string message) => Debug.LogError("[MLAPI] " + message);
+        internal static void LogInfo(string message) => Debug.Log($"[MLAPI] {message}");
+        internal static void LogWarning(string message) => Debug.LogWarning($"[MLAPI] {message}");
+        internal static void LogError(string message) => Debug.LogError($"[MLAPI] {message}");
 
         /// <summary>
         /// Logs an info log locally and on the server if possible.
         /// </summary>
         /// <param name="message">The message to log</param>
         public static void LogInfoServer(string message) => LogServer(message, LogType.Info);
+
         /// <summary>
         /// Logs a warning log locally and on the server if possible.
         /// </summary>
         /// <param name="message">The message to log</param>
         public static void LogWarningServer(string message) => LogServer(message, LogType.Warning);
+
         /// <summary>
         /// Logs an error log locally and on the server if possible.
         /// </summary>
@@ -67,9 +60,9 @@ namespace MLAPI.Logging
 
             if (NetworkManager.Singleton != null && !NetworkManager.Singleton.IsServer && NetworkManager.Singleton.NetworkConfig.EnableNetworkLogs)
             {
-                using (PooledNetworkStream stream = PooledNetworkStream.Get())
+                using (var stream = PooledNetworkStream.Get())
                 {
-                    using (PooledNetworkWriter writer = PooledNetworkWriter.Get(stream))
+                    using (var writer = PooledNetworkWriter.Get(stream))
                     {
                         writer.WriteByte((byte)logType);
 
@@ -81,9 +74,9 @@ namespace MLAPI.Logging
             }
         }
 
-        internal static void LogInfoServerLocal(string message, ulong sender) => Debug.Log("[MLAPI_SERVER Sender=" + sender + "] " + message);
-        internal static void LogWarningServerLocal(string message, ulong sender) => Debug.LogWarning("[MLAPI_SERVER Sender=" + sender + "] " + message);
-        internal static void LogErrorServerLocal(string message, ulong sender) => Debug.LogError("[MLAPI_SERVER Sender=" + sender + "] " + message);
+        internal static void LogInfoServerLocal(string message, ulong sender) => Debug.Log($"[MLAPI_SERVER Sender={sender}] {message}");
+        internal static void LogWarningServerLocal(string message, ulong sender) => Debug.LogWarning($"[MLAPI_SERVER Sender={sender}] {message}");
+        internal static void LogErrorServerLocal(string message, ulong sender) => Debug.LogError($"[MLAPI_SERVER Sender={sender}] {message}");
 
         internal enum LogType
         {

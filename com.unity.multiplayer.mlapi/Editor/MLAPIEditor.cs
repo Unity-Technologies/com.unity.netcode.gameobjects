@@ -240,10 +240,10 @@ public class GithubAsset
 [InitializeOnLoad]
 public class MLAPIEditor : EditorWindow
 {
-    private const int COMPATIBLE_ARTIFACT_PATH_VERSION = 2;
-    private const string API_URL = "https://api.github.com/repos/MidLevel/MLAPI/releases";
-    private const string TRANSPORT_ARTIFACT_PATH_URL = "https://api.github.com/repos/MidLevel/MLAPI.Transports/contents/artifact_paths.json";
-    private const string TRANSPORT_ARTIFACT_DOWNLOAD_URL_TEMPLATE = "https://ci.appveyor.com/api/projects/MidLevel/MLAPI-Transports/artifacts/<path>?branch=master";
+    private const int k_COMPATIBLE_ARTIFACT_PATH_VERSION = 2;
+    private const string k_API_URL = "https://api.github.com/repos/MidLevel/MLAPI/releases";
+    private const string k_TRANSPORT_ARTIFACT_PATH_URL = "https://api.github.com/repos/MidLevel/MLAPI.Transports/contents/artifact_paths.json";
+    private const string k_TRANSPORT_ARTIFACT_DOWNLOAD_URL_TEMPLATE = "https://ci.appveyor.com/api/projects/MidLevel/MLAPI-Transports/artifacts/<path>?branch=master";
     private GithubRelease[] releases = new GithubRelease[0];
     private TransportArtifactDefinition transportArtifacts = null;
     private bool transportArtifactIncompatble = false;
@@ -754,7 +754,7 @@ public class MLAPIEditor : EditorWindow
         Directory.CreateDirectory(transportDirectory);
 
 
-        using (UnityWebRequest www = UnityWebRequest.Get(TRANSPORT_ARTIFACT_DOWNLOAD_URL_TEMPLATE.Replace("<path>", transportArtifacts.artifacts[index].path)))
+        using (UnityWebRequest www = UnityWebRequest.Get(k_TRANSPORT_ARTIFACT_DOWNLOAD_URL_TEMPLATE.Replace("<path>", transportArtifacts.artifacts[index].path)))
         {
             www.SendWebRequest();
             while (!www.isDone && string.IsNullOrEmpty(www.error))
@@ -852,7 +852,7 @@ public class MLAPIEditor : EditorWindow
     {
         lastUpdated = DateTime.Now.Ticks;
 
-        using (UnityWebRequest www = UnityWebRequest.Get(API_URL))
+        using (UnityWebRequest www = UnityWebRequest.Get(k_API_URL))
         {
             www.SendWebRequest();
             isFetching = true;
@@ -937,7 +937,7 @@ public class MLAPIEditor : EditorWindow
         }
 
 
-        using (UnityWebRequest www = UnityWebRequest.Get(TRANSPORT_ARTIFACT_PATH_URL))
+        using (UnityWebRequest www = UnityWebRequest.Get(k_TRANSPORT_ARTIFACT_PATH_URL))
         {
             www.SendWebRequest();
             isFetching = true;
@@ -971,7 +971,7 @@ public class MLAPIEditor : EditorWindow
 
                     transportArtifacts = JsonUtility.FromJson<TransportArtifactDefinition>(decodedJson);
 
-                    if (transportArtifacts != null && transportArtifacts.breaking_version != COMPATIBLE_ARTIFACT_PATH_VERSION)
+                    if (transportArtifacts != null && transportArtifacts.breaking_version != k_COMPATIBLE_ARTIFACT_PATH_VERSION)
                     {
                         // Incompatbile
                         transportArtifactIncompatble = true;

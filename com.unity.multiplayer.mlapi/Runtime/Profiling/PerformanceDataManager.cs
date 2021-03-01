@@ -1,20 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace MLAPI.Profiling
 {
-    static class PerformanceDataManager
+    internal static class PerformanceDataManager
     {
-        static PerformanceTickData s_ProfilerData;
-        static int s_TickID;
+        private static PerformanceTickData s_ProfilerData;
+        private static int s_TickId;
 
         internal static void BeginNewTick()
         {
-            s_TickID = Math.Max(s_TickID, 0);
+            s_TickId = Math.Max(s_TickId, 0);
             s_ProfilerData = new PerformanceTickData
             {
-                tickID = s_TickID++,
+                TickId = s_TickId++,
             };
         }
 

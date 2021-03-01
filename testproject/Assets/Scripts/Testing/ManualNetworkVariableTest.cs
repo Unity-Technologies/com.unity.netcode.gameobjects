@@ -19,8 +19,8 @@ namespace MLAPI
         private int m_Count = 0;
 
         // todo: address issue with initial values
-        private const int m_WaitIterations = 5;
-        private const int m_EndIterations = 1000;
+        private const int k_WaitIterations = 5;
+        private const int k_EndIterations = 1000;
 
         void Start()
         {
@@ -54,7 +54,7 @@ namespace MLAPI
                     int delta = m_TestVar.LocalTick - m_TestVar.RemoteTick;
                     m_Count++;
 
-                    if (m_Count > m_WaitIterations)
+                    if (m_Count > k_WaitIterations)
                     {
                         if (!m_Valid)
                         {
@@ -82,7 +82,7 @@ namespace MLAPI
                 }
             }
 
-            if (m_Count == m_EndIterations)
+            if (m_Count == k_EndIterations)
             {
                 if (m_Problems == "" && Math.Abs(m_MaxDelta - m_MinDelta) < 3)
                 {

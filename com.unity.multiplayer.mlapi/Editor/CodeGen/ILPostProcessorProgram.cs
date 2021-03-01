@@ -90,7 +90,7 @@ namespace MLAPI.Editor.CodeGen
                         // Since this assembly is already loaded in the domain this is a no-op and returns the
                         // already loaded assembly
                         depenencyPaths.Add(Assembly.Load(dependency).Location);
-                        if (dependency.Name.Contains(CodeGenHelpers.RuntimeAssemblyName))
+                        if (dependency.Name.Contains(CodeGenHelpers.k_RuntimeAssemblyName))
                         {
                             usesMLAPI = true;
                         }
@@ -104,7 +104,7 @@ namespace MLAPI.Editor.CodeGen
                         unityEngine = assembly.Location;
                     }
 
-                    if (assembly.Location.Contains(CodeGenHelpers.RuntimeAssemblyName))
+                    if (assembly.Location.Contains(CodeGenHelpers.k_RuntimeAssemblyName))
                     {
                         mlapiRuntimeAssemblyPath = assembly.Location;
                     }
@@ -143,7 +143,7 @@ namespace MLAPI.Editor.CodeGen
             if (!usesMLAPI)
             {
                 // we shall also check and see if it we are ourself
-                usesMLAPI = targetAssembly.Contains(CodeGenHelpers.RuntimeAssemblyName);
+                usesMLAPI = targetAssembly.Contains(CodeGenHelpers.k_RuntimeAssemblyName);
             }
 
             if (!usesMLAPI)

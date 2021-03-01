@@ -25,7 +25,7 @@ namespace MLAPI.Editor.CodeGen
     {
         public override ILPPInterface GetInstance() => this;
 
-        public override bool WillProcess(ICompiledAssembly compiledAssembly) => compiledAssembly.References.Any(filePath => Path.GetFileNameWithoutExtension(filePath) == CodeGenHelpers.RuntimeAssemblyName);
+        public override bool WillProcess(ICompiledAssembly compiledAssembly) => compiledAssembly.References.Any(filePath => Path.GetFileNameWithoutExtension(filePath) == CodeGenHelpers.k_RuntimeAssemblyName);
 
         private readonly List<DiagnosticMessage> m_Diagnostics = new List<DiagnosticMessage>();
 
@@ -50,7 +50,7 @@ namespace MLAPI.Editor.CodeGen
                 {
                     // process `NetworkBehaviour` types
                     mainModule.Types
-                        .Where(t => t.IsSubclassOf(CodeGenHelpers.NetworkBehaviour_FullName))
+                        .Where(t => t.IsSubclassOf(CodeGenHelpers.k_NetworkBehaviour_FullName))
                         .ToList()
                         .ForEach(ProcessNetworkBehaviour);
                 }
@@ -406,7 +406,7 @@ namespace MLAPI.Editor.CodeGen
 
             // process nested `NetworkBehaviour` types
             typeDefinition.NestedTypes
-                .Where(t => t.IsSubclassOf(CodeGenHelpers.NetworkBehaviour_FullName))
+                .Where(t => t.IsSubclassOf(CodeGenHelpers.k_NetworkBehaviour_FullName))
                 .ToList()
                 .ForEach(ProcessNetworkBehaviour);
         }
@@ -419,8 +419,8 @@ namespace MLAPI.Editor.CodeGen
             {
                 var customAttributeType_FullName = customAttribute.AttributeType.FullName;
 
-                if (customAttributeType_FullName == CodeGenHelpers.ServerRpcAttribute_FullName ||
-                    customAttributeType_FullName == CodeGenHelpers.ClientRpcAttribute_FullName)
+                if (customAttributeType_FullName == CodeGenHelpers.k_ServerRpcAttribute_FullName ||
+                    customAttributeType_FullName == CodeGenHelpers.k_ClientRpcAttribute_FullName)
                 {
                     bool isValid = true;
 
@@ -442,14 +442,14 @@ namespace MLAPI.Editor.CodeGen
                         isValid = false;
                     }
 
-                    if (customAttributeType_FullName == CodeGenHelpers.ServerRpcAttribute_FullName &&
+                    if (customAttributeType_FullName == CodeGenHelpers.k_ServerRpcAttribute_FullName &&
                         !methodDefinition.Name.EndsWith("ServerRpc", StringComparison.OrdinalIgnoreCase))
                     {
                         m_Diagnostics.AddError(methodDefinition, "ServerRpc method must end with 'ServerRpc' suffix!");
                         isValid = false;
                     }
 
-                    if (customAttributeType_FullName == CodeGenHelpers.ClientRpcAttribute_FullName &&
+                    if (customAttributeType_FullName == CodeGenHelpers.k_ClientRpcAttribute_FullName &&
                         !methodDefinition.Name.EndsWith("ClientRpc", StringComparison.OrdinalIgnoreCase))
                     {
                         m_Diagnostics.AddError(methodDefinition, "ClientRpc method must end with 'ClientRpc' suffix!");
@@ -458,7 +458,7 @@ namespace MLAPI.Editor.CodeGen
 
                     if (isValid)
                     {
-                        isServerRpc = customAttributeType_FullName == CodeGenHelpers.ServerRpcAttribute_FullName;
+                        isServerRpc = customAttributeType_FullName == CodeGenHelpers.k_ServerRpcAttribute_FullName;
                         rpcAttribute = customAttribute;
                     }
                 }
@@ -487,9 +487,9 @@ namespace MLAPI.Editor.CodeGen
                 // Serializable
                 if (paramType.IsSerializable()) continue;
                 // ServerRpcParams
-                if (paramType.FullName == CodeGenHelpers.ServerRpcParams_FullName && isServerRpc && paramIndex == paramCount - 1) continue;
+                if (paramType.FullName == CodeGenHelpers.k_ServerRpcParams_FullName && isServerRpc && paramIndex == paramCount - 1) continue;
                 // ClientRpcParams
-                if (paramType.FullName == CodeGenHelpers.ClientRpcParams_FullName && !isServerRpc && paramIndex == paramCount - 1) continue;
+                if (paramType.FullName == CodeGenHelpers.k_ClientRpcParams_FullName && !isServerRpc && paramIndex == paramCount - 1) continue;
 
                 m_Diagnostics.AddError(methodDefinition, $"RPC method parameter does not support serialization: {paramType.FullName}");
                 rpcAttribute = null;
@@ -503,7 +503,7 @@ namespace MLAPI.Editor.CodeGen
             var typeSystem = methodDefinition.Module.TypeSystem;
             var instructions = new List<Instruction>();
             var processor = methodDefinition.Body.GetILProcessor();
-            var isServerRpc = rpcAttribute.AttributeType.FullName == CodeGenHelpers.ServerRpcAttribute_FullName;
+            var isServerRpc = rpcAttribute.AttributeType.FullName == CodeGenHelpers.k_ServerRpcAttribute_FullName;
             var requireOwnership = true; // default value MUST be = `ServerRpcAttribute.RequireOwnership`
             var rpcDelivery = RpcDelivery.Reliable; // default value MUST be = `RpcAttribute.Delivery`
             foreach (var attrField in rpcAttribute.Fields)
@@ -522,8 +522,8 @@ namespace MLAPI.Editor.CodeGen
             var paramCount = methodDefinition.Parameters.Count;
             var hasRpcParams =
                 paramCount > 0 &&
-                ((isServerRpc && methodDefinition.Parameters[paramCount - 1].ParameterType.FullName == CodeGenHelpers.ServerRpcParams_FullName) ||
-                 (!isServerRpc && methodDefinition.Parameters[paramCount - 1].ParameterType.FullName == CodeGenHelpers.ClientRpcParams_FullName));
+                ((isServerRpc && methodDefinition.Parameters[paramCount - 1].ParameterType.FullName == CodeGenHelpers.k_ServerRpcParams_FullName) ||
+                 (!isServerRpc && methodDefinition.Parameters[paramCount - 1].ParameterType.FullName == CodeGenHelpers.k_ClientRpcParams_FullName));
 
             methodDefinition.Body.InitLocals = true;
             // NetworkManager networkManager;
@@ -872,7 +872,7 @@ namespace MLAPI.Editor.CodeGen
 
                     // Unity primitives (+arrays)
 
-                    if (paramType.FullName == CodeGenHelpers.UnityColor_FullName)
+                    if (paramType.FullName == CodeGenHelpers.k_UnityColor_FullName)
                     {
                         instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                         instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
@@ -880,7 +880,7 @@ namespace MLAPI.Editor.CodeGen
                         continue;
                     }
 
-                    if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.UnityColor_FullName)
+                    if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.k_UnityColor_FullName)
                     {
                         instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                         instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
@@ -888,7 +888,7 @@ namespace MLAPI.Editor.CodeGen
                         continue;
                     }
 
-                    if (paramType.FullName == CodeGenHelpers.UnityColor32_FullName)
+                    if (paramType.FullName == CodeGenHelpers.k_UnityColor32_FullName)
                     {
                         instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                         instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
@@ -896,7 +896,7 @@ namespace MLAPI.Editor.CodeGen
                         continue;
                     }
 
-                    if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.UnityColor32_FullName)
+                    if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.k_UnityColor32_FullName)
                     {
                         instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                         instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
@@ -904,7 +904,7 @@ namespace MLAPI.Editor.CodeGen
                         continue;
                     }
 
-                    if (paramType.FullName == CodeGenHelpers.UnityVector2_FullName)
+                    if (paramType.FullName == CodeGenHelpers.k_UnityVector2_FullName)
                     {
                         instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                         instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
@@ -912,7 +912,7 @@ namespace MLAPI.Editor.CodeGen
                         continue;
                     }
 
-                    if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.UnityVector2_FullName)
+                    if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.k_UnityVector2_FullName)
                     {
                         instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                         instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
@@ -920,7 +920,7 @@ namespace MLAPI.Editor.CodeGen
                         continue;
                     }
 
-                    if (paramType.FullName == CodeGenHelpers.UnityVector3_FullName)
+                    if (paramType.FullName == CodeGenHelpers.k_UnityVector3_FullName)
                     {
                         instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                         instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
@@ -928,7 +928,7 @@ namespace MLAPI.Editor.CodeGen
                         continue;
                     }
 
-                    if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.UnityVector3_FullName)
+                    if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.k_UnityVector3_FullName)
                     {
                         instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                         instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
@@ -936,7 +936,7 @@ namespace MLAPI.Editor.CodeGen
                         continue;
                     }
 
-                    if (paramType.FullName == CodeGenHelpers.UnityVector4_FullName)
+                    if (paramType.FullName == CodeGenHelpers.k_UnityVector4_FullName)
                     {
                         instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                         instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
@@ -944,7 +944,7 @@ namespace MLAPI.Editor.CodeGen
                         continue;
                     }
 
-                    if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.UnityVector4_FullName)
+                    if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.k_UnityVector4_FullName)
                     {
                         instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                         instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
@@ -952,7 +952,7 @@ namespace MLAPI.Editor.CodeGen
                         continue;
                     }
 
-                    if (paramType.FullName == CodeGenHelpers.UnityQuaternion_FullName)
+                    if (paramType.FullName == CodeGenHelpers.k_UnityQuaternion_FullName)
                     {
                         instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                         instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
@@ -960,7 +960,7 @@ namespace MLAPI.Editor.CodeGen
                         continue;
                     }
 
-                    if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.UnityQuaternion_FullName)
+                    if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.k_UnityQuaternion_FullName)
                     {
                         instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                         instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
@@ -968,7 +968,7 @@ namespace MLAPI.Editor.CodeGen
                         continue;
                     }
 
-                    if (paramType.FullName == CodeGenHelpers.UnityRay_FullName)
+                    if (paramType.FullName == CodeGenHelpers.k_UnityRay_FullName)
                     {
                         instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                         instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
@@ -976,7 +976,7 @@ namespace MLAPI.Editor.CodeGen
                         continue;
                     }
 
-                    if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.UnityRay_FullName)
+                    if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.k_UnityRay_FullName)
                     {
                         instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                         instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
@@ -984,7 +984,7 @@ namespace MLAPI.Editor.CodeGen
                         continue;
                     }
 
-                    if (paramType.FullName == CodeGenHelpers.UnityRay2D_FullName)
+                    if (paramType.FullName == CodeGenHelpers.k_UnityRay2D_FullName)
                     {
                         instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                         instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
@@ -992,7 +992,7 @@ namespace MLAPI.Editor.CodeGen
                         continue;
                     }
 
-                    if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.UnityRay2D_FullName)
+                    if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.k_UnityRay2D_FullName)
                     {
                         instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                         instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
@@ -1288,10 +1288,10 @@ namespace MLAPI.Editor.CodeGen
 
                     // INetworkSerializable
 
-                    if (paramType.HasInterface(CodeGenHelpers.INetworkSerializable_FullName))
+                    if (paramType.HasInterface(CodeGenHelpers.k_INetworkSerializable_FullName))
                     {
                         var paramTypeDef = paramType.Resolve();
-                        var paramTypeNetworkSerialize_MethodDef = paramTypeDef.Methods.FirstOrDefault(m => m.Name == CodeGenHelpers.INetworkSerializable_NetworkSerialize_Name);
+                        var paramTypeNetworkSerialize_MethodDef = paramTypeDef.Methods.FirstOrDefault(m => m.Name == CodeGenHelpers.k_INetworkSerializable_NetworkSerialize_Name);
                         if (paramTypeNetworkSerialize_MethodDef != null)
                         {
                             if (paramType.IsValueType)
@@ -1333,11 +1333,11 @@ namespace MLAPI.Editor.CodeGen
                     }
 
                     // INetworkSerializable[]
-                    if (paramType.IsArray && paramType.GetElementType().HasInterface(CodeGenHelpers.INetworkSerializable_FullName))
+                    if (paramType.IsArray && paramType.GetElementType().HasInterface(CodeGenHelpers.k_INetworkSerializable_FullName))
                     {
                         var paramElemType = paramType.GetElementType();
                         var paramElemTypeDef = paramElemType.Resolve();
-                        var paramElemNetworkSerialize_MethodDef = paramElemTypeDef.Methods.FirstOrDefault(m => m.Name == CodeGenHelpers.INetworkSerializable_NetworkSerialize_Name);
+                        var paramElemNetworkSerialize_MethodDef = paramElemTypeDef.Methods.FirstOrDefault(m => m.Name == CodeGenHelpers.k_INetworkSerializable_NetworkSerialize_Name);
                         if (paramElemNetworkSerialize_MethodDef != null)
                         {
                             methodDefinition.Body.Variables.Add(new VariableDefinition(typeSystem.Int32));
@@ -1530,7 +1530,7 @@ namespace MLAPI.Editor.CodeGen
             nhandler.Parameters.Add(new ParameterDefinition("rpcParams", ParameterAttributes.None, RpcParams_TypeRef));
 
             var processor = nhandler.Body.GetILProcessor();
-            var isServerRpc = rpcAttribute.AttributeType.FullName == CodeGenHelpers.ServerRpcAttribute_FullName;
+            var isServerRpc = rpcAttribute.AttributeType.FullName == CodeGenHelpers.k_ServerRpcAttribute_FullName;
             var requireOwnership = true; // default value MUST be = `ServerRpcAttribute.RequireOwnership`
             foreach (var attrField in rpcAttribute.Fields)
             {
@@ -1790,7 +1790,7 @@ namespace MLAPI.Editor.CodeGen
 
                 // Unity primitives (+arrays)
 
-                if (paramType.FullName == CodeGenHelpers.UnityColor_FullName)
+                if (paramType.FullName == CodeGenHelpers.k_UnityColor_FullName)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
                     processor.Emit(OpCodes.Ldloca, localIndex);
@@ -1798,7 +1798,7 @@ namespace MLAPI.Editor.CodeGen
                     continue;
                 }
 
-                if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.UnityColor_FullName)
+                if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.k_UnityColor_FullName)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
                     processor.Emit(OpCodes.Ldloca, localIndex);
@@ -1806,7 +1806,7 @@ namespace MLAPI.Editor.CodeGen
                     continue;
                 }
 
-                if (paramType.FullName == CodeGenHelpers.UnityColor32_FullName)
+                if (paramType.FullName == CodeGenHelpers.k_UnityColor32_FullName)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
                     processor.Emit(OpCodes.Ldloca, localIndex);
@@ -1814,7 +1814,7 @@ namespace MLAPI.Editor.CodeGen
                     continue;
                 }
 
-                if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.UnityColor32_FullName)
+                if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.k_UnityColor32_FullName)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
                     processor.Emit(OpCodes.Ldloca, localIndex);
@@ -1822,7 +1822,7 @@ namespace MLAPI.Editor.CodeGen
                     continue;
                 }
 
-                if (paramType.FullName == CodeGenHelpers.UnityVector2_FullName)
+                if (paramType.FullName == CodeGenHelpers.k_UnityVector2_FullName)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
                     processor.Emit(OpCodes.Ldloca, localIndex);
@@ -1830,7 +1830,7 @@ namespace MLAPI.Editor.CodeGen
                     continue;
                 }
 
-                if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.UnityVector2_FullName)
+                if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.k_UnityVector2_FullName)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
                     processor.Emit(OpCodes.Ldloca, localIndex);
@@ -1838,7 +1838,7 @@ namespace MLAPI.Editor.CodeGen
                     continue;
                 }
 
-                if (paramType.FullName == CodeGenHelpers.UnityVector3_FullName)
+                if (paramType.FullName == CodeGenHelpers.k_UnityVector3_FullName)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
                     processor.Emit(OpCodes.Ldloca, localIndex);
@@ -1846,7 +1846,7 @@ namespace MLAPI.Editor.CodeGen
                     continue;
                 }
 
-                if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.UnityVector3_FullName)
+                if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.k_UnityVector3_FullName)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
                     processor.Emit(OpCodes.Ldloca, localIndex);
@@ -1854,7 +1854,7 @@ namespace MLAPI.Editor.CodeGen
                     continue;
                 }
 
-                if (paramType.FullName == CodeGenHelpers.UnityVector4_FullName)
+                if (paramType.FullName == CodeGenHelpers.k_UnityVector4_FullName)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
                     processor.Emit(OpCodes.Ldloca, localIndex);
@@ -1862,7 +1862,7 @@ namespace MLAPI.Editor.CodeGen
                     continue;
                 }
 
-                if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.UnityVector4_FullName)
+                if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.k_UnityVector4_FullName)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
                     processor.Emit(OpCodes.Ldloca, localIndex);
@@ -1870,7 +1870,7 @@ namespace MLAPI.Editor.CodeGen
                     continue;
                 }
 
-                if (paramType.FullName == CodeGenHelpers.UnityQuaternion_FullName)
+                if (paramType.FullName == CodeGenHelpers.k_UnityQuaternion_FullName)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
                     processor.Emit(OpCodes.Ldloca, localIndex);
@@ -1878,7 +1878,7 @@ namespace MLAPI.Editor.CodeGen
                     continue;
                 }
 
-                if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.UnityQuaternion_FullName)
+                if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.k_UnityQuaternion_FullName)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
                     processor.Emit(OpCodes.Ldloca, localIndex);
@@ -1886,7 +1886,7 @@ namespace MLAPI.Editor.CodeGen
                     continue;
                 }
 
-                if (paramType.FullName == CodeGenHelpers.UnityRay_FullName)
+                if (paramType.FullName == CodeGenHelpers.k_UnityRay_FullName)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
                     processor.Emit(OpCodes.Ldloca, localIndex);
@@ -1894,7 +1894,7 @@ namespace MLAPI.Editor.CodeGen
                     continue;
                 }
 
-                if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.UnityRay_FullName)
+                if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.k_UnityRay_FullName)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
                     processor.Emit(OpCodes.Ldloca, localIndex);
@@ -1902,7 +1902,7 @@ namespace MLAPI.Editor.CodeGen
                     continue;
                 }
 
-                if (paramType.FullName == CodeGenHelpers.UnityRay2D_FullName)
+                if (paramType.FullName == CodeGenHelpers.k_UnityRay2D_FullName)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
                     processor.Emit(OpCodes.Ldloca, localIndex);
@@ -1910,7 +1910,7 @@ namespace MLAPI.Editor.CodeGen
                     continue;
                 }
 
-                if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.UnityRay2D_FullName)
+                if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.k_UnityRay2D_FullName)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
                     processor.Emit(OpCodes.Ldloca, localIndex);
@@ -2204,10 +2204,10 @@ namespace MLAPI.Editor.CodeGen
 
                 // INetworkSerializable
 
-                if (paramType.HasInterface(CodeGenHelpers.INetworkSerializable_FullName))
+                if (paramType.HasInterface(CodeGenHelpers.k_INetworkSerializable_FullName))
                 {
                     var paramTypeDef = paramType.Resolve();
-                    var paramTypeNetworkSerialize_MethodDef = paramTypeDef.Methods.FirstOrDefault(m => m.Name == CodeGenHelpers.INetworkSerializable_NetworkSerialize_Name);
+                    var paramTypeNetworkSerialize_MethodDef = paramTypeDef.Methods.FirstOrDefault(m => m.Name == CodeGenHelpers.k_INetworkSerializable_NetworkSerialize_Name);
                     if (paramTypeNetworkSerialize_MethodDef != null)
                     {
                         if (paramType.IsValueType)
@@ -2253,11 +2253,11 @@ namespace MLAPI.Editor.CodeGen
                 }
 
                 // INetworkSerializable[]
-                if (paramType.IsArray && paramType.GetElementType().HasInterface(CodeGenHelpers.INetworkSerializable_FullName))
+                if (paramType.IsArray && paramType.GetElementType().HasInterface(CodeGenHelpers.k_INetworkSerializable_FullName))
                 {
                     var paramElemType = paramType.GetElementType();
                     var paramElemTypeDef = paramElemType.Resolve();
-                    var paramElemNetworkSerialize_MethodDef = paramElemTypeDef.Methods.FirstOrDefault(m => m.Name == CodeGenHelpers.INetworkSerializable_NetworkSerialize_Name);
+                    var paramElemNetworkSerialize_MethodDef = paramElemTypeDef.Methods.FirstOrDefault(m => m.Name == CodeGenHelpers.k_INetworkSerializable_NetworkSerialize_Name);
                     if (paramElemNetworkSerialize_MethodDef != null)
                     {
                         nhandler.Body.Variables.Add(new VariableDefinition(typeSystem.Int32));
@@ -2349,7 +2349,7 @@ namespace MLAPI.Editor.CodeGen
                 // ServerRpcParams, ClientRpcParams
                 {
                     // ServerRpcParams
-                    if (paramType.FullName == CodeGenHelpers.ServerRpcParams_FullName)
+                    if (paramType.FullName == CodeGenHelpers.k_ServerRpcParams_FullName)
                     {
                         processor.Emit(OpCodes.Ldarg_2);
                         processor.Emit(OpCodes.Ldfld, RpcParams_Server_FieldRef);
@@ -2358,7 +2358,7 @@ namespace MLAPI.Editor.CodeGen
                     }
 
                     // ClientRpcParams
-                    if (paramType.FullName == CodeGenHelpers.ClientRpcParams_FullName)
+                    if (paramType.FullName == CodeGenHelpers.k_ClientRpcParams_FullName)
                     {
                         processor.Emit(OpCodes.Ldarg_2);
                         processor.Emit(OpCodes.Ldfld, RpcParams_Client_FieldRef);

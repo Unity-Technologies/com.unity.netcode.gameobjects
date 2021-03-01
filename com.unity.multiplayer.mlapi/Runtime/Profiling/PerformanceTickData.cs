@@ -5,9 +5,9 @@ namespace MLAPI.Profiling
 {
     public class PerformanceTickData
     {
-        public int tickID;
+        public int TickId;
 
-        readonly ProfilingDataStore m_TickData = new ProfilingDataStore();
+        private readonly ProfilingDataStore m_TickData = new ProfilingDataStore();
 
         public void Increment(string fieldName, int count = 1)
         {

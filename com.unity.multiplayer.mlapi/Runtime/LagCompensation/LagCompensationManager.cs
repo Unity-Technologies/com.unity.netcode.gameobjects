@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using MLAPI.Exceptions;
 
 namespace MLAPI.LagCompensation
@@ -14,7 +13,6 @@ namespace MLAPI.LagCompensation
         /// Simulation objects
         /// </summary>
         public static readonly List<TrackedObject> SimulationObjects = new List<TrackedObject>();
-
 
         /// <summary>
         /// Turns time back a given amount of seconds, invokes an action and turns it back

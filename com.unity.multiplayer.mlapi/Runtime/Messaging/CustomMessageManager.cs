@@ -71,9 +71,9 @@ namespace MLAPI.Messaging
         /// </summary>
         public delegate void HandleNamedMessageDelegate(ulong sender, Stream payload);
 
-        private static readonly Dictionary<ulong, HandleNamedMessageDelegate> namedMessageHandlers16 = new Dictionary<ulong, HandleNamedMessageDelegate>();
-        private static readonly Dictionary<ulong, HandleNamedMessageDelegate> namedMessageHandlers32 = new Dictionary<ulong, HandleNamedMessageDelegate>();
-        private static readonly Dictionary<ulong, HandleNamedMessageDelegate> namedMessageHandlers64 = new Dictionary<ulong, HandleNamedMessageDelegate>();
+        private static readonly Dictionary<ulong, HandleNamedMessageDelegate> k_NamedMessageHandlers16 = new Dictionary<ulong, HandleNamedMessageDelegate>();
+        private static readonly Dictionary<ulong, HandleNamedMessageDelegate> k_NamedMessageHandlers32 = new Dictionary<ulong, HandleNamedMessageDelegate>();
+        private static readonly Dictionary<ulong, HandleNamedMessageDelegate> k_NamedMessageHandlers64 = new Dictionary<ulong, HandleNamedMessageDelegate>();
 
 
         internal static void InvokeNamedMessage(ulong hash, ulong sender, Stream stream)
@@ -81,19 +81,19 @@ namespace MLAPI.Messaging
             if (NetworkManager.Singleton == null)
             {
                 // We dont know what size to use. Try every (more collision prone)
-                if (namedMessageHandlers16.ContainsKey(hash))
+                if (k_NamedMessageHandlers16.ContainsKey(hash))
                 {
-                    namedMessageHandlers16[hash](sender, stream);
+                    k_NamedMessageHandlers16[hash](sender, stream);
                 }
 
-                if (namedMessageHandlers32.ContainsKey(hash))
+                if (k_NamedMessageHandlers32.ContainsKey(hash))
                 {
-                    namedMessageHandlers32[hash](sender, stream);
+                    k_NamedMessageHandlers32[hash](sender, stream);
                 }
 
-                if (namedMessageHandlers64.ContainsKey(hash))
+                if (k_NamedMessageHandlers64.ContainsKey(hash))
                 {
-                    namedMessageHandlers64[hash](sender, stream);
+                    k_NamedMessageHandlers64[hash](sender, stream);
                 }
             }
             else
@@ -101,23 +101,23 @@ namespace MLAPI.Messaging
                 // Only check the right size.
                 if (NetworkManager.Singleton.NetworkConfig.RpcHashSize == HashSize.VarIntTwoBytes)
                 {
-                    if (namedMessageHandlers16.ContainsKey(hash))
+                    if (k_NamedMessageHandlers16.ContainsKey(hash))
                     {
-                        namedMessageHandlers16[hash](sender, stream);
+                        k_NamedMessageHandlers16[hash](sender, stream);
                     }
                 }
                 else if (NetworkManager.Singleton.NetworkConfig.RpcHashSize == HashSize.VarIntFourBytes)
                 {
-                    if (namedMessageHandlers32.ContainsKey(hash))
+                    if (k_NamedMessageHandlers32.ContainsKey(hash))
                     {
-                        namedMessageHandlers32[hash](sender, stream);
+                        k_NamedMessageHandlers32[hash](sender, stream);
                     }
                 }
                 else if (NetworkManager.Singleton.NetworkConfig.RpcHashSize == HashSize.VarIntEightBytes)
                 {
-                    if (namedMessageHandlers64.ContainsKey(hash))
+                    if (k_NamedMessageHandlers64.ContainsKey(hash))
                     {
-                        namedMessageHandlers64[hash](sender, stream);
+                        k_NamedMessageHandlers64[hash](sender, stream);
                     }
                 }
             }
@@ -130,9 +130,9 @@ namespace MLAPI.Messaging
         /// <param name="callback">The callback to run when a named message is received.</param>
         public static void RegisterNamedMessageHandler(string name, HandleNamedMessageDelegate callback)
         {
-            namedMessageHandlers16[name.GetStableHash16()] = callback;
-            namedMessageHandlers32[name.GetStableHash32()] = callback;
-            namedMessageHandlers64[name.GetStableHash64()] = callback;
+            k_NamedMessageHandlers16[name.GetStableHash16()] = callback;
+            k_NamedMessageHandlers32[name.GetStableHash32()] = callback;
+            k_NamedMessageHandlers64[name.GetStableHash64()] = callback;
         }
 
         /// <summary>
@@ -141,9 +141,9 @@ namespace MLAPI.Messaging
         /// <param name="name">The name of the message.</param>
         public static void UnregisterNamedMessageHandler(string name)
         {
-            namedMessageHandlers16.Remove(name.GetStableHash16());
-            namedMessageHandlers32.Remove(name.GetStableHash32());
-            namedMessageHandlers64.Remove(name.GetStableHash64());
+            k_NamedMessageHandlers16.Remove(name.GetStableHash16());
+            k_NamedMessageHandlers32.Remove(name.GetStableHash32());
+            k_NamedMessageHandlers64.Remove(name.GetStableHash64());
         }
 
         /// <summary>
@@ -169,9 +169,9 @@ namespace MLAPI.Messaging
                     break;
             }
 
-            using (PooledNetworkStream messageStream = PooledNetworkStream.Get())
+            using (var messageStream = PooledNetworkStream.Get())
             {
-                using (PooledNetworkWriter writer = PooledNetworkWriter.Get(messageStream))
+                using (var writer = PooledNetworkWriter.Get(messageStream))
                 {
                     writer.WriteUInt64Packed(hash);
                 }
@@ -205,9 +205,9 @@ namespace MLAPI.Messaging
                     break;
             }
 
-            using (PooledNetworkStream messageStream = PooledNetworkStream.Get())
+            using (var messageStream = PooledNetworkStream.Get())
             {
-                using (PooledNetworkWriter writer = PooledNetworkWriter.Get(messageStream))
+                using (var writer = PooledNetworkWriter.Get(messageStream))
                 {
                     writer.WriteUInt64Packed(hash);
                 }

@@ -9,12 +9,12 @@ namespace MLAPI.Serialization.Pooled
     /// </summary>
     public static class NetworkStreamPool
     {
-        private static uint createdStreams = 0;
-        private static readonly Queue<WeakReference> overflowStreams = new Queue<WeakReference>();
-        private static readonly Queue<PooledNetworkStream> streams = new Queue<PooledNetworkStream>();
+        private static uint s_CreatedStreams = 0;
+        private static readonly Queue<WeakReference> k_OverflowStreams = new Queue<WeakReference>();
+        private static readonly Queue<PooledNetworkStream> k_Streams = new Queue<PooledNetworkStream>();
 
-        private const uint MaxBitPoolStreams = 1024;
-        private const uint MaxCreatedDelta = 768;
+        private const uint k_MaxBitPoolStreams = 1024;
+        private const uint k_MaxCreatedDelta = 768;
 
 
         /// <summary>
@@ -23,9 +23,9 @@ namespace MLAPI.Serialization.Pooled
         /// <returns>An expandable PooledNetworkStream</returns>
         public static PooledNetworkStream GetStream()
         {
-            if (streams.Count == 0)
+            if (k_Streams.Count == 0)
             {
-                if (overflowStreams.Count > 0)
+                if (k_OverflowStreams.Count > 0)
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
                     {
@@ -33,7 +33,7 @@ namespace MLAPI.Serialization.Pooled
                     }
 
                     object weakStream = null;
-                    while (overflowStreams.Count > 0 && ((weakStream = overflowStreams.Dequeue().Target) == null)) ;
+                    while (k_OverflowStreams.Count > 0 && ((weakStream = k_OverflowStreams.Dequeue().Target) == null)) ;
 
                     if (weakStream != null)
                     {
@@ -46,16 +46,16 @@ namespace MLAPI.Serialization.Pooled
                     }
                 }
 
-                if (createdStreams == MaxBitPoolStreams)
+                if (s_CreatedStreams == k_MaxBitPoolStreams)
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning($"{MaxBitPoolStreams} streams have been created. Did you forget to dispose?");
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning($"{k_MaxBitPoolStreams} streams have been created. Did you forget to dispose?");
                 }
-                else if (createdStreams < MaxBitPoolStreams) createdStreams++;
+                else if (s_CreatedStreams < k_MaxBitPoolStreams) s_CreatedStreams++;
 
                 return new PooledNetworkStream();
             }
 
-            PooledNetworkStream stream = streams.Dequeue();
+            PooledNetworkStream stream = k_Streams.Dequeue();
 
             stream.SetLength(0);
             stream.Position = 0;
@@ -69,7 +69,7 @@ namespace MLAPI.Serialization.Pooled
         /// <param name="stream">The stream to put in the pool</param>
         public static void PutBackInPool(PooledNetworkStream stream)
         {
-            if (streams.Count > MaxCreatedDelta)
+            if (k_Streams.Count > k_MaxCreatedDelta)
             {
                 // The user just created lots of streams without returning them in between.
                 // Streams are essentially byte array wrappers. This is valuable memory.
@@ -80,11 +80,11 @@ namespace MLAPI.Serialization.Pooled
                     NetworkLog.LogInfo($"Putting {nameof(PooledNetworkStream)} into overflow pool. Did you forget to dispose?");
                 }
 
-                overflowStreams.Enqueue(new WeakReference(stream));
+                k_OverflowStreams.Enqueue(new WeakReference(stream));
             }
             else
             {
-                streams.Enqueue(stream);
+                k_Streams.Enqueue(stream);
             }
         }
     }

@@ -19,7 +19,6 @@ using MLAPI.Messaging;
 using MLAPI.SceneManagement;
 using MLAPI.Serialization.Pooled;
 using MLAPI.Spawning;
-using static MLAPI.Messaging.CustomMessagingManager;
 using MLAPI.Exceptions;
 using MLAPI.Transports.Tasks;
 using MLAPI.Messaging.Buffering;
@@ -57,8 +56,8 @@ namespace MLAPI
 
         static ProfilerMarker s_InvokeRpc = new ProfilerMarker("InvokeRpc");
 #endif
-        internal RpcQueueContainer rpcQueueContainer { get; private set; }
-        internal NetworkTickSystem networkTickSystem { get; private set; }
+        internal RpcQueueContainer RpcQueueContainer { get; private set; }
+        internal NetworkTickSystem NetworkTickSystem { get; private set; }
 
         public delegate void PerformanceDataEventHandler(PerformanceTickData profilerData);
 
@@ -67,10 +66,10 @@ namespace MLAPI
         /// <summary>
         /// A synchronized time, represents the time in seconds since the server application started. Is replicated across all clients
         /// </summary>
-        public float NetworkTime => Time.unscaledTime + currentNetworkTimeOffset;
+        public float NetworkTime => Time.unscaledTime + m_CurrentNetworkTimeOffset;
 
-        private float networkTimeOffset;
-        private float currentNetworkTimeOffset;
+        private float m_NetworkTimeOffset;
+        private float m_CurrentNetworkTimeOffset;
 
         /// <summary>
         /// Gets or sets if the NetworkManager should be marked as DontDestroyOnLoad
@@ -105,11 +104,11 @@ namespace MLAPI
         /// </summary>
         public ulong LocalClientId
         {
-            get => IsServer ? NetworkConfig.NetworkTransport.ServerClientId : localClientId;
-            internal set => localClientId = value;
+            get => IsServer ? NetworkConfig.NetworkTransport.ServerClientId : m_LocalClientId;
+            internal set => m_LocalClientId = value;
         }
 
-        private ulong localClientId;
+        private ulong m_LocalClientId;
 
         /// <summary>
         /// Gets a dictionary of connected clients and their clientId keys. This is only populated on the server.
@@ -216,7 +215,7 @@ namespace MLAPI
         /// </summary>
         public string ConnectedHostname { get; private set; }
 
-        internal static event Action OnSingletonReady;
+        internal static event Action s_OnSingletonReady;
 
         private void OnValidate()
         {
@@ -299,8 +298,8 @@ namespace MLAPI
             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogInfo("Init()");
 
             LocalClientId = 0;
-            networkTimeOffset = 0f;
-            currentNetworkTimeOffset = 0f;
+            m_NetworkTimeOffset = 0f;
+            m_CurrentNetworkTimeOffset = 0f;
             m_LastReceiveTickTime = 0f;
             m_LastReceiveTickTime = 0f;
             m_EventOvershootCounter = 0f;
@@ -310,12 +309,12 @@ namespace MLAPI
 
             NetworkSpawnManager.SpawnedObjects.Clear();
             NetworkSpawnManager.SpawnedObjectsList.Clear();
-            NetworkSpawnManager.releasedNetworkObjectIds.Clear();
-            NetworkSpawnManager.pendingSoftSyncObjects.Clear();
-            NetworkSceneManager.registeredSceneNames.Clear();
-            NetworkSceneManager.sceneIndexToString.Clear();
-            NetworkSceneManager.sceneNameToIndex.Clear();
-            NetworkSceneManager.sceneSwitchProgresses.Clear();
+            NetworkSpawnManager.k_ReleasedNetworkObjectIds.Clear();
+            NetworkSpawnManager.k_PendingSoftSyncObjects.Clear();
+            NetworkSceneManager.k_RegisteredSceneNames.Clear();
+            NetworkSceneManager.k_SceneIndexToString.Clear();
+            NetworkSceneManager.k_SceneNameToIndex.Clear();
+            NetworkSceneManager.k_SceneSwitchProgresses.Clear();
 
             if (NetworkConfig.NetworkTransport == null)
             {
@@ -324,28 +323,28 @@ namespace MLAPI
             }
 
             //This 'if' should never enter
-            if (networkTickSystem != null)
+            if (NetworkTickSystem != null)
             {
-                networkTickSystem.Dispose();
+                NetworkTickSystem.Dispose();
             }
 
-            networkTickSystem = new NetworkTickSystem();
+            NetworkTickSystem = new NetworkTickSystem();
 
             //This should never happen, but in the event that it does there should be (at a minimum) a unity error logged.
-            if (rpcQueueContainer != null)
+            if (RpcQueueContainer != null)
             {
                 UnityEngine.Debug.LogError("Init was invoked, but rpcQueueContainer was already initialized! (destroying previous instance)");
-                rpcQueueContainer.Shutdown();
-                rpcQueueContainer = null;
+                RpcQueueContainer.Shutdown();
+                RpcQueueContainer = null;
             }
 
             //The RpcQueueContainer must be initialized within the Init method ONLY
             //It should ONLY be shutdown and destroyed in the Shutdown method (other than just above)
-            rpcQueueContainer = new RpcQueueContainer(false);
+            RpcQueueContainer = new RpcQueueContainer(false);
 
             //Note: Since frame history is not being used, this is set to 0
             //To test frame history, increase the number to (n) where n > 0
-            rpcQueueContainer.Initialize(0);
+            RpcQueueContainer.Initialize(0);
 
             // Register INetworkUpdateSystem (always register this after rpcQueueContainer has been instantiated)
             this.RegisterNetworkUpdate(NetworkUpdateStage.EarlyUpdate);
@@ -357,9 +356,9 @@ namespace MLAPI
 
                 for (int i = 0; i < NetworkConfig.RegisteredScenes.Count; i++)
                 {
-                    NetworkSceneManager.registeredSceneNames.Add(NetworkConfig.RegisteredScenes[i]);
-                    NetworkSceneManager.sceneIndexToString.Add((uint)i, NetworkConfig.RegisteredScenes[i]);
-                    NetworkSceneManager.sceneNameToIndex.Add(NetworkConfig.RegisteredScenes[i], (uint)i);
+                    NetworkSceneManager.k_RegisteredSceneNames.Add(NetworkConfig.RegisteredScenes[i]);
+                    NetworkSceneManager.k_SceneIndexToString.Add((uint)i, NetworkConfig.RegisteredScenes[i]);
+                    NetworkSceneManager.k_SceneNameToIndex.Add(NetworkConfig.RegisteredScenes[i], (uint)i);
                 }
 
                 NetworkSceneManager.SetCurrentSceneIndex();
@@ -555,7 +554,7 @@ namespace MLAPI
 
                 if (netObject.CheckObjectVisibility == null || netObject.CheckObjectVisibility(hostClientId))
                 {
-                    netObject.observers.Add(hostClientId);
+                    netObject.m_Observers.Add(hostClientId);
                 }
             }
 
@@ -570,8 +569,8 @@ namespace MLAPI
         {
             Singleton = this;
 
-            if (OnSingletonReady != null)
-                OnSingletonReady();
+            if (s_OnSingletonReady != null)
+                s_OnSingletonReady();
         }
 
         private void OnEnable()
@@ -606,18 +605,18 @@ namespace MLAPI
             this.UnregisterAllNetworkUpdates();
 
             //If an instance of the RpcQueueContainer is still around, then shut it down and remove the reference
-            if (rpcQueueContainer != null)
+            if (RpcQueueContainer != null)
             {
-                rpcQueueContainer.Shutdown();
-                rpcQueueContainer = null;
+                RpcQueueContainer.Shutdown();
+                RpcQueueContainer = null;
             }
 
-            if (networkTickSystem != null)
+            if (NetworkTickSystem != null)
             {
-                networkTickSystem.Dispose();
+                NetworkTickSystem.Dispose();
             }
 
-            networkTickSystem = null;
+            NetworkTickSystem = null;
 
             NetworkProfiler.Stop();
             IsListening = false;
@@ -664,8 +663,8 @@ namespace MLAPI
                 // Process received data
                 if ((NetworkTime - m_LastReceiveTickTime >= (1f / NetworkConfig.ReceiveTickrate)) || NetworkConfig.ReceiveTickrate <= 0)
                 {
-                    PerformanceDataManager.Increment(ProfilerConstants.ReceiveTickRate);
-                    ProfilerStatManager.rcvTickRate.Record();
+                    PerformanceDataManager.Increment(ProfilerConstants.k_ReceiveTickRate);
+                    ProfilerStatManager.RcvTickRate.Record();
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                     s_ReceiveTick.Begin();
 #endif
@@ -766,12 +765,12 @@ namespace MLAPI
 #endif
                 }
 
-                if (!Mathf.Approximately(networkTimeOffset, currentNetworkTimeOffset))
+                if (!Mathf.Approximately(m_NetworkTimeOffset, m_CurrentNetworkTimeOffset))
                 {
                     // Smear network time adjustments by no more than 200ms per second.  This should help code deal with
                     // changes more gracefully, since the network time will always flow forward at a reasonable pace.
                     float maxDelta = Mathf.Max(0.001f, 0.2f * Time.unscaledDeltaTime);
-                    currentNetworkTimeOffset += Mathf.Clamp(networkTimeOffset - currentNetworkTimeOffset, -maxDelta, maxDelta);
+                    m_CurrentNetworkTimeOffset += Mathf.Clamp(m_NetworkTimeOffset - m_CurrentNetworkTimeOffset, -maxDelta, maxDelta);
                 }
             }
 
@@ -787,20 +786,20 @@ namespace MLAPI
         internal void UpdateNetworkTime(ulong clientId, float netTime, float receiveTime, bool warp = false)
         {
             float rtt = NetworkConfig.NetworkTransport.GetCurrentRtt(clientId) / 1000f;
-            networkTimeOffset = netTime - receiveTime + rtt / 2f;
+            m_NetworkTimeOffset = netTime - receiveTime + rtt / 2f;
             if (warp)
             {
-                currentNetworkTimeOffset = networkTimeOffset;
+                m_CurrentNetworkTimeOffset = m_NetworkTimeOffset;
             }
 
-            if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogInfo($"Received network time {netTime}, RTT to server is {rtt}, {(warp ? "setting" : "smearing")} offset to {networkTimeOffset} (delta {networkTimeOffset - currentNetworkTimeOffset})");
+            if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogInfo($"Received network time {netTime}, RTT to server is {rtt}, {(warp ? "setting" : "smearing")} offset to {m_NetworkTimeOffset} (delta {m_NetworkTimeOffset - m_CurrentNetworkTimeOffset})");
         }
 
         internal void SendConnectionRequest()
         {
-            using (PooledNetworkStream stream = PooledNetworkStream.Get())
+            using (var stream = PooledNetworkStream.Get())
             {
-                using (PooledNetworkWriter writer = PooledNetworkWriter.Get(stream))
+                using (var writer = PooledNetworkWriter.Get(stream))
                 {
                     writer.WriteUInt64Packed(NetworkConfig.GetConfig());
 
@@ -837,8 +836,8 @@ namespace MLAPI
 
         private void HandleRawTransportPoll(NetworkEvent networkEvent, ulong clientId, NetworkChannel networkChannel, ArraySegment<byte> payload, float receiveTime)
         {
-            PerformanceDataManager.Increment(ProfilerConstants.NumberBytesReceived, payload.Count);
-            ProfilerStatManager.bytesRcvd.Record(payload.Count);
+            PerformanceDataManager.Increment(ProfilerConstants.k_NumberBytesReceived, payload.Count);
+            ProfilerStatManager.BytesRcvd.Record(payload.Count);
             switch (networkEvent)
             {
                 case NetworkEvent.Connect:
@@ -1011,11 +1010,11 @@ namespace MLAPI
                     {
                         if (IsServer)
                         {
-                            if (rpcQueueContainer.IsUsingBatching())
+                            if (RpcQueueContainer.IsUsingBatching())
                             {
                                 m_RpcBatcher.ReceiveItems(messageStream, ReceiveCallback, RpcQueueContainer.QueueItemType.ServerRpc, clientId, receiveTime);
-                                ProfilerStatManager.rpcBatchesRcvd.Record();
-                                PerformanceDataManager.Increment(ProfilerConstants.NumberOfRPCBatchesReceived);
+                                ProfilerStatManager.RpcBatchesRcvd.Record();
+                                PerformanceDataManager.Increment(ProfilerConstants.k_NumberOfRPCBatchesReceived);
                             }
                             else
                             {
@@ -1035,11 +1034,11 @@ namespace MLAPI
                     {
                         if (IsClient)
                         {
-                            if (rpcQueueContainer.IsUsingBatching())
+                            if (RpcQueueContainer.IsUsingBatching())
                             {
                                 m_RpcBatcher.ReceiveItems(messageStream, ReceiveCallback, RpcQueueContainer.QueueItemType.ClientRpc, clientId, receiveTime);
-                                ProfilerStatManager.rpcBatchesRcvd.Record();
-                                PerformanceDataManager.Increment(ProfilerConstants.NumberOfRPCBatchesReceived);
+                                ProfilerStatManager.RpcBatchesRcvd.Record();
+                                PerformanceDataManager.Increment(ProfilerConstants.k_NumberOfRPCBatchesReceived);
                             }
                             else
                             {
@@ -1105,10 +1104,10 @@ namespace MLAPI
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_InvokeRpc.Begin();
 #endif
-            var networkObjectId = queueItem.streamReader.ReadUInt64Packed();
-            var networkBehaviourId = queueItem.streamReader.ReadUInt16Packed();
-            var networkUpdateStage = queueItem.streamReader.ReadByteDirect();
-            var networkMethodId = queueItem.streamReader.ReadUInt32Packed();
+            var networkObjectId = queueItem.StreamReader.ReadUInt64Packed();
+            var networkBehaviourId = queueItem.StreamReader.ReadUInt16Packed();
+            var networkUpdateStage = queueItem.StreamReader.ReadByteDirect();
+            var networkMethodId = queueItem.StreamReader.ReadUInt32Packed();
 
             if (__ntable.ContainsKey(networkMethodId))
             {
@@ -1119,7 +1118,7 @@ namespace MLAPI
                 if (ReferenceEquals(networkBehaviour, null)) return;
 
                 var rpcParams = new __RpcParams();
-                switch (queueItem.queueItemType)
+                switch (queueItem.QueueItemType)
                 {
                     case RpcQueueContainer.QueueItemType.ServerRpc:
                         rpcParams.Server = new ServerRpcParams
@@ -1127,7 +1126,7 @@ namespace MLAPI
                             Receive = new ServerRpcReceiveParams
                             {
                                 UpdateStage = (NetworkUpdateStage)networkUpdateStage,
-                                SenderClientId = queueItem.networkId
+                                SenderClientId = queueItem.NetworkId
                             }
                         };
                         break;
@@ -1142,7 +1141,7 @@ namespace MLAPI
                         break;
                 }
 
-                __ntable[networkMethodId](networkBehaviour, new NetworkSerializer(queueItem.streamReader), rpcParams);
+                __ntable[networkMethodId](networkBehaviour, new NetworkSerializer(queueItem.StreamReader), rpcParams);
             }
 #pragma warning restore 618
 
@@ -1195,8 +1194,8 @@ namespace MLAPI
                 if (ConnectedClientsList[i].ClientId == clientId)
                 {
                     ConnectedClientsList.RemoveAt(i);
-                    PerformanceDataManager.Increment(ProfilerConstants.NumberOfConnections, -1);
-                    ProfilerStatManager.connections.Record(-1);
+                    PerformanceDataManager.Increment(ProfilerConstants.k_NumberOfConnections, -1);
+                    ProfilerStatManager.Connections.Record(-1);
                 }
             }
 
@@ -1214,9 +1213,9 @@ namespace MLAPI
                 {
                     if (ConnectedClients[clientId].PlayerObject != null)
                     {
-                        if (NetworkSpawnManager.customDestroyHandlers.ContainsKey(ConnectedClients[clientId].PlayerObject.PrefabHash))
+                        if (NetworkSpawnManager.k_CustomDestroyHandlers.ContainsKey(ConnectedClients[clientId].PlayerObject.PrefabHash))
                         {
-                            NetworkSpawnManager.customDestroyHandlers[ConnectedClients[clientId].PlayerObject.PrefabHash](ConnectedClients[clientId].PlayerObject);
+                            NetworkSpawnManager.k_CustomDestroyHandlers[ConnectedClients[clientId].PlayerObject.PrefabHash](ConnectedClients[clientId].PlayerObject);
                             NetworkSpawnManager.OnDestroyObject(ConnectedClients[clientId].PlayerObject.NetworkId, false);
                         }
                         else
@@ -1231,9 +1230,9 @@ namespace MLAPI
                         {
                             if (!ConnectedClients[clientId].OwnedObjects[i].DontDestroyWithOwner)
                             {
-                                if (NetworkSpawnManager.customDestroyHandlers.ContainsKey(ConnectedClients[clientId].OwnedObjects[i].PrefabHash))
+                                if (NetworkSpawnManager.k_CustomDestroyHandlers.ContainsKey(ConnectedClients[clientId].OwnedObjects[i].PrefabHash))
                                 {
-                                    NetworkSpawnManager.customDestroyHandlers[ConnectedClients[clientId].OwnedObjects[i].PrefabHash](ConnectedClients[clientId].OwnedObjects[i]);
+                                    NetworkSpawnManager.k_CustomDestroyHandlers[ConnectedClients[clientId].OwnedObjects[i].PrefabHash](ConnectedClients[clientId].OwnedObjects[i]);
                                     NetworkSpawnManager.OnDestroyObject(ConnectedClients[clientId].OwnedObjects[i].NetworkId, false);
                                 }
                                 else
@@ -1252,7 +1251,7 @@ namespace MLAPI
 
                     foreach (var sobj in NetworkSpawnManager.SpawnedObjectsList)
                     {
-                        sobj.observers.Remove(clientId);
+                        sobj.m_Observers.Remove(clientId);
                     }
                 }
 
@@ -1261,8 +1260,8 @@ namespace MLAPI
                     if (ConnectedClientsList[i].ClientId == clientId)
                     {
                         ConnectedClientsList.RemoveAt(i);
-                        PerformanceDataManager.Increment(ProfilerConstants.NumberOfConnections, -1);
-                        ProfilerStatManager.connections.Record(-1);
+                        PerformanceDataManager.Increment(ProfilerConstants.k_NumberOfConnections, -1);
+                        ProfilerStatManager.Connections.Record(-1);
                         break;
                     }
                 }
@@ -1277,9 +1276,9 @@ namespace MLAPI
             s_SyncTime.Begin();
 #endif
             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogInfo("Syncing Time To Clients");
-            using (PooledNetworkStream stream = PooledNetworkStream.Get())
+            using (var stream = PooledNetworkStream.Get())
             {
-                using (PooledNetworkWriter writer = PooledNetworkWriter.Get(stream))
+                using (var writer = PooledNetworkWriter.Get(stream))
                 {
                     writer.WriteSinglePacked(Time.realtimeSinceStartup);
                     InternalMessageSender.Send(NetworkConstants.k_TIME_SYNC, NetworkChannel.SyncChannel, stream);
@@ -1290,15 +1289,14 @@ namespace MLAPI
 #endif
         }
 
-        private readonly List<NetworkObject> _observedObjects = new List<NetworkObject>();
+        private readonly List<NetworkObject> m_ObservedObjects = new List<NetworkObject>();
 
         internal void HandleApproval(ulong clientId, bool createPlayerObject, ulong? playerPrefabHash, bool approved, Vector3? position, Quaternion? rotation)
         {
             if (approved)
             {
                 // Inform new client it got approved
-                if (PendingClients.ContainsKey(clientId))
-                    PendingClients.Remove(clientId);
+                if (PendingClients.ContainsKey(clientId)) PendingClients.Remove(clientId);
                 NetworkClient client = new NetworkClient()
                 {
                     ClientId = clientId,
@@ -1306,8 +1304,8 @@ namespace MLAPI
                 ConnectedClients.Add(clientId, client);
                 ConnectedClientsList.Add(client);
 
-                PerformanceDataManager.Increment(ProfilerConstants.NumberOfConnections);
-                ProfilerStatManager.connections.Record();
+                PerformanceDataManager.Increment(ProfilerConstants.k_NumberOfConnections);
+                ProfilerStatManager.Connections.Record();
 
                 // This packet is unreliable, but if it gets through it should provide a much better sync than the potentially huge approval message.
                 SyncTime();
@@ -1321,36 +1319,36 @@ namespace MLAPI
                     ConnectedClients[clientId].PlayerObject = netObject;
                 }
 
-                _observedObjects.Clear();
+                m_ObservedObjects.Clear();
 
                 foreach (var sobj in NetworkSpawnManager.SpawnedObjectsList)
                 {
                     if (clientId == ServerClientId || sobj.CheckObjectVisibility == null || sobj.CheckObjectVisibility(clientId))
                     {
-                        _observedObjects.Add(sobj);
-                        sobj.observers.Add(clientId);
+                        m_ObservedObjects.Add(sobj);
+                        sobj.m_Observers.Add(clientId);
                     }
                 }
 
-                using (PooledNetworkStream stream = PooledNetworkStream.Get())
+                using (var stream = PooledNetworkStream.Get())
                 {
-                    using (PooledNetworkWriter writer = PooledNetworkWriter.Get(stream))
+                    using (var writer = PooledNetworkWriter.Get(stream))
                     {
                         writer.WriteUInt64Packed(clientId);
 
                         if (NetworkConfig.EnableSceneManagement)
                         {
-                            writer.WriteUInt32Packed(NetworkSceneManager.currentSceneIndex);
-                            writer.WriteByteArray(NetworkSceneManager.currentSceneSwitchProgressGuid.ToByteArray());
+                            writer.WriteUInt32Packed(NetworkSceneManager.s_CurrentSceneIndex);
+                            writer.WriteByteArray(NetworkSceneManager.s_CurrentSceneSwitchProgressGuid.ToByteArray());
                         }
 
                         writer.WriteSinglePacked(Time.realtimeSinceStartup);
 
-                        writer.WriteUInt32Packed((uint)_observedObjects.Count);
+                        writer.WriteUInt32Packed((uint)m_ObservedObjects.Count);
 
-                        for (int i = 0; i < _observedObjects.Count; i++)
+                        for (int i = 0; i < m_ObservedObjects.Count; i++)
                         {
-                            NetworkObject observedObject = _observedObjects[i];
+                            NetworkObject observedObject = m_ObservedObjects[i];
                             writer.WriteBool(observedObject.IsPlayerObject);
                             writer.WriteUInt64Packed(observedObject.NetworkId);
                             writer.WriteUInt64Packed(observedObject.OwnerClientId);
@@ -1425,12 +1423,12 @@ namespace MLAPI
 
                 foreach (KeyValuePair<ulong, NetworkClient> clientPair in ConnectedClients)
                 {
-                    if (clientPair.Key == clientId || ConnectedClients[clientId].PlayerObject == null || !ConnectedClients[clientId].PlayerObject.observers.Contains(clientPair.Key))
+                    if (clientPair.Key == clientId || ConnectedClients[clientId].PlayerObject == null || !ConnectedClients[clientId].PlayerObject.m_Observers.Contains(clientPair.Key))
                         continue; //The new client.
 
-                    using (PooledNetworkStream stream = PooledNetworkStream.Get())
+                    using (var stream = PooledNetworkStream.Get())
                     {
-                        using (PooledNetworkWriter writer = PooledNetworkWriter.Get(stream))
+                        using (var writer = PooledNetworkWriter.Get(stream))
                         {
                             writer.WriteBool(true);
                             writer.WriteUInt64Packed(ConnectedClients[clientId].PlayerObject.NetworkId);

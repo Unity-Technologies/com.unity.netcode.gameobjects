@@ -14,39 +14,38 @@ namespace MLAPI.NetworkVariable
     public class NetworkVariable<T> : INetworkVariable
     {
         /// <summary>
-        /// Gets or sets Whether or not the variable needs to be delta synced
-        /// </summary>
-        public bool isDirty { get; set; }
-        /// <summary>
         /// The settings for this var
         /// </summary>
         public readonly NetworkVariableSettings Settings = new NetworkVariableSettings();
+
         /// <summary>
         /// The last time the variable was written to locally
         /// </summary>
         public ushort LocalTick { get; internal set; }
+
         /// <summary>
         /// The last time the variable was written to remotely. Uses the remote timescale
         /// </summary>
         public ushort RemoteTick { get; internal set; }
+
         /// <summary>
         /// Delegate type for value changed event
         /// </summary>
         /// <param name="previousValue">The value before the change</param>
         /// <param name="newValue">The new value</param>
         public delegate void OnValueChangedDelegate(T previousValue, T newValue);
+
         /// <summary>
         /// The callback to be invoked when the value gets changed
         /// </summary>
         public OnValueChangedDelegate OnValueChanged;
-        private NetworkBehaviour networkBehaviour;
+
+        private NetworkBehaviour m_NetworkBehaviour;
 
         /// <summary>
         /// Creates a NetworkVariable with the default value and settings
         /// </summary>
-        public NetworkVariable()
-        {
-        }
+        public NetworkVariable() { }
 
         /// <summary>
         /// Creates a NetworkVariable with the default value and custom settings
@@ -65,7 +64,7 @@ namespace MLAPI.NetworkVariable
         public NetworkVariable(NetworkVariableSettings settings, T value)
         {
             Settings = settings;
-            InternalValue = value;
+            m_InternalValue = value;
         }
 
         /// <summary>
@@ -74,42 +73,53 @@ namespace MLAPI.NetworkVariable
         /// <param name="value">The initial value to use for the NetworkVariable</param>
         public NetworkVariable(T value)
         {
-            InternalValue = value;
+            m_InternalValue = value;
         }
 
         [SerializeField]
-        private T InternalValue;
+        private T m_InternalValue;
+
         /// <summary>
         /// The value of the NetworkVariable container
         /// </summary>
         public T Value
         {
-            get => InternalValue;
+            get => m_InternalValue;
             set
             {
-                if (EqualityComparer<T>.Default.Equals(InternalValue, value)) return;
+                if (EqualityComparer<T>.Default.Equals(m_InternalValue, value)) return;
 
                 // Setter is assumed to be called locally, by game code.
                 // When used by the host, it is its responsibility to set the RemoteTick
                 RemoteTick = NetworkTickSystem.k_NoTick;
 
-                isDirty = true;
-                T previousValue = InternalValue;
-                InternalValue = value;
-                OnValueChanged?.Invoke(previousValue, InternalValue);
+                m_IsDirty = true;
+                T previousValue = m_InternalValue;
+                m_InternalValue = value;
+                OnValueChanged?.Invoke(previousValue, m_InternalValue);
             }
         }
 
-        /// <inheritdoc />
-        public void ResetDirty()
+        private bool m_IsDirty = false;
+
+        /// <summary>
+        /// Sets whether or not the variable needs to be delta synced
+        /// </summary>
+        public void SetDirty(bool isDirty)
         {
-            isDirty = false;
+            m_IsDirty = isDirty;
         }
 
         /// <inheritdoc />
         public bool IsDirty()
         {
-            return isDirty;
+            return m_IsDirty;
+        }
+
+        /// <inheritdoc />
+        public void ResetDirty()
+        {
+            m_IsDirty = false;
         }
 
         /// <inheritdoc />
@@ -122,13 +132,14 @@ namespace MLAPI.NetworkVariable
                 case NetworkVariablePermission.ServerOnly:
                     return false;
                 case NetworkVariablePermission.OwnerOnly:
-                    return networkBehaviour.OwnerClientId == clientId;
+                    return m_NetworkBehaviour.OwnerClientId == clientId;
                 case NetworkVariablePermission.Custom:
                 {
                     if (Settings.ReadPermissionCallback == null) return false;
                     return Settings.ReadPermissionCallback(clientId);
                 }
             }
+
             return true;
         }
 
@@ -159,7 +170,7 @@ namespace MLAPI.NetworkVariable
                 case NetworkVariablePermission.ServerOnly:
                     return false;
                 case NetworkVariablePermission.OwnerOnly:
-                    return networkBehaviour.OwnerClientId == clientId;
+                    return m_NetworkBehaviour.OwnerClientId == clientId;
                 case NetworkVariablePermission.Custom:
                 {
                     if (Settings.WritePermissionCallback == null) return false;
@@ -184,19 +195,19 @@ namespace MLAPI.NetworkVariable
 
             using (var reader = PooledNetworkReader.Get(stream))
             {
-                T previousValue = InternalValue;
-                InternalValue = (T)reader.ReadObjectPacked(typeof(T));
+                T previousValue = m_InternalValue;
+                m_InternalValue = (T)reader.ReadObjectPacked(typeof(T));
 
-                if (keepDirtyDelta) isDirty = true;
+                if (keepDirtyDelta) m_IsDirty = true;
 
-                OnValueChanged?.Invoke(previousValue, InternalValue);
+                OnValueChanged?.Invoke(previousValue, m_InternalValue);
             }
         }
 
         /// <inheritdoc />
         public void SetNetworkBehaviour(NetworkBehaviour behaviour)
         {
-            networkBehaviour = behaviour;
+            m_NetworkBehaviour = behaviour;
         }
 
         /// <inheritdoc />
@@ -209,10 +220,10 @@ namespace MLAPI.NetworkVariable
         public void WriteField(Stream stream)
         {
             // Store the local tick at which this NetworkVariable was modified
-            LocalTick = NetworkBehaviour.currentTick;
-            using (PooledNetworkWriter writer = PooledNetworkWriter.Get(stream))
+            LocalTick = NetworkBehaviour.CurrentTick;
+            using (var writer = PooledNetworkWriter.Get(stream))
             {
-                writer.WriteObjectPacked(InternalValue); //BOX
+                writer.WriteObjectPacked(m_InternalValue); //BOX
             }
         }
 
@@ -231,10 +242,13 @@ namespace MLAPI.NetworkVariable
     {
         /// <inheritdoc />
         public NetworkVariableString() : base(string.Empty) { }
+
         /// <inheritdoc />
         public NetworkVariableString(NetworkVariableSettings settings) : base(settings, string.Empty) { }
+
         /// <inheritdoc />
         public NetworkVariableString(string value) : base(value) { }
+
         /// <inheritdoc />
         public NetworkVariableString(NetworkVariableSettings settings, string value) : base(settings, value) { }
     }
@@ -247,10 +261,13 @@ namespace MLAPI.NetworkVariable
     {
         /// <inheritdoc />
         public NetworkVariableBool() { }
+
         /// <inheritdoc />
         public NetworkVariableBool(NetworkVariableSettings settings) : base(settings) { }
+
         /// <inheritdoc />
         public NetworkVariableBool(bool value) : base(value) { }
+
         /// <inheritdoc />
         public NetworkVariableBool(NetworkVariableSettings settings, bool value) : base(settings, value) { }
     }
@@ -263,10 +280,13 @@ namespace MLAPI.NetworkVariable
     {
         /// <inheritdoc />
         public NetworkVariableByte() { }
+
         /// <inheritdoc />
         public NetworkVariableByte(NetworkVariableSettings settings) : base(settings) { }
+
         /// <inheritdoc />
         public NetworkVariableByte(byte value) : base(value) { }
+
         /// <inheritdoc />
         public NetworkVariableByte(NetworkVariableSettings settings, byte value) : base(settings, value) { }
     }
@@ -279,10 +299,13 @@ namespace MLAPI.NetworkVariable
     {
         /// <inheritdoc />
         public NetworkVariableSByte() { }
+
         /// <inheritdoc />
         public NetworkVariableSByte(NetworkVariableSettings settings) : base(settings) { }
+
         /// <inheritdoc />
         public NetworkVariableSByte(sbyte value) : base(value) { }
+
         /// <inheritdoc />
         public NetworkVariableSByte(NetworkVariableSettings settings, sbyte value) : base(settings, value) { }
     }
@@ -295,10 +318,13 @@ namespace MLAPI.NetworkVariable
     {
         /// <inheritdoc />
         public NetworkVariableUShort() { }
+
         /// <inheritdoc />
         public NetworkVariableUShort(NetworkVariableSettings settings) : base(settings) { }
+
         /// <inheritdoc />
         public NetworkVariableUShort(ushort value) : base(value) { }
+
         /// <inheritdoc />
         public NetworkVariableUShort(NetworkVariableSettings settings, ushort value) : base(settings, value) { }
     }
@@ -311,10 +337,13 @@ namespace MLAPI.NetworkVariable
     {
         /// <inheritdoc />
         public NetworkVariableShort() { }
+
         /// <inheritdoc />
         public NetworkVariableShort(NetworkVariableSettings settings) : base(settings) { }
+
         /// <inheritdoc />
         public NetworkVariableShort(short value) : base(value) { }
+
         /// <inheritdoc />
         public NetworkVariableShort(NetworkVariableSettings settings, short value) : base(settings, value) { }
     }
@@ -327,10 +356,13 @@ namespace MLAPI.NetworkVariable
     {
         /// <inheritdoc />
         public NetworkVariableUInt() { }
+
         /// <inheritdoc />
         public NetworkVariableUInt(NetworkVariableSettings settings) : base(settings) { }
+
         /// <inheritdoc />
         public NetworkVariableUInt(uint value) : base(value) { }
+
         /// <inheritdoc />
         public NetworkVariableUInt(NetworkVariableSettings settings, uint value) : base(settings, value) { }
     }
@@ -343,10 +375,13 @@ namespace MLAPI.NetworkVariable
     {
         /// <inheritdoc />
         public NetworkVariableInt() { }
+
         /// <inheritdoc />
         public NetworkVariableInt(NetworkVariableSettings settings) : base(settings) { }
+
         /// <inheritdoc />
         public NetworkVariableInt(int value) : base(value) { }
+
         /// <inheritdoc />
         public NetworkVariableInt(NetworkVariableSettings settings, int value) : base(settings, value) { }
     }
@@ -359,10 +394,13 @@ namespace MLAPI.NetworkVariable
     {
         /// <inheritdoc />
         public NetworkVariableULong() { }
+
         /// <inheritdoc />
         public NetworkVariableULong(NetworkVariableSettings settings) : base(settings) { }
+
         /// <inheritdoc />
         public NetworkVariableULong(ulong value) : base(value) { }
+
         /// <inheritdoc />
         public NetworkVariableULong(NetworkVariableSettings settings, ulong value) : base(settings, value) { }
     }
@@ -375,10 +413,13 @@ namespace MLAPI.NetworkVariable
     {
         /// <inheritdoc />
         public NetworkVariableLong() { }
+
         /// <inheritdoc />
         public NetworkVariableLong(NetworkVariableSettings settings) : base(settings) { }
+
         /// <inheritdoc />
         public NetworkVariableLong(long value) : base(value) { }
+
         /// <inheritdoc />
         public NetworkVariableLong(NetworkVariableSettings settings, long value) : base(settings, value) { }
     }
@@ -391,10 +432,13 @@ namespace MLAPI.NetworkVariable
     {
         /// <inheritdoc />
         public NetworkVariableFloat() { }
+
         /// <inheritdoc />
         public NetworkVariableFloat(NetworkVariableSettings settings) : base(settings) { }
+
         /// <inheritdoc />
         public NetworkVariableFloat(float value) : base(value) { }
+
         /// <inheritdoc />
         public NetworkVariableFloat(NetworkVariableSettings settings, float value) : base(settings, value) { }
     }
@@ -407,10 +451,13 @@ namespace MLAPI.NetworkVariable
     {
         /// <inheritdoc />
         public NetworkVariableDouble() { }
+
         /// <inheritdoc />
         public NetworkVariableDouble(NetworkVariableSettings settings) : base(settings) { }
+
         /// <inheritdoc />
         public NetworkVariableDouble(double value) : base(value) { }
+
         /// <inheritdoc />
         public NetworkVariableDouble(NetworkVariableSettings settings, double value) : base(settings, value) { }
     }
@@ -423,10 +470,13 @@ namespace MLAPI.NetworkVariable
     {
         /// <inheritdoc />
         public NetworkVariableVector2() { }
+
         /// <inheritdoc />
         public NetworkVariableVector2(NetworkVariableSettings settings) : base(settings) { }
+
         /// <inheritdoc />
         public NetworkVariableVector2(Vector2 value) : base(value) { }
+
         /// <inheritdoc />
         public NetworkVariableVector2(NetworkVariableSettings settings, Vector2 value) : base(settings, value) { }
     }
@@ -439,10 +489,13 @@ namespace MLAPI.NetworkVariable
     {
         /// <inheritdoc />
         public NetworkVariableVector3() { }
+
         /// <inheritdoc />
         public NetworkVariableVector3(NetworkVariableSettings settings) : base(settings) { }
+
         /// <inheritdoc />
         public NetworkVariableVector3(Vector3 value) : base(value) { }
+
         /// <inheritdoc />
         public NetworkVariableVector3(NetworkVariableSettings settings, Vector3 value) : base(settings, value) { }
     }
@@ -455,10 +508,13 @@ namespace MLAPI.NetworkVariable
     {
         /// <inheritdoc />
         public NetworkVariableVector4() { }
+
         /// <inheritdoc />
         public NetworkVariableVector4(NetworkVariableSettings settings) : base(settings) { }
+
         /// <inheritdoc />
         public NetworkVariableVector4(Vector4 value) : base(value) { }
+
         /// <inheritdoc />
         public NetworkVariableVector4(NetworkVariableSettings settings, Vector4 value) : base(settings, value) { }
     }
@@ -471,10 +527,13 @@ namespace MLAPI.NetworkVariable
     {
         /// <inheritdoc />
         public NetworkVariableColor() { }
+
         /// <inheritdoc />
         public NetworkVariableColor(NetworkVariableSettings settings) : base(settings) { }
+
         /// <inheritdoc />
         public NetworkVariableColor(Color value) : base(value) { }
+
         /// <inheritdoc />
         public NetworkVariableColor(NetworkVariableSettings settings, Color value) : base(settings, value) { }
     }
@@ -487,10 +546,13 @@ namespace MLAPI.NetworkVariable
     {
         /// <inheritdoc />
         public NetworkVariableColor32() { }
+
         /// <inheritdoc />
         public NetworkVariableColor32(NetworkVariableSettings settings) : base(settings) { }
+
         /// <inheritdoc />
         public NetworkVariableColor32(Color32 value) : base(value) { }
+
         /// <inheritdoc />
         public NetworkVariableColor32(NetworkVariableSettings settings, Color32 value) : base(settings, value) { }
     }
@@ -503,10 +565,13 @@ namespace MLAPI.NetworkVariable
     {
         /// <inheritdoc />
         public NetworkVariableRay() { }
+
         /// <inheritdoc />
         public NetworkVariableRay(NetworkVariableSettings settings) : base(settings) { }
+
         /// <inheritdoc />
         public NetworkVariableRay(Ray value) : base(value) { }
+
         /// <inheritdoc />
         public NetworkVariableRay(NetworkVariableSettings settings, Ray value) : base(settings, value) { }
     }
@@ -519,10 +584,13 @@ namespace MLAPI.NetworkVariable
     {
         /// <inheritdoc />
         public NetworkVariableQuaternion() { }
+
         /// <inheritdoc />
         public NetworkVariableQuaternion(NetworkVariableSettings settings) : base(settings) { }
+
         /// <inheritdoc />
         public NetworkVariableQuaternion(Quaternion value) : base(value) { }
+
         /// <inheritdoc />
         public NetworkVariableQuaternion(NetworkVariableSettings settings, Quaternion value) : base(settings, value) { }
     }

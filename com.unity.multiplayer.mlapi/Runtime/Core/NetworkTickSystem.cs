@@ -10,12 +10,13 @@ namespace MLAPI
 
     public class NetworkTickSystem : INetworkUpdateSystem, IDisposable
     {
-        private const float k_DefaultTickIntervalSec = 1/60f; // Defaults to 60 ticks second
+        private const float k_DefaultTickIntervalSec = 1 / 60f; // Defaults to 60 ticks second
         private readonly float m_TickIntervalSec; // Duration of a tick in seconds
         private int m_NetworkTickCount; // How many network ticks have passed?
 
         // special value to indicate "No tick information"
         public const ushort k_NoTick = ushort.MaxValue;
+
         // Number of ticks over which the tick number wraps back to 0
         public const ushort k_TickPeriod = k_NoTick - 1;
 

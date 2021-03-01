@@ -7,7 +7,7 @@ namespace MLAPI.Serialization.Pooled
     /// </summary>
     public sealed class PooledNetworkStream : NetworkStream, IDisposable
     {
-        private bool isDisposed = false;
+        private bool m_IsDisposed = false;
 
         internal PooledNetworkStream() { }
 
@@ -18,7 +18,7 @@ namespace MLAPI.Serialization.Pooled
         public static PooledNetworkStream Get()
         {
             PooledNetworkStream stream = NetworkStreamPool.GetStream();
-            stream.isDisposed = false;
+            stream.m_IsDisposed = false;
             return stream;
         }
 
@@ -27,9 +27,9 @@ namespace MLAPI.Serialization.Pooled
         /// </summary>
         public new void Dispose()
         {
-            if (!isDisposed)
+            if (!m_IsDisposed)
             {
-                isDisposed = true;
+                m_IsDisposed = true;
                 NetworkStreamPool.PutBackInPool(this);
             }
         }
