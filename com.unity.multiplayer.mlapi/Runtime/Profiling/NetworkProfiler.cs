@@ -17,12 +17,7 @@ namespace MLAPI.Profiling
         /// The ticks that has been recorded
         /// </summary>
         public static FixedQueue<ProfilerTick> Ticks { get; private set; }
-        /// <summary>
-        /// Whether or not the profiler is recording data
-        /// </summary>
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        [Obsolete("Use IsRunning instead", false)]
-        public static bool isRunning => IsRunning;
+
         /// <summary>
         /// Whether or not the profiler is recording data
         /// </summary>

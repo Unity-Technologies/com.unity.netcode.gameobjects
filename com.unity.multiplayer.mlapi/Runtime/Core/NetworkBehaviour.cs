@@ -232,73 +232,39 @@ namespace MLAPI
         /// Gets the NetworkManager that owns this NetworkBehaviour instance
         /// </summary>
         public NetworkManager NetworkManager => NetworkObject.NetworkManager;
-        /// <summary>
-        /// Gets if the object is the the personal clients player object
-        /// </summary>
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        [Obsolete("Use IsLocalPlayer instead", false)]
-        public bool isLocalPlayer => IsLocalPlayer;
+
         /// <summary>
         /// Gets if the object is the the personal clients player object
         /// </summary>
         public bool IsLocalPlayer => NetworkObject.IsLocalPlayer;
-        /// <summary>
-        /// Gets if the object is owned by the local player or if the object is the local player object
-        /// </summary>
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        [Obsolete("Use IsOwner instead", false)]
-        public bool isOwner => IsOwner;
+
         /// <summary>
         /// Gets if the object is owned by the local player or if the object is the local player object
         /// </summary>
         public bool IsOwner => NetworkObject.IsOwner;
-        /// <summary>
-        /// Gets if we are executing as server
-        /// </summary>
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        [Obsolete("Use IsServer instead", false)]
-        protected bool isServer => IsServer;
+
         /// <summary>
         /// Gets if we are executing as server
         /// </summary>
         protected static bool IsServer => IsRunning && NetworkManager.Singleton.IsServer;
-        /// <summary>
-        /// Gets if we are executing as client
-        /// </summary>
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        [Obsolete("Use IsClient instead")]
-        protected bool isClient => IsClient;
+
         /// <summary>
         /// Gets if we are executing as client
         /// </summary>
         protected bool IsClient => IsRunning && NetworkManager.Singleton.IsClient;
-        /// <summary>
-        /// Gets if we are executing as Host, I.E Server and Client
-        /// </summary>
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        [Obsolete("Use IsHost instead", false)]
-        protected bool isHost => IsHost;
+
         /// <summary>
         /// Gets if we are executing as Host, I.E Server and Client
         /// </summary>
         protected bool IsHost => IsRunning && NetworkManager.Singleton.IsHost;
+
         private static bool IsRunning => NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening;
-        /// <summary>
-        /// Gets Whether or not the object has a owner
-        /// </summary>
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        [Obsolete("Use IsOwnedByServer instead", false)]
-		public bool isOwnedByServer => IsOwnedByServer;
+
         /// <summary>
         /// Gets Whether or not the object has a owner
         /// </summary>
         public bool IsOwnedByServer => NetworkObject.IsOwnedByServer;
-        /// <summary>
-        /// Gets the NetworkObject that owns this NetworkBehaviour instance
-        /// </summary>
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        [Obsolete("Use NetworkObject instead", false)]
-        public NetworkObject networkObject => NetworkObject;
+
         /// <summary>
         /// Gets the NetworkObject that owns this NetworkBehaviour instance
         /// </summary>
@@ -306,19 +272,20 @@ namespace MLAPI
         {
             get
             {
-                if (ReferenceEquals(_networkObject, null))
+                if (ReferenceEquals(m_NetworkObject, null))
                 {
-                    _networkObject = GetComponentInParent<NetworkObject>();
+                    m_NetworkObject = GetComponentInParent<NetworkObject>();
                 }
 
-                if (ReferenceEquals(_networkObject, null))
+                if (ReferenceEquals(m_NetworkObject, null))
                 {
                     throw new NullReferenceException($"Could not get {nameof(NetworkObject)} for the {nameof(NetworkBehaviour)}. Are you missing a {nameof(NetworkObject)} component?");
                 }
 
-                return _networkObject;
+                return m_NetworkObject;
             }
         }
+
         /// <summary>
         /// Gets whether or not this NetworkBehaviour instance has a NetworkObject owner.
         /// </summary>
@@ -326,26 +293,22 @@ namespace MLAPI
         {
             get
             {
-                if (ReferenceEquals(_networkObject, null))
+                if (ReferenceEquals(m_NetworkObject, null))
                 {
-                    _networkObject = GetComponentInParent<NetworkObject>();
+                    m_NetworkObject = GetComponentInParent<NetworkObject>();
                 }
 
-                return !ReferenceEquals(_networkObject, null);
+                return !ReferenceEquals(m_NetworkObject, null);
             }
         }
 
-        private NetworkObject _networkObject = null;
-        /// <summary>
-        /// Gets the NetworkId of the NetworkObject that owns the NetworkBehaviour instance
-        /// </summary>
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        [Obsolete("Use NetworkId instead", false)]
-        public ulong networkId => NetworkId;
+        private NetworkObject m_NetworkObject = null;
+
         /// <summary>
         /// Gets the NetworkId of the NetworkObject that owns the NetworkBehaviour instance
         /// </summary>
         public ulong NetworkId => NetworkObject.NetworkId;
+
         /// <summary>
         /// Gets the clientId that owns the NetworkObject
         /// </summary>
@@ -353,18 +316,17 @@ namespace MLAPI
 
         internal bool networkStartInvoked = false;
         internal bool internalNetworkStartInvoked = false;
+
         /// <summary>
         /// Stores the network tick at the NetworkBehaviourUpdate time
         /// This allows sending NetworkVariables not more often than once per network tick, regardless of the update rate
         /// </summary>
         public static ushort currentTick { get; private set; }
+
         /// <summary>
         /// Gets called when message handlers are ready to be registered and the network is setup
         /// </summary>
-        public virtual void NetworkStart()
-        {
-
-        }
+        public virtual void NetworkStart() { }
 
         /// <summary>
         /// Gets called when message handlers are ready to be registered and the network is setup. Provides a Payload if it was provided
@@ -383,17 +345,12 @@ namespace MLAPI
         /// <summary>
         /// Gets called when the local client gains ownership of this object
         /// </summary>
-        public virtual void OnGainedOwnership()
-        {
+        public virtual void OnGainedOwnership() { }
 
-        }
         /// <summary>
         /// Gets called when we loose ownership of this object
         /// </summary>
-        public virtual void OnLostOwnership()
-        {
-
-        }
+        public virtual void OnLostOwnership() { }
 
         /// <summary>
         /// Gets BehaviourId for this NetworkBehaviour on this NetworkObject
@@ -453,7 +410,6 @@ namespace MLAPI
             }
 
             return list.OrderBy(x => x.Name, StringComparer.Ordinal).ToArray();
-
         }
 
         internal void InitializeVariables()
@@ -520,6 +476,7 @@ namespace MLAPI
             {
                 return;
             }
+
             currentTick = tick;
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
@@ -538,9 +495,9 @@ namespace MLAPI
                         foreach (var sobj in spawnedObjs)
                         {
                             // Sync just the variables for just the objects this client sees
-                            for (int k = 0; k < sobj.childNetworkBehaviours.Count; k++)
+                            for (int k = 0; k < sobj.ChildNetworkBehaviours.Count; k++)
                             {
-                                sobj.childNetworkBehaviours[k].VariableUpdate(client.ClientId);
+                                sobj.ChildNetworkBehaviours[k].VariableUpdate(client.ClientId);
                             }
                         }
                     }
@@ -548,30 +505,29 @@ namespace MLAPI
                     // Now, reset all the no-longer-dirty variables
                     foreach (var sobj in touched)
                     {
-                        for (int k = 0; k < sobj.childNetworkBehaviours.Count; k++)
+                        for (int k = 0; k < sobj.ChildNetworkBehaviours.Count; k++)
                         {
-                            sobj.childNetworkBehaviours[k].PostNetworkVariableWrite();
+                            sobj.ChildNetworkBehaviours[k].PostNetworkVariableWrite();
                         }
                     }
                 }
                 else
                 {
-
                     // when client updates the sever, it tells it about all its objects
                     foreach (var sobj in NetworkSpawnManager.SpawnedObjectsList)
                     {
-                        for (int k = 0; k < sobj.childNetworkBehaviours.Count; k++)
+                        for (int k = 0; k < sobj.ChildNetworkBehaviours.Count; k++)
                         {
-                           sobj.childNetworkBehaviours[k].VariableUpdate(NetworkManager.Singleton.ServerClientId);
+                            sobj.ChildNetworkBehaviours[k].VariableUpdate(NetworkManager.Singleton.ServerClientId);
                         }
                     }
 
                     // Now, reset all the no-longer-dirty variables
                     foreach (var sobj in NetworkSpawnManager.SpawnedObjectsList)
                     {
-                        for (int k = 0; k < sobj.childNetworkBehaviours.Count; k++)
+                        for (int k = 0; k < sobj.ChildNetworkBehaviours.Count; k++)
                         {
-                            sobj.childNetworkBehaviours[k].PostNetworkVariableWrite();
+                            sobj.ChildNetworkBehaviours[k].PostNetworkVariableWrite();
                         }
                     }
                 }
@@ -643,6 +599,7 @@ namespace MLAPI
                                 {
                                     writer.WriteBool(false);
                                 }
+
                                 continue;
                             }
 
@@ -700,6 +657,7 @@ namespace MLAPI
                 }
             }
         }
+
         private bool CouldHaveDirtyNetworkVariables()
         {
             // TODO: There should be a better way by reading one dirty variable vs. 'n'
@@ -958,6 +916,7 @@ namespace MLAPI
                 }
             }
         }
+
         #endregion
 
         /// <summary>

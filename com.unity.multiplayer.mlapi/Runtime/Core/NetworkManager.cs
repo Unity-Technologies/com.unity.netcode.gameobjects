@@ -68,37 +68,38 @@ namespace MLAPI
         /// A synchronized time, represents the time in seconds since the server application started. Is replicated across all clients
         /// </summary>
         public float NetworkTime => Time.unscaledTime + currentNetworkTimeOffset;
+
         private float networkTimeOffset;
         private float currentNetworkTimeOffset;
+
         /// <summary>
         /// Gets or sets if the NetworkManager should be marked as DontDestroyOnLoad
         /// </summary>
         [HideInInspector]
         public bool DontDestroy = true;
+
         /// <summary>
         /// Gets or sets if the application should be set to run in background
         /// </summary>
         [HideInInspector]
         public bool RunInBackground = true;
+
         /// <summary>
         /// The log level to use
         /// </summary>
         [HideInInspector]
         public LogLevel LogLevel = LogLevel.Normal;
-        /// <summary>
-        /// The singleton instance of the NetworkManager
-        /// </summary>
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        [Obsolete("Use Singleton instead", false)]
-        public static NetworkManager singleton => Singleton;
+
         /// <summary>
         /// The singleton instance of the NetworkManager
         /// </summary>
         public static NetworkManager Singleton { get; private set; }
+
         /// <summary>
         /// Gets the networkId of the server
         /// </summary>
-		public ulong ServerClientId => NetworkConfig.NetworkTransport != null ? NetworkConfig.NetworkTransport.ServerClientId : throw new NullReferenceException("The transport in the active NetworkConfig is null");
+        public ulong ServerClientId => NetworkConfig.NetworkTransport != null ? NetworkConfig.NetworkTransport.ServerClientId : throw new NullReferenceException("The transport in the active NetworkConfig is null");
+
         /// <summary>
         /// The clientId the server calls the local client by, only valid for clients
         /// </summary>
@@ -107,73 +108,54 @@ namespace MLAPI
             get => IsServer ? NetworkConfig.NetworkTransport.ServerClientId : localClientId;
             internal set => localClientId = value;
         }
+
         private ulong localClientId;
+
         /// <summary>
         /// Gets a dictionary of connected clients and their clientId keys. This is only populated on the server.
         /// </summary>
         public readonly Dictionary<ulong, NetworkClient> ConnectedClients = new Dictionary<ulong, NetworkClient>();
+
         /// <summary>
         /// Gets a list of connected clients. This is only populated on the server.
         /// </summary>
         public readonly List<NetworkClient> ConnectedClientsList = new List<NetworkClient>();
+
         /// <summary>
         /// Gets a dictionary of the clients that have been accepted by the transport but are still pending by the MLAPI. This is only populated on the server.
         /// </summary>
         public readonly Dictionary<ulong, PendingClient> PendingClients = new Dictionary<ulong, PendingClient>();
-        /// <summary>
-        /// Gets Whether or not a server is running
-        /// </summary>
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        [Obsolete("Use IsServer instead", false)]
-        public bool isServer => IsServer;
+
         /// <summary>
         /// Gets Whether or not a server is running
         /// </summary>
         public bool IsServer { get; internal set; }
-        /// <summary>
-        /// Gets Whether or not a client is running
-        /// </summary>
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        [Obsolete("Use IsClient instead", false)]
-        public bool isClient => IsClient;
+
         /// <summary>
         /// Gets Whether or not a client is running
         /// </summary>
         public bool IsClient { get; internal set; }
-        /// <summary>
-        /// Gets if we are running as host
-        /// </summary>
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        [Obsolete("Use IsHost instead", false)]
-        public bool isHost => IsHost;
+
         /// <summary>
         /// Gets if we are running as host
         /// </summary>
         public bool IsHost => IsServer && IsClient;
-        /// <summary>
-        /// Gets Whether or not we are listening for connections
-        /// </summary>
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        [Obsolete("Use IsListening instead", false)]
-        public bool isListening => IsListening;
+
         /// <summary>
         /// Gets Whether or not we are listening for connections
         /// </summary>
         public bool IsListening { get; internal set; }
-        /// <summary>
-        /// Gets if we are connected as a client
-        /// </summary>
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        [Obsolete("Use IsConnectedClient instead", false)]
-        public bool isConnectedClients => IsConnectedClient;
+
         /// <summary>
         /// Gets if we are connected as a client
         /// </summary>
         public bool IsConnectedClient { get; internal set; }
+
         /// <summary>
         /// The callback to invoke once a client connects. This callback is only ran on the server and on the local client that connects.
         /// </summary>
         public event Action<ulong> OnClientConnectedCallback = null;
+
         internal void InvokeOnClientConnectedCallback(ulong clientId)
         {
             if (OnClientConnectedCallback != null)
@@ -181,10 +163,12 @@ namespace MLAPI
                 OnClientConnectedCallback(clientId);
             }
         }
+
         /// <summary>
         /// The callback to invoke when a client disconnects. This callback is only ran on the server and on the local client that disconnects.
         /// </summary>
         public event Action<ulong> OnClientDisconnectCallback = null;
+
         internal void InvokeOnClientDisconnectCallback(ulong clientId)
         {
             if (OnClientDisconnectCallback != null)
@@ -192,10 +176,12 @@ namespace MLAPI
                 OnClientDisconnectCallback(clientId);
             }
         }
+
         /// <summary>
         /// The callback to invoke once the server is ready
         /// </summary>
         public event Action OnServerStarted = null;
+
         /// <summary>
         /// Delegate type called when connection has been approved. This only has to be set on the server.
         /// </summary>
@@ -205,10 +191,12 @@ namespace MLAPI
         /// <param name="position">The position to spawn the client at. If null, the prefab position is used.</param>
         /// <param name="rotation">The rotation to spawn the client with. If null, the prefab position is used.</param>
         public delegate void ConnectionApprovedDelegate(bool createPlayerObject, ulong? playerPrefabHash, bool approved, Vector3? position, Quaternion? rotation);
+
         /// <summary>
         /// The callback to invoke during connection approval
         /// </summary>
         public event Action<byte[], ulong, ConnectionApprovedDelegate> ConnectionApprovalCallback = null;
+
         internal void InvokeConnectionApproval(byte[] payload, ulong clientId, ConnectionApprovedDelegate action)
         {
             if (ConnectionApprovalCallback != null)
@@ -216,56 +204,19 @@ namespace MLAPI
                 ConnectionApprovalCallback(payload, clientId, action);
             }
         }
+
         /// <summary>
         /// The current NetworkConfig
         /// </summary>
         [HideInInspector]
         public NetworkConfig NetworkConfig;
-        [Obsolete("Use OnUnnamedMessage instead")]
-        public event UnnamedMessageDelegate OnIncomingCustomMessage;
+
         /// <summary>
         /// The current hostname we are connected to, used to validate certificate
         /// </summary>
         public string ConnectedHostname { get; private set; }
+
         internal static event Action OnSingletonReady;
-
-        internal void InvokeOnIncomingCustomMessage(ulong clientId, Stream stream)
-        {
-            if (OnIncomingCustomMessage != null)
-            {
-                OnIncomingCustomMessage(clientId, stream);
-            }
-        }
-
-        /// <summary>
-        /// Sends unnamed message to a list of clients
-        /// </summary>
-        /// <param name="clientIds">The clients to send to, sends to everyone if null</param>
-        /// <param name="stream">The message stream containing the data</param>
-        /// <param name="networkChannel">The channel to send the data on</param>
-        [Obsolete("Use CustomMessagingManager.SendUnnamedMessage instead")]
-        public void SendCustomMessage(List<ulong> clientIds, NetworkStream stream, NetworkChannel networkChannel = NetworkChannel.Internal)
-        {
-            if (!IsServer)
-            {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogWarning("Can not send unnamed message to multiple users as a client");
-                return;
-            }
-
-            InternalMessageSender.Send(MLAPIConstants.MLAPI_UNNAMED_MESSAGE, networkChannel, clientIds, stream);
-        }
-
-        /// <summary>
-        /// Sends a unnamed message to a specific client
-        /// </summary>
-        /// <param name="clientId">The client to send the message to</param>
-        /// <param name="stream">The message stream containing the data</param>
-        /// <param name="networkChannel">The channel tos end the data on</param>
-        [Obsolete("Use CustomMessagingManager.SendUnnamedMessage instead")]
-        public void SendCustomMessage(ulong clientId, NetworkStream stream, NetworkChannel networkChannel = NetworkChannel.Internal)
-        {
-            InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_UNNAMED_MESSAGE, networkChannel, stream);
-        }
 
         private void OnValidate()
         {
@@ -310,7 +261,6 @@ namespace MLAPI
                         var prefabHashGenerator = NetworkConfig.NetworkPrefabs[i].Prefab.GetComponent<NetworkObject>().PrefabHashGenerator;
                         NetworkLog.LogError($"PrefabHash collision! You have two prefabs with the same hash (PrefabHashGenerator = {prefabHashGenerator}). This is not supported");
                     }
-
                 }
 
                 hashes.Add(NetworkConfig.NetworkPrefabs[i].Hash);
@@ -339,6 +289,7 @@ namespace MLAPI
                 {
                     NetworkConfig.PlayerPrefabHash = new NullableBoolSerializable();
                 }
+
                 NetworkConfig.PlayerPrefabHash.Value = networkPrefab.Hash;
             }
         }
@@ -377,10 +328,11 @@ namespace MLAPI
             {
                 networkTickSystem.Dispose();
             }
+
             networkTickSystem = new NetworkTickSystem();
 
             //This should never happen, but in the event that it does there should be (at a minimum) a unity error logged.
-            if(rpcQueueContainer != null)
+            if (rpcQueueContainer != null)
             {
                 UnityEngine.Debug.LogError("Init was invoked, but rpcQueueContainer was already initialized! (destroying previous instance)");
                 rpcQueueContainer.Shutdown();
@@ -511,7 +463,7 @@ namespace MLAPI
                 {
                     disconnectedIds.Add(pair.Key);
 
-					if (pair.Key == NetworkConfig.NetworkTransport.ServerClientId)
+                    if (pair.Key == NetworkConfig.NetworkTransport.ServerClientId)
                         continue;
 
                     NetworkConfig.NetworkTransport.DisconnectRemoteClient(pair.Key);
@@ -520,7 +472,7 @@ namespace MLAPI
 
             foreach (KeyValuePair<ulong, PendingClient> pair in PendingClients)
             {
-                if(!disconnectedIds.Contains(pair.Key))
+                if (!disconnectedIds.Contains(pair.Key))
                 {
                     disconnectedIds.Add(pair.Key);
                     if (pair.Key == NetworkConfig.NetworkTransport.ServerClientId)
@@ -664,6 +616,7 @@ namespace MLAPI
             {
                 networkTickSystem.Dispose();
             }
+
             networkTickSystem = null;
 
             NetworkProfiler.Stop();
@@ -677,8 +630,6 @@ namespace MLAPI
             //The Transport is set during Init time, thus it is possible for the Transport to be null
             if (NetworkConfig != null && NetworkConfig.NetworkTransport != null)
                 NetworkConfig.NetworkTransport.Shutdown();
-
-
         }
 
         // INetworkUpdateSystem
@@ -754,7 +705,6 @@ namespace MLAPI
             {
                 if (((NetworkTime - m_LastEventTickTime >= (1f / NetworkConfig.EventTickrate))))
                 {
-
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                     s_EventTick.Begin();
 #endif
@@ -816,7 +766,8 @@ namespace MLAPI
 #endif
                 }
 
-                if (!Mathf.Approximately(networkTimeOffset, currentNetworkTimeOffset)) {
+                if (!Mathf.Approximately(networkTimeOffset, currentNetworkTimeOffset))
+                {
                     // Smear network time adjustments by no more than 200ms per second.  This should help code deal with
                     // changes more gracefully, since the network time will always flow forward at a reasonable pace.
                     float maxDelta = Mathf.Max(0.001f, 0.2f * Time.unscaledDeltaTime);
@@ -824,7 +775,7 @@ namespace MLAPI
                 }
             }
 
-            if(NetworkConfig.NetworkTransport is ITransportProfilerData profileTransport)
+            if (NetworkConfig.NetworkTransport is ITransportProfilerData profileTransport)
             {
                 var transportProfilerData = profileTransport.GetTransportProfilerData();
                 PerformanceDataManager.AddTransportData(transportProfilerData);
@@ -837,9 +788,11 @@ namespace MLAPI
         {
             float rtt = NetworkConfig.NetworkTransport.GetCurrentRtt(clientId) / 1000f;
             networkTimeOffset = netTime - receiveTime + rtt / 2f;
-            if (warp) {
+            if (warp)
+            {
                 currentNetworkTimeOffset = networkTimeOffset;
             }
+
             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogInfo($"Received network time {netTime}, RTT to server is {rtt}, {(warp ? "setting" : "smearing")} offset to {networkTimeOffset} (delta {networkTimeOffset - currentNetworkTimeOffset})");
         }
 
@@ -911,17 +864,18 @@ namespace MLAPI
                         SendConnectionRequest();
                         StartCoroutine(ApprovalTimeout(clientId));
                     }
+
                     NetworkProfiler.EndEvent();
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                     s_TransportConnect.End();
 #endif
                     break;
                 case NetworkEvent.Data:
-                    {
-                        if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogInfo($"Incoming Data From {clientId} : {payload.Count} bytes");
-                        HandleIncomingData(clientId, networkChannel, payload, receiveTime, true);
-                        break;
-                    }
+                {
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogInfo($"Incoming Data From {clientId} : {payload.Count} bytes");
+                    HandleIncomingData(clientId, networkChannel, payload, receiveTime, true);
+                    break;
+                }
                 case NetworkEvent.Disconnect:
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                     s_TransportDisconnect.Begin();
@@ -1054,56 +1008,58 @@ namespace MLAPI
                         if (IsServer && NetworkConfig.EnableNetworkLogs) InternalMessageHandler.HandleNetworkLog(clientId, messageStream);
                         break;
                     case MLAPIConstants.MLAPI_SERVER_RPC:
+                    {
+                        if (IsServer)
                         {
-                            if (IsServer)
+                            if (rpcQueueContainer.IsUsingBatching())
                             {
-                                if(rpcQueueContainer.IsUsingBatching())
-                                {
-                                    m_RpcBatcher.ReceiveItems(messageStream, ReceiveCallback, RpcQueueContainer.QueueItemType.ServerRpc, clientId, receiveTime);
-                                    ProfilerStatManager.rpcBatchesRcvd.Record();
-                                    PerformanceDataManager.Increment(ProfilerConstants.NumberOfRPCBatchesReceived);
-                                }
-                                else
-                                {
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-                                    s_ServerRpcQueued.Begin();
-#endif
-                                    InternalMessageHandler.RpcReceiveQueueItem(clientId, messageStream, receiveTime,RpcQueueContainer.QueueItemType.ServerRpc);
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-                                    s_ServerRpcQueued.End();
-#endif
-                                }
+                                m_RpcBatcher.ReceiveItems(messageStream, ReceiveCallback, RpcQueueContainer.QueueItemType.ServerRpc, clientId, receiveTime);
+                                ProfilerStatManager.rpcBatchesRcvd.Record();
+                                PerformanceDataManager.Increment(ProfilerConstants.NumberOfRPCBatchesReceived);
                             }
-                            break;
+                            else
+                            {
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+                                s_ServerRpcQueued.Begin();
+#endif
+                                InternalMessageHandler.RpcReceiveQueueItem(clientId, messageStream, receiveTime, RpcQueueContainer.QueueItemType.ServerRpc);
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+                                s_ServerRpcQueued.End();
+#endif
+                            }
                         }
-                    case MLAPIConstants.MLAPI_CLIENT_RPC:
-                        {
-                            if (IsClient)
-                            {
-                                if(rpcQueueContainer.IsUsingBatching())
-                                {
-                                    m_RpcBatcher.ReceiveItems(messageStream, ReceiveCallback, RpcQueueContainer.QueueItemType.ClientRpc, clientId, receiveTime);
-                                    ProfilerStatManager.rpcBatchesRcvd.Record();
-                                    PerformanceDataManager.Increment(ProfilerConstants.NumberOfRPCBatchesReceived);
-                                }
-                                else
-                                {
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-                                    s_ClientRpcQueued.Begin();
-#endif
-                                    InternalMessageHandler.RpcReceiveQueueItem(clientId, messageStream,receiveTime,RpcQueueContainer.QueueItemType.ClientRpc);
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-                                    s_ClientRpcQueued.End();
-#endif
-                                }
-                            }
 
-                            break;
+                        break;
+                    }
+                    case MLAPIConstants.MLAPI_CLIENT_RPC:
+                    {
+                        if (IsClient)
+                        {
+                            if (rpcQueueContainer.IsUsingBatching())
+                            {
+                                m_RpcBatcher.ReceiveItems(messageStream, ReceiveCallback, RpcQueueContainer.QueueItemType.ClientRpc, clientId, receiveTime);
+                                ProfilerStatManager.rpcBatchesRcvd.Record();
+                                PerformanceDataManager.Increment(ProfilerConstants.NumberOfRPCBatchesReceived);
+                            }
+                            else
+                            {
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+                                s_ClientRpcQueued.Begin();
+#endif
+                                InternalMessageHandler.RpcReceiveQueueItem(clientId, messageStream, receiveTime, RpcQueueContainer.QueueItemType.ClientRpc);
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+                                s_ClientRpcQueued.End();
+#endif
+                            }
                         }
+
+                        break;
+                    }
                     default:
                         if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogError("Read unrecognized messageType " + messageType);
                         break;
                 }
+
                 #endregion
 
                 NetworkProfiler.EndEvent();
@@ -1236,7 +1192,8 @@ namespace MLAPI
 
             for (int i = ConnectedClientsList.Count - 1; i > -1; i--)
             {
-                if (ConnectedClientsList[i].ClientId == clientId) {
+                if (ConnectedClientsList[i].ClientId == clientId)
+                {
                     ConnectedClientsList.RemoveAt(i);
                     PerformanceDataManager.Increment(ProfilerConstants.NumberOfConnections, -1);
                     ProfilerStatManager.connections.Record(-1);
@@ -1458,13 +1415,11 @@ namespace MLAPI
 
                         InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_CONNECTION_APPROVED, NetworkChannel.Internal, stream);
 
-                        if (OnClientConnectedCallback != null)
-                            OnClientConnectedCallback.Invoke(clientId);
+                        OnClientConnectedCallback?.Invoke(clientId);
                     }
                 }
 
-                if(!createPlayerObject || (playerPrefabHash == null && NetworkConfig.PlayerPrefabHash == null))
-                    return;
+                if (!createPlayerObject || (playerPrefabHash == null && NetworkConfig.PlayerPrefabHash == null)) return;
 
                 //Inform old clients of the new player
 
@@ -1526,7 +1481,9 @@ namespace MLAPI
             else
             {
                 if (PendingClients.ContainsKey(clientId))
+                {
                     PendingClients.Remove(clientId);
+                }
 
                 NetworkConfig.NetworkTransport.DisconnectRemoteClient(clientId);
             }

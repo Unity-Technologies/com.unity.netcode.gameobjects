@@ -417,17 +417,6 @@ namespace MLAPI.Serialization
         /// Reads the rotation from the stream
         /// </summary>
         /// <returns>The rotation read from the stream</returns>
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        [Obsolete("Use ReadRotationPacked instead")]
-        public Quaternion ReadRotation(int bytesPerAngle)
-        {
-            return ReadRotationPacked();
-        }
-
-        /// <summary>
-        /// Reads the rotation from the stream
-        /// </summary>
-        /// <returns>The rotation read from the stream</returns>
         public Quaternion ReadRotation()
         {
             float x = ReadSingle();

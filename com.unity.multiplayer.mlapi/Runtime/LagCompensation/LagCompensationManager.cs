@@ -14,12 +14,6 @@ namespace MLAPI.LagCompensation
         /// Simulation objects
         /// </summary>
         public static readonly List<TrackedObject> SimulationObjects = new List<TrackedObject>();
-        /// <summary>
-        /// Simulation objects
-        /// </summary>
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        [Obsolete("Use SimulationObjects instead", false)]
-        public static List<TrackedObject> simulationObjects => SimulationObjects;
 
 
         /// <summary>
@@ -69,7 +63,7 @@ namespace MLAPI.LagCompensation
             {
                 throw new NotServerException("Only the server can perform lag compensation");
             }
-            
+
             float millisecondsDelay = NetworkManager.Singleton.NetworkConfig.NetworkTransport.GetCurrentRtt(clientId) / 2f;
             Simulate(millisecondsDelay * 1000f, action);
         }

@@ -16,6 +16,7 @@ namespace MLAPI.Messaging
     public static class CustomMessagingManager
     {
         #region Unnamed
+
         /// <summary>
         /// Delegate used for incoming unnamed messages
         /// </summary>
@@ -30,14 +31,8 @@ namespace MLAPI.Messaging
 
         internal static void InvokeUnnamedMessage(ulong clientId, Stream stream)
         {
-            if (OnUnnamedMessage != null)
-            {
-                OnUnnamedMessage(clientId, stream);
-            }
-
-            NetworkManager.Singleton.InvokeOnIncomingCustomMessage(clientId, stream);
+            OnUnnamedMessage?.Invoke(clientId, stream);
         }
-
 
         /// <summary>
         /// Sends unnamed message to a list of clients
@@ -66,8 +61,11 @@ namespace MLAPI.Messaging
         {
             InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_UNNAMED_MESSAGE, networkChannel, stream);
         }
+
         #endregion
+
         #region Named
+
         /// <summary>
         /// Delegate used to handle named messages
         /// </summary>
@@ -225,6 +223,7 @@ namespace MLAPI.Messaging
                 InternalMessageSender.Send(MLAPIConstants.MLAPI_NAMED_MESSAGE, networkChannel, clientIds, messageStream);
             }
         }
+
         #endregion
     }
 }

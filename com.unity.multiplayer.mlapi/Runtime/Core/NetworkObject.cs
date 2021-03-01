@@ -1,6 +1,4 @@
-using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.IO;
 using MLAPI.Configuration;
 using MLAPI.Exceptions;
@@ -41,10 +39,12 @@ namespace MLAPI
         /// Gets the NetworkManager that owns this NetworkObject instance
         /// </summary>
         public NetworkManager NetworkManager => NetworkManager.Singleton;
+
         /// <summary>
         /// Gets the unique ID of this object that is synced across the network
         /// </summary>
         public ulong NetworkId { get; internal set; }
+
         /// <summary>
         /// Gets the clientId of the owner of this NetworkObject
         /// </summary>
@@ -53,13 +53,13 @@ namespace MLAPI
             get
             {
                 if (_ownerClientId == null)
-					return NetworkManager.Singleton != null ? NetworkManager.Singleton.ServerClientId : 0;
+                    return NetworkManager.Singleton != null ? NetworkManager.Singleton.ServerClientId : 0;
                 else
                     return _ownerClientId.Value;
             }
             internal set
             {
-				if (NetworkManager.Singleton != null && value == NetworkManager.Singleton.ServerClientId)
+                if (NetworkManager.Singleton != null && value == NetworkManager.Singleton.ServerClientId)
                     _ownerClientId = null;
                 else
                     _ownerClientId = value;
@@ -76,6 +76,7 @@ namespace MLAPI
         [HideInInspector]
         [SerializeField]
         public ulong NetworkInstanceId;
+
         /// <summary>
         /// The Prefab unique hash. This should not be set my the user but rather changed by editing the PrefabHashGenerator.
         /// It has to be the same for all instances of a prefab
@@ -83,70 +84,49 @@ namespace MLAPI
         [HideInInspector]
         [SerializeField]
         public ulong PrefabHash;
+
         /// <summary>
         /// The generator used to change the PrefabHash. This should be set the same for all instances of a prefab.
         /// It has to be unique in relation to other prefabs
         /// </summary>
         [SerializeField]
         public string PrefabHashGenerator;
+
         /// <summary>
         /// If true, the object will always be replicated as root on clients and the parent will be ignored.
         /// </summary>
         public bool AlwaysReplicateAsRoot;
-        /// <summary>
-        /// Gets if this object is a player object
-        /// </summary>
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        [Obsolete("Use IsPlayerObject instead", false)]
-        public bool isPlayerObject => IsPlayerObject;
+
         /// <summary>
         /// Gets if this object is a player object
         /// </summary>
         public bool IsPlayerObject { get; internal set; }
-        /// <summary>
-        /// Gets if the object is the the personal clients player object
-        /// </summary>
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        [Obsolete("Use IsLocalPlayer instead", false)]
-		public bool isLocalPlayer => IsLocalPlayer;
+
         /// <summary>
         /// Gets if the object is the the personal clients player object
         /// </summary>
         public bool IsLocalPlayer => NetworkManager.Singleton != null && IsPlayerObject && OwnerClientId == NetworkManager.Singleton.LocalClientId;
-        /// <summary>
-        /// Gets if the object is owned by the local player or if the object is the local player object
-        /// </summary>
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        [Obsolete("Use IsOwner instead", false)]
-        public bool isOwner => IsOwner;
+
         /// <summary>
         /// Gets if the object is owned by the local player or if the object is the local player object
         /// </summary>
         public bool IsOwner => NetworkManager.Singleton != null && OwnerClientId == NetworkManager.Singleton.LocalClientId;
-        /// <summary>
-        /// Gets Whether or not the object is owned by anyone
-        /// </summary>
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        [Obsolete("Use IsOwnedByServer instead", false)]
-		public bool isOwnedByServer => IsOwnedByServer;
+
         /// <summary>
         /// Gets Whether or not the object is owned by anyone
         /// </summary>
         public bool IsOwnedByServer => NetworkManager.Singleton != null && OwnerClientId == NetworkManager.Singleton.ServerClientId;
-        /// <summary>
-        /// Gets if the object has yet been spawned across the network
-        /// </summary>
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        [Obsolete("Use IsSpawned instead", false)]
-        public bool isSpawned => IsSpawned;
+
         /// <summary>
         /// Gets if the object has yet been spawned across the network
         /// </summary>
         public bool IsSpawned { get; internal set; }
+
         /// <summary>
         /// Gets if the object is a SceneObject, null if it's not yet spawned but is a scene object.
         /// </summary>
         public bool? IsSceneObject { get; internal set; }
+
         /// <summary>
         /// Gets whether or not the object should be automatically removed when the scene is unloaded.
         /// </summary>
@@ -400,7 +380,7 @@ namespace MLAPI
             if (spawnPayload != null)
                 spawnPayload.Position = 0;
 
-            NetworkSpawnManager.SpawnNetworkObjectLocally(this,NetworkSpawnManager.GetNetworkObjectId(), false, false, null, spawnPayload, spawnPayload != null, spawnPayload == null ? 0 : (int)spawnPayload.Length, false, destroyWithScene);
+            NetworkSpawnManager.SpawnNetworkObjectLocally(this, NetworkSpawnManager.GetNetworkObjectId(), false, false, null, spawnPayload, spawnPayload != null, spawnPayload == null ? 0 : (int)spawnPayload.Length, false, destroyWithScene);
 
             for (int i = 0; i < NetworkManager.Singleton.ConnectedClientsList.Count; i++)
             {
@@ -470,6 +450,7 @@ namespace MLAPI
         {
             NetworkSpawnManager.RemoveOwnership(this);
         }
+
         /// <summary>
         /// Changes the owner of the object. Can only be called from server
         /// </summary>
@@ -481,104 +462,109 @@ namespace MLAPI
 
         internal void InvokeBehaviourOnLostOwnership()
         {
-            for (int i = 0; i < childNetworkBehaviours.Count; i++)
+            for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
             {
-                childNetworkBehaviours[i].OnLostOwnership();
+                ChildNetworkBehaviours[i].OnLostOwnership();
             }
         }
 
         internal void InvokeBehaviourOnGainedOwnership()
         {
-            for (int i = 0; i < childNetworkBehaviours.Count; i++)
+            for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
             {
-                childNetworkBehaviours[i].OnGainedOwnership();
+                ChildNetworkBehaviours[i].OnGainedOwnership();
             }
         }
 
         internal void ResetNetworkStartInvoked()
         {
-            if(childNetworkBehaviours != null)
+            if (ChildNetworkBehaviours != null)
             {
-                for (int i = 0; i < childNetworkBehaviours.Count; i++)
+                for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
                 {
-                    childNetworkBehaviours[i].networkStartInvoked = false;
+                    ChildNetworkBehaviours[i].networkStartInvoked = false;
                 }
             }
         }
 
         internal void InvokeBehaviourNetworkSpawn(Stream stream)
         {
-            for (int i = 0; i < childNetworkBehaviours.Count; i++)
+            for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
             {
                 //We check if we are it's NetworkObject owner incase a NetworkObject exists as a child of our NetworkObject
-                if(!childNetworkBehaviours[i].networkStartInvoked)
+                if (!ChildNetworkBehaviours[i].networkStartInvoked)
                 {
-                    if(!childNetworkBehaviours[i].internalNetworkStartInvoked)
+                    if (!ChildNetworkBehaviours[i].internalNetworkStartInvoked)
                     {
-                        childNetworkBehaviours[i].InternalNetworkStart();
-                        childNetworkBehaviours[i].internalNetworkStartInvoked = true;
+                        ChildNetworkBehaviours[i].InternalNetworkStart();
+                        ChildNetworkBehaviours[i].internalNetworkStartInvoked = true;
                     }
-                    childNetworkBehaviours[i].NetworkStart(stream);
-                    childNetworkBehaviours[i].networkStartInvoked = true;
+
+                    ChildNetworkBehaviours[i].NetworkStart(stream);
+                    ChildNetworkBehaviours[i].networkStartInvoked = true;
                 }
             }
         }
 
-        private List<NetworkBehaviour> _childNetworkBehaviours;
-        internal List<NetworkBehaviour> childNetworkBehaviours
+        private List<NetworkBehaviour> m_ChildNetworkBehaviours;
+
+        internal List<NetworkBehaviour> ChildNetworkBehaviours
         {
             get
             {
-                if(_childNetworkBehaviours == null)
+                if (m_ChildNetworkBehaviours == null)
                 {
-                    _childNetworkBehaviours = new List<NetworkBehaviour>();
+                    m_ChildNetworkBehaviours = new List<NetworkBehaviour>();
                     NetworkBehaviour[] behaviours = GetComponentsInChildren<NetworkBehaviour>(true);
                     for (int i = 0; i < behaviours.Length; i++)
                     {
                         if (behaviours[i].NetworkObject == this)
-                            _childNetworkBehaviours.Add(behaviours[i]);
+                            m_ChildNetworkBehaviours.Add(behaviours[i]);
                     }
                 }
-                return _childNetworkBehaviours;
+
+                return m_ChildNetworkBehaviours;
             }
         }
 
         internal void WriteNetworkVariableData(Stream stream, ulong clientId)
         {
-            for (int i = 0; i < childNetworkBehaviours.Count; i++)
+            for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
             {
-                childNetworkBehaviours[i].InitializeVariables();
-                NetworkBehaviour.WriteNetworkVariableData(childNetworkBehaviours[i].networkVariableFields, stream, clientId);
+                ChildNetworkBehaviours[i].InitializeVariables();
+                NetworkBehaviour.WriteNetworkVariableData(ChildNetworkBehaviours[i].networkVariableFields, stream, clientId);
             }
         }
 
         internal void SetNetworkVariableData(Stream stream)
         {
-            for (int i = 0; i < childNetworkBehaviours.Count; i++)
+            for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
             {
-                childNetworkBehaviours[i].InitializeVariables();
-                NetworkBehaviour.SetNetworkVariableData(childNetworkBehaviours[i].networkVariableFields, stream);
+                ChildNetworkBehaviours[i].InitializeVariables();
+                NetworkBehaviour.SetNetworkVariableData(ChildNetworkBehaviours[i].networkVariableFields, stream);
             }
         }
 
         internal ushort GetOrderIndex(NetworkBehaviour instance)
         {
-            for (ushort i = 0; i < childNetworkBehaviours.Count; i++)
+            for (ushort i = 0; i < ChildNetworkBehaviours.Count; i++)
             {
-                if (childNetworkBehaviours[i] == instance)
+                if (ChildNetworkBehaviours[i] == instance)
                     return i;
             }
+
             return 0;
         }
 
         internal NetworkBehaviour GetNetworkBehaviourAtOrderIndex(ushort index)
         {
-            if (index >= childNetworkBehaviours.Count)
+            if (index >= ChildNetworkBehaviours.Count)
             {
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogError($"Behaviour index was out of bounds. Did you mess up the order of your {nameof(NetworkBehaviour)}s?");
                 return null;
             }
-            return childNetworkBehaviours[index];
+
+            return ChildNetworkBehaviours[index];
         }
     }
 }

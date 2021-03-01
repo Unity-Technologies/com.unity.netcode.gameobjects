@@ -482,18 +482,6 @@ namespace MLAPI.Serialization
         /// Writes the rotation to the stream.
         /// </summary>
         /// <param name="rotation">Rotation to write</param>
-        /// <param name="bytesPerAngle">Unused</param>
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        [Obsolete("Use WriteRotationPacked instead")]
-        public void WriteRotation(Quaternion rotation, int bytesPerAngle)
-        {
-            WriteRotationPacked(rotation);
-        }
-
-        /// <summary>
-        /// Writes the rotation to the stream.
-        /// </summary>
-        /// <param name="rotation">Rotation to write</param>
         public void WriteRotation(Quaternion rotation)
         {
             WriteSingle(rotation.x);
