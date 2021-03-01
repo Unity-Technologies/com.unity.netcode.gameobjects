@@ -7,12 +7,12 @@ using MLAPI.Messaging;
 namespace MLAPI.Prototyping
 {
     /// <summary>
-    /// A prototype component for syncing navmeshagents
+    /// A prototype component for syncing NavMeshAgents
     /// </summary>
     [AddComponentMenu("MLAPI/NetworkNavMeshAgent")]
     public class NetworkNavMeshAgent : NetworkBehaviour
     {
-        private NavMeshAgent agent;
+        private NavMeshAgent m_Agent;
 
         /// <summary>
         /// Is proximity enabled
@@ -43,22 +43,22 @@ namespace MLAPI.Prototyping
 
         private void Awake()
         {
-            agent = GetComponent<NavMeshAgent>();
+            m_Agent = GetComponent<NavMeshAgent>();
         }
 
-        private Vector3 lastDestination = Vector3.zero;
-        private float lastCorrectionTime = 0f;
+        private Vector3 m_LastDestination = Vector3.zero;
+        private float m_LastCorrectionTime = 0f;
 
         private void Update()
         {
             if (!IsOwner) return;
 
-            if (agent.destination != lastDestination)
+            if (m_Agent.destination != m_LastDestination)
             {
-                lastDestination = agent.destination;
+                m_LastDestination = m_Agent.destination;
                 if (!EnableProximity)
                 {
-                    OnNavMeshStateUpdateClientRpc(agent.destination, agent.velocity, transform.position);
+                    OnNavMeshStateUpdateClientRpc(m_Agent.destination, m_Agent.velocity, transform.position);
                 }
                 else
                 {
@@ -71,15 +71,15 @@ namespace MLAPI.Prototyping
                         }
                     }
 
-                    OnNavMeshStateUpdateClientRpc(agent.destination, agent.velocity, transform.position, new ClientRpcParams {Send = new ClientRpcSendParams {TargetClientIds = proximityClients.ToArray()}});
+                    OnNavMeshStateUpdateClientRpc(m_Agent.destination, m_Agent.velocity, transform.position, new ClientRpcParams { Send = new ClientRpcSendParams { TargetClientIds = proximityClients.ToArray() } });
                 }
             }
 
-            if (NetworkManager.Singleton.NetworkTime - lastCorrectionTime >= CorrectionDelay)
+            if (NetworkManager.Singleton.NetworkTime - m_LastCorrectionTime >= CorrectionDelay)
             {
                 if (!EnableProximity)
                 {
-                    OnNavMeshCorrectionUpdateClientRpc(agent.velocity, transform.position);
+                    OnNavMeshCorrectionUpdateClientRpc(m_Agent.velocity, transform.position);
                 }
                 else
                 {
@@ -92,26 +92,26 @@ namespace MLAPI.Prototyping
                         }
                     }
 
-                    OnNavMeshCorrectionUpdateClientRpc(agent.velocity, transform.position, new ClientRpcParams {Send = new ClientRpcSendParams {TargetClientIds = proximityClients.ToArray()}});
+                    OnNavMeshCorrectionUpdateClientRpc(m_Agent.velocity, transform.position, new ClientRpcParams { Send = new ClientRpcSendParams { TargetClientIds = proximityClients.ToArray() } });
                 }
 
-                lastCorrectionTime = NetworkManager.Singleton.NetworkTime;
+                m_LastCorrectionTime = NetworkManager.Singleton.NetworkTime;
             }
         }
 
         [ClientRpc]
         private void OnNavMeshStateUpdateClientRpc(Vector3 destination, Vector3 velocity, Vector3 position, ClientRpcParams rpcParams = default)
         {
-            agent.Warp(WarpOnDestinationChange ? position : Vector3.Lerp(transform.position, position, DriftCorrectionPercentage));
-            agent.SetDestination(destination);
-            agent.velocity = velocity;
+            m_Agent.Warp(WarpOnDestinationChange ? position : Vector3.Lerp(transform.position, position, DriftCorrectionPercentage));
+            m_Agent.SetDestination(destination);
+            m_Agent.velocity = velocity;
         }
 
         [ClientRpc]
         private void OnNavMeshCorrectionUpdateClientRpc(Vector3 velocity, Vector3 position, ClientRpcParams rpcParams = default)
         {
-            agent.Warp(Vector3.Lerp(transform.position, position, DriftCorrectionPercentage));
-            agent.velocity = velocity;
+            m_Agent.Warp(Vector3.Lerp(transform.position, position, DriftCorrectionPercentage));
+            m_Agent.velocity = velocity;
         }
     }
 }

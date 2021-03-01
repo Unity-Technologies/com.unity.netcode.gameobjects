@@ -34,7 +34,7 @@ namespace UnityEditor
             EditorGUILayout.PropertyField(m_AnimatorProperty, m_AnimatorLabel);
             if (EditorGUI.EndChangeCheck()) m_Target.ResetTrackedParams();
 
-            var animator = m_Target.animator;
+            var animator = m_Target.Animator;
             if (ReferenceEquals(animator, null)) return;
 
             var animatorController = animator.runtimeAnimatorController as AnimatorController;

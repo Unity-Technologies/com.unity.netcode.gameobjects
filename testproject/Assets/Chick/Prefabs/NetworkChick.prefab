@@ -659,7 +659,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e8d0727d5ae3244e3b569694d3912374, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  sendRate: 0.1
+  SendRate: 0.1
   m_Animator: {fileID: 1718370056002731768}
   m_TrackedParamFlags: 8
 --- !u!114 &-5941657025301234913

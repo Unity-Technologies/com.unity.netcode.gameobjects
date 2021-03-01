@@ -63,12 +63,12 @@ namespace MLAPI.Prototyping
             }
         }
 
-        public float sendRate = 0.1f;
+        public float SendRate = 0.1f;
 
         [SerializeField]
         private Animator m_Animator;
 
-        public Animator animator => m_Animator;
+        public Animator Animator => m_Animator;
 
         [HideInInspector]
         [SerializeField]
@@ -119,10 +119,10 @@ namespace MLAPI.Prototyping
 
         private bool CheckSendRate()
         {
-            var networkTime = MLAPI.NetworkManager.Singleton.NetworkTime;
-            if (sendRate != 0 && m_NextSendTime < networkTime)
+            var networkTime = NetworkManager.Singleton.NetworkTime;
+            if (SendRate != 0 && m_NextSendTime < networkTime)
             {
-                m_NextSendTime = networkTime + sendRate;
+                m_NextSendTime = networkTime + SendRate;
                 return true;
             }
 
@@ -133,7 +133,7 @@ namespace MLAPI.Prototyping
 
         private bool CheckStateChange(out int outAnimStateHash, out float outAnimStateTime)
         {
-            var animStateInfo = animator.GetCurrentAnimatorStateInfo(0);
+            var animStateInfo = Animator.GetCurrentAnimatorStateInfo(0);
             var animStateHash = animStateInfo.fullPathHash;
             var animStateTime = animStateInfo.normalizedTime;
             if (animStateHash != m_LastAnimStateHash)
@@ -154,11 +154,11 @@ namespace MLAPI.Prototyping
         {
             var animParams = new AnimParams();
             animParams.Parameters = new Dictionary<int, (AnimatorControllerParameterType, object)>(32);
-            for (int paramIndex = 0; paramIndex < 32 && paramIndex < animator.parameters.Length; paramIndex++)
+            for (int paramIndex = 0; paramIndex < 32 && paramIndex < Animator.parameters.Length; paramIndex++)
             {
                 if (trackedOnly && !GetParamTracking(paramIndex)) continue;
 
-                var animParam = animator.parameters[paramIndex];
+                var animParam = Animator.parameters[paramIndex];
                 var animParamHash = animParam.nameHash;
                 var animParamType = animParam.type;
 
@@ -166,13 +166,13 @@ namespace MLAPI.Prototyping
                 switch (animParamType)
                 {
                     case AnimatorControllerParameterType.Float:
-                        animParamBoxed = animator.GetFloat(animParamHash);
+                        animParamBoxed = Animator.GetFloat(animParamHash);
                         break;
                     case AnimatorControllerParameterType.Int:
-                        animParamBoxed = animator.GetInteger(animParamHash);
+                        animParamBoxed = Animator.GetInteger(animParamHash);
                         break;
                     case AnimatorControllerParameterType.Bool:
-                        animParamBoxed = animator.GetBool(animParamHash);
+                        animParamBoxed = Animator.GetBool(animParamHash);
                         break;
                 }
 
@@ -189,13 +189,13 @@ namespace MLAPI.Prototyping
                 switch (animParam.Value.Type)
                 {
                     case AnimatorControllerParameterType.Float:
-                        animator.SetFloat(animParam.Key, (float)animParam.Value.Boxed);
+                        Animator.SetFloat(animParam.Key, (float)animParam.Value.Boxed);
                         break;
                     case AnimatorControllerParameterType.Int:
-                        animator.SetInteger(animParam.Key, (int)animParam.Value.Boxed);
+                        Animator.SetInteger(animParam.Key, (int)animParam.Value.Boxed);
                         break;
                     case AnimatorControllerParameterType.Bool:
-                        animator.SetBool(animParam.Key, (bool)animParam.Value.Boxed);
+                        Animator.SetBool(animParam.Key, (bool)animParam.Value.Boxed);
                         break;
                 }
             }
@@ -203,7 +203,7 @@ namespace MLAPI.Prototyping
 
         private void SendTrackedParams()
         {
-            var animParams = GetAnimParams(/* trackedOnly = */ true);
+            var animParams = GetAnimParams( /* trackedOnly = */ true);
 
             if (IsServer)
             {
@@ -211,8 +211,8 @@ namespace MLAPI.Prototyping
                 {
                     Send = new ClientRpcSendParams
                     {
-                        TargetClientIds = MLAPI.NetworkManager.Singleton.ConnectedClientsList
-                            .Where(c => c.ClientId != MLAPI.NetworkManager.Singleton.ServerClientId)
+                        TargetClientIds = NetworkManager.Singleton.ConnectedClientsList
+                            .Where(c => c.ClientId != NetworkManager.Singleton.ServerClientId)
                             .Select(c => c.ClientId)
                             .ToArray()
                     }
@@ -261,7 +261,7 @@ namespace MLAPI.Prototyping
             {
                 Send = new ClientRpcSendParams
                 {
-                    TargetClientIds = MLAPI.NetworkManager.Singleton.ConnectedClientsList
+                    TargetClientIds = NetworkManager.Singleton.ConnectedClientsList
                         .Where(c => c.ClientId != serverRpcParams.Receive.SenderClientId)
                         .Select(c => c.ClientId)
                         .ToArray()
@@ -282,13 +282,13 @@ namespace MLAPI.Prototyping
         {
             if (IsOwner) return;
 
-            animator.Play(animStateHash, 0, animStateTime);
+            Animator.Play(animStateHash, 0, animStateTime);
 
             var clientRpcParams = new ClientRpcParams
             {
                 Send = new ClientRpcSendParams
                 {
-                    TargetClientIds = MLAPI.NetworkManager.Singleton.ConnectedClientsList
+                    TargetClientIds = NetworkManager.Singleton.ConnectedClientsList
                         .Where(c => c.ClientId != serverRpcParams.Receive.SenderClientId)
                         .Select(c => c.ClientId)
                         .ToArray()
@@ -302,7 +302,7 @@ namespace MLAPI.Prototyping
         {
             if (IsOwner) return;
 
-            animator.Play(animStateHash, 0, animStateTime);
+            Animator.Play(animStateHash, 0, animStateTime);
         }
     }
 }
