@@ -23,7 +23,7 @@ namespace MLAPI.Transports
     /// <summary>
     /// A network transport
     /// </summary>
-    public abstract class Transport : MonoBehaviour
+    public abstract class NetworkTransport : MonoBehaviour
     {
         /// <summary>
         /// Delegate used to request channels on the underlying transport.

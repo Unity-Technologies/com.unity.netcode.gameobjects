@@ -10,7 +10,7 @@ using UnityEngine.Networking;
 
 namespace MLAPI.Transports.UNET
 {
-    public class UnetTransport : Transport, ITransportProfilerData
+    public class UnetTransport : NetworkTransport, ITransportProfilerData
     {
         public enum SendMode
         {
@@ -66,7 +66,7 @@ namespace MLAPI.Transports.UNET
 
         protected void LateUpdate()
         {
-            if (NetworkTransport.IsStarted  && MessageSendMode == SendMode.Queued) {
+            if (UnityEngine.Networking.NetworkTransport.IsStarted  && MessageSendMode == SendMode.Queued) {
                 if (NetworkManager.Singleton.IsServer) {
                     for (int i = 0; i < NetworkManager.Singleton.ConnectedClientsList.Count; i++) {
                         SendQueued(NetworkManager.Singleton.ConnectedClientsList[i].ClientId);
@@ -284,7 +284,7 @@ namespace MLAPI.Transports.UNET
             {
                 if (!UseMLAPIRelay)
                 {
-                    int websocketHostId = NetworkTransport.AddWebsocketHost(topology, ServerWebsocketListenPort);
+                    int websocketHostId = UnityEngine.Networking.NetworkTransport.AddWebsocketHost(topology, ServerWebsocketListenPort);
                 }
                 else
                 {
@@ -320,7 +320,7 @@ namespace MLAPI.Transports.UNET
             }
             else
             {
-                return (ulong)NetworkTransport.GetCurrentRTT((int) hostId, (int) connectionId, out byte error);
+                return (ulong)UnityEngine.Networking.NetworkTransport.GetCurrentRTT((int) hostId, (int) connectionId, out byte error);
             }
         }
 
@@ -328,7 +328,7 @@ namespace MLAPI.Transports.UNET
         {
             channelIdToName.Clear();
             channelNameToId.Clear();
-            NetworkTransport.Shutdown();
+            UnityEngine.Networking.NetworkTransport.Shutdown();
         }
 
         public override void Init()
@@ -339,7 +339,7 @@ namespace MLAPI.Transports.UNET
 
             k_TransportProfilerData.Clear();
 
-            NetworkTransport.Init();
+            UnityEngine.Networking.NetworkTransport.Init();
         }
 
         public ulong GetMLAPIClientId(byte hostId, ushort connectionId, bool isServer)

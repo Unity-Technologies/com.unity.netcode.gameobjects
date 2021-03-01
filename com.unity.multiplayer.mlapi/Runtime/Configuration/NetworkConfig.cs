@@ -31,7 +31,7 @@ namespace MLAPI.Configuration
         /// The transport hosts the sever uses
         /// </summary>
         [Tooltip("The NetworkTransport to use")]
-        public Transport NetworkTransport = null;
+        public NetworkTransport NetworkTransport = null;
         /// <summary>
         /// A list of SceneNames that can be used during networked games.
         /// </summary>

@@ -66,7 +66,7 @@ public class NetworkManagerEditor : Editor
 
             foreach (Type type in types)
             {
-                if (type.IsSubclassOf(typeof(Transport)))
+                if (type.IsSubclassOf(typeof(NetworkTransport)))
                 {
                     transportTypes.Add(type);
                 }

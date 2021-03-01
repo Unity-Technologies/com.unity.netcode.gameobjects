@@ -8,7 +8,7 @@ namespace MLAPI.Transports.Multiplex
     /// <summary>
     /// Multiplex transport adapter.
     /// </summary>
-    public class MultiplexTransportAdapter : Transport
+    public class MultiplexTransportAdapter : NetworkTransport
     {
         /// <summary>
         /// The method to use to distribute the transport connectionIds in a fixed size 64 bit integer.
@@ -45,7 +45,7 @@ namespace MLAPI.Transports.Multiplex
 
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
         public ConnectionIdSpreadMethod SpreadMethod = ConnectionIdSpreadMethod.MakeRoomLastBits;
-        public Transport[] Transports = new Transport[0];
+        public NetworkTransport[] Transports = new NetworkTransport[0];
         public override ulong ServerClientId => 0;
 
         private byte _lastProcessedTransportIndex;
