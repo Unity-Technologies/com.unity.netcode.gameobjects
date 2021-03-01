@@ -90,16 +90,16 @@ namespace MLAPI.Transports
         /// </summary>
         private readonly TransportChannel[] MLAPI_INTERNAL_CHANNELS =
         {
-            new TransportChannel(Channel.Internal, ChannelType.ReliableFragmentedSequenced),
-            new TransportChannel(Channel.ReliableRpc, ChannelType.ReliableSequenced),
-            new TransportChannel(Channel.UnreliableRpc, ChannelType.UnreliableSequenced),
-            new TransportChannel(Channel.TimeSync, ChannelType.Unreliable),
-            new TransportChannel(Channel.SyncChannel, ChannelType.Unreliable),
-            new TransportChannel(Channel.DefaultMessage, ChannelType.Reliable),
-            new TransportChannel(Channel.PositionUpdate, ChannelType.UnreliableSequenced),
-            new TransportChannel(Channel.AnimationUpdate, ChannelType.ReliableSequenced),
-            new TransportChannel(Channel.NavAgentState, ChannelType.ReliableSequenced),
-            new TransportChannel(Channel.NavAgentCorrection, ChannelType.UnreliableSequenced),
+            new TransportChannel(Channel.Internal, NetworkDelivery.ReliableFragmentedSequenced),
+            new TransportChannel(Channel.ReliableRpc, NetworkDelivery.ReliableSequenced),
+            new TransportChannel(Channel.UnreliableRpc, NetworkDelivery.UnreliableSequenced),
+            new TransportChannel(Channel.TimeSync, NetworkDelivery.Unreliable),
+            new TransportChannel(Channel.SyncChannel, NetworkDelivery.Unreliable),
+            new TransportChannel(Channel.DefaultMessage, NetworkDelivery.Reliable),
+            new TransportChannel(Channel.PositionUpdate, NetworkDelivery.UnreliableSequenced),
+            new TransportChannel(Channel.AnimationUpdate, NetworkDelivery.ReliableSequenced),
+            new TransportChannel(Channel.NavAgentState, NetworkDelivery.ReliableSequenced),
+            new TransportChannel(Channel.NavAgentCorrection, NetworkDelivery.UnreliableSequenced),
         };
 
         /// <summary>

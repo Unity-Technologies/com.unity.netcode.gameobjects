@@ -399,19 +399,19 @@ namespace MLAPI.Transports.UNET
             return config;
         }
 
-        public int AddMLAPIChannel(ChannelType type, ConnectionConfig config)
+        public int AddMLAPIChannel(NetworkDelivery type, ConnectionConfig config)
         {
             switch (type)
             {
-                case ChannelType.Unreliable:
+                case NetworkDelivery.Unreliable:
                     return config.AddChannel(QosType.Unreliable);
-                case ChannelType.Reliable:
+                case NetworkDelivery.Reliable:
                     return config.AddChannel(QosType.Reliable);
-                case ChannelType.ReliableSequenced:
+                case NetworkDelivery.ReliableSequenced:
                     return config.AddChannel(QosType.ReliableSequenced);
-                case ChannelType.ReliableFragmentedSequenced:
+                case NetworkDelivery.ReliableFragmentedSequenced:
                     return config.AddChannel(QosType.ReliableFragmentedSequenced);
-                case ChannelType.UnreliableSequenced:
+                case NetworkDelivery.UnreliableSequenced:
                     return config.AddChannel(QosType.UnreliableSequenced);
             }
 

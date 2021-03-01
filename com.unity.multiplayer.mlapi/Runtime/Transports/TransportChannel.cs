@@ -10,7 +10,7 @@ namespace MLAPI.Transports
     [Serializable]
     public class TransportChannel
     {
-        public TransportChannel(Channel id, ChannelType type)
+        public TransportChannel(Channel id, NetworkDelivery type)
         {
             Id = id;
             Type = type;
@@ -24,6 +24,6 @@ namespace MLAPI.Transports
         /// <summary>
         /// Channel type
         /// </summary>
-        public ChannelType Type;
+        public NetworkDelivery Type;
     }
 }
