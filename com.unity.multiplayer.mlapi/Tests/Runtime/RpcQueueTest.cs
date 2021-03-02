@@ -1,8 +1,8 @@
 using System.Collections;
-using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
+using NUnit.Framework;
 using MLAPI.SceneManagement;
 using MLAPI.Transports.UNET;
 
@@ -15,7 +15,7 @@ namespace MLAPI.RuntimeTests
     /// - Rpcs receive will be invoked at the appropriate NetworkUpdateStage.
     /// Requires: RpcPipelineTestComponent
     /// </summary>
-    public class RpcQueueTests
+    public class RpcQueueTest
     {
         private NetworkingManager m_NetMan;
 
@@ -54,7 +54,6 @@ namespace MLAPI.RuntimeTests
             var instantiatedNetworkingManager = false;
             var testsAreComplete = false;
             var testsAreValidated = false;
-            var maximumTimeTaken = 0.0f;
 
             if (currentActiveScene != null)
             {
@@ -81,11 +80,8 @@ namespace MLAPI.RuntimeTests
                         RpcPipelineTestComponent.PingSelfEnabled = true;
                         Debug.Log("Running RPC Queue Tests...");
 
-                        //We shouldn't (for sure) take longer than 30 seconds
-                        maximumTimeTaken = Time.realtimeSinceStartup + 30.0f;
-
                         //Wait for the rpc pipeline test to complete or
-                        while (!testsAreComplete && maximumTimeTaken > Time.realtimeSinceStartup)
+                        while (!testsAreComplete)
                         {
                             //Wait for 100ms
                             yield return new WaitForSeconds(0.1f);
@@ -102,18 +98,13 @@ namespace MLAPI.RuntimeTests
 
                     //Stop the host
                     NetworkingManager.Singleton.StopHost();
-
-
                 }
             }
 
             //Shutdown the networking manager
             NetworkingManager.Singleton.Shutdown();
 
-            Assert.IsTrue(testsAreComplete && testsAreValidated && instantiatedNetworkingManager && maximumTimeTaken > Time.realtimeSinceStartup);
-            // Use the Assert class to test conditions.
-            // Use yield to skip a frame.
-            yield return null;
+            Assert.IsTrue(testsAreComplete && testsAreValidated && instantiatedNetworkingManager);
         }
 
 #if UNITY_EDITOR

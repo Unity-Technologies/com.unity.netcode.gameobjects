@@ -53,14 +53,14 @@ namespace MLAPI.RuntimeTests
         // Update is called once per frame
         private void Update()
         {
-            if (NetworkingManager.Singleton.IsListening && PingSelfEnabled && m_NextUpdate < Time.realtimeSinceStartup)
+            if (NetworkingManager.Singleton.IsListening && PingSelfEnabled)
             {
                 if (NetworkingManager.Singleton.IsListening && PingSelfEnabled && m_NextUpdate < Time.realtimeSinceStartup)
                 {
                     //As long as testing isn't completed, keep testing
                     if (!IsTestComplete())
                     {
-                        m_NextUpdate = Time.realtimeSinceStartup + 0.5f;
+                        m_NextUpdate = Time.realtimeSinceStartup + 0.06f;
                         m_LastUpdateStage = m_Serverparams.Send.UpdateStage;
                         m_StagesSent.Add(m_LastUpdateStage);
                         PingMySelfServerRPC(m_Serverparams);
