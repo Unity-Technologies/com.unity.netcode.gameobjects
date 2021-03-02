@@ -7,7 +7,17 @@ namespace MLAPI.RuntimeTests
 {
     public class RpcPipelineTestComponent : NetworkedBehaviour
     {
+        /// <summary>
+        /// PingSelfEnabled
+        /// Allows the external RPCQueueTest to begin testing or stop it
+        /// </summary>
         public bool PingSelfEnabled;
+
+        /// <summary>
+        /// MaxIterations
+        /// How many times will we iterate through the various NetworkUpdateStage values?
+        /// (defaults to 2)
+        /// </summary>
         public int MaxIterations = 2;
 
 
@@ -18,6 +28,11 @@ namespace MLAPI.RuntimeTests
             m_Clientparms.Send.UpdateStage = NetworkUpdateStage.Update;
         }
 
+        /// <summary>
+        /// IsTestComplete
+        /// Returns back whether the test has completed the total number of iterations
+        /// </summary>
+        /// <returns></returns>
         public bool IsTestComplete()
         {
             if (m_Counter >= MaxIterations)
@@ -41,12 +56,12 @@ namespace MLAPI.RuntimeTests
                 if (NetworkingManager.Singleton.IsListening && PingSelfEnabled && m_NextUpdate < Time.realtimeSinceStartup)
                 {
                     //As long as testing isn't completed, keep testing
-                    if(!IsTestComplete())
+                    if (!IsTestComplete())
                     {
                         m_NextUpdate = Time.realtimeSinceStartup + 0.5f;
                         m_LastUpdateStage = m_Serverparms.Send.UpdateStage;
-                        StagesSent.Add(m_LastUpdateStage);
-                        PingMySelfServerRPC(m_Counter, m_Serverparms);
+                        m_StagesSent.Add(m_LastUpdateStage);
+                        PingMySelfServerRPC(m_Serverparms);
                         m_Clientparms.Send.UpdateStage = m_Serverparms.Send.UpdateStage;
                         switch (m_Serverparms.Send.UpdateStage)
                         {
@@ -93,9 +108,9 @@ namespace MLAPI.RuntimeTests
         }
 
 
-        List<NetworkUpdateStage> ServerStagesReceived = new List<NetworkUpdateStage>();
-        List<NetworkUpdateStage> ClientStagesReceived = new List<NetworkUpdateStage>();
-        List<NetworkUpdateStage> StagesSent = new List<NetworkUpdateStage>();
+        private List<NetworkUpdateStage> m_ServerStagesReceived = new List<NetworkUpdateStage>();
+        private List<NetworkUpdateStage> m_ClientStagesReceived = new List<NetworkUpdateStage>();
+        private List<NetworkUpdateStage> m_StagesSent = new List<NetworkUpdateStage>();
 
         /// <summary>
         /// ValidateUpdateStages
@@ -104,20 +119,20 @@ namespace MLAPI.RuntimeTests
         /// <returns>true or false</returns>
         public bool ValidateUpdateStages()
         {
-            bool Validated = false;
-            if ( ServerStagesReceived.Count == ClientStagesReceived.Count && ClientStagesReceived.Count == StagesSent.Count )
+            var Validated = false;
+            if (m_ServerStagesReceived.Count == m_ClientStagesReceived.Count && m_ClientStagesReceived.Count == m_StagesSent.Count)
             {
-                for(int i = 0; i < StagesSent.Count; i++)
+                for (int i = 0; i < m_StagesSent.Count; i++)
                 {
-                    NetworkUpdateStage currentStage = StagesSent[i];
-                    if(ServerStagesReceived[i] != currentStage)
+                    NetworkUpdateStage currentStage = m_StagesSent[i];
+                    if (m_ServerStagesReceived[i] != currentStage)
                     {
-                        Debug.LogFormat("ServerRpc Update Stage ( {0} ) is not equal to the current update stage ( {1} ) ", ServerStagesReceived[i].ToString(), currentStage.ToString());
+                        Debug.LogFormat("ServerRpc Update Stage ( {0} ) is not equal to the current update stage ( {1} ) ", m_ServerStagesReceived[i].ToString(), currentStage.ToString());
                         return Validated;
                     }
-                    if(ClientStagesReceived[i] != currentStage )
+                    if (m_ClientStagesReceived[i] != currentStage)
                     {
-                        Debug.LogFormat("ClientRpc Update Stage ( {0} ) is not equal to the current update stage ( {1} ) ", ServerStagesReceived[i].ToString(), currentStage.ToString());
+                        Debug.LogFormat("ClientRpc Update Stage ( {0} ) is not equal to the current update stage ( {1} ) ", m_ClientStagesReceived[i].ToString(), currentStage.ToString());
                         return Validated;
                     }
                 }
@@ -128,36 +143,34 @@ namespace MLAPI.RuntimeTests
 
         /// <summary>
         /// PingMySelfServerRPC
+        /// Server side RPC for testing
         /// </summary>
-        /// <param name="pingnumber">current number of pings</param>
         /// <param name="parameters">server rpc parameters</param>
         [ServerRpc]
-        void PingMySelfServerRPC(int pingnumber, ServerRpcParams parameters)
+        void PingMySelfServerRPC(ServerRpcParams parameters)
         {
             Debug.Log("[HostClient][ServerRpc] invoked during the " + parameters.Receive.UpdateStage.ToString() + " stage.");
             m_Clientparms.Send.UpdateStage = parameters.Receive.UpdateStage;
-            ServerStagesReceived.Add(m_Clientparms.Send.UpdateStage);
-            PingMySelfClientRpc(m_Counter, m_Clientparms);
-
-            //If we reached the last update state, then go ahead and increment our iteration counter
-            if(parameters.Receive.UpdateStage == NetworkUpdateStage.PostLateUpdate)
-            {
-                m_Counter++;
-            }
-
+            m_ServerStagesReceived.Add(m_Clientparms.Send.UpdateStage);
+            PingMySelfClientRpc(m_Clientparms);
         }
 
         /// <summary>
         /// PingMySelfClientRpc
-        /// Called by PingMySelfServerRPC to validate both Client->Server and Server-Client pipeline is working
+        /// Client Side RPC called by PingMySelfServerRPC to validate both Client->Server and Server-Client pipeline is working
         /// </summary>
-        /// <param name="pingnumber">current number of pings</param>
         /// <param name="parameters">client rpc parameters</param>
         [ClientRpc]
-        void PingMySelfClientRpc(int pingnumber, ClientRpcParams parameters)
+        void PingMySelfClientRpc(ClientRpcParams parameters)
         {
-            ClientStagesReceived.Add(m_Clientparms.Send.UpdateStage);
+            m_ClientStagesReceived.Add(m_Clientparms.Send.UpdateStage);
             Debug.Log("[HostServer][ClientRpc] invoked during the " + parameters.Receive.UpdateStage.ToString() + " stage. (previous output line should confirm this)");
+
+            //If we reached the last update state, then go ahead and increment our iteration counter
+            if (parameters.Receive.UpdateStage == NetworkUpdateStage.PostLateUpdate)
+            {
+                m_Counter++;
+            }
         }
     }
 }

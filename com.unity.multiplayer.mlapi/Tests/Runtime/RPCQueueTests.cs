@@ -27,7 +27,7 @@ namespace MLAPI.RuntimeTests
         [UnityTest]
         public IEnumerator RPCQueueUnitTest()
         {
-            GameObject NetManObject = new GameObject();
+            var NetManObject = new GameObject();
             m_NetMan = NetManObject.AddComponent<NetworkingManager>();
             UnetTransport unetTransport = NetManObject.AddComponent<UnetTransport>();
             m_NetMan.NetworkConfig = new Configuration.NetworkConfig();
@@ -41,14 +41,14 @@ namespace MLAPI.RuntimeTests
             unetTransport.MaxConnections = 100;
             unetTransport.MessageSendMode = UnetTransport.SendMode.Immediately;
             m_NetMan.NetworkConfig.NetworkTransport = unetTransport;
-            Scene CurrentActiveScene = SceneManager.GetActiveScene();
 
-            bool InstantiatedNetworkingManager = false;
-            bool TestsAreComplete = false;
-            bool TestsAreValidated = false;
+            var CurrentActiveScene = SceneManager.GetActiveScene();
+            var InstantiatedNetworkingManager = false;
+            var TestsAreComplete = false;
+            var TestsAreValidated = false;
             var MaximumTimeTaken = 0.0f;
 
-            if(CurrentActiveScene != null)
+            if (CurrentActiveScene != null)
             {
                 //Add our test scene name
                 NetworkSceneManager.AddRuntimeSceneName(CurrentActiveScene.name, 0);
@@ -58,7 +58,7 @@ namespace MLAPI.RuntimeTests
                 NetworkedObject playerNetworkObject = playerObject.AddComponent<NetworkedObject>();
                 RpcPipelineTestComponent RpcPipelineTestComponent = playerObject.AddComponent<RpcPipelineTestComponent>();
 
-                if(NetworkingManager.Singleton != null)
+                if (NetworkingManager.Singleton != null)
                 {
                     Debug.Log("Networking Manager Instantiated.");
                     InstantiatedNetworkingManager = true;
@@ -93,6 +93,7 @@ namespace MLAPI.RuntimeTests
                     }
                 }
             }
+
             Assert.IsTrue(TestsAreComplete && TestsAreValidated && InstantiatedNetworkingManager && MaximumTimeTaken > Time.realtimeSinceStartup);
             // Use the Assert class to test conditions.
             // Use yield to skip a frame.
