@@ -43,7 +43,7 @@ namespace MLAPI
         /// <summary>
         /// Gets the unique Id of this object that is synced across the network
         /// </summary>
-        public ulong ObjectId { get; internal set; }
+        public ulong NetworkObjectId { get; internal set; }
 
         /// <summary>
         /// Gets the ClientId of the owner of this NetworkObject
@@ -53,16 +53,22 @@ namespace MLAPI
             get
             {
                 if (_ownerClientId == null)
-                    return NetworkManager.Singleton != null ? NetworkManager.Singleton.ServerClientId : 0;
-                else
-                    return _ownerClientId.Value;
+                {
+                    return !ReferenceEquals(NetworkManager.Singleton, null) ? NetworkManager.Singleton.ServerClientId : 0;
+                }
+
+                return _ownerClientId.Value;
             }
             internal set
             {
-                if (NetworkManager.Singleton != null && value == NetworkManager.Singleton.ServerClientId)
+                if (!ReferenceEquals(NetworkManager.Singleton, null) && value == NetworkManager.Singleton.ServerClientId)
+                {
                     _ownerClientId = null;
+                }
                 else
+                {
                     _ownerClientId = value;
+                }
             }
         }
 
@@ -242,7 +248,7 @@ namespace MLAPI
 
                 if (networkObjects[i].observers.Contains(clientId))
                 {
-                    throw new VisibilityChangeException($"{nameof(NetworkObject)} with NetworkId: {networkObjects[i].ObjectId} is already visible");
+                    throw new VisibilityChangeException($"{nameof(NetworkObject)} with NetworkId: {networkObjects[i].NetworkObjectId} is already visible");
                 }
             }
 
@@ -299,7 +305,7 @@ namespace MLAPI
             {
                 using (PooledNetworkWriter writer = PooledNetworkWriter.Get(buffer))
                 {
-                    writer.WriteUInt64Packed(ObjectId);
+                    writer.WriteUInt64Packed(NetworkObjectId);
 
                     InternalMessageSender.Send(clientId, NetworkConstants.DESTROY_OBJECT, NetworkChannel.Internal, buffer);
                 }
@@ -333,7 +339,7 @@ namespace MLAPI
 
                 if (!networkObjects[i].observers.Contains(clientId))
                 {
-                    throw new VisibilityChangeException($"{nameof(NetworkObject)} with NetworkId: {networkObjects[i].ObjectId} is already hidden");
+                    throw new VisibilityChangeException($"{nameof(NetworkObject)} with NetworkId: {networkObjects[i].NetworkObjectId} is already hidden");
                 }
             }
 
@@ -349,7 +355,7 @@ namespace MLAPI
                         // Send destroy call
                         networkObjects[i].observers.Remove(clientId);
 
-                        writer.WriteUInt64Packed(networkObjects[i].ObjectId);
+                        writer.WriteUInt64Packed(networkObjects[i].NetworkObjectId);
                     }
                 }
 
@@ -361,7 +367,7 @@ namespace MLAPI
         {
             if (NetworkManager.Singleton != null)
             {
-                NetworkSpawnManager.OnDestroyObject(ObjectId, false);
+                NetworkSpawnManager.OnDestroyObject(NetworkObjectId, false);
             }
         }
 

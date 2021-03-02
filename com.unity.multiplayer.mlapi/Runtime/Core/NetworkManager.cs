@@ -1217,7 +1217,7 @@ namespace MLAPI
                         if (NetworkSpawnManager.customDestroyHandlers.ContainsKey(ConnectedClients[clientId].PlayerObject.PrefabHash))
                         {
                             NetworkSpawnManager.customDestroyHandlers[ConnectedClients[clientId].PlayerObject.PrefabHash](ConnectedClients[clientId].PlayerObject);
-                            NetworkSpawnManager.OnDestroyObject(ConnectedClients[clientId].PlayerObject.ObjectId, false);
+                            NetworkSpawnManager.OnDestroyObject(ConnectedClients[clientId].PlayerObject.NetworkObjectId, false);
                         }
                         else
                         {
@@ -1234,7 +1234,7 @@ namespace MLAPI
                                 if (NetworkSpawnManager.customDestroyHandlers.ContainsKey(ConnectedClients[clientId].OwnedObjects[i].PrefabHash))
                                 {
                                     NetworkSpawnManager.customDestroyHandlers[ConnectedClients[clientId].OwnedObjects[i].PrefabHash](ConnectedClients[clientId].OwnedObjects[i]);
-                                    NetworkSpawnManager.OnDestroyObject(ConnectedClients[clientId].OwnedObjects[i].ObjectId, false);
+                                    NetworkSpawnManager.OnDestroyObject(ConnectedClients[clientId].OwnedObjects[i].NetworkObjectId, false);
                                 }
                                 else
                                 {
@@ -1352,7 +1352,7 @@ namespace MLAPI
                         {
                             NetworkObject observedObject = _observedObjects[i];
                             writer.WriteBool(observedObject.IsPlayerObject);
-                            writer.WriteUInt64Packed(observedObject.ObjectId);
+                            writer.WriteUInt64Packed(observedObject.NetworkObjectId);
                             writer.WriteUInt64Packed(observedObject.OwnerClientId);
 
                             NetworkObject parent = null;
@@ -1369,7 +1369,7 @@ namespace MLAPI
                             else
                             {
                                 writer.WriteBool(true);
-                                writer.WriteUInt64Packed(parent.ObjectId);
+                                writer.WriteUInt64Packed(parent.NetworkObjectId);
                             }
 
                             if (!NetworkConfig.EnableSceneManagement || NetworkConfig.UsePrefabSync)
@@ -1433,7 +1433,7 @@ namespace MLAPI
                         using (PooledNetworkWriter writer = PooledNetworkWriter.Get(buffer))
                         {
                             writer.WriteBool(true);
-                            writer.WriteUInt64Packed(ConnectedClients[clientId].PlayerObject.ObjectId);
+                            writer.WriteUInt64Packed(ConnectedClients[clientId].PlayerObject.NetworkObjectId);
                             writer.WriteUInt64Packed(clientId);
 
                             //Does not have a parent

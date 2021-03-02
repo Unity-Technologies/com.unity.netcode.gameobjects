@@ -90,8 +90,8 @@ namespace MLAPI
                 }
             }
 
-            writer.WriteUInt64Packed(ObjectId); // NetworkObjectId
-            writer.WriteUInt16Packed(BehaviourId); // NetworkBehaviourId
+            writer.WriteUInt64Packed(NetworkObjectId); // NetworkObjectId
+            writer.WriteUInt16Packed(NetworkBehaviourId); // NetworkBehaviourId
             writer.WriteByte((byte)serverRpcParams.Send.UpdateStage); // NetworkUpdateStage
 
             return writer.Serializer;
@@ -161,7 +161,7 @@ namespace MLAPI
                     rpcQueueContainer.SetLoopBackFrameItem(clientRpcParams.Send.UpdateStage);
 
                     //Switch to the outbound queue
-                    writer = rpcQueueContainer.BeginAddQueueItemToFrame(RpcQueueContainer.QueueItemType.ClientRpc, Time.realtimeSinceStartup, NetworkChannel.ReliableRpc, ObjectId,
+                    writer = rpcQueueContainer.BeginAddQueueItemToFrame(RpcQueueContainer.QueueItemType.ClientRpc, Time.realtimeSinceStartup, NetworkChannel.ReliableRpc, NetworkObjectId,
                         ClientIds, QueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
 
                     if (!isUsingBatching)
@@ -179,7 +179,7 @@ namespace MLAPI
             }
             else
             {
-                writer = rpcQueueContainer.BeginAddQueueItemToFrame(RpcQueueContainer.QueueItemType.ClientRpc, Time.realtimeSinceStartup, transportChannel, ObjectId,
+                writer = rpcQueueContainer.BeginAddQueueItemToFrame(RpcQueueContainer.QueueItemType.ClientRpc, Time.realtimeSinceStartup, transportChannel, NetworkObjectId,
                     ClientIds, QueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
 
                 if (!isUsingBatching)
@@ -188,8 +188,8 @@ namespace MLAPI
                 }
             }
 
-            writer.WriteUInt64Packed(ObjectId); // NetworkObjectId
-            writer.WriteUInt16Packed(BehaviourId); // NetworkBehaviourId
+            writer.WriteUInt64Packed(NetworkObjectId); // NetworkObjectId
+            writer.WriteUInt16Packed(NetworkBehaviourId); // NetworkBehaviourId
             writer.WriteByte((byte)clientRpcParams.Send.UpdateStage); // NetworkUpdateStage
 
             return writer.Serializer;
@@ -305,9 +305,24 @@ namespace MLAPI
         private NetworkObject m_NetworkObject = null;
 
         /// <summary>
-        /// Gets the Id of the NetworkObject that owns the NetworkBehaviour instance
+        /// Gets the NetworkId of the NetworkObject that owns this NetworkBehaviour
         /// </summary>
-        public ulong ObjectId => NetworkObject.ObjectId;
+        public ulong NetworkObjectId => NetworkObject.NetworkObjectId;
+
+        /// <summary>
+        /// Gets NetworkId for this NetworkBehaviour from the owner NetworkObject
+        /// </summary>
+        public ushort NetworkBehaviourId => NetworkObject.GetOrderIndex(this);
+
+        /// <summary>
+        /// Returns a the NetworkBehaviour with a given BehaviourId for the current NetworkObject
+        /// </summary>
+        /// <param name="behaviourId">The behaviourId to return</param>
+        /// <returns>Returns NetworkBehaviour with given behaviourId</returns>
+        protected NetworkBehaviour GetNetworkBehaviour(ushort behaviourId)
+        {
+            return NetworkObject.GetNetworkBehaviourAtOrderIndex(behaviourId);
+        }
 
         /// <summary>
         /// Gets the ClientId that owns the NetworkObject
@@ -351,21 +366,6 @@ namespace MLAPI
         /// Gets called when we loose ownership of this object
         /// </summary>
         public virtual void OnLostOwnership() { }
-
-        /// <summary>
-        /// Gets BehaviourId for this NetworkBehaviour on this NetworkObject
-        /// </summary>
-        public ushort BehaviourId => NetworkObject.GetOrderIndex(this);
-
-        /// <summary>
-        /// Returns a the NetworkBehaviour with a given BehaviourId for the current NetworkObject
-        /// </summary>
-        /// <param name="behaviourId">The behaviourId to return</param>
-        /// <returns>Returns NetworkBehaviour with given behaviourId</returns>
-        protected NetworkBehaviour GetNetworkBehaviour(ushort behaviourId)
-        {
-            return NetworkObject.GetNetworkBehaviourAtOrderIndex(behaviourId);
-        }
 
         #region NetworkVariable
 
@@ -574,7 +574,7 @@ namespace MLAPI
                 {
                     using (PooledNetworkWriter writer = PooledNetworkWriter.Get(buffer))
                     {
-                        writer.WriteUInt64Packed(ObjectId);
+                        writer.WriteUInt64Packed(NetworkObjectId);
                         writer.WriteUInt16Packed(NetworkObject.GetOrderIndex(this));
 
                         // Write the current tick frame
@@ -694,7 +694,7 @@ namespace MLAPI
                         {
                             if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                             {
-                                NetworkLog.LogWarning("Client wrote to NetworkVariable without permission. " + (logInstance != null ? ("NetworkId: " + logInstance.ObjectId + " BehaviourIndex: " + logInstance.NetworkObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
+                                NetworkLog.LogWarning("Client wrote to NetworkVariable without permission. " + (logInstance != null ? ("NetworkId: " + logInstance.NetworkObjectId + " BehaviourIndex: " + logInstance.NetworkObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
                                 NetworkLog.LogError("[" + networkVariableList[i].GetType().Name + "]");
                             }
 
@@ -712,7 +712,7 @@ namespace MLAPI
 
                         if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
                         {
-                            NetworkLog.LogError("Client wrote to NetworkVariable without permission. No more variables can be read. This is critical. " + (logInstance != null ? ("NetworkId: " + logInstance.ObjectId + " BehaviourIndex: " + logInstance.NetworkObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
+                            NetworkLog.LogError("Client wrote to NetworkVariable without permission. No more variables can be read. This is critical. " + (logInstance != null ? ("NetworkId: " + logInstance.NetworkObjectId + " BehaviourIndex: " + logInstance.NetworkObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
                             NetworkLog.LogError("[" + networkVariableList[i].GetType().Name + "]");
                         }
 
@@ -736,12 +736,12 @@ namespace MLAPI
 
                         if (stream.Position > (readStartPos + varSize))
                         {
-                            if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Var delta read too far. " + (stream.Position - (readStartPos + varSize)) + " bytes." + (logInstance != null ? ("NetworkId: " + logInstance.ObjectId + " BehaviourIndex: " + logInstance.NetworkObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
+                            if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Var delta read too far. " + (stream.Position - (readStartPos + varSize)) + " bytes." + (logInstance != null ? ("NetworkId: " + logInstance.NetworkObjectId + " BehaviourIndex: " + logInstance.NetworkObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
                             stream.Position = readStartPos + varSize;
                         }
                         else if (stream.Position < (readStartPos + varSize))
                         {
-                            if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Var delta read too little. " + ((readStartPos + varSize) - stream.Position) + " bytes." + (logInstance != null ? ("NetworkId: " + logInstance.ObjectId + " BehaviourIndex: " + logInstance.NetworkObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
+                            if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Var delta read too little. " + ((readStartPos + varSize) - stream.Position) + " bytes." + (logInstance != null ? ("NetworkId: " + logInstance.NetworkObjectId + " BehaviourIndex: " + logInstance.NetworkObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
                             stream.Position = readStartPos + varSize;
                         }
                     }
@@ -772,7 +772,7 @@ namespace MLAPI
                     {
                         if (NetworkManager.Singleton.NetworkConfig.EnsureNetworkVariableLengthSafety)
                         {
-                            if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Client wrote to NetworkVariable without permission. " + (logInstance != null ? ("NetworkId: " + logInstance.ObjectId + " BehaviourIndex: " + logInstance.NetworkObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
+                            if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Client wrote to NetworkVariable without permission. " + (logInstance != null ? ("NetworkId: " + logInstance.NetworkObjectId + " BehaviourIndex: " + logInstance.NetworkObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
                             stream.Position += varSize;
                             continue;
                         }
@@ -786,7 +786,7 @@ namespace MLAPI
                         // - TwoTen
                         if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
                         {
-                            NetworkLog.LogError("Client wrote to NetworkVariable without permission. No more variables can be read. This is critical. " + (logInstance != null ? ("NetworkId: " + logInstance.ObjectId + " BehaviourIndex: " + logInstance.NetworkObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
+                            NetworkLog.LogError("Client wrote to NetworkVariable without permission. No more variables can be read. This is critical. " + (logInstance != null ? ("NetworkId: " + logInstance.NetworkObjectId + " BehaviourIndex: " + logInstance.NetworkObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
                         }
 
                         return;
@@ -808,12 +808,12 @@ namespace MLAPI
 
                         if (stream.Position > (readStartPos + varSize))
                         {
-                            if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Var update read too far. " + (stream.Position - (readStartPos + varSize)) + " bytes." + (logInstance != null ? ("NetworkId: " + logInstance.ObjectId + " BehaviourIndex: " + logInstance.NetworkObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
+                            if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Var update read too far. " + (stream.Position - (readStartPos + varSize)) + " bytes." + (logInstance != null ? ("NetworkId: " + logInstance.NetworkObjectId + " BehaviourIndex: " + logInstance.NetworkObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
                             stream.Position = readStartPos + varSize;
                         }
                         else if (stream.Position < (readStartPos + varSize))
                         {
-                            if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Var update read too little. " + ((readStartPos + varSize) - stream.Position) + " bytes." + (logInstance != null ? ("NetworkId: " + logInstance.ObjectId + " BehaviourIndex: " + logInstance.NetworkObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
+                            if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Var update read too little. " + ((readStartPos + varSize) - stream.Position) + " bytes." + (logInstance != null ? ("NetworkId: " + logInstance.NetworkObjectId + " BehaviourIndex: " + logInstance.NetworkObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
                             stream.Position = readStartPos + varSize;
                         }
                     }

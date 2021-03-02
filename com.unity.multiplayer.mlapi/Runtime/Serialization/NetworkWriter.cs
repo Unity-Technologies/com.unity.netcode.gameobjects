@@ -204,7 +204,7 @@ namespace MLAPI.Serialization
                     throw new ArgumentException($"{nameof(NetworkWriter)} cannot write {nameof(NetworkObject)} types that are not spawned. GameObject: {((GameObject)value).name}");
                 }
 
-                WriteUInt64Packed(networkObject.ObjectId);
+                WriteUInt64Packed(networkObject.NetworkObjectId);
                 return;
             }
             else if (value is NetworkObject)
@@ -214,7 +214,7 @@ namespace MLAPI.Serialization
                     throw new ArgumentException($"{nameof(NetworkWriter)} cannot write {nameof(NetworkObject)} types that are not spawned. GameObject: {((GameObject)value).name}");
                 }
 
-                WriteUInt64Packed(((NetworkObject)value).ObjectId);
+                WriteUInt64Packed(((NetworkObject)value).NetworkObjectId);
                 return;
             }
             else if (value is NetworkBehaviour)
@@ -224,8 +224,8 @@ namespace MLAPI.Serialization
                     throw new ArgumentException($"{nameof(NetworkWriter)} cannot write {nameof(NetworkBehaviour)} types that are not spawned. GameObject: {((GameObject)value).name}");
                 }
 
-                WriteUInt64Packed(((NetworkBehaviour)value).ObjectId);
-                WriteUInt16Packed(((NetworkBehaviour)value).BehaviourId);
+                WriteUInt64Packed(((NetworkBehaviour)value).NetworkObjectId);
+                WriteUInt16Packed(((NetworkBehaviour)value).NetworkBehaviourId);
                 return;
             }
             else if (value is INetworkSerializable)
