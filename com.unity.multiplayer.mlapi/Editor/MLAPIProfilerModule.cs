@@ -8,7 +8,7 @@ using UnityEngine;
 namespace MLAPI
 {
     [InitializeOnLoad]
-    public static class MLAPIProfilerModule
+    internal static class MLAPIProfilerModule
     {
 #if UNITY_2020_2_OR_NEWER && ENABLE_PROFILER
         const string RPCModuleName = "MLAPI RPCs";
@@ -19,7 +19,7 @@ namespace MLAPI
         /// This needs to be in synced with the internal dynamic module structure to provide our own counters
         /// </summary>
         [Serializable]
-        public class MLAPIProfilerCounter
+        private class MLAPIProfilerCounter
         {
             public string m_Name;
             public string m_Category;
@@ -29,7 +29,7 @@ namespace MLAPI
         /// This needs to be in synced with the internal dynamic module structure to provide our own counters
         /// </summary>
         [Serializable]
-        public class MLAPIProfilerModuleData
+        private class MLAPIProfilerModuleData
         {
             public List<MLAPIProfilerCounter> m_ChartCounters = new List<MLAPIProfilerCounter>();
             public List<MLAPIProfilerCounter> m_DetailCounters = new List<MLAPIProfilerCounter>();
@@ -37,7 +37,7 @@ namespace MLAPI
         }
 
         [Serializable]
-        public class MLAPIModules
+        private class MLAPIModules
         {
             public List<MLAPIProfilerModuleData> m_Modules;
         }

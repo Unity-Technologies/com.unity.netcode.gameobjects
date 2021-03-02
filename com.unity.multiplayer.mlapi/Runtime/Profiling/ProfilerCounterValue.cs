@@ -16,7 +16,7 @@ namespace MLAPI.Profiling
 #else
     [StructLayout(LayoutKind.Sequential, Size = 0)]
 #endif
-    public readonly struct ProfilerCounterValue<T> where T : unmanaged
+    internal readonly struct ProfilerCounterValue<T> where T : unmanaged
     {
 #if UNITY_2020_2_OR_NEWER
 #if ENABLE_PROFILER
