@@ -45,6 +45,7 @@ namespace MLAPI.RuntimeTests
 
             bool InstantiatedNetworkingManager = false;
             bool TestsAreComplete = false;
+            bool TestsAreValidated = false;
             var MaximumTimeTaken = 0.0f;
 
             if(CurrentActiveScene != null)
@@ -78,12 +79,13 @@ namespace MLAPI.RuntimeTests
                         //Wait for the rpc pipeline test to complete or
                         while (!TestsAreComplete && MaximumTimeTaken > Time.realtimeSinceStartup)
                         {
-                            //Wait half a second
-                            yield return new WaitForSeconds(0.5f);
+                            //Wait for 100ms
+                            yield return new WaitForSeconds(0.1f);
 
                             TestsAreComplete = RpcPipelineTestComponent.IsTestComplete();
                         }
 
+                        TestsAreValidated = RpcPipelineTestComponent.ValidateUpdateStages();
                         //Stop pinging
                         RpcPipelineTestComponent.PingSelfEnabled = false;
 
@@ -91,7 +93,7 @@ namespace MLAPI.RuntimeTests
                     }
                 }
             }
-            Assert.IsTrue(TestsAreComplete && InstantiatedNetworkingManager && MaximumTimeTaken > Time.realtimeSinceStartup);
+            Assert.IsTrue(TestsAreComplete && TestsAreValidated && InstantiatedNetworkingManager && MaximumTimeTaken > Time.realtimeSinceStartup);
             // Use the Assert class to test conditions.
             // Use yield to skip a frame.
             yield return null;
