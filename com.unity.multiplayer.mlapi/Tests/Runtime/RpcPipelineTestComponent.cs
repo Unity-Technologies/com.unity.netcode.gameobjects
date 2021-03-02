@@ -121,7 +121,7 @@ namespace MLAPI.RuntimeTests
         /// <returns>true or false</returns>
         public bool ValidateUpdateStages()
         {
-            var Validated = false;
+            var validated = false;
             if (m_ServerStagesReceived.Count == m_ClientStagesReceived.Count && m_ClientStagesReceived.Count == m_StagesSent.Count)
             {
                 for (int i = 0; i < m_StagesSent.Count; i++)
@@ -130,17 +130,17 @@ namespace MLAPI.RuntimeTests
                     if (m_ServerStagesReceived[i] != currentStage)
                     {
                         Debug.LogFormat("ServerRpc Update Stage ( {0} ) is not equal to the current update stage ( {1} ) ", m_ServerStagesReceived[i].ToString(), currentStage.ToString());
-                        return Validated;
+                        return validated;
                     }
                     if (m_ClientStagesReceived[i] != currentStage)
                     {
                         Debug.LogFormat("ClientRpc Update Stage ( {0} ) is not equal to the current update stage ( {1} ) ", m_ClientStagesReceived[i].ToString(), currentStage.ToString());
-                        return Validated;
+                        return validated;
                     }
                 }
-                Validated = true;
+                validated = true;
             }
-            return Validated;
+            return validated;
         }
 
         /// <summary>
