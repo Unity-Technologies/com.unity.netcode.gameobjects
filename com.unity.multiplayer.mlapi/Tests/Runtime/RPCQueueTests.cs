@@ -19,13 +19,12 @@ namespace MLAPI.RuntimeTests
         }
 
         /// <summary>
-        /// RPCQueueUnitTest
         /// Tests the egress and ingress RPC queue functionality
         /// ** This does not include any of the MLAPI to Transport code **
         /// </summary>
         /// <returns>IEnumerator</returns>
         [UnityTest]
-        public IEnumerator RPCQueueUnitTest()
+        public IEnumerator RpcQueueUnitTest()
         {
             var NetManObject = new GameObject();
             m_NetMan = NetManObject.AddComponent<NetworkingManager>();

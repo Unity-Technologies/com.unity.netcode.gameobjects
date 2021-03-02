@@ -8,13 +8,11 @@ namespace MLAPI.RuntimeTests
     public class RpcPipelineTestComponent : NetworkedBehaviour
     {
         /// <summary>
-        /// PingSelfEnabled
         /// Allows the external RPCQueueTest to begin testing or stop it
         /// </summary>
         public bool PingSelfEnabled;
 
         /// <summary>
-        /// MaxIterations
         /// How many times will we iterate through the various NetworkUpdateStage values?
         /// (defaults to 2)
         /// </summary>
@@ -29,7 +27,6 @@ namespace MLAPI.RuntimeTests
         }
 
         /// <summary>
-        /// IsTestComplete
         /// Returns back whether the test has completed the total number of iterations
         /// </summary>
         /// <returns></returns>
@@ -113,7 +110,6 @@ namespace MLAPI.RuntimeTests
         private List<NetworkUpdateStage> m_StagesSent = new List<NetworkUpdateStage>();
 
         /// <summary>
-        /// ValidateUpdateStages
         /// Assures all update stages were in alginment with one another
         /// </summary>
         /// <returns>true or false</returns>
@@ -142,7 +138,6 @@ namespace MLAPI.RuntimeTests
         }
 
         /// <summary>
-        /// PingMySelfServerRPC
         /// Server side RPC for testing
         /// </summary>
         /// <param name="parameters">server rpc parameters</param>
@@ -156,7 +151,6 @@ namespace MLAPI.RuntimeTests
         }
 
         /// <summary>
-        /// PingMySelfClientRpc
         /// Client Side RPC called by PingMySelfServerRPC to validate both Client->Server and Server-Client pipeline is working
         /// </summary>
         /// <param name="parameters">client rpc parameters</param>
