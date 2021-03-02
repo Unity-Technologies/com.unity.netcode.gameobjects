@@ -26,7 +26,7 @@ namespace MLAPI.RuntimeTests
 
 
         // Start is called before the first frame update
-        void Start()
+        private void Start()
         {
             m_Serverparams.Send.UpdateStage = NetworkUpdateStage.Initialization;
             m_Clientparams.Send.UpdateStage = NetworkUpdateStage.Update;
@@ -52,7 +52,7 @@ namespace MLAPI.RuntimeTests
         private NetworkUpdateStage m_LastUpdateStage;
 
         // Update is called once per frame
-        void Update()
+        private void Update()
         {
             if (NetworkingManager.Singleton.IsListening && PingSelfEnabled && m_NextUpdate < Time.realtimeSinceStartup)
             {
@@ -148,7 +148,7 @@ namespace MLAPI.RuntimeTests
         /// </summary>
         /// <param name="parameters">server rpc parameters</param>
         [ServerRpc]
-        void PingMySelfServerRPC(ServerRpcParams parameters)
+        private void PingMySelfServerRPC(ServerRpcParams parameters)
         {
             Debug.Log("[HostClient][ServerRpc] invoked during the " + parameters.Receive.UpdateStage.ToString() + " stage.");
             m_Clientparams.Send.UpdateStage = parameters.Receive.UpdateStage;
@@ -161,7 +161,7 @@ namespace MLAPI.RuntimeTests
         /// </summary>
         /// <param name="parameters">client rpc parameters</param>
         [ClientRpc]
-        void PingMySelfClientRpc(ClientRpcParams parameters)
+        private void PingMySelfClientRpc(ClientRpcParams parameters)
         {
             m_ClientStagesReceived.Add(parameters.Receive.UpdateStage);
             Debug.Log("[HostServer][ClientRpc] invoked during the " + parameters.Receive.UpdateStage.ToString() + " stage. (previous output line should confirm this)");

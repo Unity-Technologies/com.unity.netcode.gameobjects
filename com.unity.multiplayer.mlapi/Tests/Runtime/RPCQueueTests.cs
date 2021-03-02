@@ -60,9 +60,9 @@ namespace MLAPI.RuntimeTests
                 NetworkSceneManager.AddRuntimeSceneName(CurrentActiveScene.name, 0);
 
                 //Create the player object that we will spawn as a host
-                GameObject playerObject = new GameObject("RpcTestObject");
-                NetworkedObject playerNetworkObject = playerObject.AddComponent<NetworkedObject>();
-                RpcPipelineTestComponent RpcPipelineTestComponent = playerObject.AddComponent<RpcPipelineTestComponent>();
+                var playerObject = new GameObject("RpcTestObject");
+                var playerNetworkObject = playerObject.AddComponent<NetworkedObject>();
+                var RpcPipelineTestComponent = playerObject.AddComponent<RpcPipelineTestComponent>();
 
                 if (NetworkingManager.Singleton != null)
                 {
