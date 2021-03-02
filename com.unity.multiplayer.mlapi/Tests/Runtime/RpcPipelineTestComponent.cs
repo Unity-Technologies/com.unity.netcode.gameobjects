@@ -5,16 +5,9 @@ using MLAPI.Messaging;
 
 namespace MLAPI.RuntimeTests
 {
-    public interface IMLAPIUnitTestObject
-    {
-        public bool IsTestComplete();
-    }
-
-    public class RpcPipelineTestComponent : NetworkedBehaviour, IMLAPIUnitTestObject
+    public class RpcPipelineTestComponent : NetworkedBehaviour
     {
         public bool PingSelfEnabled;
-
-        //
         public int MaxIterations = 2;
 
 
