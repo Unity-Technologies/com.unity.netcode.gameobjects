@@ -30,7 +30,8 @@ namespace MLAPI.Profiling
         {
 #if ENABLE_PROFILER
             byte dataType = ProfilerCounterUtility.GetProfilerMarkerDataType<T>();
-            unsafe {
+            unsafe
+            {
                 m_Value = (T*)ProfilerUnsafeUtility.CreateCounterValue(out var counterPtr, name, category, MarkerFlags.Default, dataType, (byte)dataUnit, UnsafeUtility.SizeOf<T>(), counterOptions);
             }
 #endif
@@ -39,9 +40,11 @@ namespace MLAPI.Profiling
         public T Value
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get {
+            get
+            {
 #if ENABLE_PROFILER
-                unsafe {
+                unsafe
+                {
                     return *m_Value;
                 }
 #else
@@ -50,9 +53,11 @@ namespace MLAPI.Profiling
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            set {
+            set
+            {
 #if ENABLE_PROFILER
-                unsafe {
+                unsafe
+                {
                     *m_Value = value;
                 }
 #endif
@@ -61,5 +66,3 @@ namespace MLAPI.Profiling
 #endif
     }
 }
-
-

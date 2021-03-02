@@ -6,14 +6,13 @@ using UnityEngine;
 
 namespace MLAPI.Profiling
 {
-
     internal static class ProfilerCountersInfo
     {
 #if UNITY_2020_2_OR_NEWER && ENABLE_PROFILER
         // Operations
         private static ProfilerCounterValue<int> s_ConnectionsCounterValue =
-        new ProfilerCounterValue<int>(ProfilerCategory.Network, ProfilerConstants.NumberOfConnections,
-            ProfilerMarkerDataUnit.Count, ProfilerCounterOptions.FlushOnEndOfFrame);
+            new ProfilerCounterValue<int>(ProfilerCategory.Network, ProfilerConstants.NumberOfConnections,
+                ProfilerMarkerDataUnit.Count, ProfilerCounterOptions.FlushOnEndOfFrame);
 
         private static ProfilerCounterValue<int> s_TickRateCounterValue =
             new ProfilerCounterValue<int>(ProfilerCategory.Network, ProfilerConstants.ReceiveTickRate,
@@ -70,12 +69,12 @@ namespace MLAPI.Profiling
                 ProfilerMarkerDataUnit.Count, ProfilerCounterOptions.FlushOnEndOfFrame);
 
         [RuntimeInitializeOnLoadMethod]
-        static void RegisterMLAPIPerformanceEvent()
+        private static void RegisterMLAPIPerformanceEvent()
         {
-            NetworkingManager.OnPerformanceDataEvent += OnPerformanceTickData;
+            NetworkManager.OnPerformanceDataEvent += OnPerformanceTickData;
         }
 
-        static void OnPerformanceTickData(PerformanceTickData tickData)
+        private static void OnPerformanceTickData(PerformanceTickData tickData)
         {
             //Operations
             s_ConnectionsCounterValue.Value += tickData.GetData(ProfilerConstants.NumberOfConnections);
