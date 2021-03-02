@@ -210,40 +210,38 @@ namespace MLAPI.Configuration
         {
             NetworkConfig config = this;
             using (var buffer = PooledNetworkBuffer.Get())
+            using (var writer = PooledNetworkWriter.Get(buffer))
             {
-                using (var writer = PooledNetworkWriter.Get(buffer))
+                writer.WriteUInt16Packed(config.ProtocolVersion);
+
+                writer.WriteUInt16Packed((ushort)config.RegisteredScenes.Count);
+
+                for (int i = 0; i < config.RegisteredScenes.Count; i++)
                 {
-                    writer.WriteUInt16Packed(config.ProtocolVersion);
-
-                    writer.WriteUInt16Packed((ushort)config.RegisteredScenes.Count);
-
-                    for (int i = 0; i < config.RegisteredScenes.Count; i++)
-                    {
-                        writer.WriteString(config.RegisteredScenes[i]);
-                    }
-
-                    writer.WriteInt32Packed(config.ReceiveTickrate);
-                    writer.WriteInt32Packed(config.MaxReceiveEventsPerTickRate);
-                    writer.WriteInt32Packed(config.EventTickrate);
-                    writer.WriteInt32Packed(config.ClientConnectionBufferTimeout);
-                    writer.WriteBool(config.ConnectionApproval);
-                    writer.WriteInt32Packed(config.SecondsHistory);
-                    writer.WriteInt32Packed(config.LoadSceneTimeOut);
-                    writer.WriteBool(config.EnableTimeResync);
-                    writer.WriteBool(config.EnsureNetworkVariableLengthSafety);
-                    writer.WriteBits((byte)config.RpcHashSize, 2);
-                    writer.WriteBool(ForceSamePrefabs);
-                    writer.WriteBool(UsePrefabSync);
-                    writer.WriteBool(EnableSceneManagement);
-                    writer.WriteBool(RecycleNetworkIds);
-                    writer.WriteSinglePacked(NetworkIdRecycleDelay);
-                    writer.WriteBool(EnableNetworkVariable);
-                    writer.WriteBool(AllowRuntimeSceneChanges);
-                    writer.WriteBool(EnableNetworkLogs);
-                    buffer.PadBuffer();
-
-                    return Convert.ToBase64String(buffer.ToArray());
+                    writer.WriteString(config.RegisteredScenes[i]);
                 }
+
+                writer.WriteInt32Packed(config.ReceiveTickrate);
+                writer.WriteInt32Packed(config.MaxReceiveEventsPerTickRate);
+                writer.WriteInt32Packed(config.EventTickrate);
+                writer.WriteInt32Packed(config.ClientConnectionBufferTimeout);
+                writer.WriteBool(config.ConnectionApproval);
+                writer.WriteInt32Packed(config.SecondsHistory);
+                writer.WriteInt32Packed(config.LoadSceneTimeOut);
+                writer.WriteBool(config.EnableTimeResync);
+                writer.WriteBool(config.EnsureNetworkVariableLengthSafety);
+                writer.WriteBits((byte)config.RpcHashSize, 2);
+                writer.WriteBool(ForceSamePrefabs);
+                writer.WriteBool(UsePrefabSync);
+                writer.WriteBool(EnableSceneManagement);
+                writer.WriteBool(RecycleNetworkIds);
+                writer.WriteSinglePacked(NetworkIdRecycleDelay);
+                writer.WriteBool(EnableNetworkVariable);
+                writer.WriteBool(AllowRuntimeSceneChanges);
+                writer.WriteBool(EnableNetworkLogs);
+                buffer.PadBuffer();
+
+                return Convert.ToBase64String(buffer.ToArray());
             }
         }
 
@@ -256,38 +254,36 @@ namespace MLAPI.Configuration
             NetworkConfig config = this;
             byte[] binary = Convert.FromBase64String(base64);
             using (var buffer = new NetworkBuffer(binary))
+            using (var reader = PooledNetworkReader.Get(buffer))
             {
-                using (var reader = PooledNetworkReader.Get(buffer))
+                config.ProtocolVersion = reader.ReadUInt16Packed();
+
+                ushort sceneCount = reader.ReadUInt16Packed();
+                config.RegisteredScenes.Clear();
+
+                for (int i = 0; i < sceneCount; i++)
                 {
-                    config.ProtocolVersion = reader.ReadUInt16Packed();
-
-                    ushort sceneCount = reader.ReadUInt16Packed();
-                    config.RegisteredScenes.Clear();
-
-                    for (int i = 0; i < sceneCount; i++)
-                    {
-                        config.RegisteredScenes.Add(reader.ReadString().ToString());
-                    }
-
-                    config.ReceiveTickrate = reader.ReadInt32Packed();
-                    config.MaxReceiveEventsPerTickRate = reader.ReadInt32Packed();
-                    config.EventTickrate = reader.ReadInt32Packed();
-                    config.ClientConnectionBufferTimeout = reader.ReadInt32Packed();
-                    config.ConnectionApproval = reader.ReadBool();
-                    config.SecondsHistory = reader.ReadInt32Packed();
-                    config.LoadSceneTimeOut = reader.ReadInt32Packed();
-                    config.EnableTimeResync = reader.ReadBool();
-                    config.EnsureNetworkVariableLengthSafety = reader.ReadBool();
-                    config.RpcHashSize = (HashSize)reader.ReadBits(2);
-                    config.ForceSamePrefabs = reader.ReadBool();
-                    config.UsePrefabSync = reader.ReadBool();
-                    config.EnableSceneManagement = reader.ReadBool();
-                    config.RecycleNetworkIds = reader.ReadBool();
-                    config.NetworkIdRecycleDelay = reader.ReadSinglePacked();
-                    config.EnableNetworkVariable = reader.ReadBool();
-                    config.AllowRuntimeSceneChanges = reader.ReadBool();
-                    config.EnableNetworkLogs = reader.ReadBool();
+                    config.RegisteredScenes.Add(reader.ReadString().ToString());
                 }
+
+                config.ReceiveTickrate = reader.ReadInt32Packed();
+                config.MaxReceiveEventsPerTickRate = reader.ReadInt32Packed();
+                config.EventTickrate = reader.ReadInt32Packed();
+                config.ClientConnectionBufferTimeout = reader.ReadInt32Packed();
+                config.ConnectionApproval = reader.ReadBool();
+                config.SecondsHistory = reader.ReadInt32Packed();
+                config.LoadSceneTimeOut = reader.ReadInt32Packed();
+                config.EnableTimeResync = reader.ReadBool();
+                config.EnsureNetworkVariableLengthSafety = reader.ReadBool();
+                config.RpcHashSize = (HashSize)reader.ReadBits(2);
+                config.ForceSamePrefabs = reader.ReadBool();
+                config.UsePrefabSync = reader.ReadBool();
+                config.EnableSceneManagement = reader.ReadBool();
+                config.RecycleNetworkIds = reader.ReadBool();
+                config.NetworkIdRecycleDelay = reader.ReadSinglePacked();
+                config.EnableNetworkVariable = reader.ReadBool();
+                config.AllowRuntimeSceneChanges = reader.ReadBool();
+                config.EnableNetworkLogs = reader.ReadBool();
             }
         }
 
@@ -306,45 +302,43 @@ namespace MLAPI.Configuration
             Sort();
 
             using (var buffer = PooledNetworkBuffer.Get())
+            using (var writer = PooledNetworkWriter.Get(buffer))
             {
-                using (var writer = PooledNetworkWriter.Get(buffer))
+                writer.WriteUInt16Packed(ProtocolVersion);
+                writer.WriteString(NetworkConstants.PROTOCOL_VERSION);
+
+                if (EnableSceneManagement && !AllowRuntimeSceneChanges)
                 {
-                    writer.WriteUInt16Packed(ProtocolVersion);
-                    writer.WriteString(NetworkConstants.PROTOCOL_VERSION);
-
-                    if (EnableSceneManagement && !AllowRuntimeSceneChanges)
+                    for (int i = 0; i < RegisteredScenes.Count; i++)
                     {
-                        for (int i = 0; i < RegisteredScenes.Count; i++)
-                        {
-                            writer.WriteString(RegisteredScenes[i]);
-                        }
+                        writer.WriteString(RegisteredScenes[i]);
                     }
-
-                    if (ForceSamePrefabs)
-                    {
-                        var sortedPrefabList = NetworkPrefabs.OrderBy(x => x.Hash).ToList();
-                        for (int i = 0; i < sortedPrefabList.Count; i++)
-                        {
-                            writer.WriteUInt64Packed(sortedPrefabList[i].Hash);
-                        }
-                    }
-
-                    writer.WriteBool(EnableNetworkVariable);
-                    writer.WriteBool(ForceSamePrefabs);
-                    writer.WriteBool(UsePrefabSync);
-                    writer.WriteBool(EnableSceneManagement);
-                    writer.WriteBool(EnsureNetworkVariableLengthSafety);
-                    writer.WriteBits((byte)RpcHashSize, 2);
-                    buffer.PadBuffer();
-
-                    if (cache)
-                    {
-                        m_ConfigHash = buffer.ToArray().GetStableHash64();
-                        return m_ConfigHash.Value;
-                    }
-
-                    return buffer.ToArray().GetStableHash64();
                 }
+
+                if (ForceSamePrefabs)
+                {
+                    var sortedPrefabList = NetworkPrefabs.OrderBy(x => x.Hash).ToList();
+                    for (int i = 0; i < sortedPrefabList.Count; i++)
+                    {
+                        writer.WriteUInt64Packed(sortedPrefabList[i].Hash);
+                    }
+                }
+
+                writer.WriteBool(EnableNetworkVariable);
+                writer.WriteBool(ForceSamePrefabs);
+                writer.WriteBool(UsePrefabSync);
+                writer.WriteBool(EnableSceneManagement);
+                writer.WriteBool(EnsureNetworkVariableLengthSafety);
+                writer.WriteBits((byte)RpcHashSize, 2);
+                buffer.PadBuffer();
+
+                if (cache)
+                {
+                    m_ConfigHash = buffer.ToArray().GetStableHash64();
+                    return m_ConfigHash.Value;
+                }
+
+                return buffer.ToArray().GetStableHash64();
             }
         }
 

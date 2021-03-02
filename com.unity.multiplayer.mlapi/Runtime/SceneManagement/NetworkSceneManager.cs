@@ -179,12 +179,10 @@ namespace MLAPI.SceneManagement
             SceneManager.LoadScene(sceneName);
 
             using (var buffer = PooledNetworkBuffer.Get())
+            using (var writer = PooledNetworkWriter.Get(buffer))
             {
-                using (var writer = PooledNetworkWriter.Get(buffer))
-                {
-                    writer.WriteByteArray(switchSceneGuid.ToByteArray());
-                    InternalMessageSender.Send(NetworkManager.Singleton.ServerClientId, NetworkConstants.CLIENT_SWITCH_SCENE_COMPLETED, NetworkChannel.Internal, buffer);
-                }
+                writer.WriteByteArray(switchSceneGuid.ToByteArray());
+                InternalMessageSender.Send(NetworkManager.Singleton.ServerClientId, NetworkConstants.CLIENT_SWITCH_SCENE_COMPLETED, NetworkChannel.Internal, buffer);
             }
 
             s_IsSwitching = false;
@@ -234,69 +232,67 @@ namespace MLAPI.SceneManagement
                 if (NetworkManager.Singleton.ConnectedClientsList[j].ClientId != NetworkManager.Singleton.ServerClientId)
                 {
                     using (var buffer = PooledNetworkBuffer.Get())
+                    using (var writer = PooledNetworkWriter.Get(buffer))
                     {
-                        using (var writer = PooledNetworkWriter.Get(buffer))
+                        writer.WriteUInt32Packed(CurrentActiveSceneIndex);
+                        writer.WriteByteArray(switchSceneGuid.ToByteArray());
+
+                        uint sceneObjectsToSpawn = 0;
+                        for (int i = 0; i < newSceneObjects.Count; i++)
                         {
-                            writer.WriteUInt32Packed(CurrentActiveSceneIndex);
-                            writer.WriteByteArray(switchSceneGuid.ToByteArray());
-
-                            uint sceneObjectsToSpawn = 0;
-                            for (int i = 0; i < newSceneObjects.Count; i++)
+                            if (newSceneObjects[i].m_Observers.Contains(NetworkManager.Singleton.ConnectedClientsList[j].ClientId))
                             {
-                                if (newSceneObjects[i].m_Observers.Contains(NetworkManager.Singleton.ConnectedClientsList[j].ClientId))
-                                {
-                                    sceneObjectsToSpawn++;
-                                }
+                                sceneObjectsToSpawn++;
                             }
+                        }
 
-                            writer.WriteUInt32Packed(sceneObjectsToSpawn);
+                        writer.WriteUInt32Packed(sceneObjectsToSpawn);
 
-                            for (int i = 0; i < newSceneObjects.Count; i++)
+                        for (int i = 0; i < newSceneObjects.Count; i++)
+                        {
+                            if (newSceneObjects[i].m_Observers.Contains(NetworkManager.Singleton.ConnectedClientsList[j].ClientId))
                             {
-                                if (newSceneObjects[i].m_Observers.Contains(NetworkManager.Singleton.ConnectedClientsList[j].ClientId))
+                                writer.WriteBool(newSceneObjects[i].IsPlayerObject);
+                                writer.WriteUInt64Packed(newSceneObjects[i].NetworkObjectId);
+                                writer.WriteUInt64Packed(newSceneObjects[i].OwnerClientId);
+
+                                NetworkObject parentNetworkObject = null;
+
+                                if (!newSceneObjects[i].AlwaysReplicateAsRoot && newSceneObjects[i].transform.parent != null)
                                 {
-                                    writer.WriteBool(newSceneObjects[i].IsPlayerObject);
-                                    writer.WriteUInt64Packed(newSceneObjects[i].NetworkObjectId);
-                                    writer.WriteUInt64Packed(newSceneObjects[i].OwnerClientId);
+                                    parentNetworkObject = newSceneObjects[i].transform.parent.GetComponent<NetworkObject>();
+                                }
 
-                                    NetworkObject parentNetworkObject = null;
+                                if (parentNetworkObject == null)
+                                {
+                                    writer.WriteBool(false);
+                                }
+                                else
+                                {
+                                    writer.WriteBool(true);
+                                    writer.WriteUInt64Packed(parentNetworkObject.NetworkObjectId);
+                                }
 
-                                    if (!newSceneObjects[i].AlwaysReplicateAsRoot && newSceneObjects[i].transform.parent != null)
-                                    {
-                                        parentNetworkObject = newSceneObjects[i].transform.parent.GetComponent<NetworkObject>();
-                                    }
+                                if (!NetworkManager.Singleton.NetworkConfig.EnableSceneManagement || NetworkManager.Singleton.NetworkConfig.UsePrefabSync)
+                                {
+                                    writer.WriteUInt64Packed(newSceneObjects[i].PrefabHash);
 
-                                    if (parentNetworkObject == null)
-                                    {
-                                        writer.WriteBool(false);
-                                    }
-                                    else
-                                    {
-                                        writer.WriteBool(true);
-                                        writer.WriteUInt64Packed(parentNetworkObject.NetworkObjectId);
-                                    }
+                                    writer.WriteSinglePacked(newSceneObjects[i].transform.position.x);
+                                    writer.WriteSinglePacked(newSceneObjects[i].transform.position.y);
+                                    writer.WriteSinglePacked(newSceneObjects[i].transform.position.z);
 
-                                    if (!NetworkManager.Singleton.NetworkConfig.EnableSceneManagement || NetworkManager.Singleton.NetworkConfig.UsePrefabSync)
-                                    {
-                                        writer.WriteUInt64Packed(newSceneObjects[i].PrefabHash);
+                                    writer.WriteSinglePacked(newSceneObjects[i].transform.rotation.eulerAngles.x);
+                                    writer.WriteSinglePacked(newSceneObjects[i].transform.rotation.eulerAngles.y);
+                                    writer.WriteSinglePacked(newSceneObjects[i].transform.rotation.eulerAngles.z);
+                                }
+                                else
+                                {
+                                    writer.WriteUInt64Packed(newSceneObjects[i].NetworkInstanceId);
+                                }
 
-                                        writer.WriteSinglePacked(newSceneObjects[i].transform.position.x);
-                                        writer.WriteSinglePacked(newSceneObjects[i].transform.position.y);
-                                        writer.WriteSinglePacked(newSceneObjects[i].transform.position.z);
-
-                                        writer.WriteSinglePacked(newSceneObjects[i].transform.rotation.eulerAngles.x);
-                                        writer.WriteSinglePacked(newSceneObjects[i].transform.rotation.eulerAngles.y);
-                                        writer.WriteSinglePacked(newSceneObjects[i].transform.rotation.eulerAngles.z);
-                                    }
-                                    else
-                                    {
-                                        writer.WriteUInt64Packed(newSceneObjects[i].NetworkInstanceId);
-                                    }
-
-                                    if (NetworkManager.Singleton.NetworkConfig.EnableNetworkVariable)
-                                    {
-                                        newSceneObjects[i].WriteNetworkVariableData(buffer, NetworkManager.Singleton.ConnectedClientsList[j].ClientId);
-                                    }
+                                if (NetworkManager.Singleton.NetworkConfig.EnableNetworkVariable)
+                                {
+                                    newSceneObjects[i].WriteNetworkVariableData(buffer, NetworkManager.Singleton.ConnectedClientsList[j].ClientId);
                                 }
                             }
                         }
@@ -412,12 +408,10 @@ namespace MLAPI.SceneManagement
             }
 
             using (var buffer = PooledNetworkBuffer.Get())
+            using (var writer = PooledNetworkWriter.Get(buffer))
             {
-                using (var writer = PooledNetworkWriter.Get(buffer))
-                {
-                    writer.WriteByteArray(switchSceneGuid.ToByteArray());
-                    InternalMessageSender.Send(NetworkManager.Singleton.ServerClientId, NetworkConstants.CLIENT_SWITCH_SCENE_COMPLETED, NetworkChannel.Internal, buffer);
-                }
+                writer.WriteByteArray(switchSceneGuid.ToByteArray());
+                InternalMessageSender.Send(NetworkManager.Singleton.ServerClientId, NetworkConstants.CLIENT_SWITCH_SCENE_COMPLETED, NetworkChannel.Internal, buffer);
             }
 
             s_IsSwitching = false;

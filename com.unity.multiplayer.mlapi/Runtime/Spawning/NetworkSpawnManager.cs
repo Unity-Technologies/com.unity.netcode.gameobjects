@@ -196,14 +196,12 @@ namespace MLAPI.Spawning
             netObject.OwnerClientIdInternal = null;
 
             using (var buffer = PooledNetworkBuffer.Get())
+            using (var writer = PooledNetworkWriter.Get(buffer))
             {
-                using (var writer = PooledNetworkWriter.Get(buffer))
-                {
-                    writer.WriteUInt64Packed(netObject.NetworkObjectId);
-                    writer.WriteUInt64Packed(netObject.OwnerClientId);
+                writer.WriteUInt64Packed(netObject.NetworkObjectId);
+                writer.WriteUInt64Packed(netObject.OwnerClientId);
 
-                    InternalMessageSender.Send(NetworkConstants.CHANGE_OWNER, NetworkChannel.Internal, buffer);
-                }
+                InternalMessageSender.Send(NetworkConstants.CHANGE_OWNER, NetworkChannel.Internal, buffer);
             }
         }
 
@@ -234,14 +232,12 @@ namespace MLAPI.Spawning
             netObject.OwnerClientId = clientId;
 
             using (var buffer = PooledNetworkBuffer.Get())
+            using (var writer = PooledNetworkWriter.Get(buffer))
             {
-                using (var writer = PooledNetworkWriter.Get(buffer))
-                {
-                    writer.WriteUInt64Packed(netObject.NetworkObjectId);
-                    writer.WriteUInt64Packed(clientId);
+                writer.WriteUInt64Packed(netObject.NetworkObjectId);
+                writer.WriteUInt64Packed(clientId);
 
-                    InternalMessageSender.Send(NetworkConstants.CHANGE_OWNER, NetworkChannel.Internal, buffer);
-                }
+                InternalMessageSender.Send(NetworkConstants.CHANGE_OWNER, NetworkChannel.Internal, buffer);
             }
         }
 

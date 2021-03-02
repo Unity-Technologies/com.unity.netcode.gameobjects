@@ -61,15 +61,12 @@ namespace MLAPI.Logging
             if (NetworkManager.Singleton != null && !NetworkManager.Singleton.IsServer && NetworkManager.Singleton.NetworkConfig.EnableNetworkLogs)
             {
                 using (var buffer = PooledNetworkBuffer.Get())
+                using (var writer = PooledNetworkWriter.Get(buffer))
                 {
-                    using (var writer = PooledNetworkWriter.Get(buffer))
-                    {
-                        writer.WriteByte((byte)logType);
+                    writer.WriteByte((byte)logType);
+                    writer.WriteStringPacked(message);
 
-                        writer.WriteStringPacked(message);
-
-                        InternalMessageSender.Send(NetworkManager.Singleton.ServerClientId, NetworkConstants.SERVER_LOG, NetworkChannel.Internal, buffer);
-                    }
+                    InternalMessageSender.Send(NetworkManager.Singleton.ServerClientId, NetworkConstants.SERVER_LOG, NetworkChannel.Internal, buffer);
                 }
             }
         }

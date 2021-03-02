@@ -16,6 +16,7 @@ namespace MLAPI.Internal
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogError("The incoming message was too small");
                     messageType = NetworkConstants.INVALID;
+
                     return null;
                 }
 
