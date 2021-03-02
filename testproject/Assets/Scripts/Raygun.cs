@@ -1,8 +1,6 @@
-using UnityEngine;
-using System.Collections;
 using System.Collections.Generic;
+using UnityEngine;
 using MLAPI;
-using UnityEditor;
 
 public class Raygun : NetworkedBehaviour
 {
@@ -10,10 +8,6 @@ public class Raygun : NetworkedBehaviour
 
     private GameObject m_CurrentTarget;
     private LineRenderer m_LineRenderer;
-
-    private void Start()
-    {
-    }
 
     private void Awake()
     {
@@ -27,7 +21,7 @@ public class Raygun : NetworkedBehaviour
     {
         var forward = transform.forward * m_Range;
 
-        m_LineRenderer.SetVertexCount(2);
+        m_LineRenderer.positionCount = 2;
         m_LineRenderer.SetPosition(0, transform.position);
         m_LineRenderer.SetPosition(1, transform.position + forward);
 
@@ -36,7 +30,6 @@ public class Raygun : NetworkedBehaviour
             m_CurrentTarget = FindTarget();
             transform.position = m_CurrentTarget.transform.position + forward;
         }
-
     }
 
     private GameObject FindTarget()
