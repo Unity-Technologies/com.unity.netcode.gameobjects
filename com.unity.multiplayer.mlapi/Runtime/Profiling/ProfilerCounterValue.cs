@@ -7,7 +7,6 @@ using Unity.Profiling;
 using Unity.Profiling.LowLevel;
 using Unity.Profiling.LowLevel.Unsafe;
 #endif
-using UnityEngine;
 
 namespace MLAPI.Profiling
 {

@@ -96,8 +96,8 @@ namespace MLAPI
             if (dynamicModules != null)
             {
                 bool wasCreated = CreateMLAPIDynamicModule(ref dynamicModules, k_RpcModuleName, CreateRPCCounters);
-                wasCreated |= CreateMLAPIDynamicModule(ref dynamicModules, OperationModuleName, CreateOperationsCounters);
-                wasCreated |= CreateMLAPIDynamicModule(ref dynamicModules, MessageModuleName, CreateMessagesCounters);
+                wasCreated |= CreateMLAPIDynamicModule(ref dynamicModules, k_OperationModuleName, CreateOperationsCounters);
+                wasCreated |= CreateMLAPIDynamicModule(ref dynamicModules, k_MessageModuleName, CreateMessagesCounters);
 
                 if (wasCreated)
                 {
