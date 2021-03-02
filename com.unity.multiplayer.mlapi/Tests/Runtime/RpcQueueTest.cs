@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -101,8 +102,17 @@ namespace MLAPI.RuntimeTests
                 }
             }
 
-            //Shutdown the networking manager
-            NetworkingManager.Singleton.Shutdown();
+            try
+            {
+                //Shutdown the networking manager
+                NetworkingManager.Singleton.Shutdown();
+            }
+            catch(Exception ex)
+            {
+                Debug.LogException(ex);
+            }
+            Debug.LogFormat("Exiting status: testsAreComplete [{0}] testsAreValidated [{1}] instantiatedNetworkingManager[{2}]",
+                testsAreComplete.ToString(), testsAreValidated.ToString(), instantiatedNetworkingManager.ToString());
 
             Assert.IsTrue(testsAreComplete && testsAreValidated && instantiatedNetworkingManager);
         }
