@@ -1,6 +1,7 @@
 namespace MLAPI.Profiling
 {
-    public static class ProfilerConstants {
+    public static class ProfilerConstants
+    {
         public const string NumberOfConnections = nameof(NumberOfConnections);
         public const string ReceiveTickRate = nameof(ReceiveTickRate);
 
