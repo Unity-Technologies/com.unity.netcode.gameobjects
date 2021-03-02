@@ -1,7 +1,8 @@
-using MLAPI;
-using MLAPI.NetworkedVar;
 using UnityEngine;
 using UnityEngine.UI;
+using MLAPI;
+using MLAPI.Spawning;
+using MLAPI.NetworkedVar;
 
 public class InGameManager : NetworkedBehaviour
 {
@@ -122,13 +123,13 @@ public class InGameManager : NetworkedBehaviour
 
     /// <summary>
     /// SetAndInitializeLocalPlayer
+    /// SpawnManager.SpawnedObjects Use Case Scenario:  Parsing through currently spawned NetworkedObjects
     /// Sets our local player, assigns the local main camera instanve to the local player, and
     /// registers all NetworkedObjects with a RandomPlayerMover component for In-Game state changes
     /// </summary>
     void SetAndInitializeLocalPlayer()
     {
-        NetworkedObject[] NetoworkedObjects = GameObject.FindObjectsOfType<NetworkedObject>();
-        foreach(NetworkedObject networkedObject in NetoworkedObjects)
+        foreach(NetworkedObject networkedObject in SpawnManager.SpawnedObjects.Values)
         {
             RandomPlayerMover PlayerMover = networkedObject.GetComponent<RandomPlayerMover>();
 
@@ -146,13 +147,14 @@ public class InGameManager : NetworkedBehaviour
 
     /// <summary>
     /// FreezeAndShowPlayers
+    /// SpawnManager.SpawnedObjects Use Case Scenario:  Parsing through currently spawned NetworkedObjects
     /// This is to handle pausing and unpausing primarily the players' networked object clones not owned by the local player
     /// </summary>
     /// <param name="shouldFreeze">should we freeze everyone or un-freeze them?</param>
     void FreezeAndShowPlayers(bool shouldFreeze = false)
     {
-        NetworkedObject[] NetoworkedObjects = GameObject.FindObjectsOfType<NetworkedObject>();
-        foreach(NetworkedObject networkedObject in NetoworkedObjects)
+
+        foreach(NetworkedObject networkedObject in SpawnManager.SpawnedObjects.Values)
         {
             RandomPlayerMover PlayerMover = networkedObject.GetComponent<RandomPlayerMover>();
 
