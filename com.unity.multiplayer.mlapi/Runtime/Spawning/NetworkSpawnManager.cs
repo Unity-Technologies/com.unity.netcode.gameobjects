@@ -271,7 +271,7 @@ namespace MLAPI.Spawning
                         networkObject.transform.SetParent(parentNetworkObject.transform, true);
                     }
 
-                    if (NetworkSceneManager.s_IsSpawnedObjectsPendingInDontDestroyOnLoad)
+                    if (NetworkSceneManager.IsSpawnedObjectsPendingInDontDestroyOnLoad)
                     {
                         GameObject.DontDestroyOnLoad(networkObject.gameObject);
                     }
@@ -302,7 +302,7 @@ namespace MLAPI.Spawning
                             networkObject.transform.SetParent(parentNetworkObject.transform, true);
                         }
 
-                        if (NetworkSceneManager.s_IsSpawnedObjectsPendingInDontDestroyOnLoad)
+                        if (NetworkSceneManager.IsSpawnedObjectsPendingInDontDestroyOnLoad)
                         {
                             GameObject.DontDestroyOnLoad(networkObject.gameObject);
                         }

@@ -47,9 +47,9 @@ namespace MLAPI.SceneManagement
         private static Scene s_LastScene;
         private static string s_NextSceneName;
         private static bool s_IsSwitching = false;
-        internal static uint s_CurrentSceneIndex = 0;
-        internal static Guid s_CurrentSceneSwitchProgressGuid = new Guid();
-        internal static bool s_IsSpawnedObjectsPendingInDontDestroyOnLoad = false;
+        internal static uint CurrentSceneIndex = 0;
+        internal static Guid CurrentSceneSwitchProgressGuid = new Guid();
+        internal static bool IsSpawnedObjectsPendingInDontDestroyOnLoad = false;
 
         internal static void SetCurrentSceneIndex()
         {
@@ -59,11 +59,11 @@ namespace MLAPI.SceneManagement
                 return;
             }
 
-            s_CurrentSceneIndex = SceneNameToIndex[SceneManager.GetActiveScene().name];
-            s_CurrentActiveSceneIndex = s_CurrentSceneIndex;
+            CurrentSceneIndex = SceneNameToIndex[SceneManager.GetActiveScene().name];
+            CurrentActiveSceneIndex = CurrentSceneIndex;
         }
 
-        internal static uint s_CurrentActiveSceneIndex { get; private set; } = 0;
+        internal static uint CurrentActiveSceneIndex { get; private set; } = 0;
 
         /// <summary>
         /// Adds a scene during runtime.
@@ -112,12 +112,12 @@ namespace MLAPI.SceneManagement
 
             var switchSceneProgress = new SceneSwitchProgress();
             SceneSwitchProgresses.Add(switchSceneProgress.Guid, switchSceneProgress);
-            s_CurrentSceneSwitchProgressGuid = switchSceneProgress.Guid;
+            CurrentSceneSwitchProgressGuid = switchSceneProgress.Guid;
 
             // Move ALL NetworkObjects to the temp scene
             MoveObjectsToDontDestroyOnLoad();
 
-            s_IsSpawnedObjectsPendingInDontDestroyOnLoad = true;
+            IsSpawnedObjectsPendingInDontDestroyOnLoad = true;
 
             // Switch scene
             AsyncOperation sceneLoad = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Single);
@@ -145,7 +145,7 @@ namespace MLAPI.SceneManagement
             // Move ALL NetworkObjects to the temp scene
             MoveObjectsToDontDestroyOnLoad();
 
-            s_IsSpawnedObjectsPendingInDontDestroyOnLoad = true;
+            IsSpawnedObjectsPendingInDontDestroyOnLoad = true;
 
             string sceneName = SceneIndexToString[sceneIndex];
 
@@ -173,9 +173,9 @@ namespace MLAPI.SceneManagement
             s_LastScene = SceneManager.GetActiveScene();
             string sceneName = SceneIndexToString[sceneIndex];
             s_NextSceneName = sceneName;
-            s_CurrentActiveSceneIndex = SceneNameToIndex[sceneName];
+            CurrentActiveSceneIndex = SceneNameToIndex[sceneName];
 
-            s_IsSpawnedObjectsPendingInDontDestroyOnLoad = true;
+            IsSpawnedObjectsPendingInDontDestroyOnLoad = true;
             SceneManager.LoadScene(sceneName);
 
             using (var buffer = PooledNetworkBuffer.Get())
@@ -192,16 +192,16 @@ namespace MLAPI.SceneManagement
 
         private static void OnSceneLoaded(Guid switchSceneGuid, Stream objectStream)
         {
-            s_CurrentActiveSceneIndex = SceneNameToIndex[s_NextSceneName];
+            CurrentActiveSceneIndex = SceneNameToIndex[s_NextSceneName];
             var nextScene = SceneManager.GetSceneByName(s_NextSceneName);
             SceneManager.SetActiveScene(nextScene);
 
             // Move all objects to the new scene
             MoveObjectsToScene(nextScene);
 
-            s_IsSpawnedObjectsPendingInDontDestroyOnLoad = false;
+            IsSpawnedObjectsPendingInDontDestroyOnLoad = false;
 
-            s_CurrentSceneIndex = s_CurrentActiveSceneIndex;
+            CurrentSceneIndex = CurrentActiveSceneIndex;
 
             if (NetworkManager.Singleton.IsServer)
             {
@@ -237,7 +237,7 @@ namespace MLAPI.SceneManagement
                     {
                         using (var writer = PooledNetworkWriter.Get(buffer))
                         {
-                            writer.WriteUInt32Packed(s_CurrentActiveSceneIndex);
+                            writer.WriteUInt32Packed(CurrentActiveSceneIndex);
                             writer.WriteByteArray(switchSceneGuid.ToByteArray());
 
                             uint sceneObjectsToSpawn = 0;

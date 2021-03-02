@@ -136,12 +136,14 @@ public struct MLAPIVersion
     public static MLAPIVersion Parse(string version)
     {
         if (version == "None")
-            return new MLAPIVersion()
+        {
+            return new MLAPIVersion
             {
                 MAJOR = byte.MaxValue,
                 MINOR = byte.MaxValue,
                 PATCH = byte.MaxValue
             };
+        }
 
         string v = version;
         if (version[0] == 'v')

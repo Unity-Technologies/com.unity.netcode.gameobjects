@@ -12,7 +12,7 @@ namespace UnityEditor
         public static void ProcessScene()
         {
             //If we are in playmode (editor or stand alone) we do not want this to execute
-            if(Application.isPlaying)
+            if (Application.isPlaying)
             {
                 return;
             }

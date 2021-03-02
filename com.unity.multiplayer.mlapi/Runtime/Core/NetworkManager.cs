@@ -197,7 +197,7 @@ namespace MLAPI
         /// </summary>
         public string ConnectedHostname { get; private set; }
 
-        internal static event Action s_OnSingletonReady;
+        internal static event Action OnSingletonReady;
 
         private void OnValidate()
         {
@@ -549,7 +549,7 @@ namespace MLAPI
         {
             Singleton = this;
 
-            s_OnSingletonReady?.Invoke();
+            OnSingletonReady?.Invoke();
         }
 
         private void OnEnable()
@@ -1311,8 +1311,8 @@ namespace MLAPI
 
                         if (NetworkConfig.EnableSceneManagement)
                         {
-                            writer.WriteUInt32Packed(NetworkSceneManager.s_CurrentSceneIndex);
-                            writer.WriteByteArray(NetworkSceneManager.s_CurrentSceneSwitchProgressGuid.ToByteArray());
+                            writer.WriteUInt32Packed(NetworkSceneManager.CurrentSceneIndex);
+                            writer.WriteByteArray(NetworkSceneManager.CurrentSceneSwitchProgressGuid.ToByteArray());
                         }
 
                         writer.WriteSinglePacked(Time.realtimeSinceStartup);

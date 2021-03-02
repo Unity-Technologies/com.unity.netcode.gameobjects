@@ -191,7 +191,7 @@ namespace MLAPI.Messaging
                     void OnSceneLoadComplete()
                     {
                         SceneManager.activeSceneChanged -= onSceneLoaded;
-                        NetworkSceneManager.s_IsSpawnedObjectsPendingInDontDestroyOnLoad = false;
+                        NetworkSceneManager.IsSpawnedObjectsPendingInDontDestroyOnLoad = false;
                         DelayedSpawnAction(continuationBuffer);
                     }
 

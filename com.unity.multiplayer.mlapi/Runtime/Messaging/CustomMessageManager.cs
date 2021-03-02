@@ -29,10 +29,7 @@ namespace MLAPI.Messaging
         /// </summary>
         public static event UnnamedMessageDelegate OnUnnamedMessage;
 
-        internal static void InvokeUnnamedMessage(ulong clientId, Stream stream)
-        {
-            OnUnnamedMessage?.Invoke(clientId, stream);
-        }
+        internal static void InvokeUnnamedMessage(ulong clientId, Stream stream) => OnUnnamedMessage?.Invoke(clientId, stream);
 
         /// <summary>
         /// Sends unnamed message to a list of clients
