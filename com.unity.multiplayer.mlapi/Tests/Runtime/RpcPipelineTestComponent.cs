@@ -152,7 +152,7 @@ namespace MLAPI.RuntimeTests
         {
             Debug.Log("[HostClient][ServerRpc] invoked during the " + parameters.Receive.UpdateStage.ToString() + " stage.");
             m_Clientparams.Send.UpdateStage = parameters.Receive.UpdateStage;
-            m_ServerStagesReceived.Add(parameters.Send.UpdateStage);
+            m_ServerStagesReceived.Add(parameters.Receive.UpdateStage);
             PingMySelfClientRpc(m_Clientparams);
         }
 
@@ -163,7 +163,7 @@ namespace MLAPI.RuntimeTests
         [ClientRpc]
         void PingMySelfClientRpc(ClientRpcParams parameters)
         {
-            m_ClientStagesReceived.Add(parameters.Send.UpdateStage);
+            m_ClientStagesReceived.Add(parameters.Receive.UpdateStage);
             Debug.Log("[HostServer][ClientRpc] invoked during the " + parameters.Receive.UpdateStage.ToString() + " stage. (previous output line should confirm this)");
 
             //If we reached the last update state, then go ahead and increment our iteration counter
