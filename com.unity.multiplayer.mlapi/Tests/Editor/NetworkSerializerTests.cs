@@ -11,9 +11,9 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeBool()
         {
-            using (var outStream = PooledNetworkStream.Get())
+            using (var outStream = PooledNetworkBuffer.Get())
             using (var outWriter = PooledNetworkWriter.Get(outStream))
-            using (var inStream = PooledNetworkStream.Get())
+            using (var inStream = PooledNetworkBuffer.Get())
             using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
@@ -41,9 +41,9 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeChar()
         {
-            using (var outStream = PooledNetworkStream.Get())
+            using (var outStream = PooledNetworkBuffer.Get())
             using (var outWriter = PooledNetworkWriter.Get(outStream))
-            using (var inStream = PooledNetworkStream.Get())
+            using (var inStream = PooledNetworkBuffer.Get())
             using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
@@ -76,9 +76,9 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeSbyte()
         {
-            using (var outStream = PooledNetworkStream.Get())
+            using (var outStream = PooledNetworkBuffer.Get())
             using (var outWriter = PooledNetworkWriter.Get(outStream))
-            using (var inStream = PooledNetworkStream.Get())
+            using (var inStream = PooledNetworkBuffer.Get())
             using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
@@ -111,9 +111,9 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeByte()
         {
-            using (var outStream = PooledNetworkStream.Get())
+            using (var outStream = PooledNetworkBuffer.Get())
             using (var outWriter = PooledNetworkWriter.Get(outStream))
-            using (var inStream = PooledNetworkStream.Get())
+            using (var inStream = PooledNetworkBuffer.Get())
             using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
@@ -146,9 +146,9 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeShort()
         {
-            using (var outStream = PooledNetworkStream.Get())
+            using (var outStream = PooledNetworkBuffer.Get())
             using (var outWriter = PooledNetworkWriter.Get(outStream))
-            using (var inStream = PooledNetworkStream.Get())
+            using (var inStream = PooledNetworkBuffer.Get())
             using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
@@ -181,9 +181,9 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeUshort()
         {
-            using (var outStream = PooledNetworkStream.Get())
+            using (var outStream = PooledNetworkBuffer.Get())
             using (var outWriter = PooledNetworkWriter.Get(outStream))
-            using (var inStream = PooledNetworkStream.Get())
+            using (var inStream = PooledNetworkBuffer.Get())
             using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
@@ -216,9 +216,9 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeInt()
         {
-            using (var outStream = PooledNetworkStream.Get())
+            using (var outStream = PooledNetworkBuffer.Get())
             using (var outWriter = PooledNetworkWriter.Get(outStream))
-            using (var inStream = PooledNetworkStream.Get())
+            using (var inStream = PooledNetworkBuffer.Get())
             using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
@@ -251,9 +251,9 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeUint()
         {
-            using (var outStream = PooledNetworkStream.Get())
+            using (var outStream = PooledNetworkBuffer.Get())
             using (var outWriter = PooledNetworkWriter.Get(outStream))
-            using (var inStream = PooledNetworkStream.Get())
+            using (var inStream = PooledNetworkBuffer.Get())
             using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
@@ -286,9 +286,9 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeLong()
         {
-            using (var outStream = PooledNetworkStream.Get())
+            using (var outStream = PooledNetworkBuffer.Get())
             using (var outWriter = PooledNetworkWriter.Get(outStream))
-            using (var inStream = PooledNetworkStream.Get())
+            using (var inStream = PooledNetworkBuffer.Get())
             using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
@@ -321,9 +321,9 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeUlong()
         {
-            using (var outStream = PooledNetworkStream.Get())
+            using (var outStream = PooledNetworkBuffer.Get())
             using (var outWriter = PooledNetworkWriter.Get(outStream))
-            using (var inStream = PooledNetworkStream.Get())
+            using (var inStream = PooledNetworkBuffer.Get())
             using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
@@ -356,9 +356,9 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeFloat()
         {
-            using (var outStream = PooledNetworkStream.Get())
+            using (var outStream = PooledNetworkBuffer.Get())
             using (var outWriter = PooledNetworkWriter.Get(outStream))
-            using (var inStream = PooledNetworkStream.Get())
+            using (var inStream = PooledNetworkBuffer.Get())
             using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
@@ -391,9 +391,9 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeDouble()
         {
-            using (var outStream = PooledNetworkStream.Get())
+            using (var outStream = PooledNetworkBuffer.Get())
             using (var outWriter = PooledNetworkWriter.Get(outStream))
-            using (var inStream = PooledNetworkStream.Get())
+            using (var inStream = PooledNetworkBuffer.Get())
             using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
@@ -426,9 +426,9 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeString()
         {
-            using (var outStream = PooledNetworkStream.Get())
+            using (var outStream = PooledNetworkBuffer.Get())
             using (var outWriter = PooledNetworkWriter.Get(outStream))
-            using (var inStream = PooledNetworkStream.Get())
+            using (var inStream = PooledNetworkBuffer.Get())
             using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
@@ -461,9 +461,9 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeColor()
         {
-            using (var outStream = PooledNetworkStream.Get())
+            using (var outStream = PooledNetworkBuffer.Get())
             using (var outWriter = PooledNetworkWriter.Get(outStream))
-            using (var inStream = PooledNetworkStream.Get())
+            using (var inStream = PooledNetworkBuffer.Get())
             using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
@@ -496,9 +496,9 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeColor32()
         {
-            using (var outStream = PooledNetworkStream.Get())
+            using (var outStream = PooledNetworkBuffer.Get())
             using (var outWriter = PooledNetworkWriter.Get(outStream))
-            using (var inStream = PooledNetworkStream.Get())
+            using (var inStream = PooledNetworkBuffer.Get())
             using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
@@ -531,9 +531,9 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeVector2()
         {
-            using (var outStream = PooledNetworkStream.Get())
+            using (var outStream = PooledNetworkBuffer.Get())
             using (var outWriter = PooledNetworkWriter.Get(outStream))
-            using (var inStream = PooledNetworkStream.Get())
+            using (var inStream = PooledNetworkBuffer.Get())
             using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
@@ -566,9 +566,9 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeVector3()
         {
-            using (var outStream = PooledNetworkStream.Get())
+            using (var outStream = PooledNetworkBuffer.Get())
             using (var outWriter = PooledNetworkWriter.Get(outStream))
-            using (var inStream = PooledNetworkStream.Get())
+            using (var inStream = PooledNetworkBuffer.Get())
             using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
@@ -601,9 +601,9 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeVector4()
         {
-            using (var outStream = PooledNetworkStream.Get())
+            using (var outStream = PooledNetworkBuffer.Get())
             using (var outWriter = PooledNetworkWriter.Get(outStream))
-            using (var inStream = PooledNetworkStream.Get())
+            using (var inStream = PooledNetworkBuffer.Get())
             using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
@@ -636,9 +636,9 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeQuaternion()
         {
-            using (var outStream = PooledNetworkStream.Get())
+            using (var outStream = PooledNetworkBuffer.Get())
             using (var outWriter = PooledNetworkWriter.Get(outStream))
-            using (var inStream = PooledNetworkStream.Get())
+            using (var inStream = PooledNetworkBuffer.Get())
             using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
@@ -671,9 +671,9 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeRay()
         {
-            using (var outStream = PooledNetworkStream.Get())
+            using (var outStream = PooledNetworkBuffer.Get())
             using (var outWriter = PooledNetworkWriter.Get(outStream))
-            using (var inStream = PooledNetworkStream.Get())
+            using (var inStream = PooledNetworkBuffer.Get())
             using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
@@ -706,9 +706,9 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeRay2D()
         {
-            using (var outStream = PooledNetworkStream.Get())
+            using (var outStream = PooledNetworkBuffer.Get())
             using (var outWriter = PooledNetworkWriter.Get(outStream))
-            using (var inStream = PooledNetworkStream.Get())
+            using (var inStream = PooledNetworkBuffer.Get())
             using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
@@ -771,9 +771,9 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeEnum()
         {
-            using (var outStream = PooledNetworkStream.Get())
+            using (var outStream = PooledNetworkBuffer.Get())
             using (var outWriter = PooledNetworkWriter.Get(outStream))
-            using (var inStream = PooledNetworkStream.Get())
+            using (var inStream = PooledNetworkBuffer.Get())
             using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
@@ -816,9 +816,9 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeBoolArray()
         {
-            using (var outStream = PooledNetworkStream.Get())
+            using (var outStream = PooledNetworkBuffer.Get())
             using (var outWriter = PooledNetworkWriter.Get(outStream))
-            using (var inStream = PooledNetworkStream.Get())
+            using (var inStream = PooledNetworkBuffer.Get())
             using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
@@ -851,9 +851,9 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeCharArray()
         {
-            using (var outStream = PooledNetworkStream.Get())
+            using (var outStream = PooledNetworkBuffer.Get())
             using (var outWriter = PooledNetworkWriter.Get(outStream))
-            using (var inStream = PooledNetworkStream.Get())
+            using (var inStream = PooledNetworkBuffer.Get())
             using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
@@ -886,9 +886,9 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeSbyteArray()
         {
-            using (var outStream = PooledNetworkStream.Get())
+            using (var outStream = PooledNetworkBuffer.Get())
             using (var outWriter = PooledNetworkWriter.Get(outStream))
-            using (var inStream = PooledNetworkStream.Get())
+            using (var inStream = PooledNetworkBuffer.Get())
             using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
@@ -921,9 +921,9 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeByteArray()
         {
-            using (var outStream = PooledNetworkStream.Get())
+            using (var outStream = PooledNetworkBuffer.Get())
             using (var outWriter = PooledNetworkWriter.Get(outStream))
-            using (var inStream = PooledNetworkStream.Get())
+            using (var inStream = PooledNetworkBuffer.Get())
             using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
@@ -956,9 +956,9 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeShortArray()
         {
-            using (var outStream = PooledNetworkStream.Get())
+            using (var outStream = PooledNetworkBuffer.Get())
             using (var outWriter = PooledNetworkWriter.Get(outStream))
-            using (var inStream = PooledNetworkStream.Get())
+            using (var inStream = PooledNetworkBuffer.Get())
             using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
@@ -991,9 +991,9 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeUshortArray()
         {
-            using (var outStream = PooledNetworkStream.Get())
+            using (var outStream = PooledNetworkBuffer.Get())
             using (var outWriter = PooledNetworkWriter.Get(outStream))
-            using (var inStream = PooledNetworkStream.Get())
+            using (var inStream = PooledNetworkBuffer.Get())
             using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
@@ -1026,9 +1026,9 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeIntArray()
         {
-            using (var outStream = PooledNetworkStream.Get())
+            using (var outStream = PooledNetworkBuffer.Get())
             using (var outWriter = PooledNetworkWriter.Get(outStream))
-            using (var inStream = PooledNetworkStream.Get())
+            using (var inStream = PooledNetworkBuffer.Get())
             using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
@@ -1061,9 +1061,9 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeUintArray()
         {
-            using (var outStream = PooledNetworkStream.Get())
+            using (var outStream = PooledNetworkBuffer.Get())
             using (var outWriter = PooledNetworkWriter.Get(outStream))
-            using (var inStream = PooledNetworkStream.Get())
+            using (var inStream = PooledNetworkBuffer.Get())
             using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
@@ -1096,9 +1096,9 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeLongArray()
         {
-            using (var outStream = PooledNetworkStream.Get())
+            using (var outStream = PooledNetworkBuffer.Get())
             using (var outWriter = PooledNetworkWriter.Get(outStream))
-            using (var inStream = PooledNetworkStream.Get())
+            using (var inStream = PooledNetworkBuffer.Get())
             using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
@@ -1131,9 +1131,9 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeUlongArray()
         {
-            using (var outStream = PooledNetworkStream.Get())
+            using (var outStream = PooledNetworkBuffer.Get())
             using (var outWriter = PooledNetworkWriter.Get(outStream))
-            using (var inStream = PooledNetworkStream.Get())
+            using (var inStream = PooledNetworkBuffer.Get())
             using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
@@ -1166,9 +1166,9 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeFloatArray()
         {
-            using (var outStream = PooledNetworkStream.Get())
+            using (var outStream = PooledNetworkBuffer.Get())
             using (var outWriter = PooledNetworkWriter.Get(outStream))
-            using (var inStream = PooledNetworkStream.Get())
+            using (var inStream = PooledNetworkBuffer.Get())
             using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
@@ -1201,9 +1201,9 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeDoubleArray()
         {
-            using (var outStream = PooledNetworkStream.Get())
+            using (var outStream = PooledNetworkBuffer.Get())
             using (var outWriter = PooledNetworkWriter.Get(outStream))
-            using (var inStream = PooledNetworkStream.Get())
+            using (var inStream = PooledNetworkBuffer.Get())
             using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
@@ -1236,9 +1236,9 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeStringArray()
         {
-            using (var outStream = PooledNetworkStream.Get())
+            using (var outStream = PooledNetworkBuffer.Get())
             using (var outWriter = PooledNetworkWriter.Get(outStream))
-            using (var inStream = PooledNetworkStream.Get())
+            using (var inStream = PooledNetworkBuffer.Get())
             using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
@@ -1271,9 +1271,9 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeColorArray()
         {
-            using (var outStream = PooledNetworkStream.Get())
+            using (var outStream = PooledNetworkBuffer.Get())
             using (var outWriter = PooledNetworkWriter.Get(outStream))
-            using (var inStream = PooledNetworkStream.Get())
+            using (var inStream = PooledNetworkBuffer.Get())
             using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
@@ -1306,9 +1306,9 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeColor32Array()
         {
-            using (var outStream = PooledNetworkStream.Get())
+            using (var outStream = PooledNetworkBuffer.Get())
             using (var outWriter = PooledNetworkWriter.Get(outStream))
-            using (var inStream = PooledNetworkStream.Get())
+            using (var inStream = PooledNetworkBuffer.Get())
             using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
@@ -1346,9 +1346,9 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeVector2Array()
         {
-            using (var outStream = PooledNetworkStream.Get())
+            using (var outStream = PooledNetworkBuffer.Get())
             using (var outWriter = PooledNetworkWriter.Get(outStream))
-            using (var inStream = PooledNetworkStream.Get())
+            using (var inStream = PooledNetworkBuffer.Get())
             using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
@@ -1381,9 +1381,9 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeVector3Array()
         {
-            using (var outStream = PooledNetworkStream.Get())
+            using (var outStream = PooledNetworkBuffer.Get())
             using (var outWriter = PooledNetworkWriter.Get(outStream))
-            using (var inStream = PooledNetworkStream.Get())
+            using (var inStream = PooledNetworkBuffer.Get())
             using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
@@ -1416,9 +1416,9 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeVector4Array()
         {
-            using (var outStream = PooledNetworkStream.Get())
+            using (var outStream = PooledNetworkBuffer.Get())
             using (var outWriter = PooledNetworkWriter.Get(outStream))
-            using (var inStream = PooledNetworkStream.Get())
+            using (var inStream = PooledNetworkBuffer.Get())
             using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
@@ -1451,9 +1451,9 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeQuaternionArray()
         {
-            using (var outStream = PooledNetworkStream.Get())
+            using (var outStream = PooledNetworkBuffer.Get())
             using (var outWriter = PooledNetworkWriter.Get(outStream))
-            using (var inStream = PooledNetworkStream.Get())
+            using (var inStream = PooledNetworkBuffer.Get())
             using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
@@ -1489,9 +1489,9 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeRayArray()
         {
-            using (var outStream = PooledNetworkStream.Get())
+            using (var outStream = PooledNetworkBuffer.Get())
             using (var outWriter = PooledNetworkWriter.Get(outStream))
-            using (var inStream = PooledNetworkStream.Get())
+            using (var inStream = PooledNetworkBuffer.Get())
             using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
@@ -1529,9 +1529,9 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeRay2DArray()
         {
-            using (var outStream = PooledNetworkStream.Get())
+            using (var outStream = PooledNetworkBuffer.Get())
             using (var outWriter = PooledNetworkWriter.Get(outStream))
-            using (var inStream = PooledNetworkStream.Get())
+            using (var inStream = PooledNetworkBuffer.Get())
             using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
@@ -1569,9 +1569,9 @@ namespace MLAPI.EditorTests
         [Test]
         public void SerializeEnumArray()
         {
-            using (var outStream = PooledNetworkStream.Get())
+            using (var outStream = PooledNetworkBuffer.Get())
             using (var outWriter = PooledNetworkWriter.Get(outStream))
-            using (var inStream = PooledNetworkStream.Get())
+            using (var inStream = PooledNetworkBuffer.Get())
             using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize

@@ -38,9 +38,9 @@ namespace MLAPI.Messaging
         /// Sends unnamed message to a list of clients
         /// </summary>
         /// <param name="clientIds">The clients to send to, sends to everyone if null</param>
-        /// <param name="stream">The message stream containing the data</param>
+        /// <param name="buffer">The message stream containing the data</param>
         /// <param name="networkChannel">The channel to send the data on</param>
-        public static void SendUnnamedMessage(List<ulong> clientIds, NetworkStream stream, NetworkChannel networkChannel = NetworkChannel.Internal)
+        public static void SendUnnamedMessage(List<ulong> clientIds, NetworkBuffer buffer, NetworkChannel networkChannel = NetworkChannel.Internal)
         {
             if (!NetworkManager.Singleton.IsServer)
             {
@@ -48,18 +48,18 @@ namespace MLAPI.Messaging
                 return;
             }
 
-            InternalMessageSender.Send(NetworkConstants.k_UNNAMED_MESSAGE, networkChannel, clientIds, stream);
+            InternalMessageSender.Send(NetworkConstants.k_UNNAMED_MESSAGE, networkChannel, clientIds, buffer);
         }
 
         /// <summary>
         /// Sends a unnamed message to a specific client
         /// </summary>
         /// <param name="clientId">The client to send the message to</param>
-        /// <param name="stream">The message stream containing the data</param>
+        /// <param name="buffer">The message stream containing the data</param>
         /// <param name="networkChannel">The channel tos end the data on</param>
-        public static void SendUnnamedMessage(ulong clientId, NetworkStream stream, NetworkChannel networkChannel = NetworkChannel.Internal)
+        public static void SendUnnamedMessage(ulong clientId, NetworkBuffer buffer, NetworkChannel networkChannel = NetworkChannel.Internal)
         {
-            InternalMessageSender.Send(clientId, NetworkConstants.k_UNNAMED_MESSAGE, networkChannel, stream);
+            InternalMessageSender.Send(clientId, NetworkConstants.k_UNNAMED_MESSAGE, networkChannel, buffer);
         }
 
         #endregion
@@ -169,16 +169,16 @@ namespace MLAPI.Messaging
                     break;
             }
 
-            using (PooledNetworkStream messageStream = PooledNetworkStream.Get())
+            using (PooledNetworkBuffer messageBuffer = PooledNetworkBuffer.Get())
             {
-                using (PooledNetworkWriter writer = PooledNetworkWriter.Get(messageStream))
+                using (PooledNetworkWriter writer = PooledNetworkWriter.Get(messageBuffer))
                 {
                     writer.WriteUInt64Packed(hash);
                 }
 
-                messageStream.CopyFrom(stream);
+                messageBuffer.CopyFrom(stream);
 
-                InternalMessageSender.Send(clientId, NetworkConstants.k_NAMED_MESSAGE, networkChannel, messageStream);
+                InternalMessageSender.Send(clientId, NetworkConstants.k_NAMED_MESSAGE, networkChannel, messageBuffer);
             }
         }
 
@@ -205,14 +205,14 @@ namespace MLAPI.Messaging
                     break;
             }
 
-            using (PooledNetworkStream messageStream = PooledNetworkStream.Get())
+            using (PooledNetworkBuffer messageBuffer = PooledNetworkBuffer.Get())
             {
-                using (PooledNetworkWriter writer = PooledNetworkWriter.Get(messageStream))
+                using (PooledNetworkWriter writer = PooledNetworkWriter.Get(messageBuffer))
                 {
                     writer.WriteUInt64Packed(hash);
                 }
 
-                messageStream.CopyFrom(stream);
+                messageBuffer.CopyFrom(stream);
 
                 if (!NetworkManager.Singleton.IsServer)
                 {
@@ -220,7 +220,7 @@ namespace MLAPI.Messaging
                     return;
                 }
 
-                InternalMessageSender.Send(NetworkConstants.k_NAMED_MESSAGE, networkChannel, clientIds, messageStream);
+                InternalMessageSender.Send(NetworkConstants.k_NAMED_MESSAGE, networkChannel, clientIds, messageBuffer);
             }
         }
 

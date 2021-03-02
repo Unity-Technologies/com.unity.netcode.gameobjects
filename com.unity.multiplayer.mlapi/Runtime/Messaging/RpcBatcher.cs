@@ -15,14 +15,14 @@ namespace MLAPI.Messaging
         public class SendStream
         {
             public NetworkChannel NetworkChannel;
-            public PooledNetworkStream Stream;
+            public PooledNetworkBuffer Buffer;
             public PooledNetworkWriter Writer;
             public bool IsEmpty = true;
 
             public SendStream()
             {
-                Stream = PooledNetworkStream.Get();
-                Writer = PooledNetworkWriter.Get(Stream);
+                Buffer = PooledNetworkBuffer.Get();
+                Writer = PooledNetworkWriter.Get(Buffer);
             }
         }
 
@@ -51,9 +51,9 @@ namespace MLAPI.Messaging
             }
         }
 
-        private int PopLength(in NetworkStream messageStream)
+        private int PopLength(in NetworkBuffer messageBuffer)
         {
-            int read = messageStream.ReadByte();
+            int read = messageBuffer.ReadByte();
             // if we read a non-zero value, we have a single byte length
             // or a -1 error we can return
             if (read != k_LongLenMarker)
@@ -62,14 +62,14 @@ namespace MLAPI.Messaging
             }
 
             // otherwise, a two-byte length follows. We'll read in len1, len2
-            int len1 = messageStream.ReadByte();
+            int len1 = messageBuffer.ReadByte();
             if (len1 < 0)
             {
                 // pass errors back to caller
                 return len1;
             }
 
-            int len2 = messageStream.ReadByte();
+            int len2 = messageBuffer.ReadByte();
             if (len2 < 0)
             {
                 // pass errors back to caller
@@ -152,7 +152,7 @@ namespace MLAPI.Messaging
         }
 
         public delegate void SendCallbackType(ulong clientId, SendStream messageStream);
-        public delegate void ReceiveCallbackType(NetworkStream messageStream, RpcQueueContainer.QueueItemType messageType, ulong clientId, float receiveTime);
+        public delegate void ReceiveCallbackType(NetworkBuffer messageBuffer, RpcQueueContainer.QueueItemType messageType, ulong clientId, float receiveTime);
 
         /// <summary>
         /// SendItems
@@ -167,14 +167,14 @@ namespace MLAPI.Messaging
                 if (!entry.Value.IsEmpty)
                 {
                     // read the queued message
-                    int length = (int)SendDict[entry.Key].Stream.Length;
+                    int length = (int)SendDict[entry.Key].Buffer.Length;
 
                     if (length >= thresholdBytes)
                     {
                         sendCallback(entry.Key, entry.Value);
                         // clear the batch that was sent from the SendDict
-                        entry.Value.Stream.SetLength(0);
-                        entry.Value.Stream.Position = 0;
+                        entry.Value.Buffer.SetLength(0);
+                        entry.Value.Buffer.Position = 0;
                         entry.Value.IsEmpty = true;
                         ProfilerStatManager.rpcBatchesSent.Record();
                         PerformanceDataManager.Increment(ProfilerConstants.NumberOfRPCBatchesSent);
@@ -187,19 +187,19 @@ namespace MLAPI.Messaging
         /// ReceiveItems
         /// Process the messageStream and call the callback with individual RPC messages
         /// </summary>
-        /// <param name="messageStream"> the messageStream containing the batched RPC</param>
+        /// <param name="messageBuffer"> the messageStream containing the batched RPC</param>
         /// <param name="receiveCallback"> the callback to call has type int f(message, type, clientId, time) </param>
         /// <param name="messageType"> the message type to pass back to callback</param>
         /// <param name="clientId"> the clientId to pass back to callback</param>
         /// <param name="receiveTime"> the packet receive time to pass back to callback</param>
-        public void ReceiveItems(in NetworkStream messageStream, ReceiveCallbackType receiveCallback, RpcQueueContainer.QueueItemType messageType, ulong clientId, float receiveTime)
+        public void ReceiveItems(in NetworkBuffer messageBuffer, ReceiveCallbackType receiveCallback, RpcQueueContainer.QueueItemType messageType, ulong clientId, float receiveTime)
         {
-            using (var copy = PooledNetworkStream.Get())
+            using (var copy = PooledNetworkBuffer.Get())
             {
                 do
                 {
                     // read the length of the next RPC
-                    int rpcSize = PopLength(messageStream);
+                    int rpcSize = PopLength(messageBuffer);
                     if (rpcSize < 0)
                     {
                         // abort if there's an error reading lengths
@@ -207,17 +207,17 @@ namespace MLAPI.Messaging
                     }
 
                     // copy what comes after current stream position
-                    long position = messageStream.Position;
+                    long position = messageBuffer.Position;
                     copy.SetLength(rpcSize);
                     copy.Position = 0;
-                    Buffer.BlockCopy(messageStream.GetBuffer(), (int)position, copy.GetBuffer(), 0, rpcSize);
+                    Buffer.BlockCopy(messageBuffer.GetBuffer(), (int)position, copy.GetBuffer(), 0, rpcSize);
 
                     receiveCallback(copy, messageType, clientId, receiveTime);
 
                     // seek over the RPC
                     // RPCReceiveQueueItem peeks at content, it doesn't advance
-                    messageStream.Seek(rpcSize, SeekOrigin.Current);
-                } while (messageStream.Position < messageStream.Length);
+                    messageBuffer.Seek(rpcSize, SeekOrigin.Current);
+                } while (messageBuffer.Position < messageBuffer.Length);
             }
         }
     }

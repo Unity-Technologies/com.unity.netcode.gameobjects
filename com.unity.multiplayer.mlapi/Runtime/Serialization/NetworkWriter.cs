@@ -14,12 +14,12 @@ namespace MLAPI.Serialization
 {
     // Improved version of NetworkWriter
     /// <summary>
-    /// A BinaryWriter that can do bit wise manipulation when backed by a NetworkStream
+    /// A BinaryWriter that can do bit wise manipulation when backed by a NetworkBuffer
     /// </summary>
     public class NetworkWriter
     {
         private Stream sink;
-        private NetworkStream networkSink;
+        private NetworkBuffer networkSink;
 
         /// <summary>
         /// Creates a new NetworkWriter backed by a given stream
@@ -28,7 +28,7 @@ namespace MLAPI.Serialization
         public NetworkWriter(Stream stream)
         {
             sink = stream;
-            networkSink = stream as NetworkStream;
+            networkSink = stream as NetworkBuffer;
         }
 
         /// <summary>
@@ -38,7 +38,7 @@ namespace MLAPI.Serialization
         public void SetStream(Stream stream)
         {
             sink = stream;
-            networkSink = stream as NetworkStream;
+            networkSink = stream as NetworkBuffer;
         }
 
         internal Stream GetStream()
@@ -496,7 +496,7 @@ namespace MLAPI.Serialization
         /// <param name="bit"></param>
         public void WriteBit(bool bit)
         {
-            if (networkSink == null) throw new InvalidOperationException($"Cannot write bits on a non-{nameof(NetworkStream)} stream");
+            if (networkSink == null) throw new InvalidOperationException($"Cannot write bits on a non-{nameof(NetworkBuffer)} stream");
             networkSink.WriteBit(bit);
         }
 
@@ -545,7 +545,7 @@ namespace MLAPI.Serialization
         /// <param name="bitCount">Amount of bits to write</param>
         public void WriteBits(ulong value, int bitCount)
         {
-            if (networkSink == null) throw new InvalidOperationException($"Cannot write bits on a non-{nameof(NetworkStream)} stream");
+            if (networkSink == null) throw new InvalidOperationException($"Cannot write bits on a non-{nameof(NetworkBuffer)} stream");
             if (bitCount > 64) throw new ArgumentOutOfRangeException("Cannot read more than 64 bits from a 64-bit value!");
             if (bitCount < 0) throw new ArgumentOutOfRangeException("Cannot read fewer than 0 bits!");
             int count = 0;
@@ -561,7 +561,7 @@ namespace MLAPI.Serialization
         /// <param name="bitCount">Amount of bits to write.</param>
         public void WriteBits(byte value, int bitCount)
         {
-            if (networkSink == null) throw new InvalidOperationException($"Cannot write bits on a non-{nameof(NetworkStream)} stream");
+            if (networkSink == null) throw new InvalidOperationException($"Cannot write bits on a non-{nameof(NetworkBuffer)} stream");
             for (int i = 0; i < bitCount; ++i)
                 networkSink.WriteBit(((value >> i) & 1) != 0);
         }

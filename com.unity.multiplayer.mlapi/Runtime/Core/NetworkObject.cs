@@ -246,9 +246,9 @@ namespace MLAPI
                 }
             }
 
-            using (PooledNetworkStream stream = PooledNetworkStream.Get())
+            using (PooledNetworkBuffer buffer = PooledNetworkBuffer.Get())
             {
-                using (PooledNetworkWriter writer = PooledNetworkWriter.Get(stream))
+                using (PooledNetworkWriter writer = PooledNetworkWriter.Get(buffer))
                 {
                     writer.WriteUInt16Packed((ushort)networkObjects.Count);
                 }
@@ -258,10 +258,10 @@ namespace MLAPI
                     // Send spawn call
                     networkObjects[i].observers.Add(clientId);
 
-                    NetworkSpawnManager.WriteSpawnCallForObject(stream, clientId, networkObjects[i], payload);
+                    NetworkSpawnManager.WriteSpawnCallForObject(buffer, clientId, networkObjects[i], payload);
                 }
 
-                InternalMessageSender.Send(clientId, NetworkConstants.k_ADD_OBJECTS, NetworkChannel.Internal, stream);
+                InternalMessageSender.Send(clientId, NetworkConstants.k_ADD_OBJECTS, NetworkChannel.Internal, buffer);
             }
         }
 
@@ -295,13 +295,13 @@ namespace MLAPI
             // Send destroy call
             observers.Remove(clientId);
 
-            using (PooledNetworkStream stream = PooledNetworkStream.Get())
+            using (PooledNetworkBuffer buffer = PooledNetworkBuffer.Get())
             {
-                using (PooledNetworkWriter writer = PooledNetworkWriter.Get(stream))
+                using (PooledNetworkWriter writer = PooledNetworkWriter.Get(buffer))
                 {
                     writer.WriteUInt64Packed(NetworkId);
 
-                    InternalMessageSender.Send(clientId, NetworkConstants.k_DESTROY_OBJECT, NetworkChannel.Internal, stream);
+                    InternalMessageSender.Send(clientId, NetworkConstants.k_DESTROY_OBJECT, NetworkChannel.Internal, buffer);
                 }
             }
         }
@@ -338,9 +338,9 @@ namespace MLAPI
             }
 
 
-            using (PooledNetworkStream stream = PooledNetworkStream.Get())
+            using (PooledNetworkBuffer buffer = PooledNetworkBuffer.Get())
             {
-                using (PooledNetworkWriter writer = PooledNetworkWriter.Get(stream))
+                using (PooledNetworkWriter writer = PooledNetworkWriter.Get(buffer))
                 {
                     writer.WriteUInt16Packed((ushort)networkObjects.Count);
 
@@ -353,7 +353,7 @@ namespace MLAPI
                     }
                 }
 
-                InternalMessageSender.Send(clientId, NetworkConstants.k_DESTROY_OBJECTS, NetworkChannel.Internal, stream);
+                InternalMessageSender.Send(clientId, NetworkConstants.k_DESTROY_OBJECTS, NetworkChannel.Internal, buffer);
             }
         }
 

@@ -15,12 +15,12 @@ using UnityEngine;
 namespace MLAPI.Serialization
 {
     /// <summary>
-    /// A BinaryReader that can do bit wise manipulation when backed by a NetworkStream
+    /// A BinaryReader that can do bit wise manipulation when backed by a NetworkBuffer
     /// </summary>
     public class NetworkReader
     {
         private Stream source;
-        private NetworkStream networkSource;
+        private NetworkBuffer networkSource;
 
         /// <summary>
         /// Creates a new NetworkReader backed by a given stream
@@ -29,7 +29,7 @@ namespace MLAPI.Serialization
         public NetworkReader(Stream stream)
         {
             source = stream;
-            networkSource = stream as NetworkStream;
+            networkSource = stream as NetworkBuffer;
         }
 
         /// <summary>
@@ -39,7 +39,7 @@ namespace MLAPI.Serialization
         public void SetStream(Stream stream)
         {
             source = stream;
-            networkSource = stream as NetworkStream;
+            networkSource = stream as NetworkBuffer;
         }
 
         /// <summary>
@@ -62,7 +62,7 @@ namespace MLAPI.Serialization
         {
             if (networkSource == null)
             {
-                throw new InvalidOperationException($"Cannot read bits on a non-{nameof(NetworkStream)} stream");
+                throw new InvalidOperationException($"Cannot read bits on a non-{nameof(NetworkBuffer)} stream");
             }
 
             return networkSource.ReadBit();
@@ -90,7 +90,7 @@ namespace MLAPI.Serialization
         {
             if (networkSource == null)
             {
-                throw new InvalidOperationException($"Cannot read bits on a non-{nameof(NetworkStream)} stream");
+                throw new InvalidOperationException($"Cannot read bits on a non-{nameof(NetworkBuffer)} stream");
             }
 
             while (!networkSource.BitAligned) ReadBit();
@@ -434,7 +434,7 @@ namespace MLAPI.Serialization
         /// <returns>The bits that were read</returns>
         public ulong ReadBits(int bitCount)
         {
-            if (networkSource == null) throw new InvalidOperationException($"Cannot read bits on a non-{nameof(NetworkStream)} stream");
+            if (networkSource == null) throw new InvalidOperationException($"Cannot read bits on a non-{nameof(NetworkBuffer)} stream");
             if (bitCount > 64) throw new ArgumentOutOfRangeException("Cannot read more than 64 bits into a 64-bit value!");
             if (bitCount < 0) throw new ArgumentOutOfRangeException("Cannot read fewer than 0 bits!");
             ulong read = 0;
@@ -450,7 +450,7 @@ namespace MLAPI.Serialization
         /// <returns>The bits that were read</returns>
         public byte ReadByteBits(int bitCount)
         {
-            if (networkSource == null) throw new InvalidOperationException($"Cannot read bits on a non-{nameof(NetworkStream)} stream");
+            if (networkSource == null) throw new InvalidOperationException($"Cannot read bits on a non-{nameof(NetworkBuffer)} stream");
             if (bitCount > 8) throw new ArgumentOutOfRangeException("Cannot read more than 8 bits into an 8-bit value!");
             if (bitCount < 0) throw new ArgumentOutOfRangeException("Cannot read fewer than 0 bits!");
 
@@ -468,7 +468,7 @@ namespace MLAPI.Serialization
         /// <returns>The nibble that was read</returns>
         public byte ReadNibble(bool asUpper)
         {
-            if (networkSource == null) throw new InvalidOperationException($"Cannot read bits on a non-{nameof(NetworkStream)} stream");
+            if (networkSource == null) throw new InvalidOperationException($"Cannot read bits on a non-{nameof(NetworkBuffer)} stream");
             ByteBool convert = new ByteBool();
 
             byte result = (byte)(
@@ -488,7 +488,7 @@ namespace MLAPI.Serialization
         /// <returns>The nibble that was read</returns>
         public byte ReadNibble()
         {
-            if (networkSource == null) throw new InvalidOperationException($"Cannot read bits on a non-{nameof(NetworkStream)} stream");
+            if (networkSource == null) throw new InvalidOperationException($"Cannot read bits on a non-{nameof(NetworkBuffer)} stream");
             ByteBool convert = new ByteBool();
             return (byte)(
                 convert.Collapse(ReadBit()) |
@@ -665,7 +665,7 @@ namespace MLAPI.Serialization
         /// <param name="oneByteChars">If set to <c>true</c> one byte chars are used and only ASCII is supported.</param>
         public StringBuilder ReadStringDiff(StringBuilder builder, string compare, bool oneByteChars = false)
         {
-            if (networkSource == null) throw new InvalidOperationException($"Cannot read bits on a non-{nameof(NetworkStream)} stream");
+            if (networkSource == null) throw new InvalidOperationException($"Cannot read bits on a non-{nameof(NetworkBuffer)} stream");
             int expectedLength = (int)ReadUInt32Packed();
             if (builder == null) builder = new StringBuilder(expectedLength);
             else if (builder.Capacity < expectedLength) builder.Capacity = expectedLength;
@@ -704,7 +704,7 @@ namespace MLAPI.Serialization
         /// <param name="oneByteChars">If set to <c>true</c> one byte chars will be used and only ASCII will be supported.</param>
         public StringBuilder ReadStringDiff(StringBuilder compareAndBuffer, bool oneByteChars = false)
         {
-            if (networkSource == null) throw new InvalidOperationException($"Cannot read bits on a non-{nameof(NetworkStream)} stream");
+            if (networkSource == null) throw new InvalidOperationException($"Cannot read bits on a non-{nameof(NetworkBuffer)} stream");
             int expectedLength = (int)ReadUInt32Packed();
             if (compareAndBuffer == null) throw new ArgumentNullException("Buffer cannot be null");
             else if (compareAndBuffer.Capacity < expectedLength) compareAndBuffer.Capacity = expectedLength;
@@ -749,7 +749,7 @@ namespace MLAPI.Serialization
         /// <param name="compare">The version to compare the diff to.</param>
         public StringBuilder ReadStringPackedDiff(StringBuilder builder, string compare)
         {
-            if (networkSource == null) throw new InvalidOperationException($"Cannot read bits on a non-{nameof(NetworkStream)} stream");
+            if (networkSource == null) throw new InvalidOperationException($"Cannot read bits on a non-{nameof(NetworkBuffer)} stream");
             int expectedLength = (int)ReadUInt32Packed();
             if (builder == null) builder = new StringBuilder(expectedLength);
             else if (builder.Capacity < expectedLength) builder.Capacity = expectedLength;
@@ -787,7 +787,7 @@ namespace MLAPI.Serialization
         /// <param name="compareAndBuffer">The builder containing the current version and that will also be used as the output buffer.</param>
         public StringBuilder ReadStringPackedDiff(StringBuilder compareAndBuffer)
         {
-            if (networkSource == null) throw new InvalidOperationException($"Cannot read bits on a non-{nameof(NetworkStream)} stream");
+            if (networkSource == null) throw new InvalidOperationException($"Cannot read bits on a non-{nameof(NetworkBuffer)} stream");
             int expectedLength = (int)ReadUInt32Packed();
             if (compareAndBuffer == null) throw new ArgumentNullException("Buffer cannot be null");
             if (compareAndBuffer.Capacity < expectedLength) compareAndBuffer.Capacity = expectedLength;
@@ -887,7 +887,7 @@ namespace MLAPI.Serialization
         /// <param name="knownLength">The length of the array if it's known. Otherwise -1</param>
         public byte[] ReadByteArrayDiff(byte[] readTo = null, long knownLength = -1)
         {
-            if (networkSource == null) throw new InvalidOperationException($"Cannot read bits on a non-{nameof(NetworkStream)} stream");
+            if (networkSource == null) throw new InvalidOperationException($"Cannot read bits on a non-{nameof(NetworkBuffer)} stream");
             if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
             byte[] writeTo = readTo == null || readTo.LongLength != knownLength ? new byte[knownLength] : readTo;
             ulong dBlockStart = networkSource.BitPosition + (ulong)(readTo == null ? 0 : Math.Min(knownLength, readTo.LongLength));
@@ -953,7 +953,7 @@ namespace MLAPI.Serialization
         /// <param name="knownLength">The known length or -1 if unknown</param>
         public short[] ReadShortArrayDiff(short[] readTo = null, long knownLength = -1)
         {
-            if (networkSource == null) throw new InvalidOperationException($"Cannot read bits on a non-{nameof(NetworkStream)} stream");
+            if (networkSource == null) throw new InvalidOperationException($"Cannot read bits on a non-{nameof(NetworkBuffer)} stream");
             if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
             short[] writeTo = readTo == null || readTo.LongLength != knownLength ? new short[knownLength] : readTo;
             ulong dBlockStart = networkSource.BitPosition + (ulong)(readTo == null ? 0 : Math.Min(knownLength, readTo.LongLength));
@@ -991,7 +991,7 @@ namespace MLAPI.Serialization
         /// <param name="knownLength">The known length or -1 if unknown</param>
         public short[] ReadShortArrayPackedDiff(short[] readTo = null, long knownLength = -1)
         {
-            if (networkSource == null) throw new InvalidOperationException($"Cannot read bits on a non-{nameof(NetworkStream)} stream");
+            if (networkSource == null) throw new InvalidOperationException($"Cannot read bits on a non-{nameof(NetworkBuffer)} stream");
             if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
             short[] writeTo = readTo == null || readTo.LongLength != knownLength ? new short[knownLength] : readTo;
             ulong data = networkSource.BitPosition + (ulong)(readTo == null ? 0 : Math.Min(knownLength, readTo.LongLength));
@@ -1057,7 +1057,7 @@ namespace MLAPI.Serialization
         /// <param name="knownLength">The known length or -1 if unknown</param>
         public ushort[] ReadUShortArrayDiff(ushort[] readTo = null, long knownLength = -1)
         {
-            if (networkSource == null) throw new InvalidOperationException($"Cannot read bits on a non-{nameof(NetworkStream)} stream");
+            if (networkSource == null) throw new InvalidOperationException($"Cannot read bits on a non-{nameof(NetworkBuffer)} stream");
             if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
             ushort[] writeTo = readTo == null || readTo.LongLength != knownLength ? new ushort[knownLength] : readTo;
             ulong dBlockStart = networkSource.BitPosition + (ulong)(readTo == null ? 0 : Math.Min(knownLength, readTo.LongLength));
@@ -1095,7 +1095,7 @@ namespace MLAPI.Serialization
         /// <param name="knownLength">The known length or -1 if unknown</param>
         public ushort[] ReadUShortArrayPackedDiff(ushort[] readTo = null, long knownLength = -1)
         {
-            if (networkSource == null) throw new InvalidOperationException($"Cannot read bits on a non-{nameof(NetworkStream)} stream");
+            if (networkSource == null) throw new InvalidOperationException($"Cannot read bits on a non-{nameof(NetworkBuffer)} stream");
             if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
             ushort[] writeTo = readTo == null || readTo.LongLength != knownLength ? new ushort[knownLength] : readTo;
             ulong data = networkSource.BitPosition + (ulong)(readTo == null ? 0 : Math.Min(knownLength, readTo.LongLength));
@@ -1161,7 +1161,7 @@ namespace MLAPI.Serialization
         /// <param name="knownLength">The known length or -1 if unknown</param>
         public int[] ReadIntArrayDiff(int[] readTo = null, long knownLength = -1)
         {
-            if (networkSource == null) throw new InvalidOperationException($"Cannot read bits on a non-{nameof(NetworkStream)} stream");
+            if (networkSource == null) throw new InvalidOperationException($"Cannot read bits on a non-{nameof(NetworkBuffer)} stream");
             if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
             int[] writeTo = readTo == null || readTo.LongLength != knownLength ? new int[knownLength] : readTo;
             ulong dBlockStart = networkSource.BitPosition + (ulong)(readTo == null ? 0 : Math.Min(knownLength, readTo.LongLength));
@@ -1199,7 +1199,7 @@ namespace MLAPI.Serialization
         /// <param name="knownLength">The known length or -1 if unknown</param>
         public int[] ReadIntArrayPackedDiff(int[] readTo = null, long knownLength = -1)
         {
-            if (networkSource == null) throw new InvalidOperationException($"Cannot read bits on a non-{nameof(NetworkStream)} stream");
+            if (networkSource == null) throw new InvalidOperationException($"Cannot read bits on a non-{nameof(NetworkBuffer)} stream");
             if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
             int[] writeTo = readTo == null || readTo.LongLength != knownLength ? new int[knownLength] : readTo;
             ulong data = networkSource.BitPosition + (ulong)(readTo == null ? 0 : Math.Min(knownLength, readTo.LongLength));
@@ -1265,7 +1265,7 @@ namespace MLAPI.Serialization
         /// <param name="knownLength">The known length or -1 if unknown</param>
         public uint[] ReadUIntArrayDiff(uint[] readTo = null, long knownLength = -1)
         {
-            if (networkSource == null) throw new InvalidOperationException($"Cannot read bits on a non-{nameof(NetworkStream)} stream");
+            if (networkSource == null) throw new InvalidOperationException($"Cannot read bits on a non-{nameof(NetworkBuffer)} stream");
             if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
             uint[] writeTo = readTo == null || readTo.LongLength != knownLength ? new uint[knownLength] : readTo;
             ulong dBlockStart = networkSource.BitPosition + (ulong)(readTo == null ? 0 : Math.Min(knownLength, readTo.LongLength));
@@ -1331,7 +1331,7 @@ namespace MLAPI.Serialization
         /// <param name="knownLength">The known length or -1 if unknown</param>
         public long[] ReadLongArrayDiff(long[] readTo = null, long knownLength = -1)
         {
-            if (networkSource == null) throw new InvalidOperationException($"Cannot read bits on a non-{nameof(NetworkStream)} stream");
+            if (networkSource == null) throw new InvalidOperationException($"Cannot read bits on a non-{nameof(NetworkBuffer)} stream");
             if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
             long[] writeTo = readTo == null || readTo.LongLength != knownLength ? new long[knownLength] : readTo;
             ulong dBlockStart = networkSource.BitPosition + (ulong)(readTo == null ? 0 : Math.Min(knownLength, readTo.LongLength));
@@ -1369,7 +1369,7 @@ namespace MLAPI.Serialization
         /// <param name="knownLength">The known length or -1 if unknown</param>
         public long[] ReadLongArrayPackedDiff(long[] readTo = null, long knownLength = -1)
         {
-            if (networkSource == null) throw new InvalidOperationException($"Cannot read bits on a non-{nameof(NetworkStream)} stream");
+            if (networkSource == null) throw new InvalidOperationException($"Cannot read bits on a non-{nameof(NetworkBuffer)} stream");
             if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
             long[] writeTo = readTo == null || readTo.LongLength != knownLength ? new long[knownLength] : readTo;
             ulong data = networkSource.BitPosition + (ulong)(readTo == null ? 0 : Math.Min(knownLength, readTo.LongLength));
@@ -1435,7 +1435,7 @@ namespace MLAPI.Serialization
         /// <param name="knownLength">The known length or -1 if unknown</param>
         public ulong[] ReadULongArrayDiff(ulong[] readTo = null, long knownLength = -1)
         {
-            if (networkSource == null) throw new InvalidOperationException($"Cannot read bits on a non-{nameof(NetworkStream)} stream");
+            if (networkSource == null) throw new InvalidOperationException($"Cannot read bits on a non-{nameof(NetworkBuffer)} stream");
             if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
             ulong[] writeTo = readTo == null || readTo.LongLength != knownLength ? new ulong[knownLength] : readTo;
             ulong dBlockStart = networkSource.BitPosition + (ulong)(readTo == null ? 0 : Math.Min(knownLength, readTo.LongLength));
@@ -1473,7 +1473,7 @@ namespace MLAPI.Serialization
         /// <param name="knownLength">The known length or -1 if unknown</param>
         public ulong[] ReadULongArrayPackedDiff(ulong[] readTo = null, long knownLength = -1)
         {
-            if (networkSource == null) throw new InvalidOperationException($"Cannot read bits on a non-{nameof(NetworkStream)} stream");
+            if (networkSource == null) throw new InvalidOperationException($"Cannot read bits on a non-{nameof(NetworkBuffer)} stream");
             if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
             ulong[] writeTo = readTo == null || readTo.LongLength != knownLength ? new ulong[knownLength] : readTo;
             ulong data = networkSource.BitPosition + (ulong)(readTo == null ? 0 : Math.Min(knownLength, readTo.LongLength));
@@ -1539,7 +1539,7 @@ namespace MLAPI.Serialization
         /// <param name="knownLength">The known length or -1 if unknown</param>
         public float[] ReadFloatArrayDiff(float[] readTo = null, long knownLength = -1)
         {
-            if (networkSource == null) throw new InvalidOperationException($"Cannot read bits on a non-{nameof(NetworkStream)} stream");
+            if (networkSource == null) throw new InvalidOperationException($"Cannot read bits on a non-{nameof(NetworkBuffer)} stream");
             if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
             float[] writeTo = readTo == null || readTo.LongLength != knownLength ? new float[knownLength] : readTo;
             ulong dBlockStart = networkSource.BitPosition + (ulong)(readTo == null ? 0 : Math.Min(knownLength, readTo.LongLength));
@@ -1577,7 +1577,7 @@ namespace MLAPI.Serialization
         /// <param name="knownLength">The known length or -1 if unknown</param>
         public float[] ReadFloatArrayPackedDiff(float[] readTo = null, long knownLength = -1)
         {
-            if (networkSource == null) throw new InvalidOperationException($"Cannot read bits on a non-{nameof(NetworkStream)} stream");
+            if (networkSource == null) throw new InvalidOperationException($"Cannot read bits on a non-{nameof(NetworkBuffer)} stream");
             if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
             float[] writeTo = readTo == null || readTo.LongLength != knownLength ? new float[knownLength] : readTo;
             ulong data = networkSource.BitPosition + (ulong)(readTo == null ? 0 : Math.Min(knownLength, readTo.LongLength));
@@ -1643,7 +1643,7 @@ namespace MLAPI.Serialization
         /// <param name="knownLength">The known length or -1 if unknown</param>
         public double[] ReadDoubleArrayDiff(double[] readTo = null, long knownLength = -1)
         {
-            if (networkSource == null) throw new InvalidOperationException($"Cannot read bits on a non-{nameof(NetworkStream)} stream");
+            if (networkSource == null) throw new InvalidOperationException($"Cannot read bits on a non-{nameof(NetworkBuffer)} stream");
             if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
             double[] writeTo = readTo == null || readTo.LongLength != knownLength ? new double[knownLength] : readTo;
             ulong dBlockStart = networkSource.BitPosition + (ulong)(readTo == null ? 0 : Math.Min(knownLength, readTo.LongLength));
@@ -1681,7 +1681,7 @@ namespace MLAPI.Serialization
         /// <param name="knownLength">The known length or -1 if unknown</param>
         public double[] ReadDoubleArrayPackedDiff(double[] readTo = null, long knownLength = -1)
         {
-            if (networkSource == null) throw new InvalidOperationException($"Cannot read bits on a non-{nameof(NetworkStream)} stream");
+            if (networkSource == null) throw new InvalidOperationException($"Cannot read bits on a non-{nameof(NetworkBuffer)} stream");
             if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
             double[] writeTo = readTo == null || readTo.LongLength != knownLength ? new double[knownLength] : readTo;
             ulong data = networkSource.BitPosition + (ulong)(readTo == null ? 0 : Math.Min(knownLength, readTo.LongLength));

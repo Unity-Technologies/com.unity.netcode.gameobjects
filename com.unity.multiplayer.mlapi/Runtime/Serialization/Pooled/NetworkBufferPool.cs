@@ -5,23 +5,23 @@ using MLAPI.Logging;
 namespace MLAPI.Serialization.Pooled
 {
     /// <summary>
-    /// Static class containing PooledNetworkStreams
+    /// Static class containing PooledNetworkBuffers
     /// </summary>
-    public static class NetworkStreamPool
+    public static class NetworkBufferPool
     {
         private static uint createdStreams = 0;
         private static readonly Queue<WeakReference> overflowStreams = new Queue<WeakReference>();
-        private static readonly Queue<PooledNetworkStream> streams = new Queue<PooledNetworkStream>();
+        private static readonly Queue<PooledNetworkBuffer> streams = new Queue<PooledNetworkBuffer>();
 
         private const uint MaxBitPoolStreams = 1024;
         private const uint MaxCreatedDelta = 768;
 
 
         /// <summary>
-        /// Retrieves an expandable PooledNetworkStream from the pool
+        /// Retrieves an expandable PooledNetworkBuffer from the pool
         /// </summary>
-        /// <returns>An expandable PooledNetworkStream</returns>
-        public static PooledNetworkStream GetStream()
+        /// <returns>An expandable PooledNetworkBuffer</returns>
+        public static PooledNetworkBuffer GetStream()
         {
             if (streams.Count == 0)
             {
@@ -29,7 +29,7 @@ namespace MLAPI.Serialization.Pooled
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
                     {
-                        NetworkLog.LogInfo($"Retrieving {nameof(PooledNetworkStream)} from overflow pool. Recent burst?");
+                        NetworkLog.LogInfo($"Retrieving {nameof(PooledNetworkBuffer)} from overflow pool. Recent burst?");
                     }
 
                     object weakStream = null;
@@ -37,12 +37,12 @@ namespace MLAPI.Serialization.Pooled
 
                     if (weakStream != null)
                     {
-                        PooledNetworkStream strongStream = (PooledNetworkStream)weakStream;
+                        PooledNetworkBuffer strongBuffer = (PooledNetworkBuffer)weakStream;
 
-                        strongStream.SetLength(0);
-                        strongStream.Position = 0;
+                        strongBuffer.SetLength(0);
+                        strongBuffer.Position = 0;
 
-                        return strongStream;
+                        return strongBuffer;
                     }
                 }
 
@@ -52,22 +52,22 @@ namespace MLAPI.Serialization.Pooled
                 }
                 else if (createdStreams < MaxBitPoolStreams) createdStreams++;
 
-                return new PooledNetworkStream();
+                return new PooledNetworkBuffer();
             }
 
-            PooledNetworkStream stream = streams.Dequeue();
+            PooledNetworkBuffer buffer = streams.Dequeue();
 
-            stream.SetLength(0);
-            stream.Position = 0;
+            buffer.SetLength(0);
+            buffer.Position = 0;
 
-            return stream;
+            return buffer;
         }
 
         /// <summary>
-        /// Puts a PooledNetworkStream back into the pool
+        /// Puts a PooledNetworkBuffer back into the pool
         /// </summary>
-        /// <param name="stream">The stream to put in the pool</param>
-        public static void PutBackInPool(PooledNetworkStream stream)
+        /// <param name="buffer">The buffer to put in the pool</param>
+        public static void PutBackInPool(PooledNetworkBuffer buffer)
         {
             if (streams.Count > MaxCreatedDelta)
             {
@@ -77,14 +77,14 @@ namespace MLAPI.Serialization.Pooled
                 // But still leave it to GC
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
                 {
-                    NetworkLog.LogInfo($"Putting {nameof(PooledNetworkStream)} into overflow pool. Did you forget to dispose?");
+                    NetworkLog.LogInfo($"Putting {nameof(PooledNetworkBuffer)} into overflow pool. Did you forget to dispose?");
                 }
 
-                overflowStreams.Enqueue(new WeakReference(stream));
+                overflowStreams.Enqueue(new WeakReference(buffer));
             }
             else
             {
-                streams.Enqueue(stream);
+                streams.Enqueue(buffer);
             }
         }
     }

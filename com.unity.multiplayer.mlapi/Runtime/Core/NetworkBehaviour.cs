@@ -574,9 +574,9 @@ namespace MLAPI
 
             for (int j = 0; j < channelMappedNetworkVariableIndexes.Count; j++)
             {
-                using (PooledNetworkStream stream = PooledNetworkStream.Get())
+                using (PooledNetworkBuffer buffer = PooledNetworkBuffer.Get())
                 {
-                    using (PooledNetworkWriter writer = PooledNetworkWriter.Get(stream))
+                    using (PooledNetworkWriter writer = PooledNetworkWriter.Get(buffer))
                     {
                         writer.WriteUInt64Packed(NetworkId);
                         writer.WriteUInt16Packed(NetworkObject.GetOrderIndex(this));
@@ -627,18 +627,18 @@ namespace MLAPI
 
                                 if (NetworkManager.Singleton.NetworkConfig.EnsureNetworkVariableLengthSafety)
                                 {
-                                    using (PooledNetworkStream varStream = PooledNetworkStream.Get())
+                                    using (PooledNetworkBuffer varBuffer = PooledNetworkBuffer.Get())
                                     {
-                                        networkVariableFields[k].WriteDelta(varStream);
-                                        varStream.PadStream();
+                                        networkVariableFields[k].WriteDelta(varBuffer);
+                                        varBuffer.PadStream();
 
-                                        writer.WriteUInt16Packed((ushort)varStream.Length);
-                                        stream.CopyFrom(varStream);
+                                        writer.WriteUInt16Packed((ushort)varBuffer.Length);
+                                        buffer.CopyFrom(varBuffer);
                                     }
                                 }
                                 else
                                 {
-                                    networkVariableFields[k].WriteDelta(stream);
+                                    networkVariableFields[k].WriteDelta(buffer);
                                 }
 
                                 if (!networkVariableIndexesToResetSet.Contains(k))
@@ -651,7 +651,7 @@ namespace MLAPI
 
                         if (writtenAny)
                         {
-                            InternalMessageSender.Send(clientId, NetworkConstants.k_NETWORK_VARIABLE_DELTA, channelsForNetworkVariableGroups[j], stream);
+                            InternalMessageSender.Send(clientId, NetworkConstants.k_NETWORK_VARIABLE_DELTA, channelsForNetworkVariableGroups[j], buffer);
                         }
                     }
                 }
@@ -736,7 +736,7 @@ namespace MLAPI
 
                     if (NetworkManager.Singleton.NetworkConfig.EnsureNetworkVariableLengthSafety)
                     {
-                        (stream as NetworkStream).SkipPadBits();
+                        (stream as NetworkBuffer).SkipPadBits();
 
                         if (stream.Position > (readStartPos + varSize))
                         {
@@ -805,9 +805,9 @@ namespace MLAPI
 
                     if (NetworkManager.Singleton.NetworkConfig.EnsureNetworkVariableLengthSafety)
                     {
-                        if (stream is NetworkStream networkStream)
+                        if (stream is NetworkBuffer networkBuffer)
                         {
-                            networkStream.SkipPadBits();
+                            networkBuffer.SkipPadBits();
                         }
 
                         if (stream.Position > (readStartPos + varSize))
@@ -852,13 +852,13 @@ namespace MLAPI
                     {
                         if (NetworkManager.Singleton.NetworkConfig.EnsureNetworkVariableLengthSafety)
                         {
-                            using (PooledNetworkStream varStream = PooledNetworkStream.Get())
+                            using (PooledNetworkBuffer varBuffer = PooledNetworkBuffer.Get())
                             {
-                                networkVariableList[j].WriteField(varStream);
-                                varStream.PadStream();
+                                networkVariableList[j].WriteField(varBuffer);
+                                varBuffer.PadStream();
 
-                                writer.WriteUInt16Packed((ushort)varStream.Length);
-                                varStream.CopyTo(stream);
+                                writer.WriteUInt16Packed((ushort)varBuffer.Length);
+                                varBuffer.CopyTo(stream);
                             }
                         }
                         else
@@ -897,9 +897,9 @@ namespace MLAPI
 
                     if (NetworkManager.Singleton.NetworkConfig.EnsureNetworkVariableLengthSafety)
                     {
-                        if (stream is NetworkStream networkStream)
+                        if (stream is NetworkBuffer networkBuffer)
                         {
-                            networkStream.SkipPadBits();
+                            networkBuffer.SkipPadBits();
                         }
 
                         if (stream.Position > (readStartPos + varSize))

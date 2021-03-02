@@ -182,9 +182,9 @@ namespace MLAPI.Configuration
         public string ToBase64()
         {
             NetworkConfig config = this;
-            using (PooledNetworkStream stream = PooledNetworkStream.Get())
+            using (PooledNetworkBuffer buffer = PooledNetworkBuffer.Get())
             {
-                using (PooledNetworkWriter writer = PooledNetworkWriter.Get(stream))
+                using (PooledNetworkWriter writer = PooledNetworkWriter.Get(buffer))
                 {
                     writer.WriteUInt16Packed(config.ProtocolVersion);
 
@@ -213,9 +213,9 @@ namespace MLAPI.Configuration
                     writer.WriteBool(EnableNetworkVariable);
                     writer.WriteBool(AllowRuntimeSceneChanges);
                     writer.WriteBool(EnableNetworkLogs);
-                    stream.PadStream();
+                    buffer.PadStream();
 
-                    return Convert.ToBase64String(stream.ToArray());
+                    return Convert.ToBase64String(buffer.ToArray());
                 }
             }
         }
@@ -228,9 +228,9 @@ namespace MLAPI.Configuration
         {
             NetworkConfig config = this;
             byte[] binary = Convert.FromBase64String(base64);
-            using (NetworkStream stream = new NetworkStream(binary))
+            using (NetworkBuffer buffer = new NetworkBuffer(binary))
             {
-                using (PooledNetworkReader reader = PooledNetworkReader.Get(stream))
+                using (PooledNetworkReader reader = PooledNetworkReader.Get(buffer))
                 {
                     config.ProtocolVersion = reader.ReadUInt16Packed();
 
@@ -278,9 +278,9 @@ namespace MLAPI.Configuration
 
             Sort();
 
-            using (PooledNetworkStream stream = PooledNetworkStream.Get())
+            using (PooledNetworkBuffer buffer = PooledNetworkBuffer.Get())
             {
-                using (PooledNetworkWriter writer = PooledNetworkWriter.Get(stream))
+                using (PooledNetworkWriter writer = PooledNetworkWriter.Get(buffer))
                 {
                     writer.WriteUInt16Packed(ProtocolVersion);
                     writer.WriteString(NetworkConstants.k_PROTOCOL_VERSION);
@@ -308,15 +308,15 @@ namespace MLAPI.Configuration
                     writer.WriteBool(EnableSceneManagement);
                     writer.WriteBool(EnsureNetworkVariableLengthSafety);
                     writer.WriteBits((byte)RpcHashSize, 2);
-                    stream.PadStream();
+                    buffer.PadStream();
 
                     if (cache)
                     {
-                        ConfigHash = stream.ToArray().GetStableHash64();
+                        ConfigHash = buffer.ToArray().GetStableHash64();
                         return ConfigHash.Value;
                     }
 
-                    return stream.ToArray().GetStableHash64();
+                    return buffer.ToArray().GetStableHash64();
                 }
             }
         }

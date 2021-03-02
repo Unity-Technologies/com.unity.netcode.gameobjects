@@ -19,7 +19,7 @@ namespace MLAPI.Messaging.Buffering
         {
             internal ulong sender;
             internal NetworkChannel networkChannel;
-            internal PooledNetworkStream payload;
+            internal PooledNetworkBuffer payload;
             internal float receiveTime;
             internal float bufferTime;
         }
@@ -54,16 +54,16 @@ namespace MLAPI.Messaging.Buffering
 
             Queue<BufferedMessage> queue = bufferQueues[networkId];
 
-            PooledNetworkStream payloadStream = PooledNetworkStream.Get();
+            PooledNetworkBuffer payloadBuffer = PooledNetworkBuffer.Get();
 
-            payloadStream.Write(payload.Array, payload.Offset, payload.Count);
-            payloadStream.Position = 0;
+            payloadBuffer.Write(payload.Array, payload.Offset, payload.Count);
+            payloadBuffer.Position = 0;
 
             queue.Enqueue(new BufferedMessage()
             {
                 bufferTime = Time.realtimeSinceStartup,
                 networkChannel = networkChannel,
-                payload = payloadStream,
+                payload = payloadBuffer,
                 receiveTime = receiveTime,
                 sender = sender
             });

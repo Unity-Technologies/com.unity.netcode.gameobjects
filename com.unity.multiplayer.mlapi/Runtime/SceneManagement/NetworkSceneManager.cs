@@ -182,12 +182,12 @@ namespace MLAPI.SceneManagement
             isSpawnedObjectsPendingInDontDestroyOnLoad = true;
             SceneManager.LoadScene(sceneName);
 
-            using (PooledNetworkStream stream = PooledNetworkStream.Get())
+            using (PooledNetworkBuffer buffer = PooledNetworkBuffer.Get())
             {
-                using (PooledNetworkWriter writer = PooledNetworkWriter.Get(stream))
+                using (PooledNetworkWriter writer = PooledNetworkWriter.Get(buffer))
                 {
                     writer.WriteByteArray(switchSceneGuid.ToByteArray());
-                    InternalMessageSender.Send(NetworkManager.Singleton.ServerClientId, NetworkConstants.k_CLIENT_SWITCH_SCENE_COMPLETED, NetworkChannel.Internal, stream);
+                    InternalMessageSender.Send(NetworkManager.Singleton.ServerClientId, NetworkConstants.k_CLIENT_SWITCH_SCENE_COMPLETED, NetworkChannel.Internal, buffer);
                 }
             }
 
@@ -237,9 +237,9 @@ namespace MLAPI.SceneManagement
             {
                 if (NetworkManager.Singleton.ConnectedClientsList[j].ClientId != NetworkManager.Singleton.ServerClientId)
                 {
-                    using (PooledNetworkStream stream = PooledNetworkStream.Get())
+                    using (PooledNetworkBuffer buffer = PooledNetworkBuffer.Get())
                     {
-                        using (PooledNetworkWriter writer = PooledNetworkWriter.Get(stream))
+                        using (PooledNetworkWriter writer = PooledNetworkWriter.Get(buffer))
                         {
                             writer.WriteUInt32Packed(CurrentActiveSceneIndex);
                             writer.WriteByteArray(switchSceneGuid.ToByteArray());
@@ -297,13 +297,13 @@ namespace MLAPI.SceneManagement
 
                                     if (NetworkManager.Singleton.NetworkConfig.EnableNetworkVariable)
                                     {
-                                        newSceneObjects[i].WriteNetworkVariableData(stream, NetworkManager.Singleton.ConnectedClientsList[j].ClientId);
+                                        newSceneObjects[i].WriteNetworkVariableData(buffer, NetworkManager.Singleton.ConnectedClientsList[j].ClientId);
                                     }
                                 }
                             }
                         }
 
-                        InternalMessageSender.Send(NetworkManager.Singleton.ConnectedClientsList[j].ClientId, NetworkConstants.k_SWITCH_SCENE, NetworkChannel.Internal, stream);
+                        InternalMessageSender.Send(NetworkManager.Singleton.ConnectedClientsList[j].ClientId, NetworkConstants.k_SWITCH_SCENE, NetworkChannel.Internal, buffer);
                     }
                 }
             }
@@ -420,12 +420,12 @@ namespace MLAPI.SceneManagement
                 }
             }
 
-            using (PooledNetworkStream stream = PooledNetworkStream.Get())
+            using (PooledNetworkBuffer buffer = PooledNetworkBuffer.Get())
             {
-                using (PooledNetworkWriter writer = PooledNetworkWriter.Get(stream))
+                using (PooledNetworkWriter writer = PooledNetworkWriter.Get(buffer))
                 {
                     writer.WriteByteArray(switchSceneGuid.ToByteArray());
-                    InternalMessageSender.Send(NetworkManager.Singleton.ServerClientId, NetworkConstants.k_CLIENT_SWITCH_SCENE_COMPLETED, NetworkChannel.Internal, stream);
+                    InternalMessageSender.Send(NetworkManager.Singleton.ServerClientId, NetworkConstants.k_CLIENT_SWITCH_SCENE_COMPLETED, NetworkChannel.Internal, buffer);
                 }
             }
 

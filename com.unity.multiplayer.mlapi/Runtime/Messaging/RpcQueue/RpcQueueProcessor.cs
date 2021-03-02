@@ -118,7 +118,7 @@ namespace MLAPI.Messaging
             foreach (RpcFrameQueueItem queueItem in m_InternalMLAPISendQueue)
             {
 
-                var PoolStream = queueItem.itemStream;
+                var PoolStream = queueItem.itemBuffer;
 
                 if(NetworkManager.Singleton.IsListening)
                 {
@@ -210,8 +210,8 @@ namespace MLAPI.Messaging
         /// <param name="sendStream"> the stream to send</param>
         private static void SendCallback(ulong clientId, RpcBatcher.SendStream sendStream)
         {
-            var length = (int)sendStream.Stream.Length;
-            var bytes = sendStream.Stream.GetBuffer();
+            var length = (int)sendStream.Buffer.Length;
+            var bytes = sendStream.Buffer.GetBuffer();
             ArraySegment<byte> sendBuffer = new ArraySegment<byte>(bytes, 0, length);
 
             NetworkManager.Singleton.NetworkConfig.NetworkTransport.Send(clientId, sendBuffer, sendStream.NetworkChannel);

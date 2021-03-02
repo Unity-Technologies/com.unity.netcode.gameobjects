@@ -22,7 +22,7 @@ namespace  MLAPI.Messaging
         public float                                     timeStamp;
         public PooledNetworkWriter                           streamWriter;
         public PooledNetworkReader                           streamReader;
-        public PooledNetworkStream                           itemStream;
+        public PooledNetworkBuffer                           itemBuffer;
         public ArraySegment<byte>                        messageData;
     }
 }

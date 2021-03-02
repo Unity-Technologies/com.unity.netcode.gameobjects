@@ -188,15 +188,15 @@ namespace MLAPI.Messaging
                 {
                     UnityAction<Scene, Scene> onSceneLoaded = null;
 
-                    Serialization.NetworkStream continuationStream = new Serialization.NetworkStream();
-                    continuationStream.CopyUnreadFrom(stream);
-                    continuationStream.Position = 0;
+                    var continuationBuffer = new NetworkBuffer();
+                    continuationBuffer.CopyUnreadFrom(stream);
+                    continuationBuffer.Position = 0;
 
                     void OnSceneLoadComplete()
                     {
                         SceneManager.activeSceneChanged -= onSceneLoaded;
                         NetworkSceneManager.isSpawnedObjectsPendingInDontDestroyOnLoad = false;
-                        DelayedSpawnAction(continuationStream);
+                        DelayedSpawnAction(continuationBuffer);
                     }
 
                     onSceneLoaded = (oldScene, newScene) => { OnSceneLoadComplete(); };
@@ -318,11 +318,11 @@ namespace MLAPI.Messaging
                 uint sceneIndex = reader.ReadUInt32Packed();
                 Guid switchSceneGuid = new Guid(reader.ReadByteArray());
 
-                Serialization.NetworkStream objectStream = new Serialization.NetworkStream();
-                objectStream.CopyUnreadFrom(stream);
-                objectStream.Position = 0;
+                var objectBuffer = new NetworkBuffer();
+                objectBuffer.CopyUnreadFrom(stream);
+                objectBuffer.Position = 0;
 
-                NetworkSceneManager.OnSceneSwitch(sceneIndex, switchSceneGuid, objectStream);
+                NetworkSceneManager.OnSceneSwitch(sceneIndex, switchSceneGuid, objectBuffer);
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleSwitchScene.End();
@@ -530,7 +530,7 @@ namespace MLAPI.Messaging
             PerformanceDataManager.Increment(ProfilerConstants.NumberOfRPCsReceived);
 
             var rpcQueueContainer = NetworkManager.Singleton.rpcQueueContainer;
-            rpcQueueContainer.AddQueueItemToInboundFrame(queueItemType, receiveTime, clientId, (NetworkStream)stream);
+            rpcQueueContainer.AddQueueItemToInboundFrame(queueItemType, receiveTime, clientId, (NetworkBuffer)stream);
         }
 
         internal static void HandleUnnamedMessage(ulong clientId, Stream stream)

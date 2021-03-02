@@ -7,7 +7,7 @@ namespace MLAPI.Serialization
     /// <summary>
     /// A stream that can be used at the bit level
     /// </summary>
-    public class NetworkStream : Stream
+    public class NetworkBuffer : Stream
     {
         private const int k_InitialCapacity = 16;
         private const float k_InitialGrowthFactor = 2.0f;
@@ -19,7 +19,7 @@ namespace MLAPI.Serialization
         /// </summary>
         /// <param name="capacity">Initial capacity of buffer in bytes.</param>
         /// <param name="growthFactor">Factor by which buffer should grow when necessary.</param>
-        public NetworkStream(int capacity, float growthFactor)
+        public NetworkBuffer(int capacity, float growthFactor)
         {
             m_Target = new byte[capacity];
             GrowthFactor = growthFactor;
@@ -30,25 +30,25 @@ namespace MLAPI.Serialization
         /// A stream that supports writing data smaller than a single byte. This stream also has a built-in compression algorithm that can (optionally) be used to write compressed data.
         /// </summary>
         /// <param name="growthFactor">Factor by which buffer should grow when necessary.</param>
-        public NetworkStream(float growthFactor) : this(k_InitialCapacity, growthFactor) { }
+        public NetworkBuffer(float growthFactor) : this(k_InitialCapacity, growthFactor) { }
 
         /// <summary>
         /// A stream that supports writing data smaller than a single byte. This stream also has a built-in compression algorithm that can (optionally) be used to write compressed data.
         /// </summary>
         /// <param name="capacity"></param>
-        public NetworkStream(int capacity) : this(capacity, k_InitialGrowthFactor) { }
+        public NetworkBuffer(int capacity) : this(capacity, k_InitialGrowthFactor) { }
 
         /// <summary>
         /// A stream that supports writing data smaller than a single byte. This stream also has a built-in compression algorithm that can (optionally) be used to write compressed data.
         /// </summary>
-        public NetworkStream() : this(k_InitialCapacity, k_InitialGrowthFactor) { }
+        public NetworkBuffer() : this(k_InitialCapacity, k_InitialGrowthFactor) { }
 
         /// <summary>
         /// A stream that supports writing data smaller than a single byte. This stream also has a built-in compression algorithm that can (optionally) be used to write compressed data.
         /// NOTE: when using a pre-allocated buffer, the stream will not grow!
         /// </summary>
         /// <param name="target">Pre-allocated buffer to write to</param>
-        public NetworkStream(byte[] target)
+        public NetworkBuffer(byte[] target)
         {
             m_Target = target;
             Resizable = false;
@@ -387,7 +387,7 @@ namespace MLAPI.Serialization
         /// <param name="count">How many bytes to read. Set to value less than one to read until ReadByte returns -1</param>
         public void CopyFrom(Stream s, int count = -1)
         {
-            if (s is NetworkStream b) Write(b.m_Target, 0, count < 0 ? (int)b.Length : count);
+            if (s is NetworkBuffer b) Write(b.m_Target, 0, count < 0 ? (int)b.Length : count);
             else
             {
                 long currentPosition = s.Position;
@@ -434,25 +434,25 @@ namespace MLAPI.Serialization
             s.Position = currentPosition;
         }
 
-        // TODO: Implement CopyFrom() for NetworkStream with bitCount parameter
+        // TODO: Implement CopyFrom() for NetworkBuffer with bitCount parameter
         /// <summary>
-        /// Copys the bits from the provided NetworkStream
+        /// Copys the bits from the provided NetworkBuffer
         /// </summary>
-        /// <param name="stream">The stream to copy from</param>
+        /// <param name="buffer">The buffer to copy from</param>
         /// <param name="dataCount">The amount of data evel</param>
         /// <param name="copyBits">Whether or not to copy at the bit level rather than the byte level</param>
-        public void CopyFrom(NetworkStream stream, int dataCount, bool copyBits)
+        public void CopyFrom(NetworkBuffer buffer, int dataCount, bool copyBits)
         {
             if (!copyBits)
             {
-                CopyFrom(stream, dataCount);
+                CopyFrom(buffer, dataCount);
             }
             else
             {
-                ulong count = dataCount < 0 ? stream.BitLength : (ulong)dataCount;
-                if (stream.BitLength < count) throw new IndexOutOfRangeException("Attempted to read more data than is available");
-                Write(stream.GetBuffer(), 0, (int)(count >> 3));
-                for (int i = (int)(count & 7); i >= 0; --i) WriteBit(stream.ReadBit());
+                ulong count = dataCount < 0 ? buffer.BitLength : (ulong)dataCount;
+                if (buffer.BitLength < count) throw new IndexOutOfRangeException("Attempted to read more data than is available");
+                Write(buffer.GetBuffer(), 0, (int)(count >> 3));
+                for (int i = (int)(count & 7); i >= 0; --i) WriteBit(buffer.ReadBit());
             }
         }
 

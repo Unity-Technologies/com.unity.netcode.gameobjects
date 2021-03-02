@@ -187,14 +187,14 @@ namespace MLAPI.Spawning
 
 			netObject._ownerClientId = null;
 
-            using (PooledNetworkStream stream = PooledNetworkStream.Get())
+            using (PooledNetworkBuffer buffer = PooledNetworkBuffer.Get())
             {
-                using (PooledNetworkWriter writer = PooledNetworkWriter.Get(stream))
+                using (PooledNetworkWriter writer = PooledNetworkWriter.Get(buffer))
                 {
                     writer.WriteUInt64Packed(netObject.NetworkId);
                     writer.WriteUInt64Packed(netObject.OwnerClientId);
 
-                    InternalMessageSender.Send(NetworkConstants.k_CHANGE_OWNER, NetworkChannel.Internal, stream);
+                    InternalMessageSender.Send(NetworkConstants.k_CHANGE_OWNER, NetworkChannel.Internal, buffer);
                 }
             }
         }
@@ -223,14 +223,14 @@ namespace MLAPI.Spawning
             NetworkManager.Singleton.ConnectedClients[clientId].OwnedObjects.Add(netObject);
             netObject.OwnerClientId = clientId;
 
-            using (PooledNetworkStream stream = PooledNetworkStream.Get())
+            using (PooledNetworkBuffer buffer = PooledNetworkBuffer.Get())
             {
-                using (PooledNetworkWriter writer = PooledNetworkWriter.Get(stream))
+                using (PooledNetworkWriter writer = PooledNetworkWriter.Get(buffer))
                 {
                     writer.WriteUInt64Packed(netObject.NetworkId);
                     writer.WriteUInt64Packed(clientId);
 
-                    InternalMessageSender.Send(NetworkConstants.k_CHANGE_OWNER, NetworkChannel.Internal, stream);
+                    InternalMessageSender.Send(NetworkConstants.k_CHANGE_OWNER, NetworkChannel.Internal, buffer);
                 }
             }
         }
@@ -390,12 +390,12 @@ namespace MLAPI.Spawning
 
             if (readPayload)
             {
-                using (PooledNetworkStream payloadStream = PooledNetworkStream.Get())
+                using (PooledNetworkBuffer payloadBuffer = PooledNetworkBuffer.Get())
                 {
-                    payloadStream.CopyUnreadFrom(dataStream, payloadLength);
+                    payloadBuffer.CopyUnreadFrom(dataStream, payloadLength);
                     dataStream.Position += payloadLength;
-                    payloadStream.Position = 0;
-                    netObject.InvokeBehaviourNetworkSpawn(payloadStream);
+                    payloadBuffer.Position = 0;
+                    netObject.InvokeBehaviourNetworkSpawn(payloadBuffer);
                 }
             }
             else
@@ -407,7 +407,7 @@ namespace MLAPI.Spawning
         internal static void SendSpawnCallForObject(ulong clientId, NetworkObject netObject, Stream payload)
         {
             //Currently, if this is called and the clientId (destination) is the server's client Id, this case
-            //will be checked within the below Send function.  To avoid unwarranted allocation of a PooledNetworkStream
+            //will be checked within the below Send function.  To avoid unwarranted allocation of a PooledNetworkBuffer
             //placing this check here. [NSS]
             if (NetworkManager.Singleton.IsServer && clientId == NetworkManager.Singleton.ServerClientId)
             {
@@ -416,7 +416,7 @@ namespace MLAPI.Spawning
 
             RpcQueueContainer rpcQueueContainer = NetworkManager.Singleton.rpcQueueContainer;
 
-            var stream = PooledNetworkStream.Get();
+            var stream = PooledNetworkBuffer.Get();
             WriteSpawnCallForObject(stream, clientId, netObject, payload);
 
             var queueItem = new RpcFrameQueueItem
@@ -424,16 +424,16 @@ namespace MLAPI.Spawning
                 updateStage = NetworkUpdateStage.Update,
                 queueItemType = RpcQueueContainer.QueueItemType.CreateObject,
                 networkId = 0,
-                itemStream = stream,
+                itemBuffer = stream,
                 networkChannel = NetworkChannel.Internal,
                 clientIds = new[] {clientId}
             };
             rpcQueueContainer.AddToInternalMLAPISendQueue(queueItem);
         }
 
-        internal static void WriteSpawnCallForObject(Serialization.NetworkStream stream, ulong clientId, NetworkObject netObject, Stream payload)
+        internal static void WriteSpawnCallForObject(Serialization.NetworkBuffer buffer, ulong clientId, NetworkObject netObject, Stream payload)
         {
-            using (PooledNetworkWriter writer = PooledNetworkWriter.Get(stream))
+            using (PooledNetworkWriter writer = PooledNetworkWriter.Get(buffer))
             {
                 writer.WriteBool(netObject.IsPlayerObject);
                 writer.WriteUInt64Packed(netObject.NetworkId);
@@ -498,10 +498,10 @@ namespace MLAPI.Spawning
 
                 if (NetworkManager.Singleton.NetworkConfig.EnableNetworkVariable)
                 {
-                    netObject.WriteNetworkVariableData(stream, clientId);
+                    netObject.WriteNetworkVariableData(buffer, clientId);
                 }
 
-                if (payload != null) stream.CopyFrom(payload);
+                if (payload != null) buffer.CopyFrom(payload);
             }
         }
 
@@ -685,7 +685,7 @@ namespace MLAPI.Spawning
                         // As long as we have any remaining clients, then notify of the object being destroy.
                         if (NetworkManager.Singleton.ConnectedClientsList.Count > 0)
                         {
-                            var stream = PooledNetworkStream.Get();
+                            var stream = PooledNetworkBuffer.Get();
                             using (var writer = PooledNetworkWriter.Get(stream))
                             {
                                 writer.WriteUInt64Packed(networkId);
@@ -695,7 +695,7 @@ namespace MLAPI.Spawning
                                     updateStage = NetworkUpdateStage.PostLateUpdate,
                                     queueItemType = RpcQueueContainer.QueueItemType.DestroyObject,
                                     networkId = networkId,
-                                    itemStream = stream,
+                                    itemBuffer = stream,
                                     networkChannel = NetworkChannel.Internal,
                                     clientIds = NetworkManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray()
                                 };

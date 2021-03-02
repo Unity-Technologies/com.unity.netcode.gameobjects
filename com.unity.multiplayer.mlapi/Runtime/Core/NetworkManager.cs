@@ -798,9 +798,9 @@ namespace MLAPI
 
         internal void SendConnectionRequest()
         {
-            using (PooledNetworkStream stream = PooledNetworkStream.Get())
+            using (PooledNetworkBuffer buffer = PooledNetworkBuffer.Get())
             {
-                using (PooledNetworkWriter writer = PooledNetworkWriter.Get(stream))
+                using (PooledNetworkWriter writer = PooledNetworkWriter.Get(buffer))
                 {
                     writer.WriteUInt64Packed(NetworkConfig.GetConfig());
 
@@ -808,7 +808,7 @@ namespace MLAPI
                         writer.WriteByteArray(NetworkConfig.ConnectionData);
                 }
 
-                InternalMessageSender.Send(ServerClientId, NetworkConstants.k_CONNECTION_REQUEST, NetworkChannel.Internal, stream);
+                InternalMessageSender.Send(ServerClientId, NetworkConstants.k_CONNECTION_REQUEST, NetworkChannel.Internal, buffer);
             }
         }
 
@@ -902,7 +902,7 @@ namespace MLAPI
             }
         }
 
-        private readonly NetworkStream m_InputStreamWrapper = new NetworkStream(new byte[0]);
+        private readonly NetworkBuffer m_InputBufferWrapper = new NetworkBuffer(new byte[0]);
         private readonly RpcBatcher m_RpcBatcher = new RpcBatcher();
 
         internal void HandleIncomingData(ulong clientId, NetworkChannel networkChannel, ArraySegment<byte> data, float receiveTime, bool allowBuffer)
@@ -912,11 +912,11 @@ namespace MLAPI
 #endif
             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogInfo("Unwrapping Data Header");
 
-            m_InputStreamWrapper.SetTarget(data.Array);
-            m_InputStreamWrapper.SetLength(data.Count + data.Offset);
-            m_InputStreamWrapper.Position = data.Offset;
+            m_InputBufferWrapper.SetTarget(data.Array);
+            m_InputBufferWrapper.SetLength(data.Count + data.Offset);
+            m_InputBufferWrapper.Position = data.Offset;
 
-            using (var messageStream = MessagePacker.UnwrapMessage(m_InputStreamWrapper, out byte messageType))
+            using (var messageStream = MessagePacker.UnwrapMessage(m_InputBufferWrapper, out byte messageType))
             {
                 if (messageStream == null)
                 {
@@ -1069,7 +1069,7 @@ namespace MLAPI
 #endif
         }
 
-        private static void ReceiveCallback(NetworkStream messageStream, RpcQueueContainer.QueueItemType messageType, ulong clientId, float receiveTime)
+        private static void ReceiveCallback(NetworkBuffer messageBuffer, RpcQueueContainer.QueueItemType messageType, ulong clientId, float receiveTime)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (messageType == RpcQueueContainer.QueueItemType.ServerRpc)
@@ -1081,7 +1081,7 @@ namespace MLAPI
                 s_ClientRpcQueued.Begin();
             }
 #endif
-            InternalMessageHandler.RpcReceiveQueueItem(clientId, messageStream, receiveTime, messageType);
+            InternalMessageHandler.RpcReceiveQueueItem(clientId, messageBuffer, receiveTime, messageType);
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (messageType == RpcQueueContainer.QueueItemType.ServerRpc)
             {
@@ -1277,12 +1277,12 @@ namespace MLAPI
             s_SyncTime.Begin();
 #endif
             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogInfo("Syncing Time To Clients");
-            using (PooledNetworkStream stream = PooledNetworkStream.Get())
+            using (PooledNetworkBuffer buffer = PooledNetworkBuffer.Get())
             {
-                using (PooledNetworkWriter writer = PooledNetworkWriter.Get(stream))
+                using (PooledNetworkWriter writer = PooledNetworkWriter.Get(buffer))
                 {
                     writer.WriteSinglePacked(Time.realtimeSinceStartup);
-                    InternalMessageSender.Send(NetworkConstants.k_TIME_SYNC, NetworkChannel.SyncChannel, stream);
+                    InternalMessageSender.Send(NetworkConstants.k_TIME_SYNC, NetworkChannel.SyncChannel, buffer);
                 }
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
@@ -1332,9 +1332,9 @@ namespace MLAPI
                     }
                 }
 
-                using (PooledNetworkStream stream = PooledNetworkStream.Get())
+                using (PooledNetworkBuffer buffer = PooledNetworkBuffer.Get())
                 {
-                    using (PooledNetworkWriter writer = PooledNetworkWriter.Get(stream))
+                    using (PooledNetworkWriter writer = PooledNetworkWriter.Get(buffer))
                     {
                         writer.WriteUInt64Packed(clientId);
 
@@ -1409,11 +1409,11 @@ namespace MLAPI
 
                             if (NetworkConfig.EnableNetworkVariable)
                             {
-                                observedObject.WriteNetworkVariableData(stream, clientId);
+                                observedObject.WriteNetworkVariableData(buffer, clientId);
                             }
                         }
 
-                        InternalMessageSender.Send(clientId, NetworkConstants.k_CONNECTION_APPROVED, NetworkChannel.Internal, stream);
+                        InternalMessageSender.Send(clientId, NetworkConstants.k_CONNECTION_APPROVED, NetworkChannel.Internal, buffer);
 
                         OnClientConnectedCallback?.Invoke(clientId);
                     }
@@ -1428,9 +1428,9 @@ namespace MLAPI
                     if (clientPair.Key == clientId || ConnectedClients[clientId].PlayerObject == null || !ConnectedClients[clientId].PlayerObject.observers.Contains(clientPair.Key))
                         continue; //The new client.
 
-                    using (PooledNetworkStream stream = PooledNetworkStream.Get())
+                    using (PooledNetworkBuffer buffer = PooledNetworkBuffer.Get())
                     {
-                        using (PooledNetworkWriter writer = PooledNetworkWriter.Get(stream))
+                        using (PooledNetworkWriter writer = PooledNetworkWriter.Get(buffer))
                         {
                             writer.WriteBool(true);
                             writer.WriteUInt64Packed(ConnectedClients[clientId].PlayerObject.NetworkId);
@@ -1470,10 +1470,10 @@ namespace MLAPI
 
                             if (NetworkConfig.EnableNetworkVariable)
                             {
-                                ConnectedClients[clientId].PlayerObject.WriteNetworkVariableData(stream, clientPair.Key);
+                                ConnectedClients[clientId].PlayerObject.WriteNetworkVariableData(buffer, clientPair.Key);
                             }
 
-                            InternalMessageSender.Send(clientPair.Key, NetworkConstants.k_ADD_OBJECT, NetworkChannel.Internal, stream);
+                            InternalMessageSender.Send(clientPair.Key, NetworkConstants.k_ADD_OBJECT, NetworkChannel.Internal, buffer);
                         }
                     }
                 }
