@@ -235,8 +235,8 @@ namespace MLAPI.Prototyping
                 {
                     Send = new ClientRpcSendParams
                     {
-                        TargetClientIds = MLAPI.NetworkManager.Singleton.ConnectedClientsList
-                            .Where(c => c.ClientId != MLAPI.NetworkManager.Singleton.ServerClientId)
+                        TargetClientIds = NetworkManager.Singleton.ConnectedClientsList
+                            .Where(c => c.ClientId != NetworkManager.Singleton.ServerClientId)
                             .Select(c => c.ClientId)
                             .ToArray()
                     }
