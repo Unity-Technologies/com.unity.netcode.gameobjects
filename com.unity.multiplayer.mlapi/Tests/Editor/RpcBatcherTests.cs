@@ -17,7 +17,7 @@ namespace MLAPI.EditorTests
             const int k_QueueItemCount = 128;
 
             var sendBatcher = new RpcBatcher();
-            var sendStreamQueue = new Queue<NetworkStream>();
+            var sendStreamQueue = new Queue<NetworkBuffer>();
             for (int i = 0; i < k_QueueItemCount; ++i)
             {
                 var randomData = Encoding.ASCII.GetBytes(Guid.NewGuid().ToString());
@@ -33,8 +33,8 @@ namespace MLAPI.EditorTests
                 sendBatcher.SendItems(k_BatchThreshold,
                     (networkId, sendStream) =>
                     {
-                        var queueStream = new NetworkStream();
-                        sendStream.Stream.CopyTo(queueStream);
+                        var queueStream = new NetworkBuffer();
+                        sendStream.Buffer.CopyTo(queueStream);
                         sendStreamQueue.Enqueue(queueStream);
                     });
             }
@@ -43,8 +43,8 @@ namespace MLAPI.EditorTests
             sendBatcher.SendItems( /* thresholdBytes = */ 0,
                 (networkId, sendStream) =>
                 {
-                    var queueStream = new NetworkStream();
-                    sendStream.Stream.CopyTo(queueStream);
+                    var queueStream = new NetworkBuffer();
+                    sendStream.Buffer.CopyTo(queueStream);
                     sendStreamQueue.Enqueue(queueStream);
                 });
 
@@ -75,7 +75,7 @@ namespace MLAPI.EditorTests
             const int k_QueueItemCount = 128;
 
             var sendBatcher = new RpcBatcher();
-            var sendStreamQueue = new Queue<NetworkStream>();
+            var sendStreamQueue = new Queue<NetworkBuffer>();
             for (int i = 0; i < k_QueueItemCount; ++i)
             {
                 var randomData = Encoding.ASCII.GetBytes(Guid.NewGuid().ToString());
@@ -91,8 +91,8 @@ namespace MLAPI.EditorTests
                 sendBatcher.SendItems(k_BatchThreshold,
                     (networkId, sendStream) =>
                     {
-                        var queueStream = new NetworkStream();
-                        sendStream.Stream.CopyTo(queueStream);
+                        var queueStream = new NetworkBuffer();
+                        sendStream.Buffer.CopyTo(queueStream);
                         sendStreamQueue.Enqueue(queueStream);
                     });
             }
@@ -101,8 +101,8 @@ namespace MLAPI.EditorTests
             sendBatcher.SendItems( /* thresholdBytes = */ 0,
                 (networkId, sendStream) =>
                 {
-                    var queueStream = new NetworkStream();
-                    sendStream.Stream.CopyTo(queueStream);
+                    var queueStream = new NetworkBuffer();
+                    sendStream.Buffer.CopyTo(queueStream);
                     sendStreamQueue.Enqueue(queueStream);
                 });
 

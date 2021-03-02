@@ -6,22 +6,22 @@ namespace MLAPI.Transports
     /// A transport channel used by the MLAPI
     /// </summary>
     [Serializable]
-    public class TransportChannel
+    public struct TransportChannel
     {
-        public TransportChannel(NetworkChannel id, NetworkDelivery type)
+        public TransportChannel(NetworkChannel channel, NetworkDelivery delivery)
         {
-            Id = id;
-            Type = type;
+            Channel = channel;
+            Delivery = delivery;
         }
 
         /// <summary>
         /// Channel identifier
         /// </summary>
-        public NetworkChannel Id;
+        public NetworkChannel Channel;
 
         /// <summary>
-        /// Channel type
+        /// Delivery type
         /// </summary>
-        public NetworkDelivery Type;
+        public NetworkDelivery Delivery;
     }
 }

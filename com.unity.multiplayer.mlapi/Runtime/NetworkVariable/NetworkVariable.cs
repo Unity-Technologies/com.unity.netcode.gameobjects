@@ -91,7 +91,7 @@ namespace MLAPI.NetworkVariable
 
                 // Setter is assumed to be called locally, by game code.
                 // When used by the host, it is its responsibility to set the RemoteTick
-                RemoteTick = NetworkTickSystem.k_NoTick;
+                RemoteTick = NetworkTickSystem.NoTick;
 
                 m_IsDirty = true;
                 T previousValue = m_InternalValue;

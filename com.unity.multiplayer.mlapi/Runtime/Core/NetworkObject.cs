@@ -41,12 +41,12 @@ namespace MLAPI
         public NetworkManager NetworkManager => NetworkManager.Singleton;
 
         /// <summary>
-        /// Gets the unique ID of this object that is synced across the network
+        /// Gets the unique Id of this object that is synced across the network
         /// </summary>
-        public ulong NetworkId { get; internal set; }
+        public ulong NetworkObjectId { get; internal set; }
 
         /// <summary>
-        /// Gets the clientId of the owner of this NetworkObject
+        /// Gets the ClientId of the owner of this NetworkObject
         /// </summary>
         public ulong OwnerClientId
         {
@@ -250,13 +250,13 @@ namespace MLAPI
 
                 if (networkObjects[i].m_Observers.Contains(clientId))
                 {
-                    throw new VisibilityChangeException($"{nameof(NetworkObject)} with NetworkId: {networkObjects[i].NetworkId} is already visible");
+                    throw new VisibilityChangeException($"{nameof(NetworkObject)} with NetworkId: {networkObjects[i].NetworkObjectId} is already visible");
                 }
             }
 
-            using (var stream = PooledNetworkStream.Get())
+            using (var buffer = PooledNetworkBuffer.Get())
             {
-                using (var writer = PooledNetworkWriter.Get(stream))
+                using (var writer = PooledNetworkWriter.Get(buffer))
                 {
                     writer.WriteUInt16Packed((ushort)networkObjects.Count);
                 }
@@ -266,10 +266,10 @@ namespace MLAPI
                     // Send spawn call
                     networkObjects[i].m_Observers.Add(clientId);
 
-                    NetworkSpawnManager.WriteSpawnCallForObject(stream, clientId, networkObjects[i], payload);
+                    NetworkSpawnManager.WriteSpawnCallForObject(buffer, clientId, networkObjects[i], payload);
                 }
 
-                InternalMessageSender.Send(clientId, NetworkConstants.k_ADD_OBJECTS, NetworkChannel.Internal, stream);
+                InternalMessageSender.Send(clientId, NetworkConstants.ADD_OBJECTS, NetworkChannel.Internal, buffer);
             }
         }
 
@@ -303,13 +303,13 @@ namespace MLAPI
             // Send destroy call
             m_Observers.Remove(clientId);
 
-            using (var stream = PooledNetworkStream.Get())
+            using (var buffer = PooledNetworkBuffer.Get())
             {
-                using (var writer = PooledNetworkWriter.Get(stream))
+                using (var writer = PooledNetworkWriter.Get(buffer))
                 {
-                    writer.WriteUInt64Packed(NetworkId);
+                    writer.WriteUInt64Packed(NetworkObjectId);
 
-                    InternalMessageSender.Send(clientId, NetworkConstants.k_DESTROY_OBJECT, NetworkChannel.Internal, stream);
+                    InternalMessageSender.Send(clientId, NetworkConstants.DESTROY_OBJECT, NetworkChannel.Internal, buffer);
                 }
             }
         }
@@ -341,13 +341,13 @@ namespace MLAPI
 
                 if (!networkObjects[i].m_Observers.Contains(clientId))
                 {
-                    throw new VisibilityChangeException($"{nameof(NetworkObject)} with NetworkId: {networkObjects[i].NetworkId} is already hidden");
+                    throw new VisibilityChangeException($"{nameof(NetworkObject)} with NetworkId: {networkObjects[i].NetworkObjectId} is already hidden");
                 }
             }
 
-            using (var stream = PooledNetworkStream.Get())
+            using (var buffer = PooledNetworkBuffer.Get())
             {
-                using (var writer = PooledNetworkWriter.Get(stream))
+                using (var writer = PooledNetworkWriter.Get(buffer))
                 {
                     writer.WriteUInt16Packed((ushort)networkObjects.Count);
 
@@ -356,11 +356,11 @@ namespace MLAPI
                         // Send destroy call
                         networkObjects[i].m_Observers.Remove(clientId);
 
-                        writer.WriteUInt64Packed(networkObjects[i].NetworkId);
+                        writer.WriteUInt64Packed(networkObjects[i].NetworkObjectId);
                     }
                 }
 
-                InternalMessageSender.Send(clientId, NetworkConstants.k_DESTROY_OBJECTS, NetworkChannel.Internal, stream);
+                InternalMessageSender.Send(clientId, NetworkConstants.DESTROY_OBJECTS, NetworkChannel.Internal, buffer);
             }
         }
 
@@ -368,7 +368,7 @@ namespace MLAPI
         {
             if (NetworkManager.Singleton != null)
             {
-                NetworkSpawnManager.OnDestroyObject(NetworkId, false);
+                NetworkSpawnManager.OnDestroyObject(NetworkObjectId, false);
             }
         }
 

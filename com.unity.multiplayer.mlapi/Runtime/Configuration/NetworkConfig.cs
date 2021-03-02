@@ -209,9 +209,9 @@ namespace MLAPI.Configuration
         public string ToBase64()
         {
             NetworkConfig config = this;
-            using (var stream = PooledNetworkStream.Get())
+            using (var buffer = PooledNetworkBuffer.Get())
             {
-                using (var writer = PooledNetworkWriter.Get(stream))
+                using (var writer = PooledNetworkWriter.Get(buffer))
                 {
                     writer.WriteUInt16Packed(config.ProtocolVersion);
 
@@ -240,9 +240,9 @@ namespace MLAPI.Configuration
                     writer.WriteBool(EnableNetworkVariable);
                     writer.WriteBool(AllowRuntimeSceneChanges);
                     writer.WriteBool(EnableNetworkLogs);
-                    stream.PadStream();
+                    buffer.PadBuffer();
 
-                    return Convert.ToBase64String(stream.ToArray());
+                    return Convert.ToBase64String(buffer.ToArray());
                 }
             }
         }
@@ -255,9 +255,9 @@ namespace MLAPI.Configuration
         {
             NetworkConfig config = this;
             byte[] binary = Convert.FromBase64String(base64);
-            using (var stream = new NetworkStream(binary))
+            using (var buffer = new NetworkBuffer(binary))
             {
-                using (var reader = PooledNetworkReader.Get(stream))
+                using (var reader = PooledNetworkReader.Get(buffer))
                 {
                     config.ProtocolVersion = reader.ReadUInt16Packed();
 
@@ -305,12 +305,12 @@ namespace MLAPI.Configuration
 
             Sort();
 
-            using (var stream = PooledNetworkStream.Get())
+            using (var buffer = PooledNetworkBuffer.Get())
             {
-                using (var writer = PooledNetworkWriter.Get(stream))
+                using (var writer = PooledNetworkWriter.Get(buffer))
                 {
                     writer.WriteUInt16Packed(ProtocolVersion);
-                    writer.WriteString(NetworkConstants.k_PROTOCOL_VERSION);
+                    writer.WriteString(NetworkConstants.PROTOCOL_VERSION);
 
                     if (EnableSceneManagement && !AllowRuntimeSceneChanges)
                     {
@@ -335,15 +335,15 @@ namespace MLAPI.Configuration
                     writer.WriteBool(EnableSceneManagement);
                     writer.WriteBool(EnsureNetworkVariableLengthSafety);
                     writer.WriteBits((byte)RpcHashSize, 2);
-                    stream.PadStream();
+                    buffer.PadBuffer();
 
                     if (cache)
                     {
-                        m_ConfigHash = stream.ToArray().GetStableHash64();
+                        m_ConfigHash = buffer.ToArray().GetStableHash64();
                         return m_ConfigHash.Value;
                     }
 
-                    return stream.ToArray().GetStableHash64();
+                    return buffer.ToArray().GetStableHash64();
                 }
             }
         }

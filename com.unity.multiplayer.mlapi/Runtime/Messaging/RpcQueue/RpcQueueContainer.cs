@@ -169,20 +169,20 @@ namespace MLAPI.Messaging
 
             if (!QueueHistory.ContainsKey(queueType))
             {
-                UnityEngine.Debug.LogError("You must initialize the RpcQueueContainer before using MLAPI!");
+                UnityEngine.Debug.LogError($"You must initialize the {nameof(RpcQueueContainer)} before using MLAPI!");
                 return;
             }
 
             if (!QueueHistory[queueType].ContainsKey(StreamBufferIndex))
             {
-                UnityEngine.Debug.LogError("RpcQueueContainer " + queueType + " queue stream buffer index out of range! [" + StreamBufferIndex + "]");
+                UnityEngine.Debug.LogError($"{nameof(RpcQueueContainer)} {queueType} queue stream buffer index out of range! [{StreamBufferIndex}]");
                 return;
             }
 
 
             foreach (KeyValuePair<NetworkUpdateStage, RpcQueueHistoryFrame> queueHistoryByUpdates in QueueHistory[queueType][StreamBufferIndex])
             {
-                RpcQueueHistoryFrame rpcQueueHistoryItem = queueHistoryByUpdates.Value;
+                var rpcQueueHistoryItem = queueHistoryByUpdates.Value;
                 //This only gets reset when we advanced to next frame (do not reset this in the ResetQueueHistoryFrame)
                 rpcQueueHistoryItem.HasLoopbackData = false;
                 if (rpcQueueHistoryItem.QueueItemOffsets.Count > 0)
@@ -251,7 +251,7 @@ namespace MLAPI.Messaging
             {
                 rpcQueueFrame.TotalSize = 0;
                 rpcQueueFrame.QueueItemOffsets.Clear();
-                rpcQueueFrame.QueueStream.Position = 0;
+                rpcQueueFrame.QueueBuffer.Position = 0;
                 rpcQueueFrame.MarkCurrentStreamPosition();
                 rpcQueueFrame.IsDirty = false;
             }
@@ -265,24 +265,23 @@ namespace MLAPI.Messaging
         /// <param name="timeStamp">when it was received</param>
         /// <param name="sourceNetworkId">who sent the rpc</param>
         /// <param name="message">the message being received</param>
-        internal void AddQueueItemToInboundFrame(QueueItemType qItemType, float timeStamp, ulong sourceNetworkId, NetworkStream message)
+        internal void AddQueueItemToInboundFrame(QueueItemType qItemType, float timeStamp, ulong sourceNetworkId, NetworkBuffer message)
         {
             long originalPosition = message.Position;
-            PooledNetworkReader BR = PooledNetworkReader.Get(message);
+            NetworkUpdateStage updateStage;
 
-            var longValue = BR.ReadUInt64Packed(); // NetworkObjectId (temporary, we reset position just below)
-
-            var shortValue = BR.ReadUInt16Packed(); // NetworkBehaviourId (temporary, we reset position just below)
-
-            var updateStage = (NetworkUpdateStage)BR.ReadByteDirect();
-            BR.Dispose();
-            BR = null;
+            using (var reader = PooledNetworkReader.Get(message))
+            {
+                var longValue = reader.ReadUInt64Packed(); // NetworkObjectId (temporary, we reset position just below)
+                var shortValue = reader.ReadUInt16Packed(); // NetworkBehaviourId (temporary, we reset position just below)
+                updateStage = (NetworkUpdateStage)reader.ReadByteDirect();
+            }
 
             message.Position = originalPosition;
-            RpcQueueHistoryFrame rpcQueueHistoryItem = GetQueueHistoryFrame(RpcQueueHistoryFrame.QueueFrameType.Inbound, updateStage);
+            var rpcQueueHistoryItem = GetQueueHistoryFrame(RpcQueueHistoryFrame.QueueFrameType.Inbound, updateStage);
             rpcQueueHistoryItem.IsDirty = true;
 
-            long StartPosition = rpcQueueHistoryItem.QueueStream.Position;
+            long StartPosition = rpcQueueHistoryItem.QueueBuffer.Position;
 
             //Write the packed version of the queueItem to our current queue history buffer
             rpcQueueHistoryItem.QueueWriter.WriteUInt16((ushort)qItemType);
@@ -296,10 +295,10 @@ namespace MLAPI.Messaging
             rpcQueueHistoryItem.QueueWriter.WriteBytes(message.GetBuffer(), streamSize);
 
             //Add the packed size to the offsets for parsing over various entries
-            rpcQueueHistoryItem.QueueItemOffsets.Add((uint)rpcQueueHistoryItem.QueueStream.Position);
+            rpcQueueHistoryItem.QueueItemOffsets.Add((uint)rpcQueueHistoryItem.QueueBuffer.Position);
 
             //Calculate the packed size based on stream progression
-            rpcQueueHistoryItem.TotalSize += (uint)(rpcQueueHistoryItem.QueueStream.Position - StartPosition);
+            rpcQueueHistoryItem.TotalSize += (uint)(rpcQueueHistoryItem.QueueBuffer.Position - StartPosition);
         }
 
         /// <summary>
@@ -311,10 +310,10 @@ namespace MLAPI.Messaging
         public void SetLoopBackFrameItem(NetworkUpdateStage updateStage)
         {
             //Get the next frame's inbound queue history frame
-            RpcQueueHistoryFrame loopbackHistoryframe = GetQueueHistoryFrame(RpcQueueHistoryFrame.QueueFrameType.Inbound, updateStage, true);
+            var loopbackHistoryframe = GetQueueHistoryFrame(RpcQueueHistoryFrame.QueueFrameType.Inbound, updateStage, true);
 
             //Get the current frame's outbound queue history frame
-            RpcQueueHistoryFrame rpcQueueHistoryItem = GetQueueHistoryFrame(RpcQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate, false);
+            var rpcQueueHistoryItem = GetQueueHistoryFrame(RpcQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate, false);
 
             if (rpcQueueHistoryItem != null)
             {
@@ -354,7 +353,7 @@ namespace MLAPI.Messaging
         {
             bool getNextFrame = NetworkManager.Singleton.IsHost && queueFrameType == RpcQueueHistoryFrame.QueueFrameType.Inbound;
 
-            RpcQueueHistoryFrame rpcQueueHistoryItem = GetQueueHistoryFrame(queueFrameType, updateStage, getNextFrame);
+            var rpcQueueHistoryItem = GetQueueHistoryFrame(queueFrameType, updateStage, getNextFrame);
             rpcQueueHistoryItem.IsDirty = true;
 
             //Write the packed version of the queueItem to our current queue history buffer
@@ -435,11 +434,11 @@ namespace MLAPI.Messaging
         {
             bool getNextFrame = NetworkManager.Singleton.IsHost && queueFrameType == RpcQueueHistoryFrame.QueueFrameType.Inbound;
 
-            RpcQueueHistoryFrame rpcQueueHistoryItem = GetQueueHistoryFrame(queueFrameType, updateStage, getNextFrame);
-            RpcQueueHistoryFrame loopBackHistoryFrame = rpcQueueHistoryItem.LoopbackHistoryFrame;
+            var rpcQueueHistoryItem = GetQueueHistoryFrame(queueFrameType, updateStage, getNextFrame);
+            var loopBackHistoryFrame = rpcQueueHistoryItem.LoopbackHistoryFrame;
 
 
-            PooledNetworkWriter pbWriter = (PooledNetworkWriter)writer;
+            var pbWriter = (PooledNetworkWriter)writer;
 
             //Sanity check
             if (pbWriter != rpcQueueHistoryItem.QueueWriter && !getNextFrame)
@@ -448,15 +447,15 @@ namespace MLAPI.Messaging
             }
 
             //The total size of the frame is the last known position of the stream
-            rpcQueueHistoryItem.TotalSize = (uint)rpcQueueHistoryItem.QueueStream.Position;
+            rpcQueueHistoryItem.TotalSize = (uint)rpcQueueHistoryItem.QueueBuffer.Position;
 
-            long CurrentPosition = rpcQueueHistoryItem.QueueStream.Position;
-            ulong BitPosition = rpcQueueHistoryItem.QueueStream.BitPosition;
+            long CurrentPosition = rpcQueueHistoryItem.QueueBuffer.Position;
+            ulong BitPosition = rpcQueueHistoryItem.QueueBuffer.BitPosition;
 
             //////////////////////////////////////////////////////////////
             //>>>> REPOSITIONING STREAM TO RPC MESSAGE SIZE LOCATION <<<<
             //////////////////////////////////////////////////////////////
-            rpcQueueHistoryItem.QueueStream.Position = rpcQueueHistoryItem.GetCurrentMarkedPosition();
+            rpcQueueHistoryItem.QueueBuffer.Position = rpcQueueHistoryItem.GetCurrentMarkedPosition();
 
             long MSGOffset = 8;
             if (getNextFrame && IsUsingBatching())
@@ -483,7 +482,7 @@ namespace MLAPI.Messaging
                 if (MSGSize > 0)
                 {
                     //Point to where the size of the message is stored
-                    loopBackHistoryFrame.QueueStream.Position = loopBackHistoryFrame.GetCurrentMarkedPosition();
+                    loopBackHistoryFrame.QueueBuffer.Position = loopBackHistoryFrame.GetCurrentMarkedPosition();
 
                     //Write the actual size of the RPC message
                     loopBackHistoryFrame.QueueWriter.WriteInt64(MSGSize);
@@ -500,13 +499,13 @@ namespace MLAPI.Messaging
                     }
 
                     //Write RPC data
-                    loopBackHistoryFrame.QueueWriter.WriteBytes(rpcQueueHistoryItem.QueueStream.GetBuffer(), MSGSize, (int)rpcQueueHistoryItem.QueueStream.Position);
+                    loopBackHistoryFrame.QueueWriter.WriteBytes(rpcQueueHistoryItem.QueueBuffer.GetBuffer(), MSGSize, (int)rpcQueueHistoryItem.QueueBuffer.Position);
 
                     //Set the total size for this stream
-                    loopBackHistoryFrame.TotalSize = (uint)loopBackHistoryFrame.QueueStream.Position;
+                    loopBackHistoryFrame.TotalSize = (uint)loopBackHistoryFrame.QueueBuffer.Position;
 
                     //Add the total size to the offsets for parsing over various entries
-                    loopBackHistoryFrame.QueueItemOffsets.Add((uint)loopBackHistoryFrame.QueueStream.Position);
+                    loopBackHistoryFrame.QueueItemOffsets.Add((uint)loopBackHistoryFrame.QueueBuffer.Position);
                 }
                 else
                 {
@@ -522,11 +521,11 @@ namespace MLAPI.Messaging
             //////////////////////////////////////////////////////////////
             //<<<< REPOSITIONING STREAM BACK TO THE CURRENT TAIL >>>>
             //////////////////////////////////////////////////////////////
-            rpcQueueHistoryItem.QueueStream.Position = CurrentPosition;
-            rpcQueueHistoryItem.QueueStream.BitPosition = BitPosition;
+            rpcQueueHistoryItem.QueueBuffer.Position = CurrentPosition;
+            rpcQueueHistoryItem.QueueBuffer.BitPosition = BitPosition;
 
             //Add the packed size to the offsets for parsing over various entries
-            rpcQueueHistoryItem.QueueItemOffsets.Add((uint)rpcQueueHistoryItem.QueueStream.Position);
+            rpcQueueHistoryItem.QueueItemOffsets.Add((uint)rpcQueueHistoryItem.QueueBuffer.Position);
         }
 
         /// <summary>
@@ -543,6 +542,7 @@ namespace MLAPI.Messaging
             if (getNextFrame)
             {
                 StreamBufferIndex++;
+
                 //If we have hit our maximum history, roll back over to the first one
                 if (StreamBufferIndex >= m_MaxFrameHistory)
                 {
@@ -558,19 +558,20 @@ namespace MLAPI.Messaging
 
             if (!QueueHistory[frameType].ContainsKey(StreamBufferIndex))
             {
-                UnityEngine.Debug.LogError("RPCQueueManager " + frameType + " queue stream buffer index out of range! [" + StreamBufferIndex + "]");
+                UnityEngine.Debug.LogError($"{nameof(RpcQueueContainer)} {frameType} queue stream buffer index out of range! [{StreamBufferIndex}]");
                 return null;
             }
 
             if (!QueueHistory[frameType][StreamBufferIndex].ContainsKey(updateStage))
             {
-                UnityEngine.Debug.LogError("RPCQueueManager " + updateStage.ToString() + " update type does not exist!");
+                UnityEngine.Debug.LogError($"{nameof(RpcQueueContainer)} {updateStage} update type does not exist!");
                 return null;
             }
 
             return QueueHistory[frameType][StreamBufferIndex][updateStage];
         }
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
         /// <summary>
         /// LoopbackSendFrame
         /// Will copy the contents of the current outbound QueueHistoryFrame to the current inbound QueueHistoryFrame
@@ -581,42 +582,43 @@ namespace MLAPI.Messaging
             //If we do not have loop back or testing mode enabled then ignore the call
             if (m_IsTestingEnabled)
             {
-                RpcQueueHistoryFrame rpcQueueHistoryItemOutbound = GetQueueHistoryFrame(RpcQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
+                var rpcQueueHistoryItemOutbound = GetQueueHistoryFrame(RpcQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
                 if (rpcQueueHistoryItemOutbound.QueueItemOffsets.Count > 0)
                 {
                     //Reset inbound queues based on update stage
                     foreach (NetworkUpdateStage netUpdateStage in Enum.GetValues(typeof(NetworkUpdateStage)))
                     {
-                        RpcQueueHistoryFrame rpcQueueHistoryItemInbound = GetQueueHistoryFrame(RpcQueueHistoryFrame.QueueFrameType.Inbound, netUpdateStage);
+                        var rpcQueueHistoryItemInbound = GetQueueHistoryFrame(RpcQueueHistoryFrame.QueueFrameType.Inbound, netUpdateStage);
                         ResetQueueHistoryFrame(rpcQueueHistoryItemInbound);
                     }
 
-                    PooledNetworkStream pooledNetworkStream = PooledNetworkStream.Get();
-                    RpcFrameQueueItem rpcFrameQueueItem = rpcQueueHistoryItemOutbound.GetFirstQueueItem();
+                    var pooledNetworkBuffer = PooledNetworkBuffer.Get();
+                    var rpcFrameQueueItem = rpcQueueHistoryItemOutbound.GetFirstQueueItem();
 
                     while (rpcFrameQueueItem.QueueItemType != QueueItemType.None)
                     {
-                        pooledNetworkStream.SetLength(rpcFrameQueueItem.StreamSize);
-                        pooledNetworkStream.Position = 0;
-                        byte[] pooledNetworkStreamArray = pooledNetworkStream.GetBuffer();
+                        pooledNetworkBuffer.SetLength(rpcFrameQueueItem.StreamSize);
+                        pooledNetworkBuffer.Position = 0;
+                        byte[] pooledNetworkStreamArray = pooledNetworkBuffer.GetBuffer();
                         Buffer.BlockCopy(rpcFrameQueueItem.MessageData.Array ?? Array.Empty<byte>(), rpcFrameQueueItem.MessageData.Offset, pooledNetworkStreamArray, 0, (int)rpcFrameQueueItem.StreamSize);
 
                         if (!IsUsingBatching())
                         {
-                            pooledNetworkStream.Position = 1;
+                            pooledNetworkBuffer.Position = 1;
                         }
 
-                        AddQueueItemToInboundFrame(rpcFrameQueueItem.QueueItemType, UnityEngine.Time.realtimeSinceStartup, rpcFrameQueueItem.NetworkId, pooledNetworkStream);
+                        AddQueueItemToInboundFrame(rpcFrameQueueItem.QueueItemType, UnityEngine.Time.realtimeSinceStartup, rpcFrameQueueItem.NetworkId, pooledNetworkBuffer);
                         rpcFrameQueueItem = rpcQueueHistoryItemOutbound.GetNextQueueItem();
                     }
                 }
             }
         }
+#endif
 
         /// <summary>
         /// Initialize
         /// This should be called during primary initialization period (typically during NetworkManager's Start method)
-        /// This will allocate [maxFrameHistory] + [1 currentFrame] number of PooledNetworkStreams and keep them open until the session ends
+        /// This will allocate [maxFrameHistory] + [1 currentFrame] number of PooledNetworkBuffers and keep them open until the session ends
         /// Note: For zero frame history set maxFrameHistory to zero
         /// </summary>
         /// <param name="maxFrameHistory"></param>
@@ -625,7 +627,6 @@ namespace MLAPI.Messaging
             ClearParameters();
 
             m_RpcQueueProcessor = new RpcQueueProcessor();
-
             m_MaxFrameHistory = maxFrameHistory + k_MinQueueHistory;
 
             if (!QueueHistory.ContainsKey(RpcQueueHistoryFrame.QueueFrameType.Inbound))
@@ -644,10 +645,10 @@ namespace MLAPI.Messaging
                 {
                     QueueHistory[RpcQueueHistoryFrame.QueueFrameType.Outbound].Add(i, new Dictionary<NetworkUpdateStage, RpcQueueHistoryFrame>());
                     var queueHistoryFrame = new RpcQueueHistoryFrame(RpcQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
-                    queueHistoryFrame.QueueStream = PooledNetworkStream.Get();
-                    queueHistoryFrame.QueueStream.Position = 0;
-                    queueHistoryFrame.QueueWriter = PooledNetworkWriter.Get(queueHistoryFrame.QueueStream);
-                    queueHistoryFrame.QueueReader = PooledNetworkReader.Get(queueHistoryFrame.QueueStream);
+                    queueHistoryFrame.QueueBuffer = PooledNetworkBuffer.Get();
+                    queueHistoryFrame.QueueBuffer.Position = 0;
+                    queueHistoryFrame.QueueWriter = PooledNetworkWriter.Get(queueHistoryFrame.QueueBuffer);
+                    queueHistoryFrame.QueueReader = PooledNetworkReader.Get(queueHistoryFrame.QueueBuffer);
                     queueHistoryFrame.QueueItemOffsets = new List<uint>();
 
                     //For now all outbound, we will always have a single update in which they are processed (LATEUPDATE)
@@ -661,11 +662,11 @@ namespace MLAPI.Messaging
                     //For inbound, we create a queue history frame per update stage
                     foreach (NetworkUpdateStage netUpdateStage in Enum.GetValues(typeof(NetworkUpdateStage)))
                     {
-                        RpcQueueHistoryFrame rpcQueueHistoryFrame = new RpcQueueHistoryFrame(RpcQueueHistoryFrame.QueueFrameType.Inbound, netUpdateStage);
-                        rpcQueueHistoryFrame.QueueStream = PooledNetworkStream.Get();
-                        rpcQueueHistoryFrame.QueueStream.Position = 0;
-                        rpcQueueHistoryFrame.QueueWriter = PooledNetworkWriter.Get(rpcQueueHistoryFrame.QueueStream);
-                        rpcQueueHistoryFrame.QueueReader = PooledNetworkReader.Get(rpcQueueHistoryFrame.QueueStream);
+                        var rpcQueueHistoryFrame = new RpcQueueHistoryFrame(RpcQueueHistoryFrame.QueueFrameType.Inbound, netUpdateStage);
+                        rpcQueueHistoryFrame.QueueBuffer = PooledNetworkBuffer.Get();
+                        rpcQueueHistoryFrame.QueueBuffer.Position = 0;
+                        rpcQueueHistoryFrame.QueueWriter = PooledNetworkWriter.Get(rpcQueueHistoryFrame.QueueBuffer);
+                        rpcQueueHistoryFrame.QueueReader = PooledNetworkReader.Get(rpcQueueHistoryFrame.QueueBuffer);
                         rpcQueueHistoryFrame.QueueItemOffsets = new List<uint>();
                         QueueHistory[RpcQueueHistoryFrame.QueueFrameType.Inbound][i].Add(netUpdateStage, rpcQueueHistoryFrame);
                     }
@@ -720,15 +721,15 @@ namespace MLAPI.Messaging
             m_RpcQueueProcessor.InternalMessagesSendAndFlush();
 
             //Dispose of any readers and writers
-            foreach (KeyValuePair<RpcQueueHistoryFrame.QueueFrameType, Dictionary<int, Dictionary<NetworkUpdateStage, RpcQueueHistoryFrame>>> queueHistorySection in QueueHistory)
+            foreach (var queueHistorySection in QueueHistory)
             {
-                foreach (KeyValuePair<int, Dictionary<NetworkUpdateStage, RpcQueueHistoryFrame>> queueHistoryItemByStage in queueHistorySection.Value)
+                foreach (var queueHistoryItemByStage in queueHistorySection.Value)
                 {
-                    foreach (KeyValuePair<NetworkUpdateStage, RpcQueueHistoryFrame> queueHistoryItem in queueHistoryItemByStage.Value)
+                    foreach (var queueHistoryItem in queueHistoryItemByStage.Value)
                     {
                         queueHistoryItem.Value.QueueWriter?.Dispose();
                         queueHistoryItem.Value.QueueReader?.Dispose();
-                        queueHistoryItem.Value.QueueStream?.Dispose();
+                        queueHistoryItem.Value.QueueBuffer?.Dispose();
                     }
                 }
             }

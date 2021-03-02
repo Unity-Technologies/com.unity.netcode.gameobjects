@@ -380,10 +380,10 @@ namespace MLAPI.Transports.UNET
             // MLAPI built-in channels
             for (int i = 0; i < MLAPI_CHANNELS.Length; i++)
             {
-                int channelId = AddMLAPIChannel(MLAPI_CHANNELS[i].Type, config);
+                int channelId = AddMLAPIChannel(MLAPI_CHANNELS[i].Delivery, config);
 
-                m_ChannelIdToName.Add(channelId, MLAPI_CHANNELS[i].Id);
-                m_ChannelNameToId.Add(MLAPI_CHANNELS[i].Id, channelId);
+                m_ChannelIdToName.Add(channelId, MLAPI_CHANNELS[i].Channel);
+                m_ChannelNameToId.Add(MLAPI_CHANNELS[i].Channel, channelId);
             }
 
             // Custom user-added channels

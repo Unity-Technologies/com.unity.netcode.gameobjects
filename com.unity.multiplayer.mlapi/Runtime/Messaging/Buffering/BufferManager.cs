@@ -17,9 +17,9 @@ namespace MLAPI.Messaging.Buffering
 
         internal struct BufferedMessage
         {
-            internal ulong Sender;
+            internal ulong SenderClientId;
             internal NetworkChannel NetworkChannel;
-            internal PooledNetworkStream Payload;
+            internal PooledNetworkBuffer NetworkBuffer;
             internal float ReceiveTime;
             internal float BufferTime;
         }
@@ -42,10 +42,10 @@ namespace MLAPI.Messaging.Buffering
 
         internal static void RecycleConsumedBufferedMessage(BufferedMessage message)
         {
-            message.Payload.Dispose();
+            message.NetworkBuffer.Dispose();
         }
 
-        internal static void BufferMessageForNetworkId(ulong networkId, ulong sender, NetworkChannel networkChannel, float receiveTime, ArraySegment<byte> payload)
+        internal static void BufferMessageForNetworkId(ulong networkId, ulong senderClientId, NetworkChannel networkChannel, float receiveTime, ArraySegment<byte> payload)
         {
             if (!k_BufferQueues.ContainsKey(networkId))
             {
@@ -54,18 +54,17 @@ namespace MLAPI.Messaging.Buffering
 
             Queue<BufferedMessage> queue = k_BufferQueues[networkId];
 
-            PooledNetworkStream payloadStream = PooledNetworkStream.Get();
-
-            payloadStream.Write(payload.Array, payload.Offset, payload.Count);
-            payloadStream.Position = 0;
+            var payloadBuffer = PooledNetworkBuffer.Get();
+            payloadBuffer.Write(payload.Array, payload.Offset, payload.Count);
+            payloadBuffer.Position = 0;
 
             queue.Enqueue(new BufferedMessage()
             {
                 BufferTime = Time.realtimeSinceStartup,
                 NetworkChannel = networkChannel,
-                Payload = payloadStream,
+                NetworkBuffer = payloadBuffer,
                 ReceiveTime = receiveTime,
-                Sender = sender
+                SenderClientId = senderClientId
             });
         }
 

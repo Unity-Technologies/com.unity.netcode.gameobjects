@@ -117,8 +117,7 @@ namespace MLAPI.Messaging
         {
             foreach (RpcFrameQueueItem queueItem in m_InternalMLAPISendQueue)
             {
-                var PoolStream = queueItem.ItemStream;
-
+                var PoolStream = queueItem.NetworkBuffer;
                 if (NetworkManager.Singleton.IsListening)
                 {
                     switch (queueItem.QueueItemType)
@@ -127,7 +126,7 @@ namespace MLAPI.Messaging
                         {
                             foreach (ulong clientId in queueItem.ClientNetworkIds)
                             {
-                                InternalMessageSender.Send(clientId, NetworkConstants.k_ADD_OBJECT, queueItem.NetworkChannel, PoolStream);
+                                InternalMessageSender.Send(clientId, NetworkConstants.ADD_OBJECT, queueItem.NetworkChannel, PoolStream);
                             }
 
                             PerformanceDataManager.Increment(ProfilerConstants.k_NumberOfRPCsSent, queueItem.ClientNetworkIds.Length);
@@ -138,7 +137,7 @@ namespace MLAPI.Messaging
                         {
                             foreach (ulong clientId in queueItem.ClientNetworkIds)
                             {
-                                InternalMessageSender.Send(clientId, NetworkConstants.k_DESTROY_OBJECT, queueItem.NetworkChannel, PoolStream);
+                                InternalMessageSender.Send(clientId, NetworkConstants.DESTROY_OBJECT, queueItem.NetworkChannel, PoolStream);
                             }
 
                             PerformanceDataManager.Increment(ProfilerConstants.k_NumberOfRPCsSent, queueItem.ClientNetworkIds.Length);
@@ -211,8 +210,8 @@ namespace MLAPI.Messaging
         /// <param name="sendStream"> the stream to send</param>
         private static void SendCallback(ulong clientId, RpcBatcher.SendStream sendStream)
         {
-            var length = (int)sendStream.Stream.Length;
-            var bytes = sendStream.Stream.GetBuffer();
+            var length = (int)sendStream.Buffer.Length;
+            var bytes = sendStream.Buffer.GetBuffer();
             ArraySegment<byte> sendBuffer = new ArraySegment<byte>(bytes, 0, length);
 
             NetworkManager.Singleton.NetworkConfig.NetworkTransport.Send(clientId, sendBuffer, sendStream.NetworkChannel);

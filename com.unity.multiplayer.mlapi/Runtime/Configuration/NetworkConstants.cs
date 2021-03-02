@@ -5,28 +5,28 @@ namespace MLAPI.Configuration
     /// </summary>
     internal static class NetworkConstants
     {
-        internal const string k_PROTOCOL_VERSION = "13.0.0";
+        internal const string PROTOCOL_VERSION = "13.0.0";
 
-        internal const byte k_CONNECTION_REQUEST = 3;
-        internal const byte k_CONNECTION_APPROVED = 4;
-        internal const byte k_ADD_OBJECT = 5;
-        internal const byte k_DESTROY_OBJECT = 6;
-        internal const byte k_SWITCH_SCENE = 7;
-        internal const byte k_CLIENT_SWITCH_SCENE_COMPLETED = 8;
-        internal const byte k_CHANGE_OWNER = 9;
-        internal const byte k_ADD_OBJECTS = 10;
-        internal const byte k_TIME_SYNC = 11;
-        internal const byte k_NETWORK_VARIABLE_DELTA = 12;
-        internal const byte k_NETWORK_VARIABLE_UPDATE = 13;
-        internal const byte k_UNNAMED_MESSAGE = 20;
-        internal const byte k_DESTROY_OBJECTS = 21;
-        internal const byte k_NAMED_MESSAGE = 22;
-        internal const byte k_SERVER_LOG = 23;
-        internal const byte k_SERVER_RPC = 30;
-        internal const byte k_CLIENT_RPC = 31;
-        internal const byte k_INVALID = 32;
+        internal const byte CONNECTION_REQUEST = 3;
+        internal const byte CONNECTION_APPROVED = 4;
+        internal const byte ADD_OBJECT = 5;
+        internal const byte DESTROY_OBJECT = 6;
+        internal const byte SWITCH_SCENE = 7;
+        internal const byte CLIENT_SWITCH_SCENE_COMPLETED = 8;
+        internal const byte CHANGE_OWNER = 9;
+        internal const byte ADD_OBJECTS = 10;
+        internal const byte TIME_SYNC = 11;
+        internal const byte NETWORK_VARIABLE_DELTA = 12;
+        internal const byte NETWORK_VARIABLE_UPDATE = 13;
+        internal const byte UNNAMED_MESSAGE = 20;
+        internal const byte DESTROY_OBJECTS = 21;
+        internal const byte NAMED_MESSAGE = 22;
+        internal const byte SERVER_LOG = 23;
+        internal const byte SERVER_RPC = 30;
+        internal const byte CLIENT_RPC = 31;
+        internal const byte INVALID = 32;
 
-        internal static readonly string[] k_MESSAGE_NAMES =
+        internal static readonly string[] MESSAGE_NAMES =
         {
             "", // 0
             "",

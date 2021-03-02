@@ -13,12 +13,12 @@ namespace MLAPI.Serialization
 {
     // Improved version of NetworkWriter
     /// <summary>
-    /// A BinaryWriter that can do bit wise manipulation when backed by a NetworkStream
+    /// A BinaryWriter that can do bit wise manipulation when backed by a NetworkBuffer
     /// </summary>
     public class NetworkWriter
     {
         private Stream m_Source;
-        private NetworkStream m_NetworkSource;
+        private NetworkBuffer m_NetworkSource;
 
         /// <summary>
         /// Creates a new NetworkWriter backed by a given stream
@@ -27,7 +27,7 @@ namespace MLAPI.Serialization
         public NetworkWriter(Stream stream)
         {
             m_Source = stream;
-            m_NetworkSource = stream as NetworkStream;
+            m_NetworkSource = stream as NetworkBuffer;
         }
 
         /// <summary>
@@ -37,7 +37,7 @@ namespace MLAPI.Serialization
         public void SetStream(Stream stream)
         {
             m_Source = stream;
-            m_NetworkSource = stream as NetworkStream;
+            m_NetworkSource = stream as NetworkBuffer;
         }
 
         internal Stream GetStream()
@@ -203,7 +203,7 @@ namespace MLAPI.Serialization
                     throw new ArgumentException($"{nameof(NetworkWriter)} cannot write {nameof(NetworkObject)} types that are not spawned. GameObject: {((GameObject)value).name}");
                 }
 
-                WriteUInt64Packed(networkObject.NetworkId);
+                WriteUInt64Packed(networkObject.NetworkObjectId);
                 return;
             }
             else if (value is NetworkObject)
@@ -213,7 +213,7 @@ namespace MLAPI.Serialization
                     throw new ArgumentException($"{nameof(NetworkWriter)} cannot write {nameof(NetworkObject)} types that are not spawned. GameObject: {((GameObject)value).name}");
                 }
 
-                WriteUInt64Packed(((NetworkObject)value).NetworkId);
+                WriteUInt64Packed(((NetworkObject)value).NetworkObjectId);
                 return;
             }
             else if (value is NetworkBehaviour)
@@ -223,8 +223,8 @@ namespace MLAPI.Serialization
                     throw new ArgumentException($"{nameof(NetworkWriter)} cannot write {nameof(NetworkBehaviour)} types that are not spawned. GameObject: {((GameObject)value).name}");
                 }
 
-                WriteUInt64Packed(((NetworkBehaviour)value).NetworkId);
-                WriteUInt16Packed(((NetworkBehaviour)value).GetNetworkBehaviourId());
+                WriteUInt64Packed(((NetworkBehaviour)value).NetworkObjectId);
+                WriteUInt16Packed(((NetworkBehaviour)value).NetworkBehaviourId);
                 return;
             }
             else if (value is INetworkSerializable)
@@ -495,7 +495,7 @@ namespace MLAPI.Serialization
         /// <param name="bit"></param>
         public void WriteBit(bool bit)
         {
-            if (m_NetworkSource == null) throw new InvalidOperationException($"Cannot write bits on a non-{nameof(NetworkStream)} stream");
+            if (m_NetworkSource == null) throw new InvalidOperationException($"Cannot write bits on a non-{nameof(NetworkBuffer)} stream");
             m_NetworkSource.WriteBit(bit);
         }
 
@@ -544,7 +544,7 @@ namespace MLAPI.Serialization
         /// <param name="bitCount">Amount of bits to write</param>
         public void WriteBits(ulong value, int bitCount)
         {
-            if (m_NetworkSource == null) throw new InvalidOperationException($"Cannot write bits on a non-{nameof(NetworkStream)} stream");
+            if (m_NetworkSource == null) throw new InvalidOperationException($"Cannot write bits on a non-{nameof(NetworkBuffer)} stream");
             if (bitCount > 64) throw new ArgumentOutOfRangeException("Cannot read more than 64 bits from a 64-bit value!");
             if (bitCount < 0) throw new ArgumentOutOfRangeException("Cannot read fewer than 0 bits!");
             int count = 0;
@@ -560,7 +560,7 @@ namespace MLAPI.Serialization
         /// <param name="bitCount">Amount of bits to write.</param>
         public void WriteBits(byte value, int bitCount)
         {
-            if (m_NetworkSource == null) throw new InvalidOperationException($"Cannot write bits on a non-{nameof(NetworkStream)} stream");
+            if (m_NetworkSource == null) throw new InvalidOperationException($"Cannot write bits on a non-{nameof(NetworkBuffer)} stream");
             for (int i = 0; i < bitCount; ++i)
                 m_NetworkSource.WriteBit(((value >> i) & 1) != 0);
         }

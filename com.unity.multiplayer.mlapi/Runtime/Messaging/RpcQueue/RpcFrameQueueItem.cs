@@ -20,9 +20,9 @@ namespace MLAPI.Messaging
         public ulong[] ClientNetworkIds; //Server invoked Client RPCs only
         public long StreamSize;
         public float Timestamp;
-        public PooledNetworkWriter StreamWriter;
-        public PooledNetworkReader StreamReader;
-        public PooledNetworkStream ItemStream;
+        public PooledNetworkWriter NetworkWriter;
+        public PooledNetworkReader NetworkReader;
+        public PooledNetworkBuffer NetworkBuffer;
         public ArraySegment<byte> MessageData;
     }
 }

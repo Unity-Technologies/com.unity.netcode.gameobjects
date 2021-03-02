@@ -55,7 +55,10 @@ namespace MLAPI.Messaging
                 if (NetworkManager.Singleton.NetworkConfig.ConnectionApproval)
                 {
                     byte[] connectionBuffer = reader.ReadByteArray();
-                    NetworkManager.Singleton.InvokeConnectionApproval(connectionBuffer, clientId, (createPlayerObject, playerPrefabHash, approved, position, rotation) => { NetworkManager.Singleton.HandleApproval(clientId, createPlayerObject, playerPrefabHash, approved, position, rotation); });
+                    NetworkManager.Singleton.InvokeConnectionApproval(connectionBuffer, clientId, (createPlayerObject, playerPrefabHash, approved, position, rotation) =>
+                    {
+                        NetworkManager.Singleton.HandleApproval(clientId, createPlayerObject, playerPrefabHash, approved, position, rotation);
+                    });
                 }
                 else
                 {
@@ -166,7 +169,7 @@ namespace MLAPI.Messaging
                                 {
                                     BufferManager.BufferedMessage message = bufferQueue.Dequeue();
 
-                                    NetworkManager.Singleton.HandleIncomingData(message.Sender, message.NetworkChannel, new ArraySegment<byte>(message.Payload.GetBuffer(), (int)message.Payload.Position, (int)message.Payload.Length), message.ReceiveTime, false);
+                                    NetworkManager.Singleton.HandleIncomingData(message.SenderClientId, message.NetworkChannel, new ArraySegment<byte>(message.NetworkBuffer.GetBuffer(), (int)message.NetworkBuffer.Position, (int)message.NetworkBuffer.Length), message.ReceiveTime, false);
 
                                     BufferManager.RecycleConsumedBufferedMessage(message);
                                 }
@@ -185,15 +188,15 @@ namespace MLAPI.Messaging
                 {
                     UnityAction<Scene, Scene> onSceneLoaded = null;
 
-                    Serialization.NetworkStream continuationStream = new Serialization.NetworkStream();
-                    continuationStream.CopyUnreadFrom(stream);
-                    continuationStream.Position = 0;
+                    var continuationBuffer = new NetworkBuffer();
+                    continuationBuffer.CopyUnreadFrom(stream);
+                    continuationBuffer.Position = 0;
 
                     void OnSceneLoadComplete()
                     {
                         SceneManager.activeSceneChanged -= onSceneLoaded;
                         NetworkSceneManager.s_IsSpawnedObjectsPendingInDontDestroyOnLoad = false;
-                        DelayedSpawnAction(continuationStream);
+                        DelayedSpawnAction(continuationBuffer);
                     }
 
                     onSceneLoaded = (oldScene, newScene) => { OnSceneLoadComplete(); };
@@ -279,7 +282,7 @@ namespace MLAPI.Messaging
                     {
                         BufferManager.BufferedMessage message = bufferQueue.Dequeue();
 
-                        NetworkManager.Singleton.HandleIncomingData(message.Sender, message.NetworkChannel, new ArraySegment<byte>(message.Payload.GetBuffer(), (int)message.Payload.Position, (int)message.Payload.Length), message.ReceiveTime, false);
+                        NetworkManager.Singleton.HandleIncomingData(message.SenderClientId, message.NetworkChannel, new ArraySegment<byte>(message.NetworkBuffer.GetBuffer(), (int)message.NetworkBuffer.Position, (int)message.NetworkBuffer.Length), message.ReceiveTime, false);
 
                         BufferManager.RecycleConsumedBufferedMessage(message);
                     }
@@ -315,11 +318,11 @@ namespace MLAPI.Messaging
                 uint sceneIndex = reader.ReadUInt32Packed();
                 Guid switchSceneGuid = new Guid(reader.ReadByteArray());
 
-                var objectStream = new NetworkStream();
-                objectStream.CopyUnreadFrom(stream);
-                objectStream.Position = 0;
+                var objectBuffer = new NetworkBuffer();
+                objectBuffer.CopyUnreadFrom(stream);
+                objectBuffer.Position = 0;
 
-                NetworkSceneManager.OnSceneSwitch(sceneIndex, switchSceneGuid, objectStream);
+                NetworkSceneManager.OnSceneSwitch(sceneIndex, switchSceneGuid, objectBuffer);
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleSwitchScene.End();
@@ -527,7 +530,7 @@ namespace MLAPI.Messaging
             PerformanceDataManager.Increment(ProfilerConstants.k_NumberOfRPCsReceived);
 
             var rpcQueueContainer = NetworkManager.Singleton.RpcQueueContainer;
-            rpcQueueContainer.AddQueueItemToInboundFrame(queueItemType, receiveTime, clientId, (NetworkStream)stream);
+            rpcQueueContainer.AddQueueItemToInboundFrame(queueItemType, receiveTime, clientId, (NetworkBuffer)stream);
         }
 
         internal static void HandleUnnamedMessage(ulong clientId, Stream stream)

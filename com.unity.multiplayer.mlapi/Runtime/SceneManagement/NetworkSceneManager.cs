@@ -185,12 +185,12 @@ namespace MLAPI.SceneManagement
             s_IsSpawnedObjectsPendingInDontDestroyOnLoad = true;
             SceneManager.LoadScene(sceneName);
 
-            using (var stream = PooledNetworkStream.Get())
+            using (var buffer = PooledNetworkBuffer.Get())
             {
-                using (var writer = PooledNetworkWriter.Get(stream))
+                using (var writer = PooledNetworkWriter.Get(buffer))
                 {
                     writer.WriteByteArray(switchSceneGuid.ToByteArray());
-                    InternalMessageSender.Send(NetworkManager.Singleton.ServerClientId, NetworkConstants.k_CLIENT_SWITCH_SCENE_COMPLETED, NetworkChannel.Internal, stream);
+                    InternalMessageSender.Send(NetworkManager.Singleton.ServerClientId, NetworkConstants.CLIENT_SWITCH_SCENE_COMPLETED, NetworkChannel.Internal, buffer);
                 }
             }
 
@@ -240,9 +240,9 @@ namespace MLAPI.SceneManagement
             {
                 if (NetworkManager.Singleton.ConnectedClientsList[j].ClientId != NetworkManager.Singleton.ServerClientId)
                 {
-                    using (var stream = PooledNetworkStream.Get())
+                    using (var buffer = PooledNetworkBuffer.Get())
                     {
-                        using (var writer = PooledNetworkWriter.Get(stream))
+                        using (var writer = PooledNetworkWriter.Get(buffer))
                         {
                             writer.WriteUInt32Packed(s_CurrentActiveSceneIndex);
                             writer.WriteByteArray(switchSceneGuid.ToByteArray());
@@ -261,7 +261,7 @@ namespace MLAPI.SceneManagement
                                 if (newSceneObjects[i].m_Observers.Contains(NetworkManager.Singleton.ConnectedClientsList[j].ClientId))
                                 {
                                     writer.WriteBool(newSceneObjects[i].IsPlayerObject);
-                                    writer.WriteUInt64Packed(newSceneObjects[i].NetworkId);
+                                    writer.WriteUInt64Packed(newSceneObjects[i].NetworkObjectId);
                                     writer.WriteUInt64Packed(newSceneObjects[i].OwnerClientId);
 
                                     NetworkObject parent = null;
@@ -278,7 +278,7 @@ namespace MLAPI.SceneManagement
                                     else
                                     {
                                         writer.WriteBool(true);
-                                        writer.WriteUInt64Packed(parent.NetworkId);
+                                        writer.WriteUInt64Packed(parent.NetworkObjectId);
                                     }
 
                                     if (!NetworkManager.Singleton.NetworkConfig.EnableSceneManagement || NetworkManager.Singleton.NetworkConfig.UsePrefabSync)
@@ -300,13 +300,13 @@ namespace MLAPI.SceneManagement
 
                                     if (NetworkManager.Singleton.NetworkConfig.EnableNetworkVariable)
                                     {
-                                        newSceneObjects[i].WriteNetworkVariableData(stream, NetworkManager.Singleton.ConnectedClientsList[j].ClientId);
+                                        newSceneObjects[i].WriteNetworkVariableData(buffer, NetworkManager.Singleton.ConnectedClientsList[j].ClientId);
                                     }
                                 }
                             }
                         }
 
-                        InternalMessageSender.Send(NetworkManager.Singleton.ConnectedClientsList[j].ClientId, NetworkConstants.k_SWITCH_SCENE, NetworkChannel.Internal, stream);
+                        InternalMessageSender.Send(NetworkManager.Singleton.ConnectedClientsList[j].ClientId, NetworkConstants.SWITCH_SCENE, NetworkChannel.Internal, buffer);
                     }
                 }
             }
@@ -370,7 +370,7 @@ namespace MLAPI.SceneManagement
                             {
                                 BufferManager.BufferedMessage message = bufferQueue.Dequeue();
 
-                                NetworkManager.Singleton.HandleIncomingData(message.Sender, message.NetworkChannel, new ArraySegment<byte>(message.Payload.GetBuffer(), (int)message.Payload.Position, (int)message.Payload.Length), message.ReceiveTime, false);
+                                NetworkManager.Singleton.HandleIncomingData(message.SenderClientId, message.NetworkChannel, new ArraySegment<byte>(message.NetworkBuffer.GetBuffer(), (int)message.NetworkBuffer.Position, (int)message.NetworkBuffer.Length), message.ReceiveTime, false);
 
                                 BufferManager.RecycleConsumedBufferedMessage(message);
                             }
@@ -414,7 +414,7 @@ namespace MLAPI.SceneManagement
                             {
                                 BufferManager.BufferedMessage message = bufferQueue.Dequeue();
 
-                                NetworkManager.Singleton.HandleIncomingData(message.Sender, message.NetworkChannel, new ArraySegment<byte>(message.Payload.GetBuffer(), (int)message.Payload.Position, (int)message.Payload.Length), message.ReceiveTime, false);
+                                NetworkManager.Singleton.HandleIncomingData(message.SenderClientId, message.NetworkChannel, new ArraySegment<byte>(message.NetworkBuffer.GetBuffer(), (int)message.NetworkBuffer.Position, (int)message.NetworkBuffer.Length), message.ReceiveTime, false);
 
                                 BufferManager.RecycleConsumedBufferedMessage(message);
                             }
@@ -423,12 +423,12 @@ namespace MLAPI.SceneManagement
                 }
             }
 
-            using (var stream = PooledNetworkStream.Get())
+            using (var buffer = PooledNetworkBuffer.Get())
             {
-                using (var writer = PooledNetworkWriter.Get(stream))
+                using (var writer = PooledNetworkWriter.Get(buffer))
                 {
                     writer.WriteByteArray(switchSceneGuid.ToByteArray());
-                    InternalMessageSender.Send(NetworkManager.Singleton.ServerClientId, NetworkConstants.k_CLIENT_SWITCH_SCENE_COMPLETED, NetworkChannel.Internal, stream);
+                    InternalMessageSender.Send(NetworkManager.Singleton.ServerClientId, NetworkConstants.CLIENT_SWITCH_SCENE_COMPLETED, NetworkChannel.Internal, buffer);
                 }
             }
 

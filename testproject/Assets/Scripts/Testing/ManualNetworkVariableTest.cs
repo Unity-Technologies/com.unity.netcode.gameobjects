@@ -49,7 +49,7 @@ namespace MLAPI
             {
                 // compute the delta in tick between client and server,
                 // as seen from the client, when it receives a value not from itself
-                if (m_TestVar.LocalTick != NetworkTickSystem.k_NoTick)
+                if (m_TestVar.LocalTick != NetworkTickSystem.NoTick)
                 {
                     int delta = m_TestVar.LocalTick - m_TestVar.RemoteTick;
                     m_Count++;

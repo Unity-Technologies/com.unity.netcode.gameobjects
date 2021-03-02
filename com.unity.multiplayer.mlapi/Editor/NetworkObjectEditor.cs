@@ -40,7 +40,7 @@ namespace UnityEditor
                 EditorGUILayout.LabelField("PrefabHashGenerator: ", networkObject.PrefabHashGenerator, EditorStyles.label);
                 EditorGUILayout.LabelField("PrefabHash: ", networkObject.PrefabHash.ToString(), EditorStyles.label);
                 EditorGUILayout.LabelField("InstanceId: ", networkObject.NetworkInstanceId.ToString(), EditorStyles.label);
-                EditorGUILayout.LabelField("NetworkId: ", networkObject.NetworkId.ToString(), EditorStyles.label);
+                EditorGUILayout.LabelField("NetworkId: ", networkObject.NetworkObjectId.ToString(), EditorStyles.label);
                 EditorGUILayout.LabelField("OwnerId: ", networkObject.OwnerClientId.ToString(), EditorStyles.label);
                 EditorGUILayout.LabelField("IsSpawned: ", networkObject.IsSpawned.ToString(), EditorStyles.label);
                 EditorGUILayout.LabelField("IsLocalPlayer: ", networkObject.IsLocalPlayer.ToString(), EditorStyles.label);

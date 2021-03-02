@@ -40,28 +40,28 @@ namespace UnityEditor
 
             public byte[] ToBytes()
 			{
-				NetworkStream stream = new NetworkStream();
-				NetworkWriter writer = new NetworkWriter(stream);
+				NetworkBuffer buffer = new NetworkBuffer();
+				NetworkWriter writer = new NetworkWriter(buffer);
 				writer.WriteUInt16Packed((ushort)ticks.Length);
 
 				for (int i = 0; i < ticks.Length; i++)
 				{
-					ticks[i].SerializeToStream(stream);
+					ticks[i].SerializeToStream(buffer);
 				}
 
-				return stream.ToArray();
+				return buffer.ToArray();
 			}
 
 			public static ProfilerContainer FromBytes(byte[] bytes)
 			{
 				ProfilerContainer container = new ProfilerContainer();
-				NetworkStream stream = new NetworkStream(bytes);
-				NetworkReader reader = new NetworkReader(stream);
+				NetworkBuffer buffer = new NetworkBuffer(bytes);
+				NetworkReader reader = new NetworkReader(buffer);
 				ushort count = reader.ReadUInt16Packed();
 				container.ticks = new ProfilerTick[count];
                 for (int i = 0; i < count; i++)
 				{
-					container.ticks[i] = ProfilerTick.FromStream(stream);
+					container.ticks[i] = ProfilerTick.FromStream(buffer);
 				}
 
 				return container;
