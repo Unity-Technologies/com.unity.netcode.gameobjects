@@ -1,6 +1,7 @@
 using System;
 using MLAPI;
 using MLAPI.Configuration;
+using MLAPI.Exceptions;
 using MLAPI.Transports;
 using NUnit.Framework;
 using UnityEngine;
@@ -38,13 +39,13 @@ public class TransportTest : MonoBehaviour
         byte CustomChannel = 0;
 
         // test 1: add a legit channel.
-        ut.Channels.Add(new UnetChannel { Id = Channel.ChannelUnused + CustomChannel, Type = QosType.Unreliable });
+        ut.Channels.Add(new UnetChannel() { Id = Channel.ChannelUnused + CustomChannel, Type = QosType.Unreliable });
 
         try
         {
             nm.StartServer();
         }
-        catch
+        catch (InvalidChannelException e)
         {
             Assert.Fail("The UNet transport won't allow registration of a legit user channel");
         }
@@ -54,16 +55,16 @@ public class TransportTest : MonoBehaviour
 
         ut.Channels.Clear();
         // test 2: add a bogus channel (one that intersects with the MLAPI built-in ones.)  Expect failure
-        ut.Channels.Add(new UnetChannel { Id = Channel.Internal, Type = QosType.Unreliable });
+        ut.Channels.Add(new UnetChannel() { Id = Channel.Internal, Type = QosType.Unreliable });
 
         try
         {
             nm.StartServer();
             Assert.Fail("The Unet transport allowed registration of an MLAPI-reserved channel");
         }
-        catch (Exception ex)
+        catch (Exception e)
         {
-            Debug.Log(ex.Message);
+            Debug.Log(e.Message);
         }
 
         nm.StopServer();

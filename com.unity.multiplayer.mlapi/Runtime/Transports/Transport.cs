@@ -8,6 +8,7 @@ namespace MLAPI.Transports
     public enum Channel : byte
     {
         Internal,
+        StdRpc,
         TimeSync,
         ReliableRPC,
         UnreliableRPC,
@@ -91,6 +92,7 @@ namespace MLAPI.Transports
         private readonly TransportChannel[] MLAPI_INTERNAL_CHANNELS =
         {
             new TransportChannel(Channel.Internal, ChannelType.ReliableFragmentedSequenced),
+            new TransportChannel(Channel.StdRpc, ChannelType.ReliableSequenced),
             new TransportChannel(Channel.ReliableRPC, ChannelType.ReliableSequenced),
             new TransportChannel(Channel.UnreliableRPC, ChannelType.UnreliableSequenced),
             new TransportChannel(Channel.TimeSync, ChannelType.Unreliable),
