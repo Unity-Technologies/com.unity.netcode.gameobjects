@@ -16,8 +16,8 @@ namespace MLAPI.Messaging
     internal class RpcQueueProcessor
     {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-        static ProfilerMarker s_RpcQueueProcess = new ProfilerMarker("RpcQueueProcess");
-        static ProfilerMarker s_RpcQueueSend = new ProfilerMarker("RpcQueueSend");
+        private static ProfilerMarker s_RpcQueueProcess = new ProfilerMarker("RpcQueueProcess");
+        private static ProfilerMarker s_RpcQueueSend = new ProfilerMarker("RpcQueueSend");
 #endif
 
         // Batcher object used to manage the RPC batching on the send side

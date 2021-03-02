@@ -195,12 +195,12 @@ namespace MLAPI.Serialization
                 var networkObject = ((GameObject)value).GetComponent<NetworkObject>();
                 if (ReferenceEquals(networkObject, null))
                 {
-                    throw new ArgumentException($"{nameof(NetworkWriter)} cannot write GameObject types that does not has a {nameof(NetworkObject)} component attached. GameObject: {((GameObject)value).name}");
+                    throw new ArgumentException($"{nameof(NetworkWriter)} cannot write {nameof(GameObject)} types that does not has a {nameof(NetworkObject)} component attached. {nameof(GameObject)}: {((GameObject)value).name}");
                 }
 
                 if (!networkObject.IsSpawned)
                 {
-                    throw new ArgumentException($"{nameof(NetworkWriter)} cannot write {nameof(NetworkObject)} types that are not spawned. GameObject: {((GameObject)value).name}");
+                    throw new ArgumentException($"{nameof(NetworkWriter)} cannot write {nameof(NetworkObject)} types that are not spawned. {nameof(GameObject)}: {((GameObject)value).name}");
                 }
 
                 WriteUInt64Packed(networkObject.NetworkObjectId);
@@ -210,7 +210,7 @@ namespace MLAPI.Serialization
             {
                 if (!((NetworkObject)value).IsSpawned)
                 {
-                    throw new ArgumentException($"{nameof(NetworkWriter)} cannot write {nameof(NetworkObject)} types that are not spawned. GameObject: {((GameObject)value).name}");
+                    throw new ArgumentException($"{nameof(NetworkWriter)} cannot write {nameof(NetworkObject)} types that are not spawned. {nameof(GameObject)}: {((GameObject)value).name}");
                 }
 
                 WriteUInt64Packed(((NetworkObject)value).NetworkObjectId);
@@ -220,7 +220,7 @@ namespace MLAPI.Serialization
             {
                 if (!((NetworkBehaviour)value).HasNetworkObject || !((NetworkBehaviour)value).NetworkObject.IsSpawned)
                 {
-                    throw new ArgumentException($"{nameof(NetworkWriter)} cannot write {nameof(NetworkBehaviour)} types that are not spawned. GameObject: {((GameObject)value).name}");
+                    throw new ArgumentException($"{nameof(NetworkWriter)} cannot write {nameof(NetworkBehaviour)} types that are not spawned. {nameof(GameObject)}: {((GameObject)value).name}");
                 }
 
                 WriteUInt64Packed(((NetworkBehaviour)value).NetworkObjectId);
@@ -545,8 +545,8 @@ namespace MLAPI.Serialization
         public void WriteBits(ulong value, int bitCount)
         {
             if (m_NetworkSource == null) throw new InvalidOperationException($"Cannot write bits on a non-{nameof(NetworkBuffer)} stream");
-            if (bitCount > 64) throw new ArgumentOutOfRangeException("Cannot read more than 64 bits from a 64-bit value!");
-            if (bitCount < 0) throw new ArgumentOutOfRangeException("Cannot read fewer than 0 bits!");
+            if (bitCount > 64) throw new ArgumentOutOfRangeException(nameof(bitCount), "Cannot read more than 64 bits from a 64-bit value!");
+            if (bitCount < 0) throw new ArgumentOutOfRangeException(nameof(bitCount), "Cannot read fewer than 0 bits!");
             int count = 0;
             for (; count + 8 < bitCount; count += 8) m_NetworkSource.WriteByte((byte)(value >> count));
             for (; count < bitCount; ++count) m_NetworkSource.WriteBit((value & (1UL << count)) != 0);

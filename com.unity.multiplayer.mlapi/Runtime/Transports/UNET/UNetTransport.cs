@@ -391,7 +391,7 @@ namespace MLAPI.Transports.UNET
 
                 if (m_ChannelNameToId.ContainsKey(Channels[i].Id))
                 {
-                    throw new InvalidChannelException("Channel " + channelId + " already exists");
+                    throw new InvalidChannelException($"Channel {channelId} already exists");
                 }
 
                 m_ChannelIdToName.Add(channelId, Channels[i].Id);

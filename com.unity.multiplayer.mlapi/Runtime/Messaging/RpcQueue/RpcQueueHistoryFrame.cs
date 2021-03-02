@@ -145,7 +145,7 @@ namespace MLAPI.Messaging
             }
             else
             {
-                UnityEngine.Debug.LogWarning($"CurrentQueueItem.StreamSize exceeds allowed size ({k_MaxStreamBounds} vs {m_CurrentQueueItem.StreamSize})! Exiting Current RPC Queue Enumeration Loop!");
+                UnityEngine.Debug.LogWarning($"{nameof(m_CurrentQueueItem)}.{nameof(RpcFrameQueueItem.StreamSize)} exceeds allowed size ({k_MaxStreamBounds} vs {m_CurrentQueueItem.StreamSize})! Exiting from the current RpcQueue enumeration loop!");
                 m_CurrentQueueItem.QueueItemType = RpcQueueContainer.QueueItemType.None;
             }
 

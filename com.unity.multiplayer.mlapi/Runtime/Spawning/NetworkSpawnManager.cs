@@ -282,29 +282,26 @@ namespace MLAPI.Spawning
                     {
                         if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
                         {
-                            NetworkLog.LogError("Failed to create object locally. [PrefabHash=" + prefabHash + "]. Hash could not be found. Is the prefab registered?");
+                            NetworkLog.LogError($"Failed to create object locally. [{nameof(prefabHash)}={prefabHash}]. Hash could not be found. Is the prefab registered?");
                         }
 
                         return null;
                     }
-                    else
+
+                    var prefab = NetworkManager.Singleton.NetworkConfig.NetworkPrefabs[prefabIndex].Prefab;
+                    var networkObject = ((position == null && rotation == null) ? MonoBehaviour.Instantiate(prefab) : MonoBehaviour.Instantiate(prefab, position.GetValueOrDefault(Vector3.zero), rotation.GetValueOrDefault(Quaternion.identity))).GetComponent<NetworkObject>();
+
+                    if (!ReferenceEquals(parentNetworkObject, null))
                     {
-                        var prefab = NetworkManager.Singleton.NetworkConfig.NetworkPrefabs[prefabIndex].Prefab;
-
-                        var networkObject = ((position == null && rotation == null) ? MonoBehaviour.Instantiate(prefab) : MonoBehaviour.Instantiate(prefab, position.GetValueOrDefault(Vector3.zero), rotation.GetValueOrDefault(Quaternion.identity))).GetComponent<NetworkObject>();
-
-                        if (!ReferenceEquals(parentNetworkObject, null))
-                        {
-                            networkObject.transform.SetParent(parentNetworkObject.transform, true);
-                        }
-
-                        if (NetworkSceneManager.IsSpawnedObjectsPendingInDontDestroyOnLoad)
-                        {
-                            GameObject.DontDestroyOnLoad(networkObject.gameObject);
-                        }
-
-                        return networkObject;
+                        networkObject.transform.SetParent(parentNetworkObject.transform, true);
                     }
+
+                    if (NetworkSceneManager.IsSpawnedObjectsPendingInDontDestroyOnLoad)
+                    {
+                        GameObject.DontDestroyOnLoad(networkObject.gameObject);
+                    }
+
+                    return networkObject;
                 }
             }
             else
@@ -313,7 +310,10 @@ namespace MLAPI.Spawning
                 if (!PendingSoftSyncObjects.ContainsKey(instanceId))
                 {
                     // TODO: Fix this message
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogError("Cannot find pending soft sync object. Is the projects the same?");
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
+                    {
+                        NetworkLog.LogError("Cannot find pending soft sync object. Is the projects the same?");
+                    }
                     return null;
                 }
 

@@ -55,7 +55,11 @@ namespace MLAPI.SceneManagement
         {
             if (!SceneNameToIndex.ContainsKey(SceneManager.GetActiveScene().name))
             {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("The current scene (" + SceneManager.GetActiveScene().name + ") is not regisered as a network scene.");
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                {
+                    NetworkLog.LogWarning($"The current scene ({SceneManager.GetActiveScene().name}) is not regisered as a network scene.");
+                }
+
                 return;
             }
 
@@ -75,7 +79,7 @@ namespace MLAPI.SceneManagement
         {
             if (!NetworkManager.Singleton.NetworkConfig.AllowRuntimeSceneChanges)
             {
-                throw new NetworkConfigurationException("Cannot change the scene configuration when AllowRuntimeSceneChanges is false");
+                throw new NetworkConfigurationException($"Cannot change the scene configuration when {nameof(NetworkConfig.AllowRuntimeSceneChanges)} is false");
             }
 
             RegisteredSceneNames.Add(sceneName);
@@ -96,13 +100,21 @@ namespace MLAPI.SceneManagement
 
             if (s_IsSwitching)
             {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Scene switch already in progress");
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                {
+                    NetworkLog.LogWarning("Scene switch already in progress");
+                }
+
                 return null;
             }
 
             if (!RegisteredSceneNames.Contains(sceneName))
             {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("The scene " + sceneName + " is not registered as a switchable scene.");
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                {
+                    NetworkLog.LogWarning($"The scene {sceneName} is not registered as a switchable scene.");
+                }
+
                 return null;
             }
 
@@ -136,7 +148,11 @@ namespace MLAPI.SceneManagement
         {
             if (!SceneIndexToString.ContainsKey(sceneIndex) || !RegisteredSceneNames.Contains(SceneIndexToString[sceneIndex]))
             {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Server requested a scene switch to a non registered scene");
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                {
+                    NetworkLog.LogWarning("Server requested a scene switch to a non-registered scene");
+                }
+
                 return;
             }
 
@@ -161,7 +177,11 @@ namespace MLAPI.SceneManagement
         {
             if (!SceneIndexToString.ContainsKey(sceneIndex) || !RegisteredSceneNames.Contains(SceneIndexToString[sceneIndex]))
             {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Server requested a scene switch to a non registered scene");
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                {
+                    NetworkLog.LogWarning("Server requested a scene switch to a non-registered scene");
+                }
+
                 return;
             }
 

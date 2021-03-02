@@ -150,16 +150,16 @@ namespace MLAPI.Serialization
             if (type.IsEnum) return ReadInt32Packed();
             if (type == typeof(GameObject))
             {
-                ulong networkId = ReadUInt64Packed();
+                ulong networkObjectId = ReadUInt64Packed();
 
-                if (NetworkSpawnManager.SpawnedObjects.ContainsKey(networkId))
+                if (NetworkSpawnManager.SpawnedObjects.ContainsKey(networkObjectId))
                 {
-                    return NetworkSpawnManager.SpawnedObjects[networkId].gameObject;
+                    return NetworkSpawnManager.SpawnedObjects[networkObjectId].gameObject;
                 }
 
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                 {
-                    NetworkLog.LogWarning($"{nameof(NetworkReader)} cannot find the GameObject sent in the SpawnedObjects list, it may have been destroyed. NetworkId: {networkId}");
+                    NetworkLog.LogWarning($"{nameof(NetworkReader)} cannot find the {nameof(GameObject)} sent in the {nameof(NetworkSpawnManager.SpawnedObjects)} list, it may have been destroyed. {nameof(networkObjectId)}: {networkObjectId}");
                 }
 
                 return null;
@@ -167,16 +167,16 @@ namespace MLAPI.Serialization
 
             if (type == typeof(NetworkObject))
             {
-                ulong networkId = ReadUInt64Packed();
+                ulong networkObjectId = ReadUInt64Packed();
 
-                if (NetworkSpawnManager.SpawnedObjects.ContainsKey(networkId))
+                if (NetworkSpawnManager.SpawnedObjects.ContainsKey(networkObjectId))
                 {
-                    return NetworkSpawnManager.SpawnedObjects[networkId];
+                    return NetworkSpawnManager.SpawnedObjects[networkObjectId];
                 }
 
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                 {
-                    NetworkLog.LogWarning($"{nameof(NetworkReader)} cannot find the {nameof(NetworkObject)} sent in the SpawnedObjects list, it may have been destroyed. NetworkId: {networkId}");
+                    NetworkLog.LogWarning($"{nameof(NetworkReader)} cannot find the {nameof(NetworkObject)} sent in the {nameof(NetworkSpawnManager.SpawnedObjects)} list, it may have been destroyed. {nameof(networkObjectId)}: {networkObjectId}");
                 }
 
                 return null;
@@ -184,16 +184,16 @@ namespace MLAPI.Serialization
 
             if (typeof(NetworkBehaviour).IsAssignableFrom(type))
             {
-                ulong networkId = ReadUInt64Packed();
+                ulong networkObjectId = ReadUInt64Packed();
                 ushort behaviourId = ReadUInt16Packed();
-                if (NetworkSpawnManager.SpawnedObjects.ContainsKey(networkId))
+                if (NetworkSpawnManager.SpawnedObjects.ContainsKey(networkObjectId))
                 {
-                    return NetworkSpawnManager.SpawnedObjects[networkId].GetNetworkBehaviourAtOrderIndex(behaviourId);
+                    return NetworkSpawnManager.SpawnedObjects[networkObjectId].GetNetworkBehaviourAtOrderIndex(behaviourId);
                 }
 
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                 {
-                    NetworkLog.LogWarning($"{nameof(NetworkReader)} cannot find the {nameof(NetworkBehaviour)} sent in the SpawnedObjects list, it may have been destroyed. NetworkId: {networkId}");
+                    NetworkLog.LogWarning($"{nameof(NetworkReader)} cannot find the {nameof(NetworkBehaviour)} sent in the {nameof(NetworkSpawnManager.SpawnedObjects)} list, it may have been destroyed. {nameof(networkObjectId)}: {networkObjectId}");
                 }
 
                 return null;
@@ -388,8 +388,8 @@ namespace MLAPI.Serialization
         public ulong ReadBits(int bitCount)
         {
             if (m_NetworkSource == null) throw new InvalidOperationException($"Cannot read bits on a non-{nameof(NetworkBuffer)} stream");
-            if (bitCount > 64) throw new ArgumentOutOfRangeException("Cannot read more than 64 bits into a 64-bit value!");
-            if (bitCount < 0) throw new ArgumentOutOfRangeException("Cannot read fewer than 0 bits!");
+            if (bitCount > 64) throw new ArgumentOutOfRangeException(nameof(bitCount), "Cannot read more than 64 bits into a 64-bit value!");
+            if (bitCount < 0) throw new ArgumentOutOfRangeException(nameof(bitCount), "Cannot read fewer than 0 bits!");
             ulong read = 0;
             for (int i = 0; i + 8 < bitCount; i += 8) read |= (ulong)ReadByte() << i;
             read |= (ulong)ReadByteBits(bitCount & 7) << (bitCount & ~7);
@@ -404,8 +404,8 @@ namespace MLAPI.Serialization
         public byte ReadByteBits(int bitCount)
         {
             if (m_NetworkSource == null) throw new InvalidOperationException($"Cannot read bits on a non-{nameof(NetworkBuffer)} stream");
-            if (bitCount > 8) throw new ArgumentOutOfRangeException("Cannot read more than 8 bits into an 8-bit value!");
-            if (bitCount < 0) throw new ArgumentOutOfRangeException("Cannot read fewer than 0 bits!");
+            if (bitCount > 8) throw new ArgumentOutOfRangeException(nameof(bitCount), "Cannot read more than 8 bits into an 8-bit value!");
+            if (bitCount < 0) throw new ArgumentOutOfRangeException(nameof(bitCount), "Cannot read fewer than 0 bits!");
 
             int result = 0;
             ByteBool convert = new ByteBool();
@@ -659,7 +659,7 @@ namespace MLAPI.Serialization
         {
             if (m_NetworkSource == null) throw new InvalidOperationException($"Cannot read bits on a non-{nameof(NetworkBuffer)} stream");
             int expectedLength = (int)ReadUInt32Packed();
-            if (compareAndBuffer == null) throw new ArgumentNullException("Buffer cannot be null");
+            if (compareAndBuffer == null) throw new ArgumentNullException(nameof(compareAndBuffer), "Buffer cannot be null");
             if (compareAndBuffer.Capacity < expectedLength) compareAndBuffer.Capacity = expectedLength;
             ulong dBlockStart = m_NetworkSource.BitPosition + (ulong)Math.Min(expectedLength, compareAndBuffer.Length);
             ulong mapStart;
@@ -742,7 +742,7 @@ namespace MLAPI.Serialization
         {
             if (m_NetworkSource == null) throw new InvalidOperationException($"Cannot read bits on a non-{nameof(NetworkBuffer)} stream");
             int expectedLength = (int)ReadUInt32Packed();
-            if (compareAndBuffer == null) throw new ArgumentNullException("Buffer cannot be null");
+            if (compareAndBuffer == null) throw new ArgumentNullException(nameof(compareAndBuffer), "Buffer cannot be null");
             if (compareAndBuffer.Capacity < expectedLength) compareAndBuffer.Capacity = expectedLength;
             ulong dBlockStart = m_NetworkSource.BitPosition + (ulong)Math.Min(expectedLength, compareAndBuffer.Length);
             ulong mapStart;
@@ -814,7 +814,7 @@ namespace MLAPI.Serialization
                     }
                     else
                     {
-                        Debug.LogError($"CopySize ({CopySize}) exceeds bounds with an Offset of ({Offset})! <returning empty array segment>");
+                        Debug.LogError($"{nameof(CopySize)} ({CopySize}) exceeds bounds with an {nameof(Offset)} of ({Offset})! <returning empty array segment>");
                         return new ArraySegment<byte>();
                     }
 
@@ -822,7 +822,7 @@ namespace MLAPI.Serialization
                     return new ArraySegment<byte>(m_NetworkSource.GetBuffer(), Offset, CopySize);
                 }
 
-                Debug.LogError($"CopySize ({CopySize}) is zero or less! <returning empty array segment>");
+                Debug.LogError($"{nameof(CopySize)} ({CopySize}) is zero or less! <returning empty array segment>");
             }
             else
             {

@@ -341,7 +341,7 @@ namespace MLAPI
 
                 if (!networkObjects[i].m_Observers.Contains(clientId))
                 {
-                    throw new VisibilityChangeException($"{nameof(NetworkObject)} with NetworkId: {networkObjects[i].NetworkObjectId} is already hidden");
+                    throw new VisibilityChangeException($"{nameof(NetworkObject)} with {nameof(NetworkObjectId)}: {networkObjects[i].NetworkObjectId} is already hidden");
                 }
             }
 
@@ -553,7 +553,7 @@ namespace MLAPI
             }
         }
 
-        internal ushort GetOrderIndex(NetworkBehaviour instance)
+        internal ushort GetNetworkBehaviourOrderIndex(NetworkBehaviour instance)
         {
             for (ushort i = 0; i < ChildNetworkBehaviours.Count; i++)
             {
@@ -570,7 +570,10 @@ namespace MLAPI
         {
             if (index >= ChildNetworkBehaviours.Count)
             {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogError($"Behaviour index was out of bounds. Did you mess up the order of your {nameof(NetworkBehaviour)}s?");
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
+                {
+                    NetworkLog.LogError($"Behaviour index was out of bounds. Did you mess up the order of your {nameof(NetworkBehaviour)}s?");
+                }
                 return null;
             }
 

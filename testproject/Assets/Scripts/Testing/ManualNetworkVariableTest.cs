@@ -15,7 +15,7 @@ namespace MLAPI
         private int m_MaxDelta = 0;
         private int m_LastRemoteTick = 0;
         private bool m_Valid = false;
-        private string m_Problems = "";
+        private string m_Problems = string.Empty;
         private int m_Count = 0;
 
         // todo: address issue with initial values
@@ -91,7 +91,7 @@ namespace MLAPI
                 else
                 {
                     Debug.Log("**** TEST FAILED ****");
-                    Debug.Log("Delta range: " + m_MinDelta + ", " + m_MaxDelta);
+                    Debug.Log($"Delta range: {m_MinDelta}, {m_MaxDelta}");
 
                     if (m_Problems != "")
                     {

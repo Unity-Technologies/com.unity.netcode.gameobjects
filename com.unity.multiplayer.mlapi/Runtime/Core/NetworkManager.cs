@@ -44,18 +44,19 @@ namespace MLAPI
 #endif
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-        static ProfilerMarker s_EventTick = new ProfilerMarker("Event");
-        static ProfilerMarker s_ReceiveTick = new ProfilerMarker("Receive");
-        static ProfilerMarker s_SyncTime = new ProfilerMarker("SyncTime");
-        static ProfilerMarker s_TransportConnect = new ProfilerMarker("TransportConnect");
-        static ProfilerMarker s_HandleIncomingData = new ProfilerMarker("HandleIncomingData");
-        static ProfilerMarker s_TransportDisconnect = new ProfilerMarker("TransportDisconnect");
+        private static ProfilerMarker s_EventTick = new ProfilerMarker("Event");
+        private static ProfilerMarker s_ReceiveTick = new ProfilerMarker("Receive");
+        private static ProfilerMarker s_SyncTime = new ProfilerMarker("SyncTime");
+        private static ProfilerMarker s_TransportConnect = new ProfilerMarker("TransportConnect");
+        private static ProfilerMarker s_HandleIncomingData = new ProfilerMarker("HandleIncomingData");
+        private static ProfilerMarker s_TransportDisconnect = new ProfilerMarker("TransportDisconnect");
 
-        static ProfilerMarker s_ServerRpcQueued = new ProfilerMarker("ServerRpcQueued");
-        static ProfilerMarker s_ClientRpcQueued = new ProfilerMarker("ClientRpcQueued");
+        private static ProfilerMarker s_ServerRpcQueued = new ProfilerMarker("ServerRpcQueued");
+        private static ProfilerMarker s_ClientRpcQueued = new ProfilerMarker("ClientRpcQueued");
 
-        static ProfilerMarker s_InvokeRpc = new ProfilerMarker("InvokeRpc");
+        private static ProfilerMarker s_InvokeRpc = new ProfilerMarker("InvokeRpc");
 #endif
+
         internal RpcQueueContainer RpcQueueContainer { get; private set; }
         internal NetworkTickSystem NetworkTickSystem { get; private set; }
 
@@ -97,7 +98,7 @@ namespace MLAPI
         /// <summary>
         /// Gets the networkId of the server
         /// </summary>
-        public ulong ServerClientId => NetworkConfig.NetworkTransport != null ? NetworkConfig.NetworkTransport.ServerClientId : throw new NullReferenceException($"The transport in the active {nameof(NetworkConfig)} is null");
+        public ulong ServerClientId => NetworkConfig.NetworkTransport?.ServerClientId ?? throw new NullReferenceException($"The transport in the active {nameof(NetworkConfig)} is null");
 
         /// <summary>
         /// The clientId the server calls the local client by, only valid for clients
@@ -205,7 +206,10 @@ namespace MLAPI
 
             if (GetComponentInChildren<NetworkObject>() != null)
             {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning($"{nameof(NetworkManager)} cannot be a {nameof(NetworkObject)}. This will lead to weird side effects.");
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                {
+                    NetworkLog.LogWarning($"{nameof(NetworkManager)} cannot be a {nameof(NetworkObject)}. This will lead to weird side effects.");
+                }
             }
 
             if (!NetworkConfig.RegisteredScenes.Contains(SceneManager.GetActiveScene().name))
@@ -220,7 +224,10 @@ namespace MLAPI
                 {
                     if (NetworkConfig.NetworkPrefabs[i].Prefab.GetComponent<NetworkObject>() == null)
                     {
-                        if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning($"Network prefab [{i}] does not have a {nameof(NetworkObject)} component");
+                        if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                        {
+                            NetworkLog.LogWarning($"{nameof(NetworkPrefab)} [{i}] does not have a {nameof(NetworkObject)} component");
+                        }
                     }
                     else
                     {
@@ -239,7 +246,7 @@ namespace MLAPI
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                     {
                         var prefabHashGenerator = NetworkConfig.NetworkPrefabs[i].Prefab.GetComponent<NetworkObject>().PrefabHashGenerator;
-                        NetworkLog.LogError($"PrefabHash collision! You have two prefabs with the same hash (PrefabHashGenerator = {prefabHashGenerator}). This is not supported");
+                        NetworkLog.LogError($"PrefabHash collision! You have two prefabs with the same hash ({nameof(NetworkObject.PrefabHashGenerator)} = {prefabHashGenerator}). This is not supported");
                     }
                 }
 
@@ -250,11 +257,17 @@ namespace MLAPI
 
             if (playerPrefabCount == 0 && !NetworkConfig.ConnectionApproval && NetworkConfig.CreatePlayerPrefab)
             {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning($"There is no {nameof(NetworkPrefab)} marked as a PlayerPrefab");
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                {
+                    NetworkLog.LogWarning($"There is no {nameof(NetworkPrefab)} marked as a {nameof(NetworkPrefab.PlayerPrefab)}");
+                }
             }
             else if (playerPrefabCount > 1)
             {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning($"Only one {nameof(NetworkPrefab)} can be marked as a PlayerPrefab");
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                {
+                    NetworkLog.LogWarning($"Only one {nameof(NetworkPrefab)} can be marked as a {nameof(NetworkPrefab.PlayerPrefab)}");
+                }
             }
 
             var networkPrefab = NetworkConfig.NetworkPrefabs.FirstOrDefault(x => x.PlayerPrefab);
@@ -350,11 +363,17 @@ namespace MLAPI
             {
                 if (NetworkConfig.NetworkPrefabs[i] == null || ReferenceEquals(NetworkConfig.NetworkPrefabs[i].Prefab, null))
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogError($"{nameof(NetworkPrefab)} cannot be null");
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
+                    {
+                        NetworkLog.LogError($"{nameof(NetworkPrefab)} cannot be null");
+                    }
                 }
                 else if (ReferenceEquals(NetworkConfig.NetworkPrefabs[i].Prefab.GetComponent<NetworkObject>(), null))
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogError($"{nameof(NetworkPrefab)} is missing a {nameof(NetworkObject)} component");
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
+                    {
+                        NetworkLog.LogError($"{nameof(NetworkPrefab)} is missing a {nameof(NetworkObject)} component");
+                    }
                 }
                 else
                 {
@@ -656,8 +675,8 @@ namespace MLAPI
                         do
                         {
                             processedEvents++;
-                            networkEvent = NetworkConfig.NetworkTransport.PollEvent(out ulong clientId, out NetworkChannel channel, out ArraySegment<byte> payload, out float receiveTime);
-                            HandleRawTransportPoll(networkEvent, clientId, channel, payload, receiveTime);
+                            networkEvent = NetworkConfig.NetworkTransport.PollEvent(out ulong clientId, out NetworkChannel networkChannel, out ArraySegment<byte> payload, out float receiveTime);
+                            HandleRawTransportPoll(networkEvent, clientId, networkChannel, payload, receiveTime);
 
                             // Only do another iteration if: there are no more messages AND (there is no limit to max events or we have processed less than the maximum)
                         } while (IsListening && (networkEvent != NetworkEvent.Nothing) && (NetworkConfig.MaxReceiveEventsPerTickRate <= 0 || processedEvents < NetworkConfig.MaxReceiveEventsPerTickRate));
@@ -769,7 +788,10 @@ namespace MLAPI
                 m_CurrentNetworkTimeOffset = m_NetworkTimeOffset;
             }
 
-            if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogInfo($"Received network time {netTime}, RTT to server is {rtt}, {(warp ? "setting" : "smearing")} offset to {m_NetworkTimeOffset} (delta {m_NetworkTimeOffset - m_CurrentNetworkTimeOffset})");
+            if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+            {
+                NetworkLog.LogInfo($"Received network time {netTime}, RTT to server is {rtt}, {(warp ? "setting" : "smearing")} offset to {m_NetworkTimeOffset} (delta {m_NetworkTimeOffset - m_CurrentNetworkTimeOffset})");
+            }
         }
 
         internal void SendConnectionRequest()
@@ -801,7 +823,11 @@ namespace MLAPI
             if (PendingClients.ContainsKey(clientId) && !ConnectedClients.ContainsKey(clientId))
             {
                 // Timeout
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogInfo("Client " + clientId + " Handshake Timed Out");
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+                {
+                    NetworkLog.LogInfo($"Client {clientId} Handshake Timed Out");
+                }
+
                 DisconnectClient(clientId);
             }
         }
@@ -826,7 +852,10 @@ namespace MLAPI
                     NetworkProfiler.StartEvent(TickType.Receive, (uint)payload.Count, networkChannel, "TRANSPORT_CONNECT");
                     if (IsServer)
                     {
-                        if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogInfo("Client Connected");
+                        if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+                        {
+                            NetworkLog.LogInfo("Client Connected");
+                        }
 
                         PendingClients.Add(clientId, new PendingClient()
                         {
@@ -838,7 +867,10 @@ namespace MLAPI
                     }
                     else
                     {
-                        if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogInfo("Connected");
+                        if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+                        {
+                            NetworkLog.LogInfo("Connected");
+                        }
 
                         SendConnectionRequest();
                         StartCoroutine(ApprovalTimeout(clientId));
@@ -851,7 +883,11 @@ namespace MLAPI
                     break;
                 case NetworkEvent.Data:
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogInfo($"Incoming Data From {clientId} : {payload.Count} bytes");
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+                    {
+                        NetworkLog.LogInfo($"Incoming Data From {clientId}: {payload.Count} bytes");
+                    }
+
                     HandleIncomingData(clientId, networkChannel, payload, receiveTime, true);
                     break;
                 }
@@ -861,7 +897,10 @@ namespace MLAPI
 #endif
                     NetworkProfiler.StartEvent(TickType.Receive, 0, NetworkChannel.Internal, "TRANSPORT_DISCONNECT");
 
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogInfo($"Disconnect Event From {clientId}");
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+                    {
+                        NetworkLog.LogInfo($"Disconnect Event From {clientId}");
+                    }
 
                     if (IsServer) OnClientDisconnectFromServer(clientId);
                     else
@@ -888,7 +927,10 @@ namespace MLAPI
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleIncomingData.Begin();
 #endif
-            if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogInfo("Unwrapping Data Header");
+            if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+            {
+                NetworkLog.LogInfo("Unwrapping Data Header");
+            }
 
             m_InputBufferWrapper.SetTarget(data.Array);
             m_InputBufferWrapper.SetLength(data.Count + data.Offset);
@@ -898,25 +940,40 @@ namespace MLAPI
             {
                 if (messageStream == null)
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogError("Message unwrap could not be completed. Was the header corrupt? Crypto error?");
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
+                    {
+                        NetworkLog.LogError("Message unwrap could not be completed. Was the header corrupt? Crypto error?");
+                    }
+
                     return;
                 }
 
                 if (messageType == NetworkConstants.INVALID)
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogError("Message unwrap read an invalid messageType");
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
+                    {
+                        NetworkLog.LogError($"Message unwrap read an invalid {nameof(messageType)}");
+                    }
+
                     return;
                 }
 
                 uint headerByteSize = (uint)Arithmetic.VarIntSize(messageType);
                 NetworkProfiler.StartEvent(TickType.Receive, (uint)(data.Count - headerByteSize), networkChannel, messageType);
 
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogInfo("Data Header: messageType=" + messageType);
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+                {
+                    NetworkLog.LogInfo($"Data Header: {nameof(messageType)}={messageType}");
+                }
 
                 // Client tried to send a network message that was not the connection request before he was accepted.
                 if (PendingClients.ContainsKey(clientId) && PendingClients[clientId].ConnectionState == PendingClient.State.PendingConnection && messageType != NetworkConstants.CONNECTION_REQUEST)
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Message received from clientId " + clientId + " before it has been accepted");
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                    {
+                        NetworkLog.LogWarning($"Message received from {nameof(clientId)}={clientId} before it has been accepted");
+                    }
+
                     return;
                 }
 
@@ -1034,7 +1091,11 @@ namespace MLAPI
                         break;
                     }
                     default:
-                        if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogError("Read unrecognized messageType " + messageType);
+                        if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
+                        {
+                            NetworkLog.LogError($"Read unrecognized {nameof(messageType)}={messageType}");
+                        }
+
                         break;
                 }
 
@@ -1134,7 +1195,11 @@ namespace MLAPI
             if (!preset.AllowBuffer)
             {
                 // This is to prevent recursive buffering
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogError("A message of type " + NetworkConstants.MESSAGE_NAMES[preset.MessageType] + " was recursivley buffered. It has been dropped.");
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
+                {
+                    NetworkLog.LogError($"A message of type {NetworkConstants.MESSAGE_NAMES[preset.MessageType]} was recursivley buffered. It has been dropped.");
+                }
+
                 return;
             }
 
@@ -1250,7 +1315,11 @@ namespace MLAPI
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_SyncTime.Begin();
 #endif
-            if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogInfo("Syncing Time To Clients");
+            if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+            {
+                NetworkLog.LogInfo("Syncing Time To Clients");
+            }
+
             using (var buffer = PooledNetworkBuffer.Get())
             {
                 using (var writer = PooledNetworkWriter.Get(buffer))
@@ -1286,7 +1355,7 @@ namespace MLAPI
 
                 if (createPlayerObject)
                 {
-                    NetworkObject netObject = NetworkSpawnManager.CreateLocalNetworkObject(false, 0, (playerPrefabHash == null ? NetworkConfig.PlayerPrefabHash.Value : playerPrefabHash.Value), null, position, rotation);
+                    NetworkObject netObject = NetworkSpawnManager.CreateLocalNetworkObject(false, 0, playerPrefabHash ?? NetworkConfig.PlayerPrefabHash.Value, null, position, rotation);
                     NetworkSpawnManager.SpawnNetworkObjectLocally(netObject, NetworkSpawnManager.GetNetworkObjectId(), false, true, clientId, null, false, 0, false, false);
 
                     ConnectedClients[clientId].PlayerObject = netObject;
@@ -1349,9 +1418,9 @@ namespace MLAPI
                             else
                             {
                                 // Is this a scene object that we will soft map
-                                writer.WriteBool(observedObject.IsSceneObject == null ? true : observedObject.IsSceneObject.Value);
+                                writer.WriteBool(observedObject.IsSceneObject ?? true);
 
-                                if (observedObject.IsSceneObject == null || observedObject.IsSceneObject.Value == true)
+                                if (observedObject.IsSceneObject == null || observedObject.IsSceneObject.Value)
                                 {
                                     writer.WriteUInt64Packed(observedObject.NetworkInstanceId);
                                 }
