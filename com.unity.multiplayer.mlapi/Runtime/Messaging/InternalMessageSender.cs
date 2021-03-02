@@ -18,7 +18,7 @@ namespace MLAPI.Messaging
 
             using (NetworkBuffer buffer = MessagePacker.WrapMessage(messageType, messageBuffer))
             {
-                NetworkProfiler.StartEvent(TickType.Send, (uint)buffer.Length, networkChannel, NetworkConstants.k_MESSAGE_NAMES[messageType]);
+                NetworkProfiler.StartEvent(TickType.Send, (uint)buffer.Length, networkChannel, NetworkConstants.MESSAGE_NAMES[messageType]);
 
                 NetworkManager.Singleton.NetworkConfig.NetworkTransport.Send(clientId, new ArraySegment<byte>(buffer.GetBuffer(), 0, (int)buffer.Length), networkChannel);
                 ProfilerStatManager.bytesSent.Record((int)buffer.Length);
@@ -34,7 +34,7 @@ namespace MLAPI.Messaging
 
             using (NetworkBuffer buffer = MessagePacker.WrapMessage(messageType, messageBuffer))
             {
-                NetworkProfiler.StartEvent(TickType.Send, (uint)buffer.Length, networkChannel, NetworkConstants.k_MESSAGE_NAMES[messageType]);
+                NetworkProfiler.StartEvent(TickType.Send, (uint)buffer.Length, networkChannel, NetworkConstants.MESSAGE_NAMES[messageType]);
                 for (int i = 0; i < NetworkManager.Singleton.ConnectedClientsList.Count; i++)
                 {
                     if (NetworkManager.Singleton.IsServer && NetworkManager.Singleton.ConnectedClientsList[i].ClientId == NetworkManager.Singleton.ServerClientId)
@@ -61,7 +61,7 @@ namespace MLAPI.Messaging
 
             using (NetworkBuffer buffer = MessagePacker.WrapMessage(messageType, messageBuffer))
             {
-                NetworkProfiler.StartEvent(TickType.Send, (uint)buffer.Length, networkChannel, NetworkConstants.k_MESSAGE_NAMES[messageType]);
+                NetworkProfiler.StartEvent(TickType.Send, (uint)buffer.Length, networkChannel, NetworkConstants.MESSAGE_NAMES[messageType]);
                 for (int i = 0; i < clientIds.Count; i++)
                 {
                     if (NetworkManager.Singleton.IsServer && clientIds[i] == NetworkManager.Singleton.ServerClientId)
@@ -82,7 +82,7 @@ namespace MLAPI.Messaging
 
             using (NetworkBuffer buffer = MessagePacker.WrapMessage(messageType, messageBuffer))
             {
-                NetworkProfiler.StartEvent(TickType.Send, (uint)buffer.Length, networkChannel, NetworkConstants.k_MESSAGE_NAMES[messageType]);
+                NetworkProfiler.StartEvent(TickType.Send, (uint)buffer.Length, networkChannel, NetworkConstants.MESSAGE_NAMES[messageType]);
                 for (int i = 0; i < NetworkManager.Singleton.ConnectedClientsList.Count; i++)
                 {
                     if (NetworkManager.Singleton.ConnectedClientsList[i].ClientId == clientIdToIgnore ||

@@ -128,7 +128,7 @@ namespace MLAPI.Messaging
                         {
                             foreach (ulong clientId in queueItem.clientIds)
                             {
-                                InternalMessageSender.Send(clientId, NetworkConstants.k_ADD_OBJECT, queueItem.networkChannel, PoolStream);
+                                InternalMessageSender.Send(clientId, NetworkConstants.ADD_OBJECT, queueItem.networkChannel, PoolStream);
                             }
 
                             PerformanceDataManager.Increment(ProfilerConstants.NumberOfRPCsSent, queueItem.clientIds.Length);
@@ -139,7 +139,7 @@ namespace MLAPI.Messaging
                         {
                             foreach (ulong clientId in queueItem.clientIds)
                             {
-                                InternalMessageSender.Send(clientId, NetworkConstants.k_DESTROY_OBJECT, queueItem.networkChannel, PoolStream);
+                                InternalMessageSender.Send(clientId, NetworkConstants.DESTROY_OBJECT, queueItem.networkChannel, PoolStream);
                             }
 
                             PerformanceDataManager.Increment(ProfilerConstants.NumberOfRPCsSent, queueItem.clientIds.Length);

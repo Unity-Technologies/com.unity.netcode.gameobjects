@@ -124,7 +124,7 @@ namespace MLAPI.Profiling
             if (CurrentTick == null)
                 return;
 
-            string messageName = messageType < NetworkConstants.k_MESSAGE_NAMES.Length ? NetworkConstants.k_MESSAGE_NAMES[messageType] : "INVALID_MESSAGE_TYPE";
+            string messageName = messageType < NetworkConstants.MESSAGE_NAMES.Length ? NetworkConstants.MESSAGE_NAMES[messageType] : "INVALID_MESSAGE_TYPE";
 
             string channelName = networkChannel.ToString();
             CurrentTick.StartEvent(eventType, bytes, channelName, messageName);

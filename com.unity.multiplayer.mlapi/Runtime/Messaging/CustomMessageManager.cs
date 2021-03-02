@@ -48,7 +48,7 @@ namespace MLAPI.Messaging
                 return;
             }
 
-            InternalMessageSender.Send(NetworkConstants.k_UNNAMED_MESSAGE, networkChannel, clientIds, buffer);
+            InternalMessageSender.Send(NetworkConstants.UNNAMED_MESSAGE, networkChannel, clientIds, buffer);
         }
 
         /// <summary>
@@ -59,7 +59,7 @@ namespace MLAPI.Messaging
         /// <param name="networkChannel">The channel tos end the data on</param>
         public static void SendUnnamedMessage(ulong clientId, NetworkBuffer buffer, NetworkChannel networkChannel = NetworkChannel.Internal)
         {
-            InternalMessageSender.Send(clientId, NetworkConstants.k_UNNAMED_MESSAGE, networkChannel, buffer);
+            InternalMessageSender.Send(clientId, NetworkConstants.UNNAMED_MESSAGE, networkChannel, buffer);
         }
 
         #endregion
@@ -178,7 +178,7 @@ namespace MLAPI.Messaging
 
                 messageBuffer.CopyFrom(stream);
 
-                InternalMessageSender.Send(clientId, NetworkConstants.k_NAMED_MESSAGE, networkChannel, messageBuffer);
+                InternalMessageSender.Send(clientId, NetworkConstants.NAMED_MESSAGE, networkChannel, messageBuffer);
             }
         }
 
@@ -220,7 +220,7 @@ namespace MLAPI.Messaging
                     return;
                 }
 
-                InternalMessageSender.Send(NetworkConstants.k_NAMED_MESSAGE, networkChannel, clientIds, messageBuffer);
+                InternalMessageSender.Send(NetworkConstants.NAMED_MESSAGE, networkChannel, clientIds, messageBuffer);
             }
         }
 

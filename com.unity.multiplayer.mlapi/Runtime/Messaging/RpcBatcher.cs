@@ -130,10 +130,10 @@ namespace MLAPI.Messaging
                     {
                         // 8 bits are used for the message type, which is an NetworkConstants
                         case RpcQueueContainer.QueueItemType.ServerRpc:
-                            SendDict[clientId].Writer.WriteByte(NetworkConstants.k_SERVER_RPC); // MessageType
+                            SendDict[clientId].Writer.WriteByte(NetworkConstants.SERVER_RPC); // MessageType
                             break;
                         case RpcQueueContainer.QueueItemType.ClientRpc:
-                            SendDict[clientId].Writer.WriteByte(NetworkConstants.k_CLIENT_RPC); // MessageType
+                            SendDict[clientId].Writer.WriteByte(NetworkConstants.CLIENT_RPC); // MessageType
                             break;
                     }
                 }
