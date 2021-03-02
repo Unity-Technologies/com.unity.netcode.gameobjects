@@ -1073,6 +1073,11 @@ namespace MLAPI
         bool m_InputStreamWrapperUsed;
         // The fallback wrapper is used in case we have to handle incoming data but the InputStreamWrapper is already being used.
         // This change is needed because MLAPI calls HandleIncomingData nested when it is applying buffered messages to an object spawned in HandleIncomingData.
+        // This fallback wrapper solution works because HandleIncomingData will never get nested more then once because:
+        // - Messages we buffer and execute in nest level 1 can never end up in another HandleIncomingData call. This is true because HandleIncomingData is only called in two cases:
+        //    1. When a new message arrives (nest level 0)
+        //    2. When that new message spawns an object and applies buffered messages (nest level 1)
+        //Nest level 1 can never trigger case 1. or 2. again because case 1. can only be triggered by the server sending a spawn packet down and not locally and case 2. can only be triggered by case 1..
         private readonly BitStream m_FallbackInputStreamWrapper = new BitStream(new byte[0]);
         private readonly RpcBatcher m_RpcBatcher = new RpcBatcher();
 
