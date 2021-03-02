@@ -157,8 +157,8 @@ namespace MLAPI.Messaging
                                 rot = Quaternion.Euler(continuationReader.ReadSinglePacked(), continuationReader.ReadSinglePacked(), continuationReader.ReadSinglePacked());
                             }
 
-                            NetworkObject netObject = NetworkSpawnManager.CreateLocalNetworkObject(softSync, instanceId, prefabHash, parentNetworkId, pos, rot);
-                            NetworkSpawnManager.SpawnNetworkObjectLocally(netObject, networkId, softSync, isPlayerObject, ownerId, continuationStream, false, 0, true, false);
+                            var networkObject = NetworkSpawnManager.CreateLocalNetworkObject(softSync, instanceId, prefabHash, parentNetworkId, pos, rot);
+                            NetworkSpawnManager.SpawnNetworkObjectLocally(networkObject, networkId, softSync, isPlayerObject, ownerId, continuationStream, false, 0, true, false);
 
                             Queue<BufferManager.BufferedMessage> bufferQueue = BufferManager.ConsumeBuffersForNetworkId(networkId);
 
@@ -168,18 +168,14 @@ namespace MLAPI.Messaging
                                 while (bufferQueue.Count > 0)
                                 {
                                     BufferManager.BufferedMessage message = bufferQueue.Dequeue();
-
                                     NetworkManager.Singleton.HandleIncomingData(message.SenderClientId, message.NetworkChannel, new ArraySegment<byte>(message.NetworkBuffer.GetBuffer(), (int)message.NetworkBuffer.Position, (int)message.NetworkBuffer.Length), message.ReceiveTime, false);
-
                                     BufferManager.RecycleConsumedBufferedMessage(message);
                                 }
                             }
                         }
 
                         NetworkSpawnManager.CleanDiffedSceneObjects();
-
                         NetworkManager.Singleton.IsConnectedClient = true;
-
                         NetworkManager.Singleton.InvokeOnClientConnectedCallback(NetworkManager.Singleton.LocalClientId);
                     }
                 }
@@ -200,9 +196,7 @@ namespace MLAPI.Messaging
                     }
 
                     onSceneLoaded = (oldScene, newScene) => { OnSceneLoadComplete(); };
-
                     SceneManager.activeSceneChanged += onSceneLoaded;
-
                     NetworkSceneManager.OnFirstSceneSwitchSync(sceneIndex, sceneSwitchProgressGuid);
                 }
                 else
@@ -270,8 +264,8 @@ namespace MLAPI.Messaging
                 bool hasPayload = reader.ReadBool();
                 int payLoadLength = hasPayload ? reader.ReadInt32Packed() : 0;
 
-                NetworkObject netObject = NetworkSpawnManager.CreateLocalNetworkObject(softSync, instanceId, prefabHash, parentNetworkId, pos, rot);
-                NetworkSpawnManager.SpawnNetworkObjectLocally(netObject, networkId, softSync, isPlayerObject, ownerId, stream, hasPayload, payLoadLength, true, false);
+                var networkObject = NetworkSpawnManager.CreateLocalNetworkObject(softSync, instanceId, prefabHash, parentNetworkId, pos, rot);
+                NetworkSpawnManager.SpawnNetworkObjectLocally(networkObject, networkId, softSync, isPlayerObject, ownerId, stream, hasPayload, payLoadLength, true, false);
 
                 Queue<BufferManager.BufferedMessage> bufferQueue = BufferManager.ConsumeBuffersForNetworkId(networkId);
 
@@ -281,9 +275,7 @@ namespace MLAPI.Messaging
                     while (bufferQueue.Count > 0)
                     {
                         BufferManager.BufferedMessage message = bufferQueue.Dequeue();
-
                         NetworkManager.Singleton.HandleIncomingData(message.SenderClientId, message.NetworkChannel, new ArraySegment<byte>(message.NetworkBuffer.GetBuffer(), (int)message.NetworkBuffer.Position, (int)message.NetworkBuffer.Length), message.ReceiveTime, false);
-
                         BufferManager.RecycleConsumedBufferedMessage(message);
                     }
                 }
@@ -487,15 +479,15 @@ namespace MLAPI.Messaging
 
                 if (NetworkSpawnManager.SpawnedObjects.ContainsKey(networkId))
                 {
-                    NetworkBehaviour instance = NetworkSpawnManager.SpawnedObjects[networkId].GetNetworkBehaviourAtOrderIndex(orderIndex);
+                    var networkBehaviour = NetworkSpawnManager.SpawnedObjects[networkId].GetNetworkBehaviourAtOrderIndex(orderIndex);
 
-                    if (instance == null)
+                    if (networkBehaviour == null)
                     {
                         if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("NetworkVariableUpdate message received for a non-existent behaviour. NetworkId: " + networkId + ", behaviourIndex: " + orderIndex);
                     }
                     else
                     {
-                        NetworkBehaviour.HandleNetworkVariableUpdate(instance.NetworkVariableFields, stream, clientId, instance);
+                        NetworkBehaviour.HandleNetworkVariableUpdate(networkBehaviour.NetworkVariableFields, stream, clientId, networkBehaviour);
                     }
                 }
                 else if (NetworkManager.Singleton.IsServer || !NetworkManager.Singleton.NetworkConfig.EnableMessageBuffering)

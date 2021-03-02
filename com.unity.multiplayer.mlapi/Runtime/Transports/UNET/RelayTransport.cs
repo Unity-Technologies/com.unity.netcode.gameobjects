@@ -277,7 +277,7 @@ namespace MLAPI.Transports.UNET
         {
             if (!Enabled) return UnityEngine.Networking.NetworkTransport.ReceiveFromHost(hostId, out connectionId, out channelId, buffer, bufferSize, out receivedSize, out error);
 
-            NetworkEventType eventType = UnityEngine.Networking.NetworkTransport.ReceiveFromHost(hostId, out connectionId, out channelId, buffer, bufferSize, out receivedSize, out error);
+            var eventType = UnityEngine.Networking.NetworkTransport.ReceiveFromHost(hostId, out connectionId, out channelId, buffer, bufferSize, out receivedSize, out error);
 
             return BaseReceive(eventType, hostId, ref connectionId, ref channelId, buffer, bufferSize, ref receivedSize, ref error);
         }
@@ -286,7 +286,7 @@ namespace MLAPI.Transports.UNET
         {
             if (!Enabled) return UnityEngine.Networking.NetworkTransport.Receive(out hostId, out connectionId, out channelId, buffer, bufferSize, out receivedSize, out error);
 
-            NetworkEventType eventType = UnityEngine.Networking.NetworkTransport.Receive(out hostId, out connectionId, out channelId, buffer, bufferSize, out receivedSize, out error);
+            var eventType = UnityEngine.Networking.NetworkTransport.Receive(out hostId, out connectionId, out channelId, buffer, bufferSize, out receivedSize, out error);
 
             return BaseReceive(eventType, hostId, ref connectionId, ref channelId, buffer, bufferSize, ref receivedSize, ref error);
         }
@@ -297,7 +297,7 @@ namespace MLAPI.Transports.UNET
             {
                 case NetworkEventType.DataEvent:
                 {
-                    MessageType messageType = (MessageType)buffer[receivedSize - 1];
+                    var messageType = (MessageType)buffer[receivedSize - 1];
 
                     switch (messageType)
                     {
@@ -306,17 +306,16 @@ namespace MLAPI.Transports.UNET
                             byte[] addressBytes = new byte[16];
 
                             for (int i = 0; i < addressBytes.Length; i++)
+                            {
                                 addressBytes[i] = buffer[i];
+                            }
 
                             ushort remotePort = (ushort)(((ushort)buffer[16]) |
                                                          ((ushort)buffer[17] << 8));
 
-                            IPEndPoint remoteEndPoint = new IPEndPoint(new IPAddress(addressBytes), remotePort);
+                            var remoteEndPoint = new IPEndPoint(new IPAddress(addressBytes), remotePort);
 
-                            if (OnRemoteEndpointReported != null)
-                            {
-                                OnRemoteEndpointReported(remoteEndPoint);
-                            }
+                            OnRemoteEndpointReported?.Invoke(remoteEndPoint);
 
                             break;
                         }
@@ -385,7 +384,7 @@ namespace MLAPI.Transports.UNET
                         //Connect via relay
 
                         byte[] ipv6AddressBuffer;
-                        IPAddress ipAddress = IPAddress.Parse(s_Address);
+                        var ipAddress = IPAddress.Parse(s_Address);
 
                         if (ipAddress.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6)
                         {

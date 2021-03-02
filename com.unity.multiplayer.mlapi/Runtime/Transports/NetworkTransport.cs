@@ -61,23 +61,20 @@ namespace MLAPI.Transports
             {
                 if (m_ChannelsCache == null)
                 {
-                    List<TransportChannel> channels = new List<TransportChannel>();
+                    var transportChannels = new List<TransportChannel>();
 
-                    if (OnChannelRegistration != null)
-                    {
-                        OnChannelRegistration(channels);
-                    }
+                    OnChannelRegistration?.Invoke(transportChannels);
 
-                    m_ChannelsCache = new TransportChannel[MLAPI_INTERNAL_CHANNELS.Length + channels.Count];
+                    m_ChannelsCache = new TransportChannel[MLAPI_INTERNAL_CHANNELS.Length + transportChannels.Count];
 
                     for (int i = 0; i < MLAPI_INTERNAL_CHANNELS.Length; i++)
                     {
                         m_ChannelsCache[i] = MLAPI_INTERNAL_CHANNELS[i];
                     }
 
-                    for (int i = 0; i < channels.Count; i++)
+                    for (int i = 0; i < transportChannels.Count; i++)
                     {
-                        m_ChannelsCache[i + MLAPI_INTERNAL_CHANNELS.Length] = channels[i];
+                        m_ChannelsCache[i + MLAPI_INTERNAL_CHANNELS.Length] = transportChannels[i];
                     }
                 }
 

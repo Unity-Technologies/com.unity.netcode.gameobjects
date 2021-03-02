@@ -34,43 +34,43 @@ namespace MLAPI.Messaging
         /// </summary>
         public void ProcessReceiveQueue(NetworkUpdateStage currentStage)
         {
-            bool AdvanceFrameHistory = false;
+            bool advanceFrameHistory = false;
             var rpcQueueContainer = NetworkManager.Singleton.RpcQueueContainer;
             if (rpcQueueContainer != null)
             {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                 s_RpcQueueProcess.Begin();
 #endif
-                var CurrentFrame = rpcQueueContainer.GetQueueHistoryFrame(RpcQueueHistoryFrame.QueueFrameType.Inbound, currentStage);
-                var NextFrame = rpcQueueContainer.GetQueueHistoryFrame(RpcQueueHistoryFrame.QueueFrameType.Inbound, currentStage, true);
-                if (NextFrame.IsDirty && NextFrame.HasLoopbackData)
+                var currentFrame = rpcQueueContainer.GetQueueHistoryFrame(RpcQueueHistoryFrame.QueueFrameType.Inbound, currentStage);
+                var nextFrame = rpcQueueContainer.GetQueueHistoryFrame(RpcQueueHistoryFrame.QueueFrameType.Inbound, currentStage, true);
+                if (nextFrame.IsDirty && nextFrame.HasLoopbackData)
                 {
-                    AdvanceFrameHistory = true;
+                    advanceFrameHistory = true;
                 }
 
-                if (CurrentFrame != null && CurrentFrame.IsDirty)
+                if (currentFrame != null && currentFrame.IsDirty)
                 {
-                    var currentQueueItem = CurrentFrame.GetFirstQueueItem();
+                    var currentQueueItem = currentFrame.GetFirstQueueItem();
                     while (currentQueueItem.QueueItemType != RpcQueueContainer.QueueItemType.None)
                     {
-                        AdvanceFrameHistory = true;
+                        advanceFrameHistory = true;
 
                         if (rpcQueueContainer.IsTesting())
                         {
-                            Debug.Log("RPC invoked during the " + currentStage.ToString() + " update stage.");
+                            Debug.Log($"RPC invoked during the {currentStage} update stage.");
                         }
 
                         NetworkManager.InvokeRpc(currentQueueItem);
                         ProfilerStatManager.RpcsQueueProc.Record();
                         PerformanceDataManager.Increment(ProfilerConstants.k_NumberOfRPCQueueProcessed);
-                        currentQueueItem = CurrentFrame.GetNextQueueItem();
+                        currentQueueItem = currentFrame.GetNextQueueItem();
                     }
 
                     //We call this to dispose of the shared stream writer and stream
-                    CurrentFrame.CloseQueue();
+                    currentFrame.CloseQueue();
                 }
 
-                if (AdvanceFrameHistory)
+                if (advanceFrameHistory)
                 {
                     rpcQueueContainer.AdvanceFrameHistory(RpcQueueHistoryFrame.QueueFrameType.Inbound);
                 }
@@ -159,18 +159,17 @@ namespace MLAPI.Messaging
         /// </summary>
         private void RpcQueueSendAndFlush()
         {
-            var AdvanceFrameHistory = false;
+            var advanceFrameHistory = false;
             var rpcQueueContainer = NetworkManager.Singleton.RpcQueueContainer;
             if (rpcQueueContainer != null)
             {
-                var CurrentFrame = rpcQueueContainer.GetCurrentFrame(RpcQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
-
-                if (CurrentFrame != null)
+                var currentFrame = rpcQueueContainer.GetCurrentFrame(RpcQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
+                if (currentFrame != null)
                 {
-                    var currentQueueItem = CurrentFrame.GetFirstQueueItem();
+                    var currentQueueItem = currentFrame.GetFirstQueueItem();
                     while (currentQueueItem.QueueItemType != RpcQueueContainer.QueueItemType.None)
                     {
-                        AdvanceFrameHistory = true;
+                        advanceFrameHistory = true;
                         if (rpcQueueContainer.IsUsingBatching())
                         {
                             m_RpcBatcher.QueueItem(currentQueueItem);
@@ -182,18 +181,18 @@ namespace MLAPI.Messaging
                             SendFrameQueueItem(currentQueueItem);
                         }
 
-                        currentQueueItem = CurrentFrame.GetNextQueueItem();
+                        currentQueueItem = currentFrame.GetNextQueueItem();
                     }
 
                     //If the size is < m_BatchThreshold then just send the messages
-                    if (AdvanceFrameHistory && rpcQueueContainer.IsUsingBatching())
+                    if (advanceFrameHistory && rpcQueueContainer.IsUsingBatching())
                     {
                         m_RpcBatcher.SendItems(0, SendCallback);
                     }
                 }
 
                 //If we processed any RPCs, then advance to the next frame
-                if (AdvanceFrameHistory)
+                if (advanceFrameHistory)
                 {
                     rpcQueueContainer.AdvanceFrameHistory(RpcQueueHistoryFrame.QueueFrameType.Outbound);
                 }
@@ -212,7 +211,7 @@ namespace MLAPI.Messaging
         {
             var length = (int)sendStream.Buffer.Length;
             var bytes = sendStream.Buffer.GetBuffer();
-            ArraySegment<byte> sendBuffer = new ArraySegment<byte>(bytes, 0, length);
+            var sendBuffer = new ArraySegment<byte>(bytes, 0, length);
 
             NetworkManager.Singleton.NetworkConfig.NetworkTransport.Send(clientId, sendBuffer, sendStream.NetworkChannel);
         }

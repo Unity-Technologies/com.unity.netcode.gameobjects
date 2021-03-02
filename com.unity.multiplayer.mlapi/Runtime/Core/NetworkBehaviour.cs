@@ -436,7 +436,7 @@ namespace MLAPI
 
             {
                 // Create index map for channels
-                Dictionary<NetworkChannel, int> firstLevelIndex = new Dictionary<NetworkChannel, int>();
+                var firstLevelIndex = new Dictionary<NetworkChannel, int>();
                 int secondLevelCounter = 0;
 
                 for (int i = 0; i < NetworkVariableFields.Count; i++)
@@ -659,8 +659,7 @@ namespace MLAPI
             // TODO: There should be a better way by reading one dirty variable vs. 'n'
             for (int i = 0; i < NetworkVariableFields.Count; i++)
             {
-                if (NetworkVariableFields[i].IsDirty())
-                    return true;
+                if (NetworkVariableFields[i].IsDirty()) return true;
             }
 
             return false;

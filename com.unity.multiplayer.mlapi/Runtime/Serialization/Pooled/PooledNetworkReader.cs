@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using UnityEngine;
 
 namespace MLAPI.Serialization.Pooled
 {
@@ -21,7 +22,7 @@ namespace MLAPI.Serialization.Pooled
         /// <returns>PooledNetworkReader</returns>
         public static PooledNetworkReader Get(Stream stream)
         {
-            PooledNetworkReader reader = NetworkReaderPool.GetReader(stream);
+            var reader = NetworkReaderPool.GetReader(stream);
             reader.m_IsDisposed = false;
             return reader;
         }
@@ -38,7 +39,7 @@ namespace MLAPI.Serialization.Pooled
             }
             else
             {
-                UnityEngine.Debug.LogWarning("Disposing reader that thinks it is already disposed!");
+                Debug.LogWarning("Disposing reader that thinks it is already disposed!");
             }
         }
     }

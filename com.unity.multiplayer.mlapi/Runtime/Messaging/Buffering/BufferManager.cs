@@ -75,7 +75,7 @@ namespace MLAPI.Messaging.Buffering
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_CleanBuffer.Begin();
 #endif
-            foreach (KeyValuePair<ulong, Queue<BufferedMessage>> pair in k_BufferQueues)
+            foreach (var pair in k_BufferQueues)
             {
                 while (pair.Value.Count > 0 && Time.realtimeSinceStartup - pair.Value.Peek().BufferTime >= NetworkManager.Singleton.NetworkConfig.MessageBufferTimeout)
                 {

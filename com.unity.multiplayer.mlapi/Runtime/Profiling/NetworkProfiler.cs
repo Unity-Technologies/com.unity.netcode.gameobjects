@@ -94,7 +94,7 @@ namespace MLAPI.Profiling
                 Ticks.Dequeue();
             }
 
-            ProfilerTick tick = new ProfilerTick()
+            var tick = new ProfilerTick()
             {
                 Type = type,
                 Frame = Time.frameCount,

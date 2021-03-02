@@ -17,7 +17,7 @@ namespace MLAPI.Serialization.Pooled
         /// <returns>PooledNetworkBuffer</returns>
         public static PooledNetworkBuffer Get()
         {
-            PooledNetworkBuffer buffer = NetworkBufferPool.GetBuffer();
+            var buffer = NetworkBufferPool.GetBuffer();
             buffer.isDisposed = false;
             return buffer;
         }

@@ -127,48 +127,27 @@ namespace MLAPI.Serialization
                 return array;
             }
 
-            if (type == typeof(byte))
-                return ReadByteDirect();
-            if (type == typeof(sbyte))
-                return ReadSByte();
-            if (type == typeof(ushort))
-                return ReadUInt16Packed();
-            if (type == typeof(short))
-                return ReadInt16Packed();
-            if (type == typeof(int))
-                return ReadInt32Packed();
-            if (type == typeof(uint))
-                return ReadUInt32Packed();
-            if (type == typeof(long))
-                return ReadInt64Packed();
-            if (type == typeof(ulong))
-                return ReadUInt64Packed();
-            if (type == typeof(float))
-                return ReadSinglePacked();
-            if (type == typeof(double))
-                return ReadDoublePacked();
-            if (type == typeof(string))
-                return ReadStringPacked();
-            if (type == typeof(bool))
-                return ReadBool();
-            if (type == typeof(Vector2))
-                return ReadVector2Packed();
-            if (type == typeof(Vector3))
-                return ReadVector3Packed();
-            if (type == typeof(Vector4))
-                return ReadVector4Packed();
-            if (type == typeof(Color))
-                return ReadColorPacked();
-            if (type == typeof(Color32))
-                return ReadColor32();
-            if (type == typeof(Ray))
-                return ReadRayPacked();
-            if (type == typeof(Quaternion))
-                return ReadRotationPacked();
-            if (type == typeof(char))
-                return ReadCharPacked();
-            if (type.IsEnum)
-                return ReadInt32Packed();
+            if (type == typeof(byte)) return ReadByteDirect();
+            if (type == typeof(sbyte)) return ReadSByte();
+            if (type == typeof(ushort)) return ReadUInt16Packed();
+            if (type == typeof(short)) return ReadInt16Packed();
+            if (type == typeof(int)) return ReadInt32Packed();
+            if (type == typeof(uint)) return ReadUInt32Packed();
+            if (type == typeof(long)) return ReadInt64Packed();
+            if (type == typeof(ulong)) return ReadUInt64Packed();
+            if (type == typeof(float)) return ReadSinglePacked();
+            if (type == typeof(double)) return ReadDoublePacked();
+            if (type == typeof(string)) return ReadStringPacked();
+            if (type == typeof(bool)) return ReadBool();
+            if (type == typeof(Vector2)) return ReadVector2Packed();
+            if (type == typeof(Vector3)) return ReadVector3Packed();
+            if (type == typeof(Vector4)) return ReadVector4Packed();
+            if (type == typeof(Color)) return ReadColorPacked();
+            if (type == typeof(Color32)) return ReadColor32();
+            if (type == typeof(Ray)) return ReadRayPacked();
+            if (type == typeof(Quaternion)) return ReadRotationPacked();
+            if (type == typeof(char)) return ReadCharPacked();
+            if (type.IsEnum) return ReadInt32Packed();
             if (type == typeof(GameObject))
             {
                 ulong networkId = ReadUInt64Packed();
@@ -241,50 +220,25 @@ namespace MLAPI.Serialization
         /// Read a single-precision floating point value from the stream.
         /// </summary>
         /// <returns>The read value</returns>
-        public float ReadSingle()
-        {
-            return new UIntFloat
-            {
-                UIntValue = ReadUInt32()
-            }.FloatValue;
-        }
-
+        public float ReadSingle() => new UIntFloat { UIntValue = ReadUInt32() }.FloatValue;
 
         /// <summary>
         /// Read a double-precision floating point value from the stream.
         /// </summary>
         /// <returns>The read value</returns>
-        public double ReadDouble()
-        {
-            return new UIntFloat
-            {
-                ULongValue = ReadUInt64()
-            }.DoubleValue;
-        }
+        public double ReadDouble() => new UIntFloat { ULongValue = ReadUInt64() }.DoubleValue;
 
         /// <summary>
         /// Read a single-precision floating point value from the stream from a varint
         /// </summary>
         /// <returns>The read value</returns>
-        public float ReadSinglePacked()
-        {
-            return new UIntFloat
-            {
-                UIntValue = ReadUInt32Packed()
-            }.FloatValue;
-        }
+        public float ReadSinglePacked() => new UIntFloat { UIntValue = ReadUInt32Packed() }.FloatValue;
 
         /// <summary>
         /// Read a double-precision floating point value from the stream as a varint
         /// </summary>
         /// <returns>The read value</returns>
-        public double ReadDoublePacked()
-        {
-            return new UIntFloat
-            {
-                ULongValue = ReadUInt64Packed()
-            }.DoubleValue;
-        }
+        public double ReadDoublePacked() => new UIntFloat { ULongValue = ReadUInt64Packed() }.DoubleValue;
 
         /// <summary>
         /// Read a Vector2 from the stream.
@@ -455,8 +409,7 @@ namespace MLAPI.Serialization
 
             int result = 0;
             ByteBool convert = new ByteBool();
-            for (int i = 0; i < bitCount; ++i)
-                result |= convert.Collapse(ReadBit()) << i;
+            for (int i = 0; i < bitCount; ++i) result |= convert.Collapse(ReadBit()) << i;
             return (byte)result;
         }
 
@@ -470,7 +423,8 @@ namespace MLAPI.Serialization
             if (m_NetworkSource == null) throw new InvalidOperationException($"Cannot read bits on a non-{nameof(NetworkBuffer)} stream");
             ByteBool convert = new ByteBool();
 
-            byte result = (byte)(
+            byte result = (byte)
+            (
                 convert.Collapse(ReadBit()) |
                 (convert.Collapse(ReadBit()) << 1) |
                 (convert.Collapse(ReadBit()) << 2) |
@@ -489,7 +443,8 @@ namespace MLAPI.Serialization
         {
             if (m_NetworkSource == null) throw new InvalidOperationException($"Cannot read bits on a non-{nameof(NetworkBuffer)} stream");
             ByteBool convert = new ByteBool();
-            return (byte)(
+            return (byte)
+            (
                 convert.Collapse(ReadBit()) |
                 (convert.Collapse(ReadBit()) << 1) |
                 (convert.Collapse(ReadBit()) << 2) |
@@ -537,7 +492,8 @@ namespace MLAPI.Serialization
         /// Read an unsigned long (UInt64) from the stream.
         /// </summary>
         /// <returns>Value read from stream.</returns>
-        public ulong ReadUInt64() => (
+        public ulong ReadUInt64() =>
+        (
             ((uint)ReadByte()) |
             ((ulong)ReadByte() << 8) |
             ((ulong)ReadByte() << 16) |
@@ -627,8 +583,7 @@ namespace MLAPI.Serialization
             int expectedLength = (int)ReadUInt32Packed();
             if (builder == null) builder = new StringBuilder(expectedLength);
             else if (builder.Capacity + builder.Length < expectedLength) builder.Capacity = expectedLength + builder.Length;
-            for (int i = 0; i < expectedLength; ++i)
-                builder.Insert(i, oneByteChars ? (char)ReadByte() : ReadChar());
+            for (int i = 0; i < expectedLength; ++i) builder.Insert(i, oneByteChars ? (char)ReadByte() : ReadChar());
             return builder;
         }
 
@@ -642,8 +597,7 @@ namespace MLAPI.Serialization
             int expectedLength = (int)ReadUInt32Packed();
             if (builder == null) builder = new StringBuilder(expectedLength);
             else if (builder.Capacity + builder.Length < expectedLength) builder.Capacity = expectedLength + builder.Length;
-            for (int i = 0; i < expectedLength; ++i)
-                builder.Insert(i, ReadCharPacked());
+            for (int i = 0; i < expectedLength; ++i) builder.Insert(i, ReadCharPacked());
             return builder.ToString();
         }
 
@@ -670,7 +624,7 @@ namespace MLAPI.Serialization
             else if (builder.Capacity < expectedLength) builder.Capacity = expectedLength;
             ulong dBlockStart = m_NetworkSource.BitPosition + (ulong)(compare == null ? 0 : Math.Min(expectedLength, compare.Length));
             ulong mapStart;
-            int compareLength = compare == null ? 0 : compare.Length;
+            int compareLength = compare?.Length ?? 0;
             for (int i = 0; i < expectedLength; ++i)
             {
                 if (i >= compareLength || ReadBit())
@@ -706,7 +660,7 @@ namespace MLAPI.Serialization
             if (m_NetworkSource == null) throw new InvalidOperationException($"Cannot read bits on a non-{nameof(NetworkBuffer)} stream");
             int expectedLength = (int)ReadUInt32Packed();
             if (compareAndBuffer == null) throw new ArgumentNullException("Buffer cannot be null");
-            else if (compareAndBuffer.Capacity < expectedLength) compareAndBuffer.Capacity = expectedLength;
+            if (compareAndBuffer.Capacity < expectedLength) compareAndBuffer.Capacity = expectedLength;
             ulong dBlockStart = m_NetworkSource.BitPosition + (ulong)Math.Min(expectedLength, compareAndBuffer.Length);
             ulong mapStart;
             for (int i = 0; i < expectedLength; ++i)
@@ -754,7 +708,7 @@ namespace MLAPI.Serialization
             else if (builder.Capacity < expectedLength) builder.Capacity = expectedLength;
             ulong dBlockStart = m_NetworkSource.BitPosition + (ulong)(compare == null ? 0 : Math.Min(expectedLength, compare.Length));
             ulong mapStart;
-            int compareLength = compare == null ? 0 : compare.Length;
+            int compareLength = compare?.Length ?? 0;
             for (int i = 0; i < expectedLength; ++i)
             {
                 if (i >= compareLength || ReadBit())
@@ -891,7 +845,7 @@ namespace MLAPI.Serialization
             byte[] writeTo = readTo == null || readTo.LongLength != knownLength ? new byte[knownLength] : readTo;
             ulong dBlockStart = m_NetworkSource.BitPosition + (ulong)(readTo == null ? 0 : Math.Min(knownLength, readTo.LongLength));
             ulong mapStart;
-            long readToLength = readTo == null ? 0 : readTo.LongLength;
+            long readToLength = readTo?.LongLength ?? 0;
             for (long i = 0; i < knownLength; ++i)
             {
                 if (i >= readToLength || ReadBit())
@@ -957,7 +911,7 @@ namespace MLAPI.Serialization
             short[] writeTo = readTo == null || readTo.LongLength != knownLength ? new short[knownLength] : readTo;
             ulong dBlockStart = m_NetworkSource.BitPosition + (ulong)(readTo == null ? 0 : Math.Min(knownLength, readTo.LongLength));
             ulong mapStart;
-            long readToLength = readTo == null ? 0 : readTo.LongLength;
+            long readToLength = readTo?.LongLength ?? 0;
             for (long i = 0; i < knownLength; ++i)
             {
                 if (i >= readToLength || ReadBit())
@@ -995,7 +949,7 @@ namespace MLAPI.Serialization
             short[] writeTo = readTo == null || readTo.LongLength != knownLength ? new short[knownLength] : readTo;
             ulong data = m_NetworkSource.BitPosition + (ulong)(readTo == null ? 0 : Math.Min(knownLength, readTo.LongLength));
             ulong rset;
-            long readToLength = readTo == null ? 0 : readTo.LongLength;
+            long readToLength = readTo?.LongLength ?? 0;
             for (long i = 0; i < knownLength; ++i)
             {
                 if (i >= readToLength || ReadBit())
@@ -1061,7 +1015,7 @@ namespace MLAPI.Serialization
             ushort[] writeTo = readTo == null || readTo.LongLength != knownLength ? new ushort[knownLength] : readTo;
             ulong dBlockStart = m_NetworkSource.BitPosition + (ulong)(readTo == null ? 0 : Math.Min(knownLength, readTo.LongLength));
             ulong mapStart;
-            long readToLength = readTo == null ? 0 : readTo.LongLength;
+            long readToLength = readTo?.LongLength ?? 0;
             for (long i = 0; i < knownLength; ++i)
             {
                 if (i >= readToLength || ReadBit())
@@ -1099,7 +1053,7 @@ namespace MLAPI.Serialization
             ushort[] writeTo = readTo == null || readTo.LongLength != knownLength ? new ushort[knownLength] : readTo;
             ulong data = m_NetworkSource.BitPosition + (ulong)(readTo == null ? 0 : Math.Min(knownLength, readTo.LongLength));
             ulong rset;
-            long readToLength = readTo == null ? 0 : readTo.LongLength;
+            long readToLength = readTo?.LongLength ?? 0;
             for (long i = 0; i < knownLength; ++i)
             {
                 if (i >= readToLength || ReadBit())
@@ -1165,7 +1119,7 @@ namespace MLAPI.Serialization
             int[] writeTo = readTo == null || readTo.LongLength != knownLength ? new int[knownLength] : readTo;
             ulong dBlockStart = m_NetworkSource.BitPosition + (ulong)(readTo == null ? 0 : Math.Min(knownLength, readTo.LongLength));
             ulong mapStart;
-            long readToLength = readTo == null ? 0 : readTo.LongLength;
+            long readToLength = readTo?.LongLength ?? 0;
             for (long i = 0; i < knownLength; ++i)
             {
                 if (i >= readToLength || ReadBit())
@@ -1203,7 +1157,7 @@ namespace MLAPI.Serialization
             int[] writeTo = readTo == null || readTo.LongLength != knownLength ? new int[knownLength] : readTo;
             ulong data = m_NetworkSource.BitPosition + (ulong)(readTo == null ? 0 : Math.Min(knownLength, readTo.LongLength));
             ulong rset;
-            long readToLength = readTo == null ? 0 : readTo.LongLength;
+            long readToLength = readTo?.LongLength ?? 0;
             for (long i = 0; i < knownLength; ++i)
             {
                 if (i >= readToLength || ReadBit())
@@ -1269,7 +1223,7 @@ namespace MLAPI.Serialization
             uint[] writeTo = readTo == null || readTo.LongLength != knownLength ? new uint[knownLength] : readTo;
             ulong dBlockStart = m_NetworkSource.BitPosition + (ulong)(readTo == null ? 0 : Math.Min(knownLength, readTo.LongLength));
             ulong mapStart;
-            long readToLength = readTo == null ? 0 : readTo.LongLength;
+            long readToLength = readTo?.LongLength ?? 0;
             for (long i = 0; i < knownLength; ++i)
             {
                 if (i >= readToLength || ReadBit())
@@ -1335,7 +1289,7 @@ namespace MLAPI.Serialization
             long[] writeTo = readTo == null || readTo.LongLength != knownLength ? new long[knownLength] : readTo;
             ulong dBlockStart = m_NetworkSource.BitPosition + (ulong)(readTo == null ? 0 : Math.Min(knownLength, readTo.LongLength));
             ulong mapStart;
-            long readToLength = readTo == null ? 0 : readTo.LongLength;
+            long readToLength = readTo?.LongLength ?? 0;
             for (long i = 0; i < knownLength; ++i)
             {
                 if (i >= readToLength || ReadBit())
@@ -1373,7 +1327,7 @@ namespace MLAPI.Serialization
             long[] writeTo = readTo == null || readTo.LongLength != knownLength ? new long[knownLength] : readTo;
             ulong data = m_NetworkSource.BitPosition + (ulong)(readTo == null ? 0 : Math.Min(knownLength, readTo.LongLength));
             ulong rset;
-            long readToLength = readTo == null ? 0 : readTo.LongLength;
+            long readToLength = readTo?.LongLength ?? 0;
             for (long i = 0; i < knownLength; ++i)
             {
                 if (i >= readToLength || ReadBit())
@@ -1439,7 +1393,7 @@ namespace MLAPI.Serialization
             ulong[] writeTo = readTo == null || readTo.LongLength != knownLength ? new ulong[knownLength] : readTo;
             ulong dBlockStart = m_NetworkSource.BitPosition + (ulong)(readTo == null ? 0 : Math.Min(knownLength, readTo.LongLength));
             ulong mapStart;
-            long readToLength = readTo == null ? 0 : readTo.LongLength;
+            long readToLength = readTo?.LongLength ?? 0;
             for (long i = 0; i < knownLength; ++i)
             {
                 if (i >= readToLength || ReadBit())
@@ -1477,7 +1431,7 @@ namespace MLAPI.Serialization
             ulong[] writeTo = readTo == null || readTo.LongLength != knownLength ? new ulong[knownLength] : readTo;
             ulong data = m_NetworkSource.BitPosition + (ulong)(readTo == null ? 0 : Math.Min(knownLength, readTo.LongLength));
             ulong rset;
-            long readToLength = readTo == null ? 0 : readTo.LongLength;
+            long readToLength = readTo?.LongLength ?? 0;
             for (long i = 0; i < knownLength; ++i)
             {
                 if (i >= readToLength || ReadBit())
@@ -1543,7 +1497,7 @@ namespace MLAPI.Serialization
             float[] writeTo = readTo == null || readTo.LongLength != knownLength ? new float[knownLength] : readTo;
             ulong dBlockStart = m_NetworkSource.BitPosition + (ulong)(readTo == null ? 0 : Math.Min(knownLength, readTo.LongLength));
             ulong mapStart;
-            long readToLength = readTo == null ? 0 : readTo.LongLength;
+            long readToLength = readTo?.LongLength ?? 0;
             for (long i = 0; i < knownLength; ++i)
             {
                 if (i >= readToLength || ReadBit())
@@ -1581,7 +1535,7 @@ namespace MLAPI.Serialization
             float[] writeTo = readTo == null || readTo.LongLength != knownLength ? new float[knownLength] : readTo;
             ulong data = m_NetworkSource.BitPosition + (ulong)(readTo == null ? 0 : Math.Min(knownLength, readTo.LongLength));
             ulong rset;
-            long readToLength = readTo == null ? 0 : readTo.LongLength;
+            long readToLength = readTo?.LongLength ?? 0;
             for (long i = 0; i < knownLength; ++i)
             {
                 if (i >= readToLength || ReadBit())
@@ -1647,7 +1601,7 @@ namespace MLAPI.Serialization
             double[] writeTo = readTo == null || readTo.LongLength != knownLength ? new double[knownLength] : readTo;
             ulong dBlockStart = m_NetworkSource.BitPosition + (ulong)(readTo == null ? 0 : Math.Min(knownLength, readTo.LongLength));
             ulong mapStart;
-            long readToLength = readTo == null ? 0 : readTo.LongLength;
+            long readToLength = readTo?.LongLength ?? 0;
             for (long i = 0; i < knownLength; ++i)
             {
                 if (i >= readToLength || ReadBit())
@@ -1685,7 +1639,7 @@ namespace MLAPI.Serialization
             double[] writeTo = readTo == null || readTo.LongLength != knownLength ? new double[knownLength] : readTo;
             ulong data = m_NetworkSource.BitPosition + (ulong)(readTo == null ? 0 : Math.Min(knownLength, readTo.LongLength));
             ulong rset;
-            long readToLength = readTo == null ? 0 : readTo.LongLength;
+            long readToLength = readTo?.LongLength ?? 0;
             for (long i = 0; i < knownLength; ++i)
             {
                 if (i >= readToLength || ReadBit())

@@ -59,7 +59,7 @@ namespace MLAPI.Profiling
         /// <returns>The ProfilerTick with data read from the stream</returns>
         public static ProfilerTick FromStream(Stream stream)
         {
-            ProfilerTick tick = new ProfilerTick();
+            var tick = new ProfilerTick();
 
             using (var reader = PooledNetworkReader.Get(stream))
             {
@@ -87,7 +87,7 @@ namespace MLAPI.Profiling
 
         internal void StartEvent(TickType type, uint bytes, string channelName, string messageType)
         {
-            TickEvent tickEvent = new TickEvent()
+            var tickEvent = new TickEvent()
             {
                 Bytes = bytes,
                 ChannelName = string.IsNullOrEmpty(channelName) ? "NONE" : channelName,
@@ -121,7 +121,11 @@ namespace MLAPI.Profiling
             get
             {
                 uint bytes = 0;
-                for (int i = 0; i < Events.Count; i++) bytes += Events[i].Bytes;
+                for (int i = 0; i < Events.Count; i++)
+                {
+                    bytes += Events[i].Bytes;
+                }
+
                 return bytes;
             }
         }
@@ -182,7 +186,7 @@ namespace MLAPI.Profiling
         {
             using (var reader = PooledNetworkReader.Get(stream))
             {
-                TickEvent tickEvent = new TickEvent
+                var tickEvent = new TickEvent
                 {
                     EventType = (TickType)reader.ReadByte(),
                     Bytes = reader.ReadUInt32Packed(),
@@ -190,6 +194,7 @@ namespace MLAPI.Profiling
                     MessageType = reader.ReadStringPacked(),
                     Closed = reader.ReadBool()
                 };
+
                 return tickEvent;
             }
         }

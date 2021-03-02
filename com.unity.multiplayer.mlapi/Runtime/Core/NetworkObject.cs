@@ -113,17 +113,17 @@ namespace MLAPI
         /// <summary>
         /// Gets if the object is the the personal clients player object
         /// </summary>
-        public bool IsLocalPlayer => NetworkManager.Singleton != null && IsPlayerObject && OwnerClientId == NetworkManager.Singleton.LocalClientId;
+        public bool IsLocalPlayer => !ReferenceEquals(NetworkManager.Singleton, null) && IsPlayerObject && OwnerClientId == NetworkManager.Singleton.LocalClientId;
 
         /// <summary>
         /// Gets if the object is owned by the local player or if the object is the local player object
         /// </summary>
-        public bool IsOwner => NetworkManager.Singleton != null && OwnerClientId == NetworkManager.Singleton.LocalClientId;
+        public bool IsOwner => !ReferenceEquals(NetworkManager.Singleton, null) && OwnerClientId == NetworkManager.Singleton.LocalClientId;
 
         /// <summary>
         /// Gets Whether or not the object is owned by anyone
         /// </summary>
-        public bool IsOwnedByServer => NetworkManager.Singleton != null && OwnerClientId == NetworkManager.Singleton.ServerClientId;
+        public bool IsOwnedByServer => !ReferenceEquals(NetworkManager.Singleton, null) && OwnerClientId == NetworkManager.Singleton.ServerClientId;
 
         /// <summary>
         /// Gets if the object has yet been spawned across the network
@@ -384,8 +384,7 @@ namespace MLAPI
                 throw new NotListeningException($"{nameof(NetworkManager)} isn't listening, start a server, client or host before spawning objects.");
             }
 
-            if (spawnPayload != null)
-                spawnPayload.Position = 0;
+            if (spawnPayload != null) spawnPayload.Position = 0;
 
             NetworkSpawnManager.SpawnNetworkObjectLocally(this, NetworkSpawnManager.GetNetworkObjectId(), false, false, null, spawnPayload, spawnPayload != null, spawnPayload == null ? 0 : (int)spawnPayload.Length, false, destroyWithScene);
 
@@ -414,8 +413,7 @@ namespace MLAPI
         /// <param name="destroyWithScene">Should the object be destroyd when the scene is changed</param>
         public void SpawnWithOwnership(ulong clientId, Stream spawnPayload = null, bool destroyWithScene = false)
         {
-            if (spawnPayload != null)
-                spawnPayload.Position = 0;
+            if (spawnPayload != null) spawnPayload.Position = 0;
 
             NetworkSpawnManager.SpawnNetworkObjectLocally(this, NetworkSpawnManager.GetNetworkObjectId(), false, false, clientId, spawnPayload, spawnPayload != null, spawnPayload == null ? 0 : (int)spawnPayload.Length, false, destroyWithScene);
 
@@ -436,8 +434,7 @@ namespace MLAPI
         /// <param name="destroyWithScene">Should the object be destroyd when the scene is changed</param>
         public void SpawnAsPlayerObject(ulong clientId, Stream spawnPayload = null, bool destroyWithScene = false)
         {
-            if (spawnPayload != null)
-                spawnPayload.Position = 0;
+            if (spawnPayload != null) spawnPayload.Position = 0;
 
             NetworkSpawnManager.SpawnNetworkObjectLocally(this, NetworkSpawnManager.GetNetworkObjectId(), false, true, clientId, spawnPayload, spawnPayload != null, spawnPayload == null ? 0 : (int)spawnPayload.Length, false, destroyWithScene);
 
@@ -519,14 +516,18 @@ namespace MLAPI
         {
             get
             {
-                if (m_ChildNetworkBehaviours == null)
+                if (m_ChildNetworkBehaviours != null)
                 {
-                    m_ChildNetworkBehaviours = new List<NetworkBehaviour>();
-                    NetworkBehaviour[] behaviours = GetComponentsInChildren<NetworkBehaviour>(true);
-                    for (int i = 0; i < behaviours.Length; i++)
+                    return m_ChildNetworkBehaviours;
+                }
+
+                m_ChildNetworkBehaviours = new List<NetworkBehaviour>();
+                var networkBehaviours = GetComponentsInChildren<NetworkBehaviour>(true);
+                for (int i = 0; i < networkBehaviours.Length; i++)
+                {
+                    if (networkBehaviours[i].NetworkObject == this)
                     {
-                        if (behaviours[i].NetworkObject == this)
-                            m_ChildNetworkBehaviours.Add(behaviours[i]);
+                        m_ChildNetworkBehaviours.Add(networkBehaviours[i]);
                     }
                 }
 
@@ -557,7 +558,9 @@ namespace MLAPI
             for (ushort i = 0; i < ChildNetworkBehaviours.Count; i++)
             {
                 if (ChildNetworkBehaviours[i] == instance)
+                {
                     return i;
+                }
             }
 
             return 0;

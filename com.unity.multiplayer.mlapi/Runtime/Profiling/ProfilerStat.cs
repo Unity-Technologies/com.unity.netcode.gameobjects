@@ -61,7 +61,7 @@ namespace MLAPI.Profiling
             {
                 LinkedListNode<Sample> node = Data.First;
                 LastCount = 0;
-                LastTime = (Data.Last != null) ? Data.Last.Value.TimeRecorded : 0.0f;
+                LastTime = Data.Last?.Value.TimeRecorded ?? 0.0f;
 
                 while (node != null)
                 {

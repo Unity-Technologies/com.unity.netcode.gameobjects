@@ -158,14 +158,12 @@ namespace MLAPI.Transports.UNET
 
         public override NetworkEvent PollEvent(out ulong clientId, out NetworkChannel networkChannel, out ArraySegment<byte> payload, out float receiveTime)
         {
-            NetworkEventType eventType = RelayTransport.Receive(out int hostId, out int connectionId, out int channelId, m_MessageBuffer, m_MessageBuffer.Length, out int receivedSize, out byte error);
+            var eventType = RelayTransport.Receive(out int hostId, out int connectionId, out int channelId, m_MessageBuffer, m_MessageBuffer.Length, out int receivedSize, out byte error);
 
             clientId = GetMLAPIClientId((byte)hostId, (ushort)connectionId, false);
-
             receiveTime = UnityEngine.Time.realtimeSinceStartup;
 
-            NetworkError networkError = (NetworkError)error;
-
+            var networkError = (NetworkError)error;
             if (networkError == NetworkError.MessageToLong)
             {
                 byte[] tempBuffer;
@@ -253,38 +251,38 @@ namespace MLAPI.Transports.UNET
 
         public override SocketTasks StartClient()
         {
-            SocketTask task = SocketTask.Working;
+            var socketTask = SocketTask.Working;
 
             m_ServerHostId = RelayTransport.AddHost(new HostTopology(GetConfig(), 1), false);
             m_ServerConnectionId = RelayTransport.Connect(m_ServerHostId, ConnectAddress, ConnectPort, 0, out byte error);
 
-            NetworkError connectError = (NetworkError)error;
+            var connectError = (NetworkError)error;
 
             switch (connectError)
             {
                 case NetworkError.Ok:
-                    task.Success = true;
-                    task.TransportCode = error;
-                    task.SocketError = System.Net.Sockets.SocketError.Success;
-                    task.IsDone = false;
+                    socketTask.Success = true;
+                    socketTask.TransportCode = error;
+                    socketTask.SocketError = System.Net.Sockets.SocketError.Success;
+                    socketTask.IsDone = false;
 
                     // We want to continue to wait for the successful connect
-                    m_ConnectTask = task;
+                    m_ConnectTask = socketTask;
                     break;
                 default:
-                    task.Success = false;
-                    task.TransportCode = error;
-                    task.SocketError = System.Net.Sockets.SocketError.SocketError;
-                    task.IsDone = true;
+                    socketTask.Success = false;
+                    socketTask.TransportCode = error;
+                    socketTask.SocketError = System.Net.Sockets.SocketError.SocketError;
+                    socketTask.IsDone = true;
                     break;
             }
 
-            return task.AsTasks();
+            return socketTask.AsTasks();
         }
 
         public override SocketTasks StartServer()
         {
-            HostTopology topology = new HostTopology(GetConfig(), MaxConnections);
+            var topology = new HostTopology(GetConfig(), MaxConnections);
 
             if (SupportWebsocket)
             {
@@ -375,12 +373,12 @@ namespace MLAPI.Transports.UNET
 
         public ConnectionConfig GetConfig()
         {
-            ConnectionConfig config = new ConnectionConfig();
+            var connectionConfig = new ConnectionConfig();
 
             // MLAPI built-in channels
             for (int i = 0; i < MLAPI_CHANNELS.Length; i++)
             {
-                int channelId = AddMLAPIChannel(MLAPI_CHANNELS[i].Delivery, config);
+                int channelId = AddMLAPIChannel(MLAPI_CHANNELS[i].Delivery, connectionConfig);
 
                 m_ChannelIdToName.Add(channelId, MLAPI_CHANNELS[i].Channel);
                 m_ChannelNameToId.Add(MLAPI_CHANNELS[i].Channel, channelId);
@@ -389,7 +387,7 @@ namespace MLAPI.Transports.UNET
             // Custom user-added channels
             for (int i = 0; i < Channels.Count; i++)
             {
-                int channelId = AddUNETChannel(Channels[i].Type, config);
+                int channelId = AddUNETChannel(Channels[i].Type, connectionConfig);
 
                 if (m_ChannelNameToId.ContainsKey(Channels[i].Id))
                 {
@@ -400,9 +398,9 @@ namespace MLAPI.Transports.UNET
                 m_ChannelNameToId.Add(Channels[i].Id, channelId);
             }
 
-            config.MaxSentMessageQueueSize = (ushort)MaxSentMessageQueueSize;
+            connectionConfig.MaxSentMessageQueueSize = (ushort)MaxSentMessageQueueSize;
 
-            return config;
+            return connectionConfig;
         }
 
         public int AddMLAPIChannel(NetworkDelivery type, ConnectionConfig config)

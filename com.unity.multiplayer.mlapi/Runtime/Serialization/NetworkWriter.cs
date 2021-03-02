@@ -71,7 +71,7 @@ namespace MLAPI.Serialization
 
             if (value is Array array)
             {
-                Type elementType = value.GetType().GetElementType();
+                var elementType = value.GetType().GetElementType();
 
                 if (SerializationManager.IsTypeSupported(elementType))
                 {
@@ -561,8 +561,7 @@ namespace MLAPI.Serialization
         public void WriteBits(byte value, int bitCount)
         {
             if (m_NetworkSource == null) throw new InvalidOperationException($"Cannot write bits on a non-{nameof(NetworkBuffer)} stream");
-            for (int i = 0; i < bitCount; ++i)
-                m_NetworkSource.WriteBit(((value >> i) & 1) != 0);
+            for (int i = 0; i < bitCount; ++i) m_NetworkSource.WriteBit(((value >> i) & 1) != 0);
         }
 
         /// <summary>
@@ -735,8 +734,10 @@ namespace MLAPI.Serialization
             WriteUInt32Packed((uint)s.Length);
             int target = s.Length;
             for (int i = 0; i < target; ++i)
+            {
                 if (oneByteChars) WriteByte((byte)s[i]);
                 else WriteChar(s[i]);
+            }
         }
 
         /// <summary>
@@ -1270,7 +1271,7 @@ namespace MLAPI.Serialization
         /// <param name="count">The amount of elements to write</param>
         public void WriteArrayPacked(Array a, long count = -1)
         {
-            Type arrayType = a.GetType();
+            var arrayType = a.GetType();
 
 
 #if ARRAY_WRITE_PERMISSIVE
@@ -1297,7 +1298,7 @@ namespace MLAPI.Serialization
         /// <param name="count">The amount of elements to write</param>
         public void WriteArrayPackedDiff(Array write, Array compare, long count = -1)
         {
-            Type arrayType = write.GetType();
+            var arrayType = write.GetType();
             if (arrayType != compare.GetType()) throw new ArrayTypeMismatchException("Cannot write diff of two differing array types");
 
 #if ARRAY_WRITE_PERMISSIVE

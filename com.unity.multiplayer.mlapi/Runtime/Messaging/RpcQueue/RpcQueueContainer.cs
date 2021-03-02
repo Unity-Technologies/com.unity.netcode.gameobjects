@@ -183,8 +183,10 @@ namespace MLAPI.Messaging
             foreach (KeyValuePair<NetworkUpdateStage, RpcQueueHistoryFrame> queueHistoryByUpdates in QueueHistory[queueType][StreamBufferIndex])
             {
                 var rpcQueueHistoryItem = queueHistoryByUpdates.Value;
+
                 //This only gets reset when we advanced to next frame (do not reset this in the ResetQueueHistoryFrame)
                 rpcQueueHistoryItem.HasLoopbackData = false;
+
                 if (rpcQueueHistoryItem.QueueItemOffsets.Count > 0)
                 {
                     if (queueType == RpcQueueHistoryFrame.QueueFrameType.Inbound)
@@ -437,10 +439,7 @@ namespace MLAPI.Messaging
             var rpcQueueHistoryItem = GetQueueHistoryFrame(queueFrameType, updateStage, getNextFrame);
             var loopBackHistoryFrame = rpcQueueHistoryItem.LoopbackHistoryFrame;
 
-
             var pbWriter = (PooledNetworkWriter)writer;
-
-            //Sanity check
             if (pbWriter != rpcQueueHistoryItem.QueueWriter && !getNextFrame)
             {
                 UnityEngine.Debug.LogError($"{nameof(RpcQueueContainer)} {queueFrameType} passed writer is not the same as the current {nameof(PooledNetworkWriter)} for the {queueFrameType}!");

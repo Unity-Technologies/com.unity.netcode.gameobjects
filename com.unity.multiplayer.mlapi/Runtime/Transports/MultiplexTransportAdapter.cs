@@ -88,7 +88,9 @@ namespace MLAPI.Transports.Multiplex
         public override NetworkEvent PollEvent(out ulong clientId, out NetworkChannel networkChannel, out ArraySegment<byte> payload, out float receiveTime)
         {
             if (m_LastProcessedTransportIndex >= Transports.Length - 1)
+            {
                 m_LastProcessedTransportIndex = 0;
+            }
 
             for (byte i = m_LastProcessedTransportIndex; i < Transports.Length; i++)
             {
@@ -96,7 +98,7 @@ namespace MLAPI.Transports.Multiplex
 
                 if (Transports[i].IsSupported)
                 {
-                    NetworkEvent networkEvent = Transports[i].PollEvent(out ulong connectionId, out networkChannel, out payload, out receiveTime);
+                    var networkEvent = Transports[i].PollEvent(out ulong connectionId, out networkChannel, out payload, out receiveTime);
 
                     if (networkEvent != NetworkEvent.Nothing)
                     {
@@ -135,7 +137,7 @@ namespace MLAPI.Transports.Multiplex
 
         public override SocketTasks StartClient()
         {
-            List<SocketTask> socketTasks = new List<SocketTask>();
+            var socketTasks = new List<SocketTask>();
 
             for (int i = 0; i < Transports.Length; i++)
             {
@@ -145,15 +147,12 @@ namespace MLAPI.Transports.Multiplex
                 }
             }
 
-            return new SocketTasks()
-            {
-                Tasks = socketTasks.ToArray()
-            };
+            return new SocketTasks { Tasks = socketTasks.ToArray() };
         }
 
         public override SocketTasks StartServer()
         {
-            List<SocketTask> socketTasks = new List<SocketTask>();
+            var socketTasks = new List<SocketTask>();
 
             for (int i = 0; i < Transports.Length; i++)
             {
@@ -163,10 +162,7 @@ namespace MLAPI.Transports.Multiplex
                 }
             }
 
-            return new SocketTasks()
-            {
-                Tasks = socketTasks.ToArray()
-            };
+            return new SocketTasks { Tasks = socketTasks.ToArray() };
         }
 
 
@@ -176,66 +172,64 @@ namespace MLAPI.Transports.Multiplex
             {
                 return ServerClientId;
             }
-            else
+
+            switch (SpreadMethod)
             {
-                switch (SpreadMethod)
+                case ConnectionIdSpreadMethod.ReplaceFirstBits:
                 {
-                    case ConnectionIdSpreadMethod.ReplaceFirstBits:
-                    {
-                        // Calculate bits to store transportId
-                        byte bits = (byte)UnityEngine.Mathf.CeilToInt(UnityEngine.Mathf.Log(Transports.Length, 2));
+                    // Calculate bits to store transportId
+                    byte bits = (byte)UnityEngine.Mathf.CeilToInt(UnityEngine.Mathf.Log(Transports.Length, 2));
 
-                        // Drop first bits of connectionId
-                        ulong clientId = ((connectionId << bits) >> bits);
+                    // Drop first bits of connectionId
+                    ulong clientId = ((connectionId << bits) >> bits);
 
-                        // Place transportId there
-                        ulong shiftedTransportId = (ulong)transportId << ((sizeof(ulong) * 8) - bits);
+                    // Place transportId there
+                    ulong shiftedTransportId = (ulong)transportId << ((sizeof(ulong) * 8) - bits);
 
-                        return (clientId | shiftedTransportId) + 1;
-                    }
-                    case ConnectionIdSpreadMethod.MakeRoomFirstBits:
-                    {
-                        // Calculate bits to store transportId
-                        byte bits = (byte)UnityEngine.Mathf.CeilToInt(UnityEngine.Mathf.Log(Transports.Length, 2));
+                    return (clientId | shiftedTransportId) + 1;
+                }
+                case ConnectionIdSpreadMethod.MakeRoomFirstBits:
+                {
+                    // Calculate bits to store transportId
+                    byte bits = (byte)UnityEngine.Mathf.CeilToInt(UnityEngine.Mathf.Log(Transports.Length, 2));
 
-                        // Drop first bits of connectionId
-                        ulong clientId = (connectionId >> bits);
+                    // Drop first bits of connectionId
+                    ulong clientId = (connectionId >> bits);
 
-                        // Place transportId there
-                        ulong shiftedTransportId = (ulong)transportId << ((sizeof(ulong) * 8) - bits);
+                    // Place transportId there
+                    ulong shiftedTransportId = (ulong)transportId << ((sizeof(ulong) * 8) - bits);
 
-                        return (clientId | shiftedTransportId) + 1;
-                    }
-                    case ConnectionIdSpreadMethod.ReplaceLastBits:
-                    {
-                        // Calculate bits to store transportId
-                        byte bits = (byte)UnityEngine.Mathf.CeilToInt(UnityEngine.Mathf.Log(Transports.Length, 2));
+                    return (clientId | shiftedTransportId) + 1;
+                }
+                case ConnectionIdSpreadMethod.ReplaceLastBits:
+                {
+                    // Calculate bits to store transportId
+                    byte bits = (byte)UnityEngine.Mathf.CeilToInt(UnityEngine.Mathf.Log(Transports.Length, 2));
 
-                        // Drop the last bits of connectionId
-                        ulong clientId = ((connectionId >> bits) << bits);
+                    // Drop the last bits of connectionId
+                    ulong clientId = ((connectionId >> bits) << bits);
 
-                        // Return the transport inserted at the end
-                        return (clientId | transportId) + 1;
-                    }
-                    case ConnectionIdSpreadMethod.MakeRoomLastBits:
-                    {
-                        // Calculate bits to store transportId
-                        byte bits = (byte)UnityEngine.Mathf.CeilToInt(UnityEngine.Mathf.Log(Transports.Length, 2));
+                    // Return the transport inserted at the end
+                    return (clientId | transportId) + 1;
+                }
+                case ConnectionIdSpreadMethod.MakeRoomLastBits:
+                {
+                    // Calculate bits to store transportId
+                    byte bits = (byte)UnityEngine.Mathf.CeilToInt(UnityEngine.Mathf.Log(Transports.Length, 2));
 
-                        // Drop the last bits of connectionId
-                        ulong clientId = (connectionId << bits);
+                    // Drop the last bits of connectionId
+                    ulong clientId = (connectionId << bits);
 
-                        // Return the transport inserted at the end
-                        return (clientId | transportId) + 1;
-                    }
-                    case ConnectionIdSpreadMethod.Spread:
-                    {
-                        return (connectionId * (ulong)Transports.Length + (ulong)transportId) + 1;
-                    }
-                    default:
-                    {
-                        return ServerClientId;
-                    }
+                    // Return the transport inserted at the end
+                    return (clientId | transportId) + 1;
+                }
+                case ConnectionIdSpreadMethod.Spread:
+                {
+                    return (connectionId * (ulong)Transports.Length + (ulong)transportId) + 1;
+                }
+                default:
+                {
+                    return ServerClientId;
                 }
             }
         }

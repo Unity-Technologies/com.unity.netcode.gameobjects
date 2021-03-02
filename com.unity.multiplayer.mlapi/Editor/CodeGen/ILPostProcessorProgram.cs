@@ -185,8 +185,7 @@ namespace MLAPI.Editor.CodeGen
             foreach (var i in s_ILPostProcessors)
             {
                 var result = i.Process(targetCompiledAssembly);
-                if (result == null)
-                    continue;
+                if (result == null) continue;
 
                 if (result.Diagnostics.Count > 0)
                 {

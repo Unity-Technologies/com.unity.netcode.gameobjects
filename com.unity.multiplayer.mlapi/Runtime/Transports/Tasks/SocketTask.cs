@@ -148,7 +148,7 @@ namespace MLAPI.Transports.Tasks
         /// Gets a done task.
         /// </summary>
         /// <value>The done.</value>
-        public static SocketTask Done => new SocketTask()
+        public static SocketTask Done => new SocketTask
         {
             IsDone = true,
             Message = null,
@@ -163,7 +163,7 @@ namespace MLAPI.Transports.Tasks
         /// Gets a faulty task.
         /// </summary>
         /// <value>The fault.</value>
-        public static SocketTask Fault => new SocketTask()
+        public static SocketTask Fault => new SocketTask
         {
             IsDone = true,
             Message = null,
@@ -178,7 +178,7 @@ namespace MLAPI.Transports.Tasks
         /// Gets a working task.
         /// </summary>
         /// <value>The working.</value>
-        public static SocketTask Working => new SocketTask()
+        public static SocketTask Working => new SocketTask
         {
             IsDone = false,
             Message = null,
@@ -193,12 +193,6 @@ namespace MLAPI.Transports.Tasks
         /// Converts to a SocketTasks.
         /// </summary>
         /// <returns>The tasks.</returns>
-        public SocketTasks AsTasks()
-        {
-            return new SocketTasks()
-            {
-                Tasks = new SocketTask[] { this }
-            };
-        }
+        public SocketTasks AsTasks() => new SocketTasks { Tasks = new[] { this } };
     }
 }

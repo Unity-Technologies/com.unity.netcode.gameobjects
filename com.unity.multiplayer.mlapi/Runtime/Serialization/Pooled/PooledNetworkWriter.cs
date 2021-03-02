@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using UnityEngine;
 
 namespace MLAPI.Serialization.Pooled
 {
@@ -21,7 +22,7 @@ namespace MLAPI.Serialization.Pooled
         /// <returns>PooledNetworkWriter</returns>
         public static PooledNetworkWriter Get(Stream stream)
         {
-            PooledNetworkWriter writer = NetworkWriterPool.GetWriter(stream);
+            var writer = NetworkWriterPool.GetWriter(stream);
             writer.m_IsDisposed = false;
             return writer;
         }
@@ -38,7 +39,7 @@ namespace MLAPI.Serialization.Pooled
             }
             else
             {
-                UnityEngine.Debug.LogError("Writer is being disposed but thinks it is already disposed");
+                Debug.LogError("Writer is being disposed but thinks it is already disposed");
             }
         }
     }
