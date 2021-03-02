@@ -290,12 +290,12 @@ namespace MLAPI
 
             NetworkSpawnManager.SpawnedObjects.Clear();
             NetworkSpawnManager.SpawnedObjectsList.Clear();
-            NetworkSpawnManager.k_ReleasedNetworkObjectIds.Clear();
-            NetworkSpawnManager.k_PendingSoftSyncObjects.Clear();
-            NetworkSceneManager.k_RegisteredSceneNames.Clear();
-            NetworkSceneManager.k_SceneIndexToString.Clear();
-            NetworkSceneManager.k_SceneNameToIndex.Clear();
-            NetworkSceneManager.k_SceneSwitchProgresses.Clear();
+            NetworkSpawnManager.ReleasedNetworkObjectIds.Clear();
+            NetworkSpawnManager.PendingSoftSyncObjects.Clear();
+            NetworkSceneManager.RegisteredSceneNames.Clear();
+            NetworkSceneManager.SceneIndexToString.Clear();
+            NetworkSceneManager.SceneNameToIndex.Clear();
+            NetworkSceneManager.SceneSwitchProgresses.Clear();
 
             if (ReferenceEquals(NetworkConfig.NetworkTransport, null))
             {
@@ -338,9 +338,9 @@ namespace MLAPI
 
                 for (int i = 0; i < NetworkConfig.RegisteredScenes.Count; i++)
                 {
-                    NetworkSceneManager.k_RegisteredSceneNames.Add(NetworkConfig.RegisteredScenes[i]);
-                    NetworkSceneManager.k_SceneIndexToString.Add((uint)i, NetworkConfig.RegisteredScenes[i]);
-                    NetworkSceneManager.k_SceneNameToIndex.Add(NetworkConfig.RegisteredScenes[i], (uint)i);
+                    NetworkSceneManager.RegisteredSceneNames.Add(NetworkConfig.RegisteredScenes[i]);
+                    NetworkSceneManager.SceneIndexToString.Add((uint)i, NetworkConfig.RegisteredScenes[i]);
+                    NetworkSceneManager.SceneNameToIndex.Add(NetworkConfig.RegisteredScenes[i], (uint)i);
                 }
 
                 NetworkSceneManager.SetCurrentSceneIndex();
@@ -639,7 +639,7 @@ namespace MLAPI
                 // Process received data
                 if ((NetworkTime - m_LastReceiveTickTime >= (1f / NetworkConfig.ReceiveTickrate)) || NetworkConfig.ReceiveTickrate <= 0)
                 {
-                    PerformanceDataManager.Increment(ProfilerConstants.k_ReceiveTickRate);
+                    PerformanceDataManager.Increment(ProfilerConstants.ReceiveTickRate);
                     ProfilerStatManager.RcvTickRate.Record();
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                     s_ReceiveTick.Begin();
@@ -814,7 +814,7 @@ namespace MLAPI
 
         private void HandleRawTransportPoll(NetworkEvent networkEvent, ulong clientId, NetworkChannel networkChannel, ArraySegment<byte> payload, float receiveTime)
         {
-            PerformanceDataManager.Increment(ProfilerConstants.k_NumberBytesReceived, payload.Count);
+            PerformanceDataManager.Increment(ProfilerConstants.NumberBytesReceived, payload.Count);
             ProfilerStatManager.BytesRcvd.Record(payload.Count);
 
             switch (networkEvent)
@@ -993,7 +993,7 @@ namespace MLAPI
                             {
                                 m_RpcBatcher.ReceiveItems(messageStream, ReceiveCallback, RpcQueueContainer.QueueItemType.ServerRpc, clientId, receiveTime);
                                 ProfilerStatManager.RpcBatchesRcvd.Record();
-                                PerformanceDataManager.Increment(ProfilerConstants.k_NumberOfRPCBatchesReceived);
+                                PerformanceDataManager.Increment(ProfilerConstants.NumberOfRPCBatchesReceived);
                             }
                             else
                             {
@@ -1017,7 +1017,7 @@ namespace MLAPI
                             {
                                 m_RpcBatcher.ReceiveItems(messageStream, ReceiveCallback, RpcQueueContainer.QueueItemType.ClientRpc, clientId, receiveTime);
                                 ProfilerStatManager.RpcBatchesRcvd.Record();
-                                PerformanceDataManager.Increment(ProfilerConstants.k_NumberOfRPCBatchesReceived);
+                                PerformanceDataManager.Increment(ProfilerConstants.NumberOfRPCBatchesReceived);
                             }
                             else
                             {
@@ -1170,7 +1170,7 @@ namespace MLAPI
                 if (ConnectedClientsList[i].ClientId == clientId)
                 {
                     ConnectedClientsList.RemoveAt(i);
-                    PerformanceDataManager.Increment(ProfilerConstants.k_NumberOfConnections, -1);
+                    PerformanceDataManager.Increment(ProfilerConstants.NumberOfConnections, -1);
                     ProfilerStatManager.Connections.Record(-1);
                 }
             }
@@ -1188,9 +1188,9 @@ namespace MLAPI
                 {
                     if (ConnectedClients[clientId].PlayerObject != null)
                     {
-                        if (NetworkSpawnManager.k_CustomDestroyHandlers.ContainsKey(ConnectedClients[clientId].PlayerObject.PrefabHash))
+                        if (NetworkSpawnManager.CustomDestroyHandlers.ContainsKey(ConnectedClients[clientId].PlayerObject.PrefabHash))
                         {
-                            NetworkSpawnManager.k_CustomDestroyHandlers[ConnectedClients[clientId].PlayerObject.PrefabHash](ConnectedClients[clientId].PlayerObject);
+                            NetworkSpawnManager.CustomDestroyHandlers[ConnectedClients[clientId].PlayerObject.PrefabHash](ConnectedClients[clientId].PlayerObject);
                             NetworkSpawnManager.OnDestroyObject(ConnectedClients[clientId].PlayerObject.NetworkObjectId, false);
                         }
                         else
@@ -1205,9 +1205,9 @@ namespace MLAPI
                         {
                             if (!ConnectedClients[clientId].OwnedObjects[i].DontDestroyWithOwner)
                             {
-                                if (NetworkSpawnManager.k_CustomDestroyHandlers.ContainsKey(ConnectedClients[clientId].OwnedObjects[i].PrefabHash))
+                                if (NetworkSpawnManager.CustomDestroyHandlers.ContainsKey(ConnectedClients[clientId].OwnedObjects[i].PrefabHash))
                                 {
-                                    NetworkSpawnManager.k_CustomDestroyHandlers[ConnectedClients[clientId].OwnedObjects[i].PrefabHash](ConnectedClients[clientId].OwnedObjects[i]);
+                                    NetworkSpawnManager.CustomDestroyHandlers[ConnectedClients[clientId].OwnedObjects[i].PrefabHash](ConnectedClients[clientId].OwnedObjects[i]);
                                     NetworkSpawnManager.OnDestroyObject(ConnectedClients[clientId].OwnedObjects[i].NetworkObjectId, false);
                                 }
                                 else
@@ -1235,7 +1235,7 @@ namespace MLAPI
                     if (ConnectedClientsList[i].ClientId == clientId)
                     {
                         ConnectedClientsList.RemoveAt(i);
-                        PerformanceDataManager.Increment(ProfilerConstants.k_NumberOfConnections, -1);
+                        PerformanceDataManager.Increment(ProfilerConstants.NumberOfConnections, -1);
                         ProfilerStatManager.Connections.Record(-1);
                         break;
                     }
@@ -1277,7 +1277,7 @@ namespace MLAPI
                 ConnectedClients.Add(clientId, client);
                 ConnectedClientsList.Add(client);
 
-                PerformanceDataManager.Increment(ProfilerConstants.k_NumberOfConnections);
+                PerformanceDataManager.Increment(ProfilerConstants.NumberOfConnections);
                 ProfilerStatManager.Connections.Record();
 
                 // This packet is unreliable, but if it gets through it should provide a much better sync than the potentially huge approval message.

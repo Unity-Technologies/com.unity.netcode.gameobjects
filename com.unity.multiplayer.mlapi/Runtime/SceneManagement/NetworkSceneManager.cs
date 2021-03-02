@@ -39,10 +39,10 @@ namespace MLAPI.SceneManagement
         /// </summary>
         public static event SceneSwitchStartedDelegate OnSceneSwitchStarted;
 
-        internal static readonly HashSet<string> k_RegisteredSceneNames = new HashSet<string>();
-        internal static readonly Dictionary<string, uint> k_SceneNameToIndex = new Dictionary<string, uint>();
-        internal static readonly Dictionary<uint, string> k_SceneIndexToString = new Dictionary<uint, string>();
-        internal static readonly Dictionary<Guid, SceneSwitchProgress> k_SceneSwitchProgresses = new Dictionary<Guid, SceneSwitchProgress>();
+        internal static readonly HashSet<string> RegisteredSceneNames = new HashSet<string>();
+        internal static readonly Dictionary<string, uint> SceneNameToIndex = new Dictionary<string, uint>();
+        internal static readonly Dictionary<uint, string> SceneIndexToString = new Dictionary<uint, string>();
+        internal static readonly Dictionary<Guid, SceneSwitchProgress> SceneSwitchProgresses = new Dictionary<Guid, SceneSwitchProgress>();
 
         private static Scene s_LastScene;
         private static string s_NextSceneName;
@@ -53,13 +53,13 @@ namespace MLAPI.SceneManagement
 
         internal static void SetCurrentSceneIndex()
         {
-            if (!k_SceneNameToIndex.ContainsKey(SceneManager.GetActiveScene().name))
+            if (!SceneNameToIndex.ContainsKey(SceneManager.GetActiveScene().name))
             {
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("The current scene (" + SceneManager.GetActiveScene().name + ") is not regisered as a network scene.");
                 return;
             }
 
-            s_CurrentSceneIndex = k_SceneNameToIndex[SceneManager.GetActiveScene().name];
+            s_CurrentSceneIndex = SceneNameToIndex[SceneManager.GetActiveScene().name];
             s_CurrentActiveSceneIndex = s_CurrentSceneIndex;
         }
 
@@ -78,9 +78,9 @@ namespace MLAPI.SceneManagement
                 throw new NetworkConfigurationException("Cannot change the scene configuration when AllowRuntimeSceneChanges is false");
             }
 
-            k_RegisteredSceneNames.Add(sceneName);
-            k_SceneIndexToString.Add(index, sceneName);
-            k_SceneNameToIndex.Add(sceneName, index);
+            RegisteredSceneNames.Add(sceneName);
+            SceneIndexToString.Add(index, sceneName);
+            SceneNameToIndex.Add(sceneName, index);
         }
 
         /// <summary>
@@ -100,7 +100,7 @@ namespace MLAPI.SceneManagement
                 return null;
             }
 
-            if (!k_RegisteredSceneNames.Contains(sceneName))
+            if (!RegisteredSceneNames.Contains(sceneName))
             {
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("The scene " + sceneName + " is not registered as a switchable scene.");
                 return null;
@@ -111,7 +111,7 @@ namespace MLAPI.SceneManagement
             s_LastScene = SceneManager.GetActiveScene();
 
             var switchSceneProgress = new SceneSwitchProgress();
-            k_SceneSwitchProgresses.Add(switchSceneProgress.Guid, switchSceneProgress);
+            SceneSwitchProgresses.Add(switchSceneProgress.Guid, switchSceneProgress);
             s_CurrentSceneSwitchProgressGuid = switchSceneProgress.Guid;
 
             // Move ALL NetworkObjects to the temp scene
@@ -134,7 +134,7 @@ namespace MLAPI.SceneManagement
         // Called on client
         internal static void OnSceneSwitch(uint sceneIndex, Guid switchSceneGuid, Stream objectStream)
         {
-            if (!k_SceneIndexToString.ContainsKey(sceneIndex) || !k_RegisteredSceneNames.Contains(k_SceneIndexToString[sceneIndex]))
+            if (!SceneIndexToString.ContainsKey(sceneIndex) || !RegisteredSceneNames.Contains(SceneIndexToString[sceneIndex]))
             {
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Server requested a scene switch to a non registered scene");
                 return;
@@ -147,7 +147,7 @@ namespace MLAPI.SceneManagement
 
             s_IsSpawnedObjectsPendingInDontDestroyOnLoad = true;
 
-            string sceneName = k_SceneIndexToString[sceneIndex];
+            string sceneName = SceneIndexToString[sceneIndex];
 
             var sceneLoad = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Single);
 
@@ -159,21 +159,21 @@ namespace MLAPI.SceneManagement
 
         internal static void OnFirstSceneSwitchSync(uint sceneIndex, Guid switchSceneGuid)
         {
-            if (!k_SceneIndexToString.ContainsKey(sceneIndex) || !k_RegisteredSceneNames.Contains(k_SceneIndexToString[sceneIndex]))
+            if (!SceneIndexToString.ContainsKey(sceneIndex) || !RegisteredSceneNames.Contains(SceneIndexToString[sceneIndex]))
             {
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Server requested a scene switch to a non registered scene");
                 return;
             }
 
-            if (SceneManager.GetActiveScene().name == k_SceneIndexToString[sceneIndex])
+            if (SceneManager.GetActiveScene().name == SceneIndexToString[sceneIndex])
             {
                 return; //This scene is already loaded. This usually happends at first load
             }
 
             s_LastScene = SceneManager.GetActiveScene();
-            string sceneName = k_SceneIndexToString[sceneIndex];
+            string sceneName = SceneIndexToString[sceneIndex];
             s_NextSceneName = sceneName;
-            s_CurrentActiveSceneIndex = k_SceneNameToIndex[sceneName];
+            s_CurrentActiveSceneIndex = SceneNameToIndex[sceneName];
 
             s_IsSpawnedObjectsPendingInDontDestroyOnLoad = true;
             SceneManager.LoadScene(sceneName);
@@ -192,7 +192,7 @@ namespace MLAPI.SceneManagement
 
         private static void OnSceneLoaded(Guid switchSceneGuid, Stream objectStream)
         {
-            s_CurrentActiveSceneIndex = k_SceneNameToIndex[s_NextSceneName];
+            s_CurrentActiveSceneIndex = SceneNameToIndex[s_NextSceneName];
             var nextScene = SceneManager.GetSceneByName(s_NextSceneName);
             SceneManager.SetActiveScene(nextScene);
 
@@ -425,7 +425,7 @@ namespace MLAPI.SceneManagement
             OnSceneSwitched?.Invoke();
         }
 
-        internal static bool HasSceneMismatch(uint sceneIndex) => SceneManager.GetActiveScene().name != k_SceneIndexToString[sceneIndex];
+        internal static bool HasSceneMismatch(uint sceneIndex) => SceneManager.GetActiveScene().name != SceneIndexToString[sceneIndex];
 
         // Called on server
         internal static void OnClientSwitchSceneCompleted(ulong clientId, Guid switchSceneGuid)
@@ -436,18 +436,18 @@ namespace MLAPI.SceneManagement
                 return;
             }
 
-            if (!k_SceneSwitchProgresses.ContainsKey(switchSceneGuid))
+            if (!SceneSwitchProgresses.ContainsKey(switchSceneGuid))
             {
                 return;
             }
 
-            k_SceneSwitchProgresses[switchSceneGuid].AddClientAsDone(clientId);
+            SceneSwitchProgresses[switchSceneGuid].AddClientAsDone(clientId);
         }
 
 
         internal static void RemoveClientFromSceneSwitchProgresses(ulong clientId)
         {
-            foreach (var switchSceneProgress in k_SceneSwitchProgresses.Values)
+            foreach (var switchSceneProgress in SceneSwitchProgresses.Values)
             {
                 switchSceneProgress.RemoveClientAsDone(clientId);
             }

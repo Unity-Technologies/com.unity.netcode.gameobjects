@@ -20,23 +20,23 @@ namespace MLAPI.Editor.CodeGen
 {
     internal static class CodeGenHelpers
     {
-        public const string k_RuntimeAssemblyName = "Unity.Multiplayer.MLAPI.Runtime";
+        public const string RuntimeAssemblyName = "Unity.Multiplayer.MLAPI.Runtime";
 
-        public static readonly string k_NetworkBehaviour_FullName = typeof(NetworkBehaviour).FullName;
-        public static readonly string k_ServerRpcAttribute_FullName = typeof(ServerRpcAttribute).FullName;
-        public static readonly string k_ClientRpcAttribute_FullName = typeof(ClientRpcAttribute).FullName;
-        public static readonly string k_ServerRpcParams_FullName = typeof(ServerRpcParams).FullName;
-        public static readonly string k_ClientRpcParams_FullName = typeof(ClientRpcParams).FullName;
-        public static readonly string k_INetworkSerializable_FullName = typeof(INetworkSerializable).FullName;
-        public static readonly string k_INetworkSerializable_NetworkSerialize_Name = nameof(INetworkSerializable.NetworkSerialize);
-        public static readonly string k_UnityColor_FullName = typeof(Color).FullName;
-        public static readonly string k_UnityColor32_FullName = typeof(Color32).FullName;
-        public static readonly string k_UnityVector2_FullName = typeof(Vector2).FullName;
-        public static readonly string k_UnityVector3_FullName = typeof(Vector3).FullName;
-        public static readonly string k_UnityVector4_FullName = typeof(Vector4).FullName;
-        public static readonly string k_UnityQuaternion_FullName = typeof(Quaternion).FullName;
-        public static readonly string k_UnityRay_FullName = typeof(Ray).FullName;
-        public static readonly string k_UnityRay2D_FullName = typeof(Ray2D).FullName;
+        public static readonly string NetworkBehaviour_FullName = typeof(NetworkBehaviour).FullName;
+        public static readonly string ServerRpcAttribute_FullName = typeof(ServerRpcAttribute).FullName;
+        public static readonly string ClientRpcAttribute_FullName = typeof(ClientRpcAttribute).FullName;
+        public static readonly string ServerRpcParams_FullName = typeof(ServerRpcParams).FullName;
+        public static readonly string ClientRpcParams_FullName = typeof(ClientRpcParams).FullName;
+        public static readonly string INetworkSerializable_FullName = typeof(INetworkSerializable).FullName;
+        public static readonly string INetworkSerializable_NetworkSerialize_Name = nameof(INetworkSerializable.NetworkSerialize);
+        public static readonly string UnityColor_FullName = typeof(Color).FullName;
+        public static readonly string UnityColor32_FullName = typeof(Color32).FullName;
+        public static readonly string UnityVector2_FullName = typeof(Vector2).FullName;
+        public static readonly string UnityVector3_FullName = typeof(Vector3).FullName;
+        public static readonly string UnityVector4_FullName = typeof(Vector4).FullName;
+        public static readonly string UnityQuaternion_FullName = typeof(Quaternion).FullName;
+        public static readonly string UnityRay_FullName = typeof(Ray).FullName;
+        public static readonly string UnityRay2D_FullName = typeof(Ray2D).FullName;
 
         public static uint Hash(this MethodDefinition methodDefinition)
         {
@@ -112,20 +112,20 @@ namespace MLAPI.Editor.CodeGen
             if (typeReference == typeSystem.String) return true;
 
             // Unity primitives
-            if (typeReference.FullName == k_UnityColor_FullName) return true;
-            if (typeReference.FullName == k_UnityColor32_FullName) return true;
-            if (typeReference.FullName == k_UnityVector2_FullName) return true;
-            if (typeReference.FullName == k_UnityVector3_FullName) return true;
-            if (typeReference.FullName == k_UnityVector4_FullName) return true;
-            if (typeReference.FullName == k_UnityQuaternion_FullName) return true;
-            if (typeReference.FullName == k_UnityRay_FullName) return true;
-            if (typeReference.FullName == k_UnityRay2D_FullName) return true;
+            if (typeReference.FullName == UnityColor_FullName) return true;
+            if (typeReference.FullName == UnityColor32_FullName) return true;
+            if (typeReference.FullName == UnityVector2_FullName) return true;
+            if (typeReference.FullName == UnityVector3_FullName) return true;
+            if (typeReference.FullName == UnityVector4_FullName) return true;
+            if (typeReference.FullName == UnityQuaternion_FullName) return true;
+            if (typeReference.FullName == UnityRay_FullName) return true;
+            if (typeReference.FullName == UnityRay2D_FullName) return true;
 
             // Enum
             if (typeReference.GetEnumAsInt() != null) return true;
 
             // INetworkSerializable
-            if (typeReference.HasInterface(k_INetworkSerializable_FullName)) return true;
+            if (typeReference.HasInterface(INetworkSerializable_FullName)) return true;
 
             // Static array
             if (typeReference.IsArray) return typeReference.GetElementType().IsSerializable();

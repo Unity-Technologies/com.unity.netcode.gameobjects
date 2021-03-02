@@ -85,7 +85,7 @@ namespace MLAPI.SceneManagement
             {
                 IsCompleted = true;
                 IsAllClientsDoneLoading = true;
-                NetworkSceneManager.k_SceneSwitchProgresses.Remove(Guid);
+                NetworkSceneManager.SceneSwitchProgresses.Remove(Guid);
                 OnComplete?.Invoke(false);
 
                 NetworkManager.Singleton.StopCoroutine(m_TimeOutCoroutine);
@@ -97,7 +97,7 @@ namespace MLAPI.SceneManagement
             if (!IsCompleted)
             {
                 IsCompleted = true;
-                NetworkSceneManager.k_SceneSwitchProgresses.Remove(Guid);
+                NetworkSceneManager.SceneSwitchProgresses.Remove(Guid);
                 OnComplete?.Invoke(true);
             }
         }

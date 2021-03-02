@@ -6,10 +6,10 @@
     public static class Arithmetic
     {
         // Sign bits for different data types
-        internal const long k_SIGN_BIT_64 = -9223372036854775808;
-        internal const int k_SIGN_BIT_32 = -2147483648;
-        internal const short k_SIGN_BIT_16 = -32768;
-        internal const sbyte k_SIGN_BIT_8 = -128;
+        internal const long SIGN_BIT_64 = -9223372036854775808;
+        internal const int SIGN_BIT_32 = -2147483648;
+        internal const short SIGN_BIT_16 = -32768;
+        internal const sbyte SIGN_BIT_8 = -128;
 
         // Ceiling function that doesn't deal with floating point values
         // these only work correctly with possitive numbers

@@ -237,8 +237,8 @@ namespace MLAPI.Serialization
                 BitPosition =
                 (
                     origin == SeekOrigin.Current ? offset > 0 ? Math.Min(BitPosition + ((ulong)offset << 3), (ulong)m_Target.Length << 3) :
-                    (offset ^ k_SIGN_BIT_64) > Position ? 0UL :
-                    BitPosition - (ulong)((offset ^ k_SIGN_BIT_64) << 3) :
+                    (offset ^ SIGN_BIT_64) > Position ? 0UL :
+                    BitPosition - (ulong)((offset ^ SIGN_BIT_64) << 3) :
                     origin == SeekOrigin.Begin ? (ulong)Math.Max(0, offset) << 3 :
                     (ulong)Math.Max(m_Target.Length - offset, 0) << 3
                 )) >> 3) + (long)((BitPosition & 1UL) | ((BitPosition >> 1) & 1UL) | ((BitPosition >> 2) & 1UL));
