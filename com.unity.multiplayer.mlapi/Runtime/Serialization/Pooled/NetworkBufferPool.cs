@@ -9,35 +9,35 @@ namespace MLAPI.Serialization.Pooled
     /// </summary>
     public static class NetworkBufferPool
     {
-        private static uint createdStreams = 0;
-        private static readonly Queue<WeakReference> overflowStreams = new Queue<WeakReference>();
-        private static readonly Queue<PooledNetworkBuffer> streams = new Queue<PooledNetworkBuffer>();
+        private static uint s_CreatedBuffers = 0;
+        private static readonly Queue<WeakReference> k_OverflowBuffers = new Queue<WeakReference>();
+        private static readonly Queue<PooledNetworkBuffer> k_Buffers = new Queue<PooledNetworkBuffer>();
 
-        private const uint MaxBitPoolStreams = 1024;
-        private const uint MaxCreatedDelta = 768;
+        private const uint k_MaxBitPoolBuffers = 1024;
+        private const uint k_MaxCreatedDelta = 768;
 
 
         /// <summary>
         /// Retrieves an expandable PooledNetworkBuffer from the pool
         /// </summary>
         /// <returns>An expandable PooledNetworkBuffer</returns>
-        public static PooledNetworkBuffer GetStream()
+        public static PooledNetworkBuffer GetBuffer()
         {
-            if (streams.Count == 0)
+            if (k_Buffers.Count == 0)
             {
-                if (overflowStreams.Count > 0)
+                if (k_OverflowBuffers.Count > 0)
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
                     {
                         NetworkLog.LogInfo($"Retrieving {nameof(PooledNetworkBuffer)} from overflow pool. Recent burst?");
                     }
 
-                    object weakStream = null;
-                    while (overflowStreams.Count > 0 && ((weakStream = overflowStreams.Dequeue().Target) == null)) ;
+                    object weakBuffer = null;
+                    while (k_OverflowBuffers.Count > 0 && ((weakBuffer = k_OverflowBuffers.Dequeue().Target) == null)) ;
 
-                    if (weakStream != null)
+                    if (weakBuffer != null)
                     {
-                        PooledNetworkBuffer strongBuffer = (PooledNetworkBuffer)weakStream;
+                        PooledNetworkBuffer strongBuffer = (PooledNetworkBuffer)weakBuffer;
 
                         strongBuffer.SetLength(0);
                         strongBuffer.Position = 0;
@@ -46,17 +46,16 @@ namespace MLAPI.Serialization.Pooled
                     }
                 }
 
-                if (createdStreams == MaxBitPoolStreams)
+                if (s_CreatedBuffers == k_MaxBitPoolBuffers)
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning($"{MaxBitPoolStreams} streams have been created. Did you forget to dispose?");
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning($"{k_MaxBitPoolBuffers} buffers have been created. Did you forget to dispose?");
                 }
-                else if (createdStreams < MaxBitPoolStreams) createdStreams++;
+                else if (s_CreatedBuffers < k_MaxBitPoolBuffers) s_CreatedBuffers++;
 
                 return new PooledNetworkBuffer();
             }
 
-            PooledNetworkBuffer buffer = streams.Dequeue();
-
+            PooledNetworkBuffer buffer = k_Buffers.Dequeue();
             buffer.SetLength(0);
             buffer.Position = 0;
 
@@ -69,22 +68,22 @@ namespace MLAPI.Serialization.Pooled
         /// <param name="buffer">The buffer to put in the pool</param>
         public static void PutBackInPool(PooledNetworkBuffer buffer)
         {
-            if (streams.Count > MaxCreatedDelta)
+            if (k_Buffers.Count > k_MaxCreatedDelta)
             {
-                // The user just created lots of streams without returning them in between.
-                // Streams are essentially byte array wrappers. This is valuable memory.
-                // Thus we put this stream as a weak reference incase of another burst
+                // The user just created lots of buffers without returning them in between.
+                // Buffers are essentially byte array wrappers. This is valuable memory.
+                // Thus we put this buffer as a weak reference incase of another burst
                 // But still leave it to GC
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
                 {
                     NetworkLog.LogInfo($"Putting {nameof(PooledNetworkBuffer)} into overflow pool. Did you forget to dispose?");
                 }
 
-                overflowStreams.Enqueue(new WeakReference(buffer));
+                k_OverflowBuffers.Enqueue(new WeakReference(buffer));
             }
             else
             {
-                streams.Enqueue(buffer);
+                k_Buffers.Enqueue(buffer);
             }
         }
     }

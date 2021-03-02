@@ -213,7 +213,7 @@ namespace MLAPI.Configuration
                     writer.WriteBool(EnableNetworkVariable);
                     writer.WriteBool(AllowRuntimeSceneChanges);
                     writer.WriteBool(EnableNetworkLogs);
-                    buffer.PadStream();
+                    buffer.PadBuffer();
 
                     return Convert.ToBase64String(buffer.ToArray());
                 }
@@ -308,7 +308,7 @@ namespace MLAPI.Configuration
                     writer.WriteBool(EnableSceneManagement);
                     writer.WriteBool(EnsureNetworkVariableLengthSafety);
                     writer.WriteBits((byte)RpcHashSize, 2);
-                    buffer.PadStream();
+                    buffer.PadBuffer();
 
                     if (cache)
                     {

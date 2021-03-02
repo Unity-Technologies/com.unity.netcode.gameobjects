@@ -12,7 +12,7 @@ namespace MLAPI.Messaging
     {
         internal static void Send(ulong clientId, byte messageType, NetworkChannel networkChannel, NetworkBuffer messageBuffer)
         {
-            messageBuffer.PadStream();
+            messageBuffer.PadBuffer();
 
             if (NetworkManager.Singleton.IsServer && clientId == NetworkManager.Singleton.ServerClientId) return;
 
@@ -30,7 +30,7 @@ namespace MLAPI.Messaging
 
         internal static void Send(byte messageType, NetworkChannel networkChannel, NetworkBuffer messageBuffer)
         {
-            messageBuffer.PadStream();
+            messageBuffer.PadBuffer();
 
             using (NetworkBuffer buffer = MessagePacker.WrapMessage(messageType, messageBuffer))
             {
@@ -57,7 +57,7 @@ namespace MLAPI.Messaging
                 return;
             }
 
-            messageBuffer.PadStream();
+            messageBuffer.PadBuffer();
 
             using (NetworkBuffer buffer = MessagePacker.WrapMessage(messageType, messageBuffer))
             {
@@ -78,7 +78,7 @@ namespace MLAPI.Messaging
 
         internal static void Send(byte messageType, NetworkChannel networkChannel, ulong clientIdToIgnore, NetworkBuffer messageBuffer)
         {
-            messageBuffer.PadStream();
+            messageBuffer.PadBuffer();
 
             using (NetworkBuffer buffer = MessagePacker.WrapMessage(messageType, messageBuffer))
             {

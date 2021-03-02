@@ -626,7 +626,7 @@ namespace MLAPI
                                     using (PooledNetworkBuffer varBuffer = PooledNetworkBuffer.Get())
                                     {
                                         networkVariableFields[k].WriteDelta(varBuffer);
-                                        varBuffer.PadStream();
+                                        varBuffer.PadBuffer();
 
                                         writer.WriteUInt16Packed((ushort)varBuffer.Length);
                                         buffer.CopyFrom(varBuffer);
@@ -851,7 +851,7 @@ namespace MLAPI
                             using (PooledNetworkBuffer varBuffer = PooledNetworkBuffer.Get())
                             {
                                 networkVariableList[j].WriteField(varBuffer);
-                                varBuffer.PadStream();
+                                varBuffer.PadBuffer();
 
                                 writer.WriteUInt16Packed((ushort)varBuffer.Length);
                                 varBuffer.CopyTo(stream);
