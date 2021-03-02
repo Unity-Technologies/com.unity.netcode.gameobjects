@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using UnityEngine;
-using MLAPI;
 using MLAPI.Messaging;
 
 namespace MLAPI.RuntimeTests

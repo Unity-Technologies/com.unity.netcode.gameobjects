@@ -19,11 +19,13 @@ namespace MLAPI.RuntimeTests
     {
         private NetworkingManager m_NetMan;
 
+#if UNITY_EDITOR
         [UnitySetUp]
         public IEnumerator SetUp()
         {
             yield return new EnterPlayMode();
         }
+#endif
 
         /// <summary>
         /// Tests the egress and ingress RPC queue functionality
@@ -114,11 +116,12 @@ namespace MLAPI.RuntimeTests
             yield return null;
         }
 
-
+#if UNITY_EDITOR
         [UnitySetUp]
         public IEnumerator TearDown()
         {
             yield return new ExitPlayMode();
         }
+#endif
     }
 }
