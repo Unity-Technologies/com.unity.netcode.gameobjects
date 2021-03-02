@@ -97,8 +97,16 @@ namespace MLAPI.RuntimeTests
 
                         Debug.Log("RPC Queue Testing completed.");
                     }
+
+                    //Stop the host
+                    NetworkingManager.Singleton.StopHost();
+
+
                 }
             }
+
+            //Shutdown the networking manager
+            NetworkingManager.Singleton.Shutdown();
 
             Assert.IsTrue(testsAreComplete && testsAreValidated && instantiatedNetworkingManager && maximumTimeTaken > Time.realtimeSinceStartup);
             // Use the Assert class to test conditions.
