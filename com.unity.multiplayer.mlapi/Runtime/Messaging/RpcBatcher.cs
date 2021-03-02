@@ -126,17 +126,14 @@ namespace MLAPI.Messaging
                     SendDict[clientId].IsEmpty = false;
                     SendDict[clientId].Channel = queueItem.channel;
 
-                    SendDict[clientId].Writer.WriteBit(false); // Encrypted
-                    SendDict[clientId].Writer.WriteBit(false); // Authenticated
-
                     switch (queueItem.queueItemType)
                     {
-                        // 6 bits are used for the message type, which is an MLAPIConstants
+                        // 8 bits are used for the message type, which is an MLAPIConstants
                         case RpcQueueContainer.QueueItemType.ServerRpc:
-                            SendDict[clientId].Writer.WriteBits(MLAPIConstants.MLAPI_SERVER_RPC, 6); // MessageType
+                            SendDict[clientId].Writer.WriteByte(MLAPIConstants.MLAPI_SERVER_RPC); // MessageType
                             break;
                         case RpcQueueContainer.QueueItemType.ClientRpc:
-                            SendDict[clientId].Writer.WriteBits(MLAPIConstants.MLAPI_CLIENT_RPC, 6); // MessageType
+                            SendDict[clientId].Writer.WriteByte(MLAPIConstants.MLAPI_CLIENT_RPC); // MessageType
                             break;
                     }
                 }
