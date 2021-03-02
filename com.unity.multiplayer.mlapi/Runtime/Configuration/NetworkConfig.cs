@@ -4,10 +4,8 @@ using UnityEngine;
 using System.Linq;
 using MLAPI.Transports;
 using BitStream = MLAPI.Serialization.BitStream;
-using System.Security.Cryptography.X509Certificates;
 using MLAPI.Hashing;
 using MLAPI.Serialization.Pooled;
-using UnityEngine.Serialization;
 
 namespace MLAPI.Configuration
 {
@@ -171,51 +169,6 @@ namespace MLAPI.Configuration
         /// Whether or not to enable network logs.
         /// </summary>
         public bool EnableNetworkLogs = true;
-        /// <summary>
-        /// Whether or not to enable the ECDHE key exchange to allow for encryption and authentication of messages
-        /// </summary>
-        [Tooltip("Whether or not to enable the ECDHE key exchange to allow for encryption and authentication of messages")]
-        public bool EnableEncryption = false;
-        /// <summary>
-        /// Whether or not to enable signed diffie hellman key exchange.
-        /// </summary>
-        [Tooltip("Whether or not to sign the diffie hellman key exchange to prevent MITM attacks on")]
-        public bool SignKeyExchange = false;
-        /// <summary>
-        /// Pfx file in base64 encoding containing private and public key
-        /// </summary>
-        [Tooltip("The certificate in base64 encoded PFX format")]
-        [TextArea]
-        public string ServerBase64PfxCertificate;
-        /// <summary>
-        /// Gets the currently in use certificate
-        /// </summary>
-        public X509Certificate2 ServerX509Certificate
-        {
-            get
-            {
-                return serverX509Certificate;
-            }
-            internal set
-            {
-                serverX509CertificateBytes = null;
-                serverX509Certificate = value;
-            }
-        }
-        private X509Certificate2 serverX509Certificate;
-        /// <summary>
-        /// Gets the cached binary representation of the server certificate that's used for handshaking
-        /// </summary>
-        public byte[] ServerX509CertificateBytes
-        {
-            get
-            {
-                if (serverX509CertificateBytes == null)
-                    serverX509CertificateBytes = ServerX509Certificate.Export(X509ContentType.Cert);
-                return serverX509CertificateBytes;
-            }
-        }
-        private byte[] serverX509CertificateBytes = null;
 
         private void Sort()
         {
@@ -248,8 +201,6 @@ namespace MLAPI.Configuration
                     writer.WriteInt32Packed(config.ClientConnectionBufferTimeout);
                     writer.WriteBool(config.ConnectionApproval);
                     writer.WriteInt32Packed(config.SecondsHistory);
-                    writer.WriteBool(config.EnableEncryption);
-                    writer.WriteBool(config.SignKeyExchange);
                     writer.WriteInt32Packed(config.LoadSceneTimeOut);
                     writer.WriteBool(config.EnableTimeResync);
                     writer.WriteBool(config.EnsureNetworkedVarLengthSafety);
@@ -297,8 +248,6 @@ namespace MLAPI.Configuration
                     config.ClientConnectionBufferTimeout = reader.ReadInt32Packed();
                     config.ConnectionApproval = reader.ReadBool();
                     config.SecondsHistory = reader.ReadInt32Packed();
-                    config.EnableEncryption = reader.ReadBool();
-                    config.SignKeyExchange = reader.ReadBool();
                     config.LoadSceneTimeOut = reader.ReadInt32Packed();
                     config.EnableTimeResync = reader.ReadBool();
                     config.EnsureNetworkedVarLengthSafety = reader.ReadBool();
@@ -358,8 +307,6 @@ namespace MLAPI.Configuration
                     writer.WriteBool(UsePrefabSync);
                     writer.WriteBool(EnableSceneManagement);
                     writer.WriteBool(EnsureNetworkedVarLengthSafety);
-                    writer.WriteBool(EnableEncryption);
-                    writer.WriteBool(SignKeyExchange);
                     writer.WriteBits((byte)RpcHashSize, 2);
                     stream.PadStream();
 

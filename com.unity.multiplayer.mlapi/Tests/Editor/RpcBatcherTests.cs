@@ -57,9 +57,7 @@ namespace MLAPI.EditorTests
                 // todo: revisit
                 // The following line is sub-optimal
                 // The stream returned by SendItems() includes:
-                // - 1 bit for authentication flag
-                // - 1 bit for encryption flag
-                // - 6 bits for the MLAPI message types.
+                // - 8 bits for the MLAPI message types.
                 // ReceiveItems expects those to have been stripped by the receive code.
                 // In order to replicate this behaviour, we'll read 8 bits before calling ReceiveItems()
                 recvStream.ReadByte();
@@ -117,9 +115,7 @@ namespace MLAPI.EditorTests
                 // todo: revisit
                 // The following line is sub-optimal
                 // The stream returned by SendItems() includes:
-                // - 1 bit for authentication flag
-                // - 1 bit for encryption flag
-                // - 6 bits for the MLAPI message types.
+                // - 8 bits for the MLAPI message types.
                 // ReceiveItems expects those to have been stripped by the receive code.
                 // In order to replicate this behaviour, we'll read 8 bits before calling ReceiveItems()
                 recvStream.ReadByte();

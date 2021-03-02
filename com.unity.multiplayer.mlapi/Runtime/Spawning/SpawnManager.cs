@@ -8,7 +8,6 @@ using MLAPI.Hashing;
 using MLAPI.Logging;
 using MLAPI.Messaging;
 using MLAPI.SceneManagement;
-using MLAPI.Security;
 using MLAPI.Serialization.Pooled;
 using MLAPI.Transports;
 using UnityEngine;
@@ -195,7 +194,7 @@ namespace MLAPI.Spawning
                     writer.WriteUInt64Packed(netObject.NetworkId);
                     writer.WriteUInt64Packed(netObject.OwnerClientId);
 
-                    InternalMessageSender.Send(MLAPIConstants.MLAPI_CHANGE_OWNER, Channel.Internal, stream, SecuritySendFlags.None);
+                    InternalMessageSender.Send(MLAPIConstants.MLAPI_CHANGE_OWNER, Channel.Internal, stream);
                 }
             }
         }
@@ -231,7 +230,7 @@ namespace MLAPI.Spawning
                     writer.WriteUInt64Packed(netObject.NetworkId);
                     writer.WriteUInt64Packed(clientId);
 
-                    InternalMessageSender.Send(MLAPIConstants.MLAPI_CHANGE_OWNER, Channel.Internal, stream, SecuritySendFlags.None);
+                    InternalMessageSender.Send(MLAPIConstants.MLAPI_CHANGE_OWNER, Channel.Internal, stream);
                 }
             }
         }
@@ -424,7 +423,6 @@ namespace MLAPI.Spawning
                 networkId = 0,
                 itemStream = stream,
                 channel = Channel.Internal,
-                sendFlags = SecuritySendFlags.None,
                 clientIds = new[] {clientId}
             };
             rpcQueueContainer.AddToInternalMLAPISendQueue(queueItem);
@@ -698,7 +696,6 @@ namespace MLAPI.Spawning
                                     networkId = networkId,
                                     itemStream = stream,
                                     channel = Channel.Internal,
-                                    sendFlags = SecuritySendFlags.None,
                                     clientIds = NetworkingManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray()
                                 };
                                 rpcQueueContainer.AddToInternalMLAPISendQueue(queueItem);

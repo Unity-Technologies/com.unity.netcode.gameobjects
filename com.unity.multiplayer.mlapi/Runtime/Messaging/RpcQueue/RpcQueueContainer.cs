@@ -286,7 +286,6 @@ namespace MLAPI.Messaging
 
             //Write the packed version of the queueItem to our current queue history buffer
             queueHistoryItem.queueWriter.WriteUInt16((ushort)qItemType);
-            queueHistoryItem.queueWriter.WriteUInt16((ushort)0);
             queueHistoryItem.queueWriter.WriteSingle(timeStamp);
             queueHistoryItem.queueWriter.WriteUInt64(sourceNetworkId);
 
@@ -347,11 +346,10 @@ namespace MLAPI.Messaging
         /// <param name="qItemType">type of rpc (client or server)</param>
         /// <param name="timeStamp">when it was scheduled to be sent</param>
         /// <param name="channel">the channel to send it on</param>
-        /// <param name="sendflags">security flags</param>
         /// <param name="sourceNetworkId">who is sending the rpc</param>
         /// <param name="targetNetworkIds">who the rpc is being sent to</param>
         /// <returns></returns>
-        public PooledBitWriter BeginAddQueueItemToFrame(QueueItemType qItemType, float timeStamp, Channel channel, ushort sendflags, ulong sourceNetworkId, ulong[] targetNetworkIds,
+        public PooledBitWriter BeginAddQueueItemToFrame(QueueItemType qItemType, float timeStamp, Channel channel, ulong sourceNetworkId, ulong[] targetNetworkIds,
             QueueHistoryFrame.QueueFrameType queueFrameType, NetworkUpdateStage updateStage)
         {
             bool getNextFrame = NetworkingManager.Singleton.IsHost && queueFrameType == QueueHistoryFrame.QueueFrameType.Inbound;
@@ -361,7 +359,6 @@ namespace MLAPI.Messaging
 
             //Write the packed version of the queueItem to our current queue history buffer
             queueHistoryItem.queueWriter.WriteUInt16((ushort)qItemType);
-            queueHistoryItem.queueWriter.WriteUInt16(sendflags);
             queueHistoryItem.queueWriter.WriteSingle(timeStamp);
             queueHistoryItem.queueWriter.WriteUInt64(sourceNetworkId);
 

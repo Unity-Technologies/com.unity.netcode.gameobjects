@@ -82,7 +82,6 @@ namespace MLAPI.Messaging
         {
             //Write the packed version of the queueItem to our current queue history buffer
             m_CurrentQueueItem.queueItemType = (RpcQueueContainer.QueueItemType)queueReader.ReadUInt16();
-            m_CurrentQueueItem.sendFlags = (Security.SecuritySendFlags)queueReader.ReadUInt16();
             m_CurrentQueueItem.timeStamp = queueReader.ReadSingle();
             m_CurrentQueueItem.networkId = queueReader.ReadUInt64();
 

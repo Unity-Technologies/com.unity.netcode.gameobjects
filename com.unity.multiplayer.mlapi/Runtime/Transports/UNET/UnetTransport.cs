@@ -1,7 +1,7 @@
+#pragma warning disable 618
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using MLAPI.Exceptions;
 using MLAPI.Logging;
 using MLAPI.Profiling;
@@ -468,3 +468,4 @@ namespace MLAPI.Transports.UNET
     }
 }
 #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
+#pragma warning restore 618
