@@ -74,7 +74,7 @@ namespace MLAPI.Prototyping
         [Tooltip("The channel to send the data on. Uses the default channel if left unspecified")]
         public string Channel = null;
 
-        private float m_LerpT;
+        private float m_LerpTime;
         private Vector3 m_LerpStartPos;
         private Quaternion m_LerpStartRot;
         private Vector3 m_LerpEndPos;
@@ -180,21 +180,21 @@ namespace MLAPI.Prototyping
                     if (Vector3.Distance(transform.position, m_LerpEndPos) > SnapDistance)
                     {
                         //Snap, set T to 1 (100% of the lerp)
-                        m_LerpT = 1f;
+                        m_LerpTime = 1f;
                     }
 
                     float sendDelay = (IsServer || !EnableRange || !AssumeSyncedSends || NetworkManager.Singleton.ConnectedClients[NetworkManager.Singleton.LocalClientId].PlayerObject == null) ? (1f / FixedSendsPerSecond) : GetTimeForLerp(transform.position, NetworkManager.Singleton.ConnectedClients[NetworkManager.Singleton.LocalClientId].PlayerObject.transform.position);
-                    m_LerpT += Time.unscaledDeltaTime / sendDelay;
+                    m_LerpTime += Time.unscaledDeltaTime / sendDelay;
 
                     if (ExtrapolatePosition && Time.unscaledTime - m_LastReceiveTime < sendDelay * MaxSendsToExtrapolate)
-                        transform.position = Vector3.LerpUnclamped(m_LerpStartPos, m_LerpEndPos, m_LerpT);
+                        transform.position = Vector3.LerpUnclamped(m_LerpStartPos, m_LerpEndPos, m_LerpTime);
                     else
-                        transform.position = Vector3.Lerp(m_LerpStartPos, m_LerpEndPos, m_LerpT);
+                        transform.position = Vector3.Lerp(m_LerpStartPos, m_LerpEndPos, m_LerpTime);
 
                     if (ExtrapolatePosition && Time.unscaledTime - m_LastReceiveTime < sendDelay * MaxSendsToExtrapolate)
-                        transform.rotation = Quaternion.SlerpUnclamped(m_LerpStartRot, m_LerpEndRot, m_LerpT);
+                        transform.rotation = Quaternion.SlerpUnclamped(m_LerpStartRot, m_LerpEndRot, m_LerpTime);
                     else
-                        transform.rotation = Quaternion.Slerp(m_LerpStartRot, m_LerpEndRot, m_LerpT);
+                        transform.rotation = Quaternion.Slerp(m_LerpStartRot, m_LerpEndRot, m_LerpTime);
                 }
             }
 
@@ -223,7 +223,7 @@ namespace MLAPI.Prototyping
                 m_LerpStartRot = transform.rotation;
                 m_LerpEndPos = position;
                 m_LerpEndRot = rotation;
-                m_LerpT = 0;
+                m_LerpTime = 0;
             }
             else
             {
@@ -344,7 +344,7 @@ namespace MLAPI.Prototyping
                 m_LerpStartRot = rotation;
                 m_LerpEndPos = position;
                 m_LerpEndRot = rotation;
-                m_LerpT = 0;
+                m_LerpTime = 0;
             }
         }
     }

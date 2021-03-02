@@ -258,7 +258,7 @@ namespace MLAPI.SceneManagement
                                 if (newSceneObjects[i].observers.Contains(NetworkManager.Singleton.ConnectedClientsList[j].ClientId))
                                 {
                                     writer.WriteBool(newSceneObjects[i].IsPlayerObject);
-                                    writer.WriteUInt64Packed(newSceneObjects[i].NetworkId);
+                                    writer.WriteUInt64Packed(newSceneObjects[i].ObjectId);
                                     writer.WriteUInt64Packed(newSceneObjects[i].OwnerClientId);
 
                                     NetworkObject parent = null;
@@ -275,7 +275,7 @@ namespace MLAPI.SceneManagement
                                     else
                                     {
                                         writer.WriteBool(true);
-                                        writer.WriteUInt64Packed(parent.NetworkId);
+                                        writer.WriteUInt64Packed(parent.ObjectId);
                                     }
 
                                     if (!NetworkManager.Singleton.NetworkConfig.EnableSceneManagement || NetworkManager.Singleton.NetworkConfig.UsePrefabSync)

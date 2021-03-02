@@ -191,7 +191,7 @@ namespace MLAPI.Spawning
             {
                 using (PooledNetworkWriter writer = PooledNetworkWriter.Get(buffer))
                 {
-                    writer.WriteUInt64Packed(netObject.NetworkId);
+                    writer.WriteUInt64Packed(netObject.ObjectId);
                     writer.WriteUInt64Packed(netObject.OwnerClientId);
 
                     InternalMessageSender.Send(NetworkConstants.CHANGE_OWNER, NetworkChannel.Internal, buffer);
@@ -227,7 +227,7 @@ namespace MLAPI.Spawning
             {
                 using (PooledNetworkWriter writer = PooledNetworkWriter.Get(buffer))
                 {
-                    writer.WriteUInt64Packed(netObject.NetworkId);
+                    writer.WriteUInt64Packed(netObject.ObjectId);
                     writer.WriteUInt64Packed(clientId);
 
                     InternalMessageSender.Send(NetworkConstants.CHANGE_OWNER, NetworkChannel.Internal, buffer);
@@ -341,19 +341,19 @@ namespace MLAPI.Spawning
                 netObject.SetNetworkVariableData(dataStream);
             }
 
-            if (SpawnedObjects.ContainsKey(netObject.NetworkId)) return;
+            if (SpawnedObjects.ContainsKey(netObject.ObjectId)) return;
 
             netObject.IsSpawned = true;
 
             netObject.IsSceneObject = sceneObject;
-            netObject.NetworkId = networkId;
+            netObject.ObjectId = networkId;
 
             netObject.DestroyWithScene = sceneObject || destroyWithScene;
 
             netObject._ownerClientId = ownerClientId;
             netObject.IsPlayerObject = playerObject;
 
-            SpawnedObjects.Add(netObject.NetworkId, netObject);
+            SpawnedObjects.Add(netObject.ObjectId, netObject);
             SpawnedObjectsList.Add(netObject);
 
             if (ownerClientId != null)
@@ -436,7 +436,7 @@ namespace MLAPI.Spawning
             using (PooledNetworkWriter writer = PooledNetworkWriter.Get(buffer))
             {
                 writer.WriteBool(netObject.IsPlayerObject);
-                writer.WriteUInt64Packed(netObject.NetworkId);
+                writer.WriteUInt64Packed(netObject.ObjectId);
                 writer.WriteUInt64Packed(netObject.OwnerClientId);
 
                 NetworkObject parent = null;
@@ -453,7 +453,7 @@ namespace MLAPI.Spawning
                 else
                 {
                     writer.WriteBool(true);
-                    writer.WriteUInt64Packed(parent.NetworkId);
+                    writer.WriteUInt64Packed(parent.ObjectId);
                 }
 
                 if (!NetworkManager.Singleton.NetworkConfig.EnableSceneManagement || NetworkManager.Singleton.NetworkConfig.UsePrefabSync)
@@ -517,7 +517,7 @@ namespace MLAPI.Spawning
                 throw new NotServerException("Only server can despawn objects");
             }
 
-            OnDestroyObject(netObject.NetworkId, destroyObject);
+            OnDestroyObject(netObject.ObjectId, destroyObject);
         }
 
         // Makes scene objects ready to be reused
@@ -543,7 +543,7 @@ namespace MLAPI.Spawning
                     if (customDestroyHandlers.ContainsKey(sobj.PrefabHash))
                     {
                         customDestroyHandlers[sobj.PrefabHash](sobj);
-                        OnDestroyObject(sobj.NetworkId, false);
+                        OnDestroyObject(sobj.ObjectId, false);
                     }
                     else
                     {
@@ -564,7 +564,7 @@ namespace MLAPI.Spawning
                     if (customDestroyHandlers.ContainsKey(netObjects[i].PrefabHash))
                     {
                         customDestroyHandlers[netObjects[i].PrefabHash](netObjects[i]);
-                        OnDestroyObject(netObjects[i].NetworkId, false);
+                        OnDestroyObject(netObjects[i].ObjectId, false);
                     }
                     else
                     {
@@ -585,7 +585,7 @@ namespace MLAPI.Spawning
                     if (customDestroyHandlers.ContainsKey(netObjects[i].PrefabHash))
                     {
                         customDestroyHandlers[netObjects[i].PrefabHash](netObjects[i]);
-                        OnDestroyObject(netObjects[i].NetworkId, false);
+                        OnDestroyObject(netObjects[i].ObjectId, false);
                     }
                     else
                     {
@@ -659,7 +659,7 @@ namespace MLAPI.Spawning
                 //Someone owns it.
                 for (int i = NetworkManager.Singleton.ConnectedClients[sobj.OwnerClientId].OwnedObjects.Count - 1; i > -1; i--)
                 {
-                    if (NetworkManager.Singleton.ConnectedClients[sobj.OwnerClientId].OwnedObjects[i].NetworkId == networkId)
+                    if (NetworkManager.Singleton.ConnectedClients[sobj.OwnerClientId].OwnedObjects[i].ObjectId == networkId)
                         NetworkManager.Singleton.ConnectedClients[sobj.OwnerClientId].OwnedObjects.RemoveAt(i);
                 }
             }
