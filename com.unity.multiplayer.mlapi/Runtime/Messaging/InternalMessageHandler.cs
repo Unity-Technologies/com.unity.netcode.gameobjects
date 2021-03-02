@@ -1,12 +1,6 @@
 using System;
 using System.IO;
-using MLAPI.Configuration;
 using MLAPI.Connection;
-#if !DISABLE_CRYPTOGRAPHY
-using System.Security.Cryptography;
-using System.Security.Cryptography.X509Certificates;
-#endif
-using MLAPI.Security;
 using MLAPI.Logging;
 using MLAPI.SceneManagement;
 using MLAPI.Serialization.Pooled;
@@ -18,8 +12,6 @@ using System.Collections.Generic;
 using MLAPI.Messaging.Buffering;
 using MLAPI.Profiling;
 using Unity.Profiling;
-using MLAPI.Serialization;
-using MLAPI.Transports;
 using BitStream = MLAPI.Serialization.BitStream;
 
 namespace MLAPI.Messaging
@@ -33,177 +25,16 @@ namespace MLAPI.Messaging
         static ProfilerMarker s_HandleDestroyObject = new ProfilerMarker("InternalMessageHandler.HandleDestroyObject");
         static ProfilerMarker s_HandleSwitchScene = new ProfilerMarker("InternalMessageHandler.HandleSwitchScene");
         static ProfilerMarker s_HandleClientSwitchSceneCompleted = new ProfilerMarker("InternalMessageHandler.HandleClientSwitchSceneCompleted");
-        static ProfilerMarker s_HandleChangeOwner =
-            new ProfilerMarker("InternalMessageHandler.HandleChangeOwner");
-        static ProfilerMarker s_HandleAddObjects =
-            new ProfilerMarker("InternalMessageHandler.HandleAddObjects");
-        static ProfilerMarker s_HandleDestroyObjects =
-            new ProfilerMarker("InternalMessageHandler.HandleDestroyObjects");
-        static ProfilerMarker s_HandleTimeSync =
-            new ProfilerMarker("InternalMessageHandler.HandleTimeSync");
-        static ProfilerMarker s_HandleNetworkedVarDelta =
-            new ProfilerMarker("InternalMessageHandler.HandleNetworkedVarDelta");
-        static ProfilerMarker s_HandleNetworkedVarUpdate =
-            new ProfilerMarker("InternalMessageHandler.HandleNetworkedVarUpdate");
-        static ProfilerMarker s_HandleUnnamedMessage =
-            new ProfilerMarker("InternalMessageHandler.HandleUnnamedMessage");
-        static ProfilerMarker s_HandleNamedMessage =
-            new ProfilerMarker("InternalMessageHandler.HandleNamedMessage");
-        static ProfilerMarker s_HandleNetworkLog =
-            new ProfilerMarker("InternalMessageHandler.HandleNetworkLog");
+        static ProfilerMarker s_HandleChangeOwner = new ProfilerMarker("InternalMessageHandler.HandleChangeOwner");
+        static ProfilerMarker s_HandleAddObjects = new ProfilerMarker("InternalMessageHandler.HandleAddObjects");
+        static ProfilerMarker s_HandleDestroyObjects = new ProfilerMarker("InternalMessageHandler.HandleDestroyObjects");
+        static ProfilerMarker s_HandleTimeSync = new ProfilerMarker("InternalMessageHandler.HandleTimeSync");
+        static ProfilerMarker s_HandleNetworkedVarDelta = new ProfilerMarker("InternalMessageHandler.HandleNetworkedVarDelta");
+        static ProfilerMarker s_HandleNetworkedVarUpdate = new ProfilerMarker("InternalMessageHandler.HandleNetworkedVarUpdate");
+        static ProfilerMarker s_HandleUnnamedMessage = new ProfilerMarker("InternalMessageHandler.HandleUnnamedMessage");
+        static ProfilerMarker s_HandleNamedMessage = new ProfilerMarker("InternalMessageHandler.HandleNamedMessage");
+        static ProfilerMarker s_HandleNetworkLog = new ProfilerMarker("InternalMessageHandler.HandleNetworkLog");
 
-#endif
-
-#if !DISABLE_CRYPTOGRAPHY
-        // Runs on client
-        internal static void HandleHailRequest(ulong clientId, Stream stream)
-        {
-            X509Certificate2 certificate = null;
-            byte[] serverDiffieHellmanPublicPart = null;
-            using (PooledBitReader reader = PooledBitReader.Get(stream))
-            {
-                if (NetworkingManager.Singleton.NetworkConfig.EnableEncryption)
-                {
-                    // Read the certificate
-                    if (NetworkingManager.Singleton.NetworkConfig.SignKeyExchange)
-                    {
-                        // Allocation justification: This runs on client and only once, at initial connection
-                        certificate = new X509Certificate2(reader.ReadByteArray());
-                        if (CryptographyHelper.VerifyCertificate(certificate, NetworkingManager.Singleton.ConnectedHostname))
-                        {
-                            // The certificate is not valid :(
-                            // Man in the middle.
-                            if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Invalid certificate. Disconnecting");
-                            NetworkingManager.Singleton.StopClient();
-                            return;
-                        }
-                        else
-                        {
-                            NetworkingManager.Singleton.NetworkConfig.ServerX509Certificate = certificate;
-                        }
-                    }
-
-                    // Read the ECDH
-                    // Allocation justification: This runs on client and only once, at initial connection
-                    serverDiffieHellmanPublicPart = reader.ReadByteArray();
-
-                    // Verify the key exchange
-                    if (NetworkingManager.Singleton.NetworkConfig.SignKeyExchange)
-                    {
-                        int signatureType = reader.ReadByte();
-
-                        byte[] serverDiffieHellmanPublicPartSignature = reader.ReadByteArray();
-
-                        if (signatureType == 0)
-                        {
-                            RSACryptoServiceProvider rsa = certificate.PublicKey.Key as RSACryptoServiceProvider;
-
-                            if (rsa != null)
-                            {
-                                using (SHA256Managed sha = new SHA256Managed())
-                                {
-                                    if (!rsa.VerifyData(serverDiffieHellmanPublicPart, sha, serverDiffieHellmanPublicPartSignature))
-                                    {
-                                        if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Invalid RSA signature. Disconnecting");
-                                        NetworkingManager.Singleton.StopClient();
-                                        return;
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("No RSA key found in certificate. Disconnecting");
-                                NetworkingManager.Singleton.StopClient();
-                                return;
-                            }
-                        }
-                        else if (signatureType == 1)
-                        {
-                            DSACryptoServiceProvider dsa = certificate.PublicKey.Key as DSACryptoServiceProvider;
-
-                            if (dsa != null)
-                            {
-                                using (SHA256Managed sha = new SHA256Managed())
-                                {
-                                    if (!dsa.VerifyData(sha.ComputeHash(serverDiffieHellmanPublicPart), serverDiffieHellmanPublicPartSignature))
-                                    {
-                                        if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Invalid DSA signature. Disconnecting");
-                                        NetworkingManager.Singleton.StopClient();
-                                        return;
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("No DSA key found in certificate. Disconnecting");
-                                NetworkingManager.Singleton.StopClient();
-                                return;
-                            }
-                        }
-                        else
-                        {
-                            if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Invalid signature type. Disconnecting");
-                            NetworkingManager.Singleton.StopClient();
-                            return;
-                        }
-                    }
-                }
-            }
-
-            using (PooledBitStream outStream = PooledBitStream.Get())
-            {
-                using (PooledBitWriter writer = PooledBitWriter.Get(outStream))
-                {
-                    if (NetworkingManager.Singleton.NetworkConfig.EnableEncryption)
-                    {
-                        // Create a ECDH key
-                        EllipticDiffieHellman diffieHellman = new EllipticDiffieHellman(EllipticDiffieHellman.DEFAULT_CURVE, EllipticDiffieHellman.DEFAULT_GENERATOR, EllipticDiffieHellman.DEFAULT_ORDER);
-                        NetworkingManager.Singleton.clientAesKey = diffieHellman.GetSharedSecret(serverDiffieHellmanPublicPart);
-                        byte[] diffieHellmanPublicKey = diffieHellman.GetPublicKey();
-                        writer.WriteByteArray(diffieHellmanPublicKey);
-                    }
-                }
-
-                // Send HailResponse
-                InternalMessageSender.Send(NetworkingManager.Singleton.ServerClientId, MLAPIConstants.MLAPI_CERTIFICATE_HAIL_RESPONSE, Channel.Internal, outStream, SecuritySendFlags.None);
-            }
-        }
-
-        // Ran on server
-        internal static void HandleHailResponse(ulong clientId, Stream stream)
-        {
-            if (!NetworkingManager.Singleton.PendingClients.ContainsKey(clientId) || NetworkingManager.Singleton.PendingClients[clientId].ConnectionState != PendingClient.State.PendingHail) return;
-            if (!NetworkingManager.Singleton.NetworkConfig.EnableEncryption) return;
-
-            using (PooledBitReader reader = PooledBitReader.Get(stream))
-            {
-                if (NetworkingManager.Singleton.PendingClients[clientId].KeyExchange != null)
-                {
-                    byte[] diffieHellmanPublic = reader.ReadByteArray();
-                    NetworkingManager.Singleton.PendingClients[clientId].AesKey = NetworkingManager.Singleton.PendingClients[clientId].KeyExchange.GetSharedSecret(diffieHellmanPublic);
-                }
-            }
-
-            NetworkingManager.Singleton.PendingClients[clientId].ConnectionState = PendingClient.State.PendingConnection;
-            NetworkingManager.Singleton.PendingClients[clientId].KeyExchange = null; // Give to GC
-
-            // Send greetings, they have passed all the handshakes
-            using (PooledBitStream outStream = PooledBitStream.Get())
-            {
-                using (PooledBitWriter writer = PooledBitWriter.Get(outStream))
-                {
-                    writer.WriteInt64Packed(DateTime.Now.Ticks); // This serves no purpose.
-                }
-
-                InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_GREETINGS, Channel.Internal, outStream, SecuritySendFlags.None);
-            }
-        }
-
-        internal static void HandleGreetings(ulong clientId, Stream stream)
-        {
-            // Server greeted us, we can now initiate our request to connect.
-            NetworkingManager.Singleton.SendConnectionRequest();
-        }
 #endif
 
         internal static void HandleConnectionRequest(ulong clientId, Stream stream)
@@ -224,10 +55,7 @@ namespace MLAPI.Messaging
                 if (NetworkingManager.Singleton.NetworkConfig.ConnectionApproval)
                 {
                     byte[] connectionBuffer = reader.ReadByteArray();
-                    NetworkingManager.Singleton.InvokeConnectionApproval(connectionBuffer, clientId, (createPlayerObject, playerPrefabHash, approved, position, rotation) =>
-                    {
-                        NetworkingManager.Singleton.HandleApproval(clientId, createPlayerObject, playerPrefabHash, approved, position, rotation);
-                    });
+                    NetworkingManager.Singleton.InvokeConnectionApproval(connectionBuffer, clientId, (createPlayerObject, playerPrefabHash, approved, position, rotation) => { NetworkingManager.Singleton.HandleApproval(clientId, createPlayerObject, playerPrefabHash, approved, position, rotation); });
                 }
                 else
                 {
@@ -527,11 +355,13 @@ namespace MLAPI.Messaging
                     //We are current owner.
                     SpawnManager.SpawnedObjects[networkId].InvokeBehaviourOnLostOwnership();
                 }
+
                 if (ownerClientId == NetworkingManager.Singleton.LocalClientId)
                 {
                     //We are new owner.
                     SpawnManager.SpawnedObjects[networkId].InvokeBehaviourOnGainedOwnership();
                 }
+
                 SpawnManager.SpawnedObjects[networkId].OwnerClientId = ownerClientId;
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR

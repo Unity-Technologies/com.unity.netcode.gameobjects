@@ -2,6 +2,7 @@
 using UnityEngine;
 using System.IO;
 using System;
+using MLAPI.Logging;
 using MLAPI.Serialization.Pooled;
 using MLAPI.Transports;
 
@@ -22,9 +23,13 @@ namespace MLAPI.NetworkedVar
         /// </summary>
         public readonly NetworkedVarSettings Settings = new NetworkedVarSettings();
         /// <summary>
-        /// Gets the last time the variable was synced
+        /// The last time the variable was written to locally
         /// </summary>
-        public float LastSyncedTime { get; internal set; }
+        public ushort LocalTick { get; internal set; }
+        /// <summary>
+        /// The last time the variable was written to remotely. Uses the remote timescale
+        /// </summary>
+        public ushort RemoteTick { get; internal set; }
         /// <summary>
         /// Delegate type for value changed event
         /// </summary>
@@ -89,6 +94,10 @@ namespace MLAPI.NetworkedVar
             {
                 if (!EqualityComparer<T>.Default.Equals(InternalValue, value))
                 {
+                    // Setter is assumed to be called locally, by game code.
+                    // When used by the host, it is its responsibility to set the RemoteTick
+                    RemoteTick = NetworkTickSystem.k_NoTick;
+
                     isDirty = true;
                     T previousValue = InternalValue;
                     InternalValue = value;
@@ -102,17 +111,12 @@ namespace MLAPI.NetworkedVar
         public void ResetDirty()
         {
             isDirty = false;
-            LastSyncedTime = NetworkingManager.Singleton.NetworkTime;
         }
 
         /// <inheritdoc />
         public bool IsDirty()
         {
-            if (!isDirty) return false;
-            if (Settings.SendTickrate == 0) return true;
-            if (Settings.SendTickrate < 0) return false;
-            if (NetworkingManager.Singleton.NetworkTime - LastSyncedTime >= (1f / Settings.SendTickrate)) return true;
-            return false;
+            return isDirty;
         }
 
         /// <inheritdoc />
@@ -139,7 +143,18 @@ namespace MLAPI.NetworkedVar
         /// Writes the variable to the writer
         /// </summary>
         /// <param name="stream">The stream to write the value to</param>
-        public void WriteDelta(Stream stream) => WriteField(stream); //The NetworkedVar is built for simple data types and has no delta.
+        public void WriteDelta(Stream stream)
+        {
+            using (PooledBitWriter writer = PooledBitWriter.Get(stream))
+            {
+                // write the network tick at which this NetworkedVar was modified remotely
+                // this will allow lag-compensation
+                // todo: this is currently only done on delta updates. Consider whether it should be done in WriteField
+                writer.WriteUInt16Packed(RemoteTick);
+            }
+
+            WriteField(stream);
+        }
 
         /// <inheritdoc />
         public bool CanClientWrite(ulong clientId)
@@ -167,8 +182,13 @@ namespace MLAPI.NetworkedVar
         /// </summary>
         /// <param name="stream">The stream to read the value from</param>
         /// <param name="keepDirtyDelta">Whether or not the container should keep the dirty delta, or mark the delta as consumed</param>
-        public void ReadDelta(Stream stream, bool keepDirtyDelta)
+        public void ReadDelta(Stream stream, bool keepDirtyDelta, ushort localTick, ushort remoteTick)
         {
+            // todo: This allows the host-returned value to be set back to an old value
+            // this will need to be adjusted to check if we're have a most recent value
+            LocalTick = localTick;
+            RemoteTick = remoteTick;
+
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
                 T previousValue = InternalValue;
@@ -188,14 +208,16 @@ namespace MLAPI.NetworkedVar
         }
 
         /// <inheritdoc />
-        public void ReadField(Stream stream)
+        public void ReadField(Stream stream, ushort localTick, ushort remoteTick)
         {
-            ReadDelta(stream, false);
+            ReadDelta(stream, false, localTick, remoteTick);
         }
 
         /// <inheritdoc />
         public void WriteField(Stream stream)
         {
+            // Store the local tick at which this NetworkedVar was modified
+            LocalTick = NetworkedBehaviour.currentTick;
             using (PooledBitWriter writer = PooledBitWriter.Get(stream))
             {
                 writer.WriteObjectPacked(InternalValue); //BOX

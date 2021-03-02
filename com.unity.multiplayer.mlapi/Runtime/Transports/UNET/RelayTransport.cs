@@ -1,3 +1,4 @@
+#pragma warning disable 618
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 using System;
 using System.Collections.Generic;
@@ -287,9 +288,9 @@ namespace MLAPI.Transports.UNET
             return BaseReceive(@event, hostId, ref connectionId, ref channelId, buffer, bufferSize, ref receivedSize, ref error);
         }
 
-        private static NetworkEventType BaseReceive(NetworkEventType @event, int hostId, ref int connectionId, ref int channelId, byte[] buffer, int bufferSize, ref int receivedSize, ref byte error)
+        private static NetworkEventType BaseReceive(NetworkEventType netEvent, int hostId, ref int connectionId, ref int channelId, byte[] buffer, int bufferSize, ref int receivedSize, ref byte error)
         {
-            switch (@event)
+            switch (netEvent)
             {
                 case NetworkEventType.DataEvent:
                     {
@@ -423,7 +424,7 @@ namespace MLAPI.Transports.UNET
                     }
             }
 
-            return @event;
+            return netEvent;
         }
     }
 
@@ -434,3 +435,4 @@ namespace MLAPI.Transports.UNET
     }
 }
 #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
+#pragma warning restore 618
