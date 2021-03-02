@@ -8,7 +8,14 @@ using MLAPI.Transports.UNET;
 
 namespace MLAPI.RuntimeTests
 {
-    public class RPCQueueTests
+    /// <summary>
+    /// The RPC Queue unit test to validate:
+    /// - Sending and Receiving pipeline to validate that both sending and receiving pipelines are functioning properly.
+    /// - Usage of the ServerRpcParams.Send.UpdateStage and ClientRpcParams.Send.UpdateStage functionality.
+    /// - Rpcs receive will be invoked at the appropriate NetworkUpdateStage.
+    /// Requires: RpcPipelineTestComponent
+    /// </summary>
+    public class RpcQueueTests
     {
         private NetworkingManager m_NetMan;
 
