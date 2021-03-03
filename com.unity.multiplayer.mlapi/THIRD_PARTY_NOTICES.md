@@ -1,6 +1,17 @@
-MIT License
+This package contains third-party software components governed by the license(s) indicated below:
+---------
 
-Copyright (c) 2018, 2019 Albin Corén
+## Package: Editor/CodeGen/XXHash
+
+---------
+
+Component Name: xxHash
+
+License Type: MIT
+
+Copyright (c) 2015, 2016 Sedat Kapanoglu
+
+http://www.xxhash.com/
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
