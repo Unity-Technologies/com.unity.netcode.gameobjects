@@ -1,10 +1,7 @@
 {
     "name": "Unity.Multiplayer.MLAPI.RuntimeTests",
     "references": [
-        "UnityEngine.TestRunner",
-        "UnityEditor.TestRunner",
-        "Unity.Multiplayer.MLAPI.Runtime",
-        "Unity.Multiplayer.MLAPI.Editor"
+        "Unity.Multiplayer.MLAPI.Runtime"
     ],
     "optionalUnityReferences": [
         "TestAssemblies"
