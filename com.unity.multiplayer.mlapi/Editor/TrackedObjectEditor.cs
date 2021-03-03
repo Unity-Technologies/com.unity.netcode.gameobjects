@@ -23,7 +23,7 @@ namespace UnityEditor
         {
             Init();
             base.OnInspectorGUI();
-            if(NetworkingManager.Singleton != null && NetworkingManager.Singleton.IsServer)
+            if(NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer)
             {
                 EditorGUILayout.LabelField("Total points: ", trackedObject.TotalPoints.ToString(), EditorStyles.label);
                 EditorGUILayout.LabelField("Avg time between points: ", trackedObject.AvgTimeBetweenPointsMs.ToString() + " ms", EditorStyles.label);

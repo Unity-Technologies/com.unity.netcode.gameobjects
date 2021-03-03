@@ -12,7 +12,7 @@ namespace MLAPI.Transports
         /// <summary>
         /// The name of the channel
         /// </summary>
-        public Channel Id;
+        public NetworkChannel Id;
 
         /// <summary>
         /// The type of channel

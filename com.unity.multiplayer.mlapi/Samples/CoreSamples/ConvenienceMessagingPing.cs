@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace MLAPI_Examples
 {
-    public class ConvenienceMessagingPing : NetworkedBehaviour
+    public class ConvenienceMessagingPing : NetworkBehaviour
     {
         public override void NetworkStart()
         {

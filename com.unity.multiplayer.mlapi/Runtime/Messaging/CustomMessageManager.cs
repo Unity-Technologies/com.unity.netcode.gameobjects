@@ -10,12 +10,13 @@ using MLAPI.Transports;
 namespace MLAPI.Messaging
 {
     /// <summary>
-    /// The manager class to manage custom messages, note that this is different from the NetworkingManager custom messages.
+    /// The manager class to manage custom messages, note that this is different from the NetworkManager custom messages.
     /// These are named and are much easier to use.
     /// </summary>
     public static class CustomMessagingManager
     {
         #region Unnamed
+
         /// <summary>
         /// Delegate used for incoming unnamed messages
         /// </summary>
@@ -30,44 +31,41 @@ namespace MLAPI.Messaging
 
         internal static void InvokeUnnamedMessage(ulong clientId, Stream stream)
         {
-            if (OnUnnamedMessage != null)
-            {
-                OnUnnamedMessage(clientId, stream);
-            }
-
-            NetworkingManager.Singleton.InvokeOnIncomingCustomMessage(clientId, stream);
+            OnUnnamedMessage?.Invoke(clientId, stream);
         }
-
 
         /// <summary>
         /// Sends unnamed message to a list of clients
         /// </summary>
         /// <param name="clientIds">The clients to send to, sends to everyone if null</param>
-        /// <param name="stream">The message stream containing the data</param>
-        /// <param name="channel">The channel to send the data on</param>
-        public static void SendUnnamedMessage(List<ulong> clientIds, BitStream stream, Channel channel = Channel.Internal)
+        /// <param name="buffer">The message stream containing the data</param>
+        /// <param name="networkChannel">The channel to send the data on</param>
+        public static void SendUnnamedMessage(List<ulong> clientIds, NetworkBuffer buffer, NetworkChannel networkChannel = NetworkChannel.Internal)
         {
-            if (!NetworkingManager.Singleton.IsServer)
+            if (!NetworkManager.Singleton.IsServer)
             {
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogWarning("Can not send unnamed messages to multiple users as a client");
                 return;
             }
 
-            InternalMessageSender.Send(MLAPIConstants.MLAPI_UNNAMED_MESSAGE, channel, clientIds, stream);
+            InternalMessageSender.Send(NetworkConstants.UNNAMED_MESSAGE, networkChannel, clientIds, buffer);
         }
 
         /// <summary>
         /// Sends a unnamed message to a specific client
         /// </summary>
         /// <param name="clientId">The client to send the message to</param>
-        /// <param name="stream">The message stream containing the data</param>
-        /// <param name="channel">The channel tos end the data on</param>
-        public static void SendUnnamedMessage(ulong clientId, BitStream stream, Channel channel = Channel.Internal)
+        /// <param name="buffer">The message stream containing the data</param>
+        /// <param name="networkChannel">The channel tos end the data on</param>
+        public static void SendUnnamedMessage(ulong clientId, NetworkBuffer buffer, NetworkChannel networkChannel = NetworkChannel.Internal)
         {
-            InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_UNNAMED_MESSAGE, channel, stream);
+            InternalMessageSender.Send(clientId, NetworkConstants.UNNAMED_MESSAGE, networkChannel, buffer);
         }
+
         #endregion
+
         #region Named
+
         /// <summary>
         /// Delegate used to handle named messages
         /// </summary>
@@ -80,7 +78,7 @@ namespace MLAPI.Messaging
 
         internal static void InvokeNamedMessage(ulong hash, ulong sender, Stream stream)
         {
-            if (NetworkingManager.Singleton == null)
+            if (NetworkManager.Singleton == null)
             {
                 // We dont know what size to use. Try every (more collision prone)
                 if (namedMessageHandlers16.ContainsKey(hash))
@@ -101,21 +99,21 @@ namespace MLAPI.Messaging
             else
             {
                 // Only check the right size.
-                if (NetworkingManager.Singleton.NetworkConfig.RpcHashSize == HashSize.VarIntTwoBytes)
+                if (NetworkManager.Singleton.NetworkConfig.RpcHashSize == HashSize.VarIntTwoBytes)
                 {
                     if (namedMessageHandlers16.ContainsKey(hash))
                     {
                         namedMessageHandlers16[hash](sender, stream);
                     }
                 }
-                else if (NetworkingManager.Singleton.NetworkConfig.RpcHashSize == HashSize.VarIntFourBytes)
+                else if (NetworkManager.Singleton.NetworkConfig.RpcHashSize == HashSize.VarIntFourBytes)
                 {
                     if (namedMessageHandlers32.ContainsKey(hash))
                     {
                         namedMessageHandlers32[hash](sender, stream);
                     }
                 }
-                else if (NetworkingManager.Singleton.NetworkConfig.RpcHashSize == HashSize.VarIntEightBytes)
+                else if (NetworkManager.Singleton.NetworkConfig.RpcHashSize == HashSize.VarIntEightBytes)
                 {
                     if (namedMessageHandlers64.ContainsKey(hash))
                     {
@@ -154,11 +152,11 @@ namespace MLAPI.Messaging
         /// <param name="name">The message name to send</param>
         /// <param name="clientId">The client to send the message to</param>
         /// <param name="stream">The message stream containing the data</param>
-        /// <param name="channel">The channel to send the data on</param>
-        public static void SendNamedMessage(string name, ulong clientId, Stream stream, Channel channel = Channel.Internal)
+        /// <param name="networkChannel">The channel to send the data on</param>
+        public static void SendNamedMessage(string name, ulong clientId, Stream stream, NetworkChannel networkChannel = NetworkChannel.Internal)
         {
             ulong hash = 0;
-            switch (NetworkingManager.Singleton.NetworkConfig.RpcHashSize)
+            switch (NetworkManager.Singleton.NetworkConfig.RpcHashSize)
             {
                 case HashSize.VarIntTwoBytes:
                     hash = name.GetStableHash16();
@@ -171,16 +169,16 @@ namespace MLAPI.Messaging
                     break;
             }
 
-            using (PooledBitStream messageStream = PooledBitStream.Get())
+            using (PooledNetworkBuffer messageBuffer = PooledNetworkBuffer.Get())
             {
-                using (PooledBitWriter writer = PooledBitWriter.Get(messageStream))
+                using (PooledNetworkWriter writer = PooledNetworkWriter.Get(messageBuffer))
                 {
                     writer.WriteUInt64Packed(hash);
                 }
 
-                messageStream.CopyFrom(stream);
+                messageBuffer.CopyFrom(stream);
 
-                InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_NAMED_MESSAGE, channel, messageStream);
+                InternalMessageSender.Send(clientId, NetworkConstants.NAMED_MESSAGE, networkChannel, messageBuffer);
             }
         }
 
@@ -190,11 +188,11 @@ namespace MLAPI.Messaging
         /// <param name="name">The message name to send</param>
         /// <param name="clientIds">The clients to send to, sends to everyone if null</param>
         /// <param name="stream">The message stream containing the data</param>
-        /// <param name="channel">The channel to send the data on</param>
-        public static void SendNamedMessage(string name, List<ulong> clientIds, Stream stream, Channel channel = Channel.Internal)
+        /// <param name="networkChannel">The channel to send the data on</param>
+        public static void SendNamedMessage(string name, List<ulong> clientIds, Stream stream, NetworkChannel networkChannel = NetworkChannel.Internal)
         {
             ulong hash = 0;
-            switch (NetworkingManager.Singleton.NetworkConfig.RpcHashSize)
+            switch (NetworkManager.Singleton.NetworkConfig.RpcHashSize)
             {
                 case HashSize.VarIntTwoBytes:
                     hash = name.GetStableHash16();
@@ -207,24 +205,25 @@ namespace MLAPI.Messaging
                     break;
             }
 
-            using (PooledBitStream messageStream = PooledBitStream.Get())
+            using (PooledNetworkBuffer messageBuffer = PooledNetworkBuffer.Get())
             {
-                using (PooledBitWriter writer = PooledBitWriter.Get(messageStream))
+                using (PooledNetworkWriter writer = PooledNetworkWriter.Get(messageBuffer))
                 {
                     writer.WriteUInt64Packed(hash);
                 }
 
-                messageStream.CopyFrom(stream);
+                messageBuffer.CopyFrom(stream);
 
-                if (!NetworkingManager.Singleton.IsServer)
+                if (!NetworkManager.Singleton.IsServer)
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogWarning("Can not send named messages to multiple users as a client");
                     return;
                 }
 
-                InternalMessageSender.Send(MLAPIConstants.MLAPI_NAMED_MESSAGE, channel, clientIds, messageStream);
+                InternalMessageSender.Send(NetworkConstants.NAMED_MESSAGE, networkChannel, clientIds, messageBuffer);
             }
         }
+
         #endregion
     }
 }

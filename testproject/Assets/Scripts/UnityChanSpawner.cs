@@ -7,10 +7,10 @@ public class UnityChanSpawner : MonoBehaviour
     
     private void Start()
     {
-        NetworkingManager.Singleton.OnServerStarted += () =>
+        NetworkManager.Singleton.OnServerStarted += () =>
         {
             var unityChanGameObj = Instantiate(unityChanPrefab);
-            var unityChanNetObj = unityChanGameObj.GetComponent<NetworkedObject>();
+            var unityChanNetObj = unityChanGameObj.GetComponent<NetworkObject>();
             unityChanNetObj.Spawn();
         };
     }

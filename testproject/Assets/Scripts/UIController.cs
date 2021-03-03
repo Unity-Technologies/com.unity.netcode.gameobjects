@@ -3,7 +3,7 @@ using MLAPI;
 
 public class UIController : MonoBehaviour
 {
-    public NetworkingManager network;
+    public NetworkManager network;
     public GameObject buttonsUI;
 
     public void CreateServer()

@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
 using MLAPI.Transports;
-using BitStream = MLAPI.Serialization.BitStream;
 using MLAPI.Hashing;
+using MLAPI.Serialization;
 using MLAPI.Serialization.Pooled;
 
 namespace MLAPI.Configuration
@@ -31,7 +31,7 @@ namespace MLAPI.Configuration
         /// The transport hosts the sever uses
         /// </summary>
         [Tooltip("The NetworkTransport to use")]
-        public Transport NetworkTransport = null;
+        public NetworkTransport NetworkTransport = null;
         /// <summary>
         /// A list of SceneNames that can be used during networked games.
         /// </summary>
@@ -48,7 +48,7 @@ namespace MLAPI.Configuration
         /// A list of spawnable prefabs
         /// </summary>
         [Tooltip("The prefabs that can be spawned across the network")]
-        public List<NetworkedPrefab> NetworkedPrefabs = new List<NetworkedPrefab>();
+        public List<NetworkPrefab> NetworkPrefabs = new List<NetworkPrefab>();
         /// <summary>
         /// The default player prefab
         /// </summary>
@@ -72,7 +72,7 @@ namespace MLAPI.Configuration
         /// <summary>
         /// The amount of times per second internal frame events will occur, e.g. send checking.
         /// </summary>
-        [Tooltip("The amount of times per second the internal event loop will run. This includes for example NetworkedVar checking and LagCompensation tracking")]
+        [Tooltip("The amount of times per second the internal event loop will run. This includes for example NetworkVariable checking and LagCompensation tracking")]
         public int EventTickrate = 64;
         /// <summary>
         /// The amount of seconds to wait for handshake to complete before timing out a client
@@ -95,26 +95,26 @@ namespace MLAPI.Configuration
         [Tooltip("The amount of seconds to keep lag compensation position history")]
         public int SecondsHistory = 5;
         /// <summary>
-        /// If your logic uses the NetworkedTime, this should probably be turned off. If however it's needed to maximize accuracy, this is recommended to be turned on
+        /// If your logic uses the NetworkTime, this should probably be turned off. If however it's needed to maximize accuracy, this is recommended to be turned on
         /// </summary>
-        [Tooltip("Enable this to resync the NetworkedTime after the initial sync")]
+        [Tooltip("Enable this to resync the NetworkTime after the initial sync")]
         public bool EnableTimeResync = false;
         /// <summary>
         /// If time resync is turned on, this specifies the interval between syncs in seconds.
         /// </summary>
-        [Tooltip("The amount of seconds between resyncs of NetworkedTime, if enabled")]
+        [Tooltip("The amount of seconds between resyncs of NetworkTime, if enabled")]
         public int TimeResyncInterval = 30;
         /// <summary>
-        /// Whether or not to enable the NetworkedVar system. This system runs in the Update loop and will degrade performance, but it can be a huge convenience.
-        /// Only turn it off if you have no need for the NetworkedVar system.
+        /// Whether or not to enable the NetworkVariable system. This system runs in the Update loop and will degrade performance, but it can be a huge convenience.
+        /// Only turn it off if you have no need for the NetworkVariable system.
         /// </summary>
-        [Tooltip("Whether or not to enable the NetworkedVar system")]
-        public bool EnableNetworkedVar = true;
+        [Tooltip("Whether or not to enable the NetworkVariable system")]
+        public bool EnableNetworkVariable = true;
         /// <summary>
-        /// Whether or not to ensure that NetworkedVars can be read even if a client accidentally writes where its not allowed to. This costs some CPU and bandwdith.
+        /// Whether or not to ensure that NetworkVariables can be read even if a client accidentally writes where its not allowed to. This costs some CPU and bandwdith.
         /// </summary>
-        [Tooltip("Ensures that NetworkedVars can be read even if a client accidental writes where its not allowed to. This will cost some CPU time and bandwidth")]
-        public bool EnsureNetworkedVarLengthSafety = false;
+        [Tooltip("Ensures that NetworkVariables can be read even if a client accidental writes where its not allowed to. This will cost some CPU time and bandwidth")]
+        public bool EnsureNetworkVariableLengthSafety = false;
         /// <summary>
         /// Enables scene management. This will allow network scene switches and automatic scene diff corrections upon connect.
         /// SoftSynced scene objects wont work with this disabled. That means that disabling SceneManagement also enables PrefabSync.
@@ -129,10 +129,10 @@ namespace MLAPI.Configuration
         [Tooltip("Whether or not the MLAPI should check for differences in the prefab lists at connection")]
         public bool ForceSamePrefabs = true;
         /// <summary>
-        /// If true, all NetworkedObject's need to be prefabs and all scene objects will be replaced on server side which causes all serialization to be lost. Useful for multi project setups
+        /// If true, all NetworkObjects need to be prefabs and all scene objects will be replaced on server side which causes all serialization to be lost. Useful for multi project setups
         /// If false, Only non scene objects have to be prefabs. Scene objects will be matched using their PrefabInstanceId which can be precomputed globally for a scene at build time. Useful for single projects
         /// </summary>
-        [Tooltip("If true, all NetworkedObject's need to be prefabs and all scene objects will be replaced on server side which causes all serialization to be lost. Useful for multi project setups\n" +
+        [Tooltip("If true, all NetworkObjects need to be prefabs and all scene objects will be replaced on server side which causes all serialization to be lost. Useful for multi project setups\n" +
                  "If false, Only non scene objects have to be prefabs. Scene objects will be matched using their PrefabInstanceId which can be precomputed globally for a scene at build time. Useful for single projects")]
         public bool UsePrefabSync = false;
         /// <summary>
@@ -182,9 +182,9 @@ namespace MLAPI.Configuration
         public string ToBase64()
         {
             NetworkConfig config = this;
-            using (PooledBitStream stream = PooledBitStream.Get())
+            using (PooledNetworkBuffer buffer = PooledNetworkBuffer.Get())
             {
-                using (PooledBitWriter writer = PooledBitWriter.Get(stream))
+                using (PooledNetworkWriter writer = PooledNetworkWriter.Get(buffer))
                 {
                     writer.WriteUInt16Packed(config.ProtocolVersion);
 
@@ -203,19 +203,19 @@ namespace MLAPI.Configuration
                     writer.WriteInt32Packed(config.SecondsHistory);
                     writer.WriteInt32Packed(config.LoadSceneTimeOut);
                     writer.WriteBool(config.EnableTimeResync);
-                    writer.WriteBool(config.EnsureNetworkedVarLengthSafety);
+                    writer.WriteBool(config.EnsureNetworkVariableLengthSafety);
                     writer.WriteBits((byte)config.RpcHashSize, 2);
                     writer.WriteBool(ForceSamePrefabs);
                     writer.WriteBool(UsePrefabSync);
                     writer.WriteBool(EnableSceneManagement);
                     writer.WriteBool(RecycleNetworkIds);
                     writer.WriteSinglePacked(NetworkIdRecycleDelay);
-                    writer.WriteBool(EnableNetworkedVar);
+                    writer.WriteBool(EnableNetworkVariable);
                     writer.WriteBool(AllowRuntimeSceneChanges);
                     writer.WriteBool(EnableNetworkLogs);
-                    stream.PadStream();
+                    buffer.PadBuffer();
 
-                    return Convert.ToBase64String(stream.ToArray());
+                    return Convert.ToBase64String(buffer.ToArray());
                 }
             }
         }
@@ -228,9 +228,9 @@ namespace MLAPI.Configuration
         {
             NetworkConfig config = this;
             byte[] binary = Convert.FromBase64String(base64);
-            using (BitStream stream = new BitStream(binary))
+            using (NetworkBuffer buffer = new NetworkBuffer(binary))
             {
-                using (PooledBitReader reader = PooledBitReader.Get(stream))
+                using (PooledNetworkReader reader = PooledNetworkReader.Get(buffer))
                 {
                     config.ProtocolVersion = reader.ReadUInt16Packed();
 
@@ -250,14 +250,14 @@ namespace MLAPI.Configuration
                     config.SecondsHistory = reader.ReadInt32Packed();
                     config.LoadSceneTimeOut = reader.ReadInt32Packed();
                     config.EnableTimeResync = reader.ReadBool();
-                    config.EnsureNetworkedVarLengthSafety = reader.ReadBool();
+                    config.EnsureNetworkVariableLengthSafety = reader.ReadBool();
                     config.RpcHashSize = (HashSize)reader.ReadBits(2);
                     config.ForceSamePrefabs = reader.ReadBool();
                     config.UsePrefabSync = reader.ReadBool();
                     config.EnableSceneManagement = reader.ReadBool();
                     config.RecycleNetworkIds = reader.ReadBool();
                     config.NetworkIdRecycleDelay = reader.ReadSinglePacked();
-                    config.EnableNetworkedVar = reader.ReadBool();
+                    config.EnableNetworkVariable = reader.ReadBool();
                     config.AllowRuntimeSceneChanges = reader.ReadBool();
                     config.EnableNetworkLogs = reader.ReadBool();
                 }
@@ -267,7 +267,7 @@ namespace MLAPI.Configuration
 
         private ulong? ConfigHash = null;
         /// <summary>
-        /// Gets a SHA256 hash of parts of the NetworkingConfiguration instance
+        /// Gets a SHA256 hash of parts of the NetworkConfig instance
         /// </summary>
         /// <param name="cache"></param>
         /// <returns></returns>
@@ -278,12 +278,12 @@ namespace MLAPI.Configuration
 
             Sort();
 
-            using (PooledBitStream stream = PooledBitStream.Get())
+            using (PooledNetworkBuffer buffer = PooledNetworkBuffer.Get())
             {
-                using (PooledBitWriter writer = PooledBitWriter.Get(stream))
+                using (PooledNetworkWriter writer = PooledNetworkWriter.Get(buffer))
                 {
                     writer.WriteUInt16Packed(ProtocolVersion);
-                    writer.WriteString(MLAPIConstants.MLAPI_PROTOCOL_VERSION);
+                    writer.WriteString(NetworkConstants.PROTOCOL_VERSION);
 
                     if (EnableSceneManagement && !AllowRuntimeSceneChanges)
                     {
@@ -295,34 +295,34 @@ namespace MLAPI.Configuration
 
                     if (ForceSamePrefabs)
                     {
-                        List<NetworkedPrefab> sortedPrefabList = NetworkedPrefabs.OrderBy(x => x.Hash).ToList();
+                        List<NetworkPrefab> sortedPrefabList = NetworkPrefabs.OrderBy(x => x.Hash).ToList();
                         for (int i = 0; i < sortedPrefabList.Count; i++)
                         {
                             writer.WriteUInt64Packed(sortedPrefabList[i].Hash);
                         }
                     }
 
-                    writer.WriteBool(EnableNetworkedVar);
+                    writer.WriteBool(EnableNetworkVariable);
                     writer.WriteBool(ForceSamePrefabs);
                     writer.WriteBool(UsePrefabSync);
                     writer.WriteBool(EnableSceneManagement);
-                    writer.WriteBool(EnsureNetworkedVarLengthSafety);
+                    writer.WriteBool(EnsureNetworkVariableLengthSafety);
                     writer.WriteBits((byte)RpcHashSize, 2);
-                    stream.PadStream();
+                    buffer.PadBuffer();
 
                     if (cache)
                     {
-                        ConfigHash = stream.ToArray().GetStableHash64();
+                        ConfigHash = buffer.ToArray().GetStableHash64();
                         return ConfigHash.Value;
                     }
 
-                    return stream.ToArray().GetStableHash64();
+                    return buffer.ToArray().GetStableHash64();
                 }
             }
         }
 
         /// <summary>
-        /// Compares a SHA256 hash with the current NetworkingConfiguration instances hash
+        /// Compares a SHA256 hash with the current NetworkConfig instances hash
         /// </summary>
         /// <param name="hash"></param>
         /// <returns></returns>
