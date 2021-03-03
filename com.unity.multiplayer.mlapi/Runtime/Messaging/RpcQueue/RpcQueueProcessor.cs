@@ -16,8 +16,8 @@ namespace MLAPI.Messaging
     internal class RpcQueueProcessor
     {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-        private static ProfilerMarker s_RpcQueueProcess = new ProfilerMarker("RpcQueueProcess");
-        private static ProfilerMarker s_RpcQueueSend = new ProfilerMarker("RpcQueueSend");
+        private static ProfilerMarker s_ProcessReceiveQueue = new ProfilerMarker($"{nameof(RpcQueueProcessor)}.{nameof(ProcessReceiveQueue)}");
+        private static ProfilerMarker s_ProcessSendQueue = new ProfilerMarker($"{nameof(RpcQueueProcessor)}.{nameof(ProcessSendQueue)}");
 #endif
 
         // Batcher object used to manage the RPC batching on the send side
@@ -39,7 +39,7 @@ namespace MLAPI.Messaging
             if (rpcQueueContainer != null)
             {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-                s_RpcQueueProcess.Begin();
+                s_ProcessReceiveQueue.Begin();
 #endif
                 var currentFrame = rpcQueueContainer.GetQueueHistoryFrame(RpcQueueHistoryFrame.QueueFrameType.Inbound, currentStage);
                 var nextFrame = rpcQueueContainer.GetQueueHistoryFrame(RpcQueueHistoryFrame.QueueFrameType.Inbound, currentStage, true);
@@ -74,10 +74,11 @@ namespace MLAPI.Messaging
                 {
                     rpcQueueContainer.AdvanceFrameHistory(RpcQueueHistoryFrame.QueueFrameType.Inbound);
                 }
-            }
+
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            s_RpcQueueProcess.End();
+                s_ProcessReceiveQueue.End();
 #endif
+            }
         }
 
         /// <summary>
@@ -87,13 +88,13 @@ namespace MLAPI.Messaging
         public void ProcessSendQueue()
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            s_RpcQueueSend.Begin();
+            s_ProcessSendQueue.Begin();
 #endif
 
             RpcQueueSendAndFlush();
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            s_RpcQueueSend.End();
+            s_ProcessSendQueue.End();
 #endif
             InternalMessagesSendAndFlush();
         }

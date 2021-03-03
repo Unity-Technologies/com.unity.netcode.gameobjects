@@ -44,17 +44,14 @@ namespace MLAPI
 #endif
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-        private static ProfilerMarker s_EventTick = new ProfilerMarker("Event");
-        private static ProfilerMarker s_ReceiveTick = new ProfilerMarker("Receive");
-        private static ProfilerMarker s_SyncTime = new ProfilerMarker("SyncTime");
-        private static ProfilerMarker s_TransportConnect = new ProfilerMarker("TransportConnect");
-        private static ProfilerMarker s_HandleIncomingData = new ProfilerMarker("HandleIncomingData");
-        private static ProfilerMarker s_TransportDisconnect = new ProfilerMarker("TransportDisconnect");
+        private static ProfilerMarker s_EventTick = new ProfilerMarker($"{nameof(NetworkManager)}.EventTick");
+        private static ProfilerMarker s_ReceiveTick = new ProfilerMarker($"{nameof(NetworkManager)}.ReceiveTick");
+        private static ProfilerMarker s_SyncTime = new ProfilerMarker($"{nameof(NetworkManager)}.SyncTime");
+        private static ProfilerMarker s_TransportConnect = new ProfilerMarker($"{nameof(NetworkManager)}.TransportConnect");
+        private static ProfilerMarker s_HandleIncomingData = new ProfilerMarker($"{nameof(NetworkManager)}.{nameof(HandleIncomingData)}");
+        private static ProfilerMarker s_TransportDisconnect = new ProfilerMarker($"{nameof(NetworkManager)}.TransportDisconnect");
 
-        private static ProfilerMarker s_ServerRpcQueued = new ProfilerMarker("ServerRpcQueued");
-        private static ProfilerMarker s_ClientRpcQueued = new ProfilerMarker("ClientRpcQueued");
-
-        private static ProfilerMarker s_InvokeRpc = new ProfilerMarker("InvokeRpc");
+        private static ProfilerMarker s_InvokeRpc = new ProfilerMarker($"{nameof(NetworkManager)}.{nameof(InvokeRpc)}");
 #endif
 
         internal RpcQueueContainer RpcQueueContainer { get; private set; }
@@ -800,7 +797,7 @@ namespace MLAPI
             }
         }
 
-        internal void SendConnectionRequest()
+        private void SendConnectionRequest()
         {
             using (var buffer = PooledNetworkBuffer.Get())
             using (var writer = PooledNetworkWriter.Get(buffer))
@@ -1071,13 +1068,7 @@ namespace MLAPI
                             }
                             else
                             {
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-                                s_ServerRpcQueued.Begin();
-#endif
                                 InternalMessageHandler.RpcReceiveQueueItem(clientId, messageStream, receiveTime, RpcQueueContainer.QueueItemType.ServerRpc);
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-                                s_ServerRpcQueued.End();
-#endif
                             }
                         }
 
@@ -1095,13 +1086,7 @@ namespace MLAPI
                             }
                             else
                             {
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-                                s_ClientRpcQueued.Begin();
-#endif
                                 InternalMessageHandler.RpcReceiveQueueItem(clientId, messageStream, receiveTime, RpcQueueContainer.QueueItemType.ClientRpc);
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-                                s_ClientRpcQueued.End();
-#endif
                             }
                         }
 
@@ -1129,27 +1114,7 @@ namespace MLAPI
 
         private static void ReceiveCallback(NetworkBuffer messageBuffer, RpcQueueContainer.QueueItemType messageType, ulong clientId, float receiveTime)
         {
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (messageType == RpcQueueContainer.QueueItemType.ServerRpc)
-            {
-                s_ServerRpcQueued.Begin();
-            }
-            else
-            {
-                s_ClientRpcQueued.Begin();
-            }
-#endif
             InternalMessageHandler.RpcReceiveQueueItem(clientId, messageBuffer, receiveTime, messageType);
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (messageType == RpcQueueContainer.QueueItemType.ServerRpc)
-            {
-                s_ServerRpcQueued.End();
-            }
-            else
-            {
-                s_ClientRpcQueued.End();
-            }
-#endif
         }
 
         /// <summary>

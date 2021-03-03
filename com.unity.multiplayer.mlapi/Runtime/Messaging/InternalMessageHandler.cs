@@ -20,21 +20,23 @@ namespace MLAPI.Messaging
     internal static class InternalMessageHandler
     {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-        private static ProfilerMarker s_HandleConnectionRequest = new ProfilerMarker("InternalMessageHandler.HandleConnectionRequest");
-        private static ProfilerMarker s_HandleConnectionApproved = new ProfilerMarker("InternalMessageHandler.HandleConnectionApproved");
-        private static ProfilerMarker s_HandleAddObject = new ProfilerMarker("InternalMessageHandler.HandleAddObject");
-        private static ProfilerMarker s_HandleDestroyObject = new ProfilerMarker("InternalMessageHandler.HandleDestroyObject");
-        private static ProfilerMarker s_HandleSwitchScene = new ProfilerMarker("InternalMessageHandler.HandleSwitchScene");
-        private static ProfilerMarker s_HandleClientSwitchSceneCompleted = new ProfilerMarker("InternalMessageHandler.HandleClientSwitchSceneCompleted");
-        private static ProfilerMarker s_HandleChangeOwner = new ProfilerMarker("InternalMessageHandler.HandleChangeOwner");
-        private static ProfilerMarker s_HandleAddObjects = new ProfilerMarker("InternalMessageHandler.HandleAddObjects");
-        private static ProfilerMarker s_HandleDestroyObjects = new ProfilerMarker("InternalMessageHandler.HandleDestroyObjects");
-        private static ProfilerMarker s_HandleTimeSync = new ProfilerMarker("InternalMessageHandler.HandleTimeSync");
-        private static ProfilerMarker s_HandleNetworkVariableDelta = new ProfilerMarker("InternalMessageHandler.HandleNetworkVariableDelta");
-        private static ProfilerMarker s_HandleNetworkVariableUpdate = new ProfilerMarker("InternalMessageHandler.HandleNetworkVariableUpdate");
-        private static ProfilerMarker s_HandleUnnamedMessage = new ProfilerMarker("InternalMessageHandler.HandleUnnamedMessage");
-        private static ProfilerMarker s_HandleNamedMessage = new ProfilerMarker("InternalMessageHandler.HandleNamedMessage");
-        private static ProfilerMarker s_HandleNetworkLog = new ProfilerMarker("InternalMessageHandler.HandleNetworkLog");
+        private static ProfilerMarker s_HandleConnectionRequest = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleConnectionRequest)}");
+        private static ProfilerMarker s_HandleConnectionApproved = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleConnectionApproved)}");
+        private static ProfilerMarker s_HandleAddObject = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleAddObject)}");
+        private static ProfilerMarker s_HandleDestroyObject = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleDestroyObject)}");
+        private static ProfilerMarker s_HandleSwitchScene = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleSwitchScene)}");
+        private static ProfilerMarker s_HandleClientSwitchSceneCompleted = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleClientSwitchSceneCompleted)}");
+        private static ProfilerMarker s_HandleChangeOwner = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleChangeOwner)}");
+        private static ProfilerMarker s_HandleAddObjects = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleAddObjects)}");
+        private static ProfilerMarker s_HandleDestroyObjects = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleDestroyObjects)}");
+        private static ProfilerMarker s_HandleTimeSync = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleTimeSync)}");
+        private static ProfilerMarker s_HandleNetworkVariableDelta = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleNetworkVariableDelta)}");
+        private static ProfilerMarker s_HandleNetworkVariableUpdate = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleNetworkVariableUpdate)}");
+        private static ProfilerMarker s_HandleUnnamedMessage = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleUnnamedMessage)}");
+        private static ProfilerMarker s_HandleNamedMessage = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleNamedMessage)}");
+        private static ProfilerMarker s_HandleNetworkLog = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleNetworkLog)}");
+        private static ProfilerMarker s_RpcReceiveQueueItemServerRpc = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(RpcReceiveQueueItem)}.{nameof(RpcQueueContainer.QueueItemType.ServerRpc)}");
+        private static ProfilerMarker s_RpcReceiveQueueItemClientRpc = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(RpcReceiveQueueItem)}.{nameof(RpcQueueContainer.QueueItemType.ClientRpc)}");
 #endif
 
         internal static void HandleConnectionRequest(ulong clientId, Stream stream)
@@ -59,10 +61,7 @@ namespace MLAPI.Messaging
                 if (NetworkManager.Singleton.NetworkConfig.ConnectionApproval)
                 {
                     byte[] connectionBuffer = reader.ReadByteArray();
-                    NetworkManager.Singleton.InvokeConnectionApproval(connectionBuffer, clientId, (createPlayerObject, playerPrefabHash, approved, position, rotation) =>
-                    {
-                        NetworkManager.Singleton.HandleApproval(clientId, createPlayerObject, playerPrefabHash, approved, position, rotation);
-                    });
+                    NetworkManager.Singleton.InvokeConnectionApproval(connectionBuffer, clientId, (createPlayerObject, playerPrefabHash, approved, position, rotation) => { NetworkManager.Singleton.HandleApproval(clientId, createPlayerObject, playerPrefabHash, approved, position, rotation); });
                 }
                 else
                 {
@@ -553,8 +552,32 @@ namespace MLAPI.Messaging
             ProfilerStatManager.RpcsRcvd.Record();
             PerformanceDataManager.Increment(ProfilerConstants.NumberOfRPCsReceived);
 
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            switch (queueItemType)
+            {
+                case RpcQueueContainer.QueueItemType.ServerRpc:
+                    s_RpcReceiveQueueItemServerRpc.Begin();
+                    break;
+                case RpcQueueContainer.QueueItemType.ClientRpc:
+                    s_RpcReceiveQueueItemClientRpc.Begin();
+                    break;
+            }
+#endif
+
             var rpcQueueContainer = NetworkManager.Singleton.RpcQueueContainer;
             rpcQueueContainer.AddQueueItemToInboundFrame(queueItemType, receiveTime, clientId, (NetworkBuffer)stream);
+
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            switch (queueItemType)
+            {
+                case RpcQueueContainer.QueueItemType.ServerRpc:
+                    s_RpcReceiveQueueItemServerRpc.End();
+                    break;
+                case RpcQueueContainer.QueueItemType.ClientRpc:
+                    s_RpcReceiveQueueItemClientRpc.End();
+                    break;
+            }
+#endif
         }
 
         internal static void HandleUnnamedMessage(ulong clientId, Stream stream)

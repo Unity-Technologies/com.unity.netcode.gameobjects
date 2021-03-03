@@ -461,7 +461,7 @@ namespace MLAPI
         }
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-        private static ProfilerMarker s_NetworkBehaviourUpdate = new ProfilerMarker(nameof(NetworkBehaviourUpdate));
+        private static ProfilerMarker s_NetworkBehaviourUpdate = new ProfilerMarker($"{nameof(NetworkBehaviour)}.{nameof(NetworkBehaviourUpdate)}");
 #endif
 
         internal static void NetworkBehaviourUpdate()

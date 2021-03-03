@@ -10,7 +10,7 @@ namespace MLAPI.Messaging.Buffering
     internal static class BufferManager
     {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-        private static ProfilerMarker s_CleanBuffer = new ProfilerMarker("MLAPI.BufferManager.CleanBuffer");
+        private static ProfilerMarker s_CleanBuffer = new ProfilerMarker($"{nameof(BufferManager)}.{nameof(CleanBuffer)}");
 #endif
 
         private static readonly Dictionary<ulong, Queue<BufferedMessage>> k_BufferQueues = new Dictionary<ulong, Queue<BufferedMessage>>();
