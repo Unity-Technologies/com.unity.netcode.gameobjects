@@ -167,11 +167,9 @@ namespace MLAPI.Messaging
             }
 
             using (var messageBuffer = PooledNetworkBuffer.Get())
+            using (var writer = PooledNetworkWriter.Get(messageBuffer))
             {
-                using (var writer = PooledNetworkWriter.Get(messageBuffer))
-                {
-                    writer.WriteUInt64Packed(hash);
-                }
+                writer.WriteUInt64Packed(hash);
 
                 messageBuffer.CopyFrom(stream);
 
@@ -203,11 +201,9 @@ namespace MLAPI.Messaging
             }
 
             using (var messageBuffer = PooledNetworkBuffer.Get())
+            using (var writer = PooledNetworkWriter.Get(messageBuffer))
             {
-                using (var writer = PooledNetworkWriter.Get(messageBuffer))
-                {
-                    writer.WriteUInt64Packed(hash);
-                }
+                writer.WriteUInt64Packed(hash);
 
                 messageBuffer.CopyFrom(stream);
 

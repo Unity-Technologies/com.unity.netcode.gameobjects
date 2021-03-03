@@ -270,6 +270,7 @@ namespace MLAPI.Messaging
         internal void AddQueueItemToInboundFrame(QueueItemType qItemType, float timeStamp, ulong sourceNetworkId, NetworkBuffer message)
         {
             long originalPosition = message.Position;
+
             NetworkUpdateStage updateStage;
 
             using (var reader = PooledNetworkReader.Get(message))

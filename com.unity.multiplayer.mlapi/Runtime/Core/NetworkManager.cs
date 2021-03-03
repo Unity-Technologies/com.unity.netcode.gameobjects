@@ -614,7 +614,9 @@ namespace MLAPI
                 NetworkTickSystem = null;
             }
 
+#if !UNITY_2020_2_OR_LATER
             NetworkProfiler.Stop();
+#endif
             IsListening = false;
             IsServer = false;
             IsClient = false;
@@ -665,7 +667,9 @@ namespace MLAPI
 #endif
                     var isLoopBack = false;
 
+#if !UNITY_2020_2_OR_LATER
                     NetworkProfiler.StartTick(TickType.Receive);
+#endif
 
                     //If we are in loopback mode, we don't need to touch the transport
                     if (!isLoopBack)
@@ -684,7 +688,9 @@ namespace MLAPI
 
                     m_LastReceiveTickTime = NetworkTime;
 
+#if !UNITY_2020_2_OR_LATER
                     NetworkProfiler.EndTick();
+#endif
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                     s_ReceiveTick.End();
@@ -702,7 +708,7 @@ namespace MLAPI
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                     s_EventTick.Begin();
 #endif
-#if UNITY_EDITOR
+#if UNITY_EDITOR && !UNITY_2020_2_OR_LATER
                     NetworkProfiler.StartTick(TickType.Event);
 #endif
 
@@ -727,7 +733,7 @@ namespace MLAPI
                     {
                         m_LastEventTickTime = NetworkTime;
                     }
-#if UNITY_EDITOR
+#if UNITY_EDITOR && !UNITY_2020_2_OR_LATER
                     NetworkProfiler.EndTick();
 #endif
 
@@ -737,25 +743,25 @@ namespace MLAPI
                 }
                 else if (IsServer && m_EventOvershootCounter >= ((1f / NetworkConfig.EventTickrate)))
                 {
-#if UNITY_EDITOR
+#if UNITY_EDITOR && !UNITY_2020_2_OR_LATER
                     NetworkProfiler.StartTick(TickType.Event);
 #endif
                     //We run this one to compensate for previous update overshoots.
                     m_EventOvershootCounter -= (1f / NetworkConfig.EventTickrate);
                     LagCompensationManager.AddFrames();
-#if UNITY_EDITOR
+#if UNITY_EDITOR && !UNITY_2020_2_OR_LATER
                     NetworkProfiler.EndTick();
 #endif
                 }
 
                 if (IsServer && NetworkConfig.EnableTimeResync && NetworkTime - m_LastTimeSyncTime >= NetworkConfig.TimeResyncInterval)
                 {
-#if UNITY_EDITOR
+#if UNITY_EDITOR && !UNITY_2020_2_OR_LATER
                     NetworkProfiler.StartTick(TickType.Event);
 #endif
                     SyncTime();
                     m_LastTimeSyncTime = NetworkTime;
-#if UNITY_EDITOR
+#if UNITY_EDITOR && !UNITY_2020_2_OR_LATER
                     NetworkProfiler.EndTick();
 #endif
                 }
@@ -797,13 +803,13 @@ namespace MLAPI
         internal void SendConnectionRequest()
         {
             using (var buffer = PooledNetworkBuffer.Get())
+            using (var writer = PooledNetworkWriter.Get(buffer))
             {
-                using (var writer = PooledNetworkWriter.Get(buffer))
-                {
-                    writer.WriteUInt64Packed(NetworkConfig.GetConfig());
+                writer.WriteUInt64Packed(NetworkConfig.GetConfig());
 
-                    if (NetworkConfig.ConnectionApproval)
-                        writer.WriteByteArray(NetworkConfig.ConnectionData);
+                if (NetworkConfig.ConnectionApproval)
+                {
+                    writer.WriteByteArray(NetworkConfig.ConnectionData);
                 }
 
                 InternalMessageSender.Send(ServerClientId, NetworkConstants.CONNECTION_REQUEST, NetworkChannel.Internal, buffer);
@@ -849,7 +855,9 @@ namespace MLAPI
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                     s_TransportConnect.Begin();
 #endif
+#if !UNITY_2020_2_OR_LATER
                     NetworkProfiler.StartEvent(TickType.Receive, (uint)payload.Count, networkChannel, "TRANSPORT_CONNECT");
+#endif
                     if (IsServer)
                     {
                         if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
@@ -876,7 +884,9 @@ namespace MLAPI
                         StartCoroutine(ApprovalTimeout(clientId));
                     }
 
+#if !UNITY_2020_2_OR_LATER
                     NetworkProfiler.EndEvent();
+#endif
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                     s_TransportConnect.End();
 #endif
@@ -895,7 +905,9 @@ namespace MLAPI
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                     s_TransportDisconnect.Begin();
 #endif
+#if !UNITY_2020_2_OR_LATER
                     NetworkProfiler.StartEvent(TickType.Receive, 0, NetworkChannel.Internal, "TRANSPORT_DISCONNECT");
+#endif
 
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
                     {
@@ -911,7 +923,9 @@ namespace MLAPI
 
                     OnClientDisconnectCallback?.Invoke(clientId);
 
+#if !UNITY_2020_2_OR_LATER
                     NetworkProfiler.EndEvent();
+#endif
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                     s_TransportDisconnect.End();
 #endif
@@ -959,7 +973,10 @@ namespace MLAPI
                 }
 
                 uint headerByteSize = (uint)Arithmetic.VarIntSize(messageType);
+
+#if !UNITY_2020_2_OR_LATER
                 NetworkProfiler.StartEvent(TickType.Receive, (uint)(data.Count - headerByteSize), networkChannel, messageType);
+#endif
 
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
                 {
@@ -1101,7 +1118,9 @@ namespace MLAPI
 
                 #endregion
 
+#if !UNITY_2020_2_OR_LATER
                 NetworkProfiler.EndEvent();
+#endif
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleIncomingData.End();
@@ -1321,12 +1340,10 @@ namespace MLAPI
             }
 
             using (var buffer = PooledNetworkBuffer.Get())
+            using (var writer = PooledNetworkWriter.Get(buffer))
             {
-                using (var writer = PooledNetworkWriter.Get(buffer))
-                {
-                    writer.WriteSinglePacked(Time.realtimeSinceStartup);
-                    InternalMessageSender.Send(NetworkConstants.TIME_SYNC, NetworkChannel.SyncChannel, buffer);
-                }
+                writer.WriteSinglePacked(Time.realtimeSinceStartup);
+                InternalMessageSender.Send(NetworkConstants.TIME_SYNC, NetworkChannel.SyncChannel, buffer);
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_SyncTime.End();
@@ -1355,10 +1372,10 @@ namespace MLAPI
 
                 if (createPlayerObject)
                 {
-                    NetworkObject netObject = NetworkSpawnManager.CreateLocalNetworkObject(false, 0, playerPrefabHash ?? NetworkConfig.PlayerPrefabHash.Value, null, position, rotation);
-                    NetworkSpawnManager.SpawnNetworkObjectLocally(netObject, NetworkSpawnManager.GetNetworkObjectId(), false, true, clientId, null, false, 0, false, false);
+                    var networkObject = NetworkSpawnManager.CreateLocalNetworkObject(false, 0, playerPrefabHash ?? NetworkConfig.PlayerPrefabHash.Value, null, position, rotation);
+                    NetworkSpawnManager.SpawnNetworkObjectLocally(networkObject, NetworkSpawnManager.GetNetworkObjectId(), false, true, clientId, null, false, 0, false, false);
 
-                    ConnectedClients[clientId].PlayerObject = netObject;
+                    ConnectedClients[clientId].PlayerObject = networkObject;
                 }
 
                 m_ObservedObjects.Clear();
@@ -1373,89 +1390,87 @@ namespace MLAPI
                 }
 
                 using (var buffer = PooledNetworkBuffer.Get())
+                using (var writer = PooledNetworkWriter.Get(buffer))
                 {
-                    using (var writer = PooledNetworkWriter.Get(buffer))
-                    {
-                        writer.WriteUInt64Packed(clientId);
+                    writer.WriteUInt64Packed(clientId);
 
-                        if (NetworkConfig.EnableSceneManagement)
+                    if (NetworkConfig.EnableSceneManagement)
+                    {
+                        writer.WriteUInt32Packed(NetworkSceneManager.CurrentSceneIndex);
+                        writer.WriteByteArray(NetworkSceneManager.CurrentSceneSwitchProgressGuid.ToByteArray());
+                    }
+
+                    writer.WriteSinglePacked(Time.realtimeSinceStartup);
+                    writer.WriteUInt32Packed((uint)m_ObservedObjects.Count);
+
+                    for (int i = 0; i < m_ObservedObjects.Count; i++)
+                    {
+                        var observedObject = m_ObservedObjects[i];
+                        writer.WriteBool(observedObject.IsPlayerObject);
+                        writer.WriteUInt64Packed(observedObject.NetworkObjectId);
+                        writer.WriteUInt64Packed(observedObject.OwnerClientId);
+
+                        NetworkObject parent = null;
+
+                        if (!observedObject.AlwaysReplicateAsRoot && observedObject.transform.parent != null)
                         {
-                            writer.WriteUInt32Packed(NetworkSceneManager.CurrentSceneIndex);
-                            writer.WriteByteArray(NetworkSceneManager.CurrentSceneSwitchProgressGuid.ToByteArray());
+                            parent = observedObject.transform.parent.GetComponent<NetworkObject>();
                         }
 
-                        writer.WriteSinglePacked(Time.realtimeSinceStartup);
-                        writer.WriteUInt32Packed((uint)m_ObservedObjects.Count);
-
-                        for (int i = 0; i < m_ObservedObjects.Count; i++)
+                        if (parent == null)
                         {
-                            var observedObject = m_ObservedObjects[i];
-                            writer.WriteBool(observedObject.IsPlayerObject);
-                            writer.WriteUInt64Packed(observedObject.NetworkObjectId);
-                            writer.WriteUInt64Packed(observedObject.OwnerClientId);
+                            writer.WriteBool(false);
+                        }
+                        else
+                        {
+                            writer.WriteBool(true);
+                            writer.WriteUInt64Packed(parent.NetworkObjectId);
+                        }
 
-                            NetworkObject parent = null;
+                        if (!NetworkConfig.EnableSceneManagement || NetworkConfig.UsePrefabSync)
+                        {
+                            writer.WriteUInt64Packed(observedObject.PrefabHash);
+                        }
+                        else
+                        {
+                            // Is this a scene object that we will soft map
+                            writer.WriteBool(observedObject.IsSceneObject ?? true);
 
-                            if (!observedObject.AlwaysReplicateAsRoot && observedObject.transform.parent != null)
+                            if (observedObject.IsSceneObject == null || observedObject.IsSceneObject.Value)
                             {
-                                parent = observedObject.transform.parent.GetComponent<NetworkObject>();
-                            }
-
-                            if (parent == null)
-                            {
-                                writer.WriteBool(false);
+                                writer.WriteUInt64Packed(observedObject.NetworkInstanceId);
                             }
                             else
-                            {
-                                writer.WriteBool(true);
-                                writer.WriteUInt64Packed(parent.NetworkObjectId);
-                            }
-
-                            if (!NetworkConfig.EnableSceneManagement || NetworkConfig.UsePrefabSync)
                             {
                                 writer.WriteUInt64Packed(observedObject.PrefabHash);
                             }
-                            else
-                            {
-                                // Is this a scene object that we will soft map
-                                writer.WriteBool(observedObject.IsSceneObject ?? true);
-
-                                if (observedObject.IsSceneObject == null || observedObject.IsSceneObject.Value)
-                                {
-                                    writer.WriteUInt64Packed(observedObject.NetworkInstanceId);
-                                }
-                                else
-                                {
-                                    writer.WriteUInt64Packed(observedObject.PrefabHash);
-                                }
-                            }
-
-                            if (observedObject.IncludeTransformWhenSpawning == null || observedObject.IncludeTransformWhenSpawning(clientId))
-                            {
-                                writer.WriteBool(true);
-                                writer.WriteSinglePacked(observedObject.transform.position.x);
-                                writer.WriteSinglePacked(observedObject.transform.position.y);
-                                writer.WriteSinglePacked(observedObject.transform.position.z);
-
-                                writer.WriteSinglePacked(observedObject.transform.rotation.eulerAngles.x);
-                                writer.WriteSinglePacked(observedObject.transform.rotation.eulerAngles.y);
-                                writer.WriteSinglePacked(observedObject.transform.rotation.eulerAngles.z);
-                            }
-                            else
-                            {
-                                writer.WriteBool(false);
-                            }
-
-                            if (NetworkConfig.EnableNetworkVariable)
-                            {
-                                observedObject.WriteNetworkVariableData(buffer, clientId);
-                            }
                         }
 
-                        InternalMessageSender.Send(clientId, NetworkConstants.CONNECTION_APPROVED, NetworkChannel.Internal, buffer);
+                        if (observedObject.IncludeTransformWhenSpawning == null || observedObject.IncludeTransformWhenSpawning(clientId))
+                        {
+                            writer.WriteBool(true);
+                            writer.WriteSinglePacked(observedObject.transform.position.x);
+                            writer.WriteSinglePacked(observedObject.transform.position.y);
+                            writer.WriteSinglePacked(observedObject.transform.position.z);
 
-                        OnClientConnectedCallback?.Invoke(clientId);
+                            writer.WriteSinglePacked(observedObject.transform.rotation.eulerAngles.x);
+                            writer.WriteSinglePacked(observedObject.transform.rotation.eulerAngles.y);
+                            writer.WriteSinglePacked(observedObject.transform.rotation.eulerAngles.z);
+                        }
+                        else
+                        {
+                            writer.WriteBool(false);
+                        }
+
+                        if (NetworkConfig.EnableNetworkVariable)
+                        {
+                            observedObject.WriteNetworkVariableData(buffer, clientId);
+                        }
                     }
+
+                    InternalMessageSender.Send(clientId, NetworkConstants.CONNECTION_APPROVED, NetworkChannel.Internal, buffer);
+
+                    OnClientConnectedCallback?.Invoke(clientId);
                 }
 
                 if (!createPlayerObject || (playerPrefabHash == null && NetworkConfig.PlayerPrefabHash == null)) return;
@@ -1470,52 +1485,50 @@ namespace MLAPI
                         continue; //The new client.
 
                     using (var buffer = PooledNetworkBuffer.Get())
+                    using (var writer = PooledNetworkWriter.Get(buffer))
                     {
-                        using (var writer = PooledNetworkWriter.Get(buffer))
+                        writer.WriteBool(true);
+                        writer.WriteUInt64Packed(ConnectedClients[clientId].PlayerObject.NetworkObjectId);
+                        writer.WriteUInt64Packed(clientId);
+
+                        //Does not have a parent
+                        writer.WriteBool(false);
+
+                        if (!NetworkConfig.EnableSceneManagement || NetworkConfig.UsePrefabSync)
+                        {
+                            writer.WriteUInt64Packed(playerPrefabHash ?? NetworkConfig.PlayerPrefabHash.Value);
+                        }
+                        else
+                        {
+                            // Not a softmap aka scene object
+                            writer.WriteBool(false);
+                            writer.WriteUInt64Packed(playerPrefabHash ?? NetworkConfig.PlayerPrefabHash.Value);
+                        }
+
+                        if (ConnectedClients[clientId].PlayerObject.IncludeTransformWhenSpawning == null || ConnectedClients[clientId].PlayerObject.IncludeTransformWhenSpawning(clientId))
                         {
                             writer.WriteBool(true);
-                            writer.WriteUInt64Packed(ConnectedClients[clientId].PlayerObject.NetworkObjectId);
-                            writer.WriteUInt64Packed(clientId);
+                            writer.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.position.x);
+                            writer.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.position.y);
+                            writer.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.position.z);
 
-                            //Does not have a parent
-                            writer.WriteBool(false);
-
-                            if (!NetworkConfig.EnableSceneManagement || NetworkConfig.UsePrefabSync)
-                            {
-                                writer.WriteUInt64Packed(playerPrefabHash ?? NetworkConfig.PlayerPrefabHash.Value);
-                            }
-                            else
-                            {
-                                // Not a softmap aka scene object
-                                writer.WriteBool(false);
-                                writer.WriteUInt64Packed(playerPrefabHash ?? NetworkConfig.PlayerPrefabHash.Value);
-                            }
-
-                            if (ConnectedClients[clientId].PlayerObject.IncludeTransformWhenSpawning == null || ConnectedClients[clientId].PlayerObject.IncludeTransformWhenSpawning(clientId))
-                            {
-                                writer.WriteBool(true);
-                                writer.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.position.x);
-                                writer.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.position.y);
-                                writer.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.position.z);
-
-                                writer.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.rotation.eulerAngles.x);
-                                writer.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.rotation.eulerAngles.y);
-                                writer.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.rotation.eulerAngles.z);
-                            }
-                            else
-                            {
-                                writer.WriteBool(false);
-                            }
-
-                            writer.WriteBool(false); //No payload data
-
-                            if (NetworkConfig.EnableNetworkVariable)
-                            {
-                                ConnectedClients[clientId].PlayerObject.WriteNetworkVariableData(buffer, clientPair.Key);
-                            }
-
-                            InternalMessageSender.Send(clientPair.Key, NetworkConstants.ADD_OBJECT, NetworkChannel.Internal, buffer);
+                            writer.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.rotation.eulerAngles.x);
+                            writer.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.rotation.eulerAngles.y);
+                            writer.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.rotation.eulerAngles.z);
                         }
+                        else
+                        {
+                            writer.WriteBool(false);
+                        }
+
+                        writer.WriteBool(false); //No payload data
+
+                        if (NetworkConfig.EnableNetworkVariable)
+                        {
+                            ConnectedClients[clientId].PlayerObject.WriteNetworkVariableData(buffer, clientPair.Key);
+                        }
+
+                        InternalMessageSender.Send(clientPair.Key, NetworkConstants.ADD_OBJECT, NetworkChannel.Internal, buffer);
                     }
                 }
             }

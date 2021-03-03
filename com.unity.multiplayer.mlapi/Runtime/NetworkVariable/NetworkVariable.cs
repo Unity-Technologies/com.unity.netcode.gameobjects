@@ -22,19 +22,16 @@ namespace MLAPI.NetworkVariable
         /// The last time the variable was written to locally
         /// </summary>
         public ushort LocalTick { get; internal set; }
-
         /// <summary>
         /// The last time the variable was written to remotely. Uses the remote timescale
         /// </summary>
         public ushort RemoteTick { get; internal set; }
-
         /// <summary>
         /// Delegate type for value changed event
         /// </summary>
         /// <param name="previousValue">The value before the change</param>
         /// <param name="newValue">The new value</param>
         public delegate void OnValueChangedDelegate(T previousValue, T newValue);
-
         /// <summary>
         /// The callback to be invoked when the value gets changed
         /// </summary>
@@ -139,7 +136,6 @@ namespace MLAPI.NetworkVariable
                     return Settings.ReadPermissionCallback(clientId);
                 }
             }
-
             return true;
         }
 

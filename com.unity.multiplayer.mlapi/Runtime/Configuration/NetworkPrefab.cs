@@ -31,6 +31,7 @@ namespace MLAPI.Configuration
                     {
                         NetworkLog.LogWarning($"{nameof(NetworkPrefab)} {Prefab.name} does not have a {nameof(NetworkObject)}");
                     }
+
                     return 0;
                 }
 

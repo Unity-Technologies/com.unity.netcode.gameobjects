@@ -255,11 +255,9 @@ namespace MLAPI
             }
 
             using (var buffer = PooledNetworkBuffer.Get())
+            using (var writer = PooledNetworkWriter.Get(buffer))
             {
-                using (var writer = PooledNetworkWriter.Get(buffer))
-                {
-                    writer.WriteUInt16Packed((ushort)networkObjects.Count);
-                }
+                writer.WriteUInt16Packed((ushort)networkObjects.Count);
 
                 for (int i = 0; i < networkObjects.Count; i++)
                 {
@@ -304,13 +302,11 @@ namespace MLAPI
             m_Observers.Remove(clientId);
 
             using (var buffer = PooledNetworkBuffer.Get())
+            using (var writer = PooledNetworkWriter.Get(buffer))
             {
-                using (var writer = PooledNetworkWriter.Get(buffer))
-                {
-                    writer.WriteUInt64Packed(NetworkObjectId);
+                writer.WriteUInt64Packed(NetworkObjectId);
 
-                    InternalMessageSender.Send(clientId, NetworkConstants.DESTROY_OBJECT, NetworkChannel.Internal, buffer);
-                }
+                InternalMessageSender.Send(clientId, NetworkConstants.DESTROY_OBJECT, NetworkChannel.Internal, buffer);
             }
         }
 
@@ -346,18 +342,16 @@ namespace MLAPI
             }
 
             using (var buffer = PooledNetworkBuffer.Get())
+            using (var writer = PooledNetworkWriter.Get(buffer))
             {
-                using (var writer = PooledNetworkWriter.Get(buffer))
+                writer.WriteUInt16Packed((ushort)networkObjects.Count);
+
+                for (int i = 0; i < networkObjects.Count; i++)
                 {
-                    writer.WriteUInt16Packed((ushort)networkObjects.Count);
+                    // Send destroy call
+                    networkObjects[i].m_Observers.Remove(clientId);
 
-                    for (int i = 0; i < networkObjects.Count; i++)
-                    {
-                        // Send destroy call
-                        networkObjects[i].m_Observers.Remove(clientId);
-
-                        writer.WriteUInt64Packed(networkObjects[i].NetworkObjectId);
-                    }
+                    writer.WriteUInt64Packed(networkObjects[i].NetworkObjectId);
                 }
 
                 InternalMessageSender.Send(clientId, NetworkConstants.DESTROY_OBJECTS, NetworkChannel.Internal, buffer);
@@ -574,6 +568,7 @@ namespace MLAPI
                 {
                     NetworkLog.LogError($"Behaviour index was out of bounds. Did you mess up the order of your {nameof(NetworkBehaviour)}s?");
                 }
+
                 return null;
             }
 

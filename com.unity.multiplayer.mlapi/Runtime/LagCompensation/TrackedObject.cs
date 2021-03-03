@@ -26,28 +26,12 @@ namespace MLAPI.LagCompensation
         /// <summary>
         /// Gets the average amount of time between the points in miliseconds
         /// </summary>
-        public float AvgTimeBetweenPointsMs
-        {
-            get
-            {
-                if (Framekeys == null || Framekeys.Count == 0) return 0;
-
-                return ((Framekeys.ElementAt(Framekeys.Count - 1) - Framekeys.ElementAt(0)) / Framekeys.Count) * 1000f;
-            }
-        }
+        public float AvgTimeBetweenPointsMs => Framekeys == null || Framekeys.Count == 0 ? 0 : ((Framekeys.ElementAt(Framekeys.Count - 1) - Framekeys.ElementAt(0)) / Framekeys.Count) * 1000f;
 
         /// <summary>
         /// Gets the total time history we have for this object
         /// </summary>
-        public float TotalTimeHistory
-        {
-            get
-            {
-                if (Framekeys == null) return 0;
-
-                return Framekeys.ElementAt(Framekeys.Count - 1) - Framekeys.ElementAt(0);
-            }
-        }
+        public float TotalTimeHistory => Framekeys == null ? 0 : Framekeys.ElementAt(Framekeys.Count - 1) - Framekeys.ElementAt(0);
 
         private int m_MaxPoints => (int)(NetworkManager.Singleton.NetworkConfig.SecondsHistory / (1f / NetworkManager.Singleton.NetworkConfig.EventTickrate));
 
@@ -85,7 +69,7 @@ namespace MLAPI.LagCompensation
             transform.rotation = m_SavedRotation;
         }
 
-        void Start()
+        private void Start()
         {
             Framekeys = new FixedQueue<float>(m_MaxPoints);
             Framekeys.Enqueue(0);
@@ -93,7 +77,7 @@ namespace MLAPI.LagCompensation
             LagCompensationManager.SimulationObjects.Add(this);
         }
 
-        void OnDestroy()
+        private void OnDestroy()
         {
             LagCompensationManager.SimulationObjects.Remove(this);
         }

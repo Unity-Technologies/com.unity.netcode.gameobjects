@@ -24,7 +24,9 @@ namespace MLAPI.Messaging
                 ProfilerStatManager.BytesSent.Record((int)buffer.Length);
                 PerformanceDataManager.Increment(ProfilerConstants.NumberBytesSent, (int)buffer.Length);
 
+#if !UNITY_2020_2_OR_LATER
                 NetworkProfiler.EndEvent();
+#endif
             }
         }
 
@@ -34,7 +36,9 @@ namespace MLAPI.Messaging
 
             using (var buffer = MessagePacker.WrapMessage(messageType, messageBuffer))
             {
+#if !UNITY_2020_2_OR_LATER
                 NetworkProfiler.StartEvent(TickType.Send, (uint)buffer.Length, networkChannel, NetworkConstants.MESSAGE_NAMES[messageType]);
+#endif
 
                 for (int i = 0; i < NetworkManager.Singleton.ConnectedClientsList.Count; i++)
                 {
@@ -45,7 +49,9 @@ namespace MLAPI.Messaging
                     PerformanceDataManager.Increment(ProfilerConstants.NumberBytesSent, (int)buffer.Length);
                 }
 
+#if !UNITY_2020_2_OR_LATER
                 NetworkProfiler.EndEvent();
+#endif
             }
         }
 
@@ -61,7 +67,9 @@ namespace MLAPI.Messaging
 
             using (var buffer = MessagePacker.WrapMessage(messageType, messageBuffer))
             {
+#if !UNITY_2020_2_OR_LATER
                 NetworkProfiler.StartEvent(TickType.Send, (uint)buffer.Length, networkChannel, NetworkConstants.MESSAGE_NAMES[messageType]);
+#endif
 
                 for (int i = 0; i < clientIds.Count; i++)
                 {
@@ -72,7 +80,9 @@ namespace MLAPI.Messaging
                     PerformanceDataManager.Increment(ProfilerConstants.NumberBytesSent, (int)buffer.Length);
                 }
 
+#if !UNITY_2020_2_OR_LATER
                 NetworkProfiler.EndEvent();
+#endif
             }
         }
 
@@ -82,7 +92,9 @@ namespace MLAPI.Messaging
 
             using (var buffer = MessagePacker.WrapMessage(messageType, messageBuffer))
             {
+#if !UNITY_2020_2_OR_LATER
                 NetworkProfiler.StartEvent(TickType.Send, (uint)buffer.Length, networkChannel, NetworkConstants.MESSAGE_NAMES[messageType]);
+#endif
 
                 for (int i = 0; i < NetworkManager.Singleton.ConnectedClientsList.Count; i++)
                 {
@@ -97,7 +109,9 @@ namespace MLAPI.Messaging
                     PerformanceDataManager.Increment(ProfilerConstants.NumberBytesSent, (int)buffer.Length);
                 }
 
+#if !UNITY_2020_2_OR_LATER
                 NetworkProfiler.EndEvent();
+#endif
             }
         }
     }

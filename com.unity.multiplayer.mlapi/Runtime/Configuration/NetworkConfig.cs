@@ -213,7 +213,6 @@ namespace MLAPI.Configuration
             using (var writer = PooledNetworkWriter.Get(buffer))
             {
                 writer.WriteUInt16Packed(config.ProtocolVersion);
-
                 writer.WriteUInt16Packed((ushort)config.RegisteredScenes.Count);
 
                 for (int i = 0; i < config.RegisteredScenes.Count; i++)

@@ -721,6 +721,7 @@ namespace MLAPI
                     // read the local network tick at which this variable was written.
                     // if this var was updated from our machine, this local tick will be locally valid
                     ushort localTick = reader.ReadUInt16Packed();
+
                     long readStartPos = stream.Position;
 
                     networkVariableList[i].ReadDelta(stream, IsServer, localTick, remoteTick);

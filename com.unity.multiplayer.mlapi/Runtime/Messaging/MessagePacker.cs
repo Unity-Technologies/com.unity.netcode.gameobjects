@@ -21,6 +21,7 @@ namespace MLAPI.Internal
                 }
 
                 messageType = inputHeaderReader.ReadByteDirect();
+
                 // The input stream is now ready to be read from. It's "safe" and has the correct position
                 return inputBuffer;
             }

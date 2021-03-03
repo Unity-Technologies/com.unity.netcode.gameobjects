@@ -9,8 +9,8 @@ namespace MLAPI.Serialization.Pooled
     /// </summary>
     public static class NetworkWriterPool
     {
-        private static byte s_CreatedWriters = 0;
-        private static readonly Queue<PooledNetworkWriter> k_Writers = new Queue<PooledNetworkWriter>();
+        private static byte createdWriters = 0;
+        private static readonly Queue<PooledNetworkWriter> writers = new Queue<PooledNetworkWriter>();
 
         /// <summary>
         /// Retrieves a PooledNetworkWriter
@@ -19,18 +19,18 @@ namespace MLAPI.Serialization.Pooled
         /// <returns>A PooledNetworkWriter</returns>
         public static PooledNetworkWriter GetWriter(Stream stream)
         {
-            if (k_Writers.Count == 0)
+            if (writers.Count == 0)
             {
-                if (s_CreatedWriters == 254)
+                if (createdWriters == 254)
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("255 writers have been created. Did you forget to dispose?");
                 }
-                else if (s_CreatedWriters < 255) s_CreatedWriters++;
+                else if (createdWriters < 255) createdWriters++;
 
                 return new PooledNetworkWriter(stream);
             }
 
-            PooledNetworkWriter writer = k_Writers.Dequeue();
+            PooledNetworkWriter writer = writers.Dequeue();
             writer.SetStream(stream);
 
             return writer;
@@ -42,7 +42,7 @@ namespace MLAPI.Serialization.Pooled
         /// <param name="writer">The writer to put in the pool</param>
         public static void PutBackInPool(PooledNetworkWriter writer)
         {
-            if (k_Writers.Count < 64) k_Writers.Enqueue(writer);
+            if (writers.Count < 64) writers.Enqueue(writer);
             else if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
             {
                 NetworkLog.LogInfo($"{nameof(NetworkWriterPool)} already has 64 queued. Throwing to GC. Did you forget to dispose?");
