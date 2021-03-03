@@ -66,14 +66,14 @@ namespace MLAPI
         {
             PooledNetworkWriter writer;
 
-            var rpcQueueContainer = MLAPI.NetworkManager.Singleton.RpcQueueContainer;
+            var rpcQueueContainer = NetworkManager.Singleton.RpcQueueContainer;
             var isUsingBatching = rpcQueueContainer.IsUsingBatching();
             var transportChannel = rpcDelivery == RpcDelivery.Reliable ? NetworkChannel.ReliableRpc : NetworkChannel.UnreliableRpc;
 
             if (IsHost)
             {
                 writer = rpcQueueContainer.BeginAddQueueItemToFrame(RpcQueueContainer.QueueItemType.ServerRpc, Time.realtimeSinceStartup, transportChannel,
-                    MLAPI.NetworkManager.Singleton.ServerClientId, null, RpcQueueHistoryFrame.QueueFrameType.Inbound, serverRpcParams.Send.UpdateStage);
+                    NetworkManager.Singleton.ServerClientId, null, RpcQueueHistoryFrame.QueueFrameType.Inbound, serverRpcParams.Send.UpdateStage);
 
                 if (!isUsingBatching)
                 {
@@ -83,7 +83,7 @@ namespace MLAPI
             else
             {
                 writer = rpcQueueContainer.BeginAddQueueItemToFrame(RpcQueueContainer.QueueItemType.ServerRpc, Time.realtimeSinceStartup, transportChannel,
-                    MLAPI.NetworkManager.Singleton.ServerClientId, null, RpcQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
+                    NetworkManager.Singleton.ServerClientId, null, RpcQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
                 if (!isUsingBatching)
                 {
                     writer.WriteByte(NetworkConstants.SERVER_RPC); // MessageType
@@ -109,7 +109,7 @@ namespace MLAPI
         {
             if (serializer == null) return;
 
-            var rpcQueueContainer = MLAPI.NetworkManager.Singleton.RpcQueueContainer;
+            var rpcQueueContainer = NetworkManager.Singleton.RpcQueueContainer;
             if (IsHost)
             {
                 rpcQueueContainer.EndAddQueueItemToFrame(serializer.Writer, RpcQueueHistoryFrame.QueueFrameType.Inbound, serverRpcParams.Send.UpdateStage);
@@ -133,7 +133,7 @@ namespace MLAPI
             PooledNetworkWriter writer;
 
             // This will start a new queue item entry and will then return the writer to the current frame's stream
-            var rpcQueueContainer = MLAPI.NetworkManager.Singleton.RpcQueueContainer;
+            var rpcQueueContainer = NetworkManager.Singleton.RpcQueueContainer;
             var isUsingBatching = rpcQueueContainer.IsUsingBatching();
             var transportChannel = rpcDelivery == RpcDelivery.Reliable ? NetworkChannel.ReliableRpc : NetworkChannel.UnreliableRpc;
 
@@ -152,7 +152,7 @@ namespace MLAPI
             {
                 //Always write to the next frame's inbound queue
                 writer = rpcQueueContainer.BeginAddQueueItemToFrame(RpcQueueContainer.QueueItemType.ClientRpc, Time.realtimeSinceStartup, transportChannel,
-                    MLAPI.NetworkManager.Singleton.ServerClientId, null, RpcQueueHistoryFrame.QueueFrameType.Inbound, clientRpcParams.Send.UpdateStage);
+                    NetworkManager.Singleton.ServerClientId, null, RpcQueueHistoryFrame.QueueFrameType.Inbound, clientRpcParams.Send.UpdateStage);
 
                 //Handle sending to the other clients, if so the above notes explain why this code is here (a temporary patch-fix)
                 if (ClientIds.Length > 1)
@@ -207,7 +207,7 @@ namespace MLAPI
         {
             if (serializer == null) return;
 
-            var rpcQueueContainer = MLAPI.NetworkManager.Singleton.RpcQueueContainer;
+            var rpcQueueContainer = NetworkManager.Singleton.RpcQueueContainer;
 
             if (IsHost)
             {
