@@ -619,7 +619,9 @@ namespace MLAPI
 
             networkTickSystem = null;
 
+#if !UNITY_2020_2_OR_LATER
             NetworkProfiler.Stop();
+#endif
             IsListening = false;
             IsServer = false;
             IsClient = false;
@@ -671,7 +673,9 @@ namespace MLAPI
 #endif
                     var IsLoopBack = false;
 
+#if !UNITY_2020_2_OR_LATER
                     NetworkProfiler.StartTick(TickType.Receive);
+#endif
 
                     //If we are in loopback mode, we don't need to touch the transport
                     if (!IsLoopBack)
@@ -690,7 +694,9 @@ namespace MLAPI
 
                     m_LastReceiveTickTime = NetworkTime;
 
+#if !UNITY_2020_2_OR_LATER
                     NetworkProfiler.EndTick();
+#endif
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                     s_ReceiveTick.End();
@@ -708,7 +714,7 @@ namespace MLAPI
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                     s_EventTick.Begin();
 #endif
-#if UNITY_EDITOR
+#if UNITY_EDITOR && !UNITY_2020_2_OR_LATER
                     NetworkProfiler.StartTick(TickType.Event);
 #endif
 
@@ -733,7 +739,7 @@ namespace MLAPI
                     {
                         m_LastEventTickTime = NetworkTime;
                     }
-#if UNITY_EDITOR
+#if UNITY_EDITOR && !UNITY_2020_2_OR_LATER
                     NetworkProfiler.EndTick();
 #endif
 
@@ -743,25 +749,25 @@ namespace MLAPI
                 }
                 else if (IsServer && m_EventOvershootCounter >= ((1f / NetworkConfig.EventTickrate)))
                 {
-#if UNITY_EDITOR
+#if UNITY_EDITOR && !UNITY_2020_2_OR_LATER
                     NetworkProfiler.StartTick(TickType.Event);
 #endif
                     //We run this one to compensate for previous update overshoots.
                     m_EventOvershootCounter -= (1f / NetworkConfig.EventTickrate);
                     LagCompensationManager.AddFrames();
-#if UNITY_EDITOR
+#if UNITY_EDITOR && !UNITY_2020_2_OR_LATER
                     NetworkProfiler.EndTick();
 #endif
                 }
 
                 if (IsServer && NetworkConfig.EnableTimeResync && NetworkTime - m_LastTimeSyncTime >= NetworkConfig.TimeResyncInterval)
                 {
-#if UNITY_EDITOR
+#if UNITY_EDITOR && !UNITY_2020_2_OR_LATER
                     NetworkProfiler.StartTick(TickType.Event);
 #endif
                     SyncTime();
                     m_LastTimeSyncTime = NetworkTime;
-#if UNITY_EDITOR
+#if UNITY_EDITOR && !UNITY_2020_2_OR_LATER
                     NetworkProfiler.EndTick();
 #endif
                 }
@@ -845,7 +851,9 @@ namespace MLAPI
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                     s_TransportConnect.Begin();
 #endif
+#if !UNITY_2020_2_OR_LATER
                     NetworkProfiler.StartEvent(TickType.Receive, (uint)payload.Count, networkChannel, "TRANSPORT_CONNECT");
+#endif
                     if (IsServer)
                     {
                         if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogInfo("Client Connected");
@@ -865,7 +873,9 @@ namespace MLAPI
                         StartCoroutine(ApprovalTimeout(clientId));
                     }
 
+#if !UNITY_2020_2_OR_LATER
                     NetworkProfiler.EndEvent();
+#endif
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                     s_TransportConnect.End();
 #endif
@@ -880,7 +890,9 @@ namespace MLAPI
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                     s_TransportDisconnect.Begin();
 #endif
+#if !UNITY_2020_2_OR_LATER
                     NetworkProfiler.StartEvent(TickType.Receive, 0, NetworkChannel.Internal, "TRANSPORT_DISCONNECT");
+#endif
 
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogInfo("Disconnect Event From " + clientId);
 
@@ -894,7 +906,10 @@ namespace MLAPI
 
                     if (OnClientDisconnectCallback != null)
                         OnClientDisconnectCallback.Invoke(clientId);
+
+#if !UNITY_2020_2_OR_LATER
                     NetworkProfiler.EndEvent();
+#endif
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                     s_TransportDisconnect.End();
 #endif
@@ -931,7 +946,10 @@ namespace MLAPI
                 }
 
                 uint headerByteSize = (uint)Arithmetic.VarIntSize(messageType);
+
+#if !UNITY_2020_2_OR_LATER
                 NetworkProfiler.StartEvent(TickType.Receive, (uint)(data.Count - headerByteSize), networkChannel, messageType);
+#endif
 
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogInfo("Data Header: messageType=" + messageType);
 
@@ -1062,7 +1080,9 @@ namespace MLAPI
 
                 #endregion
 
+#if !UNITY_2020_2_OR_LATER
                 NetworkProfiler.EndEvent();
+#endif
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleIncomingData.End();
