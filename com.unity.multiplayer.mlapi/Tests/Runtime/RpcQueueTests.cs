@@ -19,6 +19,18 @@ namespace MLAPI.RuntimeTests
     {
         private NetworkManager m_NetworkManager;
 
+        [UnitySetUp]
+        public IEnumerator SetUp()
+        {
+            yield return new EnterPlayMode();
+        }
+
+        [UnityTearDown]
+        public IEnumerator TearDown()
+        {
+            yield return new ExitPlayMode();
+        }
+
         /// <summary>
         /// Tests the egress and ingress RPC queue functionality
         /// ** This does not include any of the MLAPI to Transport code **
