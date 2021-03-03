@@ -6,15 +6,15 @@ using MLAPI.Spawning;
 namespace MLAPI_Examples
 {
     // Features example calls for things often needed for things like Game managers
-    public class ManagerExamples : NetworkedBehaviour
+    public class ManagerExamples : NetworkBehaviour
     {
-        public NetworkedObject GetPlayerGameObject(ulong clientId)
+        public NetworkObject GetPlayerGameObject(ulong clientId)
         {
             return SpawnManager.GetPlayerObject(clientId);
         }
         
         // Only runs on host and client
-        public NetworkedObject GetLocalPlayerObject()
+        public NetworkObject GetLocalPlayerObject()
         {
             return SpawnManager.GetLocalPlayerObject();
         }
@@ -34,9 +34,9 @@ namespace MLAPI_Examples
 #endif
 
         // Contains player object, owned objects, cryptography keys and more
-        public NetworkedClient GetClient(ulong clientId)
+        public NetworkClient GetClient(ulong clientId)
         {
-            return NetworkingManager.Singleton.ConnectedClients[clientId];
+            return NetworkManager.Singleton.ConnectedClients[clientId];
         }
     }
 }

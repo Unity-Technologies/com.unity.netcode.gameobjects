@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace MLAPI_Examples
 {
-    public class BasicRpcPositionSync : NetworkedBehaviour
+    public class BasicRpcPositionSync : NetworkBehaviour
     {
         // Send position no more than 20 times a second
         public int SendsPerSecond = 20;

@@ -1,7 +1,7 @@
+#pragma warning disable 618
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using MLAPI.Exceptions;
 using MLAPI.Logging;
 using MLAPI.Profiling;
@@ -10,7 +10,7 @@ using UnityEngine.Networking;
 
 namespace MLAPI.Transports.UNET
 {
-    public class UnetTransport : Transport, ITransportProfilerData
+    public class UnetTransport : NetworkTransport, ITransportProfilerData
     {
         public enum SendMode
         {
@@ -56,8 +56,8 @@ namespace MLAPI.Transports.UNET
         private WeakReference temporaryBufferReference;
 
         // Lookup / translation
-        private readonly Dictionary<Channel, int> channelNameToId = new Dictionary<Channel, int>();
-        private readonly Dictionary<int, Channel> channelIdToName = new Dictionary<int, Channel>();
+        private readonly Dictionary<NetworkChannel, int> channelNameToId = new Dictionary<NetworkChannel, int>();
+        private readonly Dictionary<int, NetworkChannel> channelIdToName = new Dictionary<int, NetworkChannel>();
         private int serverConnectionId;
         private int serverHostId;
 
@@ -66,19 +66,19 @@ namespace MLAPI.Transports.UNET
 
         protected void LateUpdate()
         {
-            if (NetworkTransport.IsStarted  && MessageSendMode == SendMode.Queued) {
-                if (NetworkingManager.Singleton.IsServer) {
-                    for (int i = 0; i < NetworkingManager.Singleton.ConnectedClientsList.Count; i++) {
-                        SendQueued(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId);
+            if (UnityEngine.Networking.NetworkTransport.IsStarted  && MessageSendMode == SendMode.Queued) {
+                if (NetworkManager.Singleton.IsServer) {
+                    for (int i = 0; i < NetworkManager.Singleton.ConnectedClientsList.Count; i++) {
+                        SendQueued(NetworkManager.Singleton.ConnectedClientsList[i].ClientId);
                     }
                 }
                 else {
-                    SendQueued(NetworkingManager.Singleton.LocalClientId);
+                    SendQueued(NetworkManager.Singleton.LocalClientId);
                 }
             }
         }
 
-        public override void Send(ulong clientId, ArraySegment<byte> data, Channel channel)
+        public override void Send(ulong clientId, ArraySegment<byte> data, NetworkChannel networkChannel)
         {
             if (profilerEnabled)
             {
@@ -89,13 +89,13 @@ namespace MLAPI.Transports.UNET
 
             int channelId = 0;
 
-            if (channelNameToId.ContainsKey(channel))
+            if (channelNameToId.ContainsKey(networkChannel))
             {
-                channelId = channelNameToId[channel];
+                channelId = channelNameToId[networkChannel];
             }
             else
             {
-                channelId = channelNameToId[Channel.Internal];
+                channelId = channelNameToId[NetworkChannel.Internal];
             }
 
             byte[] buffer;
@@ -150,7 +150,7 @@ namespace MLAPI.Transports.UNET
             RelayTransport.SendQueuedMessages(hostId, connectionId, out byte error);
         }
 
-        public override NetEventType PollEvent(out ulong clientId, out Channel channel, out ArraySegment<byte> payload, out float receiveTime)
+        public override NetworkEvent PollEvent(out ulong clientId, out NetworkChannel networkChannel, out ArraySegment<byte> payload, out float receiveTime)
         {
             NetworkEventType eventType = RelayTransport.Receive(out int hostId, out int connectionId, out int channelId, messageBuffer, messageBuffer.Length, out int receivedSize, out byte error);
 
@@ -184,11 +184,11 @@ namespace MLAPI.Transports.UNET
 
             if (channelIdToName.ContainsKey(channelId))
             {
-                channel = channelIdToName[channelId];
+                networkChannel = channelIdToName[channelId];
             }
             else
             {
-                channel = Channel.Internal;
+                networkChannel = NetworkChannel.Internal;
             }
 
             if (connectTask != null && hostId == serverHostId && connectionId == serverConnectionId)
@@ -231,18 +231,18 @@ namespace MLAPI.Transports.UNET
             switch (eventType)
             {
                 case NetworkEventType.DataEvent:
-                    return NetEventType.Data;
+                    return NetworkEvent.Data;
                 case NetworkEventType.ConnectEvent:
-                    return NetEventType.Connect;
+                    return NetworkEvent.Connect;
                 case NetworkEventType.DisconnectEvent:
-                    return NetEventType.Disconnect;
+                    return NetworkEvent.Disconnect;
                 case NetworkEventType.Nothing:
-                    return NetEventType.Nothing;
+                    return NetworkEvent.Nothing;
                 case NetworkEventType.BroadcastEvent:
-                    return NetEventType.Nothing;
+                    return NetworkEvent.Nothing;
             }
 
-            return NetEventType.Nothing;
+            return NetworkEvent.Nothing;
         }
 
         public override SocketTasks StartClient()
@@ -284,7 +284,7 @@ namespace MLAPI.Transports.UNET
             {
                 if (!UseMLAPIRelay)
                 {
-                    int websocketHostId = NetworkTransport.AddWebsocketHost(topology, ServerWebsocketListenPort);
+                    int websocketHostId = UnityEngine.Networking.NetworkTransport.AddWebsocketHost(topology, ServerWebsocketListenPort);
                 }
                 else
                 {
@@ -320,7 +320,7 @@ namespace MLAPI.Transports.UNET
             }
             else
             {
-                return (ulong)NetworkTransport.GetCurrentRTT((int) hostId, (int) connectionId, out byte error);
+                return (ulong)UnityEngine.Networking.NetworkTransport.GetCurrentRTT((int) hostId, (int) connectionId, out byte error);
             }
         }
 
@@ -328,7 +328,7 @@ namespace MLAPI.Transports.UNET
         {
             channelIdToName.Clear();
             channelNameToId.Clear();
-            NetworkTransport.Shutdown();
+            UnityEngine.Networking.NetworkTransport.Shutdown();
         }
 
         public override void Init()
@@ -339,7 +339,7 @@ namespace MLAPI.Transports.UNET
 
             k_TransportProfilerData.Clear();
 
-            NetworkTransport.Init();
+            UnityEngine.Networking.NetworkTransport.Init();
         }
 
         public ulong GetMLAPIClientId(byte hostId, ushort connectionId, bool isServer)
@@ -375,10 +375,10 @@ namespace MLAPI.Transports.UNET
             // MLAPI built-in channels
             for (int i = 0; i < MLAPI_CHANNELS.Length; i++)
             {
-                int channelId = AddMLAPIChannel(MLAPI_CHANNELS[i].Type, config);
+                int channelId = AddMLAPIChannel(MLAPI_CHANNELS[i].Delivery, config);
 
-                channelIdToName.Add(channelId, MLAPI_CHANNELS[i].Id);
-                channelNameToId.Add(MLAPI_CHANNELS[i].Id, channelId);
+                channelIdToName.Add(channelId, MLAPI_CHANNELS[i].Channel);
+                channelNameToId.Add(MLAPI_CHANNELS[i].Channel, channelId);
             }
 
             // Custom user-added channels
@@ -399,19 +399,19 @@ namespace MLAPI.Transports.UNET
             return config;
         }
 
-        public int AddMLAPIChannel(ChannelType type, ConnectionConfig config)
+        public int AddMLAPIChannel(NetworkDelivery type, ConnectionConfig config)
         {
             switch (type)
             {
-                case ChannelType.Unreliable:
+                case NetworkDelivery.Unreliable:
                     return config.AddChannel(QosType.Unreliable);
-                case ChannelType.Reliable:
+                case NetworkDelivery.Reliable:
                     return config.AddChannel(QosType.Reliable);
-                case ChannelType.ReliableSequenced:
+                case NetworkDelivery.ReliableSequenced:
                     return config.AddChannel(QosType.ReliableSequenced);
-                case ChannelType.ReliableFragmentedSequenced:
+                case NetworkDelivery.ReliableFragmentedSequenced:
                     return config.AddChannel(QosType.ReliableFragmentedSequenced);
-                case ChannelType.UnreliableSequenced:
+                case NetworkDelivery.UnreliableSequenced:
                     return config.AddChannel(QosType.UnreliableSequenced);
             }
 
@@ -468,3 +468,4 @@ namespace MLAPI.Transports.UNET
     }
 }
 #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
+#pragma warning restore 618

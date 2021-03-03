@@ -1,6 +1,5 @@
 using MLAPI.Configuration;
 using MLAPI.Messaging;
-using MLAPI.Security;
 using MLAPI.Serialization.Pooled;
 using MLAPI.Transports;
 using UnityEngine;
@@ -20,10 +19,10 @@ namespace MLAPI.Logging
         {
             get
             {
-                if (NetworkingManager.Singleton == null)
+                if (NetworkManager.Singleton == null)
                     return LogLevel.Normal;
                 else
-                    return NetworkingManager.Singleton.LogLevel;
+                    return NetworkManager.Singleton.LogLevel;
             }
         }
 
@@ -51,7 +50,7 @@ namespace MLAPI.Logging
         private static void LogServer(string message, LogType logType)
         {
             // Get the sender of the local log
-            ulong localId = NetworkingManager.Singleton != null ? NetworkingManager.Singleton.LocalClientId : 0;
+            ulong localId = NetworkManager.Singleton != null ? NetworkManager.Singleton.LocalClientId : 0;
 
             switch (logType)
             {
@@ -66,17 +65,17 @@ namespace MLAPI.Logging
                     break;
             }
 
-            if (NetworkingManager.Singleton != null && !NetworkingManager.Singleton.IsServer && NetworkingManager.Singleton.NetworkConfig.EnableNetworkLogs)
+            if (NetworkManager.Singleton != null && !NetworkManager.Singleton.IsServer && NetworkManager.Singleton.NetworkConfig.EnableNetworkLogs)
             {
-                using (PooledBitStream stream = PooledBitStream.Get())
+                using (PooledNetworkBuffer buffer = PooledNetworkBuffer.Get())
                 {
-                    using (PooledBitWriter writer = PooledBitWriter.Get(stream))
+                    using (PooledNetworkWriter writer = PooledNetworkWriter.Get(buffer))
                     {
                         writer.WriteByte((byte)logType);
 
                         writer.WriteStringPacked(message);
 
-                        InternalMessageSender.Send(NetworkingManager.Singleton.ServerClientId, MLAPIConstants.MLAPI_SERVER_LOG, Channel.Internal, stream, SecuritySendFlags.None);
+                        InternalMessageSender.Send(NetworkManager.Singleton.ServerClientId, NetworkConstants.SERVER_LOG, NetworkChannel.Internal, buffer);
                     }
                 }
             }

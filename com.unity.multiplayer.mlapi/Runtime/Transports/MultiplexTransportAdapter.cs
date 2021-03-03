@@ -8,7 +8,7 @@ namespace MLAPI.Transports.Multiplex
     /// <summary>
     /// Multiplex transport adapter.
     /// </summary>
-    public class MultiplexTransportAdapter : Transport
+    public class MultiplexTransportAdapter : NetworkTransport
     {
         /// <summary>
         /// The method to use to distribute the transport connectionIds in a fixed size 64 bit integer.
@@ -45,7 +45,7 @@ namespace MLAPI.Transports.Multiplex
 
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
         public ConnectionIdSpreadMethod SpreadMethod = ConnectionIdSpreadMethod.MakeRoomLastBits;
-        public Transport[] Transports = new Transport[0];
+        public NetworkTransport[] Transports = new NetworkTransport[0];
         public override ulong ServerClientId => 0;
 
         private byte _lastProcessedTransportIndex;
@@ -82,7 +82,7 @@ namespace MLAPI.Transports.Multiplex
             }
         }
 
-        public override NetEventType PollEvent(out ulong clientId, out Channel channel, out ArraySegment<byte> payload, out float receiveTime)
+        public override NetworkEvent PollEvent(out ulong clientId, out NetworkChannel networkChannel, out ArraySegment<byte> payload, out float receiveTime)
         {
             if (_lastProcessedTransportIndex >= Transports.Length - 1)
                 _lastProcessedTransportIndex = 0;
@@ -93,30 +93,30 @@ namespace MLAPI.Transports.Multiplex
 
                 if (Transports[i].IsSupported)
                 {
-                    NetEventType @eventType = Transports[i].PollEvent(out ulong connectionId, out channel, out payload, out receiveTime);
+                    NetworkEvent networkEvent = Transports[i].PollEvent(out ulong connectionId, out networkChannel, out payload, out receiveTime);
 
-                    if (@eventType != NetEventType.Nothing)
+                    if (networkEvent != NetworkEvent.Nothing)
                     {
                         clientId = GetMLAPIClientId(i, connectionId, false);
 
-                        return @eventType;
+                        return networkEvent;
                     }
                 }
             }
 
             clientId = 0;
-            channel = 0;
+            networkChannel = 0;
             payload = new ArraySegment<byte>();
             receiveTime = 0;
 
-            return NetEventType.Nothing;
+            return NetworkEvent.Nothing;
         }
 
-        public override void Send(ulong clientId, ArraySegment<byte> data, Channel channel)
+        public override void Send(ulong clientId, ArraySegment<byte> data, NetworkChannel networkChannel)
         {
             GetMultiplexTransportDetails(clientId, out byte transportId, out ulong connectionId);
 
-            Transports[transportId].Send(connectionId, data, channel);
+            Transports[transportId].Send(connectionId, data, networkChannel);
         }
 
         public override void Shutdown()
