@@ -164,7 +164,7 @@ namespace MLAPI.RuntimeTests
         /// </summary>
         /// <param name="parameters">server rpc parameters</param>
         [ServerRpc]
-        private void PingMySelfServerRPC(int currentCount, ServerRpcParams parameters)
+        private void PingMySelfServerRPC(int currentCount, ServerRpcParams parameters = default)
         {
             Debug.Log("[HostClient][ServerRpc][" + currentCount.ToString() + "] invoked during the " + parameters.Receive.UpdateStage.ToString() + " stage.");
             m_Clientparams.Send.UpdateStage = parameters.Receive.UpdateStage;
@@ -177,7 +177,7 @@ namespace MLAPI.RuntimeTests
         /// </summary>
         /// <param name="parameters">client rpc parameters</param>
         [ClientRpc]
-        private void PingMySelfClientRpc(int currentCount, ClientRpcParams parameters)
+        private void PingMySelfClientRpc(int currentCount, ClientRpcParams parameters = default)
         {
             m_ClientStagesReceived.Add(parameters.Receive.UpdateStage);
             Debug.Log("[HostServer][ClientRpc][" + currentCount.ToString() + "]  invoked during the " + parameters.Receive.UpdateStage.ToString() + " stage. (previous output line should confirm this)");

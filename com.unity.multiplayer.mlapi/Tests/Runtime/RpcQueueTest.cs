@@ -74,10 +74,6 @@ namespace MLAPI.RuntimeTests
                     //Start as host mode as loopback only works in hostmode
                     NetworkingManager.Singleton.StartHost();
 
-
-                    //Wait for 100ms
-                    yield return new WaitForSeconds(0.1f);
-
                     Debug.Log("Host Started.");
 
                     if (RpcPipelineTestComponent != null)
@@ -89,8 +85,8 @@ namespace MLAPI.RuntimeTests
                         //Wait for the rpc pipeline test to complete or if we exceeded the maximum iterations bail
                         while (!testsAreComplete && !exceededMaximumStageIterations)
                         {
-                            //Wait for 500ms
-                            yield return new WaitForSeconds(0.5f);
+                            //Wait for 20ms
+                            yield return new WaitForSeconds(0.02f);
 
                             testsAreComplete = RpcPipelineTestComponent.IsTestComplete();
                             exceededMaximumStageIterations = RpcPipelineTestComponent.ExceededMaxIterations();
