@@ -1,8 +1,8 @@
 using MLAPI;
-using MLAPI.NetworkedVar;
+using MLAPI.NetworkVariable;
 using UnityEngine;
 
-public class PlayerControl : NetworkedBehaviour
+public class PlayerControl : NetworkBehaviour
 {
     [Header("Movement Settings")]
     [SerializeField]
@@ -20,7 +20,7 @@ public class PlayerControl : NetworkedBehaviour
     [Header("Player Settings")]
     [SerializeField]
     //Example use case scenario for a slowly ( once per second ) updated networked variable
-    NetworkedVarString m_PlayerName = new NetworkedVarString(new NetworkedVarSettings(){ SendTickrate = 1.0f } ,"Player_Name");
+    NetworkVariableString m_PlayerName = new NetworkVariableString(new NetworkVariableSettings(){ SendTickrate = 1.0f } ,"Player_Name");
 
     /// <summary>
     /// m_Health
@@ -31,7 +31,7 @@ public class PlayerControl : NetworkedBehaviour
     /// </summary>
     [SerializeField]
     //Example use case scenario for an immediate update server-side only (athoritative server) write capabilities
-    NetworkedVarFloat m_Health = new NetworkedVarFloat(new NetworkedVarSettings(){ SendTickrate = 0.0f, WritePermission = NetworkedVarPermission.ServerOnly } ,100.0f);
+    NetworkVariableFloat m_Health = new NetworkVariableFloat(new NetworkVariableSettings(){ SendTickrate = 0.0f, WritePermission = NetworkVariablePermission.ServerOnly } ,100.0f);
 
     /// <summary>
     /// m_MoveX
@@ -40,7 +40,7 @@ public class PlayerControl : NetworkedBehaviour
     /// Used to send the player's X-Axis input value
     /// Everyone but the owner has read only access
     /// </summary>
-    private NetworkedVarFloat m_MoveX = new NetworkedVarFloat(new NetworkedVarSettings(){ SendTickrate = 0.100f, WritePermission = NetworkedVarPermission.OwnerOnly } , 0);
+    private NetworkVariableFloat m_MoveX = new NetworkVariableFloat(new NetworkVariableSettings(){ SendTickrate = 0.100f, WritePermission = NetworkVariablePermission.OwnerOnly } , 0);
 
     /// <summary>
     /// m_MoveY
@@ -49,7 +49,7 @@ public class PlayerControl : NetworkedBehaviour
     /// Used to send the player's Y-Axis input value
     /// Everyone but the owner has read only access
     /// </summary>
-    private NetworkedVarFloat m_MoveY = new NetworkedVarFloat(new NetworkedVarSettings(){ SendTickrate = 0.100f, WritePermission = NetworkedVarPermission.OwnerOnly } , 0);
+    private NetworkVariableFloat m_MoveY = new NetworkVariableFloat(new NetworkVariableSettings(){ SendTickrate = 0.100f, WritePermission = NetworkVariablePermission.OwnerOnly } , 0);
 
     /// <summary>
     /// m_MoveZ
@@ -58,7 +58,7 @@ public class PlayerControl : NetworkedBehaviour
     /// Used to send the player's Z-Axis input value
     /// Everyone but the owner has read only access
     /// </summary>
-    private NetworkedVarFloat m_MoveZ = new NetworkedVarFloat(new NetworkedVarSettings(){ SendTickrate = 0.100f, WritePermission = NetworkedVarPermission.OwnerOnly } , 0);
+    private NetworkVariableFloat m_MoveZ = new NetworkVariableFloat(new NetworkVariableSettings(){ SendTickrate = 0.100f, WritePermission = NetworkVariablePermission.OwnerOnly } , 0);
 
 
     private bool m_HasGameStarted = false;

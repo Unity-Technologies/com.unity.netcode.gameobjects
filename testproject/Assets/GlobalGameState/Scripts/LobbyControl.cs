@@ -4,7 +4,7 @@ using MLAPI.Messaging;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class LobbyControl : NetworkedBehaviour
+public class LobbyControl : NetworkBehaviour
 {
     [SerializeField]
     private bool m_LaunchAsHostInEditor;
@@ -29,7 +29,7 @@ public class LobbyControl : NetworkedBehaviour
     {
         m_ClientsInLobby = new Dictionary<ulong, bool>();
 #if UNITY_EDITOR
-        if ( NetworkingManager.Singleton == null)
+        if ( NetworkManager.Singleton == null)
         {
             GlobalGameState.s_EditorLaunchingAsHost = m_LaunchAsHostInEditor;
             //This will automatically launch the MLAPIBootStrap and then transition directly to the scene this control is contained within (for easy development of scenes)
@@ -38,12 +38,12 @@ public class LobbyControl : NetworkedBehaviour
         }
 #endif
 
-        if (NetworkingManager.Singleton.IsListening)
+        if (NetworkManager.Singleton.IsListening)
         {
             //Always add ourselves to the list at first
-            m_ClientsInLobby.Add(NetworkingManager.Singleton.LocalClientId, false);
+            m_ClientsInLobby.Add(NetworkManager.Singleton.LocalClientId, false);
 
-            NetworkingManager.Singleton.OnClientConnectedCallback += OnClientConnectedCallback;
+            NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnectedCallback;
             //If we are hosting, then handle the server side for detecting when clients have connected
             //and when their lobby scenes are finished loading.
             if (IsServer)
@@ -70,12 +70,12 @@ public class LobbyControl : NetworkedBehaviour
 
     /// <summary>
     /// FreezeAndHidePlayers
-    /// This parses through all local NetworkedObjects, freezes (pauses) them, and "hides" them.
+    /// This parses through all local NetworkObjects, freezes (pauses) them, and "hides" them.
     /// </summary>
     void FreezeAndHidePlayers()
     {
-        NetworkedObject[] NetoworkedObjects = GameObject.FindObjectsOfType<NetworkedObject>();
-        foreach (NetworkedObject networkedObject in NetoworkedObjects)
+        NetworkObject[] NetoworkedObjects = GameObject.FindObjectsOfType<NetworkObject>();
+        foreach (NetworkObject networkedObject in NetoworkedObjects)
         {
             RandomPlayerMover PlayerMover = networkedObject.GetComponent<RandomPlayerMover>();
             if (PlayerMover)
@@ -141,7 +141,7 @@ public class LobbyControl : NetworkedBehaviour
         foreach(KeyValuePair<ulong,bool> clientLobbyStatus in m_ClientsInLobby)
         {
             SendClientReadyStatusUpdatesClientRpc(clientLobbyStatus.Key, clientLobbyStatus.Value);
-            if (!NetworkingManager.Singleton.ConnectedClients.ContainsKey(clientLobbyStatus.Key))
+            if (!NetworkManager.Singleton.ConnectedClients.ContainsKey(clientLobbyStatus.Key))
             {
                 //If some clients are still loading into the lobby scene then this is false
                 m_AllPlayersInLobby = false;
@@ -188,7 +188,7 @@ public class LobbyControl : NetworkedBehaviour
         }
         else
         {
-            OnClientIsReadyServerRpc(NetworkingManager.Singleton.LocalClientId, false);
+            OnClientIsReadyServerRpc(NetworkManager.Singleton.LocalClientId, false);
         }
         GenerateUserStatsForLobby();
     }
@@ -240,7 +240,7 @@ public class LobbyControl : NetworkedBehaviour
             if (AllPlayersAreReady)
             {
                 //Remove our client connected callback
-                NetworkingManager.Singleton.OnClientConnectedCallback -= OnClientConnectedCallback;
+                NetworkManager.Singleton.OnClientConnectedCallback -= OnClientConnectedCallback;
 
                 //Remove our scene loaded callback
                 GlobalGameState.Singleton.ClientLoadedScene -= ClientLoadedScene;
@@ -259,13 +259,13 @@ public class LobbyControl : NetworkedBehaviour
     {
         if (IsServer)
         {
-            m_ClientsInLobby[NetworkingManager.Singleton.ServerClientId] = !m_ClientsInLobby[NetworkingManager.Singleton.ServerClientId];
+            m_ClientsInLobby[NetworkManager.Singleton.ServerClientId] = !m_ClientsInLobby[NetworkManager.Singleton.ServerClientId];
             UpdateAndCheckPlayersInLobby();
         }
         else
         {
-            m_ClientsInLobby[NetworkingManager.Singleton.LocalClientId] =  !m_ClientsInLobby[NetworkingManager.Singleton.LocalClientId];
-            OnClientIsReadyServerRpc(NetworkingManager.Singleton.LocalClientId,m_ClientsInLobby[NetworkingManager.Singleton.LocalClientId]);
+            m_ClientsInLobby[NetworkManager.Singleton.LocalClientId] =  !m_ClientsInLobby[NetworkManager.Singleton.LocalClientId];
+            OnClientIsReadyServerRpc(NetworkManager.Singleton.LocalClientId,m_ClientsInLobby[NetworkManager.Singleton.LocalClientId]);
         }
         GenerateUserStatsForLobby();
     }
@@ -302,9 +302,9 @@ public class LobbyControl : NetworkedBehaviour
     /// </summary>
     private void OnDestroy()
     {
-        if (NetworkingManager.Singleton != null)
+        if (NetworkManager.Singleton != null)
         {
-            NetworkingManager.Singleton.OnClientConnectedCallback -= OnClientConnectedCallback;
+            NetworkManager.Singleton.OnClientConnectedCallback -= OnClientConnectedCallback;
             if (IsServer)
             {
                 GlobalGameState.Singleton.ClientLoadedScene -= ClientLoadedScene;

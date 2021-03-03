@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using MLAPI;
 
-public class NextLevelButtonControl : NetworkedBehaviour
+public class NextLevelButtonControl : NetworkBehaviour
 {
     [SerializeField]
     Button m_NextLevelButton;

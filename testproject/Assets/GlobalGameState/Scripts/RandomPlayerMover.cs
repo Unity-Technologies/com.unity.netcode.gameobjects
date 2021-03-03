@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using MLAPI;
 
-public class RandomPlayerMover : NetworkedBehaviour
+public class RandomPlayerMover : NetworkBehaviour
 {
     [Tooltip("How fast the player will move.")]
     [Range(0.5f,20.0f)]
@@ -50,7 +50,7 @@ public class RandomPlayerMover : NetworkedBehaviour
     {
         if (m_MeshRenderer)
         {
-            m_MeshRenderer.material.color = s_PlayerColors[ NetworkedObject.OwnerClientId % System.Convert.ToUInt64(s_PlayerColors.Length)];
+            m_MeshRenderer.material.color = s_PlayerColors[ NetworkObject.OwnerClientId % System.Convert.ToUInt64(s_PlayerColors.Length)];
         }
     }
 

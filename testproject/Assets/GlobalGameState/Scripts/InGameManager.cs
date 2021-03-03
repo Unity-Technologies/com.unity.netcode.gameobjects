@@ -2,9 +2,9 @@ using UnityEngine;
 using UnityEngine.UI;
 using MLAPI;
 using MLAPI.Spawning;
-using MLAPI.NetworkedVar;
+using MLAPI.NetworkVariable;
 
-public class InGameManager : NetworkedBehaviour
+public class InGameManager : NetworkBehaviour
 {
     [SerializeField]
     private bool m_LaunchAsHostInEditor;
@@ -43,7 +43,7 @@ public class InGameManager : NetworkedBehaviour
     /// Used for a state machine that updates immediately upon the value changing.
     /// Clients only have read access to the current GlobalGameState.
     /// </summary>
-    private NetworkedVar<InGameStates> m_InGameState = new NetworkedVar<InGameStates>(new NetworkedVarSettings(){ WritePermission = NetworkedVarPermission.ServerOnly } , InGameStates.Waiting);
+    private NetworkVariable<InGameStates> m_InGameState = new NetworkVariable<InGameStates>(new NetworkVariableSettings(){ WritePermission = NetworkVariablePermission.ServerOnly } , InGameStates.Waiting);
 
     /// <summary>
     /// m_ExitingTime
@@ -53,7 +53,7 @@ public class InGameManager : NetworkedBehaviour
     /// Clients only have read access to the current GlobalGameState.
     /// !!NOTE!! Leave the initial value > 0 to assure all clients have received the first full exiting timer update from the server
     /// </summary>
-    private NetworkedVarFloat m_ExitingTime = new NetworkedVarFloat(new NetworkedVarSettings(){ WritePermission = NetworkedVarPermission.ServerOnly, ReadPermission = NetworkedVarPermission.Everyone } , 1.0f);
+    private NetworkVariableFloat m_ExitingTime = new NetworkVariableFloat(new NetworkVariableSettings(){ WritePermission = NetworkVariablePermission.ServerOnly, ReadPermission = NetworkVariablePermission.Everyone } , 1.0f);
 
     /// <summary>
     /// OnInGameStateChangedDelegateHandler
@@ -66,12 +66,12 @@ public class InGameManager : NetworkedBehaviour
     public event OnInGameStateChangedDelegateHandler OnInGameStateChanged;
 
     //The local player
-    private NetworkedObject m_LocalPlayerObject;
+    private NetworkObject m_LocalPlayerObject;
 
     private void Awake()
     {
 #if UNITY_EDITOR
-        if ( NetworkingManager.Singleton == null)
+        if ( NetworkManager.Singleton == null)
         {
             GlobalGameState.s_EditorLaunchingAsHost = m_LaunchAsHostInEditor;
             //This will automatically launch the MLAPIBootStrap and then transition directly to the scene this control is contained within (for easy development of scenes)
@@ -79,12 +79,12 @@ public class InGameManager : NetworkedBehaviour
             return;
         }
 #endif
-        if (NetworkingManager.Singleton.IsListening)
+        if (NetworkManager.Singleton.IsListening)
         {
             if (IsServer)
             {
                 GlobalGameState.Singleton.allPlayersLoadedScene += AllPlayersLoadedScene;
-                NetworkingManager.Singleton.OnClientDisconnectCallback += OnClientDisconnectCallback;
+                NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnectCallback;
             }
 
             m_InGameState.OnValueChanged += InGameStateValueChanged;
@@ -123,13 +123,13 @@ public class InGameManager : NetworkedBehaviour
 
     /// <summary>
     /// SetAndInitializeLocalPlayer
-    /// SpawnManager.SpawnedObjects Use Case Scenario:  Parsing through currently spawned NetworkedObjects
+    /// SpawnManager.SpawnedObjects Use Case Scenario:  Parsing through currently spawned NetworkObjects
     /// Sets our local player, assigns the local main camera instanve to the local player, and
-    /// registers all NetworkedObjects with a RandomPlayerMover component for In-Game state changes
+    /// registers all NetworkObjects with a RandomPlayerMover component for In-Game state changes
     /// </summary>
     void SetAndInitializeLocalPlayer()
     {
-        foreach(NetworkedObject networkedObject in SpawnManager.SpawnedObjects.Values)
+        foreach(NetworkObject networkedObject in NetworkSpawnManager.SpawnedObjects.Values)
         {
             RandomPlayerMover PlayerMover = networkedObject.GetComponent<RandomPlayerMover>();
 
@@ -147,14 +147,14 @@ public class InGameManager : NetworkedBehaviour
 
     /// <summary>
     /// FreezeAndShowPlayers
-    /// SpawnManager.SpawnedObjects Use Case Scenario:  Parsing through currently spawned NetworkedObjects
+    /// SpawnManager.SpawnedObjects Use Case Scenario:  Parsing through currently spawned NetworkObjects
     /// This is to handle pausing and unpausing primarily the players' networked object clones not owned by the local player
     /// </summary>
     /// <param name="shouldFreeze">should we freeze everyone or un-freeze them?</param>
     void FreezeAndShowPlayers(bool shouldFreeze = false)
     {
 
-        foreach(NetworkedObject networkedObject in SpawnManager.SpawnedObjects.Values)
+        foreach(NetworkObject networkedObject in NetworkSpawnManager.SpawnedObjects.Values)
         {
             RandomPlayerMover PlayerMover = networkedObject.GetComponent<RandomPlayerMover>();
 
@@ -245,7 +245,7 @@ public class InGameManager : NetworkedBehaviour
                     if (IsServer)
                     {
                         //As long as there are players, let's let them know the game is exiting/ending
-                        if (NetworkingManager.Singleton.ConnectedClientsList.Count > 1)
+                        if (NetworkManager.Singleton.ConnectedClientsList.Count > 1)
                         {
                              m_ExitingTime.Value = m_ExitGameCountDown;
                         }
@@ -288,7 +288,7 @@ public class InGameManager : NetworkedBehaviour
     /// <param name="clientId"></param>
     private void OnClientDisconnectCallback(ulong clientId)
     {
-        if (IsServer && NetworkingManager.Singleton.ConnectedClientsList.Count == 1 && m_ExitIfNoPlayers)
+        if (IsServer && NetworkManager.Singleton.ConnectedClientsList.Count == 1 && m_ExitIfNoPlayers)
         {
             //Transition the in game state to exiting
             m_InGameState.Value = InGameStates.Exiting;
@@ -378,11 +378,11 @@ public class InGameManager : NetworkedBehaviour
         if (m_ExitingTime.Value == 0)
         {
             //Server waits for no more players, and then exits the game
-            if (IsServer && NetworkingManager.Singleton.ConnectedClientsList.Count <= 1)
+            if (IsServer && NetworkManager.Singleton.ConnectedClientsList.Count <= 1)
             {
                 //De-register from our events
                 GlobalGameState.Singleton.allPlayersLoadedScene -= AllPlayersLoadedScene;
-                NetworkingManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnectCallback;
+                NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnectCallback;
                 GlobalGameState.Singleton.SetGameState(GlobalGameState.GameStates.ExitGame);
             }
             else if (!IsServer)

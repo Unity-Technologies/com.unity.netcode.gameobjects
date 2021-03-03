@@ -5,7 +5,7 @@ public class IntroSceneControl : MonoBehaviour
 {
     private void Start()
     {
-        NetworkingManager NM = NetworkingManager.Singleton;
+        NetworkManager NM = NetworkManager.Singleton;
         if(NM == null)
         {
 #if (UNITY_EDITOR)

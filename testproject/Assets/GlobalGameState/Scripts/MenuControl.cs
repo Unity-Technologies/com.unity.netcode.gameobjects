@@ -17,10 +17,10 @@ public class MenuControl : MonoBehaviour
 
     private void Start()
     {
-        NetworkingManager NM = NetworkingManager.Singleton;
+        NetworkManager NM = NetworkManager.Singleton;
         if (NM != null)
         {
-            NetworkConfig NetConfig = NetworkingManager.Singleton.NetworkConfig;
+            NetworkConfig NetConfig = NetworkManager.Singleton.NetworkConfig;
             if (NetConfig != null)
             {
                 //Update the host input IP Address

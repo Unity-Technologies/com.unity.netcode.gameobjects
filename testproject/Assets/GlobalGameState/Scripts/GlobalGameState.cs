@@ -1,12 +1,12 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using MLAPI;
-using MLAPI.NetworkedVar;
+using MLAPI.NetworkVariable;
 using MLAPI.SceneManagement;
 using MLAPIGlobalGameState;
 
 
-public class GlobalGameState : NetworkedBehaviour
+public class GlobalGameState : NetworkBehaviour
 {
     static public GlobalGameState Singleton { get; internal set; }
 
@@ -82,7 +82,7 @@ public class GlobalGameState : NetworkedBehaviour
     /// Used for a state machine that updates immediately upon the value changing.
     /// Clients only have read access to the current GlobalGameState.
     /// </summary>
-    private NetworkedVar<GameStates> m_GameState = new NetworkedVar<GameStates>(new NetworkedVarSettings(){ WritePermission = NetworkedVarPermission.ServerOnly } , GameStates.None);
+    private NetworkVariable<GameStates> m_GameState = new NetworkVariable<GameStates>(new NetworkVariableSettings(){ WritePermission = NetworkVariablePermission.ServerOnly } , GameStates.None);
 
     /// <summary>
     /// m_InGameTime
@@ -91,11 +91,11 @@ public class GlobalGameState : NetworkedBehaviour
     /// Can be used for various global timing events
     /// Clients only have read access
     /// </summary>
-    private NetworkedVarFloat m_InGameTime = new NetworkedVarFloat(new NetworkedVarSettings(){ SendTickrate = 0.100f, WritePermission = NetworkedVarPermission.ServerOnly } , 0.0f);
+    private NetworkVariableFloat m_InGameTime = new NetworkVariableFloat(new NetworkVariableSettings(){ SendTickrate = 0.100f, WritePermission = NetworkVariablePermission.ServerOnly } , 0.0f);
 
     /// <summary>
     /// inGameTime
-    /// Networked Var Use Case Scenario:  public read only accessor to NetworkedVarFloat m_InGameTime
+    /// Networked Var Use Case Scenario:  public read only accessor to NetworkVariableFloat m_InGameTime
     /// One way to expose a global value that can be updated regularly
     /// Clients only have read access
     /// </summary>
@@ -114,7 +114,7 @@ public class GlobalGameState : NetworkedBehaviour
 
     /// <summary>
     /// GameStates
-    /// Relates to:  NetworkedVar<GameStates> m_GameState
+    /// Relates to:  NetworkVariable<GameStates> m_GameState
     /// Provides the different states for the networked game state machine
     /// </summary>
     public enum GameStates
@@ -212,9 +212,9 @@ public class GlobalGameState : NetworkedBehaviour
                 }
             case GameStates.Lobby:
                 {
-                    if (m_GameState.Settings.WritePermission != NetworkedVarPermission.ServerOnly)
+                    if (m_GameState.Settings.WritePermission != NetworkVariablePermission.ServerOnly)
                     {
-                         m_GameState.Settings.WritePermission = NetworkedVarPermission.ServerOnly;
+                         m_GameState.Settings.WritePermission = NetworkVariablePermission.ServerOnly;
                     }
                     break;
                 }
@@ -252,16 +252,16 @@ public class GlobalGameState : NetworkedBehaviour
                     {
                         if (m_CurrentMLAPIState == StateToSceneTransitionLinks.MLAPIStates.None)
                         {
-                            if (!NetworkingManager.Singleton.IsListening)
+                            if (!NetworkManager.Singleton.IsListening)
                             {
                                 //If we are host, then start the host
                                 if (IsHostingGame)
                                 {
-                                    NetworkingManager.Singleton.StartHost();  //Spin up the host
+                                    NetworkManager.Singleton.StartHost();  //Spin up the host
                                 }
                                 else //otherwise start the client
                                 {
-                                    NetworkingManager.Singleton.StartClient();//Spin up the client
+                                    NetworkManager.Singleton.StartClient();//Spin up the client
                                 }
                             }
                         }
@@ -271,17 +271,17 @@ public class GlobalGameState : NetworkedBehaviour
                     {
                         if (m_CurrentMLAPIState == StateToSceneTransitionLinks.MLAPIStates.InSession || m_CurrentMLAPIState == StateToSceneTransitionLinks.MLAPIStates.Connecting)
                         {
-                            if (NetworkingManager.Singleton.IsListening)
+                            if (NetworkManager.Singleton.IsListening)
                             {
                                 //If we are host, then stop the host
                                 if (IsHostingGame)
                                 {
                                     IsHostingGame = false;
-                                    NetworkingManager.Singleton.StopHost();  //shutdown the host
+                                    NetworkManager.Singleton.StopHost();  //shutdown the host
                                 }
                                 else //otherwise stop the client
                                 {
-                                    NetworkingManager.Singleton.StopClient();//shutdown the client
+                                    NetworkManager.Singleton.StopClient();//shutdown the client
                                 }
 
                                 //Clean up scene loading and progeess handlers
@@ -346,12 +346,12 @@ public class GlobalGameState : NetworkedBehaviour
             }
 
             //make sure we can set this networked variable
-            if (IsServer || m_GameState.Settings.WritePermission != NetworkedVarPermission.ServerOnly || newState == GameStates.ExitGame )
+            if (IsServer || m_GameState.Settings.WritePermission != NetworkVariablePermission.ServerOnly || newState == GameStates.ExitGame )
             {
                 if (newState == GameStates.ExitGame)
                 {
                     //Revert back to everyone access after we leave the game session
-                    m_GameState.Settings.WritePermission = NetworkedVarPermission.Everyone;
+                    m_GameState.Settings.WritePermission = NetworkVariablePermission.Everyone;
                 }
                 //Now set the state so all clients will receive the message
                 m_GameState.Value = newState;
@@ -386,7 +386,7 @@ public class GlobalGameState : NetworkedBehaviour
     private void SwitchScene(string scenename)
     {
         // If we have started our network transport (connecting, connected, in game session, etc)
-        if (NetworkingManager.Singleton.IsListening && IsServer)
+        if (NetworkManager.Singleton.IsListening && IsServer)
         {
             //Use the NetworkSceneManager
             m_SceneProgress = NetworkSceneManager.SwitchScene(scenename);
@@ -398,7 +398,7 @@ public class GlobalGameState : NetworkedBehaviour
         }
         else
         {
-            if (!NetworkingManager.Singleton.IsListening)
+            if (!NetworkManager.Singleton.IsListening)
             {
                 //If transport is not active then just load the scene via the normal Unity scene manager
                 SceneManager.LoadScene(scenename);
