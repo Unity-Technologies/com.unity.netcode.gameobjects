@@ -3,7 +3,7 @@ using MLAPI;
 
 namespace MLAPI_Examples
 {
-    public class NetworkedBehaviourCallbacks : NetworkedBehaviour
+    public class NetworkBehaviourCallbacks : NetworkBehaviour
     {
         public override void NetworkStart(Stream payload)
         {

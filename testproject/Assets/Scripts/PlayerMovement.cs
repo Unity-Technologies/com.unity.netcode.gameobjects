@@ -1,7 +1,7 @@
 using MLAPI;
 using UnityEngine;
 
-public class PlayerMovement : NetworkedBehaviour
+public class PlayerMovement : NetworkBehaviour
 {
     private float m_Speed = 20.0f;
     private float m_RotSpeed = 5.0f;

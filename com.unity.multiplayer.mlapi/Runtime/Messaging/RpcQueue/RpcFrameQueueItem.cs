@@ -16,13 +16,13 @@ namespace  MLAPI.Messaging
         public NetworkUpdateStage                        updateStage;
         public RpcQueueContainer.QueueItemType           queueItemType;
         public ulong                                     networkId;          //Sender's network Identifier
-        public Channel                                   channel;
+        public NetworkChannel                                   networkChannel;
         public ulong[]                                   clientIds;          //Server invoked Client RPCs only
         public long                                      streamSize;
         public float                                     timeStamp;
-        public PooledBitWriter                           streamWriter;
-        public PooledBitReader                           streamReader;
-        public PooledBitStream                           itemStream;
+        public PooledNetworkWriter                           streamWriter;
+        public PooledNetworkReader                           streamReader;
+        public PooledNetworkBuffer                           itemBuffer;
         public ArraySegment<byte>                        messageData;
     }
 }

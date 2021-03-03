@@ -18,8 +18,8 @@ namespace MLAPI.Messaging.Buffering
         internal struct BufferedMessage
         {
             internal ulong sender;
-            internal Channel channel;
-            internal PooledBitStream payload;
+            internal NetworkChannel networkChannel;
+            internal PooledNetworkBuffer payload;
             internal float receiveTime;
             internal float bufferTime;
         }
@@ -45,7 +45,7 @@ namespace MLAPI.Messaging.Buffering
             message.payload.Dispose();
         }
 
-        internal static void BufferMessageForNetworkId(ulong networkId, ulong sender, Channel channel, float receiveTime, ArraySegment<byte> payload)
+        internal static void BufferMessageForNetworkId(ulong networkId, ulong sender, NetworkChannel networkChannel, float receiveTime, ArraySegment<byte> payload)
         {
             if (!bufferQueues.ContainsKey(networkId))
             {
@@ -54,16 +54,16 @@ namespace MLAPI.Messaging.Buffering
 
             Queue<BufferedMessage> queue = bufferQueues[networkId];
 
-            PooledBitStream payloadStream = PooledBitStream.Get();
+            PooledNetworkBuffer payloadBuffer = PooledNetworkBuffer.Get();
 
-            payloadStream.Write(payload.Array, payload.Offset, payload.Count);
-            payloadStream.Position = 0;
+            payloadBuffer.Write(payload.Array, payload.Offset, payload.Count);
+            payloadBuffer.Position = 0;
 
             queue.Enqueue(new BufferedMessage()
             {
                 bufferTime = Time.realtimeSinceStartup,
-                channel = channel,
-                payload = payloadStream,
+                networkChannel = networkChannel,
+                payload = payloadBuffer,
                 receiveTime = receiveTime,
                 sender = sender
             });
@@ -77,7 +77,7 @@ namespace MLAPI.Messaging.Buffering
 #endif
             foreach (KeyValuePair<ulong, Queue<BufferedMessage>> pair in bufferQueues)
             {
-                while (pair.Value.Count > 0 && Time.realtimeSinceStartup - pair.Value.Peek().bufferTime >= NetworkingManager.Singleton.NetworkConfig.MessageBufferTimeout)
+                while (pair.Value.Count > 0 && Time.realtimeSinceStartup - pair.Value.Peek().bufferTime >= NetworkManager.Singleton.NetworkConfig.MessageBufferTimeout)
                 {
                     BufferedMessage message = pair.Value.Dequeue();
 

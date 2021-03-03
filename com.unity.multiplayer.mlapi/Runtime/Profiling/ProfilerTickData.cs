@@ -38,7 +38,7 @@ namespace MLAPI.Profiling
         /// <param name="stream">The stream containing</param>
 		public void SerializeToStream(Stream stream)
 		{
-            using (PooledBitWriter writer = PooledBitWriter.Get(stream))
+            using (PooledNetworkWriter writer = PooledNetworkWriter.Get(stream))
             {
                 writer.WriteUInt16Packed((ushort)Events.Count);
 
@@ -58,7 +58,7 @@ namespace MLAPI.Profiling
 		{
 			ProfilerTick tick = new ProfilerTick();
 
-            using (PooledBitReader reader = PooledBitReader.Get(stream))
+            using (PooledNetworkReader reader = PooledNetworkReader.Get(stream))
             {
                 ushort count = reader.ReadUInt16Packed();
                 for (int i = 0; i < count; i++)
@@ -153,7 +153,7 @@ namespace MLAPI.Profiling
         /// <param name="stream">The stream to write the TickEvent data to</param>
         public void SerializeToStream(Stream stream)
 		{
-            using (PooledBitWriter writer = PooledBitWriter.Get(stream))
+            using (PooledNetworkWriter writer = PooledNetworkWriter.Get(stream))
             {
                 writer.WriteByte((byte)EventType);
                 writer.WriteUInt32Packed(Bytes);
@@ -170,7 +170,7 @@ namespace MLAPI.Profiling
         /// <returns>The TickEvent with data read from the stream</returns>
         public static TickEvent FromStream(Stream stream)
 		{
-            using (PooledBitReader reader = PooledBitReader.Get(stream))
+            using (PooledNetworkReader reader = PooledNetworkReader.Get(stream))
             {
                 TickEvent @event = new TickEvent
                 {

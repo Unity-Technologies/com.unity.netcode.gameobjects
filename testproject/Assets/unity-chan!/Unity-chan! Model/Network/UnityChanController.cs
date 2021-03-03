@@ -2,7 +2,7 @@
 using UnityEngine;
 
 [RequireComponent(typeof(Animator))]
-public class UnityChanController : NetworkedBehaviour
+public class UnityChanController : NetworkBehaviour
 {
     private Animator m_Animator;
 

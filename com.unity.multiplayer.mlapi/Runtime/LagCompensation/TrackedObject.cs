@@ -58,7 +58,7 @@ namespace MLAPI.LagCompensation
         {
             get
             {
-                return (int)(NetworkingManager.Singleton.NetworkConfig.SecondsHistory / (1f / NetworkingManager.Singleton.NetworkConfig.EventTickrate));
+                return (int)(NetworkManager.Singleton.NetworkConfig.SecondsHistory / (1f / NetworkManager.Singleton.NetworkConfig.EventTickrate));
             }
         }
 
@@ -67,7 +67,7 @@ namespace MLAPI.LagCompensation
             savedPosition = transform.position;
             savedRotation = transform.rotation;
 
-            float currentTime = NetworkingManager.Singleton.NetworkTime;
+            float currentTime = NetworkManager.Singleton.NetworkTime;
             float targetTime = currentTime - secondsAgo;
 
             float previousTime = 0f;
@@ -112,12 +112,12 @@ namespace MLAPI.LagCompensation
             if (Framekeys.Count == maxPoints)
                 FrameData.Remove(Framekeys.Dequeue());
 
-            FrameData.Add(NetworkingManager.Singleton.NetworkTime, new TrackedPointData()
+            FrameData.Add(NetworkManager.Singleton.NetworkTime, new TrackedPointData()
             {
                 position = transform.position,
                 rotation = transform.rotation
             });
-            Framekeys.Enqueue(NetworkingManager.Singleton.NetworkTime);
+            Framekeys.Enqueue(NetworkManager.Singleton.NetworkTime);
         }
     }
 }
