@@ -72,58 +72,55 @@ namespace MLAPI.RuntimeTests
         // Update is called once per frame
         private void Update()
         {
-            if (NetworkingManager.Singleton.IsListening && PingSelfEnabled)
+            if (NetworkingManager.Singleton.IsListening && PingSelfEnabled && m_ClientReceivedRpc)
             {
-                if (NetworkingManager.Singleton.IsListening && PingSelfEnabled && m_ClientReceivedRpc)
+                //Reset this for the next sequence of rpcs
+                m_ClientReceivedRpc = false;
+
+                //As long as testing isn't completed, keep testing
+                if (!IsTestComplete() && m_StagesSent.Count < m_MaxStagesSent)
                 {
-                    //Reset this for the next sequence of rpcs
-                    m_ClientReceivedRpc = false;
-
-                    //As long as testing isn't completed, keep testing
-                    if (!IsTestComplete() && m_StagesSent.Count < m_MaxStagesSent)
+                    m_LastUpdateStage = m_Serverparams.Send.UpdateStage;
+                    m_StagesSent.Add(m_LastUpdateStage);
+                    PingMySelfServerRPC(m_Serverparams);
+                    switch (m_Serverparams.Send.UpdateStage)
                     {
-                        m_LastUpdateStage = m_Serverparams.Send.UpdateStage;
-                        m_StagesSent.Add(m_LastUpdateStage);
-                        PingMySelfServerRPC(m_Serverparams);
-                        switch (m_Serverparams.Send.UpdateStage)
-                        {
-                            case NetworkUpdateStage.Initialization:
-                                {
-                                    m_Serverparams.Send.UpdateStage = NetworkUpdateStage.EarlyUpdate;
-                                    break;
-                                }
-                            case NetworkUpdateStage.EarlyUpdate:
-                                {
-                                    m_Serverparams.Send.UpdateStage = NetworkUpdateStage.FixedUpdate;
-                                    break;
-                                }
-                            case NetworkUpdateStage.FixedUpdate:
-                                {
-                                    m_Serverparams.Send.UpdateStage = NetworkUpdateStage.PreUpdate;
-                                    break;
-                                }
-                            case NetworkUpdateStage.PreUpdate:
-                                {
-                                    m_Serverparams.Send.UpdateStage = NetworkUpdateStage.Update;
-                                    break;
-                                }
-                            case NetworkUpdateStage.Update:
-                                {
-                                    m_Serverparams.Send.UpdateStage = NetworkUpdateStage.PreLateUpdate;
-                                    break;
-                                }
-                            case NetworkUpdateStage.PreLateUpdate:
-                                {
-                                    m_Serverparams.Send.UpdateStage = NetworkUpdateStage.PostLateUpdate;
-                                    break;
-                                }
-                            case NetworkUpdateStage.PostLateUpdate:
-                                {
-                                    m_Serverparams.Send.UpdateStage = NetworkUpdateStage.Initialization;
+                        case NetworkUpdateStage.Initialization:
+                            {
+                                m_Serverparams.Send.UpdateStage = NetworkUpdateStage.EarlyUpdate;
+                                break;
+                            }
+                        case NetworkUpdateStage.EarlyUpdate:
+                            {
+                                m_Serverparams.Send.UpdateStage = NetworkUpdateStage.FixedUpdate;
+                                break;
+                            }
+                        case NetworkUpdateStage.FixedUpdate:
+                            {
+                                m_Serverparams.Send.UpdateStage = NetworkUpdateStage.PreUpdate;
+                                break;
+                            }
+                        case NetworkUpdateStage.PreUpdate:
+                            {
+                                m_Serverparams.Send.UpdateStage = NetworkUpdateStage.Update;
+                                break;
+                            }
+                        case NetworkUpdateStage.Update:
+                            {
+                                m_Serverparams.Send.UpdateStage = NetworkUpdateStage.PreLateUpdate;
+                                break;
+                            }
+                        case NetworkUpdateStage.PreLateUpdate:
+                            {
+                                m_Serverparams.Send.UpdateStage = NetworkUpdateStage.PostLateUpdate;
+                                break;
+                            }
+                        case NetworkUpdateStage.PostLateUpdate:
+                            {
+                                m_Serverparams.Send.UpdateStage = NetworkUpdateStage.Initialization;
 
-                                    break;
-                                }
-                        }
+                                break;
+                            }
                     }
                 }
             }
