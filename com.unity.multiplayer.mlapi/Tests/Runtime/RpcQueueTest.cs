@@ -89,8 +89,8 @@ namespace MLAPI.RuntimeTests
                         //Wait for the rpc pipeline test to complete or if we exceeded the maximum iterations bail
                         while (!testsAreComplete && !exceededMaximumStageIterations)
                         {
-                            //Wait for 100ms
-                            yield return new WaitForSeconds(0.03f);
+                            //Wait for 500ms
+                            yield return new WaitForSeconds(0.5f);
 
                             testsAreComplete = RpcPipelineTestComponent.IsTestComplete();
                             exceededMaximumStageIterations = RpcPipelineTestComponent.ExceededMaxIterations();

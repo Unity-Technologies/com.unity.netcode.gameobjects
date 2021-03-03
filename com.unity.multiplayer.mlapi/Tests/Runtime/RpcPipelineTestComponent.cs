@@ -82,7 +82,7 @@ namespace MLAPI.RuntimeTests
                 {
                     m_LastUpdateStage = m_Serverparams.Send.UpdateStage;
                     m_StagesSent.Add(m_LastUpdateStage);
-                    PingMySelfServerRPC(m_Serverparams);
+                    PingMySelfServerRPC(m_StagesSent.Count, m_Serverparams);
                     switch (m_Serverparams.Send.UpdateStage)
                     {
                         case NetworkUpdateStage.Initialization:
@@ -164,12 +164,12 @@ namespace MLAPI.RuntimeTests
         /// </summary>
         /// <param name="parameters">server rpc parameters</param>
         [ServerRpc]
-        private void PingMySelfServerRPC(ServerRpcParams parameters)
+        private void PingMySelfServerRPC(int currentCount, ServerRpcParams parameters)
         {
-            Debug.Log("[HostClient][ServerRpc] invoked during the " + parameters.Receive.UpdateStage.ToString() + " stage.");
+            Debug.Log("[HostClient][ServerRpc][" + currentCount.ToString() + "] invoked during the " + parameters.Receive.UpdateStage.ToString() + " stage.");
             m_Clientparams.Send.UpdateStage = parameters.Receive.UpdateStage;
             m_ServerStagesReceived.Add(parameters.Receive.UpdateStage);
-            PingMySelfClientRpc(m_Clientparams);
+            PingMySelfClientRpc(currentCount, m_Clientparams);
         }
 
         /// <summary>
@@ -177,10 +177,10 @@ namespace MLAPI.RuntimeTests
         /// </summary>
         /// <param name="parameters">client rpc parameters</param>
         [ClientRpc]
-        private void PingMySelfClientRpc(ClientRpcParams parameters)
+        private void PingMySelfClientRpc(int currentCount, ClientRpcParams parameters)
         {
             m_ClientStagesReceived.Add(parameters.Receive.UpdateStage);
-            Debug.Log("[HostServer][ClientRpc] invoked during the " + parameters.Receive.UpdateStage.ToString() + " stage. (previous output line should confirm this)");
+            Debug.Log("[HostServer][ClientRpc][" + currentCount.ToString() + "]  invoked during the " + parameters.Receive.UpdateStage.ToString() + " stage. (previous output line should confirm this)");
 
             //If we reached the last update state, then go ahead and increment our iteration counter
             if (parameters.Receive.UpdateStage == NetworkUpdateStage.PostLateUpdate)
