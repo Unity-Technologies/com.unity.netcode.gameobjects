@@ -145,12 +145,16 @@ namespace MLAPI.RuntimeTests
                     NetworkUpdateStage currentStage = m_StagesSent[i];
                     if (m_ServerStagesReceived[i] != currentStage)
                     {
+#if UNITY_EDITOR
                         Debug.LogFormat("ServerRpc Update Stage ( {0} ) is not equal to the current update stage ( {1} ) ", m_ServerStagesReceived[i].ToString(), currentStage.ToString());
+#endif
                         return validated;
                     }
                     if (m_ClientStagesReceived[i] != currentStage)
                     {
+#if UNITY_EDITOR
                         Debug.LogFormat("ClientRpc Update Stage ( {0} ) is not equal to the current update stage ( {1} ) ", m_ClientStagesReceived[i].ToString(), currentStage.ToString());
+#endif
                         return validated;
                     }
                 }
@@ -166,7 +170,9 @@ namespace MLAPI.RuntimeTests
         [ServerRpc]
         private void PingMySelfServerRPC(int currentCount, ServerRpcParams parameters = default)
         {
+#if UNITY_EDITOR
             Debug.Log("[HostClient][ServerRpc][" + currentCount.ToString() + "] invoked during the " + parameters.Receive.UpdateStage.ToString() + " stage.");
+#endif
             m_Clientparams.Send.UpdateStage = parameters.Receive.UpdateStage;
             m_ServerStagesReceived.Add(parameters.Receive.UpdateStage);
             PingMySelfClientRpc(currentCount, m_Clientparams);
@@ -180,8 +186,9 @@ namespace MLAPI.RuntimeTests
         private void PingMySelfClientRpc(int currentCount, ClientRpcParams parameters = default)
         {
             m_ClientStagesReceived.Add(parameters.Receive.UpdateStage);
+#if UNITY_EDITOR
             Debug.Log("[HostServer][ClientRpc][" + currentCount.ToString() + "]  invoked during the " + parameters.Receive.UpdateStage.ToString() + " stage. (previous output line should confirm this)");
-
+#endif
             //If we reached the last update state, then go ahead and increment our iteration counter
             if (parameters.Receive.UpdateStage == NetworkUpdateStage.PostLateUpdate)
             {

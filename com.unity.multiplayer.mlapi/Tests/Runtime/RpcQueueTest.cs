@@ -69,18 +69,24 @@ namespace MLAPI.RuntimeTests
 
                 if (NetworkingManager.Singleton != null)
                 {
+#if UNITY_EDITOR
                     Debug.Log("Networking Manager Instantiated.");
+#endif
                     instantiatedNetworkingManager = true;
                     //Start as host mode as loopback only works in hostmode
                     NetworkingManager.Singleton.StartHost();
 
+#if UNITY_EDITOR
                     Debug.Log("Host Started.");
-
+#endif
                     if (RpcPipelineTestComponent != null)
                     {
                         //Enable the simple ping test
                         RpcPipelineTestComponent.PingSelfEnabled = true;
+
+#if UNITY_EDITOR
                         Debug.Log("Running RPC Queue Tests...");
+#endif
 
                         //Wait for the rpc pipeline test to complete or if we exceeded the maximum iterations bail
                         while (!testsAreComplete && !exceededMaximumStageIterations)
@@ -99,8 +105,9 @@ namespace MLAPI.RuntimeTests
 
                         //Stop pinging
                         RpcPipelineTestComponent.PingSelfEnabled = false;
-
+#if UNITY_EDITOR
                         Debug.Log("RPC Queue Testing completed.");
+#endif
                     }
 
                     //Stop the host
@@ -117,8 +124,11 @@ namespace MLAPI.RuntimeTests
             {
                 Debug.LogException(ex);
             }
+
+#if UNITY_EDITOR
             Debug.LogFormat("Exiting status: testsAreComplete [{0}] testsAreValidated [{1}] instantiatedNetworkingManager[{2}] exceededMaximumStageIterations[{3}]",
                 testsAreComplete.ToString(), testsAreValidated.ToString(), instantiatedNetworkingManager.ToString(), exceededMaximumStageIterations.ToString());
+#endif
 
             Assert.IsTrue(testsAreComplete && testsAreValidated && instantiatedNetworkingManager);
         }
