@@ -31,6 +31,9 @@ namespace MLAPI.RuntimeTests
             m_ServerParams.Send.UpdateStage = NetworkUpdateStage.Initialization;
             m_ClientParams.Send.UpdateStage = NetworkUpdateStage.Update;
 
+            m_ServerParams.Receive.UpdateStage = NetworkUpdateStage.Initialization;
+            m_ClientParams.Receive.UpdateStage = NetworkUpdateStage.Initialization;
+
             m_MaxStagesSent = (Enum.GetValues(typeof(NetworkUpdateStage)).Length) * MaxIterations;
 
             //Start out with this being true (for first sequence)
