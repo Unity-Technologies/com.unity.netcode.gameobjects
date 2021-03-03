@@ -39,7 +39,7 @@ namespace MLAPI.RuntimeTests
         [UnityTest]
         public IEnumerator RpcQueueUnitTest()
         {
-            var networkManagerObject = new GameObject();
+            var networkManagerObject = new GameObject(nameof(NetworkManager));
             m_NetworkManager = networkManagerObject.AddComponent<NetworkManager>();
             var unetTransport = networkManagerObject.AddComponent<UnetTransport>();
             m_NetworkManager.NetworkConfig = new Configuration.NetworkConfig
@@ -110,6 +110,9 @@ namespace MLAPI.RuntimeTests
             Debug.Log($"Exiting status => {nameof(testsAreComplete)}: {testsAreComplete} - {nameof(testsAreValidated)}: {testsAreValidated} - {nameof(instantiatedNetworkManager)}: {instantiatedNetworkManager} - {nameof(exceededMaximumStageIterations)}: {exceededMaximumStageIterations}");
 
             Assert.IsTrue(testsAreComplete && testsAreValidated && instantiatedNetworkManager);
+
+            GameObject.DestroyImmediate(playerObject);
+            GameObject.DestroyImmediate(networkManagerObject);
         }
     }
 }
