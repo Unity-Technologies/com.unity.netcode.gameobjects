@@ -11,7 +11,7 @@ namespace MLAPI.RuntimeTests
     /// - Usage of the ServerRpcParams.Send.UpdateStage and ClientRpcParams.Send.UpdateStage functionality.
     /// - Rpcs receive will be invoked at the appropriate NetworkUpdateStage.
     /// </summary>
-    public class RpcPipelineTestComponent : NetworkedBehaviour
+    public class RpcPipelineTestComponent : NetworkBehaviour
     {
         /// <summary>
         /// Allows the external RPCQueueTest to begin testing or stop it
@@ -75,7 +75,7 @@ namespace MLAPI.RuntimeTests
         // Update is called once per frame
         private void Update()
         {
-            if (NetworkingManager.Singleton.IsListening && PingSelfEnabled && m_ClientReceivedRpc)
+            if (NetworkManager.Singleton.IsListening && PingSelfEnabled && m_ClientReceivedRpc)
             {
                 //Reset this for the next sequence of rpcs
                 m_ClientReceivedRpc = false;

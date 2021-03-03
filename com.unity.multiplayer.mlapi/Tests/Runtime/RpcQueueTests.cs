@@ -17,7 +17,7 @@ namespace MLAPI.RuntimeTests
     /// </summary>
     public class RpcQueueTests
     {
-        private NetworkingManager m_NetworkManager;
+        private NetworkManager m_NetworkManager;
 
         /// <summary>
         /// Tests the egress and ingress RPC queue functionality
@@ -28,7 +28,7 @@ namespace MLAPI.RuntimeTests
         public IEnumerator RpcQueueUnitTest()
         {
             var networkManagerObject = new GameObject();
-            m_NetworkManager = networkManagerObject.AddComponent<NetworkingManager>();
+            m_NetworkManager = networkManagerObject.AddComponent<NetworkManager>();
             var unetTransport = networkManagerObject.AddComponent<UnetTransport>();
             m_NetworkManager.NetworkConfig = new Configuration.NetworkConfig
             {
@@ -45,7 +45,7 @@ namespace MLAPI.RuntimeTests
             m_NetworkManager.NetworkConfig.NetworkTransport = unetTransport;
 
             var currentActiveScene = SceneManager.GetActiveScene();
-            var instantiatedNetworkingManager = false;
+            var instantiatedNetworkManager = false;
             var testsAreComplete = false;
             var testsAreValidated = false;
             var exceededMaximumStageIterations = false;
@@ -55,14 +55,14 @@ namespace MLAPI.RuntimeTests
 
             //Create the player object that we will spawn as a host
             var playerObject = new GameObject("RpcTestObject");
-            playerObject.AddComponent<NetworkedObject>();
+            playerObject.AddComponent<NetworkObject>();
             var rpcPipelineTestComponent = playerObject.AddComponent<RpcPipelineTestComponent>();
 
-            instantiatedNetworkingManager = true;
-            Debug.Log("Networking Manager Instantiated.");
+            instantiatedNetworkManager = true;
+            Debug.Log("NetworkManager Instantiated.");
 
             //Start as host mode as loopback only works in hostmode
-            NetworkingManager.Singleton.StartHost();
+            NetworkManager.Singleton.StartHost();
             Debug.Log("Host Started.");
 
             //Enable the simple ping test
@@ -90,14 +90,14 @@ namespace MLAPI.RuntimeTests
             Debug.Log("RPC Queue Testing completed.");
 
             //Stop the host
-            NetworkingManager.Singleton.StopHost();
+            NetworkManager.Singleton.StopHost();
 
-            //Shutdown the networking manager
-            NetworkingManager.Singleton.Shutdown();
+            //Shutdown the NetworkManager
+            NetworkManager.Singleton.Shutdown();
 
-            Debug.Log($"Exiting status: testsAreComplete [{testsAreComplete}] testsAreValidated [{testsAreValidated}] instantiatedNetworkingManager[{instantiatedNetworkingManager}] exceededMaximumStageIterations[{exceededMaximumStageIterations}]");
+            Debug.Log($"Exiting status => {nameof(testsAreComplete)}: {testsAreComplete} - {nameof(testsAreValidated)}: {testsAreValidated} - {nameof(instantiatedNetworkManager)}: {instantiatedNetworkManager} - {nameof(exceededMaximumStageIterations)}: {exceededMaximumStageIterations}");
 
-            Assert.IsTrue(testsAreComplete && testsAreValidated && instantiatedNetworkingManager);
+            Assert.IsTrue(testsAreComplete && testsAreValidated && instantiatedNetworkManager);
         }
     }
 }
