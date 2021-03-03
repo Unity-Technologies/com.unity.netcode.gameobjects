@@ -55,6 +55,7 @@ namespace MLAPI.RuntimeTests
             var instantiatedNetworkingManager = false;
             var testsAreComplete = false;
             var testsAreValidated = false;
+            var exceededMaximumStageIterations = false;
 
             if (currentActiveScene != null)
             {
@@ -73,6 +74,10 @@ namespace MLAPI.RuntimeTests
                     //Start as host mode as loopback only works in hostmode
                     NetworkingManager.Singleton.StartHost();
 
+
+                    //Wait for 100ms
+                    yield return new WaitForSeconds(0.1f);
+
                     Debug.Log("Host Started.");
 
                     if (RpcPipelineTestComponent != null)
@@ -81,16 +86,21 @@ namespace MLAPI.RuntimeTests
                         RpcPipelineTestComponent.PingSelfEnabled = true;
                         Debug.Log("Running RPC Queue Tests...");
 
-                        //Wait for the rpc pipeline test to complete or
-                        while (!testsAreComplete)
+                        //Wait for the rpc pipeline test to complete or if we exceeded the maximum iterations bail
+                        while (!testsAreComplete && !exceededMaximumStageIterations)
                         {
                             //Wait for 100ms
-                            yield return new WaitForSeconds(0.1f);
+                            yield return new WaitForSeconds(0.03f);
 
                             testsAreComplete = RpcPipelineTestComponent.IsTestComplete();
+                            exceededMaximumStageIterations = RpcPipelineTestComponent.ExceededMaxIterations();
                         }
 
-                        testsAreValidated = RpcPipelineTestComponent.ValidateUpdateStages();
+                        if(!exceededMaximumStageIterations)
+                        {
+                            testsAreValidated = RpcPipelineTestComponent.ValidateUpdateStages();
+                        }
+
                         //Stop pinging
                         RpcPipelineTestComponent.PingSelfEnabled = false;
 
@@ -111,8 +121,8 @@ namespace MLAPI.RuntimeTests
             {
                 Debug.LogException(ex);
             }
-            Debug.LogFormat("Exiting status: testsAreComplete [{0}] testsAreValidated [{1}] instantiatedNetworkingManager[{2}]",
-                testsAreComplete.ToString(), testsAreValidated.ToString(), instantiatedNetworkingManager.ToString());
+            Debug.LogFormat("Exiting status: testsAreComplete [{0}] testsAreValidated [{1}] instantiatedNetworkingManager[{2}] exceededMaximumStageIterations[{3}]",
+                testsAreComplete.ToString(), testsAreValidated.ToString(), instantiatedNetworkingManager.ToString(), exceededMaximumStageIterations.ToString());
 
             Assert.IsTrue(testsAreComplete && testsAreValidated && instantiatedNetworkingManager);
         }

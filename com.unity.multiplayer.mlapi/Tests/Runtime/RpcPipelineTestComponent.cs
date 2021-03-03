@@ -29,6 +29,24 @@ namespace MLAPI.RuntimeTests
         {
             m_Serverparams.Send.UpdateStage = NetworkUpdateStage.Initialization;
             m_Clientparams.Send.UpdateStage = NetworkUpdateStage.Update;
+
+            m_MaxStagesSent = (System.Enum.GetValues(typeof(NetworkUpdateStage)).Length)*MaxIterations;
+
+            //Start out with this being true (for first sequence)
+            m_ClientReceivedRpc = true;
+        }
+
+        /// <summary>
+        /// Determine if we have iterated over more than our maximum stages we want to test
+        /// </summary>
+        /// <returns>true or false (did we exceed the max iterations or not?)</returns>
+        public bool ExceededMaxIterations()
+        {
+            if(m_StagesSent.Count > m_MaxStagesSent && m_MaxStagesSent > 0)
+            {
+                return true;
+            }
+            return false;
         }
 
         /// <summary>
@@ -44,8 +62,9 @@ namespace MLAPI.RuntimeTests
             return false;
         }
 
+        private bool m_ClientReceivedRpc;
         private int m_Counter = 0;
-        private float m_NextUpdate = 0.0f;
+        private int m_MaxStagesSent = 0;
         private ServerRpcParams m_Serverparams;
         private ClientRpcParams m_Clientparams;
         private NetworkUpdateStage m_LastUpdateStage;
@@ -55,16 +74,17 @@ namespace MLAPI.RuntimeTests
         {
             if (NetworkingManager.Singleton.IsListening && PingSelfEnabled)
             {
-                if (NetworkingManager.Singleton.IsListening && PingSelfEnabled && m_NextUpdate < Time.realtimeSinceStartup)
+                if (NetworkingManager.Singleton.IsListening && PingSelfEnabled && m_ClientReceivedRpc)
                 {
+                    //Reset this for the next sequence of rpcs
+                    m_ClientReceivedRpc = false;
+
                     //As long as testing isn't completed, keep testing
-                    if (!IsTestComplete())
+                    if (!IsTestComplete() && m_StagesSent.Count < m_MaxStagesSent)
                     {
-                        m_NextUpdate = Time.realtimeSinceStartup + 0.06f;
                         m_LastUpdateStage = m_Serverparams.Send.UpdateStage;
                         m_StagesSent.Add(m_LastUpdateStage);
                         PingMySelfServerRPC(m_Serverparams);
-                        m_Clientparams.Send.UpdateStage = m_Serverparams.Send.UpdateStage;
                         switch (m_Serverparams.Send.UpdateStage)
                         {
                             case NetworkUpdateStage.Initialization:
@@ -170,6 +190,7 @@ namespace MLAPI.RuntimeTests
             {
                 m_Counter++;
             }
+            m_ClientReceivedRpc = true;
         }
     }
 }
