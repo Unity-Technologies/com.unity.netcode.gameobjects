@@ -12,9 +12,9 @@ namespace MLAPI.NetworkVariable.Collections
     /// <typeparam name="T">The type for the list</typeparam>
     public class NetworkList<T> : IList<T>, INetworkVariable
     {
-        private readonly IList<T> list = new List<T>();
-        private readonly List<NetworkListEvent<T>> dirtyEvents = new List<NetworkListEvent<T>>();
-        private NetworkBehaviour networkBehaviour;
+        private readonly IList<T> m_List = new List<T>();
+        private readonly List<NetworkListEvent<T>> m_DirtyEvents = new List<NetworkListEvent<T>>();
+        private NetworkBehaviour m_NetworkBehaviour;
 
         /// <summary>
         /// Gets the last time the variable was synced
@@ -59,7 +59,7 @@ namespace MLAPI.NetworkVariable.Collections
         public NetworkList(NetworkVariableSettings settings, IList<T> value)
         {
             Settings = settings;
-            list = value;
+            m_List = value;
         }
 
         /// <summary>
@@ -68,20 +68,20 @@ namespace MLAPI.NetworkVariable.Collections
         /// <param name="value">The initial value to use for the NetworkList</param>
         public NetworkList(IList<T> value)
         {
-            list = value;
+            m_List = value;
         }
 
         /// <inheritdoc />
         public void ResetDirty()
         {
-            dirtyEvents.Clear();
+            m_DirtyEvents.Clear();
             LastSyncedTime = NetworkManager.Singleton.NetworkTime;
         }
 
         /// <inheritdoc />
         public bool IsDirty()
         {
-            if (dirtyEvents.Count == 0) return false;
+            if (m_DirtyEvents.Count == 0) return false;
             if (Settings.SendTickrate == 0) return true;
             if (Settings.SendTickrate < 0) return false;
             if (NetworkManager.Singleton.NetworkTime - LastSyncedTime >= (1f / Settings.SendTickrate)) return true;
@@ -104,7 +104,7 @@ namespace MLAPI.NetworkVariable.Collections
                 case NetworkVariablePermission.ServerOnly:
                     return false;
                 case NetworkVariablePermission.OwnerOnly:
-                    return networkBehaviour.OwnerClientId == clientId;
+                    return m_NetworkBehaviour.OwnerClientId == clientId;
                 case NetworkVariablePermission.Custom:
                 {
                     if (Settings.WritePermissionCallback == null) return false;
@@ -125,7 +125,7 @@ namespace MLAPI.NetworkVariable.Collections
                 case NetworkVariablePermission.ServerOnly:
                     return false;
                 case NetworkVariablePermission.OwnerOnly:
-                    return networkBehaviour.OwnerClientId == clientId;
+                    return m_NetworkBehaviour.OwnerClientId == clientId;
                 case NetworkVariablePermission.Custom:
                 {
                     if (Settings.ReadPermissionCallback == null) return false;
@@ -139,39 +139,39 @@ namespace MLAPI.NetworkVariable.Collections
         /// <inheritdoc />
         public void WriteDelta(Stream stream)
         {
-            using (PooledNetworkWriter writer = PooledNetworkWriter.Get(stream))
+            using (var writer = PooledNetworkWriter.Get(stream))
             {
-                writer.WriteUInt16Packed((ushort)dirtyEvents.Count);
-                for (int i = 0; i < dirtyEvents.Count; i++)
+                writer.WriteUInt16Packed((ushort)m_DirtyEvents.Count);
+                for (int i = 0; i < m_DirtyEvents.Count; i++)
                 {
-                    writer.WriteBits((byte)dirtyEvents[i].eventType, 3);
-                    switch (dirtyEvents[i].eventType)
+                    writer.WriteBits((byte)m_DirtyEvents[i].Type, 3);
+                    switch (m_DirtyEvents[i].Type)
                     {
                         case NetworkListEvent<T>.EventType.Add:
                         {
-                            writer.WriteObjectPacked(dirtyEvents[i].value); //BOX
+                            writer.WriteObjectPacked(m_DirtyEvents[i].Value); //BOX
                         }
                             break;
                         case NetworkListEvent<T>.EventType.Insert:
                         {
-                            writer.WriteInt32Packed(dirtyEvents[i].index);
-                            writer.WriteObjectPacked(dirtyEvents[i].value); //BOX
+                            writer.WriteInt32Packed(m_DirtyEvents[i].Index);
+                            writer.WriteObjectPacked(m_DirtyEvents[i].Value); //BOX
                         }
                             break;
                         case NetworkListEvent<T>.EventType.Remove:
                         {
-                            writer.WriteObjectPacked(dirtyEvents[i].value); //BOX
+                            writer.WriteObjectPacked(m_DirtyEvents[i].Value); //BOX
                         }
                             break;
                         case NetworkListEvent<T>.EventType.RemoveAt:
                         {
-                            writer.WriteInt32Packed(dirtyEvents[i].index);
+                            writer.WriteInt32Packed(m_DirtyEvents[i].Index);
                         }
                             break;
                         case NetworkListEvent<T>.EventType.Value:
                         {
-                            writer.WriteInt32Packed(dirtyEvents[i].index);
-                            writer.WriteObjectPacked(dirtyEvents[i].value); //BOX
+                            writer.WriteInt32Packed(m_DirtyEvents[i].Index);
+                            writer.WriteObjectPacked(m_DirtyEvents[i].Value); //BOX
                         }
                             break;
                         case NetworkListEvent<T>.EventType.Clear:
@@ -187,12 +187,12 @@ namespace MLAPI.NetworkVariable.Collections
         /// <inheritdoc />
         public void WriteField(Stream stream)
         {
-            using (PooledNetworkWriter writer = PooledNetworkWriter.Get(stream))
+            using (var writer = PooledNetworkWriter.Get(stream))
             {
-                writer.WriteUInt16Packed((ushort)list.Count);
-                for (int i = 0; i < list.Count; i++)
+                writer.WriteUInt16Packed((ushort)m_List.Count);
+                for (int i = 0; i < m_List.Count; i++)
                 {
-                    writer.WriteObjectPacked(list[i]); //BOX
+                    writer.WriteObjectPacked(m_List[i]); //BOX
                 }
             }
         }
@@ -200,13 +200,13 @@ namespace MLAPI.NetworkVariable.Collections
         /// <inheritdoc />
         public void ReadField(Stream stream, ushort localTick, ushort remoteTick)
         {
-            using (PooledNetworkReader reader = PooledNetworkReader.Get(stream))
+            using (var reader = PooledNetworkReader.Get(stream))
             {
-                list.Clear();
+                m_List.Clear();
                 ushort count = reader.ReadUInt16Packed();
                 for (int i = 0; i < count; i++)
                 {
-                    list.Add((T)reader.ReadObjectPacked(typeof(T))); //BOX
+                    m_List.Add((T)reader.ReadObjectPacked(typeof(T))); //BOX
                 }
             }
         }
@@ -214,7 +214,7 @@ namespace MLAPI.NetworkVariable.Collections
         /// <inheritdoc />
         public void ReadDelta(Stream stream, bool keepDirtyDelta, ushort localTick, ushort remoteTick)
         {
-            using (PooledNetworkReader reader = PooledNetworkReader.Get(stream))
+            using (var reader = PooledNetworkReader.Get(stream))
             {
                 ushort deltaCount = reader.ReadUInt16Packed();
                 for (int i = 0; i < deltaCount; i++)
@@ -224,25 +224,25 @@ namespace MLAPI.NetworkVariable.Collections
                     {
                         case NetworkListEvent<T>.EventType.Add:
                         {
-                            list.Add((T)reader.ReadObjectPacked(typeof(T))); //BOX
+                            m_List.Add((T)reader.ReadObjectPacked(typeof(T))); //BOX
 
                             if (OnListChanged != null)
                             {
                                 OnListChanged(new NetworkListEvent<T>
                                 {
-                                    eventType = eventType,
-                                    index = list.Count - 1,
-                                    value = list[list.Count - 1]
+                                    Type = eventType,
+                                    Index = m_List.Count - 1,
+                                    Value = m_List[m_List.Count - 1]
                                 });
                             }
 
                             if (keepDirtyDelta)
                             {
-                                dirtyEvents.Add(new NetworkListEvent<T>()
+                                m_DirtyEvents.Add(new NetworkListEvent<T>()
                                 {
-                                    eventType = eventType,
-                                    index = list.Count - 1,
-                                    value = list[list.Count - 1]
+                                    Type = eventType,
+                                    Index = m_List.Count - 1,
+                                    Value = m_List[m_List.Count - 1]
                                 });
                             }
                         }
@@ -250,25 +250,25 @@ namespace MLAPI.NetworkVariable.Collections
                         case NetworkListEvent<T>.EventType.Insert:
                         {
                             int index = reader.ReadInt32Packed();
-                            list.Insert(index, (T)reader.ReadObjectPacked(typeof(T))); //BOX
+                            m_List.Insert(index, (T)reader.ReadObjectPacked(typeof(T))); //BOX
 
                             if (OnListChanged != null)
                             {
                                 OnListChanged(new NetworkListEvent<T>
                                 {
-                                    eventType = eventType,
-                                    index = index,
-                                    value = list[index]
+                                    Type = eventType,
+                                    Index = index,
+                                    Value = m_List[index]
                                 });
                             }
 
                             if (keepDirtyDelta)
                             {
-                                dirtyEvents.Add(new NetworkListEvent<T>()
+                                m_DirtyEvents.Add(new NetworkListEvent<T>()
                                 {
-                                    eventType = eventType,
-                                    index = index,
-                                    value = list[index]
+                                    Type = eventType,
+                                    Index = index,
+                                    Value = m_List[index]
                                 });
                             }
                         }
@@ -276,26 +276,26 @@ namespace MLAPI.NetworkVariable.Collections
                         case NetworkListEvent<T>.EventType.Remove:
                         {
                             T value = (T)reader.ReadObjectPacked(typeof(T)); //BOX
-                            int index = list.IndexOf(value);
-                            list.RemoveAt(index);
+                            int index = m_List.IndexOf(value);
+                            m_List.RemoveAt(index);
 
                             if (OnListChanged != null)
                             {
                                 OnListChanged(new NetworkListEvent<T>
                                 {
-                                    eventType = eventType,
-                                    index = index,
-                                    value = value
+                                    Type = eventType,
+                                    Index = index,
+                                    Value = value
                                 });
                             }
 
                             if (keepDirtyDelta)
                             {
-                                dirtyEvents.Add(new NetworkListEvent<T>()
+                                m_DirtyEvents.Add(new NetworkListEvent<T>()
                                 {
-                                    eventType = eventType,
-                                    index = index,
-                                    value = value
+                                    Type = eventType,
+                                    Index = index,
+                                    Value = value
                                 });
                             }
                         }
@@ -303,26 +303,26 @@ namespace MLAPI.NetworkVariable.Collections
                         case NetworkListEvent<T>.EventType.RemoveAt:
                         {
                             int index = reader.ReadInt32Packed();
-                            T value = list[index];
-                            list.RemoveAt(index);
+                            T value = m_List[index];
+                            m_List.RemoveAt(index);
 
                             if (OnListChanged != null)
                             {
                                 OnListChanged(new NetworkListEvent<T>
                                 {
-                                    eventType = eventType,
-                                    index = index,
-                                    value = value
+                                    Type = eventType,
+                                    Index = index,
+                                    Value = value
                                 });
                             }
 
                             if (keepDirtyDelta)
                             {
-                                dirtyEvents.Add(new NetworkListEvent<T>()
+                                m_DirtyEvents.Add(new NetworkListEvent<T>()
                                 {
-                                    eventType = eventType,
-                                    index = index,
-                                    value = value
+                                    Type = eventType,
+                                    Index = index,
+                                    Value = value
                                 });
                             }
                         }
@@ -331,25 +331,25 @@ namespace MLAPI.NetworkVariable.Collections
                         {
                             int index = reader.ReadInt32Packed();
                             T value = (T)reader.ReadObjectPacked(typeof(T)); //BOX
-                            if (index < list.Count) list[index] = value;
+                            if (index < m_List.Count) m_List[index] = value;
 
                             if (OnListChanged != null)
                             {
                                 OnListChanged(new NetworkListEvent<T>
                                 {
-                                    eventType = eventType,
-                                    index = index,
-                                    value = value
+                                    Type = eventType,
+                                    Index = index,
+                                    Value = value
                                 });
                             }
 
                             if (keepDirtyDelta)
                             {
-                                dirtyEvents.Add(new NetworkListEvent<T>()
+                                m_DirtyEvents.Add(new NetworkListEvent<T>()
                                 {
-                                    eventType = eventType,
-                                    index = index,
-                                    value = value
+                                    Type = eventType,
+                                    Index = index,
+                                    Value = value
                                 });
                             }
                         }
@@ -357,21 +357,21 @@ namespace MLAPI.NetworkVariable.Collections
                         case NetworkListEvent<T>.EventType.Clear:
                         {
                             //Read nothing
-                            list.Clear();
+                            m_List.Clear();
 
                             if (OnListChanged != null)
                             {
                                 OnListChanged(new NetworkListEvent<T>
                                 {
-                                    eventType = eventType,
+                                    Type = eventType,
                                 });
                             }
 
                             if (keepDirtyDelta)
                             {
-                                dirtyEvents.Add(new NetworkListEvent<T>()
+                                m_DirtyEvents.Add(new NetworkListEvent<T>()
                                 {
-                                    eventType = eventType
+                                    Type = eventType
                                 });
                             }
                         }
@@ -384,30 +384,30 @@ namespace MLAPI.NetworkVariable.Collections
         /// <inheritdoc />
         public void SetNetworkBehaviour(NetworkBehaviour behaviour)
         {
-            networkBehaviour = behaviour;
+            m_NetworkBehaviour = behaviour;
         }
 
         /// <inheritdoc />
         public IEnumerator<T> GetEnumerator()
         {
-            return list.GetEnumerator();
+            return m_List.GetEnumerator();
         }
 
         IEnumerator IEnumerable.GetEnumerator()
         {
-            return ((IEnumerable)list).GetEnumerator();
+            return ((IEnumerable)m_List).GetEnumerator();
         }
 
         /// <inheritdoc />
         public void Add(T item)
         {
-            if (NetworkManager.Singleton.IsServer) list.Add(item);
+            if (NetworkManager.Singleton.IsServer) m_List.Add(item);
 
             NetworkListEvent<T> listEvent = new NetworkListEvent<T>()
             {
-                eventType = NetworkListEvent<T>.EventType.Add,
-                value = item,
-                index = list.Count - 1
+                Type = NetworkListEvent<T>.EventType.Add,
+                Value = item,
+                Index = m_List.Count - 1
             };
 
             HandleAddListEvent(listEvent);
@@ -416,11 +416,11 @@ namespace MLAPI.NetworkVariable.Collections
         /// <inheritdoc />
         public void Clear()
         {
-            if (NetworkManager.Singleton.IsServer) list.Clear();
+            if (NetworkManager.Singleton.IsServer) m_List.Clear();
 
             NetworkListEvent<T> listEvent = new NetworkListEvent<T>()
             {
-                eventType = NetworkListEvent<T>.EventType.Clear
+                Type = NetworkListEvent<T>.EventType.Clear
             };
 
             HandleAddListEvent(listEvent);
@@ -429,24 +429,24 @@ namespace MLAPI.NetworkVariable.Collections
         /// <inheritdoc />
         public bool Contains(T item)
         {
-            return list.Contains(item);
+            return m_List.Contains(item);
         }
 
         /// <inheritdoc />
         public void CopyTo(T[] array, int arrayIndex)
         {
-            list.CopyTo(array, arrayIndex);
+            m_List.CopyTo(array, arrayIndex);
         }
 
         /// <inheritdoc />
         public bool Remove(T item)
         {
-            if (NetworkManager.Singleton.IsServer) list.Remove(item);
+            if (NetworkManager.Singleton.IsServer) m_List.Remove(item);
 
             NetworkListEvent<T> listEvent = new NetworkListEvent<T>()
             {
-                eventType = NetworkListEvent<T>.EventType.Remove,
-                value = item
+                Type = NetworkListEvent<T>.EventType.Remove,
+                Value = item
             };
 
             HandleAddListEvent(listEvent);
@@ -454,27 +454,27 @@ namespace MLAPI.NetworkVariable.Collections
         }
 
         /// <inheritdoc />
-        public int Count => list.Count;
+        public int Count => m_List.Count;
 
         /// <inheritdoc />
-        public bool IsReadOnly => list.IsReadOnly;
+        public bool IsReadOnly => m_List.IsReadOnly;
 
         /// <inheritdoc />
         public int IndexOf(T item)
         {
-            return list.IndexOf(item);
+            return m_List.IndexOf(item);
         }
 
         /// <inheritdoc />
         public void Insert(int index, T item)
         {
-            if (NetworkManager.Singleton.IsServer) list.Insert(index, item);
+            if (NetworkManager.Singleton.IsServer) m_List.Insert(index, item);
 
             NetworkListEvent<T> listEvent = new NetworkListEvent<T>()
             {
-                eventType = NetworkListEvent<T>.EventType.Insert,
-                index = index,
-                value = item
+                Type = NetworkListEvent<T>.EventType.Insert,
+                Index = index,
+                Value = item
             };
 
             HandleAddListEvent(listEvent);
@@ -483,12 +483,12 @@ namespace MLAPI.NetworkVariable.Collections
         /// <inheritdoc />
         public void RemoveAt(int index)
         {
-            if (NetworkManager.Singleton.IsServer) list.RemoveAt(index);
+            if (NetworkManager.Singleton.IsServer) m_List.RemoveAt(index);
 
             NetworkListEvent<T> listEvent = new NetworkListEvent<T>()
             {
-                eventType = NetworkListEvent<T>.EventType.RemoveAt,
-                index = index
+                Type = NetworkListEvent<T>.EventType.RemoveAt,
+                Index = index
             };
 
             HandleAddListEvent(listEvent);
@@ -498,17 +498,17 @@ namespace MLAPI.NetworkVariable.Collections
         /// <inheritdoc />
         public T this[int index]
         {
-            get => list[index];
+            get => m_List[index];
             set
             {
                 if (NetworkManager.Singleton.IsServer)
-                    list[index] = value;
+                    m_List[index] = value;
 
                 NetworkListEvent<T> listEvent = new NetworkListEvent<T>()
                 {
-                    eventType = NetworkListEvent<T>.EventType.Value,
-                    index = index,
-                    value = value
+                    Type = NetworkListEvent<T>.EventType.Value,
+                    Index = index,
+                    Value = value
                 };
 
                 HandleAddListEvent(listEvent);
@@ -521,14 +521,14 @@ namespace MLAPI.NetworkVariable.Collections
             {
                 if (NetworkManager.Singleton.ConnectedClients.Count > 0)
                 {
-                    dirtyEvents.Add(listEvent);
+                    m_DirtyEvents.Add(listEvent);
                 }
 
                 OnListChanged?.Invoke(listEvent);
             }
             else
             {
-                dirtyEvents.Add(listEvent);
+                m_DirtyEvents.Add(listEvent);
             }
         }
     }
@@ -578,16 +578,16 @@ namespace MLAPI.NetworkVariable.Collections
         /// <summary>
         /// Enum representing the operation made to the list.
         /// </summary>
-        public EventType eventType;
+        public EventType Type;
 
         /// <summary>
         /// The value changed, added or removed if available.
         /// </summary>
-        public T value;
+        public T Value;
 
         /// <summary>
         /// the index changed, added or removed if available
         /// </summary>
-        public int index;
+        public int Index;
     }
 }
