@@ -75,7 +75,7 @@ If the change isn't backwards compatible. You have to disclose that in the foote
 ```
 perf(networked-vars): Improved performance by removing duplex functionality
 
-BREAKING CHANGE: Removes duplex functionality from networked vars in order to improve performance
+BREAKING CHANGE: Removes duplex functionality from network variables in order to improve performance
 ```
 Samples:
 

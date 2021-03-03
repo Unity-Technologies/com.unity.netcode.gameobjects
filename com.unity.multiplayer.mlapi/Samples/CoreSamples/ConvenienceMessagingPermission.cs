@@ -3,7 +3,7 @@ using MLAPI.Messaging;
 
 namespace MLAPI_Examples
 {
-    public class ConvenienceMessagingPermission : NetworkedBehaviour
+    public class ConvenienceMessagingPermission : NetworkBehaviour
     {
         [ServerRPC(RequireOwnership = false)]
         public void RunCodeOnServerWithoutOwnershipChecks(int randomNumber, int constantNumber)

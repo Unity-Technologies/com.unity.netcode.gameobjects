@@ -17,12 +17,7 @@ namespace MLAPI.Profiling
         /// The ticks that has been recorded
         /// </summary>
         public static FixedQueue<ProfilerTick> Ticks { get; private set; }
-        /// <summary>
-        /// Whether or not the profiler is recording data
-        /// </summary>
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        [Obsolete("Use IsRunning instead", false)]
-        public static bool isRunning => IsRunning;
+
         /// <summary>
         /// Whether or not the profiler is recording data
         /// </summary>
@@ -122,27 +117,27 @@ namespace MLAPI.Profiling
             CurrentTick = null;
         }
 
-        internal static void StartEvent(TickType eventType, uint bytes, Channel channel, byte messageType)
+        internal static void StartEvent(TickType eventType, uint bytes, NetworkChannel networkChannel, byte messageType)
         {
             if (!IsRunning)
                 return;
             if (CurrentTick == null)
                 return;
 
-            string messageName = messageType < MLAPIConstants.MESSAGE_NAMES.Length ? MLAPIConstants.MESSAGE_NAMES[messageType] : "INVALID_MESSAGE_TYPE";
+            string messageName = messageType < NetworkConstants.MESSAGE_NAMES.Length ? NetworkConstants.MESSAGE_NAMES[messageType] : "INVALID_MESSAGE_TYPE";
 
-            string channelName = channel.ToString();
+            string channelName = networkChannel.ToString();
             CurrentTick.StartEvent(eventType, bytes, channelName, messageName);
         }
 
-        internal static void StartEvent(TickType eventType, uint bytes, Channel channel, string messageName)
+        internal static void StartEvent(TickType eventType, uint bytes, NetworkChannel networkChannel, string messageName)
         {
             if (!IsRunning)
                 return;
             if (CurrentTick == null)
                 return;
 
-            string channelName = channel.ToString();
+            string channelName = networkChannel.ToString();
             CurrentTick.StartEvent(eventType, bytes, channelName, messageName);
         }
 

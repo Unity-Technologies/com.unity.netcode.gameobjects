@@ -7,7 +7,7 @@ namespace MLAPI.Messaging
     /// <summary>
     /// QueueHistoryFrame
     /// Used by the RpcQueueContainer to hold queued RPCs
-    /// All queued Rpcs end up in a PooledBitStream within a QueueHistoryFrame instance.
+    /// All queued Rpcs end up in a PooledNetworkBuffer within a QueueHistoryFrame instance.
     /// </summary>
     public class QueueHistoryFrame
     {
@@ -22,12 +22,12 @@ namespace MLAPI.Messaging
         public uint            totalSize;
         public List<uint>      queueItemOffsets;
 
-        public PooledBitStream queueStream;
-        public PooledBitWriter queueWriter;
+        public PooledNetworkBuffer queueBuffer;
+        public PooledNetworkWriter queueWriter;
         public QueueHistoryFrame loopbackHistoryFrame;  //Temporary fix for Host mode loopback work around.
 
 
-        public PooledBitReader queueReader;
+        public PooledNetworkReader queueReader;
 
         private int                                      m_QueueItemOffsetIndex;
         private RpcFrameQueueItem                        m_CurrentQueueItem;
@@ -54,9 +54,9 @@ namespace MLAPI.Messaging
         /// </summary>
         public void MarkCurrentStreamPosition()
         {
-            if (queueStream != null)
+            if (queueBuffer != null)
             {
-                m_CurrentStreamSizeMark = queueStream.Position;
+                m_CurrentStreamSizeMark = queueBuffer.Position;
             }
             else
             {
@@ -92,7 +92,7 @@ namespace MLAPI.Messaging
             if (m_QueueFrameType == QueueFrameType.Outbound)
             {
                 //Outbound we care about both channel and clients
-                m_CurrentQueueItem.channel = (Channel)queueReader.ReadByteDirect();
+                m_CurrentQueueItem.networkChannel = (NetworkChannel)queueReader.ReadByteDirect();
                 int NumClients = queueReader.ReadInt32();
                 if (NumClients > 0 && NumClients < m_MaximumClients)
                 {
@@ -128,19 +128,19 @@ namespace MLAPI.Messaging
                     long Position = queueReader.ReadInt64();
 
                     //Always make sure we are positioned at the start of the stream before we write
-                    m_CurrentQueueItem.itemStream.Position = 0;
+                    m_CurrentQueueItem.itemBuffer.Position = 0;
 
                     //Write the entire message to the m_CurrentQueueItem stream (1 stream is re-used for all incoming RPCs)
                     m_CurrentQueueItem.streamWriter.ReadAndWrite(queueReader, m_CurrentQueueItem.streamSize);
 
                     //Reset the position back to the offset so std rpc API can process the message properly
                     //(i.e. minus the already processed header)
-                    m_CurrentQueueItem.itemStream.Position = Position;
+                    m_CurrentQueueItem.itemBuffer.Position = Position;
                 }
                 else
                 {
                     //Create a byte array segment for outbound sending
-                    m_CurrentQueueItem.messageData = queueReader.CreateArraySegment((int)m_CurrentQueueItem.streamSize, (int)queueStream.Position);
+                    m_CurrentQueueItem.messageData = queueReader.CreateArraySegment((int)m_CurrentQueueItem.streamSize, (int)queueBuffer.Position);
                 }
             }
             else
@@ -160,7 +160,7 @@ namespace MLAPI.Messaging
         /// <returns>FrameQueueItem</returns>
         internal RpcFrameQueueItem GetNextQueueItem()
         {
-            queueStream.Position = queueItemOffsets[m_QueueItemOffsetIndex];
+            queueBuffer.Position = queueItemOffsets[m_QueueItemOffsetIndex];
             m_QueueItemOffsetIndex++;
             if (m_QueueItemOffsetIndex >= queueItemOffsets.Count)
             {
@@ -179,26 +179,26 @@ namespace MLAPI.Messaging
         /// <returns>FrameQueueItem</returns>
         internal RpcFrameQueueItem GetFirstQueueItem()
         {
-            if (queueStream.Position > 0)
+            if (queueBuffer.Position > 0)
             {
                 m_QueueItemOffsetIndex = 0;
-                queueStream.Position = 0;
+                queueBuffer.Position = 0;
 
                 if (m_QueueFrameType == QueueFrameType.Inbound)
                 {
-                    if(m_CurrentQueueItem.itemStream == null)
+                    if(m_CurrentQueueItem.itemBuffer == null)
                     {
-                        m_CurrentQueueItem.itemStream = PooledBitStream.Get();
+                        m_CurrentQueueItem.itemBuffer = PooledNetworkBuffer.Get();
                     }
 
                     if(m_CurrentQueueItem.streamWriter == null)
                     {
-                        m_CurrentQueueItem.streamWriter = PooledBitWriter.Get(m_CurrentQueueItem.itemStream);
+                        m_CurrentQueueItem.streamWriter = PooledNetworkWriter.Get(m_CurrentQueueItem.itemBuffer);
                     }
 
                     if(m_CurrentQueueItem.streamReader == null)
                     {
-                        m_CurrentQueueItem.streamReader = PooledBitReader.Get(m_CurrentQueueItem.itemStream);
+                        m_CurrentQueueItem.streamReader = PooledNetworkReader.Get(m_CurrentQueueItem.itemBuffer);
                     }
 
                 }
@@ -232,10 +232,10 @@ namespace MLAPI.Messaging
                 m_CurrentQueueItem.streamReader = null;
             }
 
-            if (m_CurrentQueueItem.itemStream != null)
+            if (m_CurrentQueueItem.itemBuffer != null)
             {
-                m_CurrentQueueItem.itemStream.Dispose();
-                m_CurrentQueueItem.itemStream = null;
+                m_CurrentQueueItem.itemBuffer.Dispose();
+                m_CurrentQueueItem.itemBuffer = null;
             }
         }
 

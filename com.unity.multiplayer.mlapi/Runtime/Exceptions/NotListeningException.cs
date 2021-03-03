@@ -3,7 +3,7 @@ using System;
 namespace MLAPI.Exceptions
 {
     /// <summary>
-    /// Exception thrown when the operation require NetworkingManager to be listening.
+    /// Exception thrown when the operation require NetworkManager to be listening.
     /// </summary>
     public class NotListeningException : Exception
     {

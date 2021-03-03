@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using MLAPI;
 
-public class Raygun : NetworkedBehaviour
+public class Raygun : NetworkBehaviour
 {
     public float m_Range = 10;
 
