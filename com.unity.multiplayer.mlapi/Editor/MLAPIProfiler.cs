@@ -9,11 +9,13 @@ namespace UnityEditor
 {
     public class MLAPIProfiler : EditorWindow
     {
+#if !UNITY_2020_2_OR_LATER
         [MenuItem("Window/MLAPI Profiler")]
         public static void ShowWindow()
         {
             GetWindow<MLAPIProfiler>();
         }
+#endif
 
         GUIStyle wrapStyle
         {
