@@ -3,17 +3,18 @@ using System.IO;
 using MLAPI.Profiling;
 using MLAPI.Serialization;
 using UnityEngine;
-using BitStream = MLAPI.Serialization.BitStream;
 
 namespace UnityEditor
 {
     public class MLAPIProfiler : EditorWindow
     {
+#if !UNITY_2020_2_OR_LATER
         [MenuItem("Window/MLAPI Profiler")]
         public static void ShowWindow()
         {
             GetWindow<MLAPIProfiler>();
         }
+#endif
 
         GUIStyle wrapStyle
         {
@@ -41,28 +42,28 @@ namespace UnityEditor
 
             public byte[] ToBytes()
 			{
-				BitStream stream = new BitStream();
-				BitWriter writer = new BitWriter(stream);
+				NetworkBuffer buffer = new NetworkBuffer();
+				NetworkWriter writer = new NetworkWriter(buffer);
 				writer.WriteUInt16Packed((ushort)ticks.Length);
 
 				for (int i = 0; i < ticks.Length; i++)
 				{
-					ticks[i].SerializeToStream(stream);
+					ticks[i].SerializeToStream(buffer);
 				}
 
-				return stream.ToArray();
+				return buffer.ToArray();
 			}
 
 			public static ProfilerContainer FromBytes(byte[] bytes)
 			{
 				ProfilerContainer container = new ProfilerContainer();
-				BitStream stream = new BitStream(bytes);
-				BitReader reader = new BitReader(stream);
+				NetworkBuffer buffer = new NetworkBuffer(bytes);
+				NetworkReader reader = new NetworkReader(buffer);
 				ushort count = reader.ReadUInt16Packed();
 				container.ticks = new ProfilerTick[count];
                 for (int i = 0; i < count; i++)
 				{
-					container.ticks[i] = ProfilerTick.FromStream(stream);
+					container.ticks[i] = ProfilerTick.FromStream(buffer);
 				}
 
 				return container;

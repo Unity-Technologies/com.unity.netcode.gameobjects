@@ -72,7 +72,7 @@ namespace MLAPI.Profiling
         [RuntimeInitializeOnLoadMethod]
         static void RegisterMLAPIPerformanceEvent()
         {
-            NetworkingManager.OnPerformanceDataEvent += OnPerformanceTickData;
+            NetworkManager.OnPerformanceDataEvent += OnPerformanceTickData;
         }
 
         static void OnPerformanceTickData(PerformanceTickData tickData)

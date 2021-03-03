@@ -8,7 +8,7 @@ namespace MLAPI.Messaging.Buffering
         public byte MessageType;
         public bool AllowBuffer;
         public ulong ClientId;
-        public Channel Channel;
+        public NetworkChannel NetworkChannel;
         public float ReceiveTime;
         public ArraySegment<byte> Data;
     }

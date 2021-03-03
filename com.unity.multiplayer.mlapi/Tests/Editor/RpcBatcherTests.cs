@@ -17,7 +17,7 @@ namespace MLAPI.EditorTests
             const int k_QueueItemCount = 128;
 
             var sendBatcher = new RpcBatcher();
-            var sendStreamQueue = new Queue<BitStream>();
+            var sendStreamQueue = new Queue<NetworkBuffer>();
             for (int i = 0; i < k_QueueItemCount; ++i)
             {
                 var randomData = Encoding.ASCII.GetBytes(Guid.NewGuid().ToString());
@@ -25,7 +25,7 @@ namespace MLAPI.EditorTests
                 {
                     networkId = 123,
                     clientIds = new ulong[] { 123 },
-                    channel = Channel.ChannelUnused + 123,
+                    networkChannel = NetworkChannel.ChannelUnused + 123,
                     queueItemType = i % 2 == 0 ? RpcQueueContainer.QueueItemType.ServerRpc : RpcQueueContainer.QueueItemType.ClientRpc,
                     messageData = new ArraySegment<byte>(randomData, 0, randomData.Length)
                 };
@@ -33,8 +33,8 @@ namespace MLAPI.EditorTests
                 sendBatcher.SendItems(k_BatchThreshold,
                     (networkId, sendStream) =>
                     {
-                        var queueStream = new BitStream();
-                        sendStream.Stream.CopyTo(queueStream);
+                        var queueStream = new NetworkBuffer();
+                        sendStream.Buffer.CopyTo(queueStream);
                         sendStreamQueue.Enqueue(queueStream);
                     });
             }
@@ -43,8 +43,8 @@ namespace MLAPI.EditorTests
             sendBatcher.SendItems( /* thresholdBytes = */ 0,
                 (networkId, sendStream) =>
                 {
-                    var queueStream = new BitStream();
-                    sendStream.Stream.CopyTo(queueStream);
+                    var queueStream = new NetworkBuffer();
+                    sendStream.Buffer.CopyTo(queueStream);
                     sendStreamQueue.Enqueue(queueStream);
                 });
 
@@ -75,7 +75,7 @@ namespace MLAPI.EditorTests
             const int k_QueueItemCount = 128;
 
             var sendBatcher = new RpcBatcher();
-            var sendStreamQueue = new Queue<BitStream>();
+            var sendStreamQueue = new Queue<NetworkBuffer>();
             for (int i = 0; i < k_QueueItemCount; ++i)
             {
                 var randomData = Encoding.ASCII.GetBytes(Guid.NewGuid().ToString());
@@ -83,7 +83,7 @@ namespace MLAPI.EditorTests
                 {
                     networkId = 123,
                     clientIds = new ulong[] { 123 },
-                    channel = Channel.ChannelUnused + 123,
+                    networkChannel = NetworkChannel.ChannelUnused + 123,
                     queueItemType = i % 2 == 0 ? RpcQueueContainer.QueueItemType.ServerRpc : RpcQueueContainer.QueueItemType.ClientRpc,
                     messageData = new ArraySegment<byte>(randomData, 0, randomData.Length)
                 };
@@ -91,8 +91,8 @@ namespace MLAPI.EditorTests
                 sendBatcher.SendItems(k_BatchThreshold,
                     (networkId, sendStream) =>
                     {
-                        var queueStream = new BitStream();
-                        sendStream.Stream.CopyTo(queueStream);
+                        var queueStream = new NetworkBuffer();
+                        sendStream.Buffer.CopyTo(queueStream);
                         sendStreamQueue.Enqueue(queueStream);
                     });
             }
@@ -101,8 +101,8 @@ namespace MLAPI.EditorTests
             sendBatcher.SendItems( /* thresholdBytes = */ 0,
                 (networkId, sendStream) =>
                 {
-                    var queueStream = new BitStream();
-                    sendStream.Stream.CopyTo(queueStream);
+                    var queueStream = new NetworkBuffer();
+                    sendStream.Buffer.CopyTo(queueStream);
                     sendStreamQueue.Enqueue(queueStream);
                 });
 
