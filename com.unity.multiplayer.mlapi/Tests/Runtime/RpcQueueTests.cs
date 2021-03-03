@@ -19,18 +19,6 @@ namespace MLAPI.RuntimeTests
     {
         private NetworkManager m_NetworkManager;
 
-        [UnitySetUp]
-        public IEnumerator SetUp()
-        {
-            yield return new EnterPlayMode();
-        }
-
-        [UnityTearDown]
-        public IEnumerator TearDown()
-        {
-            yield return new ExitPlayMode();
-        }
-
         /// <summary>
         /// Tests the egress and ingress RPC queue functionality
         /// ** This does not include any of the MLAPI to Transport code **
@@ -39,6 +27,7 @@ namespace MLAPI.RuntimeTests
         [UnityTest]
         public IEnumerator RpcQueueUnitTest()
         {
+#if UNITY_2020_2_OR_NEWER
             var networkManagerObject = new GameObject(nameof(NetworkManager));
             m_NetworkManager = networkManagerObject.AddComponent<NetworkManager>();
             var unetTransport = networkManagerObject.AddComponent<UnetTransport>();
@@ -113,6 +102,9 @@ namespace MLAPI.RuntimeTests
 
             GameObject.DestroyImmediate(playerObject);
             GameObject.DestroyImmediate(networkManagerObject);
+#else
+            yield return null;
+#endif
         }
     }
 }
