@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using MLAPI.Messaging;
@@ -27,10 +28,10 @@ namespace MLAPI.RuntimeTests
         // Start is called before the first frame update
         private void Start()
         {
-            m_Serverparams.Send.UpdateStage = NetworkUpdateStage.Initialization;
-            m_Clientparams.Send.UpdateStage = NetworkUpdateStage.Update;
+            m_ServerParams.Send.UpdateStage = NetworkUpdateStage.Initialization;
+            m_ClientParams.Send.UpdateStage = NetworkUpdateStage.Update;
 
-            m_MaxStagesSent = (System.Enum.GetValues(typeof(NetworkUpdateStage)).Length)*MaxIterations;
+            m_MaxStagesSent = (Enum.GetValues(typeof(NetworkUpdateStage)).Length) * MaxIterations;
 
             //Start out with this being true (for first sequence)
             m_ClientReceivedRpc = true;
@@ -42,10 +43,11 @@ namespace MLAPI.RuntimeTests
         /// <returns>true or false (did we exceed the max iterations or not?)</returns>
         public bool ExceededMaxIterations()
         {
-            if(m_StagesSent.Count > m_MaxStagesSent && m_MaxStagesSent > 0)
+            if (m_StagesSent.Count > m_MaxStagesSent && m_MaxStagesSent > 0)
             {
                 return true;
             }
+
             return false;
         }
 
@@ -59,14 +61,15 @@ namespace MLAPI.RuntimeTests
             {
                 return true;
             }
+
             return false;
         }
 
         private bool m_ClientReceivedRpc;
         private int m_Counter = 0;
         private int m_MaxStagesSent = 0;
-        private ServerRpcParams m_Serverparams;
-        private ClientRpcParams m_Clientparams;
+        private ServerRpcParams m_ServerParams;
+        private ClientRpcParams m_ClientParams;
         private NetworkUpdateStage m_LastUpdateStage;
 
         // Update is called once per frame
@@ -80,56 +83,43 @@ namespace MLAPI.RuntimeTests
                 //As long as testing isn't completed, keep testing
                 if (!IsTestComplete() && m_StagesSent.Count < m_MaxStagesSent)
                 {
-                    m_LastUpdateStage = m_Serverparams.Send.UpdateStage;
+                    m_LastUpdateStage = m_ServerParams.Send.UpdateStage;
                     m_StagesSent.Add(m_LastUpdateStage);
-                    PingMySelfServerRPC(m_StagesSent.Count, m_Serverparams);
-                    switch (m_Serverparams.Send.UpdateStage)
+
+                    PingMySelfServerRpc(m_StagesSent.Count, m_ServerParams);
+
+                    switch (m_ServerParams.Send.UpdateStage)
                     {
                         case NetworkUpdateStage.Initialization:
-                            {
-                                m_Serverparams.Send.UpdateStage = NetworkUpdateStage.EarlyUpdate;
-                                break;
-                            }
+                            m_ServerParams.Send.UpdateStage = NetworkUpdateStage.EarlyUpdate;
+                            break;
                         case NetworkUpdateStage.EarlyUpdate:
-                            {
-                                m_Serverparams.Send.UpdateStage = NetworkUpdateStage.FixedUpdate;
-                                break;
-                            }
+                            m_ServerParams.Send.UpdateStage = NetworkUpdateStage.FixedUpdate;
+                            break;
                         case NetworkUpdateStage.FixedUpdate:
-                            {
-                                m_Serverparams.Send.UpdateStage = NetworkUpdateStage.PreUpdate;
-                                break;
-                            }
+                            m_ServerParams.Send.UpdateStage = NetworkUpdateStage.PreUpdate;
+                            break;
                         case NetworkUpdateStage.PreUpdate:
-                            {
-                                m_Serverparams.Send.UpdateStage = NetworkUpdateStage.Update;
-                                break;
-                            }
+                            m_ServerParams.Send.UpdateStage = NetworkUpdateStage.Update;
+                            break;
                         case NetworkUpdateStage.Update:
-                            {
-                                m_Serverparams.Send.UpdateStage = NetworkUpdateStage.PreLateUpdate;
-                                break;
-                            }
+                            m_ServerParams.Send.UpdateStage = NetworkUpdateStage.PreLateUpdate;
+                            break;
                         case NetworkUpdateStage.PreLateUpdate:
-                            {
-                                m_Serverparams.Send.UpdateStage = NetworkUpdateStage.PostLateUpdate;
-                                break;
-                            }
+                            m_ServerParams.Send.UpdateStage = NetworkUpdateStage.PostLateUpdate;
+                            break;
                         case NetworkUpdateStage.PostLateUpdate:
-                            {
-                                m_Serverparams.Send.UpdateStage = NetworkUpdateStage.Initialization;
-
-                                break;
-                            }
+                            m_ServerParams.Send.UpdateStage = NetworkUpdateStage.Initialization;
+                            break;
                     }
                 }
             }
         }
 
 
-        private List<NetworkUpdateStage> m_ServerStagesReceived = new List<NetworkUpdateStage>();
-        private List<NetworkUpdateStage> m_ClientStagesReceived = new List<NetworkUpdateStage>();
-        private List<NetworkUpdateStage> m_StagesSent = new List<NetworkUpdateStage>();
+        private readonly List<NetworkUpdateStage> m_ServerStagesReceived = new List<NetworkUpdateStage>();
+        private readonly List<NetworkUpdateStage> m_ClientStagesReceived = new List<NetworkUpdateStage>();
+        private readonly List<NetworkUpdateStage> m_StagesSent = new List<NetworkUpdateStage>();
 
         /// <summary>
         /// Assures all update stages were in alginment with one another
@@ -142,24 +132,25 @@ namespace MLAPI.RuntimeTests
             {
                 for (int i = 0; i < m_StagesSent.Count; i++)
                 {
-                    NetworkUpdateStage currentStage = m_StagesSent[i];
+                    var currentStage = m_StagesSent[i];
                     if (m_ServerStagesReceived[i] != currentStage)
                     {
-#if UNITY_EDITOR
-                        Debug.LogFormat("ServerRpc Update Stage ( {0} ) is not equal to the current update stage ( {1} ) ", m_ServerStagesReceived[i].ToString(), currentStage.ToString());
-#endif
+                        Debug.Log($"ServerRpc Update Stage ({m_ServerStagesReceived[i]}) is not equal to the current update stage ({currentStage})");
+
                         return validated;
                     }
+
                     if (m_ClientStagesReceived[i] != currentStage)
                     {
-#if UNITY_EDITOR
-                        Debug.LogFormat("ClientRpc Update Stage ( {0} ) is not equal to the current update stage ( {1} ) ", m_ClientStagesReceived[i].ToString(), currentStage.ToString());
-#endif
+                        Debug.Log($"ClientRpc Update Stage ({m_ClientStagesReceived[i]}) is not equal to the current update stage ({currentStage})");
+
                         return validated;
                     }
                 }
+
                 validated = true;
             }
+
             return validated;
         }
 
@@ -168,14 +159,14 @@ namespace MLAPI.RuntimeTests
         /// </summary>
         /// <param name="parameters">server rpc parameters</param>
         [ServerRpc]
-        private void PingMySelfServerRPC(int currentCount, ServerRpcParams parameters = default)
+        private void PingMySelfServerRpc(int currentCount, ServerRpcParams parameters = default)
         {
-#if UNITY_EDITOR
-            Debug.Log("[HostClient][ServerRpc][" + currentCount.ToString() + "] invoked during the " + parameters.Receive.UpdateStage.ToString() + " stage.");
-#endif
-            m_Clientparams.Send.UpdateStage = parameters.Receive.UpdateStage;
+            Debug.Log($"{nameof(PingMySelfServerRpc)}: [HostClient][ServerRpc][{currentCount}] invoked during the {parameters.Receive.UpdateStage} stage.");
+
+            m_ClientParams.Send.UpdateStage = parameters.Receive.UpdateStage;
             m_ServerStagesReceived.Add(parameters.Receive.UpdateStage);
-            PingMySelfClientRpc(currentCount, m_Clientparams);
+
+            PingMySelfClientRpc(currentCount, m_ClientParams);
         }
 
         /// <summary>
@@ -185,15 +176,16 @@ namespace MLAPI.RuntimeTests
         [ClientRpc]
         private void PingMySelfClientRpc(int currentCount, ClientRpcParams parameters = default)
         {
+            Debug.Log($"{nameof(PingMySelfClientRpc)}: [HostServer][ClientRpc][{currentCount}]  invoked during the {parameters.Receive.UpdateStage} stage. (previous output line should confirm this)");
+
             m_ClientStagesReceived.Add(parameters.Receive.UpdateStage);
-#if UNITY_EDITOR
-            Debug.Log("[HostServer][ClientRpc][" + currentCount.ToString() + "]  invoked during the " + parameters.Receive.UpdateStage.ToString() + " stage. (previous output line should confirm this)");
-#endif
+
             //If we reached the last update state, then go ahead and increment our iteration counter
             if (parameters.Receive.UpdateStage == NetworkUpdateStage.PostLateUpdate)
             {
                 m_Counter++;
             }
+
             m_ClientReceivedRpc = true;
         }
     }
