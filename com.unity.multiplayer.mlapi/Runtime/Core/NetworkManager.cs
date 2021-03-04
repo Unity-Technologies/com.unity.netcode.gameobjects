@@ -1333,17 +1333,11 @@ namespace MLAPI
                 // This packet is unreliable, but if it gets through it should provide a much better sync than the potentially huge approval message.
                 SyncTime();
 
-
-                //if (createPlayerObject)
-                //{
-                //    NetworkObject netObject = NetworkSpawnManager.CreateLocalNetworkObject(false, 0, (playerPrefabHash == null ? NetworkConfig.PlayerPrefabHash.Value : playerPrefabHash.Value), null, position, rotation);
-                //    NetworkSpawnManager.SpawnNetworkObjectLocally(netObject, NetworkSpawnManager.GetNetworkObjectId(), false, true, clientId, null, false, 0, false, false);
-
-                //    ConnectedClients[clientId].PlayerObject = netObject;
-                //}
-
+                //Reset our observed objects list
+                //[NSS]: This assures we have an up to date list of all observed objects
                 _observedObjects.Clear();
 
+                //Rebuild our observed objects list
                 foreach (var sobj in NetworkSpawnManager.SpawnedObjectsList)
                 {
                     if (clientId == ServerClientId || sobj.CheckObjectVisibility == null || sobj.CheckObjectVisibility(clientId))
@@ -1353,6 +1347,7 @@ namespace MLAPI
                     }
                 }
 
+                //Build scene loading stream information to send to the client
                 using (PooledNetworkBuffer buffer = PooledNetworkBuffer.Get())
                 {
                     using (PooledNetworkWriter writer = PooledNetworkWriter.Get(buffer))
@@ -1440,17 +1435,25 @@ namespace MLAPI
                     }
                 }
 
-                if (!createPlayerObject || (playerPrefabHash == null && NetworkConfig.PlayerPrefabHash == null)) return;
-
-
-                if (createPlayerObject)
+                //We are done if we don't automatically spawn the player or there is an issue with the configuration (i.e. no player prefab hash
+                if (!createPlayerObject || (playerPrefabHash == null && NetworkConfig.PlayerPrefabHash == null))
                 {
-                    NetworkObject netObject = NetworkSpawnManager.CreateLocalNetworkObject(false, 0, (playerPrefabHash == null ? NetworkConfig.PlayerPrefabHash.Value : playerPrefabHash.Value), null, position, rotation);
-                    NetworkSpawnManager.SpawnNetworkObjectLocally(netObject, NetworkSpawnManager.GetNetworkObjectId(), false, true, clientId, null, false, 0, false, false);
-                    ConnectedClients[clientId].IsClientDoneLoadingScene = false;
-                    ConnectedClients[clientId].PlayerObject = netObject;
+                    if(createPlayerObject)
+                    {
+                        //Provide meaningful feedback to developers that this happened.
+                        NetworkLog.LogWarning("NetworkManager configured to spawn player prefab but no prefab is defined or there is a problem with the prefab hash.");
+                    }
+
+                    return;
                 }
 
+                //Create the new player from the assigned prefab
+                NetworkObject netObject = NetworkSpawnManager.CreateLocalNetworkObject(false, 0, (playerPrefabHash == null ? NetworkConfig.PlayerPrefabHash.Value : playerPrefabHash.Value), null, position, rotation);
+                NetworkSpawnManager.SpawnNetworkObjectLocally(netObject, NetworkSpawnManager.GetNetworkObjectId(), false, true, clientId, null, false, 0, false, false);
+                ConnectedClients[clientId].IsClientDoneLoadingScene = false;
+                ConnectedClients[clientId].PlayerObject = netObject;
+
+                //Rebuild our observed objects list (yes a second time to assure this happens for the new player)
                 _observedObjects.Clear();
 
                 foreach (var sobj in NetworkSpawnManager.SpawnedObjectsList)
@@ -1462,12 +1465,11 @@ namespace MLAPI
                     }
                 }
 
-                //Inform old clients of the new player
+                //Inform all clients of the new player
                 foreach (KeyValuePair<ulong, NetworkClient> clientPair in ConnectedClients)
                 {
-                    //if (clientPair.Key == clientId || ConnectedClients[clientId].PlayerObject == null || !ConnectedClients[clientId].PlayerObject.observers.Contains(clientPair.Key))
                     if (ConnectedClients[clientId].PlayerObject == null || !ConnectedClients[clientId].PlayerObject.observers.Contains(clientPair.Key))
-                        continue; //The new client.
+                        continue;
 
                     using (PooledNetworkBuffer buffer = PooledNetworkBuffer.Get())
                     {
@@ -1515,7 +1517,6 @@ namespace MLAPI
                             }
 
                             NetworkSpawnManager.SendSpawnCallForObject(clientPair.Key, ConnectedClients[clientId].PlayerObject, buffer);
-                            //InternalMessageSender.Send(clientPair.Key, NetworkConstants.ADD_OBJECT, NetworkChannel.Internal, buffer);
                         }
                     }
                 }

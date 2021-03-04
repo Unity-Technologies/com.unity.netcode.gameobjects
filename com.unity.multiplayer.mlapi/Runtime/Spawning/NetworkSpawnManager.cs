@@ -404,7 +404,7 @@ namespace MLAPI.Spawning
             }
         }
 
-        internal static void SendSpawnCallForObject(ulong clientId, NetworkObject netObject, Stream payload, bool isPlayerObject = false)
+        internal static void SendSpawnCallForObject(ulong clientId, NetworkObject netObject, Stream payload)
         {
             //Currently, if this is called and the clientId (destination) is the server's client Id, this case
             //will be checked within the below Send function.  To avoid unwarranted allocation of a PooledNetworkBuffer
@@ -422,7 +422,8 @@ namespace MLAPI.Spawning
             var queueItem = new RpcFrameQueueItem
             {
                 updateStage = NetworkUpdateStage.Update,
-                queueItemType = isPlayerObject ? RpcQueueContainer.QueueItemType.CreatePlayerObject:RpcQueueContainer.QueueItemType.CreateObject,
+                queueCreationTime = Time.realtimeSinceStartup,
+                queueItemType = RpcQueueContainer.QueueItemType.CreateObject,
                 networkId = 0,
                 itemBuffer = stream,
                 networkChannel = NetworkChannel.Internal,
@@ -693,6 +694,7 @@ namespace MLAPI.Spawning
                                 var queueItem = new RpcFrameQueueItem
                                 {
                                     updateStage = NetworkUpdateStage.PostLateUpdate,
+                                    queueCreationTime = Time.realtimeSinceStartup,
                                     queueItemType = RpcQueueContainer.QueueItemType.DestroyObject,
                                     networkId = networkId,
                                     itemBuffer = stream,

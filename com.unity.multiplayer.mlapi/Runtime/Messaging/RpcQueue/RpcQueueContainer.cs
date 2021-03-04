@@ -20,7 +20,6 @@ namespace MLAPI.Messaging
             ServerRpc,
             ClientRpc,
             CreateObject, //MLAPI Constant *** We need to determine if these belong here ***
-            CreatePlayerObject, //Special case to assure the players are spawned always
             DestroyObject, //MLAPI Constant
 
             None //Indicates end of frame
@@ -69,29 +68,11 @@ namespace MLAPI.Messaging
         }
 
         /// <summary>
-        /// GetStreamBufferFrameCount
-        /// Returns how many frames have been processed (Inbound/Outbound)
-        /// </summary>
-        /// <param name="queueType"></param>
-        /// <returns>number of frames procssed</returns>
-        public uint GetStreamBufferFrameCount(QueueHistoryFrame.QueueFrameType queueType)
-        {
-            return queueType == QueueHistoryFrame.QueueFrameType.Inbound ? m_InboundFramesProcessed : m_OutboundFramesProcessed;
-        }
-
-        /// <summary>
-        /// AddToInternalMLAPISendQueue
-        /// NSS-TODO: This will need to be removed once we determine how we want to handle specific
-        /// internal MLAPI commands relative to RPCS.
-        /// Example: An network object is destroyed via server side (internal mlapi) command, but prior to this several RPCs are invoked for the to be destroyed object (Client RPC)
-        /// If both the DestroyObject internal mlapi command and the ClientRPCs are received in the same frame but the internal mlapi DestroyObject command is processed prior to the
-        /// RPCs being invoked then the object won't exist and additional warnings will be logged that the object no longer exists.
-        /// The vices versa scenario (create and then RPCs sent) is an unlikely/improbable scenario, but just in case added the CreateObject to this special case scenario.
-        ///
+        /// A public wrapper
         /// To avoid the DestroyObject scenario, the internal MLAPI commands (DestroyObject and CreateObject) are always invoked after RPCs.
         /// </summary>
         /// <param name="queueItem">item to add to the internal MLAPI queue</param>
-        public void AddToInternalMLAPISendQueue(RpcFrameQueueItem queueItem)
+        internal void AddToInternalMLAPISendQueue(RpcFrameQueueItem queueItem)
         {
             m_RpcQueueProcessor.QueueInternalMLAPICommand(queueItem);
         }
@@ -101,7 +82,7 @@ namespace MLAPI.Messaging
         /// Will process the RPC queue and then move to the next available frame
         /// </summary>
         /// <param name="queueType"></param>
-        public void ProcessAndFlushRpcQueue(RpcQueueProcessingTypes queueType, NetworkUpdateStage currentUpdateStage)
+        internal void ProcessAndFlushRpcQueue(RpcQueueProcessingTypes queueType, NetworkUpdateStage currentUpdateStage)
         {
             if (m_RpcQueueProcessor == null)
             {
@@ -129,7 +110,7 @@ namespace MLAPI.Messaging
         /// </summary>
         /// <param name="qType"></param>
         /// <returns>QueueHistoryFrame</returns>
-        public QueueHistoryFrame GetCurrentFrame(QueueHistoryFrame.QueueFrameType qType, NetworkUpdateStage currentUpdateStage)
+        internal QueueHistoryFrame GetCurrentFrame(QueueHistoryFrame.QueueFrameType qType, NetworkUpdateStage currentUpdateStage)
         {
             if (QueueHistory.ContainsKey(qType))
             {
@@ -164,7 +145,7 @@ namespace MLAPI.Messaging
         /// All other frames other than the current frame is considered the live rollback history
         /// </summary>
         /// <param name="queueType"></param>
-        public void AdvanceFrameHistory(QueueHistoryFrame.QueueFrameType queueType)
+        internal void AdvanceFrameHistory(QueueHistoryFrame.QueueFrameType queueType)
         {
             int StreamBufferIndex = GetStreamBufferIndex(queueType);
 
@@ -224,7 +205,6 @@ namespace MLAPI.Messaging
         }
 
         /// <summary>
-        /// IncrementAndSetQueueHistoryFrame
         /// Increments and sets frame count for this queue frame
         /// </summary>
         /// <param name="queueFrame">QueueHistoryFrame to be reset</param>
@@ -241,7 +221,6 @@ namespace MLAPI.Messaging
         }
 
         /// <summary>
-        /// ResetQueueHistoryFrame
         /// Resets the queue history frame passed to this method
         /// </summary>
         /// <param name="queueFrame">QueueHistoryFrame to be reset</param>
@@ -259,7 +238,6 @@ namespace MLAPI.Messaging
         }
 
         /// <summary>
-        /// AddQueueItemToInboundFrame
         /// Adds an RPC queue item to the outbound frame
         /// </summary>
         /// <param name="qItemType">type of rpc (client or server)</param>
@@ -304,12 +282,11 @@ namespace MLAPI.Messaging
         }
 
         /// <summary>
-        /// SetLoopBackFrameItem
-        /// ***Temporary fix for host mode loopback RPC writer work-around
+        /// ***Temporary fix *** for host mode loopback RPC writer work-around
         /// Sets the next frame inbond buffer as the loopback queue history frame in the current frame's outbound buffer
         /// </summary>
         /// <param name="updateStage"></param>
-        public void SetLoopBackFrameItem(NetworkUpdateStage updateStage)
+        internal void SetLoopBackFrameItem(NetworkUpdateStage updateStage)
         {
             //Get the next frame's inbound queue history frame
             QueueHistoryFrame loopbackHistoryframe =  GetQueueHistoryFrame(QueueHistoryFrame.QueueFrameType.Inbound,updateStage,true);
@@ -328,29 +305,18 @@ namespace MLAPI.Messaging
         }
 
         /// <summary>
-        /// GetLoopBackWriter
-        /// Gets the loop back writer for the history frame (if one exists)
-        /// ***Temporary fix for host mode loopback RPC writer work-around
-        /// </summary>
-        /// <param name="queueFrameType"></param>
-        /// <param name="updateStage"></param>
-        /// <returns></returns>
-        public QueueHistoryFrame GetLoopBackHistoryFrame(QueueHistoryFrame.QueueFrameType queueFrameType, NetworkUpdateStage updateStage)
-        {
-            return GetQueueHistoryFrame(queueFrameType, updateStage, false);
-        }
-
-        /// <summary>
-        /// BeginAddQueueItemToOutboundFrame
-        /// Adds a queue item to the outbound queue frame
+        /// Begins the sequence to adds a queue item to the outbound queue frame
+        /// *** EndAddQueueItemToFrame must be called to complete the queue item ***
         /// </summary>
         /// <param name="qItemType">type of rpc (client or server)</param>
         /// <param name="timeStamp">when it was scheduled to be sent</param>
         /// <param name="networkChannel">the channel to send it on</param>
         /// <param name="sourceNetworkId">who is sending the rpc</param>
         /// <param name="targetNetworkIds">who the rpc is being sent to</param>
-        /// <returns></returns>
-        public PooledNetworkWriter BeginAddQueueItemToFrame(QueueItemType qItemType, float timeStamp, NetworkChannel networkChannel, ulong sourceNetworkId, ulong[] targetNetworkIds,
+        /// <param name="queueFrameType">type of queue frame item</param>
+        /// <param name="updateStage">stage the item should be processed or invoked</param>
+        /// <returns>PooledNetworkWriter to write additional information for the queue item</returns>
+        internal PooledNetworkWriter BeginAddQueueItemToFrame(QueueItemType qItemType, float timeStamp, NetworkChannel networkChannel, ulong sourceNetworkId, ulong[] targetNetworkIds,
             QueueHistoryFrame.QueueFrameType queueFrameType, NetworkUpdateStage updateStage)
         {
             bool getNextFrame = NetworkManager.Singleton.IsHost && queueFrameType == QueueHistoryFrame.QueueFrameType.Inbound;
@@ -426,12 +392,12 @@ namespace MLAPI.Messaging
         }
 
         /// <summary>
-        /// EndAddQueueItemToOutboundFrame
         /// Signifies the end of this outbound RPC.
-        /// We store final MSG size and track the total current frame queue size
+        /// *** BeginAddQueueItemToFrame must be called to complete the queue item ***
+        /// *** !!The network writer (PooledNetworkWriter) used must be the same returned by BeginAddQueueItemToFrame!! ***
         /// </summary>
         /// <param name="writer">writer that was used</param>
-        public void EndAddQueueItemToFrame(NetworkWriter writer, QueueHistoryFrame.QueueFrameType queueFrameType, NetworkUpdateStage updateStage)
+        internal void EndAddQueueItemToFrame(NetworkWriter writer, QueueHistoryFrame.QueueFrameType queueFrameType, NetworkUpdateStage updateStage)
         {
             bool getNextFrame = NetworkManager.Singleton.IsHost && queueFrameType == QueueHistoryFrame.QueueFrameType.Inbound;
 
@@ -530,12 +496,11 @@ namespace MLAPI.Messaging
         }
 
         /// <summary>
-        /// GetQueueHistoryFrame
         /// Gets the current queue history frame (inbound or outbound)
         /// </summary>
         /// <param name="frameType">inbound or outbound</param>
         /// <returns>QueueHistoryFrame or null</returns>
-        public QueueHistoryFrame GetQueueHistoryFrame(QueueHistoryFrame.QueueFrameType frameType, NetworkUpdateStage updateStage, bool getNextFrame = false)
+        internal QueueHistoryFrame GetQueueHistoryFrame(QueueHistoryFrame.QueueFrameType frameType, NetworkUpdateStage updateStage, bool getNextFrame = false)
         {
             int StreamBufferIndex = GetStreamBufferIndex(frameType);
 
@@ -572,11 +537,10 @@ namespace MLAPI.Messaging
         }
 
         /// <summary>
-        /// LoopbackSendFrame
         /// Will copy the contents of the current outbound QueueHistoryFrame to the current inbound QueueHistoryFrame
-        /// [NSS]: Leaving this here in the event a portion of this code is useful for doing Batch testing
+        /// [NSS]: Leaving this here in the event a portion of this code is useful for reference and/or future testing purposes
         /// </summary>
-        public void LoopbackSendFrame()
+        internal void LoopbackSendFrame()
         {
             //If we do not have loop back or testing mode enabled then ignore the call
             if (m_IsTestingEnabled)
@@ -614,13 +578,12 @@ namespace MLAPI.Messaging
         }
 
         /// <summary>
-        /// Initialize
         /// This should be called during primary initialization period (typically during NetworkManager's Start method)
         /// This will allocate [maxFrameHistory] + [1 currentFrame] number of PooledNetworkBuffers and keep them open until the session ends
         /// Note: For zero frame history set maxFrameHistory to zero
         /// </summary>
         /// <param name="maxFrameHistory"></param>
-        public void Initialize(uint maxFrameHistory)
+        internal void Initialize(uint maxFrameHistory)
         {
             ClearParameters();
 
@@ -707,7 +670,7 @@ namespace MLAPI.Messaging
         /// Removes itself from the network update loop
         /// Disposes readers, writers, clears the queue history, and resets any parameters
         /// </summary>
-        public void Shutdown()
+        internal void Shutdown()
         {
             //As long as this instance is using the pre-defined update stages
             if (!m_ProcessUpdateStagesExternally)
@@ -744,7 +707,7 @@ namespace MLAPI.Messaging
         /// </summary>
         /// <param name="processInternally">determines if it handles processing internally or if it will be done externally</param>
         /// <param name="isLoopBackEnabled">turns loopback on or off (primarily debugging purposes)</param>
-        public RpcQueueContainer(bool processExternally)
+        internal RpcQueueContainer(bool processExternally)
         {
             m_ProcessUpdateStagesExternally = processExternally;
         }

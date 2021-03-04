@@ -438,13 +438,13 @@ namespace MLAPI
             if (spawnPayload != null)
                 spawnPayload.Position = 0;
 
-            //NetworkSpawnManager.SpawnNetworkObjectLocally(this, NetworkSpawnManager.GetNetworkObjectId(), false, true, clientId, spawnPayload, spawnPayload != null, spawnPayload == null ? 0 : (int)spawnPayload.Length, false, destroyWithScene);
+            NetworkSpawnManager.SpawnNetworkObjectLocally(this, NetworkSpawnManager.GetNetworkObjectId(), false, true, clientId, spawnPayload, spawnPayload != null, spawnPayload == null ? 0 : (int)spawnPayload.Length, false, destroyWithScene);
 
             for (int i = 0; i < NetworkManager.Singleton.ConnectedClientsList.Count; i++)
             {
                 if (observers.Contains(NetworkManager.Singleton.ConnectedClientsList[i].ClientId))
                 {
-                    NetworkSpawnManager.SendSpawnCallForObject(NetworkManager.Singleton.ConnectedClientsList[i].ClientId, this, spawnPayload,true);
+                    NetworkSpawnManager.SendSpawnCallForObject(NetworkManager.Singleton.ConnectedClientsList[i].ClientId, this, spawnPayload);
                 }
             }
         }

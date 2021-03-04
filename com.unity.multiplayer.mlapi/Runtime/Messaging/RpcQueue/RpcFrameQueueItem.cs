@@ -14,6 +14,7 @@ namespace  MLAPI.Messaging
     internal struct RpcFrameQueueItem
     {
         public NetworkUpdateStage                        updateStage;
+        public float                                     queueCreationTime;  //How long has this queue item been around (right now only internal message queue items set this)
         public RpcQueueContainer.QueueItemType           queueItemType;
         public ulong                                     networkId;          //Sender's network Identifier
         public NetworkChannel                            networkChannel;
