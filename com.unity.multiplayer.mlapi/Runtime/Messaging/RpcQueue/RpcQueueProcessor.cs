@@ -54,7 +54,7 @@ namespace MLAPI.Messaging
                 var nextFrame = rpcQueueContainer.GetQueueHistoryFrame(RpcQueueHistoryFrame.QueueFrameType.Inbound, currentStage, true);
                 if (nextFrame.IsDirty && nextFrame.HasLoopbackData)
                 {
-                    advanceFrameHistory = true;
+                    AdvanceFrameHistory = true;
                 }
 
                 if (currentFrame != null && currentFrame.IsDirty)
@@ -62,7 +62,7 @@ namespace MLAPI.Messaging
                     var currentQueueItem = currentFrame.GetFirstQueueItem();
                     while (currentQueueItem.QueueItemType != RpcQueueContainer.QueueItemType.None)
                     {
-                        advanceFrameHistory = true;
+                        AdvanceFrameHistory = true;
 
                         if (rpcQueueContainer.IsTesting())
                         {
@@ -79,7 +79,7 @@ namespace MLAPI.Messaging
                     currentFrame.CloseQueue();
                 }
 
-                if (advanceFrameHistory)
+                if (AdvanceFrameHistory)
                 {
                     rpcQueueContainer.AdvanceFrameHistory(RpcQueueHistoryFrame.QueueFrameType.Inbound);
                 }
@@ -141,22 +141,22 @@ namespace MLAPI.Messaging
                         {
                             if(NetworkManager.Singleton.IsClient || NetworkManager.Singleton.ConnectedClients[clientId].IsClientDoneLoadingScene )
                             {
-                                switch (queueItem.queueItemType)
+                                switch (queueItem.QueueItemType)
                                 {
                                     case RpcQueueContainer.QueueItemType.CreateObject:
                                     {
-                                        InternalMessageSender.Send(clientId, NetworkConstants.ADD_OBJECT, queueItem.networkChannel, PoolStream);
+                                        InternalMessageSender.Send(clientId, NetworkConstants.ADD_OBJECT, queueItem.NetworkChannel, PoolStream);
                                         clientIds.Remove(clientId);
                                         PerformanceDataManager.Increment(ProfilerConstants.NumberOfRPCsSent, queueItem.ClientNetworkIds.Length);
-                                        ProfilerStatManager.rpcsSent.Record(queueItem.ClientNetworkIds.Length);
+                                        ProfilerStatManager.RpcsSent.Record(queueItem.ClientNetworkIds.Length);
                                         break;
                                     }
                                     case RpcQueueContainer.QueueItemType.DestroyObject:
                                     {
-                                        InternalMessageSender.Send(clientId, NetworkConstants.DESTROY_OBJECT, queueItem.networkChannel, PoolStream);
+                                        InternalMessageSender.Send(clientId, NetworkConstants.DESTROY_OBJECT, queueItem.NetworkChannel, PoolStream);
                                         clientIds.Remove(clientId);
                                         PerformanceDataManager.Increment(ProfilerConstants.NumberOfRPCsSent, queueItem.ClientNetworkIds.Length);
-                                        ProfilerStatManager.rpcsSent.Record(queueItem.ClientNetworkIds.Length);
+                                        ProfilerStatManager.RpcsSent.Record(queueItem.ClientNetworkIds.Length);
                                         break;
                                     }
                                 }
@@ -169,7 +169,7 @@ namespace MLAPI.Messaging
                     }
 
                     //If there are no more clients to send this item to =or= a queue item has been around for a minute then remove it from the outbound internal message queue
-                    if(clientIds.Count == 0 || ((queueItem.queueCreationTime + k_MaximumInternalQueueItemLifeTime) < Time.realtimeSinceStartup) )
+                    if(clientIds.Count == 0 || ((queueItem.QueueCreationTime + k_MaximumInternalQueueItemLifeTime) < Time.realtimeSinceStartup) )
                     {
                         CompletedRpcQueueItems.Add(queueItem);
                         PoolStream.Dispose();
@@ -204,7 +204,7 @@ namespace MLAPI.Messaging
                     var currentQueueItem = currentFrame.GetFirstQueueItem();
                     while (currentQueueItem.QueueItemType != RpcQueueContainer.QueueItemType.None)
                     {
-                        advanceFrameHistory = true;
+                        AdvanceFrameHistory = true;
                         if (rpcQueueContainer.IsUsingBatching())
                         {
                             m_RpcBatcher.QueueItem(currentQueueItem);
@@ -220,14 +220,14 @@ namespace MLAPI.Messaging
                     }
 
                     //If the size is < m_BatchThreshold then just send the messages
-                    if (advanceFrameHistory && rpcQueueContainer.IsUsingBatching())
+                    if (AdvanceFrameHistory && rpcQueueContainer.IsUsingBatching())
                     {
                         m_RpcBatcher.SendItems(0, SendCallback);
                     }
                 }
 
                 //If we processed any RPCs, then advance to the next frame
-                if (advanceFrameHistory)
+                if (AdvanceFrameHistory)
                 {
                     rpcQueueContainer.AdvanceFrameHistory(RpcQueueHistoryFrame.QueueFrameType.Outbound);
                 }

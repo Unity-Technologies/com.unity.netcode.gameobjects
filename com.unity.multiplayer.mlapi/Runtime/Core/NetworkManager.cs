@@ -1319,7 +1319,7 @@ namespace MLAPI
 
                 //Reset our observed objects list
                 //[NSS]: This assures we have an up to date list of all observed objects
-                _observedObjects.Clear();
+                m_ObservedObjects.Clear();
 
                 //Rebuild our observed objects list
                 foreach (var sobj in NetworkSpawnManager.SpawnedObjectsList)
@@ -1434,21 +1434,21 @@ namespace MLAPI
                 ConnectedClients[clientId].PlayerObject = netObject;
 
                 //Rebuild our observed objects list (yes a second time to assure this happens for the new player)
-                _observedObjects.Clear();
+                m_ObservedObjects.Clear();
 
                 foreach (var sobj in NetworkSpawnManager.SpawnedObjectsList)
                 {
                     if (clientId == ServerClientId || sobj.CheckObjectVisibility == null || sobj.CheckObjectVisibility(clientId))
                     {
-                        _observedObjects.Add(sobj);
-                        sobj.observers.Add(clientId);
+                        m_ObservedObjects.Add(sobj);
+                        sobj.m_Observers.Add(clientId);
                     }
                 }
 
                 //Inform all clients of the new player
                 foreach (KeyValuePair<ulong, NetworkClient> clientPair in ConnectedClients)
                 {
-                    if (ConnectedClients[clientId].PlayerObject == null || !ConnectedClients[clientId].PlayerObject.observers.Contains(clientPair.Key))
+                    if (ConnectedClients[clientId].PlayerObject == null || !ConnectedClients[clientId].PlayerObject.m_Observers.Contains(clientPair.Key))
                         continue;
 
                     using (var buffer = PooledNetworkBuffer.Get())
@@ -1494,7 +1494,7 @@ namespace MLAPI
                         {
                             ConnectedClients[clientId].PlayerObject.WriteNetworkVariableData(buffer, clientPair.Key);
                         }
-                        
+
                         NetworkSpawnManager.SendSpawnCallForObject(clientPair.Key, ConnectedClients[clientId].PlayerObject, buffer);
                     }
                 }

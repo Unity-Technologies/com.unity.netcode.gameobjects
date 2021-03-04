@@ -91,15 +91,15 @@ namespace MLAPI.Messaging
             switch (queueType)
             {
                 case RpcQueueProcessingTypes.Receive:
-                {
-                    m_RpcQueueProcessor.ProcessReceiveQueue(currentUpdateStage);
-                    break;
-                }
+                    {
+                        m_RpcQueueProcessor.ProcessReceiveQueue(currentUpdateStage);
+                        break;
+                    }
                 case RpcQueueProcessingTypes.Send:
-                {
-                    m_RpcQueueProcessor.ProcessSendQueue();
-                    break;
-                }
+                    {
+                        m_RpcQueueProcessor.ProcessSendQueue();
+                        break;
+                    }
             }
         }
 
@@ -141,7 +141,7 @@ namespace MLAPI.Messaging
         /// All other frames other than the current frame is considered the live rollback history
         /// </summary>
         /// <param name="queueType"></param>
-        internal void AdvanceFrameHistory(QueueHistoryFrame.QueueFrameType queueType)
+        internal void AdvanceFrameHistory(RpcQueueHistoryFrame.QueueFrameType queueType)
         {
             int StreamBufferIndex = GetStreamBufferIndex(queueType);
 
@@ -315,7 +315,7 @@ namespace MLAPI.Messaging
         /// <param name="updateStage">stage the item should be processed or invoked</param>
         /// <returns>PooledNetworkWriter to write additional information for the queue item</returns>
         internal PooledNetworkWriter BeginAddQueueItemToFrame(QueueItemType qItemType, float timeStamp, NetworkChannel networkChannel, ulong sourceNetworkId, ulong[] targetNetworkIds,
-            QueueHistoryFrame.QueueFrameType queueFrameType, NetworkUpdateStage updateStage)
+            RpcQueueHistoryFrame.QueueFrameType queueFrameType, NetworkUpdateStage updateStage)
         {
             bool getNextFrame = NetworkManager.Singleton.IsHost && queueFrameType == RpcQueueHistoryFrame.QueueFrameType.Inbound;
 
@@ -396,7 +396,7 @@ namespace MLAPI.Messaging
         /// *** !!The network writer (PooledNetworkWriter) used must be the same returned by BeginAddQueueItemToFrame!! ***
         /// </summary>
         /// <param name="writer">writer that was used</param>
-        internal void EndAddQueueItemToFrame(NetworkWriter writer, QueueHistoryFrame.QueueFrameType queueFrameType, NetworkUpdateStage updateStage)
+        internal void EndAddQueueItemToFrame(NetworkWriter writer, RpcQueueHistoryFrame.QueueFrameType queueFrameType, NetworkUpdateStage updateStage)
         {
             bool getNextFrame = NetworkManager.Singleton.IsHost && queueFrameType == RpcQueueHistoryFrame.QueueFrameType.Inbound;
 
@@ -496,7 +496,7 @@ namespace MLAPI.Messaging
         /// </summary>
         /// <param name="frameType">inbound or outbound</param>
         /// <returns>QueueHistoryFrame or null</returns>
-        internal RpcQueueHistoryFrame GetQueueHistoryFrame(QueueHistoryFrame.QueueFrameType frameType, NetworkUpdateStage updateStage, bool getNextFrame = false)
+        internal RpcQueueHistoryFrame GetQueueHistoryFrame(RpcQueueHistoryFrame.QueueFrameType frameType, NetworkUpdateStage updateStage, bool getNextFrame = false)
         {
             int StreamBufferIndex = GetStreamBufferIndex(frameType);
 
