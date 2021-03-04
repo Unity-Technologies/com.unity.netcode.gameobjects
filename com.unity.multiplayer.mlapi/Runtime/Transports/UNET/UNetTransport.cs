@@ -264,7 +264,7 @@ namespace MLAPI.Transports.UNET
             var socketTask = SocketTask.Working;
 
             m_ServerHostId = RelayTransport.AddHost(new HostTopology(GetConfig(), 1), false);
-            m_ServerConnectionId = RelayTransport.Connect(m_ServerHostId, ConnectAddress, ConnectPort, 0, out byte error);
+            m_ServerConnectionId = RelayTransport.Connect(m_ServerHostId, NetworkAddress, NetworkPort, 0, out byte error);
 
             var connectError = (NetworkError)error;
 
