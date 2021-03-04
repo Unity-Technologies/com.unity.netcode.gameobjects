@@ -18,7 +18,7 @@ namespace MLAPI.Transports.UNET
             Queued
         }
 
-        private static readonly ProfilingDataStore k_TransportProfilerData = new ProfilingDataStore();
+        private static ProfilingDataStore s_TransportProfilerData = new ProfilingDataStore();
         public static bool ProfilerEnabled;
 
         // Inspector / settings
@@ -86,7 +86,7 @@ namespace MLAPI.Transports.UNET
         {
             if (ProfilerEnabled)
             {
-                k_TransportProfilerData.Increment(ProfilerConstants.NumberOfTransportSends);
+                s_TransportProfilerData.Increment(ProfilerConstants.NumberOfTransportSends);
             }
 
             GetUNetConnectionDetails(clientId, out byte hostId, out ushort connectionId);
@@ -148,7 +148,7 @@ namespace MLAPI.Transports.UNET
         {
             if (ProfilerEnabled)
             {
-                k_TransportProfilerData.Increment(ProfilerConstants.NumberOfTransportSendQueues);
+                s_TransportProfilerData.Increment(ProfilerConstants.NumberOfTransportSendQueues);
             }
 
             GetUNetConnectionDetails(clientId, out byte hostId, out ushort connectionId);
@@ -340,7 +340,7 @@ namespace MLAPI.Transports.UNET
 
             m_MessageBuffer = new byte[MessageBufferSize];
 
-            k_TransportProfilerData.Clear();
+            s_TransportProfilerData.Clear();
 
             UnityEngine.Networking.NetworkTransport.Init();
         }
@@ -462,12 +462,12 @@ namespace MLAPI.Transports.UNET
 
         public void BeginNewTick()
         {
-            k_TransportProfilerData.Clear();
+            s_TransportProfilerData.Clear();
         }
 
         public IReadOnlyDictionary<string, int> GetTransportProfilerData()
         {
-            return k_TransportProfilerData.GetReadonly();
+            return s_TransportProfilerData.GetReadonly();
         }
     }
 }

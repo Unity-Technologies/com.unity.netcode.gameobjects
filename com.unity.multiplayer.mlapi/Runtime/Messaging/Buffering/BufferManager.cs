@@ -13,7 +13,7 @@ namespace MLAPI.Messaging.Buffering
         private static ProfilerMarker s_CleanBuffer = new ProfilerMarker($"{nameof(BufferManager)}.{nameof(CleanBuffer)}");
 #endif
 
-        private static readonly Dictionary<ulong, Queue<BufferedMessage>> k_BufferQueues = new Dictionary<ulong, Queue<BufferedMessage>>();
+        private static Dictionary<ulong, Queue<BufferedMessage>> s_BufferQueues = new Dictionary<ulong, Queue<BufferedMessage>>();
 
         internal struct BufferedMessage
         {
@@ -26,11 +26,11 @@ namespace MLAPI.Messaging.Buffering
 
         internal static Queue<BufferedMessage> ConsumeBuffersForNetworkId(ulong networkId)
         {
-            if (k_BufferQueues.ContainsKey(networkId))
+            if (s_BufferQueues.ContainsKey(networkId))
             {
-                Queue<BufferedMessage> message = k_BufferQueues[networkId];
+                Queue<BufferedMessage> message = s_BufferQueues[networkId];
 
-                k_BufferQueues.Remove(networkId);
+                s_BufferQueues.Remove(networkId);
 
                 return message;
             }
@@ -47,12 +47,12 @@ namespace MLAPI.Messaging.Buffering
 
         internal static void BufferMessageForNetworkId(ulong networkId, ulong senderClientId, NetworkChannel networkChannel, float receiveTime, ArraySegment<byte> payload)
         {
-            if (!k_BufferQueues.ContainsKey(networkId))
+            if (!s_BufferQueues.ContainsKey(networkId))
             {
-                k_BufferQueues.Add(networkId, new Queue<BufferedMessage>());
+                s_BufferQueues.Add(networkId, new Queue<BufferedMessage>());
             }
 
-            Queue<BufferedMessage> queue = k_BufferQueues[networkId];
+            Queue<BufferedMessage> queue = s_BufferQueues[networkId];
 
             var payloadBuffer = PooledNetworkBuffer.Get();
             payloadBuffer.Write(payload.Array, payload.Offset, payload.Count);
@@ -68,14 +68,14 @@ namespace MLAPI.Messaging.Buffering
             });
         }
 
-        private static readonly List<ulong> k_KeysToDestroy = new List<ulong>();
+        private static List<ulong> s_KeysToDestroy = new List<ulong>();
 
         internal static void CleanBuffer()
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_CleanBuffer.Begin();
 #endif
-            foreach (var pair in k_BufferQueues)
+            foreach (var pair in s_BufferQueues)
             {
                 while (pair.Value.Count > 0 && Time.realtimeSinceStartup - pair.Value.Peek().BufferTime >= NetworkManager.Singleton.NetworkConfig.MessageBufferTimeout)
                 {
@@ -86,16 +86,16 @@ namespace MLAPI.Messaging.Buffering
 
                 if (pair.Value.Count == 0)
                 {
-                    k_KeysToDestroy.Add(pair.Key);
+                    s_KeysToDestroy.Add(pair.Key);
                 }
             }
 
-            for (int i = 0; i < k_KeysToDestroy.Count; i++)
+            for (int i = 0; i < s_KeysToDestroy.Count; i++)
             {
-                k_BufferQueues.Remove(k_KeysToDestroy[i]);
+                s_BufferQueues.Remove(s_KeysToDestroy[i]);
             }
 
-            k_KeysToDestroy.Clear();
+            s_KeysToDestroy.Clear();
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_CleanBuffer.End();
 #endif

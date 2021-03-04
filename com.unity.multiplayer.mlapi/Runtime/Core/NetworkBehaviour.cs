@@ -376,16 +376,16 @@ namespace MLAPI
         internal readonly List<INetworkVariable> NetworkVariableFields = new List<INetworkVariable>();
 
         private static HashSet<NetworkObject> s_Touched = new HashSet<NetworkObject>();
-        private static readonly Dictionary<Type, FieldInfo[]> k_FieldTypes = new Dictionary<Type, FieldInfo[]>();
+        private static Dictionary<Type, FieldInfo[]> s_FieldTypes = new Dictionary<Type, FieldInfo[]>();
 
         private static FieldInfo[] GetFieldInfoForType(Type type)
         {
-            if (!k_FieldTypes.ContainsKey(type))
+            if (!s_FieldTypes.ContainsKey(type))
             {
-                k_FieldTypes.Add(type, GetFieldInfoForTypeRecursive(type));
+                s_FieldTypes.Add(type, GetFieldInfoForTypeRecursive(type));
             }
 
-            return k_FieldTypes[type];
+            return s_FieldTypes[type];
         }
 
         private static FieldInfo[] GetFieldInfoForTypeRecursive(Type type, List<FieldInfo> list = null)

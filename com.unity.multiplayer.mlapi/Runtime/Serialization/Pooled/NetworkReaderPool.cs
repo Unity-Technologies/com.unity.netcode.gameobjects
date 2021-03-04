@@ -10,7 +10,7 @@ namespace MLAPI.Serialization.Pooled
     public static class NetworkReaderPool
     {
         private static byte s_CreatedReaders = 0;
-        private static readonly Queue<PooledNetworkReader> k_Readers = new Queue<PooledNetworkReader>();
+        private static Queue<PooledNetworkReader> s_Readers = new Queue<PooledNetworkReader>();
 
         /// <summary>
         /// Retrieves a PooledNetworkReader
@@ -19,7 +19,7 @@ namespace MLAPI.Serialization.Pooled
         /// <returns>A PooledNetworkReader</returns>
         public static PooledNetworkReader GetReader(Stream stream)
         {
-            if (k_Readers.Count == 0)
+            if (s_Readers.Count == 0)
             {
                 if (s_CreatedReaders == 254)
                 {
@@ -30,7 +30,7 @@ namespace MLAPI.Serialization.Pooled
                 return new PooledNetworkReader(stream);
             }
 
-            PooledNetworkReader reader = k_Readers.Dequeue();
+            PooledNetworkReader reader = s_Readers.Dequeue();
             reader.SetStream(stream);
 
             return reader;
@@ -42,7 +42,7 @@ namespace MLAPI.Serialization.Pooled
         /// <param name="reader">The reader to put in the pool</param>
         public static void PutBackInPool(PooledNetworkReader reader)
         {
-            if (k_Readers.Count < 64) k_Readers.Enqueue(reader);
+            if (s_Readers.Count < 64) s_Readers.Enqueue(reader);
             else if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
             {
                 NetworkLog.LogInfo($"{nameof(NetworkReaderPool)} already has 64 queued. Throwing to GC. Did you forget to dispose?");

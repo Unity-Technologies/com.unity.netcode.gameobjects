@@ -17,8 +17,8 @@ namespace MLAPI.Serialization
     /// </summary>
     public class NetworkWriter
     {
-        private Stream m_Source;
-        private NetworkBuffer m_NetworkSource;
+        private Stream m_Sink;
+        private NetworkBuffer m_NetworkSink;
 
         /// <summary>
         /// Creates a new NetworkWriter backed by a given stream
@@ -26,8 +26,8 @@ namespace MLAPI.Serialization
         /// <param name="stream">The stream to use for writing</param>
         public NetworkWriter(Stream stream)
         {
-            m_Source = stream;
-            m_NetworkSource = stream as NetworkBuffer;
+            m_Sink = stream;
+            m_NetworkSink = stream as NetworkBuffer;
         }
 
         /// <summary>
@@ -36,13 +36,13 @@ namespace MLAPI.Serialization
         /// <param name="stream">The stream to write to</param>
         public void SetStream(Stream stream)
         {
-            m_Source = stream;
-            m_NetworkSource = stream as NetworkBuffer;
+            m_Sink = stream;
+            m_NetworkSink = stream as NetworkBuffer;
         }
 
         internal Stream GetStream()
         {
-            return m_Source;
+            return m_Sink;
         }
 
         /// <summary>
@@ -64,7 +64,7 @@ namespace MLAPI.Serialization
                 }
             }
 
-            if (SerializationManager.TrySerialize(m_Source, value))
+            if (SerializationManager.TrySerialize(m_Sink, value))
             {
                 return;
             }
@@ -439,7 +439,7 @@ namespace MLAPI.Serialization
             if (bytes < 1 || bytes > 4) throw new ArgumentOutOfRangeException("Result must occupy between 1 and 4 bytes!");
             if (value < minValue || value > maxValue) throw new ArgumentOutOfRangeException("Given value does not match the given constraints!");
             uint result = (uint)(((value + minValue) / (maxValue + minValue)) * ((0x100 * bytes) - 1));
-            for (int i = 0; i < bytes; ++i) m_Source.WriteByte((byte)(result >> (i << 3)));
+            for (int i = 0; i < bytes; ++i) m_Sink.WriteByte((byte)(result >> (i << 3)));
         }
 
         /// <summary>
@@ -495,8 +495,8 @@ namespace MLAPI.Serialization
         /// <param name="bit"></param>
         public void WriteBit(bool bit)
         {
-            if (m_NetworkSource == null) throw new InvalidOperationException($"Cannot write bits on a non-{nameof(NetworkBuffer)} stream");
-            m_NetworkSource.WriteBit(bit);
+            if (m_NetworkSink == null) throw new InvalidOperationException($"Cannot write bits on a non-{nameof(NetworkBuffer)} stream");
+            m_NetworkSink.WriteBit(bit);
         }
 
         /// <summary>
@@ -505,9 +505,9 @@ namespace MLAPI.Serialization
         /// <param name="value"></param>
         public void WriteBool(bool value)
         {
-            if (m_NetworkSource == null)
+            if (m_NetworkSink == null)
             {
-                m_Source.WriteByte(value ? (byte)1 : (byte)0);
+                m_Sink.WriteByte(value ? (byte)1 : (byte)0);
             }
             else
             {
@@ -521,7 +521,7 @@ namespace MLAPI.Serialization
         /// </summary>
         public void WritePadBits()
         {
-            while (!m_NetworkSource.BitAligned) WriteBit(false);
+            while (!m_NetworkSink.BitAligned) WriteBit(false);
         }
 
         /// <summary>
@@ -544,12 +544,12 @@ namespace MLAPI.Serialization
         /// <param name="bitCount">Amount of bits to write</param>
         public void WriteBits(ulong value, int bitCount)
         {
-            if (m_NetworkSource == null) throw new InvalidOperationException($"Cannot write bits on a non-{nameof(NetworkBuffer)} stream");
+            if (m_NetworkSink == null) throw new InvalidOperationException($"Cannot write bits on a non-{nameof(NetworkBuffer)} stream");
             if (bitCount > 64) throw new ArgumentOutOfRangeException(nameof(bitCount), "Cannot read more than 64 bits from a 64-bit value!");
             if (bitCount < 0) throw new ArgumentOutOfRangeException(nameof(bitCount), "Cannot read fewer than 0 bits!");
             int count = 0;
-            for (; count + 8 < bitCount; count += 8) m_NetworkSource.WriteByte((byte)(value >> count));
-            for (; count < bitCount; ++count) m_NetworkSource.WriteBit((value & (1UL << count)) != 0);
+            for (; count + 8 < bitCount; count += 8) m_NetworkSink.WriteByte((byte)(value >> count));
+            for (; count < bitCount; ++count) m_NetworkSink.WriteBit((value & (1UL << count)) != 0);
         }
 
 
@@ -560,8 +560,8 @@ namespace MLAPI.Serialization
         /// <param name="bitCount">Amount of bits to write.</param>
         public void WriteBits(byte value, int bitCount)
         {
-            if (m_NetworkSource == null) throw new InvalidOperationException($"Cannot write bits on a non-{nameof(NetworkBuffer)} stream");
-            for (int i = 0; i < bitCount; ++i) m_NetworkSource.WriteBit(((value >> i) & 1) != 0);
+            if (m_NetworkSink == null) throw new InvalidOperationException($"Cannot write bits on a non-{nameof(NetworkBuffer)} stream");
+            for (int i = 0; i < bitCount; ++i) m_NetworkSink.WriteBit(((value >> i) & 1) != 0);
         }
 
         /// <summary>
@@ -582,8 +582,8 @@ namespace MLAPI.Serialization
         /// <param name="value">Value to write</param>
         public void WriteUInt16(ushort value)
         {
-            m_Source.WriteByte((byte)value);
-            m_Source.WriteByte((byte)(value >> 8));
+            m_Sink.WriteByte((byte)value);
+            m_Sink.WriteByte((byte)(value >> 8));
         }
 
         /// <summary>
@@ -598,10 +598,10 @@ namespace MLAPI.Serialization
         /// <param name="value">Value to write</param>
         public void WriteUInt32(uint value)
         {
-            m_Source.WriteByte((byte)value);
-            m_Source.WriteByte((byte)(value >> 8));
-            m_Source.WriteByte((byte)(value >> 16));
-            m_Source.WriteByte((byte)(value >> 24));
+            m_Sink.WriteByte((byte)value);
+            m_Sink.WriteByte((byte)(value >> 8));
+            m_Sink.WriteByte((byte)(value >> 16));
+            m_Sink.WriteByte((byte)(value >> 24));
         }
 
         /// <summary>
@@ -616,14 +616,14 @@ namespace MLAPI.Serialization
         /// <param name="value">Value to write</param>
         public void WriteUInt64(ulong value)
         {
-            m_Source.WriteByte((byte)value);
-            m_Source.WriteByte((byte)(value >> 8));
-            m_Source.WriteByte((byte)(value >> 16));
-            m_Source.WriteByte((byte)(value >> 24));
-            m_Source.WriteByte((byte)(value >> 32));
-            m_Source.WriteByte((byte)(value >> 40));
-            m_Source.WriteByte((byte)(value >> 48));
-            m_Source.WriteByte((byte)(value >> 56));
+            m_Sink.WriteByte((byte)value);
+            m_Sink.WriteByte((byte)(value >> 8));
+            m_Sink.WriteByte((byte)(value >> 16));
+            m_Sink.WriteByte((byte)(value >> 24));
+            m_Sink.WriteByte((byte)(value >> 32));
+            m_Sink.WriteByte((byte)(value >> 40));
+            m_Sink.WriteByte((byte)(value >> 48));
+            m_Sink.WriteByte((byte)(value >> 56));
         }
 
         /// <summary>
@@ -720,7 +720,7 @@ namespace MLAPI.Serialization
         /// <param name="value">Value to write</param>
         public void WriteByte(byte value)
         {
-            m_Source.WriteByte(value);
+            m_Sink.WriteByte(value);
         }
 
         // As it turns out, strings cannot be treated as char arrays, since strings use pointers to store data rather than C# arrays
@@ -855,7 +855,7 @@ namespace MLAPI.Serialization
         public void WriteByteArray(byte[] b, long count = -1)
         {
             ulong target = WriteArraySize(b, null, count);
-            for (ulong i = 0; i < target; ++i) m_Source.WriteByte(b[i]);
+            for (ulong i = 0; i < target; ++i) m_Sink.WriteByte(b[i]);
         }
 
 

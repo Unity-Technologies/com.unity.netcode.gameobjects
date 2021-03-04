@@ -10,8 +10,8 @@ namespace MLAPI.Serialization.Pooled
     public static class NetworkBufferPool
     {
         private static uint s_CreatedBuffers = 0;
-        private static readonly Queue<WeakReference> k_OverflowBuffers = new Queue<WeakReference>();
-        private static readonly Queue<PooledNetworkBuffer> k_Buffers = new Queue<PooledNetworkBuffer>();
+        private static Queue<WeakReference> s_OverflowBuffers = new Queue<WeakReference>();
+        private static Queue<PooledNetworkBuffer> s_Buffers = new Queue<PooledNetworkBuffer>();
 
         private const uint k_MaxBitPoolBuffers = 1024;
         private const uint k_MaxCreatedDelta = 768;
@@ -23,9 +23,9 @@ namespace MLAPI.Serialization.Pooled
         /// <returns>An expandable PooledNetworkBuffer</returns>
         public static PooledNetworkBuffer GetBuffer()
         {
-            if (k_Buffers.Count == 0)
+            if (s_Buffers.Count == 0)
             {
-                if (k_OverflowBuffers.Count > 0)
+                if (s_OverflowBuffers.Count > 0)
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
                     {
@@ -33,7 +33,7 @@ namespace MLAPI.Serialization.Pooled
                     }
 
                     object weakBuffer = null;
-                    while (k_OverflowBuffers.Count > 0 && ((weakBuffer = k_OverflowBuffers.Dequeue().Target) == null)) ;
+                    while (s_OverflowBuffers.Count > 0 && ((weakBuffer = s_OverflowBuffers.Dequeue().Target) == null)) ;
 
                     if (weakBuffer != null)
                     {
@@ -55,7 +55,7 @@ namespace MLAPI.Serialization.Pooled
                 return new PooledNetworkBuffer();
             }
 
-            PooledNetworkBuffer buffer = k_Buffers.Dequeue();
+            PooledNetworkBuffer buffer = s_Buffers.Dequeue();
             buffer.SetLength(0);
             buffer.Position = 0;
 
@@ -68,7 +68,7 @@ namespace MLAPI.Serialization.Pooled
         /// <param name="buffer">The buffer to put in the pool</param>
         public static void PutBackInPool(PooledNetworkBuffer buffer)
         {
-            if (k_Buffers.Count > k_MaxCreatedDelta)
+            if (s_Buffers.Count > k_MaxCreatedDelta)
             {
                 // The user just created lots of buffers without returning them in between.
                 // Buffers are essentially byte array wrappers. This is valuable memory.
@@ -79,11 +79,11 @@ namespace MLAPI.Serialization.Pooled
                     NetworkLog.LogInfo($"Putting {nameof(PooledNetworkBuffer)} into overflow pool. Did you forget to dispose?");
                 }
 
-                k_OverflowBuffers.Enqueue(new WeakReference(buffer));
+                s_OverflowBuffers.Enqueue(new WeakReference(buffer));
             }
             else
             {
-                k_Buffers.Enqueue(buffer);
+                s_Buffers.Enqueue(buffer);
             }
         }
     }

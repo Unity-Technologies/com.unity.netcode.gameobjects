@@ -68,29 +68,28 @@ namespace MLAPI.Messaging
         /// </summary>
         public delegate void HandleNamedMessageDelegate(ulong sender, Stream payload);
 
-        private static readonly Dictionary<ulong, HandleNamedMessageDelegate> k_NamedMessageHandlers16 = new Dictionary<ulong, HandleNamedMessageDelegate>();
-        private static readonly Dictionary<ulong, HandleNamedMessageDelegate> k_NamedMessageHandlers32 = new Dictionary<ulong, HandleNamedMessageDelegate>();
-        private static readonly Dictionary<ulong, HandleNamedMessageDelegate> k_NamedMessageHandlers64 = new Dictionary<ulong, HandleNamedMessageDelegate>();
-
+        private static Dictionary<ulong, HandleNamedMessageDelegate> s_NamedMessageHandlers16 = new Dictionary<ulong, HandleNamedMessageDelegate>();
+        private static Dictionary<ulong, HandleNamedMessageDelegate> s_NamedMessageHandlers32 = new Dictionary<ulong, HandleNamedMessageDelegate>();
+        private static Dictionary<ulong, HandleNamedMessageDelegate> s_NamedMessageHandlers64 = new Dictionary<ulong, HandleNamedMessageDelegate>();
 
         internal static void InvokeNamedMessage(ulong hash, ulong sender, Stream stream)
         {
             if (NetworkManager.Singleton == null)
             {
                 // We dont know what size to use. Try every (more collision prone)
-                if (k_NamedMessageHandlers16.ContainsKey(hash))
+                if (s_NamedMessageHandlers16.ContainsKey(hash))
                 {
-                    k_NamedMessageHandlers16[hash](sender, stream);
+                    s_NamedMessageHandlers16[hash](sender, stream);
                 }
 
-                if (k_NamedMessageHandlers32.ContainsKey(hash))
+                if (s_NamedMessageHandlers32.ContainsKey(hash))
                 {
-                    k_NamedMessageHandlers32[hash](sender, stream);
+                    s_NamedMessageHandlers32[hash](sender, stream);
                 }
 
-                if (k_NamedMessageHandlers64.ContainsKey(hash))
+                if (s_NamedMessageHandlers64.ContainsKey(hash))
                 {
-                    k_NamedMessageHandlers64[hash](sender, stream);
+                    s_NamedMessageHandlers64[hash](sender, stream);
                 }
             }
             else
@@ -98,23 +97,23 @@ namespace MLAPI.Messaging
                 // Only check the right size.
                 if (NetworkManager.Singleton.NetworkConfig.RpcHashSize == HashSize.VarIntTwoBytes)
                 {
-                    if (k_NamedMessageHandlers16.ContainsKey(hash))
+                    if (s_NamedMessageHandlers16.ContainsKey(hash))
                     {
-                        k_NamedMessageHandlers16[hash](sender, stream);
+                        s_NamedMessageHandlers16[hash](sender, stream);
                     }
                 }
                 else if (NetworkManager.Singleton.NetworkConfig.RpcHashSize == HashSize.VarIntFourBytes)
                 {
-                    if (k_NamedMessageHandlers32.ContainsKey(hash))
+                    if (s_NamedMessageHandlers32.ContainsKey(hash))
                     {
-                        k_NamedMessageHandlers32[hash](sender, stream);
+                        s_NamedMessageHandlers32[hash](sender, stream);
                     }
                 }
                 else if (NetworkManager.Singleton.NetworkConfig.RpcHashSize == HashSize.VarIntEightBytes)
                 {
-                    if (k_NamedMessageHandlers64.ContainsKey(hash))
+                    if (s_NamedMessageHandlers64.ContainsKey(hash))
                     {
-                        k_NamedMessageHandlers64[hash](sender, stream);
+                        s_NamedMessageHandlers64[hash](sender, stream);
                     }
                 }
             }
@@ -127,9 +126,9 @@ namespace MLAPI.Messaging
         /// <param name="callback">The callback to run when a named message is received.</param>
         public static void RegisterNamedMessageHandler(string name, HandleNamedMessageDelegate callback)
         {
-            k_NamedMessageHandlers16[name.GetStableHash16()] = callback;
-            k_NamedMessageHandlers32[name.GetStableHash32()] = callback;
-            k_NamedMessageHandlers64[name.GetStableHash64()] = callback;
+            s_NamedMessageHandlers16[name.GetStableHash16()] = callback;
+            s_NamedMessageHandlers32[name.GetStableHash32()] = callback;
+            s_NamedMessageHandlers64[name.GetStableHash64()] = callback;
         }
 
         /// <summary>
@@ -138,9 +137,9 @@ namespace MLAPI.Messaging
         /// <param name="name">The name of the message.</param>
         public static void UnregisterNamedMessageHandler(string name)
         {
-            k_NamedMessageHandlers16.Remove(name.GetStableHash16());
-            k_NamedMessageHandlers32.Remove(name.GetStableHash32());
-            k_NamedMessageHandlers64.Remove(name.GetStableHash64());
+            s_NamedMessageHandlers16.Remove(name.GetStableHash16());
+            s_NamedMessageHandlers32.Remove(name.GetStableHash32());
+            s_NamedMessageHandlers64.Remove(name.GetStableHash64());
         }
 
         /// <summary>

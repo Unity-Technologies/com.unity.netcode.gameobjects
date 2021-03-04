@@ -193,6 +193,6 @@ namespace MLAPI.Transports.Tasks
         /// Converts to a SocketTasks.
         /// </summary>
         /// <returns>The tasks.</returns>
-        public SocketTasks AsTasks() => new SocketTasks { Tasks = new[] { this } };
+        public SocketTasks AsTasks() => new SocketTasks { Tasks = new SocketTask[] { this } };
     }
 }
