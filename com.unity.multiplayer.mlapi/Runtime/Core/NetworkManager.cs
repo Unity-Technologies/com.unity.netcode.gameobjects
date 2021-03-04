@@ -1321,6 +1321,7 @@ namespace MLAPI
                     PendingClients.Remove(clientId);
                 NetworkClient client = new NetworkClient()
                 {
+                    IsClientDoneLoadingScene = false,
                     ClientId = clientId,
                 };
                 ConnectedClients.Add(clientId, client);
@@ -1333,13 +1334,13 @@ namespace MLAPI
                 SyncTime();
 
 
-                if (createPlayerObject)
-                {
-                    NetworkObject netObject = NetworkSpawnManager.CreateLocalNetworkObject(false, 0, (playerPrefabHash == null ? NetworkConfig.PlayerPrefabHash.Value : playerPrefabHash.Value), null, position, rotation);
-                    NetworkSpawnManager.SpawnNetworkObjectLocally(netObject, NetworkSpawnManager.GetNetworkObjectId(), false, true, clientId, null, false, 0, false, false);
+                //if (createPlayerObject)
+                //{
+                //    NetworkObject netObject = NetworkSpawnManager.CreateLocalNetworkObject(false, 0, (playerPrefabHash == null ? NetworkConfig.PlayerPrefabHash.Value : playerPrefabHash.Value), null, position, rotation);
+                //    NetworkSpawnManager.SpawnNetworkObjectLocally(netObject, NetworkSpawnManager.GetNetworkObjectId(), false, true, clientId, null, false, 0, false, false);
 
-                    ConnectedClients[clientId].PlayerObject = netObject;
-                }
+                //    ConnectedClients[clientId].PlayerObject = netObject;
+                //}
 
                 _observedObjects.Clear();
 
@@ -1441,11 +1442,31 @@ namespace MLAPI
 
                 if (!createPlayerObject || (playerPrefabHash == null && NetworkConfig.PlayerPrefabHash == null)) return;
 
-                //Inform old clients of the new player
 
+                if (createPlayerObject)
+                {
+                    NetworkObject netObject = NetworkSpawnManager.CreateLocalNetworkObject(false, 0, (playerPrefabHash == null ? NetworkConfig.PlayerPrefabHash.Value : playerPrefabHash.Value), null, position, rotation);
+                    NetworkSpawnManager.SpawnNetworkObjectLocally(netObject, NetworkSpawnManager.GetNetworkObjectId(), false, true, clientId, null, false, 0, false, false);
+                    ConnectedClients[clientId].IsClientDoneLoadingScene = false;
+                    ConnectedClients[clientId].PlayerObject = netObject;
+                }
+
+                _observedObjects.Clear();
+
+                foreach (var sobj in NetworkSpawnManager.SpawnedObjectsList)
+                {
+                    if (clientId == ServerClientId || sobj.CheckObjectVisibility == null || sobj.CheckObjectVisibility(clientId))
+                    {
+                        _observedObjects.Add(sobj);
+                        sobj.observers.Add(clientId);
+                    }
+                }
+
+                //Inform old clients of the new player
                 foreach (KeyValuePair<ulong, NetworkClient> clientPair in ConnectedClients)
                 {
-                    if (clientPair.Key == clientId || ConnectedClients[clientId].PlayerObject == null || !ConnectedClients[clientId].PlayerObject.observers.Contains(clientPair.Key))
+                    //if (clientPair.Key == clientId || ConnectedClients[clientId].PlayerObject == null || !ConnectedClients[clientId].PlayerObject.observers.Contains(clientPair.Key))
+                    if (ConnectedClients[clientId].PlayerObject == null || !ConnectedClients[clientId].PlayerObject.observers.Contains(clientPair.Key))
                         continue; //The new client.
 
                     using (PooledNetworkBuffer buffer = PooledNetworkBuffer.Get())
@@ -1493,7 +1514,8 @@ namespace MLAPI
                                 ConnectedClients[clientId].PlayerObject.WriteNetworkVariableData(buffer, clientPair.Key);
                             }
 
-                            InternalMessageSender.Send(clientPair.Key, NetworkConstants.ADD_OBJECT, NetworkChannel.Internal, buffer);
+                            NetworkSpawnManager.SendSpawnCallForObject(clientPair.Key, ConnectedClients[clientId].PlayerObject, buffer);
+                            //InternalMessageSender.Send(clientPair.Key, NetworkConstants.ADD_OBJECT, NetworkChannel.Internal, buffer);
                         }
                     }
                 }

@@ -302,7 +302,7 @@ namespace MLAPI.SceneManagement
                                 }
                             }
                         }
-
+                        NetworkManager.Singleton.ConnectedClientsList[j].IsClientDoneLoadingScene = false;
                         InternalMessageSender.Send(NetworkManager.Singleton.ConnectedClientsList[j].ClientId, NetworkConstants.SWITCH_SCENE, NetworkChannel.Internal, buffer);
                     }
                 }
@@ -311,6 +311,7 @@ namespace MLAPI.SceneManagement
             //Tell server that scene load is completed
             if (NetworkManager.Singleton.IsHost)
             {
+                NetworkManager.Singleton.ConnectedClients[NetworkManager.Singleton.ServerClientId].IsClientDoneLoadingScene = true;
                 OnClientSwitchSceneCompleted(NetworkManager.Singleton.LocalClientId, switchSceneGuid);
             }
 

@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 
 namespace MLAPI.Connection
 {
@@ -7,6 +7,8 @@ namespace MLAPI.Connection
     /// </summary>
     public class NetworkClient
     {
+        public bool IsClientDoneLoadingScene;
+
         /// <summary>
         /// The ClientId of the NetworkClient
         /// </summary>

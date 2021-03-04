@@ -77,26 +77,29 @@ namespace MLAPI.Profiling
 
         static void OnPerformanceTickData(PerformanceTickData tickData)
         {
-            //Operations
-            s_ConnectionsCounterValue.Value += tickData.GetData(ProfilerConstants.NumberOfConnections);
-            s_TickRateCounterValue.Value += tickData.GetData(ProfilerConstants.ReceiveTickRate);
+            if(tickData != null)
+            {
+                //Operations
+                s_ConnectionsCounterValue.Value += tickData.GetData(ProfilerConstants.NumberOfConnections);
+                s_TickRateCounterValue.Value += tickData.GetData(ProfilerConstants.ReceiveTickRate);
 
-            //Messages
-            s_NamedMessagesCounterValue.Value += tickData.GetData(ProfilerConstants.NumberOfNamedMessages);
-            s_UnnamedMessagesCounterValue.Value += tickData.GetData(ProfilerConstants.NumberOfUnnamedMessages);
-            s_BytesSentCounterValue.Value += tickData.GetData(ProfilerConstants.NumberBytesSent);
-            s_BytesReceivedCounterValue.Value += tickData.GetData(ProfilerConstants.NumberBytesReceived);
-            s_NetworkVarsCounterValue.Value += tickData.GetData(ProfilerConstants.NumberNetworkVarsReceived);
+                //Messages
+                s_NamedMessagesCounterValue.Value += tickData.GetData(ProfilerConstants.NumberOfNamedMessages);
+                s_UnnamedMessagesCounterValue.Value += tickData.GetData(ProfilerConstants.NumberOfUnnamedMessages);
+                s_BytesSentCounterValue.Value += tickData.GetData(ProfilerConstants.NumberBytesSent);
+                s_BytesReceivedCounterValue.Value += tickData.GetData(ProfilerConstants.NumberBytesReceived);
+                s_NetworkVarsCounterValue.Value += tickData.GetData(ProfilerConstants.NumberNetworkVarsReceived);
 
-            //RPCs
-            s_RPCsSentCounterValue.Value += tickData.GetData(ProfilerConstants.NumberOfRPCsSent);
-            s_RPCsReceivedCounterValue.Value += tickData.GetData(ProfilerConstants.NumberOfRPCsReceived);
-            s_RPCBatchesSentCounterValue.Value += tickData.GetData(ProfilerConstants.NumberOfRPCBatchesSent);
-            s_RPCBatchesReceivedCounterValue.Value += tickData.GetData(ProfilerConstants.NumberOfRPCBatchesReceived);
-            s_RPCBatchesReceivedCounterValue.Value += tickData.GetData(ProfilerConstants.NumberOfRPCBatchesReceived);
-            s_RPCQueueProcessedCounterValue.Value += tickData.GetData(ProfilerConstants.NumberOfRPCQueueProcessed);
-            s_RPCsInQueueSizeCounterValue.Value += tickData.GetData(ProfilerConstants.NumberOfRPCsInQueueSize);
-            s_RPCsOutQueueSizeCounterValue.Value += tickData.GetData(ProfilerConstants.NumberOfRPCsOutQueueSize);
+                //RPCs
+                s_RPCsSentCounterValue.Value += tickData.GetData(ProfilerConstants.NumberOfRPCsSent);
+                s_RPCsReceivedCounterValue.Value += tickData.GetData(ProfilerConstants.NumberOfRPCsReceived);
+                s_RPCBatchesSentCounterValue.Value += tickData.GetData(ProfilerConstants.NumberOfRPCBatchesSent);
+                s_RPCBatchesReceivedCounterValue.Value += tickData.GetData(ProfilerConstants.NumberOfRPCBatchesReceived);
+                s_RPCBatchesReceivedCounterValue.Value += tickData.GetData(ProfilerConstants.NumberOfRPCBatchesReceived);
+                s_RPCQueueProcessedCounterValue.Value += tickData.GetData(ProfilerConstants.NumberOfRPCQueueProcessed);
+                s_RPCsInQueueSizeCounterValue.Value += tickData.GetData(ProfilerConstants.NumberOfRPCsInQueueSize);
+                s_RPCsOutQueueSizeCounterValue.Value += tickData.GetData(ProfilerConstants.NumberOfRPCsOutQueueSize);
+            }
         }
 #endif
     }

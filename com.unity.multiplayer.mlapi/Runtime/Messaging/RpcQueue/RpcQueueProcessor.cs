@@ -115,43 +115,60 @@ namespace MLAPI.Messaging
         /// </summary>
         public void InternalMessagesSendAndFlush()
         {
-            foreach (RpcFrameQueueItem queueItem in m_InternalMLAPISendQueue)
+            if(NetworkManager.Singleton && NetworkManager.Singleton.IsListening)
             {
-
-                var PoolStream = queueItem.itemBuffer;
-
-                if(NetworkManager.Singleton.IsListening)
+                List<RpcFrameQueueItem> CompletedRpcQueueItems = new List<RpcFrameQueueItem>();
+                foreach (RpcFrameQueueItem queueItem in m_InternalMLAPISendQueue)
                 {
-                    switch (queueItem.queueItemType)
+                    List<ulong> clientIds = new List<ulong>(queueItem.clientIds);
+                    var PoolStream = queueItem.itemBuffer;
+                    for(int i = 0; i < queueItem.clientIds.Length; i++)
                     {
-                        case RpcQueueContainer.QueueItemType.CreateObject:
+                        ulong clientId = queueItem.clientIds[i];
+                        if( NetworkManager.Singleton.IsClient || NetworkManager.Singleton.ConnectedClients.ContainsKey(clientId))
                         {
-                            foreach (ulong clientId in queueItem.clientIds)
+                            if(NetworkManager.Singleton.ConnectedClients[clientId].IsClientDoneLoadingScene || queueItem.queueItemType == RpcQueueContainer.QueueItemType.CreatePlayerObject)
                             {
-                                InternalMessageSender.Send(clientId, NetworkConstants.ADD_OBJECT, queueItem.networkChannel, PoolStream);
+                                switch (queueItem.queueItemType)
+                                {
+                                    case RpcQueueContainer.QueueItemType.CreatePlayerObject:
+                                    case RpcQueueContainer.QueueItemType.CreateObject:
+                                    {
+                                        InternalMessageSender.Send(clientId, NetworkConstants.ADD_OBJECT, queueItem.networkChannel, PoolStream);
+                                        clientIds.Remove(clientId);
+                                        PerformanceDataManager.Increment(ProfilerConstants.NumberOfRPCsSent, queueItem.clientIds.Length);
+                                        ProfilerStatManager.rpcsSent.Record(queueItem.clientIds.Length);
+                                        break;
+                                    }
+                                    case RpcQueueContainer.QueueItemType.DestroyObject:
+                                    {
+                                        InternalMessageSender.Send(clientId, NetworkConstants.DESTROY_OBJECT, queueItem.networkChannel, PoolStream);
+                                        clientIds.Remove(clientId);
+                                        PerformanceDataManager.Increment(ProfilerConstants.NumberOfRPCsSent, queueItem.clientIds.Length);
+                                        ProfilerStatManager.rpcsSent.Record(queueItem.clientIds.Length);
+                                        break;
+                                    }
+                                }
                             }
-
-                            PerformanceDataManager.Increment(ProfilerConstants.NumberOfRPCsSent, queueItem.clientIds.Length);
-                            ProfilerStatManager.rpcsSent.Record(queueItem.clientIds.Length);
-                            break;
                         }
-                        case RpcQueueContainer.QueueItemType.DestroyObject:
+                        else
                         {
-                            foreach (ulong clientId in queueItem.clientIds)
-                            {
-                                InternalMessageSender.Send(clientId, NetworkConstants.DESTROY_OBJECT, queueItem.networkChannel, PoolStream);
-                            }
-
-                            PerformanceDataManager.Increment(ProfilerConstants.NumberOfRPCsSent, queueItem.clientIds.Length);
-                            ProfilerStatManager.rpcsSent.Record(queueItem.clientIds.Length);
-                            break;
+                            clientIds.Remove(clientId);
                         }
                     }
+                    if(clientIds.Count == 0)
+                    {
+                        CompletedRpcQueueItems.Add(queueItem);
+                        PoolStream.Dispose();
+                    }
                 }
-                PoolStream.Dispose();
-            }
+                foreach(RpcFrameQueueItem item in CompletedRpcQueueItems)
+                {
+                    m_InternalMLAPISendQueue.Remove(item);
+                }
 
-            m_InternalMLAPISendQueue.Clear();
+                //m_InternalMLAPISendQueue.Clear();
+            }
         }
 
         /// <summary>

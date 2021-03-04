@@ -20,6 +20,7 @@ namespace MLAPI.Messaging
             ServerRpc,
             ClientRpc,
             CreateObject, //MLAPI Constant *** We need to determine if these belong here ***
+            CreatePlayerObject, //Special case to assure the players are spawned always
             DestroyObject, //MLAPI Constant
 
             None //Indicates end of frame

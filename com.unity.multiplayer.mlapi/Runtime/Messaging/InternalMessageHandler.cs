@@ -334,6 +334,10 @@ namespace MLAPI.Messaging
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleClientSwitchSceneCompleted.Begin();
 #endif
+            if(NetworkManager.Singleton.ConnectedClients.ContainsKey(clientId))
+            {
+                NetworkManager.Singleton.ConnectedClients[clientId].IsClientDoneLoadingScene = true;
+            }
             using (PooledNetworkReader reader = PooledNetworkReader.Get(stream))
             {
                 NetworkSceneManager.OnClientSwitchSceneCompleted(clientId, new Guid(reader.ReadByteArray()));
