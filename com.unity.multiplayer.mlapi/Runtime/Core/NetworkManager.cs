@@ -14,7 +14,6 @@ using MLAPI.Profiling;
 using MLAPI.Serialization;
 using MLAPI.Transports;
 using MLAPI.Connection;
-using MLAPI.LagCompensation;
 using MLAPI.Messaging;
 using MLAPI.SceneManagement;
 using MLAPI.Serialization.Pooled;
@@ -293,7 +292,6 @@ namespace MLAPI
             m_CurrentNetworkTimeOffset = 0f;
             m_LastReceiveTickTime = 0f;
             m_LastReceiveTickTime = 0f;
-            m_EventOvershootCounter = 0f;
             PendingClients.Clear();
             ConnectedClients.Clear();
             ConnectedClientsList.Clear();
@@ -641,7 +639,6 @@ namespace MLAPI
 
         private float m_LastReceiveTickTime;
         private float m_LastEventTickTime;
-        private float m_EventOvershootCounter;
         private float m_LastTimeSyncTime;
 
         private void OnNetworkEarlyUpdate()
@@ -709,12 +706,6 @@ namespace MLAPI
                     NetworkProfiler.StartTick(TickType.Event);
 #endif
 
-                    if (IsServer)
-                    {
-                        m_EventOvershootCounter += ((NetworkTime - m_LastEventTickTime) - (1f / NetworkConfig.EventTickrate));
-                        LagCompensationManager.AddFrames();
-                    }
-
                     if (NetworkConfig.EnableNetworkVariable)
                     {
                         // Do NetworkVariable updates
@@ -736,18 +727,6 @@ namespace MLAPI
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                     s_EventTick.End();
-#endif
-                }
-                else if (IsServer && m_EventOvershootCounter >= ((1f / NetworkConfig.EventTickrate)))
-                {
-#if UNITY_EDITOR && !UNITY_2020_2_OR_LATER
-                    NetworkProfiler.StartTick(TickType.Event);
-#endif
-                    //We run this one to compensate for previous update overshoots.
-                    m_EventOvershootCounter -= (1f / NetworkConfig.EventTickrate);
-                    LagCompensationManager.AddFrames();
-#if UNITY_EDITOR && !UNITY_2020_2_OR_LATER
-                    NetworkProfiler.EndTick();
 #endif
                 }
 
