@@ -30,7 +30,7 @@ namespace MLAPI.RuntimeTests
 #if UNITY_2020_2_OR_NEWER // Disabling this test on 2019.4 due to ILPP issues on Yamato CI/CD runs
             var networkManagerObject = new GameObject(nameof(NetworkManager));
             m_NetworkManager = networkManagerObject.AddComponent<NetworkManager>();
-            var unetTransport = networkManagerObject.AddComponent<UnetTransport>();
+            var unetTransport = networkManagerObject.AddComponent<UNetTransport>();
             m_NetworkManager.NetworkConfig = new Configuration.NetworkConfig
             {
                 CreatePlayerPrefab = false,
@@ -42,7 +42,7 @@ namespace MLAPI.RuntimeTests
             unetTransport.ServerListenPort = 7777;
             unetTransport.MessageBufferSize = 65535;
             unetTransport.MaxConnections = 100;
-            unetTransport.MessageSendMode = UnetTransport.SendMode.Immediately;
+            unetTransport.MessageSendMode = UNetTransport.SendMode.Immediately;
             m_NetworkManager.NetworkConfig.NetworkTransport = unetTransport;
 
             var currentActiveScene = SceneManager.GetActiveScene();
