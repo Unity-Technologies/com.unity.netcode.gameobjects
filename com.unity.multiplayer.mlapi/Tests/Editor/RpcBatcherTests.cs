@@ -23,11 +23,11 @@ namespace MLAPI.EditorTests
                 var randomData = Encoding.ASCII.GetBytes(Guid.NewGuid().ToString());
                 var queueItem = new RpcFrameQueueItem
                 {
-                    networkId = 123,
-                    clientIds = new ulong[] { 123 },
-                    networkChannel = NetworkChannel.ChannelUnused + 123,
-                    queueItemType = i % 2 == 0 ? RpcQueueContainer.QueueItemType.ServerRpc : RpcQueueContainer.QueueItemType.ClientRpc,
-                    messageData = new ArraySegment<byte>(randomData, 0, randomData.Length)
+                    NetworkId = 123,
+                    ClientNetworkIds = new ulong[] { 123 },
+                    NetworkChannel = NetworkChannel.ChannelUnused + 123,
+                    QueueItemType = i % 2 == 0 ? RpcQueueContainer.QueueItemType.ServerRpc : RpcQueueContainer.QueueItemType.ClientRpc,
+                    MessageData = new ArraySegment<byte>(randomData, 0, randomData.Length)
                 };
                 sendBatcher.QueueItem(queueItem);
                 sendBatcher.SendItems(k_BatchThreshold,
@@ -81,11 +81,11 @@ namespace MLAPI.EditorTests
                 var randomData = Encoding.ASCII.GetBytes(Guid.NewGuid().ToString());
                 var queueItem = new RpcFrameQueueItem
                 {
-                    networkId = 123,
-                    clientIds = new ulong[] { 123 },
-                    networkChannel = NetworkChannel.ChannelUnused + 123,
-                    queueItemType = i % 2 == 0 ? RpcQueueContainer.QueueItemType.ServerRpc : RpcQueueContainer.QueueItemType.ClientRpc,
-                    messageData = new ArraySegment<byte>(randomData, 0, randomData.Length)
+                    NetworkId = 123,
+                    ClientNetworkIds = new ulong[] { 123 },
+                    NetworkChannel = NetworkChannel.ChannelUnused + 123,
+                    QueueItemType = i % 2 == 0 ? RpcQueueContainer.QueueItemType.ServerRpc : RpcQueueContainer.QueueItemType.ClientRpc,
+                    MessageData = new ArraySegment<byte>(randomData, 0, randomData.Length)
                 };
                 sendBatcher.QueueItem(queueItem);
                 sendBatcher.SendItems(k_BatchThreshold,

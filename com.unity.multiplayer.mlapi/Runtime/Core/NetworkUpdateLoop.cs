@@ -34,19 +34,19 @@ namespace MLAPI
     /// </summary>
     public static class NetworkUpdateLoop
     {
-        private static readonly Dictionary<NetworkUpdateStage, HashSet<INetworkUpdateSystem>> m_UpdateSystem_Sets;
-        private static readonly Dictionary<NetworkUpdateStage, INetworkUpdateSystem[]> m_UpdateSystem_Arrays;
+        private static Dictionary<NetworkUpdateStage, HashSet<INetworkUpdateSystem>> s_UpdateSystem_Sets;
+        private static Dictionary<NetworkUpdateStage, INetworkUpdateSystem[]> s_UpdateSystem_Arrays;
         private const int k_UpdateSystem_InitialArrayCapacity = 1024;
 
         static NetworkUpdateLoop()
         {
-            m_UpdateSystem_Sets = new Dictionary<NetworkUpdateStage, HashSet<INetworkUpdateSystem>>();
-            m_UpdateSystem_Arrays = new Dictionary<NetworkUpdateStage, INetworkUpdateSystem[]>();
+            s_UpdateSystem_Sets = new Dictionary<NetworkUpdateStage, HashSet<INetworkUpdateSystem>>();
+            s_UpdateSystem_Arrays = new Dictionary<NetworkUpdateStage, INetworkUpdateSystem[]>();
 
             foreach (NetworkUpdateStage updateStage in Enum.GetValues(typeof(NetworkUpdateStage)))
             {
-                m_UpdateSystem_Sets.Add(updateStage, new HashSet<INetworkUpdateSystem>());
-                m_UpdateSystem_Arrays.Add(updateStage, new INetworkUpdateSystem[k_UpdateSystem_InitialArrayCapacity]);
+                s_UpdateSystem_Sets.Add(updateStage, new HashSet<INetworkUpdateSystem>());
+                s_UpdateSystem_Arrays.Add(updateStage, new INetworkUpdateSystem[k_UpdateSystem_InitialArrayCapacity]);
             }
         }
 
@@ -66,19 +66,19 @@ namespace MLAPI
         /// </summary>
         public static void RegisterNetworkUpdate(this INetworkUpdateSystem updateSystem, NetworkUpdateStage updateStage = NetworkUpdateStage.Update)
         {
-            var sysSet = m_UpdateSystem_Sets[updateStage];
+            var sysSet = s_UpdateSystem_Sets[updateStage];
             if (!sysSet.Contains(updateSystem))
             {
                 sysSet.Add(updateSystem);
 
                 int setLen = sysSet.Count;
-                var sysArr = m_UpdateSystem_Arrays[updateStage];
+                var sysArr = s_UpdateSystem_Arrays[updateStage];
                 int arrLen = sysArr.Length;
 
                 if (setLen > arrLen)
                 {
                     // double capacity
-                    sysArr = m_UpdateSystem_Arrays[updateStage] = new INetworkUpdateSystem[arrLen *= 2];
+                    sysArr = s_UpdateSystem_Arrays[updateStage] = new INetworkUpdateSystem[arrLen *= 2];
                 }
 
                 sysSet.CopyTo(sysArr);
@@ -107,13 +107,13 @@ namespace MLAPI
         /// </summary>
         public static void UnregisterNetworkUpdate(this INetworkUpdateSystem updateSystem, NetworkUpdateStage updateStage = NetworkUpdateStage.Update)
         {
-            var sysSet = m_UpdateSystem_Sets[updateStage];
+            var sysSet = s_UpdateSystem_Sets[updateStage];
             if (sysSet.Contains(updateSystem))
             {
                 sysSet.Remove(updateSystem);
 
                 int setLen = sysSet.Count;
-                var sysArr = m_UpdateSystem_Arrays[updateStage];
+                var sysArr = s_UpdateSystem_Arrays[updateStage];
                 int arrLen = sysArr.Length;
 
                 sysSet.CopyTo(sysArr);
@@ -135,7 +135,7 @@ namespace MLAPI
         {
             UpdateStage = updateStage;
 
-            var sysArr = m_UpdateSystem_Arrays[updateStage];
+            var sysArr = s_UpdateSystem_Arrays[updateStage];
             int arrLen = sysArr.Length;
             for (int curIdx = 0; curIdx < arrLen; curIdx++)
             {

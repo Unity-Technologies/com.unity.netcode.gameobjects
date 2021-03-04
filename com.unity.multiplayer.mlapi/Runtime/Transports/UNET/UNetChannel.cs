@@ -7,7 +7,7 @@ namespace MLAPI.Transports
     /// A transport channel used by the MLAPI
     /// </summary>
     [Serializable]
-    public class UnetChannel
+    public class UNetChannel
     {
         /// <summary>
         /// The name of the channel

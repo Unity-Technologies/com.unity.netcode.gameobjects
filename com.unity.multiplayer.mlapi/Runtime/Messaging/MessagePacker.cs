@@ -16,10 +16,12 @@ namespace MLAPI.Internal
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogError("The incoming message was too small");
                     messageType = NetworkConstants.INVALID;
+
                     return null;
                 }
 
                 messageType = inputHeaderReader.ReadByteDirect();
+
                 // The input stream is now ready to be read from. It's "safe" and has the correct position
                 return inputBuffer;
             }

@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using UnityEngine;
 
 namespace MLAPI.Serialization.Pooled
 {
@@ -11,7 +12,7 @@ namespace MLAPI.Serialization.Pooled
         private NetworkSerializer m_Serializer;
         public NetworkSerializer Serializer => m_Serializer ?? (m_Serializer = new NetworkSerializer(this));
 
-        private bool isDisposed = false;
+        private bool m_IsDisposed = false;
 
         internal PooledNetworkWriter(Stream stream) : base(stream) { }
 
@@ -21,8 +22,8 @@ namespace MLAPI.Serialization.Pooled
         /// <returns>PooledNetworkWriter</returns>
         public static PooledNetworkWriter Get(Stream stream)
         {
-            PooledNetworkWriter writer = NetworkWriterPool.GetWriter(stream);
-            writer.isDisposed = false;
+            var writer = NetworkWriterPool.GetWriter(stream);
+            writer.m_IsDisposed = false;
             return writer;
         }
 
@@ -31,14 +32,14 @@ namespace MLAPI.Serialization.Pooled
         /// </summary>
         public void Dispose()
         {
-            if (!isDisposed)
+            if (!m_IsDisposed)
             {
-                isDisposed = true;
+                m_IsDisposed = true;
                 NetworkWriterPool.PutBackInPool(this);
             }
             else
             {
-                UnityEngine.Debug.LogError("Writer is being disposed but thinks it is already disposed");
+                Debug.LogError("Writer is being disposed but thinks it is already disposed");
             }
         }
     }

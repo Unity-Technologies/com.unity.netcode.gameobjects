@@ -8,63 +8,68 @@ namespace UnityEditor
     [CanEditMultipleObjects]
     public class NetworkObjectEditor : Editor
     {
-        private bool initialized;
-        private NetworkObject networkObject;
-        private bool showObservers;
+        private bool m_Initialized;
+        private NetworkObject m_NetworkObject;
+        private bool m_ShowObservers;
 
         private void Init()
         {
-            if (initialized)
-                return;
-            initialized = true;
-            networkObject = (NetworkObject)target;
+            if (m_Initialized) return;
+
+            m_Initialized = true;
+            m_NetworkObject = (NetworkObject)target;
         }
 
         public override void OnInspectorGUI()
         {
             Init();
 
-            if (!networkObject.IsSpawned && NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer)
+            if (!m_NetworkObject.IsSpawned && !ReferenceEquals(NetworkManager.Singleton, null) && NetworkManager.Singleton.IsServer)
             {
                 EditorGUILayout.BeginHorizontal();
                 EditorGUILayout.LabelField(new GUIContent("Spawn", "Spawns the object across the network"));
                 if (GUILayout.Toggle(false, "Spawn", EditorStyles.miniButtonLeft))
                 {
-                    networkObject.Spawn();
+                    m_NetworkObject.Spawn();
                     EditorUtility.SetDirty(target);
                 }
+
                 EditorGUILayout.EndHorizontal();
             }
-            else if (networkObject.IsSpawned)
+            else if (m_NetworkObject.IsSpawned)
             {
-                EditorGUILayout.LabelField("PrefabHashGenerator: ", networkObject.PrefabHashGenerator, EditorStyles.label);
-                EditorGUILayout.LabelField("PrefabHash: ", networkObject.PrefabHash.ToString(), EditorStyles.label);
-                EditorGUILayout.LabelField("InstanceId: ", networkObject.NetworkInstanceId.ToString(), EditorStyles.label);
-                EditorGUILayout.LabelField("NetworkId: ", networkObject.NetworkObjectId.ToString(), EditorStyles.label);
-                EditorGUILayout.LabelField("OwnerId: ", networkObject.OwnerClientId.ToString(), EditorStyles.label);
-                EditorGUILayout.LabelField("IsSpawned: ", networkObject.IsSpawned.ToString(), EditorStyles.label);
-                EditorGUILayout.LabelField("IsLocalPlayer: ", networkObject.IsLocalPlayer.ToString(), EditorStyles.label);
-                EditorGUILayout.LabelField("IsOwner: ", networkObject.IsOwner.ToString(), EditorStyles.label);
-				EditorGUILayout.LabelField("IsOwnedByServer: ", networkObject.IsOwnedByServer.ToString(), EditorStyles.label);
-                EditorGUILayout.LabelField("IsPlayerObject: ", networkObject.IsPlayerObject.ToString(), EditorStyles.label);
-                EditorGUILayout.LabelField("IsSceneObject: ", (networkObject.IsSceneObject == null ? "Null" : networkObject.IsSceneObject.Value.ToString()), EditorStyles.label);
+                EditorGUILayout.LabelField("PrefabHashGenerator: ", m_NetworkObject.PrefabHashGenerator, EditorStyles.label);
+                EditorGUILayout.LabelField("PrefabHash: ", m_NetworkObject.PrefabHash.ToString(), EditorStyles.label);
+                EditorGUILayout.LabelField("InstanceId: ", m_NetworkObject.NetworkInstanceId.ToString(), EditorStyles.label);
+                EditorGUILayout.LabelField("NetworkId: ", m_NetworkObject.NetworkObjectId.ToString(), EditorStyles.label);
+                EditorGUILayout.LabelField("OwnerId: ", m_NetworkObject.OwnerClientId.ToString(), EditorStyles.label);
+                EditorGUILayout.LabelField("IsSpawned: ", m_NetworkObject.IsSpawned.ToString(), EditorStyles.label);
+                EditorGUILayout.LabelField("IsLocalPlayer: ", m_NetworkObject.IsLocalPlayer.ToString(), EditorStyles.label);
+                EditorGUILayout.LabelField("IsOwner: ", m_NetworkObject.IsOwner.ToString(), EditorStyles.label);
+                EditorGUILayout.LabelField("IsOwnedByServer: ", m_NetworkObject.IsOwnedByServer.ToString(), EditorStyles.label);
+                EditorGUILayout.LabelField("IsPlayerObject: ", m_NetworkObject.IsPlayerObject.ToString(), EditorStyles.label);
+                EditorGUILayout.LabelField("IsSceneObject: ", (m_NetworkObject.IsSceneObject == null ? "Null" : m_NetworkObject.IsSceneObject.Value.ToString()), EditorStyles.label);
 
                 if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer)
                 {
-                    showObservers = EditorGUILayout.Foldout(showObservers, "Observers");
+                    m_ShowObservers = EditorGUILayout.Foldout(m_ShowObservers, "Observers");
 
-                    if (showObservers)
+                    if (m_ShowObservers)
                     {
-                        HashSet<ulong>.Enumerator observerClientIds = networkObject.GetObservers();
+                        HashSet<ulong>.Enumerator observerClientIds = m_NetworkObject.GetObservers();
 
                         EditorGUI.indentLevel += 1;
 
                         while (observerClientIds.MoveNext())
                         {
                             if (NetworkManager.Singleton.ConnectedClients[observerClientIds.Current].PlayerObject != null)
+                            {
                                 EditorGUILayout.ObjectField("ClientId: " + observerClientIds.Current, NetworkManager.Singleton.ConnectedClients[observerClientIds.Current].PlayerObject, typeof(GameObject), false);
+                            }
                             else
+                            {
                                 EditorGUILayout.TextField("ClientId: " + observerClientIds.Current, EditorStyles.label);
+                            }
                         }
 
                         EditorGUI.indentLevel -= 1;
@@ -74,8 +79,8 @@ namespace UnityEditor
             else
             {
                 base.OnInspectorGUI();
-                EditorGUILayout.LabelField("PrefabHash: ", networkObject.PrefabHash.ToString(), EditorStyles.label);
-                EditorGUILayout.LabelField("InstanceId: ", networkObject.NetworkInstanceId.ToString(), EditorStyles.label);
+                EditorGUILayout.LabelField("PrefabHash: ", m_NetworkObject.PrefabHash.ToString(), EditorStyles.label);
+                EditorGUILayout.LabelField("InstanceId: ", m_NetworkObject.NetworkInstanceId.ToString(), EditorStyles.label);
             }
         }
     }

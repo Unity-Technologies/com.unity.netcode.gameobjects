@@ -15,57 +15,30 @@ namespace MLAPI.LagCompensation
     {
         internal Dictionary<float, TrackedPointData> FrameData = new Dictionary<float, TrackedPointData>();
         internal FixedQueue<float> Framekeys;
-        private Vector3 savedPosition;
-        private Quaternion savedRotation;
+        private Vector3 m_SavedPosition;
+        private Quaternion m_SavedRotation;
 
         /// <summary>
         /// Gets the total amount of points stored in the component
         /// </summary>
-        public int TotalPoints
-        {
-            get
-            {
-                if (Framekeys == null) return 0;
-                else return Framekeys.Count;
-            }
-        }
+        public int TotalPoints => Framekeys?.Count ?? 0;
 
         /// <summary>
         /// Gets the average amount of time between the points in miliseconds
         /// </summary>
-        public float AvgTimeBetweenPointsMs
-        {
-            get
-            {
-                if (Framekeys == null || Framekeys.Count == 0) return 0;
-                else return ((Framekeys.ElementAt(Framekeys.Count - 1) - Framekeys.ElementAt(0)) / Framekeys.Count) * 1000f;
-            }
-        }
+        public float AvgTimeBetweenPointsMs => Framekeys == null || Framekeys.Count == 0 ? 0 : ((Framekeys.ElementAt(Framekeys.Count - 1) - Framekeys.ElementAt(0)) / Framekeys.Count) * 1000f;
 
         /// <summary>
         /// Gets the total time history we have for this object
         /// </summary>
-        public float TotalTimeHistory
-        {
-            get
-            {
-                if (Framekeys == null) return 0;
-                else return Framekeys.ElementAt(Framekeys.Count - 1) - Framekeys.ElementAt(0);
-            }
-        }
+        public float TotalTimeHistory => Framekeys == null ? 0 : Framekeys.ElementAt(Framekeys.Count - 1) - Framekeys.ElementAt(0);
 
-        private int maxPoints
-        {
-            get
-            {
-                return (int)(NetworkManager.Singleton.NetworkConfig.SecondsHistory / (1f / NetworkManager.Singleton.NetworkConfig.EventTickrate));
-            }
-        }
+        private int m_MaxPoints => (int)(NetworkManager.Singleton.NetworkConfig.SecondsHistory / (1f / NetworkManager.Singleton.NetworkConfig.EventTickrate));
 
         internal void ReverseTransform(float secondsAgo)
         {
-            savedPosition = transform.position;
-            savedRotation = transform.rotation;
+            m_SavedPosition = transform.position;
+            m_SavedRotation = transform.rotation;
 
             float currentTime = NetworkManager.Singleton.NetworkTime;
             float targetTime = currentTime - secondsAgo;
@@ -79,44 +52,46 @@ namespace MLAPI.LagCompensation
                     nextTime = Framekeys.ElementAt(i);
                     break;
                 }
-                else
-                    previousTime = Framekeys.ElementAt(i);
+
+                previousTime = Framekeys.ElementAt(i);
             }
+
             float timeBetweenFrames = nextTime - previousTime;
             float timeAwayFromPrevious = currentTime - previousTime;
             float lerpProgress = timeAwayFromPrevious / timeBetweenFrames;
-            transform.position = Vector3.Lerp(FrameData[previousTime].position, FrameData[nextTime].position, lerpProgress);
-            transform.rotation = Quaternion.Slerp(FrameData[previousTime].rotation, FrameData[nextTime].rotation, lerpProgress);
+            transform.position = Vector3.Lerp(FrameData[previousTime].Position, FrameData[nextTime].Position, lerpProgress);
+            transform.rotation = Quaternion.Slerp(FrameData[previousTime].Rotation, FrameData[nextTime].Rotation, lerpProgress);
         }
 
         internal void ResetStateTransform()
         {
-            transform.position = savedPosition;
-            transform.rotation = savedRotation;
+            transform.position = m_SavedPosition;
+            transform.rotation = m_SavedRotation;
         }
 
-        void Start()
+        private void Start()
         {
-            Framekeys = new FixedQueue<float>(maxPoints);
+            Framekeys = new FixedQueue<float>(m_MaxPoints);
             Framekeys.Enqueue(0);
+
             LagCompensationManager.SimulationObjects.Add(this);
         }
 
-        void OnDestroy()
+        private void OnDestroy()
         {
             LagCompensationManager.SimulationObjects.Remove(this);
         }
 
         internal void AddFrame()
         {
-            if (Framekeys.Count == maxPoints)
-                FrameData.Remove(Framekeys.Dequeue());
+            if (Framekeys.Count == m_MaxPoints) FrameData.Remove(Framekeys.Dequeue());
 
             FrameData.Add(NetworkManager.Singleton.NetworkTime, new TrackedPointData()
             {
-                position = transform.position,
-                rotation = transform.rotation
+                Position = transform.position,
+                Rotation = transform.rotation
             });
+
             Framekeys.Enqueue(NetworkManager.Singleton.NetworkTime);
         }
     }

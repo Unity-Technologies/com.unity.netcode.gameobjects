@@ -5,9 +5,9 @@ namespace MLAPI.Profiling
 {
     public class PerformanceTickData
     {
-        public int tickID;
+        public int TickId;
 
-        readonly ProfilingDataStore m_TickData = new ProfilingDataStore();
+        private readonly ProfilingDataStore m_TickData = new ProfilingDataStore();
 
         public void Increment(string fieldName, int count = 1)
         {
@@ -16,8 +16,8 @@ namespace MLAPI.Profiling
 
         public void AddNonDuplicateData(IReadOnlyDictionary<string, int> transportProfilerData)
         {
-            IEnumerable<KeyValuePair<string, int>> nonDuplicates = transportProfilerData.Where(entry => !m_TickData.HasData(entry.Key));
-            foreach (KeyValuePair<string, int> entry in nonDuplicates)
+            var nonDuplicates = transportProfilerData.Where(entry => !m_TickData.HasData(entry.Key));
+            foreach (var entry in nonDuplicates)
             {
                 m_TickData.Add(entry.Key, entry.Value);
             }

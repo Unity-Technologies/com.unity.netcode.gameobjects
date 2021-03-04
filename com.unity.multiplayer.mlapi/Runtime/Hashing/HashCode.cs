@@ -5,11 +5,11 @@
     /// </summary>
     internal static class HashCode
     {
-        private const uint FNV_offset_basis32 = 2166136261;
-        private const uint FNV_prime32 = 16777619;
+        private const uint k_FNV_offset_basis32 = 2166136261;
+        private const uint k_FNV_prime32 = 16777619;
 
-        private const ulong FNV_offset_basis64 = 14695981039346656037;
-        private const ulong FNV_prime64 = 1099511628211;
+        private const ulong k_FNV_offset_basis64 = 14695981039346656037;
+        private const ulong k_FNV_prime64 = 1099511628211;
 
         /// <summary>
         /// non cryptographic stable hash code,  
@@ -43,13 +43,14 @@
         {
             unchecked
             {
-                uint hash = FNV_offset_basis32;
+                uint hash = k_FNV_offset_basis32;
                 for (int i = 0; i < txt.Length; i++)
                 {
                     uint ch = txt[i];
-                    hash = hash * FNV_prime32;
+                    hash = hash * k_FNV_prime32;
                     hash = hash ^ ch;
                 }
+
                 return hash;
             }
         }
@@ -68,13 +69,14 @@
         {
             unchecked
             {
-                ulong hash = FNV_offset_basis64;
+                ulong hash = k_FNV_offset_basis64;
                 for (int i = 0; i < txt.Length; i++)
                 {
                     ulong ch = txt[i];
-                    hash = hash * FNV_prime64;
+                    hash = hash * k_FNV_prime64;
                     hash = hash ^ ch;
                 }
+
                 return hash;
             }
         }
@@ -110,13 +112,14 @@
         {
             unchecked
             {
-                uint hash = FNV_offset_basis32;
+                uint hash = k_FNV_offset_basis32;
                 for (int i = 0; i < bytes.Length; i++)
                 {
                     uint bt = bytes[i];
-                    hash = hash * FNV_prime32;
+                    hash = hash * k_FNV_prime32;
                     hash = hash ^ bt;
                 }
+
                 return hash;
             }
         }
@@ -135,13 +138,14 @@
         {
             unchecked
             {
-                ulong hash = FNV_offset_basis64;
+                ulong hash = k_FNV_offset_basis64;
                 for (int i = 0; i < bytes.Length; i++)
                 {
                     ulong bt = bytes[i];
-                    hash = hash * FNV_prime64;
+                    hash = hash * k_FNV_prime64;
                     hash = hash ^ bt;
                 }
+
                 return hash;
             }
         }

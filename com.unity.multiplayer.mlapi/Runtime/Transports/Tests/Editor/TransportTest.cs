@@ -30,7 +30,7 @@ public class TransportTest : MonoBehaviour
         NetworkManager nm = (NetworkManager)o.AddComponent(typeof(NetworkManager));
         nm.SetSingleton();
         nm.NetworkConfig = new NetworkConfig();
-        UnetTransport ut = (UnetTransport)o.AddComponent(typeof(UnetTransport));
+        UNetTransport ut = (UNetTransport)o.AddComponent(typeof(UNetTransport));
 
         ut.ServerListenPort = 7777;
         nm.NetworkConfig.NetworkTransport = ut;
@@ -38,7 +38,7 @@ public class TransportTest : MonoBehaviour
         byte CustomChannel = 0;
 
         // test 1: add a legit channel.
-        ut.Channels.Add(new UnetChannel { Id = NetworkChannel.ChannelUnused + CustomChannel, Type = QosType.Unreliable });
+        ut.Channels.Add(new UNetChannel { Id = NetworkChannel.ChannelUnused + CustomChannel, Type = QosType.Unreliable });
 
         try
         {
@@ -54,12 +54,12 @@ public class TransportTest : MonoBehaviour
 
         ut.Channels.Clear();
         // test 2: add a bogus channel (one that intersects with the MLAPI built-in ones.)  Expect failure
-        ut.Channels.Add(new UnetChannel { Id = NetworkChannel.Internal, Type = QosType.Unreliable });
+        ut.Channels.Add(new UNetChannel { Id = NetworkChannel.Internal, Type = QosType.Unreliable });
 
         try
         {
             nm.StartServer();
-            Assert.Fail("The Unet transport allowed registration of an MLAPI-reserved channel");
+            Assert.Fail("The UNet transport allowed registration of an MLAPI-reserved channel");
         }
         catch (Exception ex)
         {

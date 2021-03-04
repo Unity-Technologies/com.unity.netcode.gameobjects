@@ -27,10 +27,10 @@ namespace MLAPI.Messaging
         }
 
         // Stores the stream of batched RPC to send to each client, by ClientId
-        private readonly Dictionary<ulong, SendStream> SendDict = new Dictionary<ulong, SendStream>();
+        private readonly Dictionary<ulong, SendStream> k_SendDict = new Dictionary<ulong, SendStream>();
 
         // Used to store targets, internally
-        private ulong[] TargetList = new ulong[0];
+        private ulong[] m_TargetList = new ulong[0];
 
         // Used to mark longer lengths. Works because we can't have zero-sized messages
         private const byte k_LongLenMarker = 0;
@@ -87,18 +87,18 @@ namespace MLAPI.Messaging
         /// <param name="networkIdList">the list to fill</param>
         private static void FillTargetList(in RpcFrameQueueItem queueItem, ref ulong[] networkIdList)
         {
-            switch (queueItem.queueItemType)
+            switch (queueItem.QueueItemType)
             {
                 // todo: revisit .resize() and .ToArry() usage, for performance
                 case RpcQueueContainer.QueueItemType.ServerRpc:
                     Array.Resize(ref networkIdList, 1);
-                    networkIdList[0] = queueItem.networkId;
+                    networkIdList[0] = queueItem.NetworkId;
                     break;
                 default:
-                    // todo: consider the implications of default usage of queueItem.clientIds
+                // todo: consider the implications of default usage of queueItem.clientIds
                 case RpcQueueContainer.QueueItemType.ClientRpc:
                     // copy the list
-                    networkIdList = queueItem.clientIds.ToArray();
+                    networkIdList = queueItem.ClientNetworkIds.ToArray();
                     break;
             }
         }
@@ -110,49 +110,50 @@ namespace MLAPI.Messaging
         /// <param name="queueItem">the threshold in bytes</param>
         public void QueueItem(in RpcFrameQueueItem queueItem)
         {
-            FillTargetList(queueItem, ref TargetList);
+            FillTargetList(queueItem, ref m_TargetList);
 
-            foreach (ulong clientId in TargetList)
+            foreach (ulong clientId in m_TargetList)
             {
-                if (!SendDict.ContainsKey(clientId))
+                if (!k_SendDict.ContainsKey(clientId))
                 {
                     // todo: consider what happens if many clients join and leave the game consecutively
                     // we probably need a cleanup mechanism at some point
-                    SendDict[clientId] = new SendStream();
+                    k_SendDict[clientId] = new SendStream();
                 }
 
-                if (SendDict[clientId].IsEmpty)
+                if (k_SendDict[clientId].IsEmpty)
                 {
-                    SendDict[clientId].IsEmpty = false;
-                    SendDict[clientId].NetworkChannel = queueItem.networkChannel;
+                    k_SendDict[clientId].IsEmpty = false;
+                    k_SendDict[clientId].NetworkChannel = queueItem.NetworkChannel;
 
-                    switch (queueItem.queueItemType)
+                    switch (queueItem.QueueItemType)
                     {
                         // 8 bits are used for the message type, which is an NetworkConstants
                         case RpcQueueContainer.QueueItemType.ServerRpc:
-                            SendDict[clientId].Writer.WriteByte(NetworkConstants.SERVER_RPC); // MessageType
+                            k_SendDict[clientId].Writer.WriteByte(NetworkConstants.SERVER_RPC); // MessageType
                             break;
                         case RpcQueueContainer.QueueItemType.ClientRpc:
-                            SendDict[clientId].Writer.WriteByte(NetworkConstants.CLIENT_RPC); // MessageType
+                            k_SendDict[clientId].Writer.WriteByte(NetworkConstants.CLIENT_RPC); // MessageType
                             break;
                     }
                 }
 
                 // write the amounts of bytes that are coming up
-                PushLength(queueItem.messageData.Count, ref SendDict[clientId].Writer);
+                PushLength(queueItem.MessageData.Count, ref k_SendDict[clientId].Writer);
 
                 // write the message to send
-                SendDict[clientId].Writer.WriteBytes(queueItem.messageData.Array, queueItem.messageData.Count, queueItem.messageData.Offset);
+                k_SendDict[clientId].Writer.WriteBytes(queueItem.MessageData.Array, queueItem.MessageData.Count, queueItem.MessageData.Offset);
 
-                ProfilerStatManager.bytesSent.Record(queueItem.messageData.Count);
-                ProfilerStatManager.rpcsSent.Record();
-                PerformanceDataManager.Increment(ProfilerConstants.NumberBytesSent, queueItem.messageData.Count);
+                ProfilerStatManager.BytesSent.Record(queueItem.MessageData.Count);
+                ProfilerStatManager.RpcsSent.Record();
+                PerformanceDataManager.Increment(ProfilerConstants.NumberBytesSent, queueItem.MessageData.Count);
                 PerformanceDataManager.Increment(ProfilerConstants.NumberOfRPCsSent);
             }
         }
 
         public delegate void SendCallbackType(ulong clientId, SendStream messageStream);
-        public delegate void ReceiveCallbackType(NetworkBuffer messageBuffer, RpcQueueContainer.QueueItemType messageType, ulong clientId, float receiveTime);
+
+        public delegate void ReceiveCallbackType(NetworkBuffer messageStream, RpcQueueContainer.QueueItemType messageType, ulong clientId, float receiveTime);
 
         /// <summary>
         /// SendItems
@@ -162,12 +163,12 @@ namespace MLAPI.Messaging
         /// <param name="sendCallback"> the function to call for sending the batch</param>
         public void SendItems(int thresholdBytes, SendCallbackType sendCallback)
         {
-            foreach (KeyValuePair<ulong, SendStream> entry in SendDict)
+            foreach (KeyValuePair<ulong, SendStream> entry in k_SendDict)
             {
                 if (!entry.Value.IsEmpty)
                 {
                     // read the queued message
-                    int length = (int)SendDict[entry.Key].Buffer.Length;
+                    int length = (int)k_SendDict[entry.Key].Buffer.Length;
 
                     if (length >= thresholdBytes)
                     {
@@ -176,7 +177,7 @@ namespace MLAPI.Messaging
                         entry.Value.Buffer.SetLength(0);
                         entry.Value.Buffer.Position = 0;
                         entry.Value.IsEmpty = true;
-                        ProfilerStatManager.rpcBatchesSent.Record();
+                        ProfilerStatManager.RpcBatchesSent.Record();
                         PerformanceDataManager.Increment(ProfilerConstants.NumberOfRPCBatchesSent);
                     }
                 }
