@@ -6,6 +6,7 @@ using MLAPI.Exceptions;
 using MLAPI.Logging;
 using MLAPI.Profiling;
 using MLAPI.Transports.Tasks;
+using UnityEngine;
 using UnityEngine.Networking;
 
 namespace MLAPI.Transports.UNET
@@ -26,8 +27,10 @@ namespace MLAPI.Transports.UNET
         public int MaxConnections = 100;
         public int MaxSentMessageQueueSize = 128;
 
-        public string ConnectAddress = "127.0.0.1";
-        public int ConnectPort = 7777;
+        [SerializeField]
+        string m_ConnectAddress = "127.0.0.1";
+        [SerializeField]
+        ushort m_ConnectPort = 7777;
         public int ServerListenPort = 7777;
         public int ServerWebsocketListenPort = 8887;
         public bool SupportWebsocket = false;
@@ -63,6 +66,12 @@ namespace MLAPI.Transports.UNET
 
         private SocketTask m_ConnectTask;
         public override ulong ServerClientId => GetMLAPIClientId(0, 0, true);
+
+        /// <inheritdoc />
+        public override string NetworkAddress { get { return m_ConnectAddress; } set { m_ConnectAddress = value; } }
+
+        /// <inheritdoc />
+        public override ushort NetworkPort { get { return m_ConnectPort; } set { m_ConnectPort = value; } }
 
         protected void LateUpdate()
         {
@@ -143,7 +152,6 @@ namespace MLAPI.Transports.UNET
             }
         }
 
-
         public void SendQueued(ulong clientId)
         {
             if (ProfilerEnabled)
@@ -161,9 +169,11 @@ namespace MLAPI.Transports.UNET
             var eventType = RelayTransport.Receive(out int hostId, out int connectionId, out int channelId, m_MessageBuffer, m_MessageBuffer.Length, out int receivedSize, out byte error);
 
             clientId = GetMLAPIClientId((byte)hostId, (ushort)connectionId, false);
+
             receiveTime = UnityEngine.Time.realtimeSinceStartup;
 
             var networkError = (NetworkError)error;
+
             if (networkError == NetworkError.MessageToLong)
             {
                 byte[] tempBuffer;
@@ -254,7 +264,7 @@ namespace MLAPI.Transports.UNET
             var socketTask = SocketTask.Working;
 
             m_ServerHostId = RelayTransport.AddHost(new HostTopology(GetConfig(), 1), false);
-            m_ServerConnectionId = RelayTransport.Connect(m_ServerHostId, ConnectAddress, ConnectPort, 0, out byte error);
+            m_ServerConnectionId = RelayTransport.Connect(m_ServerHostId, NetworkAddress, NetworkPort, 0, out byte error);
 
             var connectError = (NetworkError)error;
 

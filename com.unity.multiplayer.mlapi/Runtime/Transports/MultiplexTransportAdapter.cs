@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using MLAPI.Transports.Tasks;
 
 namespace MLAPI.Transports.Multiplex
@@ -52,6 +53,21 @@ namespace MLAPI.Transports.Multiplex
         public override ulong ServerClientId => 0;
 
         private byte m_LastProcessedTransportIndex;
+
+        /// <inheritdoc />
+        public override string NetworkAddress
+        {
+            get => Transports.Any() ? Transports.First().NetworkAddress : default;
+            set => Array.ForEach(Transports, t => t.NetworkAddress = value);
+        }
+
+        /// <inheritdoc />
+        public override ushort NetworkPort
+        {
+            get => Transports.Any() ? Transports.First().NetworkPort : default;
+            set => Array.ForEach(Transports, t => t.NetworkPort = value);
+        }
+
 
         public override bool IsSupported => true;
 
