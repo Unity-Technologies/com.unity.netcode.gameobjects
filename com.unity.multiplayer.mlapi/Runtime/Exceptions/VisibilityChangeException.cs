@@ -10,28 +10,19 @@ namespace MLAPI.Exceptions
         /// <summary>
         /// Constructs a VisibilityChangeException
         /// </summary>
-        public VisibilityChangeException()
-        {
-            
-        }
+        public VisibilityChangeException() { }
 
         /// <summary>
         /// Constructs a VisibilityChangeException with a message
         /// </summary>
         /// <param name="message">The exception message</param>
-        public VisibilityChangeException(string message) : base(message)
-        {
-            
-        }
+        public VisibilityChangeException(string message) : base(message) { }
 
         /// <summary>
         /// Constructs a VisibilityChangeException with a message and a inner exception
         /// </summary>
         /// <param name="message">The exception message</param>
         /// <param name="inner">The inner exception</param>
-        public VisibilityChangeException(string message, Exception inner) : base(message, inner)
-        {
-            
-        }
+        public VisibilityChangeException(string message, Exception inner) : base(message, inner) { }
     }
 }

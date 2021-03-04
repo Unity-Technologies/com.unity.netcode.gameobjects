@@ -1,16 +1,18 @@
 using System;
+
 #if UNITY_2020_2_OR_NEWER
 using Unity.Profiling.LowLevel;
 #endif
 
 namespace MLAPI.Profiling
 {
-    struct ProfilerCounterUtility
+    internal struct ProfilerCounterUtility
     {
 #if UNITY_2020_2_OR_NEWER && ENABLE_PROFILER
         public static byte GetProfilerMarkerDataType<T>()
         {
-            switch (Type.GetTypeCode(typeof(T))) {
+            switch (Type.GetTypeCode(typeof(T)))
+            {
                 case TypeCode.Int32:
                     return (byte)ProfilerMarkerDataType.Int32;
                 case TypeCode.UInt32:
@@ -32,5 +34,3 @@ namespace MLAPI.Profiling
 #endif
     }
 }
-
-

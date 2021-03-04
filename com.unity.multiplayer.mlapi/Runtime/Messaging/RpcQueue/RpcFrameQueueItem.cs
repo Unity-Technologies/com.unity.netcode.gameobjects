@@ -2,7 +2,7 @@ using System;
 using MLAPI.Transports;
 using MLAPI.Serialization.Pooled;
 
-namespace  MLAPI.Messaging
+namespace MLAPI.Messaging
 {
     /// <summary>
     /// FrameQueueItem
@@ -13,17 +13,17 @@ namespace  MLAPI.Messaging
     /// </summary>
     internal struct RpcFrameQueueItem
     {
-        public NetworkUpdateStage                        updateStage;
-        public float                                     queueCreationTime;  //How long has this queue item been around (right now only internal message queue items set this)
-        public RpcQueueContainer.QueueItemType           queueItemType;
-        public ulong                                     networkId;          //Sender's network Identifier
-        public NetworkChannel                            networkChannel;
-        public ulong[]                                   clientIds;          //Server invoked Client RPCs only
-        public long                                      streamSize;
-        public float                                     timeStamp;
-        public PooledNetworkWriter                       streamWriter;
-        public PooledNetworkReader                       streamReader;
-        public PooledNetworkBuffer                       itemBuffer;
-        public ArraySegment<byte>                        messageData;
+        public NetworkUpdateStage UpdateStage;
+        public float  QueueCreationTime;  //How long has this queue item been around (right now only internal message queue items set this)
+        public RpcQueueContainer.QueueItemType QueueItemType;
+        public ulong NetworkId; //Sender's network Identifier
+        public NetworkChannel NetworkChannel;
+        public ulong[] ClientNetworkIds; //Server invoked Client RPCs only
+        public long StreamSize;
+        public float Timestamp;
+        public PooledNetworkWriter NetworkWriter;
+        public PooledNetworkReader NetworkReader;
+        public PooledNetworkBuffer NetworkBuffer;
+        public ArraySegment<byte> MessageData;
     }
 }

@@ -13,9 +13,9 @@ namespace MLAPI.Serialization
     /// </summary>
     public static class SerializationManager
     {
-        private static readonly Dictionary<Type, FieldInfo[]> fieldCache = new Dictionary<Type, FieldInfo[]>();
-        private static readonly Dictionary<Type, BoxedSerializationDelegate> cachedExternalSerializers = new Dictionary<Type, BoxedSerializationDelegate>();
-        private static readonly Dictionary<Type, BoxedDeserializationDelegate> cachedExternalDeserializers = new Dictionary<Type, BoxedDeserializationDelegate>();
+        private static Dictionary<Type, FieldInfo[]> s_FieldCache = new Dictionary<Type, FieldInfo[]>();
+        private static Dictionary<Type, BoxedSerializationDelegate> s_CachedExternalSerializers = new Dictionary<Type, BoxedSerializationDelegate>();
+        private static Dictionary<Type, BoxedDeserializationDelegate> s_CachedExternalDeserializers = new Dictionary<Type, BoxedDeserializationDelegate>();
 
         /// <summary>
         /// The delegate used when registering custom deserialization for a type.
@@ -46,8 +46,8 @@ namespace MLAPI.Serialization
         /// <typeparam name="T">The type to register.</typeparam>
         public static void RegisterSerializationHandlers<T>(CustomSerializationDelegate<T> onSerialize, CustomDeserializationDelegate<T> onDeserialize)
         {
-            cachedExternalSerializers[typeof(T)] = (stream, instance) => onSerialize(stream, (T)instance);
-            cachedExternalDeserializers[typeof(T)] = stream => onDeserialize(stream);
+            s_CachedExternalSerializers[typeof(T)] = (stream, instance) => onSerialize(stream, (T)instance);
+            s_CachedExternalDeserializers[typeof(T)] = stream => onDeserialize(stream);
         }
 
         /// <summary>
@@ -58,17 +58,17 @@ namespace MLAPI.Serialization
         /// <returns>Whether or not either the serialization or deserialization handlers for the type was removed.</returns>
         public static bool RemoveSerializationHandlers<T>()
         {
-            bool serializationRemoval = cachedExternalSerializers.Remove(typeof(T));
-            bool deserializationRemoval = cachedExternalDeserializers.Remove(typeof(T));
+            bool serializationRemoval = s_CachedExternalSerializers.Remove(typeof(T));
+            bool deserializationRemoval = s_CachedExternalDeserializers.Remove(typeof(T));
 
             return serializationRemoval || deserializationRemoval;
         }
 
         internal static bool TrySerialize(Stream stream, object obj)
         {
-            if (cachedExternalSerializers.ContainsKey(obj.GetType()))
+            if (s_CachedExternalSerializers.ContainsKey(obj.GetType()))
             {
-                cachedExternalSerializers[obj.GetType()](stream, obj);
+                s_CachedExternalSerializers[obj.GetType()](stream, obj);
                 return true;
             }
 
@@ -77,9 +77,9 @@ namespace MLAPI.Serialization
 
         internal static bool TryDeserialize(Stream stream, Type type, out object obj)
         {
-            if (cachedExternalDeserializers.ContainsKey(type))
+            if (s_CachedExternalDeserializers.ContainsKey(type))
             {
-                obj = cachedExternalDeserializers[type](stream);
+                obj = s_CachedExternalDeserializers[type](stream);
                 return true;
             }
 
@@ -89,19 +89,19 @@ namespace MLAPI.Serialization
 
         internal static FieldInfo[] GetFieldsForType(Type type)
         {
-            if (fieldCache.ContainsKey(type)) return fieldCache[type];
+            if (s_FieldCache.ContainsKey(type)) return s_FieldCache[type];
 
             FieldInfo[] fields = type
                 .GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
                 .Where(x => (x.IsPublic || x.GetCustomAttributes(typeof(SerializeField), true).Length > 0) && IsTypeSupported(x.FieldType))
                 .OrderBy(x => x.Name, StringComparer.Ordinal).ToArray();
 
-            fieldCache.Add(type, fields);
+            s_FieldCache.Add(type, fields);
 
             return fields;
         }
 
-        private static readonly HashSet<Type> SupportedTypes = new HashSet<Type>()
+        private static HashSet<Type> s_SupportedTypes = new HashSet<Type>()
         {
             typeof(byte),
             typeof(byte),
@@ -136,8 +136,8 @@ namespace MLAPI.Serialization
         /// <returns>Whether or not the type is supported</returns>
         public static bool IsTypeSupported(Type type)
         {
-            return type.IsEnum || SupportedTypes.Contains(type) || type.HasInterface(typeof(INetworkSerializable)) ||
-                   (cachedExternalSerializers.ContainsKey(type) && cachedExternalDeserializers.ContainsKey(type)) ||
+            return type.IsEnum || s_SupportedTypes.Contains(type) || type.HasInterface(typeof(INetworkSerializable)) ||
+                   (s_CachedExternalSerializers.ContainsKey(type) && s_CachedExternalDeserializers.ContainsKey(type)) ||
                    (type.IsArray && type.HasElementType && IsTypeSupported(type.GetElementType()));
         }
     }

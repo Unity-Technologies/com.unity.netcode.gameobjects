@@ -21,10 +21,14 @@ namespace UnityEditor
                 while (xSiblingIndex.Count > 0 && ySiblingIndex.Count > 0)
                 {
                     if (xSiblingIndex[0] < ySiblingIndex[0])
+                    {
                         return -1;
+                    }
 
                     if (xSiblingIndex[0] > ySiblingIndex[0])
+                    {
                         return 1;
+                    }
 
                     xSiblingIndex.RemoveAt(0);
                     ySiblingIndex.RemoveAt(0);
@@ -34,7 +38,9 @@ namespace UnityEditor
             });
 
             for (ulong i = 0; i < (ulong)traverseSortedObjects.Count; i++)
+            {
                 traverseSortedObjects[(int)i].NetworkInstanceId = i;
+            }
         }
     }
 
@@ -42,9 +48,8 @@ namespace UnityEditor
     {
         internal static List<int> TraversedSiblingIndex(this NetworkObject networkObject)
         {
-            List<int> paths = new List<int>();
-
-            Transform transform = networkObject.transform;
+            var paths = new List<int>();
+            var transform = networkObject.transform;
 
             while (transform != null)
             {

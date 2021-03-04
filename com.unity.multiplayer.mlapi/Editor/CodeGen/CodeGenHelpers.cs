@@ -88,9 +88,8 @@ namespace MLAPI.Editor.CodeGen
             }
             catch
             {
+                return false;
             }
-
-            return false;
         }
 
         public static bool IsSerializable(this TypeReference typeReference)
@@ -141,16 +140,12 @@ namespace MLAPI.Editor.CodeGen
             try
             {
                 var typeDef = typeReference.Resolve();
-                if (typeDef.IsEnum)
-                {
-                    return typeDef.GetEnumUnderlyingType();
-                }
+                return typeDef.IsEnum ? typeDef.GetEnumUnderlyingType() : null;
             }
             catch
             {
+                return null;
             }
-
-            return null;
         }
 
         public static void AddError(this List<DiagnosticMessage> diagnostics, string message)

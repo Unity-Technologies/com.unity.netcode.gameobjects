@@ -15,12 +15,12 @@ namespace MLAPI
         private int m_MaxDelta = 0;
         private int m_LastRemoteTick = 0;
         private bool m_Valid = false;
-        private string m_Problems = "";
+        private string m_Problems = string.Empty;
         private int m_Count = 0;
 
         // todo: address issue with initial values
-        private const int m_WaitIterations = 5;
-        private const int m_EndIterations = 1000;
+        private const int k_WaitIterations = 5;
+        private const int k_EndIterations = 1000;
 
         void Start()
         {
@@ -49,12 +49,12 @@ namespace MLAPI
             {
                 // compute the delta in tick between client and server,
                 // as seen from the client, when it receives a value not from itself
-                if (m_TestVar.LocalTick != NetworkTickSystem.k_NoTick)
+                if (m_TestVar.LocalTick != NetworkTickSystem.NoTick)
                 {
                     int delta = m_TestVar.LocalTick - m_TestVar.RemoteTick;
                     m_Count++;
 
-                    if (m_Count > m_WaitIterations)
+                    if (m_Count > k_WaitIterations)
                     {
                         if (!m_Valid)
                         {
@@ -82,7 +82,7 @@ namespace MLAPI
                 }
             }
 
-            if (m_Count == m_EndIterations)
+            if (m_Count == k_EndIterations)
             {
                 if (m_Problems == "" && Math.Abs(m_MaxDelta - m_MinDelta) < 3)
                 {
@@ -91,7 +91,7 @@ namespace MLAPI
                 else
                 {
                     Debug.Log("**** TEST FAILED ****");
-                    Debug.Log("Delta range: " + m_MinDelta + ", " + m_MaxDelta);
+                    Debug.Log($"Delta range: {m_MinDelta}, {m_MaxDelta}");
 
                     if (m_Problems != "")
                     {
