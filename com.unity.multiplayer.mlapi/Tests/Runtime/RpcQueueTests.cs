@@ -37,8 +37,8 @@ namespace MLAPI.RuntimeTests
                 AllowRuntimeSceneChanges = true,
                 EnableSceneManagement = false
             };
-            unetTransport.NetworkAddress = "127.0.0.1";
-            unetTransport.NetworkPort = 7777;
+            unetTransport.ConnectAddress = "127.0.0.1";
+            unetTransport.ConnectPort = 7777;
             unetTransport.ServerListenPort = 7777;
             unetTransport.MessageBufferSize = 65535;
             unetTransport.MaxConnections = 100;
