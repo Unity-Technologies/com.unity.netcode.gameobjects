@@ -46,7 +46,7 @@ namespace MLAPI.RuntimeTests
             m_WaitForValidation = false;
             m_CurrentBufferSize = BufferSizeMultiplier;
             m_SendBuffer = new List<byte>(MaximumBufferSize);
-            m_PreCalculatedBufferValues = new List<byte>(MaximumBufferSize+1);
+            m_PreCalculatedBufferValues = new List<byte>(MaximumBufferSize);
             while(m_PreCalculatedBufferValues.Count <= MaximumBufferSize )
             {
                 m_PreCalculatedBufferValues.Add((byte)UnityEngine.Random.Range(0, 255));

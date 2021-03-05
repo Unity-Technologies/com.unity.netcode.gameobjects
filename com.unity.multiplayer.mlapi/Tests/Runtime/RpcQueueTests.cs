@@ -1,14 +1,20 @@
+using System;
 using System.Collections;
-using UnityEngine;
-using UnityEngine.SceneManagement;
-using UnityEngine.TestTools;
-using NUnit.Framework;
-using MLAPI.Messaging;
-using MLAPI.SceneManagement;
-using MLAPI.Transports.UNET;
+using System.Collections.Generic;
+
 
 namespace MLAPI.RuntimeTests
 {
+    using UnityEngine;
+    using UnityEngine.SceneManagement;
+    using UnityEngine.TestTools;
+    using NUnit.Framework;
+    using MLAPI.Messaging;
+    using MLAPI.SceneManagement;
+    using MLAPI.Transports.UNET;
+    using MLAPI.Serialization;
+
+
     /// <summary>
     /// The RpcQueue unit tests to validate:
     /// - Sending and Receiving pipeline to validate that both sending and receiving pipelines are functioning properly.
@@ -193,7 +199,7 @@ namespace MLAPI.RuntimeTests
         }
 
         [UnityTest]
-        public IEnumerator RpcQueueProcessorTest()
+        public IEnumerator RpcQueueContainerTest()
         {
             bool InitializeNetworkManager = NetowrkManangerHelper.StartNetworkManager();
             Assert.IsTrue(InitializeNetworkManager);
@@ -226,9 +232,19 @@ namespace MLAPI.RuntimeTests
             //Spawn the player
             NetowrkManangerHelper.PlayerNetworkObject.SpawnAsPlayerObject(0, null, true);
 
-            var rpcQueueProcessor = new RpcQueueProcessor();
+            var rpcQueueContainer = new RpcQueueContainer(true);
+            var buffer = new NetworkBuffer();
 
+            var MaxSize = 65536;
+            var PreCalculatedBufferValues = new List<byte>(0);
+            for(int i = 0; i <  (MaxSize >> 3); i++ )
+            {
+                PreCalculatedBufferValues.AddRange(BitConverter.GetBytes(Random.Range(0, UInt64.MaxValue)));
+            }
 
+            var writer = new NetworkWriter(buffer);
+            writer.WriteBytes(PreCalculatedBufferValues.ToArray(), 0);
+            rpcQueueContainer.AddQueueItemToInboundFrame(RpcQueueContainer.QueueItemType.ClientRpc, Time.realtimeSinceStartup, 0, buffer);
 
             yield return null;
         }
