@@ -785,7 +785,14 @@ namespace MLAPI
 
                 if (NetworkConfig.ConnectionApproval)
                 {
-                    writer.WriteByteArray(NetworkConfig.ConnectionData);
+                    if(NetworkConfig.ConnectionData != null)
+                    {
+                         writer.WriteByteArray(NetworkConfig.ConnectionData);
+                    }
+                    else
+                    {
+                        NetworkLog.LogWarning($"The NetworkConfig.ConnectionData was not set before sending the connection request!");
+                    }
                 }
 
                 InternalMessageSender.Send(ServerClientId, NetworkConstants.CONNECTION_REQUEST, NetworkChannel.Internal, buffer);
