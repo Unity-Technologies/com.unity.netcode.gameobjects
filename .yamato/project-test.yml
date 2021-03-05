@@ -132,4 +132,6 @@ develop_pull_request_trigger:
     pull_requests:
     - targets:
         only:
-          - "release/0.1.0"
+          - "master"
+          - "develop"
+          - "/release\/.+/"
