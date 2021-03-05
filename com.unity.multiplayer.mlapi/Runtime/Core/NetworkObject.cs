@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.CompilerServices;
 using MLAPI.Configuration;
 using MLAPI.Exceptions;
 using MLAPI.Hashing;
@@ -366,21 +367,22 @@ namespace MLAPI
             }
         }
 
-        /// <summary>
-        /// Spawns this GameObject across the network. Can only be called from the Server
-        /// </summary>
-        /// <param name="spawnPayload">The writer containing the spawn payload</param>
-        /// <param name="destroyWithScene">Should the object be destroyd when the scene is changed</param>
-        public void Spawn(Stream spawnPayload = null, bool destroyWithScene = false)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void SpawnInternal(Stream spawnPayload, bool destroyWithScene , ulong? ownerClientId, bool playerObject)
         {
             if (!NetworkManager.Singleton.IsListening)
             {
-                throw new NotListeningException($"{nameof(NetworkManager)} isn't listening, start a server, client or host before spawning objects.");
+                throw new NotListeningException($"{nameof(NetworkManager)} isn't listening, start a server or host before spawning objects.");
+            }
+
+            if (!NetworkManager.Singleton.IsServer)
+            {
+                throw new NotServerException($"Only server can spawn {nameof(NetworkObject)}s");
             }
 
             if (spawnPayload != null) spawnPayload.Position = 0;
 
-            NetworkSpawnManager.SpawnNetworkObjectLocally(this, NetworkSpawnManager.GetNetworkObjectId(), false, false, null, spawnPayload, spawnPayload != null, spawnPayload == null ? 0 : (int)spawnPayload.Length, false, destroyWithScene);
+            NetworkSpawnManager.SpawnNetworkObjectLocally(this, NetworkSpawnManager.GetNetworkObjectId(), false, playerObject, ownerClientId, spawnPayload, spawnPayload != null, spawnPayload == null ? 0 : (int)spawnPayload.Length, false, destroyWithScene);
 
             for (int i = 0; i < NetworkManager.Singleton.ConnectedClientsList.Count; i++)
             {
@@ -392,11 +394,13 @@ namespace MLAPI
         }
 
         /// <summary>
-        /// Despawns this GameObject and destroys it for other clients. This should be used if the object should be kept on the server
+        /// Spawns this GameObject across the network. Can only be called from the Server
         /// </summary>
-        public void Despawn(bool destroy = false)
+        /// <param name="spawnPayload">The writer containing the spawn payload</param>
+        /// <param name="destroyWithScene">Should the object be destroyd when the scene is changed</param>
+        public void Spawn(Stream spawnPayload = null, bool destroyWithScene = false)
         {
-            NetworkSpawnManager.DespawnObject(this, destroy);
+            SpawnInternal(spawnPayload, destroyWithScene, null, false);
         }
 
         /// <summary>
@@ -407,17 +411,7 @@ namespace MLAPI
         /// <param name="destroyWithScene">Should the object be destroyd when the scene is changed</param>
         public void SpawnWithOwnership(ulong clientId, Stream spawnPayload = null, bool destroyWithScene = false)
         {
-            if (spawnPayload != null) spawnPayload.Position = 0;
-
-            NetworkSpawnManager.SpawnNetworkObjectLocally(this, NetworkSpawnManager.GetNetworkObjectId(), false, false, clientId, spawnPayload, spawnPayload != null, spawnPayload == null ? 0 : (int)spawnPayload.Length, false, destroyWithScene);
-
-            for (int i = 0; i < NetworkManager.Singleton.ConnectedClientsList.Count; i++)
-            {
-                if (m_Observers.Contains(NetworkManager.Singleton.ConnectedClientsList[i].ClientId))
-                {
-                    NetworkSpawnManager.SendSpawnCallForObject(NetworkManager.Singleton.ConnectedClientsList[i].ClientId, this, spawnPayload);
-                }
-            }
+            SpawnInternal(spawnPayload, destroyWithScene, clientId, false);
         }
 
         /// <summary>
@@ -428,18 +422,17 @@ namespace MLAPI
         /// <param name="destroyWithScene">Should the object be destroyd when the scene is changed</param>
         public void SpawnAsPlayerObject(ulong clientId, Stream spawnPayload = null, bool destroyWithScene = false)
         {
-            if (spawnPayload != null) spawnPayload.Position = 0;
-
-            NetworkSpawnManager.SpawnNetworkObjectLocally(this, NetworkSpawnManager.GetNetworkObjectId(), false, true, clientId, spawnPayload, spawnPayload != null, spawnPayload == null ? 0 : (int)spawnPayload.Length, false, destroyWithScene);
-
-            for (int i = 0; i < NetworkManager.Singleton.ConnectedClientsList.Count; i++)
-            {
-                if (m_Observers.Contains(NetworkManager.Singleton.ConnectedClientsList[i].ClientId))
-                {
-                    NetworkSpawnManager.SendSpawnCallForObject(NetworkManager.Singleton.ConnectedClientsList[i].ClientId, this, spawnPayload);
-                }
-            }
+            SpawnInternal(spawnPayload, destroyWithScene, clientId, true);
         }
+
+        /// <summary>
+        /// Despawns this GameObject and destroys it for other clients. This should be used if the object should be kept on the server
+        /// </summary>
+        public void Despawn(bool destroy = false)
+        {
+            NetworkSpawnManager.DespawnObject(this, destroy);
+        }
+
 
         /// <summary>
         /// Removes all ownership of an object from any client. Can only be called from server
