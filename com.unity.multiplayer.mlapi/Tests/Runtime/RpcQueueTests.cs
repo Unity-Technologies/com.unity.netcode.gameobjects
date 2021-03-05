@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using NUnit.Framework;
+using MLAPI.Messaging;
 using MLAPI.SceneManagement;
 using MLAPI.Transports.UNET;
 
@@ -186,8 +187,104 @@ namespace MLAPI.RuntimeTests
 #else
             yield return null;
 #endif
+
+
+
+        }
+
+        [UnityTest]
+        public IEnumerator RpcQueueProcessorTest()
+        {
+            bool InitializeNetworkManager = NetowrkManangerHelper.StartNetworkManager();
+            Assert.IsTrue(InitializeNetworkManager);
+            if(!InitializeNetworkManager)
+            {
+                  yield return null;
+            }
+
+            if(NetowrkManangerHelper.StartHostSocketTasks == null)
+            {
+                Assert.IsNotNull(NetowrkManangerHelper.StartHostSocketTasks);
+                yield return null;
+            }
+
+            foreach(Transports.Tasks.SocketTask task in NetowrkManangerHelper.StartHostSocketTasks.Tasks)
+            {
+                while(!task.IsDone)
+                {
+                     yield return new WaitForSeconds(0.02f);
+                }
+                if(task.SocketError != System.Net.Sockets.SocketError.Success)
+                {
+                    Assert.AreSame(task.SocketError, System.Net.Sockets.SocketError.Success);
+                    yield return null;
+                }
+            }
+
+            Debug.Log("Host Started.");
+
+            //Spawn the player
+            NetowrkManangerHelper.PlayerNetworkObject.SpawnAsPlayerObject(0, null, true);
+
+            var rpcQueueProcessor = new RpcQueueProcessor();
+
+
+
+            yield return null;
         }
 
 
+        public static class NetowrkManangerHelper
+        {
+            public static Transports.Tasks.SocketTasks StartHostSocketTasks { get; internal set; }
+            public static GameObject PlayerObject { get; internal set; }
+            public static NetworkObject PlayerNetworkObject { get; internal set; }
+            public static bool StartNetworkManager()
+            {
+                var networkManagerObject = new GameObject(nameof(NetworkManager));
+                var NetworkManagerComponent = networkManagerObject.AddComponent<NetworkManager>();
+                if(NetworkManagerComponent == null)
+                {
+                    return false;
+                }
+
+                Debug.Log("NetworkManager Instantiated.");
+
+                var unetTransport = networkManagerObject.AddComponent<UNetTransport>();
+
+                NetworkManagerComponent.NetworkConfig = new Configuration.NetworkConfig
+                {
+                    CreatePlayerPrefab = false,
+                    AllowRuntimeSceneChanges = true,
+                    EnableSceneManagement = false
+                };
+                unetTransport.ConnectAddress = "127.0.0.1";
+                unetTransport.ConnectPort = 7777;
+                unetTransport.ServerListenPort = 7777;
+                unetTransport.MessageBufferSize = 65535;
+                unetTransport.MaxConnections = 100;
+                unetTransport.MessageSendMode = UNetTransport.SendMode.Immediately;
+                NetworkManagerComponent.NetworkConfig.NetworkTransport = unetTransport;
+
+                var currentActiveScene = SceneManager.GetActiveScene();
+
+                //Add our test scene name
+                NetworkSceneManager.AddRuntimeSceneName(currentActiveScene.name, 0);
+
+                //Create the player object that we will spawn as a host
+                PlayerObject = new GameObject("RpcTestObject");
+                PlayerNetworkObject = PlayerObject.AddComponent<NetworkObject>();
+
+                if(!PlayerNetworkObject)
+                {
+                    return false;
+                }
+
+                //Start as host mode as loopback only works in hostmode
+                StartHostSocketTasks = NetworkManager.Singleton.StartHost();
+
+                return true;
+            }
+        }
     }
 }
