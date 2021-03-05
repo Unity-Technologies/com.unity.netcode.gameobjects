@@ -6,24 +6,30 @@ using MLAPI.Messaging;
 namespace MLAPI.RuntimeTests
 {
     /// <summary>
-    /// Used in conjunction with the RpcQueueTest to validate:
-    /// - Sending and Receiving pipeline to validate that both sending and receiving pipelines are functioning properly.
-    /// - Usage of the ServerRpcParams.Send.UpdateStage and ClientRpcParams.Send.UpdateStage functionality.
-    /// - Rpcs receive will be invoked at the appropriate NetworkUpdateStage.
+    /// Used in conjunction with the RpcQueueTest.TestNetworkUpdateStages to validate:
+    /// - Sending and Receiving pipeline which tests both sending and receiving pipelines are functioning properly.
+    /// - Tests that using the ServerRpcParams.Send.UpdateStage and ClientRpcParams.Send.UpdateStage are recevied and processed during the specified NetworkUpdateStage
     /// </summary>
-    public class RpcPipelineTestComponent : NetworkBehaviour
+    public class NetworkUpdateStagesComponent : NetworkBehaviour
     {
         /// <summary>
         /// Allows the external RPCQueueTest to begin testing or stop it
         /// </summary>
-        public bool PingSelfEnabled;
+        public bool EnableTesting;
 
         /// <summary>
         /// How many times will we iterate through the various NetworkUpdateStage values?
-        /// (defaults to 2)
+        /// (defaults to 1)
         /// </summary>
-        public int MaxIterations = 2;
+        public int MaxIterations = 1;
 
+        private bool m_ClientReceivedRpc;
+        private int m_Counter;
+        private int m_MaxStagesSent;
+        private int m_MaxStages;
+        private ServerRpcParams m_ServerParams;
+        private ClientRpcParams m_ClientParams;
+        private NetworkUpdateStage m_LastUpdateStage;
 
         // Start is called before the first frame update
         private void Start()
@@ -31,10 +37,14 @@ namespace MLAPI.RuntimeTests
             m_ServerParams.Send.UpdateStage = NetworkUpdateStage.Initialization;
             m_ClientParams.Send.UpdateStage = NetworkUpdateStage.Update;
 
+            //This assures the ILPP Codegen side of things is working by making sure that the Receive.UpdateStage
+            //is not always NetworkUpdateStage.Initialization as it should be whatever NetworkUpdateStage the RPC
+            //was assigned within the Send.UpdateStage
             m_ServerParams.Receive.UpdateStage = NetworkUpdateStage.Initialization;
             m_ClientParams.Receive.UpdateStage = NetworkUpdateStage.Initialization;
 
-            m_MaxStagesSent = (Enum.GetValues(typeof(NetworkUpdateStage)).Length) * MaxIterations;
+            m_MaxStages = (Enum.GetValues(typeof(NetworkUpdateStage)).Length);
+            m_MaxStagesSent = m_MaxStages * MaxIterations;
 
             //Start out with this being true (for first sequence)
             m_ClientReceivedRpc = true;
@@ -68,17 +78,10 @@ namespace MLAPI.RuntimeTests
             return false;
         }
 
-        private bool m_ClientReceivedRpc;
-        private int m_Counter = 0;
-        private int m_MaxStagesSent = 0;
-        private ServerRpcParams m_ServerParams;
-        private ClientRpcParams m_ClientParams;
-        private NetworkUpdateStage m_LastUpdateStage;
-
         // Update is called once per frame
         private void Update()
         {
-            if (NetworkManager.Singleton.IsListening && PingSelfEnabled && m_ClientReceivedRpc)
+            if (NetworkManager.Singleton.IsListening && EnableTesting && m_ClientReceivedRpc)
             {
                 //Reset this for the next sequence of rpcs
                 m_ClientReceivedRpc = false;
@@ -118,7 +121,6 @@ namespace MLAPI.RuntimeTests
                 }
             }
         }
-
 
         private readonly List<NetworkUpdateStage> m_ServerStagesReceived = new List<NetworkUpdateStage>();
         private readonly List<NetworkUpdateStage> m_ClientStagesReceived = new List<NetworkUpdateStage>();

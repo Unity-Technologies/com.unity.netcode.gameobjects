@@ -25,7 +25,7 @@ namespace MLAPI.RuntimeTests
         /// </summary>
         /// <returns>IEnumerator</returns>
         [UnityTest]
-        public IEnumerator RpcQueueUnitTest()
+        public IEnumerator TestNetworkUpdateStages()
         {
 #if UNITY_2020_2_OR_NEWER // Disabling this test on 2019.4 due to ILPP issues on Yamato CI/CD runs
             var networkManagerObject = new GameObject(nameof(NetworkManager));
@@ -57,7 +57,7 @@ namespace MLAPI.RuntimeTests
             //Create the player object that we will spawn as a host
             var playerObject = new GameObject("RpcTestObject");
             playerObject.AddComponent<NetworkObject>();
-            var rpcPipelineTestComponent = playerObject.AddComponent<RpcPipelineTestComponent>();
+            var rpcPipelineTestComponent = playerObject.AddComponent<NetworkUpdateStagesComponent>();
 
             instantiatedNetworkManager = true;
             Debug.Log("NetworkManager Instantiated.");
@@ -66,10 +66,10 @@ namespace MLAPI.RuntimeTests
             NetworkManager.Singleton.StartHost();
             Debug.Log("Host Started.");
 
-            //Enable the simple ping test
-            rpcPipelineTestComponent.PingSelfEnabled = true;
+            //Start testing
+            rpcPipelineTestComponent.EnableTesting = true;
 
-            Debug.Log("Running RPC Queue Tests...");
+            Debug.Log("Running TestNetworkUpdateStages: ");
 
             //Wait for the rpc pipeline test to complete or if we exceeded the maximum iterations bail
             while (!testsAreComplete && !exceededMaximumStageIterations)
@@ -86,8 +86,8 @@ namespace MLAPI.RuntimeTests
                 testsAreValidated = rpcPipelineTestComponent.ValidateUpdateStages();
             }
 
-            //Stop pinging
-            rpcPipelineTestComponent.PingSelfEnabled = false;
+            //Stop testing
+            rpcPipelineTestComponent.EnableTesting = false;
             Debug.Log("RPC Queue Testing completed.");
 
             //Stop the host
@@ -102,9 +102,92 @@ namespace MLAPI.RuntimeTests
 
             GameObject.DestroyImmediate(playerObject);
             GameObject.DestroyImmediate(networkManagerObject);
+            yield return null;
 #else
             yield return null;
 #endif
         }
+
+        /// <summary>
+        /// This test validates that the RPC Queue can handle the maximum allowed UNet buffer size for a single RPC
+        /// </summary>
+        /// <returns>IEnumerator</returns>
+        [UnityTest]
+        public IEnumerator GrowingRpcBufferSizes()
+        {
+#if UNITY_2020_2_OR_NEWER // Disabling this test on 2019.4 due to ILPP issues on Yamato CI/CD runs
+            var networkManagerObject = new GameObject(nameof(NetworkManager));
+            m_NetworkManager = networkManagerObject.AddComponent<NetworkManager>();
+            var unetTransport = networkManagerObject.AddComponent<UNetTransport>();
+            m_NetworkManager.NetworkConfig = new Configuration.NetworkConfig
+            {
+                CreatePlayerPrefab = false,
+                AllowRuntimeSceneChanges = true,
+                EnableSceneManagement = false
+            };
+            unetTransport.ConnectAddress = "127.0.0.1";
+            unetTransport.ConnectPort = 7777;
+            unetTransport.ServerListenPort = 7777;
+            unetTransport.MessageBufferSize = 65535;
+            unetTransport.MaxConnections = 100;
+            unetTransport.MessageSendMode = UNetTransport.SendMode.Immediately;
+            m_NetworkManager.NetworkConfig.NetworkTransport = unetTransport;
+
+            var currentActiveScene = SceneManager.GetActiveScene();
+            var instantiatedNetworkManager = false;
+            var testsAreComplete = false;
+
+            //Add our test scene name
+            NetworkSceneManager.AddRuntimeSceneName(currentActiveScene.name, 0);
+
+            //Create the player object that we will spawn as a host
+            var playerObject = new GameObject("RpcTestObject");
+            playerObject.AddComponent<NetworkObject>();
+            var rpcPipelineTestComponent = playerObject.AddComponent<GrowingRpcBufferSizesComponent>();
+
+            instantiatedNetworkManager = true;
+            Debug.Log("NetworkManager Instantiated.");
+
+            //Start as host mode as loopback only works in hostmode
+            NetworkManager.Singleton.StartHost();
+            Debug.Log("Host Started.");
+
+            //Start Testing
+            rpcPipelineTestComponent.EnableTesting = true;
+
+            Debug.Log("Running RpcQueueTests.GrowingRpcBufferSizes: ");
+
+            //Wait for the rpc pipeline test to complete or if we exceeded the maximum iterations bail
+            while (!testsAreComplete)
+            {
+                //Wait for 20ms
+                yield return new WaitForSeconds(0.02f);
+
+                testsAreComplete = rpcPipelineTestComponent.IsTestComplete();
+            }
+
+            //Stop Testing
+            rpcPipelineTestComponent.EnableTesting = false;
+            Debug.Log("RpcQueueTests.GrowingRpcBufferSizes completed.");
+
+            //Stop the host
+            NetworkManager.Singleton.StopHost();
+
+            //Shutdown the NetworkManager
+            NetworkManager.Singleton.Shutdown();
+
+            Debug.Log($"Exiting status => {nameof(testsAreComplete)}: {testsAreComplete} - {nameof(instantiatedNetworkManager)}: {instantiatedNetworkManager}");
+
+            Assert.IsTrue(testsAreComplete && instantiatedNetworkManager);
+
+            GameObject.DestroyImmediate(playerObject);
+            GameObject.DestroyImmediate(networkManagerObject);
+            yield return null;
+#else
+            yield return null;
+#endif
+        }
+
+
     }
 }
