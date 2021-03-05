@@ -8,27 +8,21 @@ namespace MLAPI.Collections
     /// <typeparam name="T">The type of the queue</typeparam>
     public sealed class FixedQueue<T>
     {
-        private readonly T[] queue;
-        private int queueCount = 0;
-        private int queueStart;
+        private readonly T[] m_Queue;
+        private int m_QueueCount = 0;
+        private int m_QueueStart;
 
         /// <summary>
         /// The amount of enqueued objects
         /// </summary>
-        public int Count { get => queueCount; }
+        public int Count => m_QueueCount;
 
         /// <summary>
         /// Gets the element at a given virtual index
         /// </summary>
         /// <param name="index">The virtual index to get the item from</param>
         /// <returns>The element at the virtual index</returns>
-        public T this[int index]
-        {
-            get
-            {
-                return queue[(queueStart + index) % queue.Length];
-            }
-        }
+        public T this[int index] => m_Queue[(m_QueueStart + index) % m_Queue.Length];
 
         /// <summary>
         /// Creates a new FixedQueue with a given size
@@ -36,8 +30,8 @@ namespace MLAPI.Collections
         /// <param name="maxSize">The size of the queue</param>
         public FixedQueue(int maxSize)
         {
-            queue = new T[maxSize];
-            queueStart = 0;
+            m_Queue = new T[maxSize];
+            m_QueueStart = 0;
         }
 
         /// <summary>
@@ -47,12 +41,13 @@ namespace MLAPI.Collections
         /// <returns></returns>
         public bool Enqueue(T t)
         {
-            queue[(queueStart + queueCount) % queue.Length] = t;
-            if (++queueCount > queue.Length)
+            m_Queue[(m_QueueStart + m_QueueCount) % m_Queue.Length] = t;
+            if (++m_QueueCount > m_Queue.Length)
             {
-                --queueCount;
+                --m_QueueCount;
                 return true;
             }
+
             return false;
         }
 
@@ -62,9 +57,9 @@ namespace MLAPI.Collections
         /// <returns></returns>
         public T Dequeue()
         {
-            if (--queueCount == -1) throw new IndexOutOfRangeException("Cannot dequeue empty queue!");
-            T res = queue[queueStart];
-            queueStart = (queueStart + 1) % queue.Length;
+            if (--m_QueueCount == -1) throw new IndexOutOfRangeException("Cannot dequeue empty queue!");
+            T res = m_Queue[m_QueueStart];
+            m_QueueStart = (m_QueueStart + 1) % m_Queue.Length;
             return res;
         }
 
@@ -73,6 +68,6 @@ namespace MLAPI.Collections
         /// </summary>
         /// <param name="index">The virtual index to get the item from</param>
         /// <returns>The element at the virtual index</returns>
-        public T ElementAt(int index) => queue[(queueStart + index) % queue.Length];
+        public T ElementAt(int index) => m_Queue[(m_QueueStart + index) % m_Queue.Length];
     }
 }

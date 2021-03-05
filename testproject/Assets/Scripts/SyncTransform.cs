@@ -1,5 +1,4 @@
-using MLAPI.Logging;
-using MLAPI.NetworkedVar;
+using MLAPI.NetworkVariable;
 using UnityEngine;
 
 namespace MLAPI
@@ -10,11 +9,11 @@ namespace MLAPI
     /// with variables updating at specific place in the frame
     /// </summary>
     [AddComponentMenu("MLAPI/SyncTransform")]
-    // todo: check inheriting from NetworkedBehaviour. Currently needed for IsLocalPlayer, to synchronize position
-    public class SyncTransform : NetworkedBehaviour
+    // todo: check inheriting from NetworkBehaviour. Currently needed for IsOwner, to synchronize position
+    public class SyncTransform : NetworkBehaviour
     {
-        private NetworkedVar<Vector3> m_VarPos = new NetworkedVar<Vector3>();
-        private NetworkedVarQuaternion m_VarRot = new NetworkedVarQuaternion();
+        private NetworkVariable<Vector3> m_VarPos = new NetworkVariable<Vector3>();
+        private NetworkVariableQuaternion m_VarRot = new NetworkVariableQuaternion();
         private const float k_Epsilon = 0.001f;
 
         private bool m_Interpolate = true;
@@ -26,7 +25,7 @@ namespace MLAPI
         private float[] m_RotTimes = new float[2];
         private float m_LastSent = 0.0f;
 
-        SyncTransform()
+        public SyncTransform()
         {
             m_PosTimes[0] = -1.0f;
             m_PosTimes[1] = -1.0f;
@@ -39,7 +38,7 @@ namespace MLAPI
 
         void SyncPosChanged(Vector3 before, Vector3 after)
         {
-            if (!IsLocalPlayer)
+            if (!IsOwner)
             {
                 m_PosTimes[0] = m_PosTimes[1];
                 m_PosTimes[1] = Time.time;
@@ -50,14 +49,13 @@ namespace MLAPI
                 {
                     gameObject.transform.position = after;
                 }
-                //Debug.Log("[1] received position from " + before + " to " + after);
             }
         }
 
         void SyncRotChanged(Quaternion before, Quaternion after)
         {
             // todo: this is problematic. Why couldn't this filtering be done server-side?
-            if (!IsLocalPlayer)
+            if (!IsOwner)
             {
                 m_RotTimes[0] = m_RotTimes[1];
                 m_RotTimes[1] = Time.time;
@@ -68,14 +66,13 @@ namespace MLAPI
                 {
                     gameObject.transform.rotation = after;
                 }
-                //Debug.Log("[2] received rotation from " + before + " to " + after);
             }
         }
 
         void Start()
         {
-            m_VarPos.Settings.WritePermission = NetworkedVarPermission.Everyone;
-            m_VarRot.Settings.WritePermission = NetworkedVarPermission.Everyone;
+            m_VarPos.Settings.WritePermission = NetworkVariablePermission.Everyone;
+            m_VarRot.Settings.WritePermission = NetworkVariablePermission.Everyone;
         }
 
         void FixedUpdate()
@@ -87,7 +84,7 @@ namespace MLAPI
             }
 
             // if this.gameObject is local let's send its position
-            if (IsLocalPlayer)
+            if (IsOwner)
             {
                 m_VarPos.Value = gameObject.transform.position;
                 m_VarRot.Value = gameObject.transform.rotation;
@@ -118,10 +115,6 @@ namespace MLAPI
                     {
                         gameObject.transform.position = m_PosStore[1];
                     }
-
-                    var after = gameObject.transform.position;
-
-                    //Debug.Log("[3] Updated position from " + before + " to " + after);
                 }
 
                 if (m_RotTimes[0] >= 0.0 && m_RotTimes[1] >= 0.0)
@@ -142,10 +135,6 @@ namespace MLAPI
                     {
                         gameObject.transform.rotation = m_RotStore[1];
                     }
-
-                    var after = gameObject.transform.rotation;
-
-                    //Debug.Log("[4] Updated rotation from " + before + " to " + after);
                 }
             }
         }

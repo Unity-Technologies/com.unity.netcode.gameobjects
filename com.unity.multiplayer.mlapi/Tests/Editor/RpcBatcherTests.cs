@@ -17,24 +17,24 @@ namespace MLAPI.EditorTests
             const int k_QueueItemCount = 128;
 
             var sendBatcher = new RpcBatcher();
-            var sendStreamQueue = new Queue<BitStream>();
+            var sendStreamQueue = new Queue<NetworkBuffer>();
             for (int i = 0; i < k_QueueItemCount; ++i)
             {
                 var randomData = Encoding.ASCII.GetBytes(Guid.NewGuid().ToString());
                 var queueItem = new RpcFrameQueueItem
                 {
-                    networkId = 123,
-                    clientIds = new ulong[] { 123 },
-                    channel = Channel.ChannelUnused + 123,
-                    queueItemType = i % 2 == 0 ? RpcQueueContainer.QueueItemType.ServerRpc : RpcQueueContainer.QueueItemType.ClientRpc,
-                    messageData = new ArraySegment<byte>(randomData, 0, randomData.Length)
+                    NetworkId = 123,
+                    ClientNetworkIds = new ulong[] { 123 },
+                    NetworkChannel = NetworkChannel.ChannelUnused + 123,
+                    QueueItemType = i % 2 == 0 ? RpcQueueContainer.QueueItemType.ServerRpc : RpcQueueContainer.QueueItemType.ClientRpc,
+                    MessageData = new ArraySegment<byte>(randomData, 0, randomData.Length)
                 };
                 sendBatcher.QueueItem(queueItem);
                 sendBatcher.SendItems(k_BatchThreshold,
                     (networkId, sendStream) =>
                     {
-                        var queueStream = new BitStream();
-                        sendStream.Stream.CopyTo(queueStream);
+                        var queueStream = new NetworkBuffer();
+                        sendStream.Buffer.CopyTo(queueStream);
                         sendStreamQueue.Enqueue(queueStream);
                     });
             }
@@ -43,8 +43,8 @@ namespace MLAPI.EditorTests
             sendBatcher.SendItems( /* thresholdBytes = */ 0,
                 (networkId, sendStream) =>
                 {
-                    var queueStream = new BitStream();
-                    sendStream.Stream.CopyTo(queueStream);
+                    var queueStream = new NetworkBuffer();
+                    sendStream.Buffer.CopyTo(queueStream);
                     sendStreamQueue.Enqueue(queueStream);
                 });
 
@@ -57,9 +57,7 @@ namespace MLAPI.EditorTests
                 // todo: revisit
                 // The following line is sub-optimal
                 // The stream returned by SendItems() includes:
-                // - 1 bit for authentication flag
-                // - 1 bit for encryption flag
-                // - 6 bits for the MLAPI message types.
+                // - 8 bits for the MLAPI message types.
                 // ReceiveItems expects those to have been stripped by the receive code.
                 // In order to replicate this behaviour, we'll read 8 bits before calling ReceiveItems()
                 recvStream.ReadByte();
@@ -77,24 +75,24 @@ namespace MLAPI.EditorTests
             const int k_QueueItemCount = 128;
 
             var sendBatcher = new RpcBatcher();
-            var sendStreamQueue = new Queue<BitStream>();
+            var sendStreamQueue = new Queue<NetworkBuffer>();
             for (int i = 0; i < k_QueueItemCount; ++i)
             {
                 var randomData = Encoding.ASCII.GetBytes(Guid.NewGuid().ToString());
                 var queueItem = new RpcFrameQueueItem
                 {
-                    networkId = 123,
-                    clientIds = new ulong[] { 123 },
-                    channel = Channel.ChannelUnused + 123,
-                    queueItemType = i % 2 == 0 ? RpcQueueContainer.QueueItemType.ServerRpc : RpcQueueContainer.QueueItemType.ClientRpc,
-                    messageData = new ArraySegment<byte>(randomData, 0, randomData.Length)
+                    NetworkId = 123,
+                    ClientNetworkIds = new ulong[] { 123 },
+                    NetworkChannel = NetworkChannel.ChannelUnused + 123,
+                    QueueItemType = i % 2 == 0 ? RpcQueueContainer.QueueItemType.ServerRpc : RpcQueueContainer.QueueItemType.ClientRpc,
+                    MessageData = new ArraySegment<byte>(randomData, 0, randomData.Length)
                 };
                 sendBatcher.QueueItem(queueItem);
                 sendBatcher.SendItems(k_BatchThreshold,
                     (networkId, sendStream) =>
                     {
-                        var queueStream = new BitStream();
-                        sendStream.Stream.CopyTo(queueStream);
+                        var queueStream = new NetworkBuffer();
+                        sendStream.Buffer.CopyTo(queueStream);
                         sendStreamQueue.Enqueue(queueStream);
                     });
             }
@@ -103,8 +101,8 @@ namespace MLAPI.EditorTests
             sendBatcher.SendItems( /* thresholdBytes = */ 0,
                 (networkId, sendStream) =>
                 {
-                    var queueStream = new BitStream();
-                    sendStream.Stream.CopyTo(queueStream);
+                    var queueStream = new NetworkBuffer();
+                    sendStream.Buffer.CopyTo(queueStream);
                     sendStreamQueue.Enqueue(queueStream);
                 });
 
@@ -117,9 +115,7 @@ namespace MLAPI.EditorTests
                 // todo: revisit
                 // The following line is sub-optimal
                 // The stream returned by SendItems() includes:
-                // - 1 bit for authentication flag
-                // - 1 bit for encryption flag
-                // - 6 bits for the MLAPI message types.
+                // - 8 bits for the MLAPI message types.
                 // ReceiveItems expects those to have been stripped by the receive code.
                 // In order to replicate this behaviour, we'll read 8 bits before calling ReceiveItems()
                 recvStream.ReadByte();

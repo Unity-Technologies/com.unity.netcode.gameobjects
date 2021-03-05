@@ -10,27 +10,27 @@ namespace MLAPI.Messaging.Buffering
     internal static class BufferManager
     {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-        public static ProfilerMarker s_CleanBuffer = new ProfilerMarker("MLAPI.BufferManager.CleanBuffer");
+        private static ProfilerMarker s_CleanBuffer = new ProfilerMarker($"{nameof(BufferManager)}.{nameof(CleanBuffer)}");
 #endif
 
-        private static readonly Dictionary<ulong, Queue<BufferedMessage>> bufferQueues = new Dictionary<ulong, Queue<BufferedMessage>>();
+        private static Dictionary<ulong, Queue<BufferedMessage>> s_BufferQueues = new Dictionary<ulong, Queue<BufferedMessage>>();
 
         internal struct BufferedMessage
         {
-            internal ulong sender;
-            internal Channel channel;
-            internal PooledBitStream payload;
-            internal float receiveTime;
-            internal float bufferTime;
+            internal ulong SenderClientId;
+            internal NetworkChannel NetworkChannel;
+            internal PooledNetworkBuffer NetworkBuffer;
+            internal float ReceiveTime;
+            internal float BufferTime;
         }
 
         internal static Queue<BufferedMessage> ConsumeBuffersForNetworkId(ulong networkId)
         {
-            if (bufferQueues.ContainsKey(networkId))
+            if (s_BufferQueues.ContainsKey(networkId))
             {
-                Queue<BufferedMessage> message = bufferQueues[networkId];
+                Queue<BufferedMessage> message = s_BufferQueues[networkId];
 
-                bufferQueues.Remove(networkId);
+                s_BufferQueues.Remove(networkId);
 
                 return message;
             }
@@ -42,42 +42,42 @@ namespace MLAPI.Messaging.Buffering
 
         internal static void RecycleConsumedBufferedMessage(BufferedMessage message)
         {
-            message.payload.Dispose();
+            message.NetworkBuffer.Dispose();
         }
 
-        internal static void BufferMessageForNetworkId(ulong networkId, ulong sender, Channel channel, float receiveTime, ArraySegment<byte> payload)
+        internal static void BufferMessageForNetworkId(ulong networkId, ulong senderClientId, NetworkChannel networkChannel, float receiveTime, ArraySegment<byte> payload)
         {
-            if (!bufferQueues.ContainsKey(networkId))
+            if (!s_BufferQueues.ContainsKey(networkId))
             {
-                bufferQueues.Add(networkId, new Queue<BufferedMessage>());
+                s_BufferQueues.Add(networkId, new Queue<BufferedMessage>());
             }
 
-            Queue<BufferedMessage> queue = bufferQueues[networkId];
+            Queue<BufferedMessage> queue = s_BufferQueues[networkId];
 
-            PooledBitStream payloadStream = PooledBitStream.Get();
-
-            payloadStream.Write(payload.Array, payload.Offset, payload.Count);
-            payloadStream.Position = 0;
+            var payloadBuffer = PooledNetworkBuffer.Get();
+            payloadBuffer.Write(payload.Array, payload.Offset, payload.Count);
+            payloadBuffer.Position = 0;
 
             queue.Enqueue(new BufferedMessage()
             {
-                bufferTime = Time.realtimeSinceStartup,
-                channel = channel,
-                payload = payloadStream,
-                receiveTime = receiveTime,
-                sender = sender
+                BufferTime = Time.realtimeSinceStartup,
+                NetworkChannel = networkChannel,
+                NetworkBuffer = payloadBuffer,
+                ReceiveTime = receiveTime,
+                SenderClientId = senderClientId
             });
         }
 
-        private static readonly List<ulong> _keysToDestroy = new List<ulong>();
+        private static List<ulong> s_KeysToDestroy = new List<ulong>();
+
         internal static void CleanBuffer()
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_CleanBuffer.Begin();
 #endif
-            foreach (KeyValuePair<ulong, Queue<BufferedMessage>> pair in bufferQueues)
+            foreach (var pair in s_BufferQueues)
             {
-                while (pair.Value.Count > 0 && Time.realtimeSinceStartup - pair.Value.Peek().bufferTime >= NetworkingManager.Singleton.NetworkConfig.MessageBufferTimeout)
+                while (pair.Value.Count > 0 && Time.realtimeSinceStartup - pair.Value.Peek().BufferTime >= NetworkManager.Singleton.NetworkConfig.MessageBufferTimeout)
                 {
                     BufferedMessage message = pair.Value.Dequeue();
 
@@ -86,16 +86,16 @@ namespace MLAPI.Messaging.Buffering
 
                 if (pair.Value.Count == 0)
                 {
-                    _keysToDestroy.Add(pair.Key);
+                    s_KeysToDestroy.Add(pair.Key);
                 }
             }
 
-            for (int i = 0; i < _keysToDestroy.Count; i++)
+            for (int i = 0; i < s_KeysToDestroy.Count; i++)
             {
-                bufferQueues.Remove(_keysToDestroy[i]);
+                s_BufferQueues.Remove(s_KeysToDestroy[i]);
             }
 
-            _keysToDestroy.Clear();
+            s_KeysToDestroy.Clear();
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_CleanBuffer.End();
 #endif

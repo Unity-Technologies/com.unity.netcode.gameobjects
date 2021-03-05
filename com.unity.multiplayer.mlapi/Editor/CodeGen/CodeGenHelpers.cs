@@ -22,7 +22,7 @@ namespace MLAPI.Editor.CodeGen
     {
         public const string RuntimeAssemblyName = "Unity.Multiplayer.MLAPI.Runtime";
 
-        public static readonly string NetworkBehaviour_FullName = typeof(NetworkedBehaviour).FullName;
+        public static readonly string NetworkBehaviour_FullName = typeof(NetworkBehaviour).FullName;
         public static readonly string ServerRpcAttribute_FullName = typeof(ServerRpcAttribute).FullName;
         public static readonly string ClientRpcAttribute_FullName = typeof(ClientRpcAttribute).FullName;
         public static readonly string ServerRpcParams_FullName = typeof(ServerRpcParams).FullName;
@@ -88,9 +88,8 @@ namespace MLAPI.Editor.CodeGen
             }
             catch
             {
+                return false;
             }
-
-            return false;
         }
 
         public static bool IsSerializable(this TypeReference typeReference)
@@ -141,16 +140,12 @@ namespace MLAPI.Editor.CodeGen
             try
             {
                 var typeDef = typeReference.Resolve();
-                if (typeDef.IsEnum)
-                {
-                    return typeDef.GetEnumUnderlyingType();
-                }
+                return typeDef.IsEnum ? typeDef.GetEnumUnderlyingType() : null;
             }
             catch
             {
+                return null;
             }
-
-            return null;
         }
 
         public static void AddError(this List<DiagnosticMessage> diagnostics, string message)

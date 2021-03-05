@@ -106,6 +106,7 @@ namespace MLAPI.Transports.Tasks
         /// </summary>
         /// <value><c>true</c> if is done; otherwise, <c>false</c>.</value>
         public bool IsDone { get; set; }
+
         /// <summary>
         /// Gets or sets a value indicating whether this <see cref="T:MLAPI.Transports.Tasks.SocketTask"/> is success.
         /// </summary>
@@ -118,21 +119,25 @@ namespace MLAPI.Transports.Tasks
         /// </summary>
         /// <value>The transport exception.</value>
         public Exception TransportException { get; set; }
+
         /// <summary>
         /// Gets or sets the socket error.
         /// </summary>
         /// <value>The socket error.</value>
         public SocketError SocketError { get; set; }
+
         /// <summary>
         /// Gets or sets the transport code.
         /// </summary>
         /// <value>The transport code.</value>
         public int TransportCode { get; set; }
+
         /// <summary>
         /// Gets or sets the message.
         /// </summary>
         /// <value>The message.</value>
         public string Message { get; set; }
+
         /// <summary>
         /// Gets or sets the state.
         /// </summary>
@@ -143,7 +148,7 @@ namespace MLAPI.Transports.Tasks
         /// Gets a done task.
         /// </summary>
         /// <value>The done.</value>
-        public static SocketTask Done => new SocketTask()
+        public static SocketTask Done => new SocketTask
         {
             IsDone = true,
             Message = null,
@@ -158,7 +163,7 @@ namespace MLAPI.Transports.Tasks
         /// Gets a faulty task.
         /// </summary>
         /// <value>The fault.</value>
-        public static SocketTask Fault => new SocketTask()
+        public static SocketTask Fault => new SocketTask
         {
             IsDone = true,
             Message = null,
@@ -173,7 +178,7 @@ namespace MLAPI.Transports.Tasks
         /// Gets a working task.
         /// </summary>
         /// <value>The working.</value>
-        public static SocketTask Working => new SocketTask()
+        public static SocketTask Working => new SocketTask
         {
             IsDone = false,
             Message = null,
@@ -188,12 +193,6 @@ namespace MLAPI.Transports.Tasks
         /// Converts to a SocketTasks.
         /// </summary>
         /// <returns>The tasks.</returns>
-        public SocketTasks AsTasks()
-        {
-            return new SocketTasks()
-            {
-                Tasks = new SocketTask[] { this }
-            };
-        }
+        public SocketTasks AsTasks() => new SocketTasks { Tasks = new SocketTask[] { this } };
     }
 }

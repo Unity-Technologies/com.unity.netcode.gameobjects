@@ -1,6 +1,4 @@
-using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using MLAPI.Collections;
 using MLAPI.Configuration;
 using MLAPI.Transports;
@@ -17,20 +15,15 @@ namespace MLAPI.Profiling
         /// The ticks that has been recorded
         /// </summary>
         public static FixedQueue<ProfilerTick> Ticks { get; private set; }
-        /// <summary>
-        /// Whether or not the profiler is recording data
-        /// </summary>
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        [Obsolete("Use IsRunning instead", false)]
-        public static bool isRunning => IsRunning;
+
         /// <summary>
         /// Whether or not the profiler is recording data
         /// </summary>
         public static bool IsRunning { get; private set; }
 
-        private static int tickHistory = 1024;
-        private static int EventIdCounter = 0;
-        private static ProfilerTick CurrentTick;
+        private static int s_TickHistory = 1024;
+        private static int s_EventIdCounter = 0;
+        private static ProfilerTick s_CurrentTick;
 
         /// <summary>
         /// Starts recording data for the Profiler
@@ -38,12 +31,11 @@ namespace MLAPI.Profiling
         /// <param name="historyLength">The amount of ticks to keep in memory</param>
         public static void Start(int historyLength)
         {
-            if (IsRunning)
-                return;
-            EventIdCounter = 0;
+            if (IsRunning) return;
+            s_EventIdCounter = 0;
             Ticks = new FixedQueue<ProfilerTick>(historyLength);
-            tickHistory = historyLength;
-            CurrentTick = null;
+            s_TickHistory = historyLength;
+            s_CurrentTick = null;
             IsRunning = true;
         }
 
@@ -53,7 +45,7 @@ namespace MLAPI.Profiling
         public static void Stop()
         {
             Ticks = null; //leave to GC
-            CurrentTick = null; //leave to GC
+            s_CurrentTick = null; //leave to GC
             IsRunning = false;
         }
 
@@ -64,13 +56,12 @@ namespace MLAPI.Profiling
         /// <returns>The number of ticks recorded</returns>
         public static int Stop(ref ProfilerTick[] tickBuffer)
         {
-            if (!IsRunning)
-                return 0;
+            if (!IsRunning) return 0;
             int iteration = Ticks.Count > tickBuffer.Length ? tickBuffer.Length : Ticks.Count;
             for (int i = 0; i < iteration; i++) tickBuffer[i] = Ticks[i];
 
             Ticks = null; //leave to GC
-            CurrentTick = null; //leave to GC
+            s_CurrentTick = null; //leave to GC
             IsRunning = false;
 
             return iteration;
@@ -83,13 +74,13 @@ namespace MLAPI.Profiling
         /// <returns>The number of ticks recorded</returns>
         public static int Stop(ref List<ProfilerTick> tickBuffer)
         {
-            if (!IsRunning)
-                return 0;
+            if (!IsRunning) return 0;
+
             int iteration = Ticks.Count > tickBuffer.Count ? tickBuffer.Count : Ticks.Count;
             for (int i = 0; i < iteration; i++) tickBuffer[i] = Ticks[i];
 
             Ticks = null; //leave to GC
-            CurrentTick = null; //leave to GC
+            s_CurrentTick = null; //leave to GC
             IsRunning = false;
 
             return iteration;
@@ -97,62 +88,55 @@ namespace MLAPI.Profiling
 
         internal static void StartTick(TickType type)
         {
-            if (!IsRunning)
-                return;
-            if (Ticks.Count == tickHistory)
+            if (!IsRunning) return;
+            if (Ticks.Count == s_TickHistory)
+            {
                 Ticks.Dequeue();
+            }
 
-            ProfilerTick tick = new ProfilerTick()
+            var tick = new ProfilerTick()
             {
                 Type = type,
                 Frame = Time.frameCount,
-                EventId = EventIdCounter
+                EventId = s_EventIdCounter
             };
-            EventIdCounter++;
+            s_EventIdCounter++;
             Ticks.Enqueue(tick);
-            CurrentTick = tick;
+            s_CurrentTick = tick;
         }
 
         internal static void EndTick()
         {
-            if (!IsRunning)
-                return;
-            if (CurrentTick == null)
-                return;
-            CurrentTick = null;
+            if (!IsRunning) return;
+            if (s_CurrentTick == null) return;
+            s_CurrentTick = null;
         }
 
-        internal static void StartEvent(TickType eventType, uint bytes, Channel channel, byte messageType)
+        internal static void StartEvent(TickType eventType, uint bytes, NetworkChannel networkChannel, byte messageType)
         {
-            if (!IsRunning)
-                return;
-            if (CurrentTick == null)
-                return;
+            if (!IsRunning) return;
+            if (s_CurrentTick == null) return;
 
-            string messageName = messageType < MLAPIConstants.MESSAGE_NAMES.Length ? MLAPIConstants.MESSAGE_NAMES[messageType] : "INVALID_MESSAGE_TYPE";
+            string messageName = messageType < NetworkConstants.MESSAGE_NAMES.Length ? NetworkConstants.MESSAGE_NAMES[messageType] : "INVALID_MESSAGE_TYPE";
 
-            string channelName = channel.ToString();
-            CurrentTick.StartEvent(eventType, bytes, channelName, messageName);
+            string channelName = networkChannel.ToString();
+            s_CurrentTick.StartEvent(eventType, bytes, channelName, messageName);
         }
 
-        internal static void StartEvent(TickType eventType, uint bytes, Channel channel, string messageName)
+        internal static void StartEvent(TickType eventType, uint bytes, NetworkChannel networkChannel, string messageName)
         {
-            if (!IsRunning)
-                return;
-            if (CurrentTick == null)
-                return;
+            if (!IsRunning) return;
+            if (s_CurrentTick == null) return;
 
-            string channelName = channel.ToString();
-            CurrentTick.StartEvent(eventType, bytes, channelName, messageName);
+            string channelName = networkChannel.ToString();
+            s_CurrentTick.StartEvent(eventType, bytes, channelName, messageName);
         }
 
         internal static void EndEvent()
         {
-            if (!IsRunning)
-                return;
-            if (CurrentTick == null)
-                return;
-            CurrentTick.EndEvent();
+            if (!IsRunning) return;
+            if (s_CurrentTick == null) return;
+            s_CurrentTick.EndEvent();
         }
     }
 }
