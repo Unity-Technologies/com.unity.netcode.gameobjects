@@ -60,7 +60,15 @@ namespace MLAPI.Messaging
 
                 if (NetworkManager.Singleton.NetworkConfig.ConnectionApproval)
                 {
-                    byte[] connectionBuffer = reader.ReadByteArray();
+                    byte[] connectionBuffer = null;
+                    if (stream.Position == stream.Length)
+                    {
+                        NetworkLog.LogWarning($"Connection approval could be aborted for client ID {clientId} due to missing authorization token data.  Make sure the client is setting the NetworkConfig.ConnectionData before sending the authorization response.");
+                    }
+                    else
+                    {
+                        connectionBuffer = reader.ReadByteArray();
+                    }
                     NetworkManager.Singleton.InvokeConnectionApproval(connectionBuffer, clientId, (createPlayerObject, playerPrefabHash, approved, position, rotation) => { NetworkManager.Singleton.HandleApproval(clientId, createPlayerObject, playerPrefabHash, approved, position, rotation); });
                 }
                 else
