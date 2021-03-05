@@ -132,4 +132,4 @@ develop_pull_request_trigger:
     pull_requests:
     - targets:
         only:
-          - "develop"
+          - "release/0.1.0"
