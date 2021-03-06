@@ -41,11 +41,14 @@ namespace MLAPI.Editor.CodeGen
 
                     switch (typeDefinition.Name)
                     {
-                        case nameof(NetworkingManager):
+                        case nameof(NetworkManager):
                             ProcessNetworkManager(typeDefinition);
                             break;
-                        case nameof(NetworkedBehaviour):
+                        case nameof(NetworkBehaviour):
                             ProcessNetworkBehaviour(typeDefinition);
+                            break;
+                        case nameof(Messaging.__RpcParams):
+                            typeDefinition.IsPublic = true;
                             break;
                     }
                 }
@@ -72,7 +75,7 @@ namespace MLAPI.Editor.CodeGen
         {
             foreach (var fieldDefinition in typeDefinition.Fields)
             {
-                if (fieldDefinition.Name == nameof(NetworkingManager.__ntable))
+                if (fieldDefinition.Name == nameof(NetworkManager.__ntable))
                 {
                     fieldDefinition.IsPublic = true;
                 }
@@ -83,7 +86,7 @@ namespace MLAPI.Editor.CodeGen
         {
             foreach (var nestedType in typeDefinition.NestedTypes)
             {
-                if (nestedType.Name == nameof(NetworkedBehaviour.__NExec))
+                if (nestedType.Name == nameof(NetworkBehaviour.__NExec))
                 {
                     nestedType.IsNestedFamily = true;
                 }
@@ -91,7 +94,7 @@ namespace MLAPI.Editor.CodeGen
 
             foreach (var fieldDefinition in typeDefinition.Fields)
             {
-                if (fieldDefinition.Name == nameof(NetworkedBehaviour.__nexec))
+                if (fieldDefinition.Name == nameof(NetworkBehaviour.__nexec))
                 {
                     fieldDefinition.IsFamily = true;
                 }
@@ -101,10 +104,10 @@ namespace MLAPI.Editor.CodeGen
             {
                 switch (methodDefinition.Name)
                 {
-                    case nameof(NetworkedBehaviour.__beginSendServerRpc):
-                    case nameof(NetworkedBehaviour.__endSendServerRpc):
-                    case nameof(NetworkedBehaviour.__beginSendClientRpc):
-                    case nameof(NetworkedBehaviour.__endSendClientRpc):
+                    case nameof(NetworkBehaviour.__beginSendServerRpc):
+                    case nameof(NetworkBehaviour.__endSendServerRpc):
+                    case nameof(NetworkBehaviour.__beginSendClientRpc):
+                    case nameof(NetworkBehaviour.__endSendClientRpc):
                         methodDefinition.IsFamily = true;
                         break;
                 }

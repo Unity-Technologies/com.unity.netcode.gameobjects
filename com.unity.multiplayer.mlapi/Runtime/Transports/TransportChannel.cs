@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 
 namespace MLAPI.Transports
 {
@@ -7,31 +6,22 @@ namespace MLAPI.Transports
     /// A transport channel used by the MLAPI
     /// </summary>
     [Serializable]
-    public class TransportChannel
+    public struct TransportChannel
     {
-        public TransportChannel(string name, ChannelType type, byte id)
+        public TransportChannel(NetworkChannel channel, NetworkDelivery delivery)
         {
-            Name = name;
-            Type = type;
-            Id = id;
-
-            ChannelByteToString[Id] = Name;
-            ChannelStringToByte[Name] = Id;
+            Channel = channel;
+            Delivery = delivery;
         }
 
         /// <summary>
-        /// The name of the channel
+        /// Channel identifier
         /// </summary>
-        public string Name;
-
-        public byte Id;
+        public NetworkChannel Channel;
 
         /// <summary>
-        /// The type of channel
+        /// Delivery type
         /// </summary>
-        public ChannelType Type;
-
-        public static Dictionary<byte, string> ChannelByteToString = new Dictionary<byte, string>();
-        public static Dictionary<string, byte> ChannelStringToByte = new Dictionary<string, byte>();
+        public NetworkDelivery Delivery;
     }
 }

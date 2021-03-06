@@ -11,8 +11,14 @@ namespace UnityEditor
         [PostProcessScene(int.MaxValue)]
         public static void ProcessScene()
         {
-            List<NetworkedObject> traverseSortedObjects = MonoBehaviour.FindObjectsOfType<NetworkedObject>().ToList();
-            
+            //If we are in playmode (editor or stand alone) we do not want this to execute
+            if (Application.isPlaying)
+            {
+                return;
+            }
+
+            var traverseSortedObjects = FindObjectsOfType<NetworkObject>().ToList();
+
             traverseSortedObjects.Sort((x, y) =>
             {
                 List<int> xSiblingIndex = x.TraversedSiblingIndex();
@@ -21,31 +27,36 @@ namespace UnityEditor
                 while (xSiblingIndex.Count > 0 && ySiblingIndex.Count > 0)
                 {
                     if (xSiblingIndex[0] < ySiblingIndex[0])
+                    {
                         return -1;
-                    
+                    }
+
                     if (xSiblingIndex[0] > ySiblingIndex[0])
+                    {
                         return 1;
+                    }
 
                     xSiblingIndex.RemoveAt(0);
                     ySiblingIndex.RemoveAt(0);
                 }
-                
+
                 return 0;
             });
 
             for (ulong i = 0; i < (ulong)traverseSortedObjects.Count; i++)
-                traverseSortedObjects[(int)i].NetworkedInstanceId = i;
+            {
+                traverseSortedObjects[(int)i].NetworkInstanceId = i;
+            }
         }
     }
-    
+
     internal static class PrefabHelpers
     {
-        internal static List<int> TraversedSiblingIndex(this NetworkedObject networkedObject)
+        internal static List<int> TraversedSiblingIndex(this NetworkObject networkObject)
         {
-            List<int> paths = new List<int>();
-            
-            Transform transform = networkedObject.transform;
-            
+            var paths = new List<int>();
+            var transform = networkObject.transform;
+
             while (transform != null)
             {
                 paths.Add(transform.GetSiblingIndex());
@@ -53,7 +64,7 @@ namespace UnityEditor
             }
 
             paths.Reverse();
-            
+
             return paths;
         }
     }

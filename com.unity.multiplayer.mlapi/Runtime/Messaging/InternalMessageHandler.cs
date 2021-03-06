@@ -1,12 +1,6 @@
 using System;
 using System.IO;
-using MLAPI.Configuration;
 using MLAPI.Connection;
-#if !DISABLE_CRYPTOGRAPHY
-using System.Security.Cryptography;
-using System.Security.Cryptography.X509Certificates;
-#endif
-using MLAPI.Security;
 using MLAPI.Logging;
 using MLAPI.SceneManagement;
 using MLAPI.Serialization.Pooled;
@@ -15,230 +9,63 @@ using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.SceneManagement;
 using System.Collections.Generic;
+using MLAPI.Configuration;
 using MLAPI.Messaging.Buffering;
 using MLAPI.Profiling;
-using Unity.Profiling;
 using MLAPI.Serialization;
-using MLAPI.Transports;
-using BitStream = MLAPI.Serialization.BitStream;
+using Unity.Profiling;
 
 namespace MLAPI.Messaging
 {
-    internal class InternalMessageHandler
+    internal static class InternalMessageHandler
     {
-        private NetworkingManager networkingManager;
-
-        internal InternalMessageHandler(NetworkingManager manager )
-        {
-            networkingManager = manager;
-        }
-
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-        static ProfilerMarker s_HandleConnectionRequest = new ProfilerMarker("InternalMessageHandler.HandleConnectionRequest");
-        static ProfilerMarker s_HandleConnectionApproved = new ProfilerMarker("InternalMessageHandler.HandleConnectionApproved");
-        static ProfilerMarker s_HandleAddObject = new ProfilerMarker("InternalMessageHandler.HandleAddObject");
-        static ProfilerMarker s_HandleDestroyObject = new ProfilerMarker("InternalMessageHandler.HandleDestroyObject");
-        static ProfilerMarker s_HandleSwitchScene = new ProfilerMarker("InternalMessageHandler.HandleSwitchScene");
-        static ProfilerMarker s_HandleClientSwitchSceneCompleted = new ProfilerMarker("InternalMessageHandler.HandleClientSwitchSceneCompleted");
-        static ProfilerMarker s_HandleChangeOwner =
-            new ProfilerMarker("InternalMessageHandler.HandleChangeOwner");
-        static ProfilerMarker s_HandleAddObjects =
-            new ProfilerMarker("InternalMessageHandler.HandleAddObjects");
-        static ProfilerMarker s_HandleDestroyObjects =
-            new ProfilerMarker("InternalMessageHandler.HandleDestroyObjects");
-        static ProfilerMarker s_HandleTimeSync =
-            new ProfilerMarker("InternalMessageHandler.HandleTimeSync");
-        static ProfilerMarker s_HandleNetworkedVarDelta =
-            new ProfilerMarker("InternalMessageHandler.HandleNetworkedVarDelta");
-        static ProfilerMarker s_HandleNetworkedVarUpdate =
-            new ProfilerMarker("InternalMessageHandler.HandleNetworkedVarUpdate");
-        static ProfilerMarker s_HandleUnnamedMessage =
-            new ProfilerMarker("InternalMessageHandler.HandleUnnamedMessage");
-        static ProfilerMarker s_HandleNamedMessage =
-            new ProfilerMarker("InternalMessageHandler.HandleNamedMessage");
-        static ProfilerMarker s_HandleNetworkLog =
-            new ProfilerMarker("InternalMessageHandler.HandleNetworkLog");
-
+        private static ProfilerMarker s_HandleConnectionRequest = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleConnectionRequest)}");
+        private static ProfilerMarker s_HandleConnectionApproved = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleConnectionApproved)}");
+        private static ProfilerMarker s_HandleAddObject = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleAddObject)}");
+        private static ProfilerMarker s_HandleDestroyObject = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleDestroyObject)}");
+        private static ProfilerMarker s_HandleSwitchScene = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleSwitchScene)}");
+        private static ProfilerMarker s_HandleClientSwitchSceneCompleted = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleClientSwitchSceneCompleted)}");
+        private static ProfilerMarker s_HandleChangeOwner = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleChangeOwner)}");
+        private static ProfilerMarker s_HandleAddObjects = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleAddObjects)}");
+        private static ProfilerMarker s_HandleDestroyObjects = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleDestroyObjects)}");
+        private static ProfilerMarker s_HandleTimeSync = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleTimeSync)}");
+        private static ProfilerMarker s_HandleNetworkVariableDelta = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleNetworkVariableDelta)}");
+        private static ProfilerMarker s_HandleNetworkVariableUpdate = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleNetworkVariableUpdate)}");
+        private static ProfilerMarker s_HandleUnnamedMessage = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleUnnamedMessage)}");
+        private static ProfilerMarker s_HandleNamedMessage = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleNamedMessage)}");
+        private static ProfilerMarker s_HandleNetworkLog = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleNetworkLog)}");
+        private static ProfilerMarker s_RpcReceiveQueueItemServerRpc = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(RpcReceiveQueueItem)}.{nameof(RpcQueueContainer.QueueItemType.ServerRpc)}");
+        private static ProfilerMarker s_RpcReceiveQueueItemClientRpc = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(RpcReceiveQueueItem)}.{nameof(RpcQueueContainer.QueueItemType.ClientRpc)}");
 #endif
 
-#if !DISABLE_CRYPTOGRAPHY
-        // Runs on client
-        internal void HandleHailRequest(ulong clientId, Stream stream)
-        {
-            X509Certificate2 certificate = null;
-            byte[] serverDiffieHellmanPublicPart = null;
-            using (PooledBitReader reader = networkingManager.PooledBitReaders.GetReader(stream))
-            {
-                if (networkingManager.NetworkConfig.EnableEncryption)
-                {
-                    // Read the certificate
-                    if (networkingManager.NetworkConfig.SignKeyExchange)
-                    {
-                        // Allocation justification: This runs on client and only once, at initial connection
-                        certificate = new X509Certificate2(reader.ReadByteArray());
-                        if (CryptographyHelper.VerifyCertificate(certificate, networkingManager.ConnectedHostname))
-                        {
-                            // The certificate is not valid :(
-                            // Man in the middle.
-                            if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Invalid certificate. Disconnecting");
-                            networkingManager.StopClient();
-                            return;
-                        }
-                        else
-                        {
-                            networkingManager.NetworkConfig.ServerX509Certificate = certificate;
-                        }
-                    }
-
-                    // Read the ECDH
-                    // Allocation justification: This runs on client and only once, at initial connection
-                    serverDiffieHellmanPublicPart = reader.ReadByteArray();
-
-                    // Verify the key exchange
-                    if (networkingManager.NetworkConfig.SignKeyExchange)
-                    {
-                        int signatureType = reader.ReadByte();
-
-                        byte[] serverDiffieHellmanPublicPartSignature = reader.ReadByteArray();
-
-                        if (signatureType == 0)
-                        {
-                            RSACryptoServiceProvider rsa = certificate.PublicKey.Key as RSACryptoServiceProvider;
-
-                            if (rsa != null)
-                            {
-                                using (SHA256Managed sha = new SHA256Managed())
-                                {
-                                    if (!rsa.VerifyData(serverDiffieHellmanPublicPart, sha, serverDiffieHellmanPublicPartSignature))
-                                    {
-                                        if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Invalid RSA signature. Disconnecting");
-                                        networkingManager.StopClient();
-                                        return;
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("No RSA key found in certificate. Disconnecting");
-                                networkingManager.StopClient();
-                                return;
-                            }
-                        }
-                        else if (signatureType == 1)
-                        {
-                            DSACryptoServiceProvider dsa = certificate.PublicKey.Key as DSACryptoServiceProvider;
-
-                            if (dsa != null)
-                            {
-                                using (SHA256Managed sha = new SHA256Managed())
-                                {
-                                    if (!dsa.VerifyData(sha.ComputeHash(serverDiffieHellmanPublicPart), serverDiffieHellmanPublicPartSignature))
-                                    {
-                                        if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Invalid DSA signature. Disconnecting");
-                                        networkingManager.StopClient();
-                                        return;
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("No DSA key found in certificate. Disconnecting");
-                                networkingManager.StopClient();
-                                return;
-                            }
-                        }
-                        else
-                        {
-                            if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Invalid signature type. Disconnecting");
-                            networkingManager.StopClient();
-                            return;
-                        }
-                    }
-                }
-            }
-
-            using (PooledBitStream outStream = PooledBitStream.Get())
-            {
-                using (PooledBitWriter writer = PooledBitWriter.Get(outStream))
-                {
-                    if (networkingManager.NetworkConfig.EnableEncryption)
-                    {
-                        // Create a ECDH key
-                        EllipticDiffieHellman diffieHellman = new EllipticDiffieHellman(EllipticDiffieHellman.DEFAULT_CURVE, EllipticDiffieHellman.DEFAULT_GENERATOR, EllipticDiffieHellman.DEFAULT_ORDER);
-                        networkingManager.clientAesKey = diffieHellman.GetSharedSecret(serverDiffieHellmanPublicPart);
-                        byte[] diffieHellmanPublicKey = diffieHellman.GetPublicKey();
-                        writer.WriteByteArray(diffieHellmanPublicKey);
-                    }
-                }
-
-                // Send HailResponse
-                InternalMessageSender.Send(networkingManager.ServerClientId, MLAPIConstants.MLAPI_CERTIFICATE_HAIL_RESPONSE, Transport.MLAPI_INTERNAL_CHANNEL, outStream, SecuritySendFlags.None);
-            }
-        }
-
-        // Ran on server
-        internal void HandleHailResponse(ulong clientId, Stream stream)
-        {
-            if (!networkingManager.PendingClients.ContainsKey(clientId) || networkingManager.PendingClients[clientId].ConnectionState != PendingClient.State.PendingHail) return;
-            if (!networkingManager.NetworkConfig.EnableEncryption) return;
-
-            using (PooledBitReader reader = networkingManager.PooledBitReaders.GetReader(stream))
-            {
-                if (networkingManager.PendingClients[clientId].KeyExchange != null)
-                {
-                    byte[] diffieHellmanPublic = reader.ReadByteArray();
-                    networkingManager.PendingClients[clientId].AesKey = networkingManager.PendingClients[clientId].KeyExchange.GetSharedSecret(diffieHellmanPublic);
-                }
-            }
-
-            networkingManager.PendingClients[clientId].ConnectionState = PendingClient.State.PendingConnection;
-            networkingManager.PendingClients[clientId].KeyExchange = null; // Give to GC
-
-            // Send greetings, they have passed all the handshakes
-            using (PooledBitStream outStream = PooledBitStream.Get())
-            {
-                using (PooledBitWriter writer = PooledBitWriter.Get(outStream))
-                {
-                    writer.WriteInt64Packed(DateTime.Now.Ticks); // This serves no purpose.
-                }
-
-                InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_GREETINGS, Transport.MLAPI_INTERNAL_CHANNEL, outStream, SecuritySendFlags.None);
-            }
-        }
-
-        internal void HandleGreetings(ulong clientId, Stream stream)
-        {
-            // Server greeted us, we can now initiate our request to connect.
-            networkingManager.SendConnectionRequest();
-        }
-#endif
-
-        internal void HandleConnectionRequest(ulong clientId, Stream stream)
+        internal static void HandleConnectionRequest(ulong clientId, Stream stream)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleConnectionRequest.Begin();
 #endif
-            using (PooledBitReader reader = networkingManager.PooledBitReaders.GetReader(stream))
+            using (var reader = PooledNetworkReader.Get(stream))
             {
                 ulong configHash = reader.ReadUInt64Packed();
-                if (!networkingManager.NetworkConfig.CompareConfig(configHash))
+                if (!NetworkManager.Singleton.NetworkConfig.CompareConfig(configHash))
                 {
-                    if (NetworkingManager.LogLevel <= LogLevel.Normal) NetworkLog.LogWarning("NetworkConfiguration mismatch. The configuration between the server and client does not match");
-                    networkingManager.DisconnectClient(clientId);
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                    {
+                        NetworkLog.LogWarning($"{nameof(NetworkConfig)} mismatch. The configuration between the server and client does not match");
+                    }
+
+                    NetworkManager.Singleton.DisconnectClient(clientId);
                     return;
                 }
 
-                if (networkingManager.NetworkConfig.ConnectionApproval)
+                if (NetworkManager.Singleton.NetworkConfig.ConnectionApproval)
                 {
                     byte[] connectionBuffer = reader.ReadByteArray();
-                    networkingManager.InvokeConnectionApproval(connectionBuffer, clientId, (createPlayerObject, playerPrefabHash, approved, position, rotation) =>
-                    {
-                        networkingManager.HandleApproval(clientId, createPlayerObject, playerPrefabHash, approved, position, rotation);
-                    });
+                    NetworkManager.Singleton.InvokeConnectionApproval(connectionBuffer, clientId, (createPlayerObject, playerPrefabHash, approved, position, rotation) => { NetworkManager.Singleton.HandleApproval(clientId, createPlayerObject, playerPrefabHash, approved, position, rotation); });
                 }
                 else
                 {
-                    networkingManager.HandleApproval(clientId, networkingManager.NetworkConfig.CreatePlayerPrefab, null, true, null, null);
+                    NetworkManager.Singleton.HandleApproval(clientId, NetworkManager.Singleton.NetworkConfig.CreatePlayerPrefab, null, true, null, null);
                 }
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
@@ -246,43 +73,43 @@ namespace MLAPI.Messaging
 #endif
         }
 
-        internal void HandleConnectionApproved(ulong clientId, Stream stream, float receiveTime)
+        internal static void HandleConnectionApproved(ulong clientId, Stream stream, float receiveTime)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleConnectionApproved.Begin();
 #endif
-            using (PooledBitReader reader = networkingManager.PooledBitReaders.GetReader(stream))
+            using (var reader = PooledNetworkReader.Get(stream))
             {
-                networkingManager.LocalClientId = reader.ReadUInt64Packed();
+                NetworkManager.Singleton.LocalClientId = reader.ReadUInt64Packed();
 
                 uint sceneIndex = 0;
                 Guid sceneSwitchProgressGuid = new Guid();
 
-                if (networkingManager.NetworkConfig.EnableSceneManagement)
+                if (NetworkManager.Singleton.NetworkConfig.EnableSceneManagement)
                 {
                     sceneIndex = reader.ReadUInt32Packed();
                     sceneSwitchProgressGuid = new Guid(reader.ReadByteArray());
                 }
 
-                bool sceneSwitch = networkingManager.NetworkConfig.EnableSceneManagement && networkingManager.NetworkSceneManager.HasSceneMismatch(sceneIndex);
+                bool sceneSwitch = NetworkManager.Singleton.NetworkConfig.EnableSceneManagement && NetworkSceneManager.HasSceneMismatch(sceneIndex);
 
                 float netTime = reader.ReadSinglePacked();
-                networkingManager.UpdateNetworkTime(clientId, netTime, receiveTime, true);
+                NetworkManager.Singleton.UpdateNetworkTime(clientId, netTime, receiveTime, true);
 
-                networkingManager.ConnectedClients.Add(networkingManager.LocalClientId, new NetworkedClient() { ClientId = networkingManager.LocalClientId });
+                NetworkManager.Singleton.ConnectedClients.Add(NetworkManager.Singleton.LocalClientId, new NetworkClient { ClientId = NetworkManager.Singleton.LocalClientId });
 
 
                 void DelayedSpawnAction(Stream continuationStream)
                 {
-                    using (PooledBitReader continuationReader = networkingManager.PooledBitReaders.GetReader(continuationStream))
+                    using (var continuationReader = PooledNetworkReader.Get(continuationStream))
                     {
-                        if (!networkingManager.NetworkConfig.EnableSceneManagement || networkingManager.NetworkConfig.UsePrefabSync)
+                        if (!NetworkManager.Singleton.NetworkConfig.EnableSceneManagement || NetworkManager.Singleton.NetworkConfig.UsePrefabSync)
                         {
-                            networkingManager.SpawnManager.DestroySceneObjects();
+                            NetworkSpawnManager.DestroySceneObjects();
                         }
                         else
                         {
-                            networkingManager.SpawnManager.ClientCollectSoftSyncSceneObjectSweep(null);
+                            NetworkSpawnManager.ClientCollectSoftSyncSceneObjectSweep(null);
                         }
 
                         uint objectCount = continuationReader.ReadUInt32Packed();
@@ -303,7 +130,7 @@ namespace MLAPI.Messaging
                             ulong instanceId;
                             bool softSync;
 
-                            if (!networkingManager.NetworkConfig.EnableSceneManagement || networkingManager.NetworkConfig.UsePrefabSync)
+                            if (!NetworkManager.Singleton.NetworkConfig.EnableSceneManagement || NetworkManager.Singleton.NetworkConfig.UsePrefabSync)
                             {
                                 softSync = false;
                                 instanceId = 0;
@@ -333,8 +160,8 @@ namespace MLAPI.Messaging
                                 rot = Quaternion.Euler(continuationReader.ReadSinglePacked(), continuationReader.ReadSinglePacked(), continuationReader.ReadSinglePacked());
                             }
 
-                            NetworkedObject netObject = networkingManager.SpawnManager.CreateLocalNetworkedObject(softSync, instanceId, prefabHash, parentNetworkId, pos, rot);
-                            networkingManager.SpawnManager.SpawnNetworkedObjectLocally(netObject, networkId, softSync, isPlayerObject, ownerId, continuationStream, false, 0, true, false);
+                            var networkObject = NetworkSpawnManager.CreateLocalNetworkObject(softSync, instanceId, prefabHash, parentNetworkId, pos, rot);
+                            NetworkSpawnManager.SpawnNetworkObjectLocally(networkObject, networkId, softSync, isPlayerObject, ownerId, continuationStream, false, 0, true, false);
 
                             Queue<BufferManager.BufferedMessage> bufferQueue = BufferManager.ConsumeBuffersForNetworkId(networkId);
 
@@ -344,19 +171,15 @@ namespace MLAPI.Messaging
                                 while (bufferQueue.Count > 0)
                                 {
                                     BufferManager.BufferedMessage message = bufferQueue.Dequeue();
-
-                                    networkingManager.HandleIncomingData(message.sender, message.channel, new ArraySegment<byte>(message.payload.GetBuffer(), (int)message.payload.Position, (int)message.payload.Length), message.receiveTime, false);
-
+                                    NetworkManager.Singleton.HandleIncomingData(message.SenderClientId, message.NetworkChannel, new ArraySegment<byte>(message.NetworkBuffer.GetBuffer(), (int)message.NetworkBuffer.Position, (int)message.NetworkBuffer.Length), message.ReceiveTime, false);
                                     BufferManager.RecycleConsumedBufferedMessage(message);
                                 }
                             }
                         }
 
-                        networkingManager.SpawnManager.CleanDiffedSceneObjects();
-
-                        networkingManager.IsConnectedClient = true;
-
-                        networkingManager.InvokeOnClientConnectedCallback(networkingManager.LocalClientId);
+                        NetworkSpawnManager.CleanDiffedSceneObjects();
+                        NetworkManager.Singleton.IsConnectedClient = true;
+                        NetworkManager.Singleton.InvokeOnClientConnectedCallback(NetworkManager.Singleton.LocalClientId);
                     }
                 }
 
@@ -364,22 +187,20 @@ namespace MLAPI.Messaging
                 {
                     UnityAction<Scene, Scene> onSceneLoaded = null;
 
-                    Serialization.BitStream continuationStream = new Serialization.BitStream();
-                    continuationStream.CopyUnreadFrom(stream);
-                    continuationStream.Position = 0;
+                    var continuationBuffer = new NetworkBuffer();
+                    continuationBuffer.CopyUnreadFrom(stream);
+                    continuationBuffer.Position = 0;
 
                     void OnSceneLoadComplete()
                     {
                         SceneManager.activeSceneChanged -= onSceneLoaded;
-                        networkingManager.NetworkSceneManager.isSpawnedObjectsPendingInDontDestroyOnLoad = false;
-                        DelayedSpawnAction(continuationStream);
+                        NetworkSceneManager.IsSpawnedObjectsPendingInDontDestroyOnLoad = false;
+                        DelayedSpawnAction(continuationBuffer);
                     }
 
                     onSceneLoaded = (oldScene, newScene) => { OnSceneLoadComplete(); };
-
                     SceneManager.activeSceneChanged += onSceneLoaded;
-
-                    networkingManager.NetworkSceneManager.OnFirstSceneSwitchSync(sceneIndex, sceneSwitchProgressGuid);
+                    NetworkSceneManager.OnFirstSceneSwitchSync(sceneIndex, sceneSwitchProgressGuid);
                 }
                 else
                 {
@@ -391,12 +212,12 @@ namespace MLAPI.Messaging
 #endif
         }
 
-        internal void HandleAddObject(ulong clientId, Stream stream)
+        internal static void HandleAddObject(ulong clientId, Stream stream)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleAddObject.Begin();
 #endif
-            using (PooledBitReader reader = networkingManager.PooledBitReaders.GetReader(stream))
+            using (var reader = PooledNetworkReader.Get(stream))
             {
                 bool isPlayerObject = reader.ReadBool();
                 ulong networkId = reader.ReadUInt64Packed();
@@ -413,7 +234,7 @@ namespace MLAPI.Messaging
                 ulong instanceId;
                 bool softSync;
 
-                if (!networkingManager.NetworkConfig.EnableSceneManagement || networkingManager.NetworkConfig.UsePrefabSync)
+                if (!NetworkManager.Singleton.NetworkConfig.EnableSceneManagement || NetworkManager.Singleton.NetworkConfig.UsePrefabSync)
                 {
                     softSync = false;
                     instanceId = 0;
@@ -446,8 +267,8 @@ namespace MLAPI.Messaging
                 bool hasPayload = reader.ReadBool();
                 int payLoadLength = hasPayload ? reader.ReadInt32Packed() : 0;
 
-                NetworkedObject netObject = networkingManager.SpawnManager.CreateLocalNetworkedObject(softSync, instanceId, prefabHash, parentNetworkId, pos, rot);
-                networkingManager.SpawnManager.SpawnNetworkedObjectLocally(netObject, networkId, softSync, isPlayerObject, ownerId, stream, hasPayload, payLoadLength, true, false);
+                var networkObject = NetworkSpawnManager.CreateLocalNetworkObject(softSync, instanceId, prefabHash, parentNetworkId, pos, rot);
+                NetworkSpawnManager.SpawnNetworkObjectLocally(networkObject, networkId, softSync, isPlayerObject, ownerId, stream, hasPayload, payLoadLength, true, false);
 
                 Queue<BufferManager.BufferedMessage> bufferQueue = BufferManager.ConsumeBuffersForNetworkId(networkId);
 
@@ -457,9 +278,7 @@ namespace MLAPI.Messaging
                     while (bufferQueue.Count > 0)
                     {
                         BufferManager.BufferedMessage message = bufferQueue.Dequeue();
-
-                        networkingManager.HandleIncomingData(message.sender, message.channel, new ArraySegment<byte>(message.payload.GetBuffer(), (int)message.payload.Position, (int)message.payload.Length), message.receiveTime, false);
-
+                        NetworkManager.Singleton.HandleIncomingData(message.SenderClientId, message.NetworkChannel, new ArraySegment<byte>(message.NetworkBuffer.GetBuffer(), (int)message.NetworkBuffer.Position, (int)message.NetworkBuffer.Length), message.ReceiveTime, false);
                         BufferManager.RecycleConsumedBufferedMessage(message);
                     }
                 }
@@ -469,89 +288,91 @@ namespace MLAPI.Messaging
 #endif
         }
 
-        internal void HandleDestroyObject(ulong clientId, Stream stream)
+        internal static void HandleDestroyObject(ulong clientId, Stream stream)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleDestroyObject.Begin();
 #endif
-            using (PooledBitReader reader = networkingManager.PooledBitReaders.GetReader(stream))
+            using (var reader = PooledNetworkReader.Get(stream))
             {
                 ulong networkId = reader.ReadUInt64Packed();
-                networkingManager.SpawnManager.OnDestroyObject(networkId, true);
+                NetworkSpawnManager.OnDestroyObject(networkId, true);
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleDestroyObject.End();
 #endif
         }
 
-        internal void HandleSwitchScene(ulong clientId, Stream stream)
+        internal static void HandleSwitchScene(ulong clientId, Stream stream)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleSwitchScene.Begin();
 #endif
-            using (PooledBitReader reader = networkingManager.PooledBitReaders.GetReader(stream))
+            using (var reader = PooledNetworkReader.Get(stream))
             {
                 uint sceneIndex = reader.ReadUInt32Packed();
                 Guid switchSceneGuid = new Guid(reader.ReadByteArray());
 
-                Serialization.BitStream objectStream = new Serialization.BitStream();
-                objectStream.CopyUnreadFrom(stream);
-                objectStream.Position = 0;
+                var objectBuffer = new NetworkBuffer();
+                objectBuffer.CopyUnreadFrom(stream);
+                objectBuffer.Position = 0;
 
-                networkingManager.NetworkSceneManager.OnSceneSwitch(sceneIndex, switchSceneGuid, objectStream);
+                NetworkSceneManager.OnSceneSwitch(sceneIndex, switchSceneGuid, objectBuffer);
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleSwitchScene.End();
 #endif
         }
 
-        internal void HandleClientSwitchSceneCompleted(ulong clientId, Stream stream)
+        internal static void HandleClientSwitchSceneCompleted(ulong clientId, Stream stream)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleClientSwitchSceneCompleted.Begin();
 #endif
-            using (PooledBitReader reader = networkingManager.PooledBitReaders.GetReader(stream))
+            using (var reader = PooledNetworkReader.Get(stream))
             {
-                networkingManager.NetworkSceneManager.OnClientSwitchSceneCompleted(clientId, new Guid(reader.ReadByteArray()));
+                NetworkSceneManager.OnClientSwitchSceneCompleted(clientId, new Guid(reader.ReadByteArray()));
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleClientSwitchSceneCompleted.End();
 #endif
         }
 
-        internal void HandleChangeOwner(ulong clientId, Stream stream)
+        internal static void HandleChangeOwner(ulong clientId, Stream stream)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleChangeOwner.Begin();
 #endif
-            using (PooledBitReader reader = networkingManager.PooledBitReaders.GetReader(stream))
+            using (var reader = PooledNetworkReader.Get(stream))
             {
                 ulong networkId = reader.ReadUInt64Packed();
                 ulong ownerClientId = reader.ReadUInt64Packed();
 
-                if (networkingManager.SpawnManager.SpawnedObjects[networkId].OwnerClientId == networkingManager.LocalClientId)
+                if (NetworkSpawnManager.SpawnedObjects[networkId].OwnerClientId == NetworkManager.Singleton.LocalClientId)
                 {
                     //We are current owner.
-                    networkingManager.SpawnManager.SpawnedObjects[networkId].InvokeBehaviourOnLostOwnership();
+                    NetworkSpawnManager.SpawnedObjects[networkId].InvokeBehaviourOnLostOwnership();
                 }
-                if (ownerClientId == networkingManager.LocalClientId)
+
+                if (ownerClientId == NetworkManager.Singleton.LocalClientId)
                 {
                     //We are new owner.
-                    networkingManager.SpawnManager.SpawnedObjects[networkId].InvokeBehaviourOnGainedOwnership();
+                    NetworkSpawnManager.SpawnedObjects[networkId].InvokeBehaviourOnGainedOwnership();
                 }
-                networkingManager.SpawnManager.SpawnedObjects[networkId].OwnerClientId = ownerClientId;
+
+                NetworkSpawnManager.SpawnedObjects[networkId].OwnerClientId = ownerClientId;
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleChangeOwner.End();
 #endif
         }
 
-        internal void HandleAddObjects(ulong clientId, Stream stream)
+        internal static void HandleAddObjects(ulong clientId, Stream stream)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleAddObjects.Begin();
 #endif
-            using (PooledBitReader reader = networkingManager.PooledBitReaders.GetReader(stream))
+            using (var reader = PooledNetworkReader.Get(stream))
             {
                 ushort objectCount = reader.ReadUInt16Packed();
 
@@ -565,12 +386,12 @@ namespace MLAPI.Messaging
 #endif
         }
 
-        internal void HandleDestroyObjects(ulong clientId, Stream stream)
+        internal static void HandleDestroyObjects(ulong clientId, Stream stream)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleDestroyObjects.Begin();
 #endif
-            using (PooledBitReader reader = networkingManager.PooledBitReaders.GetReader(stream))
+            using (var reader = PooledNetworkReader.Get(stream))
             {
                 ushort objectCount = reader.ReadUInt16Packed();
 
@@ -584,106 +405,134 @@ namespace MLAPI.Messaging
 #endif
         }
 
-        internal void HandleTimeSync(ulong clientId, Stream stream, float receiveTime)
+        internal static void HandleTimeSync(ulong clientId, Stream stream, float receiveTime)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleTimeSync.Begin();
 #endif
-            using (PooledBitReader reader = networkingManager.PooledBitReaders.GetReader(stream))
+            using (var reader = PooledNetworkReader.Get(stream))
             {
                 float netTime = reader.ReadSinglePacked();
-                networkingManager.UpdateNetworkTime(clientId, netTime, receiveTime);
+                NetworkManager.Singleton.UpdateNetworkTime(clientId, netTime, receiveTime);
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleTimeSync.End();
 #endif
         }
 
-        internal void HandleNetworkedVarDelta(ulong clientId, Stream stream, Action<ulong, PreBufferPreset> bufferCallback, PreBufferPreset bufferPreset)
+        internal static void HandleNetworkVariableDelta(ulong clientId, Stream stream, Action<ulong, PreBufferPreset> bufferCallback, PreBufferPreset bufferPreset)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            s_HandleNetworkedVarDelta.Begin();
+            s_HandleNetworkVariableDelta.Begin();
 #endif
-            if (!networkingManager.NetworkConfig.EnableNetworkedVar)
+            if (!NetworkManager.Singleton.NetworkConfig.EnableNetworkVariable)
             {
-                if (NetworkingManager.LogLevel <= LogLevel.Normal) NetworkLog.LogWarning("NetworkedVar delta received but EnableNetworkedVar is false");
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                {
+                    NetworkLog.LogWarning($"{nameof(NetworkConstants.NETWORK_VARIABLE_DELTA)} received but {nameof(NetworkConfig.EnableNetworkVariable)} is false");
+                }
+
                 return;
             }
 
-            using (PooledBitReader reader = networkingManager.PooledBitReaders.GetReader(stream))
+            using (var reader = PooledNetworkReader.Get(stream))
             {
-                ulong networkId = reader.ReadUInt64Packed();
-                ushort orderIndex = reader.ReadUInt16Packed();
+                ulong networkObjectId = reader.ReadUInt64Packed();
+                ushort networkBehaviourIndex = reader.ReadUInt16Packed();
 
-                if (networkingManager.SpawnManager.SpawnedObjects.ContainsKey(networkId))
+                if (NetworkSpawnManager.SpawnedObjects.ContainsKey(networkObjectId))
                 {
-                    NetworkedBehaviour instance = networkingManager.SpawnManager.SpawnedObjects[networkId].GetBehaviourAtOrderIndex(orderIndex);
+                    NetworkBehaviour instance = NetworkSpawnManager.SpawnedObjects[networkObjectId].GetNetworkBehaviourAtOrderIndex(networkBehaviourIndex);
 
                     if (instance == null)
                     {
-                        if (NetworkingManager.LogLevel <= LogLevel.Normal) NetworkLog.LogWarning("NetworkedVarDelta message received for a non-existent behaviour. NetworkId: " + networkId + ", behaviourIndex: " + orderIndex);
+                        if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                        {
+                            NetworkLog.LogWarning($"{nameof(NetworkConstants.NETWORK_VARIABLE_DELTA)} message received for a non-existent behaviour. {nameof(networkObjectId)}: {networkObjectId}, {nameof(networkBehaviourIndex)}: {networkBehaviourIndex}");
+                        }
                     }
                     else
                     {
-                        NetworkedBehaviour.HandleNetworkedVarDeltas(networkingManager, instance.networkedVarFields, stream, clientId, instance);
+                        NetworkBehaviour.HandleNetworkVariableDeltas(instance.NetworkVariableFields, stream, clientId, instance);
                     }
                 }
-                else if (networkingManager.IsServer || !networkingManager.NetworkConfig.EnableMessageBuffering)
+                else if (NetworkManager.Singleton.IsServer || !NetworkManager.Singleton.NetworkConfig.EnableMessageBuffering)
                 {
-                    if (NetworkingManager.LogLevel <= LogLevel.Normal) NetworkLog.LogWarning("NetworkedVarDelta message received for a non-existent object with id: " + networkId + ". This delta was lost.");
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                    {
+                        NetworkLog.LogWarning($"{nameof(NetworkConstants.NETWORK_VARIABLE_DELTA)} message received for a non-existent object with {nameof(networkObjectId)}: {networkObjectId}. This delta was lost.");
+                    }
                 }
                 else
                 {
-                    if (NetworkingManager.LogLevel <= LogLevel.Normal) NetworkLog.LogWarning("NetworkedVarDelta message received for a non-existent object with id: " + networkId + ". This delta will be buffered and might be recovered.");
-                    bufferCallback(networkId, bufferPreset);
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                    {
+                        NetworkLog.LogWarning($"{nameof(NetworkConstants.NETWORK_VARIABLE_DELTA)} message received for a non-existent object with {nameof(networkObjectId)}: {networkObjectId}. This delta will be buffered and might be recovered.");
+                    }
+
+                    bufferCallback(networkObjectId, bufferPreset);
                 }
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            s_HandleNetworkedVarDelta.End();
+            s_HandleNetworkVariableDelta.End();
 #endif
         }
 
-        internal void HandleNetworkedVarUpdate(ulong clientId, Stream stream, Action<ulong, PreBufferPreset> bufferCallback, PreBufferPreset bufferPreset)
+        internal static void HandleNetworkVariableUpdate(ulong clientId, Stream stream, Action<ulong, PreBufferPreset> bufferCallback, PreBufferPreset bufferPreset)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            s_HandleNetworkedVarUpdate.Begin();
+            s_HandleNetworkVariableUpdate.Begin();
 #endif
-            if (!networkingManager.NetworkConfig.EnableNetworkedVar)
+            if (!NetworkManager.Singleton.NetworkConfig.EnableNetworkVariable)
             {
-                if (NetworkingManager.LogLevel <= LogLevel.Normal) NetworkLog.LogWarning("NetworkedVar update received but EnableNetworkedVar is false");
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                {
+                    NetworkLog.LogWarning($"{nameof(NetworkConstants.NETWORK_VARIABLE_UPDATE)} update received but {nameof(NetworkConfig.EnableNetworkVariable)} is false");
+                }
+
                 return;
             }
 
-            using (PooledBitReader reader = networkingManager.PooledBitReaders.GetReader(stream))
+            using (var reader = PooledNetworkReader.Get(stream))
             {
-                ulong networkId = reader.ReadUInt64Packed();
-                ushort orderIndex = reader.ReadUInt16Packed();
+                ulong networkObjectId = reader.ReadUInt64Packed();
+                ushort networkBehaviourIndex = reader.ReadUInt16Packed();
 
-                if (networkingManager.SpawnManager.SpawnedObjects.ContainsKey(networkId))
+                if (NetworkSpawnManager.SpawnedObjects.ContainsKey(networkObjectId))
                 {
-                    NetworkedBehaviour instance = networkingManager.SpawnManager.SpawnedObjects[networkId].GetBehaviourAtOrderIndex(orderIndex);
+                    var networkBehaviour = NetworkSpawnManager.SpawnedObjects[networkObjectId].GetNetworkBehaviourAtOrderIndex(networkBehaviourIndex);
 
-                    if (instance == null)
+                    if (networkBehaviour == null)
                     {
-                        if (NetworkingManager.LogLevel <= LogLevel.Normal) NetworkLog.LogWarning("NetworkedVarUpdate message received for a non-existent behaviour. NetworkId: " + networkId + ", behaviourIndex: " + orderIndex);
+                        if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                        {
+                            NetworkLog.LogWarning($"{nameof(NetworkConstants.NETWORK_VARIABLE_UPDATE)} message received for a non-existent behaviour. {nameof(networkObjectId)}: {networkObjectId}, {nameof(networkBehaviourIndex)}: {networkBehaviourIndex}");
+                        }
                     }
                     else
                     {
-                        NetworkedBehaviour.HandleNetworkedVarUpdate(networkingManager, instance.networkedVarFields, stream, clientId, instance);
+                        NetworkBehaviour.HandleNetworkVariableUpdate(networkBehaviour.NetworkVariableFields, stream, clientId, networkBehaviour);
                     }
                 }
-                else if (networkingManager.IsServer || !networkingManager.NetworkConfig.EnableMessageBuffering)
+                else if (NetworkManager.Singleton.IsServer || !NetworkManager.Singleton.NetworkConfig.EnableMessageBuffering)
                 {
-                    if (NetworkingManager.LogLevel <= LogLevel.Normal) NetworkLog.LogWarning("NetworkedVarUpdate message received for a non-existent object with id: " + networkId + ". This delta was lost.");
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                    {
+                        NetworkLog.LogWarning($"{nameof(NetworkConstants.NETWORK_VARIABLE_UPDATE)} message received for a non-existent object with {nameof(networkObjectId)}: {networkObjectId}. This delta was lost.");
+                    }
                 }
                 else
                 {
-                    if (NetworkingManager.LogLevel <= LogLevel.Normal) NetworkLog.LogWarning("NetworkedVarUpdate message received for a non-existent object with id: " + networkId + ". This delta will be buffered and might be recovered.");
-                    bufferCallback(networkId, bufferPreset);
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                    {
+                        NetworkLog.LogWarning($"{nameof(NetworkConstants.NETWORK_VARIABLE_UPDATE)} message received for a non-existent object with {nameof(networkObjectId)}: {networkObjectId}. This delta will be buffered and might be recovered.");
+                    }
+
+                    bufferCallback(networkObjectId, bufferPreset);
                 }
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            s_HandleNetworkedVarUpdate.End();
+            s_HandleNetworkVariableUpdate.End();
 #endif
         }
 
@@ -693,57 +542,84 @@ namespace MLAPI.Messaging
         /// <param name="clientId"></param>
         /// <param name="stream"></param>
         /// <param name="receiveTime"></param>
-        internal void RPCReceiveQueueItem(ulong clientId, Stream stream, float receiveTime, RpcQueueContainer.QueueItemType queueItemType)
+        internal static void RpcReceiveQueueItem(ulong clientId, Stream stream, float receiveTime, RpcQueueContainer.QueueItemType queueItemType)
         {
-            if (networkingManager.IsServer && clientId == networkingManager.ServerClientId)
+            if (NetworkManager.Singleton.IsServer && clientId == NetworkManager.Singleton.ServerClientId)
             {
                 return;
             }
 
-            ProfilerStatManager.rpcsRcvd.Record();
+            ProfilerStatManager.RpcsRcvd.Record();
+            PerformanceDataManager.Increment(ProfilerConstants.NumberOfRPCsReceived);
 
-            var rpcQueueContainer = networkingManager.rpcQueueContainer;
-            rpcQueueContainer.AddQueueItemToInboundFrame(queueItemType, receiveTime, clientId, (BitStream)stream);
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            switch (queueItemType)
+            {
+                case RpcQueueContainer.QueueItemType.ServerRpc:
+                    s_RpcReceiveQueueItemServerRpc.Begin();
+                    break;
+                case RpcQueueContainer.QueueItemType.ClientRpc:
+                    s_RpcReceiveQueueItemClientRpc.Begin();
+                    break;
+            }
+#endif
+
+            var rpcQueueContainer = NetworkManager.Singleton.RpcQueueContainer;
+            rpcQueueContainer.AddQueueItemToInboundFrame(queueItemType, receiveTime, clientId, (NetworkBuffer)stream);
+
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            switch (queueItemType)
+            {
+                case RpcQueueContainer.QueueItemType.ServerRpc:
+                    s_RpcReceiveQueueItemServerRpc.End();
+                    break;
+                case RpcQueueContainer.QueueItemType.ClientRpc:
+                    s_RpcReceiveQueueItemClientRpc.End();
+                    break;
+            }
+#endif
         }
 
-        internal void HandleUnnamedMessage(ulong clientId, Stream stream)
+        internal static void HandleUnnamedMessage(ulong clientId, Stream stream)
         {
-            ProfilerStatManager.unnamedMessage.Record();
+            PerformanceDataManager.Increment(ProfilerConstants.NumberOfUnnamedMessages);
+            ProfilerStatManager.UnnamedMessage.Record();
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleUnnamedMessage.Begin();
 #endif
-            CustomMessagingManager.InvokeUnnamedMessage(networkingManager, clientId, stream);
+            CustomMessagingManager.InvokeUnnamedMessage(clientId, stream);
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleUnnamedMessage.End();
 #endif
         }
 
-        internal void HandleNamedMessage(ulong clientId, Stream stream)
+        internal static void HandleNamedMessage(ulong clientId, Stream stream)
         {
-            ProfilerStatManager.namedMessage.Record();
+            PerformanceDataManager.Increment(ProfilerConstants.NumberOfNamedMessages);
+            ProfilerStatManager.NamedMessage.Record();
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleNamedMessage.Begin();
 #endif
-            using (PooledBitReader reader = networkingManager.PooledBitReaders.GetReader(stream))
+            using (var reader = PooledNetworkReader.Get(stream))
             {
                 ulong hash = reader.ReadUInt64Packed();
 
-                CustomMessagingManager.InvokeNamedMessage(networkingManager, hash, clientId, stream);
+                CustomMessagingManager.InvokeNamedMessage(hash, clientId, stream);
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleNamedMessage.End();
 #endif
         }
 
-        internal void HandleNetworkLog(ulong clientId, Stream stream)
+        internal static void HandleNetworkLog(ulong clientId, Stream stream)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleNetworkLog.Begin();
 #endif
-            using (PooledBitReader reader = networkingManager.PooledBitReaders.GetReader(stream))
+            using (var reader = PooledNetworkReader.Get(stream))
             {
                 NetworkLog.LogType logType = (NetworkLog.LogType)reader.ReadByte();
-                string message = reader.ReadStringPacked().ToString();
+                string message = reader.ReadStringPacked();
 
                 switch (logType)
                 {

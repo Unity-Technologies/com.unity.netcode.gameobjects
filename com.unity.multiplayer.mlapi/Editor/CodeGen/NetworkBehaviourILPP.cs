@@ -10,9 +10,9 @@ using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
 using Unity.CompilationPipeline.Common.Diagnostics;
 using Unity.CompilationPipeline.Common.ILPostProcessing;
+using UnityEngine;
 using MethodAttributes = Mono.Cecil.MethodAttributes;
 using ParameterAttributes = Mono.Cecil.ParameterAttributes;
-
 #if UNITY_2020_2_OR_NEWER
 using ILPPInterface = Unity.CompilationPipeline.Common.ILPostProcessing.ILPostProcessor;
 #else
@@ -25,9 +25,7 @@ namespace MLAPI.Editor.CodeGen
     {
         public override ILPPInterface GetInstance() => this;
 
-        public override bool WillProcess(ICompiledAssembly compiledAssembly) =>
-            compiledAssembly.References.Any(
-                filePath => Path.GetFileNameWithoutExtension(filePath) == CodeGenHelpers.RuntimeAssemblyName);
+        public override bool WillProcess(ICompiledAssembly compiledAssembly) => compiledAssembly.References.Any(filePath => Path.GetFileNameWithoutExtension(filePath) == CodeGenHelpers.RuntimeAssemblyName);
 
         private readonly List<DiagnosticMessage> m_Diagnostics = new List<DiagnosticMessage>();
 
@@ -77,97 +75,110 @@ namespace MLAPI.Editor.CodeGen
         }
 
         private TypeReference NetworkManager_TypeRef;
-        private FieldReference NetworkManager_ntable_FieldRef;
-        private MethodReference NetworkManager_ntable_Add_MethodRef;
+        private MethodReference NetworkManager_getLocalClientId_MethodRef;
         private MethodReference NetworkManager_getIsListening_MethodRef;
         private MethodReference NetworkManager_getIsHost_MethodRef;
         private MethodReference NetworkManager_getIsServer_MethodRef;
         private MethodReference NetworkManager_getIsClient_MethodRef;
+        private FieldReference NetworkManager_ntable_FieldRef;
+        private MethodReference NetworkManager_ntable_Add_MethodRef;
         private TypeReference NetworkBehaviour_TypeRef;
         private MethodReference NetworkBehaviour_BeginSendServerRpc_MethodRef;
         private MethodReference NetworkBehaviour_EndSendServerRpc_MethodRef;
         private MethodReference NetworkBehaviour_BeginSendClientRpc_MethodRef;
         private MethodReference NetworkBehaviour_EndSendClientRpc_MethodRef;
         private FieldReference NetworkBehaviour_nexec_FieldRef;
-        private MethodReference NetworkBehaviour_getNetManager_MethodRef;
+        private MethodReference NetworkBehaviour_getNetworkManager_MethodRef;
+        private MethodReference NetworkBehaviour_getOwnerClientId_MethodRef;
         private MethodReference NetworkHandlerDelegateCtor_MethodRef;
+        private TypeReference RpcParams_TypeRef;
+        private FieldReference RpcParams_Server_FieldRef;
+        private FieldReference RpcParams_Client_FieldRef;
         private TypeReference ServerRpcParams_TypeRef;
-        private FieldReference ServerRpcParams_Send_FieldRef;
         private FieldReference ServerRpcParams_Receive_FieldRef;
-        private TypeReference ServerRpcSendParams_TypeRef;
-        private TypeReference ServerRpcReceiveParams_TypeRef;
-        private FieldReference ServerRpcReceiveParams_SenderClientId_FieldRef;
+        private FieldReference ServerRpcParams_Receive_SenderClientId_FieldRef;
         private TypeReference ClientRpcParams_TypeRef;
-        private FieldReference ClientRpcParams_Send_FieldRef;
-        private FieldReference ClientRpcParams_Receive_FieldRef;
-        private TypeReference ClientRpcSendParams_TypeRef;
-        private TypeReference ClientRpcReceiveParams_TypeRef;
-        private TypeReference BitWriter_TypeRef;
-        private MethodReference BitWriter_WriteBool_MethodRef;
-        private MethodReference BitWriter_WriteChar_MethodRef;
-        private MethodReference BitWriter_WriteSByte_MethodRef;
-        private MethodReference BitWriter_WriteByte_MethodRef;
-        private MethodReference BitWriter_WriteInt16Packed_MethodRef;
-        private MethodReference BitWriter_WriteUInt16Packed_MethodRef;
-        private MethodReference BitWriter_WriteInt32Packed_MethodRef;
-        private MethodReference BitWriter_WriteUInt32Packed_MethodRef;
-        private MethodReference BitWriter_WriteInt64Packed_MethodRef;
-        private MethodReference BitWriter_WriteUInt64Packed_MethodRef;
-        private MethodReference BitWriter_WriteSinglePacked_MethodRef;
-        private MethodReference BitWriter_WriteDoublePacked_MethodRef;
-        private MethodReference BitWriter_WriteStringPacked_MethodRef;
-        private MethodReference BitWriter_WriteColorPacked_MethodRef;
-        private MethodReference BitWriter_WriteVector2Packed_MethodRef;
-        private MethodReference BitWriter_WriteVector3Packed_MethodRef;
-        private MethodReference BitWriter_WriteVector4Packed_MethodRef;
-        private MethodReference BitWriter_WriteRotationPacked_MethodRef;
-        private MethodReference BitWriter_WriteRayPacked_MethodRef;
-        private MethodReference BitWriter_WriteRay2DPacked_MethodRef;
-        private TypeReference BitReader_TypeRef;
-        private MethodReference BitReader_ReadBool_MethodRef;
-        private MethodReference BitReader_ReadChar_MethodRef;
-        private MethodReference BitReader_ReadSByte_MethodRef;
-        private MethodReference BitReader_ReadByte_MethodRef;
-        private MethodReference BitReader_ReadInt16Packed_MethodRef;
-        private MethodReference BitReader_ReadUInt16Packed_MethodRef;
-        private MethodReference BitReader_ReadInt32Packed_MethodRef;
-        private MethodReference BitReader_ReadUInt32Packed_MethodRef;
-        private MethodReference BitReader_ReadInt64Packed_MethodRef;
-        private MethodReference BitReader_ReadUInt64Packed_MethodRef;
-        private MethodReference BitReader_ReadSinglePacked_MethodRef;
-        private MethodReference BitReader_ReadDoublePacked_MethodRef;
-        private MethodReference BitReader_ReadStringPacked_MethodRef;
-        private MethodReference BitReader_ReadColorPacked_MethodRef;
-        private MethodReference BitReader_ReadVector2Packed_MethodRef;
-        private MethodReference BitReader_ReadVector3Packed_MethodRef;
-        private MethodReference BitReader_ReadVector4Packed_MethodRef;
-        private MethodReference BitReader_ReadRotationPacked_MethodRef;
-        private MethodReference BitReader_ReadRayPacked_MethodRef;
-        private MethodReference BitReader_ReadRay2DPacked_MethodRef;
+        private TypeReference NetworkSerializer_TypeRef;
+        private MethodReference NetworkSerializer_SerializeBool_MethodRef;
+        private MethodReference NetworkSerializer_SerializeChar_MethodRef;
+        private MethodReference NetworkSerializer_SerializeSbyte_MethodRef;
+        private MethodReference NetworkSerializer_SerializeByte_MethodRef;
+        private MethodReference NetworkSerializer_SerializeShort_MethodRef;
+        private MethodReference NetworkSerializer_SerializeUshort_MethodRef;
+        private MethodReference NetworkSerializer_SerializeInt_MethodRef;
+        private MethodReference NetworkSerializer_SerializeUint_MethodRef;
+        private MethodReference NetworkSerializer_SerializeLong_MethodRef;
+        private MethodReference NetworkSerializer_SerializeUlong_MethodRef;
+        private MethodReference NetworkSerializer_SerializeFloat_MethodRef;
+        private MethodReference NetworkSerializer_SerializeDouble_MethodRef;
+        private MethodReference NetworkSerializer_SerializeString_MethodRef;
+        private MethodReference NetworkSerializer_SerializeColor_MethodRef;
+        private MethodReference NetworkSerializer_SerializeColor32_MethodRef;
+        private MethodReference NetworkSerializer_SerializeVector2_MethodRef;
+        private MethodReference NetworkSerializer_SerializeVector3_MethodRef;
+        private MethodReference NetworkSerializer_SerializeVector4_MethodRef;
+        private MethodReference NetworkSerializer_SerializeQuaternion_MethodRef;
+        private MethodReference NetworkSerializer_SerializeRay_MethodRef;
+        private MethodReference NetworkSerializer_SerializeRay2D_MethodRef;
+        private MethodReference NetworkSerializer_SerializeBoolArray_MethodRef;
+        private MethodReference NetworkSerializer_SerializeCharArray_MethodRef;
+        private MethodReference NetworkSerializer_SerializeSbyteArray_MethodRef;
+        private MethodReference NetworkSerializer_SerializeByteArray_MethodRef;
+        private MethodReference NetworkSerializer_SerializeShortArray_MethodRef;
+        private MethodReference NetworkSerializer_SerializeUshortArray_MethodRef;
+        private MethodReference NetworkSerializer_SerializeIntArray_MethodRef;
+        private MethodReference NetworkSerializer_SerializeUintArray_MethodRef;
+        private MethodReference NetworkSerializer_SerializeLongArray_MethodRef;
+        private MethodReference NetworkSerializer_SerializeUlongArray_MethodRef;
+        private MethodReference NetworkSerializer_SerializeFloatArray_MethodRef;
+        private MethodReference NetworkSerializer_SerializeDoubleArray_MethodRef;
+        private MethodReference NetworkSerializer_SerializeStringArray_MethodRef;
+        private MethodReference NetworkSerializer_SerializeColorArray_MethodRef;
+        private MethodReference NetworkSerializer_SerializeColor32Array_MethodRef;
+        private MethodReference NetworkSerializer_SerializeVector2Array_MethodRef;
+        private MethodReference NetworkSerializer_SerializeVector3Array_MethodRef;
+        private MethodReference NetworkSerializer_SerializeVector4Array_MethodRef;
+        private MethodReference NetworkSerializer_SerializeQuaternionArray_MethodRef;
+        private MethodReference NetworkSerializer_SerializeRayArray_MethodRef;
+        private MethodReference NetworkSerializer_SerializeRay2DArray_MethodRef;
 
-        private const string k_NetworkManager_IsListening = nameof(NetworkingManager.IsListening);
-        private const string k_NetworkManager_IsHost = nameof(NetworkingManager.IsHost);
-        private const string k_NetworkManager_IsServer = nameof(NetworkingManager.IsServer);
-        private const string k_NetworkManager_IsClient = nameof(NetworkingManager.IsClient);
+        private const string k_NetworkManager_LocalClientId = nameof(NetworkManager.LocalClientId);
+        private const string k_NetworkManager_IsListening = nameof(NetworkManager.IsListening);
+        private const string k_NetworkManager_IsHost = nameof(NetworkManager.IsHost);
+        private const string k_NetworkManager_IsServer = nameof(NetworkManager.IsServer);
+        private const string k_NetworkManager_IsClient = nameof(NetworkManager.IsClient);
 #pragma warning disable 618
-        private const string k_NetworkManager_ntable = nameof(NetworkingManager.__ntable);
+        private const string k_NetworkManager_ntable = nameof(NetworkManager.__ntable);
 
-        private const string k_NetworkBehaviour_BeginSendServerRpc = nameof(NetworkedBehaviour.__beginSendServerRpc);
-        private const string k_NetworkBehaviour_EndSendServerRpc = nameof(NetworkedBehaviour.__endSendServerRpc);
-        private const string k_NetworkBehaviour_BeginSendClientRpc = nameof(NetworkedBehaviour.__beginSendClientRpc);
-        private const string k_NetworkBehaviour_EndSendClientRpc = nameof(NetworkedBehaviour.__endSendClientRpc);
-        private const string k_NetworkBehaviour_nexec = nameof(NetworkedBehaviour.__nexec);
+        private const string k_NetworkBehaviour_BeginSendServerRpc = nameof(NetworkBehaviour.__beginSendServerRpc);
+        private const string k_NetworkBehaviour_EndSendServerRpc = nameof(NetworkBehaviour.__endSendServerRpc);
+        private const string k_NetworkBehaviour_BeginSendClientRpc = nameof(NetworkBehaviour.__beginSendClientRpc);
+        private const string k_NetworkBehaviour_EndSendClientRpc = nameof(NetworkBehaviour.__endSendClientRpc);
+        private const string k_NetworkBehaviour_nexec = nameof(NetworkBehaviour.__nexec);
 #pragma warning restore 618
-        private const string k_NetworkBehaviour_NetManager = nameof(NetworkedBehaviour.NetManager);
+        private const string k_NetworkBehaviour_NetworkManager = nameof(NetworkBehaviour.NetworkManager);
+        private const string k_NetworkBehaviour_OwnerClientId = nameof(NetworkBehaviour.OwnerClientId);
+
+        private const string k_RpcAttribute_Delivery = nameof(RpcAttribute.Delivery);
+        private const string k_ServerRpcAttribute_RequireOwnership = nameof(ServerRpcAttribute.RequireOwnership);
+#pragma warning disable 618
+        private const string k_RpcParams_Server = nameof(__RpcParams.Server);
+        private const string k_RpcParams_Client = nameof(__RpcParams.Client);
+#pragma warning restore 618
+        private const string k_ServerRpcParams_Receive = nameof(ServerRpcParams.Receive);
+        private const string k_ServerRpcReceiveParams_SenderClientId = nameof(ServerRpcReceiveParams.SenderClientId);
 
         private bool ImportReferences(ModuleDefinition moduleDefinition)
         {
-            var networkManagerType = typeof(NetworkingManager);
+            var networkManagerType = typeof(NetworkManager);
             NetworkManager_TypeRef = moduleDefinition.ImportReference(networkManagerType);
             foreach (var propertyInfo in networkManagerType.GetProperties())
             {
                 switch (propertyInfo.Name)
                 {
+                    case k_NetworkManager_LocalClientId:
+                        NetworkManager_getLocalClientId_MethodRef = moduleDefinition.ImportReference(propertyInfo.GetMethod);
+                        break;
                     case k_NetworkManager_IsListening:
                         NetworkManager_getIsListening_MethodRef = moduleDefinition.ImportReference(propertyInfo.GetMethod);
                         break;
@@ -194,18 +205,21 @@ namespace MLAPI.Editor.CodeGen
                 }
             }
 
-            var networkBehaviourType = typeof(NetworkedBehaviour);
+            var networkBehaviourType = typeof(NetworkBehaviour);
             NetworkBehaviour_TypeRef = moduleDefinition.ImportReference(networkBehaviourType);
             foreach (var propertyInfo in networkBehaviourType.GetProperties())
             {
                 switch (propertyInfo.Name)
                 {
-                    case k_NetworkBehaviour_NetManager:
-                        NetworkBehaviour_getNetManager_MethodRef = moduleDefinition.ImportReference(propertyInfo.GetMethod);
+                    case k_NetworkBehaviour_NetworkManager:
+                        NetworkBehaviour_getNetworkManager_MethodRef = moduleDefinition.ImportReference(propertyInfo.GetMethod);
+                        break;
+                    case k_NetworkBehaviour_OwnerClientId:
+                        NetworkBehaviour_getOwnerClientId_MethodRef = moduleDefinition.ImportReference(propertyInfo.GetMethod);
                         break;
                 }
             }
-            
+
             foreach (var methodInfo in networkBehaviourType.GetMethods(BindingFlags.Static | BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
             {
                 switch (methodInfo.Name)
@@ -235,9 +249,25 @@ namespace MLAPI.Editor.CodeGen
                 }
             }
 
-            var networkHandlerDelegateType = typeof(Action<NetworkedBehaviour, BitReader, ulong>);
-            NetworkHandlerDelegateCtor_MethodRef = moduleDefinition.ImportReference(
-                networkHandlerDelegateType.GetConstructor(new[] { typeof(object), typeof(IntPtr) }));
+#pragma warning disable 618
+            var networkHandlerDelegateType = typeof(Action<NetworkBehaviour, NetworkSerializer, __RpcParams>);
+            NetworkHandlerDelegateCtor_MethodRef = moduleDefinition.ImportReference(networkHandlerDelegateType.GetConstructor(new[] { typeof(object), typeof(IntPtr) }));
+
+            var rpcParamsType = typeof(__RpcParams);
+            RpcParams_TypeRef = moduleDefinition.ImportReference(rpcParamsType);
+            foreach (var fieldInfo in rpcParamsType.GetFields())
+            {
+                switch (fieldInfo.Name)
+                {
+                    case k_RpcParams_Server:
+                        RpcParams_Server_FieldRef = moduleDefinition.ImportReference(fieldInfo);
+                        break;
+                    case k_RpcParams_Client:
+                        RpcParams_Client_FieldRef = moduleDefinition.ImportReference(fieldInfo);
+                        break;
+                }
+            }
+#pragma warning restore 618
 
             var serverRpcParamsType = typeof(ServerRpcParams);
             ServerRpcParams_TypeRef = moduleDefinition.ImportReference(serverRpcParamsType);
@@ -245,187 +275,78 @@ namespace MLAPI.Editor.CodeGen
             {
                 switch (fieldInfo.Name)
                 {
-                    case nameof(ServerRpcParams.Send):
-                        ServerRpcParams_Send_FieldRef = moduleDefinition.ImportReference(fieldInfo);
-                        break;
-                    case nameof(ServerRpcParams.Receive):
+                    case k_ServerRpcParams_Receive:
+                        foreach (var recvFieldInfo in fieldInfo.FieldType.GetFields())
+                        {
+                            switch (recvFieldInfo.Name)
+                            {
+                                case k_ServerRpcReceiveParams_SenderClientId:
+                                    ServerRpcParams_Receive_SenderClientId_FieldRef = moduleDefinition.ImportReference(recvFieldInfo);
+                                    break;
+                            }
+                        }
+
                         ServerRpcParams_Receive_FieldRef = moduleDefinition.ImportReference(fieldInfo);
-                        break;
-                }
-            }
-
-            var serverRpcSendParamsType = typeof(ServerRpcSendParams);
-            ServerRpcSendParams_TypeRef = moduleDefinition.ImportReference(serverRpcSendParamsType);
-
-            var serverRpcReceiveParamsType = typeof(ServerRpcReceiveParams);
-            ServerRpcReceiveParams_TypeRef = moduleDefinition.ImportReference(serverRpcReceiveParamsType);
-            foreach (var fieldInfo in serverRpcReceiveParamsType.GetFields())
-            {
-                switch (fieldInfo.Name)
-                {
-                    case nameof(ServerRpcReceiveParams.SenderClientId):
-                        ServerRpcReceiveParams_SenderClientId_FieldRef = moduleDefinition.ImportReference(fieldInfo);
                         break;
                 }
             }
 
             var clientRpcParamsType = typeof(ClientRpcParams);
             ClientRpcParams_TypeRef = moduleDefinition.ImportReference(clientRpcParamsType);
-            foreach (var fieldInfo in clientRpcParamsType.GetFields())
+
+            var networkSerializerType = typeof(NetworkSerializer);
+            NetworkSerializer_TypeRef = moduleDefinition.ImportReference(networkSerializerType);
+            foreach (var methodInfo in networkSerializerType.GetMethods())
             {
-                switch (fieldInfo.Name)
-                {
-                    case nameof(ClientRpcParams.Send):
-                        ClientRpcParams_Send_FieldRef = moduleDefinition.ImportReference(fieldInfo);
-                        break;
-                    case nameof(ClientRpcParams.Receive):
-                        ClientRpcParams_Receive_FieldRef = moduleDefinition.ImportReference(fieldInfo);
-                        break;
-                }
-            }
+                if (methodInfo.Name != nameof(NetworkSerializer.Serialize)) continue;
+                var methodParams = methodInfo.GetParameters();
+                if (methodParams.Length != 1) continue;
+                var paramType = methodParams[0].ParameterType;
+                if (paramType.IsByRef == false) continue;
+                var paramTypeName = paramType.Name;
 
-            var clientRpcSendParamsType = typeof(ClientRpcSendParams);
-            ClientRpcSendParams_TypeRef = moduleDefinition.ImportReference(clientRpcSendParamsType);
-
-            var clientRpcReceiveParamsType = typeof(ClientRpcReceiveParams);
-            ClientRpcReceiveParams_TypeRef = moduleDefinition.ImportReference(clientRpcReceiveParamsType);
-
-            var bitWriterType = typeof(BitWriter);
-            BitWriter_TypeRef = moduleDefinition.ImportReference(bitWriterType);
-            foreach (var methodInfo in bitWriterType.GetMethods())
-            {
-                switch (methodInfo.Name)
-                {
-                    case nameof(BitWriter.WriteBool):
-                        BitWriter_WriteBool_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                    case nameof(BitWriter.WriteChar):
-                        BitWriter_WriteChar_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                    case nameof(BitWriter.WriteSByte):
-                        BitWriter_WriteSByte_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                    case nameof(BitWriter.WriteByte):
-                        BitWriter_WriteByte_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                    case nameof(BitWriter.WriteInt16Packed):
-                        BitWriter_WriteInt16Packed_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                    case nameof(BitWriter.WriteUInt16Packed):
-                        BitWriter_WriteUInt16Packed_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                    case nameof(BitWriter.WriteInt32Packed):
-                        BitWriter_WriteInt32Packed_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                    case nameof(BitWriter.WriteUInt32Packed):
-                        BitWriter_WriteUInt32Packed_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                    case nameof(BitWriter.WriteInt64Packed):
-                        BitWriter_WriteInt64Packed_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                    case nameof(BitWriter.WriteUInt64Packed):
-                        BitWriter_WriteUInt64Packed_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                    case nameof(BitWriter.WriteSinglePacked):
-                        BitWriter_WriteSinglePacked_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                    case nameof(BitWriter.WriteDoublePacked):
-                        BitWriter_WriteDoublePacked_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                    case nameof(BitWriter.WriteStringPacked):
-                        BitWriter_WriteStringPacked_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                    case nameof(BitWriter.WriteColorPacked):
-                        BitWriter_WriteColorPacked_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                    case nameof(BitWriter.WriteVector2Packed):
-                        BitWriter_WriteVector2Packed_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                    case nameof(BitWriter.WriteVector3Packed):
-                        BitWriter_WriteVector3Packed_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                    case nameof(BitWriter.WriteVector4Packed):
-                        BitWriter_WriteVector4Packed_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                    case nameof(BitWriter.WriteRotationPacked):
-                        BitWriter_WriteRotationPacked_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                    case nameof(BitWriter.WriteRayPacked):
-                        BitWriter_WriteRayPacked_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                    case nameof(BitWriter.WriteRay2DPacked):
-                        BitWriter_WriteRay2DPacked_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                }
-            }
-
-            var bitReaderType = typeof(BitReader);
-            BitReader_TypeRef = moduleDefinition.ImportReference(bitReaderType);
-            foreach (var methodInfo in bitReaderType.GetMethods())
-            {
-                switch (methodInfo.Name)
-                {
-                    case nameof(BitReader.ReadBool):
-                        BitReader_ReadBool_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                    case nameof(BitReader.ReadChar):
-                        BitReader_ReadChar_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                    case nameof(BitReader.ReadSByte):
-                        BitReader_ReadSByte_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                    case nameof(BitReader.ReadByte):
-                        BitReader_ReadByte_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                    case nameof(BitReader.ReadInt16Packed):
-                        BitReader_ReadInt16Packed_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                    case nameof(BitReader.ReadUInt16Packed):
-                        BitReader_ReadUInt16Packed_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                    case nameof(BitReader.ReadInt32Packed):
-                        BitReader_ReadInt32Packed_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                    case nameof(BitReader.ReadUInt32Packed):
-                        BitReader_ReadUInt32Packed_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                    case nameof(BitReader.ReadInt64Packed):
-                        BitReader_ReadInt64Packed_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                    case nameof(BitReader.ReadUInt64Packed):
-                        BitReader_ReadUInt64Packed_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                    case nameof(BitReader.ReadSinglePacked):
-                        BitReader_ReadSinglePacked_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                    case nameof(BitReader.ReadDoublePacked):
-                        BitReader_ReadDoublePacked_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                    case nameof(BitReader.ReadStringPacked):
-                        BitReader_ReadStringPacked_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                    case nameof(BitReader.ReadColorPacked):
-                        BitReader_ReadColorPacked_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                    case nameof(BitReader.ReadVector2Packed):
-                        BitReader_ReadVector2Packed_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                    case nameof(BitReader.ReadVector3Packed):
-                        BitReader_ReadVector3Packed_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                    case nameof(BitReader.ReadVector4Packed):
-                        BitReader_ReadVector4Packed_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                    case nameof(BitReader.ReadRotationPacked):
-                        BitReader_ReadRotationPacked_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                    case nameof(BitReader.ReadRayPacked):
-                        BitReader_ReadRayPacked_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                    case nameof(BitReader.ReadRay2DPacked):
-                        BitReader_ReadRay2DPacked_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                }
+                if (paramTypeName == typeof(bool).MakeByRefType().Name) NetworkSerializer_SerializeBool_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(char).MakeByRefType().Name) NetworkSerializer_SerializeChar_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(sbyte).MakeByRefType().Name) NetworkSerializer_SerializeSbyte_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(byte).MakeByRefType().Name) NetworkSerializer_SerializeByte_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(short).MakeByRefType().Name) NetworkSerializer_SerializeShort_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(ushort).MakeByRefType().Name) NetworkSerializer_SerializeUshort_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(int).MakeByRefType().Name) NetworkSerializer_SerializeInt_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(uint).MakeByRefType().Name) NetworkSerializer_SerializeUint_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(long).MakeByRefType().Name) NetworkSerializer_SerializeLong_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(ulong).MakeByRefType().Name) NetworkSerializer_SerializeUlong_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(float).MakeByRefType().Name) NetworkSerializer_SerializeFloat_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(double).MakeByRefType().Name) NetworkSerializer_SerializeDouble_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(string).MakeByRefType().Name) NetworkSerializer_SerializeString_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(Color).MakeByRefType().Name) NetworkSerializer_SerializeColor_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(Color32).MakeByRefType().Name) NetworkSerializer_SerializeColor32_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(Vector2).MakeByRefType().Name) NetworkSerializer_SerializeVector2_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(Vector3).MakeByRefType().Name) NetworkSerializer_SerializeVector3_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(Vector4).MakeByRefType().Name) NetworkSerializer_SerializeVector4_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(Quaternion).MakeByRefType().Name) NetworkSerializer_SerializeQuaternion_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(Ray).MakeByRefType().Name) NetworkSerializer_SerializeRay_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(Ray2D).MakeByRefType().Name) NetworkSerializer_SerializeRay2D_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(bool[]).MakeByRefType().Name) NetworkSerializer_SerializeBoolArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(char[]).MakeByRefType().Name) NetworkSerializer_SerializeCharArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(sbyte[]).MakeByRefType().Name) NetworkSerializer_SerializeSbyteArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(byte[]).MakeByRefType().Name) NetworkSerializer_SerializeByteArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(short[]).MakeByRefType().Name) NetworkSerializer_SerializeShortArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(ushort[]).MakeByRefType().Name) NetworkSerializer_SerializeUshortArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(int[]).MakeByRefType().Name) NetworkSerializer_SerializeIntArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(uint[]).MakeByRefType().Name) NetworkSerializer_SerializeUintArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(long[]).MakeByRefType().Name) NetworkSerializer_SerializeLongArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(ulong[]).MakeByRefType().Name) NetworkSerializer_SerializeUlongArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(float[]).MakeByRefType().Name) NetworkSerializer_SerializeFloatArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(double[]).MakeByRefType().Name) NetworkSerializer_SerializeDoubleArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(string[]).MakeByRefType().Name) NetworkSerializer_SerializeStringArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(Color[]).MakeByRefType().Name) NetworkSerializer_SerializeColorArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(Color32[]).MakeByRefType().Name) NetworkSerializer_SerializeColor32Array_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(Vector2[]).MakeByRefType().Name) NetworkSerializer_SerializeVector2Array_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(Vector3[]).MakeByRefType().Name) NetworkSerializer_SerializeVector3Array_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(Vector4[]).MakeByRefType().Name) NetworkSerializer_SerializeVector4Array_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(Quaternion[]).MakeByRefType().Name) NetworkSerializer_SerializeQuaternionArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(Ray[]).MakeByRefType().Name) NetworkSerializer_SerializeRayArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(Ray2D[]).MakeByRefType().Name) NetworkSerializer_SerializeRay2DArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
             }
 
             return true;
@@ -563,8 +484,8 @@ namespace MLAPI.Editor.CodeGen
                 var paramDef = methodDefinition.Parameters[paramIndex];
                 var paramType = paramDef.ParameterType;
 
-                if (paramType.IsSupportedType()) continue;
-
+                // Serializable
+                if (paramType.IsSerializable()) continue;
                 // ServerRpcParams
                 if (paramType.FullName == CodeGenHelpers.ServerRpcParams_FullName && isServerRpc && paramIndex == paramCount - 1) continue;
                 // ClientRpcParams
@@ -583,13 +504,17 @@ namespace MLAPI.Editor.CodeGen
             var instructions = new List<Instruction>();
             var processor = methodDefinition.Body.GetILProcessor();
             var isServerRpc = rpcAttribute.AttributeType.FullName == CodeGenHelpers.ServerRpcAttribute_FullName;
-            var isReliableRpc = true;
+            var requireOwnership = true; // default value MUST be = `ServerRpcAttribute.RequireOwnership`
+            var rpcDelivery = RpcDelivery.Reliable; // default value MUST be = `RpcAttribute.Delivery`
             foreach (var attrField in rpcAttribute.Fields)
             {
                 switch (attrField.Name)
                 {
-                    case nameof(RpcAttribute.IsReliable):
-                        isReliableRpc = attrField.Argument.Type == typeSystem.Boolean && (bool)attrField.Argument.Value;
+                    case k_RpcAttribute_Delivery:
+                        rpcDelivery = (RpcDelivery)attrField.Argument.Value;
+                        break;
+                    case k_ServerRpcAttribute_RequireOwnership:
+                        requireOwnership = attrField.Argument.Type == typeSystem.Boolean && (bool)attrField.Argument.Value;
                         break;
                 }
             }
@@ -604,20 +529,23 @@ namespace MLAPI.Editor.CodeGen
             // NetworkManager networkManager;
             methodDefinition.Body.Variables.Add(new VariableDefinition(NetworkManager_TypeRef));
             int netManLocIdx = methodDefinition.Body.Variables.Count - 1;
-            // BitWriter writer;
-            methodDefinition.Body.Variables.Add(new VariableDefinition(BitWriter_TypeRef));
-            int writerLocIdx = methodDefinition.Body.Variables.Count - 1;
-            // XXXRpcSendParams
-            if (!hasRpcParams) methodDefinition.Body.Variables.Add(new VariableDefinition(isServerRpc ? ServerRpcSendParams_TypeRef : ClientRpcSendParams_TypeRef));
-            int sendParamsIdx = !hasRpcParams ? methodDefinition.Body.Variables.Count - 1 : -1;
+            // NetworkSerializer serializer;
+            methodDefinition.Body.Variables.Add(new VariableDefinition(NetworkSerializer_TypeRef));
+            int serializerLocIdx = methodDefinition.Body.Variables.Count - 1;
+            // uint methodHash;
+            methodDefinition.Body.Variables.Add(new VariableDefinition(typeSystem.UInt32));
+            int methodHashLocIdx = methodDefinition.Body.Variables.Count - 1;
+            // XXXRpcParams
+            if (!hasRpcParams) methodDefinition.Body.Variables.Add(new VariableDefinition(isServerRpc ? ServerRpcParams_TypeRef : ClientRpcParams_TypeRef));
+            int rpcParamsIdx = !hasRpcParams ? methodDefinition.Body.Variables.Count - 1 : -1;
 
             {
                 var returnInstr = processor.Create(OpCodes.Ret);
                 var lastInstr = processor.Create(OpCodes.Nop);
 
-                // networkManager = this.NetManager;
+                // networkManager = this.NetworkManager;
                 instructions.Add(processor.Create(OpCodes.Ldarg_0));
-                instructions.Add(processor.Create(OpCodes.Call, NetworkBehaviour_getNetManager_MethodRef));
+                instructions.Add(processor.Create(OpCodes.Call, NetworkBehaviour_getNetworkManager_MethodRef));
                 instructions.Add(processor.Create(OpCodes.Stloc, netManLocIdx));
 
                 // if (networkManager == null || !networkManager.IsListening) return;
@@ -641,7 +569,7 @@ namespace MLAPI.Editor.CodeGen
                 instructions.Add(processor.Create(OpCodes.Ldarg_0));
                 instructions.Add(processor.Create(OpCodes.Ldfld, NetworkBehaviour_nexec_FieldRef));
 #pragma warning disable 618
-                instructions.Add(processor.Create(OpCodes.Ldc_I4, (int)(isServerRpc ? NetworkedBehaviour.__NExec.Server : NetworkedBehaviour.__NExec.Client)));
+                instructions.Add(processor.Create(OpCodes.Ldc_I4, (int)(isServerRpc ? NetworkBehaviour.__NExec.Server : NetworkBehaviour.__NExec.Client)));
 #pragma warning restore 618
                 instructions.Add(processor.Create(OpCodes.Ceq));
                 instructions.Add(processor.Create(OpCodes.Ldc_I4, 0));
@@ -659,278 +587,840 @@ namespace MLAPI.Editor.CodeGen
 
                 instructions.Add(beginInstr);
 
-                // var writer = BeginSendServerRpc(sendParams, isReliable) -> ServerRpc
-                // var writer = BeginSendClientRpc(sendParams, isReliable) -> ClientRpc
+                // var serializer = BeginSendServerRpc(serverRpcParams, rpcDelivery) -> ServerRpc
+                // var serializer = BeginSendClientRpc(clientRpcParams, rpcDelivery) -> ClientRpc
                 if (isServerRpc)
                 {
                     // ServerRpc
-                    // var writer = BeginSendServerRpc(sendParams, isReliable);
+
+                    if (requireOwnership)
+                    {
+                        var roReturnInstr = processor.Create(OpCodes.Ret);
+                        var roLastInstr = processor.Create(OpCodes.Nop);
+
+                        // if (this.OwnerClientId != networkManager.LocalClientId) return;
+                        instructions.Add(processor.Create(OpCodes.Ldarg_0));
+                        instructions.Add(processor.Create(OpCodes.Call, NetworkBehaviour_getOwnerClientId_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Ldloc, netManLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkManager_getLocalClientId_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Ceq));
+                        instructions.Add(processor.Create(OpCodes.Ldc_I4, 0));
+                        instructions.Add(processor.Create(OpCodes.Ceq));
+                        instructions.Add(processor.Create(OpCodes.Brfalse, roLastInstr));
+
+                        instructions.Add(roReturnInstr);
+                        instructions.Add(roLastInstr);
+                    }
+
+                    // var serializer = BeginSendServerRpc(serverRpcParams, rpcDelivery);
                     instructions.Add(processor.Create(OpCodes.Ldarg_0));
 
-                    if (hasRpcParams)
-                    {
-                        // rpcParams.Send
-                        instructions.Add(processor.Create(OpCodes.Ldarg, paramCount));
-                        instructions.Add(processor.Create(OpCodes.Ldfld, ServerRpcParams_Send_FieldRef));
-                    }
-                    else
-                    {
-                        // default
-                        instructions.Add(processor.Create(OpCodes.Ldloca, sendParamsIdx));
-                        instructions.Add(processor.Create(OpCodes.Initobj, ServerRpcSendParams_TypeRef));
-                        instructions.Add(processor.Create(OpCodes.Ldloc, sendParamsIdx));
-                    }
+                    // rpcParams
+                    instructions.Add(hasRpcParams ? processor.Create(OpCodes.Ldarg, paramCount) : processor.Create(OpCodes.Ldloc, rpcParamsIdx));
 
-                    // isReliable
-                    instructions.Add(processor.Create(isReliableRpc ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0));
+                    // rpcDelivery
+                    instructions.Add(processor.Create(OpCodes.Ldc_I4, (int)rpcDelivery));
 
                     // BeginSendServerRpc
                     instructions.Add(processor.Create(OpCodes.Call, NetworkBehaviour_BeginSendServerRpc_MethodRef));
-                    instructions.Add(processor.Create(OpCodes.Stloc, writerLocIdx));
+                    instructions.Add(processor.Create(OpCodes.Stloc, serializerLocIdx));
                 }
                 else
                 {
                     // ClientRpc
-                    // var writer = BeginSendClientRpc(sendParams, isReliable);
+                    // var serializer = BeginSendClientRpc(clientRpcParams, rpcDelivery);
                     instructions.Add(processor.Create(OpCodes.Ldarg_0));
 
-                    if (hasRpcParams)
-                    {
-                        // rpcParams.Send
-                        instructions.Add(processor.Create(OpCodes.Ldarg, paramCount));
-                        instructions.Add(processor.Create(OpCodes.Ldfld, ClientRpcParams_Send_FieldRef));
-                    }
-                    else
-                    {
-                        // default
-                        instructions.Add(processor.Create(OpCodes.Ldloca, sendParamsIdx));
-                        instructions.Add(processor.Create(OpCodes.Initobj, ClientRpcSendParams_TypeRef));
-                        instructions.Add(processor.Create(OpCodes.Ldloc, sendParamsIdx));
-                    }
+                    // rpcParams
+                    instructions.Add(hasRpcParams ? processor.Create(OpCodes.Ldarg, paramCount) : processor.Create(OpCodes.Ldloc, rpcParamsIdx));
 
-                    // isReliable
-                    instructions.Add(processor.Create(isReliableRpc ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0));
+                    // rpcDelivery
+                    instructions.Add(processor.Create(OpCodes.Ldc_I4, (int)rpcDelivery));
 
                     // BeginSendClientRpc
                     instructions.Add(processor.Create(OpCodes.Call, NetworkBehaviour_BeginSendClientRpc_MethodRef));
-                    instructions.Add(processor.Create(OpCodes.Stloc, writerLocIdx));
+                    instructions.Add(processor.Create(OpCodes.Stloc, serializerLocIdx));
                 }
 
-                // if (writer != null)
-                instructions.Add(processor.Create(OpCodes.Ldloc, writerLocIdx));
+                // if (serializer != null)
+                instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                 instructions.Add(processor.Create(OpCodes.Brfalse, endInstr));
 
-                // writer.WriteUInt32Packed(123123); // NetworkMethodId
-                instructions.Add(processor.Create(OpCodes.Ldloc, writerLocIdx));
+                // methodHash = methodDefHash
                 instructions.Add(processor.Create(OpCodes.Ldc_I4, unchecked((int)methodDefHash)));
-                instructions.Add(processor.Create(OpCodes.Callvirt, BitWriter_WriteUInt32Packed_MethodRef));
+                instructions.Add(processor.Create(OpCodes.Stloc, methodHashLocIdx));
+                // serializer.Serialize(ref methodHash); // NetworkMethodId
+                instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                instructions.Add(processor.Create(OpCodes.Ldloca, methodHashLocIdx));
+                instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeUint_MethodRef));
+
                 // write method parameters into stream
                 for (int paramIndex = 0; paramIndex < paramCount; ++paramIndex)
                 {
                     var paramDef = methodDefinition.Parameters[paramIndex];
                     var paramType = paramDef.ParameterType;
 
+                    // C# primitives (+arrays)
+
                     if (paramType == typeSystem.Boolean)
                     {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, writerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitWriter_WriteBool_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeBool_MethodRef));
+                        continue;
+                    }
+
+                    if (paramType.IsArray && paramType.GetElementType() == typeSystem.Boolean)
+                    {
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeBoolArray_MethodRef));
                         continue;
                     }
 
                     if (paramType == typeSystem.Char)
                     {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, writerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitWriter_WriteChar_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeChar_MethodRef));
+                        continue;
+                    }
+
+                    if (paramType.IsArray && paramType.GetElementType() == typeSystem.Char)
+                    {
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeCharArray_MethodRef));
                         continue;
                     }
 
                     if (paramType == typeSystem.SByte)
                     {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, writerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitWriter_WriteSByte_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeSbyte_MethodRef));
+                        continue;
+                    }
+
+                    if (paramType.IsArray && paramType.GetElementType() == typeSystem.SByte)
+                    {
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeSbyteArray_MethodRef));
                         continue;
                     }
 
                     if (paramType == typeSystem.Byte)
                     {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, writerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitWriter_WriteByte_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeByte_MethodRef));
+                        continue;
+                    }
+
+                    if (paramType.IsArray && paramType.GetElementType() == typeSystem.Byte)
+                    {
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeByteArray_MethodRef));
                         continue;
                     }
 
                     if (paramType == typeSystem.Int16)
                     {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, writerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitWriter_WriteInt16Packed_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeShort_MethodRef));
+                        continue;
+                    }
+
+                    if (paramType.IsArray && paramType.GetElementType() == typeSystem.Int16)
+                    {
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeShortArray_MethodRef));
                         continue;
                     }
 
                     if (paramType == typeSystem.UInt16)
                     {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, writerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitWriter_WriteUInt16Packed_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeUshort_MethodRef));
+                        continue;
+                    }
+
+                    if (paramType.IsArray && paramType.GetElementType() == typeSystem.UInt16)
+                    {
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeUshortArray_MethodRef));
                         continue;
                     }
 
                     if (paramType == typeSystem.Int32)
                     {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, writerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitWriter_WriteInt32Packed_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeInt_MethodRef));
+                        continue;
+                    }
+
+                    if (paramType.IsArray && paramType.GetElementType() == typeSystem.Int32)
+                    {
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeIntArray_MethodRef));
                         continue;
                     }
 
                     if (paramType == typeSystem.UInt32)
                     {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, writerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitWriter_WriteUInt32Packed_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeUint_MethodRef));
+                        continue;
+                    }
+
+                    if (paramType.IsArray && paramType.GetElementType() == typeSystem.UInt32)
+                    {
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeUintArray_MethodRef));
                         continue;
                     }
 
                     if (paramType == typeSystem.Int64)
                     {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, writerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitWriter_WriteInt64Packed_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeLong_MethodRef));
+                        continue;
+                    }
+
+                    if (paramType.IsArray && paramType.GetElementType() == typeSystem.Int64)
+                    {
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeLongArray_MethodRef));
                         continue;
                     }
 
                     if (paramType == typeSystem.UInt64)
                     {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, writerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitWriter_WriteUInt64Packed_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeUlong_MethodRef));
+                        continue;
+                    }
+
+                    if (paramType.IsArray && paramType.GetElementType() == typeSystem.UInt64)
+                    {
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeUlongArray_MethodRef));
                         continue;
                     }
 
                     if (paramType == typeSystem.Single)
                     {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, writerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitWriter_WriteSinglePacked_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeFloat_MethodRef));
+                        continue;
+                    }
+
+                    if (paramType.IsArray && paramType.GetElementType() == typeSystem.Single)
+                    {
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeFloatArray_MethodRef));
                         continue;
                     }
 
                     if (paramType == typeSystem.Double)
                     {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, writerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitWriter_WriteDoublePacked_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeDouble_MethodRef));
+                        continue;
+                    }
+
+                    if (paramType.IsArray && paramType.GetElementType() == typeSystem.Double)
+                    {
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeDoubleArray_MethodRef));
                         continue;
                     }
 
                     if (paramType == typeSystem.String)
                     {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, writerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitWriter_WriteStringPacked_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeString_MethodRef));
                         continue;
                     }
 
+                    if (paramType.IsArray && paramType.GetElementType() == typeSystem.String)
+                    {
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeStringArray_MethodRef));
+                        continue;
+                    }
+
+                    // Unity primitives (+arrays)
+
                     if (paramType.FullName == CodeGenHelpers.UnityColor_FullName)
                     {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, writerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitWriter_WriteColorPacked_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeColor_MethodRef));
+                        continue;
+                    }
+
+                    if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.UnityColor_FullName)
+                    {
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeColorArray_MethodRef));
+                        continue;
+                    }
+
+                    if (paramType.FullName == CodeGenHelpers.UnityColor32_FullName)
+                    {
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeColor32_MethodRef));
+                        continue;
+                    }
+
+                    if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.UnityColor32_FullName)
+                    {
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeColor32Array_MethodRef));
                         continue;
                     }
 
                     if (paramType.FullName == CodeGenHelpers.UnityVector2_FullName)
                     {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, writerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitWriter_WriteVector2Packed_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeVector2_MethodRef));
+                        continue;
+                    }
+
+                    if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.UnityVector2_FullName)
+                    {
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeVector2Array_MethodRef));
                         continue;
                     }
 
                     if (paramType.FullName == CodeGenHelpers.UnityVector3_FullName)
                     {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, writerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitWriter_WriteVector3Packed_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeVector3_MethodRef));
+                        continue;
+                    }
+
+                    if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.UnityVector3_FullName)
+                    {
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeVector3Array_MethodRef));
                         continue;
                     }
 
                     if (paramType.FullName == CodeGenHelpers.UnityVector4_FullName)
                     {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, writerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitWriter_WriteVector4Packed_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeVector4_MethodRef));
+                        continue;
+                    }
+
+                    if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.UnityVector4_FullName)
+                    {
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeVector4Array_MethodRef));
                         continue;
                     }
 
                     if (paramType.FullName == CodeGenHelpers.UnityQuaternion_FullName)
                     {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, writerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitWriter_WriteRotationPacked_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeQuaternion_MethodRef));
+                        continue;
+                    }
+
+                    if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.UnityQuaternion_FullName)
+                    {
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeQuaternionArray_MethodRef));
                         continue;
                     }
 
                     if (paramType.FullName == CodeGenHelpers.UnityRay_FullName)
                     {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, writerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitWriter_WriteRayPacked_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeRay_MethodRef));
+                        continue;
+                    }
+
+                    if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.UnityRay_FullName)
+                    {
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeRayArray_MethodRef));
                         continue;
                     }
 
                     if (paramType.FullName == CodeGenHelpers.UnityRay2D_FullName)
                     {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, writerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitWriter_WriteRay2DPacked_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeRay2D_MethodRef));
                         continue;
                     }
 
+                    if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.UnityRay2D_FullName)
+                    {
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeRay2DArray_MethodRef));
+                        continue;
+                    }
+
+                    // Enum
+
+                    {
+                        var paramEnumIntType = paramType.GetEnumAsInt();
+                        if (paramEnumIntType != null)
+                        {
+                            if (paramEnumIntType == typeSystem.Int32)
+                            {
+                                methodDefinition.Body.Variables.Add(new VariableDefinition(typeSystem.Int32));
+                                int localIndex = methodDefinition.Body.Variables.Count - 1;
+
+                                instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
+                                instructions.Add(processor.Create(OpCodes.Stloc, localIndex));
+
+                                instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                                instructions.Add(processor.Create(OpCodes.Ldloca, localIndex));
+                                instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeInt_MethodRef));
+                                continue;
+                            }
+
+                            if (paramEnumIntType == typeSystem.UInt32)
+                            {
+                                methodDefinition.Body.Variables.Add(new VariableDefinition(typeSystem.UInt32));
+                                int localIndex = methodDefinition.Body.Variables.Count - 1;
+
+                                instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
+                                instructions.Add(processor.Create(OpCodes.Stloc, localIndex));
+
+                                instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                                instructions.Add(processor.Create(OpCodes.Ldloca, localIndex));
+                                instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeUint_MethodRef));
+                                continue;
+                            }
+
+                            if (paramEnumIntType == typeSystem.Byte)
+                            {
+                                methodDefinition.Body.Variables.Add(new VariableDefinition(typeSystem.Byte));
+                                int localIndex = methodDefinition.Body.Variables.Count - 1;
+
+                                instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
+                                instructions.Add(processor.Create(OpCodes.Stloc, localIndex));
+
+                                instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                                instructions.Add(processor.Create(OpCodes.Ldloca, localIndex));
+                                instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeByte_MethodRef));
+                                continue;
+                            }
+
+                            if (paramEnumIntType == typeSystem.SByte)
+                            {
+                                methodDefinition.Body.Variables.Add(new VariableDefinition(typeSystem.SByte));
+                                int localIndex = methodDefinition.Body.Variables.Count - 1;
+
+                                instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
+                                instructions.Add(processor.Create(OpCodes.Stloc, localIndex));
+
+                                instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                                instructions.Add(processor.Create(OpCodes.Ldloca, localIndex));
+                                instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeSbyte_MethodRef));
+                                continue;
+                            }
+
+                            if (paramEnumIntType == typeSystem.Int16)
+                            {
+                                methodDefinition.Body.Variables.Add(new VariableDefinition(typeSystem.Int16));
+                                int localIndex = methodDefinition.Body.Variables.Count - 1;
+
+                                instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
+                                instructions.Add(processor.Create(OpCodes.Stloc, localIndex));
+
+                                instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                                instructions.Add(processor.Create(OpCodes.Ldloca, localIndex));
+                                instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeShort_MethodRef));
+                                continue;
+                            }
+
+                            if (paramEnumIntType == typeSystem.UInt16)
+                            {
+                                methodDefinition.Body.Variables.Add(new VariableDefinition(typeSystem.UInt16));
+                                int localIndex = methodDefinition.Body.Variables.Count - 1;
+
+                                instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
+                                instructions.Add(processor.Create(OpCodes.Stloc, localIndex));
+
+                                instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                                instructions.Add(processor.Create(OpCodes.Ldloca, localIndex));
+                                instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeUshort_MethodRef));
+                                continue;
+                            }
+
+                            if (paramEnumIntType == typeSystem.Int64)
+                            {
+                                methodDefinition.Body.Variables.Add(new VariableDefinition(typeSystem.Int64));
+                                int localIndex = methodDefinition.Body.Variables.Count - 1;
+
+                                instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
+                                instructions.Add(processor.Create(OpCodes.Stloc, localIndex));
+
+                                instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                                instructions.Add(processor.Create(OpCodes.Ldloca, localIndex));
+                                instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeLong_MethodRef));
+                                continue;
+                            }
+
+                            if (paramEnumIntType == typeSystem.UInt64)
+                            {
+                                methodDefinition.Body.Variables.Add(new VariableDefinition(typeSystem.UInt64));
+                                int localIndex = methodDefinition.Body.Variables.Count - 1;
+
+                                instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
+                                instructions.Add(processor.Create(OpCodes.Stloc, localIndex));
+
+                                instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                                instructions.Add(processor.Create(OpCodes.Ldloca, localIndex));
+                                instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeUlong_MethodRef));
+                                continue;
+                            }
+                        }
+                    }
+
+                    // Enum array
+
+                    if (paramType.IsArray)
+                    {
+                        var paramElemEnumIntType = paramType.GetElementType().GetEnumAsInt();
+                        if (paramElemEnumIntType != null)
+                        {
+                            methodDefinition.Body.Variables.Add(new VariableDefinition(typeSystem.Int32));
+                            int arrLenLocalIndex = methodDefinition.Body.Variables.Count - 1;
+
+                            var endifInstr = processor.Create(OpCodes.Nop);
+                            var arrLenInstr = processor.Create(OpCodes.Nop);
+
+                            instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
+                            instructions.Add(processor.Create(OpCodes.Brtrue, arrLenInstr));
+                            instructions.Add(processor.Create(OpCodes.Ldc_I4_M1));
+                            instructions.Add(processor.Create(OpCodes.Br, endifInstr));
+                            instructions.Add(arrLenInstr);
+                            instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
+                            instructions.Add(processor.Create(OpCodes.Ldlen));
+                            instructions.Add(processor.Create(OpCodes.Conv_I4));
+                            instructions.Add(endifInstr);
+                            instructions.Add(processor.Create(OpCodes.Stloc, arrLenLocalIndex));
+
+                            instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                            instructions.Add(processor.Create(OpCodes.Ldloca, arrLenLocalIndex));
+                            instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeInt_MethodRef));
+
+                            methodDefinition.Body.Variables.Add(new VariableDefinition(typeSystem.Int32));
+                            int counterLocalIndex = methodDefinition.Body.Variables.Count - 1;
+
+                            var forBodyInstr = processor.Create(OpCodes.Nop);
+                            var forCheckInstr = processor.Create(OpCodes.Nop);
+
+                            instructions.Add(processor.Create(OpCodes.Ldc_I4_0));
+                            instructions.Add(processor.Create(OpCodes.Stloc, counterLocalIndex));
+                            instructions.Add(processor.Create(OpCodes.Br, forCheckInstr));
+                            instructions.Add(forBodyInstr);
+
+                            if (paramElemEnumIntType == typeSystem.Int32)
+                            {
+                                methodDefinition.Body.Variables.Add(new VariableDefinition(typeSystem.Int32));
+                                int enumValLocalIndex = methodDefinition.Body.Variables.Count - 1;
+
+                                instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
+                                instructions.Add(processor.Create(OpCodes.Ldloc, counterLocalIndex));
+                                instructions.Add(processor.Create(OpCodes.Ldelem_I4));
+                                instructions.Add(processor.Create(OpCodes.Stloc, enumValLocalIndex));
+
+                                instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                                instructions.Add(processor.Create(OpCodes.Ldloca, enumValLocalIndex));
+                                instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeInt_MethodRef));
+                            }
+                            else if (paramElemEnumIntType == typeSystem.UInt32)
+                            {
+                                methodDefinition.Body.Variables.Add(new VariableDefinition(typeSystem.UInt32));
+                                int enumValLocalIndex = methodDefinition.Body.Variables.Count - 1;
+
+                                instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
+                                instructions.Add(processor.Create(OpCodes.Ldloc, counterLocalIndex));
+                                instructions.Add(processor.Create(OpCodes.Ldelem_U4));
+                                instructions.Add(processor.Create(OpCodes.Stloc, enumValLocalIndex));
+
+                                instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                                instructions.Add(processor.Create(OpCodes.Ldloca, enumValLocalIndex));
+                                instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeUint_MethodRef));
+                            }
+                            else if (paramElemEnumIntType == typeSystem.Byte)
+                            {
+                                methodDefinition.Body.Variables.Add(new VariableDefinition(typeSystem.Byte));
+                                int enumValLocalIndex = methodDefinition.Body.Variables.Count - 1;
+
+                                instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
+                                instructions.Add(processor.Create(OpCodes.Ldloc, counterLocalIndex));
+                                instructions.Add(processor.Create(OpCodes.Ldelem_U1));
+                                instructions.Add(processor.Create(OpCodes.Stloc, enumValLocalIndex));
+
+                                instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                                instructions.Add(processor.Create(OpCodes.Ldloca, enumValLocalIndex));
+                                instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeByte_MethodRef));
+                            }
+                            else if (paramElemEnumIntType == typeSystem.SByte)
+                            {
+                                methodDefinition.Body.Variables.Add(new VariableDefinition(typeSystem.SByte));
+                                int enumValLocalIndex = methodDefinition.Body.Variables.Count - 1;
+
+                                instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
+                                instructions.Add(processor.Create(OpCodes.Ldloc, counterLocalIndex));
+                                instructions.Add(processor.Create(OpCodes.Ldelem_I1));
+                                instructions.Add(processor.Create(OpCodes.Stloc, enumValLocalIndex));
+
+                                instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                                instructions.Add(processor.Create(OpCodes.Ldloca, enumValLocalIndex));
+                                instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeSbyte_MethodRef));
+                            }
+                            else if (paramElemEnumIntType == typeSystem.Int16)
+                            {
+                                methodDefinition.Body.Variables.Add(new VariableDefinition(typeSystem.Int16));
+                                int enumValLocalIndex = methodDefinition.Body.Variables.Count - 1;
+
+                                instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
+                                instructions.Add(processor.Create(OpCodes.Ldloc, counterLocalIndex));
+                                instructions.Add(processor.Create(OpCodes.Ldelem_I2));
+                                instructions.Add(processor.Create(OpCodes.Stloc, enumValLocalIndex));
+
+                                instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                                instructions.Add(processor.Create(OpCodes.Ldloca, enumValLocalIndex));
+                                instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeShort_MethodRef));
+                            }
+                            else if (paramElemEnumIntType == typeSystem.UInt16)
+                            {
+                                methodDefinition.Body.Variables.Add(new VariableDefinition(typeSystem.UInt16));
+                                int enumValLocalIndex = methodDefinition.Body.Variables.Count - 1;
+
+                                instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
+                                instructions.Add(processor.Create(OpCodes.Ldloc, counterLocalIndex));
+                                instructions.Add(processor.Create(OpCodes.Ldelem_U2));
+                                instructions.Add(processor.Create(OpCodes.Stloc, enumValLocalIndex));
+
+                                instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                                instructions.Add(processor.Create(OpCodes.Ldloca, enumValLocalIndex));
+                                instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeUshort_MethodRef));
+                            }
+                            else if (paramElemEnumIntType == typeSystem.Int64)
+                            {
+                                methodDefinition.Body.Variables.Add(new VariableDefinition(typeSystem.Int64));
+                                int enumValLocalIndex = methodDefinition.Body.Variables.Count - 1;
+
+                                instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
+                                instructions.Add(processor.Create(OpCodes.Ldloc, counterLocalIndex));
+                                instructions.Add(processor.Create(OpCodes.Ldelem_I8));
+                                instructions.Add(processor.Create(OpCodes.Stloc, enumValLocalIndex));
+
+                                instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                                instructions.Add(processor.Create(OpCodes.Ldloca, enumValLocalIndex));
+                                instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeLong_MethodRef));
+                            }
+                            else if (paramElemEnumIntType == typeSystem.UInt64)
+                            {
+                                methodDefinition.Body.Variables.Add(new VariableDefinition(typeSystem.UInt64));
+                                int enumValLocalIndex = methodDefinition.Body.Variables.Count - 1;
+
+                                instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
+                                instructions.Add(processor.Create(OpCodes.Ldloc, counterLocalIndex));
+                                instructions.Add(processor.Create(OpCodes.Ldelem_I8));
+                                instructions.Add(processor.Create(OpCodes.Stloc, enumValLocalIndex));
+
+                                instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                                instructions.Add(processor.Create(OpCodes.Ldloca, enumValLocalIndex));
+                                instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeUlong_MethodRef));
+                            }
+
+                            instructions.Add(processor.Create(OpCodes.Ldloc, counterLocalIndex));
+                            instructions.Add(processor.Create(OpCodes.Ldc_I4_1));
+                            instructions.Add(processor.Create(OpCodes.Add));
+                            instructions.Add(processor.Create(OpCodes.Stloc, counterLocalIndex));
+                            instructions.Add(forCheckInstr);
+                            instructions.Add(processor.Create(OpCodes.Ldloc, counterLocalIndex));
+                            instructions.Add(processor.Create(OpCodes.Ldloc, arrLenLocalIndex));
+                            instructions.Add(processor.Create(OpCodes.Clt));
+                            instructions.Add(processor.Create(OpCodes.Brtrue, forBodyInstr));
+
+                            continue;
+                        }
+                    }
+
                     // INetworkSerializable
+
                     if (paramType.HasInterface(CodeGenHelpers.INetworkSerializable_FullName))
                     {
                         var paramTypeDef = paramType.Resolve();
-                        var paramTypeNetworkWrite_MethodDef = paramTypeDef.Methods.FirstOrDefault(m => m.Name == CodeGenHelpers.INetworkSerializable_NetworkWrite_Name);
-                        if (paramTypeNetworkWrite_MethodDef != null)
+                        var paramTypeNetworkSerialize_MethodDef = paramTypeDef.Methods.FirstOrDefault(m => m.Name == CodeGenHelpers.INetworkSerializable_NetworkSerialize_Name);
+                        if (paramTypeNetworkSerialize_MethodDef != null)
                         {
                             if (paramType.IsValueType)
                             {
                                 // struct (pass by value)
                                 instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                                instructions.Add(processor.Create(OpCodes.Ldloc, writerLocIdx));
-                                instructions.Add(processor.Create(OpCodes.Call, paramTypeNetworkWrite_MethodDef));
+                                instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                                instructions.Add(processor.Create(OpCodes.Call, paramTypeNetworkSerialize_MethodDef));
                             }
                             else
                             {
                                 // class (pass by reference)
+                                methodDefinition.Body.Variables.Add(new VariableDefinition(typeSystem.Boolean));
+                                int isSetLocalIndex = methodDefinition.Body.Variables.Count - 1;
+
                                 instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
-                                instructions.Add(processor.Create(OpCodes.Ldloc, writerLocIdx));
-                                instructions.Add(processor.Create(OpCodes.Callvirt, paramTypeNetworkWrite_MethodDef));
+                                instructions.Add(processor.Create(OpCodes.Ldnull));
+                                instructions.Add(processor.Create(OpCodes.Cgt_Un));
+                                instructions.Add(processor.Create(OpCodes.Stloc, isSetLocalIndex));
+
+                                instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                                instructions.Add(processor.Create(OpCodes.Ldloca, isSetLocalIndex));
+                                instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeBool_MethodRef));
+
+                                var notSetInstr = processor.Create(OpCodes.Nop);
+
+                                instructions.Add(processor.Create(OpCodes.Ldloc, isSetLocalIndex));
+                                instructions.Add(processor.Create(OpCodes.Brfalse, notSetInstr));
+
+                                instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
+                                instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                                instructions.Add(processor.Create(OpCodes.Callvirt, paramTypeNetworkSerialize_MethodDef));
+
+                                instructions.Add(notSetInstr);
                             }
 
                             continue;
                         }
                     }
 
-                    // Enum
+                    // INetworkSerializable[]
+                    if (paramType.IsArray && paramType.GetElementType().HasInterface(CodeGenHelpers.INetworkSerializable_FullName))
                     {
-                        var paramEnumType = paramType.GetEnumAsInt();
-                        if (paramEnumType != null)
+                        var paramElemType = paramType.GetElementType();
+                        var paramElemTypeDef = paramElemType.Resolve();
+                        var paramElemNetworkSerialize_MethodDef = paramElemTypeDef.Methods.FirstOrDefault(m => m.Name == CodeGenHelpers.INetworkSerializable_NetworkSerialize_Name);
+                        if (paramElemNetworkSerialize_MethodDef != null)
                         {
-                            instructions.Add(processor.Create(OpCodes.Ldloc, writerLocIdx));
+                            methodDefinition.Body.Variables.Add(new VariableDefinition(typeSystem.Int32));
+                            int arrLenLocalIndex = methodDefinition.Body.Variables.Count - 1;
+
+                            var endifInstr = processor.Create(OpCodes.Nop);
+                            var arrLenInstr = processor.Create(OpCodes.Nop);
+
                             instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
-                            if (paramEnumType == typeSystem.SByte) instructions.Add(processor.Create(OpCodes.Callvirt, BitWriter_WriteSByte_MethodRef));
-                            if (paramEnumType == typeSystem.Byte) instructions.Add(processor.Create(OpCodes.Callvirt, BitWriter_WriteByte_MethodRef));
-                            if (paramEnumType == typeSystem.Int16) instructions.Add(processor.Create(OpCodes.Callvirt, BitWriter_WriteInt16Packed_MethodRef));
-                            if (paramEnumType == typeSystem.UInt16) instructions.Add(processor.Create(OpCodes.Callvirt, BitWriter_WriteUInt16Packed_MethodRef));
-                            if (paramEnumType == typeSystem.Int32) instructions.Add(processor.Create(OpCodes.Callvirt, BitWriter_WriteInt32Packed_MethodRef));
-                            if (paramEnumType == typeSystem.UInt32) instructions.Add(processor.Create(OpCodes.Callvirt, BitWriter_WriteUInt32Packed_MethodRef));
-                            if (paramEnumType == typeSystem.Int64) instructions.Add(processor.Create(OpCodes.Callvirt, BitWriter_WriteInt64Packed_MethodRef));
-                            if (paramEnumType == typeSystem.UInt64) instructions.Add(processor.Create(OpCodes.Callvirt, BitWriter_WriteUInt64Packed_MethodRef));
+                            instructions.Add(processor.Create(OpCodes.Brtrue, arrLenInstr));
+                            instructions.Add(processor.Create(OpCodes.Ldc_I4_M1));
+                            instructions.Add(processor.Create(OpCodes.Br, endifInstr));
+                            instructions.Add(arrLenInstr);
+                            instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
+                            instructions.Add(processor.Create(OpCodes.Ldlen));
+                            instructions.Add(processor.Create(OpCodes.Conv_I4));
+                            instructions.Add(endifInstr);
+                            instructions.Add(processor.Create(OpCodes.Stloc, arrLenLocalIndex));
+
+                            instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                            instructions.Add(processor.Create(OpCodes.Ldloca, arrLenLocalIndex));
+                            instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeInt_MethodRef));
+
+                            methodDefinition.Body.Variables.Add(new VariableDefinition(typeSystem.Int32));
+                            int counterLocalIndex = methodDefinition.Body.Variables.Count - 1;
+
+                            var forBodyInstr = processor.Create(OpCodes.Nop);
+                            var forCheckInstr = processor.Create(OpCodes.Nop);
+
+                            instructions.Add(processor.Create(OpCodes.Ldc_I4_0));
+                            instructions.Add(processor.Create(OpCodes.Stloc, counterLocalIndex));
+                            instructions.Add(processor.Create(OpCodes.Br, forCheckInstr));
+                            instructions.Add(forBodyInstr);
+
+                            if (paramElemType.IsValueType)
+                            {
+                                // struct (pass by value)
+                                instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
+                                instructions.Add(processor.Create(OpCodes.Ldloc, counterLocalIndex));
+                                instructions.Add(processor.Create(OpCodes.Ldelema, paramElemType));
+                                instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                                instructions.Add(processor.Create(OpCodes.Call, paramElemNetworkSerialize_MethodDef));
+                            }
+                            else
+                            {
+                                // class (pass by reference)
+                                methodDefinition.Body.Variables.Add(new VariableDefinition(typeSystem.Boolean));
+                                int isSetLocalIndex = methodDefinition.Body.Variables.Count - 1;
+
+                                instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
+                                instructions.Add(processor.Create(OpCodes.Ldloc, counterLocalIndex));
+                                instructions.Add(processor.Create(OpCodes.Ldelem_Ref));
+                                instructions.Add(processor.Create(OpCodes.Ldnull));
+                                instructions.Add(processor.Create(OpCodes.Cgt_Un));
+                                instructions.Add(processor.Create(OpCodes.Stloc, isSetLocalIndex));
+
+                                instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                                instructions.Add(processor.Create(OpCodes.Ldloca, isSetLocalIndex));
+                                instructions.Add(processor.Create(OpCodes.Callvirt, NetworkSerializer_SerializeBool_MethodRef));
+
+                                var notSetInstr = processor.Create(OpCodes.Nop);
+
+                                instructions.Add(processor.Create(OpCodes.Ldloc, isSetLocalIndex));
+                                instructions.Add(processor.Create(OpCodes.Brfalse, notSetInstr));
+
+                                instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
+                                instructions.Add(processor.Create(OpCodes.Ldloc, counterLocalIndex));
+                                instructions.Add(processor.Create(OpCodes.Ldelem_Ref));
+                                instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                                instructions.Add(processor.Create(OpCodes.Callvirt, paramElemNetworkSerialize_MethodDef));
+
+                                instructions.Add(notSetInstr);
+                            }
+
+                            instructions.Add(processor.Create(OpCodes.Ldloc, counterLocalIndex));
+                            instructions.Add(processor.Create(OpCodes.Ldc_I4_1));
+                            instructions.Add(processor.Create(OpCodes.Add));
+                            instructions.Add(processor.Create(OpCodes.Stloc, counterLocalIndex));
+                            instructions.Add(forCheckInstr);
+                            instructions.Add(processor.Create(OpCodes.Ldloc, counterLocalIndex));
+                            instructions.Add(processor.Create(OpCodes.Ldloc, arrLenLocalIndex));
+                            instructions.Add(processor.Create(OpCodes.Clt));
+                            instructions.Add(processor.Create(OpCodes.Brtrue, forBodyInstr));
 
                             continue;
                         }
@@ -939,31 +1429,30 @@ namespace MLAPI.Editor.CodeGen
 
                 instructions.Add(endInstr);
 
-                // EndSendServerRpc(writer, sendParams, isReliable) -> ServerRpc
-                // EndSendClientRpc(writer, sendParams, isReliable) -> ClientRpc
+                // EndSendServerRpc(serializer, serverRpcParams, rpcDelivery) -> ServerRpc
+                // EndSendClientRpc(serializer, clientRpcParams, rpcDelivery) -> ClientRpc
                 if (isServerRpc)
                 {
                     // ServerRpc
-                    // EndSendServerRpc(writer, sendParams, isReliable);
+                    // EndSendServerRpc(serializer, serverRpcParams, rpcDelivery);
                     instructions.Add(processor.Create(OpCodes.Ldarg_0));
 
-                    // writer
-                    instructions.Add(processor.Create(OpCodes.Ldloc, writerLocIdx));
+                    // serializer
+                    instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
 
                     if (hasRpcParams)
                     {
-                        // rpcParams.Send
+                        // rpcParams
                         instructions.Add(processor.Create(OpCodes.Ldarg, paramCount));
-                        instructions.Add(processor.Create(OpCodes.Ldfld, ServerRpcParams_Send_FieldRef));
                     }
                     else
                     {
                         // default
-                        instructions.Add(processor.Create(OpCodes.Ldloc, sendParamsIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldloc, rpcParamsIdx));
                     }
 
-                    // isReliable
-                    instructions.Add(processor.Create(isReliableRpc ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0));
+                    // rpcDelivery
+                    instructions.Add(processor.Create(OpCodes.Ldc_I4, (int)rpcDelivery));
 
                     // EndSendServerRpc
                     instructions.Add(processor.Create(OpCodes.Call, NetworkBehaviour_EndSendServerRpc_MethodRef));
@@ -971,26 +1460,25 @@ namespace MLAPI.Editor.CodeGen
                 else
                 {
                     // ClientRpc
-                    // EndSendClientRpc(writer, sendParams, isReliable);
+                    // EndSendClientRpc(serializer, clientRpcParams, rpcDelivery);
                     instructions.Add(processor.Create(OpCodes.Ldarg_0));
 
-                    // writer
-                    instructions.Add(processor.Create(OpCodes.Ldloc, writerLocIdx));
+                    // serializer
+                    instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
 
                     if (hasRpcParams)
                     {
-                        // rpcParams.Send
+                        // rpcParams
                         instructions.Add(processor.Create(OpCodes.Ldarg, paramCount));
-                        instructions.Add(processor.Create(OpCodes.Ldfld, ClientRpcParams_Send_FieldRef));
                     }
                     else
                     {
                         // default
-                        instructions.Add(processor.Create(OpCodes.Ldloc, sendParamsIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldloc, rpcParamsIdx));
                     }
 
-                    // isReliable
-                    instructions.Add(processor.Create(isReliableRpc ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0));
+                    // rpcDelivery
+                    instructions.Add(processor.Create(OpCodes.Ldc_I4, (int)rpcDelivery));
 
                     // EndSendClientRpc
                     instructions.Add(processor.Create(OpCodes.Call, NetworkBehaviour_EndSendClientRpc_MethodRef));
@@ -1008,7 +1496,7 @@ namespace MLAPI.Editor.CodeGen
                 instructions.Add(processor.Create(OpCodes.Ldarg_0));
                 instructions.Add(processor.Create(OpCodes.Ldfld, NetworkBehaviour_nexec_FieldRef));
 #pragma warning disable 618
-                instructions.Add(processor.Create(OpCodes.Ldc_I4, (int)(isServerRpc ? NetworkedBehaviour.__NExec.Server : NetworkedBehaviour.__NExec.Client)));
+                instructions.Add(processor.Create(OpCodes.Ldc_I4, (int)(isServerRpc ? NetworkBehaviour.__NExec.Server : NetworkBehaviour.__NExec.Client)));
 #pragma warning restore 618
                 instructions.Add(processor.Create(OpCodes.Ceq));
                 instructions.Add(processor.Create(OpCodes.Brfalse, returnInstr));
@@ -1038,197 +1526,696 @@ namespace MLAPI.Editor.CodeGen
                 MethodAttributes.Private | MethodAttributes.Static | MethodAttributes.HideBySig,
                 methodDefinition.Module.TypeSystem.Void);
             nhandler.Parameters.Add(new ParameterDefinition("target", ParameterAttributes.None, NetworkBehaviour_TypeRef));
-            nhandler.Parameters.Add(new ParameterDefinition("reader", ParameterAttributes.None, BitReader_TypeRef));
-            nhandler.Parameters.Add(new ParameterDefinition("sender", ParameterAttributes.None, typeSystem.UInt64));
+            nhandler.Parameters.Add(new ParameterDefinition("serializer", ParameterAttributes.None, NetworkSerializer_TypeRef));
+            nhandler.Parameters.Add(new ParameterDefinition("rpcParams", ParameterAttributes.None, RpcParams_TypeRef));
 
             var processor = nhandler.Body.GetILProcessor();
             var isServerRpc = rpcAttribute.AttributeType.FullName == CodeGenHelpers.ServerRpcAttribute_FullName;
-
+            var requireOwnership = true; // default value MUST be = `ServerRpcAttribute.RequireOwnership`
+            foreach (var attrField in rpcAttribute.Fields)
+            {
+                switch (attrField.Name)
+                {
+                    case k_ServerRpcAttribute_RequireOwnership:
+                        requireOwnership = attrField.Argument.Type == typeSystem.Boolean && (bool)attrField.Argument.Value;
+                        break;
+                }
+            }
+            
             nhandler.Body.InitLocals = true;
+
+            if (isServerRpc && requireOwnership)
+            {
+                var roReturnInstr = processor.Create(OpCodes.Ret);
+                var roLastInstr = processor.Create(OpCodes.Nop);
+
+                // if (rpcParams.Server.Receive.SenderClientId != target.OwnerClientId) return;
+                processor.Emit(OpCodes.Ldarg_2);
+                processor.Emit(OpCodes.Ldfld, RpcParams_Server_FieldRef);
+                processor.Emit(OpCodes.Ldfld, ServerRpcParams_Receive_FieldRef);
+                processor.Emit(OpCodes.Ldfld, ServerRpcParams_Receive_SenderClientId_FieldRef);
+                processor.Emit(OpCodes.Ldarg_0);
+                processor.Emit(OpCodes.Call, NetworkBehaviour_getOwnerClientId_MethodRef);
+                processor.Emit(OpCodes.Ceq);
+                processor.Emit(OpCodes.Ldc_I4, 0);
+                processor.Emit(OpCodes.Ceq);
+                processor.Emit(OpCodes.Brfalse, roLastInstr);
+
+                processor.Append(roReturnInstr);
+                processor.Append(roLastInstr);
+            }
+
             // read method parameters from stream
             int paramCount = methodDefinition.Parameters.Count;
+            int[] paramLocalMap = new int[paramCount];
             for (int paramIndex = 0; paramIndex < paramCount; ++paramIndex)
             {
                 var paramDef = methodDefinition.Parameters[paramIndex];
                 var paramType = paramDef.ParameterType;
 
-                // local variable to storage argument
+                // local variable
                 nhandler.Body.Variables.Add(new VariableDefinition(paramType));
+                int localIndex = nhandler.Body.Variables.Count - 1;
+                paramLocalMap[paramIndex] = localIndex;
+
+                // C# primitives (+arrays)
 
                 if (paramType == typeSystem.Boolean)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Callvirt, BitReader_ReadBool_MethodRef);
-                    processor.Emit(OpCodes.Stloc, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeBool_MethodRef);
+                    continue;
+                }
+
+                if (paramType.IsArray && paramType.GetElementType() == typeSystem.Boolean)
+                {
+                    processor.Emit(OpCodes.Ldarg_1);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeBoolArray_MethodRef);
                     continue;
                 }
 
                 if (paramType == typeSystem.Char)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Callvirt, BitReader_ReadChar_MethodRef);
-                    processor.Emit(OpCodes.Stloc, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeChar_MethodRef);
+                    continue;
+                }
+
+                if (paramType.IsArray && paramType.GetElementType() == typeSystem.Char)
+                {
+                    processor.Emit(OpCodes.Ldarg_1);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeCharArray_MethodRef);
                     continue;
                 }
 
                 if (paramType == typeSystem.SByte)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Callvirt, BitReader_ReadSByte_MethodRef);
-                    processor.Emit(OpCodes.Stloc, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeSbyte_MethodRef);
+                    continue;
+                }
+
+                if (paramType.IsArray && paramType.GetElementType() == typeSystem.SByte)
+                {
+                    processor.Emit(OpCodes.Ldarg_1);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeSbyteArray_MethodRef);
                     continue;
                 }
 
                 if (paramType == typeSystem.Byte)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Callvirt, BitReader_ReadByte_MethodRef);
-                    processor.Emit(OpCodes.Stloc, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeByte_MethodRef);
+                    continue;
+                }
+
+                if (paramType.IsArray && paramType.GetElementType() == typeSystem.Byte)
+                {
+                    processor.Emit(OpCodes.Ldarg_1);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeByteArray_MethodRef);
                     continue;
                 }
 
                 if (paramType == typeSystem.Int16)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Callvirt, BitReader_ReadInt16Packed_MethodRef);
-                    processor.Emit(OpCodes.Stloc, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeShort_MethodRef);
+                    continue;
+                }
+
+                if (paramType.IsArray && paramType.GetElementType() == typeSystem.Int16)
+                {
+                    processor.Emit(OpCodes.Ldarg_1);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeShortArray_MethodRef);
                     continue;
                 }
 
                 if (paramType == typeSystem.UInt16)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Callvirt, BitReader_ReadUInt16Packed_MethodRef);
-                    processor.Emit(OpCodes.Stloc, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeUshort_MethodRef);
+                    continue;
+                }
+
+                if (paramType.IsArray && paramType.GetElementType() == typeSystem.UInt16)
+                {
+                    processor.Emit(OpCodes.Ldarg_1);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeUshortArray_MethodRef);
                     continue;
                 }
 
                 if (paramType == typeSystem.Int32)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Callvirt, BitReader_ReadInt32Packed_MethodRef);
-                    processor.Emit(OpCodes.Stloc, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeInt_MethodRef);
+                    continue;
+                }
+
+                if (paramType.IsArray && paramType.GetElementType() == typeSystem.Int32)
+                {
+                    processor.Emit(OpCodes.Ldarg_1);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeIntArray_MethodRef);
                     continue;
                 }
 
                 if (paramType == typeSystem.UInt32)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Callvirt, BitReader_ReadUInt32Packed_MethodRef);
-                    processor.Emit(OpCodes.Stloc, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeUint_MethodRef);
+                    continue;
+                }
+
+                if (paramType.IsArray && paramType.GetElementType() == typeSystem.UInt32)
+                {
+                    processor.Emit(OpCodes.Ldarg_1);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeUintArray_MethodRef);
                     continue;
                 }
 
                 if (paramType == typeSystem.Int64)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Callvirt, BitReader_ReadInt64Packed_MethodRef);
-                    processor.Emit(OpCodes.Stloc, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeLong_MethodRef);
+                    continue;
+                }
+
+                if (paramType.IsArray && paramType.GetElementType() == typeSystem.Int64)
+                {
+                    processor.Emit(OpCodes.Ldarg_1);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeLongArray_MethodRef);
                     continue;
                 }
 
                 if (paramType == typeSystem.UInt64)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Callvirt, BitReader_ReadUInt64Packed_MethodRef);
-                    processor.Emit(OpCodes.Stloc, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeUlong_MethodRef);
+                    continue;
+                }
+
+                if (paramType.IsArray && paramType.GetElementType() == typeSystem.UInt64)
+                {
+                    processor.Emit(OpCodes.Ldarg_1);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeUlongArray_MethodRef);
                     continue;
                 }
 
                 if (paramType == typeSystem.Single)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Callvirt, BitReader_ReadSinglePacked_MethodRef);
-                    processor.Emit(OpCodes.Stloc, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeFloat_MethodRef);
+                    continue;
+                }
+
+                if (paramType.IsArray && paramType.GetElementType() == typeSystem.Single)
+                {
+                    processor.Emit(OpCodes.Ldarg_1);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeFloatArray_MethodRef);
                     continue;
                 }
 
                 if (paramType == typeSystem.Double)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Callvirt, BitReader_ReadDoublePacked_MethodRef);
-                    processor.Emit(OpCodes.Stloc, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeDouble_MethodRef);
+                    continue;
+                }
+
+                if (paramType.IsArray && paramType.GetElementType() == typeSystem.Double)
+                {
+                    processor.Emit(OpCodes.Ldarg_1);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeDoubleArray_MethodRef);
                     continue;
                 }
 
                 if (paramType == typeSystem.String)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldnull);
-                    processor.Emit(OpCodes.Callvirt, BitReader_ReadStringPacked_MethodRef);
-                    processor.Emit(OpCodes.Stloc, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeString_MethodRef);
                     continue;
                 }
+
+                if (paramType.IsArray && paramType.GetElementType() == typeSystem.String)
+                {
+                    processor.Emit(OpCodes.Ldarg_1);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeStringArray_MethodRef);
+                    continue;
+                }
+
+                // Unity primitives (+arrays)
 
                 if (paramType.FullName == CodeGenHelpers.UnityColor_FullName)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Callvirt, BitReader_ReadColorPacked_MethodRef);
-                    processor.Emit(OpCodes.Stloc, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeColor_MethodRef);
+                    continue;
+                }
+
+                if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.UnityColor_FullName)
+                {
+                    processor.Emit(OpCodes.Ldarg_1);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeColorArray_MethodRef);
+                    continue;
+                }
+
+                if (paramType.FullName == CodeGenHelpers.UnityColor32_FullName)
+                {
+                    processor.Emit(OpCodes.Ldarg_1);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeColor32_MethodRef);
+                    continue;
+                }
+
+                if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.UnityColor32_FullName)
+                {
+                    processor.Emit(OpCodes.Ldarg_1);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeColor32Array_MethodRef);
                     continue;
                 }
 
                 if (paramType.FullName == CodeGenHelpers.UnityVector2_FullName)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Callvirt, BitReader_ReadVector2Packed_MethodRef);
-                    processor.Emit(OpCodes.Stloc, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeVector2_MethodRef);
+                    continue;
+                }
+
+                if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.UnityVector2_FullName)
+                {
+                    processor.Emit(OpCodes.Ldarg_1);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeVector2Array_MethodRef);
                     continue;
                 }
 
                 if (paramType.FullName == CodeGenHelpers.UnityVector3_FullName)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Callvirt, BitReader_ReadVector3Packed_MethodRef);
-                    processor.Emit(OpCodes.Stloc, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeVector3_MethodRef);
+                    continue;
+                }
+
+                if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.UnityVector3_FullName)
+                {
+                    processor.Emit(OpCodes.Ldarg_1);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeVector3Array_MethodRef);
                     continue;
                 }
 
                 if (paramType.FullName == CodeGenHelpers.UnityVector4_FullName)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Callvirt, BitReader_ReadVector4Packed_MethodRef);
-                    processor.Emit(OpCodes.Stloc, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeVector4_MethodRef);
+                    continue;
+                }
+
+                if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.UnityVector4_FullName)
+                {
+                    processor.Emit(OpCodes.Ldarg_1);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeVector4Array_MethodRef);
                     continue;
                 }
 
                 if (paramType.FullName == CodeGenHelpers.UnityQuaternion_FullName)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Callvirt, BitReader_ReadRotationPacked_MethodRef);
-                    processor.Emit(OpCodes.Stloc, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeQuaternion_MethodRef);
+                    continue;
+                }
+
+                if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.UnityQuaternion_FullName)
+                {
+                    processor.Emit(OpCodes.Ldarg_1);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeQuaternionArray_MethodRef);
                     continue;
                 }
 
                 if (paramType.FullName == CodeGenHelpers.UnityRay_FullName)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Callvirt, BitReader_ReadRayPacked_MethodRef);
-                    processor.Emit(OpCodes.Stloc, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeRay_MethodRef);
+                    continue;
+                }
+
+                if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.UnityRay_FullName)
+                {
+                    processor.Emit(OpCodes.Ldarg_1);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeRayArray_MethodRef);
                     continue;
                 }
 
                 if (paramType.FullName == CodeGenHelpers.UnityRay2D_FullName)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Callvirt, BitReader_ReadRay2DPacked_MethodRef);
-                    processor.Emit(OpCodes.Stloc, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeRay2D_MethodRef);
                     continue;
                 }
 
+                if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.UnityRay2D_FullName)
+                {
+                    processor.Emit(OpCodes.Ldarg_1);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
+                    processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeRay2DArray_MethodRef);
+                    continue;
+                }
+
+                // Enum
+
+                {
+                    var paramEnumIntType = paramType.GetEnumAsInt();
+                    if (paramEnumIntType != null)
+                    {
+                        if (paramEnumIntType == typeSystem.Int32)
+                        {
+                            nhandler.Body.Variables.Add(new VariableDefinition(typeSystem.Int32));
+                            int enumLocalIndex = nhandler.Body.Variables.Count - 1;
+
+                            processor.Emit(OpCodes.Ldarg_1);
+                            processor.Emit(OpCodes.Ldloca, enumLocalIndex);
+                            processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeInt_MethodRef);
+
+                            processor.Emit(OpCodes.Ldloc, enumLocalIndex);
+                            processor.Emit(OpCodes.Stloc, localIndex);
+                            continue;
+                        }
+
+                        if (paramEnumIntType == typeSystem.UInt32)
+                        {
+                            nhandler.Body.Variables.Add(new VariableDefinition(typeSystem.UInt32));
+                            int enumLocalIndex = nhandler.Body.Variables.Count - 1;
+
+                            processor.Emit(OpCodes.Ldarg_1);
+                            processor.Emit(OpCodes.Ldloca, enumLocalIndex);
+                            processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeUint_MethodRef);
+
+                            processor.Emit(OpCodes.Ldloc, enumLocalIndex);
+                            processor.Emit(OpCodes.Stloc, localIndex);
+                            continue;
+                        }
+
+                        if (paramEnumIntType == typeSystem.Byte)
+                        {
+                            nhandler.Body.Variables.Add(new VariableDefinition(typeSystem.Byte));
+                            int enumLocalIndex = nhandler.Body.Variables.Count - 1;
+
+                            processor.Emit(OpCodes.Ldarg_1);
+                            processor.Emit(OpCodes.Ldloca, enumLocalIndex);
+                            processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeByte_MethodRef);
+
+                            processor.Emit(OpCodes.Ldloc, enumLocalIndex);
+                            processor.Emit(OpCodes.Stloc, localIndex);
+                            continue;
+                        }
+
+                        if (paramEnumIntType == typeSystem.SByte)
+                        {
+                            nhandler.Body.Variables.Add(new VariableDefinition(typeSystem.SByte));
+                            int enumLocalIndex = nhandler.Body.Variables.Count - 1;
+
+                            processor.Emit(OpCodes.Ldarg_1);
+                            processor.Emit(OpCodes.Ldloca, enumLocalIndex);
+                            processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeSbyte_MethodRef);
+
+                            processor.Emit(OpCodes.Ldloc, enumLocalIndex);
+                            processor.Emit(OpCodes.Stloc, localIndex);
+                            continue;
+                        }
+
+                        if (paramEnumIntType == typeSystem.Int16)
+                        {
+                            nhandler.Body.Variables.Add(new VariableDefinition(typeSystem.Int16));
+                            int enumLocalIndex = nhandler.Body.Variables.Count - 1;
+
+                            processor.Emit(OpCodes.Ldarg_1);
+                            processor.Emit(OpCodes.Ldloca, enumLocalIndex);
+                            processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeShort_MethodRef);
+
+                            processor.Emit(OpCodes.Ldloc, enumLocalIndex);
+                            processor.Emit(OpCodes.Stloc, localIndex);
+                            continue;
+                        }
+
+                        if (paramEnumIntType == typeSystem.UInt16)
+                        {
+                            nhandler.Body.Variables.Add(new VariableDefinition(typeSystem.UInt16));
+                            int enumLocalIndex = nhandler.Body.Variables.Count - 1;
+
+                            processor.Emit(OpCodes.Ldarg_1);
+                            processor.Emit(OpCodes.Ldloca, enumLocalIndex);
+                            processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeUshort_MethodRef);
+
+                            processor.Emit(OpCodes.Ldloc, enumLocalIndex);
+                            processor.Emit(OpCodes.Stloc, localIndex);
+                            continue;
+                        }
+
+                        if (paramEnumIntType == typeSystem.Int64)
+                        {
+                            nhandler.Body.Variables.Add(new VariableDefinition(typeSystem.Int64));
+                            int enumLocalIndex = nhandler.Body.Variables.Count - 1;
+
+                            processor.Emit(OpCodes.Ldarg_1);
+                            processor.Emit(OpCodes.Ldloca, enumLocalIndex);
+                            processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeLong_MethodRef);
+
+                            processor.Emit(OpCodes.Ldloc, enumLocalIndex);
+                            processor.Emit(OpCodes.Stloc, localIndex);
+                            continue;
+                        }
+
+                        if (paramEnumIntType == typeSystem.UInt64)
+                        {
+                            nhandler.Body.Variables.Add(new VariableDefinition(typeSystem.UInt64));
+                            int enumLocalIndex = nhandler.Body.Variables.Count - 1;
+
+                            processor.Emit(OpCodes.Ldarg_1);
+                            processor.Emit(OpCodes.Ldloca, enumLocalIndex);
+                            processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeUlong_MethodRef);
+
+                            processor.Emit(OpCodes.Ldloc, enumLocalIndex);
+                            processor.Emit(OpCodes.Stloc, localIndex);
+                            continue;
+                        }
+                    }
+                }
+
+                // Enum array
+
+                if (paramType.IsArray)
+                {
+                    var paramElemEnumIntType = paramType.GetElementType().GetEnumAsInt();
+                    if (paramElemEnumIntType != null)
+                    {
+                        nhandler.Body.Variables.Add(new VariableDefinition(typeSystem.Int32));
+                        int arrLenLocalIndex = nhandler.Body.Variables.Count - 1;
+
+                        processor.Emit(OpCodes.Ldarg_1);
+                        processor.Emit(OpCodes.Ldloca, arrLenLocalIndex);
+                        processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeInt_MethodRef);
+
+                        var postForInstr = processor.Create(OpCodes.Nop);
+
+                        processor.Emit(OpCodes.Ldloc, arrLenLocalIndex);
+                        processor.Emit(OpCodes.Ldc_I4_M1);
+                        processor.Emit(OpCodes.Cgt);
+                        processor.Emit(OpCodes.Brfalse, postForInstr);
+
+                        processor.Emit(OpCodes.Ldloc, arrLenLocalIndex);
+                        processor.Emit(OpCodes.Newarr, paramType.GetElementType());
+                        processor.Emit(OpCodes.Stloc, localIndex);
+
+                        nhandler.Body.Variables.Add(new VariableDefinition(typeSystem.Int32));
+                        int counterLocalIndex = nhandler.Body.Variables.Count - 1;
+
+                        var forBodyInstr = processor.Create(OpCodes.Nop);
+                        var forCheckInstr = processor.Create(OpCodes.Nop);
+
+                        processor.Emit(OpCodes.Ldc_I4_0);
+                        processor.Emit(OpCodes.Stloc, counterLocalIndex);
+                        processor.Emit(OpCodes.Br, forCheckInstr);
+                        processor.Append(forBodyInstr);
+
+                        if (paramElemEnumIntType == typeSystem.Int32)
+                        {
+                            nhandler.Body.Variables.Add(new VariableDefinition(typeSystem.Int32));
+                            int enumValLocalIndex = nhandler.Body.Variables.Count - 1;
+
+                            processor.Emit(OpCodes.Ldarg_1);
+                            processor.Emit(OpCodes.Ldloca, enumValLocalIndex);
+                            processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeInt_MethodRef);
+
+                            processor.Emit(OpCodes.Ldloc, localIndex);
+                            processor.Emit(OpCodes.Ldloc, counterLocalIndex);
+                            processor.Emit(OpCodes.Ldloc, enumValLocalIndex);
+                            processor.Emit(OpCodes.Stelem_I4);
+                        }
+                        else if (paramElemEnumIntType == typeSystem.UInt32)
+                        {
+                            nhandler.Body.Variables.Add(new VariableDefinition(typeSystem.UInt32));
+                            int enumValLocalIndex = nhandler.Body.Variables.Count - 1;
+
+                            processor.Emit(OpCodes.Ldarg_1);
+                            processor.Emit(OpCodes.Ldloca, enumValLocalIndex);
+                            processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeUint_MethodRef);
+
+                            processor.Emit(OpCodes.Ldloc, localIndex);
+                            processor.Emit(OpCodes.Ldloc, counterLocalIndex);
+                            processor.Emit(OpCodes.Ldloc, enumValLocalIndex);
+                            processor.Emit(OpCodes.Stelem_I4);
+                        }
+                        else if (paramElemEnumIntType == typeSystem.Byte)
+                        {
+                            nhandler.Body.Variables.Add(new VariableDefinition(typeSystem.Byte));
+                            int enumValLocalIndex = nhandler.Body.Variables.Count - 1;
+
+                            processor.Emit(OpCodes.Ldarg_1);
+                            processor.Emit(OpCodes.Ldloca, enumValLocalIndex);
+                            processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeByte_MethodRef);
+
+                            processor.Emit(OpCodes.Ldloc, localIndex);
+                            processor.Emit(OpCodes.Ldloc, counterLocalIndex);
+                            processor.Emit(OpCodes.Ldloc, enumValLocalIndex);
+                            processor.Emit(OpCodes.Stelem_I1);
+                        }
+                        else if (paramElemEnumIntType == typeSystem.SByte)
+                        {
+                            nhandler.Body.Variables.Add(new VariableDefinition(typeSystem.SByte));
+                            int enumValLocalIndex = nhandler.Body.Variables.Count - 1;
+
+                            processor.Emit(OpCodes.Ldarg_1);
+                            processor.Emit(OpCodes.Ldloca, enumValLocalIndex);
+                            processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeSbyte_MethodRef);
+
+                            processor.Emit(OpCodes.Ldloc, localIndex);
+                            processor.Emit(OpCodes.Ldloc, counterLocalIndex);
+                            processor.Emit(OpCodes.Ldloc, enumValLocalIndex);
+                            processor.Emit(OpCodes.Stelem_I1);
+                        }
+                        else if (paramElemEnumIntType == typeSystem.Int16)
+                        {
+                            nhandler.Body.Variables.Add(new VariableDefinition(typeSystem.Int16));
+                            int enumValLocalIndex = nhandler.Body.Variables.Count - 1;
+
+                            processor.Emit(OpCodes.Ldarg_1);
+                            processor.Emit(OpCodes.Ldloca, enumValLocalIndex);
+                            processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeShort_MethodRef);
+
+                            processor.Emit(OpCodes.Ldloc, localIndex);
+                            processor.Emit(OpCodes.Ldloc, counterLocalIndex);
+                            processor.Emit(OpCodes.Ldloc, enumValLocalIndex);
+                            processor.Emit(OpCodes.Stelem_I2);
+                        }
+                        else if (paramElemEnumIntType == typeSystem.UInt16)
+                        {
+                            nhandler.Body.Variables.Add(new VariableDefinition(typeSystem.UInt16));
+                            int enumValLocalIndex = nhandler.Body.Variables.Count - 1;
+
+                            processor.Emit(OpCodes.Ldarg_1);
+                            processor.Emit(OpCodes.Ldloca, enumValLocalIndex);
+                            processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeUshort_MethodRef);
+
+                            processor.Emit(OpCodes.Ldloc, localIndex);
+                            processor.Emit(OpCodes.Ldloc, counterLocalIndex);
+                            processor.Emit(OpCodes.Ldloc, enumValLocalIndex);
+                            processor.Emit(OpCodes.Stelem_I2);
+                        }
+                        else if (paramElemEnumIntType == typeSystem.Int64)
+                        {
+                            nhandler.Body.Variables.Add(new VariableDefinition(typeSystem.Int64));
+                            int enumValLocalIndex = nhandler.Body.Variables.Count - 1;
+
+                            processor.Emit(OpCodes.Ldarg_1);
+                            processor.Emit(OpCodes.Ldloca, enumValLocalIndex);
+                            processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeLong_MethodRef);
+
+                            processor.Emit(OpCodes.Ldloc, localIndex);
+                            processor.Emit(OpCodes.Ldloc, counterLocalIndex);
+                            processor.Emit(OpCodes.Ldloc, enumValLocalIndex);
+                            processor.Emit(OpCodes.Stelem_I8);
+                        }
+                        else if (paramElemEnumIntType == typeSystem.UInt64)
+                        {
+                            nhandler.Body.Variables.Add(new VariableDefinition(typeSystem.UInt64));
+                            int enumValLocalIndex = nhandler.Body.Variables.Count - 1;
+
+                            processor.Emit(OpCodes.Ldarg_1);
+                            processor.Emit(OpCodes.Ldloca, enumValLocalIndex);
+                            processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeUlong_MethodRef);
+
+                            processor.Emit(OpCodes.Ldloc, localIndex);
+                            processor.Emit(OpCodes.Ldloc, counterLocalIndex);
+                            processor.Emit(OpCodes.Ldloc, enumValLocalIndex);
+                            processor.Emit(OpCodes.Stelem_I8);
+                        }
+
+                        processor.Emit(OpCodes.Ldloc, counterLocalIndex);
+                        processor.Emit(OpCodes.Ldc_I4_1);
+                        processor.Emit(OpCodes.Add);
+                        processor.Emit(OpCodes.Stloc, counterLocalIndex);
+                        processor.Append(forCheckInstr);
+                        processor.Emit(OpCodes.Ldloc, counterLocalIndex);
+                        processor.Emit(OpCodes.Ldloc, arrLenLocalIndex);
+                        processor.Emit(OpCodes.Clt);
+                        processor.Emit(OpCodes.Brtrue, forBodyInstr);
+
+                        processor.Append(postForInstr);
+                        continue;
+                    }
+                }
+
                 // INetworkSerializable
+
                 if (paramType.HasInterface(CodeGenHelpers.INetworkSerializable_FullName))
                 {
                     var paramTypeDef = paramType.Resolve();
-                    var paramTypeNetworkRead_MethodDef = paramTypeDef.Methods.FirstOrDefault(m => m.Name == CodeGenHelpers.INetworkSerializable_NetworkRead_Name);
-                    if (paramTypeNetworkRead_MethodDef != null)
+                    var paramTypeNetworkSerialize_MethodDef = paramTypeDef.Methods.FirstOrDefault(m => m.Name == CodeGenHelpers.INetworkSerializable_NetworkSerialize_Name);
+                    if (paramTypeNetworkSerialize_MethodDef != null)
                     {
                         if (paramType.IsValueType)
                         {
                             // struct (pass by value)
-                            processor.Emit(OpCodes.Ldloca, paramIndex);
+                            processor.Emit(OpCodes.Ldloca, localIndex);
                             processor.Emit(OpCodes.Ldarg_1);
-                            processor.Emit(OpCodes.Call, paramTypeNetworkRead_MethodDef);
+                            processor.Emit(OpCodes.Call, paramTypeNetworkSerialize_MethodDef);
                         }
                         else
                         {
@@ -1236,14 +2223,28 @@ namespace MLAPI.Editor.CodeGen
                             var paramTypeDefCtor = paramTypeDef.GetConstructors().FirstOrDefault(m => m.Parameters.Count == 0);
                             if (paramTypeDefCtor != null)
                             {
+                                nhandler.Body.Variables.Add(new VariableDefinition(typeSystem.Boolean));
+                                int isSetLocalIndex = nhandler.Body.Variables.Count - 1;
+
+                                processor.Emit(OpCodes.Ldarg_1);
+                                processor.Emit(OpCodes.Ldloca, isSetLocalIndex);
+                                processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeBool_MethodRef);
+
+                                var notSetInstr = processor.Create(OpCodes.Nop);
+
+                                processor.Emit(OpCodes.Ldloc, isSetLocalIndex);
+                                processor.Emit(OpCodes.Brfalse, notSetInstr);
+
                                 // new INetworkSerializable()
                                 processor.Emit(OpCodes.Newobj, paramTypeDefCtor);
-                                processor.Emit(OpCodes.Stloc, paramIndex);
+                                processor.Emit(OpCodes.Stloc, localIndex);
 
-                                // INetworkSerializable.NetworkRead(reader)
-                                processor.Emit(OpCodes.Ldloc, paramIndex);
+                                // INetworkSerializable.NetworkSerialize(serializer)
+                                processor.Emit(OpCodes.Ldloc, localIndex);
                                 processor.Emit(OpCodes.Ldarg_1);
-                                processor.Emit(OpCodes.Callvirt, paramTypeNetworkRead_MethodDef);
+                                processor.Emit(OpCodes.Callvirt, paramTypeNetworkSerialize_MethodDef);
+
+                                processor.Append(notSetInstr);
                             }
                         }
 
@@ -1251,22 +2252,96 @@ namespace MLAPI.Editor.CodeGen
                     }
                 }
 
-                // Enum
+                // INetworkSerializable[]
+                if (paramType.IsArray && paramType.GetElementType().HasInterface(CodeGenHelpers.INetworkSerializable_FullName))
                 {
-                    var paramEnumType = paramType.GetEnumAsInt();
-                    if (paramEnumType != null)
+                    var paramElemType = paramType.GetElementType();
+                    var paramElemTypeDef = paramElemType.Resolve();
+                    var paramElemNetworkSerialize_MethodDef = paramElemTypeDef.Methods.FirstOrDefault(m => m.Name == CodeGenHelpers.INetworkSerializable_NetworkSerialize_Name);
+                    if (paramElemNetworkSerialize_MethodDef != null)
                     {
-                        processor.Emit(OpCodes.Ldarg_1);
-                        if (paramEnumType == typeSystem.SByte) processor.Emit(OpCodes.Callvirt, BitReader_ReadSByte_MethodRef);
-                        if (paramEnumType == typeSystem.Byte) processor.Emit(OpCodes.Callvirt, BitReader_ReadByte_MethodRef);
-                        if (paramEnumType == typeSystem.Int16) processor.Emit(OpCodes.Callvirt, BitReader_ReadInt16Packed_MethodRef);
-                        if (paramEnumType == typeSystem.UInt16) processor.Emit(OpCodes.Callvirt, BitReader_ReadUInt16Packed_MethodRef);
-                        if (paramEnumType == typeSystem.Int32) processor.Emit(OpCodes.Callvirt, BitReader_ReadInt32Packed_MethodRef);
-                        if (paramEnumType == typeSystem.UInt32) processor.Emit(OpCodes.Callvirt, BitReader_ReadUInt32Packed_MethodRef);
-                        if (paramEnumType == typeSystem.Int64) processor.Emit(OpCodes.Callvirt, BitReader_ReadInt64Packed_MethodRef);
-                        if (paramEnumType == typeSystem.UInt64) processor.Emit(OpCodes.Callvirt, BitReader_ReadUInt64Packed_MethodRef);
-                        processor.Emit(OpCodes.Stloc, paramIndex);
+                        nhandler.Body.Variables.Add(new VariableDefinition(typeSystem.Int32));
+                        int arrLenLocalIndex = nhandler.Body.Variables.Count - 1;
 
+                        processor.Emit(OpCodes.Ldarg_1);
+                        processor.Emit(OpCodes.Ldloca, arrLenLocalIndex);
+                        processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeInt_MethodRef);
+
+                        var postForInstr = processor.Create(OpCodes.Nop);
+
+                        processor.Emit(OpCodes.Ldloc, arrLenLocalIndex);
+                        processor.Emit(OpCodes.Ldc_I4_M1);
+                        processor.Emit(OpCodes.Cgt);
+                        processor.Emit(OpCodes.Brfalse, postForInstr);
+
+                        processor.Emit(OpCodes.Ldloc, arrLenLocalIndex);
+                        processor.Emit(OpCodes.Newarr, paramElemType);
+                        processor.Emit(OpCodes.Stloc, localIndex);
+
+                        nhandler.Body.Variables.Add(new VariableDefinition(typeSystem.Int32));
+                        int counterLocalIndex = nhandler.Body.Variables.Count - 1;
+
+                        var forBodyInstr = processor.Create(OpCodes.Nop);
+                        var forCheckInstr = processor.Create(OpCodes.Nop);
+
+                        processor.Emit(OpCodes.Ldc_I4_0);
+                        processor.Emit(OpCodes.Stloc, counterLocalIndex);
+                        processor.Emit(OpCodes.Br, forCheckInstr);
+                        processor.Append(forBodyInstr);
+
+                        if (paramElemType.IsValueType)
+                        {
+                            // struct (pass by value)
+                            processor.Emit(OpCodes.Ldloc, localIndex);
+                            processor.Emit(OpCodes.Ldloc, counterLocalIndex);
+                            processor.Emit(OpCodes.Ldelema, paramElemType);
+                            processor.Emit(OpCodes.Ldarg_1);
+                            processor.Emit(OpCodes.Call, paramElemNetworkSerialize_MethodDef);
+                        }
+                        else
+                        {
+                            // class (pass by reference)
+                            var paramElemTypeDefCtor = paramElemTypeDef.GetConstructors().FirstOrDefault(m => m.Parameters.Count == 0);
+                            if (paramElemTypeDefCtor != null)
+                            {
+                                nhandler.Body.Variables.Add(new VariableDefinition(typeSystem.Boolean));
+                                int isSetLocalIndex = nhandler.Body.Variables.Count - 1;
+
+                                processor.Emit(OpCodes.Ldarg_1);
+                                processor.Emit(OpCodes.Ldloca, isSetLocalIndex);
+                                processor.Emit(OpCodes.Callvirt, NetworkSerializer_SerializeBool_MethodRef);
+
+                                var notSetInstr = processor.Create(OpCodes.Nop);
+
+                                processor.Emit(OpCodes.Ldloc, isSetLocalIndex);
+                                processor.Emit(OpCodes.Brfalse, notSetInstr);
+
+                                processor.Emit(OpCodes.Ldloc, localIndex);
+                                processor.Emit(OpCodes.Ldloc, counterLocalIndex);
+                                processor.Emit(OpCodes.Newobj, paramElemTypeDefCtor);
+                                processor.Emit(OpCodes.Stelem_Ref);
+
+                                processor.Emit(OpCodes.Ldloc, localIndex);
+                                processor.Emit(OpCodes.Ldloc, counterLocalIndex);
+                                processor.Emit(OpCodes.Ldelem_Ref);
+                                processor.Emit(OpCodes.Ldarg_1);
+                                processor.Emit(OpCodes.Call, paramElemNetworkSerialize_MethodDef);
+
+                                processor.Append(notSetInstr);
+                            }
+                        }
+
+                        processor.Emit(OpCodes.Ldloc, counterLocalIndex);
+                        processor.Emit(OpCodes.Ldc_I4_1);
+                        processor.Emit(OpCodes.Add);
+                        processor.Emit(OpCodes.Stloc, counterLocalIndex);
+                        processor.Append(forCheckInstr);
+                        processor.Emit(OpCodes.Ldloc, counterLocalIndex);
+                        processor.Emit(OpCodes.Ldloc, arrLenLocalIndex);
+                        processor.Emit(OpCodes.Clt);
+                        processor.Emit(OpCodes.Brtrue, forBodyInstr);
+
+                        processor.Append(postForInstr);
                         continue;
                     }
                 }
@@ -1276,16 +2351,18 @@ namespace MLAPI.Editor.CodeGen
                     // ServerRpcParams
                     if (paramType.FullName == CodeGenHelpers.ServerRpcParams_FullName)
                     {
-                        processor.Emit(OpCodes.Ldloca, paramIndex);
-                        processor.Emit(OpCodes.Ldflda, ServerRpcParams_Receive_FieldRef);
                         processor.Emit(OpCodes.Ldarg_2);
-                        processor.Emit(OpCodes.Stfld, ServerRpcReceiveParams_SenderClientId_FieldRef);
+                        processor.Emit(OpCodes.Ldfld, RpcParams_Server_FieldRef);
+                        processor.Emit(OpCodes.Stloc, localIndex);
                         continue;
                     }
 
                     // ClientRpcParams
                     if (paramType.FullName == CodeGenHelpers.ClientRpcParams_FullName)
                     {
+                        processor.Emit(OpCodes.Ldarg_2);
+                        processor.Emit(OpCodes.Ldfld, RpcParams_Client_FieldRef);
+                        processor.Emit(OpCodes.Stloc, localIndex);
                         continue;
                     }
                 }
@@ -1295,20 +2372,20 @@ namespace MLAPI.Editor.CodeGen
             // NetworkBehaviour.__nexec = NExec.Client; -> ClientRpc
             processor.Emit(OpCodes.Ldarg_0);
 #pragma warning disable 618
-            processor.Emit(OpCodes.Ldc_I4, (int)(isServerRpc ? NetworkedBehaviour.__NExec.Server : NetworkedBehaviour.__NExec.Client));
+            processor.Emit(OpCodes.Ldc_I4, (int)(isServerRpc ? NetworkBehaviour.__NExec.Server : NetworkBehaviour.__NExec.Client));
 #pragma warning restore 618
             processor.Emit(OpCodes.Stfld, NetworkBehaviour_nexec_FieldRef);
 
             // NetworkBehaviour.XXXRpc(...);
             processor.Emit(OpCodes.Ldarg_0);
             processor.Emit(OpCodes.Castclass, methodDefinition.DeclaringType);
-            Enumerable.Range(0, paramCount).ToList().ForEach(paramIndex => processor.Emit(OpCodes.Ldloc, paramIndex));
+            Enumerable.Range(0, paramCount).ToList().ForEach(paramIndex => processor.Emit(OpCodes.Ldloc, paramLocalMap[paramIndex]));
             processor.Emit(OpCodes.Callvirt, methodDefinition);
 
             // NetworkBehaviour.__nexec = NExec.None;
             processor.Emit(OpCodes.Ldarg_0);
 #pragma warning disable 618
-            processor.Emit(OpCodes.Ldc_I4, (int)NetworkedBehaviour.__NExec.None);
+            processor.Emit(OpCodes.Ldc_I4, (int)NetworkBehaviour.__NExec.None);
 #pragma warning restore 618
             processor.Emit(OpCodes.Stfld, NetworkBehaviour_nexec_FieldRef);
 
