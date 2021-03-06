@@ -4,5 +4,8 @@
 EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
-  m_Scenes: []
+  m_Scenes:
+  - enabled: 1
+    path: Assets/Scenes/AlertPillar.unity
+    guid: 5552bf20279cccb4eba3179ce222eb12
   m_configObjects: {}

@@ -411,7 +411,7 @@ MonoBehaviour:
     ProtocolVersion: 0
     NetworkTransport: {fileID: 1196032118}
     RegisteredScenes:
-    - MLAPITest
+    - AlertPillar
     AllowRuntimeSceneChanges: 0
     NetworkedPrefabs:
     - Prefab: {fileID: 339505023449434066, guid: f651b860c56b3f747ad92381699255de, type: 3}

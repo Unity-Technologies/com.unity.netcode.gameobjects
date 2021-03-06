@@ -4,7 +4,7 @@ using UnityEngine;
 using MLAPI;
 using MLAPI.NetworkedVar;
 
-namespace MLAPITest
+namespace AlertPillar
 {
     public class MonitorPillarLogic : NetworkedBehaviour
     {
