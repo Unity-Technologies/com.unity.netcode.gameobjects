@@ -298,6 +298,7 @@ namespace MLAPI.Spawning
                             networkedObject = ((position == null && rotation == null) ?
                                 MonoBehaviour.Instantiate(prefab) :
                                 MonoBehaviour.Instantiate(prefab, position.GetValueOrDefault(Vector3.zero), rotation.GetValueOrDefault(Quaternion.identity))).GetComponent<NetworkedObject>();
+                            networkedObject.NetManager = networkingManager;
                         }
                         finally
                         {
@@ -352,6 +353,8 @@ namespace MLAPI.Spawning
             {
                 throw new SpawnStateException("Object is already spawned");
             }
+
+            netObject.NetManager = networkingManager;
 
             if (readNetworkedVar && networkingManager.NetworkConfig.EnableNetworkedVar)
             {
@@ -573,9 +576,9 @@ namespace MLAPI.Spawning
 
         internal void DestroyNonSceneObjects()
         {
-            NetworkedObject[] netObjects = MonoBehaviour.FindObjectsOfType<NetworkedObject>();
+            List<NetworkedObject> netObjects = FindObjectsInScene<NetworkedObject>(networkingManager.gameObject.scene);
 
-            for (int i = 0; i < netObjects.Length; i++)
+            for (int i = 0; i < netObjects.Count; i++)
             {
                 if (netObjects[i].IsSceneObject != null && netObjects[i].IsSceneObject.Value == false)
                 {
@@ -594,9 +597,9 @@ namespace MLAPI.Spawning
 
         internal void DestroySceneObjects()
         {
-            NetworkedObject[] netObjects = MonoBehaviour.FindObjectsOfType<NetworkedObject>();
+            List<NetworkedObject> netObjects = FindObjectsInScene<NetworkedObject>(networkingManager.gameObject.scene);
 
-            for (int i = 0; i < netObjects.Length; i++)
+            for (int i = 0; i < netObjects.Count; i++)
             {
                 if (netObjects[i].IsSceneObject == null || netObjects[i].IsSceneObject.Value == true)
                 {
@@ -634,9 +637,9 @@ namespace MLAPI.Spawning
 
         internal void ServerSpawnSceneObjectsOnStartSweep()
         {
-            NetworkedObject[] networkedObjects = MonoBehaviour.FindObjectsOfType<NetworkedObject>();
+            List<NetworkedObject> networkedObjects = FindObjectsInScene<NetworkedObject>(networkingManager.gameObject.scene);
 
-            for (int i = 0; i < networkedObjects.Length; i++)
+            for (int i = 0; i < networkedObjects.Count; i++)
             {
                 if (networkedObjects[i].IsSceneObject == null)
                 {
@@ -645,12 +648,54 @@ namespace MLAPI.Spawning
             }
         }
 
-        internal void ClientCollectSoftSyncSceneObjectSweep(NetworkedObject[] networkedObjects)
+        /// <summary>
+        /// Method that finds all Components of a particular type in a given scene. This does a depth-first scan of all
+        /// root objects in the scene, and is O(N) with the number of GameObjects in the scene. 
+        /// </summary>
+        /// <typeparam name="T">The Monobehaviour to search the scene for.</typeparam>
+        /// <param name="scene">The scene to search</param>
+        /// <returns>List of all Monobehaviours found in that scene.</returns>
+        public static List<T> FindObjectsInScene<T>(Scene scene)
+        {
+            List<T> output = new List<T>();
+            GameObject[] gameObjects = scene.GetRootGameObjects();
+            foreach(var go in gameObjects)
+            {
+                output.AddRange(go.GetComponentsInChildren<T>());
+            }
+
+            return output;
+        }
+
+        /// <summary>
+        /// Method that finds all GameObjects of a given tag in the scene. 
+        /// </summary>
+        /// <param name="scene">The scene to search</param>
+        /// <param name="tag">The GameObject tag to search for</param>
+        /// <returns>List of all GameObjects with the given tag in the scene.</returns>
+        public static List<GameObject> FindObjectsInSceneByTag(Scene scene, string tag)
+        {
+            GameObject[] allObjects = GameObject.FindGameObjectsWithTag(tag);
+            List<GameObject> output = new List<GameObject>(allObjects.Length);
+
+            //intentionally not using any LINQ "Where" container filtering here to avoid any extra allocs. 
+            foreach(var go in allObjects)
+            {
+                if(go.scene == scene )
+                {
+                    output.Add(go);
+                }
+            }
+
+            return output;
+        }
+
+        internal void ClientCollectSoftSyncSceneObjectSweep(List<NetworkedObject> networkedObjects)
         {
             if (networkedObjects == null)
-                networkedObjects = MonoBehaviour.FindObjectsOfType<NetworkedObject>();
+                networkedObjects = FindObjectsInScene<NetworkedObject>(networkingManager.gameObject.scene);
 
-            for (int i = 0; i < networkedObjects.Length; i++)
+            for (int i = 0; i < networkedObjects.Count; i++)
             {
                 if (networkedObjects[i].IsSceneObject == null)
                 {

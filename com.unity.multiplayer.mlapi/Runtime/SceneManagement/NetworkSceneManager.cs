@@ -231,9 +231,9 @@ namespace MLAPI.SceneManagement
             List<NetworkedObject> newSceneObjects = new List<NetworkedObject>();
 
             {
-                NetworkedObject[] networkedObjects = MonoBehaviour.FindObjectsOfType<NetworkedObject>();
+                List<NetworkedObject> networkedObjects = SpawnManager.FindObjectsInScene<NetworkedObject>(networkingManager.gameObject.scene);
 
-                for (int i = 0; i < networkedObjects.Length; i++)
+                for (int i = 0; i < networkedObjects.Count; i++)
                 {
                     if (networkedObjects[i].IsSceneObject == null)
                     {
@@ -390,7 +390,7 @@ namespace MLAPI.SceneManagement
             }
             else
             {
-                NetworkedObject[] networkedObjects = MonoBehaviour.FindObjectsOfType<NetworkedObject>();
+                List<NetworkedObject> networkedObjects = SpawnManager.FindObjectsInScene<NetworkedObject>(networkingManager.gameObject.scene);
 
                 networkingManager.SpawnManager.ClientCollectSoftSyncSceneObjectSweep(networkedObjects);
 
