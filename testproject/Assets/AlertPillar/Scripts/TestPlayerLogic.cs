@@ -2,15 +2,15 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using MLAPI;
-using MLAPI.NetworkedVar;
+using MLAPI.NetworkVariable;
 
 namespace AlertPillar
 {
-    public class TestPlayerLogic : MLAPI.NetworkedBehaviour
+    public class TestPlayerLogic : NetworkBehaviour
     {
-        public NetworkedVarVector3 NetworkPos { get; } = new NetworkedVarVector3();
+        public NetworkVariableVector3 NetworkPos { get; } = new NetworkVariableVector3();
 
-        public NetworkedVarFloat NetworkRotation { get; } = new NetworkedVarFloat();
+        public NetworkVariableFloat NetworkRotation { get; } = new NetworkVariableFloat();
 
         private const float k_Speed = 5;
         private const float k_RotSpeedDegrees = 120;

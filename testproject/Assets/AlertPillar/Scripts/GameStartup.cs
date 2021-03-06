@@ -13,9 +13,9 @@ namespace AlertPillar
         private GameObject NetField;
 
         [SerializeField]
-        private MLAPI.NetworkingManager ClientNetManager;
+        private MLAPI.NetworkManager ClientNetManager;
 
-        private MLAPI.NetworkingManager ServerNetManager;
+        private MLAPI.NetworkManager ServerNetManager;
 
 
 
@@ -85,7 +85,7 @@ namespace AlertPillar
                 if (go.name == "NetworkingManager")
                 {
                     go.name = "NetworkingManager (Server)";
-                    ServerNetManager = go.GetComponent<MLAPI.NetworkingManager>();
+                    ServerNetManager = go.GetComponent<MLAPI.NetworkManager>();
                 }
             }
         }
