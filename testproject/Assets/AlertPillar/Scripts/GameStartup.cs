@@ -13,9 +13,9 @@ namespace AlertPillar
         private GameObject NetField;
 
         [SerializeField]
-        private MLAPI.NetworkingManager ClientNetManager;
+        private MLAPI.NetworkManager ClientNetManager;
 
-        private MLAPI.NetworkingManager ServerNetManager;
+        private MLAPI.NetworkManager ServerNetManager;
 
 
 
@@ -67,11 +67,6 @@ namespace AlertPillar
             s_RunAlready = true; //run once! Otherwise we can "recurse" with each child scene creating another child scene. 
         }
 
-        // Update is called once per frame
-        void Update()
-        {
-
-        }
 
         private void ConfigServeritems(Scene scene)
         {
@@ -85,7 +80,7 @@ namespace AlertPillar
                 if (go.name == "NetworkingManager")
                 {
                     go.name = "NetworkingManager (Server)";
-                    ServerNetManager = go.GetComponent<MLAPI.NetworkingManager>();
+                    ServerNetManager = go.GetComponent<MLAPI.NetworkManager>();
                 }
             }
         }

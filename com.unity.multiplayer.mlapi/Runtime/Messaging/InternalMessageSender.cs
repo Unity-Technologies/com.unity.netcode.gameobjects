@@ -2,145 +2,120 @@ using System;
 using System.Collections.Generic;
 using MLAPI.Configuration;
 using MLAPI.Internal;
-using MLAPI.Logging;
 using MLAPI.Profiling;
-using MLAPI.Security;
+using MLAPI.Serialization;
 using MLAPI.Transports;
-using BitStream = MLAPI.Serialization.BitStream;
 
 namespace MLAPI.Messaging
 {
     internal class InternalMessageSender
     {
-        private NetworkingManager networkingManager;
+        private NetworkManager m_NetworkManager;
 
-        internal InternalMessageSender(NetworkingManager manager )
+        internal InternalMessageSender(NetworkManager manager) { m_NetworkManager = manager;  }
+
+        internal void Send(ulong clientId, byte messageType, NetworkChannel networkChannel, NetworkBuffer messageBuffer)
         {
-            networkingManager = manager;
-        }
+            messageBuffer.PadBuffer();
 
-        internal void Send(ulong clientId, byte messageType, byte channel, BitStream messageStream, SecuritySendFlags flags)
-        {
-            messageStream.PadStream();
+            if (m_NetworkManager.IsServer && clientId == m_NetworkManager.ServerClientId) return;
 
-            if (networkingManager.IsServer && clientId == networkingManager.ServerClientId)
-                return;
-
-            using (BitStream stream = MessagePacker.WrapMessage(networkingManager, messageType, clientId, messageStream, flags))
+            using (var buffer = m_NetworkManager.MessagePacker.WrapMessage(messageType, messageBuffer))
             {
-                NetworkProfiler.StartEvent(TickType.Send, (uint) stream.Length, channel,
-                    MLAPIConstants.MESSAGE_NAMES[messageType]);
+                NetworkProfiler.StartEvent(TickType.Send, (uint)buffer.Length, networkChannel, NetworkConstants.MESSAGE_NAMES[messageType]);
 
-                networkingManager.NetworkConfig.NetworkTransport.Send(clientId, new ArraySegment<byte>(stream.GetBuffer(), 0, (int)stream.Length), channel);
-                ProfilerStatManager.bytesSent.Record((int)stream.Length);
+                m_NetworkManager.NetworkConfig.NetworkTransport.Send(clientId, new ArraySegment<byte>(buffer.GetBuffer(), 0, (int)buffer.Length), networkChannel);
+                ProfilerStatManager.BytesSent.Record((int)buffer.Length);
+                PerformanceDataManager.Increment(ProfilerConstants.NumberBytesSent, (int)buffer.Length);
 
+#if !UNITY_2020_2_OR_LATER
                 NetworkProfiler.EndEvent();
+#endif
             }
         }
 
-        internal void Send(byte messageType, byte channel, BitStream messageStream, SecuritySendFlags flags)
+        internal void Send(byte messageType, NetworkChannel networkChannel, NetworkBuffer messageBuffer)
         {
-            bool encrypted = ((flags & SecuritySendFlags.Encrypted) == SecuritySendFlags.Encrypted) && networkingManager.NetworkConfig.EnableEncryption;
-            bool authenticated = ((flags & SecuritySendFlags.Authenticated) == SecuritySendFlags.Authenticated) && networkingManager.NetworkConfig.EnableEncryption;
+            messageBuffer.PadBuffer();
 
-            if (authenticated || encrypted)
+            using (var buffer = m_NetworkManager.MessagePacker.WrapMessage(messageType, messageBuffer))
             {
-                for (int i = 0; i < networkingManager.ConnectedClientsList.Count; i++)
-                {
-                    Send(networkingManager.ConnectedClientsList[i].ClientId, messageType, channel, messageStream, flags);
-                }
-            }
-            else
-            {
-                messageStream.PadStream();
+#if !UNITY_2020_2_OR_LATER
+                NetworkProfiler.StartEvent(TickType.Send, (uint)buffer.Length, networkChannel, NetworkConstants.MESSAGE_NAMES[messageType]);
+#endif
 
-                using (BitStream stream = MessagePacker.WrapMessage(networkingManager, messageType, 0, messageStream, flags))
+                for (int i = 0; i < m_NetworkManager.ConnectedClientsList.Count; i++)
                 {
-                    NetworkProfiler.StartEvent(TickType.Send, (uint)stream.Length, channel, MLAPIConstants.MESSAGE_NAMES[messageType]);
-                    for (int i = 0; i < networkingManager.ConnectedClientsList.Count; i++)
-                    {
-                        if (networkingManager.IsServer && networkingManager.ConnectedClientsList[i].ClientId == networkingManager.ServerClientId)
-                            continue;
+                    if (m_NetworkManager.IsServer && m_NetworkManager.ConnectedClientsList[i].ClientId == m_NetworkManager.ServerClientId) continue;
 
-                        networkingManager.NetworkConfig.NetworkTransport.Send(networkingManager.ConnectedClientsList[i].ClientId, new ArraySegment<byte>(stream.GetBuffer(), 0, (int)stream.Length), channel);
-                        ProfilerStatManager.bytesSent.Record((int)stream.Length);
-                    }
-                    NetworkProfiler.EndEvent();
+                    m_NetworkManager.NetworkConfig.NetworkTransport.Send(m_NetworkManager.ConnectedClientsList[i].ClientId, new ArraySegment<byte>(buffer.GetBuffer(), 0, (int)buffer.Length), networkChannel);
+                    ProfilerStatManager.BytesSent.Record((int)buffer.Length);
+                    PerformanceDataManager.Increment(ProfilerConstants.NumberBytesSent, (int)buffer.Length);
                 }
+
+#if !UNITY_2020_2_OR_LATER
+                NetworkProfiler.EndEvent();
+#endif
             }
         }
 
-        internal void Send(byte messageType, byte channel, List<ulong> clientIds, BitStream messageStream, SecuritySendFlags flags)
+        internal void Send(byte messageType, NetworkChannel networkChannel, List<ulong> clientIds, NetworkBuffer messageBuffer)
         {
             if (clientIds == null)
             {
-                Send(messageType, channel, messageStream, flags);
+                Send(messageType, networkChannel, messageBuffer);
                 return;
             }
 
-            bool encrypted = ((flags & SecuritySendFlags.Encrypted) == SecuritySendFlags.Encrypted) && networkingManager.NetworkConfig.EnableEncryption;
-            bool authenticated = ((flags & SecuritySendFlags.Authenticated) == SecuritySendFlags.Authenticated) && networkingManager.NetworkConfig.EnableEncryption;
+            messageBuffer.PadBuffer();
 
-            if (authenticated || encrypted)
+            using (var buffer = m_NetworkManager.MessagePacker.WrapMessage(messageType, messageBuffer))
             {
+#if !UNITY_2020_2_OR_LATER
+                NetworkProfiler.StartEvent(TickType.Send, (uint)buffer.Length, networkChannel, NetworkConstants.MESSAGE_NAMES[messageType]);
+#endif
+
                 for (int i = 0; i < clientIds.Count; i++)
                 {
-                    Send(clientIds[i], messageType, channel, messageStream, flags);
-                }
-            }
-            else
-            {
-                messageStream.PadStream();
+                    if (m_NetworkManager.IsServer && clientIds[i] == m_NetworkManager.ServerClientId) continue;
 
-                using (BitStream stream = MessagePacker.WrapMessage(networkingManager, messageType, 0, messageStream, flags))
-                {
-                    NetworkProfiler.StartEvent(TickType.Send, (uint)stream.Length, channel, MLAPIConstants.MESSAGE_NAMES[messageType]);
-                    for (int i = 0; i < clientIds.Count; i++)
-                    {
-                        if (networkingManager.IsServer && clientIds[i] == networkingManager.ServerClientId)
-                            continue;
-
-                        networkingManager.NetworkConfig.NetworkTransport.Send(clientIds[i], new ArraySegment<byte>(stream.GetBuffer(), 0, (int)stream.Length), channel);
-                        ProfilerStatManager.bytesSent.Record((int)stream.Length);
-                    }
-                    NetworkProfiler.EndEvent();
+                    m_NetworkManager.NetworkConfig.NetworkTransport.Send(clientIds[i], new ArraySegment<byte>(buffer.GetBuffer(), 0, (int)buffer.Length), networkChannel);
+                    ProfilerStatManager.BytesSent.Record((int)buffer.Length);
+                    PerformanceDataManager.Increment(ProfilerConstants.NumberBytesSent, (int)buffer.Length);
                 }
+
+#if !UNITY_2020_2_OR_LATER
+                NetworkProfiler.EndEvent();
+#endif
             }
         }
 
-        internal void Send(byte messageType, byte channel, ulong clientIdToIgnore, BitStream messageStream, SecuritySendFlags flags)
+        internal void Send(byte messageType, NetworkChannel networkChannel, ulong clientIdToIgnore, NetworkBuffer messageBuffer)
         {
-            bool encrypted = ((flags & SecuritySendFlags.Encrypted) == SecuritySendFlags.Encrypted) && networkingManager.NetworkConfig.EnableEncryption;
-            bool authenticated = ((flags & SecuritySendFlags.Authenticated) == SecuritySendFlags.Authenticated) && networkingManager.NetworkConfig.EnableEncryption;
+            messageBuffer.PadBuffer();
 
-            if (encrypted || authenticated)
+            using (var buffer = m_NetworkManager.MessagePacker.WrapMessage(messageType, messageBuffer))
             {
-                for (int i = 0; i < networkingManager.ConnectedClientsList.Count; i++)
-                {
-                    if (networkingManager.ConnectedClientsList[i].ClientId == clientIdToIgnore)
-                        continue;
+#if !UNITY_2020_2_OR_LATER
+                NetworkProfiler.StartEvent(TickType.Send, (uint)buffer.Length, networkChannel, NetworkConstants.MESSAGE_NAMES[messageType]);
+#endif
 
-                    Send(networkingManager.ConnectedClientsList[i].ClientId, messageType, channel, messageStream, flags);
-                }
-            }
-            else
-            {
-                messageStream.PadStream();
-
-                using (BitStream stream = MessagePacker.WrapMessage(networkingManager, messageType, 0, messageStream, flags))
+                for (int i = 0; i < m_NetworkManager.ConnectedClientsList.Count; i++)
                 {
-                    NetworkProfiler.StartEvent(TickType.Send, (uint)stream.Length, channel, MLAPIConstants.MESSAGE_NAMES[messageType]);
-                    for (int i = 0; i < networkingManager.ConnectedClientsList.Count; i++)
+                    if (m_NetworkManager.ConnectedClientsList[i].ClientId == clientIdToIgnore ||
+                        (m_NetworkManager.IsServer && m_NetworkManager.ConnectedClientsList[i].ClientId == m_NetworkManager.ServerClientId))
                     {
-                        if (networkingManager.ConnectedClientsList[i].ClientId == clientIdToIgnore ||
-                            (networkingManager.IsServer && networkingManager.ConnectedClientsList[i].ClientId == networkingManager.ServerClientId))
-                            continue;
-
-                        networkingManager.NetworkConfig.NetworkTransport.Send(networkingManager.ConnectedClientsList[i].ClientId, new ArraySegment<byte>(stream.GetBuffer(), 0, (int)stream.Length), channel);
-                        ProfilerStatManager.bytesSent.Record((int)stream.Length);
+                        continue;
                     }
-                    NetworkProfiler.EndEvent();
+
+                    m_NetworkManager.NetworkConfig.NetworkTransport.Send(m_NetworkManager.ConnectedClientsList[i].ClientId, new ArraySegment<byte>(buffer.GetBuffer(), 0, (int)buffer.Length), networkChannel);
+                    ProfilerStatManager.BytesSent.Record((int)buffer.Length);
+                    PerformanceDataManager.Increment(ProfilerConstants.NumberBytesSent, (int)buffer.Length);
                 }
+
+#if !UNITY_2020_2_OR_LATER
+                NetworkProfiler.EndEvent();
+#endif
             }
         }
     }

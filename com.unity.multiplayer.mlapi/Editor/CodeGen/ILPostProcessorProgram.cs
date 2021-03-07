@@ -37,7 +37,7 @@ namespace MLAPI.Editor.CodeGen
                 }
                 catch (Exception exception)
                 {
-                    Debug.LogError($"Could not create ILPostProcessor ({typeCollection.FullName}):{Environment.NewLine}{exception.StackTrace}");
+                    Debug.LogError($"Could not create {nameof(ILPostProcessor)} ({typeCollection.FullName}):{Environment.NewLine}{exception.StackTrace}");
                 }
             }
 
@@ -185,22 +185,21 @@ namespace MLAPI.Editor.CodeGen
             foreach (var i in s_ILPostProcessors)
             {
                 var result = i.Process(targetCompiledAssembly);
-                if (result == null)
-                    continue;
+                if (result == null) continue;
 
                 if (result.Diagnostics.Count > 0)
                 {
-                    Debug.LogError($"ILPostProcessor - {i.GetType().Name} failed to run on {targetCompiledAssembly.Name}");
+                    Debug.LogError($"{nameof(ILPostProcessor)} - {i.GetType().Name} failed to run on {targetCompiledAssembly.Name}");
 
                     foreach (var message in result.Diagnostics)
                     {
                         switch (message.DiagnosticType)
                         {
                             case DiagnosticType.Error:
-                                Debug.LogError($"ILPostProcessor Error - {message.MessageData} {message.File} {message.Line} {message.Column}");
+                                Debug.LogError($"{nameof(ILPostProcessor)} Error - {message.MessageData} {message.File}:{message.Line}");
                                 break;
                             case DiagnosticType.Warning:
-                                Debug.LogWarning($"ILPostProcessor Warning - {message.MessageData} {message.File} {message.Line} {message.Column}");
+                                Debug.LogWarning($"{nameof(ILPostProcessor)} Warning - {message.MessageData} {message.File}:{message.Line}");
                                 break;
                         }
                     }

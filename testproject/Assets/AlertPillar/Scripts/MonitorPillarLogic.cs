@@ -2,29 +2,24 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using MLAPI;
-using MLAPI.NetworkedVar;
+using MLAPI.NetworkVariable;
 
 namespace AlertPillar
 {
-    public class MonitorPillarLogic : NetworkedBehaviour
+    public class MonitorPillarLogic : NetworkBehaviour
     {
         public Material Unalerted;
         public Material Alerted;
 
-        public NetworkedVarBool IsAlerted { get; } = new NetworkedVarBool();
+        public NetworkVariableBool IsAlerted { get; } = new NetworkVariableBool();
 
-        // Start is called before the first frame update
-        void Start()
-        {
-
-        }
 
         // Update is called once per frame
         void Update()
         {
             if (IsServer)
             {
-                List<TestPlayerLogic> playerLogics = MLAPI.Spawning.SpawnManager.FindObjectsInScene<TestPlayerLogic>(gameObject.scene);
+                List<TestPlayerLogic> playerLogics = NetworkManager.FindObjectsOfTypeInScene<TestPlayerLogic>();
                 if(playerLogics.Count > 0 )
                 {
                     float distanceToPlayer = (playerLogics[0].transform.position - transform.position).magnitude;

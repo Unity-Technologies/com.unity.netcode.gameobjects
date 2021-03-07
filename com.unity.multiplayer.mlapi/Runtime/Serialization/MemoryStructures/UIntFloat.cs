@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
+﻿using System.Runtime.InteropServices;
 
 namespace MLAPI.Serialization
 {
@@ -16,15 +12,15 @@ namespace MLAPI.Serialization
     internal struct UIntFloat
     {
         [FieldOffset(0)]
-        public float floatValue;
+        public float FloatValue;
 
         [FieldOffset(0)]
-        public uint uintValue;
+        public uint UIntValue;
 
         [FieldOffset(0)]
-        public double doubleValue;
+        public double DoubleValue;
 
         [FieldOffset(0)]
-        public ulong ulongValue;
+        public ulong ULongValue;
     }
 }
