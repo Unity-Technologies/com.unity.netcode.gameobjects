@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using MLAPI.Serialization.Pooled;
@@ -15,6 +15,8 @@ namespace MLAPI.NetworkVariable.Collections
         private readonly IList<T> m_List = new List<T>();
         private readonly List<NetworkListEvent<T>> m_DirtyEvents = new List<NetworkListEvent<T>>();
         private NetworkBehaviour m_NetworkBehaviour;
+
+        private NetworkManager NetworkManager => m_NetworkBehaviour.NetworkManager;
 
         /// <summary>
         /// Gets the last time the variable was synced
@@ -75,7 +77,7 @@ namespace MLAPI.NetworkVariable.Collections
         public void ResetDirty()
         {
             m_DirtyEvents.Clear();
-            LastSyncedTime = NetworkManager.Singleton.NetworkTime;
+            LastSyncedTime = NetworkManager.NetworkTime;
         }
 
         /// <inheritdoc />
@@ -84,7 +86,7 @@ namespace MLAPI.NetworkVariable.Collections
             if (m_DirtyEvents.Count == 0) return false;
             if (Settings.SendTickrate == 0) return true;
             if (Settings.SendTickrate < 0) return false;
-            if (NetworkManager.Singleton.NetworkTime - LastSyncedTime >= (1f / Settings.SendTickrate)) return true;
+            if (NetworkManager.NetworkTime - LastSyncedTime >= (1f / Settings.SendTickrate)) return true;
             return false;
         }
 
@@ -139,7 +141,7 @@ namespace MLAPI.NetworkVariable.Collections
         /// <inheritdoc />
         public void WriteDelta(Stream stream)
         {
-            using (var writer = PooledNetworkWriter.Get(stream))
+            using (var writer = NetworkManager.NetworkWriterPool.GetWriter(stream))
             {
                 writer.WriteUInt16Packed((ushort)m_DirtyEvents.Count);
                 for (int i = 0; i < m_DirtyEvents.Count; i++)
@@ -187,7 +189,7 @@ namespace MLAPI.NetworkVariable.Collections
         /// <inheritdoc />
         public void WriteField(Stream stream)
         {
-            using (var writer = PooledNetworkWriter.Get(stream))
+            using (var writer = NetworkManager.NetworkWriterPool.GetWriter(stream))
             {
                 writer.WriteUInt16Packed((ushort)m_List.Count);
                 for (int i = 0; i < m_List.Count; i++)
@@ -200,7 +202,7 @@ namespace MLAPI.NetworkVariable.Collections
         /// <inheritdoc />
         public void ReadField(Stream stream, ushort localTick, ushort remoteTick)
         {
-            using (var reader = PooledNetworkReader.Get(stream))
+            using (var reader = NetworkManager.NetworkReaderPool.GetReader(stream))
             {
                 m_List.Clear();
                 ushort count = reader.ReadUInt16Packed();
@@ -214,7 +216,7 @@ namespace MLAPI.NetworkVariable.Collections
         /// <inheritdoc />
         public void ReadDelta(Stream stream, bool keepDirtyDelta, ushort localTick, ushort remoteTick)
         {
-            using (var reader = PooledNetworkReader.Get(stream))
+            using (var reader = NetworkManager.NetworkReaderPool.GetReader(stream))
             {
                 ushort deltaCount = reader.ReadUInt16Packed();
                 for (int i = 0; i < deltaCount; i++)
@@ -401,7 +403,7 @@ namespace MLAPI.NetworkVariable.Collections
         /// <inheritdoc />
         public void Add(T item)
         {
-            if (NetworkManager.Singleton.IsServer) m_List.Add(item);
+            if (NetworkManager.IsServer) m_List.Add(item);
 
             NetworkListEvent<T> listEvent = new NetworkListEvent<T>()
             {
@@ -416,7 +418,7 @@ namespace MLAPI.NetworkVariable.Collections
         /// <inheritdoc />
         public void Clear()
         {
-            if (NetworkManager.Singleton.IsServer) m_List.Clear();
+            if (NetworkManager.IsServer) m_List.Clear();
 
             NetworkListEvent<T> listEvent = new NetworkListEvent<T>()
             {
@@ -441,7 +443,7 @@ namespace MLAPI.NetworkVariable.Collections
         /// <inheritdoc />
         public bool Remove(T item)
         {
-            if (NetworkManager.Singleton.IsServer) m_List.Remove(item);
+            if (NetworkManager.IsServer) m_List.Remove(item);
 
             NetworkListEvent<T> listEvent = new NetworkListEvent<T>()
             {
@@ -468,7 +470,7 @@ namespace MLAPI.NetworkVariable.Collections
         /// <inheritdoc />
         public void Insert(int index, T item)
         {
-            if (NetworkManager.Singleton.IsServer) m_List.Insert(index, item);
+            if (NetworkManager.IsServer) m_List.Insert(index, item);
 
             NetworkListEvent<T> listEvent = new NetworkListEvent<T>()
             {
@@ -483,7 +485,7 @@ namespace MLAPI.NetworkVariable.Collections
         /// <inheritdoc />
         public void RemoveAt(int index)
         {
-            if (NetworkManager.Singleton.IsServer) m_List.RemoveAt(index);
+            if (NetworkManager.IsServer) m_List.RemoveAt(index);
 
             NetworkListEvent<T> listEvent = new NetworkListEvent<T>()
             {
@@ -501,7 +503,7 @@ namespace MLAPI.NetworkVariable.Collections
             get => m_List[index];
             set
             {
-                if (NetworkManager.Singleton.IsServer)
+                if (NetworkManager.IsServer)
                     m_List[index] = value;
 
                 NetworkListEvent<T> listEvent = new NetworkListEvent<T>()
@@ -517,9 +519,9 @@ namespace MLAPI.NetworkVariable.Collections
 
         private void HandleAddListEvent(NetworkListEvent<T> listEvent)
         {
-            if (NetworkManager.Singleton.IsServer)
+            if (NetworkManager.IsServer)
             {
-                if (NetworkManager.Singleton.ConnectedClients.Count > 0)
+                if (NetworkManager.ConnectedClients.Count > 0)
                 {
                     m_DirtyEvents.Add(listEvent);
                 }

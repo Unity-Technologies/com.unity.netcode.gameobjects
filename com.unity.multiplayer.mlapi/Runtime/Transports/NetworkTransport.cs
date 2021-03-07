@@ -50,6 +50,13 @@ namespace MLAPI.Transports
 
         private TransportChannel[] m_ChannelsCache = null;
 
+        protected NetworkManager m_NetworkManager;
+
+        internal void SetNetworkManager(NetworkManager manager)
+        {
+            m_NetworkManager = manager;
+        }
+
         internal void ResetChannelCache()
         {
             m_ChannelsCache = null;

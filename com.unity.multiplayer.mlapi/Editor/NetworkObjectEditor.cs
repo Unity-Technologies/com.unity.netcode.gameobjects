@@ -24,7 +24,7 @@ namespace UnityEditor
         {
             Init();
 
-            if (!m_NetworkObject.IsSpawned && !ReferenceEquals(NetworkManager.Singleton, null) && NetworkManager.Singleton.IsServer)
+            if (!m_NetworkObject.IsSpawned && !ReferenceEquals(m_NetworkObject.NetworkManager, null) && m_NetworkObject.NetworkManager.IsServer)
             {
                 EditorGUILayout.BeginHorizontal();
                 EditorGUILayout.LabelField(new GUIContent("Spawn", "Spawns the object across the network"));
@@ -50,7 +50,7 @@ namespace UnityEditor
                 EditorGUILayout.LabelField("IsPlayerObject: ", m_NetworkObject.IsPlayerObject.ToString(), EditorStyles.label);
                 EditorGUILayout.LabelField("IsSceneObject: ", (m_NetworkObject.IsSceneObject == null ? "Null" : m_NetworkObject.IsSceneObject.Value.ToString()), EditorStyles.label);
 
-                if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer)
+                if (m_NetworkObject.NetworkManager != null && m_NetworkObject.NetworkManager.IsServer)
                 {
                     m_ShowObservers = EditorGUILayout.Foldout(m_ShowObservers, "Observers");
 
@@ -62,9 +62,9 @@ namespace UnityEditor
 
                         while (observerClientIds.MoveNext())
                         {
-                            if (NetworkManager.Singleton.ConnectedClients[observerClientIds.Current].PlayerObject != null)
+                            if (m_NetworkObject.NetworkManager.ConnectedClients[observerClientIds.Current].PlayerObject != null)
                             {
-                                EditorGUILayout.ObjectField("ClientId: " + observerClientIds.Current, NetworkManager.Singleton.ConnectedClients[observerClientIds.Current].PlayerObject, typeof(GameObject), false);
+                                EditorGUILayout.ObjectField("ClientId: " + observerClientIds.Current, m_NetworkObject.NetworkManager.ConnectedClients[observerClientIds.Current].PlayerObject, typeof(GameObject), false);
                             }
                             else
                             {

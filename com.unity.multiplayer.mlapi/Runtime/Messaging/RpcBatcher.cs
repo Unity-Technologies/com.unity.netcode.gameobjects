@@ -19,10 +19,10 @@ namespace MLAPI.Messaging
             public PooledNetworkWriter Writer;
             public bool IsEmpty = true;
 
-            public SendStream()
+            public SendStream(NetworkManager manager)
             {
                 Buffer = PooledNetworkBuffer.Get();
-                Writer = PooledNetworkWriter.Get(Buffer);
+                Writer =  manager.NetworkWriterPool.GetWriter(Buffer);
             }
         }
 
@@ -34,6 +34,10 @@ namespace MLAPI.Messaging
 
         // Used to mark longer lengths. Works because we can't have zero-sized messages
         private const byte k_LongLenMarker = 0;
+
+        private NetworkManager m_NetworkManager;
+
+        internal RpcBatcher(NetworkManager manager) { m_NetworkManager = manager; }
 
         private void PushLength(int length, ref PooledNetworkWriter writer)
         {
@@ -118,7 +122,7 @@ namespace MLAPI.Messaging
                 {
                     // todo: consider what happens if many clients join and leave the game consecutively
                     // we probably need a cleanup mechanism at some point
-                    k_SendDict[clientId] = new SendStream();
+                    k_SendDict[clientId] = new SendStream(m_NetworkManager);
                 }
 
                 if (k_SendDict[clientId].IsEmpty)

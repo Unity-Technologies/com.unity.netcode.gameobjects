@@ -193,12 +193,12 @@ namespace MLAPI.Messaging
 
                     if (m_CurrentQueueItem.NetworkWriter == null)
                     {
-                        m_CurrentQueueItem.NetworkWriter = PooledNetworkWriter.Get(m_CurrentQueueItem.NetworkBuffer);
+                        m_CurrentQueueItem.NetworkWriter = QueueWriter.NetworkManager.NetworkWriterPool.GetWriter(m_CurrentQueueItem.NetworkBuffer);
                     }
 
                     if (m_CurrentQueueItem.NetworkReader == null)
                     {
-                        m_CurrentQueueItem.NetworkReader = PooledNetworkReader.Get(m_CurrentQueueItem.NetworkBuffer);
+                        m_CurrentQueueItem.NetworkReader = QueueReader.NetworkManager.NetworkReaderPool.GetReader(m_CurrentQueueItem.NetworkBuffer);
                     }
                 }
 

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using MLAPI.Messaging;
@@ -10,13 +10,21 @@ namespace MLAPI.EditorTests
 {
     public class RpcBatcherTests
     {
+        private NetworkManager m_TestNetworkManager;
+
+        public RpcBatcherTests()
+        {
+            m_TestNetworkManager = UnityEngine.GameObject.FindObjectOfType<NetworkManager>();
+            m_TestNetworkManager.Awake();
+        }
+
         [Test]
         public void SendWithThreshold()
         {
             const int k_BatchThreshold = 256;
             const int k_QueueItemCount = 128;
 
-            var sendBatcher = new RpcBatcher();
+            var sendBatcher = new RpcBatcher(m_TestNetworkManager);
             var sendStreamQueue = new Queue<NetworkBuffer>();
             for (int i = 0; i < k_QueueItemCount; ++i)
             {
@@ -48,7 +56,7 @@ namespace MLAPI.EditorTests
                     sendStreamQueue.Enqueue(queueStream);
                 });
 
-            var recvBatcher = new RpcBatcher();
+            var recvBatcher = new RpcBatcher(m_TestNetworkManager);
             var recvItemCounter = 0;
             foreach (var recvStream in sendStreamQueue)
             {
@@ -74,7 +82,7 @@ namespace MLAPI.EditorTests
             const int k_BatchThreshold = 0;
             const int k_QueueItemCount = 128;
 
-            var sendBatcher = new RpcBatcher();
+            var sendBatcher = new RpcBatcher(m_TestNetworkManager);
             var sendStreamQueue = new Queue<NetworkBuffer>();
             for (int i = 0; i < k_QueueItemCount; ++i)
             {
@@ -106,7 +114,7 @@ namespace MLAPI.EditorTests
                     sendStreamQueue.Enqueue(queueStream);
                 });
 
-            var recvBatcher = new RpcBatcher();
+            var recvBatcher = new RpcBatcher(m_TestNetworkManager);
             var recvItemCounter = 0;
             foreach (var recvStream in sendStreamQueue)
             {

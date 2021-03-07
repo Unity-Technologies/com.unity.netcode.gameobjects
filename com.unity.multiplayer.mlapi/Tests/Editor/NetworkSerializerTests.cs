@@ -8,13 +8,26 @@ namespace MLAPI.EditorTests
 {
     public class NetworkSerializerTests
     {
+        private NetworkReaderPool m_ReaderPool;
+        private NetworkWriterPool m_WriterPool;
+
+        public NetworkSerializerTests()
+        {
+            NetworkManager testManager = GameObject.FindObjectOfType<NetworkManager>();
+            testManager.Awake();
+
+            m_ReaderPool = new NetworkReaderPool(testManager);
+            m_WriterPool = new NetworkWriterPool(testManager);
+        }
+
+
         [Test]
         public void SerializeBool()
         {
             using (var outStream = PooledNetworkBuffer.Get())
-            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var outWriter = m_WriterPool.GetWriter(outStream))
             using (var inStream = PooledNetworkBuffer.Get())
-            using (var inReader = PooledNetworkReader.Get(inStream))
+            using (var inReader = m_ReaderPool.GetReader(inStream))
             {
                 // serialize
                 bool outValueA = true;
@@ -42,9 +55,9 @@ namespace MLAPI.EditorTests
         public void SerializeChar()
         {
             using (var outStream = PooledNetworkBuffer.Get())
-            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var outWriter = m_WriterPool.GetWriter(outStream))
             using (var inStream = PooledNetworkBuffer.Get())
-            using (var inReader = PooledNetworkReader.Get(inStream))
+            using (var inReader = m_ReaderPool.GetReader(inStream))
             {
                 // serialize
                 char outValueA = 'U';
@@ -77,9 +90,9 @@ namespace MLAPI.EditorTests
         public void SerializeSbyte()
         {
             using (var outStream = PooledNetworkBuffer.Get())
-            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var outWriter = m_WriterPool.GetWriter(outStream))
             using (var inStream = PooledNetworkBuffer.Get())
-            using (var inReader = PooledNetworkReader.Get(inStream))
+            using (var inReader = m_ReaderPool.GetReader(inStream))
             {
                 // serialize
                 sbyte outValueA = -123;
@@ -112,9 +125,9 @@ namespace MLAPI.EditorTests
         public void SerializeByte()
         {
             using (var outStream = PooledNetworkBuffer.Get())
-            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var outWriter = m_WriterPool.GetWriter(outStream))
             using (var inStream = PooledNetworkBuffer.Get())
-            using (var inReader = PooledNetworkReader.Get(inStream))
+            using (var inReader = m_ReaderPool.GetReader(inStream))
             {
                 // serialize
                 byte outValueA = 123;
@@ -147,9 +160,9 @@ namespace MLAPI.EditorTests
         public void SerializeShort()
         {
             using (var outStream = PooledNetworkBuffer.Get())
-            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var outWriter = m_WriterPool.GetWriter(outStream))
             using (var inStream = PooledNetworkBuffer.Get())
-            using (var inReader = PooledNetworkReader.Get(inStream))
+            using (var inReader = m_ReaderPool.GetReader(inStream))
             {
                 // serialize
                 short outValueA = 12345;
@@ -182,9 +195,9 @@ namespace MLAPI.EditorTests
         public void SerializeUshort()
         {
             using (var outStream = PooledNetworkBuffer.Get())
-            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var outWriter = m_WriterPool.GetWriter(outStream))
             using (var inStream = PooledNetworkBuffer.Get())
-            using (var inReader = PooledNetworkReader.Get(inStream))
+            using (var inReader = m_ReaderPool.GetReader(inStream))
             {
                 // serialize
                 ushort outValueA = 12345;
@@ -217,9 +230,9 @@ namespace MLAPI.EditorTests
         public void SerializeInt()
         {
             using (var outStream = PooledNetworkBuffer.Get())
-            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var outWriter = m_WriterPool.GetWriter(outStream))
             using (var inStream = PooledNetworkBuffer.Get())
-            using (var inReader = PooledNetworkReader.Get(inStream))
+            using (var inReader = m_ReaderPool.GetReader(inStream))
             {
                 // serialize
                 int outValueA = 1234567890;
@@ -252,9 +265,9 @@ namespace MLAPI.EditorTests
         public void SerializeUint()
         {
             using (var outStream = PooledNetworkBuffer.Get())
-            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var outWriter = m_WriterPool.GetWriter(outStream))
             using (var inStream = PooledNetworkBuffer.Get())
-            using (var inReader = PooledNetworkReader.Get(inStream))
+            using (var inReader = m_ReaderPool.GetReader(inStream))
             {
                 // serialize
                 uint outValueA = 1234567890;
@@ -287,9 +300,9 @@ namespace MLAPI.EditorTests
         public void SerializeLong()
         {
             using (var outStream = PooledNetworkBuffer.Get())
-            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var outWriter = m_WriterPool.GetWriter(outStream))
             using (var inStream = PooledNetworkBuffer.Get())
-            using (var inReader = PooledNetworkReader.Get(inStream))
+            using (var inReader = m_ReaderPool.GetReader(inStream))
             {
                 // serialize
                 long outValueA = 9876543210;
@@ -322,9 +335,9 @@ namespace MLAPI.EditorTests
         public void SerializeUlong()
         {
             using (var outStream = PooledNetworkBuffer.Get())
-            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var outWriter = m_WriterPool.GetWriter(outStream))
             using (var inStream = PooledNetworkBuffer.Get())
-            using (var inReader = PooledNetworkReader.Get(inStream))
+            using (var inReader = m_ReaderPool.GetReader(inStream))
             {
                 // serialize
                 ulong outValueA = 9876543210;
@@ -357,9 +370,9 @@ namespace MLAPI.EditorTests
         public void SerializeFloat()
         {
             using (var outStream = PooledNetworkBuffer.Get())
-            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var outWriter = m_WriterPool.GetWriter(outStream))
             using (var inStream = PooledNetworkBuffer.Get())
-            using (var inReader = PooledNetworkReader.Get(inStream))
+            using (var inReader = m_ReaderPool.GetReader(inStream))
             {
                 // serialize
                 float outValueA = 12345.6789f;
@@ -392,9 +405,9 @@ namespace MLAPI.EditorTests
         public void SerializeDouble()
         {
             using (var outStream = PooledNetworkBuffer.Get())
-            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var outWriter = m_WriterPool.GetWriter(outStream))
             using (var inStream = PooledNetworkBuffer.Get())
-            using (var inReader = PooledNetworkReader.Get(inStream))
+            using (var inReader = m_ReaderPool.GetReader(inStream))
             {
                 // serialize
                 double outValueA = 12345.6789;
@@ -427,9 +440,9 @@ namespace MLAPI.EditorTests
         public void SerializeString()
         {
             using (var outStream = PooledNetworkBuffer.Get())
-            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var outWriter = m_WriterPool.GetWriter(outStream))
             using (var inStream = PooledNetworkBuffer.Get())
-            using (var inReader = PooledNetworkReader.Get(inStream))
+            using (var inReader = m_ReaderPool.GetReader(inStream))
             {
                 // serialize
                 string outValueA = Guid.NewGuid().ToString("N");
@@ -462,9 +475,9 @@ namespace MLAPI.EditorTests
         public void SerializeColor()
         {
             using (var outStream = PooledNetworkBuffer.Get())
-            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var outWriter = m_WriterPool.GetWriter(outStream))
             using (var inStream = PooledNetworkBuffer.Get())
-            using (var inReader = PooledNetworkReader.Get(inStream))
+            using (var inReader = m_ReaderPool.GetReader(inStream))
             {
                 // serialize
                 Color outValueA = Color.black;
@@ -497,9 +510,9 @@ namespace MLAPI.EditorTests
         public void SerializeColor32()
         {
             using (var outStream = PooledNetworkBuffer.Get())
-            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var outWriter = m_WriterPool.GetWriter(outStream))
             using (var inStream = PooledNetworkBuffer.Get())
-            using (var inReader = PooledNetworkReader.Get(inStream))
+            using (var inReader = m_ReaderPool.GetReader(inStream))
             {
                 // serialize
                 Color32 outValueA = new Color32(0, 0, 0, byte.MaxValue);
@@ -532,9 +545,9 @@ namespace MLAPI.EditorTests
         public void SerializeVector2()
         {
             using (var outStream = PooledNetworkBuffer.Get())
-            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var outWriter = m_WriterPool.GetWriter(outStream))
             using (var inStream = PooledNetworkBuffer.Get())
-            using (var inReader = PooledNetworkReader.Get(inStream))
+            using (var inReader = m_ReaderPool.GetReader(inStream))
             {
                 // serialize
                 Vector2 outValueA = Vector2.up;
@@ -567,9 +580,9 @@ namespace MLAPI.EditorTests
         public void SerializeVector3()
         {
             using (var outStream = PooledNetworkBuffer.Get())
-            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var outWriter = m_WriterPool.GetWriter(outStream))
             using (var inStream = PooledNetworkBuffer.Get())
-            using (var inReader = PooledNetworkReader.Get(inStream))
+            using (var inReader = m_ReaderPool.GetReader(inStream))
             {
                 // serialize
                 Vector3 outValueA = Vector3.forward;
@@ -602,9 +615,9 @@ namespace MLAPI.EditorTests
         public void SerializeVector4()
         {
             using (var outStream = PooledNetworkBuffer.Get())
-            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var outWriter = m_WriterPool.GetWriter(outStream))
             using (var inStream = PooledNetworkBuffer.Get())
-            using (var inReader = PooledNetworkReader.Get(inStream))
+            using (var inReader = m_ReaderPool.GetReader(inStream))
             {
                 // serialize
                 Vector4 outValueA = Vector4.one;
@@ -637,9 +650,9 @@ namespace MLAPI.EditorTests
         public void SerializeQuaternion()
         {
             using (var outStream = PooledNetworkBuffer.Get())
-            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var outWriter = m_WriterPool.GetWriter(outStream))
             using (var inStream = PooledNetworkBuffer.Get())
-            using (var inReader = PooledNetworkReader.Get(inStream))
+            using (var inReader = m_ReaderPool.GetReader(inStream))
             {
                 // serialize
                 Quaternion outValueA = Quaternion.identity;
@@ -672,9 +685,9 @@ namespace MLAPI.EditorTests
         public void SerializeRay()
         {
             using (var outStream = PooledNetworkBuffer.Get())
-            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var outWriter = m_WriterPool.GetWriter(outStream))
             using (var inStream = PooledNetworkBuffer.Get())
-            using (var inReader = PooledNetworkReader.Get(inStream))
+            using (var inReader = m_ReaderPool.GetReader(inStream))
             {
                 // serialize
                 Ray outValueA = new Ray(Vector3.zero, Vector3.forward);
@@ -707,9 +720,9 @@ namespace MLAPI.EditorTests
         public void SerializeRay2D()
         {
             using (var outStream = PooledNetworkBuffer.Get())
-            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var outWriter = m_WriterPool.GetWriter(outStream))
             using (var inStream = PooledNetworkBuffer.Get())
-            using (var inReader = PooledNetworkReader.Get(inStream))
+            using (var inReader = m_ReaderPool.GetReader(inStream))
             {
                 // serialize
                 Ray2D outValueA = new Ray2D(Vector2.zero, Vector2.up);
@@ -772,9 +785,9 @@ namespace MLAPI.EditorTests
         public void SerializeEnum()
         {
             using (var outStream = PooledNetworkBuffer.Get())
-            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var outWriter = m_WriterPool.GetWriter(outStream))
             using (var inStream = PooledNetworkBuffer.Get())
-            using (var inReader = PooledNetworkReader.Get(inStream))
+            using (var inReader = m_ReaderPool.GetReader(inStream))
             {
                 // serialize
                 EnumA outValueA = EnumA.C;
@@ -817,9 +830,9 @@ namespace MLAPI.EditorTests
         public void SerializeBoolArray()
         {
             using (var outStream = PooledNetworkBuffer.Get())
-            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var outWriter = m_WriterPool.GetWriter(outStream))
             using (var inStream = PooledNetworkBuffer.Get())
-            using (var inReader = PooledNetworkReader.Get(inStream))
+            using (var inReader = m_ReaderPool.GetReader(inStream))
             {
                 // serialize
                 bool[] outArrayA = null;
@@ -852,9 +865,9 @@ namespace MLAPI.EditorTests
         public void SerializeCharArray()
         {
             using (var outStream = PooledNetworkBuffer.Get())
-            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var outWriter = m_WriterPool.GetWriter(outStream))
             using (var inStream = PooledNetworkBuffer.Get())
-            using (var inReader = PooledNetworkReader.Get(inStream))
+            using (var inReader = m_ReaderPool.GetReader(inStream))
             {
                 // serialize
                 char[] outArrayA = null;
@@ -887,9 +900,9 @@ namespace MLAPI.EditorTests
         public void SerializeSbyteArray()
         {
             using (var outStream = PooledNetworkBuffer.Get())
-            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var outWriter = m_WriterPool.GetWriter(outStream))
             using (var inStream = PooledNetworkBuffer.Get())
-            using (var inReader = PooledNetworkReader.Get(inStream))
+            using (var inReader = m_ReaderPool.GetReader(inStream))
             {
                 // serialize
                 sbyte[] outArrayA = null;
@@ -922,9 +935,9 @@ namespace MLAPI.EditorTests
         public void SerializeByteArray()
         {
             using (var outStream = PooledNetworkBuffer.Get())
-            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var outWriter = m_WriterPool.GetWriter(outStream))
             using (var inStream = PooledNetworkBuffer.Get())
-            using (var inReader = PooledNetworkReader.Get(inStream))
+            using (var inReader = m_ReaderPool.GetReader(inStream))
             {
                 // serialize
                 byte[] outArrayA = null;
@@ -957,9 +970,9 @@ namespace MLAPI.EditorTests
         public void SerializeShortArray()
         {
             using (var outStream = PooledNetworkBuffer.Get())
-            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var outWriter = m_WriterPool.GetWriter(outStream))
             using (var inStream = PooledNetworkBuffer.Get())
-            using (var inReader = PooledNetworkReader.Get(inStream))
+            using (var inReader = m_ReaderPool.GetReader(inStream))
             {
                 // serialize
                 short[] outArrayA = null;
@@ -992,9 +1005,9 @@ namespace MLAPI.EditorTests
         public void SerializeUshortArray()
         {
             using (var outStream = PooledNetworkBuffer.Get())
-            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var outWriter = m_WriterPool.GetWriter(outStream))
             using (var inStream = PooledNetworkBuffer.Get())
-            using (var inReader = PooledNetworkReader.Get(inStream))
+            using (var inReader = m_ReaderPool.GetReader(inStream))
             {
                 // serialize
                 ushort[] outArrayA = null;
@@ -1027,9 +1040,9 @@ namespace MLAPI.EditorTests
         public void SerializeIntArray()
         {
             using (var outStream = PooledNetworkBuffer.Get())
-            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var outWriter = m_WriterPool.GetWriter(outStream))
             using (var inStream = PooledNetworkBuffer.Get())
-            using (var inReader = PooledNetworkReader.Get(inStream))
+            using (var inReader = m_ReaderPool.GetReader(inStream))
             {
                 // serialize
                 int[] outArrayA = null;
@@ -1062,9 +1075,9 @@ namespace MLAPI.EditorTests
         public void SerializeUintArray()
         {
             using (var outStream = PooledNetworkBuffer.Get())
-            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var outWriter = m_WriterPool.GetWriter(outStream))
             using (var inStream = PooledNetworkBuffer.Get())
-            using (var inReader = PooledNetworkReader.Get(inStream))
+            using (var inReader = m_ReaderPool.GetReader(inStream))
             {
                 // serialize
                 uint[] outArrayA = null;
@@ -1097,9 +1110,9 @@ namespace MLAPI.EditorTests
         public void SerializeLongArray()
         {
             using (var outStream = PooledNetworkBuffer.Get())
-            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var outWriter = m_WriterPool.GetWriter(outStream))
             using (var inStream = PooledNetworkBuffer.Get())
-            using (var inReader = PooledNetworkReader.Get(inStream))
+            using (var inReader = m_ReaderPool.GetReader(inStream))
             {
                 // serialize
                 long[] outArrayA = null;
@@ -1132,9 +1145,9 @@ namespace MLAPI.EditorTests
         public void SerializeUlongArray()
         {
             using (var outStream = PooledNetworkBuffer.Get())
-            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var outWriter = m_WriterPool.GetWriter(outStream))
             using (var inStream = PooledNetworkBuffer.Get())
-            using (var inReader = PooledNetworkReader.Get(inStream))
+            using (var inReader = m_ReaderPool.GetReader(inStream))
             {
                 // serialize
                 ulong[] outArrayA = null;
@@ -1167,9 +1180,9 @@ namespace MLAPI.EditorTests
         public void SerializeFloatArray()
         {
             using (var outStream = PooledNetworkBuffer.Get())
-            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var outWriter = m_WriterPool.GetWriter(outStream))
             using (var inStream = PooledNetworkBuffer.Get())
-            using (var inReader = PooledNetworkReader.Get(inStream))
+            using (var inReader = m_ReaderPool.GetReader(inStream))
             {
                 // serialize
                 float[] outArrayA = null;
@@ -1202,9 +1215,9 @@ namespace MLAPI.EditorTests
         public void SerializeDoubleArray()
         {
             using (var outStream = PooledNetworkBuffer.Get())
-            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var outWriter = m_WriterPool.GetWriter(outStream))
             using (var inStream = PooledNetworkBuffer.Get())
-            using (var inReader = PooledNetworkReader.Get(inStream))
+            using (var inReader = m_ReaderPool.GetReader(inStream))
             {
                 // serialize
                 double[] outArrayA = null;
@@ -1237,9 +1250,9 @@ namespace MLAPI.EditorTests
         public void SerializeStringArray()
         {
             using (var outStream = PooledNetworkBuffer.Get())
-            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var outWriter = m_WriterPool.GetWriter(outStream))
             using (var inStream = PooledNetworkBuffer.Get())
-            using (var inReader = PooledNetworkReader.Get(inStream))
+            using (var inReader = m_ReaderPool.GetReader(inStream))
             {
                 // serialize
                 string[] outArrayA = null;
@@ -1272,9 +1285,9 @@ namespace MLAPI.EditorTests
         public void SerializeColorArray()
         {
             using (var outStream = PooledNetworkBuffer.Get())
-            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var outWriter = m_WriterPool.GetWriter(outStream))
             using (var inStream = PooledNetworkBuffer.Get())
-            using (var inReader = PooledNetworkReader.Get(inStream))
+            using (var inReader = m_ReaderPool.GetReader(inStream))
             {
                 // serialize
                 Color[] outArrayA = null;
@@ -1307,9 +1320,9 @@ namespace MLAPI.EditorTests
         public void SerializeColor32Array()
         {
             using (var outStream = PooledNetworkBuffer.Get())
-            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var outWriter = m_WriterPool.GetWriter(outStream))
             using (var inStream = PooledNetworkBuffer.Get())
-            using (var inReader = PooledNetworkReader.Get(inStream))
+            using (var inReader = m_ReaderPool.GetReader(inStream))
             {
                 // serialize
                 Color32[] outArrayA = null;
@@ -1347,9 +1360,9 @@ namespace MLAPI.EditorTests
         public void SerializeVector2Array()
         {
             using (var outStream = PooledNetworkBuffer.Get())
-            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var outWriter = m_WriterPool.GetWriter(outStream))
             using (var inStream = PooledNetworkBuffer.Get())
-            using (var inReader = PooledNetworkReader.Get(inStream))
+            using (var inReader = m_ReaderPool.GetReader(inStream))
             {
                 // serialize
                 Vector2[] outArrayA = null;
@@ -1382,9 +1395,9 @@ namespace MLAPI.EditorTests
         public void SerializeVector3Array()
         {
             using (var outStream = PooledNetworkBuffer.Get())
-            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var outWriter = m_WriterPool.GetWriter(outStream))
             using (var inStream = PooledNetworkBuffer.Get())
-            using (var inReader = PooledNetworkReader.Get(inStream))
+            using (var inReader = m_ReaderPool.GetReader(inStream))
             {
                 // serialize
                 Vector3[] outArrayA = null;
@@ -1417,9 +1430,9 @@ namespace MLAPI.EditorTests
         public void SerializeVector4Array()
         {
             using (var outStream = PooledNetworkBuffer.Get())
-            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var outWriter = m_WriterPool.GetWriter(outStream))
             using (var inStream = PooledNetworkBuffer.Get())
-            using (var inReader = PooledNetworkReader.Get(inStream))
+            using (var inReader = m_ReaderPool.GetReader(inStream))
             {
                 // serialize
                 Vector4[] outArrayA = null;
@@ -1452,9 +1465,9 @@ namespace MLAPI.EditorTests
         public void SerializeQuaternionArray()
         {
             using (var outStream = PooledNetworkBuffer.Get())
-            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var outWriter = m_WriterPool.GetWriter(outStream))
             using (var inStream = PooledNetworkBuffer.Get())
-            using (var inReader = PooledNetworkReader.Get(inStream))
+            using (var inReader = m_ReaderPool.GetReader(inStream))
             {
                 // serialize
                 Quaternion[] outArrayA = null;
@@ -1490,9 +1503,9 @@ namespace MLAPI.EditorTests
         public void SerializeRayArray()
         {
             using (var outStream = PooledNetworkBuffer.Get())
-            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var outWriter = m_WriterPool.GetWriter(outStream))
             using (var inStream = PooledNetworkBuffer.Get())
-            using (var inReader = PooledNetworkReader.Get(inStream))
+            using (var inReader = m_ReaderPool.GetReader(inStream))
             {
                 // serialize
                 Ray[] outArrayA = null;
@@ -1530,9 +1543,9 @@ namespace MLAPI.EditorTests
         public void SerializeRay2DArray()
         {
             using (var outStream = PooledNetworkBuffer.Get())
-            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var outWriter = m_WriterPool.GetWriter(outStream))
             using (var inStream = PooledNetworkBuffer.Get())
-            using (var inReader = PooledNetworkReader.Get(inStream))
+            using (var inReader = m_ReaderPool.GetReader(inStream))
             {
                 // serialize
                 Ray2D[] outArrayA = null;
@@ -1570,9 +1583,9 @@ namespace MLAPI.EditorTests
         public void SerializeEnumArray()
         {
             using (var outStream = PooledNetworkBuffer.Get())
-            using (var outWriter = PooledNetworkWriter.Get(outStream))
+            using (var outWriter = m_WriterPool.GetWriter(outStream))
             using (var inStream = PooledNetworkBuffer.Get())
-            using (var inReader = PooledNetworkReader.Get(inStream))
+            using (var inReader = m_ReaderPool.GetReader(inStream))
             {
                 // serialize
                 EnumA[] outArrayA = null;

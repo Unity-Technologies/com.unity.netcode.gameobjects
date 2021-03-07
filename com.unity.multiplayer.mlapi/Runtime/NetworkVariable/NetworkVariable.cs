@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 using System.IO;
 using System;
@@ -38,6 +38,8 @@ namespace MLAPI.NetworkVariable
         public OnValueChangedDelegate OnValueChanged;
 
         private NetworkBehaviour m_NetworkBehaviour;
+
+        private NetworkManager NetworkManager => m_NetworkBehaviour.NetworkManager;
 
         /// <summary>
         /// Creates a NetworkVariable with the default value and settings
@@ -145,7 +147,7 @@ namespace MLAPI.NetworkVariable
         /// <param name="stream">The stream to write the value to</param>
         public void WriteDelta(Stream stream)
         {
-            using (var writer = PooledNetworkWriter.Get(stream))
+            using (var writer = NetworkManager.NetworkWriterPool.GetWriter(stream))
             {
                 // write the network tick at which this NetworkVariable was modified remotely
                 // this will allow lag-compensation
@@ -189,7 +191,7 @@ namespace MLAPI.NetworkVariable
             LocalTick = localTick;
             RemoteTick = remoteTick;
 
-            using (var reader = PooledNetworkReader.Get(stream))
+            using (var reader = NetworkManager.NetworkReaderPool.GetReader(stream))
             {
                 T previousValue = m_InternalValue;
                 m_InternalValue = (T)reader.ReadObjectPacked(typeof(T));
@@ -216,8 +218,8 @@ namespace MLAPI.NetworkVariable
         public void WriteField(Stream stream)
         {
             // Store the local tick at which this NetworkVariable was modified
-            LocalTick = NetworkBehaviour.CurrentTick;
-            using (var writer = PooledNetworkWriter.Get(stream))
+            LocalTick = NetworkManager.CurrentTick;
+            using (var writer = NetworkManager.NetworkWriterPool.GetWriter(stream))
             {
                 writer.WriteObjectPacked(m_InternalValue); //BOX
             }

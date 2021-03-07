@@ -18,7 +18,7 @@ namespace MLAPI.SceneManagement
         /// <summary>
         /// The NetworkTime time at the moment the scene switch was initiated by the server.
         /// </summary>
-        public float TimeAtInitiation { get; } = NetworkManager.Singleton.NetworkTime;
+        public float TimeAtInitiation { get; private set; }
 
         /// <summary>
         /// Delegate type for when the switch scene progress is completed. Either by all clients done loading the scene or by time out.
@@ -54,10 +54,16 @@ namespace MLAPI.SceneManagement
 
         private Coroutine m_TimeOutCoroutine;
         private AsyncOperation m_SceneLoadOperation;
+        private NetworkManager m_NetworkManager;
+
+
+
+        internal SceneSwitchProgress(NetworkManager manager) { m_NetworkManager = manager; }
 
         internal SceneSwitchProgress()
         {
-            m_TimeOutCoroutine = NetworkManager.Singleton.StartCoroutine(NetworkManager.Singleton.TimeOutSwitchSceneProgress(this));
+            TimeAtInitiation = m_NetworkManager.NetworkTime;
+            m_TimeOutCoroutine = m_NetworkManager.StartCoroutine(m_NetworkManager.TimeOutSwitchSceneProgress(this));
         }
 
         internal void AddClientAsDone(ulong clientId)
@@ -81,14 +87,14 @@ namespace MLAPI.SceneManagement
 
         internal void CheckCompletion()
         {
-            if (!IsCompleted && DoneClients.Count == NetworkManager.Singleton.ConnectedClientsList.Count && m_SceneLoadOperation.isDone)
+            if (!IsCompleted && DoneClients.Count == m_NetworkManager.ConnectedClientsList.Count && m_SceneLoadOperation.isDone)
             {
                 IsCompleted = true;
                 IsAllClientsDoneLoading = true;
-                NetworkSceneManager.SceneSwitchProgresses.Remove(Guid);
+                m_NetworkManager.NetworkSceneManager.SceneSwitchProgresses.Remove(Guid);
                 OnComplete?.Invoke(false);
 
-                NetworkManager.Singleton.StopCoroutine(m_TimeOutCoroutine);
+                m_NetworkManager.StopCoroutine(m_TimeOutCoroutine);
             }
         }
 
@@ -97,7 +103,7 @@ namespace MLAPI.SceneManagement
             if (!IsCompleted)
             {
                 IsCompleted = true;
-                NetworkSceneManager.SceneSwitchProgresses.Remove(Guid);
+                m_NetworkManager.NetworkSceneManager.SceneSwitchProgresses.Remove(Guid);
                 OnComplete?.Invoke(true);
             }
         }

@@ -27,6 +27,8 @@ namespace MLAPI.NetworkVariable.Collections
         private NetworkBehaviour m_NetworkBehaviour;
         private readonly List<NetworkDictionaryEvent<TKey, TValue>> m_DirtyEvents = new List<NetworkDictionaryEvent<TKey, TValue>>();
 
+        private NetworkManager NetworkManager => m_NetworkBehaviour.NetworkManager;
+
         /// <summary>
         /// Delegate type for dictionary changed event
         /// </summary>
@@ -77,7 +79,7 @@ namespace MLAPI.NetworkVariable.Collections
         public void ResetDirty()
         {
             m_DirtyEvents.Clear();
-            LastSyncedTime = NetworkManager.Singleton.NetworkTime;
+            LastSyncedTime = NetworkManager.NetworkTime;
         }
 
         /// <inheritdoc />
@@ -89,7 +91,7 @@ namespace MLAPI.NetworkVariable.Collections
         /// <inheritdoc />
         public void ReadDelta(Stream stream, bool keepDirtyDelta, ushort localTick, ushort remoteTick)
         {
-            using (var reader = PooledNetworkReader.Get(stream))
+            using (var reader = NetworkManager.NetworkReaderPool.GetReader(stream))
             {
                 ushort deltaCount = reader.ReadUInt16Packed();
                 for (int i = 0; i < deltaCount; i++)
@@ -237,7 +239,7 @@ namespace MLAPI.NetworkVariable.Collections
         /// <inheritdoc />
         public void ReadField(Stream stream, ushort localTick, ushort remoteTick)
         {
-            using (var reader = PooledNetworkReader.Get(stream))
+            using (var reader = NetworkManager.NetworkReaderPool.GetReader(stream))
             {
                 m_Dictionary.Clear();
                 ushort entryCount = reader.ReadUInt16Packed();
@@ -265,7 +267,7 @@ namespace MLAPI.NetworkVariable.Collections
         /// <inheritdoc />
         public void WriteDelta(Stream stream)
         {
-            using (var writer = PooledNetworkWriter.Get(stream))
+            using (var writer = NetworkManager.NetworkWriterPool.GetWriter(stream))
             {
                 writer.WriteUInt16Packed((ushort)m_DirtyEvents.Count);
                 for (int i = 0; i < m_DirtyEvents.Count; i++)
@@ -309,7 +311,7 @@ namespace MLAPI.NetworkVariable.Collections
         /// <inheritdoc />
         public void WriteField(Stream stream)
         {
-            using (var writer = PooledNetworkWriter.Get(stream))
+            using (var writer = NetworkManager.NetworkWriterPool.GetWriter(stream))
             {
                 writer.WriteUInt16Packed((ushort)m_Dictionary.Count);
                 foreach (KeyValuePair<TKey, TValue> pair in m_Dictionary)
@@ -368,7 +370,7 @@ namespace MLAPI.NetworkVariable.Collections
             if (m_DirtyEvents.Count == 0) return false;
             if (Settings.SendTickrate == 0) return true;
             if (Settings.SendTickrate < 0) return false;
-            if (NetworkManager.Singleton.NetworkTime - LastSyncedTime >= (1f / Settings.SendTickrate)) return true;
+            if (NetworkManager.NetworkTime - LastSyncedTime >= (1f / Settings.SendTickrate)) return true;
             return false;
         }
 
@@ -379,7 +381,7 @@ namespace MLAPI.NetworkVariable.Collections
             get => m_Dictionary[key];
             set
             {
-                if (NetworkManager.Singleton.IsServer) m_Dictionary[key] = value;
+                if (NetworkManager.IsServer) m_Dictionary[key] = value;
 
                 NetworkDictionaryEvent<TKey, TValue> dictionaryEvent = new NetworkDictionaryEvent<TKey, TValue>()
                 {
@@ -407,7 +409,7 @@ namespace MLAPI.NetworkVariable.Collections
         /// <inheritdoc />
         public void Add(TKey key, TValue value)
         {
-            if (NetworkManager.Singleton.IsServer) m_Dictionary.Add(key, value);
+            if (NetworkManager.IsServer) m_Dictionary.Add(key, value);
 
             NetworkDictionaryEvent<TKey, TValue> dictionaryEvent = new NetworkDictionaryEvent<TKey, TValue>()
             {
@@ -422,7 +424,7 @@ namespace MLAPI.NetworkVariable.Collections
         /// <inheritdoc />
         public void Add(KeyValuePair<TKey, TValue> item)
         {
-            if (NetworkManager.Singleton.IsServer) m_Dictionary.Add(item);
+            if (NetworkManager.IsServer) m_Dictionary.Add(item);
 
             NetworkDictionaryEvent<TKey, TValue> dictionaryEvent = new NetworkDictionaryEvent<TKey, TValue>()
             {
@@ -437,7 +439,7 @@ namespace MLAPI.NetworkVariable.Collections
         /// <inheritdoc />
         public void Clear()
         {
-            if (NetworkManager.Singleton.IsServer) m_Dictionary.Clear();
+            if (NetworkManager.IsServer) m_Dictionary.Clear();
 
             NetworkDictionaryEvent<TKey, TValue> dictionaryEvent = new NetworkDictionaryEvent<TKey, TValue>()
             {
@@ -474,7 +476,7 @@ namespace MLAPI.NetworkVariable.Collections
         /// <inheritdoc />
         public bool Remove(TKey key)
         {
-            if (NetworkManager.Singleton.IsServer)
+            if (NetworkManager.IsServer)
                 m_Dictionary.Remove(key);
 
             TValue value;
@@ -496,7 +498,7 @@ namespace MLAPI.NetworkVariable.Collections
         /// <inheritdoc />
         public bool Remove(KeyValuePair<TKey, TValue> item)
         {
-            if (NetworkManager.Singleton.IsServer) m_Dictionary.Remove(item);
+            if (NetworkManager.IsServer) m_Dictionary.Remove(item);
 
             NetworkDictionaryEvent<TKey, TValue> dictionaryEvent = new NetworkDictionaryEvent<TKey, TValue>()
             {
@@ -517,9 +519,9 @@ namespace MLAPI.NetworkVariable.Collections
 
         private void HandleAddDictionaryEvent(NetworkDictionaryEvent<TKey, TValue> dictionaryEvent)
         {
-            if (NetworkManager.Singleton.IsServer)
+            if (NetworkManager.IsServer)
             {
-                if (NetworkManager.Singleton.ConnectedClients.Count > 0)
+                if (NetworkManager.ConnectedClients.Count > 0)
                 {
                     m_DirtyEvents.Add(dictionaryEvent);
                 }

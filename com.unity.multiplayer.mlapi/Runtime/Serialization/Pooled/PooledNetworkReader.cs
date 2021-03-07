@@ -12,20 +12,13 @@ namespace MLAPI.Serialization.Pooled
         private NetworkSerializer m_Serializer;
         public NetworkSerializer Serializer => m_Serializer ?? (m_Serializer = new NetworkSerializer(this));
 
+        private NetworkReaderPool m_Parent;
+
         private bool m_IsDisposed = false;
 
-        internal PooledNetworkReader(Stream stream) : base(stream) { }
+        internal PooledNetworkReader(NetworkReaderPool parent, Stream stream) : base(parent.NetworkManager, stream) { m_Parent = parent; }
 
-        /// <summary>
-        /// Gets a PooledNetworkReader from the static NetworkReaderPool
-        /// </summary>
-        /// <returns>PooledNetworkReader</returns>
-        public static PooledNetworkReader Get(Stream stream)
-        {
-            var reader = NetworkReaderPool.GetReader(stream);
-            reader.m_IsDisposed = false;
-            return reader;
-        }
+        internal void Undispose() { m_IsDisposed = false;  }
 
         /// <summary>
         /// Returns the PooledNetworkReader into the static NetworkReaderPool
@@ -35,7 +28,7 @@ namespace MLAPI.Serialization.Pooled
             if (!m_IsDisposed)
             {
                 m_IsDisposed = true;
-                NetworkReaderPool.PutBackInPool(this);
+                m_Parent.PutBackInPool(this);
             }
             else
             {

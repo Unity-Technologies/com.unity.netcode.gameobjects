@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.IO;
 using MLAPI.Serialization.Pooled;
 
@@ -39,15 +39,15 @@ namespace MLAPI.Profiling
         /// Writes the current ProfilerTick to the stream
         /// </summary>
         /// <param name="stream">The stream containing</param>
-        public void SerializeToStream(Stream stream)
+        public void SerializeToStream(NetworkManager manager, Stream stream)
         {
-            using (var writer = PooledNetworkWriter.Get(stream))
+            using (var writer = manager.NetworkWriterPool.GetWriter(stream))
             {
                 writer.WriteUInt16Packed((ushort)Events.Count);
 
                 for (int i = 0; i < Events.Count; i++)
                 {
-                    Events[i].SerializeToStream(stream);
+                    Events[i].SerializeToStream(manager, stream);
                 }
             }
         }
@@ -57,16 +57,16 @@ namespace MLAPI.Profiling
         /// </summary>
         /// <param name="stream">The stream containing the ProfilerTick data</param>
         /// <returns>The ProfilerTick with data read from the stream</returns>
-        public static ProfilerTick FromStream(Stream stream)
+        public static ProfilerTick FromStream(NetworkManager manager, Stream stream)
         {
             var tick = new ProfilerTick();
 
-            using (var reader = PooledNetworkReader.Get(stream))
+            using (var reader = manager.NetworkReaderPool.GetReader(stream))
             {
                 ushort count = reader.ReadUInt16Packed();
                 for (int i = 0; i < count; i++)
                 {
-                    tick.Events.Add(TickEvent.FromStream(stream));
+                    tick.Events.Add(TickEvent.FromStream(manager, stream));
                 }
 
                 return tick;
@@ -165,9 +165,9 @@ namespace MLAPI.Profiling
         /// Writes the TickEvent data to the stream
         /// </summary>
         /// <param name="stream">The stream to write the TickEvent data to</param>
-        public void SerializeToStream(Stream stream)
+        public void SerializeToStream(NetworkManager manager, Stream stream)
         {
-            using (var writer = PooledNetworkWriter.Get(stream))
+            using (var writer = manager.NetworkWriterPool.GetWriter(stream))
             {
                 writer.WriteByte((byte)EventType);
                 writer.WriteUInt32Packed(Bytes);
@@ -182,9 +182,9 @@ namespace MLAPI.Profiling
         /// </summary>
         /// <param name="stream">The stream containing the TickEvent data</param>
         /// <returns>The TickEvent with data read from the stream</returns>
-        public static TickEvent FromStream(Stream stream)
+        public static TickEvent FromStream(NetworkManager manager, Stream stream)
         {
-            using (var reader = PooledNetworkReader.Get(stream))
+            using (var reader = manager.NetworkReaderPool.GetReader(stream))
             {
                 var tickEvent = new TickEvent
                 {

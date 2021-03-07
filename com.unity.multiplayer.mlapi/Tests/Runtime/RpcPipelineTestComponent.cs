@@ -78,7 +78,7 @@ namespace MLAPI.RuntimeTests
         // Update is called once per frame
         private void Update()
         {
-            if (NetworkManager.Singleton.IsListening && PingSelfEnabled && m_ClientReceivedRpc)
+            if (NetworkManager.IsListening && PingSelfEnabled && m_ClientReceivedRpc)
             {
                 //Reset this for the next sequence of rpcs
                 m_ClientReceivedRpc = false;

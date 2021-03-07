@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Reflection;
 using MLAPI;
@@ -91,7 +91,9 @@ namespace UnityEditor
             object val = networkVariable.Value;
             string name = m_NetworkVariableNames[index];
 
-            if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
+            NetworkManager manager = NetworkManagerEditor.GetNetworkManager(true);
+
+            if (manager != null && manager.IsListening)
             {
                 if (type == typeof(int)) val = EditorGUILayout.IntField(name, (int)val);
                 else if (type == typeof(uint)) val = (uint)EditorGUILayout.LongField(name, (long)((uint)val));

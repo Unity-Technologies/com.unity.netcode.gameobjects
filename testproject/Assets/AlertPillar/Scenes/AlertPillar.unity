@@ -43,7 +43,7 @@ RenderSettings:
 --- !u!157 &3
 LightmapSettings:
   m_ObjectHideFlags: 0
-  serializedVersion: 12
+  serializedVersion: 11
   m_GIWorkflowMode: 1
   m_GISettings:
     serializedVersion: 2
@@ -98,7 +98,7 @@ LightmapSettings:
     m_TrainingDataDestination: TrainingData
     m_LightProbeSampleCountMultiplier: 4
   m_LightingDataAsset: {fileID: 0}
-  m_LightingSettings: {fileID: 0}
+  m_UseShadowmask: 1
 --- !u!196 &4
 NavMeshSettings:
   serializedVersion: 2
@@ -118,8 +118,6 @@ NavMeshSettings:
     manualTileSize: 0
     tileSize: 256
     accuratePlacement: 0
-    maxJobWorkers: 0
-    preserveTilesOutsideBounds: 0
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
@@ -298,7 +296,6 @@ MeshRenderer:
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 2
-  m_RayTraceProcedural: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -323,7 +320,6 @@ MeshRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
-  m_AdditionalVertexStreams: {fileID: 0}
 --- !u!33 &867252738
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -357,7 +353,6 @@ GameObject:
   - component: {fileID: 1196032117}
   - component: {fileID: 1196032116}
   - component: {fileID: 1196032115}
-  - component: {fileID: 1196032118}
   m_Layer: 0
   m_Name: NetworkingManager
   m_TagString: Untagged
@@ -377,7 +372,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b84c2d8dfe509a34fb59e2b81f8e1319, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  NetManager: {fileID: 1196032116}
   MessageBufferSize: 5120
   MaxConnections: 100
   MaxSentMessageQueueSize: 128
@@ -403,21 +397,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 593a2fe42fa9d37498c96f9a383b6521, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  LoopbackEnabled: 0
   DontDestroy: 0
   RunInBackground: 1
-  LogLevelLocal: 2
+  LogLevel: 1
   NetworkConfig:
     ProtocolVersion: 0
-    NetworkTransport: {fileID: 1196032118}
+    NetworkTransport: {fileID: 1196032115}
     RegisteredScenes:
     - AlertPillar
     AllowRuntimeSceneChanges: 0
-    NetworkedPrefabs:
-    - Prefab: {fileID: 339505023449434066, guid: f651b860c56b3f747ad92381699255de, type: 3}
-      PlayerPrefab: 1
-    - Prefab: {fileID: 7694947437551235760, guid: c7e83fb8d27b8e144b0659cc76501e83, type: 3}
+    NetworkPrefabs:
+    - Prefab: {fileID: 7694947437551235760, guid: c7e83fb8d27b8e144b0659cc76501e83,
+        type: 3}
       PlayerPrefab: 0
+    - Prefab: {fileID: 339505023449434066, guid: f651b860c56b3f747ad92381699255de,
+        type: 3}
+      PlayerPrefab: 1
     PlayerPrefabHash:
       id: 0
     CreatePlayerPrefab: 1
@@ -430,8 +425,8 @@ MonoBehaviour:
     SecondsHistory: 5
     EnableTimeResync: 0
     TimeResyncInterval: 30
-    EnableNetworkedVar: 1
-    EnsureNetworkedVarLengthSafety: 0
+    EnableNetworkVariable: 1
+    EnsureNetworkVariableLengthSafety: 0
     EnableSceneManagement: 1
     ForceSamePrefabs: 1
     UsePrefabSync: 1
@@ -442,9 +437,6 @@ MonoBehaviour:
     EnableMessageBuffering: 1
     MessageBufferTimeout: 20
     EnableNetworkLogs: 1
-    EnableEncryption: 0
-    SignKeyExchange: 0
-    ServerBase64PfxCertificate: 
   references:
     version: 1
     00000000:
@@ -465,28 +457,6 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 3
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1196032118
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1196032114}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 57c3fe0d2bf241e48b7cddeaa1b933af, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  NetManager: {fileID: 0}
-  Port: 7777
-  Address: 127.0.0.1
-  MaxClients: 100
-  Channels: []
-  MessageBufferSize: 5120
-  PingInterval: 500
-  TimeoutLimit: 32
-  TimeoutMinimum: 5000
-  TimeoutMaximum: 30000
 --- !u!1 &1967452987
 GameObject:
   m_ObjectHideFlags: 0
@@ -563,7 +533,6 @@ Light:
   m_UseColorTemperature: 0
   m_BoundingSphereOverride: {x: 0, y: 0, z: 0, w: 0}
   m_UseBoundingSphereOverride: 0
-  m_UseViewFrustumForShadowCasterCull: 1
   m_ShadowRadius: 0
   m_ShadowAngle: 0
 --- !u!4 &1967452989
@@ -587,51 +556,63 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 7694947437551235760, guid: c7e83fb8d27b8e144b0659cc76501e83, type: 3}
+    - target: {fileID: 7694947437551235760, guid: c7e83fb8d27b8e144b0659cc76501e83,
+        type: 3}
       propertyPath: m_Name
       value: MonitorPillar
       objectReference: {fileID: 0}
-    - target: {fileID: 7694947437551235764, guid: c7e83fb8d27b8e144b0659cc76501e83, type: 3}
+    - target: {fileID: 7694947437551235764, guid: c7e83fb8d27b8e144b0659cc76501e83,
+        type: 3}
       propertyPath: m_RootOrder
       value: 5
       objectReference: {fileID: 0}
-    - target: {fileID: 7694947437551235764, guid: c7e83fb8d27b8e144b0659cc76501e83, type: 3}
+    - target: {fileID: 7694947437551235764, guid: c7e83fb8d27b8e144b0659cc76501e83,
+        type: 3}
       propertyPath: m_LocalPosition.x
       value: 0.759156
       objectReference: {fileID: 0}
-    - target: {fileID: 7694947437551235764, guid: c7e83fb8d27b8e144b0659cc76501e83, type: 3}
+    - target: {fileID: 7694947437551235764, guid: c7e83fb8d27b8e144b0659cc76501e83,
+        type: 3}
       propertyPath: m_LocalPosition.y
       value: 0.84
       objectReference: {fileID: 0}
-    - target: {fileID: 7694947437551235764, guid: c7e83fb8d27b8e144b0659cc76501e83, type: 3}
+    - target: {fileID: 7694947437551235764, guid: c7e83fb8d27b8e144b0659cc76501e83,
+        type: 3}
       propertyPath: m_LocalPosition.z
       value: 2.64
       objectReference: {fileID: 0}
-    - target: {fileID: 7694947437551235764, guid: c7e83fb8d27b8e144b0659cc76501e83, type: 3}
+    - target: {fileID: 7694947437551235764, guid: c7e83fb8d27b8e144b0659cc76501e83,
+        type: 3}
       propertyPath: m_LocalRotation.w
       value: 1
       objectReference: {fileID: 0}
-    - target: {fileID: 7694947437551235764, guid: c7e83fb8d27b8e144b0659cc76501e83, type: 3}
+    - target: {fileID: 7694947437551235764, guid: c7e83fb8d27b8e144b0659cc76501e83,
+        type: 3}
       propertyPath: m_LocalRotation.x
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 7694947437551235764, guid: c7e83fb8d27b8e144b0659cc76501e83, type: 3}
+    - target: {fileID: 7694947437551235764, guid: c7e83fb8d27b8e144b0659cc76501e83,
+        type: 3}
       propertyPath: m_LocalRotation.y
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 7694947437551235764, guid: c7e83fb8d27b8e144b0659cc76501e83, type: 3}
+    - target: {fileID: 7694947437551235764, guid: c7e83fb8d27b8e144b0659cc76501e83,
+        type: 3}
       propertyPath: m_LocalRotation.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 7694947437551235764, guid: c7e83fb8d27b8e144b0659cc76501e83, type: 3}
+    - target: {fileID: 7694947437551235764, guid: c7e83fb8d27b8e144b0659cc76501e83,
+        type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 7694947437551235764, guid: c7e83fb8d27b8e144b0659cc76501e83, type: 3}
+    - target: {fileID: 7694947437551235764, guid: c7e83fb8d27b8e144b0659cc76501e83,
+        type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 7694947437551235764, guid: c7e83fb8d27b8e144b0659cc76501e83, type: 3}
+    - target: {fileID: 7694947437551235764, guid: c7e83fb8d27b8e144b0659cc76501e83,
+        type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}

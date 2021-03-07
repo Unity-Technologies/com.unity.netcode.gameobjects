@@ -20,15 +20,17 @@ namespace MLAPI.Serialization
     {
         private Stream m_Source;
         private NetworkBuffer m_NetworkSource;
+        public NetworkManager NetworkManager { get; private set; }
 
         /// <summary>
         /// Creates a new NetworkReader backed by a given stream
         /// </summary>
         /// <param name="stream">The stream to read from</param>
-        public NetworkReader(Stream stream)
+        public NetworkReader(NetworkManager manager, Stream stream)
         {
             m_Source = stream;
             m_NetworkSource = stream as NetworkBuffer;
+            NetworkManager = manager;
         }
 
         /// <summary>
@@ -152,14 +154,14 @@ namespace MLAPI.Serialization
             {
                 ulong networkObjectId = ReadUInt64Packed();
 
-                if (NetworkSpawnManager.SpawnedObjects.ContainsKey(networkObjectId))
+                if (NetworkManager.NetworkSpawnManager.SpawnedObjects.ContainsKey(networkObjectId))
                 {
-                    return NetworkSpawnManager.SpawnedObjects[networkObjectId].gameObject;
+                    return NetworkManager.NetworkSpawnManager.SpawnedObjects[networkObjectId].gameObject;
                 }
 
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                if (NetworkManager.NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                 {
-                    NetworkLog.LogWarning($"{nameof(NetworkReader)} cannot find the {nameof(GameObject)} sent in the {nameof(NetworkSpawnManager.SpawnedObjects)} list, it may have been destroyed. {nameof(networkObjectId)}: {networkObjectId}");
+                    NetworkManager.NetworkLog.LogWarning($"{nameof(NetworkReader)} cannot find the {nameof(GameObject)} sent in the {nameof(NetworkSpawnManager.SpawnedObjects)} list, it may have been destroyed. {nameof(networkObjectId)}: {networkObjectId}");
                 }
 
                 return null;
@@ -169,14 +171,14 @@ namespace MLAPI.Serialization
             {
                 ulong networkObjectId = ReadUInt64Packed();
 
-                if (NetworkSpawnManager.SpawnedObjects.ContainsKey(networkObjectId))
+                if (NetworkManager.NetworkSpawnManager.SpawnedObjects.ContainsKey(networkObjectId))
                 {
-                    return NetworkSpawnManager.SpawnedObjects[networkObjectId];
+                    return NetworkManager.NetworkSpawnManager.SpawnedObjects[networkObjectId];
                 }
 
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                if (NetworkManager.NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                 {
-                    NetworkLog.LogWarning($"{nameof(NetworkReader)} cannot find the {nameof(NetworkObject)} sent in the {nameof(NetworkSpawnManager.SpawnedObjects)} list, it may have been destroyed. {nameof(networkObjectId)}: {networkObjectId}");
+                    NetworkManager.NetworkLog.LogWarning($"{nameof(NetworkReader)} cannot find the {nameof(NetworkObject)} sent in the {nameof(NetworkSpawnManager.SpawnedObjects)} list, it may have been destroyed. {nameof(networkObjectId)}: {networkObjectId}");
                 }
 
                 return null;
@@ -186,14 +188,14 @@ namespace MLAPI.Serialization
             {
                 ulong networkObjectId = ReadUInt64Packed();
                 ushort behaviourId = ReadUInt16Packed();
-                if (NetworkSpawnManager.SpawnedObjects.ContainsKey(networkObjectId))
+                if (NetworkManager.NetworkSpawnManager.SpawnedObjects.ContainsKey(networkObjectId))
                 {
-                    return NetworkSpawnManager.SpawnedObjects[networkObjectId].GetNetworkBehaviourAtOrderIndex(behaviourId);
+                    return NetworkManager.NetworkSpawnManager.SpawnedObjects[networkObjectId].GetNetworkBehaviourAtOrderIndex(behaviourId);
                 }
 
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                if (NetworkManager.NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                 {
-                    NetworkLog.LogWarning($"{nameof(NetworkReader)} cannot find the {nameof(NetworkBehaviour)} sent in the {nameof(NetworkSpawnManager.SpawnedObjects)} list, it may have been destroyed. {nameof(networkObjectId)}: {networkObjectId}");
+                    NetworkManager.NetworkLog.LogWarning($"{nameof(NetworkReader)} cannot find the {nameof(NetworkBehaviour)} sent in the {nameof(NetworkSpawnManager.SpawnedObjects)} list, it may have been destroyed. {nameof(networkObjectId)}: {networkObjectId}");
                 }
 
                 return null;

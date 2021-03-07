@@ -28,7 +28,6 @@ public class TransportTest : MonoBehaviour
 
         GameObject o = new GameObject();
         NetworkManager nm = (NetworkManager)o.AddComponent(typeof(NetworkManager));
-        nm.SetSingleton();
         nm.NetworkConfig = new NetworkConfig();
         UNetTransport ut = (UNetTransport)o.AddComponent(typeof(UNetTransport));
 

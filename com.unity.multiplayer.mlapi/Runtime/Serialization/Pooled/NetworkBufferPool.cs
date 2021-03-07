@@ -27,9 +27,9 @@ namespace MLAPI.Serialization.Pooled
             {
                 if (s_OverflowBuffers.Count > 0)
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+                    if (NetworkManager.LogLevelStatic <= LogLevel.Developer)
                     {
-                        NetworkLog.LogInfo($"Retrieving {nameof(PooledNetworkBuffer)} from overflow pool. Recent burst?");
+                        NetworkLog.LogInfoStatic($"Retrieving {nameof(PooledNetworkBuffer)} from overflow pool. Recent burst?");
                     }
 
                     object weakBuffer = null;
@@ -48,7 +48,7 @@ namespace MLAPI.Serialization.Pooled
 
                 if (s_CreatedBuffers == k_MaxBitPoolBuffers)
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning($"{k_MaxBitPoolBuffers} buffers have been created. Did you forget to dispose?");
+                    if (NetworkManager.LogLevelStatic <= LogLevel.Normal) NetworkLog.LogWarningStatic($"{k_MaxBitPoolBuffers} buffers have been created. Did you forget to dispose?");
                 }
                 else if (s_CreatedBuffers < k_MaxBitPoolBuffers) s_CreatedBuffers++;
 
@@ -74,9 +74,9 @@ namespace MLAPI.Serialization.Pooled
                 // Buffers are essentially byte array wrappers. This is valuable memory.
                 // Thus we put this buffer as a weak reference incase of another burst
                 // But still leave it to GC
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+                if (NetworkManager.LogLevelStatic <= LogLevel.Developer)
                 {
-                    NetworkLog.LogInfo($"Putting {nameof(PooledNetworkBuffer)} into overflow pool. Did you forget to dispose?");
+                    NetworkLog.LogInfoStatic($"Putting {nameof(PooledNetworkBuffer)} into overflow pool. Did you forget to dispose?");
                 }
 
                 s_OverflowBuffers.Enqueue(new WeakReference(buffer));

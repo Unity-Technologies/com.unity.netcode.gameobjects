@@ -14,17 +14,15 @@ namespace MLAPI.Serialization.Pooled
 
         private bool m_IsDisposed = false;
 
-        internal PooledNetworkWriter(Stream stream) : base(stream) { }
+        private NetworkWriterPool m_Parent;
 
-        /// <summary>
-        /// Gets a PooledNetworkWriter from the static NetworkWriterPool
-        /// </summary>
-        /// <returns>PooledNetworkWriter</returns>
-        public static PooledNetworkWriter Get(Stream stream)
+        public NetworkManager NetworkManager => m_Parent.NetworkManager;
+
+        internal PooledNetworkWriter(NetworkWriterPool parent, Stream stream) : base(stream) { m_Parent = parent; }
+
+        internal void Undispose()
         {
-            var writer = NetworkWriterPool.GetWriter(stream);
-            writer.m_IsDisposed = false;
-            return writer;
+            m_IsDisposed = false;
         }
 
         /// <summary>
@@ -35,7 +33,7 @@ namespace MLAPI.Serialization.Pooled
             if (!m_IsDisposed)
             {
                 m_IsDisposed = true;
-                NetworkWriterPool.PutBackInPool(this);
+                m_Parent.PutBackInPool(this);
             }
             else
             {

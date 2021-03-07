@@ -5,32 +5,37 @@ using MLAPI.Logging;
 namespace MLAPI.Serialization.Pooled
 {
     /// <summary>
-    /// Static class containing PooledNetworkReaders
+    /// class containing PooledNetworkReaders
     /// </summary>
-    public static class NetworkReaderPool
+    public class NetworkReaderPool
     {
-        private static byte s_CreatedReaders = 0;
-        private static Queue<PooledNetworkReader> s_Readers = new Queue<PooledNetworkReader>();
+        private byte m_CreatedReaders = 0;
+        private Queue<PooledNetworkReader> m_Readers = new Queue<PooledNetworkReader>();
+        public NetworkManager NetworkManager { get; private set; }
+
+        internal NetworkReaderPool(NetworkManager manager) { NetworkManager = manager;  }
 
         /// <summary>
         /// Retrieves a PooledNetworkReader
         /// </summary>
         /// <param name="stream">The stream the reader should read from</param>
         /// <returns>A PooledNetworkReader</returns>
-        public static PooledNetworkReader GetReader(Stream stream)
+        public PooledNetworkReader GetReader(Stream stream)
         {
-            if (s_Readers.Count == 0)
+            if (m_Readers.Count == 0)
             {
-                if (s_CreatedReaders == 254)
+                if (m_CreatedReaders == 254)
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("255 readers have been created. Did you forget to dispose?");
+                    if (NetworkManager.NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkManager.NetworkLog.LogWarning("255 readers have been created. Did you forget to dispose?");
                 }
-                else if (s_CreatedReaders < 255) s_CreatedReaders++;
+                else if (m_CreatedReaders < 255) m_CreatedReaders++;
 
-                return new PooledNetworkReader(stream);
+                return new PooledNetworkReader(this, stream);
             }
 
-            PooledNetworkReader reader = s_Readers.Dequeue();
+            PooledNetworkReader reader = m_Readers.Dequeue();
+
+            reader.Undispose();
             reader.SetStream(stream);
 
             return reader;
@@ -40,12 +45,12 @@ namespace MLAPI.Serialization.Pooled
         /// Puts a PooledNetworkReader back into the pool
         /// </summary>
         /// <param name="reader">The reader to put in the pool</param>
-        public static void PutBackInPool(PooledNetworkReader reader)
+        public void PutBackInPool(PooledNetworkReader reader)
         {
-            if (s_Readers.Count < 64) s_Readers.Enqueue(reader);
-            else if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+            if (m_Readers.Count < 64) m_Readers.Enqueue(reader);
+            else if (NetworkManager.NetworkLog.CurrentLogLevel <= LogLevel.Developer)
             {
-                NetworkLog.LogInfo($"{nameof(NetworkReaderPool)} already has 64 queued. Throwing to GC. Did you forget to dispose?");
+                NetworkManager.NetworkLog.LogInfo($"{nameof(NetworkReaderPool)} already has 64 queued. Throwing to GC. Did you forget to dispose?");
             }
         }
     }

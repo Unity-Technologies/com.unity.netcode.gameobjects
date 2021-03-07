@@ -68,16 +68,16 @@ namespace MLAPI.Transports.UNET
         {
             if (UnityEngine.Networking.NetworkTransport.IsStarted && MessageSendMode == SendMode.Queued)
             {
-                if (NetworkManager.Singleton.IsServer)
+                if (m_NetworkManager.IsServer)
                 {
-                    for (int i = 0; i < NetworkManager.Singleton.ConnectedClientsList.Count; i++)
+                    for (int i = 0; i < m_NetworkManager.ConnectedClientsList.Count; i++)
                     {
-                        SendQueued(NetworkManager.Singleton.ConnectedClientsList[i].ClientId);
+                        SendQueued(m_NetworkManager.ConnectedClientsList[i].ClientId);
                     }
                 }
                 else
                 {
-                    SendQueued(NetworkManager.Singleton.LocalClientId);
+                    SendQueued(m_NetworkManager.LocalClientId);
                 }
             }
         }
@@ -292,7 +292,7 @@ namespace MLAPI.Transports.UNET
                 }
                 else
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogError("Cannot create websocket host when using MLAPI relay");
+                    if (m_NetworkManager.NetworkLog.CurrentLogLevel <= LogLevel.Error) m_NetworkManager.NetworkLog.LogError("Cannot create websocket host when using MLAPI relay");
                 }
             }
 

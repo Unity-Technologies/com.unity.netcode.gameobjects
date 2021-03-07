@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.IO;
 using MLAPI.Profiling;
 using MLAPI.Serialization;
@@ -43,6 +43,8 @@ namespace UnityEditor
 
             public byte[] ToBytes()
             {
+                MLAPI.NetworkManager manager = NetworkManagerEditor.GetAnyNetworkManager();
+
                 var buffer = new NetworkBuffer();
                 var writer = new NetworkWriter(buffer);
 
@@ -50,7 +52,7 @@ namespace UnityEditor
 
                 for (int i = 0; i < Ticks.Length; i++)
                 {
-                    Ticks[i].SerializeToStream(buffer);
+                    Ticks[i].SerializeToStream(manager, buffer);
                 }
 
                 return buffer.ToArray();
@@ -58,16 +60,18 @@ namespace UnityEditor
 
             public static ProfilerContainer FromBytes(byte[] bytes)
             {
+                MLAPI.NetworkManager manager = NetworkManagerEditor.GetAnyNetworkManager();
+
                 var container = new ProfilerContainer();
                 var buffer = new NetworkBuffer(bytes);
-                var reader = new NetworkReader(buffer);
+                var reader = new NetworkReader(manager, buffer);
                 var count = reader.ReadUInt16Packed();
 
                 container.Ticks = new ProfilerTick[count];
 
                 for (int i = 0; i < count; i++)
                 {
-                    container.Ticks[i] = ProfilerTick.FromStream(buffer);
+                    container.Ticks[i] = ProfilerTick.FromStream(manager, buffer);
                 }
 
                 return container;

@@ -9,41 +9,61 @@ namespace MLAPI.Logging
     /// <summary>
     /// Helper class for logging
     /// </summary>
-    public static class NetworkLog
+    public class NetworkLog
     {
         /// <summary>
         /// Gets the current log level.
         /// </summary>
         /// <value>The current log level.</value>
-        internal static LogLevel CurrentLogLevel => ReferenceEquals(NetworkManager.Singleton, null) ? LogLevel.Normal : NetworkManager.Singleton.LogLevel;
+        internal LogLevel CurrentLogLevel => m_NetworkManager != null ? m_NetworkManager.LogLevel : LogLevel.Normal;
+
+        private NetworkManager m_NetworkManager;
+
+        internal void SetNetworkManager(NetworkManager manager)
+        {
+            m_NetworkManager = manager;
+        }
 
         // MLAPI internal logging
-        internal static void LogInfo(string message) => Debug.Log($"[MLAPI] {message}");
-        internal static void LogWarning(string message) => Debug.LogWarning($"[MLAPI] {message}");
-        internal static void LogError(string message) => Debug.LogError($"[MLAPI] {message}");
+        internal void LogInfo(string message) => Debug.Log($"[MLAPI]{MessageTag} {message}");
+        internal void LogWarning(string message) => Debug.LogWarning($"[MLAPI]{MessageTag} {message}");
+        internal void LogError(string message) => Debug.LogError($"[MLAPI]{MessageTag} {message}");
+
+        //static internal variants that just tag with [MLAPI]. Always use the nonstatic versions if you can! That way
+        //users will see what kind of NetworkManager logged the message. 
+        internal static void LogInfoStatic(string message) => Debug.Log($"[MLAPI] {message}");
+        internal static void LogWarningStatic(string message) => Debug.Log($"[MLAPI] {message}");
+        internal static void LogErrorStatic(string message) => Debug.Log($"[MLAPI] {message}");
+
+
+        private string MessageTag =>
+            m_NetworkManager==null    ? "[Unitialized]" :
+            m_NetworkManager.IsHost   ? "[Host]" :
+            m_NetworkManager.IsServer ? "[Server]" :
+            m_NetworkManager.IsClient ? "[Client]" : "[Unitialized]";
 
         /// <summary>
         /// Logs an info log locally and on the server if possible.
         /// </summary>
         /// <param name="message">The message to log</param>
-        public static void LogInfoServer(string message) => LogServer(message, LogType.Info);
+        public void LogInfoServer(string message) => LogServer(message, LogType.Info);
 
         /// <summary>
         /// Logs a warning log locally and on the server if possible.
         /// </summary>
         /// <param name="message">The message to log</param>
-        public static void LogWarningServer(string message) => LogServer(message, LogType.Warning);
+        public void LogWarningServer(string message) => LogServer(message, LogType.Warning);
 
         /// <summary>
         /// Logs an error log locally and on the server if possible.
         /// </summary>
         /// <param name="message">The message to log</param>
-        public static void LogErrorServer(string message) => LogServer(message, LogType.Error);
+        public void LogErrorServer(string message) => LogServer(message, LogType.Error);
 
-        private static void LogServer(string message, LogType logType)
+        private void LogServer(string message, LogType logType)
         {
             // Get the sender of the local log
-            ulong localId = NetworkManager.Singleton != null ? NetworkManager.Singleton.LocalClientId : 0;
+            ulong localId = m_NetworkManager != null ? m_NetworkManager.LocalClientId : 0;
 
             switch (logType)
             {
@@ -58,15 +78,15 @@ namespace MLAPI.Logging
                     break;
             }
 
-            if (NetworkManager.Singleton != null && !NetworkManager.Singleton.IsServer && NetworkManager.Singleton.NetworkConfig.EnableNetworkLogs)
+            if (m_NetworkManager != null && !m_NetworkManager.IsServer && m_NetworkManager.NetworkConfig.EnableNetworkLogs)
             {
                 using (var buffer = PooledNetworkBuffer.Get())
-                using (var writer = PooledNetworkWriter.Get(buffer))
+                using (var writer = m_NetworkManager.NetworkWriterPool.GetWriter(buffer))
                 {
                     writer.WriteByte((byte)logType);
                     writer.WriteStringPacked(message);
 
-                    InternalMessageSender.Send(NetworkManager.Singleton.ServerClientId, NetworkConstants.SERVER_LOG, NetworkChannel.Internal, buffer);
+                    m_NetworkManager.InternalMessageSender.Send( m_NetworkManager.ServerClientId, NetworkConstants.SERVER_LOG, NetworkChannel.Internal, buffer);
                 }
             }
         }

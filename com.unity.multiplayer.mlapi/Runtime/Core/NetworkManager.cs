@@ -87,9 +87,9 @@ namespace MLAPI
         public LogLevel LogLevel = LogLevel.Normal;
 
         /// <summary>
-        /// The singleton instance of the NetworkManager
+        /// This is a convenience accessor that gets the LogLevel of the last NetworkManager to have initialized. 
         /// </summary>
-        public static NetworkManager Singleton { get; private set; }
+        internal static LogLevel LogLevelStatic { get; private set; }
 
         /// <summary>
         /// Gets the networkId of the server
@@ -106,6 +106,34 @@ namespace MLAPI
         }
 
         private ulong m_LocalClientId;
+
+        /// <summary>
+        /// The SpawnManager that can be used for spawning new objects in the context of this NetworkManager.
+        /// </summary>
+        public NetworkSpawnManager NetworkSpawnManager { get; private set; }
+
+        public CustomMessagingManager CustomMessagingManager { get; private set; }
+
+        internal InternalMessageSender InternalMessageSender { get; private set; }
+
+        internal InternalMessageHandler InternalMessageHandler { get; private set; }
+
+        public NetworkSceneManager NetworkSceneManager { get; private set; }
+
+        public NetworkLog NetworkLog { get; } = new NetworkLog();
+
+        public NetworkReaderPool NetworkReaderPool { get; private set; }
+        public NetworkWriterPool NetworkWriterPool { get; private set; }
+
+        internal MessagePacker MessagePacker { get; private set; }
+
+        private HashSet<NetworkObject> TouchedBehaviours = new HashSet<NetworkObject>();
+
+        /// <summary>
+        /// Stores the network tick at the NetworkBehaviourUpdate time
+        /// This allows sending NetworkVariables not more often than once per network tick, regardless of the update rate
+        /// </summary>
+        public ushort CurrentTick { get; private set; }
 
         /// <summary>
         /// Gets a dictionary of connected clients and their clientId keys. This is only populated on the server.
@@ -194,8 +222,6 @@ namespace MLAPI
         /// </summary>
         public string ConnectedHostname { get; private set; }
 
-        internal static event Action OnSingletonReady;
-
         private void OnValidate()
         {
             if (NetworkConfig == null) return; //May occur when the component is added
@@ -283,8 +309,20 @@ namespace MLAPI
             }
         }
 
+        public void Awake()
+        {
+            //these initializations are done in Awake so that they can be available for editor unit tests. 
+            m_RpcBatcher = new RpcBatcher(this);
+            MessagePacker = new MessagePacker(this);
+            NetworkReaderPool = new NetworkReaderPool(this);
+            NetworkWriterPool = new NetworkWriterPool(this);
+        }
+
         private void Init(bool server)
         {
+            NetworkLog.SetNetworkManager(this);
+            LogLevelStatic = LogLevel;
+
             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogInfo(nameof(Init));
 
             LocalClientId = 0;
@@ -296,10 +334,13 @@ namespace MLAPI
             ConnectedClients.Clear();
             ConnectedClientsList.Clear();
 
-            NetworkSpawnManager.SpawnedObjects.Clear();
-            NetworkSpawnManager.SpawnedObjectsList.Clear();
-            NetworkSpawnManager.ReleasedNetworkObjectIds.Clear();
-            NetworkSpawnManager.PendingSoftSyncObjects.Clear();
+            NetworkConfig.NetworkManager = this;
+            NetworkSpawnManager = new NetworkSpawnManager(this);
+            CustomMessagingManager = new CustomMessagingManager(this);
+            NetworkSceneManager = new NetworkSceneManager(this);
+            InternalMessageSender = new InternalMessageSender(this);
+            InternalMessageHandler = new InternalMessageHandler(this);
+
             NetworkSceneManager.RegisteredSceneNames.Clear();
             NetworkSceneManager.SceneIndexToString.Clear();
             NetworkSceneManager.SceneNameToIndex.Clear();
@@ -330,7 +371,7 @@ namespace MLAPI
 
             //The RpcQueueContainer must be initialized within the Init method ONLY
             //It should ONLY be shutdown and destroyed in the Shutdown method (other than just above)
-            RpcQueueContainer = new RpcQueueContainer(false);
+            RpcQueueContainer = new RpcQueueContainer(false, this);
 
             //Note: Since frame history is not being used, this is set to 0
             //To test frame history, increase the number to (n) where n > 0
@@ -375,6 +416,8 @@ namespace MLAPI
                     NetworkConfig.NetworkPrefabs[i].Prefab.GetComponent<NetworkObject>().ValidateHash();
                 }
             }
+
+            NetworkConfig.NetworkTransport.SetNetworkManager(this);
 
             NetworkConfig.NetworkTransport.OnTransportEvent += HandleRawTransportPoll;
 
@@ -559,34 +602,16 @@ namespace MLAPI
             return socketTasks;
         }
 
-        public void SetSingleton()
-        {
-            Singleton = this;
-
-            OnSingletonReady?.Invoke();
-        }
 
         private void OnEnable()
         {
-            if (Singleton != null && Singleton != this)
-            {
-                Destroy(gameObject);
-                return;
-            }
-
-            SetSingleton();
-
             if (DontDestroy) DontDestroyOnLoad(gameObject);
             if (RunInBackground) Application.runInBackground = true;
         }
 
         private void OnDestroy()
         {
-            if (!ReferenceEquals(Singleton, null) && Singleton == this)
-            {
-                Shutdown();
-                Singleton = null;
-            }
+            Shutdown();
         }
 
         public void Shutdown()
@@ -709,12 +734,12 @@ namespace MLAPI
                     if (NetworkConfig.EnableNetworkVariable)
                     {
                         // Do NetworkVariable updates
-                        NetworkBehaviour.NetworkBehaviourUpdate();
+                        NetworkBehaviourUpdate();
                     }
 
                     if (!IsServer && NetworkConfig.EnableMessageBuffering)
                     {
-                        BufferManager.CleanBuffer();
+                        BufferManager.CleanBuffer(NetworkConfig.MessageBufferTimeout);
                     }
 
                     if (IsServer)
@@ -779,7 +804,7 @@ namespace MLAPI
         private void SendConnectionRequest()
         {
             using (var buffer = PooledNetworkBuffer.Get())
-            using (var writer = PooledNetworkWriter.Get(buffer))
+            using (var writer = NetworkWriterPool.GetWriter(buffer))
             {
                 writer.WriteUInt64Packed(NetworkConfig.GetConfig());
 
@@ -910,7 +935,7 @@ namespace MLAPI
         }
 
         private readonly NetworkBuffer m_InputBufferWrapper = new NetworkBuffer(new byte[0]);
-        private readonly RpcBatcher m_RpcBatcher = new RpcBatcher();
+        private RpcBatcher m_RpcBatcher;
 
         internal void HandleIncomingData(ulong clientId, NetworkChannel networkChannel, ArraySegment<byte> data, float receiveTime, bool allowBuffer)
         {
@@ -1091,7 +1116,7 @@ namespace MLAPI
 #endif
         }
 
-        private static void ReceiveCallback(NetworkBuffer messageBuffer, RpcQueueContainer.QueueItemType messageType, ulong clientId, float receiveTime)
+        private void ReceiveCallback(NetworkBuffer messageBuffer, RpcQueueContainer.QueueItemType messageType, ulong clientId, float receiveTime)
         {
             InternalMessageHandler.RpcReceiveQueueItem(clientId, messageBuffer, receiveTime, messageType);
         }
@@ -1102,7 +1127,7 @@ namespace MLAPI
         /// </summary>
         /// <param name="queueItem">frame queue item to invoke</param>
 #pragma warning disable 618
-        internal static void InvokeRpc(RpcFrameQueueItem queueItem)
+        internal void InvokeRpc(RpcFrameQueueItem queueItem)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_InvokeRpc.Begin();
@@ -1284,7 +1309,7 @@ namespace MLAPI
             }
 
             using (var buffer = PooledNetworkBuffer.Get())
-            using (var writer = PooledNetworkWriter.Get(buffer))
+            using (var writer = NetworkWriterPool.GetWriter(buffer))
             {
                 writer.WriteSinglePacked(Time.realtimeSinceStartup);
                 InternalMessageSender.Send(NetworkConstants.TIME_SYNC, NetworkChannel.SyncChannel, buffer);
@@ -1334,7 +1359,7 @@ namespace MLAPI
                 }
 
                 using (var buffer = PooledNetworkBuffer.Get())
-                using (var writer = PooledNetworkWriter.Get(buffer))
+                using (var writer = NetworkWriterPool.GetWriter(buffer))
                 {
                     writer.WriteUInt64Packed(clientId);
 
@@ -1429,7 +1454,7 @@ namespace MLAPI
                         continue; //The new client.
 
                     using (var buffer = PooledNetworkBuffer.Get())
-                    using (var writer = PooledNetworkWriter.Get(buffer))
+                    using (var writer = NetworkWriterPool.GetWriter(buffer))
                     {
                         writer.WriteBool(true);
                         writer.WriteUInt64Packed(ConnectedClients[clientId].PlayerObject.NetworkObjectId);
@@ -1484,6 +1509,82 @@ namespace MLAPI
                 }
 
                 NetworkConfig.NetworkTransport.DisconnectRemoteClient(clientId);
+            }
+        }
+
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+        private static ProfilerMarker s_NetworkBehaviourUpdate = new ProfilerMarker($"{nameof(NetworkBehaviour)}.{nameof(NetworkBehaviourUpdate)}");
+#endif
+
+        private void NetworkBehaviourUpdate()
+        {
+            // Do not execute NetworkBehaviourUpdate more than once per network tick
+            ushort tick = NetworkTickSystem.GetTick();
+            if (tick == CurrentTick)
+            {
+                return;
+            }
+
+            CurrentTick = tick;
+
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            s_NetworkBehaviourUpdate.Begin();
+#endif
+            try
+            {
+                if (IsServer)
+                {
+                    TouchedBehaviours.Clear();
+                    for (int i = 0; i < ConnectedClientsList.Count; i++)
+                    {
+                        var client = ConnectedClientsList[i];
+                        var spawnedObjs = NetworkSpawnManager.SpawnedObjectsList;
+                        TouchedBehaviours.UnionWith(spawnedObjs);
+                        foreach (var sobj in spawnedObjs)
+                        {
+                            // Sync just the variables for just the objects this client sees
+                            for (int k = 0; k < sobj.ChildNetworkBehaviours.Count; k++)
+                            {
+                                sobj.ChildNetworkBehaviours[k].VariableUpdate(client.ClientId);
+                            }
+                        }
+                    }
+
+                    // Now, reset all the no-longer-dirty variables
+                    foreach (var sobj in TouchedBehaviours)
+                    {
+                        for (int k = 0; k < sobj.ChildNetworkBehaviours.Count; k++)
+                        {
+                            sobj.ChildNetworkBehaviours[k].PostNetworkVariableWrite();
+                        }
+                    }
+                }
+                else
+                {
+                    // when client updates the sever, it tells it about all its objects
+                    foreach (var sobj in NetworkSpawnManager.SpawnedObjectsList)
+                    {
+                        for (int k = 0; k < sobj.ChildNetworkBehaviours.Count; k++)
+                        {
+                            sobj.ChildNetworkBehaviours[k].VariableUpdate(ServerClientId);
+                        }
+                    }
+
+                    // Now, reset all the no-longer-dirty variables
+                    foreach (var sobj in NetworkSpawnManager.SpawnedObjectsList)
+                    {
+                        for (int k = 0; k < sobj.ChildNetworkBehaviours.Count; k++)
+                        {
+                            sobj.ChildNetworkBehaviours[k].PostNetworkVariableWrite();
+                        }
+                    }
+                }
+            }
+            finally
+            {
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+                s_NetworkBehaviourUpdate.End();
+#endif
             }
         }
     }

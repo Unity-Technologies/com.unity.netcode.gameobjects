@@ -197,6 +197,9 @@ namespace MLAPI.Configuration
         /// </summary>
         public bool EnableNetworkLogs = true;
 
+        [HideInInspector]
+        internal NetworkManager NetworkManager { get; set; }
+
         private void Sort()
         {
             RegisteredScenes.Sort(StringComparer.Ordinal);
@@ -210,7 +213,7 @@ namespace MLAPI.Configuration
         {
             NetworkConfig config = this;
             using (var buffer = PooledNetworkBuffer.Get())
-            using (var writer = PooledNetworkWriter.Get(buffer))
+            using (var writer = NetworkManager.NetworkWriterPool.GetWriter(buffer))
             {
                 writer.WriteUInt16Packed(config.ProtocolVersion);
                 writer.WriteUInt16Packed((ushort)config.RegisteredScenes.Count);
@@ -253,7 +256,7 @@ namespace MLAPI.Configuration
             NetworkConfig config = this;
             byte[] binary = Convert.FromBase64String(base64);
             using (var buffer = new NetworkBuffer(binary))
-            using (var reader = PooledNetworkReader.Get(buffer))
+            using (var reader = NetworkManager.NetworkReaderPool.GetReader(buffer))
             {
                 config.ProtocolVersion = reader.ReadUInt16Packed();
 
@@ -301,7 +304,7 @@ namespace MLAPI.Configuration
             Sort();
 
             using (var buffer = PooledNetworkBuffer.Get())
-            using (var writer = PooledNetworkWriter.Get(buffer))
+            using (var writer = NetworkManager.NetworkWriterPool.GetWriter(buffer))
             {
                 writer.WriteUInt16Packed(ProtocolVersion);
                 writer.WriteString(NetworkConstants.PROTOCOL_VERSION);
