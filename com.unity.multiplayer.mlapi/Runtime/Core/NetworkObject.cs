@@ -230,6 +230,9 @@ namespace MLAPI
         /// <summary>
         /// Shows a list of previously hidden objects to a client
         /// </summary>
+        /// <remarks>
+        /// Method precondition: all networkObjects must belong to the same NetworkManager. 
+        /// </remarks>
         /// <param name="networkObjects">The objects to show</param>
         /// <param name="clientId">The client to show the objects to</param>
         /// <param name="payload">An optional payload to send as part of the spawns</param>
@@ -320,6 +323,9 @@ namespace MLAPI
         /// <summary>
         /// Hides a list of objects from a client
         /// </summary>
+        /// <remarks>
+        /// Method precondition: all networkObjects must belong to the same NetworkManager. 
+        /// </remarks>
         /// <param name="networkObjects">The objects to hide</param>
         /// <param name="clientId">The client to hide the objects from</param>
         public void NetworkHide(List<NetworkObject> networkObjects, ulong clientId)
