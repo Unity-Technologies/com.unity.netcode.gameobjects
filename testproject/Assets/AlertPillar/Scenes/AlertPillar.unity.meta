@@ -1,6 +1,11 @@
 fileFormatVersion: 2
+<<<<<<< HEAD:testproject/Assets/AlertPillar/Scenes/AlertPillar.unity.meta
 guid: 5552bf20279cccb4eba3179ce222eb12
 DefaultImporter:
+=======
+guid: 96e0a72e30d0c46c8a5c9a750e8f5807
+PrefabImporter:
+>>>>>>> origin/develop:testproject/Assets/Prefabs/PlayerCube.prefab.meta
   externalObjects: {}
   userData: 
   assetBundleName: 
