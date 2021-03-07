@@ -19,11 +19,6 @@ namespace AlertPillar
         public Material ClientMat;
 
 
-        // Start is called before the first frame update
-        void Start()
-        {
-        }
-
         public override void NetworkStart()
         {
             if( IsClient)

@@ -13,18 +13,13 @@ namespace AlertPillar
 
         public NetworkVariableBool IsAlerted { get; } = new NetworkVariableBool();
 
-        // Start is called before the first frame update
-        void Start()
-        {
-
-        }
 
         // Update is called once per frame
         void Update()
         {
             if (IsServer)
             {
-                List<TestPlayerLogic> playerLogics = MLAPI.Spawning.NetworkSpawnManager.FindObjectsInScene<TestPlayerLogic>(gameObject.scene);
+                List<TestPlayerLogic> playerLogics = NetworkManager.FindObjectsOfTypeInScene<TestPlayerLogic>();
                 if(playerLogics.Count > 0 )
                 {
                     float distanceToPlayer = (playerLogics[0].transform.position - transform.position).magnitude;

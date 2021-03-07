@@ -11,6 +11,7 @@ using MLAPI.SceneManagement;
 using MLAPI.Serialization.Pooled;
 using MLAPI.Transports;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace MLAPI.Spawning
 {
@@ -295,10 +296,22 @@ namespace MLAPI.Spawning
                     }
 
                     var prefab = m_NetworkManager.NetworkConfig.NetworkPrefabs[prefabIndex].Prefab;
-                    var networkObject = ((position == null && rotation == null) ?
-                        MonoBehaviour.Instantiate(prefab) :
-                        MonoBehaviour.Instantiate(prefab, position.GetValueOrDefault(Vector3.zero), rotation.GetValueOrDefault(Quaternion.identity))).GetComponent<NetworkObject>();
-                    networkObject.NetworkManager = m_NetworkManager;
+
+                    Scene oldScene = SceneManager.GetActiveScene();
+                    NetworkObject networkObject;
+
+                    try
+                    {
+                        SceneManager.SetActiveScene(m_NetworkManager.gameObject.scene);
+                        networkObject = ((position == null && rotation == null) ?
+                            MonoBehaviour.Instantiate(prefab) :
+                            MonoBehaviour.Instantiate(prefab, position.GetValueOrDefault(Vector3.zero), rotation.GetValueOrDefault(Quaternion.identity))).GetComponent<NetworkObject>();
+                        networkObject.NetworkManager = m_NetworkManager;
+                    }
+                    finally
+                    {
+                        SceneManager.SetActiveScene(oldScene);
+                    }
 
                     if (!ReferenceEquals(parentNetworkObject, null))
                     {
@@ -572,7 +585,7 @@ namespace MLAPI.Spawning
 
         internal void DestroyNonSceneObjects()
         {
-            var networkObjects = FindObjectsInScene<NetworkObject>(m_NetworkManager.gameObject.scene);
+            var networkObjects = m_NetworkManager.FindObjectsOfTypeInScene<NetworkObject>();
 
             for (int i = 0; i < networkObjects.Count; i++)
             {
@@ -593,7 +606,7 @@ namespace MLAPI.Spawning
 
         internal void DestroySceneObjects()
         {
-            var networkObjects = FindObjectsInScene<NetworkObject>(m_NetworkManager.gameObject.scene);
+            var networkObjects = m_NetworkManager.FindObjectsOfTypeInScene<NetworkObject>();
 
             for (int i = 0; i < networkObjects.Count; i++)
             {
@@ -633,7 +646,7 @@ namespace MLAPI.Spawning
 
         internal void ServerSpawnSceneObjectsOnStartSweep()
         {
-            var networkObjects = FindObjectsInScene<NetworkObject>(m_NetworkManager.gameObject.scene);
+            var networkObjects = m_NetworkManager.FindObjectsOfTypeInScene<NetworkObject>();
 
             for (int i = 0; i < networkObjects.Count; i++)
             {
@@ -648,7 +661,7 @@ namespace MLAPI.Spawning
         {
             if (networkObjects == null)
             {
-                networkObjects = FindObjectsInScene<NetworkObject>(m_NetworkManager.gameObject.scene);
+                networkObjects = m_NetworkManager.FindObjectsOfTypeInScene<NetworkObject>();
             }
 
             for (int i = 0; i < networkObjects.Count; i++)
@@ -658,48 +671,6 @@ namespace MLAPI.Spawning
                     PendingSoftSyncObjects.Add(networkObjects[i].NetworkInstanceId, networkObjects[i]);
                 }
             }
-        }
-
-        /// <summary>
-        /// Method that finds all Components of a particular type in a given scene. This does a depth-first scan of all
-        /// root objects in the scene, and is O(N) with the number of GameObjects in the scene. 
-        /// </summary>
-        /// <typeparam name="T">The Monobehaviour to search the scene for.</typeparam>
-        /// <param name="scene">The scene to search</param>
-        /// <returns>List of all Monobehaviours found in that scene.</returns>
-        public static List<T> FindObjectsInScene<T>(UnityEngine.SceneManagement.Scene scene)
-        {
-            List<T> output = new List<T>();
-            GameObject[] gameObjects = scene.GetRootGameObjects();
-            foreach (var go in gameObjects)
-            {
-                output.AddRange(go.GetComponentsInChildren<T>());
-            }
-
-            return output;
-        }
-
-        /// <summary>
-        /// Method that finds all GameObjects of a given tag in the scene. 
-        /// </summary>
-        /// <param name="scene">The scene to search</param>
-        /// <param name="tag">The GameObject tag to search for</param>
-        /// <returns>List of all GameObjects with the given tag in the scene.</returns>
-        public static List<GameObject> FindObjectsInSceneByTag(UnityEngine.SceneManagement.Scene scene, string tag)
-        {
-            GameObject[] allObjects = GameObject.FindGameObjectsWithTag(tag);
-            List<GameObject> output = new List<GameObject>(allObjects.Length);
-
-            //intentionally not using any LINQ "Where" container filtering here to avoid any extra allocs. 
-            foreach (var go in allObjects)
-            {
-                if (go.scene == scene)
-                {
-                    output.Add(go);
-                }
-            }
-
-            return output;
         }
 
         internal void OnDestroyObject(ulong networkId, bool destroyGameObject)

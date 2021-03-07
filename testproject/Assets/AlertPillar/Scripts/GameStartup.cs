@@ -67,11 +67,6 @@ namespace AlertPillar
             s_RunAlready = true; //run once! Otherwise we can "recurse" with each child scene creating another child scene. 
         }
 
-        // Update is called once per frame
-        void Update()
-        {
-
-        }
 
         private void ConfigServeritems(Scene scene)
         {

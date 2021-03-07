@@ -29,6 +29,7 @@ public class TransportTest : MonoBehaviour
         GameObject o = new GameObject();
         NetworkManager nm = (NetworkManager)o.AddComponent(typeof(NetworkManager));
         nm.NetworkConfig = new NetworkConfig();
+        nm.Awake();
         UNetTransport ut = (UNetTransport)o.AddComponent(typeof(UNetTransport));
 
         ut.ServerListenPort = 7777;
@@ -43,9 +44,9 @@ public class TransportTest : MonoBehaviour
         {
             nm.StartServer();
         }
-        catch
+        catch( Exception ex)
         {
-            Assert.Fail("The UNet transport won't allow registration of a legit user channel");
+            Assert.Fail($"The UNet transport won't allow registration of a legit user channel. Error: {ex.Message}");
         }
 
         nm.StopServer();

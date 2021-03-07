@@ -309,6 +309,46 @@ namespace MLAPI
             }
         }
 
+        /// <summary>
+        /// Method that finds all Components of a particular type in the NetworkManager's scene. This does
+        /// a depth-first scan of all root objects in the scene, and is O(N) with the number of GameObjects in the scene. 
+        /// </summary>
+        /// <typeparam name="T">The Monobehaviour to search the scene for.</typeparam>
+        /// <returns>List of all Monobehaviours found in that scene.</returns>
+        public List<T> FindObjectsOfTypeInScene<T>()
+        {
+            List<T> output = new List<T>();
+            GameObject[] gameObjects = gameObject.scene.GetRootGameObjects();
+            foreach (var go in gameObjects)
+            {
+                output.AddRange(go.GetComponentsInChildren<T>());
+            }
+
+            return output;
+        }
+
+        /// <summary>
+        /// Method that finds all GameObjects of a given tag in the NetworkManager's scene.
+        /// </summary>
+        /// <param name="tag">The GameObject tag to search for</param>
+        /// <returns>List of all GameObjects with the given tag in the scene.</returns>
+        public List<GameObject> FindGameObjectsWithTagInScene(string tag)
+        {
+            GameObject[] allObjects = GameObject.FindGameObjectsWithTag(tag);
+            List<GameObject> output = new List<GameObject>(allObjects.Length);
+
+            //intentionally not using any LINQ "Where" container filtering here to avoid any extra allocs. 
+            foreach (var go in allObjects)
+            {
+                if (go.scene == gameObject.scene)
+                {
+                    output.Add(go);
+                }
+            }
+
+            return output;
+        }
+
         public void Awake()
         {
             //these initializations are done in Awake so that they can be available for editor unit tests. 

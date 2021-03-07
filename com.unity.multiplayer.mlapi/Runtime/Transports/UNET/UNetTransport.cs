@@ -60,6 +60,7 @@ namespace MLAPI.Transports.UNET
         private readonly Dictionary<int, NetworkChannel> m_ChannelIdToName = new Dictionary<int, NetworkChannel>();
         private int m_ServerConnectionId;
         private int m_ServerHostId;
+        private int m_LocalServerHostId;
 
         private SocketTask m_ConnectTask;
         public override ulong ServerClientId => GetMLAPIClientId(0, 0, true);
@@ -158,7 +159,9 @@ namespace MLAPI.Transports.UNET
 
         public override NetworkEvent PollEvent(out ulong clientId, out NetworkChannel networkChannel, out ArraySegment<byte> payload, out float receiveTime)
         {
-            var eventType = RelayTransport.Receive(out int hostId, out int connectionId, out int channelId, m_MessageBuffer, m_MessageBuffer.Length, out int receivedSize, out byte error);
+            int hostId = m_NetworkManager.IsServer ? m_LocalServerHostId : m_ServerHostId;
+
+            var eventType = RelayTransport.ReceiveFromHost(hostId, out int connectionId, out int channelId, m_MessageBuffer, m_MessageBuffer.Length, out int receivedSize, out byte error);
 
             clientId = GetMLAPIClientId((byte)hostId, (ushort)connectionId, false);
             receiveTime = UnityEngine.Time.realtimeSinceStartup;
@@ -296,7 +299,7 @@ namespace MLAPI.Transports.UNET
                 }
             }
 
-            int normalHostId = RelayTransport.AddHost(topology, ServerListenPort, true);
+            m_LocalServerHostId = RelayTransport.AddHost(topology, ServerListenPort, true);
 
             return SocketTask.Done.AsTasks();
         }

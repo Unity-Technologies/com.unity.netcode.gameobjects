@@ -240,7 +240,7 @@ namespace MLAPI.SceneManagement
             // Justification: Rare alloc, could(should?) reuse
             var newSceneObjects = new List<NetworkObject>();
             {
-                var networkObjects = Spawning.NetworkSpawnManager.FindObjectsInScene<NetworkObject>(m_NetworkManager.gameObject.scene);
+                var networkObjects = m_NetworkManager.FindObjectsOfTypeInScene<NetworkObject>();
                 for (int i = 0; i < networkObjects.Count; i++)
                 {
                     if (networkObjects[i].IsSceneObject == null)
@@ -391,7 +391,7 @@ namespace MLAPI.SceneManagement
             }
             else
             {
-                var networkObjects = Spawning.NetworkSpawnManager.FindObjectsInScene<NetworkObject>(m_NetworkManager.gameObject.scene);
+                var networkObjects = m_NetworkManager.FindObjectsOfTypeInScene<NetworkObject>();
                 m_NetworkManager.NetworkSpawnManager.ClientCollectSoftSyncSceneObjectSweep(networkObjects);
 
                 using (var reader = m_NetworkManager.NetworkReaderPool.GetReader(objectStream))
