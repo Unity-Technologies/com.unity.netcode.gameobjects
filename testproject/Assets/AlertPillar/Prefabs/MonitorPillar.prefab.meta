@@ -1,5 +1,9 @@
 fileFormatVersion: 2
+<<<<<<< HEAD:testproject/Assets/AlertPillar/Prefabs/MonitorPillar.prefab.meta
 guid: c7e83fb8d27b8e144b0659cc76501e83
+=======
+guid: 5eca8a21314fe4278ba2571c289a9773
+>>>>>>> origin/develop:testproject/Assets/unity-chan!/Unity-chan! Model/Network/UnityChan.prefab.meta
 PrefabImporter:
   externalObjects: {}
   userData: 
