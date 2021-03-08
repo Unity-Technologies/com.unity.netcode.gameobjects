@@ -12,7 +12,7 @@ namespace MLAPI.RuntimeTests
     public class NetworkUpdateLoopTests
     {
         [Test]
-        public void VerifyInjectedStages()
+        public void UpdateStageInjection()
         {
             var currentPlayerLoop = PlayerLoop.GetCurrentPlayerLoop();
             for (int i = 0; i < currentPlayerLoop.subSystemList.Length; i++)
@@ -26,12 +26,42 @@ namespace MLAPI.RuntimeTests
                         subsystems.Exists(s => s.type == typeof(NetworkUpdateLoop.NetworkInitialization)),
                         nameof(NetworkUpdateLoop.NetworkInitialization));
                 }
-                else if (playerLoopSystem.type == typeof(EarlyUpdate)) { }
-                else if (playerLoopSystem.type == typeof(FixedUpdate)) { }
-                else if (playerLoopSystem.type == typeof(PreUpdate)) { }
-                else if (playerLoopSystem.type == typeof(Update)) { }
-                else if (playerLoopSystem.type == typeof(PreLateUpdate)) { }
-                else if (playerLoopSystem.type == typeof(PostLateUpdate)) { }
+                else if (playerLoopSystem.type == typeof(EarlyUpdate))
+                {
+                    Assert.True(
+                        subsystems.Exists(s => s.type == typeof(NetworkUpdateLoop.NetworkEarlyUpdate)),
+                        nameof(NetworkUpdateLoop.NetworkEarlyUpdate));
+                }
+                else if (playerLoopSystem.type == typeof(FixedUpdate))
+                {
+                    Assert.True(
+                        subsystems.Exists(s => s.type == typeof(NetworkUpdateLoop.NetworkFixedUpdate)),
+                        nameof(NetworkUpdateLoop.NetworkFixedUpdate));
+                }
+                else if (playerLoopSystem.type == typeof(PreUpdate))
+                {
+                    Assert.True(
+                        subsystems.Exists(s => s.type == typeof(NetworkUpdateLoop.NetworkPreUpdate)),
+                        nameof(NetworkUpdateLoop.NetworkPreUpdate));
+                }
+                else if (playerLoopSystem.type == typeof(Update))
+                {
+                    Assert.True(
+                        subsystems.Exists(s => s.type == typeof(NetworkUpdateLoop.NetworkUpdate)),
+                        nameof(NetworkUpdateLoop.NetworkUpdate));
+                }
+                else if (playerLoopSystem.type == typeof(PreLateUpdate))
+                {
+                    Assert.True(
+                        subsystems.Exists(s => s.type == typeof(NetworkUpdateLoop.NetworkPreLateUpdate)),
+                        nameof(NetworkUpdateLoop.NetworkPreLateUpdate));
+                }
+                else if (playerLoopSystem.type == typeof(PostLateUpdate))
+                {
+                    Assert.True(
+                        subsystems.Exists(s => s.type == typeof(NetworkUpdateLoop.NetworkPostLateUpdate)),
+                        nameof(NetworkUpdateLoop.NetworkPostLateUpdate));
+                }
             }
         }
 
