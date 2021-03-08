@@ -302,7 +302,7 @@ namespace MLAPI.Spawning
 
                     try
                     {
-                        SceneManager.SetActiveScene(m_NetworkManager.gameObject.scene);
+                        SceneManager.SetActiveScene(m_NetworkManager.ActiveScene);
                         networkObject = ((position == null && rotation == null) ?
                             MonoBehaviour.Instantiate(prefab) :
                             MonoBehaviour.Instantiate(prefab, position.GetValueOrDefault(Vector3.zero), rotation.GetValueOrDefault(Quaternion.identity))).GetComponent<NetworkObject>();

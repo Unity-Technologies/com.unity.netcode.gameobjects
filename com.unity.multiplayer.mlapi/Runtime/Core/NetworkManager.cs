@@ -310,6 +310,23 @@ namespace MLAPI
         }
 
         /// <summary>
+        /// The Active Scene that this NetworkManager works against. If the NetworkManager is set to DontDestroyOnLoad, then
+        /// this will return whichever scene is currently active. 
+        /// </summary>
+        public Scene ActiveScene
+        {
+            get
+            {
+                //this highlights an important caveat with DontDestroyOnLoad scene managers, because they are in the DontDestroyOnLoad scene
+                //they don't know inherently what scene to operate against. If running a local server, developers should place a regular
+                //NetworkManager with scene-lifetime in the "server scene". If the developer wants to handle a scene transition in this scenario,
+                //she should delete the old server scene and create a new one, and re-connect to the newly created server in it. This closely follows
+                //the flow you would follow with a dedicated server, where switching between scenes also means transitioning to a new server process. 
+                return (gameObject.scene.name == "DontDestroyOnLoad") ? SceneManager.GetActiveScene() : gameObject.scene;
+            }
+        }
+
+        /// <summary>
         /// Method that finds all Components of a particular type in the NetworkManager's scene. This does
         /// a depth-first scan of all root objects in the scene, and is O(N) with the number of GameObjects in the scene. 
         /// </summary>
@@ -317,13 +334,8 @@ namespace MLAPI
         /// <returns>List of all Monobehaviours found in that scene.</returns>
         public List<T> FindObjectsOfTypeInScene<T>()
         {
-            // if the NetworkManager is in the DontDestroyOnLoad scene, then we should just search in the active scene. Users who are running
-            // multiple NetworkManagers need to be careful when they set DontDestroyOnLoad, since that will remove them from the scene
-            // to which they would normally be associated.
-
-            Scene testScene = (gameObject.scene.name == "DontDestroyOnLoad") ? SceneManager.GetActiveScene() : gameObject.scene;
             List<T> output = new List<T>();
-            GameObject[] gameObjects = testScene.GetRootGameObjects();
+            GameObject[] gameObjects = ActiveScene.GetRootGameObjects();
             foreach (var go in gameObjects)
             {
                 output.AddRange(go.GetComponentsInChildren<T>());
@@ -342,13 +354,10 @@ namespace MLAPI
             GameObject[] allObjects = GameObject.FindGameObjectsWithTag(tag);
             List<GameObject> output = new List<GameObject>(allObjects.Length);
 
-            //see note in FindObjectsOfTypeInScene.
-            Scene testScene = (gameObject.scene.name == "DontDestroyOnLoad") ? SceneManager.GetActiveScene() : gameObject.scene;
-
             //intentionally not using any LINQ "Where" container filtering here to avoid any extra allocs. 
             foreach (var go in allObjects)
             {
-                if (go.scene == testScene)
+                if (go.scene == ActiveScene)
                 {
                     output.Add(go);
                 }
