@@ -1,13 +1,40 @@
 using System;
 using System.Collections;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.TestTools;
 using NUnit.Framework;
+using UnityEngine.LowLevel;
+using UnityEngine.PlayerLoop;
 
 namespace MLAPI.RuntimeTests
 {
     public class NetworkUpdateLoopTests
     {
+        [Test]
+        public void VerifyInjectedStages()
+        {
+            var currentPlayerLoop = PlayerLoop.GetCurrentPlayerLoop();
+            for (int i = 0; i < currentPlayerLoop.subSystemList.Length; i++)
+            {
+                var playerLoopSystem = currentPlayerLoop.subSystemList[i];
+                var subsystems = playerLoopSystem.subSystemList.ToList();
+
+                if (playerLoopSystem.type == typeof(Initialization))
+                {
+                    Assert.True(
+                        subsystems.Exists(s => s.type == typeof(NetworkUpdateLoop.NetworkInitialization)),
+                        nameof(NetworkUpdateLoop.NetworkInitialization));
+                }
+                else if (playerLoopSystem.type == typeof(EarlyUpdate)) { }
+                else if (playerLoopSystem.type == typeof(FixedUpdate)) { }
+                else if (playerLoopSystem.type == typeof(PreUpdate)) { }
+                else if (playerLoopSystem.type == typeof(Update)) { }
+                else if (playerLoopSystem.type == typeof(PreLateUpdate)) { }
+                else if (playerLoopSystem.type == typeof(PostLateUpdate)) { }
+            }
+        }
+
         private struct NetworkUpdateCallbacks
         {
             public Action OnInitialization;

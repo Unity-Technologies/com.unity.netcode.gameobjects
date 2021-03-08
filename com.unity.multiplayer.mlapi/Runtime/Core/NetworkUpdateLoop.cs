@@ -150,7 +150,7 @@ namespace MLAPI
             }
         }
 
-        private struct NetworkInitialization
+        internal struct NetworkInitialization
         {
             public static PlayerLoopSystem CreateLoopSystem()
             {
