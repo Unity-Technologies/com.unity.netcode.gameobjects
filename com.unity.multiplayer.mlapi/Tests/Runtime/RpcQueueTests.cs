@@ -199,28 +199,28 @@ namespace MLAPI.RuntimeTests
         }
 
         [UnityTest]
-        public IEnumerator RpcQueueContainerTest()
+        public IEnumerator RpcQueueContainerBaseLineTest()
         {
             bool InitializeNetworkManager = NetowrkManangerHelper.StartNetworkManager();
             Assert.IsTrue(InitializeNetworkManager);
-            if(!InitializeNetworkManager)
+            if (!InitializeNetworkManager)
             {
-                  yield return null;
+                yield return null;
             }
 
-            if(NetowrkManangerHelper.StartHostSocketTasks == null)
+            if (NetowrkManangerHelper.StartHostSocketTasks == null)
             {
                 Assert.IsNotNull(NetowrkManangerHelper.StartHostSocketTasks);
                 yield return null;
             }
 
-            foreach(Transports.Tasks.SocketTask task in NetowrkManangerHelper.StartHostSocketTasks.Tasks)
+            foreach (Transports.Tasks.SocketTask task in NetowrkManangerHelper.StartHostSocketTasks.Tasks)
             {
-                while(!task.IsDone)
+                while (!task.IsDone)
                 {
-                     yield return new WaitForSeconds(0.02f);
+                    yield return new WaitForSeconds(0.02f);
                 }
-                if(task.SocketError != System.Net.Sockets.SocketError.Success)
+                if (task.SocketError != System.Net.Sockets.SocketError.Success)
                 {
                     Assert.AreSame(task.SocketError, System.Net.Sockets.SocketError.Success);
                     yield return null;
@@ -229,23 +229,80 @@ namespace MLAPI.RuntimeTests
 
             Debug.Log("Host Started.");
 
-            //Spawn the player
-            NetowrkManangerHelper.PlayerNetworkObject.SpawnAsPlayerObject(0, null, true);
-
+            //Create a testing rpcQueueContainer that doesn't get added to the network update loop so we don't try to send or process during the test
             var rpcQueueContainer = new RpcQueueContainer(true);
-            var buffer = new NetworkBuffer();
 
-            var MaxSize = 65536;
-            var PreCalculatedBufferValues = new List<byte>(0);
-            for(int i = 0; i <  (MaxSize >> 3); i++ )
+            //This test doesn't test the history frames functionality, it just tests the baseline functionality of the RpcQueueContainer
+            rpcQueueContainer.Initialize(0);
+
+            var MaxPsuedoRpcMessageSize = 1024;
+            var MaxRpcEntries = 8;
+
+            var PreCalculatedBufferValues = new List<byte>(MaxPsuedoRpcMessageSize);
+            var MessageSizeChunks = MaxPsuedoRpcMessageSize >> 3;
+
+            for (int i = 0; i <= MessageSizeChunks; i++)
             {
                 PreCalculatedBufferValues.AddRange(BitConverter.GetBytes(Random.Range(0, UInt64.MaxValue)));
             }
 
-            var writer = new NetworkWriter(buffer);
-            writer.WriteBytes(PreCalculatedBufferValues.ToArray(), 0);
-            rpcQueueContainer.AddQueueItemToInboundFrame(RpcQueueContainer.QueueItemType.ClientRpc, Time.realtimeSinceStartup, 0, buffer);
+            var IndexOffset = 0;
+            ulong SenderNetworkId = 1;
 
+            //Create ficticious list of clients to send to
+            ulong[] PsuedoClients = new ulong[]{0,1,3,4};
+
+            var PsuedoTimeStamp = Time.realtimeSinceStartup;
+            var RandomGeneratedDataArray = PreCalculatedBufferValues.ToArray();
+
+            //Testing outbound side of the RpcQueueContainer
+            for (int i = 0; i < MaxRpcEntries; i++)
+            {
+                var writer = rpcQueueContainer.BeginAddQueueItemToFrame(RpcQueueContainer.QueueItemType.ClientRpc, Time.realtimeSinceStartup,Transports.NetworkChannel.DefaultMessage,
+                        SenderNetworkId, PsuedoClients, RpcQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
+
+                //Write chunks of the randomly generated data to the "psuedo rpc entry"
+                writer.WriteBytes(PreCalculatedBufferValues.ToArray(), MessageSizeChunks, IndexOffset);
+
+                rpcQueueContainer.EndAddQueueItemToFrame(writer, RpcQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
+
+                //Increment our offset into our randomly generated data for next entry;
+                IndexOffset = i * MessageSizeChunks;
+            }
+
+            //Now verify the data by obtaining the RpcQueueHistoryFrame we just wrote to
+            var currentFrame = rpcQueueContainer.GetLoopBackHistoryFrame(RpcQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
+
+            //Reset our index offset
+            IndexOffset = 0;
+            int QueueEntryItemCount = 0;
+            //Parse through the entries written to the current RpcQueueHistoryFrame
+            var currentQueueItem = currentFrame.GetFirstQueueItem();
+            while (currentQueueItem.QueueItemType != RpcQueueContainer.QueueItemType.None)
+            {
+                //Check to make sure the clients list is accurate
+                for (int i = 0; i < 4; i++)
+                {
+                    Assert.AreEqual(currentQueueItem.ClientNetworkIds[i], PsuedoClients[i]);
+                }
+                //Check to make sure the wrapper information is accurate for the entry
+                Assert.AreEqual(currentQueueItem.NetworkId, SenderNetworkId);
+                Assert.AreEqual(currentQueueItem.QueueItemType, RpcQueueContainer.QueueItemType.ClientRpc);
+                Assert.AreEqual(currentQueueItem.UpdateStage, NetworkUpdateStage.PostLateUpdate);
+                Assert.AreEqual(currentQueueItem.Timestamp, PsuedoTimeStamp);
+                Assert.AreEqual(currentQueueItem.NetworkChannel, Transports.NetworkChannel.DefaultMessage);
+
+
+                //Increment our offset into our randomly generated data for next entry;
+                IndexOffset = QueueEntryItemCount * MessageSizeChunks;
+
+                //Validate the data
+                Assert.IsTrue(NetowrkManangerHelper.BuffersMatch(IndexOffset, MessageSizeChunks, currentQueueItem.MessageData.Array, RandomGeneratedDataArray));
+
+                //Prepare for next queue item
+                QueueEntryItemCount++;
+                currentQueueItem = currentFrame.GetNextQueueItem();
+            }
             yield return null;
         }
 
@@ -259,7 +316,7 @@ namespace MLAPI.RuntimeTests
             {
                 var networkManagerObject = new GameObject(nameof(NetworkManager));
                 var NetworkManagerComponent = networkManagerObject.AddComponent<NetworkManager>();
-                if(NetworkManagerComponent == null)
+                if (NetworkManagerComponent == null)
                 {
                     return false;
                 }
@@ -291,7 +348,7 @@ namespace MLAPI.RuntimeTests
                 PlayerObject = new GameObject("RpcTestObject");
                 PlayerNetworkObject = PlayerObject.AddComponent<NetworkObject>();
 
-                if(!PlayerNetworkObject)
+                if (!PlayerNetworkObject)
                 {
                     return false;
                 }
@@ -301,6 +358,52 @@ namespace MLAPI.RuntimeTests
 
                 return true;
             }
+
+
+            public static bool BuffersMatch(int IndexOffset, long TargetSize, byte[] SourceArray, byte[] OriginalArry)
+            {
+                long LargeInt64Blocks = TargetSize >> 3; //Divide by 8
+
+                //process by 8 byte blocks if we can
+                for (long i = 0; i < LargeInt64Blocks; i++)
+                {
+                    if (BitConverter.ToInt64(SourceArray, IndexOffset) != BitConverter.ToInt64(OriginalArry, IndexOffset))
+                    {
+                        return false;
+                    }
+                    IndexOffset += 8;
+                }
+
+                long Offset = LargeInt64Blocks * 8;
+                long Remainder = TargetSize - Offset;
+
+                //4 byte block
+                if (Remainder >= 4)
+                {
+                    if (BitConverter.ToInt32(SourceArray, IndexOffset) != BitConverter.ToInt32(OriginalArry, IndexOffset))
+                    {
+                        return false;
+                    }
+                    IndexOffset += 4;
+                    Offset += 4;
+                }
+
+                //Remainder of bytes < 4
+                if (TargetSize - Offset > 0)
+                {
+                    for (long i = 0; i < (TargetSize - Offset); i++)
+                    {
+                        if (SourceArray[IndexOffset + i] != OriginalArry[IndexOffset + i])
+                        {
+                            return false;
+                        }
+                    }
+                }
+                return true;
+            }
         }
+
     }
+
+
 }
