@@ -364,6 +364,8 @@ namespace MLAPI.Spawning
                 throw new SpawnStateException("Object is already spawned");
             }
 
+            networkObject.NetworkManager = m_NetworkManager;
+
             if (readNetworkVariable && m_NetworkManager.NetworkConfig.EnableNetworkVariable)
             {
                 networkObject.SetNetworkVariableData(dataStream);
@@ -380,7 +382,6 @@ namespace MLAPI.Spawning
 
             networkObject.OwnerClientIdInternal = ownerClientId;
             networkObject.IsPlayerObject = playerObject;
-            networkObject.NetworkManager = m_NetworkManager;
 
             SpawnedObjects.Add(networkObject.NetworkObjectId, networkObject);
             SpawnedObjectsList.Add(networkObject);
