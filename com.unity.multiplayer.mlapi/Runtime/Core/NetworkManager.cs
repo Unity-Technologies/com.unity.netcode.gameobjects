@@ -317,8 +317,13 @@ namespace MLAPI
         /// <returns>List of all Monobehaviours found in that scene.</returns>
         public List<T> FindObjectsOfTypeInScene<T>()
         {
+            // if the NetworkManager is in the DontDestroyOnLoad scene, then we should just search in the active scene. Users who are running
+            // multiple NetworkManagers need to be careful when they set DontDestroyOnLoad, since that will remove them from the scene
+            // to which they would normally be associated.
+
+            Scene testScene = (gameObject.scene.name == "DontDestroyOnLoad") ? SceneManager.GetActiveScene() : gameObject.scene;
             List<T> output = new List<T>();
-            GameObject[] gameObjects = gameObject.scene.GetRootGameObjects();
+            GameObject[] gameObjects = testScene.GetRootGameObjects();
             foreach (var go in gameObjects)
             {
                 output.AddRange(go.GetComponentsInChildren<T>());
@@ -337,10 +342,13 @@ namespace MLAPI
             GameObject[] allObjects = GameObject.FindGameObjectsWithTag(tag);
             List<GameObject> output = new List<GameObject>(allObjects.Length);
 
+            //see note in FindObjectsOfTypeInScene.
+            Scene testScene = (gameObject.scene.name == "DontDestroyOnLoad") ? SceneManager.GetActiveScene() : gameObject.scene;
+
             //intentionally not using any LINQ "Where" container filtering here to avoid any extra allocs. 
             foreach (var go in allObjects)
             {
-                if (go.scene == gameObject.scene)
+                if (go.scene == testScene)
                 {
                     output.Add(go);
                 }

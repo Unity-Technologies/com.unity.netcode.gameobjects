@@ -57,11 +57,9 @@ namespace MLAPI.SceneManagement
         private NetworkManager m_NetworkManager;
 
 
-
-        internal SceneSwitchProgress(NetworkManager manager) { m_NetworkManager = manager; }
-
-        internal SceneSwitchProgress()
+        internal SceneSwitchProgress(NetworkManager manager)
         {
+            m_NetworkManager = manager;
             TimeAtInitiation = m_NetworkManager.NetworkTime;
             m_TimeOutCoroutine = m_NetworkManager.StartCoroutine(m_NetworkManager.TimeOutSwitchSceneProgress(this));
         }
