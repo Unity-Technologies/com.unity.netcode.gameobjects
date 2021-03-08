@@ -10,70 +10,70 @@ namespace MLAPI.EditorTests
         [Test]
         public void TestEmptyStream()
         {
-            BitStream bitStream = new BitStream(new byte[100]);
-            Assert.That(bitStream.Length, Is.EqualTo(100));
+            var networkBuffer = new NetworkBuffer(new byte[100]);
+            Assert.That(networkBuffer.Length, Is.EqualTo(100));
         }
 
         [Test]
         public void TestBool()
         {
-            BitStream bitStream = new BitStream(new byte[100]);
-            bitStream.WriteBit(true);
-            Assert.That(bitStream.Length, Is.EqualTo(100));
+            var networkBuffer = new NetworkBuffer(new byte[100]);
+            networkBuffer.WriteBit(true);
+            Assert.That(networkBuffer.Length, Is.EqualTo(100));
         }
 
         [Test]
         public void TestSetLength()
         {
-            BitStream bitStream = new BitStream(4);
-            bitStream.SetLength(100);
+            var networkBuffer = new NetworkBuffer(4);
+            networkBuffer.SetLength(100);
 
-            Assert.That(bitStream.Capacity, Is.GreaterThanOrEqualTo(100));
+            Assert.That(networkBuffer.Capacity, Is.GreaterThanOrEqualTo(100));
         }
 
         [Test]
         public void TestSetLength2()
         {
-            BitStream bitStream = new BitStream(4);
+            var networkBuffer = new NetworkBuffer(4);
 
-            bitStream.WriteByte(1);
-            bitStream.WriteByte(1);
-            bitStream.WriteByte(1);
-            bitStream.WriteByte(1);
+            networkBuffer.WriteByte(1);
+            networkBuffer.WriteByte(1);
+            networkBuffer.WriteByte(1);
+            networkBuffer.WriteByte(1);
 
-            bitStream.SetLength(0);
+            networkBuffer.SetLength(0);
 
             // position should never go beyond length
-            Assert.That(bitStream.Position, Is.EqualTo(0));
+            Assert.That(networkBuffer.Position, Is.EqualTo(0));
         }
 
         [Test]
         public void TestGrow()
         {
             // stream should not grow when given a buffer
-            BitStream bitStream = new BitStream(new byte[0]);
-            BitWriter bw = new BitWriter(bitStream);
-            Assert.That(() => { bw.WriteInt64(long.MaxValue); }, Throws.TypeOf<NotSupportedException>());
+            var networkBuffer = new NetworkBuffer(new byte[0]);
+            var networkWriter = new NetworkWriter(networkBuffer);
+            Assert.That(() => { networkWriter.WriteInt64(long.MaxValue); }, Throws.TypeOf<NotSupportedException>());
         }
 
         [Test]
         public void TestInOutBool()
         {
-            byte[] buffer = new byte[100];
+            var buffer = new byte[100];
 
-            BitStream outStream = new BitStream(buffer);
-            outStream.WriteBit(true);
-            outStream.WriteBit(false);
-            outStream.WriteBit(true);
+            var outNetworkBuffer = new NetworkBuffer(buffer);
+            outNetworkBuffer.WriteBit(true);
+            outNetworkBuffer.WriteBit(false);
+            outNetworkBuffer.WriteBit(true);
 
 
             // the bit should now be stored in the buffer,  lets see if it comes out
 
-            BitStream inStream = new BitStream(buffer);
+            var inNetworkBuffer = new NetworkBuffer(buffer);
 
-            Assert.That(inStream.ReadBit(), Is.True);
-            Assert.That(inStream.ReadBit(), Is.False);
-            Assert.That(inStream.ReadBit(), Is.True);
+            Assert.That(inNetworkBuffer.ReadBit(), Is.True);
+            Assert.That(inNetworkBuffer.ReadBit(), Is.False);
+            Assert.That(inNetworkBuffer.ReadBit(), Is.True);
         }
 
 
@@ -82,15 +82,15 @@ namespace MLAPI.EditorTests
         {
             short svalue = -31934;
             ushort uvalue = 64893;
-            BitStream outStream = new BitStream();
-            BitWriter bw = new BitWriter(outStream);
-            bw.WriteInt16Packed(svalue);
-            bw.WriteUInt16Packed(uvalue);
+            var outNetworkBuffer = new NetworkBuffer();
+            var outNetworkWriter = new NetworkWriter(outNetworkBuffer);
+            outNetworkWriter.WriteInt16Packed(svalue);
+            outNetworkWriter.WriteUInt16Packed(uvalue);
 
-            BitStream inStream = new BitStream(outStream.GetBuffer());
-            BitReader br = new BitReader(inStream);
-            Assert.That(br.ReadInt16Packed(), Is.EqualTo(svalue));
-            Assert.That(br.ReadUInt16Packed(), Is.EqualTo(uvalue));
+            var inNetworkBuffer = new NetworkBuffer(outNetworkBuffer.GetBuffer());
+            var inNetworkReader = new NetworkReader(inNetworkBuffer);
+            Assert.That(inNetworkReader.ReadInt16Packed(), Is.EqualTo(svalue));
+            Assert.That(inNetworkReader.ReadUInt16Packed(), Is.EqualTo(uvalue));
         }
 
 
@@ -99,114 +99,110 @@ namespace MLAPI.EditorTests
         {
             int svalue = -100913642;
             uint uvalue = 1467867235;
-            BitStream outStream = new BitStream();
-            BitWriter bw = new BitWriter(outStream);
-            bw.WriteInt32Packed(svalue);
-            bw.WriteUInt32Packed(uvalue);
+            var outNetworkBuffer = new NetworkBuffer();
+            var outNetworkWriter = new NetworkWriter(outNetworkBuffer);
+            outNetworkWriter.WriteInt32Packed(svalue);
+            outNetworkWriter.WriteUInt32Packed(uvalue);
 
-            BitStream inStream = new BitStream(outStream.GetBuffer());
-            BitReader br = new BitReader(inStream);
-            Assert.That(br.ReadInt32Packed(), Is.EqualTo(svalue));
-            Assert.That(br.ReadUInt32Packed(), Is.EqualTo(uvalue));
+            var inNetworkBuffer = new NetworkBuffer(outNetworkBuffer.GetBuffer());
+            var inNetworkReader = new NetworkReader(inNetworkBuffer);
+            Assert.That(inNetworkReader.ReadInt32Packed(), Is.EqualTo(svalue));
+            Assert.That(inNetworkReader.ReadUInt32Packed(), Is.EqualTo(uvalue));
         }
 
 
         [Test]
         public void TestInOutPacked64Bit()
         {
-            byte[] buffer = new byte[100];
+            var buffer = new byte[100];
 
             long someNumber = -1469598103934656037;
             ulong uNumber = 81246971249124124;
             ulong uNumber2 = 2287;
             ulong uNumber3 = 235;
 
-            BitStream outStream = new BitStream(buffer);
-            BitWriter bw = new BitWriter(outStream);
-            bw.WriteInt64Packed(someNumber);
-            bw.WriteUInt64Packed(uNumber);
-            bw.WriteUInt64Packed(uNumber2);
-            bw.WriteUInt64Packed(uNumber3);
+            var outNetworkBuffer = new NetworkBuffer(buffer);
+            var outNetworkWriter = new NetworkWriter(outNetworkBuffer);
+            outNetworkWriter.WriteInt64Packed(someNumber);
+            outNetworkWriter.WriteUInt64Packed(uNumber);
+            outNetworkWriter.WriteUInt64Packed(uNumber2);
+            outNetworkWriter.WriteUInt64Packed(uNumber3);
 
             // the bit should now be stored in the buffer,  lets see if it comes out
 
-            BitStream inStream = new BitStream(buffer);
-            BitReader br = new BitReader(inStream);
+            var inNetworkBuffer = new NetworkBuffer(buffer);
+            var inNetworkReader = new NetworkReader(inNetworkBuffer);
 
-            Assert.That(br.ReadInt64Packed(), Is.EqualTo(someNumber));
-            Assert.That(br.ReadUInt64Packed(), Is.EqualTo(uNumber));
-            Assert.That(br.ReadUInt64Packed(), Is.EqualTo(uNumber2));
-            Assert.That(br.ReadUInt64Packed(), Is.EqualTo(uNumber3));
+            Assert.That(inNetworkReader.ReadInt64Packed(), Is.EqualTo(someNumber));
+            Assert.That(inNetworkReader.ReadUInt64Packed(), Is.EqualTo(uNumber));
+            Assert.That(inNetworkReader.ReadUInt64Packed(), Is.EqualTo(uNumber2));
+            Assert.That(inNetworkReader.ReadUInt64Packed(), Is.EqualTo(uNumber3));
         }
 
         [Test]
         public void TestStreamCopy()
         {
-            BitStream inStream = new BitStream();
-            BitStream copyFrom = new BitStream();
+            var inNetworkBuffer = new NetworkBuffer();
+            var copyNetworkBuffer = new NetworkBuffer();
 
             byte initialValue1 = 56;
             byte initialValue2 = 24;
 
-            inStream.WriteByte(initialValue1);
-            inStream.WriteByte(initialValue2);
+            inNetworkBuffer.WriteByte(initialValue1);
+            inNetworkBuffer.WriteByte(initialValue2);
 
             byte copyValue1 = 27;
             byte copyValue2 = 100;
 
-            copyFrom.WriteByte(copyValue1);
-            copyFrom.WriteByte(copyValue2);
+            copyNetworkBuffer.WriteByte(copyValue1);
+            copyNetworkBuffer.WriteByte(copyValue2);
 
-            inStream.CopyFrom(copyFrom, 2);
+            inNetworkBuffer.CopyFrom(copyNetworkBuffer, 2);
 
-            BitStream outStream = new BitStream(inStream.ToArray());
+            var outNetworkBuffer = new NetworkBuffer(inNetworkBuffer.ToArray());
 
-            Assert.That(outStream.ReadByte(), Is.EqualTo(initialValue1));
-            Assert.That(outStream.ReadByte(), Is.EqualTo(initialValue2));
-            Assert.That(outStream.ReadByte(), Is.EqualTo(copyValue1));
-            Assert.That(outStream.ReadByte(), Is.EqualTo(copyValue2));
+            Assert.That(outNetworkBuffer.ReadByte(), Is.EqualTo(initialValue1));
+            Assert.That(outNetworkBuffer.ReadByte(), Is.EqualTo(initialValue2));
+            Assert.That(outNetworkBuffer.ReadByte(), Is.EqualTo(copyValue1));
+            Assert.That(outNetworkBuffer.ReadByte(), Is.EqualTo(copyValue2));
         }
 
         [Test]
         public void TestToArray()
         {
-            BitStream inStream = new BitStream();
-            inStream.WriteByte(5);
-            inStream.WriteByte(6);
-            Assert.That(inStream.ToArray().Length, Is.EqualTo(2));
+            var inNetworkBuffer = new NetworkBuffer();
+            inNetworkBuffer.WriteByte(5);
+            inNetworkBuffer.WriteByte(6);
+            Assert.That(inNetworkBuffer.ToArray().Length, Is.EqualTo(2));
         }
 
 
         [Test]
         public void TestInOutBytes()
         {
-            byte[] buffer = new byte[100];
-
+            var buffer = new byte[100];
             byte someNumber = 0xff;
 
+            var outNetworkBuffer = new NetworkBuffer(buffer);
+            outNetworkBuffer.WriteByte(someNumber);
 
-            BitStream outStream = new BitStream(buffer);
-            outStream.WriteByte(someNumber);
-
-            BitStream inStream = new BitStream(buffer);
-            Assert.That(inStream.ReadByte(), Is.EqualTo(someNumber));
+            var inNetworkBuffer = new NetworkBuffer(buffer);
+            Assert.That(inNetworkBuffer.ReadByte(), Is.EqualTo(someNumber));
         }
 
         [Test]
         public void TestInOutInt16()
         {
-            byte[] buffer = new byte[100];
-
+            var buffer = new byte[100];
             short someNumber = 23223;
 
+            var outNetworkBuffer = new NetworkBuffer(buffer);
+            var outNetworkWriter = new NetworkWriter(outNetworkBuffer);
+            outNetworkWriter.WriteInt16(someNumber);
 
-            BitStream outStream = new BitStream(buffer);
-            BitWriter bw = new BitWriter(outStream);
-            bw.WriteInt16(someNumber);
-
-            BitStream inStream = new BitStream(buffer);
-            BitReader br = new BitReader(inStream);
-            short result = br.ReadInt16();
+            var inNetworkBuffer = new NetworkBuffer(buffer);
+            var inNetworkReader = new NetworkReader(inNetworkBuffer);
+            short result = inNetworkReader.ReadInt16();
 
             Assert.That(result, Is.EqualTo(someNumber));
         }
@@ -214,18 +210,16 @@ namespace MLAPI.EditorTests
         [Test]
         public void TestInOutInt32()
         {
-            byte[] buffer = new byte[100];
-
+            var buffer = new byte[100];
             int someNumber = 23234223;
 
+            var outNetworkBuffer = new NetworkBuffer(buffer);
+            var outNetworkWriter = new NetworkWriter(outNetworkBuffer);
+            outNetworkWriter.WriteInt32(someNumber);
 
-            BitStream outStream = new BitStream(buffer);
-            BitWriter bw = new BitWriter(outStream);
-            bw.WriteInt32(someNumber);
-
-            BitStream inStream = new BitStream(buffer);
-            BitReader br = new BitReader(inStream);
-            int result = br.ReadInt32();
+            var inNetworkBuffer = new NetworkBuffer(buffer);
+            var inNetworkReader = new NetworkReader(inNetworkBuffer);
+            int result = inNetworkReader.ReadInt32();
 
             Assert.That(result, Is.EqualTo(someNumber));
         }
@@ -233,18 +227,16 @@ namespace MLAPI.EditorTests
         [Test]
         public void TestInOutInt64()
         {
-            byte[] buffer = new byte[100];
-
+            var buffer = new byte[100];
             long someNumber = 4614256656552045848;
 
+            var outNetworkBuffer = new NetworkBuffer(buffer);
+            var outNetworkWriter = new NetworkWriter(outNetworkBuffer);
+            outNetworkWriter.WriteInt64(someNumber);
 
-            BitStream outStream = new BitStream(buffer);
-            BitWriter bw = new BitWriter(outStream);
-            bw.WriteInt64(someNumber);
-
-            BitStream inStream = new BitStream(buffer);
-            BitReader br = new BitReader(inStream);
-            long result = br.ReadInt64();
+            var inNetworkBuffer = new NetworkBuffer(buffer);
+            var inNetworkReader = new NetworkReader(inNetworkBuffer);
+            long result = inNetworkReader.ReadInt64();
 
             Assert.That(result, Is.EqualTo(someNumber));
         }
@@ -252,23 +244,22 @@ namespace MLAPI.EditorTests
         [Test]
         public void TestInOutMultiple()
         {
-            byte[] buffer = new byte[100];
-
+            var buffer = new byte[100];
             short someNumber = -12423;
             short someNumber2 = 9322;
 
-            BitStream outStream = new BitStream(buffer);
-            BitWriter bw = new BitWriter(outStream);
-            bw.WriteInt16(someNumber);
-            bw.WriteInt16(someNumber2);
+            var outNetworkBuffer = new NetworkBuffer(buffer);
+            var outNetworkWriter = new NetworkWriter(outNetworkBuffer);
+            outNetworkWriter.WriteInt16(someNumber);
+            outNetworkWriter.WriteInt16(someNumber2);
 
 
             // the bit should now be stored in the buffer,  lets see if it comes out
 
-            BitStream inStream = new BitStream(buffer);
-            BitReader br = new BitReader(inStream);
-            short result = br.ReadInt16();
-            short result2 = br.ReadInt16();
+            var inNetworkBuffer = new NetworkBuffer(buffer);
+            var inNetworkReader = new NetworkReader(inNetworkBuffer);
+            short result = inNetworkReader.ReadInt16();
+            short result2 = inNetworkReader.ReadInt16();
 
             Assert.That(result, Is.EqualTo(someNumber));
             Assert.That(result2, Is.EqualTo(someNumber2));
@@ -277,137 +268,135 @@ namespace MLAPI.EditorTests
         [Test]
         public void TestLength()
         {
-            BitStream inStream = new BitStream(4);
-            Assert.That(inStream.Length, Is.EqualTo(0));
-            inStream.WriteByte(1);
-            Assert.That(inStream.Length, Is.EqualTo(1));
-            inStream.WriteByte(2);
-            Assert.That(inStream.Length, Is.EqualTo(2));
-            inStream.WriteByte(3);
-            Assert.That(inStream.Length, Is.EqualTo(3));
-            inStream.WriteByte(4);
-            Assert.That(inStream.Length, Is.EqualTo(4));
+            var inNetworkBuffer = new NetworkBuffer(4);
+            Assert.That(inNetworkBuffer.Length, Is.EqualTo(0));
+            inNetworkBuffer.WriteByte(1);
+            Assert.That(inNetworkBuffer.Length, Is.EqualTo(1));
+            inNetworkBuffer.WriteByte(2);
+            Assert.That(inNetworkBuffer.Length, Is.EqualTo(2));
+            inNetworkBuffer.WriteByte(3);
+            Assert.That(inNetworkBuffer.Length, Is.EqualTo(3));
+            inNetworkBuffer.WriteByte(4);
+            Assert.That(inNetworkBuffer.Length, Is.EqualTo(4));
         }
 
         [Test]
         public void TestCapacityGrowth()
         {
-            BitStream inStream = new BitStream(4);
-            Assert.That(inStream.Capacity, Is.EqualTo(4));
+            var inNetworkBuffer = new NetworkBuffer(4);
+            Assert.That(inNetworkBuffer.Capacity, Is.EqualTo(4));
 
-            inStream.WriteByte(1);
-            inStream.WriteByte(2);
-            inStream.WriteByte(3);
-            inStream.WriteByte(4);
-            inStream.WriteByte(5);
+            inNetworkBuffer.WriteByte(1);
+            inNetworkBuffer.WriteByte(2);
+            inNetworkBuffer.WriteByte(3);
+            inNetworkBuffer.WriteByte(4);
+            inNetworkBuffer.WriteByte(5);
 
             // buffer should grow and the reported length
             // should not waste any space
             // note MemoryStream makes a distinction between Length and Capacity
-            Assert.That(inStream.Length, Is.EqualTo(5));
-            Assert.That(inStream.Capacity, Is.GreaterThanOrEqualTo(5));
+            Assert.That(inNetworkBuffer.Length, Is.EqualTo(5));
+            Assert.That(inNetworkBuffer.Capacity, Is.GreaterThanOrEqualTo(5));
         }
 
         [Test]
         public void TestWriteSingle()
         {
             float somenumber = 0.1f;
-            BitStream outStream = new BitStream();
-            BitWriter bw = new BitWriter(outStream);
+            var outNetworkBuffer = new NetworkBuffer();
+            var outNetworkWriter = new NetworkWriter(outNetworkBuffer);
 
-            bw.WriteSingle(somenumber);
-            byte[] buffer = outStream.GetBuffer();
+            outNetworkWriter.WriteSingle(somenumber);
+            var outBuffer = outNetworkBuffer.GetBuffer();
 
-            BitStream inStream = new BitStream(buffer);
-            BitReader br = new BitReader(inStream);
+            var inNetworkBuffer = new NetworkBuffer(outBuffer);
+            var inNetworkReader = new NetworkReader(inNetworkBuffer);
 
-            Assert.That(br.ReadSingle(), Is.EqualTo(somenumber));
+            Assert.That(inNetworkReader.ReadSingle(), Is.EqualTo(somenumber));
         }
 
         [Test]
         public void TestWriteDouble()
         {
             double somenumber = Math.PI;
-            BitStream outStream = new BitStream();
-            BitWriter bw = new BitWriter(outStream);
+            var outNetworkBuffer = new NetworkBuffer();
+            var outNetworkWriter = new NetworkWriter(outNetworkBuffer);
 
-            bw.WriteDouble(somenumber);
-            byte[] buffer = outStream.GetBuffer();
+            outNetworkWriter.WriteDouble(somenumber);
+            var outBuffer = outNetworkBuffer.GetBuffer();
 
-            BitStream inStream = new BitStream(buffer);
-            BitReader br = new BitReader(inStream);
+            var inNetworkBuffer = new NetworkBuffer(outBuffer);
+            var inNetworkReader = new NetworkReader(inNetworkBuffer);
 
-            Assert.That(br.ReadDouble(), Is.EqualTo(somenumber));
-
+            Assert.That(inNetworkReader.ReadDouble(), Is.EqualTo(somenumber));
         }
 
         [Test]
         public void TestWritePackedSingle()
         {
             float somenumber = (float)Math.PI;
-            BitStream outStream = new BitStream();
-            BitWriter bw = new BitWriter(outStream);
+            var outNetworkBuffer = new NetworkBuffer();
+            var outNetworkWriter = new NetworkWriter(outNetworkBuffer);
 
-            bw.WriteSinglePacked(somenumber);
-            byte[] buffer = outStream.GetBuffer();
+            outNetworkWriter.WriteSinglePacked(somenumber);
+            var buffer = outNetworkBuffer.GetBuffer();
 
-            BitStream inStream = new BitStream(buffer);
-            BitReader br = new BitReader(inStream);
+            var inNetworkBuffer = new NetworkBuffer(buffer);
+            var inNetworkReader = new NetworkReader(inNetworkBuffer);
 
-            Assert.That(br.ReadSinglePacked(), Is.EqualTo(somenumber));
+            Assert.That(inNetworkReader.ReadSinglePacked(), Is.EqualTo(somenumber));
         }
 
         [Test]
         public void TestWritePackedDouble()
         {
             double somenumber = Math.PI;
-            BitStream outStream = new BitStream();
-            BitWriter bw = new BitWriter(outStream);
+            var outNetworkBuffer = new NetworkBuffer();
+            var outNetworkWriter = new NetworkWriter(outNetworkBuffer);
 
-            bw.WriteDoublePacked(somenumber);
-            byte[] buffer = outStream.GetBuffer();
+            outNetworkWriter.WriteDoublePacked(somenumber);
+            var outBuffer = outNetworkBuffer.GetBuffer();
 
-            BitStream inStream = new BitStream(buffer);
-            BitReader br = new BitReader(inStream);
+            var inNetworkBuffer = new NetworkBuffer(outBuffer);
+            var inNetworkReader = new NetworkReader(inNetworkBuffer);
 
-            Assert.That(br.ReadDoublePacked(), Is.EqualTo(somenumber));
-
+            Assert.That(inNetworkReader.ReadDoublePacked(), Is.EqualTo(somenumber));
         }
 
         [Test]
         public void TestWriteMisaligned()
         {
-            BitStream outStream = new BitStream();
-            BitWriter bw = new BitWriter(outStream);
-            bw.WriteBit(true);
-            bw.WriteBit(false);
+            var outNetworkBuffer = new NetworkBuffer();
+            var outNetworkWriter = new NetworkWriter(outNetworkBuffer);
+            outNetworkWriter.WriteBit(true);
+            outNetworkWriter.WriteBit(false);
             // now the stream is misalligned,  lets write some bytes
-            bw.WriteByte(244);
-            bw.WriteByte(123);
-            bw.WriteInt16(-5457);
-            bw.WriteUInt64(4773753249);
-            bw.WriteUInt64Packed(5435285812313212);
-            bw.WriteInt64Packed(-5435285812313212);
-            bw.WriteBit(true);
-            bw.WriteByte(1);
-            bw.WriteByte(0);
+            outNetworkWriter.WriteByte(244);
+            outNetworkWriter.WriteByte(123);
+            outNetworkWriter.WriteInt16(-5457);
+            outNetworkWriter.WriteUInt64(4773753249);
+            outNetworkWriter.WriteUInt64Packed(5435285812313212);
+            outNetworkWriter.WriteInt64Packed(-5435285812313212);
+            outNetworkWriter.WriteBit(true);
+            outNetworkWriter.WriteByte(1);
+            outNetworkWriter.WriteByte(0);
 
-            byte[] buffer = outStream.GetBuffer();
+            var outBuffer = outNetworkBuffer.GetBuffer();
 
-            BitStream inStream = new BitStream(buffer);
-            BitReader br = new BitReader(inStream);
+            var inNetworkBuffer = new NetworkBuffer(outBuffer);
+            var inNetworkReader = new NetworkReader(inNetworkBuffer);
 
-            Assert.That(br.ReadBit(), Is.True);
-            Assert.That(br.ReadBit(), Is.False);
-            Assert.That(br.ReadByte(), Is.EqualTo(244));
-            Assert.That(br.ReadByte(), Is.EqualTo(123));
-            Assert.That(br.ReadInt16(), Is.EqualTo(-5457));
-            Assert.That(br.ReadUInt64(), Is.EqualTo(4773753249));
-            Assert.That(br.ReadUInt64Packed(), Is.EqualTo(5435285812313212));
-            Assert.That(br.ReadInt64Packed(), Is.EqualTo(-5435285812313212));
-            Assert.That(br.ReadBit(), Is.True);
-            Assert.That(br.ReadByte(), Is.EqualTo(1));
-            Assert.That(br.ReadByte(), Is.EqualTo(0));
+            Assert.That(inNetworkReader.ReadBit(), Is.True);
+            Assert.That(inNetworkReader.ReadBit(), Is.False);
+            Assert.That(inNetworkReader.ReadByte(), Is.EqualTo(244));
+            Assert.That(inNetworkReader.ReadByte(), Is.EqualTo(123));
+            Assert.That(inNetworkReader.ReadInt16(), Is.EqualTo(-5457));
+            Assert.That(inNetworkReader.ReadUInt64(), Is.EqualTo(4773753249));
+            Assert.That(inNetworkReader.ReadUInt64Packed(), Is.EqualTo(5435285812313212));
+            Assert.That(inNetworkReader.ReadInt64Packed(), Is.EqualTo(-5435285812313212));
+            Assert.That(inNetworkReader.ReadBit(), Is.True);
+            Assert.That(inNetworkReader.ReadByte(), Is.EqualTo(1));
+            Assert.That(inNetworkReader.ReadByte(), Is.EqualTo(0));
         }
 
         [Test]
@@ -415,16 +404,16 @@ namespace MLAPI.EditorTests
         {
             ulong somevalue = 0b1100101010011;
 
-            BitStream outStream = new BitStream();
-            BitWriter bw = new BitWriter(outStream);
-            bw.WriteBits(somevalue, 5);
+            var outNetworkBuffer = new NetworkBuffer();
+            var outNetworkWriter = new NetworkWriter(outNetworkBuffer);
+            outNetworkWriter.WriteBits(somevalue, 5);
 
-            byte[] buffer = outStream.GetBuffer();
+            var outBuffer = outNetworkBuffer.GetBuffer();
 
-            BitStream inStream = new BitStream(buffer);
-            BitReader br = new BitReader(inStream);
+            var inNetworkBuffer = new NetworkBuffer(outBuffer);
+            var inNetworkReader = new NetworkReader(inNetworkBuffer);
 
-            Assert.That(br.ReadBits(5), Is.EqualTo(0b10011));
+            Assert.That(inNetworkReader.ReadBits(5), Is.EqualTo(0b10011));
         }
 
         [Test]
@@ -432,110 +421,212 @@ namespace MLAPI.EditorTests
         {
             byte somevalue = 0b1010011;
 
-            BitStream outStream = new BitStream();
-            BitWriter bw = new BitWriter(outStream);
-            bw.WriteNibble(somevalue);
+            var outNetworkBuffer = new NetworkBuffer();
+            var outNetworkWriter = new NetworkWriter(outNetworkBuffer);
+            outNetworkWriter.WriteNibble(somevalue);
 
-            byte[] buffer = outStream.GetBuffer();
+            var outBuffer = outNetworkBuffer.GetBuffer();
 
-            BitStream inStream = new BitStream(buffer);
-            BitReader br = new BitReader(inStream);
+            var inNetworkBuffer = new NetworkBuffer(outBuffer);
+            var inNetworkReader = new NetworkReader(inNetworkBuffer);
 
-            Assert.That(br.ReadNibble(), Is.EqualTo(0b0011));
+            Assert.That(inNetworkReader.ReadNibble(), Is.EqualTo(0b0011));
         }
 
         [Test]
         public void TestReadWriteMissaligned()
         {
-            BitStream outStream = new BitStream();
-            BitWriter bw = new BitWriter(outStream);
-            bw.WriteBit(true);
-            byte[] writeBytes = new byte[16] { 0, 5, 2, 54, 192, 60, 214, 65, 95, 2, 43, 62, 252, 190, 45, 2 };
-            outStream.Write(writeBytes);
+            var outNetworkBuffer = new NetworkBuffer();
+            var outNetworkWriter = new NetworkWriter(outNetworkBuffer);
+            outNetworkWriter.WriteBit(true);
+            var writeBuffer = new byte[16]
+            {
+                0,
+                5,
+                2,
+                54,
+                192,
+                60,
+                214,
+                65,
+                95,
+                2,
+                43,
+                62,
+                252,
+                190,
+                45,
+                2
+            };
+            outNetworkBuffer.Write(writeBuffer);
 
-            BitStream inStream = new BitStream(outStream.GetBuffer());
-            Assert.That(inStream.ReadBit(), Is.True);
-            byte[] readTo = new byte[16];
-            inStream.Read(readTo, 0, 16);
-            Assert.That(readTo, Is.EquivalentTo(writeBytes));
+            var inNetworkBuffer = new NetworkBuffer(outNetworkBuffer.GetBuffer());
+            Assert.That(inNetworkBuffer.ReadBit(), Is.True);
+            var readBuffer = new byte[16];
+            inNetworkBuffer.Read(readBuffer, 0, 16);
+            Assert.That(readBuffer, Is.EquivalentTo(writeBuffer));
         }
 
         [Test]
         public void TestArrays()
         {
-            byte[] byteOutData = new byte[] { 1, 2, 13, 37, 69 };
-            int[] intOutData = new int[] { 1337, 69420, 12345, 0, 0, 5 };
-            double[] doubleOutData = new double[] { 0.02, 0.06, 1E40, 256.0 };
+            var outByteArray = new byte[]
+            {
+                1,
+                2,
+                13,
+                37,
+                69
+            };
+            var outIntArray = new int[]
+            {
+                1337,
+                69420,
+                12345,
+                0,
+                0,
+                5
+            };
+            var outDoubleArray = new double[]
+            {
+                0.02,
+                0.06,
+                1E40,
+                256.0
+            };
 
-            BitStream outStream = new BitStream();
-            BitWriter bw = new BitWriter(outStream);
-            bw.WriteByteArray(byteOutData);
-            bw.WriteIntArray(intOutData);
-            bw.WriteDoubleArray(doubleOutData);
+            var outNetworkBuffer = new NetworkBuffer();
+            var outNetworkWriter = new NetworkWriter(outNetworkBuffer);
+            outNetworkWriter.WriteByteArray(outByteArray);
+            outNetworkWriter.WriteIntArray(outIntArray);
+            outNetworkWriter.WriteDoubleArray(outDoubleArray);
 
-            BitStream inStream = new BitStream(outStream.GetBuffer());
-            BitReader br = new BitReader(inStream);
-            byte[] byteInData = br.ReadByteArray();
-            int[] intInData = br.ReadIntArray();
-            double[] doubleInData = br.ReadDoubleArray();
+            var inNetworkBuffer = new NetworkBuffer(outNetworkBuffer.GetBuffer());
+            var inNetworkReader = new NetworkReader(inNetworkBuffer);
+            var inByteArray = inNetworkReader.ReadByteArray();
+            var inIntArray = inNetworkReader.ReadIntArray();
+            var inDoubleArray = inNetworkReader.ReadDoubleArray();
 
-            Assert.That(byteOutData, Is.EqualTo(byteInData));
-            Assert.That(intOutData, Is.EqualTo(intInData));
-            Assert.That(doubleOutData, Is.EqualTo(doubleInData));
+            Assert.That(outByteArray, Is.EqualTo(inByteArray));
+            Assert.That(outIntArray, Is.EqualTo(inIntArray));
+            Assert.That(outDoubleArray, Is.EqualTo(inDoubleArray));
         }
 
         [Test]
         public void TestArraysPacked()
         {
-            short[] byteOutData = new short[] { 1, 2, 13, 37, 69 };
-            int[] intOutData = new int[] { 1337, 69420, 12345, 0, 0, 5 };
-            double[] doubleOutData = new double[] { 0.02, 0.06, 1E40, 256.0 };
+            var outShortArray = new short[]
+            {
+                1,
+                2,
+                13,
+                37,
+                69
+            };
+            var outIntArray = new int[]
+            {
+                1337,
+                69420,
+                12345,
+                0,
+                0,
+                5
+            };
+            var outDoubleArray = new double[]
+            {
+                0.02,
+                0.06,
+                1E40,
+                256.0
+            };
 
-            BitStream outStream = new BitStream();
-            BitWriter bw = new BitWriter(outStream);
-            bw.WriteShortArrayPacked(byteOutData);
-            bw.WriteIntArrayPacked(intOutData);
-            bw.WriteDoubleArrayPacked(doubleOutData);
+            var outNetworkBuffer = new NetworkBuffer();
+            var outNetworkWriter = new NetworkWriter(outNetworkBuffer);
+            outNetworkWriter.WriteShortArrayPacked(outShortArray);
+            outNetworkWriter.WriteIntArrayPacked(outIntArray);
+            outNetworkWriter.WriteDoubleArrayPacked(outDoubleArray);
 
-            BitStream inStream = new BitStream(outStream.GetBuffer());
-            BitReader br = new BitReader(inStream);
-            short[] byteInData = br.ReadShortArrayPacked();
-            int[] intInData = br.ReadIntArrayPacked();
-            double[] doubleInData = br.ReadDoubleArrayPacked();
+            var inNetworkBuffer = new NetworkBuffer(outNetworkBuffer.GetBuffer());
+            var inNetworkReader = new NetworkReader(inNetworkBuffer);
+            var inShortArray = inNetworkReader.ReadShortArrayPacked();
+            var inIntArray = inNetworkReader.ReadIntArrayPacked();
+            var inDoubleArray = inNetworkReader.ReadDoubleArrayPacked();
 
-            Assert.That(byteOutData, Is.EqualTo(byteInData));
-            Assert.That(intOutData, Is.EqualTo(intInData));
-            Assert.That(doubleOutData, Is.EqualTo(doubleInData));
+            Assert.That(outShortArray, Is.EqualTo(inShortArray));
+            Assert.That(outIntArray, Is.EqualTo(inIntArray));
+            Assert.That(outDoubleArray, Is.EqualTo(inDoubleArray));
         }
 
         [Test]
         public void TestArraysDiff()
         {
             // Values changed test
-            byte[] byteOutDiffData = new byte[] { 1, 2, 13, 29, 44, 15 };
-            byte[] byteOutData = new byte[] { 1, 2, 13, 37, 69 };
+            var byteOutDiffData = new byte[]
+            {
+                1,
+                2,
+                13,
+                29,
+                44,
+                15
+            };
+            var byteOutData = new byte[]
+            {
+                1,
+                2,
+                13,
+                37,
+                69
+            };
 
             // No change test
-            int[] intOutDiffData = new int[] { 1337, 69420, 12345, 0, 0, 5 };
-            int[] intOutData = new int[] { 1337, 69420, 12345, 0, 0, 5 };
+            var intOutDiffData = new int[]
+            {
+                1337,
+                69420,
+                12345,
+                0,
+                0,
+                5
+            };
+            var intOutData = new int[]
+            {
+                1337,
+                69420,
+                12345,
+                0,
+                0,
+                5
+            };
 
             // Array resize test
-            double[] doubleOutDiffData = new double[] { 0.2, 6, 1E39 };
-            double[] doubleOutData = new double[] { 0.02, 0.06, 1E40, 256.0 };
+            var doubleOutDiffData = new double[]
+            {
+                0.2,
+                6,
+                1E39
+            };
+            var doubleOutData = new double[]
+            {
+                0.02,
+                0.06,
+                1E40,
+                256.0
+            };
 
             // Serialize
-            BitStream outStream = new BitStream();
-            BitWriter bw = new BitWriter(outStream);
-            bw.WriteByteArrayDiff(byteOutData, byteOutDiffData);
-            bw.WriteIntArrayDiff(intOutData, intOutDiffData);
-            bw.WriteDoubleArrayDiff(doubleOutData, doubleOutDiffData);
+            var outNetworkBuffer = new NetworkBuffer();
+            var outNetworkWriter = new NetworkWriter(outNetworkBuffer);
+            outNetworkWriter.WriteByteArrayDiff(byteOutData, byteOutDiffData);
+            outNetworkWriter.WriteIntArrayDiff(intOutData, intOutDiffData);
+            outNetworkWriter.WriteDoubleArrayDiff(doubleOutData, doubleOutDiffData);
 
             // Deserialize
-            BitStream inStream = new BitStream(outStream.GetBuffer());
-            BitReader br = new BitReader(inStream);
-            byte[] byteInData = br.ReadByteArrayDiff(byteOutDiffData);
-            int[] intInData = br.ReadIntArrayDiff(intOutDiffData);
-            double[] doubleInData = br.ReadDoubleArrayDiff(doubleOutDiffData);
+            var inNetworkBuffer = new NetworkBuffer(outNetworkBuffer.GetBuffer());
+            var inNetworkReader = new NetworkReader(inNetworkBuffer);
+            var byteInData = inNetworkReader.ReadByteArrayDiff(byteOutDiffData);
+            var intInData = inNetworkReader.ReadIntArrayDiff(intOutDiffData);
+            var doubleInData = inNetworkReader.ReadDoubleArrayDiff(doubleOutDiffData);
 
             // Compare
             Assert.That(byteInData, Is.EqualTo(byteOutData));
@@ -547,30 +638,72 @@ namespace MLAPI.EditorTests
         public void TestArraysPackedDiff()
         {
             // Values changed test
-            long[] longOutDiffData = new long[] { 1, 2, 13, 29, 44, 15 };
-            long[] longOutData = new long[] { 1, 2, 13, 37, 69 };
+            var longOutDiffData = new long[]
+            {
+                1,
+                2,
+                13,
+                29,
+                44,
+                15
+            };
+            var longOutData = new long[]
+            {
+                1,
+                2,
+                13,
+                37,
+                69
+            };
 
             // No change test
-            int[] intOutDiffData = new int[] { 1337, 69420, 12345, 0, 0, 5 };
-            int[] intOutData = new int[] { 1337, 69420, 12345, 0, 0, 5 };
+            var intOutDiffData = new int[]
+            {
+                1337,
+                69420,
+                12345,
+                0,
+                0,
+                5
+            };
+            var intOutData = new int[]
+            {
+                1337,
+                69420,
+                12345,
+                0,
+                0,
+                5
+            };
 
             // Array resize test
-            double[] doubleOutDiffData = new double[] { 0.2, 6, 1E39 };
-            double[] doubleOutData = new double[] { 0.02, 0.06, 1E40, 256.0 };
+            var doubleOutDiffData = new double[]
+            {
+                0.2,
+                6,
+                1E39
+            };
+            var doubleOutData = new double[]
+            {
+                0.02,
+                0.06,
+                1E40,
+                256.0
+            };
 
             // Serialize
-            BitStream outStream = new BitStream();
-            BitWriter bw = new BitWriter(outStream);
-            bw.WriteLongArrayPackedDiff(longOutData, longOutDiffData);
-            bw.WriteIntArrayPackedDiff(intOutData, intOutDiffData);
-            bw.WriteDoubleArrayPackedDiff(doubleOutData, doubleOutDiffData);
+            var outNetworkBuffer = new NetworkBuffer();
+            var outNetworkWriter = new NetworkWriter(outNetworkBuffer);
+            outNetworkWriter.WriteLongArrayPackedDiff(longOutData, longOutDiffData);
+            outNetworkWriter.WriteIntArrayPackedDiff(intOutData, intOutDiffData);
+            outNetworkWriter.WriteDoubleArrayPackedDiff(doubleOutData, doubleOutDiffData);
 
             // Deserialize
-            BitStream inStream = new BitStream(outStream.GetBuffer());
-            BitReader br = new BitReader(inStream);
-            long[] longInData = br.ReadLongArrayPackedDiff(longOutDiffData);
-            int[] intInData = br.ReadIntArrayPackedDiff(intOutDiffData);
-            double[] doubleInData = br.ReadDoubleArrayPackedDiff(doubleOutDiffData);
+            var inNetworkBuffer = new NetworkBuffer(outNetworkBuffer.GetBuffer());
+            var inNetworkReader = new NetworkReader(inNetworkBuffer);
+            var longInData = inNetworkReader.ReadLongArrayPackedDiff(longOutDiffData);
+            var intInData = inNetworkReader.ReadIntArrayPackedDiff(intOutDiffData);
+            var doubleInData = inNetworkReader.ReadDoubleArrayPackedDiff(doubleOutDiffData);
 
             // Compare
             Assert.That(longInData, Is.EqualTo(longOutData));
@@ -581,16 +714,16 @@ namespace MLAPI.EditorTests
         [Test]
         public void TestString()
         {
-            string testString = "Hello, World";
-            BitStream outStream = new BitStream();
-            BitWriter bw = new BitWriter(outStream);
-            bw.WriteString(testString);
-            bw.WriteString(testString, true);
+            var testString = "Hello, World";
+            var outNetworkBuffer = new NetworkBuffer();
+            var outNetworkWriter = new NetworkWriter(outNetworkBuffer);
+            outNetworkWriter.WriteString(testString);
+            outNetworkWriter.WriteString(testString, true);
 
-            BitStream inStream = new BitStream(outStream.GetBuffer());
-            BitReader br = new BitReader(inStream);
-            StringBuilder readBuilder = br.ReadString();
-            StringBuilder readBuilderSingle = br.ReadString(true);
+            var inNetworkBuffer = new NetworkBuffer(outNetworkBuffer.GetBuffer());
+            var inNetworkReader = new NetworkReader(inNetworkBuffer);
+            StringBuilder readBuilder = inNetworkReader.ReadString();
+            StringBuilder readBuilderSingle = inNetworkReader.ReadString(true);
 
             Assert.That(readBuilder.ToString(), Is.EqualTo(testString));
             Assert.That(readBuilderSingle.ToString(), Is.EqualTo(testString));
@@ -599,40 +732,40 @@ namespace MLAPI.EditorTests
         [Test]
         public void TestStringPacked()
         {
-            string testString = "Hello, World";
-            BitStream outStream = new BitStream();
-            BitWriter bw = new BitWriter(outStream);
-            bw.WriteStringPacked(testString);
+            var testString = "Hello, World";
+            var outNetworkBuffer = new NetworkBuffer();
+            var outNetworkWriter = new NetworkWriter(outNetworkBuffer);
+            outNetworkWriter.WriteStringPacked(testString);
 
-            BitStream inStream = new BitStream(outStream.GetBuffer());
-            BitReader br = new BitReader(inStream);
-            StringBuilder readBuilder = br.ReadStringPacked();
+            var inNetworkBuffer = new NetworkBuffer(outNetworkBuffer.GetBuffer());
+            var inNetworkReader = new NetworkReader(inNetworkBuffer);
+            var readString = inNetworkReader.ReadStringPacked();
 
-            Assert.That(readBuilder.ToString(), Is.EqualTo(testString));
+            Assert.That(readString, Is.EqualTo(testString));
         }
 
         [Test]
         public void TestStringDiff()
         {
-            string testString = "Hello, World";  // The simulated "new" value of testString
-            string originalString = "Heyo,  World";  // This is what testString supposedly changed *from*
-            BitStream outStream = new BitStream();
-            BitWriter bw = new BitWriter(outStream);
-            bw.WriteStringDiff(testString, originalString);
-            bw.WriteStringDiff(testString, originalString, true);
+            var testString = "Hello, World"; // The simulated "new" value of testString
+            var originalString = "Heyo,  World"; // This is what testString supposedly changed *from*
+            var outNetworkBuffer = new NetworkBuffer();
+            var outNetworkWriter = new NetworkWriter(outNetworkBuffer);
+            outNetworkWriter.WriteStringDiff(testString, originalString);
+            outNetworkWriter.WriteStringDiff(testString, originalString, true);
 
-            BitStream inStream = new BitStream(outStream.GetBuffer());
-            BitReader br = new BitReader(inStream);
+            var inNetworkBuffer = new NetworkBuffer(outNetworkBuffer.GetBuffer());
+            var inNetworkReader = new NetworkReader(inNetworkBuffer);
             // Read regular diff
-            StringBuilder readBuilder = br.ReadStringDiff(originalString);
+            StringBuilder readBuilder = inNetworkReader.ReadStringDiff(originalString);
 
             // Read diff directly to StringBuilder
-            inStream.BitPosition = 0;
+            inNetworkBuffer.BitPosition = 0;
             StringBuilder stringCompare = new StringBuilder(originalString);
-            br.ReadStringDiff(stringCompare);
+            inNetworkReader.ReadStringDiff(stringCompare);
 
             // Read single-byte diff
-            StringBuilder byteBuilder = br.ReadStringDiff(originalString, true);
+            StringBuilder byteBuilder = inNetworkReader.ReadStringDiff(originalString, true);
 
             Assert.That(readBuilder.ToString(), Is.EqualTo(testString));
             Assert.That(stringCompare.ToString(), Is.EqualTo(testString));
@@ -642,21 +775,21 @@ namespace MLAPI.EditorTests
         [Test]
         public void TestStringPackedDiff()
         {
-            string testString = "Hello, World";  // The simulated "new" value of testString
-            string originalString = "Heyo,  World";  // This is what testString supposedly changed *from*
-            BitStream outStream = new BitStream();
-            BitWriter bw = new BitWriter(outStream);
-            bw.WriteStringPackedDiff(testString, originalString);
+            var testString = "Hello, World"; // The simulated "new" value of testString
+            var originalString = "Heyo,  World"; // This is what testString supposedly changed *from*
+            var outNetworkBuffer = new NetworkBuffer();
+            var outNetworkWriter = new NetworkWriter(outNetworkBuffer);
+            outNetworkWriter.WriteStringPackedDiff(testString, originalString);
 
-            BitStream inStream = new BitStream(outStream.GetBuffer());
-            BitReader br = new BitReader(inStream);
+            var inNetworkBuffer = new NetworkBuffer(outNetworkBuffer.GetBuffer());
+            var inNetworkReader = new NetworkReader(inNetworkBuffer);
             // Read regular diff
-            StringBuilder readBuilder = br.ReadStringPackedDiff(originalString);
+            StringBuilder readBuilder = inNetworkReader.ReadStringPackedDiff(originalString);
 
             // Read diff directly to StringBuilder
-            inStream.BitPosition = 0;
+            inNetworkBuffer.BitPosition = 0;
             StringBuilder stringCompare = new StringBuilder(originalString);
-            br.ReadStringPackedDiff(stringCompare);
+            inNetworkReader.ReadStringPackedDiff(stringCompare);
 
             Assert.That(readBuilder.ToString(), Is.EqualTo(testString));
             Assert.That(stringCompare.ToString(), Is.EqualTo(testString));

@@ -1,4 +1,3 @@
-using System;
 using MLAPI.Serialization;
 using NUnit.Framework;
 
@@ -18,7 +17,6 @@ namespace MLAPI.EditorTests
             Assert.That(Arithmetic.CeilingExact(4, 5), Is.EqualTo(1));
             Assert.That(Arithmetic.CeilingExact(5, 5), Is.EqualTo(1));
             Assert.That(Arithmetic.CeilingExact(6, 5), Is.EqualTo(2));
-
         }
 
         [Test]
@@ -27,8 +25,8 @@ namespace MLAPI.EditorTests
             Assert.That(Arithmetic.ZigZagDecode(Arithmetic.ZigZagEncode(1234)), Is.EqualTo(1234));
             Assert.That(Arithmetic.ZigZagDecode(Arithmetic.ZigZagEncode(-1)), Is.EqualTo(-1));
             Assert.That(Arithmetic.ZigZagDecode(Arithmetic.ZigZagEncode(0)), Is.EqualTo(0));
-            Assert.That(Arithmetic.ZigZagDecode(Arithmetic.ZigZagEncode(Int64.MaxValue)), Is.EqualTo(Int64.MaxValue));
-            Assert.That(Arithmetic.ZigZagDecode(Arithmetic.ZigZagEncode(Int64.MinValue)), Is.EqualTo(Int64.MinValue));
+            Assert.That(Arithmetic.ZigZagDecode(Arithmetic.ZigZagEncode(long.MaxValue)), Is.EqualTo(long.MaxValue));
+            Assert.That(Arithmetic.ZigZagDecode(Arithmetic.ZigZagEncode(long.MinValue)), Is.EqualTo(long.MinValue));
         }
     }
 }
