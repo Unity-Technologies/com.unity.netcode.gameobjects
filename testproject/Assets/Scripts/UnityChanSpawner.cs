@@ -1,4 +1,4 @@
-﻿using MLAPI;
+using MLAPI;
 using UnityEngine;
 
 public class UnityChanSpawner : MonoBehaviour
@@ -14,7 +14,7 @@ public class UnityChanSpawner : MonoBehaviour
         {
             var unityChanGameObj = Instantiate(unityChanPrefab);
             var unityChanNetObj = unityChanGameObj.GetComponent<NetworkObject>();
-            unityChanNetObj.Spawn();
+            unityChanNetObj.Spawn(m_NetworkManager);
         };
     }
 }

@@ -382,10 +382,13 @@ namespace MLAPI
         /// <summary>
         /// Spawns this GameObject across the network. Can only be called from the Server
         /// </summary>
+        /// <param name="manager">The NetworkManager that this NetworkObject will be bound to.</param>
         /// <param name="spawnPayload">The writer containing the spawn payload</param>
         /// <param name="destroyWithScene">Should the object be destroyd when the scene is changed</param>
-        public void Spawn(Stream spawnPayload = null, bool destroyWithScene = false)
+        public void Spawn(NetworkManager manager, Stream spawnPayload = null, bool destroyWithScene = false)
         {
+            NetworkManager = manager;
+
             if (!NetworkManager.IsListening)
             {
                 throw new NotListeningException($"{nameof(NetworkManager)} isn't listening, start a server, client or host before spawning objects.");
@@ -415,12 +418,15 @@ namespace MLAPI
         /// <summary>
         /// Spawns an object across the network with a given owner. Can only be called from server
         /// </summary>
+        /// <param name="manager">The NetworkManager that this NetworkObject will be bound to.</param>
         /// <param name="clientId">The clientId to own the object</param>
         /// <param name="spawnPayload">The writer containing the spawn payload</param>
         /// <param name="destroyWithScene">Should the object be destroyd when the scene is changed</param>
-        public void SpawnWithOwnership(ulong clientId, Stream spawnPayload = null, bool destroyWithScene = false)
+        public void SpawnWithOwnership(NetworkManager manager, ulong clientId, Stream spawnPayload = null, bool destroyWithScene = false)
         {
             if (spawnPayload != null) spawnPayload.Position = 0;
+
+            NetworkManager = manager;
 
             NetworkManager.NetworkSpawnManager.SpawnNetworkObjectLocally(this, NetworkManager.NetworkSpawnManager.GetNetworkObjectId(), false, false, clientId, spawnPayload, spawnPayload != null, spawnPayload == null ? 0 : (int)spawnPayload.Length, false, destroyWithScene);
 
@@ -436,12 +442,15 @@ namespace MLAPI
         /// <summary>
         /// Spawns an object across the network and makes it the player object for the given client
         /// </summary>
+        /// <param name="manager">The NetworkManager that this NetworkObject will be bound to.</param>
         /// <param name="clientId">The clientId whos player object this is</param>
         /// <param name="spawnPayload">The writer containing the spawn payload</param>
         /// <param name="destroyWithScene">Should the object be destroyd when the scene is changed</param>
-        public void SpawnAsPlayerObject(ulong clientId, Stream spawnPayload = null, bool destroyWithScene = false)
+        public void SpawnAsPlayerObject(NetworkManager manager, ulong clientId, Stream spawnPayload = null, bool destroyWithScene = false)
         {
             if (spawnPayload != null) spawnPayload.Position = 0;
+
+            NetworkManager = manager;
 
             NetworkManager.NetworkSpawnManager.SpawnNetworkObjectLocally(this, NetworkManager.NetworkSpawnManager.GetNetworkObjectId(), false, true, clientId, spawnPayload, spawnPayload != null, spawnPayload == null ? 0 : (int)spawnPayload.Length, false, destroyWithScene);
 

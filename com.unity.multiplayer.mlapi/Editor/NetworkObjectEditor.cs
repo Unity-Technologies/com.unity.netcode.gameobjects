@@ -24,13 +24,15 @@ namespace UnityEditor
         {
             Init();
 
-            if (!m_NetworkObject.IsSpawned && !ReferenceEquals(m_NetworkObject.NetworkManager, null) && m_NetworkObject.NetworkManager.IsServer)
+            NetworkManager serverManager = NetworkManagerEditor.GetNetworkManager(true);
+
+            if (!m_NetworkObject.IsSpawned && serverManager != null )
             {
                 EditorGUILayout.BeginHorizontal();
                 EditorGUILayout.LabelField(new GUIContent("Spawn", "Spawns the object across the network"));
                 if (GUILayout.Toggle(false, "Spawn", EditorStyles.miniButtonLeft))
                 {
-                    m_NetworkObject.Spawn();
+                    m_NetworkObject.Spawn(serverManager);
                     EditorUtility.SetDirty(target);
                 }
 
