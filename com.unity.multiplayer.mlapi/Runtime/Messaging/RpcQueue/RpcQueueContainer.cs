@@ -586,7 +586,7 @@ namespace MLAPI.Messaging
             {
                 if (NetworkLog.CurrentLogLevel == LogLevel.Developer)
                 {
-                    NetworkLog.LogWarning($"The maximum {nameof(RpcQueueFrameHistory)} is {ushort.MaxValue}!");
+                    NetworkLog.LogWarning($"The maximum {nameof(RpcQueueHistoryFrame)} is {ushort.MaxValue}!");
                 }
             }
 
