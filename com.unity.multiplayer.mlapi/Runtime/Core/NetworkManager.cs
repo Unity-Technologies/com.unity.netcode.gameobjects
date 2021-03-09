@@ -330,7 +330,7 @@ namespace MLAPI
 
             //The RpcQueueContainer must be initialized within the Init method ONLY
             //It should ONLY be shutdown and destroyed in the Shutdown method (other than just above)
-            RpcQueueContainer = new RpcQueueContainer();
+            RpcQueueContainer = new RpcQueueContainer(this);
 
             // Register INetworkUpdateSystem (always register this after rpcQueueContainer has been instantiated)
             this.RegisterNetworkUpdate(NetworkUpdateStage.EarlyUpdate);
