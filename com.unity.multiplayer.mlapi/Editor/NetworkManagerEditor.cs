@@ -24,6 +24,7 @@ public class NetworkManagerEditor : Editor
     private SerializedProperty m_AllowRuntimeSceneChangesProperty;
     private SerializedProperty m_NetworkTransportProperty;
     private SerializedProperty m_ReceiveTickrateProperty;
+    private SerializedProperty m_NetworkTickIntervalSecProperty;
     private SerializedProperty m_MaxReceiveEventsPerTickRateProperty;
     private SerializedProperty m_EventTickrateProperty;
     private SerializedProperty m_MaxObjectUpdatesPerTickProperty;
@@ -100,6 +101,7 @@ public class NetworkManagerEditor : Editor
         m_AllowRuntimeSceneChangesProperty = m_NetworkConfigProperty.FindPropertyRelative("AllowRuntimeSceneChanges");
         m_NetworkTransportProperty = m_NetworkConfigProperty.FindPropertyRelative("NetworkTransport");
         m_ReceiveTickrateProperty = m_NetworkConfigProperty.FindPropertyRelative("ReceiveTickrate");
+        m_NetworkTickIntervalSecProperty = m_NetworkConfigProperty.FindPropertyRelative("NetworkTickIntervalSec");
         m_MaxReceiveEventsPerTickRateProperty = m_NetworkConfigProperty.FindPropertyRelative("MaxReceiveEventsPerTickRate");
         m_EventTickrateProperty = m_NetworkConfigProperty.FindPropertyRelative("EventTickrate");
         m_ClientConnectionBufferTimeoutProperty = m_NetworkConfigProperty.FindPropertyRelative("ClientConnectionBufferTimeout");
@@ -137,6 +139,7 @@ public class NetworkManagerEditor : Editor
         m_AllowRuntimeSceneChangesProperty = m_NetworkConfigProperty.FindPropertyRelative("AllowRuntimeSceneChanges");
         m_NetworkTransportProperty = m_NetworkConfigProperty.FindPropertyRelative("NetworkTransport");
         m_ReceiveTickrateProperty = m_NetworkConfigProperty.FindPropertyRelative("ReceiveTickrate");
+        m_NetworkTickIntervalSecProperty = m_NetworkConfigProperty.FindPropertyRelative("NetworkTickIntervalSec");
         m_MaxReceiveEventsPerTickRateProperty = m_NetworkConfigProperty.FindPropertyRelative("MaxReceiveEventsPerTickRate");
         m_EventTickrateProperty = m_NetworkConfigProperty.FindPropertyRelative("EventTickrate");
         m_ClientConnectionBufferTimeoutProperty = m_NetworkConfigProperty.FindPropertyRelative("ClientConnectionBufferTimeout");
@@ -283,6 +286,7 @@ public class NetworkManagerEditor : Editor
 
             EditorGUILayout.LabelField("Performance", EditorStyles.boldLabel);
             EditorGUILayout.PropertyField(m_ReceiveTickrateProperty);
+            EditorGUILayout.PropertyField(m_NetworkTickIntervalSecProperty);
             EditorGUILayout.PropertyField(m_MaxReceiveEventsPerTickRateProperty);
             EditorGUILayout.PropertyField(m_EventTickrateProperty);
             EditorGUILayout.PropertyField(m_EnableNetworkVariableProperty);
