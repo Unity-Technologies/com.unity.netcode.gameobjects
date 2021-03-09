@@ -793,13 +793,14 @@ namespace MLAPI.Messaging
         /// <param name="processExternally">determines if it handles processing externally</param>
         public RpcQueueContainer(uint maxFrameHistory = 0, bool processExternally = false)
         {
+            //Keep track of how many instances we have instantiated
+            s_RpcQueueContainerInstances++;
+
             if (NetworkLog.CurrentLogLevel == LogLevel.Developer)
             {
                 NetworkLog.LogInfo($"[Instance : {s_RpcQueueContainerInstances}] RpcQueueContainer Initialized");
             }
 
-            //Keep track of how many instances we have instantiated
-            s_RpcQueueContainerInstances++;
             m_ProcessUpdateStagesExternally = processExternally;
             Initialize(maxFrameHistory);
         }
