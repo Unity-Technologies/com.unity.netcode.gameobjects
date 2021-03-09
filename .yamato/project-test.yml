@@ -134,4 +134,4 @@ develop_pull_request_trigger:
         only:
           - "master"
           - "develop"
-          - "/release/.*/"
+          - "/release\/.*/"
