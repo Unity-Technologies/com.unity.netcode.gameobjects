@@ -4,6 +4,7 @@ using MLAPI.Serialization;
 using MLAPI.Serialization.Pooled;
 using MLAPI.Profiling;
 using MLAPI.Transports;
+using MLAPI.Logging;
 
 namespace MLAPI.Messaging
 {
@@ -11,10 +12,10 @@ namespace MLAPI.Messaging
     /// RpcQueueContainer
     /// Handles the management of an Rpc Queue
     /// </summary>
-    internal class RpcQueueContainer : INetworkUpdateSystem
+    internal class RpcQueueContainer : INetworkUpdateSystem, IDisposable
     {
         private const int k_MinQueueHistory = 2; //We need a minimum of 2 queue history buffers in order to properly handle looping back Rpcs when a host
-
+        private static int s_RpcQueueContainerInstances;
         public enum QueueItemType
         {
             ServerRpc,
@@ -56,16 +57,6 @@ namespace MLAPI.Messaging
             m_IsNotUsingBatching = !isbatchingEnabled;
         }
 
-        // INetworkUpdateSystem
-        public void NetworkUpdate(NetworkUpdateStage updateStage)
-        {
-            ProcessAndFlushRpcQueue(RpcQueueProcessingTypes.Receive, updateStage);
-
-            if (updateStage == NetworkUpdateStage.PostLateUpdate)
-            {
-                ProcessAndFlushRpcQueue(RpcQueueProcessingTypes.Send, updateStage);
-            }
-        }
 
         /// <summary>
         /// GetStreamBufferFrameCount
@@ -102,23 +93,25 @@ namespace MLAPI.Messaging
         /// <param name="queueType"></param>
         public void ProcessAndFlushRpcQueue(RpcQueueProcessingTypes queueType, NetworkUpdateStage currentUpdateStage)
         {
-            if (m_RpcQueueProcessor == null)
+            //Check to make sure the integrity of required classes is in tact
+            if (!IntegrityValidationCheck())
             {
+                //If not, then exit (it will log messages about the issue in Developer logging mode)
                 return;
             }
 
             switch (queueType)
             {
                 case RpcQueueProcessingTypes.Receive:
-                {
-                    m_RpcQueueProcessor.ProcessReceiveQueue(currentUpdateStage);
-                    break;
-                }
+                    {
+                        m_RpcQueueProcessor.ProcessReceiveQueue(currentUpdateStage);
+                        break;
+                    }
                 case RpcQueueProcessingTypes.Send:
-                {
-                    m_RpcQueueProcessor.ProcessSendQueue();
-                    break;
-                }
+                    {
+                        m_RpcQueueProcessor.ProcessSendQueue();
+                        break;
+                    }
             }
         }
 
@@ -142,7 +135,6 @@ namespace MLAPI.Messaging
                     }
                 }
             }
-
             return null;
         }
 
@@ -354,6 +346,13 @@ namespace MLAPI.Messaging
         public PooledNetworkWriter BeginAddQueueItemToFrame(QueueItemType qItemType, float timeStamp, NetworkChannel networkChannel, ulong sourceNetworkId, ulong[] targetNetworkIds,
             RpcQueueHistoryFrame.QueueFrameType queueFrameType, NetworkUpdateStage updateStage)
         {
+            //Check to make sure the integrity of required classes is intact
+            if (!IntegrityValidationCheck())
+            {
+                //If not, then exit (it will log messages about the issue in Developer logging mode)
+                return null;
+            }
+
             bool getNextFrame = NetworkManager.Singleton.IsHost && queueFrameType == RpcQueueHistoryFrame.QueueFrameType.Inbound;
 
             var rpcQueueHistoryItem = GetQueueHistoryFrame(queueFrameType, updateStage, getNextFrame);
@@ -435,6 +434,13 @@ namespace MLAPI.Messaging
         /// <param name="writer">writer that was used</param>
         public void EndAddQueueItemToFrame(NetworkWriter writer, RpcQueueHistoryFrame.QueueFrameType queueFrameType, NetworkUpdateStage updateStage)
         {
+            //Check to make sure the integrity of required classes is intact
+            if (!IntegrityValidationCheck())
+            {
+                //If not, then exit (it will log messages about the issue in Developer logging mode)
+                return;
+            }
+
             bool getNextFrame = NetworkManager.Singleton.IsHost && queueFrameType == RpcQueueHistoryFrame.QueueFrameType.Inbound;
 
             var rpcQueueHistoryItem = GetQueueHistoryFrame(queueFrameType, updateStage, getNextFrame);
@@ -517,7 +523,6 @@ namespace MLAPI.Messaging
                 rpcQueueHistoryItem.LoopbackHistoryFrame = null;
             }
 
-
             //////////////////////////////////////////////////////////////
             //<<<< REPOSITIONING STREAM BACK TO THE CURRENT TAIL >>>>
             //////////////////////////////////////////////////////////////
@@ -571,59 +576,46 @@ namespace MLAPI.Messaging
             return QueueHistory[frameType][StreamBufferIndex][updateStage];
         }
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
         /// <summary>
-        /// LoopbackSendFrame
-        /// Will copy the contents of the current outbound QueueHistoryFrame to the current inbound QueueHistoryFrame
-        /// [NSS]: Leaving this here in the event a portion of this code is useful for doing Batch testing
+        /// The
         /// </summary>
-        public void LoopbackSendFrame()
+        /// <param name="updateStage">the stage to process RPC Queues</param>
+        public void NetworkUpdate(NetworkUpdateStage updateStage)
         {
-            //If we do not have loop back or testing mode enabled then ignore the call
-            if (m_IsTestingEnabled)
+            //Check to make sure the integrity of required classes is in tact
+            if (!IntegrityValidationCheck())
             {
-                var rpcQueueHistoryItemOutbound = GetQueueHistoryFrame(RpcQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
-                if (rpcQueueHistoryItemOutbound.QueueItemOffsets.Count > 0)
-                {
-                    //Reset inbound queues based on update stage
-                    foreach (NetworkUpdateStage netUpdateStage in Enum.GetValues(typeof(NetworkUpdateStage)))
-                    {
-                        var rpcQueueHistoryItemInbound = GetQueueHistoryFrame(RpcQueueHistoryFrame.QueueFrameType.Inbound, netUpdateStage);
-                        ResetQueueHistoryFrame(rpcQueueHistoryItemInbound);
-                    }
+                //If not, then exit (it will log messages about the issue in Developer logging mode)
+                return;
+            }
 
-                    var pooledNetworkBuffer = PooledNetworkBuffer.Get();
-                    var rpcFrameQueueItem = rpcQueueHistoryItemOutbound.GetFirstQueueItem();
+            ProcessAndFlushRpcQueue(RpcQueueProcessingTypes.Receive, updateStage);
 
-                    while (rpcFrameQueueItem.QueueItemType != QueueItemType.None)
-                    {
-                        pooledNetworkBuffer.SetLength(rpcFrameQueueItem.StreamSize);
-                        pooledNetworkBuffer.Position = 0;
-                        byte[] pooledNetworkStreamArray = pooledNetworkBuffer.GetBuffer();
-                        Buffer.BlockCopy(rpcFrameQueueItem.MessageData.Array ?? Array.Empty<byte>(), rpcFrameQueueItem.MessageData.Offset, pooledNetworkStreamArray, 0, (int)rpcFrameQueueItem.StreamSize);
-
-                        if (!IsUsingBatching())
-                        {
-                            pooledNetworkBuffer.Position = 1;
-                        }
-
-                        AddQueueItemToInboundFrame(rpcFrameQueueItem.QueueItemType, UnityEngine.Time.realtimeSinceStartup, rpcFrameQueueItem.NetworkId, pooledNetworkBuffer);
-                        rpcFrameQueueItem = rpcQueueHistoryItemOutbound.GetNextQueueItem();
-                    }
-                }
+            if (updateStage == NetworkUpdateStage.PostLateUpdate)
+            {
+                ProcessAndFlushRpcQueue(RpcQueueProcessingTypes.Send, updateStage);
             }
         }
-#endif
 
         /// <summary>
-        /// Initialize
         /// This should be called during primary initialization period (typically during NetworkManager's Start method)
         /// This will allocate [maxFrameHistory] + [1 currentFrame] number of PooledNetworkBuffers and keep them open until the session ends
         /// Note: For zero frame history set maxFrameHistory to zero
         /// </summary>
         /// <param name="maxFrameHistory"></param>
-        public void Initialize(uint maxFrameHistory)
+        private void Initialize(uint maxFrameHistory)
         {
+            //This makes sure that we don't exceed a rediculous value by capping the number of queue history frames to ushort.MaxValue
+            //If this value is exceeded, then it will be kept at the ceiling of ushort.Maxvalue.
+            //Note: If running at a 60pps rate (16ms update frequency) this would yield 17.47 minutes worth of queue frame history.
+            if (maxFrameHistory > ushort.MaxValue)
+            {
+                if (NetworkLog.CurrentLogLevel == LogLevel.Developer)
+                {
+                    NetworkLog.LogWarning($"The maximum RpcQueeuFrameHistory is {ushort.MaxValue}!");
+                }
+            }
+
             ClearParameters();
 
             m_RpcQueueProcessor = new RpcQueueProcessor();
@@ -681,16 +673,6 @@ namespace MLAPI.Messaging
             }
         }
 
-        public void SetTestingState(bool enabled)
-        {
-            m_IsTestingEnabled = enabled;
-        }
-
-        public bool IsTesting()
-        {
-            return m_IsTestingEnabled;
-        }
-
         /// <summary>
         /// Clears the stream indices and frames process properties
         /// </summary>
@@ -703,13 +685,17 @@ namespace MLAPI.Messaging
         }
 
         /// <summary>
-        /// Shutdown
         /// Flushes the internal messages
         /// Removes itself from the network update loop
         /// Disposes readers, writers, clears the queue history, and resets any parameters
         /// </summary>
-        public void Shutdown()
+        private void Shutdown()
         {
+            if (NetworkLog.CurrentLogLevel == Logging.LogLevel.Developer)
+            {
+                NetworkLog.LogInfo($"[Instance : {s_RpcQueueContainerInstances}] RpcQueueContainer Initialized");
+            }
+
             //As long as this instance is using the pre-defined update stages
             if (!m_ProcessUpdateStagesExternally)
             {
@@ -741,13 +727,138 @@ namespace MLAPI.Messaging
         }
 
         /// <summary>
-        /// RpcQueueContainer - Constructor
+        /// Checks the current integrity of the RpcQueueContainer and NetworkManager
         /// </summary>
-        /// <param name="processInternally">determines if it handles processing internally or if it will be done externally</param>
-        /// <param name="isLoopBackEnabled">turns loopback on or off (primarily debugging purposes)</param>
-        public RpcQueueContainer(bool processExternally)
+        /// <returns></returns>
+        private bool IntegrityValidationCheck()
         {
-            m_ProcessUpdateStagesExternally = processExternally;
+            //Don't continue if there is no instance of NetworkManager available
+            //Unless we are running a unit test
+            if (!m_IsTestingEnabled && ReferenceEquals(NetworkManager.Singleton, null))
+            {
+                //Only log these types of messages in Developer mode
+                if (NetworkLog.CurrentLogLevel == LogLevel.Developer)
+                {
+                    NetworkLog.LogWarning($"[Instances : {s_RpcQueueContainerInstances}] RpcQueueContainer.ProcessAndFlushRpcQueue is being invoked with no instance of NetworkMananger!");
+                }
+                return false;
+            }
+
+            //Don't continue if there is no instance of m_RpcQueueProcessor available
+            //This is required even in unit tests
+            if (ReferenceEquals(m_RpcQueueProcessor, null))
+            {
+                //Only log these types of messages in Developer mode
+                if (NetworkLog.CurrentLogLevel == LogLevel.Developer)
+                {
+                    NetworkLog.LogWarning($"[Instances : {s_RpcQueueContainerInstances}] RpcQueueContainer.ProcessAndFlushRpcQueue is being invoked with no instance of m_RpcQueueProcessor!");
+                    NetworkLog.LogInfo($"Did you forget to call RpcQueueContainer.Initialize?");
+                }
+                return false;
+            }
+
+            return true;
         }
+
+        /// <summary>
+        /// Cleans up our instance count and warns if there instantiation issues
+        /// </summary>
+        public void Dispose()
+        {
+            if (s_RpcQueueContainerInstances > 0)
+            {
+                Shutdown();
+                if (NetworkLog.CurrentLogLevel == LogLevel.Developer)
+                {
+                    NetworkLog.LogInfo($"[Instance : {s_RpcQueueContainerInstances}] RpcQueueContainer disposed.");
+                }
+                s_RpcQueueContainerInstances--;
+            }
+            else  //This should never happen...if so something else has gone very wrong.
+            {
+                if (NetworkLog.CurrentLogLevel >= LogLevel.Normal)
+                {
+                    NetworkLog.LogError("[*** Warning ***] RpcQueueContainer is being disposed twice?");
+                }
+                throw new Exception("[*** Warning ***] System state is not stable!  Check all references to the Dispose method!");
+            }
+        }
+
+        /// <summary>
+        /// RpcQueueContainer - Constructor
+        /// Note about processExternally: this values determines if it will register with the Network Update Loop
+        /// or not.  If not, then most likely unit tests are being preformed on this class.  The default value is false.
+        /// </summary>
+        /// <param name="maxFrameHistory"></param>
+        /// <param name="processExternally">determines if it handles processing externally</param>
+        public RpcQueueContainer(uint maxFrameHistory = 0, bool processExternally = false)
+        {
+            if (NetworkLog.CurrentLogLevel == LogLevel.Developer)
+            {
+                NetworkLog.LogInfo($"[Instance : {s_RpcQueueContainerInstances}] RpcQueueContainer Initialized");
+            }
+
+            //Keep track of how many instances we have instantiated
+            s_RpcQueueContainerInstances++;
+            m_ProcessUpdateStagesExternally = processExternally;
+            Initialize(maxFrameHistory);
+        }
+
+        #region DEVELOPMENT ONLY RELATED METHODS
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        /// <summary>
+        /// LoopbackSendFrame
+        /// Will copy the contents of the current outbound QueueHistoryFrame to the current inbound QueueHistoryFrame
+        /// [NSS]: Leaving this here in the event a portion of this code is useful for doing Batch testing
+        /// </summary>
+        public void LoopbackSendFrame()
+        {
+            //If we do not have loop back or testing mode enabled then ignore the call
+            if (m_IsTestingEnabled)
+            {
+                var rpcQueueHistoryItemOutbound = GetQueueHistoryFrame(RpcQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
+                if (rpcQueueHistoryItemOutbound.QueueItemOffsets.Count > 0)
+                {
+                    //Reset inbound queues based on update stage
+                    foreach (NetworkUpdateStage netUpdateStage in Enum.GetValues(typeof(NetworkUpdateStage)))
+                    {
+                        var rpcQueueHistoryItemInbound = GetQueueHistoryFrame(RpcQueueHistoryFrame.QueueFrameType.Inbound, netUpdateStage);
+                        ResetQueueHistoryFrame(rpcQueueHistoryItemInbound);
+                    }
+
+                    var pooledNetworkBuffer = PooledNetworkBuffer.Get();
+                    var rpcFrameQueueItem = rpcQueueHistoryItemOutbound.GetFirstQueueItem();
+
+                    while (rpcFrameQueueItem.QueueItemType != QueueItemType.None)
+                    {
+                        pooledNetworkBuffer.SetLength(rpcFrameQueueItem.StreamSize);
+                        pooledNetworkBuffer.Position = 0;
+                        byte[] pooledNetworkStreamArray = pooledNetworkBuffer.GetBuffer();
+                        Buffer.BlockCopy(rpcFrameQueueItem.MessageData.Array ?? Array.Empty<byte>(), rpcFrameQueueItem.MessageData.Offset, pooledNetworkStreamArray, 0, (int)rpcFrameQueueItem.StreamSize);
+
+                        if (!IsUsingBatching())
+                        {
+                            pooledNetworkBuffer.Position = 1;
+                        }
+
+                        AddQueueItemToInboundFrame(rpcFrameQueueItem.QueueItemType, UnityEngine.Time.realtimeSinceStartup, rpcFrameQueueItem.NetworkId, pooledNetworkBuffer);
+                        rpcFrameQueueItem = rpcQueueHistoryItemOutbound.GetNextQueueItem();
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Enables testing of the RpcQueueContainer
+        /// </summary>
+        /// <param name="enabled"></param>
+        public void SetTestingState(bool enabled)
+        {
+            m_IsTestingEnabled = enabled;
+        }
+
+#endif
+        #endregion
+
     }
 }

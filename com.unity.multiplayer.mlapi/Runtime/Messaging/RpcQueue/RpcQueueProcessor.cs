@@ -34,6 +34,11 @@ namespace MLAPI.Messaging
         /// </summary>
         public void ProcessReceiveQueue(NetworkUpdateStage currentStage)
         {
+            if(ReferenceEquals(NetworkManager.Singleton,null))
+            {
+                return;
+            }
+
             bool advanceFrameHistory = false;
             var rpcQueueContainer = NetworkManager.Singleton.RpcQueueContainer;
             if (rpcQueueContainer != null)
@@ -54,12 +59,6 @@ namespace MLAPI.Messaging
                     while (currentQueueItem.QueueItemType != RpcQueueContainer.QueueItemType.None)
                     {
                         advanceFrameHistory = true;
-
-                        if (rpcQueueContainer.IsTesting())
-                        {
-                            Debug.Log($"RPC invoked during the {currentStage} update stage.");
-                        }
-
                         NetworkManager.InvokeRpc(currentQueueItem);
                         ProfilerStatManager.RpcsQueueProc.Record();
                         PerformanceDataManager.Increment(ProfilerConstants.NumberOfRPCQueueProcessed);
@@ -116,6 +115,11 @@ namespace MLAPI.Messaging
         /// </summary>
         public void InternalMessagesSendAndFlush()
         {
+            if(ReferenceEquals(NetworkManager.Singleton,null))
+            {
+                return;
+            }
+
             foreach (RpcFrameQueueItem queueItem in m_InternalMLAPISendQueue)
             {
                 var PoolStream = queueItem.NetworkBuffer;
@@ -160,6 +164,11 @@ namespace MLAPI.Messaging
         /// </summary>
         private void RpcQueueSendAndFlush()
         {
+            if(ReferenceEquals(NetworkManager.Singleton,null))
+            {
+                return;
+            }
+
             var advanceFrameHistory = false;
             var rpcQueueContainer = NetworkManager.Singleton.RpcQueueContainer;
             if (rpcQueueContainer != null)
