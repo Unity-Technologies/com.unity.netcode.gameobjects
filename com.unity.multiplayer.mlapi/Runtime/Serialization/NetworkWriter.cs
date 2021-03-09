@@ -142,7 +142,7 @@ namespace MLAPI.Serialization
             }
             else if (value is bool)
             {
-                WriteBit((bool)value);
+                WriteBool((bool)value);
                 return;
             }
             else if (value is Vector2)
