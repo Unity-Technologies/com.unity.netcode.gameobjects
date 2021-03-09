@@ -324,17 +324,13 @@ namespace MLAPI
             if (RpcQueueContainer != null)
             {
                 UnityEngine.Debug.LogError("Init was invoked, but rpcQueueContainer was already initialized! (destroying previous instance)");
-                RpcQueueContainer.Shutdown();
+                RpcQueueContainer.Dispose();
                 RpcQueueContainer = null;
             }
 
             //The RpcQueueContainer must be initialized within the Init method ONLY
             //It should ONLY be shutdown and destroyed in the Shutdown method (other than just above)
-            RpcQueueContainer = new RpcQueueContainer(false);
-
-            //Note: Since frame history is not being used, this is set to 0
-            //To test frame history, increase the number to (n) where n > 0
-            RpcQueueContainer.Initialize(0);
+            RpcQueueContainer = new RpcQueueContainer(this);
 
             // Register INetworkUpdateSystem (always register this after rpcQueueContainer has been instantiated)
             this.RegisterNetworkUpdate(NetworkUpdateStage.EarlyUpdate);
@@ -599,7 +595,7 @@ namespace MLAPI
             //If an instance of the RpcQueueContainer is still around, then shut it down and remove the reference
             if (RpcQueueContainer != null)
             {
-                RpcQueueContainer.Shutdown();
+                RpcQueueContainer.Dispose();
                 RpcQueueContainer = null;
             }
 
