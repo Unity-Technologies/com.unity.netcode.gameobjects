@@ -95,7 +95,7 @@ namespace MLAPI.Messaging
         /// <param name="queueType"></param>
         public void ProcessAndFlushRpcQueue(RpcQueueProcessingTypes queueType, NetworkUpdateStage currentUpdateStage)
         {
-            bool IsListening = ReferenceEquals(m_NetworkManager,null) ? false:m_NetworkManager.IsListening;
+            bool isListening = ReferenceEquals(m_NetworkManager,null) ? false:m_NetworkManager.IsListening;
             switch (queueType)
             {
                 case RpcQueueProcessingTypes.Receive:
@@ -105,7 +105,7 @@ namespace MLAPI.Messaging
                     }
                 case RpcQueueProcessingTypes.Send:
                     {
-                        m_RpcQueueProcessor.ProcessSendQueue(IsListening);
+                        m_RpcQueueProcessor.ProcessSendQueue(isListening);
                         break;
                     }
             }
@@ -665,6 +665,7 @@ namespace MLAPI.Messaging
         /// </summary>
         private void Shutdown()
         {
+
             if (NetworkLog.CurrentLogLevel == Logging.LogLevel.Developer)
             {
                 NetworkLog.LogInfo($"[Instance : {s_RpcQueueContainerInstances}] RpcQueueContainer shutting down.");
@@ -706,15 +707,18 @@ namespace MLAPI.Messaging
         /// </summary>
         public void Dispose()
         {
+            Shutdown();
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (s_RpcQueueContainerInstances > 0)
             {
-                Shutdown();
 
                 if (NetworkLog.CurrentLogLevel == LogLevel.Developer)
                 {
                     NetworkLog.LogInfo($"[Instance : {s_RpcQueueContainerInstances}] RpcQueueContainer disposed.");
                 }
                 s_RpcQueueContainerInstances--;
+
             }
             else  //This should never happen...if so something else has gone very wrong.
             {
@@ -724,6 +728,8 @@ namespace MLAPI.Messaging
                 }
                 throw new Exception("[*** Warning ***] System state is not stable!  Check all references to the Dispose method!");
             }
+#endif
+
         }
 
         /// <summary>
@@ -737,6 +743,7 @@ namespace MLAPI.Messaging
         {
             m_NetworkManager = networkManager;
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             //Keep track of how many instances we have instantiated
             s_RpcQueueContainerInstances++;
 
@@ -744,6 +751,7 @@ namespace MLAPI.Messaging
             {
                 NetworkLog.LogInfo($"[Instance : {s_RpcQueueContainerInstances}] RpcQueueContainer Initialized");
             }
+#endif
 
             m_ProcessUpdateStagesExternally = processExternally;
             Initialize(maxFrameHistory);

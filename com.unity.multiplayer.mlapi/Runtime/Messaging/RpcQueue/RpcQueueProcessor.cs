@@ -29,7 +29,7 @@ namespace MLAPI.Messaging
         private readonly List<RpcFrameQueueItem> m_InternalMLAPISendQueue = new List<RpcFrameQueueItem>();
 
         //The RpcQueueContainer that is associated with this RpcQueueProcessor
-        RpcQueueContainer m_RpcQueueContainer;
+        internal RpcQueueContainer m_RpcQueueContainer;
 
         /// <summary>
         /// ProcessReceiveQueue
