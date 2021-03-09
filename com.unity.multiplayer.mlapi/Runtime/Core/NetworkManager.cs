@@ -318,7 +318,7 @@ namespace MLAPI
                 NetworkTickSystem = null;
             }
 
-            NetworkTickSystem = new NetworkTickSystem();
+            NetworkTickSystem = new NetworkTickSystem(NetworkConfig.NetworkTickIntervalSec);
 
             //This should never happen, but in the event that it does there should be (at a minimum) a unity error logged.
             if (RpcQueueContainer != null)
