@@ -794,5 +794,21 @@ namespace MLAPI.EditorTests
             Assert.That(readBuilder.ToString(), Is.EqualTo(testString));
             Assert.That(stringCompare.ToString(), Is.EqualTo(testString));
         }
+
+        [Test]
+        public void TestSerializationPipelineBool()
+        {
+            NetworkBuffer buffer = new NetworkBuffer();
+            NetworkWriter writer = new NetworkWriter(buffer);
+            NetworkReader reader = new NetworkReader(buffer);
+
+            writer.WriteObjectPacked(true);
+            writer.WriteObjectPacked(false);
+
+            buffer.BitPosition = 0;
+
+            Assert.That(reader.ReadObjectPacked(typeof(bool)), Is.EqualTo(true));
+            Assert.That(reader.ReadObjectPacked(typeof(bool)), Is.EqualTo(false));
+        }
     }
 }
