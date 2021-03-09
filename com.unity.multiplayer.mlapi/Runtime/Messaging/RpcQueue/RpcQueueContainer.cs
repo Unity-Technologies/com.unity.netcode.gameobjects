@@ -312,7 +312,7 @@ namespace MLAPI.Messaging
             }
             else
             {
-                UnityEngine.Debug.LogError("Could not find the outbound QueueHistoryFrame!");
+                UnityEngine.Debug.LogError($"Could not find the outbound {nameof(RpcQueueHistoryFrame)}!");
             }
         }
 
@@ -497,7 +497,7 @@ namespace MLAPI.Messaging
                 }
                 else
                 {
-                    UnityEngine.Debug.LogWarning("[LoopBack] MSGSize of < zero detected!!  Setting message size to zero!");
+                    UnityEngine.Debug.LogWarning("MSGSize of < zero detected!!  Setting message size to zero!");
                     //Write the actual size of the RPC message
                     loopBackHistoryFrame.QueueWriter.WriteInt64(0);
                 }
@@ -539,7 +539,7 @@ namespace MLAPI.Messaging
 
             if (!QueueHistory.ContainsKey(frameType))
             {
-                UnityEngine.Debug.LogError("You must initialize the RPCQueueManager before using MLAPI!");
+                UnityEngine.Debug.LogError($"{nameof(RpcQueueHistoryFrame)} {nameof(RpcQueueHistoryFrame.QueueFrameType)} {frameType} does not exist!");
                 return null;
             }
 
@@ -715,7 +715,7 @@ namespace MLAPI.Messaging
 
                 if (NetworkLog.CurrentLogLevel == LogLevel.Developer)
                 {
-                    NetworkLog.LogInfo($"[Instance : {s_RpcQueueContainerInstances}] RpcQueueContainer disposed.");
+                    NetworkLog.LogInfo($"[Instance : {s_RpcQueueContainerInstances}] {nameof(RpcQueueContainer)} disposed.");
                 }
                 s_RpcQueueContainerInstances--;
 
@@ -724,7 +724,7 @@ namespace MLAPI.Messaging
             {
                 if (NetworkLog.CurrentLogLevel >= LogLevel.Normal)
                 {
-                    NetworkLog.LogError("[*** Warning ***] RpcQueueContainer is being disposed twice?");
+                    NetworkLog.LogError($"[*** Warning ***] {nameof(RpcQueueContainer)} is being disposed twice?");
                 }
                 throw new Exception("[*** Warning ***] System state is not stable!  Check all references to the Dispose method!");
             }
@@ -749,7 +749,7 @@ namespace MLAPI.Messaging
 
             if (NetworkLog.CurrentLogLevel == LogLevel.Developer)
             {
-                NetworkLog.LogInfo($"[Instance : {s_RpcQueueContainerInstances}] RpcQueueContainer Initialized");
+                NetworkLog.LogInfo($"[Instance : {s_RpcQueueContainerInstances}] {nameof(RpcQueueContainer)} Initialized");
             }
 #endif
 
