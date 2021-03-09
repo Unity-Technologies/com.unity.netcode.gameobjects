@@ -226,11 +226,11 @@ namespace MLAPI.RuntimeTests
                 this.RegisterNetworkUpdate(NetworkUpdateStage.PreLateUpdate);
                 this.RegisterNetworkUpdate(NetworkUpdateStage.PostLateUpdate);
 
-                // intentionally try to register for `PreUpdate` stage twice
+                // intentionally try to register for 'PreUpdate' stage twice
                 // it should be ignored and the instance should not be registered twice
-                // otherwise test would fail because it would call `OnPreUpdate()` twice
-                // which would ultimately increment `netUpdates[idx]` integer twice
-                // and cause `Assert.AreEqual()` to fail the test
+                // otherwise test would fail because it would call 'OnPreUpdate()' twice
+                // which would ultimately increment 'netUpdates[idx]' integer twice
+                // and cause 'Assert.AreEqual()' to fail the test
                 this.RegisterNetworkUpdate(NetworkUpdateStage.PreUpdate);
             }
 
