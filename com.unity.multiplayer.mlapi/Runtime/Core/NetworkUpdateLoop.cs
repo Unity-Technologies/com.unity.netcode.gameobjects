@@ -150,7 +150,7 @@ namespace MLAPI
             }
         }
 
-        private struct NetworkInitialization
+        internal struct NetworkInitialization
         {
             public static PlayerLoopSystem CreateLoopSystem()
             {
@@ -162,7 +162,7 @@ namespace MLAPI
             }
         }
 
-        private struct NetworkEarlyUpdate
+        internal struct NetworkEarlyUpdate
         {
             public static PlayerLoopSystem CreateLoopSystem()
             {
@@ -174,7 +174,7 @@ namespace MLAPI
             }
         }
 
-        private struct NetworkFixedUpdate
+        internal struct NetworkFixedUpdate
         {
             public static PlayerLoopSystem CreateLoopSystem()
             {
@@ -186,7 +186,7 @@ namespace MLAPI
             }
         }
 
-        private struct NetworkPreUpdate
+        internal struct NetworkPreUpdate
         {
             public static PlayerLoopSystem CreateLoopSystem()
             {
@@ -198,7 +198,7 @@ namespace MLAPI
             }
         }
 
-        private struct NetworkUpdate
+        internal struct NetworkUpdate
         {
             public static PlayerLoopSystem CreateLoopSystem()
             {
@@ -210,7 +210,7 @@ namespace MLAPI
             }
         }
 
-        private struct NetworkPreLateUpdate
+        internal struct NetworkPreLateUpdate
         {
             public static PlayerLoopSystem CreateLoopSystem()
             {
@@ -222,7 +222,7 @@ namespace MLAPI
             }
         }
 
-        private struct NetworkPostLateUpdate
+        internal struct NetworkPostLateUpdate
         {
             public static PlayerLoopSystem CreateLoopSystem()
             {
