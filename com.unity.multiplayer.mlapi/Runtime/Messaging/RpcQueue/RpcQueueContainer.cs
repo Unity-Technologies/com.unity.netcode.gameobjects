@@ -666,7 +666,7 @@ namespace MLAPI.Messaging
         {
             if (NetworkLog.CurrentLogLevel == Logging.LogLevel.Developer)
             {
-                NetworkLog.LogInfo($"[Instance : {s_RpcQueueContainerInstances}] RpcQueueContainer shutting down.");
+                NetworkLog.LogInfo($"[Instance : {s_RpcQueueContainerInstances}] {nameof(RpcQueueContainer)} shutting down.");
             }
 
             //As long as this instance is using the pre-defined update stages
