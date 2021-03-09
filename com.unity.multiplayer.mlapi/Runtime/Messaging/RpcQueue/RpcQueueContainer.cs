@@ -95,16 +95,17 @@ namespace MLAPI.Messaging
         /// <param name="queueType"></param>
         public void ProcessAndFlushRpcQueue(RpcQueueProcessingTypes queueType, NetworkUpdateStage currentUpdateStage)
         {
+            bool IsListening = ReferenceEquals(m_NetworkManager,null) ? false:m_NetworkManager.IsListening;
             switch (queueType)
             {
                 case RpcQueueProcessingTypes.Receive:
                     {
-                        m_RpcQueueProcessor.ProcessReceiveQueue(currentUpdateStage);
+                        m_RpcQueueProcessor.ProcessReceiveQueue(currentUpdateStage, m_IsTestingEnabled);
                         break;
                     }
                 case RpcQueueProcessingTypes.Send:
                     {
-                        m_RpcQueueProcessor.ProcessSendQueue();
+                        m_RpcQueueProcessor.ProcessSendQueue(IsListening);
                         break;
                     }
             }
@@ -676,8 +677,9 @@ namespace MLAPI.Messaging
                 this.UnregisterAllNetworkUpdates();
             }
 
+            bool IsListening = ReferenceEquals(m_NetworkManager,null) ? false:m_NetworkManager.IsListening;
             //We need to make sure all internal messages (i.e. object destroy) are sent
-            m_RpcQueueProcessor.InternalMessagesSendAndFlush();
+            m_RpcQueueProcessor.InternalMessagesSendAndFlush(IsListening);
 
             //Dispose of any readers and writers
             foreach (var queueHistorySection in QueueHistory)

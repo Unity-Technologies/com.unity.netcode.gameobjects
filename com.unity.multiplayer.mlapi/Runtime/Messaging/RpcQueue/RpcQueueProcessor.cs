@@ -35,7 +35,7 @@ namespace MLAPI.Messaging
         /// ProcessReceiveQueue
         /// Public facing interface method to start processing all RPCs in the current inbound frame
         /// </summary>
-        public void ProcessReceiveQueue(NetworkUpdateStage currentStage)
+        public void ProcessReceiveQueue(NetworkUpdateStage currentStage, bool isTesting)
         {
             bool advanceFrameHistory = false;
             if (!ReferenceEquals(m_RpcQueueContainer, null))
@@ -56,7 +56,12 @@ namespace MLAPI.Messaging
                     while (currentQueueItem.QueueItemType != RpcQueueContainer.QueueItemType.None)
                     {
                         advanceFrameHistory = true;
-                        NetworkManager.InvokeRpc(currentQueueItem);
+
+                        if(!isTesting)
+                        {
+                            NetworkManager.InvokeRpc(currentQueueItem);
+                        }
+
                         ProfilerStatManager.RpcsQueueProc.Record();
                         PerformanceDataManager.Increment(ProfilerConstants.NumberOfRPCQueueProcessed);
                         currentQueueItem = currentFrame.GetNextQueueItem();
@@ -81,18 +86,18 @@ namespace MLAPI.Messaging
         /// ProcessSendQueue
         /// Called to send both performance RPC and internal messages and then flush the outbound queue
         /// </summary>
-        public void ProcessSendQueue()
+        internal void ProcessSendQueue(bool isListening)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_ProcessSendQueue.Begin();
 #endif
 
-            RpcQueueSendAndFlush();
+            RpcQueueSendAndFlush(isListening);
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_ProcessSendQueue.End();
 #endif
-            InternalMessagesSendAndFlush();
+            InternalMessagesSendAndFlush(isListening);
         }
 
         /// <summary>
@@ -106,44 +111,42 @@ namespace MLAPI.Messaging
         }
 
         /// <summary>
-        /// Generic Sending Method for Internal Messages
-        /// TODO: Will need to open this up for discussion, but we will want to determine if this is how we want internal MLAPI command
-        /// messages to be sent.  We might want specific commands to occur during specific network update regions (see NetworkUpdate
+        /// Generic Sending Method for Internal Messages ADD_OBJECT and DESTROY_OBJECT
         /// </summary>
-        public void InternalMessagesSendAndFlush()
+        internal void InternalMessagesSendAndFlush(bool isListening)
         {
-            bool IsListening = m_RpcQueueContainer.m_NetworkManager.IsListening;
-
             foreach (RpcFrameQueueItem queueItem in m_InternalMLAPISendQueue)
             {
                 var PoolStream = queueItem.NetworkBuffer;
-                if (IsListening)
+
+                switch (queueItem.QueueItemType)
                 {
-                    switch (queueItem.QueueItemType)
-                    {
-                        case RpcQueueContainer.QueueItemType.CreateObject:
+                    case RpcQueueContainer.QueueItemType.CreateObject:
+                        {
+                            if (isListening)
                             {
                                 foreach (ulong clientId in queueItem.ClientNetworkIds)
                                 {
                                     InternalMessageSender.Send(clientId, NetworkConstants.ADD_OBJECT, queueItem.NetworkChannel, PoolStream);
                                 }
-
-                                PerformanceDataManager.Increment(ProfilerConstants.NumberOfRPCsSent, queueItem.ClientNetworkIds.Length);
-                                ProfilerStatManager.RpcsSent.Record(queueItem.ClientNetworkIds.Length);
-                                break;
                             }
-                        case RpcQueueContainer.QueueItemType.DestroyObject:
+                            PerformanceDataManager.Increment(ProfilerConstants.NumberOfRPCsSent, queueItem.ClientNetworkIds.Length);
+                            ProfilerStatManager.RpcsSent.Record(queueItem.ClientNetworkIds.Length);
+                            break;
+                        }
+                    case RpcQueueContainer.QueueItemType.DestroyObject:
+                        {
+                            if (isListening)
                             {
                                 foreach (ulong clientId in queueItem.ClientNetworkIds)
                                 {
                                     InternalMessageSender.Send(clientId, NetworkConstants.DESTROY_OBJECT, queueItem.NetworkChannel, PoolStream);
                                 }
-
-                                PerformanceDataManager.Increment(ProfilerConstants.NumberOfRPCsSent, queueItem.ClientNetworkIds.Length);
-                                ProfilerStatManager.RpcsSent.Record(queueItem.ClientNetworkIds.Length);
-                                break;
                             }
-                    }
+                            PerformanceDataManager.Increment(ProfilerConstants.NumberOfRPCsSent, queueItem.ClientNetworkIds.Length);
+                            ProfilerStatManager.RpcsSent.Record(queueItem.ClientNetworkIds.Length);
+                            break;
+                        }
                 }
 
                 PoolStream.Dispose();
@@ -153,10 +156,10 @@ namespace MLAPI.Messaging
         }
 
         /// <summary>
-        /// RPCQueueSendAndFlush
         /// Sends all RPC queue items in the current outbound frame
         /// </summary>
-        private void RpcQueueSendAndFlush()
+        /// <param name="isListening">if flase it will just process through the queue items but attempt to send</param>
+        private void RpcQueueSendAndFlush(bool isListening)
         {
             var advanceFrameHistory = false;
             if (!ReferenceEquals(m_RpcQueueContainer, null))
@@ -172,11 +175,17 @@ namespace MLAPI.Messaging
                         {
                             m_RpcBatcher.QueueItem(currentQueueItem);
 
-                            m_RpcBatcher.SendItems(k_BatchThreshold, SendCallback);
+                            if (isListening)
+                            {
+                                m_RpcBatcher.SendItems(k_BatchThreshold, SendCallback);
+                            }
                         }
                         else
                         {
-                            SendFrameQueueItem(currentQueueItem);
+                            if (isListening)
+                            {
+                                SendFrameQueueItem(currentQueueItem);
+                            }
                         }
 
                         currentQueueItem = currentFrame.GetNextQueueItem();
@@ -197,11 +206,8 @@ namespace MLAPI.Messaging
             }
         }
 
-
         /// <summary>
-        /// SendCallback
         /// This is the callback from the batcher when it need to send a batch
-        ///
         /// </summary>
         /// <param name="clientId"> clientId to send to</param>
         /// <param name="sendStream"> the stream to send</param>
