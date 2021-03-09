@@ -609,7 +609,7 @@ namespace MLAPI
 
             if ((createPlayerObject == null && NetworkConfig.CreatePlayerPrefab) || (createPlayerObject != null && createPlayerObject.Value))
             {
-                NetworkedObject netObject = SpawnManager.CreateLocalNetworkedObject(false, 0, (prefabHash == null ? NetworkConfig.PlayerPrefabHash.Value : prefabHash.Value), null, position, rotation);
+                NetworkedObject netObject = SpawnManager.CreateLocalNetworkedObject(false, 0, hostClientId, (prefabHash == null ? NetworkConfig.PlayerPrefabHash.Value : prefabHash.Value), null, position, rotation);
                 SpawnManager.SpawnNetworkedObjectLocally(netObject, SpawnManager.GetNetworkObjectId(), false, true, hostClientId, payloadStream, payloadStream != null, payloadStream == null ? 0 : (int)payloadStream.Length, false, false);
 
                 if (netObject.CheckObjectVisibility == null || netObject.CheckObjectVisibility(hostClientId))
@@ -1460,7 +1460,7 @@ namespace MLAPI
 
                 if (createPlayerObject)
                 {
-                    NetworkedObject netObject = SpawnManager.CreateLocalNetworkedObject(false, 0, (playerPrefabHash == null ? NetworkConfig.PlayerPrefabHash.Value : playerPrefabHash.Value), null, position, rotation);
+                    NetworkedObject netObject = SpawnManager.CreateLocalNetworkedObject(false, 0, clientId, (playerPrefabHash == null ? NetworkConfig.PlayerPrefabHash.Value : playerPrefabHash.Value), null, position, rotation);
                     SpawnManager.SpawnNetworkedObjectLocally(netObject, SpawnManager.GetNetworkObjectId(), false, true, clientId, null, false, 0, false, false);
 
                     ConnectedClients[clientId].PlayerObject = netObject;
