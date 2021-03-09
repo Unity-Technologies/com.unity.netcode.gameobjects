@@ -70,7 +70,7 @@ namespace MLAPI.Spawning
         /// </summary>
         /// <param name="prefabHash">The prefab hash to destroy</param>
         /// <param name="handler">The delegate handler</param>
-        public static void RegisterCustomDestroyHandler(ulong prefabHash, DestroyHandlerDelegate handler)
+        public static void RegisterDestroyHandler(ulong prefabHash, DestroyHandlerDelegate handler)
         {
             if (CustomDestroyHandlers.ContainsKey(prefabHash))
             {
@@ -83,19 +83,19 @@ namespace MLAPI.Spawning
         }
 
         /// <summary>
-        /// Removes the custom spawn handler for a specific prefab hash
+        /// Unregisters the custom spawn handler for a specific prefab hash
         /// </summary>
         /// <param name="prefabHash">The prefab hash of the prefab spawn handler that is to be removed</param>
-        public static void RemoveCustomSpawnHandler(ulong prefabHash)
+        public static void UnregisterSpawnHandler(ulong prefabHash)
         {
             CustomSpawnHandlers.Remove(prefabHash);
         }
 
         /// <summary>
-        /// Removes the custom destroy handler for a specific prefab hash
+        /// Unregisters the custom destroy handler for a specific prefab hash
         /// </summary>
         /// <param name="prefabHash">The prefab hash of the prefab destroy handler that is to be removed</param>
-        public static void RemoveCustomDestroyHandler(ulong prefabHash)
+        public static void UnregisterDestroyHandler(ulong prefabHash)
         {
             CustomDestroyHandlers.Remove(prefabHash);
         }
