@@ -73,6 +73,12 @@ namespace MLAPI.Configuration
         public int ReceiveTickrate = 64;
 
         /// <summary>
+        /// Duration in seconds between network ticks.
+        /// </summary>
+        [Tooltip("Duration in seconds between network ticks")]
+        public float NetworkTickIntervalSec = 0.050f;
+
+        /// <summary>
         /// The max amount of messages to process per ReceiveTickrate. This is to prevent flooding.
         /// </summary>
         [Tooltip("The maximum amount of Receive events to poll per Receive tick. This is to prevent flooding and freezing on the server")]
