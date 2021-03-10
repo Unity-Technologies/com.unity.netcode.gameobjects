@@ -559,7 +559,7 @@ namespace MLAPI.Messaging
         }
 
         /// <summary>
-        /// The
+        /// The NetworkUpdate method used by the NetworkUpdateLoop
         /// </summary>
         /// <param name="updateStage">the stage to process RPC Queues</param>
         public void NetworkUpdate(NetworkUpdateStage updateStage)
