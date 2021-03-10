@@ -26,7 +26,6 @@ namespace MLAPI.Messaging
         public PooledNetworkWriter QueueWriter;
         public RpcQueueHistoryFrame LoopbackHistoryFrame; //Temporary fix for Host mode loopback work around.
 
-
         public PooledNetworkReader QueueReader;
 
         private int m_QueueItemOffsetIndex;
@@ -35,7 +34,7 @@ namespace MLAPI.Messaging
         private int m_MaximumClients;
         private long m_CurrentStreamSizeMark;
         private NetworkUpdateStage m_StreamUpdateStage; //Update stage specific to RPCs (typically inbound has most potential for variation)
-        private const int k_MaxStreamBounds = 131072;
+        private int m_MaxStreamBounds;
         private const int k_MinStreamBounds = 0;
 
         /// <summary>
@@ -119,7 +118,7 @@ namespace MLAPI.Messaging
             m_CurrentQueueItem.StreamSize = QueueReader.ReadInt64();
 
             //Sanity checking for boundaries
-            if (m_CurrentQueueItem.StreamSize < k_MaxStreamBounds && m_CurrentQueueItem.StreamSize > k_MinStreamBounds)
+            if (m_CurrentQueueItem.StreamSize <= m_MaxStreamBounds && m_CurrentQueueItem.StreamSize > k_MinStreamBounds)
             {
                 //Inbound and Outbound message streams are handled differently
                 if (m_QueueFrameType == QueueFrameType.Inbound)
@@ -145,7 +144,7 @@ namespace MLAPI.Messaging
             }
             else
             {
-                UnityEngine.Debug.LogWarning($"{nameof(m_CurrentQueueItem)}.{nameof(RpcFrameQueueItem.StreamSize)} exceeds allowed size ({k_MaxStreamBounds} vs {m_CurrentQueueItem.StreamSize})! Exiting from the current RpcQueue enumeration loop!");
+                UnityEngine.Debug.LogWarning($"{nameof(m_CurrentQueueItem)}.{nameof(RpcFrameQueueItem.StreamSize)} exceeds allowed size ({m_MaxStreamBounds} vs {m_CurrentQueueItem.StreamSize})! Exiting from the current RpcQueue enumeration loop!");
                 m_CurrentQueueItem.QueueItemType = RpcQueueContainer.QueueItemType.None;
             }
 
@@ -240,8 +239,9 @@ namespace MLAPI.Messaging
         /// QueueHistoryFrame Constructor
         /// </summary>
         /// <param name="queueType">type of queue history frame (Inbound/Outbound)</param>
-        public RpcQueueHistoryFrame(QueueFrameType queueType, NetworkUpdateStage updateStage, int maxClients = 512)
+        public RpcQueueHistoryFrame(QueueFrameType queueType, NetworkUpdateStage updateStage, int maxClients = 512, int maxStreamBounds = 1 << 20 )
         {
+            m_MaxStreamBounds = maxStreamBounds + 512; //Account for queue header information size with room to grow for future modifications
             m_MaximumClients = maxClients;
             m_QueueFrameType = queueType;
             m_CurrentQueueItem = new RpcFrameQueueItem();

@@ -6,9 +6,7 @@ using MLAPI.Messaging;
 namespace MLAPI.RuntimeTests
 {
     /// <summary>
-    /// Used in conjunction with the RpcQueueTest.TestNetworkUpdateStages to validate:
-    /// - Sending and Receiving pipeline which tests both sending and receiving pipelines are functioning properly.
-    /// - Tests that using the ServerRpcParams.Send.UpdateStage and ClientRpcParams.Send.UpdateStage are recevied and processed during the specified NetworkUpdateStage
+    /// Used in conjunction with the RpcQueueTest to validate that Rpcs are being invoked at the proper NetworkUpdateStage
     /// </summary>
     public class NetworkUpdateStagesComponent : NetworkBehaviour
     {
