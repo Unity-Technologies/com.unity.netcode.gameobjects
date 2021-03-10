@@ -15,7 +15,10 @@ namespace MLAPI.Messaging
     internal class RpcQueueContainer : INetworkUpdateSystem, IDisposable
     {
         private const int k_MinQueueHistory = 2; //We need a minimum of 2 queue history buffers in order to properly handle looping back Rpcs when a host
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
         private static int s_RpcQueueContainerInstances;
+#endif
 
         public enum QueueItemType
         {
@@ -667,11 +670,13 @@ namespace MLAPI.Messaging
         /// </summary>
         private void Shutdown()
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+
             if (NetworkLog.CurrentLogLevel == LogLevel.Developer)
             {
                 NetworkLog.LogInfo($"[Instance : {s_RpcQueueContainerInstances}] {nameof(RpcQueueContainer)} shutting down.");
             }
-
+#endif
             //As long as this instance is using the pre-defined update stages
             if (!m_ProcessUpdateStagesExternally)
             {
