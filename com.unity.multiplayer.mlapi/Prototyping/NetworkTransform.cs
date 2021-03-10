@@ -1,6 +1,5 @@
 using System.Linq;
 using System.Collections.Generic;
-using MLAPI.Connection;
 using UnityEngine;
 using MLAPI.Messaging;
 
