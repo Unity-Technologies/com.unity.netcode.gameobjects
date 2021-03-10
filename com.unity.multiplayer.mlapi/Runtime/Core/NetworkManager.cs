@@ -960,7 +960,7 @@ namespace MLAPI
                 }
 
                 // Client tried to send a network message that was not the connection request before he was accepted.
-                if (PendingClients.ContainsKey(clientId) && PendingClients[clientId].ConnectionState == PendingClient.State.PendingConnection && messageType != NetworkConstants.CONNECTION_REQUEST)
+                if (PendingClients.TryGetValue(clientId, out PendingClient client) && client.ConnectionState == PendingClient.State.PendingConnection && messageType != NetworkConstants.CONNECTION_REQUEST)
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                     {
@@ -1112,7 +1112,7 @@ namespace MLAPI
             var networkUpdateStage = queueItem.NetworkReader.ReadByteDirect();
             var networkMethodId = queueItem.NetworkReader.ReadUInt32Packed();
 
-            if (__ntable.ContainsKey(networkMethodId))
+            if (__ntable.TryGetValue(networkMethodId, out NetworkSerializer serializer))
             {
                 if (!NetworkSpawnManager.SpawnedObjects.ContainsKey(networkObjectId)) return;
                 var networkObject = NetworkSpawnManager.SpawnedObjects[networkObjectId];
@@ -1190,8 +1190,8 @@ namespace MLAPI
                 throw new NotServerException("Only server can disconnect remote clients. Use StopClient instead.");
             }
 
-            if (ConnectedClients.ContainsKey(clientId)) ConnectedClients.Remove(clientId);
-            if (PendingClients.ContainsKey(clientId)) PendingClients.Remove(clientId);
+            ConnectedClients.Remove(clientId);
+            PendingClients.Remove(clientId);
 
             for (int i = ConnectedClientsList.Count - 1; i > -1; i--)
             {
@@ -1208,44 +1208,46 @@ namespace MLAPI
 
         internal void OnClientDisconnectFromServer(ulong clientId)
         {
-            if (PendingClients.ContainsKey(clientId)) PendingClients.Remove(clientId);
+            PendingClients.Remove(clientId);
 
-            if (ConnectedClients.ContainsKey(clientId))
+            if (ConnectedClients.TryGetValue(clientId, out NetworkClient networkClient))
             {
                 if (IsServer)
                 {
-                    if (ConnectedClients[clientId].PlayerObject != null)
+                    var playerObject = networkClient.PlayerObject;
+                    if (playerObject != null)
                     {
-                        if (NetworkSpawnManager.CustomDestroyHandlers.ContainsKey(ConnectedClients[clientId].PlayerObject.PrefabHash))
+                        if (NetworkSpawnManager.CustomDestroyHandlers.TryGetValue(playerObject.PrefabHash, out NetworkSpawnManager.DestroyHandlerDelegate destroyHandler))
                         {
-                            NetworkSpawnManager.CustomDestroyHandlers[ConnectedClients[clientId].PlayerObject.PrefabHash](ConnectedClients[clientId].PlayerObject);
-                            NetworkSpawnManager.OnDestroyObject(ConnectedClients[clientId].PlayerObject.NetworkObjectId, false);
+                            destroyHandler(playerObject);
+                            NetworkSpawnManager.OnDestroyObject(playerObject.NetworkObjectId, false);
                         }
                         else
                         {
-                            Destroy(ConnectedClients[clientId].PlayerObject.gameObject);
+                            Destroy(playerObject.gameObject);
                         }
                     }
 
-                    for (int i = 0; i < ConnectedClients[clientId].OwnedObjects.Count; i++)
+                    for (int i = 0; i < networkClient.OwnedObjects.Count; i++)
                     {
-                        if (ConnectedClients[clientId].OwnedObjects[i] != null)
+                        var ownedObject = networkClient.OwnedObjects[i];
+                        if (ownedObject != null)
                         {
-                            if (!ConnectedClients[clientId].OwnedObjects[i].DontDestroyWithOwner)
+                            if (!ownedObject.DontDestroyWithOwner)
                             {
-                                if (NetworkSpawnManager.CustomDestroyHandlers.ContainsKey(ConnectedClients[clientId].OwnedObjects[i].PrefabHash))
+                                if (NetworkSpawnManager.CustomDestroyHandlers.TryGetValue(ownedObject.PrefabHash, out NetworkSpawnManager.DestroyHandlerDelegate destroyHandler))
                                 {
-                                    NetworkSpawnManager.CustomDestroyHandlers[ConnectedClients[clientId].OwnedObjects[i].PrefabHash](ConnectedClients[clientId].OwnedObjects[i]);
-                                    NetworkSpawnManager.OnDestroyObject(ConnectedClients[clientId].OwnedObjects[i].NetworkObjectId, false);
+                                    destroyHandler(ownedObject);
+                                    NetworkSpawnManager.OnDestroyObject(ownedObject.NetworkObjectId, false);
                                 }
                                 else
                                 {
-                                    Destroy(ConnectedClients[clientId].OwnedObjects[i].gameObject);
+                                    Destroy(ownedObject.gameObject);
                                 }
                             }
                             else
                             {
-                                ConnectedClients[clientId].OwnedObjects[i].RemoveOwnership();
+                                ownedObject.RemoveOwnership();
                             }
                         }
                     }
@@ -1301,7 +1303,7 @@ namespace MLAPI
             if (approved)
             {
                 // Inform new client it got approved
-                if (PendingClients.ContainsKey(clientId)) PendingClients.Remove(clientId);
+                PendingClients.Remove(clientId);
 
                 var client = new NetworkClient { ClientId = clientId, };
                 ConnectedClients.Add(clientId, client);
@@ -1478,11 +1480,7 @@ namespace MLAPI
             }
             else
             {
-                if (PendingClients.ContainsKey(clientId))
-                {
-                    PendingClients.Remove(clientId);
-                }
-
+                PendingClients.Remove(clientId);
                 NetworkConfig.NetworkTransport.DisconnectRemoteClient(clientId);
             }
         }

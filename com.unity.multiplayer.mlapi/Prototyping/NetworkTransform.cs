@@ -1,5 +1,6 @@
 using System.Linq;
 using System.Collections.Generic;
+using MLAPI.Connection;
 using UnityEngine;
 using MLAPI.Messaging;
 
@@ -255,7 +256,7 @@ namespace MLAPI.Prototyping
             {
                 for (int i = 0; i < NetworkManager.Singleton.ConnectedClientsList.Count; i++)
                 {
-                    if (!m_ClientSendInfo.ContainsKey(NetworkManager.Singleton.ConnectedClientsList[i].ClientId))
+                    if (!m_ClientSendInfo.TryGetValue(NetworkManager.Singleton.ConnectedClientsList[i].ClientId, out ClientSendInfo info))
                     {
                         m_ClientSendInfo.Add(NetworkManager.Singleton.ConnectedClientsList[i].ClientId, new ClientSendInfo()
                         {
@@ -265,7 +266,6 @@ namespace MLAPI.Prototyping
                         });
                     }
 
-                    ClientSendInfo info = m_ClientSendInfo[NetworkManager.Singleton.ConnectedClientsList[i].ClientId];
                     Vector3? receiverPosition = NetworkManager.Singleton.ConnectedClientsList[i].PlayerObject == null ? null : new Vector3?(NetworkManager.Singleton.ConnectedClientsList[i].PlayerObject.transform.position);
                     Vector3? senderPosition = NetworkManager.Singleton.ConnectedClients[OwnerClientId].PlayerObject == null ? null : new Vector3?(NetworkManager.Singleton.ConnectedClients[OwnerClientId].PlayerObject.transform.position);
 

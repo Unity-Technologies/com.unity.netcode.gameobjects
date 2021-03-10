@@ -53,7 +53,7 @@ namespace MLAPI.SceneManagement
 
         internal static void SetCurrentSceneIndex()
         {
-            if (!SceneNameToIndex.ContainsKey(SceneManager.GetActiveScene().name))
+            if (!SceneNameToIndex.TryGetValue(SceneManager.GetActiveScene().name, out CurrentSceneIndex))
             {
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                 {
@@ -63,7 +63,6 @@ namespace MLAPI.SceneManagement
                 return;
             }
 
-            CurrentSceneIndex = SceneNameToIndex[SceneManager.GetActiveScene().name];
             CurrentActiveSceneIndex = CurrentSceneIndex;
         }
 
@@ -146,7 +145,7 @@ namespace MLAPI.SceneManagement
         // Called on client
         internal static void OnSceneSwitch(uint sceneIndex, Guid switchSceneGuid, Stream objectStream)
         {
-            if (!SceneIndexToString.ContainsKey(sceneIndex) || !RegisteredSceneNames.Contains(SceneIndexToString[sceneIndex]))
+            if (!SceneIndexToString.TryGetValue(sceneIndex, out string sceneName) || !RegisteredSceneNames.Contains(sceneName))
             {
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                 {
@@ -163,8 +162,6 @@ namespace MLAPI.SceneManagement
 
             IsSpawnedObjectsPendingInDontDestroyOnLoad = true;
 
-            string sceneName = SceneIndexToString[sceneIndex];
-
             var sceneLoad = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Single);
 
             s_NextSceneName = sceneName;
@@ -175,7 +172,7 @@ namespace MLAPI.SceneManagement
 
         internal static void OnFirstSceneSwitchSync(uint sceneIndex, Guid switchSceneGuid)
         {
-            if (!SceneIndexToString.ContainsKey(sceneIndex) || !RegisteredSceneNames.Contains(SceneIndexToString[sceneIndex]))
+            if (!SceneIndexToString.TryGetValue(sceneIndex, out string sceneName) || !RegisteredSceneNames.Contains(sceneName))
             {
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                 {
@@ -185,13 +182,12 @@ namespace MLAPI.SceneManagement
                 return;
             }
 
-            if (SceneManager.GetActiveScene().name == SceneIndexToString[sceneIndex])
+            if (SceneManager.GetActiveScene().name == sceneName)
             {
                 return; //This scene is already loaded. This usually happends at first load
             }
 
             s_LastScene = SceneManager.GetActiveScene();
-            string sceneName = SceneIndexToString[sceneIndex];
             s_NextSceneName = sceneName;
             CurrentActiveSceneIndex = SceneNameToIndex[sceneName];
 
@@ -450,12 +446,10 @@ namespace MLAPI.SceneManagement
                 return;
             }
 
-            if (!SceneSwitchProgresses.ContainsKey(switchSceneGuid))
+            if (SceneSwitchProgresses.TryGetValue(switchSceneGuid, out SceneSwitchProgress progress))
             {
-                return;
+                SceneSwitchProgresses[switchSceneGuid].AddClientAsDone(clientId);
             }
-
-            SceneSwitchProgresses[switchSceneGuid].AddClientAsDone(clientId);
         }
 
 

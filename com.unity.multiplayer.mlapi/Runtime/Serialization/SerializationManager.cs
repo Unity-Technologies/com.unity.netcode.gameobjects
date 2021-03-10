@@ -66,9 +66,9 @@ namespace MLAPI.Serialization
 
         internal static bool TrySerialize(Stream stream, object obj)
         {
-            if (s_CachedExternalSerializers.ContainsKey(obj.GetType()))
+            if (s_CachedExternalSerializers.TryGetValue(obj.GetType(), out BoxedSerializationDelegate serializer))
             {
-                s_CachedExternalSerializers[obj.GetType()](stream, obj);
+                serializer(stream, obj);
                 return true;
             }
 
@@ -77,9 +77,9 @@ namespace MLAPI.Serialization
 
         internal static bool TryDeserialize(Stream stream, Type type, out object obj)
         {
-            if (s_CachedExternalDeserializers.ContainsKey(type))
+            if (s_CachedExternalDeserializers.TryGetValue(type, out BoxedDeserializationDelegate deserializationDelegate))
             {
-                obj = s_CachedExternalDeserializers[type](stream);
+                obj = deserializationDelegate(stream);
                 return true;
             }
 
@@ -89,7 +89,10 @@ namespace MLAPI.Serialization
 
         internal static FieldInfo[] GetFieldsForType(Type type)
         {
-            if (s_FieldCache.ContainsKey(type)) return s_FieldCache[type];
+            if (s_FieldCache.TryGetValue(type, out FieldInfo[] value))
+            {
+                return value;
+            }
 
             FieldInfo[] fields = type
                 .GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)

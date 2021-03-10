@@ -152,9 +152,9 @@ namespace MLAPI.Serialization
             {
                 ulong networkObjectId = ReadUInt64Packed();
 
-                if (NetworkSpawnManager.SpawnedObjects.ContainsKey(networkObjectId))
+                if (NetworkSpawnManager.SpawnedObjects.TryGetValue(networkObjectId, out NetworkObject networkObject))
                 {
-                    return NetworkSpawnManager.SpawnedObjects[networkObjectId].gameObject;
+                    return networkObject.gameObject;
                 }
 
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
@@ -169,9 +169,9 @@ namespace MLAPI.Serialization
             {
                 ulong networkObjectId = ReadUInt64Packed();
 
-                if (NetworkSpawnManager.SpawnedObjects.ContainsKey(networkObjectId))
+                if (NetworkSpawnManager.SpawnedObjects.TryGetValue(networkObjectId, out NetworkObject networkObject))
                 {
-                    return NetworkSpawnManager.SpawnedObjects[networkObjectId];
+                    return networkObject;
                 }
 
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
@@ -186,9 +186,9 @@ namespace MLAPI.Serialization
             {
                 ulong networkObjectId = ReadUInt64Packed();
                 ushort behaviourId = ReadUInt16Packed();
-                if (NetworkSpawnManager.SpawnedObjects.ContainsKey(networkObjectId))
+                if (NetworkSpawnManager.SpawnedObjects.TryGetValue(networkObjectId, out NetworkObject networkObject))
                 {
-                    return NetworkSpawnManager.SpawnedObjects[networkObjectId].GetNetworkBehaviourAtOrderIndex(behaviourId);
+                    return networkObject.GetNetworkBehaviourAtOrderIndex(behaviourId);
                 }
 
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)

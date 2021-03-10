@@ -947,6 +947,9 @@ namespace MLAPI
         /// </summary>
         /// <param name="networkId"></param>
         /// <returns></returns>
-        protected NetworkObject GetNetworkObject(ulong networkId) => NetworkSpawnManager.SpawnedObjects.ContainsKey(networkId) ? NetworkSpawnManager.SpawnedObjects[networkId] : null;
+        protected NetworkObject GetNetworkObject(ulong networkId)
+        {
+            return NetworkSpawnManager.SpawnedObjects.TryGetValue(networkId, out NetworkObject networkObject) ? networkObject : null;
+        }
     }
 }

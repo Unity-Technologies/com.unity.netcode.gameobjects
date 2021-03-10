@@ -121,28 +121,30 @@ namespace MLAPI.Messaging
                     k_SendDict[clientId] = new SendStream();
                 }
 
-                if (k_SendDict[clientId].IsEmpty)
+                SendStream sendStream = k_SendDict[clientId];
+
+                if (sendStream.IsEmpty)
                 {
-                    k_SendDict[clientId].IsEmpty = false;
-                    k_SendDict[clientId].NetworkChannel = queueItem.NetworkChannel;
+                    sendStream.IsEmpty = false;
+                    sendStream.NetworkChannel = queueItem.NetworkChannel;
 
                     switch (queueItem.QueueItemType)
                     {
                         // 8 bits are used for the message type, which is an NetworkConstants
                         case RpcQueueContainer.QueueItemType.ServerRpc:
-                            k_SendDict[clientId].Writer.WriteByte(NetworkConstants.SERVER_RPC); // MessageType
+                            sendStream.Writer.WriteByte(NetworkConstants.SERVER_RPC); // MessageType
                             break;
                         case RpcQueueContainer.QueueItemType.ClientRpc:
-                            k_SendDict[clientId].Writer.WriteByte(NetworkConstants.CLIENT_RPC); // MessageType
+                            sendStream.Writer.WriteByte(NetworkConstants.CLIENT_RPC); // MessageType
                             break;
                     }
                 }
 
                 // write the amounts of bytes that are coming up
-                PushLength(queueItem.MessageData.Count, ref k_SendDict[clientId].Writer);
+                PushLength(queueItem.MessageData.Count, ref sendStream.Writer);
 
                 // write the message to send
-                k_SendDict[clientId].Writer.WriteBytes(queueItem.MessageData.Array, queueItem.MessageData.Count, queueItem.MessageData.Offset);
+                sendStream.Writer.WriteBytes(queueItem.MessageData.Array, queueItem.MessageData.Count, queueItem.MessageData.Offset);
 
                 ProfilerStatManager.BytesSent.Record(queueItem.MessageData.Count);
                 ProfilerStatManager.RpcsSent.Record();

@@ -6,6 +6,7 @@ using MLAPI.Exceptions;
 using MLAPI.Logging;
 using MLAPI.Profiling;
 using MLAPI.Transports.Tasks;
+using UnityEngine.Assertions;
 using UnityEngine.Networking;
 
 namespace MLAPI.Transports.UNET
@@ -93,9 +94,9 @@ namespace MLAPI.Transports.UNET
 
             int channelId = 0;
 
-            if (m_ChannelNameToId.ContainsKey(networkChannel))
+            if (m_ChannelNameToId.TryGetValue(networkChannel, out int value))
             {
-                channelId = m_ChannelNameToId[networkChannel];
+                channelId = value;
             }
             else
             {
@@ -186,9 +187,9 @@ namespace MLAPI.Transports.UNET
                 payload = new ArraySegment<byte>(m_MessageBuffer, 0, receivedSize);
             }
 
-            if (m_ChannelIdToName.ContainsKey(channelId))
+            if (m_ChannelIdToName.TryGetValue(channelId, out NetworkChannel value))
             {
-                networkChannel = m_ChannelIdToName[channelId];
+                networkChannel = value;
             }
             else
             {
@@ -389,10 +390,7 @@ namespace MLAPI.Transports.UNET
             {
                 int channelId = AddUNETChannel(Channels[i].Type, connectionConfig);
 
-                if (m_ChannelNameToId.ContainsKey(Channels[i].Id))
-                {
-                    throw new InvalidChannelException($"Channel {channelId} already exists");
-                }
+                Assert.IsFalse(m_ChannelNameToId.ContainsKey(Channels[i].Id), $"Channel {channelId} already exists");
 
                 m_ChannelIdToName.Add(channelId, Channels[i].Id);
                 m_ChannelNameToId.Add(Channels[i].Id, channelId);

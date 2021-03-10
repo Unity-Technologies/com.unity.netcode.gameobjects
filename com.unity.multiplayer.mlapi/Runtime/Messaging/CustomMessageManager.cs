@@ -77,19 +77,19 @@ namespace MLAPI.Messaging
             if (NetworkManager.Singleton == null)
             {
                 // We dont know what size to use. Try every (more collision prone)
-                if (s_NamedMessageHandlers16.ContainsKey(hash))
+                if (s_NamedMessageHandlers16.TryGetValue(hash, out HandleNamedMessageDelegate messageHandler16))
                 {
-                    s_NamedMessageHandlers16[hash](sender, stream);
+                    messageHandler16(sender, stream);
                 }
 
-                if (s_NamedMessageHandlers32.ContainsKey(hash))
+                if (s_NamedMessageHandlers32.TryGetValue(hash, out HandleNamedMessageDelegate messageHandler32))
                 {
-                    s_NamedMessageHandlers32[hash](sender, stream);
+                    messageHandler32(sender, stream);
                 }
 
-                if (s_NamedMessageHandlers64.ContainsKey(hash))
+                if (s_NamedMessageHandlers64.TryGetValue(hash, out HandleNamedMessageDelegate messageHandler64))
                 {
-                    s_NamedMessageHandlers64[hash](sender, stream);
+                    messageHandler64(sender, stream);
                 }
             }
             else
@@ -97,23 +97,23 @@ namespace MLAPI.Messaging
                 // Only check the right size.
                 if (NetworkManager.Singleton.NetworkConfig.RpcHashSize == HashSize.VarIntTwoBytes)
                 {
-                    if (s_NamedMessageHandlers16.ContainsKey(hash))
+                    if (s_NamedMessageHandlers16.TryGetValue(hash, out HandleNamedMessageDelegate messageHandler16))
                     {
-                        s_NamedMessageHandlers16[hash](sender, stream);
+                        messageHandler16(sender, stream);
                     }
                 }
                 else if (NetworkManager.Singleton.NetworkConfig.RpcHashSize == HashSize.VarIntFourBytes)
                 {
-                    if (s_NamedMessageHandlers32.ContainsKey(hash))
+                    if (s_NamedMessageHandlers32.TryGetValue(hash, out HandleNamedMessageDelegate messageHandler32))
                     {
-                        s_NamedMessageHandlers32[hash](sender, stream);
+                        messageHandler32(sender, stream);
                     }
                 }
                 else if (NetworkManager.Singleton.NetworkConfig.RpcHashSize == HashSize.VarIntEightBytes)
                 {
-                    if (s_NamedMessageHandlers64.ContainsKey(hash))
+                    if (s_NamedMessageHandlers64.TryGetValue(hash, out HandleNamedMessageDelegate messageHandler64))
                     {
-                        s_NamedMessageHandlers64[hash](sender, stream);
+                        messageHandler64(sender, stream);
                     }
                 }
             }
