@@ -51,7 +51,7 @@ namespace MLAPI.Messaging
         private bool m_ProcessUpdateStagesExternally;
         private bool m_IsNotUsingBatching;
 
-        internal NetworkManager m_NetworkManager;
+        internal readonly NetworkManager m_NetworkManager;
 
         public bool IsUsingBatching()
         {
@@ -584,15 +584,16 @@ namespace MLAPI.Messaging
         /// <param name="maxFrameHistory"></param>
         private void Initialize(uint maxFrameHistory)
         {
-            //This makes sure that we don't exceed a rediculous value by capping the number of queue history frames to ushort.MaxValue
+            //This makes sure that we don't exceed a ridiculous value by capping the number of queue history frames to ushort.MaxValue
             //If this value is exceeded, then it will be kept at the ceiling of ushort.Maxvalue.
             //Note: If running at a 60pps rate (16ms update frequency) this would yield 17.47 minutes worth of queue frame history.
             if (maxFrameHistory > ushort.MaxValue)
             {
                 if (NetworkLog.CurrentLogLevel == LogLevel.Developer)
                 {
-                    NetworkLog.LogWarning($"The maximum {nameof(RpcQueueHistoryFrame)} is {ushort.MaxValue}!");
+                    NetworkLog.LogWarning($"The {nameof(RpcQueueHistoryFrame)} size cannot exceed {ushort.MaxValue} {nameof(RpcQueueHistoryFrame)}s! Capping at {ushort.MaxValue} {nameof(RpcQueueHistoryFrame)}s.");
                 }
+                maxFrameHistory = ushort.MaxValue;
             }
 
             ClearParameters();
@@ -684,9 +685,8 @@ namespace MLAPI.Messaging
                 this.UnregisterAllNetworkUpdates();
             }
 
-            bool isListening = !ReferenceEquals(m_NetworkManager, null) && m_NetworkManager.IsListening;
-            //We need to make sure all internal messages (i.e. object destroy) are sent
-            m_RpcQueueProcessor.InternalMessagesSendAndFlush(isListening);
+            //We need to make sure any remaining internal messages are sent before completely shutting down.
+            m_RpcQueueProcessor.InternalMessagesSendAndFlush(m_NetworkManager.IsListening);
 
             //Dispose of any readers and writers
             foreach (var queueHistorySection in QueueHistory)
