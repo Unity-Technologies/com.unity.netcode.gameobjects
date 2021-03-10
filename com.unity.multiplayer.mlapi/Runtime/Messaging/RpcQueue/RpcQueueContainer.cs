@@ -16,6 +16,7 @@ namespace MLAPI.Messaging
     {
         private const int k_MinQueueHistory = 2; //We need a minimum of 2 queue history buffers in order to properly handle looping back Rpcs when a host
         private static int s_RpcQueueContainerInstances;
+
         public enum QueueItemType
         {
             ServerRpc,
@@ -95,19 +96,19 @@ namespace MLAPI.Messaging
         /// <param name="queueType"></param>
         public void ProcessAndFlushRpcQueue(RpcQueueProcessingTypes queueType, NetworkUpdateStage currentUpdateStage)
         {
-            bool isListening = ReferenceEquals(m_NetworkManager,null) ? false:m_NetworkManager.IsListening;
+            bool isListening = !ReferenceEquals(m_NetworkManager, null) && m_NetworkManager.IsListening;
             switch (queueType)
             {
                 case RpcQueueProcessingTypes.Receive:
-                    {
-                        m_RpcQueueProcessor.ProcessReceiveQueue(currentUpdateStage, m_IsTestingEnabled);
-                        break;
-                    }
+                {
+                    m_RpcQueueProcessor.ProcessReceiveQueue(currentUpdateStage, m_IsTestingEnabled);
+                    break;
+                }
                 case RpcQueueProcessingTypes.Send:
-                    {
-                        m_RpcQueueProcessor.ProcessSendQueue(isListening);
-                        break;
-                    }
+                {
+                    m_RpcQueueProcessor.ProcessSendQueue(isListening);
+                    break;
+                }
             }
         }
 
@@ -131,6 +132,7 @@ namespace MLAPI.Messaging
                     }
                 }
             }
+
             return null;
         }
 
@@ -665,8 +667,7 @@ namespace MLAPI.Messaging
         /// </summary>
         private void Shutdown()
         {
-
-            if (NetworkLog.CurrentLogLevel == Logging.LogLevel.Developer)
+            if (NetworkLog.CurrentLogLevel == LogLevel.Developer)
             {
                 NetworkLog.LogInfo($"[Instance : {s_RpcQueueContainerInstances}] {nameof(RpcQueueContainer)} shutting down.");
             }
@@ -678,7 +679,7 @@ namespace MLAPI.Messaging
                 this.UnregisterAllNetworkUpdates();
             }
 
-            bool isListening = ReferenceEquals(m_NetworkManager,null) ? false : m_NetworkManager.IsListening;
+            bool isListening = !ReferenceEquals(m_NetworkManager, null) && m_NetworkManager.IsListening;
             //We need to make sure all internal messages (i.e. object destroy) are sent
             m_RpcQueueProcessor.InternalMessagesSendAndFlush(isListening);
 
@@ -712,24 +713,23 @@ namespace MLAPI.Messaging
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (s_RpcQueueContainerInstances > 0)
             {
-
                 if (NetworkLog.CurrentLogLevel == LogLevel.Developer)
                 {
                     NetworkLog.LogInfo($"[Instance : {s_RpcQueueContainerInstances}] {nameof(RpcQueueContainer)} disposed.");
                 }
-                s_RpcQueueContainerInstances--;
 
+                s_RpcQueueContainerInstances--;
             }
-            else  //This should never happen...if so something else has gone very wrong.
+            else //This should never happen...if so something else has gone very wrong.
             {
                 if (NetworkLog.CurrentLogLevel >= LogLevel.Normal)
                 {
                     NetworkLog.LogError($"[*** Warning ***] {nameof(RpcQueueContainer)} is being disposed twice?");
                 }
+
                 throw new Exception("[*** Warning ***] System state is not stable!  Check all references to the Dispose method!");
             }
 #endif
-
         }
 
         /// <summary>
@@ -759,7 +759,6 @@ namespace MLAPI.Messaging
 
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-
         /// <summary>
         /// LoopbackSendFrame
         /// Will copy the contents of the current outbound QueueHistoryFrame to the current inbound QueueHistoryFrame
@@ -810,8 +809,6 @@ namespace MLAPI.Messaging
         {
             m_IsTestingEnabled = enabled;
         }
-
 #endif
-
     }
 }
