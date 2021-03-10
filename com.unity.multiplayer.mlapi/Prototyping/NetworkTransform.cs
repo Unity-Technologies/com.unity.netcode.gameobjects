@@ -257,12 +257,8 @@ namespace MLAPI.Prototyping
                 {
                     if (!m_ClientSendInfo.TryGetValue(NetworkManager.Singleton.ConnectedClientsList[i].ClientId, out ClientSendInfo info))
                     {
-                        m_ClientSendInfo.Add(NetworkManager.Singleton.ConnectedClientsList[i].ClientId, new ClientSendInfo()
-                        {
-                            LastMissedPosition = null,
-                            LastMissedRotation = null,
-                            LastSent = 0
-                        });
+                        info = new ClientSendInfo() { LastMissedPosition = null, LastMissedRotation = null, LastSent = 0 };
+                        m_ClientSendInfo.Add(NetworkManager.Singleton.ConnectedClientsList[i].ClientId, info);
                     }
 
                     Vector3? receiverPosition = NetworkManager.Singleton.ConnectedClientsList[i].PlayerObject == null ? null : new Vector3?(NetworkManager.Singleton.ConnectedClientsList[i].PlayerObject.transform.position);
