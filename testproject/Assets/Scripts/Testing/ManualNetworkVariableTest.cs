@@ -18,16 +18,17 @@ namespace MLAPI
         private string m_Problems = string.Empty;
         private int m_Count = 0;
 
-        // todo: address issue with initial values
-        private const int k_WaitIterations = 5;
         private const int k_EndIterations = 1000;
 
         void Start()
         {
-            Debug.Log("Start");
-            m_TestVar.Value = 0;
             m_TestVar.OnValueChanged = ValueChanged;
             m_TestVar.Settings.WritePermission = NetworkVariablePermission.Everyone;
+
+            if (IsOwner)
+            {
+                m_TestVar.Value = 0;
+            }
         }
 
         void Awake()
@@ -45,7 +46,7 @@ namespace MLAPI
 
         private void ValueChanged(int before, int after)
         {
-            if (!IsLocalPlayer && !IsServer)
+            if (!IsOwner && !IsServer)
             {
                 // compute the delta in tick between client and server,
                 // as seen from the client, when it receives a value not from itself
@@ -54,29 +55,26 @@ namespace MLAPI
                     int delta = m_TestVar.LocalTick - m_TestVar.RemoteTick;
                     m_Count++;
 
-                    if (m_Count > k_WaitIterations)
+                    if (!m_Valid)
                     {
-                        if (!m_Valid)
-                        {
-                            m_Valid = true;
-                            m_MinDelta = delta;
-                            m_MaxDelta = delta;
-                            m_LastRemoteTick = m_TestVar.RemoteTick;
-                        }
-                        else
-                        {
-                            m_MinDelta = Math.Min(delta, m_MinDelta);
-                            m_MaxDelta = Math.Max(delta, m_MaxDelta);
+                        m_Valid = true;
+                        m_MinDelta = delta;
+                        m_MaxDelta = delta;
+                        m_LastRemoteTick = m_TestVar.RemoteTick;
+                    }
+                    else
+                    {
+                        m_MinDelta = Math.Min(delta, m_MinDelta);
+                        m_MaxDelta = Math.Max(delta, m_MaxDelta);
 
-                            // tick should not go backward until wrap around (which should be a long time)
-                            if (m_TestVar.RemoteTick == m_LastRemoteTick)
-                            {
-                                m_Problems += "Same remote tick receive twice\n";
-                            }
-                            else if (m_TestVar.RemoteTick < m_LastRemoteTick)
-                            {
-                                m_Problems += "Ticks went backward\n";
-                            }
+                        // tick should not go backward until wrap around (which should be a long time)
+                        if (m_TestVar.RemoteTick == m_LastRemoteTick)
+                        {
+                            m_Problems += "Same remote tick receive twice\n";
+                        }
+                        else if (m_TestVar.RemoteTick < m_LastRemoteTick)
+                        {
+                            m_Problems += "Ticks went backward\n";
                         }
                     }
                 }
@@ -84,7 +82,9 @@ namespace MLAPI
 
             if (m_Count == k_EndIterations)
             {
-                if (m_Problems == "" && Math.Abs(m_MaxDelta - m_MinDelta) < 3)
+                // Let's be reasonable and allow a 5 tick difference
+                // that could be due to timing difference, lag, queueing
+                if (m_Problems == "" && Math.Abs(m_MaxDelta - m_MinDelta) < 5)
                 {
                     Debug.Log("**** TEST PASSED ****");
                 }
@@ -98,7 +98,6 @@ namespace MLAPI
                         Debug.Log(m_Problems);
                     }
                 }
-
                 enabled = false;
             }
         }
