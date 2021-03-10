@@ -678,9 +678,9 @@ namespace MLAPI.Messaging
                 this.UnregisterAllNetworkUpdates();
             }
 
-            bool IsListening = ReferenceEquals(m_NetworkManager,null) ? false:m_NetworkManager.IsListening;
+            bool isListening = ReferenceEquals(m_NetworkManager,null) ? false : m_NetworkManager.IsListening;
             //We need to make sure all internal messages (i.e. object destroy) are sent
-            m_RpcQueueProcessor.InternalMessagesSendAndFlush(IsListening);
+            m_RpcQueueProcessor.InternalMessagesSendAndFlush(isListening);
 
             //Dispose of any readers and writers
             foreach (var queueHistorySection in QueueHistory)
