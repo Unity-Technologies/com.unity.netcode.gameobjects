@@ -305,7 +305,7 @@ namespace MLAPI
             NetworkSceneManager.SceneNameToIndex.Clear();
             NetworkSceneManager.SceneSwitchProgresses.Clear();
 
-            if (ReferenceEquals(NetworkConfig.NetworkTransport, null))
+            if (NetworkConfig.NetworkTransport == null)
             {
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogError("No transport has been selected!");
                 return;
@@ -356,14 +356,14 @@ namespace MLAPI
 
             for (int i = 0; i < NetworkConfig.NetworkPrefabs.Count; i++)
             {
-                if (NetworkConfig.NetworkPrefabs[i] == null || ReferenceEquals(NetworkConfig.NetworkPrefabs[i].Prefab, null))
+                if (NetworkConfig.NetworkPrefabs[i] == null || NetworkConfig.NetworkPrefabs[i].Prefab == null)
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
                     {
                         NetworkLog.LogError($"{nameof(NetworkPrefab)} cannot be null ({nameof(NetworkPrefab)} at index: {i})");
                     }
                 }
-                else if (ReferenceEquals(NetworkConfig.NetworkPrefabs[i].Prefab.GetComponent<NetworkObject>(), null))
+                else if (NetworkConfig.NetworkPrefabs[i].Prefab.GetComponent<NetworkObject>() == null)
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
                     {
@@ -582,7 +582,7 @@ namespace MLAPI
 
         private void OnDestroy()
         {
-            if (!ReferenceEquals(Singleton, null) && Singleton == this)
+            if (Singleton != null && Singleton == this)
             {
                 Shutdown();
                 Singleton = null;
@@ -1118,7 +1118,7 @@ namespace MLAPI
                 var networkObject = NetworkSpawnManager.SpawnedObjects[networkObjectId];
 
                 var networkBehaviour = networkObject.GetNetworkBehaviourAtOrderIndex(networkBehaviourId);
-                if (ReferenceEquals(networkBehaviour, null)) return;
+                if (networkBehaviour == null) return;
 
                 var rpcParams = new __RpcParams();
                 switch (queueItem.QueueItemType)

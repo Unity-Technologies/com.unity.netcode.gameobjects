@@ -272,12 +272,12 @@ namespace MLAPI
         {
             get
             {
-                if (ReferenceEquals(m_NetworkObject, null))
+                if (m_NetworkObject == null)
                 {
                     m_NetworkObject = GetComponentInParent<NetworkObject>();
                 }
 
-                if (ReferenceEquals(m_NetworkObject, null))
+                if (m_NetworkObject == null)
                 {
                     throw new NullReferenceException($"Could not get {nameof(NetworkObject)} for the {nameof(NetworkBehaviour)}. Are you missing a {nameof(NetworkObject)} component?");
                 }
@@ -293,12 +293,12 @@ namespace MLAPI
         {
             get
             {
-                if (ReferenceEquals(m_NetworkObject, null))
+                if (m_NetworkObject == null)
                 {
                     m_NetworkObject = GetComponentInParent<NetworkObject>();
                 }
 
-                return !ReferenceEquals(m_NetworkObject, null);
+                return m_NetworkObject != null;
             }
         }
 
