@@ -241,6 +241,16 @@ namespace MLAPI
         [RuntimeInitializeOnLoadMethod]
         private static void Initialize()
         {
+            // for standalone:
+            //      we only `InjectSystems()` into `PlayerLoop` once by `[RuntimeInitializeOnLoadMethod]`
+            //      but we do NOT `UninjectSystems()` since it is not necessary to do so
+            //      because we will exit PlayMode when we quit from the standalone application
+            //
+            // for the editor:
+            //      we do `InjectSystems()` into `PlayerLoop` once by `[RuntimeInitializeOnLoadMethod]`
+            //      and we DO `UninjectSystems()` in the Editor after exiting PlayMode (stop playing)
+            //      because we will still have `PlayerLoop` ticking subsystems until it gets reset again
+
 #if UNITY_EDITOR
             EditorApplication.playModeStateChanged += stateChange =>
             {
