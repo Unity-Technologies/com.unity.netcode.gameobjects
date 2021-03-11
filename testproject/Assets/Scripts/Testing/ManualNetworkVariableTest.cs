@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 using MLAPI.NetworkVariable;
+using MLAPI.NetworkVariable.Collections;
 
 namespace MLAPI
 {
@@ -10,7 +11,12 @@ namespace MLAPI
     [AddComponentMenu("MLAPI/ManualNetworkVariableTest")]
     public class ManualNetworkVariableTest : NetworkBehaviour
     {
-        private NetworkVariable<int> m_TestVar;
+        // testing NetworkList
+        private NetworkList<string> m_TestList = new NetworkList<string>();
+        private bool m_GotNetworkList = false;
+
+        // testing NetworkVariable, especially ticks
+        private NetworkVariable<int> m_TestVar = new NetworkVariable<int>();
         private int m_MinDelta = 0;
         private int m_MaxDelta = 0;
         private int m_LastRemoteTick = 0;
@@ -22,18 +28,17 @@ namespace MLAPI
 
         void Start()
         {
-            m_TestVar.OnValueChanged = ValueChanged;
+            m_TestVar.OnValueChanged += ValueChanged;
             m_TestVar.Settings.WritePermission = NetworkVariablePermission.Everyone;
+
+            m_TestList.OnListChanged += ListChanged;
+            m_TestList.Settings.WritePermission = NetworkVariablePermission.OwnerOnly;
 
             if (IsOwner)
             {
                 m_TestVar.Value = 0;
+                Debug.Log("We'll be sending " + MyMessage());
             }
-        }
-
-        void Awake()
-        {
-            Debug.Log("Awake");
         }
 
         private void FixedUpdate()
@@ -41,6 +46,21 @@ namespace MLAPI
             if (IsOwner)
             {
                 m_TestVar.Value = m_TestVar.Value + 1;
+                m_TestList.Add(MyMessage());
+            }
+        }
+
+        private string MyMessage()
+        {
+            return "Message from " + NetworkObjectId;
+        }
+
+        private void ListChanged(NetworkListEvent<string> listEvent)
+        {
+            if (!IsOwner && !m_GotNetworkList)
+            {
+                Debug.Log("Received: " + listEvent.Value);
+                m_GotNetworkList = true;
             }
         }
 
@@ -84,19 +104,25 @@ namespace MLAPI
             {
                 // Let's be reasonable and allow a 5 tick difference
                 // that could be due to timing difference, lag, queueing
-                if (m_Problems == "" && Math.Abs(m_MaxDelta - m_MinDelta) < 5)
+
+                if (!m_GotNetworkList)
+                {
+                    m_Problems += "Didn't receive any NetworkList updates from other machines";
+                }
+
+                if (Math.Abs(m_MaxDelta - m_MinDelta) > 5)
+                {
+                    m_Problems += "Delta range: " + m_MinDelta + " + " + m_MaxDelta + "\n";
+                }
+
+                if (m_Problems == "")
                 {
                     Debug.Log("**** TEST PASSED ****");
                 }
                 else
                 {
                     Debug.Log("**** TEST FAILED ****");
-                    Debug.Log($"Delta range: {m_MinDelta}, {m_MaxDelta}");
-
-                    if (m_Problems != "")
-                    {
-                        Debug.Log(m_Problems);
-                    }
+                    Debug.Log(m_Problems);
                 }
                 enabled = false;
             }
