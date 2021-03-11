@@ -4,6 +4,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.LowLevel;
 using UnityEngine.PlayerLoop;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace MLAPI
 {
@@ -237,6 +240,16 @@ namespace MLAPI
         [RuntimeInitializeOnLoadMethod]
         private static void Initialize()
         {
+#if UNITY_EDITOR
+            EditorApplication.playModeStateChanged += stateChange =>
+            {
+                if (stateChange == PlayModeStateChange.ExitingPlayMode)
+                {
+                    PlayerLoop.SetPlayerLoop(PlayerLoop.GetDefaultPlayerLoop());
+                }
+            };
+#endif
+
             var customPlayerLoop = PlayerLoop.GetCurrentPlayerLoop();
 
             for (int i = 0; i < customPlayerLoop.subSystemList.Length; i++)
