@@ -6,6 +6,7 @@ using UnityEngine.LowLevel;
 using UnityEngine.PlayerLoop;
 #if UNITY_EDITOR
 using UnityEditor;
+
 #endif
 
 namespace MLAPI
@@ -243,13 +244,23 @@ namespace MLAPI
 #if UNITY_EDITOR
             EditorApplication.playModeStateChanged += stateChange =>
             {
-                if (stateChange == PlayModeStateChange.ExitingPlayMode)
+                switch (stateChange)
                 {
-                    PlayerLoop.SetPlayerLoop(PlayerLoop.GetDefaultPlayerLoop());
+                    case PlayModeStateChange.EnteredPlayMode:
+                        InjectSystems();
+                        break;
+                    case PlayModeStateChange.ExitingPlayMode:
+                        UninjectSystems();
+                        break;
                 }
             };
+#else
+            InjectSystems();
 #endif
+        }
 
+        private static void InjectSystems()
+        {
             var customPlayerLoop = PlayerLoop.GetCurrentPlayerLoop();
 
             for (int i = 0; i < customPlayerLoop.subSystemList.Length; i++)
@@ -373,5 +384,92 @@ namespace MLAPI
 
             PlayerLoop.SetPlayerLoop(customPlayerLoop);
         }
+
+#if UNITY_EDITOR
+        private static void UninjectSystems()
+        {
+            var customPlayerLoop = PlayerLoop.GetCurrentPlayerLoop();
+
+            for (int i = 0; i < customPlayerLoop.subSystemList.Length; i++)
+            {
+                var playerLoopSystem = customPlayerLoop.subSystemList[i];
+
+                if (playerLoopSystem.type == typeof(Initialization))
+                {
+                    var subsystems = playerLoopSystem.subSystemList.ToList();
+                    {
+                        // try to find and remove `NetworkInitialization`
+                        int systemIndex = subsystems.FindIndex(s => s.type == typeof(NetworkInitialization));
+                        if (systemIndex > -1) subsystems.RemoveAt(systemIndex);
+                    }
+                    playerLoopSystem.subSystemList = subsystems.ToArray();
+                }
+                else if (playerLoopSystem.type == typeof(EarlyUpdate))
+                {
+                    var subsystems = playerLoopSystem.subSystemList.ToList();
+                    {
+                        // try to find and remove `NetworkEarlyUpdate`
+                        int systemIndex = subsystems.FindIndex(s => s.type == typeof(NetworkEarlyUpdate));
+                        if (systemIndex > -1) subsystems.RemoveAt(systemIndex);
+                    }
+                    playerLoopSystem.subSystemList = subsystems.ToArray();
+                }
+                else if (playerLoopSystem.type == typeof(FixedUpdate))
+                {
+                    var subsystems = playerLoopSystem.subSystemList.ToList();
+                    {
+                        // try to find and remove `NetworkFixedUpdate`
+                        int systemIndex = subsystems.FindIndex(s => s.type == typeof(NetworkFixedUpdate));
+                        if (systemIndex > -1) subsystems.RemoveAt(systemIndex);
+                    }
+                    playerLoopSystem.subSystemList = subsystems.ToArray();
+                }
+                else if (playerLoopSystem.type == typeof(PreUpdate))
+                {
+                    var subsystems = playerLoopSystem.subSystemList.ToList();
+                    {
+                        // try to find and remove `NetworkPreUpdate`
+                        int systemIndex = subsystems.FindIndex(s => s.type == typeof(NetworkPreUpdate));
+                        if (systemIndex > -1) subsystems.RemoveAt(systemIndex);
+                    }
+                    playerLoopSystem.subSystemList = subsystems.ToArray();
+                }
+                else if (playerLoopSystem.type == typeof(Update))
+                {
+                    var subsystems = playerLoopSystem.subSystemList.ToList();
+                    {
+                        // try to find and remove `NetworkUpdate`
+                        int systemIndex = subsystems.FindIndex(s => s.type == typeof(NetworkUpdate));
+                        if (systemIndex > -1) subsystems.RemoveAt(systemIndex);
+                    }
+                    playerLoopSystem.subSystemList = subsystems.ToArray();
+                }
+                else if (playerLoopSystem.type == typeof(PreLateUpdate))
+                {
+                    var subsystems = playerLoopSystem.subSystemList.ToList();
+                    {
+                        // try to find and remove `NetworkPreLateUpdate`
+                        int systemIndex = subsystems.FindIndex(s => s.type == typeof(NetworkPreLateUpdate));
+                        if (systemIndex > -1) subsystems.RemoveAt(systemIndex);
+                    }
+                    playerLoopSystem.subSystemList = subsystems.ToArray();
+                }
+                else if (playerLoopSystem.type == typeof(PostLateUpdate))
+                {
+                    var subsystems = playerLoopSystem.subSystemList.ToList();
+                    {
+                        // try to find and remove `NetworkPostLateUpdate`
+                        int systemIndex = subsystems.FindIndex(s => s.type == typeof(NetworkPostLateUpdate));
+                        if (systemIndex > -1) subsystems.RemoveAt(systemIndex);
+                    }
+                    playerLoopSystem.subSystemList = subsystems.ToArray();
+                }
+
+                customPlayerLoop.subSystemList[i] = playerLoopSystem;
+            }
+
+            PlayerLoop.SetPlayerLoop(customPlayerLoop);
+        }
+#endif
     }
 }
