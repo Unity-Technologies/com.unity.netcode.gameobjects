@@ -262,7 +262,7 @@ namespace MLAPI.Spawning
                 {
                     var networkObject = CustomSpawnHandlers[prefabHash](position.GetValueOrDefault(Vector3.zero), rotation.GetValueOrDefault(Quaternion.identity));
 
-                    if (!ReferenceEquals(parentNetworkObject, null))
+                    if (parentNetworkObject != null)
                     {
                         networkObject.transform.SetParent(parentNetworkObject.transform, true);
                     }
@@ -291,7 +291,7 @@ namespace MLAPI.Spawning
                     var prefab = NetworkManager.Singleton.NetworkConfig.NetworkPrefabs[prefabIndex].Prefab;
                     var networkObject = ((position == null && rotation == null) ? MonoBehaviour.Instantiate(prefab) : MonoBehaviour.Instantiate(prefab, position.GetValueOrDefault(Vector3.zero), rotation.GetValueOrDefault(Quaternion.identity))).GetComponent<NetworkObject>();
 
-                    if (!ReferenceEquals(parentNetworkObject, null))
+                    if (parentNetworkObject != null)
                     {
                         networkObject.transform.SetParent(parentNetworkObject.transform, true);
                     }
@@ -320,7 +320,7 @@ namespace MLAPI.Spawning
                 var networkObject = PendingSoftSyncObjects[instanceId];
                 PendingSoftSyncObjects.Remove(instanceId);
 
-                if (!ReferenceEquals(parentNetworkObject, null))
+                if (parentNetworkObject != null)
                 {
                     networkObject.transform.SetParent(parentNetworkObject.transform, true);
                 }
@@ -332,7 +332,7 @@ namespace MLAPI.Spawning
         // Ran on both server and client
         internal static void SpawnNetworkObjectLocally(NetworkObject networkObject, ulong networkId, bool sceneObject, bool playerObject, ulong? ownerClientId, Stream dataStream, bool readPayload, int payloadLength, bool readNetworkVariable, bool destroyWithScene)
         {
-            if (ReferenceEquals(networkObject, null))
+            if (networkObject == null)
             {
                 throw new ArgumentNullException(nameof(networkObject), "Cannot spawn null object");
             }
@@ -447,12 +447,12 @@ namespace MLAPI.Spawning
 
                 NetworkObject parentNetworkObject = null;
 
-                if (!networkObject.AlwaysReplicateAsRoot && !ReferenceEquals(networkObject.transform.parent, null))
+                if (!networkObject.AlwaysReplicateAsRoot && networkObject.transform.parent != null)
                 {
                     parentNetworkObject = networkObject.transform.parent.GetComponent<NetworkObject>();
                 }
 
-                if (ReferenceEquals(parentNetworkObject, null))
+                if (parentNetworkObject == null)
                 {
                     writer.WriteBool(false);
                 }
@@ -652,7 +652,7 @@ namespace MLAPI.Spawning
 
         internal static void OnDestroyObject(ulong networkId, bool destroyGameObject)
         {
-            if (ReferenceEquals(NetworkManager.Singleton, null)) return;
+            if (NetworkManager.Singleton == null) return;
 
             //Removal of spawned object
             if (!SpawnedObjects.ContainsKey(networkId))
@@ -691,7 +691,7 @@ namespace MLAPI.Spawning
                 var rpcQueueContainer = NetworkManager.Singleton.RpcQueueContainer;
                 if (rpcQueueContainer != null)
                 {
-                    if (!ReferenceEquals(sobj, null))
+                    if (sobj != null)
                     {
                         // As long as we have any remaining clients, then notify of the object being destroy.
                         if (NetworkManager.Singleton.ConnectedClientsList.Count > 0)
@@ -720,7 +720,7 @@ namespace MLAPI.Spawning
 
             var gobj = sobj.gameObject;
 
-            if (destroyGameObject && !ReferenceEquals(gobj, null))
+            if (destroyGameObject && gobj != null)
             {
                 if (CustomDestroyHandlers.ContainsKey(sobj.PrefabHash))
                 {

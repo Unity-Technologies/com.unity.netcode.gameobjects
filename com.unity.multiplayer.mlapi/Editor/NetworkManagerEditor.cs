@@ -266,7 +266,7 @@ public class NetworkManagerEditor : Editor
 
                     var transportComponent = m_NetworkManager.gameObject.GetComponent(m_TransportTypes[selection - 1]);
 
-                    if (ReferenceEquals(transportComponent, null))
+                    if (transportComponent == null)
                     {
                         transportComponent = m_NetworkManager.gameObject.AddComponent(m_TransportTypes[selection - 1]);
                     }
