@@ -5,7 +5,7 @@ using Object = UnityEngine.Object;
 
 namespace MLAPI.EditorTests
 {
-    public class NetworkBehaviourPropertyTests
+    public class NetworkBehaviourTests
     {
         [Test]
         public void HasNetworkObjectTest()
