@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using MLAPI.NetworkVariable;
 using MLAPI.NetworkVariable.Collections;
@@ -14,6 +15,14 @@ namespace MLAPI
         // testing NetworkList
         private NetworkList<string> m_TestList = new NetworkList<string>();
         private bool m_GotNetworkList = false;
+
+        // testing NetworkSet
+        private NetworkSet<string> m_TestSet = new NetworkSet<string>();
+        private bool m_GotNetworkSet = false;
+
+        // testing NetworkDictionary
+        private NetworkDictionary<int, string> m_TestDictionary = new NetworkDictionary<int, string>();
+        private bool m_GotNetworkDictionary = false;
 
         // testing NetworkVariable, especially ticks
         private NetworkVariable<int> m_TestVar = new NetworkVariable<int>();
@@ -34,6 +43,12 @@ namespace MLAPI
             m_TestList.OnListChanged += ListChanged;
             m_TestList.Settings.WritePermission = NetworkVariablePermission.OwnerOnly;
 
+            m_TestSet.OnSetChanged += SetChanged;
+            m_TestSet.Settings.WritePermission = NetworkVariablePermission.OwnerOnly;
+
+            m_TestDictionary.OnDictionaryChanged += DictionaryChanged;
+            m_TestDictionary.Settings.WritePermission = NetworkVariablePermission.OwnerOnly;
+
             if (IsOwner)
             {
                 m_TestVar.Value = 0;
@@ -47,6 +62,8 @@ namespace MLAPI
             {
                 m_TestVar.Value = m_TestVar.Value + 1;
                 m_TestList.Add(MyMessage());
+                ((ICollection<string>)m_TestSet).Add(MyMessage());
+                m_TestDictionary[0] = MyMessage();
             }
         }
 
@@ -61,6 +78,24 @@ namespace MLAPI
             {
                 Debug.Log("Received: " + listEvent.Value);
                 m_GotNetworkList = true;
+            }
+        }
+
+        private void SetChanged(NetworkSetEvent<string> setEvent)
+        {
+            if (!IsOwner && !m_GotNetworkSet)
+            {
+                Debug.Log("Received: " + setEvent.Value);
+                m_GotNetworkSet = true;
+            }
+        }
+
+        private void DictionaryChanged(NetworkDictionaryEvent<int, string> dictionaryEvent)
+        {
+            if (!IsOwner && !m_GotNetworkSet)
+            {
+                Debug.Log("Received: " + dictionaryEvent.Key + ":" + dictionaryEvent.Value);
+                m_GotNetworkDictionary = true;
             }
         }
 
@@ -108,6 +143,16 @@ namespace MLAPI
                 if (!m_GotNetworkList)
                 {
                     m_Problems += "Didn't receive any NetworkList updates from other machines";
+                }
+
+                if (!m_GotNetworkSet)
+                {
+                    m_Problems += "Didn't receive any NetworkSet updates from other machines";
+                }
+
+                if (!m_GotNetworkDictionary)
+                {
+                    m_Problems += "Didn't receive any NetworkDictionary updates from other machines";
                 }
 
                 if (Math.Abs(m_MaxDelta - m_MinDelta) > 5)
