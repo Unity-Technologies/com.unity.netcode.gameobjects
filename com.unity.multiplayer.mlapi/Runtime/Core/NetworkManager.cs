@@ -1502,7 +1502,7 @@ namespace MLAPI
             }
             else if (data == null)
             {
-                NetworkLog.LogWarning($"No data available. Did you forget to call {nameof(PerformanceDataManager)}.{nameof(BeginNewTick)}() first?");
+                NetworkLog.LogWarning($"No data available. Did you forget to call {nameof(PerformanceDataManager)}.{nameof(PerformanceDataManager.BeginNewTick)}() first?");
             }
         }
     }
