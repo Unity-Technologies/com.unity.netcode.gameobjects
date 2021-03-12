@@ -405,79 +405,73 @@ namespace MLAPI
 
                 if (playerLoopSystem.type == typeof(Initialization))
                 {
-                    var subsystems = playerLoopSystem.subSystemList.ToList();
-                    {
-                        // try to find and remove `NetworkInitialization`
-                        int systemIndex = subsystems.FindIndex(s => s.type == typeof(NetworkInitialization));
-                        if (systemIndex > -1) subsystems.RemoveAt(systemIndex);
-                    }
-                    playerLoopSystem.subSystemList = subsystems.ToArray();
+                    playerLoopSystem.subSystemList =
+                        playerLoopSystem.subSystemList
+                            .ToList()
+                            .TryRemoveSystem(typeof(NetworkInitialization))
+                            .ToArray();
                 }
                 else if (playerLoopSystem.type == typeof(EarlyUpdate))
                 {
-                    var subsystems = playerLoopSystem.subSystemList.ToList();
-                    {
-                        // try to find and remove `NetworkEarlyUpdate`
-                        int systemIndex = subsystems.FindIndex(s => s.type == typeof(NetworkEarlyUpdate));
-                        if (systemIndex > -1) subsystems.RemoveAt(systemIndex);
-                    }
-                    playerLoopSystem.subSystemList = subsystems.ToArray();
+                    playerLoopSystem.subSystemList =
+                        playerLoopSystem.subSystemList
+                            .ToList()
+                            .TryRemoveSystem(typeof(NetworkEarlyUpdate))
+                            .ToArray();
                 }
                 else if (playerLoopSystem.type == typeof(FixedUpdate))
                 {
-                    var subsystems = playerLoopSystem.subSystemList.ToList();
-                    {
-                        // try to find and remove `NetworkFixedUpdate`
-                        int systemIndex = subsystems.FindIndex(s => s.type == typeof(NetworkFixedUpdate));
-                        if (systemIndex > -1) subsystems.RemoveAt(systemIndex);
-                    }
-                    playerLoopSystem.subSystemList = subsystems.ToArray();
+                    playerLoopSystem.subSystemList =
+                        playerLoopSystem.subSystemList
+                            .ToList()
+                            .TryRemoveSystem(typeof(NetworkFixedUpdate))
+                            .ToArray();
                 }
                 else if (playerLoopSystem.type == typeof(PreUpdate))
                 {
-                    var subsystems = playerLoopSystem.subSystemList.ToList();
-                    {
-                        // try to find and remove `NetworkPreUpdate`
-                        int systemIndex = subsystems.FindIndex(s => s.type == typeof(NetworkPreUpdate));
-                        if (systemIndex > -1) subsystems.RemoveAt(systemIndex);
-                    }
-                    playerLoopSystem.subSystemList = subsystems.ToArray();
+                    playerLoopSystem.subSystemList =
+                        playerLoopSystem.subSystemList
+                            .ToList()
+                            .TryRemoveSystem(typeof(NetworkPreUpdate))
+                            .ToArray();
                 }
                 else if (playerLoopSystem.type == typeof(Update))
                 {
-                    var subsystems = playerLoopSystem.subSystemList.ToList();
-                    {
-                        // try to find and remove `NetworkUpdate`
-                        int systemIndex = subsystems.FindIndex(s => s.type == typeof(NetworkUpdate));
-                        if (systemIndex > -1) subsystems.RemoveAt(systemIndex);
-                    }
-                    playerLoopSystem.subSystemList = subsystems.ToArray();
+                    playerLoopSystem.subSystemList =
+                        playerLoopSystem.subSystemList
+                            .ToList()
+                            .TryRemoveSystem(typeof(NetworkUpdate))
+                            .ToArray();
                 }
                 else if (playerLoopSystem.type == typeof(PreLateUpdate))
                 {
-                    var subsystems = playerLoopSystem.subSystemList.ToList();
-                    {
-                        // try to find and remove `NetworkPreLateUpdate`
-                        int systemIndex = subsystems.FindIndex(s => s.type == typeof(NetworkPreLateUpdate));
-                        if (systemIndex > -1) subsystems.RemoveAt(systemIndex);
-                    }
-                    playerLoopSystem.subSystemList = subsystems.ToArray();
+                    playerLoopSystem.subSystemList =
+                        playerLoopSystem.subSystemList
+                            .ToList()
+                            .TryRemoveSystem(typeof(NetworkPreLateUpdate))
+                            .ToArray();
                 }
                 else if (playerLoopSystem.type == typeof(PostLateUpdate))
                 {
-                    var subsystems = playerLoopSystem.subSystemList.ToList();
-                    {
-                        // try to find and remove `NetworkPostLateUpdate`
-                        int systemIndex = subsystems.FindIndex(s => s.type == typeof(NetworkPostLateUpdate));
-                        if (systemIndex > -1) subsystems.RemoveAt(systemIndex);
-                    }
-                    playerLoopSystem.subSystemList = subsystems.ToArray();
+                    playerLoopSystem.subSystemList =
+                        playerLoopSystem.subSystemList
+                            .ToList()
+                            .TryRemoveSystem(typeof(NetworkPostLateUpdate))
+                            .ToArray();
                 }
 
                 customPlayerLoop.subSystemList[i] = playerLoopSystem;
             }
 
             PlayerLoop.SetPlayerLoop(customPlayerLoop);
+        }
+
+        private static List<PlayerLoopSystem> TryRemoveSystem(this List<PlayerLoopSystem> systemList, Type systemType)
+        {
+            int systemIndex = systemList.FindIndex(s => s.type == systemType);
+            if (systemIndex > -1) systemList.RemoveAt(systemIndex);
+
+            return systemList;
         }
 #endif
     }
