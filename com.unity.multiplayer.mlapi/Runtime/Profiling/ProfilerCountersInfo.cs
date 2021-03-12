@@ -70,7 +70,28 @@ namespace MLAPI.Profiling
         [RuntimeInitializeOnLoadMethod]
         private static void RegisterMLAPIPerformanceEvent()
         {
+            InitializeCounters();
             NetworkManager.OnPerformanceDataEvent += OnPerformanceTickData;
+        }
+
+        private static void InitializeCounters()
+        {
+            k_ConnectionsCounterValue.Value = 0;
+            k_TickRateCounterValue.Value = 0;
+
+            k_NamedMessagesCounterValue.Value = 0;
+            k_UnnamedMessagesCounterValue.Value = 0;
+            k_BytesSentCounterValue.Value = 0;
+            k_BytesReceivedCounterValue.Value = 0;
+            k_NetworkVarsCounterValue.Value = 0;
+            
+            k_RPCsSentCounterValue.Value = 0;
+            k_RPCsReceivedCounterValue.Value = 0;
+            k_RPCBatchesSentCounterValue.Value = 0;
+            k_RPCBatchesReceivedCounterValue.Value = 0;
+            k_RPCQueueProcessedCounterValue.Value = 0;
+            k_RPCsInQueueSizeCounterValue.Value = 0;
+            k_RPCsOutQueueSizeCounterValue.Value = 0;
         }
 
         private static void OnPerformanceTickData(PerformanceTickData tickData)
