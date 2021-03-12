@@ -1188,7 +1188,7 @@ namespace MLAPI
                 if (ConnectedClientsList[i].ClientId == clientId)
                 {
                     ConnectedClientsList.RemoveAt(i);
-                    PerformanceDataManager.Increment(ProfilerConstants.NumberOfConnections, -1);
+                    PerformanceDataManager.Increment(ProfilerConstants.Connections, -1);
                     ProfilerStatManager.Connections.Record(-1);
                 }
             }
@@ -1253,7 +1253,7 @@ namespace MLAPI
                     if (ConnectedClientsList[i].ClientId == clientId)
                     {
                         ConnectedClientsList.RemoveAt(i);
-                        PerformanceDataManager.Increment(ProfilerConstants.NumberOfConnections, -1);
+                        PerformanceDataManager.Increment(ProfilerConstants.Connections, -1);
                         ProfilerStatManager.Connections.Record(-1);
                         break;
                     }
@@ -1297,7 +1297,7 @@ namespace MLAPI
                 ConnectedClients.Add(clientId, client);
                 ConnectedClientsList.Add(client);
 
-                PerformanceDataManager.Increment(ProfilerConstants.NumberOfConnections);
+                PerformanceDataManager.Increment(ProfilerConstants.Connections);
                 ProfilerStatManager.Connections.Record();
 
                 // This packet is unreliable, but if it gets through it should provide a much better sync than the potentially huge approval message.
