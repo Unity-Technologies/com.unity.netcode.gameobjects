@@ -44,28 +44,28 @@ namespace MLAPI
 
         private static List<MLAPIProfilerCounter> CreateRPCCounters() => new List<MLAPIProfilerCounter>()
         {
-            new MLAPIProfilerCounter { m_Name = ProfilerConstants.NumberOfRPCsSent, m_Category = ProfilerCategory.Network.Name },
-            new MLAPIProfilerCounter { m_Name = ProfilerConstants.NumberOfRPCsReceived, m_Category = ProfilerCategory.Network.Name },
-            new MLAPIProfilerCounter { m_Name = ProfilerConstants.NumberOfRPCBatchesSent, m_Category = ProfilerCategory.Network.Name },
-            new MLAPIProfilerCounter { m_Name = ProfilerConstants.NumberOfRPCBatchesReceived, m_Category = ProfilerCategory.Network.Name },
-            new MLAPIProfilerCounter { m_Name = ProfilerConstants.NumberOfRPCQueueProcessed, m_Category = ProfilerCategory.Network.Name },
-            new MLAPIProfilerCounter { m_Name = ProfilerConstants.NumberOfRPCsInQueueSize, m_Category = ProfilerCategory.Network.Name },
-            new MLAPIProfilerCounter { m_Name = ProfilerConstants.NumberOfRPCsOutQueueSize, m_Category = ProfilerCategory.Network.Name },
+            new MLAPIProfilerCounter { m_Name = ProfilerConstants.RPCsSent, m_Category = ProfilerCategory.Network.Name },
+            new MLAPIProfilerCounter { m_Name = ProfilerConstants.RPCsReceived, m_Category = ProfilerCategory.Network.Name },
+            new MLAPIProfilerCounter { m_Name = ProfilerConstants.RPCBatchesSent, m_Category = ProfilerCategory.Network.Name },
+            new MLAPIProfilerCounter { m_Name = ProfilerConstants.RPCBatchesReceived, m_Category = ProfilerCategory.Network.Name },
+            new MLAPIProfilerCounter { m_Name = ProfilerConstants.RPCQueueProcessed, m_Category = ProfilerCategory.Network.Name },
+            new MLAPIProfilerCounter { m_Name = ProfilerConstants.RPCsInQueueSize, m_Category = ProfilerCategory.Network.Name },
+            new MLAPIProfilerCounter { m_Name = ProfilerConstants.RPCsOutQueueSize, m_Category = ProfilerCategory.Network.Name },
         };
 
         private static List<MLAPIProfilerCounter> CreateOperationsCounters() => new List<MLAPIProfilerCounter>()
         {
-            new MLAPIProfilerCounter { m_Name = ProfilerConstants.NumberOfConnections, m_Category = ProfilerCategory.Network.Name },
+            new MLAPIProfilerCounter { m_Name = ProfilerConstants.Connections, m_Category = ProfilerCategory.Network.Name },
             new MLAPIProfilerCounter { m_Name = ProfilerConstants.ReceiveTickRate, m_Category = ProfilerCategory.Network.Name },
         };
 
         private static List<MLAPIProfilerCounter> CreateMessagesCounters() => new List<MLAPIProfilerCounter>()
         {
-            new MLAPIProfilerCounter { m_Name = ProfilerConstants.NumberOfNamedMessages, m_Category = ProfilerCategory.Network.Name },
-            new MLAPIProfilerCounter { m_Name = ProfilerConstants.NumberOfUnnamedMessages, m_Category = ProfilerCategory.Network.Name },
-            new MLAPIProfilerCounter { m_Name = ProfilerConstants.NumberBytesSent, m_Category = ProfilerCategory.Network.Name },
-            new MLAPIProfilerCounter { m_Name = ProfilerConstants.NumberBytesReceived, m_Category = ProfilerCategory.Network.Name },
-            new MLAPIProfilerCounter { m_Name = ProfilerConstants.NumberNetworkVarsReceived, m_Category = ProfilerCategory.Network.Name },
+            new MLAPIProfilerCounter { m_Name = ProfilerConstants.NamedMessagesReceived, m_Category = ProfilerCategory.Network.Name },
+            new MLAPIProfilerCounter { m_Name = ProfilerConstants.UnnamedMessagesReceived, m_Category = ProfilerCategory.Network.Name },
+            new MLAPIProfilerCounter { m_Name = ProfilerConstants.BytesSent, m_Category = ProfilerCategory.Network.Name },
+            new MLAPIProfilerCounter { m_Name = ProfilerConstants.BytesReceived, m_Category = ProfilerCategory.Network.Name },
+            new MLAPIProfilerCounter { m_Name = ProfilerConstants.NetworkVarsReceived, m_Category = ProfilerCategory.Network.Name },
         };
 
         private delegate List<MLAPIProfilerCounter> CounterListFactoryDelegate();

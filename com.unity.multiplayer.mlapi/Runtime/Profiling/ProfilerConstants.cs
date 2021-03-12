@@ -2,20 +2,20 @@ namespace MLAPI.Profiling
 {
     public static class ProfilerConstants
     {
-        public const string NumberOfConnections = nameof(NumberOfConnections);
+        public const string Connections = nameof(Connections);
         public const string ReceiveTickRate = nameof(ReceiveTickRate);
 
-        public const string NumberOfNamedMessages = nameof(NumberOfNamedMessages);
-        public const string NumberOfUnnamedMessages = nameof(NumberOfUnnamedMessages);
-        public const string NumberBytesSent = nameof(NumberBytesSent);
-        public const string NumberBytesReceived = nameof(NumberBytesReceived);
-        public const string NumberNetworkVarsReceived = nameof(NumberNetworkVarsReceived);
-        public const string NumberOfRPCsSent = nameof(NumberOfRPCsSent);
-        public const string NumberOfRPCsReceived = nameof(NumberOfRPCsReceived);
-        public const string NumberOfRPCBatchesSent = nameof(NumberOfRPCBatchesSent);
-        public const string NumberOfRPCBatchesReceived = nameof(NumberOfRPCBatchesReceived);
-        public const string NumberOfRPCQueueProcessed = nameof(NumberOfRPCQueueProcessed);
-        public const string NumberOfRPCsInQueueSize = nameof(NumberOfRPCsInQueueSize);
-        public const string NumberOfRPCsOutQueueSize = nameof(NumberOfRPCsOutQueueSize);
+        public const string NamedMessagesReceived = nameof(NamedMessagesReceived);
+        public const string UnnamedMessagesReceived = nameof(UnnamedMessagesReceived);
+        public const string BytesSent = nameof(BytesSent);
+        public const string BytesReceived = nameof(BytesReceived);
+        public const string NetworkVarsReceived = nameof(NetworkVarsReceived);
+        public const string RPCsSent = nameof(RPCsSent);
+        public const string RPCsReceived = nameof(RPCsReceived);
+        public const string RPCBatchesSent = nameof(RPCBatchesSent);
+        public const string RPCBatchesReceived = nameof(RPCBatchesReceived);
+        public const string RPCQueueProcessed = nameof(RPCQueueProcessed);
+        public const string RPCsInQueueSize = nameof(RPCsInQueueSize);
+        public const string RPCsOutQueueSize = nameof(RPCsOutQueueSize);
     }
 }
