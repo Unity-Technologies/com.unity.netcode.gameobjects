@@ -798,9 +798,9 @@ namespace MLAPI.EditorTests
         [Test]
         public void TestSerializationPipelineBool()
         {
-            NetworkBuffer buffer = new NetworkBuffer();
-            NetworkWriter writer = new NetworkWriter(buffer);
-            NetworkReader reader = new NetworkReader(buffer);
+            var buffer = new NetworkBuffer();
+            var writer = new NetworkWriter(buffer);
+            var reader = new NetworkReader(buffer);
 
             writer.WriteObjectPacked(true);
             writer.WriteObjectPacked(false);
