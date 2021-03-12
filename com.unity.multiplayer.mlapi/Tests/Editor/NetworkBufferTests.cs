@@ -5,7 +5,7 @@ using System.Text;
 
 namespace MLAPI.EditorTests
 {
-    public class BitStreamTests
+    public class NetworkBufferTests
     {
         [Test]
         public void TestEmptyStream()
