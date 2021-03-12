@@ -6,7 +6,6 @@ using UnityEngine.LowLevel;
 using UnityEngine.PlayerLoop;
 #if UNITY_EDITOR
 using UnityEditor;
-
 #endif
 
 namespace MLAPI
@@ -269,7 +268,7 @@ namespace MLAPI
 #endif
         }
 
-        private static void InjectSystems()
+        internal static void InjectSystems()
         {
             var customPlayerLoop = PlayerLoop.GetCurrentPlayerLoop();
 
@@ -396,7 +395,7 @@ namespace MLAPI
         }
 
 #if UNITY_EDITOR
-        private static void UninjectSystems()
+        internal static void UninjectSystems()
         {
             var customPlayerLoop = PlayerLoop.GetCurrentPlayerLoop();
 

@@ -11,6 +11,43 @@ namespace MLAPI.RuntimeTests
 {
     public class NetworkUpdateLoopTests
     {
+        [UnityTest]
+        public IEnumerator InjectAndUninjectSystems()
+        {
+            // caching the current PlayerLoop (it will have NetworkUpdateLoop systems injected)
+            var cachedPlayerLoop = PlayerLoop.GetCurrentPlayerLoop();
+            {
+                // since current PlayerLoop already took NetworkUpdateLoop systems inside,
+                // we are going to swap it with the default PlayerLoop temporarily for testing
+                PlayerLoop.SetPlayerLoop(PlayerLoop.GetDefaultPlayerLoop());
+                var oldPlayerLoop = PlayerLoop.GetCurrentPlayerLoop();
+
+                NetworkUpdateLoop.InjectSystems();
+
+                int waitFrameNumber = Time.frameCount + 8;
+                yield return new WaitUntil(() => Time.frameCount >= waitFrameNumber);
+
+                NetworkUpdateLoop.UninjectSystems();
+
+                var newPlayerLoop = PlayerLoop.GetCurrentPlayerLoop();
+
+                // recursively compare old and new PlayerLoop systems and their subsystems
+                AssertAreEqualPlayerLoopSystems(newPlayerLoop, oldPlayerLoop);
+            }
+            // replace the current PlayerLoop with the cached PlayerLoop after the test
+            PlayerLoop.SetPlayerLoop(cachedPlayerLoop);
+        }
+
+        private void AssertAreEqualPlayerLoopSystems(PlayerLoopSystem leftPlayerLoop, PlayerLoopSystem rightPlayerLoop)
+        {
+            Assert.AreEqual(leftPlayerLoop.type, rightPlayerLoop.type);
+            Assert.AreEqual(leftPlayerLoop.subSystemList?.Length ?? 0, rightPlayerLoop.subSystemList?.Length ?? 0);
+            for (int i = 0; i < (leftPlayerLoop.subSystemList?.Length ?? 0); i++)
+            {
+                AssertAreEqualPlayerLoopSystems(leftPlayerLoop.subSystemList[i], rightPlayerLoop.subSystemList[i]);
+            }
+        }
+
         [Test]
         public void UpdateStageInjection()
         {
