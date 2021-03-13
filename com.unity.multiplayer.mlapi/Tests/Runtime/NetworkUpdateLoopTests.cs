@@ -12,9 +12,9 @@ namespace MLAPI.RuntimeTests
     public class NetworkUpdateLoopTests
     {
         [UnityTest]
-        public IEnumerator InjectAndUninjectSystems()
+        public IEnumerator RegisterAndUnregisterSystems()
         {
-            // caching the current PlayerLoop (it will have NetworkUpdateLoop systems injected)
+            // caching the current PlayerLoop (it will have NetworkUpdateLoop systems registered)
             var cachedPlayerLoop = PlayerLoop.GetCurrentPlayerLoop();
             {
                 // since current PlayerLoop already took NetworkUpdateLoop systems inside,
@@ -22,12 +22,12 @@ namespace MLAPI.RuntimeTests
                 PlayerLoop.SetPlayerLoop(PlayerLoop.GetDefaultPlayerLoop());
                 var oldPlayerLoop = PlayerLoop.GetCurrentPlayerLoop();
 
-                NetworkUpdateLoop.InjectSystems();
+                NetworkUpdateLoop.RegisterLoopSystems();
 
                 int waitFrameNumber = Time.frameCount + 8;
                 yield return new WaitUntil(() => Time.frameCount >= waitFrameNumber);
 
-                NetworkUpdateLoop.UninjectSystems();
+                NetworkUpdateLoop.UnregisterLoopSystems();
 
                 var newPlayerLoop = PlayerLoop.GetCurrentPlayerLoop();
 
@@ -49,7 +49,7 @@ namespace MLAPI.RuntimeTests
         }
 
         [Test]
-        public void UpdateStageInjection()
+        public void UpdateStageSystems()
         {
             var currentPlayerLoop = PlayerLoop.GetCurrentPlayerLoop();
             for (int i = 0; i < currentPlayerLoop.subSystemList.Length; i++)
