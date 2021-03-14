@@ -608,6 +608,8 @@ namespace MLAPI.Editor.CodeGen
                         instructions.Add(processor.Create(OpCodes.Ceq));
                         instructions.Add(processor.Create(OpCodes.Brfalse, roLastInstr));
 
+                        // todo: if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Only owner can invoke ServerRPC that is marked to require ownership");
+
                         instructions.Add(roReturnInstr);
                         instructions.Add(roLastInstr);
                     }
@@ -1560,6 +1562,8 @@ namespace MLAPI.Editor.CodeGen
                 processor.Emit(OpCodes.Ldc_I4, 0);
                 processor.Emit(OpCodes.Ceq);
                 processor.Emit(OpCodes.Brfalse, roLastInstr);
+
+                // todo: if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Only owner can invoke ServerRPC that is marked to require ownership");
 
                 processor.Append(roReturnInstr);
                 processor.Append(roLastInstr);
