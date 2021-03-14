@@ -272,11 +272,11 @@ namespace MLAPI
 
             // begin = systemsBefore + systemsAfter
             // + systemsBefore
-            Array.Copy(parentLoopSystem.subSystemList, newSubsystemList, systemPosition);
+            if (systemPosition > 0) Array.Copy(parentLoopSystem.subSystemList, newSubsystemList, systemPosition);
             // + childSystem
             newSubsystemList[systemPosition] = childLoopSystem;
             // + systemsAfter
-            Array.Copy(parentLoopSystem.subSystemList, systemPosition, newSubsystemList, systemPosition + 1, parentLoopSystem.subSystemList.Length - systemPosition);
+            if (systemPosition < parentLoopSystem.subSystemList.Length) Array.Copy(parentLoopSystem.subSystemList, systemPosition, newSubsystemList, systemPosition + 1, parentLoopSystem.subSystemList.Length - systemPosition);
             // end = systemsBefore + childSystem + systemsAfter
 
             parentLoopSystem.subSystemList = newSubsystemList;
@@ -303,9 +303,9 @@ namespace MLAPI
 
             // begin = systemsBefore + childSystem + systemsAfter
             // + systemsBefore
-            Array.Copy(parentLoopSystem.subSystemList, newSubsystemList, systemPosition);
+            if (systemPosition > 0) Array.Copy(parentLoopSystem.subSystemList, newSubsystemList, systemPosition);
             // + systemsAfter
-            Array.Copy(parentLoopSystem.subSystemList, systemPosition + 1, newSubsystemList, systemPosition, parentLoopSystem.subSystemList.Length - systemPosition - 1);
+            if (systemPosition < parentLoopSystem.subSystemList.Length - 1) Array.Copy(parentLoopSystem.subSystemList, systemPosition + 1, newSubsystemList, systemPosition, parentLoopSystem.subSystemList.Length - systemPosition - 1);
             // end = systemsBefore + systemsAfter
 
             parentLoopSystem.subSystemList = newSubsystemList;
