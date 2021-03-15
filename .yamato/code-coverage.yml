@@ -2,7 +2,7 @@
 ---
 {% for editor in test_editors -%}
 {% for project in projects -%}
-code_coverage_win_{{ editor }}_{{ project }}:
+code_coverage_win_{{ editor }}_{{ project.name }}:
   name: Code Coverage Report - Windows
   agent:
     type: Unity::VM
@@ -16,7 +16,7 @@ code_coverage_win_{{ editor }}_{{ project }}:
   artifacts:
     logs:
       paths:
-        - "code_coverage/{{ editor }}/{{ project }}/**/*"
+        - "code_coverage/{{ editor }}/{{ project.name }}/**/*"
   dependencies:
     - .yamato/project-pack.yml#pack_{{ project.name }}
 {% endfor -%}
