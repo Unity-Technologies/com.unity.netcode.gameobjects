@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Collections.Generic;
 using System.Reflection;
+using MLAPI.Logging;
 using MLAPI.Messaging;
 using MLAPI.Serialization;
 using Mono.Cecil;
@@ -74,12 +75,14 @@ namespace MLAPI.Editor.CodeGen
             return new ILPostProcessResult(new InMemoryAssembly(pe.ToArray(), pdb.ToArray()), m_Diagnostics);
         }
 
+        private MethodReference Debug_LogWarning_MethodRef;
         private TypeReference NetworkManager_TypeRef;
         private MethodReference NetworkManager_getLocalClientId_MethodRef;
         private MethodReference NetworkManager_getIsListening_MethodRef;
         private MethodReference NetworkManager_getIsHost_MethodRef;
         private MethodReference NetworkManager_getIsServer_MethodRef;
         private MethodReference NetworkManager_getIsClient_MethodRef;
+        private FieldReference NetworkManager_LogLevel_FieldRef;
         private FieldReference NetworkManager_ntable_FieldRef;
         private MethodReference NetworkManager_ntable_Add_MethodRef;
         private TypeReference NetworkBehaviour_TypeRef;
@@ -142,11 +145,13 @@ namespace MLAPI.Editor.CodeGen
         private MethodReference NetworkSerializer_SerializeRayArray_MethodRef;
         private MethodReference NetworkSerializer_SerializeRay2DArray_MethodRef;
 
+        private const string k_Debug_LogWarning = nameof(Debug.LogWarning);
         private const string k_NetworkManager_LocalClientId = nameof(NetworkManager.LocalClientId);
         private const string k_NetworkManager_IsListening = nameof(NetworkManager.IsListening);
         private const string k_NetworkManager_IsHost = nameof(NetworkManager.IsHost);
         private const string k_NetworkManager_IsServer = nameof(NetworkManager.IsServer);
         private const string k_NetworkManager_IsClient = nameof(NetworkManager.IsClient);
+        private const string k_NetworkManager_LogLevel = nameof(NetworkManager.LogLevel);
 #pragma warning disable 618
         private const string k_NetworkManager_ntable = nameof(NetworkManager.__ntable);
 
@@ -170,6 +175,17 @@ namespace MLAPI.Editor.CodeGen
 
         private bool ImportReferences(ModuleDefinition moduleDefinition)
         {
+            var debugType = typeof(Debug);
+            foreach (var methodInfo in debugType.GetMethods())
+            {
+                switch (methodInfo.Name)
+                {
+                    case k_Debug_LogWarning:
+                        if (methodInfo.GetParameters().Length == 1) Debug_LogWarning_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                        break;
+                }
+            }
+
             var networkManagerType = typeof(NetworkManager);
             NetworkManager_TypeRef = moduleDefinition.ImportReference(networkManagerType);
             foreach (var propertyInfo in networkManagerType.GetProperties())
@@ -198,6 +214,9 @@ namespace MLAPI.Editor.CodeGen
             {
                 switch (fieldInfo.Name)
                 {
+                    case k_NetworkManager_LogLevel:
+                        NetworkManager_LogLevel_FieldRef = moduleDefinition.ImportReference(fieldInfo);
+                        break;
                     case k_NetworkManager_ntable:
                         NetworkManager_ntable_FieldRef = moduleDefinition.ImportReference(fieldInfo);
                         NetworkManager_ntable_Add_MethodRef = moduleDefinition.ImportReference(fieldInfo.FieldType.GetMethod("Add"));
@@ -598,7 +617,7 @@ namespace MLAPI.Editor.CodeGen
                         var roReturnInstr = processor.Create(OpCodes.Ret);
                         var roLastInstr = processor.Create(OpCodes.Nop);
 
-                        // if (this.OwnerClientId != networkManager.LocalClientId) return;
+                        // if (this.OwnerClientId != networkManager.LocalClientId) { ... } return;
                         instructions.Add(processor.Create(OpCodes.Ldarg_0));
                         instructions.Add(processor.Create(OpCodes.Call, NetworkBehaviour_getOwnerClientId_MethodRef));
                         instructions.Add(processor.Create(OpCodes.Ldloc, netManLocIdx));
@@ -608,7 +627,22 @@ namespace MLAPI.Editor.CodeGen
                         instructions.Add(processor.Create(OpCodes.Ceq));
                         instructions.Add(processor.Create(OpCodes.Brfalse, roLastInstr));
 
-                        // todo: if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Only owner can invoke ServerRPC that is marked to require ownership");
+                        var logNextInstr = processor.Create(OpCodes.Nop);
+
+                        // if (LogLevel.Normal > networkManager.LogLevel)
+                        instructions.Add(processor.Create(OpCodes.Ldloc, netManLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldfld, NetworkManager_LogLevel_FieldRef));
+                        instructions.Add(processor.Create(OpCodes.Ldc_I4, (int)LogLevel.Normal));
+                        instructions.Add(processor.Create(OpCodes.Cgt));
+                        instructions.Add(processor.Create(OpCodes.Ldc_I4, 0));
+                        instructions.Add(processor.Create(OpCodes.Ceq));
+                        instructions.Add(processor.Create(OpCodes.Brfalse, logNextInstr));
+
+                        // Debug.LogWarning(...);
+                        instructions.Add(processor.Create(OpCodes.Ldstr, "Only the owner can invoke a ServerRpc that requires ownership!"));
+                        instructions.Add(processor.Create(OpCodes.Call, Debug_LogWarning_MethodRef));
+
+                        instructions.Add(logNextInstr);
 
                         instructions.Add(roReturnInstr);
                         instructions.Add(roLastInstr);
@@ -1545,13 +1579,36 @@ namespace MLAPI.Editor.CodeGen
             }
             
             nhandler.Body.InitLocals = true;
+            // NetworkManager networkManager;
+            nhandler.Body.Variables.Add(new VariableDefinition(NetworkManager_TypeRef));
+            int netManLocIdx = nhandler.Body.Variables.Count - 1;
+
+            {
+                var returnInstr = processor.Create(OpCodes.Ret);
+                var lastInstr = processor.Create(OpCodes.Nop);
+
+                // networkManager = this.NetworkManager;
+                processor.Emit(OpCodes.Ldarg_0);
+                processor.Emit(OpCodes.Call, NetworkBehaviour_getNetworkManager_MethodRef);
+                processor.Emit(OpCodes.Stloc, netManLocIdx);
+
+                // if (networkManager == null || !networkManager.IsListening) return;
+                processor.Emit(OpCodes.Ldloc, netManLocIdx);
+                processor.Emit(OpCodes.Brfalse, returnInstr);
+                processor.Emit(OpCodes.Ldloc, netManLocIdx);
+                processor.Emit(OpCodes.Callvirt, NetworkManager_getIsListening_MethodRef);
+                processor.Emit(OpCodes.Brtrue, lastInstr);
+
+                processor.Append(returnInstr);
+                processor.Append(lastInstr);
+            }
 
             if (isServerRpc && requireOwnership)
             {
                 var roReturnInstr = processor.Create(OpCodes.Ret);
                 var roLastInstr = processor.Create(OpCodes.Nop);
 
-                // if (rpcParams.Server.Receive.SenderClientId != target.OwnerClientId) return;
+                // if (rpcParams.Server.Receive.SenderClientId != target.OwnerClientId) { ... } return;
                 processor.Emit(OpCodes.Ldarg_2);
                 processor.Emit(OpCodes.Ldfld, RpcParams_Server_FieldRef);
                 processor.Emit(OpCodes.Ldfld, ServerRpcParams_Receive_FieldRef);
@@ -1563,7 +1620,22 @@ namespace MLAPI.Editor.CodeGen
                 processor.Emit(OpCodes.Ceq);
                 processor.Emit(OpCodes.Brfalse, roLastInstr);
 
-                // todo: if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Only owner can invoke ServerRPC that is marked to require ownership");
+                var logNextInstr = processor.Create(OpCodes.Nop);
+
+                // if (LogLevel.Normal > networkManager.LogLevel)
+                processor.Emit(OpCodes.Ldloc, netManLocIdx);
+                processor.Emit(OpCodes.Ldfld, NetworkManager_LogLevel_FieldRef);
+                processor.Emit(OpCodes.Ldc_I4, (int)LogLevel.Normal);
+                processor.Emit(OpCodes.Cgt);
+                processor.Emit(OpCodes.Ldc_I4, 0);
+                processor.Emit(OpCodes.Ceq);
+                processor.Emit(OpCodes.Brfalse, logNextInstr);
+
+                // Debug.LogWarning(...);
+                processor.Emit(OpCodes.Ldstr, "Only the owner can invoke a ServerRpc that requires ownership!");
+                processor.Emit(OpCodes.Call, Debug_LogWarning_MethodRef);
+
+                processor.Append(logNextInstr);
 
                 processor.Append(roReturnInstr);
                 processor.Append(roLastInstr);
