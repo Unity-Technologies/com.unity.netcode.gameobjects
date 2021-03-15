@@ -2,7 +2,7 @@
 ---
 {% for editor in test_editors -%}
 {% for project in projects -%}
-code_coverage_win:
+code_coverage_win_{{ editor }}_{{ project }}:
   name: Code Coverage Report - Windows
   agent:
     type: Unity::VM
