@@ -304,8 +304,7 @@ namespace MLAPI.Spawning
                 // SoftSync them by mapping
                 if (!pendingSoftSyncObjects.ContainsKey(instanceId))
                 {
-                    // TODO: Fix this message
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogError("Cannot find pending soft sync object. Is the projects the same?");
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogError(String.Format("Cannot find pending SoftSync object [InstanceID={0}]. Are the projects the same?", instanceId));
                     return null;
                 }
 
