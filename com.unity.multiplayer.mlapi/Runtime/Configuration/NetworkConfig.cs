@@ -33,7 +33,6 @@ namespace MLAPI.Configuration
         /// The transport hosts the sever uses
         /// </summary>
         [Tooltip("The NetworkTransport to use")]
-        [FormerlySerializedAs("Transport")]
         public NetworkTransport NetworkTransport = null;
 
         /// <summary>
