@@ -10,91 +10,119 @@ namespace MLAPI.Profiling
 #if UNITY_2020_2_OR_NEWER && ENABLE_PROFILER
         // Operations
         private static readonly ProfilerCounterValue<int> k_ConnectionsCounterValue =
-            new ProfilerCounterValue<int>(ProfilerCategory.Network, ProfilerConstants.NumberOfConnections,
+            new ProfilerCounterValue<int>(ProfilerCategory.Network, ProfilerConstants.Connections,
                 ProfilerMarkerDataUnit.Count, ProfilerCounterOptions.FlushOnEndOfFrame);
 
         private static readonly ProfilerCounterValue<int> k_TickRateCounterValue =
             new ProfilerCounterValue<int>(ProfilerCategory.Network, ProfilerConstants.ReceiveTickRate,
-                ProfilerMarkerDataUnit.Count, ProfilerCounterOptions.FlushOnEndOfFrame);
+                ProfilerMarkerDataUnit.Count, ProfilerCounterOptions.FlushOnEndOfFrame | ProfilerCounterOptions.ResetToZeroOnFlush);
 
         // Messages
         private static readonly ProfilerCounterValue<int> k_NamedMessagesCounterValue =
             new ProfilerCounterValue<int>(ProfilerCategory.Network, ProfilerConstants.NumberOfNamedMessages,
-                ProfilerMarkerDataUnit.Count, ProfilerCounterOptions.FlushOnEndOfFrame);
+                ProfilerMarkerDataUnit.Count, ProfilerCounterOptions.FlushOnEndOfFrame | ProfilerCounterOptions.ResetToZeroOnFlush);
 
         private static readonly ProfilerCounterValue<int> k_UnnamedMessagesCounterValue =
             new ProfilerCounterValue<int>(ProfilerCategory.Network, ProfilerConstants.NumberOfUnnamedMessages,
-                ProfilerMarkerDataUnit.Count, ProfilerCounterOptions.FlushOnEndOfFrame);
+                ProfilerMarkerDataUnit.Count, ProfilerCounterOptions.FlushOnEndOfFrame | ProfilerCounterOptions.ResetToZeroOnFlush);
 
         private static readonly ProfilerCounterValue<int> k_BytesSentCounterValue =
             new ProfilerCounterValue<int>(ProfilerCategory.Network, ProfilerConstants.NumberBytesSent,
-                ProfilerMarkerDataUnit.Count, ProfilerCounterOptions.FlushOnEndOfFrame);
+                ProfilerMarkerDataUnit.Count, ProfilerCounterOptions.FlushOnEndOfFrame | ProfilerCounterOptions.ResetToZeroOnFlush);
 
         private static readonly ProfilerCounterValue<int> k_BytesReceivedCounterValue =
             new ProfilerCounterValue<int>(ProfilerCategory.Network, ProfilerConstants.NumberBytesReceived,
-                ProfilerMarkerDataUnit.Count, ProfilerCounterOptions.FlushOnEndOfFrame);
+                ProfilerMarkerDataUnit.Count, ProfilerCounterOptions.FlushOnEndOfFrame | ProfilerCounterOptions.ResetToZeroOnFlush);
 
         private static readonly ProfilerCounterValue<int> k_NetworkVarsCounterValue =
             new ProfilerCounterValue<int>(ProfilerCategory.Network, ProfilerConstants.NumberNetworkVarsReceived,
-                ProfilerMarkerDataUnit.Count, ProfilerCounterOptions.FlushOnEndOfFrame);
+                ProfilerMarkerDataUnit.Count, ProfilerCounterOptions.FlushOnEndOfFrame | ProfilerCounterOptions.ResetToZeroOnFlush);
 
         // RPCs
         private static readonly ProfilerCounterValue<int> k_RPCsSentCounterValue =
             new ProfilerCounterValue<int>(ProfilerCategory.Network, ProfilerConstants.NumberOfRPCsSent,
-                ProfilerMarkerDataUnit.Count, ProfilerCounterOptions.FlushOnEndOfFrame);
+                ProfilerMarkerDataUnit.Count, ProfilerCounterOptions.FlushOnEndOfFrame | ProfilerCounterOptions.ResetToZeroOnFlush);
 
         private static readonly ProfilerCounterValue<int> k_RPCsReceivedCounterValue =
             new ProfilerCounterValue<int>(ProfilerCategory.Network, ProfilerConstants.NumberOfRPCsReceived,
-                ProfilerMarkerDataUnit.Count, ProfilerCounterOptions.FlushOnEndOfFrame);
+                ProfilerMarkerDataUnit.Count, ProfilerCounterOptions.FlushOnEndOfFrame | ProfilerCounterOptions.ResetToZeroOnFlush);
 
         private static readonly ProfilerCounterValue<int> k_RPCBatchesSentCounterValue =
             new ProfilerCounterValue<int>(ProfilerCategory.Network, ProfilerConstants.NumberOfRPCBatchesSent,
-                ProfilerMarkerDataUnit.Count, ProfilerCounterOptions.FlushOnEndOfFrame);
+                ProfilerMarkerDataUnit.Count, ProfilerCounterOptions.FlushOnEndOfFrame | ProfilerCounterOptions.ResetToZeroOnFlush);
 
         private static readonly ProfilerCounterValue<int> k_RPCBatchesReceivedCounterValue =
             new ProfilerCounterValue<int>(ProfilerCategory.Network, ProfilerConstants.NumberOfRPCBatchesReceived,
-                ProfilerMarkerDataUnit.Count, ProfilerCounterOptions.FlushOnEndOfFrame);
+                ProfilerMarkerDataUnit.Count, ProfilerCounterOptions.FlushOnEndOfFrame | ProfilerCounterOptions.ResetToZeroOnFlush);
 
         private static readonly ProfilerCounterValue<int> k_RPCQueueProcessedCounterValue =
             new ProfilerCounterValue<int>(ProfilerCategory.Network, ProfilerConstants.NumberOfRPCQueueProcessed,
-                ProfilerMarkerDataUnit.Count, ProfilerCounterOptions.FlushOnEndOfFrame);
+                ProfilerMarkerDataUnit.Count, ProfilerCounterOptions.FlushOnEndOfFrame | ProfilerCounterOptions.ResetToZeroOnFlush);
 
         private static readonly ProfilerCounterValue<int> k_RPCsInQueueSizeCounterValue =
             new ProfilerCounterValue<int>(ProfilerCategory.Network, ProfilerConstants.NumberOfRPCsInQueueSize,
-                ProfilerMarkerDataUnit.Count, ProfilerCounterOptions.FlushOnEndOfFrame);
+                ProfilerMarkerDataUnit.Count, ProfilerCounterOptions.FlushOnEndOfFrame | ProfilerCounterOptions.ResetToZeroOnFlush);
 
         private static readonly ProfilerCounterValue<int> k_RPCsOutQueueSizeCounterValue =
             new ProfilerCounterValue<int>(ProfilerCategory.Network, ProfilerConstants.NumberOfRPCsOutQueueSize,
-                ProfilerMarkerDataUnit.Count, ProfilerCounterOptions.FlushOnEndOfFrame);
+                ProfilerMarkerDataUnit.Count, ProfilerCounterOptions.FlushOnEndOfFrame | ProfilerCounterOptions.ResetToZeroOnFlush);
 
         [RuntimeInitializeOnLoadMethod]
         private static void RegisterMLAPIPerformanceEvent()
         {
+            InitializeCounters();
             NetworkManager.OnPerformanceDataEvent += OnPerformanceTickData;
+        }
+
+        private static void InitializeCounters()
+        {
+            k_ConnectionsCounterValue.Value = 0;
+            k_TickRateCounterValue.Value = 0;
+
+            k_NamedMessagesCounterValue.Value = 0;
+            k_UnnamedMessagesCounterValue.Value = 0;
+            k_BytesSentCounterValue.Value = 0;
+            k_BytesReceivedCounterValue.Value = 0;
+            k_NetworkVarsCounterValue.Value = 0;
+            
+            k_RPCsSentCounterValue.Value = 0;
+            k_RPCsReceivedCounterValue.Value = 0;
+            k_RPCBatchesSentCounterValue.Value = 0;
+            k_RPCBatchesReceivedCounterValue.Value = 0;
+            k_RPCQueueProcessedCounterValue.Value = 0;
+            k_RPCsInQueueSizeCounterValue.Value = 0;
+            k_RPCsOutQueueSizeCounterValue.Value = 0;
         }
 
         private static void OnPerformanceTickData(PerformanceTickData tickData)
         {
             // Operations
-            k_ConnectionsCounterValue.Value = tickData.GetData(ProfilerConstants.NumberOfConnections);
-            k_TickRateCounterValue.Value = tickData.GetData(ProfilerConstants.ReceiveTickRate);
+            UpdateIntCounter(tickData, k_ConnectionsCounterValue, ProfilerConstants.Connections);
+            UpdateIntCounter(tickData, k_TickRateCounterValue, ProfilerConstants.ReceiveTickRate);
 
             // Messages
-            k_NamedMessagesCounterValue.Value = tickData.GetData(ProfilerConstants.NumberOfNamedMessages);
-            k_UnnamedMessagesCounterValue.Value = tickData.GetData(ProfilerConstants.NumberOfUnnamedMessages);
-            k_BytesSentCounterValue.Value = tickData.GetData(ProfilerConstants.NumberBytesSent);
-            k_BytesReceivedCounterValue.Value = tickData.GetData(ProfilerConstants.NumberBytesReceived);
-            k_NetworkVarsCounterValue.Value = tickData.GetData(ProfilerConstants.NumberNetworkVarsReceived);
+            UpdateIntCounter(tickData, k_NamedMessagesCounterValue, ProfilerConstants.NumberOfNamedMessages);
+            UpdateIntCounter(tickData, k_UnnamedMessagesCounterValue, ProfilerConstants.NumberOfUnnamedMessages);
+            UpdateIntCounter(tickData, k_BytesSentCounterValue, ProfilerConstants.NumberBytesSent);
+            UpdateIntCounter(tickData, k_BytesReceivedCounterValue, ProfilerConstants.NumberBytesReceived);
+            UpdateIntCounter(tickData, k_NetworkVarsCounterValue, ProfilerConstants.NumberNetworkVarsReceived);
 
             // RPCs
-            k_RPCsSentCounterValue.Value = tickData.GetData(ProfilerConstants.NumberOfRPCsSent);
-            k_RPCsReceivedCounterValue.Value = tickData.GetData(ProfilerConstants.NumberOfRPCsReceived);
-            k_RPCBatchesSentCounterValue.Value = tickData.GetData(ProfilerConstants.NumberOfRPCBatchesSent);
-            k_RPCBatchesReceivedCounterValue.Value = tickData.GetData(ProfilerConstants.NumberOfRPCBatchesReceived);
-            k_RPCBatchesReceivedCounterValue.Value = tickData.GetData(ProfilerConstants.NumberOfRPCBatchesReceived);
-            k_RPCQueueProcessedCounterValue.Value = tickData.GetData(ProfilerConstants.NumberOfRPCQueueProcessed);
-            k_RPCsInQueueSizeCounterValue.Value = tickData.GetData(ProfilerConstants.NumberOfRPCsInQueueSize);
-            k_RPCsOutQueueSizeCounterValue.Value = tickData.GetData(ProfilerConstants.NumberOfRPCsOutQueueSize);
+            UpdateIntCounter(tickData, k_RPCsSentCounterValue, ProfilerConstants.NumberOfRPCsSent);
+            UpdateIntCounter(tickData, k_RPCsReceivedCounterValue, ProfilerConstants.NumberOfRPCsReceived);
+            UpdateIntCounter(tickData, k_RPCBatchesSentCounterValue, ProfilerConstants.NumberOfRPCBatchesSent);
+            UpdateIntCounter(tickData, k_RPCBatchesReceivedCounterValue, ProfilerConstants.NumberOfRPCBatchesReceived);
+            UpdateIntCounter(tickData, k_RPCBatchesReceivedCounterValue, ProfilerConstants.NumberOfRPCQueueProcessed);
+            UpdateIntCounter(tickData, k_RPCQueueProcessedCounterValue, ProfilerConstants.NumberOfRPCsInQueueSize);
+            UpdateIntCounter(tickData, k_RPCsInQueueSizeCounterValue, ProfilerConstants.NumberOfRPCsOutQueueSize);
+        }
+
+        private static void UpdateIntCounter(PerformanceTickData tickData, ProfilerCounterValue<int> counter, string fieldName)
+        {
+            if (tickData.HasData(fieldName))
+            {
+                counter.Value += tickData.GetData(fieldName);
+            }
         }
 #endif
     }
