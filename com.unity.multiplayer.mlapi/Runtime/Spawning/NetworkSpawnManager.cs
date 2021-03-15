@@ -541,19 +541,28 @@ namespace MLAPI.Spawning
             }
         }
 
+        /// <summary>
+        /// Gets called only by NetworkSceneManager.SwitchScene
+        /// </summary>
         internal static void ServerDestroySpawnedSceneObjects()
         {
-            foreach (var sobj in SpawnedObjectsList)
+            //This Allocation is "ok" for now because this code only executes when a new scene is switched to
+            //We need to create a new copy the HashSet of NetworkObjects (SpawnedObjectsList) so we can remove
+            //objects from the HashSet (SpawnedObjectsList) without causing a list has been modified exception to occur.
+            var spawnedObjects = SpawnedObjectsList.ToList();
+            foreach (var sobj in spawnedObjects)
             {
                 if ((sobj.IsSceneObject != null && sobj.IsSceneObject == true) || sobj.DestroyWithScene)
                 {
                     if (CustomDestroyHandlers.ContainsKey(sobj.PrefabHash))
                     {
+                        SpawnedObjectsList.Remove(sobj);
                         CustomDestroyHandlers[sobj.PrefabHash](sobj);
                         OnDestroyObject(sobj.NetworkObjectId, false);
                     }
                     else
                     {
+                        SpawnedObjectsList.Remove(sobj);
                         MonoBehaviour.Destroy(sobj.gameObject);
                     }
                 }
