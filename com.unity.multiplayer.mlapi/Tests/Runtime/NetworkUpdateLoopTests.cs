@@ -11,6 +11,31 @@ namespace MLAPI.RuntimeTests
 {
     public class NetworkUpdateLoopTests
     {
+        [Test]
+        public void RegisterCustomLoopInTheMiddle()
+        {
+            // caching the current PlayerLoop (to prevent side-effects on other tests)
+            var cachedPlayerLoop = PlayerLoop.GetCurrentPlayerLoop();
+            {
+                NetworkUpdateLoop.RegisterLoopSystems();
+
+                var curPlayerLoop = PlayerLoop.GetCurrentPlayerLoop();
+                int initSubsystemCount = curPlayerLoop.subSystemList[0].subSystemList.Length;
+                var newInitSubsystems = new PlayerLoopSystem[initSubsystemCount + 1];
+                Array.Copy(curPlayerLoop.subSystemList[0].subSystemList, newInitSubsystems, initSubsystemCount);
+                newInitSubsystems[initSubsystemCount] = new PlayerLoopSystem { type = typeof(NetworkUpdateLoopTests) };
+                curPlayerLoop.subSystemList[0].subSystemList = newInitSubsystems;
+                PlayerLoop.SetPlayerLoop(curPlayerLoop);
+
+                NetworkUpdateLoop.UnregisterLoopSystems();
+                
+                // our custom `PlayerLoopSystem` with the type of `NetworkUpdateLoopTests` should still exist
+                Assert.AreEqual(typeof(NetworkUpdateLoopTests), PlayerLoop.GetCurrentPlayerLoop().subSystemList[0].subSystemList.Last().type);
+            }
+            // replace the current PlayerLoop with the cached PlayerLoop after the test
+            PlayerLoop.SetPlayerLoop(cachedPlayerLoop);
+        }
+
         [UnityTest]
         public IEnumerator RegisterAndUnregisterSystems()
         {
@@ -24,8 +49,8 @@ namespace MLAPI.RuntimeTests
 
                 NetworkUpdateLoop.RegisterLoopSystems();
 
-                int waitFrameNumber = Time.frameCount + 8;
-                yield return new WaitUntil(() => Time.frameCount >= waitFrameNumber);
+                int nextFrameNumber = Time.frameCount + 1;
+                yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
 
                 NetworkUpdateLoop.UnregisterLoopSystems();
 
