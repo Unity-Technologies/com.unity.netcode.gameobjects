@@ -53,6 +53,7 @@ For users of previous versions of MLAPI, this release renames APIs due to refact
 | `NetworkedList` | `NetworkList` |
 | `NetworkedSet` | `NetworkSet` |
 | `MLAPIConstants` | `NetworkConstants` |
+| `UnetTransport` | `UNetTransport` |
 
 ### Fixes
 
@@ -83,4 +84,3 @@ With a new release of MLAPI in Unity, some features have been removed:
 
 ## [0.0.1-preview.1] - 2020-12-20
 This was an internally-only-used version of the Unity MLAPI Package
-
