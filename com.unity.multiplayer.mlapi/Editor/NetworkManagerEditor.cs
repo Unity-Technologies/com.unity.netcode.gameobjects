@@ -30,7 +30,6 @@ public class NetworkManagerEditor : Editor
     private SerializedProperty m_MaxObjectUpdatesPerTickProperty;
     private SerializedProperty m_ClientConnectionBufferTimeoutProperty;
     private SerializedProperty m_ConnectionApprovalProperty;
-    private SerializedProperty m_SecondsHistoryProperty;
     private SerializedProperty m_EnableTimeResyncProperty;
     private SerializedProperty m_TimeResyncIntervalProperty;
     private SerializedProperty m_EnableNetworkVariableProperty;
@@ -106,7 +105,6 @@ public class NetworkManagerEditor : Editor
         m_EventTickrateProperty = m_NetworkConfigProperty.FindPropertyRelative("EventTickrate");
         m_ClientConnectionBufferTimeoutProperty = m_NetworkConfigProperty.FindPropertyRelative("ClientConnectionBufferTimeout");
         m_ConnectionApprovalProperty = m_NetworkConfigProperty.FindPropertyRelative("ConnectionApproval");
-        m_SecondsHistoryProperty = m_NetworkConfigProperty.FindPropertyRelative("SecondsHistory");
         m_EnableTimeResyncProperty = m_NetworkConfigProperty.FindPropertyRelative("EnableTimeResync");
         m_TimeResyncIntervalProperty = m_NetworkConfigProperty.FindPropertyRelative("TimeResyncInterval");
         m_EnableNetworkVariableProperty = m_NetworkConfigProperty.FindPropertyRelative("EnableNetworkVariable");
@@ -144,7 +142,6 @@ public class NetworkManagerEditor : Editor
         m_EventTickrateProperty = m_NetworkConfigProperty.FindPropertyRelative("EventTickrate");
         m_ClientConnectionBufferTimeoutProperty = m_NetworkConfigProperty.FindPropertyRelative("ClientConnectionBufferTimeout");
         m_ConnectionApprovalProperty = m_NetworkConfigProperty.FindPropertyRelative("ConnectionApproval");
-        m_SecondsHistoryProperty = m_NetworkConfigProperty.FindPropertyRelative("SecondsHistory");
         m_EnableTimeResyncProperty = m_NetworkConfigProperty.FindPropertyRelative("EnableTimeResync");
         m_TimeResyncIntervalProperty = m_NetworkConfigProperty.FindPropertyRelative("TimeResyncInterval");
         m_EnableNetworkVariableProperty = m_NetworkConfigProperty.FindPropertyRelative("EnableNetworkVariable");
@@ -308,9 +305,6 @@ public class NetworkManagerEditor : Editor
             {
                 EditorGUILayout.PropertyField(m_ClientConnectionBufferTimeoutProperty);
             }
-
-            EditorGUILayout.LabelField("Lag Compensation", EditorStyles.boldLabel);
-            EditorGUILayout.PropertyField(m_SecondsHistoryProperty);
 
             EditorGUILayout.LabelField("Spawning", EditorStyles.boldLabel);
             EditorGUILayout.PropertyField(m_CreatePlayerPrefabProperty);
