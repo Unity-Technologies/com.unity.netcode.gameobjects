@@ -822,7 +822,7 @@ namespace MLAPI
 
         private void HandleRawTransportPoll(NetworkEvent networkEvent, ulong clientId, NetworkChannel networkChannel, ArraySegment<byte> payload, float receiveTime)
         {
-            PerformanceDataManager.Increment(ProfilerConstants.BytesReceived, payload.Count);
+            PerformanceDataManager.Increment(ProfilerConstants.ByteReceived, payload.Count);
             ProfilerStatManager.BytesRcvd.Record(payload.Count);
 
             switch (networkEvent)
@@ -1043,7 +1043,7 @@ namespace MLAPI
                             {
                                 m_RpcBatcher.ReceiveItems(messageStream, ReceiveCallback, RpcQueueContainer.QueueItemType.ServerRpc, clientId, receiveTime);
                                 ProfilerStatManager.RpcBatchesRcvd.Record();
-                                PerformanceDataManager.Increment(ProfilerConstants.RPCBatchesReceived);
+                                PerformanceDataManager.Increment(ProfilerConstants.RpcBatchesReceived);
                             }
                             else
                             {
@@ -1061,7 +1061,7 @@ namespace MLAPI
                             {
                                 m_RpcBatcher.ReceiveItems(messageStream, ReceiveCallback, RpcQueueContainer.QueueItemType.ClientRpc, clientId, receiveTime);
                                 ProfilerStatManager.RpcBatchesRcvd.Record();
-                                PerformanceDataManager.Increment(ProfilerConstants.RPCBatchesReceived);
+                                PerformanceDataManager.Increment(ProfilerConstants.RpcBatchesReceived);
                             }
                             else
                             {
@@ -1198,7 +1198,7 @@ namespace MLAPI
                 if (ConnectedClientsList[i].ClientId == clientId)
                 {
                     ConnectedClientsList.RemoveAt(i);
-                    PerformanceDataManager.Increment(ProfilerConstants.Connections, -1);
+                    PerformanceDataManager.Increment(ProfilerConstants.Connection, -1);
                     ProfilerStatManager.Connections.Record(-1);
                 }
             }
@@ -1263,7 +1263,7 @@ namespace MLAPI
                     if (ConnectedClientsList[i].ClientId == clientId)
                     {
                         ConnectedClientsList.RemoveAt(i);
-                        PerformanceDataManager.Increment(ProfilerConstants.Connections, -1);
+                        PerformanceDataManager.Increment(ProfilerConstants.Connection, -1);
                         ProfilerStatManager.Connections.Record(-1);
                         break;
                     }
@@ -1307,7 +1307,7 @@ namespace MLAPI
                 ConnectedClients.Add(clientId, client);
                 ConnectedClientsList.Add(client);
 
-                PerformanceDataManager.Increment(ProfilerConstants.Connections);
+                PerformanceDataManager.Increment(ProfilerConstants.Connection);
                 ProfilerStatManager.Connections.Record();
 
                 // This packet is unreliable, but if it gets through it should provide a much better sync than the potentially huge approval message.

@@ -2,20 +2,20 @@ namespace MLAPI.Profiling
 {
     public static class ProfilerConstants
     {
-        public const string Connections = nameof(Connections);
+        public const string Connection = nameof(Connection);
         public const string ReceiveTickRate = nameof(ReceiveTickRate);
 
-        public const string NamedMessagesReceived = nameof(NamedMessagesReceived);
-        public const string UnnamedMessagesReceived = nameof(UnnamedMessagesReceived);
-        public const string BytesSent = nameof(BytesSent);
-        public const string BytesReceived = nameof(BytesReceived);
-        public const string NetworkVarsReceived = nameof(NetworkVarsReceived);
-        public const string RPCsSent = nameof(RPCsSent);
-        public const string RPCsReceived = nameof(RPCsReceived);
-        public const string RPCBatchesSent = nameof(RPCBatchesSent);
-        public const string RPCBatchesReceived = nameof(RPCBatchesReceived);
-        public const string RPCQueueProcessed = nameof(RPCQueueProcessed);
-        public const string RPCsInQueueSize = nameof(RPCsInQueueSize);
-        public const string RPCsOutQueueSize = nameof(RPCsOutQueueSize);
+        public const string NamedMessageReceived = nameof(NamedMessageReceived);
+        public const string UnnamedMessageReceived = nameof(UnnamedMessageReceived);
+        public const string ByteSent = nameof(ByteSent);
+        public const string ByteReceived = nameof(ByteReceived);
+        public const string NetworkVarReceived = nameof(NetworkVarReceived);
+        public const string RpcSent = nameof(RpcSent);
+        public const string RpcReceived = nameof(RpcReceived);
+        public const string RpcBatchesSent = nameof(RpcBatchesSent);
+        public const string RpcBatchesReceived = nameof(RpcBatchesReceived);
+        public const string RpcQueueProcessed = nameof(RpcQueueProcessed);
+        public const string RpcInQueueSize = nameof(RpcInQueueSize);
+        public const string RpcOutQueueSize = nameof(RpcOutQueueSize);
     }
 }
