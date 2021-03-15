@@ -17,6 +17,10 @@ namespace MLAPI.RuntimeTests
             // caching the current PlayerLoop (to prevent side-effects on other tests)
             var cachedPlayerLoop = PlayerLoop.GetCurrentPlayerLoop();
             {
+                // since current PlayerLoop already took NetworkUpdateLoop systems inside,
+                // we are going to swap it with the default PlayerLoop temporarily for testing
+                PlayerLoop.SetPlayerLoop(PlayerLoop.GetDefaultPlayerLoop());
+
                 NetworkUpdateLoop.RegisterLoopSystems();
 
                 var curPlayerLoop = PlayerLoop.GetCurrentPlayerLoop();
@@ -45,6 +49,7 @@ namespace MLAPI.RuntimeTests
                 // since current PlayerLoop already took NetworkUpdateLoop systems inside,
                 // we are going to swap it with the default PlayerLoop temporarily for testing
                 PlayerLoop.SetPlayerLoop(PlayerLoop.GetDefaultPlayerLoop());
+
                 var oldPlayerLoop = PlayerLoop.GetCurrentPlayerLoop();
 
                 NetworkUpdateLoop.RegisterLoopSystems();
