@@ -62,7 +62,6 @@ namespace MLAPI.RuntimeTests
             {
                 return true;
             }
-
             return false;
         }
 
@@ -80,7 +79,6 @@ namespace MLAPI.RuntimeTests
 
                 //Send the buffer
                 SendBufferServerRpc(m_SendBuffer.ToArray());
-
             }
         }
 

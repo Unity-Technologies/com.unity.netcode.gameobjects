@@ -1,16 +1,13 @@
 using System;
 using System.Collections.Generic;
-
+using UnityEngine;
+using UnityEngine.SceneManagement;
+using NUnit.Framework;
+using MLAPI.SceneManagement;
+using MLAPI.Transports.UNET;
 
 namespace MLAPI.RuntimeTests
 {
-    using UnityEngine;
-    using UnityEngine.SceneManagement;
-    using NUnit.Framework;
-    using MLAPI.SceneManagement;
-    using MLAPI.Transports.UNET;
-
-
     /// <summary>
     /// Helper class to instantiate a NetworkManager
     /// This also provides the ability to:
@@ -24,12 +21,12 @@ namespace MLAPI.RuntimeTests
     /// </summary>
     public static class NetworkManagerHelper
     {
-        public static Transports.Tasks.SocketTasks StartHostSocketTasks { get; internal set; }
-        public static GameObject NetworkManagerObject { get; internal set; }
+        public static Transports.Tasks.SocketTasks s_StartHostSocketTasks { get; internal set; }
+        public static GameObject s_NetworkManagerObject { get; internal set; }
 
-        internal static Dictionary<Guid,GameObject> m_InstantiatedGameObjects = new Dictionary<Guid, GameObject>();
+        internal static Dictionary<Guid,GameObject> s_InstantiatedGameObjects = new Dictionary<Guid, GameObject>();
 
-        internal static Dictionary<Guid,NetworkObject> m_InstantiatedNetworkObjects = new Dictionary<Guid, NetworkObject>();
+        internal static Dictionary<Guid,NetworkObject> s_InstantiatedNetworkObjects = new Dictionary<Guid, NetworkObject>();
 
         /// <summary>
         /// Called upon the RpcQueueTests being instantiated.
@@ -40,8 +37,8 @@ namespace MLAPI.RuntimeTests
         {
             if (NetworkManager.Singleton == null)
             {
-                NetworkManagerObject = new GameObject(nameof(NetworkManager));
-                var NetworkManagerComponent = NetworkManagerObject.AddComponent<NetworkManager>();
+                s_NetworkManagerObject = new GameObject(nameof(NetworkManager));
+                var NetworkManagerComponent = s_NetworkManagerObject.AddComponent<NetworkManager>();
                 if (NetworkManagerComponent == null)
                 {
                     return false;
@@ -49,7 +46,7 @@ namespace MLAPI.RuntimeTests
 
                 Debug.Log("NetworkManager Instantiated.");
 
-                var unetTransport = NetworkManagerObject.AddComponent<UNetTransport>();
+                var unetTransport = s_NetworkManagerObject.AddComponent<UNetTransport>();
 
                 NetworkManagerComponent.NetworkConfig = new Configuration.NetworkConfig
                 {
@@ -70,8 +67,8 @@ namespace MLAPI.RuntimeTests
                 //Add our test scene name
                 NetworkSceneManager.AddRuntimeSceneName(currentActiveScene.name, 0);
 
-                //Start as host mode as loopback only works in hostmode
-                StartHostSocketTasks = NetworkManager.Singleton.StartHost();
+                //Start as host mode as loopback only works in hostmode (storing socket task in the event we use this in the future)
+                s_StartHostSocketTasks = NetworkManager.Singleton.StartHost();
 
                 Debug.Log("Host Started.");
 
@@ -97,11 +94,11 @@ namespace MLAPI.RuntimeTests
 
             Assert.IsNotNull(networkObject);
 
-            Assert.IsFalse(m_InstantiatedGameObjects.ContainsKey(gameObjectId));
-            Assert.IsFalse(m_InstantiatedNetworkObjects.ContainsKey(gameObjectId));
+            Assert.IsFalse(s_InstantiatedGameObjects.ContainsKey(gameObjectId));
+            Assert.IsFalse(s_InstantiatedNetworkObjects.ContainsKey(gameObjectId));
 
-            m_InstantiatedGameObjects.Add(gameObjectId, gameObject);
-            m_InstantiatedNetworkObjects.Add(gameObjectId, networkObject);
+            s_InstantiatedGameObjects.Add(gameObjectId, gameObject);
+            s_InstantiatedNetworkObjects.Add(gameObjectId, networkObject);
 
             return gameObjectId;
         }
@@ -114,8 +111,8 @@ namespace MLAPI.RuntimeTests
         /// <returns></returns>
         public static T AddComponentToObject<T>(Guid gameObjectIdentifier) where T : NetworkBehaviour
         {
-            Assert.IsTrue(m_InstantiatedGameObjects.ContainsKey(gameObjectIdentifier));
-            return m_InstantiatedGameObjects[gameObjectIdentifier].AddComponent<T>();
+            Assert.IsTrue(s_InstantiatedGameObjects.ContainsKey(gameObjectIdentifier));
+            return s_InstantiatedGameObjects[gameObjectIdentifier].AddComponent<T>();
         }
 
         /// <summary>
@@ -124,10 +121,10 @@ namespace MLAPI.RuntimeTests
         /// <param name="gameObjectIdentifier">ID returned to reference the game object</param>
         public static void SpawnNetworkObject(Guid gameObjectIdentifier)
         {
-            Assert.IsTrue(m_InstantiatedNetworkObjects.ContainsKey(gameObjectIdentifier));
-            if(!m_InstantiatedNetworkObjects[gameObjectIdentifier].IsSpawned)
+            Assert.IsTrue(s_InstantiatedNetworkObjects.ContainsKey(gameObjectIdentifier));
+            if (!s_InstantiatedNetworkObjects[gameObjectIdentifier].IsSpawned)
             {
-                m_InstantiatedNetworkObjects[gameObjectIdentifier].Spawn();
+                s_InstantiatedNetworkObjects[gameObjectIdentifier].Spawn();
             }
         }
 
@@ -135,14 +132,14 @@ namespace MLAPI.RuntimeTests
         public static void ShutdownNetworkManager()
         {
             //clean up any game objects created with custom unit testing components
-            foreach (KeyValuePair<Guid, GameObject> entry in m_InstantiatedGameObjects)
+            foreach (KeyValuePair<Guid, GameObject> entry in s_InstantiatedGameObjects)
             {
                 GameObject.Destroy(entry.Value);
             }
 
-            m_InstantiatedGameObjects.Clear();
+            s_InstantiatedGameObjects.Clear();
 
-            if (NetworkManagerObject != null)
+            if (s_NetworkManagerObject != null)
             {
                 //Stop the host
                 NetworkManager.Singleton.StopHost();
@@ -154,7 +151,7 @@ namespace MLAPI.RuntimeTests
 
                 Debug.Log($"{nameof(NetworkManager)} shutdown.");
 
-                GameObject.Destroy(NetworkManagerObject);
+                GameObject.Destroy(s_NetworkManagerObject);
 
                 Debug.Log($"{nameof(NetworkManager)} destroyed.");
             }

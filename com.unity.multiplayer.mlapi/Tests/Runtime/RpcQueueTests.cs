@@ -1,15 +1,13 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-
+using UnityEngine;
+using UnityEngine.TestTools;
+using NUnit.Framework;
+using MLAPI.Messaging;
 
 namespace MLAPI.RuntimeTests
 {
-    using UnityEngine;
-    using UnityEngine.TestTools;
-    using NUnit.Framework;
-    using MLAPI.Messaging;
-
     /// <summary>
     /// The RpcQueue unit tests validate:
     /// Maximum buffer size that can be sent (currently 1MB is the default maximum RpcQueueHistoryFrame size)
@@ -26,7 +24,9 @@ namespace MLAPI.RuntimeTests
         [UnityTest]
         public IEnumerator UpdateStagesInvocation()
         {
-#if UNITY_2020_2_OR_NEWER // Disabling this test on 2019.4 due to ILPP issues on Yamato CI/CD runs
+ // Disabling this test on 2019.4 due to ILPP issues on Yamato CI/CD runs (UNITY_2020_2_OR_NEWER)
+ // Adding the ability to test if we are running in editor local (UNIT_MANUAL_TESTING)
+#if UNITY_2020_2_OR_NEWER || UNIT_MANUAL_TESTING
             Assert.IsTrue(NetworkManagerHelper.StartNetworkManager());
 
             Guid updateStagesTestId = NetworkManagerHelper.AddGameNetworkObject("UpdateStagesTest");
@@ -75,7 +75,9 @@ namespace MLAPI.RuntimeTests
         [UnityTest]
         public IEnumerator BufferDataValidation()
         {
-#if UNITY_2020_2_OR_NEWER // Disabling this test on 2019.4 due to ILPP issues on Yamato CI/CD runs
+ // Disabling this test on 2019.4 due to ILPP issues on Yamato CI/CD runs (UNITY_2020_2_OR_NEWER)
+ // Adding the ability to test if we are running in editor local (UNIT_MANUAL_TESTING)
+#if UNITY_2020_2_OR_NEWER || UNIT_MANUAL_TESTING
             Assert.IsTrue(NetworkManagerHelper.StartNetworkManager());
 
             Guid gameObjectId = NetworkManagerHelper.AddGameNetworkObject("GrowingBufferObject");
@@ -131,14 +133,14 @@ namespace MLAPI.RuntimeTests
 
             for (int i = 0; i < messageChunkSize; i++)
             {
-                preCalculatedBufferValues.AddRange(BitConverter.GetBytes(Random.Range(0, ulong.MaxValue)));
+                preCalculatedBufferValues.AddRange(BitConverter.GetBytes(UnityEngine.Random.Range(0, ulong.MaxValue)));
             }
 
             var indexOffset = 0;
-            ulong SenderNetworkId = 1;
+            ulong senderNetworkId = 1;
 
             //Create ficticious list of clients to send to
-            ulong[] PsuedoClients = new ulong[]{0};
+            ulong[] psuedoClients = new ulong[]{0};
 
             var randomGeneratedDataArray = preCalculatedBufferValues.ToArray();
             var maximumOffsetValue = preCalculatedBufferValues.Count;
@@ -150,7 +152,7 @@ namespace MLAPI.RuntimeTests
                 indexOffset = (i * messageChunkSize) % maximumOffsetValue;
 
                 var writer = rpcQueueContainer.BeginAddQueueItemToFrame(RpcQueueContainer.QueueItemType.ServerRpc, Time.realtimeSinceStartup,Transports.NetworkChannel.DefaultMessage,
-                        SenderNetworkId, PsuedoClients, RpcQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
+                        senderNetworkId, psuedoClients, RpcQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
 
 
                 writer.WriteByteArray(randomGeneratedDataArray, messageChunkSize);
@@ -170,7 +172,7 @@ namespace MLAPI.RuntimeTests
             while (currentQueueItem.QueueItemType != RpcQueueContainer.QueueItemType.None)
             {
                 //Check to make sure the wrapper information is accurate for the entry
-                Assert.AreEqual(currentQueueItem.NetworkId, SenderNetworkId);
+                Assert.AreEqual(currentQueueItem.NetworkId, senderNetworkId);
                 Assert.AreEqual(currentQueueItem.QueueItemType, RpcQueueContainer.QueueItemType.ServerRpc);
                 Assert.AreEqual(currentQueueItem.UpdateStage, NetworkUpdateStage.PostLateUpdate);
                 Assert.AreEqual(currentQueueItem.NetworkChannel, Transports.NetworkChannel.DefaultMessage);
