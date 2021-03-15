@@ -3,7 +3,7 @@
 {% for editor in test_editors -%}
 {% for project in projects -%}
 code_coverage_win_{{ editor }}_{{ project.name }}:
-  name: Code Coverage Report - Windows
+  name: Code Coverage Report - Windows - {{ editor }} - {{ project.name }}
   agent:
     type: Unity::VM
     image: package-ci/win10:stable
