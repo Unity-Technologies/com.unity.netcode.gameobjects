@@ -208,10 +208,19 @@ namespace MLAPI
                 }
             }
 
-            if (!NetworkConfig.RegisteredScenes.Contains(SceneManager.GetActiveScene().name))
+            var activeScene = SceneManager.GetActiveScene();
+            var activeSceneName = activeScene.name;
+            if (!NetworkConfig.RegisteredScenes.Contains(activeSceneName))
             {
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Active scene is not registered as a network scene. The MLAPI has added it");
-                NetworkConfig.RegisteredScenes.Add(SceneManager.GetActiveScene().name);
+                NetworkConfig.RegisteredScenes.Add(activeSceneName);
+#if UNITY_EDITOR
+                UnityEditor.EditorApplication.delayCall += () =>
+                {
+                    UnityEditor.EditorUtility.SetDirty(this);
+                    UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(activeScene);
+                };
+#endif
             }
 
             for (int i = 0; i < NetworkConfig.NetworkPrefabs.Count; i++)
