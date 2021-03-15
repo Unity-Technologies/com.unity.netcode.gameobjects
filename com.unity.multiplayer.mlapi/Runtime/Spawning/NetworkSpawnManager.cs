@@ -547,37 +547,25 @@ namespace MLAPI.Spawning
         internal static void ServerDestroySpawnedSceneObjects()
         {
             //This Allocation is "ok" for now because this code only executes when a new scene is switched to
-            //We need to keep track of GameObjects and NetworkObjects to be destroyed in the current scene
-            //but only destroy them once outside of the enumerative foreach loop
-            var objectsToDestroy = new List<GameObject>();
-            var customObjectsToDestroy = new List<NetworkObject>();
-
-            foreach (var sobj in SpawnedObjectsList)
+            //We need to create a new copy the HashSet of NetworkObjects so we can remove objects from the
+            //HashSet without causing a list has been modified exception to occur.
+            var spawnedObjects = SpawnedObjectsList.ToList();
+            foreach (var sobj in spawnedObjects)
             {
                 if ((sobj.IsSceneObject != null && sobj.IsSceneObject == true) || sobj.DestroyWithScene)
                 {
                     if (CustomDestroyHandlers.ContainsKey(sobj.PrefabHash))
                     {
-                        customObjectsToDestroy.Add(sobj);
-
+                        SpawnedObjectsList.Remove(sobj);
+                        CustomDestroyHandlers[sobj.PrefabHash](sobj);
+                        OnDestroyObject(sobj.NetworkObjectId, false);
                     }
                     else
                     {
-
-                        objectsToDestroy.Add(sobj.gameObject);
+                        SpawnedObjectsList.Remove(sobj);
+                        MonoBehaviour.Destroy(sobj.gameObject);
                     }
                 }
-            }
-
-            foreach (var sobj in objectsToDestroy)
-            {
-                MonoBehaviour.Destroy(sobj.gameObject);
-            }
-
-            foreach (var sobj in customObjectsToDestroy)
-            {
-                CustomDestroyHandlers[sobj.PrefabHash](sobj);
-                OnDestroyObject(sobj.NetworkObjectId, false);
             }
         }
 
