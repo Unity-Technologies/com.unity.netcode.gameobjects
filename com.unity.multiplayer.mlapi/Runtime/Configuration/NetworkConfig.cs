@@ -6,6 +6,7 @@ using MLAPI.Transports;
 using MLAPI.Hashing;
 using MLAPI.Serialization;
 using MLAPI.Serialization.Pooled;
+using UnityEngine.Serialization;
 
 namespace MLAPI.Configuration
 {
@@ -32,6 +33,7 @@ namespace MLAPI.Configuration
         /// The transport hosts the sever uses
         /// </summary>
         [Tooltip("The NetworkTransport to use")]
+        [FormerlySerializedAs("Transport")]
         public NetworkTransport NetworkTransport = null;
 
         /// <summary>
@@ -52,6 +54,7 @@ namespace MLAPI.Configuration
         /// A list of spawnable prefabs
         /// </summary>
         [Tooltip("The prefabs that can be spawned across the network")]
+        [FormerlySerializedAs("NetworkedPrefabs")]
         public List<NetworkPrefab> NetworkPrefabs = new List<NetworkPrefab>();
 
         /// <summary>
