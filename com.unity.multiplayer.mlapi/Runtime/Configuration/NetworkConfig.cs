@@ -89,7 +89,7 @@ namespace MLAPI.Configuration
         /// <summary>
         /// The amount of times per second internal frame events will occur, e.g. send checking.
         /// </summary>
-        [Tooltip("The amount of times per second the internal event loop will run. This includes for example NetworkVariable checking and LagCompensation tracking")]
+        [Tooltip("The amount of times per second the internal event loop will run. This includes for example NetworkVariable checking.")]
         public int EventTickrate = 64;
 
         /// <summary>
@@ -109,12 +109,6 @@ namespace MLAPI.Configuration
         /// </summary>
         [Tooltip("The connection data sent along with connection requests")]
         public byte[] ConnectionData = new byte[0];
-
-        /// <summary>
-        /// The amount of seconds to keep a lag compensation position history
-        /// </summary>
-        [Tooltip("The amount of seconds to keep lag compensation position history")]
-        public int SecondsHistory = 5;
 
         /// <summary>
         /// If your logic uses the NetworkTime, this should probably be turned off. If however it's needed to maximize accuracy, this is recommended to be turned on
@@ -233,7 +227,6 @@ namespace MLAPI.Configuration
                 writer.WriteInt32Packed(config.EventTickrate);
                 writer.WriteInt32Packed(config.ClientConnectionBufferTimeout);
                 writer.WriteBool(config.ConnectionApproval);
-                writer.WriteInt32Packed(config.SecondsHistory);
                 writer.WriteInt32Packed(config.LoadSceneTimeOut);
                 writer.WriteBool(config.EnableTimeResync);
                 writer.WriteBool(config.EnsureNetworkVariableLengthSafety);
@@ -278,7 +271,6 @@ namespace MLAPI.Configuration
                 config.EventTickrate = reader.ReadInt32Packed();
                 config.ClientConnectionBufferTimeout = reader.ReadInt32Packed();
                 config.ConnectionApproval = reader.ReadBool();
-                config.SecondsHistory = reader.ReadInt32Packed();
                 config.LoadSceneTimeOut = reader.ReadInt32Packed();
                 config.EnableTimeResync = reader.ReadBool();
                 config.EnsureNetworkVariableLengthSafety = reader.ReadBool();
