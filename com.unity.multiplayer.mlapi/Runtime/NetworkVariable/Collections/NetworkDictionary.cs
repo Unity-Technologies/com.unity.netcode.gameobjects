@@ -531,6 +531,15 @@ namespace MLAPI.NetworkVariable.Collections
                 m_DirtyEvents.Add(dictionaryEvent);
             }
         }
+
+        public ushort RemoteTick
+        {
+            get
+            {
+                // todo: implement proper network tick for NetworkDictionary
+                return NetworkTickSystem.NoTick;
+            }
+        }
     }
 
     /// <summary>

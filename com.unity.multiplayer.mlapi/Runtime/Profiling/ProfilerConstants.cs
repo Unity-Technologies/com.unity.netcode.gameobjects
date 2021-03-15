@@ -2,7 +2,7 @@ namespace MLAPI.Profiling
 {
     public static class ProfilerConstants
     {
-        public const string Connection = nameof(Connection);
+        public const string Connections = nameof(Connections);
         public const string ReceiveTickRate = nameof(ReceiveTickRate);
 
         public const string NamedMessageReceived = nameof(NamedMessageReceived);

@@ -27,5 +27,10 @@ namespace MLAPI.Profiling
         {
             return m_TickData.GetData(fieldName);
         }
+
+        public bool HasData(string fieldName)
+        {
+            return m_TickData.HasData(fieldName);
+        }
     }
 }

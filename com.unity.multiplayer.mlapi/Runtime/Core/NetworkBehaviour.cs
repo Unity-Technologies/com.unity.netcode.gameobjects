@@ -621,6 +621,10 @@ namespace MLAPI
                             {
                                 writtenAny = true;
 
+                                // write the network tick at which this NetworkVariable was modified remotely
+                                // this will allow lag-compensation
+                                writer.WriteUInt16Packed(NetworkVariableFields[k].RemoteTick);
+
                                 if (NetworkManager.Singleton.NetworkConfig.EnsureNetworkVariableLengthSafety)
                                 {
                                     using (var varBuffer = PooledNetworkBuffer.Get())

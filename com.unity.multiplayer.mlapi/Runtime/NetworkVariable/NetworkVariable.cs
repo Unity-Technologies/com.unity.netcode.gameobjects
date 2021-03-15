@@ -145,14 +145,6 @@ namespace MLAPI.NetworkVariable
         /// <param name="stream">The stream to write the value to</param>
         public void WriteDelta(Stream stream)
         {
-            using (var writer = PooledNetworkWriter.Get(stream))
-            {
-                // write the network tick at which this NetworkVariable was modified remotely
-                // this will allow lag-compensation
-                // todo: this is currently only done on delta updates. Consider whether it should be done in WriteField
-                writer.WriteUInt16Packed(RemoteTick);
-            }
-
             WriteField(stream);
         }
 

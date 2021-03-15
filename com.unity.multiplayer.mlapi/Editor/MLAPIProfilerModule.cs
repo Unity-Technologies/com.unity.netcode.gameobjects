@@ -21,6 +21,7 @@ namespace MLAPI
         [Serializable]
         private class MLAPIProfilerCounter
         {
+            // Note: These fields are named this way for internal serialization
             public string m_Name;
             public string m_Category;
         }
@@ -31,6 +32,7 @@ namespace MLAPI
         [Serializable]
         private class MLAPIProfilerModuleData
         {
+            // Note: These fields are named this way for internal serialization
             public List<MLAPIProfilerCounter> m_ChartCounters = new List<MLAPIProfilerCounter>();
             public List<MLAPIProfilerCounter> m_DetailCounters = new List<MLAPIProfilerCounter>();
             public string m_Name;
@@ -39,6 +41,7 @@ namespace MLAPI
         [Serializable]
         private class MLAPIModules
         {
+            // Note: These fields are named this way for internal serialization
             public List<MLAPIProfilerModuleData> m_Modules;
         }
 
@@ -55,7 +58,7 @@ namespace MLAPI
 
         private static List<MLAPIProfilerCounter> CreateOperationsCounters() => new List<MLAPIProfilerCounter>()
         {
-            new MLAPIProfilerCounter { m_Name = ProfilerConstants.Connection, m_Category = ProfilerCategory.Network.Name },
+            new MLAPIProfilerCounter { m_Name = ProfilerConstants.Connections, m_Category = ProfilerCategory.Network.Name },
             new MLAPIProfilerCounter { m_Name = ProfilerConstants.ReceiveTickRate, m_Category = ProfilerCategory.Network.Name },
         };
 
@@ -75,10 +78,10 @@ namespace MLAPI
             var module = mlapiModules.m_Modules.Find(x => x.m_Name == moduleName);
             if (module == null)
             {
-                var newModule = new MLAPIProfilerModuleData();
-                newModule.m_Name = moduleName;
-                newModule.m_ChartCounters = counterListFactoryDelegate();
-                newModule.m_DetailCounters = counterListFactoryDelegate();
+                var newModule = new MLAPIProfilerModuleData
+                {
+                    m_Name = moduleName, m_ChartCounters = counterListFactoryDelegate(), m_DetailCounters = counterListFactoryDelegate(),
+                };
                 mlapiModules.m_Modules.Add(newModule);
                 return true;
             }
