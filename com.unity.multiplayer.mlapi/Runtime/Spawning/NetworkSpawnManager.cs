@@ -547,8 +547,8 @@ namespace MLAPI.Spawning
         internal static void ServerDestroySpawnedSceneObjects()
         {
             //This Allocation is "ok" for now because this code only executes when a new scene is switched to
-            //We need to create a new copy the HashSet of NetworkObjects so we can remove objects from the
-            //HashSet without causing a list has been modified exception to occur.
+            //We need to create a new copy the HashSet of NetworkObjects (SpawnedObjectsList) so we can remove
+            //objects from the HashSet (SpawnedObjectsList) without causing a list has been modified exception to occur.
             var spawnedObjects = SpawnedObjectsList.ToList();
             foreach (var sobj in spawnedObjects)
             {
