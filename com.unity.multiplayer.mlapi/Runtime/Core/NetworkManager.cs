@@ -831,7 +831,7 @@ namespace MLAPI
 
         private void HandleRawTransportPoll(NetworkEvent networkEvent, ulong clientId, NetworkChannel networkChannel, ArraySegment<byte> payload, float receiveTime)
         {
-            PerformanceDataManager.Increment(ProfilerConstants.NumberBytesReceived, payload.Count);
+            PerformanceDataManager.Increment(ProfilerConstants.ByteReceived, payload.Count);
             ProfilerStatManager.BytesRcvd.Record(payload.Count);
 
             switch (networkEvent)
@@ -1052,7 +1052,7 @@ namespace MLAPI
                             {
                                 m_RpcBatcher.ReceiveItems(messageStream, ReceiveCallback, RpcQueueContainer.QueueItemType.ServerRpc, clientId, receiveTime);
                                 ProfilerStatManager.RpcBatchesRcvd.Record();
-                                PerformanceDataManager.Increment(ProfilerConstants.NumberOfRPCBatchesReceived);
+                                PerformanceDataManager.Increment(ProfilerConstants.RpcBatchesReceived);
                             }
                             else
                             {
@@ -1070,7 +1070,7 @@ namespace MLAPI
                             {
                                 m_RpcBatcher.ReceiveItems(messageStream, ReceiveCallback, RpcQueueContainer.QueueItemType.ClientRpc, clientId, receiveTime);
                                 ProfilerStatManager.RpcBatchesRcvd.Record();
-                                PerformanceDataManager.Increment(ProfilerConstants.NumberOfRPCBatchesReceived);
+                                PerformanceDataManager.Increment(ProfilerConstants.RpcBatchesReceived);
                             }
                             else
                             {

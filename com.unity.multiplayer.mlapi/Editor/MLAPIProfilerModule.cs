@@ -47,13 +47,13 @@ namespace MLAPI
 
         private static List<MLAPIProfilerCounter> CreateRPCCounters() => new List<MLAPIProfilerCounter>()
         {
-            new MLAPIProfilerCounter { m_Name = ProfilerConstants.NumberOfRPCsSent, m_Category = ProfilerCategory.Network.Name },
-            new MLAPIProfilerCounter { m_Name = ProfilerConstants.NumberOfRPCsReceived, m_Category = ProfilerCategory.Network.Name },
-            new MLAPIProfilerCounter { m_Name = ProfilerConstants.NumberOfRPCBatchesSent, m_Category = ProfilerCategory.Network.Name },
-            new MLAPIProfilerCounter { m_Name = ProfilerConstants.NumberOfRPCBatchesReceived, m_Category = ProfilerCategory.Network.Name },
-            new MLAPIProfilerCounter { m_Name = ProfilerConstants.NumberOfRPCQueueProcessed, m_Category = ProfilerCategory.Network.Name },
-            new MLAPIProfilerCounter { m_Name = ProfilerConstants.NumberOfRPCsInQueueSize, m_Category = ProfilerCategory.Network.Name },
-            new MLAPIProfilerCounter { m_Name = ProfilerConstants.NumberOfRPCsOutQueueSize, m_Category = ProfilerCategory.Network.Name },
+            new MLAPIProfilerCounter { m_Name = ProfilerConstants.RpcSent, m_Category = ProfilerCategory.Network.Name },
+            new MLAPIProfilerCounter { m_Name = ProfilerConstants.RpcReceived, m_Category = ProfilerCategory.Network.Name },
+            new MLAPIProfilerCounter { m_Name = ProfilerConstants.RpcBatchesSent, m_Category = ProfilerCategory.Network.Name },
+            new MLAPIProfilerCounter { m_Name = ProfilerConstants.RpcBatchesReceived, m_Category = ProfilerCategory.Network.Name },
+            new MLAPIProfilerCounter { m_Name = ProfilerConstants.RpcQueueProcessed, m_Category = ProfilerCategory.Network.Name },
+            new MLAPIProfilerCounter { m_Name = ProfilerConstants.RpcInQueueSize, m_Category = ProfilerCategory.Network.Name },
+            new MLAPIProfilerCounter { m_Name = ProfilerConstants.RpcOutQueueSize, m_Category = ProfilerCategory.Network.Name },
         };
 
         private static List<MLAPIProfilerCounter> CreateOperationsCounters() => new List<MLAPIProfilerCounter>()
@@ -64,11 +64,11 @@ namespace MLAPI
 
         private static List<MLAPIProfilerCounter> CreateMessagesCounters() => new List<MLAPIProfilerCounter>()
         {
-            new MLAPIProfilerCounter { m_Name = ProfilerConstants.NumberOfNamedMessages, m_Category = ProfilerCategory.Network.Name },
-            new MLAPIProfilerCounter { m_Name = ProfilerConstants.NumberOfUnnamedMessages, m_Category = ProfilerCategory.Network.Name },
-            new MLAPIProfilerCounter { m_Name = ProfilerConstants.NumberBytesSent, m_Category = ProfilerCategory.Network.Name },
-            new MLAPIProfilerCounter { m_Name = ProfilerConstants.NumberBytesReceived, m_Category = ProfilerCategory.Network.Name },
-            new MLAPIProfilerCounter { m_Name = ProfilerConstants.NumberNetworkVarsReceived, m_Category = ProfilerCategory.Network.Name },
+            new MLAPIProfilerCounter { m_Name = ProfilerConstants.NamedMessageReceived, m_Category = ProfilerCategory.Network.Name },
+            new MLAPIProfilerCounter { m_Name = ProfilerConstants.UnnamedMessageReceived, m_Category = ProfilerCategory.Network.Name },
+            new MLAPIProfilerCounter { m_Name = ProfilerConstants.ByteSent, m_Category = ProfilerCategory.Network.Name },
+            new MLAPIProfilerCounter { m_Name = ProfilerConstants.ByteReceived, m_Category = ProfilerCategory.Network.Name },
+            new MLAPIProfilerCounter { m_Name = ProfilerConstants.NetworkVarReceived, m_Category = ProfilerCategory.Network.Name },
         };
 
         private delegate List<MLAPIProfilerCounter> CounterListFactoryDelegate();
