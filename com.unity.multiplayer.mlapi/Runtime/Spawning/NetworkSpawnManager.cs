@@ -543,20 +543,34 @@ namespace MLAPI.Spawning
 
         internal static void ServerDestroySpawnedSceneObjects()
         {
+            List<GameObject> ObjectsToDestroy = new List<GameObject>();
+            List<NetworkObject> CustomObjectsToDestroy = new List<NetworkObject>();
             foreach (var sobj in SpawnedObjectsList)
             {
                 if ((sobj.IsSceneObject != null && sobj.IsSceneObject == true) || sobj.DestroyWithScene)
                 {
                     if (CustomDestroyHandlers.ContainsKey(sobj.PrefabHash))
                     {
-                        CustomDestroyHandlers[sobj.PrefabHash](sobj);
-                        OnDestroyObject(sobj.NetworkObjectId, false);
+                        CustomObjectsToDestroy.Add(sobj);
+
                     }
                     else
                     {
-                        MonoBehaviour.Destroy(sobj.gameObject);
+
+                        ObjectsToDestroy.Add(sobj.gameObject);
                     }
                 }
+            }
+
+            foreach(var sobj in ObjectsToDestroy)
+            {
+                MonoBehaviour.Destroy(sobj.gameObject);
+            }
+
+            foreach(var sobj in CustomObjectsToDestroy)
+            {
+                CustomDestroyHandlers[sobj.PrefabHash](sobj);
+                OnDestroyObject(sobj.NetworkObjectId, false);
             }
         }
 
