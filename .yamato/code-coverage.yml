@@ -16,7 +16,7 @@ code_coverage_win:
   artifacts:
     logs:
       paths:
-        - "code_coverage/{{ editor }}/{{ project }}**/*"
+        - "code_coverage/{{ editor }}/{{ project }}/**/*"
   dependencies:
     - .yamato/project-pack.yml#pack_{{ project.name }}
 {% endfor -%}
