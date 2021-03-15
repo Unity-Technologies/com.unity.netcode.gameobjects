@@ -541,33 +541,40 @@ namespace MLAPI.Spawning
             }
         }
 
+        /// <summary>
+        /// Gets called only by NetworkSceneManager.SwitchScene
+        /// </summary>
         internal static void ServerDestroySpawnedSceneObjects()
         {
-            List<GameObject> ObjectsToDestroy = new List<GameObject>();
-            List<NetworkObject> CustomObjectsToDestroy = new List<NetworkObject>();
+            //This Allocation is "ok" for now because this code only executes when a new scene is switched to
+            //We need to keep track of GameObjects and NetworkObjects to be destroyed in the current scene
+            //but only destroy them once outside of the enumerative foreach loop
+            var objectsToDestroy = new List<GameObject>();
+            var customObjectsToDestroy = new List<NetworkObject>();
+
             foreach (var sobj in SpawnedObjectsList)
             {
                 if ((sobj.IsSceneObject != null && sobj.IsSceneObject == true) || sobj.DestroyWithScene)
                 {
                     if (CustomDestroyHandlers.ContainsKey(sobj.PrefabHash))
                     {
-                        CustomObjectsToDestroy.Add(sobj);
+                        customObjectsToDestroy.Add(sobj);
 
                     }
                     else
                     {
 
-                        ObjectsToDestroy.Add(sobj.gameObject);
+                        objectsToDestroy.Add(sobj.gameObject);
                     }
                 }
             }
 
-            foreach(var sobj in ObjectsToDestroy)
+            foreach (var sobj in objectsToDestroy)
             {
                 MonoBehaviour.Destroy(sobj.gameObject);
             }
 
-            foreach(var sobj in CustomObjectsToDestroy)
+            foreach (var sobj in customObjectsToDestroy)
             {
                 CustomDestroyHandlers[sobj.PrefabHash](sobj);
                 OnDestroyObject(sobj.NetworkObjectId, false);
