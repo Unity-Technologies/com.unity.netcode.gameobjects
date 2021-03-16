@@ -60,8 +60,8 @@ namespace MLAPI.RuntimeTests
             if (NetworkManager.Singleton == null)
             {
                 s_NetworkManagerObject = new GameObject(nameof(NetworkManager));
-                var networkManagerComponen = s_NetworkManagerObject.AddComponent<NetworkManager>();
-                if (networkManagerComponen == null)
+                var networkManagerComponent = s_NetworkManagerObject.AddComponent<NetworkManager>();
+                if (networkManagerComponent == null)
                 {
                     return false;
                 }
@@ -70,7 +70,7 @@ namespace MLAPI.RuntimeTests
 
                 var unetTransport = s_NetworkManagerObject.AddComponent<UNetTransport>();
 
-                networkManagerComponen.NetworkConfig = new Configuration.NetworkConfig
+                networkManagerComponent.NetworkConfig = new Configuration.NetworkConfig
                 {
                     CreatePlayerPrefab = false,
                     AllowRuntimeSceneChanges = true,
@@ -82,7 +82,7 @@ namespace MLAPI.RuntimeTests
                 unetTransport.MessageBufferSize = 65535;
                 unetTransport.MaxConnections = 100;
                 unetTransport.MessageSendMode = UNetTransport.SendMode.Immediately;
-                networkManagerComponen.NetworkConfig.NetworkTransport = unetTransport;
+                networkManagerComponent.NetworkConfig.NetworkTransport = unetTransport;
 
                 var currentActiveScene = SceneManager.GetActiveScene();
 
