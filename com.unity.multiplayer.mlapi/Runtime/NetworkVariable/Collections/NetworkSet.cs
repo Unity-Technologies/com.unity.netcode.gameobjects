@@ -496,6 +496,15 @@ namespace MLAPI.NetworkVariable.Collections
 
         /// <inheritdoc />
         public bool IsReadOnly => m_Set.IsReadOnly;
+
+        public ushort RemoteTick
+        {
+            get
+            {
+                // todo: implement proper network tick for NetworkSet
+                return NetworkTickSystem.NoTick;
+            }
+        }
     }
 
     /// <summary>

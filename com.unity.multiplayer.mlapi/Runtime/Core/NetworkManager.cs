@@ -208,10 +208,19 @@ namespace MLAPI
                 }
             }
 
-            if (!NetworkConfig.RegisteredScenes.Contains(SceneManager.GetActiveScene().name))
+            var activeScene = SceneManager.GetActiveScene();
+            var activeSceneName = activeScene.name;
+            if (!NetworkConfig.RegisteredScenes.Contains(activeSceneName))
             {
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Active scene is not registered as a network scene. The MLAPI has added it");
-                NetworkConfig.RegisteredScenes.Add(SceneManager.GetActiveScene().name);
+                NetworkConfig.RegisteredScenes.Add(activeSceneName);
+#if UNITY_EDITOR
+                UnityEditor.EditorApplication.delayCall += () =>
+                {
+                    UnityEditor.EditorUtility.SetDirty(this);
+                    UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(activeScene);
+                };
+#endif
             }
 
             for (int i = 0; i < NetworkConfig.NetworkPrefabs.Count; i++)
@@ -305,7 +314,7 @@ namespace MLAPI
             NetworkSceneManager.SceneNameToIndex.Clear();
             NetworkSceneManager.SceneSwitchProgresses.Clear();
 
-            if (ReferenceEquals(NetworkConfig.NetworkTransport, null))
+            if (NetworkConfig.NetworkTransport == null)
             {
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogError("No transport has been selected!");
                 return;
@@ -318,7 +327,7 @@ namespace MLAPI
                 NetworkTickSystem = null;
             }
 
-            NetworkTickSystem = new NetworkTickSystem();
+            NetworkTickSystem = new NetworkTickSystem(NetworkConfig.NetworkTickIntervalSec);
 
             //This should never happen, but in the event that it does there should be (at a minimum) a unity error logged.
             if (RpcQueueContainer != null)
@@ -352,14 +361,14 @@ namespace MLAPI
 
             for (int i = 0; i < NetworkConfig.NetworkPrefabs.Count; i++)
             {
-                if (NetworkConfig.NetworkPrefabs[i] == null || ReferenceEquals(NetworkConfig.NetworkPrefabs[i].Prefab, null))
+                if (NetworkConfig.NetworkPrefabs[i] == null || NetworkConfig.NetworkPrefabs[i].Prefab == null)
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
                     {
                         NetworkLog.LogError($"{nameof(NetworkPrefab)} cannot be null ({nameof(NetworkPrefab)} at index: {i})");
                     }
                 }
-                else if (ReferenceEquals(NetworkConfig.NetworkPrefabs[i].Prefab.GetComponent<NetworkObject>(), null))
+                else if (NetworkConfig.NetworkPrefabs[i].Prefab.GetComponent<NetworkObject>() == null)
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
                     {
@@ -578,7 +587,7 @@ namespace MLAPI
 
         private void OnDestroy()
         {
-            if (!ReferenceEquals(Singleton, null) && Singleton == this)
+            if (Singleton != null && Singleton == this)
             {
                 Shutdown();
                 Singleton = null;
@@ -605,7 +614,7 @@ namespace MLAPI
                 NetworkTickSystem = null;
             }
 
-#if !UNITY_2020_2_OR_LATER
+#if !UNITY_2020_2_OR_NEWER
             NetworkProfiler.Stop();
 #endif
             IsListening = false;
@@ -653,7 +662,7 @@ namespace MLAPI
 #endif
                     var isLoopBack = false;
 
-#if !UNITY_2020_2_OR_LATER
+#if !UNITY_2020_2_OR_NEWER
                     NetworkProfiler.StartTick(TickType.Receive);
 #endif
 
@@ -674,7 +683,7 @@ namespace MLAPI
 
                     m_LastReceiveTickTime = NetworkTime;
 
-#if !UNITY_2020_2_OR_LATER
+#if !UNITY_2020_2_OR_NEWER
                     NetworkProfiler.EndTick();
 #endif
 
@@ -694,7 +703,7 @@ namespace MLAPI
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                     s_EventTick.Begin();
 #endif
-#if UNITY_EDITOR && !UNITY_2020_2_OR_LATER
+#if UNITY_EDITOR && !UNITY_2020_2_OR_NEWER
                     NetworkProfiler.StartTick(TickType.Event);
 #endif
 
@@ -713,7 +722,7 @@ namespace MLAPI
                     {
                         m_LastEventTickTime = NetworkTime;
                     }
-#if UNITY_EDITOR && !UNITY_2020_2_OR_LATER
+#if UNITY_EDITOR && !UNITY_2020_2_OR_NEWER
                     NetworkProfiler.EndTick();
 #endif
 
@@ -724,12 +733,12 @@ namespace MLAPI
 
                 if (IsServer && NetworkConfig.EnableTimeResync && NetworkTime - m_LastTimeSyncTime >= NetworkConfig.TimeResyncInterval)
                 {
-#if UNITY_EDITOR && !UNITY_2020_2_OR_LATER
+#if UNITY_EDITOR && !UNITY_2020_2_OR_NEWER
                     NetworkProfiler.StartTick(TickType.Event);
 #endif
                     SyncTime();
                     m_LastTimeSyncTime = NetworkTime;
-#if UNITY_EDITOR && !UNITY_2020_2_OR_LATER
+#if UNITY_EDITOR && !UNITY_2020_2_OR_NEWER
                     NetworkProfiler.EndTick();
 #endif
                 }
@@ -808,7 +817,7 @@ namespace MLAPI
 
         private void HandleRawTransportPoll(NetworkEvent networkEvent, ulong clientId, NetworkChannel networkChannel, ArraySegment<byte> payload, float receiveTime)
         {
-            PerformanceDataManager.Increment(ProfilerConstants.NumberBytesReceived, payload.Count);
+            PerformanceDataManager.Increment(ProfilerConstants.ByteReceived, payload.Count);
             ProfilerStatManager.BytesRcvd.Record(payload.Count);
 
             switch (networkEvent)
@@ -817,7 +826,7 @@ namespace MLAPI
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                     s_TransportConnect.Begin();
 #endif
-#if !UNITY_2020_2_OR_LATER
+#if !UNITY_2020_2_OR_NEWER
                     NetworkProfiler.StartEvent(TickType.Receive, (uint)payload.Count, networkChannel, "TRANSPORT_CONNECT");
 #endif
                     if (IsServer)
@@ -846,7 +855,7 @@ namespace MLAPI
                         StartCoroutine(ApprovalTimeout(clientId));
                     }
 
-#if !UNITY_2020_2_OR_LATER
+#if !UNITY_2020_2_OR_NEWER
                     NetworkProfiler.EndEvent();
 #endif
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
@@ -867,7 +876,7 @@ namespace MLAPI
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                     s_TransportDisconnect.Begin();
 #endif
-#if !UNITY_2020_2_OR_LATER
+#if !UNITY_2020_2_OR_NEWER
                     NetworkProfiler.StartEvent(TickType.Receive, 0, NetworkChannel.Internal, "TRANSPORT_DISCONNECT");
 #endif
 
@@ -885,7 +894,7 @@ namespace MLAPI
 
                     OnClientDisconnectCallback?.Invoke(clientId);
 
-#if !UNITY_2020_2_OR_LATER
+#if !UNITY_2020_2_OR_NEWER
                     NetworkProfiler.EndEvent();
 #endif
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
@@ -936,7 +945,7 @@ namespace MLAPI
 
                 uint headerByteSize = (uint)Arithmetic.VarIntSize(messageType);
 
-#if !UNITY_2020_2_OR_LATER
+#if !UNITY_2020_2_OR_NEWER
                 NetworkProfiler.StartEvent(TickType.Receive, (uint)(data.Count - headerByteSize), networkChannel, messageType);
 #endif
 
@@ -1029,7 +1038,7 @@ namespace MLAPI
                             {
                                 m_RpcBatcher.ReceiveItems(messageStream, ReceiveCallback, RpcQueueContainer.QueueItemType.ServerRpc, clientId, receiveTime);
                                 ProfilerStatManager.RpcBatchesRcvd.Record();
-                                PerformanceDataManager.Increment(ProfilerConstants.NumberOfRPCBatchesReceived);
+                                PerformanceDataManager.Increment(ProfilerConstants.RpcBatchesReceived);
                             }
                             else
                             {
@@ -1047,7 +1056,7 @@ namespace MLAPI
                             {
                                 m_RpcBatcher.ReceiveItems(messageStream, ReceiveCallback, RpcQueueContainer.QueueItemType.ClientRpc, clientId, receiveTime);
                                 ProfilerStatManager.RpcBatchesRcvd.Record();
-                                PerformanceDataManager.Increment(ProfilerConstants.NumberOfRPCBatchesReceived);
+                                PerformanceDataManager.Increment(ProfilerConstants.RpcBatchesReceived);
                             }
                             else
                             {
@@ -1068,7 +1077,7 @@ namespace MLAPI
 
                 #endregion
 
-#if !UNITY_2020_2_OR_LATER
+#if !UNITY_2020_2_OR_NEWER
                 NetworkProfiler.EndEvent();
 #endif
             }
@@ -1104,7 +1113,7 @@ namespace MLAPI
                 var networkObject = NetworkSpawnManager.SpawnedObjects[networkObjectId];
 
                 var networkBehaviour = networkObject.GetNetworkBehaviourAtOrderIndex(networkBehaviourId);
-                if (ReferenceEquals(networkBehaviour, null)) return;
+                if (networkBehaviour == null) return;
 
                 var rpcParams = new __RpcParams();
                 switch (queueItem.QueueItemType)
@@ -1184,7 +1193,7 @@ namespace MLAPI
                 if (ConnectedClientsList[i].ClientId == clientId)
                 {
                     ConnectedClientsList.RemoveAt(i);
-                    PerformanceDataManager.Increment(ProfilerConstants.NumberOfConnections, -1);
+                    PerformanceDataManager.Increment(ProfilerConstants.Connections, -1);
                     ProfilerStatManager.Connections.Record(-1);
                 }
             }
@@ -1249,7 +1258,7 @@ namespace MLAPI
                     if (ConnectedClientsList[i].ClientId == clientId)
                     {
                         ConnectedClientsList.RemoveAt(i);
-                        PerformanceDataManager.Increment(ProfilerConstants.NumberOfConnections, -1);
+                        PerformanceDataManager.Increment(ProfilerConstants.Connections, -1);
                         ProfilerStatManager.Connections.Record(-1);
                         break;
                     }
@@ -1293,7 +1302,7 @@ namespace MLAPI
                 ConnectedClients.Add(clientId, client);
                 ConnectedClientsList.Add(client);
 
-                PerformanceDataManager.Increment(ProfilerConstants.NumberOfConnections);
+                PerformanceDataManager.Increment(ProfilerConstants.Connections);
                 ProfilerStatManager.Connections.Record();
 
                 // This packet is unreliable, but if it gets through it should provide a much better sync than the potentially huge approval message.
