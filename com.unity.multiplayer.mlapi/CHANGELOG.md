@@ -78,7 +78,7 @@ With a new release of MLAPI in Unity, some features have been removed:
 
     * Removed `SecuritySendFlags` from all APIs.
     * Removed encryption, cryptography, and certificate configurations from APIs including `NetworkManager` and `NetworkConfig`.
-    * Removed "hail handshake", including `NetworkManager` implementation and `MLAPIConstants` entries.
+    * Removed "hail handshake", including `NetworkManager` implementation and `NetworkConstants` entries.
     * Modified `RpcQueue` and `RpcBatcher` internals to remove encryption and authentication from reading and writing.
 
 * Removed the previous MLAPI Profiler editor window from Unity versions 2020.2 and later.
