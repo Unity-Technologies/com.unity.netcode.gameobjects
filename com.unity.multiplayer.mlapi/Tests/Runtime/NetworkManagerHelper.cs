@@ -28,7 +28,7 @@ namespace MLAPI.RuntimeTests
 
         internal static Dictionary<Guid,NetworkObject> s_InstantiatedNetworkObjects = new Dictionary<Guid, NetworkObject>();
 
-        internal static NetworkManagerOperatingMode m_CurrentNetworkManagerMode;
+        internal static NetworkManagerOperatingMode s_CurrentNetworkManagerMode;
 
         /// <summary>
         /// This provides the ability to start NetworkManager in various modes
