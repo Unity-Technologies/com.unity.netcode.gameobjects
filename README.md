@@ -18,6 +18,11 @@
 
 The Unity MLAPI (Mid level API) is a framework that simplifies building networked games in Unity. It offers **low level** access to core networking while at the same time providing **high level** abstractions. The MLAPI aims to remove the repetitive tasks and reduces the network code dramatically, no matter how many of the **modular** features you use.
 
+### Hold on, heard the news?
+On March 16th, during the Unity GDC keynote, we announced that we'd be releasing a new experimental netcode package - and live documentation site - alongside the new TechStream release. Please give us a few days more to polish the details ;)
+
+In the meantime, don't forget to save the date for [BossRoom](https://unity.com/BossRoom)
+
 ### Getting Started
 To get started, check the [Wiki](https://mlapi.network/wiki/).
 This is also where most documentation lies. Follow the [quickstart](https://mlapi.network/wiki/installation/), join our [Discord](http://discord.mlapi.network/) and get started today!
