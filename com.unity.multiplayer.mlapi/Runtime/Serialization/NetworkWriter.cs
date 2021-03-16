@@ -193,7 +193,7 @@ namespace MLAPI.Serialization
             else if (value is GameObject)
             {
                 var networkObject = ((GameObject)value).GetComponent<NetworkObject>();
-                if (ReferenceEquals(networkObject, null))
+                if (networkObject == null)
                 {
                     throw new ArgumentException($"{nameof(NetworkWriter)} cannot write {nameof(GameObject)} types that does not has a {nameof(NetworkObject)} component attached. {nameof(GameObject)}: {((GameObject)value).name}");
                 }
