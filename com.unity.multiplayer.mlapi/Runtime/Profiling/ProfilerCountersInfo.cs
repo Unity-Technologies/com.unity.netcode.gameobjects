@@ -34,8 +34,12 @@ namespace MLAPI.Profiling
             new ProfilerCounterValue<int>(ProfilerCategory.Network, ProfilerConstants.ByteReceived,
                 ProfilerMarkerDataUnit.Count, ProfilerCounterOptions.FlushOnEndOfFrame | ProfilerCounterOptions.ResetToZeroOnFlush);
 
-        private static readonly ProfilerCounterValue<int> k_NetworkVarsCounterValue =
-            new ProfilerCounterValue<int>(ProfilerCategory.Network, ProfilerConstants.NetworkVarReceived,
+        private static readonly ProfilerCounterValue<int> k_NetworkVarDeltasCounterValue =
+            new ProfilerCounterValue<int>(ProfilerCategory.Network, ProfilerConstants.NetworkVarDeltas,
+                ProfilerMarkerDataUnit.Count, ProfilerCounterOptions.FlushOnEndOfFrame | ProfilerCounterOptions.ResetToZeroOnFlush);
+
+        private static readonly ProfilerCounterValue<int> k_NetworkVarUpdatesCounterValue =
+            new ProfilerCounterValue<int>(ProfilerCategory.Network, ProfilerConstants.NetworkVarUpdates,
                 ProfilerMarkerDataUnit.Count, ProfilerCounterOptions.FlushOnEndOfFrame | ProfilerCounterOptions.ResetToZeroOnFlush);
 
         // RPCs
@@ -83,7 +87,8 @@ namespace MLAPI.Profiling
             k_UnnamedMessagesCounterValue.Value = 0;
             k_BytesSentCounterValue.Value = 0;
             k_BytesReceivedCounterValue.Value = 0;
-            k_NetworkVarsCounterValue.Value = 0;
+            k_NetworkVarDeltasCounterValue.Value = 0;
+            k_NetworkVarUpdatesCounterValue.Value = 0;
 
             k_RPCsSentCounterValue.Value = 0;
             k_RPCsReceivedCounterValue.Value = 0;
@@ -105,7 +110,8 @@ namespace MLAPI.Profiling
             UpdateIntCounter(tickData, k_UnnamedMessagesCounterValue, ProfilerConstants.UnnamedMessageReceived);
             UpdateIntCounter(tickData, k_BytesSentCounterValue, ProfilerConstants.ByteSent);
             UpdateIntCounter(tickData, k_BytesReceivedCounterValue, ProfilerConstants.ByteReceived);
-            UpdateIntCounter(tickData, k_NetworkVarsCounterValue, ProfilerConstants.NetworkVarReceived);
+            UpdateIntCounter(tickData, k_NetworkVarDeltasCounterValue, ProfilerConstants.NetworkVarDeltas);
+            UpdateIntCounter(tickData, k_NetworkVarUpdatesCounterValue, ProfilerConstants.NetworkVarUpdates);
 
             // RPCs
             UpdateIntCounter(tickData, k_RPCsSentCounterValue, ProfilerConstants.RpcSent);
