@@ -35,10 +35,10 @@ namespace UnityEditor
             if (EditorGUI.EndChangeCheck()) m_Target.ResetTrackedParams();
 
             var animator = m_Target.Animator;
-            if (ReferenceEquals(animator, null)) return;
+            if (animator == null) return;
 
             var animatorController = animator.runtimeAnimatorController as AnimatorController;
-            if (ReferenceEquals(animatorController, null)) return;
+            if (animatorController == null) return;
 
             EditorGUI.indentLevel += 1;
             var showWarning = false;

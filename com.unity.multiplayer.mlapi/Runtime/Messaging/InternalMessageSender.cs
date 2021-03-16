@@ -22,9 +22,9 @@ namespace MLAPI.Messaging
 
                 NetworkManager.Singleton.NetworkConfig.NetworkTransport.Send(clientId, new ArraySegment<byte>(buffer.GetBuffer(), 0, (int)buffer.Length), networkChannel);
                 ProfilerStatManager.BytesSent.Record((int)buffer.Length);
-                PerformanceDataManager.Increment(ProfilerConstants.NumberBytesSent, (int)buffer.Length);
+                PerformanceDataManager.Increment(ProfilerConstants.ByteSent, (int)buffer.Length);
 
-#if !UNITY_2020_2_OR_LATER
+#if !UNITY_2020_2_OR_NEWER
                 NetworkProfiler.EndEvent();
 #endif
             }
@@ -36,7 +36,7 @@ namespace MLAPI.Messaging
 
             using (var buffer = MessagePacker.WrapMessage(messageType, messageBuffer))
             {
-#if !UNITY_2020_2_OR_LATER
+#if !UNITY_2020_2_OR_NEWER
                 NetworkProfiler.StartEvent(TickType.Send, (uint)buffer.Length, networkChannel, NetworkConstants.MESSAGE_NAMES[messageType]);
 #endif
 
@@ -46,10 +46,10 @@ namespace MLAPI.Messaging
 
                     NetworkManager.Singleton.NetworkConfig.NetworkTransport.Send(NetworkManager.Singleton.ConnectedClientsList[i].ClientId, new ArraySegment<byte>(buffer.GetBuffer(), 0, (int)buffer.Length), networkChannel);
                     ProfilerStatManager.BytesSent.Record((int)buffer.Length);
-                    PerformanceDataManager.Increment(ProfilerConstants.NumberBytesSent, (int)buffer.Length);
+                    PerformanceDataManager.Increment(ProfilerConstants.ByteSent, (int)buffer.Length);
                 }
 
-#if !UNITY_2020_2_OR_LATER
+#if !UNITY_2020_2_OR_NEWER
                 NetworkProfiler.EndEvent();
 #endif
             }
@@ -67,7 +67,7 @@ namespace MLAPI.Messaging
 
             using (var buffer = MessagePacker.WrapMessage(messageType, messageBuffer))
             {
-#if !UNITY_2020_2_OR_LATER
+#if !UNITY_2020_2_OR_NEWER
                 NetworkProfiler.StartEvent(TickType.Send, (uint)buffer.Length, networkChannel, NetworkConstants.MESSAGE_NAMES[messageType]);
 #endif
 
@@ -77,10 +77,10 @@ namespace MLAPI.Messaging
 
                     NetworkManager.Singleton.NetworkConfig.NetworkTransport.Send(clientIds[i], new ArraySegment<byte>(buffer.GetBuffer(), 0, (int)buffer.Length), networkChannel);
                     ProfilerStatManager.BytesSent.Record((int)buffer.Length);
-                    PerformanceDataManager.Increment(ProfilerConstants.NumberBytesSent, (int)buffer.Length);
+                    PerformanceDataManager.Increment(ProfilerConstants.ByteSent, (int)buffer.Length);
                 }
 
-#if !UNITY_2020_2_OR_LATER
+#if !UNITY_2020_2_OR_NEWER
                 NetworkProfiler.EndEvent();
 #endif
             }
@@ -92,7 +92,7 @@ namespace MLAPI.Messaging
 
             using (var buffer = MessagePacker.WrapMessage(messageType, messageBuffer))
             {
-#if !UNITY_2020_2_OR_LATER
+#if !UNITY_2020_2_OR_NEWER
                 NetworkProfiler.StartEvent(TickType.Send, (uint)buffer.Length, networkChannel, NetworkConstants.MESSAGE_NAMES[messageType]);
 #endif
 
@@ -106,10 +106,10 @@ namespace MLAPI.Messaging
 
                     NetworkManager.Singleton.NetworkConfig.NetworkTransport.Send(NetworkManager.Singleton.ConnectedClientsList[i].ClientId, new ArraySegment<byte>(buffer.GetBuffer(), 0, (int)buffer.Length), networkChannel);
                     ProfilerStatManager.BytesSent.Record((int)buffer.Length);
-                    PerformanceDataManager.Increment(ProfilerConstants.NumberBytesSent, (int)buffer.Length);
+                    PerformanceDataManager.Increment(ProfilerConstants.ByteSent, (int)buffer.Length);
                 }
 
-#if !UNITY_2020_2_OR_LATER
+#if !UNITY_2020_2_OR_NEWER
                 NetworkProfiler.EndEvent();
 #endif
             }

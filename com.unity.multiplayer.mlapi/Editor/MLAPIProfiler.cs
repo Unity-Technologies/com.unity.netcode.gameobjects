@@ -8,7 +8,7 @@ namespace UnityEditor
 {
     public class MLAPIProfiler : EditorWindow
     {
-#if !UNITY_2020_2_OR_LATER
+#if !UNITY_2020_2_OR_NEWER
         [MenuItem("Window/MLAPI Profiler")]
         public static void ShowWindow()
         {
