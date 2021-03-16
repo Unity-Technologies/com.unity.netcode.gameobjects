@@ -134,7 +134,7 @@ namespace MLAPI.Messaging
                             break;
                         }
 
-                        PerformanceDataManager.Increment(ProfilerConstants.NumberOfRPCsSent, queueItem.ClientNetworkIds.Length);
+                        PerformanceDataManager.Increment(ProfilerConstants.RpcSent, queueItem.ClientNetworkIds.Length);
                         ProfilerStatManager.RpcsSent.Record(queueItem.ClientNetworkIds.Length);
                         break;
                     }
@@ -152,7 +152,7 @@ namespace MLAPI.Messaging
                             break;
                         }
 
-                        PerformanceDataManager.Increment(ProfilerConstants.NumberOfRPCsSent, queueItem.ClientNetworkIds.Length);
+                        PerformanceDataManager.Increment(ProfilerConstants.RpcSent, queueItem.ClientNetworkIds.Length);
                         ProfilerStatManager.RpcsSent.Record(queueItem.ClientNetworkIds.Length);
                         break;
                     }

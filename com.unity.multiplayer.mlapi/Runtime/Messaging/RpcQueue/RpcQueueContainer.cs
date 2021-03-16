@@ -508,7 +508,7 @@ namespace MLAPI.Messaging
                 }
                 else
                 {
-                    UnityEngine.Debug.LogWarning("MSGSize of < zero detected!!  Setting message size to zero!");
+                    UnityEngine.Debug.LogWarning($"{nameof(messageSize)} < zero detected! Setting message size to zero!");
                     //Write the actual size of the RPC message
                     loopBackHistoryFrame.QueueWriter.WriteInt64(0);
                 }
