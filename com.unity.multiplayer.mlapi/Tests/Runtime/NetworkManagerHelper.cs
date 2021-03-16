@@ -52,7 +52,7 @@ namespace MLAPI.RuntimeTests
         /// <returns>true if it was instantiated or is already instantiate otherwise false means it failed to instantiate</returns>
         public static bool StartNetworkManager(NetworkManagerOperatingMode managerMode = NetworkManagerOperatingMode.Host)
         {
-            if(s_CurrentNetworkManagerMode != managerMode)
+            if (s_CurrentNetworkManagerMode != managerMode)
             {
                 StopNetworkManagerMode();
             }
@@ -60,8 +60,8 @@ namespace MLAPI.RuntimeTests
             if (NetworkManager.Singleton == null)
             {
                 s_NetworkManagerObject = new GameObject(nameof(NetworkManager));
-                var NetworkManagerComponent = s_NetworkManagerObject.AddComponent<NetworkManager>();
-                if (NetworkManagerComponent == null)
+                var networkManagerComponen = s_NetworkManagerObject.AddComponent<NetworkManager>();
+                if (networkManagerComponen == null)
                 {
                     return false;
                 }
@@ -70,7 +70,7 @@ namespace MLAPI.RuntimeTests
 
                 var unetTransport = s_NetworkManagerObject.AddComponent<UNetTransport>();
 
-                NetworkManagerComponent.NetworkConfig = new Configuration.NetworkConfig
+                networkManagerComponen.NetworkConfig = new Configuration.NetworkConfig
                 {
                     CreatePlayerPrefab = false,
                     AllowRuntimeSceneChanges = true,
@@ -82,7 +82,7 @@ namespace MLAPI.RuntimeTests
                 unetTransport.MessageBufferSize = 65535;
                 unetTransport.MaxConnections = 100;
                 unetTransport.MessageSendMode = UNetTransport.SendMode.Immediately;
-                NetworkManagerComponent.NetworkConfig.NetworkTransport = unetTransport;
+                networkManagerComponen.NetworkConfig.NetworkTransport = unetTransport;
 
                 var currentActiveScene = SceneManager.GetActiveScene();
 
