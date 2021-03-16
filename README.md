@@ -11,9 +11,8 @@
 
 
 [![Licence](https://img.shields.io/github/license/midlevel/mlapi.svg?color=informational)](https://github.com/MidLevel/MLAPI/blob/master/LICENSE)
-[![Website](https://img.shields.io/badge/docs-website-informational.svg)](https://mlapi.network/)
-[![Wiki](https://img.shields.io/badge/docs-wiki-informational.svg)](https://mlapi.network/wiki/home/)
-[![Api](https://img.shields.io/badge/docs-api-informational.svg)](https://mlapi.network/api/home/)
+[![Website](https://img.shields.io/badge/docs-website-informational.svg)](https://docs-multiplayer.unity3d.com/)
+[![Api](https://img.shields.io/badge/docs-api-informational.svg)](https://docs-multiplayer.unity3d.com/docs/mlapi-api/introduction)
 
 
 The Unity MLAPI (Mid level API) is a framework that simplifies building networked games in Unity. It offers **low level** access to core networking while at the same time providing **high level** abstractions. The MLAPI aims to remove the repetitive tasks and reduces the network code dramatically, no matter how many of the **modular** features you use.
@@ -24,8 +23,7 @@ On March 16th, during the Unity GDC keynote, we announced that we'd be releasing
 In the meantime, don't forget to save the date for [BossRoom](https://unity.com/boss-room)
 
 ### Getting Started
-To get started, check the [Wiki](https://mlapi.network/wiki/).
-This is also where most documentation lies. Follow the [quickstart](https://mlapi.network/wiki/installation/), join our [Discord](http://discord.mlapi.network/) and get started today!
+To get started, check the [Multiplayer Docs Site](https://docs-multiplayer.unity3d.com/).
 
 ### Community and Feedback
 For general questions, networking advice or discussions about MLAPI, please join our [Discord Community](https://discord.gg/FM8SE9E) or create a post in the [Unity Multiplayer Forum](https://forum.unity.com/forums/multiplayer.26/).
