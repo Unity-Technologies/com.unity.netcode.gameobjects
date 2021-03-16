@@ -272,12 +272,12 @@ namespace MLAPI
         {
             get
             {
-                if (ReferenceEquals(m_NetworkObject, null))
+                if (m_NetworkObject == null)
                 {
                     m_NetworkObject = GetComponentInParent<NetworkObject>();
                 }
 
-                if (ReferenceEquals(m_NetworkObject, null))
+                if (m_NetworkObject == null)
                 {
                     throw new NullReferenceException($"Could not get {nameof(NetworkObject)} for the {nameof(NetworkBehaviour)}. Are you missing a {nameof(NetworkObject)} component?");
                 }
@@ -293,12 +293,12 @@ namespace MLAPI
         {
             get
             {
-                if (ReferenceEquals(m_NetworkObject, null))
+                if (m_NetworkObject == null)
                 {
                     m_NetworkObject = GetComponentInParent<NetworkObject>();
                 }
 
-                return !ReferenceEquals(m_NetworkObject, null);
+                return m_NetworkObject != null;
             }
         }
 
@@ -621,6 +621,10 @@ namespace MLAPI
                             {
                                 writtenAny = true;
 
+                                // write the network tick at which this NetworkVariable was modified remotely
+                                // this will allow lag-compensation
+                                writer.WriteUInt16Packed(NetworkVariableFields[k].RemoteTick);
+
                                 if (NetworkManager.Singleton.NetworkConfig.EnsureNetworkVariableLengthSafety)
                                 {
                                     using (var varBuffer = PooledNetworkBuffer.Get())
@@ -725,7 +729,7 @@ namespace MLAPI
                     long readStartPos = stream.Position;
 
                     networkVariableList[i].ReadDelta(stream, IsServer, localTick, remoteTick);
-                    PerformanceDataManager.Increment(ProfilerConstants.NumberNetworkVarsReceived);
+                    PerformanceDataManager.Increment(ProfilerConstants.NetworkVarReceived);
 
                     ProfilerStatManager.NetworkVarsRcvd.Record();
 
@@ -806,7 +810,7 @@ namespace MLAPI
                     long readStartPos = stream.Position;
 
                     networkVariableList[i].ReadField(stream, NetworkTickSystem.NoTick, NetworkTickSystem.NoTick);
-                    PerformanceDataManager.Increment(ProfilerConstants.NumberNetworkVarsReceived);
+                    PerformanceDataManager.Increment(ProfilerConstants.NetworkVarReceived);
 
                     ProfilerStatManager.NetworkVarsRcvd.Record();
 
