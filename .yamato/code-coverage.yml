@@ -1,6 +1,5 @@
 {% metadata_file .yamato/project.metafile %}
 ---
-{% for editor in test_editors -%}
 {% for project in projects -%}
 code_coverage_win_{{ editor }}_{{ project.name }}:
   name: Code Coverage Report - Windows - {{ editor }} - {{ project.name }}
@@ -11,23 +10,12 @@ code_coverage_win_{{ editor }}_{{ project.name }}:
   commands:
     - pip install unity-downloader-cli --upgrade --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple
     - npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
-    - unity-downloader-cli -u {{ editor }} -c editor --wait --fast
+    - unity-downloader-cli -u trunk -c editor --wait --fast
     - upm-ci package test -u .Editor --package-path com.unity.multiplayer.mlapi --enable-code-coverage --code-coverage-options 'enableCyclomaticComplexity;generateAdditionalMetrics;generateHtmlReport;assemblyFilters:+Unity.Multiplayer.MLAPI.Editor,+Unity.Multiplayer.MLAPI.Runtime,+Unity.Multiplayer.MLAPI.Prototyping'
   artifacts:
     logs:
       paths:
-        - "code_coverage/{{ editor }}/{{ project.name }}/**/*"
+        - "upm-ci~/test-results/**/*"
   dependencies:
     - .yamato/project-pack.yml#pack_{{ project.name }}
 {% endfor -%}
-{% endfor -%}
-
-code_coverage_all:
-  name: _Run All Coverage Tests
-{% for project in projects -%}
-  dependencies:
-    - .yamato/project-pack.yml#pack_{{ project.name }}
-{% for editor in test_editors -%}
-    - .yamato/code-coverage.yml#code_coverage_win_{{ editor }}_{{ project.name }}
-{% endfor %}
-{% endfor %}
