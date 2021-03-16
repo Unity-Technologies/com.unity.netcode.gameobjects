@@ -17,7 +17,7 @@ This is the initial experimental Unity MLAPI Package, v0.1.0.
   - You will typically interact with `NetworkUpdateLoop` for registration and `INetworkUpdateSystem` for implementation.
   - `NetworkVariable`s are now tick-based using the `NetworkTickSystem`, tracking time through network interactions and syncs.
 
-- Added message batching to handle consecutive RPC requests sent to the same client. `MessageBatcher` sends batches based on requests from the `RpcQueueProcessing`, by batch size threshold or immediately.
+- Added message batching to handle consecutive RPC requests sent to the same client. `RpcBatcher` sends batches based on requests from the `RpcQueueProcessing`, by batch size threshold or immediately.
 - [GitHub 494](https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi/pull/494): Added a constraint to allow one `NetworkObject` per `GameObject`, set through the `DisallowMultipleComponent` attribute.
 - Integrated MLAPI with the Unity Profiler for versions 2020.2 and later.
 - A test project is available for building and experimenting with MLAPI features. This project is located in the package `testproject` folder ([GitHub folder](https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi/tree/release/0.1.0/testproject)). 
