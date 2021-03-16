@@ -85,5 +85,20 @@ With a new release of MLAPI in Unity, some features have been removed:
 * Removed previous MLAPI Convenience and Performance RPC APIs with the new standard RPC API. See [RFC #1](https://github.com/Unity-Technologies/com.unity.multiplayer.rfcs/blob/master/text/0001-std-rpc-api.md) for details.
 * [GitHub 520](https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi/pull/520): Removed the MLAPI Installer.
 
+## Known issues
+
+* `NetworkNavMeshAgent` does not synchronize mesh data, Agent Size, Steering, Obstacle Avoidance, or Path Finding settings. It only synchronizes the destination and velocity, not the path to the destination.
+* For `RPC`, methods with a `ClientRpc` or `ServerRpc` suffix which are not marked with [ServerRpc] or [ClientRpc] will cause a compiler error.
+* For `NetworkAnimator`, Animator Overrides are not supported. Triggers do not work.
+* For `NetworkVariable`, the `NetworkDictionary` `List` and `Set` must use the `reliableSequenced` channel.
+* `NetworkObjects`s are supported but when spawning a prefab with nested child network objects you have to manually call spawn on them
+* `NetworkTransform` have the following issues:
+  * Replicated objects may have jitter. 
+  * The owner is always authoritative about the object's position.
+  * Scale is not synchronized.
+* Connection Approval is not called on the host client.
+* For `NamedMessages`, always use `NetworkBuffer` as the underlying stream for sending named and unnamed messages.
+* For `NetworkManager`, connection management is limited. Use `IsServer`, `IsClient`, `IsConnectedClient`, or other code to check if MLAPI connected correctly.
+
 ## [0.0.1-preview.1] - 2020-12-20
 This was an internally-only-used version of the Unity MLAPI Package
