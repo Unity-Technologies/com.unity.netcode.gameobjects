@@ -154,30 +154,28 @@ namespace MLAPI.RuntimeTests
         private static void StartNetworkManagerMode(NetworkManagerOperatingMode managerMode)
         {
             s_CurrentNetworkManagerMode = managerMode;
-            switch(s_CurrentNetworkManagerMode)
+            switch (s_CurrentNetworkManagerMode)
             {
                 case NetworkManagerOperatingMode.Host:
                     {
                         //Starts the host
                         NetworkManager.Singleton.StartHost();
-                        Debug.Log("Host Started.");
                         break;
                     }
                 case NetworkManagerOperatingMode.Server:
                     {
                         //Starts the server
                         NetworkManager.Singleton.StartServer();
-                        Debug.Log("Server Started.");
                         break;
                     }
                 case NetworkManagerOperatingMode.Client:
                     {
                         //Starts the client
                         NetworkManager.Singleton.StartClient();
-                        Debug.Log("Client Started.");
                         break;
                     }
             }
+            Debug.Log($"{s_CurrentNetworkManagerMode} started.");
         }
 
         /// <summary>
@@ -185,30 +183,29 @@ namespace MLAPI.RuntimeTests
         /// </summary>
         private static void StopNetworkManagerMode()
         {
-            switch(s_CurrentNetworkManagerMode)
+            switch (s_CurrentNetworkManagerMode)
             {
                 case NetworkManagerOperatingMode.Host:
                     {
                         //Stop the host
                         NetworkManager.Singleton.StopHost();
-                        Debug.Log("Host Stopped.");
                         break;
                     }
                 case NetworkManagerOperatingMode.Server:
                     {
                         //Stop the server
                         NetworkManager.Singleton.StopServer();
-                        Debug.Log("Server Stopped.");
                         break;
                     }
                 case NetworkManagerOperatingMode.Client:
                     {
                         //Stop the client
                         NetworkManager.Singleton.StopClient();
-                        Debug.Log("Client Stopped.");
                         break;
                     }
             }
+
+            Debug.Log($"{s_CurrentNetworkManagerMode} stopped.");
             s_CurrentNetworkManagerMode = NetworkManagerOperatingMode.None;
         }
 
