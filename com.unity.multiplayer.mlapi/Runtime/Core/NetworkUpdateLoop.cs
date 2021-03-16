@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.LowLevel;
@@ -234,131 +233,166 @@ namespace MLAPI
             }
         }
 
-        [RuntimeInitializeOnLoadMethod]
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void Initialize()
         {
-            var customPlayerLoop = PlayerLoop.GetCurrentPlayerLoop();
+            UnregisterLoopSystems();
+            RegisterLoopSystems();
+        }
 
-            for (int i = 0; i < customPlayerLoop.subSystemList.Length; i++)
+        private enum LoopSystemPosition
+        {
+            After,
+            Before
+        }
+
+        private static bool TryAddLoopSystem(ref PlayerLoopSystem parentLoopSystem, PlayerLoopSystem childLoopSystem, Type anchorSystemType, LoopSystemPosition loopSystemPosition)
+        {
+            int systemPosition = -1;
+            if (anchorSystemType != null)
             {
-                var playerLoopSystem = customPlayerLoop.subSystemList[i];
-
-                if (playerLoopSystem.type == typeof(Initialization))
+                for (int i = 0; i < parentLoopSystem.subSystemList.Length; i++)
                 {
-                    var subsystems = playerLoopSystem.subSystemList.ToList();
+                    var subsystem = parentLoopSystem.subSystemList[i];
+                    if (subsystem.type == anchorSystemType)
                     {
-                        // insert at the bottom of `Initialization`
-                        subsystems.Add(NetworkInitialization.CreateLoopSystem());
+                        systemPosition = loopSystemPosition == LoopSystemPosition.After ? i + 1 : i;
+                        break;
                     }
-                    playerLoopSystem.subSystemList = subsystems.ToArray();
                 }
-                else if (playerLoopSystem.type == typeof(EarlyUpdate))
-                {
-                    var subsystems = playerLoopSystem.subSystemList.ToList();
-                    {
-                        int subsystemCount = subsystems.Count;
-                        for (int k = 0; k < subsystemCount; k++)
-                        {
-                            if (subsystems[k].type == typeof(EarlyUpdate.ScriptRunDelayedStartupFrame))
-                            {
-                                // insert before `EarlyUpdate.ScriptRunDelayedStartupFrame`
-                                subsystems.Insert(k, NetworkEarlyUpdate.CreateLoopSystem());
-                                break;
-                            }
-                        }
-                    }
-                    playerLoopSystem.subSystemList = subsystems.ToArray();
-                }
-                else if (playerLoopSystem.type == typeof(FixedUpdate))
-                {
-                    var subsystems = playerLoopSystem.subSystemList.ToList();
-                    {
-                        int subsystemCount = subsystems.Count;
-                        for (int k = 0; k < subsystemCount; k++)
-                        {
-                            if (subsystems[k].type == typeof(FixedUpdate.ScriptRunBehaviourFixedUpdate))
-                            {
-                                // insert before `FixedUpdate.ScriptRunBehaviourFixedUpdate`
-                                subsystems.Insert(k, NetworkFixedUpdate.CreateLoopSystem());
-                                break;
-                            }
-                        }
-                    }
-                    playerLoopSystem.subSystemList = subsystems.ToArray();
-                }
-                else if (playerLoopSystem.type == typeof(PreUpdate))
-                {
-                    var subsystems = playerLoopSystem.subSystemList.ToList();
-                    {
-                        int subsystemCount = subsystems.Count;
-                        for (int k = 0; k < subsystemCount; k++)
-                        {
-                            if (subsystems[k].type == typeof(PreUpdate.PhysicsUpdate))
-                            {
-                                // insert before `PreUpdate.PhysicsUpdate`
-                                subsystems.Insert(k, NetworkPreUpdate.CreateLoopSystem());
-                                break;
-                            }
-                        }
-                    }
-                    playerLoopSystem.subSystemList = subsystems.ToArray();
-                }
-                else if (playerLoopSystem.type == typeof(Update))
-                {
-                    var subsystems = playerLoopSystem.subSystemList.ToList();
-                    {
-                        int subsystemCount = subsystems.Count;
-                        for (int k = 0; k < subsystemCount; k++)
-                        {
-                            if (subsystems[k].type == typeof(Update.ScriptRunBehaviourUpdate))
-                            {
-                                // insert before `Update.ScriptRunBehaviourUpdate`
-                                subsystems.Insert(k, NetworkUpdate.CreateLoopSystem());
-                                break;
-                            }
-                        }
-                    }
-                    playerLoopSystem.subSystemList = subsystems.ToArray();
-                }
-                else if (playerLoopSystem.type == typeof(PreLateUpdate))
-                {
-                    var subsystems = playerLoopSystem.subSystemList.ToList();
-                    {
-                        int subsystemCount = subsystems.Count;
-                        for (int k = 0; k < subsystemCount; k++)
-                        {
-                            if (subsystems[k].type == typeof(PreLateUpdate.ScriptRunBehaviourLateUpdate))
-                            {
-                                // insert before `PreLateUpdate.ScriptRunBehaviourLateUpdate`
-                                subsystems.Insert(k, NetworkPreLateUpdate.CreateLoopSystem());
-                                break;
-                            }
-                        }
-                    }
-                    playerLoopSystem.subSystemList = subsystems.ToArray();
-                }
-                else if (playerLoopSystem.type == typeof(PostLateUpdate))
-                {
-                    var subsystems = playerLoopSystem.subSystemList.ToList();
-                    {
-                        int subsystemCount = subsystems.Count;
-                        for (int k = 0; k < subsystemCount; k++)
-                        {
-                            if (subsystems[k].type == typeof(PostLateUpdate.PlayerSendFrameComplete))
-                            {
-                                // insert after `PostLateUpdate.PlayerSendFrameComplete`
-                                subsystems.Insert(k + 1, NetworkPostLateUpdate.CreateLoopSystem());
-                                break;
-                            }
-                        }
-                    }
-                    playerLoopSystem.subSystemList = subsystems.ToArray();
-                }
-
-                customPlayerLoop.subSystemList[i] = playerLoopSystem;
+            }
+            else
+            {
+                systemPosition = loopSystemPosition == LoopSystemPosition.After ? parentLoopSystem.subSystemList.Length : 0;
             }
 
-            PlayerLoop.SetPlayerLoop(customPlayerLoop);
+            if (systemPosition == -1) return false;
+
+            var newSubsystemList = new PlayerLoopSystem[parentLoopSystem.subSystemList.Length + 1];
+
+            // begin = systemsBefore + systemsAfter
+            // + systemsBefore
+            if (systemPosition > 0) Array.Copy(parentLoopSystem.subSystemList, newSubsystemList, systemPosition);
+            // + childSystem
+            newSubsystemList[systemPosition] = childLoopSystem;
+            // + systemsAfter
+            if (systemPosition < parentLoopSystem.subSystemList.Length) Array.Copy(parentLoopSystem.subSystemList, systemPosition, newSubsystemList, systemPosition + 1, parentLoopSystem.subSystemList.Length - systemPosition);
+            // end = systemsBefore + childSystem + systemsAfter
+
+            parentLoopSystem.subSystemList = newSubsystemList;
+
+            return true;
+        }
+
+        private static bool TryRemoveLoopSystem(ref PlayerLoopSystem parentLoopSystem, Type childSystemType)
+        {
+            int systemPosition = -1;
+            for (int i = 0; i < parentLoopSystem.subSystemList.Length; i++)
+            {
+                var subsystem = parentLoopSystem.subSystemList[i];
+                if (subsystem.type == childSystemType)
+                {
+                    systemPosition = i;
+                    break;
+                }
+            }
+
+            if (systemPosition == -1) return false;
+
+            var newSubsystemList = new PlayerLoopSystem[parentLoopSystem.subSystemList.Length - 1];
+
+            // begin = systemsBefore + childSystem + systemsAfter
+            // + systemsBefore
+            if (systemPosition > 0) Array.Copy(parentLoopSystem.subSystemList, newSubsystemList, systemPosition);
+            // + systemsAfter
+            if (systemPosition < parentLoopSystem.subSystemList.Length - 1) Array.Copy(parentLoopSystem.subSystemList, systemPosition + 1, newSubsystemList, systemPosition, parentLoopSystem.subSystemList.Length - systemPosition - 1);
+            // end = systemsBefore + systemsAfter
+
+            parentLoopSystem.subSystemList = newSubsystemList;
+
+            return true;
+        }
+
+        internal static void RegisterLoopSystems()
+        {
+            var rootPlayerLoop = PlayerLoop.GetCurrentPlayerLoop();
+
+            for (int i = 0; i < rootPlayerLoop.subSystemList.Length; i++)
+            {
+                ref var currentSystem = ref rootPlayerLoop.subSystemList[i];
+
+                if (currentSystem.type == typeof(Initialization))
+                {
+                    TryAddLoopSystem(ref currentSystem, NetworkInitialization.CreateLoopSystem(), null, LoopSystemPosition.After);
+                }
+                else if (currentSystem.type == typeof(EarlyUpdate))
+                {
+                    TryAddLoopSystem(ref currentSystem, NetworkEarlyUpdate.CreateLoopSystem(), typeof(EarlyUpdate.ScriptRunDelayedStartupFrame), LoopSystemPosition.Before);
+                }
+                else if (currentSystem.type == typeof(FixedUpdate))
+                {
+                    TryAddLoopSystem(ref currentSystem, NetworkFixedUpdate.CreateLoopSystem(), typeof(FixedUpdate.ScriptRunBehaviourFixedUpdate), LoopSystemPosition.Before);
+                }
+                else if (currentSystem.type == typeof(PreUpdate))
+                {
+                    TryAddLoopSystem(ref currentSystem, NetworkPreUpdate.CreateLoopSystem(), typeof(PreUpdate.PhysicsUpdate), LoopSystemPosition.Before);
+                }
+                else if (currentSystem.type == typeof(Update))
+                {
+                    TryAddLoopSystem(ref currentSystem, NetworkUpdate.CreateLoopSystem(), typeof(Update.ScriptRunBehaviourUpdate), LoopSystemPosition.Before);
+                }
+                else if (currentSystem.type == typeof(PreLateUpdate))
+                {
+                    TryAddLoopSystem(ref currentSystem, NetworkPreLateUpdate.CreateLoopSystem(), typeof(PreLateUpdate.ScriptRunBehaviourLateUpdate), LoopSystemPosition.Before);
+                }
+                else if (currentSystem.type == typeof(PostLateUpdate))
+                {
+                    TryAddLoopSystem(ref currentSystem, NetworkPostLateUpdate.CreateLoopSystem(), typeof(PostLateUpdate.PlayerSendFrameComplete), LoopSystemPosition.After);
+                }
+            }
+
+            PlayerLoop.SetPlayerLoop(rootPlayerLoop);
+        }
+
+        internal static void UnregisterLoopSystems()
+        {
+            var rootPlayerLoop = PlayerLoop.GetCurrentPlayerLoop();
+
+            for (int i = 0; i < rootPlayerLoop.subSystemList.Length; i++)
+            {
+                ref var currentSystem = ref rootPlayerLoop.subSystemList[i];
+
+                if (currentSystem.type == typeof(Initialization))
+                {
+                    TryRemoveLoopSystem(ref currentSystem, typeof(NetworkInitialization));
+                }
+                else if (currentSystem.type == typeof(EarlyUpdate))
+                {
+                    TryRemoveLoopSystem(ref currentSystem, typeof(NetworkEarlyUpdate));
+                }
+                else if (currentSystem.type == typeof(FixedUpdate))
+                {
+                    TryRemoveLoopSystem(ref currentSystem, typeof(NetworkFixedUpdate));
+                }
+                else if (currentSystem.type == typeof(PreUpdate))
+                {
+                    TryRemoveLoopSystem(ref currentSystem, typeof(NetworkPreUpdate));
+                }
+                else if (currentSystem.type == typeof(Update))
+                {
+                    TryRemoveLoopSystem(ref currentSystem, typeof(NetworkUpdate));
+                }
+                else if (currentSystem.type == typeof(PreLateUpdate))
+                {
+                    TryRemoveLoopSystem(ref currentSystem, typeof(NetworkPreLateUpdate));
+                }
+                else if (currentSystem.type == typeof(PostLateUpdate))
+                {
+                    TryRemoveLoopSystem(ref currentSystem, typeof(NetworkPostLateUpdate));
+                }
+            }
+
+            PlayerLoop.SetPlayerLoop(rootPlayerLoop);
         }
     }
 }
