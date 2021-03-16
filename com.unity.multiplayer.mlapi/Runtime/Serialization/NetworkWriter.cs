@@ -921,10 +921,6 @@ namespace MLAPI.Serialization
         {
             long TargetSize = targetSize;
             long LargeInt64Blocks = TargetSize >> 3; //Divide by 8
-            if (targetSize > 131072 || targetSize < 0)
-            {
-                return;
-            }
 
             //8 Byte blocks
             for (long i = 0; i < LargeInt64Blocks; i++)
