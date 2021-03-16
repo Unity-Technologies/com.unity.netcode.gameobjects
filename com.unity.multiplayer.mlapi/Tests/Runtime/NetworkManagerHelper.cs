@@ -52,7 +52,7 @@ namespace MLAPI.RuntimeTests
         /// <returns>true if it was instantiated or is already instantiate otherwise false means it failed to instantiate</returns>
         public static bool StartNetworkManager(NetworkManagerOperatingMode managerMode = NetworkManagerOperatingMode.Host)
         {
-            if(m_CurrentNetworkManagerMode != managerMode)
+            if(s_CurrentNetworkManagerMode != managerMode)
             {
                 StopNetworkManagerMode();
             }
@@ -153,8 +153,8 @@ namespace MLAPI.RuntimeTests
         /// <param name="managerMode">the mode to start the NetworkManager as</param>
         private static void StartNetworkManagerMode(NetworkManagerOperatingMode managerMode)
         {
-            m_CurrentNetworkManagerMode = managerMode;
-            switch(m_CurrentNetworkManagerMode)
+            s_CurrentNetworkManagerMode = managerMode;
+            switch(s_CurrentNetworkManagerMode)
             {
                 case NetworkManagerOperatingMode.Host:
                     {
@@ -185,7 +185,7 @@ namespace MLAPI.RuntimeTests
         /// </summary>
         private static void StopNetworkManagerMode()
         {
-            switch(m_CurrentNetworkManagerMode)
+            switch(s_CurrentNetworkManagerMode)
             {
                 case NetworkManagerOperatingMode.Host:
                     {
@@ -209,7 +209,7 @@ namespace MLAPI.RuntimeTests
                         break;
                     }
             }
-            m_CurrentNetworkManagerMode = NetworkManagerOperatingMode.None;
+            s_CurrentNetworkManagerMode = NetworkManagerOperatingMode.None;
         }
 
         //This is called, even if we assert and exit early from a test
