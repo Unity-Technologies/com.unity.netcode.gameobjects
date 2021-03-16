@@ -1,0 +1,441 @@
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.UI;
+using MLAPI;
+using MLAPI.Messaging;
+
+/// <summary>
+/// This class is used to verify that the RPC Queue allows for the
+/// sending of ClientRpcs to specific clients.  It has several "direct"
+/// methods of sending as is defined in the enum ClientRpcDirectTestingModes:
+///     Single: This will send to a single client at a time
+///     Striped: This will send to alternating client pairs at a time
+///     Unified: This sends to all clients at the same time
+/// Each direct testing mode sends a count value starting at 0 up to 100.
+/// Each direct testing mode sends to all clients at least once during testing (sometimes twice in striped)
+/// During direct testing mode the following is also tested:
+///     all clients are updating the server with a continually growing counter
+///     the server is updating all clients with a global counter
+/// </summary>
+public class ClientCounterBehaviour : NetworkBehaviour
+{
+    private const float  k_ProgressBarDivisor = 1.0f/200.0f;
+
+    [SerializeField]
+    private Text m_CounterTextObject;
+
+    [SerializeField]
+    private Image m_ClientProgressBar;
+
+    [SerializeField]
+    private GameObject m_ConnectionModeButtonParent;
+
+    private Dictionary<ulong,int> m_ClientSpecificCounters = new Dictionary<ulong, int>();
+    private List<ulong> m_ClientIds = new List<ulong>();
+    private List<ulong> m_ClientIndices = new List<ulong>();
+
+    private int m_GlobalCounter;
+    private int m_GlobalDirectCounter;
+    private int m_GlobalDirectCurrentClientIdIndex;
+    private int m_localClientCounter;
+
+    private ulong m_LocalClientId;
+
+    private float m_GlobalCounterDelay;
+    private float m_DirectGlobalCounterDelay;
+    private float m_LocalCounterDelay;
+
+    public enum ClientRpcDirectTestingModes
+    {
+        Single,        //Updates directly to a client until the progress meter reach 100%
+        Striped,       //Updates every other client in unison (i.e. 1 & 3 updated up to 100%, 0 & 2 up to 100%, "repeat")
+        Unified,       //Updates all clients directly at the same time up to 100%
+    }
+
+    private ClientRpcDirectTestingModes m_ClientRpcDirectTestingMode;
+
+    private ServerRpcParams m_ServerParams;
+    private ClientRpcParams m_ClientParams;
+
+    // Start is called before the first frame update
+    void Start()
+    {
+        Screen.SetResolution(640, 480, FullScreenMode.Windowed);
+    }
+
+    /// <summary>
+    /// Invoked via UI button when the user wants to create a client
+    /// </summary>
+    public void OnCreateClient()
+    {
+        NetworkManager.Singleton.StartClient();
+        m_ServerParams.Send.UpdateStage = NetworkUpdateStage.Update;
+        Screen.SetResolution(512, 125, FullScreenMode.Windowed);
+        m_ConnectionModeButtonParent.SetActive(false);
+    }
+
+    /// <summary>
+    /// Invoked via UI button when the user wants to create a host
+    /// </summary>
+    public void OnCreateHost()
+    {
+        NetworkManager.Singleton.StartHost();
+        m_ClientParams.Send.TargetClientIds = new ulong[] { 0 };
+        m_ClientParams.Send.UpdateStage = NetworkUpdateStage.PostLateUpdate;
+        Screen.SetResolution(1024, 768, FullScreenMode.Windowed);
+        m_ClientRpcDirectTestingMode = ClientRpcDirectTestingModes.Single;
+        m_ConnectionModeButtonParent.SetActive(false);
+    }
+
+    /// <summary>
+    /// Invoked via UI button when the user wants to create a server
+    /// </summary>
+    public void OnCreateServer()
+    {
+        NetworkManager.Singleton.StartServer();
+        m_ClientParams.Send.TargetClientIds = new ulong[] { 0 };
+        m_ClientParams.Send.UpdateStage = NetworkUpdateStage.PostLateUpdate;
+        Screen.SetResolution(1024, 768, FullScreenMode.Windowed);
+        m_ClientProgressBar.enabled = false;
+        m_ClientRpcDirectTestingMode = ClientRpcDirectTestingModes.Single;
+        m_ConnectionModeButtonParent.SetActive(false);
+    }
+
+    /// <summary>
+    /// Invoked upon the attached NetworkObject component being initialized by MLAPI
+    /// </summary>
+    public override void NetworkStart()
+    {
+        if (IsServer)
+        {
+            NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnectedCallback;
+            NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnectCallback;
+            if (IsHost)
+            {
+                m_ClientSpecificCounters.Add(NetworkManager.Singleton.LocalClientId, 0);
+                m_ClientIds.Add(NetworkManager.Singleton.LocalClientId);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Called when a client disconnects
+    /// </summary>
+    /// <param name="clientId">client id that disconnected</param>
+    private void OnClientDisconnectCallback(ulong clientId)
+    {
+        if (m_ClientSpecificCounters.ContainsKey(clientId))
+        {
+            m_ClientSpecificCounters.Remove(clientId);
+        }
+        if (m_ClientIds.Contains(clientId))
+        {
+            m_ClientIds.Remove(clientId);
+        }
+    }
+
+    /// <summary>
+    /// Invoked when a client connects (local client and host-server only receive this message)
+    /// </summary>
+    /// <param name="clientId">client id that connected</param>
+    private void OnClientConnectedCallback(ulong clientId)
+    {
+        if (IsServer)
+        {
+            //Exclude the server local id if only a server
+            if(!IsHost && clientId == NetworkManager.Singleton.LocalClientId)
+            {
+                return;
+            }
+            if (!m_ClientIds.Contains(clientId))
+            {
+                m_ClientIds.Add(clientId);
+            }
+            if (!m_ClientSpecificCounters.ContainsKey(clientId))
+            {
+                m_ClientSpecificCounters.Add(clientId, 0);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Both the Server and Client update here
+    /// </summary>
+    void Update()
+    {
+        if (NetworkManager.Singleton.IsListening)
+        {
+            if (IsServer)
+            {
+                if (m_ClientSpecificCounters.Count > 0)
+                {
+                    if (m_GlobalCounterDelay < Time.realtimeSinceStartup)
+                    {
+                        m_GlobalCounterDelay = Time.realtimeSinceStartup + 0.200f;
+                        m_GlobalCounter++;
+                        OnSendGlobalCounterClientRpc(m_GlobalCounter);
+                    }
+
+                    if (m_DirectGlobalCounterDelay < Time.realtimeSinceStartup)
+                    {
+                        switch (m_ClientRpcDirectTestingMode)
+                        {
+                            case ClientRpcDirectTestingModes.Single:
+                                {
+                                    SingleDirectUpdate();
+                                    break;
+                                }
+                            case ClientRpcDirectTestingModes.Striped:
+                                {
+                                    StripedDirectUpdate();
+                                    break;
+                                }
+                            case ClientRpcDirectTestingModes.Unified:
+                                {
+                                    UnifiedDirectUpdate();
+                                    break;
+                                }
+                        }
+
+                        m_DirectGlobalCounterDelay = Time.realtimeSinceStartup + 0.033f;
+                    }
+                }
+            }
+
+            //Hosts and Clients execute this
+            if ((IsHost || IsClient) && m_LocalCounterDelay < Time.realtimeSinceStartup)
+            {
+                m_LocalCounterDelay = Time.realtimeSinceStartup + 0.25f;
+                m_localClientCounter++;
+                OnSendCounterServerRpc(m_localClientCounter);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Cycles through the 3 different ClientRpcDirectTestingModes
+    /// </summary>
+    void SelectNextDirectUpdateMethod()
+    {
+        m_ClientIndices.Clear();
+        m_GlobalDirectCounter = 0;
+        switch (m_ClientRpcDirectTestingMode)
+        {
+            case ClientRpcDirectTestingModes.Single:
+                {
+                    m_ClientRpcDirectTestingMode = ClientRpcDirectTestingModes.Striped;
+                    break;
+                }
+            case ClientRpcDirectTestingModes.Striped:
+                {
+                    //Prepare to send to everyone
+                    m_ClientIndices.AddRange(m_ClientIds.ToArray());
+                    m_ClientRpcDirectTestingMode = ClientRpcDirectTestingModes.Unified;
+                    break;
+                }
+            case ClientRpcDirectTestingModes.Unified:
+                {
+                    m_ClientRpcDirectTestingMode = ClientRpcDirectTestingModes.Single;
+                    break;
+                }
+        }
+    }
+
+    /// <summary>
+    /// Server to Client
+    /// Handles Single Direct Updates
+    /// </summary>
+    void SingleDirectUpdate()
+    {
+        if (m_GlobalDirectCounter == 100)
+        {
+            m_GlobalDirectCurrentClientIdIndex++;
+            if (m_GlobalDirectCurrentClientIdIndex >= m_ClientIds.Count)
+            {
+                m_GlobalDirectCurrentClientIdIndex = 0;
+                SelectNextDirectUpdateMethod();
+                m_GlobalDirectCounter = 0;
+                return;
+            }
+            m_GlobalDirectCounter = 0;
+            m_ClientIndices.Clear();
+        }
+
+        if (m_ClientIndices.Count == 0)
+        {
+            m_ClientIndices.Add(m_ClientIds[m_GlobalDirectCurrentClientIdIndex]);
+        }
+
+        m_ClientParams.Send.TargetClientIds = m_ClientIndices.ToArray();
+        m_GlobalDirectCounter++;
+
+        OnSendDirectCounterClientRpc(m_GlobalDirectCounter, m_ClientParams);
+    }
+
+    /// <summary>
+    /// Server to Clients
+    /// Handles striped direct updates (sends to paired clients)
+    /// </summary>
+    private void StripedDirectUpdate()
+    {
+        if (m_GlobalDirectCounter == 100)
+        {
+            m_GlobalDirectCurrentClientIdIndex++;
+            if (m_GlobalDirectCurrentClientIdIndex >= m_ClientIds.Count)
+            {
+                m_GlobalDirectCurrentClientIdIndex = 0;
+                SelectNextDirectUpdateMethod();
+                m_GlobalDirectCounter = 0;
+                return;
+            }
+            m_GlobalDirectCounter = 0;
+            m_ClientIndices.Clear();
+        }
+
+        if (m_ClientIndices.Count == 0)
+        {
+            m_ClientIndices.Add(m_ClientIds[m_GlobalDirectCurrentClientIdIndex]);
+            var divFactor = (float)m_ClientIds.Count*0.5f;
+            var modFactor = (m_GlobalDirectCurrentClientIdIndex + (int)divFactor) % m_ClientIds.Count;
+            m_ClientIndices.Add(m_ClientIds[modFactor]);
+        }
+
+        m_ClientParams.Send.TargetClientIds = m_ClientIndices.ToArray();
+        m_GlobalDirectCounter++;
+
+        OnSendDirectCounterClientRpc(m_GlobalDirectCounter, m_ClientParams);
+    }
+
+    /// <summary>
+    /// Server to Clients
+    /// Handles unified direct updates (same as broadcasting, but testing the ability to add all clients)
+    /// </summary>
+    private void UnifiedDirectUpdate()
+    {
+        if (m_GlobalDirectCounter == 100)
+        {
+            SelectNextDirectUpdateMethod();
+            m_GlobalDirectCounter = 0;
+            return;
+        }
+
+        m_ClientParams.Send.TargetClientIds = m_ClientIds.ToArray();
+        m_GlobalDirectCounter++;
+
+        OnSendDirectCounterClientRpc(m_GlobalDirectCounter, m_ClientParams);
+    }
+
+    /// <summary>
+    /// Client to Server
+    /// Sends a client relative growing counter
+    /// </summary>
+    /// <param name="counter">the client side counter</param>
+    /// <param name="parameters"></param>
+    [ServerRpc(RequireOwnership = false)]
+    private void OnSendCounterServerRpc(int counter, ServerRpcParams parameters = default)
+    {
+        //This is just for debug purposes so I can trap for "non-local" clients
+        if (IsHost && parameters.Receive.SenderClientId == 0)
+        {
+            m_ClientSpecificCounters[parameters.Receive.SenderClientId] = counter;
+        }
+        else if (m_ClientSpecificCounters.ContainsKey(parameters.Receive.SenderClientId))
+        {
+            m_ClientSpecificCounters[parameters.Receive.SenderClientId] = counter;
+        }
+    }
+
+    /// <summary>
+    /// Server to Clients
+    /// Demonstrates broadcasting to all clients (similar to unified without specifying all client ids)
+    /// </summary>
+    /// <param name="counter">the global counter value</param>
+    [ClientRpc]
+    private void OnSendGlobalCounterClientRpc(int counter)
+    {
+        m_GlobalCounter = counter;
+    }
+
+    /// <summary>
+    /// Server to Client
+    /// Handles setting the m_GlobalDirectCounter for the client in questions
+    /// </summary>
+    /// <param name="counter"></param>
+    /// <param name="parameters"></param>
+    [ClientRpc]
+    private void OnSendDirectCounterClientRpc(int counter, ClientRpcParams parameters = default)
+    {
+        m_GlobalDirectCounter = counter;
+    }
+
+    /// <summary>
+    /// Update either the client or server display information
+    /// </summary>
+    private void OnGUI()
+    {
+        if (m_CounterTextObject)
+        {
+            if (IsServer)
+            {
+                UpdateServerInfo();
+            }
+            else
+            {
+                UpdateClientInfo();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Update the client text info and progress bar
+    /// </summary>
+    void UpdateClientInfo()
+    {
+        if (m_LocalClientId == 0 && NetworkManager.Singleton && NetworkManager.Singleton.IsListening)
+        {
+            m_LocalClientId = NetworkManager.Singleton.LocalClientId;
+        }
+
+        m_CounterTextObject.text = $"Client-ID:[{m_LocalClientId}] {nameof(m_GlobalCounter)}:{m_GlobalCounter} | {nameof(m_GlobalDirectCounter)}:{m_GlobalDirectCounter}";
+
+
+        if (m_ClientProgressBar)
+        {
+            m_ClientProgressBar.fillAmount = Mathf.Clamp((2.0f * (float)m_GlobalDirectCounter) * k_ProgressBarDivisor, 0.01f, 1.0f);
+        }
+    }
+
+    /// <summary>
+    /// Updates the server text info and host progress bar
+    /// </summary>
+    void UpdateServerInfo()
+    {
+        string updatedCounters = string.Empty;
+        foreach (var entry in m_ClientSpecificCounters)
+        {
+            if (entry.Key == 0 && IsHost)
+            {
+                updatedCounters += $"Client[{entry.Key}] | {nameof(m_GlobalCounter)}:{m_GlobalCounter} -- Counter: {entry.Value} | {nameof(m_GlobalDirectCounter)}:{m_GlobalDirectCounter}\n";
+            }
+            else
+            {
+                updatedCounters += $"Client[{entry.Key}] -- Counter: {entry.Value}\n";
+            }
+        }
+
+        updatedCounters += $"{nameof(m_ClientRpcDirectTestingMode)} : {m_ClientRpcDirectTestingMode}";
+
+        if (IsHost)
+        {
+            if (m_GlobalDirectCurrentClientIdIndex < m_ClientIds.Count)
+            {
+                if (m_ClientProgressBar && m_ClientIndices.Contains(NetworkManager.Singleton.LocalClientId))
+                {
+                    m_ClientProgressBar.fillAmount = Mathf.Clamp((2.0f * (float)m_GlobalDirectCounter) * k_ProgressBarDivisor, 0.01f, 1.0f);
+                }
+            }
+        }
+
+        m_CounterTextObject.text = updatedCounters;
+    }
+}
