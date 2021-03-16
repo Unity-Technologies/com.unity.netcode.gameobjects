@@ -10,6 +10,7 @@ namespace MLAPI.Prototyping
     /// A prototype component for syncing NavMeshAgents
     /// </summary>
     [AddComponentMenu("MLAPI/NetworkNavMeshAgent")]
+    [RequireComponent(typeof(NavMeshAgent))]
     public class NetworkNavMeshAgent : NetworkBehaviour
     {
         private NavMeshAgent m_Agent;
@@ -65,7 +66,7 @@ namespace MLAPI.Prototyping
                     var proximityClients = new List<ulong>();
                     foreach (KeyValuePair<ulong, NetworkClient> client in NetworkManager.Singleton.ConnectedClients)
                     {
-                        if (ReferenceEquals(client.Value.PlayerObject, null) || Vector3.Distance(client.Value.PlayerObject.transform.position, transform.position) <= ProximityRange)
+                        if (client.Value.PlayerObject == null || Vector3.Distance(client.Value.PlayerObject.transform.position, transform.position) <= ProximityRange)
                         {
                             proximityClients.Add(client.Key);
                         }
@@ -86,7 +87,7 @@ namespace MLAPI.Prototyping
                     var proximityClients = new List<ulong>();
                     foreach (KeyValuePair<ulong, NetworkClient> client in NetworkManager.Singleton.ConnectedClients)
                     {
-                        if (ReferenceEquals(client.Value.PlayerObject, null) || Vector3.Distance(client.Value.PlayerObject.transform.position, transform.position) <= ProximityRange)
+                        if (client.Value.PlayerObject == null || Vector3.Distance(client.Value.PlayerObject.transform.position, transform.position) <= ProximityRange)
                         {
                             proximityClients.Add(client.Key);
                         }

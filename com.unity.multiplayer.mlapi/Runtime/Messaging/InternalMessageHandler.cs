@@ -550,7 +550,7 @@ namespace MLAPI.Messaging
             }
 
             ProfilerStatManager.RpcsRcvd.Record();
-            PerformanceDataManager.Increment(ProfilerConstants.NumberOfRPCsReceived);
+            PerformanceDataManager.Increment(ProfilerConstants.RpcReceived);
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             switch (queueItemType)
@@ -582,7 +582,7 @@ namespace MLAPI.Messaging
 
         internal static void HandleUnnamedMessage(ulong clientId, Stream stream)
         {
-            PerformanceDataManager.Increment(ProfilerConstants.NumberOfUnnamedMessages);
+            PerformanceDataManager.Increment(ProfilerConstants.UnnamedMessageReceived);
             ProfilerStatManager.UnnamedMessage.Record();
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleUnnamedMessage.Begin();
@@ -595,7 +595,7 @@ namespace MLAPI.Messaging
 
         internal static void HandleNamedMessage(ulong clientId, Stream stream)
         {
-            PerformanceDataManager.Increment(ProfilerConstants.NumberOfNamedMessages);
+            PerformanceDataManager.Increment(ProfilerConstants.NamedMessageReceived);
             ProfilerStatManager.NamedMessage.Record();
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleNamedMessage.Begin();
