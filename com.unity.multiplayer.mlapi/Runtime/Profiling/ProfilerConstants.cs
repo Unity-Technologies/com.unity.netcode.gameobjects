@@ -9,7 +9,8 @@ namespace MLAPI.Profiling
         public const string UnnamedMessageReceived = nameof(UnnamedMessageReceived);
         public const string ByteSent = nameof(ByteSent);
         public const string ByteReceived = nameof(ByteReceived);
-        public const string NetworkVarReceived = nameof(NetworkVarReceived);
+        public const string NetworkVarDeltas = nameof(NetworkVarDeltas);
+        public const string NetworkVarUpdates = nameof(NetworkVarUpdates);
         public const string RpcSent = nameof(RpcSent);
         public const string RpcReceived = nameof(RpcReceived);
         public const string RpcBatchesSent = nameof(RpcBatchesSent);
