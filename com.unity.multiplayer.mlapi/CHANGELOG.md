@@ -77,7 +77,7 @@ With a new release of MLAPI in Unity, some features have been removed:
 * [GitHub 509](https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi/pull/509): Encryption has been removed from MLAPI. The `Encryption` option in `NetworkConfig` on the `NetworkingManager` is not available in this release. This change will not block game creation or running. A current replacement for this functionality is not available, and may be developed in future releases. See the following changes:
 
     * Removed `SecuritySendFlags` from all APIs.
-    * Revmoed encryption, cryptography, and certificate configurationss from APIs including `NetworkManager` and `NetworkConfig`.
+    * Removed encryption, cryptography, and certificate configurations from APIs including `NetworkManager` and `NetworkConfig`.
     * Removed "hail handshake", including `NetworkManager` implementation and `MLAPIConstants` entries.
     * Modified `RpcQueue` and `RpcBatcher` internals to remove encryption and authentication from reading and writing.
 
