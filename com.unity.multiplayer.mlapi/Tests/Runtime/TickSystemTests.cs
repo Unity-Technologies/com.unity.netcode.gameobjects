@@ -46,8 +46,6 @@ namespace MLAPI.RuntimeTests
 
             // check overall number of ticks is within one tick of the expected value
             Assert.IsTrue(Math.Abs(expectedTicks - ticks) < 2);
-
-            yield return null;
         }
     }
 }
