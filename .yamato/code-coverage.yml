@@ -1,8 +1,8 @@
 {% metadata_file .yamato/project.metafile %}
 ---
 {% for project in projects -%}
-code_coverage_win_{{ editor }}_{{ project.name }}:
-  name: Code Coverage Report - Windows - {{ editor }} - {{ project.name }}
+code_coverage_win_{{ project.name }}:
+  name: Code Coverage Report - Windows - {{ project.name }}
   agent:
     type: Unity::VM
     image: package-ci/win10:stable
