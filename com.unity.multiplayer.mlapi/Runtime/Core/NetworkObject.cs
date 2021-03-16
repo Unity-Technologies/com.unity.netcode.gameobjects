@@ -55,7 +55,7 @@ namespace MLAPI
             {
                 if (OwnerClientIdInternal == null)
                 {
-                    return !ReferenceEquals(NetworkManager.Singleton, null) ? NetworkManager.Singleton.ServerClientId : 0;
+                    return NetworkManager.Singleton != null ? NetworkManager.Singleton.ServerClientId : 0;
                 }
                 else
                 {
@@ -64,7 +64,7 @@ namespace MLAPI
             }
             internal set
             {
-                if (!ReferenceEquals(NetworkManager.Singleton, null) && value == NetworkManager.Singleton.ServerClientId)
+                if (NetworkManager.Singleton != null && value == NetworkManager.Singleton.ServerClientId)
                 {
                     OwnerClientIdInternal = null;
                 }
@@ -114,17 +114,17 @@ namespace MLAPI
         /// <summary>
         /// Gets if the object is the the personal clients player object
         /// </summary>
-        public bool IsLocalPlayer => !ReferenceEquals(NetworkManager.Singleton, null) && IsPlayerObject && OwnerClientId == NetworkManager.Singleton.LocalClientId;
+        public bool IsLocalPlayer => NetworkManager.Singleton != null && IsPlayerObject && OwnerClientId == NetworkManager.Singleton.LocalClientId;
 
         /// <summary>
         /// Gets if the object is owned by the local player or if the object is the local player object
         /// </summary>
-        public bool IsOwner => !ReferenceEquals(NetworkManager.Singleton, null) && OwnerClientId == NetworkManager.Singleton.LocalClientId;
+        public bool IsOwner => NetworkManager.Singleton != null && OwnerClientId == NetworkManager.Singleton.LocalClientId;
 
         /// <summary>
         /// Gets Whether or not the object is owned by anyone
         /// </summary>
-        public bool IsOwnedByServer => !ReferenceEquals(NetworkManager.Singleton, null) && OwnerClientId == NetworkManager.Singleton.ServerClientId;
+        public bool IsOwnedByServer => NetworkManager.Singleton != null && OwnerClientId == NetworkManager.Singleton.ServerClientId;
 
         /// <summary>
         /// Gets if the object has yet been spawned across the network
