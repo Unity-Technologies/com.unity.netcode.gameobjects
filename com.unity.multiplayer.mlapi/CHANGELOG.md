@@ -10,7 +10,7 @@ This is the initial experimental Unity MLAPI Package, v0.1.0.
 - Refactored a new standard for Remote Procedure Call (RPC) in MLAPI which provides increased performance, significantly reduced boilerplate code, and extensibility for future-proofed code. MLAPI RPC includes `ServerRpc` and `ClientRpc` to execute logic on the server and client-side.
 - Added standarized serialization types, including built-in and custom serialization flows. See [RFC #2](https://github.com/Unity-Technologies/com.unity.multiplayer.rfcs/blob/master/text/0002-serializable-types.md) for details.
 - `INetworkSerializable` interface replaces `IBitWritable`.
-- Added `NetworkSerializer`... (was `BitSerializer`...), which is the main aggregator that implements serialization code for built-in supported types and holds `BitReader` and `BitWriter` instances internally.
+- Added `NetworkSerializer`..., which is the main aggregator that implements serialization code for built-in supported types and holds `BitReader` and `BitWriter` instances internally.
 - Added a Network Update Loop infrastructure that aids Netcode systems to update (such as RPC queue and transport) outside of the standard `MonoBehaviour` event cycle. See [RFC #8](https://github.com/Unity-Technologies/com.unity.multiplayer.rfcs/blob/master/text/0008-network-update-loop.md) and the following details:
 
   - It uses Unity's [low-level Player Loop API](https://docs.unity3d.com/ScriptReference/LowLevel.PlayerLoop.html) and allows for registering `INetworkUpdateSystem`s with `NetworkUpdate` methods to be executed at specific `NetworkUpdateStage`s, which may also be before or after `MonoBehaviour`-driven game logic execution.
