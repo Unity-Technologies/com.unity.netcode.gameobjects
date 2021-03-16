@@ -216,7 +216,7 @@ namespace MLAPI.RuntimeTests
         public static void ShutdownNetworkManager()
         {
             //clean up any game objects created with custom unit testing components
-            foreach (KeyValuePair<Guid, GameObject> entry in s_InstantiatedGameObjects)
+            foreach (var entry in s_InstantiatedGameObjects)
             {
                 GameObject.Destroy(entry.Value);
             }
