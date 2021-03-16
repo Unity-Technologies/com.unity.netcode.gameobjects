@@ -21,7 +21,7 @@ The Unity MLAPI (Mid level API) is a framework that simplifies building networke
 ### Hold on, heard the news?
 On March 16th, during the Unity GDC keynote, we announced that we'd be releasing a new experimental netcode package - and live documentation site - alongside the new TechStream release. Please give us a few days more to polish the details ;)
 
-In the meantime, don't forget to save the date for [BossRoom](https://unity.com/BossRoom)
+In the meantime, don't forget to save the date for [BossRoom](https://unity.com/boss-room)
 
 ### Getting Started
 To get started, check the [Wiki](https://mlapi.network/wiki/).
