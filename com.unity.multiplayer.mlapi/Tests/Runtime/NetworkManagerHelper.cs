@@ -66,7 +66,7 @@ namespace MLAPI.RuntimeTests
                     return false;
                 }
 
-                Debug.Log("NetworkManager Instantiated.");
+                Debug.Log($"{nameof(NetworkManager)} Instantiated.");
 
                 var unetTransport = s_NetworkManagerObject.AddComponent<UNetTransport>();
 
