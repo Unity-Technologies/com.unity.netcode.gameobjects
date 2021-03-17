@@ -60,8 +60,6 @@ namespace MLAPI.RuntimeTests
 
             //Disable this so it isn't running any longer.
             rpcPipelineTestComponent.gameObject.SetActive(false);
-
-            yield return null;
 #else
             yield return null;
 #endif
@@ -106,8 +104,6 @@ namespace MLAPI.RuntimeTests
             growingRpcBufferSizeComponent.gameObject.SetActive(false);
 
             Assert.IsTrue(testsAreComplete);
-
-            yield return null;
 #else
             yield return null;
 #endif
@@ -115,8 +111,8 @@ namespace MLAPI.RuntimeTests
         }
 
 
-        [UnityTest]
-        public IEnumerator RpcQueueContainerClass()
+        [Test]
+        public void RpcQueueContainerClass()
         {
             Assert.IsTrue(NetworkManagerHelper.StartNetworkManager());
 
@@ -187,8 +183,6 @@ namespace MLAPI.RuntimeTests
 
             rpcQueueContainer.Dispose();
             rpcQueueContainer = null;
-            //If we made it to here we are all done and success!
-            yield return null;
         }
 
         public void Dispose()

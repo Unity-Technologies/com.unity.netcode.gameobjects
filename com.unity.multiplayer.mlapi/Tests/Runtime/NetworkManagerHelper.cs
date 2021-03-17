@@ -28,27 +28,50 @@ namespace MLAPI.RuntimeTests
 
         internal static Dictionary<Guid,NetworkObject> s_InstantiatedNetworkObjects = new Dictionary<Guid, NetworkObject>();
 
+        internal static NetworkManagerOperatingMode s_CurrentNetworkManagerMode;
+
+        /// <summary>
+        /// This provides the ability to start NetworkManager in various modes
+        /// </summary>
+        public enum NetworkManagerOperatingMode
+        {
+            None,
+            Host,
+            Server,
+            Client,
+        }
+
         /// <summary>
         /// Called upon the RpcQueueTests being instantiated.
-        /// This creates a NetworkManger,
+        /// This creates an instance of the NetworkManager to be used during unit tests.
+        /// Currently, the best method to run unit tests is by starting in host mode as you can
+        /// send messages to yourself (i.e. Host-Client to Host-Server and vice versa).
+        /// As such, the default setting is to start in Host mode.
         /// </summary>
-        /// <returns></returns>
-        public static bool StartNetworkManager()
+        /// <param name="managerMode">parameter to specify which mode you want to start the NetworkManager</param>
+        /// <returns>true if it was instantiated or is already instantiate otherwise false means it failed to instantiate</returns>
+        public static bool StartNetworkManager(NetworkManagerOperatingMode managerMode = NetworkManagerOperatingMode.Host)
         {
+            //If we are changing the current manager mode and the current manager mode is not "None", then stop the NetworkManager mode
+            if (s_CurrentNetworkManagerMode != managerMode && s_CurrentNetworkManagerMode != NetworkManagerOperatingMode.None)
+            {
+                StopNetworkManagerMode();
+            }
+
             if (NetworkManager.Singleton == null)
             {
                 s_NetworkManagerObject = new GameObject(nameof(NetworkManager));
-                var NetworkManagerComponent = s_NetworkManagerObject.AddComponent<NetworkManager>();
-                if (NetworkManagerComponent == null)
+                var networkManagerComponent = s_NetworkManagerObject.AddComponent<NetworkManager>();
+                if (networkManagerComponent == null)
                 {
                     return false;
                 }
 
-                Debug.Log("NetworkManager Instantiated.");
+                Debug.Log($"{nameof(NetworkManager)} Instantiated.");
 
                 var unetTransport = s_NetworkManagerObject.AddComponent<UNetTransport>();
 
-                NetworkManagerComponent.NetworkConfig = new Configuration.NetworkConfig
+                networkManagerComponent.NetworkConfig = new Configuration.NetworkConfig
                 {
                     CreatePlayerPrefab = false,
                     AllowRuntimeSceneChanges = true,
@@ -60,18 +83,15 @@ namespace MLAPI.RuntimeTests
                 unetTransport.MessageBufferSize = 65535;
                 unetTransport.MaxConnections = 100;
                 unetTransport.MessageSendMode = UNetTransport.SendMode.Immediately;
-                NetworkManagerComponent.NetworkConfig.NetworkTransport = unetTransport;
+                networkManagerComponent.NetworkConfig.NetworkTransport = unetTransport;
 
                 var currentActiveScene = SceneManager.GetActiveScene();
 
                 //Add our test scene name
                 NetworkSceneManager.AddRuntimeSceneName(currentActiveScene.name, 0);
 
-                //Start as host mode as loopback only works in hostmode (storing socket task in the event we use this in the future)
-                s_StartHostSocketTasks = NetworkManager.Singleton.StartHost();
-
-                Debug.Log("Host Started.");
-
+                //Starts the network manager in the mode specified
+                StartNetworkManagerMode(managerMode);
             }
             return true;
         }
@@ -128,11 +148,73 @@ namespace MLAPI.RuntimeTests
             }
         }
 
+        /// <summary>
+        /// Starts the NetworkManager in the current mode specified by managerMode
+        /// </summary>
+        /// <param name="managerMode">the mode to start the NetworkManager as</param>
+        private static void StartNetworkManagerMode(NetworkManagerOperatingMode managerMode)
+        {
+            s_CurrentNetworkManagerMode = managerMode;
+            switch (s_CurrentNetworkManagerMode)
+            {
+                case NetworkManagerOperatingMode.Host:
+                    {
+                        //Starts the host
+                        NetworkManager.Singleton.StartHost();
+                        break;
+                    }
+                case NetworkManagerOperatingMode.Server:
+                    {
+                        //Starts the server
+                        NetworkManager.Singleton.StartServer();
+                        break;
+                    }
+                case NetworkManagerOperatingMode.Client:
+                    {
+                        //Starts the client
+                        NetworkManager.Singleton.StartClient();
+                        break;
+                    }
+            }
+            Debug.Log($"{s_CurrentNetworkManagerMode} started.");
+        }
+
+        /// <summary>
+        /// Stops the current mode of the NetworkManager
+        /// </summary>
+        private static void StopNetworkManagerMode()
+        {
+            switch (s_CurrentNetworkManagerMode)
+            {
+                case NetworkManagerOperatingMode.Host:
+                    {
+                        //Stop the host
+                        NetworkManager.Singleton.StopHost();
+                        break;
+                    }
+                case NetworkManagerOperatingMode.Server:
+                    {
+                        //Stop the server
+                        NetworkManager.Singleton.StopServer();
+                        break;
+                    }
+                case NetworkManagerOperatingMode.Client:
+                    {
+                        //Stop the client
+                        NetworkManager.Singleton.StopClient();
+                        break;
+                    }
+            }
+
+            Debug.Log($"{s_CurrentNetworkManagerMode} stopped.");
+            s_CurrentNetworkManagerMode = NetworkManagerOperatingMode.None;
+        }
+
         //This is called, even if we assert and exit early from a test
         public static void ShutdownNetworkManager()
         {
             //clean up any game objects created with custom unit testing components
-            foreach (KeyValuePair<Guid, GameObject> entry in s_InstantiatedGameObjects)
+            foreach (var entry in s_InstantiatedGameObjects)
             {
                 GameObject.Destroy(entry.Value);
             }
@@ -141,10 +223,7 @@ namespace MLAPI.RuntimeTests
 
             if (s_NetworkManagerObject != null)
             {
-                //Stop the host
-                NetworkManager.Singleton.StopHost();
-
-                Debug.Log("Host Stopped.");
+                StopNetworkManagerMode();
 
                 //Shutdown the NetworkManager
                 NetworkManager.Singleton.Shutdown();
