@@ -38,6 +38,7 @@ public class ClientCounterBehaviour : NetworkBehaviour
     private int m_GlobalDirectCounter;
     private int m_GlobalDirectCurrentClientIdIndex;
     private int m_localClientCounter;
+    private int m_GlobalCounterOffset;
 
     private ulong m_LocalClientId;
 
@@ -103,7 +104,6 @@ public class ClientCounterBehaviour : NetworkBehaviour
         m_CurrentNetworkManagerMode = NetworkManagerMode.Server;
         InitializeNetworkManager();
     }
-
 
     /// <summary>
     /// Handles common and NetworkManager mode specifc initializations
@@ -444,7 +444,6 @@ public class ClientCounterBehaviour : NetworkBehaviour
         }
     }
 
-    int m_GlobalCounterOffset;
     /// <summary>
     /// Update the client text info and progress bar
     /// </summary>
