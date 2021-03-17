@@ -22,7 +22,7 @@ This is the initial experimental Unity MLAPI Package, v0.1.0.
 - Integrated MLAPI with the Unity Profiler for versions 2020.2 and later:
 
   - Added new profiler modules for MLAPI that report important network data.
-  - Attached the profiler to a remote player to view network data over the wire
+  - Attached the profiler to a remote player to view network data over the wire.
 
 - A test project is available for building and experimenting with MLAPI features. This project is available in the MLAPI GitHub [testproject folder](https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi/tree/release/0.1.0/testproject). 
 - Added a [MLAPI Community Contributions](https://github.com/Unity-Technologies/mlapi-community-contributions/tree/master/com.mlapi.contrib.extensions) new GitHub repository to accept extensions from the MLAPI community. Current extensions include moved MLAPI features for lag compensation (useful for Server Authoritative actions) and `TrackedObject`.
