@@ -73,5 +73,10 @@ namespace MLAPI.NetworkVariable
         /// </summary>
         /// <param name="behaviour">The behaviour the container behaves to</param>
         void SetNetworkBehaviour(NetworkBehaviour behaviour);
+
+        /// <summary>
+        /// Accessor for the RemoteTick stored in the networkVariable, list, set or dictionary
+        /// </summary>
+        ushort RemoteTick { get; }
     }
 }

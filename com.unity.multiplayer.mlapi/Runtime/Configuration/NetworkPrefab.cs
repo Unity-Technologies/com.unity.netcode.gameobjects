@@ -14,16 +14,24 @@ namespace MLAPI.Configuration
         {
             get
             {
-                if (ReferenceEquals(Prefab, null))
+                if (Prefab == null)
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning($"{nameof(NetworkPrefab)} is not assigned");
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                    {
+                        NetworkLog.LogWarning($"{nameof(NetworkPrefab)} is not assigned");
+                    }
+
                     return 0;
                 }
 
                 var networkObject = Prefab.GetComponent<NetworkObject>();
-                if (ReferenceEquals(networkObject, null))
+                if (networkObject == null)
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning($"{nameof(NetworkPrefab)} {Prefab.name} does not have a {nameof(NetworkObject)}");
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                    {
+                        NetworkLog.LogWarning($"{nameof(NetworkPrefab)} {Prefab.name} does not have a {nameof(NetworkObject)}");
+                    }
+
                     return 0;
                 }
 

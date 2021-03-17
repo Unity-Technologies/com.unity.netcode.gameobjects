@@ -4,7 +4,6 @@
 #define ARRAY_DIFF_ALLOW_RESIZE // Whether or not to permit writing diffs of differently sized arrays
 
 using System;
-using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using MLAPI.Reflection;
@@ -18,8 +17,8 @@ namespace MLAPI.Serialization
     /// </summary>
     public class NetworkWriter
     {
-        private Stream sink;
-        private NetworkBuffer networkSink;
+        private Stream m_Sink;
+        private NetworkBuffer m_NetworkSink;
 
         /// <summary>
         /// Creates a new NetworkWriter backed by a given stream
@@ -27,8 +26,8 @@ namespace MLAPI.Serialization
         /// <param name="stream">The stream to use for writing</param>
         public NetworkWriter(Stream stream)
         {
-            sink = stream;
-            networkSink = stream as NetworkBuffer;
+            m_Sink = stream;
+            m_NetworkSink = stream as NetworkBuffer;
         }
 
         /// <summary>
@@ -37,13 +36,13 @@ namespace MLAPI.Serialization
         /// <param name="stream">The stream to write to</param>
         public void SetStream(Stream stream)
         {
-            sink = stream;
-            networkSink = stream as NetworkBuffer;
+            m_Sink = stream;
+            m_NetworkSink = stream as NetworkBuffer;
         }
 
         internal Stream GetStream()
         {
-            return sink;
+            return m_Sink;
         }
 
         /// <summary>
@@ -65,14 +64,14 @@ namespace MLAPI.Serialization
                 }
             }
 
-            if (SerializationManager.TrySerialize(sink, value))
+            if (SerializationManager.TrySerialize(m_Sink, value))
             {
                 return;
             }
 
             if (value is Array array)
             {
-                Type elementType = value.GetType().GetElementType();
+                var elementType = value.GetType().GetElementType();
 
                 if (SerializationManager.IsTypeSupported(elementType))
                 {
@@ -143,7 +142,7 @@ namespace MLAPI.Serialization
             }
             else if (value is bool)
             {
-                WriteBit((bool)value);
+                WriteBool((bool)value);
                 return;
             }
             else if (value is Vector2)
@@ -194,14 +193,14 @@ namespace MLAPI.Serialization
             else if (value is GameObject)
             {
                 var networkObject = ((GameObject)value).GetComponent<NetworkObject>();
-                if (ReferenceEquals(networkObject, null))
+                if (networkObject == null)
                 {
-                    throw new ArgumentException($"{nameof(NetworkWriter)} cannot write GameObject types that does not has a {nameof(NetworkObject)} component attached. GameObject: {((GameObject)value).name}");
+                    throw new ArgumentException($"{nameof(NetworkWriter)} cannot write {nameof(GameObject)} types that does not has a {nameof(NetworkObject)} component attached. {nameof(GameObject)}: {((GameObject)value).name}");
                 }
 
                 if (!networkObject.IsSpawned)
                 {
-                    throw new ArgumentException($"{nameof(NetworkWriter)} cannot write {nameof(NetworkObject)} types that are not spawned. GameObject: {((GameObject)value).name}");
+                    throw new ArgumentException($"{nameof(NetworkWriter)} cannot write {nameof(NetworkObject)} types that are not spawned. {nameof(GameObject)}: {((GameObject)value).name}");
                 }
 
                 WriteUInt64Packed(networkObject.NetworkObjectId);
@@ -211,7 +210,7 @@ namespace MLAPI.Serialization
             {
                 if (!((NetworkObject)value).IsSpawned)
                 {
-                    throw new ArgumentException($"{nameof(NetworkWriter)} cannot write {nameof(NetworkObject)} types that are not spawned. GameObject: {((GameObject)value).name}");
+                    throw new ArgumentException($"{nameof(NetworkWriter)} cannot write {nameof(NetworkObject)} types that are not spawned. {nameof(GameObject)}: {((GameObject)value).name}");
                 }
 
                 WriteUInt64Packed(((NetworkObject)value).NetworkObjectId);
@@ -221,7 +220,7 @@ namespace MLAPI.Serialization
             {
                 if (!((NetworkBehaviour)value).HasNetworkObject || !((NetworkBehaviour)value).NetworkObject.IsSpawned)
                 {
-                    throw new ArgumentException($"{nameof(NetworkWriter)} cannot write {nameof(NetworkBehaviour)} types that are not spawned. GameObject: {((GameObject)value).name}");
+                    throw new ArgumentException($"{nameof(NetworkWriter)} cannot write {nameof(NetworkBehaviour)} types that are not spawned. {nameof(GameObject)}: {((GameObject)value).name}");
                 }
 
                 WriteUInt64Packed(((NetworkBehaviour)value).NetworkObjectId);
@@ -246,8 +245,8 @@ namespace MLAPI.Serialization
         {
             WriteUInt32(new UIntFloat
             {
-                floatValue = value
-            }.uintValue);
+                FloatValue = value
+            }.UIntValue);
         }
 
         /// <summary>
@@ -258,8 +257,8 @@ namespace MLAPI.Serialization
         {
             WriteUInt64(new UIntFloat
             {
-                doubleValue = value
-            }.ulongValue);
+                DoubleValue = value
+            }.ULongValue);
         }
 
         /// <summary>
@@ -270,8 +269,8 @@ namespace MLAPI.Serialization
         {
             WriteUInt32Packed(new UIntFloat
             {
-                floatValue = value
-            }.uintValue);
+                FloatValue = value
+            }.UIntValue);
         }
 
         /// <summary>
@@ -282,8 +281,8 @@ namespace MLAPI.Serialization
         {
             WriteUInt64Packed(new UIntFloat
             {
-                doubleValue = value
-            }.ulongValue);
+                DoubleValue = value
+            }.ULongValue);
         }
 
         /// <summary>
@@ -440,7 +439,7 @@ namespace MLAPI.Serialization
             if (bytes < 1 || bytes > 4) throw new ArgumentOutOfRangeException("Result must occupy between 1 and 4 bytes!");
             if (value < minValue || value > maxValue) throw new ArgumentOutOfRangeException("Given value does not match the given constraints!");
             uint result = (uint)(((value + minValue) / (maxValue + minValue)) * ((0x100 * bytes) - 1));
-            for (int i = 0; i < bytes; ++i) sink.WriteByte((byte)(result >> (i << 3)));
+            for (int i = 0; i < bytes; ++i) m_Sink.WriteByte((byte)(result >> (i << 3)));
         }
 
         /// <summary>
@@ -496,8 +495,8 @@ namespace MLAPI.Serialization
         /// <param name="bit"></param>
         public void WriteBit(bool bit)
         {
-            if (networkSink == null) throw new InvalidOperationException($"Cannot write bits on a non-{nameof(NetworkBuffer)} stream");
-            networkSink.WriteBit(bit);
+            if (m_NetworkSink == null) throw new InvalidOperationException($"Cannot write bits on a non-{nameof(NetworkBuffer)} stream");
+            m_NetworkSink.WriteBit(bit);
         }
 
         /// <summary>
@@ -506,9 +505,9 @@ namespace MLAPI.Serialization
         /// <param name="value"></param>
         public void WriteBool(bool value)
         {
-            if (networkSink == null)
+            if (m_NetworkSink == null)
             {
-                sink.WriteByte(value ? (byte)1 : (byte)0);
+                m_Sink.WriteByte(value ? (byte)1 : (byte)0);
             }
             else
             {
@@ -522,7 +521,7 @@ namespace MLAPI.Serialization
         /// </summary>
         public void WritePadBits()
         {
-            while (!networkSink.BitAligned) WriteBit(false);
+            while (!m_NetworkSink.BitAligned) WriteBit(false);
         }
 
         /// <summary>
@@ -545,12 +544,12 @@ namespace MLAPI.Serialization
         /// <param name="bitCount">Amount of bits to write</param>
         public void WriteBits(ulong value, int bitCount)
         {
-            if (networkSink == null) throw new InvalidOperationException($"Cannot write bits on a non-{nameof(NetworkBuffer)} stream");
-            if (bitCount > 64) throw new ArgumentOutOfRangeException("Cannot read more than 64 bits from a 64-bit value!");
-            if (bitCount < 0) throw new ArgumentOutOfRangeException("Cannot read fewer than 0 bits!");
+            if (m_NetworkSink == null) throw new InvalidOperationException($"Cannot write bits on a non-{nameof(NetworkBuffer)} stream");
+            if (bitCount > 64) throw new ArgumentOutOfRangeException(nameof(bitCount), "Cannot read more than 64 bits from a 64-bit value!");
+            if (bitCount < 0) throw new ArgumentOutOfRangeException(nameof(bitCount), "Cannot read fewer than 0 bits!");
             int count = 0;
-            for (; count + 8 < bitCount; count += 8) networkSink.WriteByte((byte)(value >> count));
-            for (; count < bitCount; ++count) networkSink.WriteBit((value & (1UL << count)) != 0);
+            for (; count + 8 < bitCount; count += 8) m_NetworkSink.WriteByte((byte)(value >> count));
+            for (; count < bitCount; ++count) m_NetworkSink.WriteBit((value & (1UL << count)) != 0);
         }
 
 
@@ -561,9 +560,8 @@ namespace MLAPI.Serialization
         /// <param name="bitCount">Amount of bits to write.</param>
         public void WriteBits(byte value, int bitCount)
         {
-            if (networkSink == null) throw new InvalidOperationException($"Cannot write bits on a non-{nameof(NetworkBuffer)} stream");
-            for (int i = 0; i < bitCount; ++i)
-                networkSink.WriteBit(((value >> i) & 1) != 0);
+            if (m_NetworkSink == null) throw new InvalidOperationException($"Cannot write bits on a non-{nameof(NetworkBuffer)} stream");
+            for (int i = 0; i < bitCount; ++i) m_NetworkSink.WriteBit(((value >> i) & 1) != 0);
         }
 
         /// <summary>
@@ -584,8 +582,8 @@ namespace MLAPI.Serialization
         /// <param name="value">Value to write</param>
         public void WriteUInt16(ushort value)
         {
-            sink.WriteByte((byte)value);
-            sink.WriteByte((byte)(value >> 8));
+            m_Sink.WriteByte((byte)value);
+            m_Sink.WriteByte((byte)(value >> 8));
         }
 
         /// <summary>
@@ -600,10 +598,10 @@ namespace MLAPI.Serialization
         /// <param name="value">Value to write</param>
         public void WriteUInt32(uint value)
         {
-            sink.WriteByte((byte)value);
-            sink.WriteByte((byte)(value >> 8));
-            sink.WriteByte((byte)(value >> 16));
-            sink.WriteByte((byte)(value >> 24));
+            m_Sink.WriteByte((byte)value);
+            m_Sink.WriteByte((byte)(value >> 8));
+            m_Sink.WriteByte((byte)(value >> 16));
+            m_Sink.WriteByte((byte)(value >> 24));
         }
 
         /// <summary>
@@ -618,14 +616,14 @@ namespace MLAPI.Serialization
         /// <param name="value">Value to write</param>
         public void WriteUInt64(ulong value)
         {
-            sink.WriteByte((byte)value);
-            sink.WriteByte((byte)(value >> 8));
-            sink.WriteByte((byte)(value >> 16));
-            sink.WriteByte((byte)(value >> 24));
-            sink.WriteByte((byte)(value >> 32));
-            sink.WriteByte((byte)(value >> 40));
-            sink.WriteByte((byte)(value >> 48));
-            sink.WriteByte((byte)(value >> 56));
+            m_Sink.WriteByte((byte)value);
+            m_Sink.WriteByte((byte)(value >> 8));
+            m_Sink.WriteByte((byte)(value >> 16));
+            m_Sink.WriteByte((byte)(value >> 24));
+            m_Sink.WriteByte((byte)(value >> 32));
+            m_Sink.WriteByte((byte)(value >> 40));
+            m_Sink.WriteByte((byte)(value >> 48));
+            m_Sink.WriteByte((byte)(value >> 56));
         }
 
         /// <summary>
@@ -722,7 +720,7 @@ namespace MLAPI.Serialization
         /// <param name="value">Value to write</param>
         public void WriteByte(byte value)
         {
-            sink.WriteByte(value);
+            m_Sink.WriteByte(value);
         }
 
         // As it turns out, strings cannot be treated as char arrays, since strings use pointers to store data rather than C# arrays
@@ -736,8 +734,10 @@ namespace MLAPI.Serialization
             WriteUInt32Packed((uint)s.Length);
             int target = s.Length;
             for (int i = 0; i < target; ++i)
+            {
                 if (oneByteChars) WriteByte((byte)s[i]);
                 else WriteChar(s[i]);
+            }
         }
 
         /// <summary>
@@ -855,7 +855,7 @@ namespace MLAPI.Serialization
         public void WriteByteArray(byte[] b, long count = -1)
         {
             ulong target = WriteArraySize(b, null, count);
-            for (ulong i = 0; i < target; ++i) sink.WriteByte(b[i]);
+            for (ulong i = 0; i < target; ++i) m_Sink.WriteByte(b[i]);
         }
 
 
@@ -921,10 +921,6 @@ namespace MLAPI.Serialization
         {
             long TargetSize = targetSize;
             long LargeInt64Blocks = TargetSize >> 3; //Divide by 8
-            if (targetSize > 131072 || targetSize < 0)
-            {
-                return;
-            }
 
             //8 Byte blocks
             for (long i = 0; i < LargeInt64Blocks; i++)
@@ -1271,7 +1267,7 @@ namespace MLAPI.Serialization
         /// <param name="count">The amount of elements to write</param>
         public void WriteArrayPacked(Array a, long count = -1)
         {
-            Type arrayType = a.GetType();
+            var arrayType = a.GetType();
 
 
 #if ARRAY_WRITE_PERMISSIVE
@@ -1298,7 +1294,7 @@ namespace MLAPI.Serialization
         /// <param name="count">The amount of elements to write</param>
         public void WriteArrayPackedDiff(Array write, Array compare, long count = -1)
         {
-            Type arrayType = write.GetType();
+            var arrayType = write.GetType();
             if (arrayType != compare.GetType()) throw new ArrayTypeMismatchException("Cannot write diff of two differing array types");
 
 #if ARRAY_WRITE_PERMISSIVE

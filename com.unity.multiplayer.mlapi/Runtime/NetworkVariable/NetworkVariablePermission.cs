@@ -9,14 +9,17 @@ namespace MLAPI.NetworkVariable
         /// Everyone
         /// </summary>
         Everyone,
+
         /// <summary>
         /// Server-only operation
         /// </summary>
         ServerOnly,
+
         /// <summary>
         /// Owner-ownly
         /// </summary>
         OwnerOnly,
+
         /// <summary>
         /// Custom delegate
         /// </summary>

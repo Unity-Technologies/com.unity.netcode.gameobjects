@@ -11,10 +11,12 @@ namespace MLAPI.Configuration
         /// Two byte hash
         /// </summary>
         VarIntTwoBytes,
+
         /// <summary>
         /// Four byte hash
         /// </summary>
         VarIntFourBytes,
+
         /// <summary>
         /// Eight byte hash
         /// </summary>

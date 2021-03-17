@@ -5,6 +5,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEditorInternal;
 using MLAPI;
+using MLAPI.Configuration;
 using MLAPI.Transports;
 
 [CustomEditor(typeof(NetworkManager), true)]
@@ -12,115 +13,113 @@ using MLAPI.Transports;
 public class NetworkManagerEditor : Editor
 {
     // Properties
-    private SerializedProperty dontDestroyOnLoadProperty;
-    private SerializedProperty runInBackgroundProperty;
-    private SerializedProperty logLevelProperty;
+    private SerializedProperty m_DontDestroyOnLoadProperty;
+    private SerializedProperty m_RunInBackgroundProperty;
+    private SerializedProperty m_LogLevelProperty;
 
     // NetworkConfig
-    private SerializedProperty networkConfigProperty;
+    private SerializedProperty m_NetworkConfigProperty;
 
     // NetworkConfig fields
-    private SerializedProperty protocolVersionProperty;
-    private SerializedProperty allowRuntimeSceneChangesProperty;
-    private SerializedProperty networkTransportProperty;
-    private SerializedProperty receiveTickrateProperty;
-    private SerializedProperty maxReceiveEventsPerTickRateProperty;
-    private SerializedProperty eventTickrateProperty;
-    private SerializedProperty maxObjectUpdatesPerTickProperty;
-    private SerializedProperty clientConnectionBufferTimeoutProperty;
-    private SerializedProperty connectionApprovalProperty;
-    private SerializedProperty secondsHistoryProperty;
-    private SerializedProperty enableTimeResyncProperty;
-    private SerializedProperty timeResyncIntervalProperty;
-    private SerializedProperty enableNetworkVariableProperty;
-    private SerializedProperty ensureNetworkVariableLengthSafetyProperty;
-    private SerializedProperty createPlayerPrefabProperty;
-    private SerializedProperty forceSamePrefabsProperty;
-    private SerializedProperty usePrefabSyncProperty;
-    private SerializedProperty enableSceneManagementProperty;
-    private SerializedProperty recycleNetworkIdsProperty;
-    private SerializedProperty networkIdRecycleDelayProperty;
-    private SerializedProperty rpcHashSizeProperty;
-    private SerializedProperty loadSceneTimeOutProperty;
-    private SerializedProperty enableMessageBufferingProperty;
-    private SerializedProperty messageBufferTimeoutProperty;
+    private SerializedProperty m_ProtocolVersionProperty;
+    private SerializedProperty m_AllowRuntimeSceneChangesProperty;
+    private SerializedProperty m_NetworkTransportProperty;
+    private SerializedProperty m_ReceiveTickrateProperty;
+    private SerializedProperty m_NetworkTickIntervalSecProperty;
+    private SerializedProperty m_MaxReceiveEventsPerTickRateProperty;
+    private SerializedProperty m_EventTickrateProperty;
+    private SerializedProperty m_MaxObjectUpdatesPerTickProperty;
+    private SerializedProperty m_ClientConnectionBufferTimeoutProperty;
+    private SerializedProperty m_ConnectionApprovalProperty;
+    private SerializedProperty m_EnableTimeResyncProperty;
+    private SerializedProperty m_TimeResyncIntervalProperty;
+    private SerializedProperty m_EnableNetworkVariableProperty;
+    private SerializedProperty m_EnsureNetworkVariableLengthSafetyProperty;
+    private SerializedProperty m_CreatePlayerPrefabProperty;
+    private SerializedProperty m_ForceSamePrefabsProperty;
+    private SerializedProperty m_UsePrefabSyncProperty;
+    private SerializedProperty m_EnableSceneManagementProperty;
+    private SerializedProperty m_RecycleNetworkIdsProperty;
+    private SerializedProperty m_NetworkIdRecycleDelayProperty;
+    private SerializedProperty m_RpcHashSizeProperty;
+    private SerializedProperty m_LoadSceneTimeOutProperty;
+    private SerializedProperty m_EnableMessageBufferingProperty;
+    private SerializedProperty m_MessageBufferTimeoutProperty;
 
-    private ReorderableList networkPrefabsList;
-    private ReorderableList registeredScenesList;
+    private ReorderableList m_NetworkPrefabsList;
+    private ReorderableList m_RegisteredScenesList;
 
-    private NetworkManager networkManager;
-    private bool initialized;
+    private NetworkManager m_NetworkManager;
+    private bool m_Initialized;
 
-    private readonly List<Type> transportTypes = new List<Type>();
-    private string[] transportNames = { "Select transport..." };
+    private readonly List<Type> m_TransportTypes = new List<Type>();
+    private string[] m_TransportNames = { "Select transport..." };
 
     private void ReloadTransports()
     {
-        transportTypes.Clear();
+        m_TransportTypes.Clear();
 
-        Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
+        var assemblies = AppDomain.CurrentDomain.GetAssemblies();
 
-        foreach (Assembly assembly in assemblies)
+        foreach (var assembly in assemblies)
         {
-            Type[] types = assembly.GetTypes();
+            var types = assembly.GetTypes();
 
-            foreach (Type type in types)
+            foreach (var type in types)
             {
                 if (type.IsSubclassOf(typeof(NetworkTransport)))
                 {
-                    transportTypes.Add(type);
+                    m_TransportTypes.Add(type);
                 }
             }
         }
 
-        transportNames = new string[transportTypes.Count + 1];
+        m_TransportNames = new string[m_TransportTypes.Count + 1];
+        m_TransportNames[0] = "Select transport...";
 
-        transportNames[0] = "Select transport...";
-
-        for (int i = 0; i < transportTypes.Count; i++)
+        for (int i = 0; i < m_TransportTypes.Count; i++)
         {
-            transportNames[i + 1] = transportTypes[i].Name;
+            m_TransportNames[i + 1] = m_TransportTypes[i].Name;
         }
     }
 
     private void Init()
     {
-        if (initialized)
-            return;
+        if (m_Initialized) return;
 
-        initialized = true;
-        networkManager = (NetworkManager)target;
+        m_Initialized = true;
+        m_NetworkManager = (NetworkManager)target;
 
         // Base properties
-        dontDestroyOnLoadProperty = serializedObject.FindProperty("DontDestroy");
-        runInBackgroundProperty = serializedObject.FindProperty("RunInBackground");
-        logLevelProperty = serializedObject.FindProperty("LogLevel");
-        networkConfigProperty = serializedObject.FindProperty("NetworkConfig");
+        m_DontDestroyOnLoadProperty = serializedObject.FindProperty(nameof(NetworkManager.DontDestroy));
+        m_RunInBackgroundProperty = serializedObject.FindProperty(nameof(NetworkManager.RunInBackground));
+        m_LogLevelProperty = serializedObject.FindProperty(nameof(NetworkManager.LogLevel));
+        m_NetworkConfigProperty = serializedObject.FindProperty(nameof(NetworkManager.NetworkConfig));
 
         // NetworkConfig properties
-        protocolVersionProperty = networkConfigProperty.FindPropertyRelative("ProtocolVersion");
-        allowRuntimeSceneChangesProperty = networkConfigProperty.FindPropertyRelative("AllowRuntimeSceneChanges");
-        networkTransportProperty = networkConfigProperty.FindPropertyRelative("NetworkTransport");
-        receiveTickrateProperty = networkConfigProperty.FindPropertyRelative("ReceiveTickrate");
-        maxReceiveEventsPerTickRateProperty = networkConfigProperty.FindPropertyRelative("MaxReceiveEventsPerTickRate");
-        eventTickrateProperty = networkConfigProperty.FindPropertyRelative("EventTickrate");
-        clientConnectionBufferTimeoutProperty = networkConfigProperty.FindPropertyRelative("ClientConnectionBufferTimeout");
-        connectionApprovalProperty = networkConfigProperty.FindPropertyRelative("ConnectionApproval");
-        secondsHistoryProperty = networkConfigProperty.FindPropertyRelative("SecondsHistory");
-        enableTimeResyncProperty = networkConfigProperty.FindPropertyRelative("EnableTimeResync");
-        timeResyncIntervalProperty = networkConfigProperty.FindPropertyRelative("TimeResyncInterval");
-        enableNetworkVariableProperty = networkConfigProperty.FindPropertyRelative("EnableNetworkVariable");
-        ensureNetworkVariableLengthSafetyProperty = networkConfigProperty.FindPropertyRelative("EnsureNetworkVariableLengthSafety");
-        createPlayerPrefabProperty = networkConfigProperty.FindPropertyRelative("CreatePlayerPrefab");
-        forceSamePrefabsProperty = networkConfigProperty.FindPropertyRelative("ForceSamePrefabs");
-        usePrefabSyncProperty = networkConfigProperty.FindPropertyRelative("UsePrefabSync");
-        enableSceneManagementProperty = networkConfigProperty.FindPropertyRelative("EnableSceneManagement");
-        recycleNetworkIdsProperty = networkConfigProperty.FindPropertyRelative("RecycleNetworkIds");
-        networkIdRecycleDelayProperty = networkConfigProperty.FindPropertyRelative("NetworkIdRecycleDelay");
-        rpcHashSizeProperty = networkConfigProperty.FindPropertyRelative("RpcHashSize");
-        loadSceneTimeOutProperty = networkConfigProperty.FindPropertyRelative("LoadSceneTimeOut");
-        enableMessageBufferingProperty = networkConfigProperty.FindPropertyRelative("EnableMessageBuffering");
-        messageBufferTimeoutProperty = networkConfigProperty.FindPropertyRelative("MessageBufferTimeout");
+        m_ProtocolVersionProperty = m_NetworkConfigProperty.FindPropertyRelative("ProtocolVersion");
+        m_AllowRuntimeSceneChangesProperty = m_NetworkConfigProperty.FindPropertyRelative("AllowRuntimeSceneChanges");
+        m_NetworkTransportProperty = m_NetworkConfigProperty.FindPropertyRelative("NetworkTransport");
+        m_ReceiveTickrateProperty = m_NetworkConfigProperty.FindPropertyRelative("ReceiveTickrate");
+        m_NetworkTickIntervalSecProperty = m_NetworkConfigProperty.FindPropertyRelative("NetworkTickIntervalSec");
+        m_MaxReceiveEventsPerTickRateProperty = m_NetworkConfigProperty.FindPropertyRelative("MaxReceiveEventsPerTickRate");
+        m_EventTickrateProperty = m_NetworkConfigProperty.FindPropertyRelative("EventTickrate");
+        m_ClientConnectionBufferTimeoutProperty = m_NetworkConfigProperty.FindPropertyRelative("ClientConnectionBufferTimeout");
+        m_ConnectionApprovalProperty = m_NetworkConfigProperty.FindPropertyRelative("ConnectionApproval");
+        m_EnableTimeResyncProperty = m_NetworkConfigProperty.FindPropertyRelative("EnableTimeResync");
+        m_TimeResyncIntervalProperty = m_NetworkConfigProperty.FindPropertyRelative("TimeResyncInterval");
+        m_EnableNetworkVariableProperty = m_NetworkConfigProperty.FindPropertyRelative("EnableNetworkVariable");
+        m_EnsureNetworkVariableLengthSafetyProperty = m_NetworkConfigProperty.FindPropertyRelative("EnsureNetworkVariableLengthSafety");
+        m_CreatePlayerPrefabProperty = m_NetworkConfigProperty.FindPropertyRelative("CreatePlayerPrefab");
+        m_ForceSamePrefabsProperty = m_NetworkConfigProperty.FindPropertyRelative("ForceSamePrefabs");
+        m_UsePrefabSyncProperty = m_NetworkConfigProperty.FindPropertyRelative("UsePrefabSync");
+        m_EnableSceneManagementProperty = m_NetworkConfigProperty.FindPropertyRelative("EnableSceneManagement");
+        m_RecycleNetworkIdsProperty = m_NetworkConfigProperty.FindPropertyRelative("RecycleNetworkIds");
+        m_NetworkIdRecycleDelayProperty = m_NetworkConfigProperty.FindPropertyRelative("NetworkIdRecycleDelay");
+        m_RpcHashSizeProperty = m_NetworkConfigProperty.FindPropertyRelative("RpcHashSize");
+        m_LoadSceneTimeOutProperty = m_NetworkConfigProperty.FindPropertyRelative("LoadSceneTimeOut");
+        m_EnableMessageBufferingProperty = m_NetworkConfigProperty.FindPropertyRelative("EnableMessageBuffering");
+        m_MessageBufferTimeoutProperty = m_NetworkConfigProperty.FindPropertyRelative("MessageBufferTimeout");
 
 
         ReloadTransports();
@@ -129,43 +128,43 @@ public class NetworkManagerEditor : Editor
     private void CheckNullProperties()
     {
         // Base properties
-        dontDestroyOnLoadProperty = serializedObject.FindProperty("DontDestroy");
-        runInBackgroundProperty = serializedObject.FindProperty("RunInBackground");
-        logLevelProperty = serializedObject.FindProperty("LogLevel");
-        networkConfigProperty = serializedObject.FindProperty("NetworkConfig");
+        m_DontDestroyOnLoadProperty = serializedObject.FindProperty(nameof(NetworkManager.DontDestroy));
+        m_RunInBackgroundProperty = serializedObject.FindProperty(nameof(NetworkManager.RunInBackground));
+        m_LogLevelProperty = serializedObject.FindProperty(nameof(NetworkManager.LogLevel));
+        m_NetworkConfigProperty = serializedObject.FindProperty(nameof(NetworkManager.NetworkConfig));
 
         // NetworkConfig properties
-        protocolVersionProperty = networkConfigProperty.FindPropertyRelative("ProtocolVersion");
-        allowRuntimeSceneChangesProperty = networkConfigProperty.FindPropertyRelative("AllowRuntimeSceneChanges");
-        networkTransportProperty = networkConfigProperty.FindPropertyRelative("NetworkTransport");
-        receiveTickrateProperty = networkConfigProperty.FindPropertyRelative("ReceiveTickrate");
-        maxReceiveEventsPerTickRateProperty = networkConfigProperty.FindPropertyRelative("MaxReceiveEventsPerTickRate");
-        eventTickrateProperty = networkConfigProperty.FindPropertyRelative("EventTickrate");
-        clientConnectionBufferTimeoutProperty = networkConfigProperty.FindPropertyRelative("ClientConnectionBufferTimeout");
-        connectionApprovalProperty = networkConfigProperty.FindPropertyRelative("ConnectionApproval");
-        secondsHistoryProperty = networkConfigProperty.FindPropertyRelative("SecondsHistory");
-        enableTimeResyncProperty = networkConfigProperty.FindPropertyRelative("EnableTimeResync");
-        timeResyncIntervalProperty = networkConfigProperty.FindPropertyRelative("TimeResyncInterval");
-        enableNetworkVariableProperty = networkConfigProperty.FindPropertyRelative("EnableNetworkVariable");
-        ensureNetworkVariableLengthSafetyProperty = networkConfigProperty.FindPropertyRelative("EnsureNetworkVariableLengthSafety");
-        createPlayerPrefabProperty = networkConfigProperty.FindPropertyRelative("CreatePlayerPrefab");
-        forceSamePrefabsProperty = networkConfigProperty.FindPropertyRelative("ForceSamePrefabs");
-        usePrefabSyncProperty = networkConfigProperty.FindPropertyRelative("UsePrefabSync");
-        enableSceneManagementProperty = networkConfigProperty.FindPropertyRelative("EnableSceneManagement");
-        recycleNetworkIdsProperty = networkConfigProperty.FindPropertyRelative("RecycleNetworkIds");
-        networkIdRecycleDelayProperty = networkConfigProperty.FindPropertyRelative("NetworkIdRecycleDelay");
-        rpcHashSizeProperty = networkConfigProperty.FindPropertyRelative("RpcHashSize");
-        loadSceneTimeOutProperty = networkConfigProperty.FindPropertyRelative("LoadSceneTimeOut");
-        enableMessageBufferingProperty = networkConfigProperty.FindPropertyRelative("EnableMessageBuffering");
-        messageBufferTimeoutProperty = networkConfigProperty.FindPropertyRelative("MessageBufferTimeout");
+        m_ProtocolVersionProperty = m_NetworkConfigProperty.FindPropertyRelative("ProtocolVersion");
+        m_AllowRuntimeSceneChangesProperty = m_NetworkConfigProperty.FindPropertyRelative("AllowRuntimeSceneChanges");
+        m_NetworkTransportProperty = m_NetworkConfigProperty.FindPropertyRelative("NetworkTransport");
+        m_ReceiveTickrateProperty = m_NetworkConfigProperty.FindPropertyRelative("ReceiveTickrate");
+        m_NetworkTickIntervalSecProperty = m_NetworkConfigProperty.FindPropertyRelative("NetworkTickIntervalSec");
+        m_MaxReceiveEventsPerTickRateProperty = m_NetworkConfigProperty.FindPropertyRelative("MaxReceiveEventsPerTickRate");
+        m_EventTickrateProperty = m_NetworkConfigProperty.FindPropertyRelative("EventTickrate");
+        m_ClientConnectionBufferTimeoutProperty = m_NetworkConfigProperty.FindPropertyRelative("ClientConnectionBufferTimeout");
+        m_ConnectionApprovalProperty = m_NetworkConfigProperty.FindPropertyRelative("ConnectionApproval");
+        m_EnableTimeResyncProperty = m_NetworkConfigProperty.FindPropertyRelative("EnableTimeResync");
+        m_TimeResyncIntervalProperty = m_NetworkConfigProperty.FindPropertyRelative("TimeResyncInterval");
+        m_EnableNetworkVariableProperty = m_NetworkConfigProperty.FindPropertyRelative("EnableNetworkVariable");
+        m_EnsureNetworkVariableLengthSafetyProperty = m_NetworkConfigProperty.FindPropertyRelative("EnsureNetworkVariableLengthSafety");
+        m_CreatePlayerPrefabProperty = m_NetworkConfigProperty.FindPropertyRelative("CreatePlayerPrefab");
+        m_ForceSamePrefabsProperty = m_NetworkConfigProperty.FindPropertyRelative("ForceSamePrefabs");
+        m_UsePrefabSyncProperty = m_NetworkConfigProperty.FindPropertyRelative("UsePrefabSync");
+        m_EnableSceneManagementProperty = m_NetworkConfigProperty.FindPropertyRelative("EnableSceneManagement");
+        m_RecycleNetworkIdsProperty = m_NetworkConfigProperty.FindPropertyRelative("RecycleNetworkIds");
+        m_NetworkIdRecycleDelayProperty = m_NetworkConfigProperty.FindPropertyRelative("NetworkIdRecycleDelay");
+        m_RpcHashSizeProperty = m_NetworkConfigProperty.FindPropertyRelative("RpcHashSize");
+        m_LoadSceneTimeOutProperty = m_NetworkConfigProperty.FindPropertyRelative("LoadSceneTimeOut");
+        m_EnableMessageBufferingProperty = m_NetworkConfigProperty.FindPropertyRelative("EnableMessageBuffering");
+        m_MessageBufferTimeoutProperty = m_NetworkConfigProperty.FindPropertyRelative("MessageBufferTimeout");
     }
 
     private void OnEnable()
     {
-        networkPrefabsList = new ReorderableList(serializedObject, serializedObject.FindProperty("NetworkConfig").FindPropertyRelative("NetworkPrefabs"), true, true, true, true);
-        networkPrefabsList.drawElementCallback = (Rect rect, int index, bool isActive, bool isFocused) =>
+        m_NetworkPrefabsList = new ReorderableList(serializedObject, serializedObject.FindProperty(nameof(NetworkManager.NetworkConfig)).FindPropertyRelative(nameof(NetworkConfig.NetworkPrefabs)), true, true, true, true);
+        m_NetworkPrefabsList.drawElementCallback = (Rect rect, int index, bool isActive, bool isFocused) =>
         {
-            SerializedProperty element = networkPrefabsList.serializedProperty.GetArrayElementAtIndex(index);
+            var element = m_NetworkPrefabsList.serializedProperty.GetArrayElementAtIndex(index);
             int firstLabelWidth = 50;
             int secondLabelWidth = 140;
             float secondFieldWidth = 10;
@@ -173,15 +172,15 @@ public class NetworkManagerEditor : Editor
 
             EditorGUI.LabelField(new Rect(rect.x, rect.y, firstLabelWidth, EditorGUIUtility.singleLineHeight), "Prefab");
             EditorGUI.PropertyField(new Rect(rect.x + firstLabelWidth, rect.y, rect.width - firstLabelWidth - secondLabelWidth - secondFieldWidth - reduceFirstWidth,
-                EditorGUIUtility.singleLineHeight), element.FindPropertyRelative("Prefab"), GUIContent.none);
+                EditorGUIUtility.singleLineHeight), element.FindPropertyRelative(nameof(NetworkPrefab.Prefab)), GUIContent.none);
 
             EditorGUI.LabelField(new Rect(rect.width - secondLabelWidth - secondFieldWidth, rect.y, secondLabelWidth, EditorGUIUtility.singleLineHeight), "Default Player Prefab");
 
             int playerPrefabIndex = -1;
 
-            for (int i = 0; i < networkManager.NetworkConfig.NetworkPrefabs.Count; i++)
+            for (int i = 0; i < m_NetworkManager.NetworkConfig.NetworkPrefabs.Count; i++)
             {
-                if (networkManager.NetworkConfig.NetworkPrefabs[i].PlayerPrefab)
+                if (m_NetworkManager.NetworkConfig.NetworkPrefabs[i].PlayerPrefab)
                 {
                     playerPrefabIndex = i;
                     break;
@@ -191,31 +190,26 @@ public class NetworkManagerEditor : Editor
             using (new EditorGUI.DisabledScope(playerPrefabIndex != -1 && playerPrefabIndex != index))
             {
                 EditorGUI.PropertyField(new Rect(rect.width - secondFieldWidth, rect.y, secondFieldWidth,
-                    EditorGUIUtility.singleLineHeight), element.FindPropertyRelative("PlayerPrefab"), GUIContent.none);
+                    EditorGUIUtility.singleLineHeight), element.FindPropertyRelative(nameof(NetworkPrefab.PlayerPrefab)), GUIContent.none);
             }
         };
 
-        networkPrefabsList.drawHeaderCallback = (Rect rect) => {
-            EditorGUI.LabelField(rect, "NetworkPrefabs");
-        };
+        m_NetworkPrefabsList.drawHeaderCallback = (Rect rect) => { EditorGUI.LabelField(rect, "NetworkPrefabs"); };
 
 
-        registeredScenesList = new ReorderableList(serializedObject, serializedObject.FindProperty("NetworkConfig").FindPropertyRelative("RegisteredScenes"), true, true, true, true);
-        registeredScenesList.drawElementCallback = (Rect rect, int index, bool isActive, bool isFocused) =>
+        m_RegisteredScenesList = new ReorderableList(serializedObject, serializedObject.FindProperty(nameof(NetworkManager.NetworkConfig)).FindPropertyRelative(nameof(NetworkConfig.RegisteredScenes)), true, true, true, true);
+        m_RegisteredScenesList.drawElementCallback = (Rect rect, int index, bool isActive, bool isFocused) =>
         {
-            SerializedProperty element = registeredScenesList.serializedProperty.GetArrayElementAtIndex(index);
+            var element = m_RegisteredScenesList.serializedProperty.GetArrayElementAtIndex(index);
             int firstLabelWidth = 50;
             int padding = 20;
 
             EditorGUI.LabelField(new Rect(rect.x, rect.y, firstLabelWidth, EditorGUIUtility.singleLineHeight), "Name");
             EditorGUI.PropertyField(new Rect(rect.x + firstLabelWidth, rect.y, rect.width - firstLabelWidth - padding,
                 EditorGUIUtility.singleLineHeight), element, GUIContent.none);
-
         };
 
-        registeredScenesList.drawHeaderCallback = (Rect rect) => {
-            EditorGUI.LabelField(rect, "Registered Scene Names");
-        };
+        m_RegisteredScenesList.drawHeaderCallback = (Rect rect) => { EditorGUI.LabelField(rect, "Registered Scene Names"); };
     }
 
     public override void OnInspectorGUI()
@@ -224,7 +218,7 @@ public class NetworkManagerEditor : Editor
         CheckNullProperties();
 
         {
-            SerializedProperty iterator = serializedObject.GetIterator();
+            var iterator = serializedObject.GetIterator();
 
             for (bool enterChildren = true; iterator.NextVisible(enterChildren); enterChildren = false)
             {
@@ -236,130 +230,128 @@ public class NetworkManagerEditor : Editor
         }
 
 
-        if (!networkManager.IsServer && !networkManager.IsClient)
+        if (!m_NetworkManager.IsServer && !m_NetworkManager.IsClient)
         {
             serializedObject.Update();
-            EditorGUILayout.PropertyField(dontDestroyOnLoadProperty);
-            EditorGUILayout.PropertyField(runInBackgroundProperty);
-            EditorGUILayout.PropertyField(logLevelProperty);
+            EditorGUILayout.PropertyField(m_DontDestroyOnLoadProperty);
+            EditorGUILayout.PropertyField(m_RunInBackgroundProperty);
+            EditorGUILayout.PropertyField(m_LogLevelProperty);
 
             EditorGUILayout.Space();
-            networkPrefabsList.DoLayoutList();
+            m_NetworkPrefabsList.DoLayoutList();
 
-            using (new EditorGUI.DisabledScope(!networkManager.NetworkConfig.EnableSceneManagement))
+            using (new EditorGUI.DisabledScope(!m_NetworkManager.NetworkConfig.EnableSceneManagement))
             {
-                registeredScenesList.DoLayoutList();
+                m_RegisteredScenesList.DoLayoutList();
                 EditorGUILayout.Space();
             }
 
 
             EditorGUILayout.LabelField("General", EditorStyles.boldLabel);
-            EditorGUILayout.PropertyField(protocolVersionProperty);
+            EditorGUILayout.PropertyField(m_ProtocolVersionProperty);
 
-            EditorGUILayout.PropertyField(networkTransportProperty);
+            EditorGUILayout.PropertyField(m_NetworkTransportProperty);
 
-            if (networkTransportProperty.objectReferenceValue == null)
+            if (m_NetworkTransportProperty.objectReferenceValue == null)
             {
                 EditorGUILayout.HelpBox("You have no transport selected. A transport is required for the MLAPI to work. Which one do you want?", MessageType.Warning);
 
-                int selection = EditorGUILayout.Popup(0, transportNames);
+                int selection = EditorGUILayout.Popup(0, m_TransportNames);
 
                 if (selection > 0)
                 {
                     ReloadTransports();
 
-                    Component transport = networkManager.gameObject.GetComponent(transportTypes[selection - 1]);
+                    var transportComponent = m_NetworkManager.gameObject.GetComponent(m_TransportTypes[selection - 1]);
 
-                    if (transport == null)
+                    if (transportComponent == null)
                     {
-                        transport = networkManager.gameObject.AddComponent(transportTypes[selection - 1]);
+                        transportComponent = m_NetworkManager.gameObject.AddComponent(m_TransportTypes[selection - 1]);
                     }
 
-                    networkTransportProperty.objectReferenceValue = transport;
+                    m_NetworkTransportProperty.objectReferenceValue = transportComponent;
 
                     Repaint();
                 }
             }
 
-            EditorGUILayout.PropertyField(enableTimeResyncProperty);
+            EditorGUILayout.PropertyField(m_EnableTimeResyncProperty);
 
-            using (new EditorGUI.DisabledScope(!networkManager.NetworkConfig.EnableTimeResync))
+            using (new EditorGUI.DisabledScope(!m_NetworkManager.NetworkConfig.EnableTimeResync))
             {
-                EditorGUILayout.PropertyField(timeResyncIntervalProperty);
+                EditorGUILayout.PropertyField(m_TimeResyncIntervalProperty);
             }
 
             EditorGUILayout.LabelField("Performance", EditorStyles.boldLabel);
-            EditorGUILayout.PropertyField(receiveTickrateProperty);
-            EditorGUILayout.PropertyField(maxReceiveEventsPerTickRateProperty);
-            EditorGUILayout.PropertyField(eventTickrateProperty);
-            EditorGUILayout.PropertyField(enableNetworkVariableProperty);
+            EditorGUILayout.PropertyField(m_ReceiveTickrateProperty);
+            EditorGUILayout.PropertyField(m_NetworkTickIntervalSecProperty);
+            EditorGUILayout.PropertyField(m_MaxReceiveEventsPerTickRateProperty);
+            EditorGUILayout.PropertyField(m_EventTickrateProperty);
+            EditorGUILayout.PropertyField(m_EnableNetworkVariableProperty);
 
-            using (new EditorGUI.DisabledScope(!networkManager.NetworkConfig.EnableNetworkVariable))
+            using (new EditorGUI.DisabledScope(!m_NetworkManager.NetworkConfig.EnableNetworkVariable))
             {
-                if(maxObjectUpdatesPerTickProperty != null)
+                if (m_MaxObjectUpdatesPerTickProperty != null)
                 {
-                    EditorGUILayout.PropertyField(maxObjectUpdatesPerTickProperty);
+                    EditorGUILayout.PropertyField(m_MaxObjectUpdatesPerTickProperty);
                 }
 
-                EditorGUILayout.PropertyField(ensureNetworkVariableLengthSafetyProperty);
+                EditorGUILayout.PropertyField(m_EnsureNetworkVariableLengthSafetyProperty);
             }
 
             EditorGUILayout.LabelField("Connection", EditorStyles.boldLabel);
-            EditorGUILayout.PropertyField(connectionApprovalProperty);
+            EditorGUILayout.PropertyField(m_ConnectionApprovalProperty);
 
-            using (new EditorGUI.DisabledScope(!networkManager.NetworkConfig.ConnectionApproval))
+            using (new EditorGUI.DisabledScope(!m_NetworkManager.NetworkConfig.ConnectionApproval))
             {
-                EditorGUILayout.PropertyField(clientConnectionBufferTimeoutProperty);
+                EditorGUILayout.PropertyField(m_ClientConnectionBufferTimeoutProperty);
             }
-
-            EditorGUILayout.LabelField("Lag Compensation", EditorStyles.boldLabel);
-            EditorGUILayout.PropertyField(secondsHistoryProperty);
 
             EditorGUILayout.LabelField("Spawning", EditorStyles.boldLabel);
-            EditorGUILayout.PropertyField(createPlayerPrefabProperty);
-            EditorGUILayout.PropertyField(forceSamePrefabsProperty);
+            EditorGUILayout.PropertyField(m_CreatePlayerPrefabProperty);
+            EditorGUILayout.PropertyField(m_ForceSamePrefabsProperty);
 
-            using (new EditorGUI.DisabledScope(!networkManager.NetworkConfig.EnableSceneManagement))
+            using (new EditorGUI.DisabledScope(!m_NetworkManager.NetworkConfig.EnableSceneManagement))
             {
-                bool value = networkManager.NetworkConfig.UsePrefabSync;
+                bool value = m_NetworkManager.NetworkConfig.UsePrefabSync;
 
-                if (!networkManager.NetworkConfig.EnableSceneManagement)
+                if (!m_NetworkManager.NetworkConfig.EnableSceneManagement)
                 {
-                    usePrefabSyncProperty.boolValue = true;
+                    m_UsePrefabSyncProperty.boolValue = true;
                 }
 
-                EditorGUILayout.PropertyField(usePrefabSyncProperty);
+                EditorGUILayout.PropertyField(m_UsePrefabSyncProperty);
 
-                if (!networkManager.NetworkConfig.EnableSceneManagement)
+                if (!m_NetworkManager.NetworkConfig.EnableSceneManagement)
                 {
-                    usePrefabSyncProperty.boolValue = value;
+                    m_UsePrefabSyncProperty.boolValue = value;
                 }
             }
 
-            EditorGUILayout.PropertyField(recycleNetworkIdsProperty);
+            EditorGUILayout.PropertyField(m_RecycleNetworkIdsProperty);
 
-            using (new EditorGUI.DisabledScope(!networkManager.NetworkConfig.RecycleNetworkIds))
+            using (new EditorGUI.DisabledScope(!m_NetworkManager.NetworkConfig.RecycleNetworkIds))
             {
-                EditorGUILayout.PropertyField(networkIdRecycleDelayProperty);
+                EditorGUILayout.PropertyField(m_NetworkIdRecycleDelayProperty);
             }
 
-            EditorGUILayout.PropertyField(enableMessageBufferingProperty);
+            EditorGUILayout.PropertyField(m_EnableMessageBufferingProperty);
 
-            using (new EditorGUI.DisabledScope(!networkManager.NetworkConfig.EnableMessageBuffering))
+            using (new EditorGUI.DisabledScope(!m_NetworkManager.NetworkConfig.EnableMessageBuffering))
             {
-                EditorGUILayout.PropertyField(messageBufferTimeoutProperty);
+                EditorGUILayout.PropertyField(m_MessageBufferTimeoutProperty);
             }
 
             EditorGUILayout.LabelField("Bandwidth", EditorStyles.boldLabel);
-            EditorGUILayout.PropertyField(rpcHashSizeProperty);
+            EditorGUILayout.PropertyField(m_RpcHashSizeProperty);
 
             EditorGUILayout.LabelField("Scene Management", EditorStyles.boldLabel);
-            EditorGUILayout.PropertyField(enableSceneManagementProperty);
+            EditorGUILayout.PropertyField(m_EnableSceneManagementProperty);
 
-            using (new EditorGUI.DisabledScope(!networkManager.NetworkConfig.EnableSceneManagement))
+            using (new EditorGUI.DisabledScope(!m_NetworkManager.NetworkConfig.EnableSceneManagement))
             {
-                EditorGUILayout.PropertyField(loadSceneTimeOutProperty);
-                EditorGUILayout.PropertyField(allowRuntimeSceneChangesProperty);
+                EditorGUILayout.PropertyField(m_LoadSceneTimeOutProperty);
+                EditorGUILayout.PropertyField(m_AllowRuntimeSceneChangesProperty);
             }
 
             serializedObject.ApplyModifiedProperties();
@@ -377,17 +369,17 @@ public class NetworkManagerEditor : Editor
 
                 if (GUILayout.Button(new GUIContent("Start Host", "Starts a host instance" + buttonDisabledReasonSuffix)))
                 {
-                    networkManager.StartHost();
+                    m_NetworkManager.StartHost();
                 }
 
                 if (GUILayout.Button(new GUIContent("Start Server", "Starts a server instance" + buttonDisabledReasonSuffix)))
                 {
-                    networkManager.StartServer();
+                    m_NetworkManager.StartServer();
                 }
 
                 if (GUILayout.Button(new GUIContent("Start Client", "Starts a client instance" + buttonDisabledReasonSuffix)))
                 {
-                    networkManager.StartClient();
+                    m_NetworkManager.StartClient();
                 }
 
                 if (!EditorApplication.isPlaying)
@@ -398,25 +390,19 @@ public class NetworkManagerEditor : Editor
         }
         else
         {
-            string instanceType = "";
+            string instanceType = string.Empty;
 
-            if (networkManager.IsHost)
-                instanceType = "Host";
-            else if (networkManager.IsServer)
-                instanceType = "Server";
-            else if (networkManager.IsClient)
-                instanceType = "Client";
+            if (m_NetworkManager.IsHost) instanceType = "Host";
+            else if (m_NetworkManager.IsServer) instanceType = "Server";
+            else if (m_NetworkManager.IsClient) instanceType = "Client";
 
             EditorGUILayout.HelpBox("You cannot edit the NetworkConfig when a " + instanceType + " is running.", MessageType.Info);
 
             if (GUILayout.Button(new GUIContent("Stop " + instanceType, "Stops the " + instanceType + " instance.")))
             {
-                if (networkManager.IsHost)
-                    networkManager.StopHost();
-                else if (networkManager.IsServer)
-                    networkManager.StopServer();
-                else if (networkManager.IsClient)
-                    networkManager.StopClient();
+                if (m_NetworkManager.IsHost) m_NetworkManager.StopHost();
+                else if (m_NetworkManager.IsServer) m_NetworkManager.StopServer();
+                else if (m_NetworkManager.IsClient) m_NetworkManager.StopClient();
             }
         }
     }

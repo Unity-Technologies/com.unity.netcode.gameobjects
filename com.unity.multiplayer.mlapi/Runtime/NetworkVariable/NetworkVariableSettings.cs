@@ -45,9 +45,6 @@ namespace MLAPI.NetworkVariable
         /// <summary>
         /// Constructs a new NetworkVariableSettings instance
         /// </summary>
-        public NetworkVariableSettings()
-        {
-
-        }
+        public NetworkVariableSettings() { }
     }
 }

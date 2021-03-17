@@ -1,11 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace MLAPI.Profiling
 {
     public class ProfilingDataStore
     {
-        readonly Dictionary<string, int> m_Dictionary = new Dictionary<string, int>();
+        private readonly Dictionary<string, int> m_Dictionary = new Dictionary<string, int>();
 
         public void Add(string fieldName, int value)
         {

@@ -47,7 +47,5 @@ namespace MLAPI.Messaging
     /// <para>A ClientRpc marked method will be fired by the server but executed on clients.</para>
     /// </summary>
     [AttributeUsage(AttributeTargets.Method)]
-    public class ClientRpcAttribute : RpcAttribute
-    {
-    }
+    public class ClientRpcAttribute : RpcAttribute { }
 }
