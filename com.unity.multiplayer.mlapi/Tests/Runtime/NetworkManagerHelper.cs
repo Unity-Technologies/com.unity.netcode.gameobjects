@@ -52,7 +52,8 @@ namespace MLAPI.RuntimeTests
         /// <returns>true if it was instantiated or is already instantiate otherwise false means it failed to instantiate</returns>
         public static bool StartNetworkManager(NetworkManagerOperatingMode managerMode = NetworkManagerOperatingMode.Host)
         {
-            if (s_CurrentNetworkManagerMode != managerMode)
+            //If we are changing the current manager mode and the current manager mode is not "None", then stop the NetworkManager mode
+            if (s_CurrentNetworkManagerMode != managerMode && s_CurrentNetworkManagerMode != NetworkManagerOperatingMode.None)
             {
                 StopNetworkManagerMode();
             }
