@@ -47,10 +47,19 @@ public class ClientCounterBehaviour : NetworkBehaviour
 
     public enum ClientRpcDirectTestingModes
     {
-        Single,        //Updates directly to a client until the progress meter reach 100%
-        Striped,       //Updates every other client in unison (i.e. 1 & 3 updated up to 100%, 0 & 2 up to 100%, "repeat")
-        Unified,       //Updates all clients directly at the same time up to 100%
+        Single,        //[Tests] sending directly to a single client
+        Striped,       //[Tests] sending to multiple alternating clients -- every other client in pairs (i.e. 1 & 3 updated up to 100%, 0 & 2 up to 100%, "repeat")
+        Unified,       //[Tests] sending to all clients directly at the same time (same as broadcast but for testing the ability to specify all clients)
     }
+
+    private enum NetworkManagerMode
+    {
+        Client,
+        Host,
+        Server,
+    }
+
+    private NetworkManagerMode m_CurrentNetworkManagerMode;
 
     private ClientRpcDirectTestingModes m_ClientRpcDirectTestingMode;
 
@@ -60,45 +69,80 @@ public class ClientCounterBehaviour : NetworkBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        Screen.SetResolution(640, 480, FullScreenMode.Windowed);
+        //Start at a smaller resolution until connection mode is selected.
+        Screen.SetResolution(320, 320, FullScreenMode.Windowed);
+        if (m_CounterTextObject)
+        {
+            m_CounterTextObject.gameObject.SetActive(false);
+        }
     }
 
     /// <summary>
-    /// Invoked via UI button when the user wants to create a client
+    /// Sets the NetworkManager to client mode when invoked via UI button
     /// </summary>
     public void OnCreateClient()
     {
-        NetworkManager.Singleton.StartClient();
-        m_ServerParams.Send.UpdateStage = NetworkUpdateStage.Update;
-        Screen.SetResolution(512, 125, FullScreenMode.Windowed);
-        m_ConnectionModeButtonParent.SetActive(false);
+        m_CurrentNetworkManagerMode = NetworkManagerMode.Client;
+        InitializeNetworkManager();
     }
 
     /// <summary>
-    /// Invoked via UI button when the user wants to create a host
+    /// Sets the NetworkManager to host mode when invoked via UI button
     /// </summary>
     public void OnCreateHost()
     {
-        NetworkManager.Singleton.StartHost();
-        m_ClientParams.Send.TargetClientIds = new ulong[] { 0 };
-        m_ClientParams.Send.UpdateStage = NetworkUpdateStage.PostLateUpdate;
-        Screen.SetResolution(1024, 768, FullScreenMode.Windowed);
-        m_ClientRpcDirectTestingMode = ClientRpcDirectTestingModes.Single;
-        m_ConnectionModeButtonParent.SetActive(false);
+        m_CurrentNetworkManagerMode = NetworkManagerMode.Host;
+        InitializeNetworkManager();
     }
 
     /// <summary>
-    /// Invoked via UI button when the user wants to create a server
+    /// Sets the NetworkManager to server mode when invoked via UI button
     /// </summary>
     public void OnCreateServer()
     {
-        NetworkManager.Singleton.StartServer();
+        m_CurrentNetworkManagerMode = NetworkManagerMode.Server;
+        InitializeNetworkManager();
+    }
+
+
+    /// <summary>
+    /// Handles common and NetworkManager mode specifc initializations
+    /// </summary>
+    private void InitializeNetworkManager()
+    {
         m_ClientParams.Send.TargetClientIds = new ulong[] { 0 };
-        m_ClientParams.Send.UpdateStage = NetworkUpdateStage.PostLateUpdate;
-        Screen.SetResolution(1024, 768, FullScreenMode.Windowed);
-        m_ClientProgressBar.enabled = false;
+
         m_ClientRpcDirectTestingMode = ClientRpcDirectTestingModes.Single;
         m_ConnectionModeButtonParent.SetActive(false);
+        if (m_CounterTextObject)
+        {
+            m_CounterTextObject.gameObject.SetActive(true);
+        }
+        switch (m_CurrentNetworkManagerMode)
+        {
+            case NetworkManagerMode.Client:
+                {
+                    NetworkManager.Singleton.StartClient();
+                    m_ServerParams.Send.UpdateStage = NetworkUpdateStage.Update;
+                    Screen.SetResolution(800, 80, FullScreenMode.Windowed);
+                    break;
+                }
+            case NetworkManagerMode.Host:
+                {
+                    NetworkManager.Singleton.StartHost();
+                    m_ClientParams.Send.UpdateStage = NetworkUpdateStage.PreUpdate;
+                    Screen.SetResolution(800, 480, FullScreenMode.Windowed);
+                    break;
+                }
+            case NetworkManagerMode.Server:
+                {
+                    NetworkManager.Singleton.StartServer();
+                    m_ClientProgressBar.enabled = false;
+                    m_ClientParams.Send.UpdateStage = NetworkUpdateStage.PostLateUpdate;
+                    Screen.SetResolution(800, 480, FullScreenMode.Windowed);
+                    break;
+                }
+        }
     }
 
     /// <summary>
@@ -115,6 +159,18 @@ public class ClientCounterBehaviour : NetworkBehaviour
                 m_ClientSpecificCounters.Add(NetworkManager.Singleton.LocalClientId, 0);
                 m_ClientIds.Add(NetworkManager.Singleton.LocalClientId);
             }
+        }
+    }
+
+    /// <summary>
+    /// Unregeister for the client connected and disconnected events upon being destroyed
+    /// </summary>
+    private void OnDestroy()
+    {
+        if (IsServer)
+        {
+            NetworkManager.Singleton.OnClientConnectedCallback -= OnClientConnectedCallback;
+            NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnectCallback;
         }
     }
 
@@ -143,7 +199,7 @@ public class ClientCounterBehaviour : NetworkBehaviour
         if (IsServer)
         {
             //Exclude the server local id if only a server
-            if(!IsHost && clientId == NetworkManager.Singleton.LocalClientId)
+            if (!IsHost && clientId == NetworkManager.Singleton.LocalClientId)
             {
                 return;
             }
@@ -219,6 +275,8 @@ public class ClientCounterBehaviour : NetworkBehaviour
     {
         m_ClientIndices.Clear();
         m_GlobalDirectCounter = 0;
+        m_GlobalDirectCurrentClientIdIndex = 0;
+
         switch (m_ClientRpcDirectTestingMode)
         {
             case ClientRpcDirectTestingModes.Single:
@@ -252,9 +310,7 @@ public class ClientCounterBehaviour : NetworkBehaviour
             m_GlobalDirectCurrentClientIdIndex++;
             if (m_GlobalDirectCurrentClientIdIndex >= m_ClientIds.Count)
             {
-                m_GlobalDirectCurrentClientIdIndex = 0;
                 SelectNextDirectUpdateMethod();
-                m_GlobalDirectCounter = 0;
                 return;
             }
             m_GlobalDirectCounter = 0;
@@ -283,9 +339,7 @@ public class ClientCounterBehaviour : NetworkBehaviour
             m_GlobalDirectCurrentClientIdIndex++;
             if (m_GlobalDirectCurrentClientIdIndex >= m_ClientIds.Count)
             {
-                m_GlobalDirectCurrentClientIdIndex = 0;
                 SelectNextDirectUpdateMethod();
-                m_GlobalDirectCounter = 0;
                 return;
             }
             m_GlobalDirectCounter = 0;
@@ -315,7 +369,6 @@ public class ClientCounterBehaviour : NetworkBehaviour
         if (m_GlobalDirectCounter == 100)
         {
             SelectNextDirectUpdateMethod();
-            m_GlobalDirectCounter = 0;
             return;
         }
 
@@ -326,8 +379,8 @@ public class ClientCounterBehaviour : NetworkBehaviour
     }
 
     /// <summary>
-    /// Client to Server
-    /// Sends a client relative growing counter
+    /// [Tests] Client to Server
+    /// Sends a growing counter (client relative)
     /// </summary>
     /// <param name="counter">the client side counter</param>
     /// <param name="parameters"></param>
@@ -346,19 +399,24 @@ public class ClientCounterBehaviour : NetworkBehaviour
     }
 
     /// <summary>
-    /// Server to Clients
-    /// Demonstrates broadcasting to all clients (similar to unified without specifying all client ids)
+    /// [Tests] Server to Clients
+    /// [Tests] broadcasting to all clients (similar to unified direct without specifying all client ids)
     /// </summary>
     /// <param name="counter">the global counter value</param>
     [ClientRpc]
     private void OnSendGlobalCounterClientRpc(int counter)
     {
         m_GlobalCounter = counter;
+        if (m_GlobalCounterOffset == 0)
+        {
+            m_GlobalCounterOffset = Mathf.Max(counter - 1, 0);
+        }
     }
 
     /// <summary>
     /// Server to Client
     /// Handles setting the m_GlobalDirectCounter for the client in questions
+    /// [Tests] Sending to random pairs of clients (i.e. multi-client but not broadcast)
     /// </summary>
     /// <param name="counter"></param>
     /// <param name="parameters"></param>
@@ -386,6 +444,7 @@ public class ClientCounterBehaviour : NetworkBehaviour
         }
     }
 
+    int m_GlobalCounterOffset;
     /// <summary>
     /// Update the client text info and progress bar
     /// </summary>
@@ -396,7 +455,7 @@ public class ClientCounterBehaviour : NetworkBehaviour
             m_LocalClientId = NetworkManager.Singleton.LocalClientId;
         }
 
-        m_CounterTextObject.text = $"Client-ID:[{m_LocalClientId}] {nameof(m_GlobalCounter)}:{m_GlobalCounter} | {nameof(m_GlobalDirectCounter)}:{m_GlobalDirectCounter}";
+        m_CounterTextObject.text = $"Client-ID [{m_LocalClientId}]  Broadcast Rpcs Received:  {m_GlobalCounter - m_GlobalCounterOffset}  |  Direct Rpcs Received: {m_GlobalDirectCounter}";
 
 
         if (m_ClientProgressBar)
@@ -415,11 +474,11 @@ public class ClientCounterBehaviour : NetworkBehaviour
         {
             if (entry.Key == 0 && IsHost)
             {
-                updatedCounters += $"Client[{entry.Key}] | {nameof(m_GlobalCounter)}:{m_GlobalCounter} -- Counter: {entry.Value} | {nameof(m_GlobalDirectCounter)}:{m_GlobalDirectCounter}\n";
+                updatedCounters += $"Client-ID [{entry.Key}]  Client to Server Rpcs Received: {entry.Value}  |  Broadcast Rpcs Sent:{m_GlobalCounter} -- Direct Rpcs Sent:{m_GlobalDirectCounter}\n";
             }
             else
             {
-                updatedCounters += $"Client[{entry.Key}] -- Counter: {entry.Value}\n";
+                updatedCounters += $"Client-ID [{entry.Key}]  Client to Server Rpcs Received: {entry.Value}\n";
             }
         }
 
