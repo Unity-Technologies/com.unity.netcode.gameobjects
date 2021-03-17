@@ -60,8 +60,6 @@ namespace MLAPI.RuntimeTests
 
             //Disable this so it isn't running any longer.
             rpcPipelineTestComponent.gameObject.SetActive(false);
-
-            yield return null;
 #else
             yield return null;
 #endif
