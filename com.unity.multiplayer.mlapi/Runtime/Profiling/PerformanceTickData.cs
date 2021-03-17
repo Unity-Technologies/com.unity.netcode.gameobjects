@@ -32,5 +32,10 @@ namespace MLAPI.Profiling
         {
             return m_TickData.HasData(fieldName);
         }
+
+        public void Reset()
+        {
+            m_TickData.Clear();
+        }
     }
 }
