@@ -106,8 +106,6 @@ namespace MLAPI.RuntimeTests
             growingRpcBufferSizeComponent.gameObject.SetActive(false);
 
             Assert.IsTrue(testsAreComplete);
-
-            yield return null;
 #else
             yield return null;
 #endif
