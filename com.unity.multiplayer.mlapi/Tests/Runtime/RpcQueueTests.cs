@@ -115,8 +115,8 @@ namespace MLAPI.RuntimeTests
         }
 
 
-        [UnityTest]
-        public IEnumerator RpcQueueContainerClass()
+        [Test]
+        public void RpcQueueContainerClass()
         {
             Assert.IsTrue(NetworkManagerHelper.StartNetworkManager());
 
@@ -187,8 +187,6 @@ namespace MLAPI.RuntimeTests
 
             rpcQueueContainer.Dispose();
             rpcQueueContainer = null;
-            //If we made it to here we are all done and success!
-            yield return null;
         }
 
         public void Dispose()
