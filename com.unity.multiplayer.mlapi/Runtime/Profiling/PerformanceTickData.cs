@@ -16,9 +16,12 @@ namespace MLAPI.Profiling
 
         public void AddNonDuplicateData(IReadOnlyDictionary<string, int> transportProfilerData)
         {
-            var nonDuplicates = transportProfilerData.Where(entry => !m_TickData.HasData(entry.Key));
-            foreach (var entry in nonDuplicates)
+            foreach (var entry in transportProfilerData)
             {
+                if (m_TickData.HasData(entry.Key))
+                {
+                    continue;
+                }
                 m_TickData.Add(entry.Key, entry.Value);
             }
         }
