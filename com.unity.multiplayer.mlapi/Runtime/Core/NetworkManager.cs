@@ -34,7 +34,7 @@ namespace MLAPI
         [Browsable(false)]
         [EditorBrowsable(EditorBrowsableState.Never)]
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-#if UNITY_2020_2_OR_NEWER
+#if UNITY_2020_3_OR_NEWER
         // RuntimeAccessModifiersILPP will make this `public`
         internal static readonly Dictionary<uint, Action<NetworkBehaviour, NetworkSerializer, __RpcParams>> __ntable = new Dictionary<uint, Action<NetworkBehaviour, NetworkSerializer, __RpcParams>>();
 #else
@@ -618,7 +618,7 @@ namespace MLAPI
                 NetworkTickSystem = null;
             }
 
-#if !UNITY_2020_2_OR_NEWER
+#if !UNITY_2020_3_OR_NEWER
             NetworkProfiler.Stop();
 #endif
             IsListening = false;
@@ -666,7 +666,7 @@ namespace MLAPI
 #endif
                     var isLoopBack = false;
 
-#if !UNITY_2020_2_OR_NEWER
+#if !UNITY_2020_3_OR_NEWER
                     NetworkProfiler.StartTick(TickType.Receive);
 #endif
 
@@ -687,7 +687,7 @@ namespace MLAPI
 
                     m_LastReceiveTickTime = NetworkTime;
 
-#if !UNITY_2020_2_OR_NEWER
+#if !UNITY_2020_3_OR_NEWER
                     NetworkProfiler.EndTick();
 #endif
 
@@ -707,7 +707,7 @@ namespace MLAPI
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                     s_EventTick.Begin();
 #endif
-#if UNITY_EDITOR && !UNITY_2020_2_OR_NEWER
+#if UNITY_EDITOR && !UNITY_2020_3_OR_NEWER
                     NetworkProfiler.StartTick(TickType.Event);
 #endif
 
@@ -726,7 +726,7 @@ namespace MLAPI
                     {
                         m_LastEventTickTime = NetworkTime;
                     }
-#if UNITY_EDITOR && !UNITY_2020_2_OR_NEWER
+#if UNITY_EDITOR && !UNITY_2020_3_OR_NEWER
                     NetworkProfiler.EndTick();
 #endif
 
@@ -737,12 +737,12 @@ namespace MLAPI
 
                 if (IsServer && NetworkConfig.EnableTimeResync && NetworkTime - m_LastTimeSyncTime >= NetworkConfig.TimeResyncInterval)
                 {
-#if UNITY_EDITOR && !UNITY_2020_2_OR_NEWER
+#if UNITY_EDITOR && !UNITY_2020_3_OR_NEWER
                     NetworkProfiler.StartTick(TickType.Event);
 #endif
                     SyncTime();
                     m_LastTimeSyncTime = NetworkTime;
-#if UNITY_EDITOR && !UNITY_2020_2_OR_NEWER
+#if UNITY_EDITOR && !UNITY_2020_3_OR_NEWER
                     NetworkProfiler.EndTick();
 #endif
                 }
@@ -830,7 +830,7 @@ namespace MLAPI
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                     s_TransportConnect.Begin();
 #endif
-#if !UNITY_2020_2_OR_NEWER
+#if !UNITY_2020_3_OR_NEWER
                     NetworkProfiler.StartEvent(TickType.Receive, (uint)payload.Count, networkChannel, "TRANSPORT_CONNECT");
 #endif
                     if (IsServer)
@@ -859,7 +859,7 @@ namespace MLAPI
                         StartCoroutine(ApprovalTimeout(clientId));
                     }
 
-#if !UNITY_2020_2_OR_NEWER
+#if !UNITY_2020_3_OR_NEWER
                     NetworkProfiler.EndEvent();
 #endif
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
@@ -880,7 +880,7 @@ namespace MLAPI
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                     s_TransportDisconnect.Begin();
 #endif
-#if !UNITY_2020_2_OR_NEWER
+#if !UNITY_2020_3_OR_NEWER
                     NetworkProfiler.StartEvent(TickType.Receive, 0, NetworkChannel.Internal, "TRANSPORT_DISCONNECT");
 #endif
 
@@ -898,7 +898,7 @@ namespace MLAPI
 
                     OnClientDisconnectCallback?.Invoke(clientId);
 
-#if !UNITY_2020_2_OR_NEWER
+#if !UNITY_2020_3_OR_NEWER
                     NetworkProfiler.EndEvent();
 #endif
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
@@ -949,7 +949,7 @@ namespace MLAPI
 
                 uint headerByteSize = (uint)Arithmetic.VarIntSize(messageType);
 
-#if !UNITY_2020_2_OR_NEWER
+#if !UNITY_2020_3_OR_NEWER
                 NetworkProfiler.StartEvent(TickType.Receive, (uint)(data.Count - headerByteSize), networkChannel, messageType);
 #endif
 
@@ -1081,7 +1081,7 @@ namespace MLAPI
 
                 #endregion
 
-#if !UNITY_2020_2_OR_NEWER
+#if !UNITY_2020_3_OR_NEWER
                 NetworkProfiler.EndEvent();
 #endif
             }

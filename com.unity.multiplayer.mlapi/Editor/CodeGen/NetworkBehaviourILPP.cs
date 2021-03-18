@@ -14,7 +14,7 @@ using Unity.CompilationPipeline.Common.ILPostProcessing;
 using UnityEngine;
 using MethodAttributes = Mono.Cecil.MethodAttributes;
 using ParameterAttributes = Mono.Cecil.ParameterAttributes;
-#if UNITY_2020_2_OR_NEWER
+#if UNITY_2020_3_OR_NEWER
 using ILPPInterface = Unity.CompilationPipeline.Common.ILPostProcessing.ILPostProcessor;
 #else
 using ILPPInterface = MLAPI.Editor.CodeGen.ILPostProcessor;

@@ -27,7 +27,7 @@ namespace MLAPI
     {
         [Browsable(false)]
         [EditorBrowsable(EditorBrowsableState.Never)]
-#if UNITY_2020_2_OR_NEWER
+#if UNITY_2020_3_OR_NEWER
         // RuntimeAccessModifiersILPP will make this `protected`
         internal enum __NExec
 #else
@@ -45,7 +45,7 @@ namespace MLAPI
         [Browsable(false)]
         [EditorBrowsable(EditorBrowsableState.Never)]
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-#if UNITY_2020_2_OR_NEWER
+#if UNITY_2020_3_OR_NEWER
         // RuntimeAccessModifiersILPP will make this `protected`
         internal __NExec __nexec = __NExec.None;
 #else
@@ -56,7 +56,7 @@ namespace MLAPI
 
         [Browsable(false)]
         [EditorBrowsable(EditorBrowsableState.Never)]
-#if UNITY_2020_2_OR_NEWER
+#if UNITY_2020_3_OR_NEWER
         // RuntimeAccessModifiersILPP will make this `protected`
         internal NetworkSerializer __beginSendServerRpc(ServerRpcParams serverRpcParams, RpcDelivery rpcDelivery)
 #else
@@ -99,7 +99,7 @@ namespace MLAPI
 
         [Browsable(false)]
         [EditorBrowsable(EditorBrowsableState.Never)]
-#if UNITY_2020_2_OR_NEWER
+#if UNITY_2020_3_OR_NEWER
         // RuntimeAccessModifiersILPP will make this `protected`
         internal void __endSendServerRpc(NetworkSerializer serializer, ServerRpcParams serverRpcParams, RpcDelivery rpcDelivery)
 #else
@@ -122,7 +122,7 @@ namespace MLAPI
 
         [Browsable(false)]
         [EditorBrowsable(EditorBrowsableState.Never)]
-#if UNITY_2020_2_OR_NEWER
+#if UNITY_2020_3_OR_NEWER
         // RuntimeAccessModifiersILPP will make this `protected`
         internal NetworkSerializer __beginSendClientRpc(ClientRpcParams clientRpcParams, RpcDelivery rpcDelivery)
 #else
@@ -197,7 +197,7 @@ namespace MLAPI
 
         [Browsable(false)]
         [EditorBrowsable(EditorBrowsableState.Never)]
-#if UNITY_2020_2_OR_NEWER
+#if UNITY_2020_3_OR_NEWER
         // RuntimeAccessModifiersILPP will make this `protected`
         internal void __endSendClientRpc(NetworkSerializer serializer, ClientRpcParams clientRpcParams, RpcDelivery rpcDelivery)
 #else

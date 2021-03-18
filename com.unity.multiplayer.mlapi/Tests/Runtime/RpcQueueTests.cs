@@ -27,7 +27,7 @@ namespace MLAPI.RuntimeTests
         [UnityTest]
         public IEnumerator RpcQueueUnitTest()
         {
-#if UNITY_2020_2_OR_NEWER // Disabling this test on 2019.4 due to ILPP issues on Yamato CI/CD runs
+#if UNITY_2020_3_OR_NEWER // Disabling this test on pre-2020.3 due to ILPP issues on Yamato CI/CD runs
             var networkManagerObject = new GameObject(nameof(NetworkManager));
             m_NetworkManager = networkManagerObject.AddComponent<NetworkManager>();
             var unetTransport = networkManagerObject.AddComponent<UNetTransport>();

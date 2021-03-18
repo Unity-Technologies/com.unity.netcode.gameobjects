@@ -1,4 +1,4 @@
-#if UNITY_2020_2_OR_NEWER
+#if UNITY_2020_3_OR_NEWER
 using Unity.Profiling;
 #endif
 using UnityEngine;
@@ -7,7 +7,7 @@ namespace MLAPI.Profiling
 {
     internal static class ProfilerCountersInfo
     {
-#if UNITY_2020_2_OR_NEWER && ENABLE_PROFILER
+#if UNITY_2020_3_OR_NEWER && ENABLE_PROFILER
         // Operations
         private static readonly ProfilerCounterValue<int> k_ConnectionsCounterValue =
             new ProfilerCounterValue<int>(ProfilerCategory.Network, ProfilerConstants.Connections,

@@ -7,7 +7,6 @@ test_editors:
   - 2021.1
   - 2021.2
   - 2020.3
-  - 2019.4
   - trunk
 
 # Platforms that will be tested. The first entry in this array will also

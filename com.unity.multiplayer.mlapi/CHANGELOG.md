@@ -19,7 +19,7 @@ This is the initial experimental Unity MLAPI Package, v0.1.0.
 
 - Added message batching to handle consecutive RPC requests sent to the same client. `RpcBatcher` sends batches based on requests from the `RpcQueueProcessing`, by batch size threshold or immediately.
 - [GitHub 494](https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi/pull/494): Added a constraint to allow one `NetworkObject` per `GameObject`, set through the `DisallowMultipleComponent` attribute.
-- Integrated MLAPI with the Unity Profiler for versions 2020.2 and later:
+- Integrated MLAPI with the Unity Profiler for versions 2020.3 and later:
 
   - Added new profiler modules for MLAPI that report important network data.
   - Attached the profiler to a remote player to view network data over the wire.
@@ -85,7 +85,7 @@ With a new release of MLAPI in Unity, some features have been removed:
     * Removed "hail handshake", including `NetworkManager` implementation and `NetworkConstants` entries.
     * Modified `RpcQueue` and `RpcBatcher` internals to remove encryption and authentication from reading and writing.
 
-* Removed the previous MLAPI Profiler editor window from Unity versions 2020.2 and later.
+* Removed the previous MLAPI Profiler editor window from Unity versions 2020.3 and later.
 * Removed previous MLAPI Convenience and Performance RPC APIs with the new standard RPC API. See [RFC #1](https://github.com/Unity-Technologies/com.unity.multiplayer.rfcs/blob/master/text/0001-std-rpc-api.md) for details.
 * [GitHub 520](https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi/pull/520): Removed the MLAPI Installer.
 

@@ -36,7 +36,7 @@ namespace MLAPI.Messaging
         public ClientRpcReceiveParams Receive;
     }
 
-#if UNITY_2020_2_OR_NEWER
+#if UNITY_2020_3_OR_NEWER
     // RuntimeAccessModifiersILPP will make this `public`
     internal struct __RpcParams
 #else

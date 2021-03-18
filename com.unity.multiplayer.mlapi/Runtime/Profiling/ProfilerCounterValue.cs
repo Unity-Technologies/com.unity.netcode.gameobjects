@@ -2,7 +2,7 @@ using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Unity.Collections.LowLevel.Unsafe;
-#if UNITY_2020_2_OR_NEWER
+#if UNITY_2020_3_OR_NEWER
 using Unity.Profiling;
 using Unity.Profiling.LowLevel;
 using Unity.Profiling.LowLevel.Unsafe;
@@ -17,7 +17,7 @@ namespace MLAPI.Profiling
 #endif
     internal readonly struct ProfilerCounterValue<T> where T : unmanaged
     {
-#if UNITY_2020_2_OR_NEWER
+#if UNITY_2020_3_OR_NEWER
 #if ENABLE_PROFILER
         [NativeDisableUnsafePtrRestriction]
         [NonSerialized]

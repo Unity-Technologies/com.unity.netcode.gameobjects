@@ -10,7 +10,7 @@ namespace MLAPI
     [InitializeOnLoad]
     internal static class MLAPIProfilerModule
     {
-#if UNITY_2020_2_OR_NEWER && ENABLE_PROFILER
+#if UNITY_2020_3_OR_NEWER && ENABLE_PROFILER
         private const string k_RpcModuleName = "MLAPI RPCs";
         private const string k_OperationModuleName = "MLAPI Operations";
         private const string k_MessageModuleName = "MLAPI Messages";
@@ -95,7 +95,7 @@ namespace MLAPI
 
         static MLAPIProfilerModule()
         {
-#if UNITY_2020_2_OR_NEWER && ENABLE_PROFILER
+#if UNITY_2020_3_OR_NEWER && ENABLE_PROFILER
             var dynamicModulesJson = EditorPrefs.GetString("ProfilerWindow.DynamicModules");
             var dynamicModules = JsonUtility.FromJson<MLAPIModules>(dynamicModulesJson);
 

@@ -1,6 +1,6 @@
 ﻿using System.Runtime.CompilerServices;
 
-#if UNITY_2020_2_OR_NEWER && UNITY_EDITOR
+#if UNITY_2020_3_OR_NEWER && UNITY_EDITOR
 [assembly: InternalsVisibleTo("Unity.Multiplayer.MLAPI.Editor.CodeGen")]
 #endif
 

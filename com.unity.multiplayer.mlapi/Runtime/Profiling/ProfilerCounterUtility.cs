@@ -1,6 +1,6 @@
 using System;
 
-#if UNITY_2020_2_OR_NEWER
+#if UNITY_2020_3_OR_NEWER
 using Unity.Profiling.LowLevel;
 #endif
 
@@ -8,7 +8,7 @@ namespace MLAPI.Profiling
 {
     internal struct ProfilerCounterUtility
     {
-#if UNITY_2020_2_OR_NEWER && ENABLE_PROFILER
+#if UNITY_2020_3_OR_NEWER && ENABLE_PROFILER
         public static byte GetProfilerMarkerDataType<T>()
         {
             switch (Type.GetTypeCode(typeof(T)))
