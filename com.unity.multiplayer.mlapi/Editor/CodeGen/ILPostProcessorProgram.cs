@@ -20,7 +20,7 @@ namespace MLAPI.Editor.CodeGen
     // is present. So in order to make sure ILPP runs properly in 2019.4 from a clean
     // import of the project we add this dummy ILPP which forces the callback to made
     // and meets the internal ScriptCompilation pipeline requirements
-    internal sealed class HackILPPToMakeThingsWork : ILPPInterface
+    internal sealed class ILPP2019CodegenWorkaround : ILPPInterface
     {
         public override ILPPInterface GetInstance()
         {
