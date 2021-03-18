@@ -652,6 +652,7 @@ namespace MLAPI
 
         private void OnNetworkEarlyUpdate()
         {
+            NotifyProfilerListeners();
             ProfilerBeginTick();
 
             if (IsListening)
@@ -755,8 +756,6 @@ namespace MLAPI
                     m_CurrentNetworkTimeOffset += Mathf.Clamp(m_NetworkTimeOffset - m_CurrentNetworkTimeOffset, -maxDelta, maxDelta);
                 }
             }
-
-            NotifyProfilerListeners();
         }
 
         internal void UpdateNetworkTime(ulong clientId, float netTime, float receiveTime, bool warp = false)
