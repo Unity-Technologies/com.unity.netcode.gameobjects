@@ -12,7 +12,7 @@ Unity MLAPI is a high level networking library built for the Unity game engine t
 
 This version of MLAPI is compatible with the following versions of the Unity Editor:
 
-* 2020.3 and later (recommended)
+* 2020.3 and later (recommended) See [Unity Upgrade Guides](https://docs.unity3d.com/Manual/UpgradeGuides.html) if you need to upgrade prior to installation.
 * Windows, Mac, Linux platforms are supported by MLAPI
 
 ## Document revision history
