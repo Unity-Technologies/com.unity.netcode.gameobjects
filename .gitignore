@@ -49,13 +49,11 @@ artifacts/
 *_p.c
 *_i.h
 *.ilk
-*.meta
 *.obj
 *.pch
 *.pdb
 *.pgc
 *.pgd
-*.rsp
 *.sbr
 *.tlb
 *.tli
@@ -155,6 +153,8 @@ PublishScripts/
 *.nupkg
 # The packages folder can be ignored because of Package Restore
 **/packages/*
+# Except Unity testproject Packages
+!/testproject/Packages/**
 # except build/, which is used as an MSBuild target.
 !**/packages/build/
 # Uncomment if necessary however generally it will be regenerated when needed
@@ -186,7 +186,6 @@ _pkginfo.txt
 # Others
 ClientBin/
 ~$*
-*~
 *.dbmdl
 *.dbproj.schemaview
 *.jfm
@@ -262,3 +261,6 @@ __pycache__/
 
 # Docs
 docs/LastBuild.log
+
+# Unity Package Manager CI output
+upm-ci~
