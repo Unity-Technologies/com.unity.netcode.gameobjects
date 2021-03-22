@@ -27,7 +27,7 @@ namespace MLAPI.Profiling
         public static void ProfilerBeginTick()
         {
             PerformanceDataManager.BeginNewTick();
-            var transport = s_HasProfilableTransport.GetTransport();
+            var transport = s_HasProfilableTransport.Transport;
             transport?.BeginNewTick();
             s_FailsafeCheck = true;
         }
@@ -45,7 +45,7 @@ namespace MLAPI.Profiling
             {
                 if (data != null)
                 {
-                    var transport = s_HasProfilableTransport.GetTransport();
+                    var transport = s_HasProfilableTransport.Transport;
                     if (transport != null)
                     {
                         var transportProfilerData = transport.GetTransportProfilerData();

@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using MLAPI.Profiling;
 using NUnit.Framework;
 using UnityEditor;
-using UnityEngine;
 
 namespace MLAPI.RuntimeTests
 {
@@ -32,7 +31,7 @@ namespace MLAPI.RuntimeTests
         }
     }
 
-    public class TestHasProfilable : IHasProfilableTransport
+    public class TestProfiler : IHasProfilableTransport
     {
         internal static class ProfilerConstants
         {
@@ -40,15 +39,15 @@ namespace MLAPI.RuntimeTests
         }
 
         private TestTransport m_Transport;
+        private bool m_HasSentAnyData;
 
-        public ITransportProfilerData GetTransport()
-        {
-            return m_Transport;
-        }
+        public ITransportProfilerData Transport => m_Transport;
+        public bool HasSentAnyData => m_HasSentAnyData;
 
         public void Initialize(bool useNullTransport)
         {
             m_Transport = useNullTransport ? null : new TestTransport();
+            m_HasSentAnyData = false;
             ProfilerNotifier.Initialize(this);
         }
 
@@ -66,6 +65,7 @@ namespace MLAPI.RuntimeTests
         {
             ProfilerNotifier.Increment(ProfilerConstants.NetworkTestData);
             m_Transport?.Send("testMessage");
+            m_HasSentAnyData = true;
         }
     }
 
@@ -75,73 +75,104 @@ namespace MLAPI.RuntimeTests
 
     public class ProfilerTests
     {
-        private static void BreakDownTestProfiler(bool useNullTransport)
+        private static TestProfiler SetupTestProfiler(bool useNullTransport)
         {
-            if (useNullTransport)
-            {
-                ProfilerNotifier.OnPerformanceDataEvent -= TestProfilerOnPerformanceDataEventNoTransport;
-            }
-            else
-            {
-                ProfilerNotifier.OnPerformanceDataEvent -= TestProfilerOnPerformanceDataEventNormal;
-            }
-
-            ProfilerNotifier.OnNoTickDataEvent -= TestProfilerNotifierOnOnNoTickDataEvent;
-        }
-
-        private static TestHasProfilable SetupTestProfiler(bool useNullTransport)
-        {
-            ProfilerNotifier.OnNoTickDataEvent += TestProfilerNotifierOnOnNoTickDataEvent;
-            if (useNullTransport)
-            {
-                ProfilerNotifier.OnPerformanceDataEvent += TestProfilerOnPerformanceDataEventNoTransport;
-            }
-            else
-            {
-                ProfilerNotifier.OnPerformanceDataEvent += TestProfilerOnPerformanceDataEventNormal;
-            }
-
-            EditorApplication.UnlockReloadAssemblies();
-            var testProfiler = new TestHasProfilable();
+            var testProfiler = new TestProfiler();
             testProfiler.Initialize(useNullTransport);
             return testProfiler;
+        }
+
+        private static void RegisterStaticAsserts(bool useNullTransport)
+        {
+            ProfilerNotifier.OnNoTickDataEvent += RaiseExceptionNoTickDataEvent;
+            if (useNullTransport)
+            {
+                ProfilerNotifier.OnPerformanceDataEvent += AssertNetworkDataExists;
+            }
+            else
+            {
+                ProfilerNotifier.OnPerformanceDataEvent += AssertNetworkAndTransportDataExists;
+            }
+        }
+
+        private static void AssertNetworkAndTransportDataExists(PerformanceTickData profilerData)
+        {
+            Assert.IsTrue(profilerData.HasData(TestProfiler.ProfilerConstants.NetworkTestData));
+            Assert.IsTrue(profilerData.HasData(TestTransport.ProfilerConstants.TransportTestData));
+        }
+
+        private static void AssertNetworkDataExists(PerformanceTickData profilerData)
+        {
+            Assert.IsTrue(profilerData.HasData(TestProfiler.ProfilerConstants.NetworkTestData));
+            Assert.IsFalse(profilerData.HasData(TestTransport.ProfilerConstants.TransportTestData));
+        }
+
+        private static void RaiseExceptionNoTickDataEvent()
+        {
+            throw new NoTickDataException();
+        }
+
+        [TearDown]
+        public void TearDown()
+        {
+            ProfilerNotifier.OnPerformanceDataEvent -= AssertNetworkAndTransportDataExists;
+            ProfilerNotifier.OnPerformanceDataEvent -= AssertNetworkDataExists;
+            ProfilerNotifier.OnNoTickDataEvent -= RaiseExceptionNoTickDataEvent;
+        }
+
+        [Test]
+        public void TestSentNoData()
+        {
+            const bool useNullTransport = true;
+            TestProfiler testProfiler = SetupTestProfiler(useNullTransport);
+
+            TestProfiler.ProfilerBeginTick();
+            TestProfiler.NotifyProfilerListeners();
+
+            Assert.False(testProfiler.HasSentAnyData);
         }
 
         [Test]
         public void TestNormalRegisterAndNotifyFlowNull()
         {
             const bool useNullTransport = true;
-            TestHasProfilable testProfiler = SetupTestProfiler(useNullTransport);
+            TestProfiler testProfiler = SetupTestProfiler(useNullTransport);
 
-            TestHasProfilable.ProfilerBeginTick();
+            RegisterStaticAsserts(useNullTransport);
+
+            TestProfiler.ProfilerBeginTick();
             testProfiler.Send();
-            TestHasProfilable.NotifyProfilerListeners();
+            TestProfiler.NotifyProfilerListeners();
 
-            BreakDownTestProfiler(useNullTransport);
+            Assert.IsTrue(testProfiler.HasSentAnyData);
         }
 
         [Test]
         public void TestNormalRegisterAndNotifyFlow()
         {
             const bool useNullTransport = false;
-            TestHasProfilable testProfiler = SetupTestProfiler(useNullTransport);
+            TestProfiler testProfiler = SetupTestProfiler(useNullTransport);
 
-            TestHasProfilable.ProfilerBeginTick();
+            RegisterStaticAsserts(useNullTransport);
+
+            TestProfiler.ProfilerBeginTick();
             testProfiler.Send();
-            TestHasProfilable.NotifyProfilerListeners();
+            TestProfiler.NotifyProfilerListeners();
 
-            BreakDownTestProfiler(useNullTransport);
+            Assert.IsTrue(testProfiler.HasSentAnyData);
         }
 
         [Test]
         public void TestDroppedRegisterAndNotifyFlow()
         {
             const bool useNullTransport = false;
-            TestHasProfilable testProfiler = SetupTestProfiler(useNullTransport);
+            TestProfiler testProfiler = SetupTestProfiler(useNullTransport);
 
-            TestHasProfilable.ProfilerBeginTick();
+            RegisterStaticAsserts(useNullTransport);
+
+            TestProfiler.ProfilerBeginTick();
             testProfiler.Send();
-            TestHasProfilable.NotifyProfilerListeners();
+            TestProfiler.NotifyProfilerListeners();
 
             // Capturing data after notifying listeners is bad
             Assert.Catch<NoTickDataException>(() =>
@@ -152,41 +183,24 @@ namespace MLAPI.RuntimeTests
             {
                 testProfiler.Send();
             });
-            TestHasProfilable.ProfilerBeginTick();
 
-            BreakDownTestProfiler(useNullTransport);
+            Assert.IsTrue(testProfiler.HasSentAnyData);
         }
-
 
         [Test]
         public void TestProperMatchRegisterAndNotifyFlow()
         {
             const bool useNullTransport = false;
-            TestHasProfilable testProfiler = SetupTestProfiler(useNullTransport);
+            TestProfiler testProfiler = SetupTestProfiler(useNullTransport);
 
-            TestHasProfilable.NotifyProfilerListeners();
-            TestHasProfilable.ProfilerBeginTick();
+            RegisterStaticAsserts(useNullTransport);
+
+            TestProfiler.NotifyProfilerListeners();
+            TestProfiler.ProfilerBeginTick();
             testProfiler.Send();
-            TestHasProfilable.NotifyProfilerListeners();
+            TestProfiler.NotifyProfilerListeners();
 
-            BreakDownTestProfiler(useNullTransport);
-        }
-
-        private static void TestProfilerOnPerformanceDataEventNormal(PerformanceTickData profilerData)
-        {
-            Assert.IsTrue(profilerData.HasData(TestHasProfilable.ProfilerConstants.NetworkTestData));
-            Assert.IsTrue(profilerData.HasData(TestTransport.ProfilerConstants.TransportTestData));
-        }
-
-        private static void TestProfilerOnPerformanceDataEventNoTransport(PerformanceTickData profilerData)
-        {
-            Assert.IsTrue(profilerData.HasData(TestHasProfilable.ProfilerConstants.NetworkTestData));
-            Assert.IsFalse(profilerData.HasData(TestTransport.ProfilerConstants.TransportTestData));
-        }
-
-        private static void TestProfilerNotifierOnOnNoTickDataEvent()
-        {
-            throw new NoTickDataException();
+            Assert.IsTrue(testProfiler.HasSentAnyData);
         }
     }
 }

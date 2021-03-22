@@ -1489,9 +1489,9 @@ namespace MLAPI
             ProfilerNotifier.NotifyProfilerListeners();
         }
 
-        public ITransportProfilerData GetTransport()
+        public ITransportProfilerData Transport
         {
-            return NetworkConfig.NetworkTransport as ITransportProfilerData;
+            get { return NetworkConfig.NetworkTransport as ITransportProfilerData; }
         }
     }
 }
