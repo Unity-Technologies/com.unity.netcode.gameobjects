@@ -50,7 +50,7 @@ validate_{{ projects.first.name }}_{{ package.name }}_{{ test_platforms.first.na
 {% for editor in pr_test_editors -%}
 {% for platform in test_platforms -%}
 pr_test_{{ projects.first.name}}_{{ package.name }}_{{ platform.name }}_{{ editor }}:
-  name : Test Project {{ projects.first.name }} - Package {{ package.name }} - {{ editor }} on {{ platform.name }}
+  name : PR Tests - {{ projects.first.name }} - Package {{ package.name }} - {{ editor }} on {{ platform.name }}
   agent:
     type: {{ platform.type }}
     image: {{ platform.image }}
