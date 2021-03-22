@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using MLAPI.Logging;
 using MLAPI.Profiling;
 using NUnit.Framework;
 using UnityEditor;
@@ -31,82 +30,6 @@ namespace MLAPI.RuntimeTests
         {
             PerformanceDataManager.Increment(ProfilerConstants.TransportTestData);
         }
-    }
-
-    public static class ProfilerNotifier
-    {
-        public delegate void PerformanceDataEventHandler(PerformanceTickData profilerData);
-
-        public static event PerformanceDataEventHandler OnPerformanceDataEvent;
-
-        public delegate void NoTickDataHandler();
-
-        public static event NoTickDataHandler OnNoTickDataEvent;
-
-        private static IHasProfilableTransport s_HasProfilableTransport;
-        private static bool s_FailsafeCheck;
-
-        public static void Initialize(IHasProfilableTransport hasProfilableNetwork)
-        {
-            s_HasProfilableTransport = hasProfilableNetwork
-                                       ?? throw new ArgumentNullException(
-                                           $"{nameof(hasProfilableNetwork)} was not set");
-            s_FailsafeCheck = false;
-        }
-
-        public static void ProfilerBeginTick()
-        {
-            PerformanceDataManager.BeginNewTick();
-            var transport = s_HasProfilableTransport.GetTransport();
-            transport?.BeginNewTick();
-            s_FailsafeCheck = true;
-        }
-
-        public static void NotifyProfilerListeners()
-        {
-            if (!s_FailsafeCheck)
-                return;
-
-            s_FailsafeCheck = false;
-
-            var data = PerformanceDataManager.GetData();
-            var eventHandler = OnPerformanceDataEvent;
-            if (eventHandler != null)
-            {
-                if (data != null)
-                {
-                    var transport = s_HasProfilableTransport.GetTransport();
-                    if (transport != null)
-                    {
-                        var transportProfilerData = transport.GetTransportProfilerData();
-
-                        PerformanceDataManager.AddTransportData(transportProfilerData);
-                    }
-
-                    eventHandler.Invoke(data);
-                }
-                else
-                {
-                    NetworkLog.LogWarning(
-                        "No data available. Did you forget to call PerformanceDataManager.BeginNewTick() first?");
-                }
-            }
-        }
-
-        public static void Increment(string fieldName, int count = 1)
-        {
-            if (!s_FailsafeCheck)
-            {
-                OnNoTickDataEvent?.Invoke();
-            }
-
-            PerformanceDataManager.Increment(fieldName);
-        }
-    }
-
-    public interface IHasProfilableTransport
-    {
-        public ITransportProfilerData GetTransport();
     }
 
     public class TestHasProfilable : IHasProfilableTransport
