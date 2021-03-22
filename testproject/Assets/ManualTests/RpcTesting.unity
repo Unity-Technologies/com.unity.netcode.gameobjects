@@ -904,7 +904,7 @@ MonoBehaviour:
     ProtocolVersion: 0
     NetworkTransport: {fileID: 1574548685}
     RegisteredScenes:
-    - ClientRpcTesting
+    - RpcTesting
     AllowRuntimeSceneChanges: 0
     NetworkPrefabs:
     - Prefab: {fileID: 4700706668509470175, guid: 7eeaaf9e50c0afc4dab93584a54fb0d6,
