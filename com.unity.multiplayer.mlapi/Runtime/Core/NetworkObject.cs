@@ -361,7 +361,7 @@ namespace MLAPI
 
         private void OnDestroy()
         {
-            if (NetworkManager.Singleton != null)
+            if (NetworkManager.Singleton != null &&  NetworkSpawnManager.SpawnedObjects.Count > 0 && NetworkSpawnManager.SpawnedObjects.ContainsKey(NetworkObjectId))
             {
                 NetworkSpawnManager.OnDestroyObject(NetworkObjectId, false);
             }
