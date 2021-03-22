@@ -16,6 +16,9 @@ using MLAPI.Messaging;
 /// During direct testing mode the following is also tested:
 ///     all clients are updating the server with a continually growing counter
 ///     the server is updating all clients with a global counter
+/// During all tests the following additional Rpc Tests are performed:
+///     Send client to server no parameters and then multiple parameters
+///     Send server to client no parameters and then multiple parameters
 /// </summary>
 public class ClientCounterBehaviour : NetworkBehaviour
 {
@@ -34,17 +37,30 @@ public class ClientCounterBehaviour : NetworkBehaviour
     private List<ulong> m_ClientIds = new List<ulong>();
     private List<ulong> m_ClientIndices = new List<ulong>();
 
+    private bool   m_MutliParameterCanSend;
+
+    private int m_MutliParameterIntValue;
+    private int m_MutliParameterValuesCount;
+    private int m_MutliParameterNoneCount;
+    private int m_RpcMessagesSent;
     private int m_GlobalCounter;
     private int m_GlobalDirectCounter;
     private int m_GlobalDirectCurrentClientIdIndex;
     private int m_localClientCounter;
     private int m_GlobalCounterOffset;
+    private int m_RpcPerSecond;
+    private int m_GlobalDirectScale;
 
+    private long  m_MutliParameterLongValue;
     private ulong m_LocalClientId;
 
+    private float m_MutliParameterFloatValue;
     private float m_GlobalCounterDelay;
     private float m_DirectGlobalCounterDelay;
     private float m_LocalCounterDelay;
+    private float m_LocalMultiDelay;
+    private float m_RpcPerSecondTimer;
+    private float m_GlobalDirectFrequency;
 
     public enum ClientRpcDirectTestingModes
     {
@@ -66,6 +82,7 @@ public class ClientCounterBehaviour : NetworkBehaviour
 
     private ServerRpcParams m_ServerParams;
     private ClientRpcParams m_ClientParams;
+    private ClientRpcParams m_ClientParamsMultiParameter;
 
     // Start is called before the first frame update
     void Start()
@@ -111,9 +128,15 @@ public class ClientCounterBehaviour : NetworkBehaviour
     private void InitializeNetworkManager()
     {
         m_ClientParams.Send.TargetClientIds = new ulong[] { 0 };
-
+        m_ClientParamsMultiParameter.Send.TargetClientIds = new ulong[] { 0 };
         m_ClientRpcDirectTestingMode = ClientRpcDirectTestingModes.Single;
         m_ConnectionModeButtonParent.SetActive(false);
+        m_MutliParameterCanSend = true;
+
+        m_GlobalDirectScale = 2;
+        m_GlobalDirectFrequency = 1.0f / (100.0f / (float)m_GlobalDirectScale);
+
+
         if (m_CounterTextObject)
         {
             m_CounterTextObject.gameObject.SetActive(true);
@@ -143,6 +166,8 @@ public class ClientCounterBehaviour : NetworkBehaviour
                     break;
                 }
         }
+
+        m_RpcPerSecondTimer = Time.realtimeSinceStartup;
     }
 
     /// <summary>
@@ -230,6 +255,7 @@ public class ClientCounterBehaviour : NetworkBehaviour
                         m_GlobalCounterDelay = Time.realtimeSinceStartup + 0.200f;
                         m_GlobalCounter++;
                         OnSendGlobalCounterClientRpc(m_GlobalCounter);
+                        m_RpcMessagesSent++;
                     }
 
                     if (m_DirectGlobalCounterDelay < Time.realtimeSinceStartup)
@@ -252,18 +278,47 @@ public class ClientCounterBehaviour : NetworkBehaviour
                                     break;
                                 }
                         }
-
-                        m_DirectGlobalCounterDelay = Time.realtimeSinceStartup + 0.033f;
+                        m_RpcMessagesSent++;
+                        m_DirectGlobalCounterDelay = Time.realtimeSinceStartup + m_GlobalDirectFrequency;
                     }
                 }
             }
 
             //Hosts and Clients execute this
-            if ((IsHost || IsClient) && m_LocalCounterDelay < Time.realtimeSinceStartup)
+            if ((IsHost || IsClient))
             {
-                m_LocalCounterDelay = Time.realtimeSinceStartup + 0.25f;
-                m_localClientCounter++;
-                OnSendCounterServerRpc(m_localClientCounter);
+
+                if (m_LocalCounterDelay < Time.realtimeSinceStartup)
+                {
+                    m_LocalCounterDelay = Time.realtimeSinceStartup + 0.25f;
+                    m_localClientCounter++;
+                    OnSendCounterServerRpc(m_localClientCounter);
+                    m_RpcMessagesSent++;
+                }
+                else if (m_LocalMultiDelay < Time.realtimeSinceStartup)
+                {
+                    m_LocalMultiDelay = Time.realtimeSinceStartup + 0.325f;
+                    if (m_MutliParameterCanSend)
+                    {
+                        m_MutliParameterCanSend = false;
+                        //Multi Parameters
+                        OnSendMultiParametersServerRpc(m_MutliParameterIntValue, m_MutliParameterFloatValue, m_MutliParameterLongValue);
+                        m_RpcMessagesSent++;
+                    }
+                    else
+                    {
+                        m_MutliParameterCanSend = true;
+                        OnSendNoParametersServerRpc();
+                        m_RpcMessagesSent++;
+                    }
+                }
+            }
+
+            if (Time.realtimeSinceStartup - m_RpcPerSecondTimer > 1.0f)
+            {
+                m_RpcPerSecondTimer = Time.realtimeSinceStartup;
+                m_RpcPerSecond = m_RpcMessagesSent;
+                m_RpcMessagesSent = 0;
             }
         }
     }
@@ -323,7 +378,8 @@ public class ClientCounterBehaviour : NetworkBehaviour
         }
 
         m_ClientParams.Send.TargetClientIds = m_ClientIndices.ToArray();
-        m_GlobalDirectCounter++;
+
+        m_GlobalDirectCounter = Mathf.Clamp(m_GlobalDirectCounter += m_GlobalDirectScale, 0, 100);
 
         OnSendDirectCounterClientRpc(m_GlobalDirectCounter, m_ClientParams);
     }
@@ -355,7 +411,7 @@ public class ClientCounterBehaviour : NetworkBehaviour
         }
 
         m_ClientParams.Send.TargetClientIds = m_ClientIndices.ToArray();
-        m_GlobalDirectCounter++;
+        m_GlobalDirectCounter = Mathf.Clamp(m_GlobalDirectCounter += m_GlobalDirectScale, 0, 100);
 
         OnSendDirectCounterClientRpc(m_GlobalDirectCounter, m_ClientParams);
     }
@@ -373,7 +429,7 @@ public class ClientCounterBehaviour : NetworkBehaviour
         }
 
         m_ClientParams.Send.TargetClientIds = m_ClientIds.ToArray();
-        m_GlobalDirectCounter++;
+        m_GlobalDirectCounter = Mathf.Clamp(m_GlobalDirectCounter += m_GlobalDirectScale, 0, 100);
 
         OnSendDirectCounterClientRpc(m_GlobalDirectCounter, m_ClientParams);
     }
@@ -396,6 +452,65 @@ public class ClientCounterBehaviour : NetworkBehaviour
         {
             m_ClientSpecificCounters[parameters.Receive.SenderClientId] = counter;
         }
+    }
+
+    /// <summary>
+    /// [Tests] Client to Server
+    /// Sends no parameters to the server
+    /// </summary>
+    /// <param name="parameters"></param>
+    [ServerRpc(RequireOwnership = false)]
+    private void OnSendNoParametersServerRpc(ServerRpcParams parameters = default)
+    {
+        m_ClientParamsMultiParameter.Send.TargetClientIds[0] = parameters.Receive.SenderClientId;
+        m_ClientParamsMultiParameter.Send.UpdateStage = NetworkUpdateStage.Update;
+        OnSendNoParametersClientRpc(m_ClientParamsMultiParameter);
+    }
+
+    /// <summary>
+    /// [Tests] Client to Server
+    /// Sends multiple parameters to the server
+    /// </summary>
+    /// <param name="parameters"></param>
+    [ServerRpc(RequireOwnership = false)]
+    private void OnSendMultiParametersServerRpc(int count, float floatValue, long longValue, ServerRpcParams parameters = default)
+    {
+        m_ClientParamsMultiParameter.Send.TargetClientIds[0] = parameters.Receive.SenderClientId;
+        m_ClientParamsMultiParameter.Send.UpdateStage = NetworkUpdateStage.EarlyUpdate;
+        OnSendMultiParametersClientRpc(count, floatValue, longValue, m_ClientParamsMultiParameter);
+    }
+
+    /// <summary>
+    /// [Tests] Server to Client
+    /// Sends no parameters to the server
+    /// </summary>
+    /// <param name="parameters"></param>
+    [ClientRpc]
+    private void OnSendNoParametersClientRpc(ClientRpcParams parameters = default)
+    {
+        m_MutliParameterNoneCount++;
+    }
+
+
+    /// <summary>
+    /// [Tests] Server to Client
+    /// Sends multiple parameters to the server
+    /// </summary>
+    /// <param name="parameters"></param>
+    [ClientRpc]
+    private void OnSendMultiParametersClientRpc(int count, float floatValue, long longValue, ClientRpcParams parameters = default)
+    {
+        if (m_MutliParameterIntValue == count && floatValue == m_MutliParameterFloatValue && m_MutliParameterLongValue == longValue)
+        {
+            m_MutliParameterValuesCount++;
+        }
+        else
+        {
+            m_MutliParameterValuesCount--;
+        }
+        m_MutliParameterIntValue = Random.Range(0, 100);
+        m_MutliParameterFloatValue = Random.Range(0.0f, 1.0f);
+        m_MutliParameterLongValue = (long)Random.Range(0, 10000);
     }
 
     /// <summary>
@@ -454,8 +569,8 @@ public class ClientCounterBehaviour : NetworkBehaviour
             m_LocalClientId = NetworkManager.Singleton.LocalClientId;
         }
 
-        m_CounterTextObject.text = $"Client-ID [{m_LocalClientId}]  Broadcast Rpcs Received:  {m_GlobalCounter - m_GlobalCounterOffset}  |  Direct Rpcs Received: {m_GlobalDirectCounter}";
-
+        m_CounterTextObject.text = $"Client-ID [{m_LocalClientId}]  Broadcast Rpcs Received:  {m_GlobalCounter - m_GlobalCounterOffset}  |  Direct Rpcs Received: {m_GlobalDirectCounter} \n";
+        m_CounterTextObject.text += $"{nameof(m_MutliParameterValuesCount)} : {m_MutliParameterValuesCount}  |  {nameof(m_MutliParameterNoneCount)} : {m_MutliParameterNoneCount}";
 
         if (m_ClientProgressBar)
         {
@@ -474,6 +589,8 @@ public class ClientCounterBehaviour : NetworkBehaviour
             if (entry.Key == 0 && IsHost)
             {
                 updatedCounters += $"Client-ID [{entry.Key}]  Client to Server Rpcs Received: {entry.Value}  |  Broadcast Rpcs Sent:{m_GlobalCounter} -- Direct Rpcs Sent:{m_GlobalDirectCounter}\n";
+                updatedCounters += $"{nameof(m_MutliParameterValuesCount)} : {m_MutliParameterValuesCount}  |  {nameof(m_MutliParameterNoneCount)} : {m_MutliParameterNoneCount}\n";
+                updatedCounters += $"{nameof(m_RpcPerSecond)} : {m_RpcPerSecond}\n ";
             }
             else
             {
