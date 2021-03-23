@@ -161,7 +161,7 @@ namespace MLAPI
                     rpcQueueContainer.SetLoopBackFrameItem(clientRpcParams.Send.UpdateStage);
 
                     //Switch to the outbound queue
-                    writer = rpcQueueContainer.BeginAddQueueItemToFrame(RpcQueueContainer.QueueItemType.ClientRpc, Time.realtimeSinceStartup, NetworkChannel.ReliableRpc, NetworkObjectId,
+                    writer = rpcQueueContainer.BeginAddQueueItemToFrame(RpcQueueContainer.QueueItemType.ClientRpc, Time.realtimeSinceStartup, transportChannel, NetworkObjectId,
                         ClientIds, RpcQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
 
                     if (!isUsingBatching)
@@ -729,7 +729,7 @@ namespace MLAPI
                     long readStartPos = stream.Position;
 
                     networkVariableList[i].ReadDelta(stream, IsServer, localTick, remoteTick);
-                    PerformanceDataManager.Increment(ProfilerConstants.NetworkVarReceived);
+                    PerformanceDataManager.Increment(ProfilerConstants.NetworkVarDeltas);
 
                     ProfilerStatManager.NetworkVarsRcvd.Record();
 
@@ -810,7 +810,7 @@ namespace MLAPI
                     long readStartPos = stream.Position;
 
                     networkVariableList[i].ReadField(stream, NetworkTickSystem.NoTick, NetworkTickSystem.NoTick);
-                    PerformanceDataManager.Increment(ProfilerConstants.NetworkVarReceived);
+                    PerformanceDataManager.Increment(ProfilerConstants.NetworkVarUpdates);
 
                     ProfilerStatManager.NetworkVarsRcvd.Record();
 

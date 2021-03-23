@@ -24,9 +24,6 @@ namespace MLAPI.RuntimeTests
         [UnityTest]
         public IEnumerator UpdateStagesInvocation()
         {
- // Disabling this test on 2019.4 due to ILPP issues on Yamato CI/CD runs (UNITY_2020_2_OR_NEWER)
- // Adding the ability to test if we are running in editor local (UNIT_MANUAL_TESTING)
-#if UNITY_2020_2_OR_NEWER || UNITY_MANUAL_TESTING
             Assert.IsTrue(NetworkManagerHelper.StartNetworkManager());
 
             Guid updateStagesTestId = NetworkManagerHelper.AddGameNetworkObject("UpdateStagesTest");
@@ -60,9 +57,6 @@ namespace MLAPI.RuntimeTests
 
             //Disable this so it isn't running any longer.
             rpcPipelineTestComponent.gameObject.SetActive(false);
-#else
-            yield return null;
-#endif
         }
 
         /// <summary>
@@ -73,9 +67,6 @@ namespace MLAPI.RuntimeTests
         [UnityTest]
         public IEnumerator BufferDataValidation()
         {
- // Disabling this test on 2019.4 due to ILPP issues on Yamato CI/CD runs (UNITY_2020_2_OR_NEWER)
- // Adding the ability to test if we are running in editor local (UNIT_MANUAL_TESTING)
-#if UNITY_2020_2_OR_NEWER || UNITY_MANUAL_TESTING
             Assert.IsTrue(NetworkManagerHelper.StartNetworkManager());
 
             Guid gameObjectId = NetworkManagerHelper.AddGameNetworkObject("GrowingBufferObject");
@@ -104,10 +95,6 @@ namespace MLAPI.RuntimeTests
             growingRpcBufferSizeComponent.gameObject.SetActive(false);
 
             Assert.IsTrue(testsAreComplete);
-#else
-            yield return null;
-#endif
-
         }
 
 
