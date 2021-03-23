@@ -2,7 +2,7 @@
 name: Bug report
 about: Create a report to help us improve
 title: ''
-labels: bug
+labels: stat:awaiting triage, type:bug
 assignees: ''
 
 ---
@@ -27,7 +27,7 @@ If applicable, add screenshots to help explain your problem.
  - OS: [e.g. Windows 10]
  - Unity Version: [e.g. 2019.1]
  - MLAPI Version: [e.g. v6.0.1]
- - MLAPI Commit: [e.g. https://github.com/MidLevel/MLAPI/commit/c102935df1d7e0928283b48948fe96e5d96dd961]
+ - MLAPI Commit: [e.g. https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi/commit/c102935df1d7e0928283b48948fe96e5d96dd961]
 
 **Additional context**
 Add any other context about the problem here.
