@@ -22,14 +22,13 @@ public class LobbyControl : NetworkBehaviour
     private string m_UserLobbyStatusText;
 
     /// <summary>
-    /// Awake
-    /// This is one way to kick off a multiplayer session
+    /// Initialize lobby related actions as well as handle in-editor invocation of bootstrap
     /// </summary>
     private void Awake()
     {
         m_ClientsInLobby = new Dictionary<ulong, bool>();
 #if UNITY_EDITOR
-        if ( NetworkManager.Singleton == null)
+        if (NetworkManager.Singleton == null)
         {
             GlobalGameState.s_EditorLaunchingAsHost = m_LaunchAsHostInEditor;
             //This will automatically launch the MLAPIBootStrap and then transition directly to the scene this control is contained within (for easy development of scenes)
@@ -69,8 +68,8 @@ public class LobbyControl : NetworkBehaviour
 
 
     /// <summary>
-    /// FreezeAndHidePlayers
     /// This parses through all local NetworkObjects, freezes (pauses) them, and "hides" them.
+    /// (one of several ways to do this)
     /// </summary>
     void FreezeAndHidePlayers()
     {
@@ -95,14 +94,13 @@ public class LobbyControl : NetworkBehaviour
     }
 
     /// <summary>
-    /// GenerateUserStatsForLobby
     /// Psuedo code for setting player state
     /// Just updating a text field, this could use a lot of "refactoring"  :)
     /// </summary>
     private void GenerateUserStatsForLobby()
     {
         m_UserLobbyStatusText = string.Empty;
-        foreach(KeyValuePair<ulong,bool> clientLobbyStatus in m_ClientsInLobby)
+        foreach (KeyValuePair<ulong, bool> clientLobbyStatus in m_ClientsInLobby)
         {
             m_UserLobbyStatusText += "Player_" + clientLobbyStatus.Key.ToString() + "          ";
             if (clientLobbyStatus.Value)
@@ -120,6 +118,7 @@ public class LobbyControl : NetworkBehaviour
 
     /// <summary>
     /// Update our lobby
+    /// (this could be actual UI elements as opposed to just text)
     /// </summary>
     private void OnGUI()
     {
@@ -130,15 +129,14 @@ public class LobbyControl : NetworkBehaviour
     }
 
     /// <summary>
-    /// UpdateAndCheckPlayersInLobby
-    /// Checks to see if we have at least 2 or more people to start
+    /// Checks to see if we have at least m_MinPlayersToStart or more people to start
     /// </summary>
     void UpdateAndCheckPlayersInLobby()
     {
         //This is game preference, but I am assuming at least 2 players?
         m_AllPlayersInLobby = (m_ClientsInLobby.Count >= m_MinPlayersToStart);
 
-        foreach(KeyValuePair<ulong,bool> clientLobbyStatus in m_ClientsInLobby)
+        foreach (KeyValuePair<ulong, bool> clientLobbyStatus in m_ClientsInLobby)
         {
             SendClientReadyStatusUpdatesClientRpc(clientLobbyStatus.Key, clientLobbyStatus.Value);
             if (!NetworkManager.Singleton.ConnectedClients.ContainsKey(clientLobbyStatus.Key))
@@ -151,7 +149,6 @@ public class LobbyControl : NetworkBehaviour
     }
 
     /// <summary>
-    /// ClientLoadedScene
     /// Invoked when a client has loaded this scene
     /// </summary>
     /// <param name="clientId"></param>
@@ -170,7 +167,6 @@ public class LobbyControl : NetworkBehaviour
     }
 
     /// <summary>
-    /// OnClientConnectedCallback
     /// Since we are entering a lobby and MLAPI NetowrkingManager is spawning the player,
     /// the server can be configured to only listen for connected clients at this stage.
     /// </summary>
@@ -194,7 +190,6 @@ public class LobbyControl : NetworkBehaviour
     }
 
     /// <summary>
-    /// SendClientReadyStatusUpdatesClientRpc
     /// ClientRpc Use Case Scenario:  Sending clients updated information about other clients in the lobby
     /// Sent from the server to the client when a player's status is updated.
     /// This also populates the connected clients' (excluding host) player state in the lobby
@@ -204,22 +199,21 @@ public class LobbyControl : NetworkBehaviour
     [ClientRpc]
     void SendClientReadyStatusUpdatesClientRpc(ulong clientId, bool isReady)
     {
-        if  (!IsServer)
+        if (!IsServer)
         {
             if (!m_ClientsInLobby.ContainsKey(clientId))
             {
-                m_ClientsInLobby.Add(clientId,isReady);
+                m_ClientsInLobby.Add(clientId, isReady);
             }
             else
             {
-                 m_ClientsInLobby[clientId] = isReady;
+                m_ClientsInLobby[clientId] = isReady;
             }
             GenerateUserStatsForLobby();
         }
     }
 
     /// <summary>
-    /// CheckForAllPlayersReady
     /// Checks to see if all players are ready, and if so launches the game
     /// </summary>
     private void CheckForAllPlayersReady()
@@ -227,7 +221,7 @@ public class LobbyControl : NetworkBehaviour
         if (m_AllPlayersInLobby)
         {
             bool AllPlayersAreReady = true;
-            foreach(KeyValuePair<ulong,bool> clientLobbyStatus in m_ClientsInLobby)
+            foreach (KeyValuePair<ulong, bool> clientLobbyStatus in m_ClientsInLobby)
             {
                 if (!clientLobbyStatus.Value)
                 {
@@ -252,8 +246,7 @@ public class LobbyControl : NetworkBehaviour
     }
 
     /// <summary>
-    /// PlayerIsReady
-    /// Tied to the Ready button in the InvadersLobby scene
+    /// Tied to the Ready button in the lobby scene
     /// </summary>
     public void PlayerIsReady()
     {
@@ -264,14 +257,13 @@ public class LobbyControl : NetworkBehaviour
         }
         else
         {
-            m_ClientsInLobby[NetworkManager.Singleton.LocalClientId] =  !m_ClientsInLobby[NetworkManager.Singleton.LocalClientId];
-            OnClientIsReadyServerRpc(NetworkManager.Singleton.LocalClientId,m_ClientsInLobby[NetworkManager.Singleton.LocalClientId]);
+            m_ClientsInLobby[NetworkManager.Singleton.LocalClientId] = !m_ClientsInLobby[NetworkManager.Singleton.LocalClientId];
+            OnClientIsReadyServerRpc(NetworkManager.Singleton.LocalClientId, m_ClientsInLobby[NetworkManager.Singleton.LocalClientId]);
         }
         GenerateUserStatsForLobby();
     }
 
     /// <summary>
-    /// OnClientIsReadyServerRpc
     /// ServerRpc Use Case Scenario: Clients notifying the server of their state, and do not require ownership of the object
     /// Sent to the server when the player clicks the ready button
     /// </summary>

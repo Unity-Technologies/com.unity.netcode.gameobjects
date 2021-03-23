@@ -4,16 +4,12 @@ using MLAPI;
 using MLAPI.Configuration;
 using MLAPI.Transports.UNET;
 
-
 public class MenuControl : MonoBehaviour
 {
     [SerializeField]
     private InputField m_HostIpInput = null;
 
-    [SerializeField]
-    private string m_LobbySceneName = "GameLobby";
-
-    private UnetTransport m_CurrentTransport;
+    private UNetTransport m_CurrentTransport;
 
     private void Start()
     {
@@ -24,7 +20,7 @@ public class MenuControl : MonoBehaviour
             if (NetConfig != null)
             {
                 //Update the host input IP Address
-                m_CurrentTransport = (UnetTransport)NetConfig.NetworkTransport;
+                m_CurrentTransport = (UNetTransport)NetConfig.NetworkTransport;
                 if (m_CurrentTransport)
                 {
                     m_HostIpInput.text = m_CurrentTransport.ConnectAddress;

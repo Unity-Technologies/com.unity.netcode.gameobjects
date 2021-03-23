@@ -1,7 +1,6 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using MLAPI;
-using MLAPI.NetworkVariable;
 using MLAPI.SceneManagement;
 using MLAPIGlobalGameState;
 
@@ -39,6 +38,11 @@ public class GlobalGameState : NetworkBehaviour
     [SerializeField]
     private StateToSceneTransitionList m_SceneToStateLinks;
 
+
+    [SerializeField]
+    private GameObject m_GlobalGameStatePrefabObject;
+
+
     #region Events and Delegate Handlers
     [HideInInspector]
     public delegate void ClientLoadedSceneDelegateHandler(ulong clientId);
@@ -74,33 +78,22 @@ public class GlobalGameState : NetworkBehaviour
     public event AllPlayersLoadedSceneDelegateHandler allPlayersLoadedScene;
     #endregion
 
-    #region NETWORK VARIABLES
     /// <summary>
-    /// m_GameState
-    /// Networked Var Use Case Scenario:  State Machine
-    /// Update Frequency: 0ms (immediate)
-    /// Used for a state machine that updates immediately upon the value changing.
-    /// Clients only have read access to the current GlobalGameState.
+    /// The GlobalGameState component used to synchronize changes
+    /// from the server when multiplayer session is active
     /// </summary>
-    private NetworkVariable<GameStates> m_GameState = new NetworkVariable<GameStates>(new NetworkVariableSettings(){ WritePermission = NetworkVariablePermission.ServerOnly } , GameStates.None);
+    private GlobalGameStateComponent m_GlobalGameStateComponent;
 
     /// <summary>
-    /// m_InGameTime
-    /// Networked Var Use Case Scenario: (n) frequency resolution timer
-    /// Update Frequency: 10fps (100ms frequency resolution)
-    /// Can be used for various global timing events
-    /// Clients only have read access
+    /// The GlobalGameState GameObject that is assigned the GlobalGameStateComponent
     /// </summary>
-    private NetworkVariableFloat m_InGameTime = new NetworkVariableFloat(new NetworkVariableSettings(){ SendTickrate = 0.100f, WritePermission = NetworkVariablePermission.ServerOnly } , 0.0f);
+    private GameObject m_GlobalGameStateGameObject;
 
     /// <summary>
-    /// inGameTime
-    /// Networked Var Use Case Scenario:  public read only accessor to NetworkVariableFloat m_InGameTime
-    /// One way to expose a global value that can be updated regularly
-    /// Clients only have read access
+    /// The global game state
+    /// This is only synchronized when in a multiplayer session
     /// </summary>
-    public float InGameTime { get{ return m_InGameTime.Value; } }
-    #endregion
+    private GameStates m_GameState;
 
     //This is set prior to setting any game state that activates MLAPI
     [HideInInspector]
@@ -111,6 +104,8 @@ public class GlobalGameState : NetworkBehaviour
 
     //Tracks our scene switching progress
     private SceneSwitchProgress m_SceneProgress;
+
+    private int m_MLAPIStateSceneIndex;
 
     /// <summary>
     /// GameStates
@@ -129,7 +124,6 @@ public class GlobalGameState : NetworkBehaviour
     }
 
     /// <summary>
-    /// Awake
     /// If another version exists, destroy it and use the current version
     /// Set our scene state to INIT
     /// </summary>
@@ -139,17 +133,16 @@ public class GlobalGameState : NetworkBehaviour
         {
             GameObject.Destroy(Singleton.gameObject);
         }
+        m_MLAPIStateSceneIndex = 0;
         Singleton = this;
-
-        m_GameState.OnValueChanged += OnGameStateChanged;
     }
 
     /// <summary>
-    /// Start
     /// Kicks of the initialization state, this is where we load the first scene from the MLAPI_BootStrap
     /// </summary>
     private void Start()
     {
+
         if (!m_IsExclusive)
         {
             Screen.fullScreenMode = FullScreenMode.Windowed;
@@ -180,27 +173,28 @@ public class GlobalGameState : NetworkBehaviour
     }
 
     /// <summary>
-    /// OnGameStateChanged
     /// Cients and Server can register for this in order to synchronize the global game state between all clients (including the host-client)
     /// </summary>
     /// <param name="previousState">from state</param>
     /// <param name="newState">to state</param>
-    private void OnGameStateChanged(GameStates previousState, GameStates newState)
+    public void OnGameStateChanged(GameStates previousState, GameStates newState)
     {
-        if (GameStateChanged != null)
+        if (NetworkManager.Singleton.IsListening)
         {
-            GameStateChanged.Invoke(previousState, newState);
+            if (GameStateChanged != null)
+            {
+                GameStateChanged.Invoke(previousState, newState);
+            }
         }
     }
 
     /// <summary>
-    /// MonoBehaviour.Update
     /// Used primarily to update anything specific to a Global Game State
     /// </summary>
     private void Update()
     {
         //Any per frame tasks can be performed here (this is not required but can be useful for things like time outs and such)
-        switch(m_GameState.Value)
+        switch (m_GameState)
         {
             case GameStates.Init:
                 {
@@ -212,18 +206,11 @@ public class GlobalGameState : NetworkBehaviour
                 }
             case GameStates.Lobby:
                 {
-                    if (m_GameState.Settings.WritePermission != NetworkVariablePermission.ServerOnly)
-                    {
-                         m_GameState.Settings.WritePermission = NetworkVariablePermission.ServerOnly;
-                    }
+
                     break;
                 }
             case GameStates.InGame:
                 {
-                    if (IsServer)
-                    {
-                        m_InGameTime.Value += Time.deltaTime;
-                    }
                     break;
                 }
             case GameStates.ExitGame:
@@ -236,16 +223,15 @@ public class GlobalGameState : NetworkBehaviour
     }
 
     /// <summary>
-    /// UpdateMLAPIState
     /// Handles the spinning up and shutting down of MLAPI
     /// </summary>
     /// <param name="newState">new state we are transitioning to</param>
     private void UpdateMLAPIState(GameStates newState)
     {
         StateToSceneTransitionLinks.MLAPIStates NewMLAPIState = m_SceneToStateLinks.GetGameStateToMLAPIState(newState);
-        if (m_CurrentMLAPIState != NewMLAPIState )
+        if (m_CurrentMLAPIState != NewMLAPIState)
         {
-            switch(NewMLAPIState)
+            switch (NewMLAPIState)
             {
                 case StateToSceneTransitionLinks.MLAPIStates.InSession:
                 case StateToSceneTransitionLinks.MLAPIStates.Connecting:
@@ -258,6 +244,15 @@ public class GlobalGameState : NetworkBehaviour
                                 if (IsHostingGame)
                                 {
                                     NetworkManager.Singleton.StartHost();  //Spin up the host
+                                    if (m_GlobalGameStatePrefabObject != null)
+                                    {
+                                        m_GlobalGameStateGameObject = GameObject.Instantiate(m_GlobalGameStatePrefabObject);
+                                        m_GlobalGameStateComponent = m_GlobalGameStateGameObject.GetComponent<GlobalGameStateComponent>();
+                                        if (m_GlobalGameStateComponent != null && !m_GlobalGameStateComponent.NetworkObject.IsSpawned)
+                                        {
+                                            m_GlobalGameStateComponent.NetworkObject.Spawn();
+                                        }
+                                    }
                                 }
                                 else //otherwise start the client
                                 {
@@ -277,10 +272,26 @@ public class GlobalGameState : NetworkBehaviour
                                 if (IsHostingGame)
                                 {
                                     IsHostingGame = false;
+                                    if (m_GlobalGameStateComponent != null && !m_GlobalGameStateComponent.NetworkObject.IsSpawned)
+                                    {
+                                        m_GlobalGameStateComponent.NetworkObject.Despawn();
+                                    }
+                                    if (m_GlobalGameStateGameObject != null)
+                                    {
+                                        GameObject.Destroy(m_GlobalGameStateGameObject);
+                                        m_GlobalGameStateGameObject = null;
+                                    }
+
                                     NetworkManager.Singleton.StopHost();  //shutdown the host
+
                                 }
                                 else //otherwise stop the client
                                 {
+                                    if (m_GlobalGameStateGameObject != null)
+                                    {
+                                        GameObject.Destroy(m_GlobalGameStateGameObject);
+                                        m_GlobalGameStateGameObject = null;
+                                    }
                                     NetworkManager.Singleton.StopClient();//shutdown the client
                                 }
 
@@ -302,9 +313,8 @@ public class GlobalGameState : NetworkBehaviour
         }
     }
 
-    private int m_MLAPIStateSceneIndex = 0;
+
     /// <summary>
-    /// GameStateChangedUpdate
     /// Any additional processing we might want to do globally depending upon the current state
     /// </summary>
     /// <param name="previousState">from state</param>
@@ -312,7 +322,7 @@ public class GlobalGameState : NetworkBehaviour
     private void GameStateChangedUpdate(GameStates previousState, GameStates newState)
     {
         string SceneName;
-        if(previousState == newState)
+        if (previousState == newState)
         {
             m_MLAPIStateSceneIndex++;
             SceneName = m_SceneToStateLinks.GetSceneNameLinkedToState(newState, m_MLAPIStateSceneIndex);
@@ -320,7 +330,7 @@ public class GlobalGameState : NetworkBehaviour
         else
         {
             SceneName = m_SceneToStateLinks.GetSceneNameLinkedToState(newState);
-            if(SceneName != string.Empty)
+            if (SceneName != string.Empty)
             {
                 m_MLAPIStateSceneIndex = 0;
             }
@@ -331,10 +341,13 @@ public class GlobalGameState : NetworkBehaviour
         {
             if (m_CurrentMLAPIState == StateToSceneTransitionLinks.MLAPIStates.InSession || m_CurrentMLAPIState == StateToSceneTransitionLinks.MLAPIStates.Connecting)
             {
+
                 //If we are in a session or connecting, then update the state first then switch scenes
                 UpdateMLAPIState(newState);
+
                 //Start the scene switch first
                 SwitchScene(SceneName);
+
             }
             else
             {
@@ -345,38 +358,34 @@ public class GlobalGameState : NetworkBehaviour
                 SwitchScene(SceneName);
             }
 
-            //make sure we can set this networked variable
-            if (IsServer || m_GameState.Settings.WritePermission != NetworkVariablePermission.ServerOnly || newState == GameStates.ExitGame )
-            {
-                if (newState == GameStates.ExitGame)
-                {
-                    //Revert back to everyone access after we leave the game session
-                    m_GameState.Settings.WritePermission = NetworkVariablePermission.Everyone;
-                }
-                //Now set the state so all clients will receive the message
-                m_GameState.Value = newState;
-            }
+            m_GameState = newState;
         }
     }
 
     /// <summary>
-    /// SetGameState (Server Only)
     /// Sets the current game state
     /// </summary>
     /// <param name="sceneState"></param>
     public void SetGameState(GameStates gameState)
     {
-        GameStateChangedUpdate(m_GameState.Value, gameState);
+        if (NetworkManager.Singleton && NetworkManager.Singleton.IsListening && m_GlobalGameStateComponent && IsServer)
+        {
+            m_GlobalGameStateComponent.SetNewGameState(gameState);
+            GameStateChangedUpdate(m_GameState, gameState);
+        }
+        else
+        {
+            GameStateChangedUpdate(m_GameState, gameState);
+        }
     }
 
     /// <summary>
-    /// GetCurrentSceneState
     /// Returns the current scene state
     /// </summary>
     /// <returns>current scene state</returns>
     public GameStates GetCurrentSceneState()
     {
-        return m_GameState.Value;
+        return m_GameState;
     }
 
     /// <summary>
@@ -407,7 +416,6 @@ public class GlobalGameState : NetworkBehaviour
     }
 
     /// <summary>
-    /// OnLoadingComplete (Server Only)
     /// When all clients have loaded their scene, this event is invoked
     /// </summary>
     /// <param name="timedOut">whether it timed out or not</param>
@@ -424,7 +432,6 @@ public class GlobalGameState : NetworkBehaviour
     }
 
     /// <summary>
-    /// AllClientsAreLoaded
     /// Returns whether all lients are loaded
     /// </summary>
     /// <returns>true or false (they are all loaded or they are not)</returns>
@@ -440,7 +447,7 @@ public class GlobalGameState : NetworkBehaviour
     /// <summary>
     /// Invoked when a client has finished loading a scene
     /// </summary>
-    /// <param name="clientId"></param>
+    /// <param name="clientId">the client network id</param>
     private void SceneProgress_OnClientLoadedScene(ulong clientId)
     {
         if (ClientLoadedScene != null)
@@ -450,7 +457,11 @@ public class GlobalGameState : NetworkBehaviour
 
     }
 
-    #region IN-EDITOR SPECIFIC METHODS
+    #region IN-EDITOR SPECIFIC METHODS FOR AUTO-BOOTSTRAP LOADING
+    /// <summary>
+    /// Determined if we are loading from within the editor
+    /// </summary>
+    /// <returns>true or false</returns>
     public static bool IsLoadingFromEditor()
     {
 #if (UNITY_EDITOR)
@@ -465,6 +476,10 @@ public class GlobalGameState : NetworkBehaviour
     public static bool s_EditorLaunchingAsHost;
 #endif
 
+    /// <summary>
+    /// Checks to see if we need to load the bootstrap for the current scene loaded in the editor
+    /// </summary>
+    /// <returns>true or false</returns>
     public static bool CheckForBootStrappedScene()
     {
 #if UNITY_EDITOR
@@ -484,6 +499,9 @@ public class GlobalGameState : NetworkBehaviour
         return false;
     }
 
+    /// <summary>
+    /// Loads the boot strap scene
+    /// </summary>
     public static void LoadBootStrapScene()
     {
 #if UNITY_EDITOR

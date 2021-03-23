@@ -43,19 +43,17 @@ public class RandomPlayerMover : NetworkBehaviour
     private static Color[] s_PlayerColors = { Color.red, Color.yellow, Color.green, Color.blue, Color.cyan, Color.magenta, Color.white };
 
     /// <summary>
-    /// SetPlayerColor
     /// Sets the player color based on its id;
     /// </summary>
     void SetPlayerColor()
     {
         if (m_MeshRenderer)
         {
-            m_MeshRenderer.material.color = s_PlayerColors[ NetworkObject.OwnerClientId % System.Convert.ToUInt64(s_PlayerColors.Length)];
+            m_MeshRenderer.material.color = s_PlayerColors[NetworkObject.OwnerClientId % System.Convert.ToUInt64(s_PlayerColors.Length)];
         }
     }
 
     /// <summary>
-    /// Start
     /// Initialize the PlayerObject's random mover component
     /// </summary>
     private void Start()
@@ -86,12 +84,24 @@ public class RandomPlayerMover : NetworkBehaviour
 
         //All instances register to this in order to change their state according to the global game state
         GlobalGameState.Singleton.GameStateChanged += GlobalGameStateChanged;
+        GlobalGameState.Singleton.ClientLoadedScene += ClientLoadedScene;
 
         SetPlayerColor();
     }
 
     /// <summary>
-    /// SetPlayerSpawnPoint
+    /// Invoked upon each scene load
+    /// </summary>
+    /// <param name="clientId"></param>
+    private void ClientLoadedScene(ulong clientId)
+    {
+        if(clientId == NetworkManager.Singleton.LocalClientId)
+        {
+            SetPlayerSpawnPoint();
+        }
+    }
+
+    /// <summary>
     /// This is one (of many) common ways to handle spawn points.
     /// ** Note: It still could end up in potential collision as each individual player is picking their own start location
     /// ** This could be improved upon by extending this to the server and having the server preselect spawn points for each player.
@@ -113,7 +123,6 @@ public class RandomPlayerMover : NetworkBehaviour
     }
 
     /// <summary>
-    /// SetPlayerCamera
     /// One way to handle setting the default camera to a player is to add a "Root Transform" (empty game object)
     /// as a child on the player prefab (PlayerObject). Using this method, you can set the camera's transform's
     /// parent to be the m_CameraRoot.transform
@@ -131,7 +140,6 @@ public class RandomPlayerMover : NetworkBehaviour
     }
 
     /// <summary>
-    /// GlobalGameStateChanged
     /// Example of using the global game state to enable or disable locally
     /// This does not handle the clone's.
     /// TODO: Created a networked camera that handles all of this automatically
@@ -145,7 +153,6 @@ public class RandomPlayerMover : NetworkBehaviour
     }
 
     /// <summary>
-    /// HandlGlobalGameStateChanged
     /// We use this pattern with handling state or value changes.
     /// With state changes it is useful to easily enable or disable something based on the GlobalGameState
     /// </summary>
@@ -153,7 +160,7 @@ public class RandomPlayerMover : NetworkBehaviour
     /// <param name="isTransitioningTo"></param>
     void HandlGlobalGameStateChanged(GlobalGameState.GameStates globalGameState, bool isTransitioningTo)
     {
-        switch(globalGameState)
+        switch (globalGameState)
         {
             case GlobalGameState.GameStates.Lobby:
                 {
@@ -162,14 +169,12 @@ public class RandomPlayerMover : NetworkBehaviour
                 }
             case GlobalGameState.GameStates.InGame:
                 {
-
                     break;
                 }
         }
     }
 
     /// <summary>
-    /// OnRegisterInGameManager
     /// The InGameManager invokes this so the component can react to In-Game state changes
     /// </summary>
     /// <param name="inGameManager"></param>
@@ -184,7 +189,6 @@ public class RandomPlayerMover : NetworkBehaviour
     }
 
     /// <summary>
-    /// OnInGameStateChanged
     /// Will be notified of the In-Game state transition (from -> to)
     /// </summary>
     /// <param name="previousState">From</param>
@@ -196,14 +200,13 @@ public class RandomPlayerMover : NetworkBehaviour
     }
 
     /// <summary>
-    /// HandleInGameStateChanged
     /// Same pattern is used as was used with the GlobalGameState GameState changes.
     /// </summary>
     /// <param name="gameState">state</param>
     /// <param name="isTransitioningTo">are we transitioning to or from this state?</param>
     void HandleInGameStateChanged(InGameManager.InGameStates gameState, bool isTransitioningTo)
     {
-        switch(gameState)
+        switch (gameState)
         {
             case InGameManager.InGameStates.Exiting:
             case InGameManager.InGameStates.Paused:
@@ -219,7 +222,6 @@ public class RandomPlayerMover : NetworkBehaviour
     }
 
     /// <summary>
-    /// OnIsHidden
     /// Hides the rendering component of this game object
     /// Note: this is specific to MeshRenderer
     /// </summary>
@@ -238,7 +240,6 @@ public class RandomPlayerMover : NetworkBehaviour
     }
 
     /// <summary>
-    /// OnPaused
     /// Invoked when the server hits pause
     /// </summary>
     /// <param name="isPaused"></param>
@@ -283,7 +284,6 @@ public class RandomPlayerMover : NetworkBehaviour
     }
 
     /// <summary>
-    /// Move
     /// Moves the player in the current direction (m_Direction) at a given speed
     /// </summary>
     /// <param name="speed"></param>
@@ -295,8 +295,7 @@ public class RandomPlayerMover : NetworkBehaviour
     }
 
     /// <summary>
-    /// FixedUpdate
-    /// Updates the movement for the player
+    /// Updates the movement for the player during physics fixed update
     /// </summary>
     private void FixedUpdate()
     {
@@ -310,7 +309,6 @@ public class RandomPlayerMover : NetworkBehaviour
     }
 
     /// <summary>
-    /// OnCollisionStay
     /// When we collide with something other than the ground, change our direction
     /// </summary>
     /// <param name="collision"></param>
@@ -335,7 +333,7 @@ public class RandomPlayerMover : NetworkBehaviour
                 if (collision.GetContacts(contactPoints) > 0)
                 {
                     Vector3 CollisionPointAverage = Vector3.zero;
-                    foreach(ContactPoint contactPoint in contactPoints)
+                    foreach (ContactPoint contactPoint in contactPoints)
                     {
                         CollisionPointAverage += contactPoint.point;
                     }

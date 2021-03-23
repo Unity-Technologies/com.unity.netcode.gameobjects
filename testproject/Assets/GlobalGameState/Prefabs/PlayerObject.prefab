@@ -41,7 +41,6 @@ GameObject:
   m_Component:
   - component: {fileID: 7090826627531459437}
   - component: {fileID: 3545798635144421820}
-  - component: {fileID: 2560425364898213362}
   m_Layer: 0
   m_Name: Camera
   m_TagString: Untagged
@@ -106,14 +105,6 @@ Camera:
   m_OcclusionCulling: 1
   m_StereoConvergence: 10
   m_StereoSeparation: 0.022
---- !u!81 &2560425364898213362
-AudioListener:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6744888604603743147}
-  m_Enabled: 1
 --- !u!1 &8685790303553767886
 GameObject:
   m_ObjectHideFlags: 0
@@ -175,6 +166,7 @@ MeshRenderer:
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -199,6 +191,7 @@ MeshRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_AdditionalVertexStreams: {fileID: 0}
 --- !u!65 &8685790303553767873
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -252,7 +245,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  NetworkedInstanceId: 0
+  NetworkInstanceId: 0
   PrefabHash: 707014007058630310
   PrefabHashGenerator: Cube
   AlwaysReplicateAsRoot: 0

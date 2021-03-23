@@ -61,7 +61,6 @@ namespace MLAPIGlobalGameState
         public List<StateToSceneTransitionLinks> StateToSceneList { get { return m_StateToSceneList; } set { m_StateToSceneList = value; } }
 
         /// <summary>
-        /// GetInSessionSceneNameIndex
         /// Returns the associated index of the InSession linked scene name
         /// </summary>
         /// <param name="sceneName"></param>
@@ -87,7 +86,6 @@ namespace MLAPIGlobalGameState
         }
 
         /// <summary>
-        /// GetSceneLinkedToState
         /// Returns the scene associated with the state
         /// </summary>
         /// <param name="gameState">game state</param>
@@ -104,7 +102,6 @@ namespace MLAPIGlobalGameState
         }
 
         /// <summary>
-        /// GetGameStateLinkedToScene
         /// Returns the state associated with the scene
         /// </summary>
         /// <param name="sceneName">Name of the scene</param>
@@ -120,7 +117,6 @@ namespace MLAPIGlobalGameState
         }
 
         /// <summary>
-        /// GetGameStateLinkedToScene
         /// Returns the MLAPI State associated with the scene
         /// </summary>
         /// <param name="gameState">GlobalGameState.GameStates</param>
@@ -135,6 +131,9 @@ namespace MLAPIGlobalGameState
             return StateToSceneTransitionLinks.MLAPIStates.None;
         }
 
+        /// <summary>
+        /// Constructor
+        /// </summary>
         public StateToSceneTransitionList()
         {
             m_StateToSceneList = new List<StateToSceneTransitionLinks>();

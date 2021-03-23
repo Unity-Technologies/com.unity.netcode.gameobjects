@@ -11,7 +11,7 @@ namespace UnityEditor
         [PostProcessScene(int.MaxValue)]
         public static void ProcessScene()
         {
-            var traverseSortedObjects = FindObjectsOfType<NetworkObject>().ToList();
+            var traverseSortedObjects = FindObjectsOfType<NetworkObject>().Where(x => x.IsSceneObject == null).ToList();
 
             traverseSortedObjects.Sort((x, y) =>
             {

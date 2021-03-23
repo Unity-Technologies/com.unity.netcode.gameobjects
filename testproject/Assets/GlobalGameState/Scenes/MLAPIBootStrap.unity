@@ -43,7 +43,7 @@ RenderSettings:
 --- !u!157 &3
 LightmapSettings:
   m_ObjectHideFlags: 0
-  serializedVersion: 11
+  serializedVersion: 12
   m_GIWorkflowMode: 1
   m_GISettings:
     serializedVersion: 2
@@ -98,7 +98,7 @@ LightmapSettings:
     m_TrainingDataDestination: TrainingData
     m_LightProbeSampleCountMultiplier: 4
   m_LightingDataAsset: {fileID: 0}
-  m_UseShadowmask: 1
+  m_LightingSettings: {fileID: 0}
 --- !u!196 &4
 NavMeshSettings:
   serializedVersion: 2
@@ -118,9 +118,80 @@ NavMeshSettings:
     manualTileSize: 0
     tileSize: 256
     accuratePlacement: 0
+    maxJobWorkers: 0
+    preserveTilesOutsideBounds: 0
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1001 &284664662
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 3086277942538694978, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
+        type: 3}
+      propertyPath: m_Name
+      value: NetworkBootStrap
+      objectReference: {fileID: 0}
+    - target: {fileID: 3086277942538694983, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
+        type: 3}
+      propertyPath: m_RootOrder
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3086277942538694983, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -0.40890312
+      objectReference: {fileID: 0}
+    - target: {fileID: 3086277942538694983, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 4.89
+      objectReference: {fileID: 0}
+    - target: {fileID: 3086277942538694983, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3086277942538694983, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3086277942538694983, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3086277942538694983, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3086277942538694983, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3086277942538694983, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3086277942538694983, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3086277942538694983, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 49aff2c2d8a4f45429ddb6f65813e9bb, type: 3}
 --- !u!1 &615382888
 GameObject:
   m_ObjectHideFlags: 0
@@ -197,6 +268,7 @@ Light:
   m_UseColorTemperature: 0
   m_BoundingSphereOverride: {x: 0, y: 0, z: 0, w: 0}
   m_UseBoundingSphereOverride: 0
+  m_UseViewFrustumForShadowCasterCull: 1
   m_ShadowRadius: 0
   m_ShadowAngle: 0
 --- !u!4 &615382890
@@ -296,526 +368,3 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1001 &1627005297
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    m_TransformParent: {fileID: 0}
-    m_Modifications:
-    - target: {fileID: 3086277942538694976, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: NetworkConfig.UsePrefabSync
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3086277942538694976, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: NetworkConfig.ForceSamePrefabs
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 3086277942538694976, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: NetworkConfig.PlayerPrefabHash
-      value: Unity.Multiplayer.MLAPI.Runtime MLAPI.Configuration.NullableBoolSerializable
-      objectReference: {fileID: 0}
-    - target: {fileID: 3086277942538694976, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: NetworkConfig.PlayerPrefabHash.Value
-      value: 707014007058630310
-      objectReference: {fileID: 0}
-    - target: {fileID: 3086277942538694976, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: NetworkConfig.NetworkedPrefabs.Array.size
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 3086277942538694976, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: NetworkConfig.RegisteredScenes.Array.size
-      value: 6
-      objectReference: {fileID: 0}
-    - target: {fileID: 3086277942538694976, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: NetworkConfig.RegisteredScenes.Array.data[0]
-      value: MLAPIBootStrap
-      objectReference: {fileID: 0}
-    - target: {fileID: 3086277942538694976, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: NetworkConfig.RegisteredScenes.Array.data[1]
-      value: GameLobby
-      objectReference: {fileID: 0}
-    - target: {fileID: 3086277942538694976, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: NetworkConfig.RegisteredScenes.Array.data[2]
-      value: InGame
-      objectReference: {fileID: 0}
-    - target: {fileID: 3086277942538694976, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: NetworkConfig.RegisteredScenes.Array.data[3]
-      value: MainMenu
-      objectReference: {fileID: 0}
-    - target: {fileID: 3086277942538694976, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: NetworkConfig.RegisteredScenes.Array.data[4]
-      value: InGame2
-      objectReference: {fileID: 0}
-    - target: {fileID: 3086277942538694976, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: NetworkConfig.RegisteredScenes.Array.data[5]
-      value: InGame3
-      objectReference: {fileID: 0}
-    - target: {fileID: 3086277942538694976, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: NetworkConfig.NetworkedPrefabs.Array.data[0].Prefab
-      value: 
-      objectReference: {fileID: 8685790303553767886, guid: 6321ace3f589e0d488be478aa1ee1ae3,
-        type: 3}
-    - target: {fileID: 3086277942538694976, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: NetworkConfig.NetworkedPrefabs.Array.data[1].Prefab
-      value: 
-      objectReference: {fileID: 8685790303553767886, guid: 6321ace3f589e0d488be478aa1ee1ae3,
-        type: 3}
-    - target: {fileID: 3086277942538694976, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: NetworkConfig.NetworkedPrefabs.Array.data[0].PlayerPrefab
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 3086277942538694976, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: NetworkConfig.NetworkedPrefabs.Array.data[1].PlayerPrefab
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 3086277942538694977, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: SupportWebsocket
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3086277942538694977, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: MessageBufferSize
-      value: 32768
-      objectReference: {fileID: 0}
-    - target: {fileID: 3086277942538694978, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: m_Name
-      value: NetworkBootStrap
-      objectReference: {fileID: 0}
-    - target: {fileID: 3086277942538694983, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: m_RootOrder
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: 3086277942538694983, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3086277942538694983, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3086277942538694983, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3086277942538694983, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 3086277942538694983, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3086277942538694983, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3086277942538694983, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3086277942538694983, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3086277942538694983, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3086277942538694983, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: m_IsFullScreen
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: m_IsWindowedMode
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: m_MaximumResolution
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: SceneStateLinks.Array.size
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: SceneToStateLinks.Array.size
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: SceneToStateLinks.m_Options.Array.size
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: SceneStateLinks.Array.data[0].SceneToLoad
-      value: 
-      objectReference: {fileID: 102900000, guid: f1b57d687e6023144852eb0403e851d6,
-        type: 3}
-    - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: SceneStateLinks.Array.data[0].StateToLoadScene
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: SceneToStateLinks.m_StateToSceneList.Array.size
-      value: 6
-      objectReference: {fileID: 0}
-    - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: m_SceneToStateLinks.m_StateToSceneList.Array.size
-      value: 8
-      objectReference: {fileID: 0}
-    - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: SceneToStateLinks.m_Options.Array.data[0].m_SceneToLoad
-      value: 
-      objectReference: {fileID: 102900000, guid: 66ac83b9757b2c041a24a6bdd2ea0051,
-        type: 3}
-    - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: SceneToStateLinks.m_Options.Array.data[1].m_SceneToLoad
-      value: 
-      objectReference: {fileID: 102900000, guid: e5ad5460121db3243abe93100d6ee520,
-        type: 3}
-    - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: SceneToStateLinks.m_Options.Array.data[0].m_StateToLoadScene
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: SceneToStateLinks.m_Options.Array.data[1].m_StateToLoadScene
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: SceneToStateLinks.m_StateToSceneList.Array.data[0].m_IsEnabled
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: SceneToStateLinks.m_StateToSceneList.Array.data[1].m_IsEnabled
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: SceneToStateLinks.m_StateToSceneList.Array.data[2].m_IsEnabled
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: SceneToStateLinks.m_StateToSceneList.Array.data[3].m_IsEnabled
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: SceneToStateLinks.m_StateToSceneList.Array.data[4].m_IsEnabled
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: SceneToStateLinks.m_StateToSceneList.Array.data[5].m_IsEnabled
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: SceneToStateLinks.m_StateToSceneList.Array.data[3].m_MLAPIState
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: SceneToStateLinks.m_StateToSceneList.Array.data[4].m_MLAPIState
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: SceneToStateLinks.m_StateToSceneList.Array.data[5].m_MLAPIState
-      value: 3
-      objectReference: {fileID: 0}
-    - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: SceneToStateLinks.m_StateToSceneList.Array.data[0].m_SceneToLoad
-      value: 
-      objectReference: {fileID: 102900000, guid: f1b57d687e6023144852eb0403e851d6,
-        type: 3}
-    - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: SceneToStateLinks.m_StateToSceneList.Array.data[1].m_SceneToLoad
-      value: 
-      objectReference: {fileID: 102900000, guid: 558f5edadd3fbfe4094deb4425db5b5f,
-        type: 3}
-    - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: SceneToStateLinks.m_StateToSceneList.Array.data[2].m_SceneToLoad
-      value: 
-      objectReference: {fileID: 102900000, guid: 66ac83b9757b2c041a24a6bdd2ea0051,
-        type: 3}
-    - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: SceneToStateLinks.m_StateToSceneList.Array.data[3].m_SceneToLoad
-      value: 
-      objectReference: {fileID: 102900000, guid: e5ad5460121db3243abe93100d6ee520,
-        type: 3}
-    - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: SceneToStateLinks.m_StateToSceneList.Array.data[4].m_SceneToLoad
-      value: 
-      objectReference: {fileID: 102900000, guid: ebee135e52c197349959dc7546e30261,
-        type: 3}
-    - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: SceneToStateLinks.m_StateToSceneList.Array.data[5].m_SceneToLoad
-      value: 
-      objectReference: {fileID: 102900000, guid: 66ac83b9757b2c041a24a6bdd2ea0051,
-        type: 3}
-    - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: m_SceneToStateLinks.m_StateToSceneList.Array.data[3].m_MLAPIState
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: m_SceneToStateLinks.m_StateToSceneList.Array.data[4].m_MLAPIState
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: m_SceneToStateLinks.m_StateToSceneList.Array.data[5].m_MLAPIState
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: m_SceneToStateLinks.m_StateToSceneList.Array.data[6].m_MLAPIState
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: m_SceneToStateLinks.m_StateToSceneList.Array.data[7].m_MLAPIState
-      value: 3
-      objectReference: {fileID: 0}
-    - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: m_SceneToStateLinks.m_StateToSceneList.Array.data[0].m_SceneToLoad
-      value: 
-      objectReference: {fileID: 102900000, guid: f1b57d687e6023144852eb0403e851d6,
-        type: 3}
-    - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: m_SceneToStateLinks.m_StateToSceneList.Array.data[1].m_SceneToLoad
-      value: 
-      objectReference: {fileID: 102900000, guid: 558f5edadd3fbfe4094deb4425db5b5f,
-        type: 3}
-    - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: m_SceneToStateLinks.m_StateToSceneList.Array.data[2].m_SceneToLoad
-      value: 
-      objectReference: {fileID: 102900000, guid: 66ac83b9757b2c041a24a6bdd2ea0051,
-        type: 3}
-    - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: m_SceneToStateLinks.m_StateToSceneList.Array.data[3].m_SceneToLoad
-      value: 
-      objectReference: {fileID: 102900000, guid: e5ad5460121db3243abe93100d6ee520,
-        type: 3}
-    - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: m_SceneToStateLinks.m_StateToSceneList.Array.data[4].m_SceneToLoad
-      value: 
-      objectReference: {fileID: 102900000, guid: ebee135e52c197349959dc7546e30261,
-        type: 3}
-    - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: m_SceneToStateLinks.m_StateToSceneList.Array.data[5].m_SceneToLoad
-      value: 
-      objectReference: {fileID: 102900000, guid: 9d13b5a268947a044bc4f1a710bb3959,
-        type: 3}
-    - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: m_SceneToStateLinks.m_StateToSceneList.Array.data[6].m_SceneToLoad
-      value: 
-      objectReference: {fileID: 102900000, guid: d7f7bc7d9a8dede4c85f461f67eea05c,
-        type: 3}
-    - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: m_SceneToStateLinks.m_StateToSceneList.Array.data[7].m_SceneToLoad
-      value: 
-      objectReference: {fileID: 102900000, guid: 66ac83b9757b2c041a24a6bdd2ea0051,
-        type: 3}
-    - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: SceneToStateLinks.m_StateToSceneList.Array.data[0].m_SceneToLoadName
-      value: MLAPIBootStrap
-      objectReference: {fileID: 0}
-    - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: SceneToStateLinks.m_StateToSceneList.Array.data[1].m_SceneToLoadName
-      value: GameIntro
-      objectReference: {fileID: 0}
-    - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: SceneToStateLinks.m_StateToSceneList.Array.data[2].m_SceneToLoadName
-      value: MainMenu
-      objectReference: {fileID: 0}
-    - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: SceneToStateLinks.m_StateToSceneList.Array.data[3].m_SceneToLoadName
-      value: GameLobby
-      objectReference: {fileID: 0}
-    - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: SceneToStateLinks.m_StateToSceneList.Array.data[4].m_SceneToLoadName
-      value: InGame
-      objectReference: {fileID: 0}
-    - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: SceneToStateLinks.m_StateToSceneList.Array.data[5].m_SceneToLoadName
-      value: MainMenu
-      objectReference: {fileID: 0}
-    - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: SceneToStateLinks.m_StateToSceneList.Array.data[0].m_StateToLoadScene
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: SceneToStateLinks.m_StateToSceneList.Array.data[1].m_StateToLoadScene
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: SceneToStateLinks.m_StateToSceneList.Array.data[2].m_StateToLoadScene
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: SceneToStateLinks.m_StateToSceneList.Array.data[3].m_StateToLoadScene
-      value: 3
-      objectReference: {fileID: 0}
-    - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: SceneToStateLinks.m_StateToSceneList.Array.data[4].m_StateToLoadScene
-      value: 4
-      objectReference: {fileID: 0}
-    - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: SceneToStateLinks.m_StateToSceneList.Array.data[5].m_StateToLoadScene
-      value: 5
-      objectReference: {fileID: 0}
-    - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: m_SceneToStateLinks.m_StateToSceneList.Array.data[0].m_SceneToLoadName
-      value: MLAPIBootStrap
-      objectReference: {fileID: 0}
-    - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: m_SceneToStateLinks.m_StateToSceneList.Array.data[1].m_SceneToLoadName
-      value: GameIntro
-      objectReference: {fileID: 0}
-    - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: m_SceneToStateLinks.m_StateToSceneList.Array.data[2].m_SceneToLoadName
-      value: MainMenu
-      objectReference: {fileID: 0}
-    - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: m_SceneToStateLinks.m_StateToSceneList.Array.data[3].m_SceneToLoadName
-      value: GameLobby
-      objectReference: {fileID: 0}
-    - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: m_SceneToStateLinks.m_StateToSceneList.Array.data[4].m_SceneToLoadName
-      value: InGame
-      objectReference: {fileID: 0}
-    - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: m_SceneToStateLinks.m_StateToSceneList.Array.data[5].m_SceneToLoadName
-      value: InGame2
-      objectReference: {fileID: 0}
-    - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: m_SceneToStateLinks.m_StateToSceneList.Array.data[6].m_SceneToLoadName
-      value: InGame3
-      objectReference: {fileID: 0}
-    - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: m_SceneToStateLinks.m_StateToSceneList.Array.data[7].m_SceneToLoadName
-      value: MainMenu
-      objectReference: {fileID: 0}
-    - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: m_SceneToStateLinks.m_StateToSceneList.Array.data[1].m_StateToLoadScene
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: m_SceneToStateLinks.m_StateToSceneList.Array.data[2].m_StateToLoadScene
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: m_SceneToStateLinks.m_StateToSceneList.Array.data[3].m_StateToLoadScene
-      value: 3
-      objectReference: {fileID: 0}
-    - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: m_SceneToStateLinks.m_StateToSceneList.Array.data[4].m_StateToLoadScene
-      value: 4
-      objectReference: {fileID: 0}
-    - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: m_SceneToStateLinks.m_StateToSceneList.Array.data[5].m_StateToLoadScene
-      value: 4
-      objectReference: {fileID: 0}
-    - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: m_SceneToStateLinks.m_StateToSceneList.Array.data[6].m_StateToLoadScene
-      value: 4
-      objectReference: {fileID: 0}
-    - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
-        type: 3}
-      propertyPath: m_SceneToStateLinks.m_StateToSceneList.Array.data[7].m_StateToLoadScene
-      value: 5
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: 49aff2c2d8a4f45429ddb6f65813e9bb, type: 3}
