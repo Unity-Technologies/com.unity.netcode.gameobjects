@@ -133,7 +133,7 @@ namespace MLAPI.RuntimeTests
         }
 
         [Test]
-        public void TestNormalRegisterAndNotifyFlowNull()
+        public void TestNormalRegisterAndNotifyFlow_NullTransport()
         {
             const bool useNullTransport = true;
             TestProfiler testProfiler = SetupTestProfiler(useNullTransport);
@@ -175,10 +175,6 @@ namespace MLAPI.RuntimeTests
             TestProfiler.NotifyProfilerListeners();
 
             // Capturing data after notifying listeners is bad
-            Assert.Catch<NoTickDataException>(() =>
-            {
-                testProfiler.Send();
-            });
             Assert.Catch<NoTickDataException>(() =>
             {
                 testProfiler.Send();
