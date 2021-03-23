@@ -11,7 +11,7 @@ test_editors:
   - trunk
   
 pr_test_editors:
-  - 2020.3
+  - 2021.1
 
 # Platforms that will be tested. The first entry in this array will also
 # be used for validation
