@@ -160,8 +160,8 @@ all_tests_trigger:
 # Run all relevant tasks when a pull request targeting the develop
 # branch is created or updated. Currently only mlapi package tests are
 # enabled, since the others are missing test coverage and will fail CI.
-develop_pull_request_trigger:
-  name: Develop Branch Triggers
+pull_request_trigger:
+  name: Pull Request Trigger
   dependencies:
     - .yamato/project-test.yml#pr_validate_{{ projects.first.name }}_com.unity.multiplayer.mlapi_{{ test_platforms.first.name }}_{{ pr_test_editors.first }}
 {% for editor in pr_test_editors -%}
