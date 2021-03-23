@@ -1,0 +1,14 @@
+{
+    "name": "Unity.Multiplayer.MLAPI.Runtime",
+    "rootNamespace": "MLAPI",
+    "references": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

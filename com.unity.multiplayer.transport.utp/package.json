@@ -1,0 +1,18 @@
+{
+  "name": "com.unity.multiplayer.transport.utp",
+  "displayName": "Unity Transport for MLAPI",
+  "version": "0.0.1-preview.1",
+  "unity": "2019.4",
+  "unityRelease": "8f1",
+  "description": "Unity Transport for MLAPI This the Core Unity Mid-level API that provides core SDK for multiplayer games within unity",
+  "keywords": [
+    "unity"
+  ],
+  "dependencies": {
+    "com.unity.multiplayer.mlapi": "0.0.1-preview.1",
+    "com.unity.transport": "0.4.1-preview.1",
+    "com.unity.jobs":"0.2.10-preview.13"
+  },
+  "type": "library",
+  "hideInEditor": false
+}

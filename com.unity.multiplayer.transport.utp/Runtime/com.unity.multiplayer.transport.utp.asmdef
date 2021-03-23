@@ -1,0 +1,20 @@
+{
+    "name": "Unity MLAPI Transport",
+    "rootNamespace": "",
+    "references": [
+        "Unity.Collections",
+        "Unity.Networking.Transport",
+        "Unity.Jobs",
+        "Unity.Burst",
+        "Unity.Multiplayer.MLAPI.Runtime"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
