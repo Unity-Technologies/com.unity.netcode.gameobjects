@@ -8,22 +8,11 @@
         /// <summary>
         /// The ClientId of the client
         /// </summary>
-        public ulong ClientId;
-
+        public ulong ClientId { get; internal set; }
+        
         /// <summary>
-        /// The state of the connection process for the client
+        /// Whether or no the client has sent a connection request
         /// </summary>
-        public State ConnectionState;
-
-        /// <summary>
-        /// The states of a connection
-        /// </summary>
-        public enum State
-        {
-            /// <summary>
-            /// Client is in the process of doing the connection handshake
-            /// </summary>
-            PendingConnection
-        }
+        public bool HasSentConnectionRequest { get; internal set; }
     }
 }
