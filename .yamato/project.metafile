@@ -35,3 +35,5 @@ projects:
     packages:
       - name: com.unity.multiplayer.mlapi
         path: com.unity.multiplayer.mlapi
+      - name: com.unity.multiplayer.transport.utp
+        path: com.unity.multiplayer.transport.utp
