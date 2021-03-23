@@ -1,25 +1,21 @@
-[![](https://i.imgur.com/d0amtqs.png)](https://midlevel.github.io/MLAPI/)
+[![](https://i.imgur.com/d0amtqs.png)](https://mlapi.network/)
 
-[![GitHub Release](https://img.shields.io/github/release/MidLevel/MLAPI.svg?logo=github)](https://github.com/MidLevel/MLAPI/releases)
-[![NuGet Release](https://img.shields.io/nuget/v/MLAPI.svg?logo=nuget)](https://www.nuget.org/packages/MLAPI/)
-[![Github All Releases](https://img.shields.io/github/downloads/MidLevel/MLAPI/total.svg?logo=github&color=informational)](https://github.com/MidLevel/MLAPI/releases)
+[![GitHub Release](https://img.shields.io/github/release/MidLevel/MLAPI.svg?logo=github)](https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi/releases/latest)
+[![Github All Releases](https://img.shields.io/github/downloads/MidLevel/MLAPI/total.svg?logo=github&color=informational)](https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi/releases)
 
+[![Forums](https://img.shields.io/badge/unity--forums-multiplayer-blue)](https://forum.unity.com/forums/multiplayer.26/)
 [![Discord](https://img.shields.io/discord/449263083769036810.svg?label=discord&logo=discord&color=informational)](https://discord.gg/FM8SE9E)
-[![Build Status](https://img.shields.io/appveyor/ci/midlevel/mlapi/master.svg?logo=appveyor)](https://ci.appveyor.com/project/MidLevel/mlapi/branch/master)
-[![AppVeyor Tests](https://img.shields.io/appveyor/tests/midlevel/mlapi/master.svg?logo=AppVeyor)](https://ci.appveyor.com/project/MidLevel/mlapi/build/tests)
 
 
-[![Licence](https://img.shields.io/github/license/midlevel/mlapi.svg?color=informational)](https://github.com/MidLevel/MLAPI/blob/master/LICENCE)
-[![Website](https://img.shields.io/badge/docs-website-informational.svg)](https://midlevel.github.io/MLAPI/)
-[![Wiki](https://img.shields.io/badge/docs-wiki-informational.svg)](https://midlevel.github.io/MLAPI/wiki/)
-[![Api](https://img.shields.io/badge/docs-api-informational.svg)](https://midlevel.github.io/MLAPI/api/)
+[![Licence](https://img.shields.io/github/license/midlevel/mlapi.svg?color=informational)](https://github.com/MidLevel/MLAPI/blob/master/LICENSE)
+[![Website](https://img.shields.io/badge/docs-website-informational.svg)](https://docs-multiplayer.unity3d.com/)
+[![Api](https://img.shields.io/badge/docs-api-informational.svg)](https://docs-multiplayer.unity3d.com/docs/mlapi-api/introduction)
 
 
-The Unity MLAPI (Mid level API) is a framework that simplifies building networked games in Unity. It offers **low level** access to core networking while at the same time providing **high level** abstractions. The MLAPI aims to remove the repetetive tasks and reduces the network code dramatically, no matter how many of the **modular** features you use.
+The Unity MLAPI (Mid level API) is a framework that simplifies building networked games in Unity. It offers **low level** access to core networking while at the same time providing **high level** abstractions. The MLAPI aims to remove the repetitive tasks and reduces the network code dramatically, no matter how many of the **modular** features you use.
 
 ### Getting Started
-To get started, check the [Wiki](https://mlapi.network/wiki/).
-This is also where most documentation lies. Follow the [quickstart](https://mlapi.network/wiki/installation/), join our [Discord](http://discord.mlapi.network/) and get started today!
+To get started, check the [Multiplayer Docs Site](https://docs-multiplayer.unity3d.com/).
 
 ### Community and Feedback
 For general questions, networking advice or discussions about MLAPI, please join our [Discord Community](https://discord.gg/FM8SE9E) or create a post in the [Unity Multiplayer Forum](https://forum.unity.com/forums/multiplayer.26/).
@@ -31,6 +27,14 @@ MLAPI is compatible with Unity 2019 and newer versions.
 
 ### Development
 We follow the [Gitflow Workflow](https://www.atlassian.com/git/tutorials/comparing-workflows/gitflow-workflow). The master branch contains our latest stable release version while the develop branch tracks our current work.
+
+This repository is broken into multiple components, each one implemented as a Unity Package.
+```
+    .
+    ├── com.unity.multiplayer.mlapi            # The core netcode SDK unity package (source + tests)
+    ├── com.unity.multiplayer.transport.utp    # Transport wrapper for com.unity.transport experimental package (not currently supported)
+    └── testproject                            # A Unity project with various test implementations & scenes which exercise the features in the above package(s).
+```
 
 ### Contributing
 The MLAPI is an open-source project and we encourage and welcome
@@ -77,4 +81,4 @@ public class Chat : NetworkBehaviour
 ```
 
 ### License
-[MIT Licence](LICENSE)
+[MIT License](LICENSE)

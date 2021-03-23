@@ -66,9 +66,12 @@ namespace MLAPI
         {
             new MLAPIProfilerCounter { m_Name = ProfilerConstants.NamedMessageReceived, m_Category = ProfilerCategory.Network.Name },
             new MLAPIProfilerCounter { m_Name = ProfilerConstants.UnnamedMessageReceived, m_Category = ProfilerCategory.Network.Name },
+            new MLAPIProfilerCounter { m_Name = ProfilerConstants.NamedMessageSent, m_Category = ProfilerCategory.Network.Name },
+            new MLAPIProfilerCounter { m_Name = ProfilerConstants.UnnamedMessageSent, m_Category = ProfilerCategory.Network.Name },
             new MLAPIProfilerCounter { m_Name = ProfilerConstants.ByteSent, m_Category = ProfilerCategory.Network.Name },
             new MLAPIProfilerCounter { m_Name = ProfilerConstants.ByteReceived, m_Category = ProfilerCategory.Network.Name },
-            new MLAPIProfilerCounter { m_Name = ProfilerConstants.NetworkVarReceived, m_Category = ProfilerCategory.Network.Name },
+            new MLAPIProfilerCounter { m_Name = ProfilerConstants.NetworkVarUpdates, m_Category = ProfilerCategory.Network.Name },
+            new MLAPIProfilerCounter { m_Name = ProfilerConstants.NetworkVarDeltas, m_Category = ProfilerCategory.Network.Name },
         };
 
         private delegate List<MLAPIProfilerCounter> CounterListFactoryDelegate();
