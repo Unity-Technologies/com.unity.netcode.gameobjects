@@ -67,6 +67,25 @@ pr_test_{{ projects.first.name}}_{{ package.name }}_{{ platform.name }}_{{ edito
 
 {% endfor -%}
 {% endfor -%}
+
+# Validation job for package {{ package.name }}, only using the first entry in the
+# platform and editor meta data
+# Validation only occurs in editmode.
+pr_validate_{{ projects.first.name }}_{{ package.name }}_{{ test_platforms.first.name }}_{{ test_editors.first }}:
+  name : Validate Project {{ projects.first.name }} - Package {{ package.name }} - {{ pr_test_editors.first }} on {{ test_platforms.first.name }}
+  agent:
+    type: {{ test_platforms.first.type }}
+    image: {{ test_platforms.first.image }}
+    flavor: {{ test_platforms.first.flavor}}
+  commands:
+    - npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
+    - {% if platform.name == "centos" %}DISPLAY=:0 {% endif %}upm-ci project test -u {{ pr_test_editors.first }} --project-path {{ projects.first.path }} --type vetting-tests --package-filter {{ package.name }} --platform editmode
+  artifacts:
+    logs:
+      paths:
+        - "upm-ci~/test-results/**/*"
+  dependencies:
+    - .yamato/project-pack.yml#pack_{{ projects.first.name }}
 {% endfor -%}
 
 # For every platform and editor version, run its project tests without
@@ -144,7 +163,7 @@ all_tests_trigger:
 develop_pull_request_trigger:
   name: Develop Branch Triggers
   dependencies:
-    - .yamato/project-test.yml#validate_{{ projects.first.name }}_com.unity.multiplayer.mlapi_{{ test_platforms.first.name }}_{{ pr_test_editors.first }}
+    - .yamato/project-test.yml#pr_validate_{{ projects.first.name }}_com.unity.multiplayer.mlapi_{{ test_platforms.first.name }}_{{ pr_test_editors.first }}
 {% for editor in pr_test_editors -%}
 {% for platform in test_platforms -%}
     - .yamato/project-test.yml#pr_test_{{ projects.first.name }}_com.unity.multiplayer.mlapi_{{ platform.name }}_{{ editor }}
