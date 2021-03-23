@@ -71,7 +71,7 @@ pr_test_{{ projects.first.name}}_{{ package.name }}_{{ platform.name }}_{{ edito
 # Validation job for package {{ package.name }}, only using the first entry in the
 # platform and editor meta data
 # Validation only occurs in editmode.
-pr_validate_{{ projects.first.name }}_{{ package.name }}_{{ test_platforms.first.name }}_{{ test_editors.first }}:
+pr_validate_{{ projects.first.name }}_{{ package.name }}_{{ test_platforms.first.name }}_{{ pr_test_editors.first }}:
   name : Validate Project {{ projects.first.name }} - Package {{ package.name }} - {{ pr_test_editors.first }} on {{ test_platforms.first.name }}
   agent:
     type: {{ test_platforms.first.type }}
