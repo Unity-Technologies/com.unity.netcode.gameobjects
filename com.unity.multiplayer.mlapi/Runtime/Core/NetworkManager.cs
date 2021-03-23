@@ -648,6 +648,7 @@ namespace MLAPI
 
         private void OnNetworkEarlyUpdate()
         {
+            NotifyProfilerListeners();
             ProfilerBeginTick();
 
             if (IsListening)
@@ -751,8 +752,6 @@ namespace MLAPI
                     m_CurrentNetworkTimeOffset += Mathf.Clamp(m_NetworkTimeOffset - m_CurrentNetworkTimeOffset, -maxDelta, maxDelta);
                 }
             }
-
-            NotifyProfilerListeners();
         }
 
         internal void UpdateNetworkTime(ulong clientId, float netTime, float receiveTime, bool warp = false)
@@ -1495,19 +1494,22 @@ namespace MLAPI
         {
             var data = PerformanceDataManager.GetData();
             var eventHandler = OnPerformanceDataEvent;
-            if (eventHandler != null && data != null)
+            if (eventHandler != null)
             {
-                if (NetworkConfig.NetworkTransport is ITransportProfilerData profileTransport)
+                if (data != null)
                 {
-                    var transportProfilerData = profileTransport.GetTransportProfilerData();
-                    PerformanceDataManager.AddTransportData(transportProfilerData);
-                }
+                    if (NetworkConfig.NetworkTransport is ITransportProfilerData profileTransport)
+                    {
+                        var transportProfilerData = profileTransport.GetTransportProfilerData();
+                        PerformanceDataManager.AddTransportData(transportProfilerData);
+                    }
 
-                eventHandler.Invoke(data);
-            }
-            else if (data == null)
-            {
-                NetworkLog.LogWarning($"No data available. Did you forget to call {nameof(PerformanceDataManager)}.{nameof(PerformanceDataManager.BeginNewTick)}() first?");
+                    eventHandler.Invoke(data);
+                }
+                else
+                {
+                    NetworkLog.LogWarning($"No data available. Did you forget to call {nameof(PerformanceDataManager)}.{nameof(PerformanceDataManager.BeginNewTick)}() first?");
+                }
             }
         }
     }
