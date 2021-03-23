@@ -11,7 +11,7 @@
         public ulong ClientId { get; internal set; }
         
         /// <summary>
-        /// Whether or no the client has sent a connection request
+        /// Whether or not the client has sent a connection request
         /// </summary>
         public bool HasSentConnectionRequest { get; internal set; }
     }
