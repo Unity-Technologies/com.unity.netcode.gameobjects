@@ -1,0 +1,37 @@
+# Editors where tests will happen. The first entry of this array is also used
+# for validation.
+#
+# Therefore, **do not** put an older V1-lifecycle ver. 
+#  like 2020.x or 2019.x on top of 'test_editors'
+test_editors:
+  - 2021.1
+  - 2021.2
+  - 2020.3
+  - 2019.4
+  - trunk
+
+# Platforms that will be tested. The first entry in this array will also
+# be used for validation
+test_platforms:
+  - name: win
+    type: Unity::VM
+    image: package-ci/win10:stable
+    flavor: b1.large
+  - name: mac
+    type: Unity::VM::osx
+    image: package-ci/mac:stable
+    flavor: m1.mac
+  - name: ubuntu
+    type: Unity::VM
+    image: package-ci/ubuntu:stable
+    flavor: b1.large
+
+# Projects within the repository that will be tested. Name will be used
+# for job ids, so it should not contain spaces/non-supported characters
+projects:
+  - name: project
+    path: testproject
+    # Packages within a project that will be tested
+    packages:
+      - name: com.unity.multiplayer.mlapi
+        path: com.unity.multiplayer.mlapi
