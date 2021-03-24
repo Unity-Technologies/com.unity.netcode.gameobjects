@@ -266,17 +266,26 @@ namespace MLAPI
                 systemPosition = loopSystemPosition == LoopSystemPosition.After ? parentLoopSystem.subSystemList.Length : 0;
             }
 
-            if (systemPosition == -1) return false;
+            if (systemPosition == -1)
+            {
+                return false;
+            }
 
             var newSubsystemList = new PlayerLoopSystem[parentLoopSystem.subSystemList.Length + 1];
 
             // begin = systemsBefore + systemsAfter
             // + systemsBefore
-            if (systemPosition > 0) Array.Copy(parentLoopSystem.subSystemList, newSubsystemList, systemPosition);
+            if (systemPosition > 0)
+            {
+                Array.Copy(parentLoopSystem.subSystemList, newSubsystemList, systemPosition);
+            }
             // + childSystem
             newSubsystemList[systemPosition] = childLoopSystem;
             // + systemsAfter
-            if (systemPosition < parentLoopSystem.subSystemList.Length) Array.Copy(parentLoopSystem.subSystemList, systemPosition, newSubsystemList, systemPosition + 1, parentLoopSystem.subSystemList.Length - systemPosition);
+            if (systemPosition < parentLoopSystem.subSystemList.Length)
+            {
+                Array.Copy(parentLoopSystem.subSystemList, systemPosition, newSubsystemList, systemPosition + 1, parentLoopSystem.subSystemList.Length - systemPosition);
+            }
             // end = systemsBefore + childSystem + systemsAfter
 
             parentLoopSystem.subSystemList = newSubsystemList;
@@ -297,15 +306,24 @@ namespace MLAPI
                 }
             }
 
-            if (systemPosition == -1) return false;
+            if (systemPosition == -1)
+            {
+                return false;
+            }
 
             var newSubsystemList = new PlayerLoopSystem[parentLoopSystem.subSystemList.Length - 1];
 
             // begin = systemsBefore + childSystem + systemsAfter
             // + systemsBefore
-            if (systemPosition > 0) Array.Copy(parentLoopSystem.subSystemList, newSubsystemList, systemPosition);
+            if (systemPosition > 0)
+            {
+                Array.Copy(parentLoopSystem.subSystemList, newSubsystemList, systemPosition);
+            }
             // + systemsAfter
-            if (systemPosition < parentLoopSystem.subSystemList.Length - 1) Array.Copy(parentLoopSystem.subSystemList, systemPosition + 1, newSubsystemList, systemPosition, parentLoopSystem.subSystemList.Length - systemPosition - 1);
+            if (systemPosition < parentLoopSystem.subSystemList.Length - 1)
+            {
+                Array.Copy(parentLoopSystem.subSystemList, systemPosition + 1, newSubsystemList, systemPosition, parentLoopSystem.subSystemList.Length - systemPosition - 1);
+            }
             // end = systemsBefore + systemsAfter
 
             parentLoopSystem.subSystemList = newSubsystemList;

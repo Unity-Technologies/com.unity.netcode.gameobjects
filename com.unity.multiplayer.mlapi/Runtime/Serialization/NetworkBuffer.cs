@@ -102,7 +102,11 @@ namespace MLAPI.Serialization
             get => m_Target.LongLength; // Optimized CeilingExact
             set
             {
-                if (value < Length) throw new ArgumentOutOfRangeException("New capcity too small!");
+                if (value < Length)
+                {
+                    throw new ArgumentOutOfRangeException("New capcity too small!");
+                }
+
                 SetCapacity(value);
             }
         }
@@ -155,13 +159,22 @@ namespace MLAPI.Serialization
             long value = newContent + Capacity;
             long newCapacity = value;
 
-            if (newCapacity < 256) newCapacity = 256;
+            if (newCapacity < 256)
+            {
+                newCapacity = 256;
+            }
             // We are ok with this overflowing since the next statement will deal
             // with the cases where _capacity*2 overflows.
-            if (newCapacity < Capacity * 2) newCapacity = Capacity * 2;
+            if (newCapacity < Capacity * 2)
+            {
+                newCapacity = Capacity * 2;
+            }
             // We want to expand the array up to Array.MaxArrayLengthOneDimensional
             // And we want to give the user the value that they asked for
-            if ((uint)(Capacity * 2) > int.MaxValue) newCapacity = value > int.MaxValue ? value : int.MaxValue;
+            if ((uint)(Capacity * 2) > int.MaxValue)
+            {
+                newCapacity = value > int.MaxValue ? value : int.MaxValue;
+            }
 
             SetCapacity(newCapacity);
         }
@@ -221,7 +234,11 @@ namespace MLAPI.Serialization
         public override int Read(byte[] buffer, int offset, int count)
         {
             int tLen = Math.Min(count, (int)(m_Target.LongLength - Position) - ((BitPosition & 7) == 0 ? 0 : 1));
-            for (int i = 0; i < tLen; ++i) buffer[offset + i] = ReadByteInternal();
+            for (int i = 0; i < tLen; ++i)
+            {
+                buffer[offset + i] = ReadByteInternal();
+            }
+
             return tLen;
         }
 
@@ -250,11 +267,19 @@ namespace MLAPI.Serialization
         /// <param name="value">New capacity of the buffer</param>
         private void SetCapacity(long value)
         {
-            if (!Resizable) throw new NotSupportedException("Can't resize non resizable buffer"); // Don't do shit because fuck you (comment by @GabrielTofvesson -TwoTen)
+            if (!Resizable)
+            {
+                throw new NotSupportedException("Can't resize non resizable buffer"); // Don't do shit because fuck you (comment by @GabrielTofvesson -TwoTen)
+            }
+
             byte[] newTarg = new byte[value];
             long len = Math.Min(value, m_Target.LongLength);
             Buffer.BlockCopy(m_Target, 0, newTarg, 0, (int)len);
-            if (value < m_Target.LongLength) BitPosition = (ulong)value << 3;
+            if (value < m_Target.LongLength)
+            {
+                BitPosition = (ulong)value << 3;
+            }
+
             m_Target = newTarg;
         }
 
@@ -264,8 +289,16 @@ namespace MLAPI.Serialization
         /// <param name="value">New length of the written data.</param>
         public override void SetLength(long value)
         {
-            if (value < 0) throw new IndexOutOfRangeException("Cannot set a negative length!");
-            if (value > Capacity) Grow(value - Capacity);
+            if (value < 0)
+            {
+                throw new IndexOutOfRangeException("Cannot set a negative length!");
+            }
+
+            if (value > Capacity)
+            {
+                Grow(value - Capacity);
+            }
+
             BitLength = (ulong)value << 3;
             BitPosition = Math.Min((ulong)value << 3, BitPosition);
         }
@@ -281,17 +314,31 @@ namespace MLAPI.Serialization
             // Check bit alignment. If misaligned, each byte written has to be misaligned
             if (BitAligned)
             {
-                if (Position + count >= m_Target.Length) Grow(count);
+                if (Position + count >= m_Target.Length)
+                {
+                    Grow(count);
+                }
+
                 Buffer.BlockCopy(buffer, offset, m_Target, (int)Position, count);
                 Position += count;
             }
             else
             {
-                if (Position + count + 1 >= m_Target.Length) Grow(count);
-                for (int i = 0; i < count; ++i) WriteMisaligned(buffer[offset + i]);
+                if (Position + count + 1 >= m_Target.Length)
+                {
+                    Grow(count);
+                }
+
+                for (int i = 0; i < count; ++i)
+                {
+                    WriteMisaligned(buffer[offset + i]);
+                }
             }
 
-            if (BitPosition > BitLength) BitLength = BitPosition;
+            if (BitPosition > BitLength)
+            {
+                BitLength = BitPosition;
+            }
         }
 
         /// <summary>
@@ -303,17 +350,28 @@ namespace MLAPI.Serialization
             // Check bit alignment. If misaligned, each byte written has to be misaligned
             if (BitAligned)
             {
-                if (Position + 1 >= m_Target.Length) Grow(1);
+                if (Position + 1 >= m_Target.Length)
+                {
+                    Grow(1);
+                }
+
                 m_Target[Position] = value;
                 Position += 1;
             }
             else
             {
-                if (Position + 1 + 1 >= m_Target.Length) Grow(1);
+                if (Position + 1 + 1 >= m_Target.Length)
+                {
+                    Grow(1);
+                }
+
                 WriteMisaligned(value);
             }
 
-            if (BitPosition > BitLength) BitLength = BitPosition;
+            if (BitPosition > BitLength)
+            {
+                BitLength = BitPosition;
+            }
         }
 
         /// <summary>
@@ -349,13 +407,20 @@ namespace MLAPI.Serialization
         /// <param name="value">Value to write</param>
         private void WriteBytePrivate(byte value)
         {
-            if (Div8Ceil(BitPosition) == m_Target.LongLength) Grow(1);
+            if (Div8Ceil(BitPosition) == m_Target.LongLength)
+            {
+                Grow(1);
+            }
+
             if (BitAligned)
             {
                 m_Target[Position] = value;
                 BitPosition += 8;
             }
-            else WriteMisaligned(value);
+            else
+            {
+                WriteMisaligned(value);
+            }
 
             UpdateLength();
         }
@@ -372,7 +437,11 @@ namespace MLAPI.Serialization
         /// <param name="bit">Value of the bit. True represents 1, False represents 0</param>
         public void WriteBit(bool bit)
         {
-            if (BitAligned && Position == m_Target.Length) Grow(1);
+            if (BitAligned && Position == m_Target.Length)
+            {
+                Grow(1);
+            }
+
             int offset = (int)(BitPosition & 7);
             long pos = Position;
             ++BitPosition;
@@ -387,7 +456,10 @@ namespace MLAPI.Serialization
         /// <param name="count">How many bytes to read. Set to value less than one to read until ReadByte returns -1</param>
         public void CopyFrom(Stream s, int count = -1)
         {
-            if (s is NetworkBuffer b) Write(b.m_Target, 0, count < 0 ? (int)b.Length : count);
+            if (s is NetworkBuffer b)
+            {
+                Write(b.m_Target, 0, count < 0 ? (int)b.Length : count);
+            }
             else
             {
                 long currentPosition = s.Position;
@@ -396,7 +468,10 @@ namespace MLAPI.Serialization
                 int read;
                 bool readToEnd = count < 0;
                 while ((readToEnd || count-- > 0) && (read = s.ReadByte()) != -1)
+                {
                     WriteIntByte(read);
+                }
+
                 UpdateLength();
 
                 s.Position = currentPosition;
@@ -428,7 +503,11 @@ namespace MLAPI.Serialization
 
             int read;
             bool readToEnd = count < 0;
-            while ((readToEnd || count-- > 0) && (read = s.ReadByte()) != -1) WriteIntByte(read);
+            while ((readToEnd || count-- > 0) && (read = s.ReadByte()) != -1)
+            {
+                WriteIntByte(read);
+            }
+
             UpdateLength();
 
             s.Position = currentPosition;
@@ -450,9 +529,16 @@ namespace MLAPI.Serialization
             else
             {
                 ulong count = dataCount < 0 ? buffer.BitLength : (ulong)dataCount;
-                if (buffer.BitLength < count) throw new IndexOutOfRangeException("Attempted to read more data than is available");
+                if (buffer.BitLength < count)
+                {
+                    throw new IndexOutOfRangeException("Attempted to read more data than is available");
+                }
+
                 Write(buffer.GetBuffer(), 0, (int)(count >> 3));
-                for (int i = (int)(count & 7); i >= 0; --i) WriteBit(buffer.ReadBit());
+                for (int i = (int)(count & 7); i >= 0; --i)
+                {
+                    WriteBit(buffer.ReadBit());
+                }
             }
         }
 
@@ -461,7 +547,10 @@ namespace MLAPI.Serialization
         /// </summary>
         private void UpdateLength()
         {
-            if (BitPosition > BitLength) BitLength = BitPosition;
+            if (BitPosition > BitLength)
+            {
+                BitLength = BitPosition;
+            }
         }
 
         /// <summary>

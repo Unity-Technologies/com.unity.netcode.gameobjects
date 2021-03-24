@@ -198,7 +198,10 @@ namespace MLAPI
 
         private void OnValidate()
         {
-            if (NetworkConfig == null) return; //May occur when the component is added
+            if (NetworkConfig == null)
+            {
+                return; //May occur when the component is added
+            }
 
             if (GetComponentInChildren<NetworkObject>() != null)
             {
@@ -212,7 +215,11 @@ namespace MLAPI
             var activeSceneName = activeScene.name;
             if (!NetworkConfig.RegisteredScenes.Contains(activeSceneName))
             {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Active scene is not registered as a network scene. The MLAPI has added it");
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                {
+                    NetworkLog.LogWarning("Active scene is not registered as a network scene. The MLAPI has added it");
+                }
+
                 NetworkConfig.RegisteredScenes.Add(activeSceneName);
 #if UNITY_EDITOR
                 UnityEditor.EditorApplication.delayCall += () =>
@@ -294,7 +301,10 @@ namespace MLAPI
 
         private void Init(bool server)
         {
-            if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogInfo(nameof(Init));
+            if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+            {
+                NetworkLog.LogInfo(nameof(Init));
+            }
 
             LocalClientId = 0;
             m_NetworkTimeOffset = 0f;
@@ -316,7 +326,11 @@ namespace MLAPI
 
             if (NetworkConfig.NetworkTransport == null)
             {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogError("No transport has been selected!");
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
+                {
+                    NetworkLog.LogError("No transport has been selected!");
+                }
+
                 return;
             }
 
@@ -393,10 +407,18 @@ namespace MLAPI
         /// </summary>
         public SocketTasks StartServer()
         {
-            if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogInfo("StartServer()");
+            if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+            {
+                NetworkLog.LogInfo("StartServer()");
+            }
+
             if (IsServer || IsClient)
             {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Cannot start server while an instance is already running");
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                {
+                    NetworkLog.LogWarning("Cannot start server while an instance is already running");
+                }
+
                 return SocketTask.Fault.AsTasks();
             }
 
@@ -404,7 +426,10 @@ namespace MLAPI
             {
                 if (ConnectionApprovalCallback == null)
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("No ConnectionApproval callback defined. Connection approval will timeout");
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                    {
+                        NetworkLog.LogWarning("No ConnectionApproval callback defined. Connection approval will timeout");
+                    }
                 }
             }
 
@@ -428,11 +453,18 @@ namespace MLAPI
         /// </summary>
         public SocketTasks StartClient()
         {
-            if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogInfo(nameof(StartClient));
+            if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+            {
+                NetworkLog.LogInfo(nameof(StartClient));
+            }
 
             if (IsServer || IsClient)
             {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Cannot start client while an instance is already running");
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                {
+                    NetworkLog.LogWarning("Cannot start client while an instance is already running");
+                }
+
                 return SocketTask.Fault.AsTasks();
             }
 
@@ -452,7 +484,11 @@ namespace MLAPI
         /// </summary>
         public void StopServer()
         {
-            if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogInfo(nameof(StopServer));
+            if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+            {
+                NetworkLog.LogInfo(nameof(StopServer));
+            }
+
             var disconnectedIds = new HashSet<ulong>();
             //Don't know if I have to disconnect the clients. I'm assuming the NetworkTransport does all the cleaning on shtudown. But this way the clients get a disconnect message from server (so long it does't get lost)
 
@@ -463,7 +499,9 @@ namespace MLAPI
                     disconnectedIds.Add(pair.Key);
 
                     if (pair.Key == NetworkConfig.NetworkTransport.ServerClientId)
+                    {
                         continue;
+                    }
 
                     NetworkConfig.NetworkTransport.DisconnectRemoteClient(pair.Key);
                 }
@@ -474,7 +512,10 @@ namespace MLAPI
                 if (!disconnectedIds.Contains(pair.Key))
                 {
                     disconnectedIds.Add(pair.Key);
-                    if (pair.Key == NetworkConfig.NetworkTransport.ServerClientId) continue;
+                    if (pair.Key == NetworkConfig.NetworkTransport.ServerClientId)
+                    {
+                        continue;
+                    }
 
                     NetworkConfig.NetworkTransport.DisconnectRemoteClient(pair.Key);
                 }
@@ -489,7 +530,11 @@ namespace MLAPI
         /// </summary>
         public void StopHost()
         {
-            if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogInfo(nameof(StopHost));
+            if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+            {
+                NetworkLog.LogInfo(nameof(StopHost));
+            }
+
             IsServer = false;
             IsClient = false;
             StopServer();
@@ -501,7 +546,11 @@ namespace MLAPI
         /// </summary>
         public void StopClient()
         {
-            if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogInfo(nameof(StopClient));
+            if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+            {
+                NetworkLog.LogInfo(nameof(StopClient));
+            }
+
             IsClient = false;
             NetworkConfig.NetworkTransport.DisconnectLocalClient();
             IsConnectedClient = false;
@@ -513,11 +562,18 @@ namespace MLAPI
         /// </summary>
         public SocketTasks StartHost(Vector3? position = null, Quaternion? rotation = null, bool? createPlayerObject = null, ulong? prefabHash = null, Stream payloadStream = null)
         {
-            if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogInfo(nameof(StartHost));
+            if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+            {
+                NetworkLog.LogInfo(nameof(StartHost));
+            }
 
             if (IsServer || IsClient)
             {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Cannot start host while an instance is already running");
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                {
+                    NetworkLog.LogWarning("Cannot start host while an instance is already running");
+                }
+
                 return SocketTask.Fault.AsTasks();
             }
 
@@ -525,7 +581,10 @@ namespace MLAPI
             {
                 if (ConnectionApprovalCallback == null)
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("No ConnectionApproval callback defined. Connection approval will timeout");
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                    {
+                        NetworkLog.LogWarning("No ConnectionApproval callback defined. Connection approval will timeout");
+                    }
                 }
             }
 
@@ -581,8 +640,15 @@ namespace MLAPI
 
             SetSingleton();
 
-            if (DontDestroy) DontDestroyOnLoad(gameObject);
-            if (RunInBackground) Application.runInBackground = true;
+            if (DontDestroy)
+            {
+                DontDestroyOnLoad(gameObject);
+            }
+
+            if (RunInBackground)
+            {
+                Application.runInBackground = true;
+            }
         }
 
         private void OnDestroy()
@@ -596,7 +662,10 @@ namespace MLAPI
 
         public void Shutdown()
         {
-            if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogInfo(nameof(Shutdown));
+            if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+            {
+                NetworkLog.LogInfo(nameof(Shutdown));
+            }
 
             // Unregister INetworkUpdateSystem before shutting down the RpcQueueContainer
             this.UnregisterAllNetworkUpdates();
@@ -884,7 +953,10 @@ namespace MLAPI
                         NetworkLog.LogInfo($"Disconnect Event From {clientId}");
                     }
 
-                    if (IsServer) OnClientDisconnectFromServer(clientId);
+                    if (IsServer)
+                    {
+                        OnClientDisconnectFromServer(clientId);
+                    }
                     else
                     {
                         IsConnectedClient = false;
@@ -969,31 +1041,67 @@ namespace MLAPI
                 switch (messageType)
                 {
                     case NetworkConstants.CONNECTION_REQUEST:
-                        if (IsServer) InternalMessageHandler.HandleConnectionRequest(clientId, messageStream);
+                        if (IsServer)
+                        {
+                            InternalMessageHandler.HandleConnectionRequest(clientId, messageStream);
+                        }
+
                         break;
                     case NetworkConstants.CONNECTION_APPROVED:
-                        if (IsClient) InternalMessageHandler.HandleConnectionApproved(clientId, messageStream, receiveTime);
+                        if (IsClient)
+                        {
+                            InternalMessageHandler.HandleConnectionApproved(clientId, messageStream, receiveTime);
+                        }
+
                         break;
                     case NetworkConstants.ADD_OBJECT:
-                        if (IsClient) InternalMessageHandler.HandleAddObject(clientId, messageStream);
+                        if (IsClient)
+                        {
+                            InternalMessageHandler.HandleAddObject(clientId, messageStream);
+                        }
+
                         break;
                     case NetworkConstants.DESTROY_OBJECT:
-                        if (IsClient) InternalMessageHandler.HandleDestroyObject(clientId, messageStream);
+                        if (IsClient)
+                        {
+                            InternalMessageHandler.HandleDestroyObject(clientId, messageStream);
+                        }
+
                         break;
                     case NetworkConstants.SWITCH_SCENE:
-                        if (IsClient) InternalMessageHandler.HandleSwitchScene(clientId, messageStream);
+                        if (IsClient)
+                        {
+                            InternalMessageHandler.HandleSwitchScene(clientId, messageStream);
+                        }
+
                         break;
                     case NetworkConstants.CHANGE_OWNER:
-                        if (IsClient) InternalMessageHandler.HandleChangeOwner(clientId, messageStream);
+                        if (IsClient)
+                        {
+                            InternalMessageHandler.HandleChangeOwner(clientId, messageStream);
+                        }
+
                         break;
                     case NetworkConstants.ADD_OBJECTS:
-                        if (IsClient) InternalMessageHandler.HandleAddObjects(clientId, messageStream);
+                        if (IsClient)
+                        {
+                            InternalMessageHandler.HandleAddObjects(clientId, messageStream);
+                        }
+
                         break;
                     case NetworkConstants.DESTROY_OBJECTS:
-                        if (IsClient) InternalMessageHandler.HandleDestroyObjects(clientId, messageStream);
+                        if (IsClient)
+                        {
+                            InternalMessageHandler.HandleDestroyObjects(clientId, messageStream);
+                        }
+
                         break;
                     case NetworkConstants.TIME_SYNC:
-                        if (IsClient) InternalMessageHandler.HandleTimeSync(clientId, messageStream, receiveTime);
+                        if (IsClient)
+                        {
+                            InternalMessageHandler.HandleTimeSync(clientId, messageStream, receiveTime);
+                        }
+
                         break;
                     case NetworkConstants.NETWORK_VARIABLE_DELTA:
                         InternalMessageHandler.HandleNetworkVariableDelta(clientId, messageStream, BufferCallback, new PreBufferPreset()
@@ -1024,10 +1132,18 @@ namespace MLAPI
                         InternalMessageHandler.HandleNamedMessage(clientId, messageStream);
                         break;
                     case NetworkConstants.CLIENT_SWITCH_SCENE_COMPLETED:
-                        if (IsServer && NetworkConfig.EnableSceneManagement) InternalMessageHandler.HandleClientSwitchSceneCompleted(clientId, messageStream);
+                        if (IsServer && NetworkConfig.EnableSceneManagement)
+                        {
+                            InternalMessageHandler.HandleClientSwitchSceneCompleted(clientId, messageStream);
+                        }
+
                         break;
                     case NetworkConstants.SERVER_LOG:
-                        if (IsServer && NetworkConfig.EnableNetworkLogs) InternalMessageHandler.HandleNetworkLog(clientId, messageStream);
+                        if (IsServer && NetworkConfig.EnableNetworkLogs)
+                        {
+                            InternalMessageHandler.HandleNetworkLog(clientId, messageStream);
+                        }
+
                         break;
                     case NetworkConstants.SERVER_RPC:
                         {
@@ -1108,11 +1224,18 @@ namespace MLAPI
 
             if (__ntable.ContainsKey(networkMethodId))
             {
-                if (!NetworkSpawnManager.SpawnedObjects.ContainsKey(networkObjectId)) return;
+                if (!NetworkSpawnManager.SpawnedObjects.ContainsKey(networkObjectId))
+                {
+                    return;
+                }
+
                 var networkObject = NetworkSpawnManager.SpawnedObjects[networkObjectId];
 
                 var networkBehaviour = networkObject.GetNetworkBehaviourAtOrderIndex(networkBehaviourId);
-                if (networkBehaviour == null) return;
+                if (networkBehaviour == null)
+                {
+                    return;
+                }
 
                 var rpcParams = new __RpcParams();
                 switch (queueItem.QueueItemType)
@@ -1184,8 +1307,15 @@ namespace MLAPI
                 throw new NotServerException("Only server can disconnect remote clients. Use StopClient instead.");
             }
 
-            if (ConnectedClients.ContainsKey(clientId)) ConnectedClients.Remove(clientId);
-            if (PendingClients.ContainsKey(clientId)) PendingClients.Remove(clientId);
+            if (ConnectedClients.ContainsKey(clientId))
+            {
+                ConnectedClients.Remove(clientId);
+            }
+
+            if (PendingClients.ContainsKey(clientId))
+            {
+                PendingClients.Remove(clientId);
+            }
 
             for (int i = ConnectedClientsList.Count - 1; i > -1; i--)
             {
@@ -1202,7 +1332,10 @@ namespace MLAPI
 
         internal void OnClientDisconnectFromServer(ulong clientId)
         {
-            if (PendingClients.ContainsKey(clientId)) PendingClients.Remove(clientId);
+            if (PendingClients.ContainsKey(clientId))
+            {
+                PendingClients.Remove(clientId);
+            }
 
             if (ConnectedClients.ContainsKey(clientId))
             {
@@ -1295,7 +1428,10 @@ namespace MLAPI
             if (approved)
             {
                 // Inform new client it got approved
-                if (PendingClients.ContainsKey(clientId)) PendingClients.Remove(clientId);
+                if (PendingClients.ContainsKey(clientId))
+                {
+                    PendingClients.Remove(clientId);
+                }
 
                 var client = new NetworkClient { ClientId = clientId, };
                 ConnectedClients.Add(clientId, client);
@@ -1411,7 +1547,10 @@ namespace MLAPI
                     OnClientConnectedCallback?.Invoke(clientId);
                 }
 
-                if (!createPlayerObject || (playerPrefabHash == null && NetworkConfig.PlayerPrefabHash == null)) return;
+                if (!createPlayerObject || (playerPrefabHash == null && NetworkConfig.PlayerPrefabHash == null))
+                {
+                    return;
+                }
 
                 //Inform old clients of the new player
 
@@ -1420,7 +1559,9 @@ namespace MLAPI
                     if (clientPair.Key == clientId ||
                         ConnectedClients[clientId].PlayerObject == null ||
                         !ConnectedClients[clientId].PlayerObject.m_Observers.Contains(clientPair.Key))
+                    {
                         continue; //The new client.
+                    }
 
                     using (var buffer = PooledNetworkBuffer.Get())
                     using (var writer = PooledNetworkWriter.Get(buffer))

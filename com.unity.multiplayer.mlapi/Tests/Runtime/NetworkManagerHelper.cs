@@ -103,7 +103,7 @@ namespace MLAPI.RuntimeTests
         /// <returns></returns>
         public static Guid AddGameNetworkObject(string nameOfGameObject)
         {
-            Guid gameObjectId = Guid.NewGuid();
+            var gameObjectId = Guid.NewGuid();
 
             //Create the player object that we will spawn as a host
             var gameObject = new GameObject(nameOfGameObject);

@@ -52,7 +52,10 @@ namespace MLAPI.Prototyping
 
         private void Update()
         {
-            if (!IsOwner) return;
+            if (!IsOwner)
+            {
+                return;
+            }
 
             if (m_Agent.destination != m_LastDestination)
             {

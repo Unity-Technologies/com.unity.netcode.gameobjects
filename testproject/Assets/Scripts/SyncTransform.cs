@@ -36,7 +36,7 @@ namespace MLAPI
             m_VarRot.OnValueChanged = SyncRotChanged;
         }
 
-        void SyncPosChanged(Vector3 before, Vector3 after)
+        private void SyncPosChanged(Vector3 before, Vector3 after)
         {
             if (!IsOwner)
             {
@@ -52,7 +52,7 @@ namespace MLAPI
             }
         }
 
-        void SyncRotChanged(Quaternion before, Quaternion after)
+        private void SyncRotChanged(Quaternion before, Quaternion after)
         {
             // todo: this is problematic. Why couldn't this filtering be done server-side?
             if (!IsOwner)
@@ -69,13 +69,13 @@ namespace MLAPI
             }
         }
 
-        void Start()
+        private void Start()
         {
             m_VarPos.Settings.WritePermission = NetworkVariablePermission.Everyone;
             m_VarRot.Settings.WritePermission = NetworkVariablePermission.Everyone;
         }
 
-        void FixedUpdate()
+        private void FixedUpdate()
         {
             float now = Time.time;
             if (m_LastSent == 0.0f)

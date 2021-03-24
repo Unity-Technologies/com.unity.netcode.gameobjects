@@ -9,3 +9,10 @@ trim_trailing_whitespace = true
 [*.cs]
 indent_style = space
 indent_size = 4
+
+# Style Rules
+dotnet_style_predefined_type_for_locals_parameters_members = true:error
+dotnet_style_predefined_type_for_member_access = true:error
+dotnet_style_require_accessibility_modifiers = always:error
+csharp_style_var_when_type_is_apparent = true:error
+csharp_prefer_braces = true:error

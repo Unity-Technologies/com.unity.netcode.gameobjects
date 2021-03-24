@@ -84,7 +84,10 @@ namespace MLAPI.NetworkVariable
             get => m_InternalValue;
             set
             {
-                if (EqualityComparer<T>.Default.Equals(m_InternalValue, value)) return;
+                if (EqualityComparer<T>.Default.Equals(m_InternalValue, value))
+                {
+                    return;
+                }
 
                 // Setter is assumed to be called locally, by game code.
                 // When used by the host, it is its responsibility to set the RemoteTick
@@ -132,7 +135,11 @@ namespace MLAPI.NetworkVariable
                     return m_NetworkBehaviour.OwnerClientId == clientId;
                 case NetworkVariablePermission.Custom:
                     {
-                        if (Settings.ReadPermissionCallback == null) return false;
+                        if (Settings.ReadPermissionCallback == null)
+                        {
+                            return false;
+                        }
+
                         return Settings.ReadPermissionCallback(clientId);
                     }
             }
@@ -161,7 +168,11 @@ namespace MLAPI.NetworkVariable
                     return m_NetworkBehaviour.OwnerClientId == clientId;
                 case NetworkVariablePermission.Custom:
                     {
-                        if (Settings.WritePermissionCallback == null) return false;
+                        if (Settings.WritePermissionCallback == null)
+                        {
+                            return false;
+                        }
+
                         return Settings.WritePermissionCallback(clientId);
                     }
             }
@@ -186,7 +197,10 @@ namespace MLAPI.NetworkVariable
                 T previousValue = m_InternalValue;
                 m_InternalValue = (T)reader.ReadObjectPacked(typeof(T));
 
-                if (keepDirtyDelta) m_IsDirty = true;
+                if (keepDirtyDelta)
+                {
+                    m_IsDirty = true;
+                }
 
                 OnValueChanged?.Invoke(previousValue, m_InternalValue);
             }

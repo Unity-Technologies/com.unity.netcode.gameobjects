@@ -76,7 +76,10 @@ namespace MLAPI.Prototyping
 
         public void SetParamTracking(int paramIndex, bool isTracking)
         {
-            if (paramIndex >= 32) return;
+            if (paramIndex >= 32)
+            {
+                return;
+            }
 
             if (isTracking)
             {
@@ -90,7 +93,10 @@ namespace MLAPI.Prototyping
 
         public bool GetParamTracking(int paramIndex)
         {
-            if (paramIndex >= 32) return false;
+            if (paramIndex >= 32)
+            {
+                return false;
+            }
 
             return (m_TrackedParamFlags & (uint)(1 << paramIndex)) != 0;
         }
@@ -102,7 +108,10 @@ namespace MLAPI.Prototyping
 
         private void FixedUpdate()
         {
-            if (!IsOwner) return;
+            if (!IsOwner)
+            {
+                return;
+            }
 
             if (CheckSendRate())
             {
@@ -156,7 +165,10 @@ namespace MLAPI.Prototyping
             animParams.Parameters = new Dictionary<int, (AnimatorControllerParameterType, object)>(32);
             for (int paramIndex = 0; paramIndex < 32 && paramIndex < Animator.parameters.Length; paramIndex++)
             {
-                if (trackedOnly && !GetParamTracking(paramIndex)) continue;
+                if (trackedOnly && !GetParamTracking(paramIndex))
+                {
+                    continue;
+                }
 
                 var animParam = Animator.parameters[paramIndex];
                 var animParamHash = animParam.nameHash;
@@ -254,7 +266,11 @@ namespace MLAPI.Prototyping
         [ServerRpc]
         private void UpdateTrackedParamsServerRpc(AnimParams animParams, ServerRpcParams serverRpcParams = default)
         {
-            if (IsOwner) return;
+            if (IsOwner)
+            {
+                return;
+            }
+
             SetAnimParams(animParams);
 
             var clientRpcParams = new ClientRpcParams
@@ -273,14 +289,21 @@ namespace MLAPI.Prototyping
         [ClientRpc]
         private void UpdateTrackedParamsClientRpc(AnimParams animParams, ClientRpcParams clientRpcParams = default)
         {
-            if (IsOwner) return;
+            if (IsOwner)
+            {
+                return;
+            }
+
             SetAnimParams(animParams);
         }
 
         [ServerRpc]
         private void UpdateAnimStateServerRpc(int animStateHash, float animStateTime, ServerRpcParams serverRpcParams = default)
         {
-            if (IsOwner) return;
+            if (IsOwner)
+            {
+                return;
+            }
 
             Animator.Play(animStateHash, 0, animStateTime);
 
@@ -300,7 +323,10 @@ namespace MLAPI.Prototyping
         [ClientRpc]
         private void UpdateAnimStateClientRpc(int animStateHash, float animStateTime, ClientRpcParams clientRpcParams = default)
         {
-            if (IsOwner) return;
+            if (IsOwner)
+            {
+                return;
+            }
 
             Animator.Play(animStateHash, 0, animStateTime);
         }

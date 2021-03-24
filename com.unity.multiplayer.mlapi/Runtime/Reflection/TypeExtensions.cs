@@ -9,7 +9,10 @@ namespace MLAPI.Reflection
             var ifaces = type.GetInterfaces();
             for (int i = 0; i < ifaces.Length; i++)
             {
-                if (ifaces[i] == interfaceType) return true;
+                if (ifaces[i] == interfaceType)
+                {
+                    return true;
+                }
             }
 
             return false;
@@ -17,7 +20,11 @@ namespace MLAPI.Reflection
 
         internal static bool IsNullable(this Type type)
         {
-            if (!type.IsValueType) return true; // ref-type
+            if (!type.IsValueType)
+            {
+                return true; // ref-type
+            }
+
             return Nullable.GetUnderlyingType(type) != null;
         }
     }

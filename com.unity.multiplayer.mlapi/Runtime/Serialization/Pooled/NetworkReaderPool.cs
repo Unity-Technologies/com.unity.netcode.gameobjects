@@ -23,9 +23,15 @@ namespace MLAPI.Serialization.Pooled
             {
                 if (s_CreatedReaders == 254)
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("255 readers have been created. Did you forget to dispose?");
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                    {
+                        NetworkLog.LogWarning("255 readers have been created. Did you forget to dispose?");
+                    }
                 }
-                else if (s_CreatedReaders < 255) s_CreatedReaders++;
+                else if (s_CreatedReaders < 255)
+                {
+                    s_CreatedReaders++;
+                }
 
                 return new PooledNetworkReader(stream);
             }
@@ -42,7 +48,10 @@ namespace MLAPI.Serialization.Pooled
         /// <param name="reader">The reader to put in the pool</param>
         public static void PutBackInPool(PooledNetworkReader reader)
         {
-            if (s_Readers.Count < 64) s_Readers.Enqueue(reader);
+            if (s_Readers.Count < 64)
+            {
+                s_Readers.Enqueue(reader);
+            }
             else if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
             {
                 NetworkLog.LogInfo($"{nameof(NetworkReaderPool)} already has 64 queued. Throwing to GC. Did you forget to dispose?");
