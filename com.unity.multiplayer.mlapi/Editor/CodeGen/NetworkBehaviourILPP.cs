@@ -1577,7 +1577,7 @@ namespace MLAPI.Editor.CodeGen
                         break;
                 }
             }
-            
+
             nhandler.Body.InitLocals = true;
             // NetworkManager networkManager;
             nhandler.Body.Variables.Add(new VariableDefinition(NetworkManager_TypeRef));

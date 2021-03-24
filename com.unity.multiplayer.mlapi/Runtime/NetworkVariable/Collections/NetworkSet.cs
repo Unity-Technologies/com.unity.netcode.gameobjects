@@ -107,10 +107,10 @@ namespace MLAPI.NetworkVariable.Collections
                 case NetworkVariablePermission.OwnerOnly:
                     return m_NetworkBehaviour.OwnerClientId == clientId;
                 case NetworkVariablePermission.Custom:
-                {
-                    if (Settings.WritePermissionCallback == null) return false;
-                    return Settings.WritePermissionCallback(clientId);
-                }
+                    {
+                        if (Settings.WritePermissionCallback == null) return false;
+                        return Settings.WritePermissionCallback(clientId);
+                    }
             }
 
             return true;
@@ -128,10 +128,10 @@ namespace MLAPI.NetworkVariable.Collections
                 case NetworkVariablePermission.OwnerOnly:
                     return m_NetworkBehaviour.OwnerClientId == clientId;
                 case NetworkVariablePermission.Custom:
-                {
-                    if (Settings.ReadPermissionCallback == null) return false;
-                    return Settings.ReadPermissionCallback(clientId);
-                }
+                    {
+                        if (Settings.ReadPermissionCallback == null) return false;
+                        return Settings.ReadPermissionCallback(clientId);
+                    }
             }
 
             return true;
@@ -150,19 +150,19 @@ namespace MLAPI.NetworkVariable.Collections
                     switch (m_DirtyEvents[i].Type)
                     {
                         case NetworkSetEvent<T>.EventType.Add:
-                        {
-                            writer.WriteObjectPacked(m_DirtyEvents[i].Value); //BOX
-                        }
+                            {
+                                writer.WriteObjectPacked(m_DirtyEvents[i].Value); //BOX
+                            }
                             break;
                         case NetworkSetEvent<T>.EventType.Remove:
-                        {
-                            writer.WriteObjectPacked(m_DirtyEvents[i].Value); //BOX
-                        }
+                            {
+                                writer.WriteObjectPacked(m_DirtyEvents[i].Value); //BOX
+                            }
                             break;
                         case NetworkSetEvent<T>.EventType.Clear:
-                        {
-                            //Nothing has to be written
-                        }
+                            {
+                                //Nothing has to be written
+                            }
                             break;
                     }
                 }
@@ -210,74 +210,74 @@ namespace MLAPI.NetworkVariable.Collections
                     switch (eventType)
                     {
                         case NetworkSetEvent<T>.EventType.Add:
-                        {
-                            T value = (T)reader.ReadObjectPacked(typeof(T)); //BOX
-                            m_Set.Add(value);
-
-                            if (OnSetChanged != null)
                             {
-                                OnSetChanged(new NetworkSetEvent<T>
-                                {
-                                    Type = eventType,
-                                    Value = value
-                                });
-                            }
+                                T value = (T)reader.ReadObjectPacked(typeof(T)); //BOX
+                                m_Set.Add(value);
 
-                            if (keepDirtyDelta)
-                            {
-                                m_DirtyEvents.Add(new NetworkSetEvent<T>()
+                                if (OnSetChanged != null)
                                 {
-                                    Type = eventType,
-                                    Value = value
-                                });
+                                    OnSetChanged(new NetworkSetEvent<T>
+                                    {
+                                        Type = eventType,
+                                        Value = value
+                                    });
+                                }
+
+                                if (keepDirtyDelta)
+                                {
+                                    m_DirtyEvents.Add(new NetworkSetEvent<T>()
+                                    {
+                                        Type = eventType,
+                                        Value = value
+                                    });
+                                }
                             }
-                        }
                             break;
                         case NetworkSetEvent<T>.EventType.Remove:
-                        {
-                            T value = (T)reader.ReadObjectPacked(typeof(T)); //BOX
-                            m_Set.Remove(value);
-
-                            if (OnSetChanged != null)
                             {
-                                OnSetChanged(new NetworkSetEvent<T>
-                                {
-                                    Type = eventType,
-                                    Value = value
-                                });
-                            }
+                                T value = (T)reader.ReadObjectPacked(typeof(T)); //BOX
+                                m_Set.Remove(value);
 
-                            if (keepDirtyDelta)
-                            {
-                                m_DirtyEvents.Add(new NetworkSetEvent<T>()
+                                if (OnSetChanged != null)
                                 {
-                                    Type = eventType,
-                                    Value = value
-                                });
+                                    OnSetChanged(new NetworkSetEvent<T>
+                                    {
+                                        Type = eventType,
+                                        Value = value
+                                    });
+                                }
+
+                                if (keepDirtyDelta)
+                                {
+                                    m_DirtyEvents.Add(new NetworkSetEvent<T>()
+                                    {
+                                        Type = eventType,
+                                        Value = value
+                                    });
+                                }
                             }
-                        }
                             break;
                         case NetworkSetEvent<T>.EventType.Clear:
-                        {
-                            //Read nothing
-                            m_Set.Clear();
-
-                            if (OnSetChanged != null)
                             {
-                                OnSetChanged(new NetworkSetEvent<T>
-                                {
-                                    Type = eventType,
-                                });
-                            }
+                                //Read nothing
+                                m_Set.Clear();
 
-                            if (keepDirtyDelta)
-                            {
-                                m_DirtyEvents.Add(new NetworkSetEvent<T>()
+                                if (OnSetChanged != null)
                                 {
-                                    Type = eventType
-                                });
+                                    OnSetChanged(new NetworkSetEvent<T>
+                                    {
+                                        Type = eventType,
+                                    });
+                                }
+
+                                if (keepDirtyDelta)
+                                {
+                                    m_DirtyEvents.Add(new NetworkSetEvent<T>()
+                                    {
+                                        Type = eventType
+                                    });
+                                }
                             }
-                        }
                             break;
                     }
                 }

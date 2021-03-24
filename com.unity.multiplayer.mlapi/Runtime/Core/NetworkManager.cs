@@ -862,15 +862,15 @@ namespace MLAPI
 #endif
                     break;
                 case NetworkEvent.Data:
-                {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
                     {
-                        NetworkLog.LogInfo($"Incoming Data From {clientId}: {payload.Count} bytes");
-                    }
+                        if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+                        {
+                            NetworkLog.LogInfo($"Incoming Data From {clientId}: {payload.Count} bytes");
+                        }
 
-                    HandleIncomingData(clientId, networkChannel, payload, receiveTime, true);
-                    break;
-                }
+                        HandleIncomingData(clientId, networkChannel, payload, receiveTime, true);
+                        break;
+                    }
                 case NetworkEvent.Disconnect:
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                     s_TransportDisconnect.Begin();
@@ -1030,41 +1030,41 @@ namespace MLAPI
                         if (IsServer && NetworkConfig.EnableNetworkLogs) InternalMessageHandler.HandleNetworkLog(clientId, messageStream);
                         break;
                     case NetworkConstants.SERVER_RPC:
-                    {
-                        if (IsServer)
                         {
-                            if (RpcQueueContainer.IsUsingBatching())
+                            if (IsServer)
                             {
-                                m_RpcBatcher.ReceiveItems(messageStream, ReceiveCallback, RpcQueueContainer.QueueItemType.ServerRpc, clientId, receiveTime);
-                                ProfilerStatManager.RpcBatchesRcvd.Record();
-                                PerformanceDataManager.Increment(ProfilerConstants.RpcBatchesReceived);
+                                if (RpcQueueContainer.IsUsingBatching())
+                                {
+                                    m_RpcBatcher.ReceiveItems(messageStream, ReceiveCallback, RpcQueueContainer.QueueItemType.ServerRpc, clientId, receiveTime);
+                                    ProfilerStatManager.RpcBatchesRcvd.Record();
+                                    PerformanceDataManager.Increment(ProfilerConstants.RpcBatchesReceived);
+                                }
+                                else
+                                {
+                                    InternalMessageHandler.RpcReceiveQueueItem(clientId, messageStream, receiveTime, RpcQueueContainer.QueueItemType.ServerRpc);
+                                }
                             }
-                            else
-                            {
-                                InternalMessageHandler.RpcReceiveQueueItem(clientId, messageStream, receiveTime, RpcQueueContainer.QueueItemType.ServerRpc);
-                            }
-                        }
 
-                        break;
-                    }
+                            break;
+                        }
                     case NetworkConstants.CLIENT_RPC:
-                    {
-                        if (IsClient)
                         {
-                            if (RpcQueueContainer.IsUsingBatching())
+                            if (IsClient)
                             {
-                                m_RpcBatcher.ReceiveItems(messageStream, ReceiveCallback, RpcQueueContainer.QueueItemType.ClientRpc, clientId, receiveTime);
-                                ProfilerStatManager.RpcBatchesRcvd.Record();
-                                PerformanceDataManager.Increment(ProfilerConstants.RpcBatchesReceived);
+                                if (RpcQueueContainer.IsUsingBatching())
+                                {
+                                    m_RpcBatcher.ReceiveItems(messageStream, ReceiveCallback, RpcQueueContainer.QueueItemType.ClientRpc, clientId, receiveTime);
+                                    ProfilerStatManager.RpcBatchesRcvd.Record();
+                                    PerformanceDataManager.Increment(ProfilerConstants.RpcBatchesReceived);
+                                }
+                                else
+                                {
+                                    InternalMessageHandler.RpcReceiveQueueItem(clientId, messageStream, receiveTime, RpcQueueContainer.QueueItemType.ClientRpc);
+                                }
                             }
-                            else
-                            {
-                                InternalMessageHandler.RpcReceiveQueueItem(clientId, messageStream, receiveTime, RpcQueueContainer.QueueItemType.ClientRpc);
-                            }
-                        }
 
-                        break;
-                    }
+                            break;
+                        }
                     default:
                         if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
                         {

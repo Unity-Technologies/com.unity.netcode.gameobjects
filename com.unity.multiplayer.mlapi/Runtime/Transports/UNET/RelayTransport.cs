@@ -296,136 +296,136 @@ namespace MLAPI.Transports.UNET
             switch (netEvent)
             {
                 case NetworkEventType.DataEvent:
-                {
-                    var messageType = (MessageType)buffer[receivedSize - 1];
-
-                    switch (messageType)
                     {
-                        case MessageType.AddressReport:
+                        var messageType = (MessageType)buffer[receivedSize - 1];
+
+                        switch (messageType)
                         {
-                            byte[] addressBytes = new byte[16];
+                            case MessageType.AddressReport:
+                                {
+                                    byte[] addressBytes = new byte[16];
 
-                            for (int i = 0; i < addressBytes.Length; i++)
-                            {
-                                addressBytes[i] = buffer[i];
-                            }
+                                    for (int i = 0; i < addressBytes.Length; i++)
+                                    {
+                                        addressBytes[i] = buffer[i];
+                                    }
 
-                            ushort remotePort = (ushort)(((ushort)buffer[16]) |
-                                                         ((ushort)buffer[17] << 8));
+                                    ushort remotePort = (ushort)(((ushort)buffer[16]) |
+                                                                 ((ushort)buffer[17] << 8));
 
-                            var remoteEndPoint = new IPEndPoint(new IPAddress(addressBytes), remotePort);
+                                    var remoteEndPoint = new IPEndPoint(new IPAddress(addressBytes), remotePort);
 
-                            OnRemoteEndpointReported?.Invoke(remoteEndPoint);
+                                    OnRemoteEndpointReported?.Invoke(remoteEndPoint);
 
-                            break;
-                        }
-                        case MessageType.ConnectToServer: // Connection approved
-                        {
-                            if (!s_IsClient)
-                            {
-                                ulong _connectionId = (((ulong)buffer[receivedSize - 9]) |
-                                                       ((ulong)buffer[receivedSize - 8] << 8) |
-                                                       ((ulong)buffer[receivedSize - 7] << 16) |
-                                                       ((ulong)buffer[receivedSize - 6] << 24) |
-                                                       ((ulong)buffer[receivedSize - 5] << 32) |
-                                                       ((ulong)buffer[receivedSize - 4] << 40) |
-                                                       ((ulong)buffer[receivedSize - 3] << 48) |
-                                                       ((ulong)buffer[receivedSize - 2] << 56));
+                                    break;
+                                }
+                            case MessageType.ConnectToServer: // Connection approved
+                                {
+                                    if (!s_IsClient)
+                                    {
+                                        ulong _connectionId = (((ulong)buffer[receivedSize - 9]) |
+                                                               ((ulong)buffer[receivedSize - 8] << 8) |
+                                                               ((ulong)buffer[receivedSize - 7] << 16) |
+                                                               ((ulong)buffer[receivedSize - 6] << 24) |
+                                                               ((ulong)buffer[receivedSize - 5] << 32) |
+                                                               ((ulong)buffer[receivedSize - 4] << 40) |
+                                                               ((ulong)buffer[receivedSize - 3] << 48) |
+                                                               ((ulong)buffer[receivedSize - 2] << 56));
 
-                                connectionId = (int)_connectionId;
-                            }
+                                        connectionId = (int)_connectionId;
+                                    }
 
-                            return NetworkEventType.ConnectEvent;
-                        }
-                        case MessageType.Data:
-                        {
-                            // Implicitly remove header
-                            if (s_IsClient) --receivedSize;
-                            else
-                            {
-                                receivedSize -= 9;
+                                    return NetworkEventType.ConnectEvent;
+                                }
+                            case MessageType.Data:
+                                {
+                                    // Implicitly remove header
+                                    if (s_IsClient) --receivedSize;
+                                    else
+                                    {
+                                        receivedSize -= 9;
 
-                                ulong _connectionId = (((ulong)buffer[receivedSize]) |
-                                                       ((ulong)buffer[receivedSize + 1] << 8) |
-                                                       ((ulong)buffer[receivedSize + 2] << 16) |
-                                                       ((ulong)buffer[receivedSize + 3] << 24) |
-                                                       ((ulong)buffer[receivedSize + 4] << 32) |
-                                                       ((ulong)buffer[receivedSize + 5] << 40) |
-                                                       ((ulong)buffer[receivedSize + 6] << 48) |
-                                                       ((ulong)buffer[receivedSize + 7] << 56));
+                                        ulong _connectionId = (((ulong)buffer[receivedSize]) |
+                                                               ((ulong)buffer[receivedSize + 1] << 8) |
+                                                               ((ulong)buffer[receivedSize + 2] << 16) |
+                                                               ((ulong)buffer[receivedSize + 3] << 24) |
+                                                               ((ulong)buffer[receivedSize + 4] << 32) |
+                                                               ((ulong)buffer[receivedSize + 5] << 40) |
+                                                               ((ulong)buffer[receivedSize + 6] << 48) |
+                                                               ((ulong)buffer[receivedSize + 7] << 56));
 
-                                connectionId = (int)_connectionId;
-                            }
+                                        connectionId = (int)_connectionId;
+                                    }
 
-                            return NetworkEventType.DataEvent;
-                        }
-                        case MessageType.ClientDisconnect:
-                        {
-                            ulong _connectionId = (((ulong)buffer[0]) |
-                                                   ((ulong)buffer[1] << 8) |
-                                                   ((ulong)buffer[2] << 16) |
-                                                   ((ulong)buffer[3] << 24) |
-                                                   ((ulong)buffer[4] << 32) |
-                                                   ((ulong)buffer[5] << 40) |
-                                                   ((ulong)buffer[6] << 48) |
-                                                   ((ulong)buffer[7] << 56));
+                                    return NetworkEventType.DataEvent;
+                                }
+                            case MessageType.ClientDisconnect:
+                                {
+                                    ulong _connectionId = (((ulong)buffer[0]) |
+                                                           ((ulong)buffer[1] << 8) |
+                                                           ((ulong)buffer[2] << 16) |
+                                                           ((ulong)buffer[3] << 24) |
+                                                           ((ulong)buffer[4] << 32) |
+                                                           ((ulong)buffer[5] << 40) |
+                                                           ((ulong)buffer[6] << 48) |
+                                                           ((ulong)buffer[7] << 56));
 
-                            connectionId = (int)_connectionId;
+                                    connectionId = (int)_connectionId;
 
-                            return NetworkEventType.DisconnectEvent;
+                                    return NetworkEventType.DisconnectEvent;
+                                }
                         }
                     }
-                }
                     break;
                 case NetworkEventType.ConnectEvent:
-                {
-                    if (s_IsClient)
                     {
-                        //Connect via relay
-
-                        byte[] ipv6AddressBuffer;
-                        var ipAddress = IPAddress.Parse(s_Address);
-
-                        if (ipAddress.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6)
+                        if (s_IsClient)
                         {
-                            ipv6AddressBuffer = ipAddress.GetAddressBytes();
-                        }
-                        else if (ipAddress.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
-                        {
-                            byte[] ipv4Address = ipAddress.GetAddressBytes();
-                            ipv6AddressBuffer = new byte[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, ipv4Address[0], ipv4Address[1], ipv4Address[2], ipv4Address[3] };
+                            //Connect via relay
+
+                            byte[] ipv6AddressBuffer;
+                            var ipAddress = IPAddress.Parse(s_Address);
+
+                            if (ipAddress.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6)
+                            {
+                                ipv6AddressBuffer = ipAddress.GetAddressBytes();
+                            }
+                            else if (ipAddress.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+                            {
+                                byte[] ipv4Address = ipAddress.GetAddressBytes();
+                                ipv6AddressBuffer = new byte[16] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, ipv4Address[0], ipv4Address[1], ipv4Address[2], ipv4Address[3] };
+                            }
+                            else
+                            {
+                                // TODO: Throw wrong type
+                                ipv6AddressBuffer = null;
+                            }
+
+                            // TODO: Throw if address is not 16 bytes. It should always be
+                            for (int i = 0; i < ipv6AddressBuffer.Length; i++) buffer[i] = ipv6AddressBuffer[i];
+
+                            for (byte i = 0; i < sizeof(ushort); i++) buffer[16 + i] = ((byte)(s_Port >> (i * 8)));
+
+                            buffer[16 + 2] = (byte)MessageType.ConnectToServer;
+
+                            UnityEngine.Networking.NetworkTransport.Send(hostId, connectionId, s_DefaultChannelId, buffer, 16 + 2 + 1, out error);
                         }
                         else
                         {
-                            // TODO: Throw wrong type
-                            ipv6AddressBuffer = null;
+                            //Register us as a server
+                            buffer[0] = (byte)MessageType.StartServer;
+
+                            UnityEngine.Networking.NetworkTransport.Send(hostId, connectionId, s_DefaultChannelId, buffer, 1, out error);
                         }
 
-                        // TODO: Throw if address is not 16 bytes. It should always be
-                        for (int i = 0; i < ipv6AddressBuffer.Length; i++) buffer[i] = ipv6AddressBuffer[i];
-
-                        for (byte i = 0; i < sizeof(ushort); i++) buffer[16 + i] = ((byte)(s_Port >> (i * 8)));
-
-                        buffer[16 + 2] = (byte)MessageType.ConnectToServer;
-
-                        UnityEngine.Networking.NetworkTransport.Send(hostId, connectionId, s_DefaultChannelId, buffer, 16 + 2 + 1, out error);
+                        return NetworkEventType.Nothing; // Connect event is ignored
                     }
-                    else
-                    {
-                        //Register us as a server
-                        buffer[0] = (byte)MessageType.StartServer;
-
-                        UnityEngine.Networking.NetworkTransport.Send(hostId, connectionId, s_DefaultChannelId, buffer, 1, out error);
-                    }
-
-                    return NetworkEventType.Nothing; // Connect event is ignored
-                }
                 case NetworkEventType.DisconnectEvent:
-                {
-                    if ((NetworkError)error == NetworkError.CRCMismatch) Debug.LogError("[MLAPI.Relay] The MLAPI Relay detected a CRC mismatch. This could be due to the maxClients or other connectionConfig settings not being the same");
+                    {
+                        if ((NetworkError)error == NetworkError.CRCMismatch) Debug.LogError("[MLAPI.Relay] The MLAPI Relay detected a CRC mismatch. This could be due to the maxClients or other connectionConfig settings not being the same");
 
-                    return NetworkEventType.DisconnectEvent;
-                }
+                        return NetworkEventType.DisconnectEvent;
+                    }
             }
 
             return netEvent;

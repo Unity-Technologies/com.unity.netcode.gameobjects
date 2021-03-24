@@ -1,4 +1,4 @@
-﻿using MLAPI.Logging;
+using MLAPI.Logging;
 using MLAPI.Serialization;
 using MLAPI.Configuration;
 using MLAPI.Serialization.Pooled;
