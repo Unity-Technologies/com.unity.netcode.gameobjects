@@ -84,8 +84,7 @@ public class ClientCounterBehaviour : NetworkBehaviour
     private ClientRpcParams m_ClientParams;
     private ClientRpcParams m_ClientParamsMultiParameter;
 
-    // Start is called before the first frame update
-    void Start()
+    private void Start()
     {
         //Start at a smaller resolution until connection mode is selected.
         Screen.SetResolution(320, 320, FullScreenMode.Windowed);
