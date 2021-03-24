@@ -220,7 +220,7 @@ public class LobbyControl : NetworkBehaviour
     {
         if (m_AllPlayersInLobby)
         {
-            bool AllPlayersAreReady = true;
+            var AllPlayersAreReady = true;
             foreach (KeyValuePair<ulong, bool> clientLobbyStatus in m_ClientsInLobby)
             {
                 if (!clientLobbyStatus.Value)
