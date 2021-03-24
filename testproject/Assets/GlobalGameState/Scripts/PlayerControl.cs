@@ -63,7 +63,7 @@ public class PlayerControl : NetworkBehaviour
 
     private bool m_HasGameStarted = false;
 
-    bool IsAlive()
+    private bool IsAlive()
     {
         if (m_Health.Value <= 0.0f)
         {
