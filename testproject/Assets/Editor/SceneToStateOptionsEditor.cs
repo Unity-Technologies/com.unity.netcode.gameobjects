@@ -13,13 +13,14 @@ class SceneToStateOptionsEditor : PropertyDrawer
         if (m_ReorderableList != null)
             return;
 
-        SerializedProperty array = property.FindPropertyRelative("m_StateToSceneList");
+        var array = property.FindPropertyRelative("m_StateToSceneList");
 
         m_ReorderableList = new ReorderableList(property.serializedObject, array);
         m_ReorderableList.drawElementCallback = DrawOptionData;
         m_ReorderableList.drawHeaderCallback = DrawHeader;
         m_ReorderableList.elementHeight += 8;
     }
+
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
     {
         Init(property);
@@ -40,7 +41,7 @@ class SceneToStateOptionsEditor : PropertyDrawer
     /// <returns></returns>
     Rect DrawHeaderSection(string header,GUIStyle gUIStyle, Rect rect,float originalWidth, bool advanceEnding, bool isFirst = true)
     {
-        Rect localRect = rect;
+        var localRect = rect;
         //For the opening bar we use a 22 pixel width
         localRect.width = gUIStyle.fontSize*0.65f;
         GUI.Label(localRect, "|", gUIStyle);
@@ -48,8 +49,8 @@ class SceneToStateOptionsEditor : PropertyDrawer
         //Advance our position with an space
         localRect.x += localRect.width;
 
-        float estSize = (header.Length * (gUIStyle.fontSize))*0.35f;
-        float propertySize = ((originalWidth * 0.28f) -localRect.width);
+        var estSize = (header.Length * (gUIStyle.fontSize))*0.35f;
+        var propertySize = ((originalWidth * 0.28f) -localRect.width);
         if (!isFirst)
         {
             propertySize = originalWidth <= estSize ? estSize : (propertySize < LastColumnSize ? LastColumnSize : propertySize);
@@ -78,10 +79,10 @@ class SceneToStateOptionsEditor : PropertyDrawer
     /// <param name="rect"></param>
     private void DrawHeader(Rect rect)
     {
-        float OriginalWidth = rect.width;
+        var OriginalWidth = rect.width;
         rect.width = (OriginalWidth * 0.24f);
 
-        GUIStyle gUIStyle = new GUIStyle( GUI.skin.label);
+        var gUIStyle = new GUIStyle( GUI.skin.label);
         gUIStyle.alignment = TextAnchor.MiddleCenter;
 
 
@@ -103,12 +104,12 @@ class SceneToStateOptionsEditor : PropertyDrawer
     /// <param name="isFocused"></param>
     private void DrawOptionData(Rect rect, int index, bool isActive, bool isFocused)
     {
-        SerializedProperty itemData = m_ReorderableList.serializedProperty.GetArrayElementAtIndex(index);
+        var itemData = m_ReorderableList.serializedProperty.GetArrayElementAtIndex(index);
 
-        SerializedProperty itemMLAPIState = itemData.FindPropertyRelative("m_MLAPIState");
-        SerializedProperty itemScene = itemData.FindPropertyRelative("m_SceneToLoad");
-        SerializedProperty itemState = itemData.FindPropertyRelative("m_StateToLoadScene");
-        SerializedProperty itemSceneName = itemData.FindPropertyRelative("m_SceneToLoadName");
+        var itemMLAPIState = itemData.FindPropertyRelative("m_MLAPIState");
+        var itemScene = itemData.FindPropertyRelative("m_SceneToLoad");
+        var itemState = itemData.FindPropertyRelative("m_StateToLoadScene");
+        var itemSceneName = itemData.FindPropertyRelative("m_SceneToLoadName");
 
         //[NSS]: This is how we get the scene name from the scene object for runtime usage (scene objects don't get exported to builds)
         if (itemScene.objectReferenceValue != null)
@@ -116,7 +117,7 @@ class SceneToStateOptionsEditor : PropertyDrawer
             itemSceneName.stringValue = itemScene.objectReferenceValue.name;
         }
 
-        float OriginalWidth = rect.width;
+        var OriginalWidth = rect.width;
         if (OriginalWidth > 0)
         {
             rect.height = 18;
