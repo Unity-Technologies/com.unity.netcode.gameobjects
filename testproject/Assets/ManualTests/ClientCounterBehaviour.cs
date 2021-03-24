@@ -561,7 +561,7 @@ public class ClientCounterBehaviour : NetworkBehaviour
     /// <summary>
     /// Update the client text info and progress bar
     /// </summary>
-    void UpdateClientInfo()
+    private void UpdateClientInfo()
     {
         if (m_LocalClientId == 0 && NetworkManager.Singleton && NetworkManager.Singleton.IsListening)
         {
