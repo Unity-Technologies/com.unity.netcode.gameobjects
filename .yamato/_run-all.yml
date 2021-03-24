@@ -1,6 +1,22 @@
 {% metadata_file .yamato/project.metafile %}
 ---
-all_tests_trigger:
+run_all_tests:
+  name: Run All Tests
+  dependencies:
+    # Pull in package and validate jobs through the badges job
+    - .yamato/project-test.yml#badges_test_trigger
+{% for package in projects.first.packages -%}
+{% for editor in test_editors -%}
+{% for platform in test_platforms -%}
+{% for project in projects -%}
+    - .yamato/package-tests.yml#test_{{ package.name }}_{{ platform.name }}_{{ editor }}
+    - .yamato/project-test.yml#test_{{ project.name }}_{{ editor }}_{{ platform.name }}
+{% endfor -%}
+{% endfor -%}
+{% endfor -%}
+{% endfor -%}
+
+all_package_tests:
   name: Run All Package Tests
   dependencies:
     # Pull in package and validate jobs through the badges job

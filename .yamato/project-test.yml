@@ -1,30 +1,5 @@
 {% metadata_file .yamato/project.metafile %}
 ---
-# Go through all platforms, editors and packages in the metadata
-# to generate its independent package tests and validation tests.
-# The idea is to only run validation once per package and not mix.
-# the results with package tests
-{% for package in projects.first.packages -%}
-{% for editor in test_editors -%}
-{% for platform in test_platforms -%}
-test_{{ projects.first.name}}_{{ package.name }}_{{ platform.name }}_{{ editor }}:
-  name : \[PackageTests\] {{ package.name }} - {{ editor }} on {{ platform.name }}
-  agent:
-    type: {{ platform.type }}
-    image: {{ platform.image }}
-    flavor: {{ platform.flavor}}
-  commands:
-    - npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
-    - {% if platform.name == "centos" %}DISPLAY=:0 {% endif %}upm-ci project test -u {{ editor }} --type package-tests --package-filter {{ package.name }}
-  artifacts:
-    logs:
-      paths:
-        - "upm-ci~/test-results/**/*"
-  dependencies:
-    - .yamato/project-pack.yml#pack_{{ projects.first.name }}
-
-{% endfor -%}
-{% endfor -%}
 
 # Validation job for package {{ package.name }}, only using the first entry in the
 # platform and editor meta data
@@ -53,7 +28,7 @@ validate_{{ projects.first.name }}_{{ package.name }}_{{ test_platforms.first.na
 {% for editor in test_editors -%}
 {% for platform in test_platforms -%}
 test_{{ project.name }}_{{ editor }}_{{ platform.name }}:
-  name : Test Project {{ project.name }} - {{ editor }} on {{ platform.name }}
+  name : {{ project.name }} - {{ editor }} on {{ platform.name }}
   agent:
     type: {{ platform.type }}
     image: {{ platform.image }}

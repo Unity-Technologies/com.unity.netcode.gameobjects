@@ -41,6 +41,6 @@ publish_{{ project.name }}:
         - "upm-ci~/packages/*.tgz"
   dependencies:
     - .yamato/project-pack.yml#pack_{{ project.name }}
-    - .yamato/project-test.yml#all_tests_trigger
+    - .yamato/project-test.yml#run_all_tests
 
 {% endfor -%}
