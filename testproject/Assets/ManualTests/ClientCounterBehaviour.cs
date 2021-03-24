@@ -188,7 +188,7 @@ public class ClientCounterBehaviour : NetworkBehaviour
     }
 
     /// <summary>
-    /// Unregeister for the client connected and disconnected events upon being destroyed
+    /// Unregister for the client connected and disconnected events upon being destroyed
     /// </summary>
     private void OnDestroy()
     {
