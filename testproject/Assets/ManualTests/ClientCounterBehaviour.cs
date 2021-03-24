@@ -358,7 +358,7 @@ public class ClientCounterBehaviour : NetworkBehaviour
     /// Server to Client
     /// Handles Single Direct Updates
     /// </summary>
-    void SingleDirectUpdate()
+    private void SingleDirectUpdate()
     {
         if (m_GlobalDirectCounter == 100)
         {
