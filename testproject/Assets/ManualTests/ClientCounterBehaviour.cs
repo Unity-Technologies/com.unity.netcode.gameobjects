@@ -581,7 +581,7 @@ public class ClientCounterBehaviour : NetworkBehaviour
     /// <summary>
     /// Updates the server text info and host progress bar
     /// </summary>
-    void UpdateServerInfo()
+    private void UpdateServerInfo()
     {
         string updatedCounters = string.Empty;
         foreach (var entry in m_ClientSpecificCounters)
