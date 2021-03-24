@@ -326,7 +326,7 @@ public class ClientCounterBehaviour : NetworkBehaviour
     /// <summary>
     /// Cycles through the 3 different ClientRpcDirectTestingModes
     /// </summary>
-    void SelectNextDirectUpdateMethod()
+    private void SelectNextDirectUpdateMethod()
     {
         m_ClientIndices.Clear();
         m_GlobalDirectCounter = 0;
