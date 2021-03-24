@@ -42,7 +42,6 @@ public class GlobalGameState : NetworkBehaviour
     [SerializeField]
     private GameObject m_GlobalGameStatePrefabObject;
 
-
     #region Events and Delegate Handlers
     [HideInInspector]
     public delegate void ClientLoadedSceneDelegateHandler(ulong clientId);
@@ -75,12 +74,12 @@ public class GlobalGameState : NetworkBehaviour
     /// that all players have finished loading a scene
     /// </summary>
     [HideInInspector]
-    public event AllPlayersLoadedSceneDelegateHandler allPlayersLoadedScene;
+    public event AllPlayersLoadedSceneDelegateHandler AllPlayersLoadedScene;
     #endregion
 
     /// <summary>
     /// The GlobalGameState component used to synchronize changes
-    /// from the server when multiplayer session is active
+    /// from the server when multi-player session is active
     /// </summary>
     private GlobalGameStateComponent m_GlobalGameStateComponent;
 
@@ -91,7 +90,7 @@ public class GlobalGameState : NetworkBehaviour
 
     /// <summary>
     /// The global game state
-    /// This is only synchronized when in a multiplayer session
+    /// This is only synchronized when in a multi-player session
     /// </summary>
     private GameStates m_GameState;
 
@@ -115,7 +114,7 @@ public class GlobalGameState : NetworkBehaviour
     public enum GameStates
     {
         None,               //The initial state
-        Init,               //Optional game intro screen, video, or additional splash sceens
+        Init,               //Optional game intro screen, video, or additional splash screens
         Menu,               //When the user has reached the main menu to the game
         Lobby,              //When the user has entered a game session lobby
         InGame,             //When the user has entered into the game session itself
@@ -142,7 +141,6 @@ public class GlobalGameState : NetworkBehaviour
     /// </summary>
     private void Start()
     {
-
         if (!m_IsExclusive)
         {
             Screen.fullScreenMode = FullScreenMode.Windowed;
@@ -173,7 +171,7 @@ public class GlobalGameState : NetworkBehaviour
     }
 
     /// <summary>
-    /// Cients and Server can register for this in order to synchronize the global game state between all clients (including the host-client)
+    /// Clients and Server can register for this in order to synchronize the global game state between all clients (including the host-client)
     /// </summary>
     /// <param name="previousState">from state</param>
     /// <param name="newState">to state</param>
@@ -244,6 +242,9 @@ public class GlobalGameState : NetworkBehaviour
                                 if (IsHostingGame)
                                 {
                                     NetworkManager.Singleton.StartHost();  //Spin up the host
+
+                                    //We create a global game state object from our prefab in order to assure
+                                    //global game state can be synchronized between server and client(s)
                                     if (m_GlobalGameStatePrefabObject != null)
                                     {
                                         m_GlobalGameStateGameObject = GameObject.Instantiate(m_GlobalGameStatePrefabObject);
@@ -272,6 +273,8 @@ public class GlobalGameState : NetworkBehaviour
                                 if (IsHostingGame)
                                 {
                                     IsHostingGame = false;
+
+                                    //We de-spawn and destroy the global game state object
                                     if (m_GlobalGameStateComponent != null && !m_GlobalGameStateComponent.NetworkObject.IsSpawned)
                                     {
                                         m_GlobalGameStateComponent.NetworkObject.Despawn();
@@ -295,7 +298,7 @@ public class GlobalGameState : NetworkBehaviour
                                     NetworkManager.Singleton.StopClient();//shutdown the client
                                 }
 
-                                //Clean up scene loading and progeess handlers
+                                //Clean up scene loading and progress handlers
                                 if (m_SceneProgress != null)
                                 {
                                     m_SceneProgress = null;
@@ -313,7 +316,6 @@ public class GlobalGameState : NetworkBehaviour
         }
     }
 
-
     /// <summary>
     /// Any additional processing we might want to do globally depending upon the current state
     /// </summary>
@@ -321,7 +323,7 @@ public class GlobalGameState : NetworkBehaviour
     /// <param name="newState">to state</param>
     private void GameStateChangedUpdate(GameStates previousState, GameStates newState)
     {
-        string SceneName;
+        var SceneName = string.Empty;
         if (previousState == newState)
         {
             m_MLAPIStateSceneIndex++;
@@ -424,15 +426,15 @@ public class GlobalGameState : NetworkBehaviour
         //TODO: Handle message about timeOut
         if (m_SceneProgress != null && m_SceneProgress.IsAllClientsDoneLoading)
         {
-            if (allPlayersLoadedScene != null)
+            if (AllPlayersLoadedScene != null)
             {
-                allPlayersLoadedScene.Invoke();
+                AllPlayersLoadedScene.Invoke();
             }
         }
     }
 
     /// <summary>
-    /// Returns whether all lients are loaded
+    /// Returns whether all clients are loaded
     /// </summary>
     /// <returns>true or false (they are all loaded or they are not)</returns>
     public bool AllClientsAreLoaded()
@@ -485,7 +487,7 @@ public class GlobalGameState : NetworkBehaviour
 #if UNITY_EDITOR
         if (s_BootStrapToScene != null && s_BootStrapToScene != string.Empty)
         {
-            GameStates BootStrappedGameState = Singleton.m_SceneToStateLinks.GetGameStateLinkedToScene(s_BootStrapToScene);
+            var BootStrappedGameState = Singleton.m_SceneToStateLinks.GetGameStateLinkedToScene(s_BootStrapToScene);
             s_BootStrapToScene = string.Empty;
             if (BootStrappedGameState != GameStates.None)
             {
@@ -509,11 +511,11 @@ public class GlobalGameState : NetworkBehaviour
         {
             if (nextscene.enabled)
             {
-                string SceneFilename = nextscene.path.Substring(nextscene.path.LastIndexOf('/')+1);
-                string[] SplitSceneFileName = SceneFilename.Split('.');
+                var SceneFilename = nextscene.path.Substring(nextscene.path.LastIndexOf('/')+1);
+                var SplitSceneFileName = SceneFilename.Split('.');
                 if (SplitSceneFileName[0] == "MLAPIBootStrap")
                 {
-                    Scene currentScene = SceneManager.GetActiveScene();
+                    var currentScene = SceneManager.GetActiveScene();
                     if (currentScene != null)
                     {
                         s_BootStrapToScene = currentScene.name;

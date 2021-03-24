@@ -32,7 +32,7 @@ public class GlobalGameStateComponent : NetworkBehaviour
     }
 
     /// <summary>
-    /// Cients and Server can register for this in order to synchronize the global game state between all clients (including the host-client)
+    /// Clients and Server can register for this in order to synchronize the global game state between all clients (including the host-client)
     /// </summary>
     /// <param name="previousState">from state</param>
     /// <param name="newState">to state</param>

@@ -9,7 +9,7 @@ public class NextLevelButtonControl : NetworkBehaviour
 
     private void Start()
     {
-        if(!IsServer && m_NextLevelButton)
+        if (!IsServer && m_NextLevelButton)
         {
             m_NextLevelButton.gameObject.SetActive(false);
         }

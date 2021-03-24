@@ -28,7 +28,7 @@ public class LobbyControl : NetworkBehaviour
     {
         m_ClientsInLobby = new Dictionary<ulong, bool>();
 #if UNITY_EDITOR
-        if (NetworkManager.Singleton == null)
+        if (!NetworkManager.Singleton)
         {
             GlobalGameState.s_EditorLaunchingAsHost = m_LaunchAsHostInEditor;
             //This will automatically launch the MLAPIBootStrap and then transition directly to the scene this control is contained within (for easy development of scenes)
@@ -71,7 +71,7 @@ public class LobbyControl : NetworkBehaviour
     /// This parses through all local NetworkObjects, freezes (pauses) them, and "hides" them.
     /// (one of several ways to do this)
     /// </summary>
-    void FreezeAndHidePlayers()
+    private void FreezeAndHidePlayers()
     {
         NetworkObject[] NetoworkedObjects = GameObject.FindObjectsOfType<NetworkObject>();
         foreach (NetworkObject networkedObject in NetoworkedObjects)
@@ -94,7 +94,7 @@ public class LobbyControl : NetworkBehaviour
     }
 
     /// <summary>
-    /// Psuedo code for setting player state
+    /// Pseudo code for setting player state
     /// Just updating a text field, this could use a lot of "refactoring"  :)
     /// </summary>
     private void GenerateUserStatsForLobby()
@@ -131,7 +131,7 @@ public class LobbyControl : NetworkBehaviour
     /// <summary>
     /// Checks to see if we have at least m_MinPlayersToStart or more people to start
     /// </summary>
-    void UpdateAndCheckPlayersInLobby()
+    private void UpdateAndCheckPlayersInLobby()
     {
         //This is game preference, but I am assuming at least 2 players?
         m_AllPlayersInLobby = (m_ClientsInLobby.Count >= m_MinPlayersToStart);
@@ -197,7 +197,7 @@ public class LobbyControl : NetworkBehaviour
     /// <param name="clientId"></param>
     /// <param name="isReady"></param>
     [ClientRpc]
-    void SendClientReadyStatusUpdatesClientRpc(ulong clientId, bool isReady)
+    private void SendClientReadyStatusUpdatesClientRpc(ulong clientId, bool isReady)
     {
         if (!IsServer)
         {
@@ -239,7 +239,7 @@ public class LobbyControl : NetworkBehaviour
                 //Remove our scene loaded callback
                 GlobalGameState.Singleton.ClientLoadedScene -= ClientLoadedScene;
 
-                //Transition to the ingame scene
+                //Transition to the in-game scene
                 GlobalGameState.Singleton.SetGameState(GlobalGameState.GameStates.InGame);
             }
         }
@@ -269,7 +269,7 @@ public class LobbyControl : NetworkBehaviour
     /// </summary>
     /// <param name="clientid">clientId that is ready</param>
     [ServerRpc(RequireOwnership = false)]
-    void OnClientIsReadyServerRpc(ulong clientid, bool isReady)
+    private void OnClientIsReadyServerRpc(ulong clientid, bool isReady)
     {
         if (m_ClientsInLobby.ContainsKey(clientid))
         {

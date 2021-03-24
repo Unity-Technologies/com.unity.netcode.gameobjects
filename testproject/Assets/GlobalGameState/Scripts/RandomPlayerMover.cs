@@ -9,12 +9,12 @@ public class RandomPlayerMover : NetworkBehaviour
     [SerializeField]
     private float m_MoveSpeed = 5;
 
-    [Tooltip("How fast the camera will rotate towards the curent player's movement direction.")]
+    [Tooltip("How fast the camera will rotate towards the current player's movement direction.")]
     [Range(1.0f,5.0f)]
     [SerializeField]
     private float m_LookSpeed = 0.25f;
 
-    [Tooltip("A transform in the player prefab that already has the view position and rotation to keep the main cmaera aligned.")]
+    [Tooltip("A transform in the player prefab that already has the view position and rotation to keep the main camera aligned.")]
     [SerializeField]
     private GameObject m_CameraRoot;
 
@@ -45,7 +45,7 @@ public class RandomPlayerMover : NetworkBehaviour
     /// <summary>
     /// Sets the player color based on its id;
     /// </summary>
-    void SetPlayerColor()
+    private void SetPlayerColor()
     {
         if (m_MeshRenderer)
         {
@@ -95,7 +95,7 @@ public class RandomPlayerMover : NetworkBehaviour
     /// <param name="clientId"></param>
     private void ClientLoadedScene(ulong clientId)
     {
-        if(clientId == NetworkManager.Singleton.LocalClientId)
+        if (clientId == NetworkManager.Singleton.LocalClientId)
         {
             SetPlayerSpawnPoint();
         }
@@ -106,7 +106,7 @@ public class RandomPlayerMover : NetworkBehaviour
     /// ** Note: It still could end up in potential collision as each individual player is picking their own start location
     /// ** This could be improved upon by extending this to the server and having the server preselect spawn points for each player.
     /// </summary>
-    void SetPlayerSpawnPoint()
+    private void SetPlayerSpawnPoint()
     {
         if (m_PlayerSpawnPoints != null)
         {
@@ -158,7 +158,7 @@ public class RandomPlayerMover : NetworkBehaviour
     /// </summary>
     /// <param name="globalGameState"></param>
     /// <param name="isTransitioningTo"></param>
-    void HandlGlobalGameStateChanged(GlobalGameState.GameStates globalGameState, bool isTransitioningTo)
+    private void HandlGlobalGameStateChanged(GlobalGameState.GameStates globalGameState, bool isTransitioningTo)
     {
         switch (globalGameState)
         {
@@ -204,7 +204,7 @@ public class RandomPlayerMover : NetworkBehaviour
     /// </summary>
     /// <param name="gameState">state</param>
     /// <param name="isTransitioningTo">are we transitioning to or from this state?</param>
-    void HandleInGameStateChanged(InGameManager.InGameStates gameState, bool isTransitioningTo)
+    private void HandleInGameStateChanged(InGameManager.InGameStates gameState, bool isTransitioningTo)
     {
         switch (gameState)
         {
@@ -290,7 +290,7 @@ public class RandomPlayerMover : NetworkBehaviour
     public void Move(float speed)
     {
         transform.position = Vector3.MoveTowards(transform.position, transform.position + m_Direction * (speed * Time.fixedDeltaTime), speed * Time.fixedDeltaTime);
-        Vector3 LookDir = Vector3.Lerp(transform.forward, m_Direction, m_LookSpeed * Time.fixedDeltaTime);
+        var LookDir = Vector3.Lerp(transform.forward, m_Direction, m_LookSpeed * Time.fixedDeltaTime);
         transform.rotation = Quaternion.LookRotation(LookDir);
     }
 
@@ -329,16 +329,16 @@ public class RandomPlayerMover : NetworkBehaviour
             }
             else  //Handle the case where there are no spawn points
             {
-                List<ContactPoint> contactPoints = new List<ContactPoint>(collision.contactCount);
+                var contactPoints = new List<ContactPoint>(collision.contactCount);
                 if (collision.GetContacts(contactPoints) > 0)
                 {
-                    Vector3 CollisionPointAverage = Vector3.zero;
+                    var CollisionPointAverage = Vector3.zero;
                     foreach (ContactPoint contactPoint in contactPoints)
                     {
                         CollisionPointAverage += contactPoint.point;
                     }
                     CollisionPointAverage *= 1.0f / (float)collision.contactCount;
-                    Vector3 MoveAway = this.transform.position - CollisionPointAverage;
+                    var MoveAway = this.transform.position - CollisionPointAverage;
                     MoveAway.Normalize();
                     m_Direction = MoveAway;
                 }

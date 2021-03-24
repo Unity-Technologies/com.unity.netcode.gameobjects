@@ -30,7 +30,7 @@ public class PlayerControl : NetworkBehaviour
     /// Everyone but the server has read only access
     /// </summary>
     [SerializeField]
-    //Example use case scenario for an immediate update server-side only (athoritative server) write capabilities
+    //Example use case scenario for an immediate update server-side only (authoritative server) write capabilities
     NetworkVariableFloat m_Health = new NetworkVariableFloat(new NetworkVariableSettings(){ SendTickrate = 0.0f, WritePermission = NetworkVariablePermission.ServerOnly } ,100.0f);
 
     /// <summary>
@@ -81,7 +81,7 @@ public class PlayerControl : NetworkBehaviour
 
     private void Start()
     {
-        m_PlayerVisual =  GetComponent<SpriteRenderer>();
+        m_PlayerVisual = GetComponent<SpriteRenderer>();
         if (m_PlayerVisual != null)
         {
             m_PlayerVisual.material.color = Color.black;
@@ -118,7 +118,7 @@ public class PlayerControl : NetworkBehaviour
     }
 
     /// <summary>
-    /// OnHealthChanged
+    /// OnHealthChanged: WIP
     /// </summary>
     /// <param name="previousAmount"></param>
     /// <param name="currentAmount"></param>
@@ -134,32 +134,31 @@ public class PlayerControl : NetworkBehaviour
     }
 
     /// <summary>
-    /// GetLerpInputValue
     /// Helper method to lerp towards a target value while a specified key is pressed
     /// </summary>
     /// <param name="keyCode">key pressed</param>
     /// <param name="current">current input value</param>
     /// <param name="target">target input value (i.e. max or min depending upon sign)</param>
     /// <returns></returns>
-    float GetLerpInputValue(KeyCode keyCode, float current, float target)
+    private float GetLerpInputValue(KeyCode keyCode, float current, float target)
     {
         if (Input.GetKey(keyCode))
         {
-            return  Mathf.Lerp(current, target, Time.deltaTime);
+            return Mathf.Lerp(current, target, Time.deltaTime);
         }
         else
         {
-           return Mathf.Lerp(current, 0.0f, Time.deltaTime);
+            return Mathf.Lerp(current, 0.0f, Time.deltaTime);
         }
     }
 
     /// <summary>
-    /// InGameUpdate
     /// Only updates when the game state is InGame
     /// </summary>
     private void InGameUpdate()
     {
-        if (!IsAlive()) return;
+        if (!IsAlive())
+            return;
 
         if (IsLocalPlayer)
         {
@@ -168,20 +167,19 @@ public class PlayerControl : NetworkBehaviour
             //you could replicate this for each axis
         }
 
-        if ( IsServer )
+        if (IsServer)
         {
-            Vector3 newMovement = new Vector3(m_MoveX.Value,m_MoveY.Value,m_MoveZ.Value);
+            var newMovement = new Vector3(m_MoveX.Value,m_MoveY.Value,m_MoveZ.Value);
             transform.position = Vector3.MoveTowards(transform.position, transform.position + newMovement, m_MoveSpeed * Time.deltaTime);
         }
     }
 
     /// <summary>
-    /// MonoBehaviour.Update
     /// Process game state to determine what we should be doing
     /// </summary>
-    void Update()
+    private void Update()
     {
-        switch(m_CurrentGameState)
+        switch (m_CurrentGameState)
         {
             case GlobalGameState.GameStates.InGame:
                 {

@@ -26,7 +26,7 @@ public class InGameManager : NetworkBehaviour
 
     [SerializeField]
     [Range(1,10)]
-    int m_ExitGameCountDown = 5; //Set default to 5
+    private int m_ExitGameCountDown = 5; //Set default to 5
 
     public enum InGameStates
     {
@@ -55,7 +55,7 @@ public class InGameManager : NetworkBehaviour
 
     /// <summary>
     /// Used to create the OnInGameStateChanged event that other components can subscribe to
-    /// Useful to change the state of objects that persist between scenes duringa an in-game session
+    /// Useful to change the state of objects that persist between scenes during an in-game session
     /// </summary>
     /// <param name="previousState"></param>
     /// <param name="newState"></param>
@@ -80,7 +80,7 @@ public class InGameManager : NetworkBehaviour
         {
             if (IsServer)
             {
-                GlobalGameState.Singleton.allPlayersLoadedScene += AllPlayersLoadedScene;
+                GlobalGameState.Singleton.AllPlayersLoadedScene += AllPlayersLoadedScene;
                 NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnectCallback;
             }
 
@@ -91,7 +91,7 @@ public class InGameManager : NetworkBehaviour
     /// <summary>
     /// Handle the initialization of dialog (text) and registering callbacks
     /// </summary>
-    void Start()
+    private void Start()
     {
         if (m_WaitingForPlayers)
         {
@@ -119,10 +119,10 @@ public class InGameManager : NetworkBehaviour
 
     /// <summary>
     /// SpawnManager.SpawnedObjects Use Case Scenario:  Parsing through currently spawned NetworkObjects
-    /// Sets our local player, assigns the local main camera instanve to the local player, and
+    /// Sets our local player, assigns the local main camera instance to the local player, and
     /// registers all NetworkObjects with a RandomPlayerMover component for In-Game state changes
     /// </summary>
-    void SetAndInitializeLocalPlayer()
+    private void SetAndInitializeLocalPlayer()
     {
         foreach (NetworkObject networkedObject in NetworkSpawnManager.SpawnedObjects.Values)
         {
@@ -142,10 +142,10 @@ public class InGameManager : NetworkBehaviour
 
     /// <summary>
     /// SpawnManager.SpawnedObjects Use Case Scenario:  Parsing through currently spawned NetworkObjects
-    /// This is to handle pausing and unpausing primarily the players' networked object clones not owned by the local player
+    /// This is to handle pausing (freezing) and un-pausing primarily the players' networked object clones not owned by the local player
     /// </summary>
-    /// <param name="shouldFreeze">should we freeze everyone or un-freeze them?</param>
-    void FreezeAndShowPlayers(bool shouldFreeze = false)
+    /// <param name="shouldFreeze">true or false</param>
+    private void FreezeAndShowPlayers(bool shouldFreeze = false)
     {
         foreach (NetworkObject networkedObject in NetworkSpawnManager.SpawnedObjects.Values)
         {
@@ -172,7 +172,7 @@ public class InGameManager : NetworkBehaviour
     /// </summary>
     /// <param name="previousState"></param>
     /// <param name="newState"></param>
-    void InGameStateValueChanged(InGameStates previousState, InGameStates newState)
+    private void InGameStateValueChanged(InGameStates previousState, InGameStates newState)
     {
         InGameStateTransition(previousState, false);
         InGameStateTransition(newState, true);
@@ -192,7 +192,7 @@ public class InGameManager : NetworkBehaviour
     /// </summary>
     /// <param name="gameState"></param>
     /// <param name="isTransitioningTo"></param>
-    void InGameStateTransition(InGameStates gameState, bool isTransitioningTo)
+    private void InGameStateTransition(InGameStates gameState, bool isTransitioningTo)
     {
         switch (gameState)
         {
@@ -263,7 +263,7 @@ public class InGameManager : NetworkBehaviour
     /// Since we have passed the lobby state, we know that all players are connected and just waiting
     /// for them to all load their scenes.
     /// </summary>
-    void AllPlayersLoadedScene()
+    private void AllPlayersLoadedScene()
     {
         if (IsServer)
         {
@@ -272,7 +272,7 @@ public class InGameManager : NetworkBehaviour
     }
 
     /// <summary>
-    /// Notififies the server that a client has disconnected
+    /// Notifies the server that a client has disconnected
     /// </summary>
     /// <param name="clientId"></param>
     private void OnClientDisconnectCallback(ulong clientId)
@@ -285,9 +285,9 @@ public class InGameManager : NetworkBehaviour
     }
 
     /// <summary>
-    /// We can use the Monobehaviour Update method to pump our in game networked state machine
+    /// We can use the Update method to pump our in game networked state machine
     /// </summary>
-    void Update()
+    private void Update()
     {
         switch (m_InGameState.Value)
         {
@@ -324,7 +324,7 @@ public class InGameManager : NetworkBehaviour
     /// Executed once per update when the m_InGameState.Value is InGameStates.Waiting
     /// You could animate something here while players wait
     /// </summary>
-    void WaitingUpdate()
+    private void WaitingUpdate()
     {
         //Waiting update here
     }
@@ -333,7 +333,7 @@ public class InGameManager : NetworkBehaviour
     /// Executed once per update when the m_InGameState.Value is InGameStates.Playing
     /// All in game logic happens here
     /// </summary>
-    void PlayingUpdate()
+    private void PlayingUpdate()
     {
         //Game update here
     }
@@ -342,7 +342,7 @@ public class InGameManager : NetworkBehaviour
     /// Executed once per update when the m_InGameState.Value is InGameStates.Paused
     /// You could animate something here while the game is paused
     /// </summary>
-    void PausedUpdate()
+    private void PausedUpdate()
     {
         //Paused update here
     }
@@ -350,7 +350,7 @@ public class InGameManager : NetworkBehaviour
     /// <summary>
     /// Executed once per update when the m_InGameState.Value is InGameStates.Exiting
     /// </summary>
-    void OnExitingGame()
+    private void OnExitingGame()
     {
         //Server is authoritative for the exiting timer
         if (IsServer)
@@ -365,7 +365,7 @@ public class InGameManager : NetworkBehaviour
             if (IsServer && NetworkManager.Singleton.ConnectedClientsList.Count <= 1)
             {
                 //De-register from our events
-                GlobalGameState.Singleton.allPlayersLoadedScene -= AllPlayersLoadedScene;
+                GlobalGameState.Singleton.AllPlayersLoadedScene -= AllPlayersLoadedScene;
                 NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnectCallback;
                 GlobalGameState.Singleton.SetGameState(GlobalGameState.GameStates.ExitGame);
             }
@@ -412,7 +412,7 @@ public class InGameManager : NetworkBehaviour
     /// <summary>
     /// This is where you can add commands or detect key presses to perform server/host operations
     /// </summary>
-    void ServerCommandInputUpdate()
+    private void ServerCommandInputUpdate()
     {
         if (Input.GetKeyDown(KeyCode.P))
         {

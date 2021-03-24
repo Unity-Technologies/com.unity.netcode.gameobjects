@@ -5,13 +5,13 @@ public class IntroSceneControl : MonoBehaviour
 {
     private void Start()
     {
-        NetworkManager NM = NetworkManager.Singleton;
-        if (NM == null)
-        {
 #if (UNITY_EDITOR)
+        if (!NetworkManager.Singleton)
+        {
+
             GlobalGameState.LoadBootStrapScene();
-#endif
         }
+#endif
     }
 
     /// <summary>

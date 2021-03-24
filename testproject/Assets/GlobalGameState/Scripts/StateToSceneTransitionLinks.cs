@@ -43,9 +43,9 @@ namespace MLAPIGlobalGameState
 #endif
             }
         }
-        public GlobalGameState.GameStates stateToLoadScene { get { return m_StateToLoadScene; } }
+        public GlobalGameState.GameStates StateToLoadScene { get { return m_StateToLoadScene; } }
 
-        public  MLAPIStates MLAPIState {get { return m_MLAPIState; }}
+        public MLAPIStates MLAPIState { get { return m_MLAPIState; } }
 
     }
 
@@ -56,7 +56,7 @@ namespace MLAPIGlobalGameState
         private List<StateToSceneTransitionLinks> m_StateToSceneList;
 
         /// <summary>
-        /// The list of options for the dropdown list.
+        /// The list of options for the drop-down list.
         /// </summary>
         public List<StateToSceneTransitionLinks> StateToSceneList { get { return m_StateToSceneList; } set { m_StateToSceneList = value; } }
 
@@ -71,11 +71,11 @@ namespace MLAPIGlobalGameState
             var results = m_StateToSceneList.Where(entry => entry.MLAPIState == mlapiState);
             if (results != null)
             {
-                int IndexCounter = 0;
+                var IndexCounter = 0;
                 //We need to parse these each time as the user might re-order the links
-                foreach(StateToSceneTransitionLinks entry in results)
+                foreach (StateToSceneTransitionLinks entry in results)
                 {
-                    if(entry.SceneToLoad == sceneName)
+                    if (entry.SceneToLoad == sceneName)
                     {
                         return IndexCounter;
                     }
@@ -93,8 +93,8 @@ namespace MLAPIGlobalGameState
         /// <returns></returns>
         public String GetSceneNameLinkedToState(GlobalGameState.GameStates gameState, int currentindex = 0)
         {
-            var results = m_StateToSceneList.Where(entry => entry.stateToLoadScene == gameState);
-            if (results != null && ( (results.Count() - 1) >= currentindex) )
+            var results = m_StateToSceneList.Where(entry => entry.StateToLoadScene == gameState);
+            if (results != null && ((results.Count() - 1) >= currentindex))
             {
                 return results.ElementAt(currentindex).SceneToLoad;
             }
@@ -111,7 +111,7 @@ namespace MLAPIGlobalGameState
             var results = m_StateToSceneList.Where(entry => entry.SceneToLoad == sceneName);
             if (results != null)
             {
-                return results.First().stateToLoadScene;
+                return results.First().StateToLoadScene;
             }
             return GlobalGameState.GameStates.None;
         }
@@ -123,7 +123,7 @@ namespace MLAPIGlobalGameState
         /// <returns>StateToSceneTransitionLinks.MLAPIStates</returns>
         public StateToSceneTransitionLinks.MLAPIStates GetGameStateToMLAPIState(GlobalGameState.GameStates gameState)
         {
-            var results = m_StateToSceneList.Where(entry =>  entry.stateToLoadScene == gameState);
+            var results = m_StateToSceneList.Where(entry =>  entry.StateToLoadScene == gameState);
             if (results != null)
             {
                 return results.First().MLAPIState;
