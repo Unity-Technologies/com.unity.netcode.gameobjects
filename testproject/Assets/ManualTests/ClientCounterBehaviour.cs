@@ -37,11 +37,11 @@ public class ClientCounterBehaviour : NetworkBehaviour
     private List<ulong> m_ClientIds = new List<ulong>();
     private List<ulong> m_ClientIndices = new List<ulong>();
 
-    private bool   m_MutliParameterCanSend;
+    private bool   m_MultiParameterCanSend;
 
-    private int m_MutliParameterIntValue;
-    private int m_MutliParameterValuesCount;
-    private int m_MutliParameterNoneCount;
+    private int m_MultiParameterIntValue;
+    private int m_MultiParameterValuesCount;
+    private int m_MultiParameterNoneCount;
     private int m_RpcMessagesSent;
     private int m_GlobalCounter;
     private int m_GlobalDirectCounter;
@@ -51,10 +51,10 @@ public class ClientCounterBehaviour : NetworkBehaviour
     private int m_RpcPerSecond;
     private int m_GlobalDirectScale;
 
-    private long  m_MutliParameterLongValue;
+    private long  m_MultiParameterLongValue;
     private ulong m_LocalClientId;
 
-    private float m_MutliParameterFloatValue;
+    private float m_MultiParameterFloatValue;
     private float m_GlobalCounterDelay;
     private float m_DirectGlobalCounterDelay;
     private float m_LocalCounterDelay;
@@ -130,7 +130,7 @@ public class ClientCounterBehaviour : NetworkBehaviour
         m_ClientParamsMultiParameter.Send.TargetClientIds = new ulong[] { 0 };
         m_ClientRpcDirectTestingMode = ClientRpcDirectTestingModes.Single;
         m_ConnectionModeButtonParent.SetActive(false);
-        m_MutliParameterCanSend = true;
+        m_MultiParameterCanSend = true;
 
         m_GlobalDirectScale = 2;
         m_GlobalDirectFrequency = 1.0f / (100.0f / (float)m_GlobalDirectScale);
@@ -297,16 +297,16 @@ public class ClientCounterBehaviour : NetworkBehaviour
                 else if (m_LocalMultiDelay < Time.realtimeSinceStartup)
                 {
                     m_LocalMultiDelay = Time.realtimeSinceStartup + 0.325f;
-                    if (m_MutliParameterCanSend)
+                    if (m_MultiParameterCanSend)
                     {
-                        m_MutliParameterCanSend = false;
+                        m_MultiParameterCanSend = false;
                         //Multi Parameters
-                        OnSendMultiParametersServerRpc(m_MutliParameterIntValue, m_MutliParameterFloatValue, m_MutliParameterLongValue);
+                        OnSendMultiParametersServerRpc(m_MultiParameterIntValue, m_MultiParameterFloatValue, m_MultiParameterLongValue);
                         m_RpcMessagesSent++;
                     }
                     else
                     {
-                        m_MutliParameterCanSend = true;
+                        m_MultiParameterCanSend = true;
                         OnSendNoParametersServerRpc();
                         m_RpcMessagesSent++;
                     }
@@ -487,7 +487,7 @@ public class ClientCounterBehaviour : NetworkBehaviour
     [ClientRpc]
     private void OnSendNoParametersClientRpc(ClientRpcParams parameters = default)
     {
-        m_MutliParameterNoneCount++;
+        m_MultiParameterNoneCount++;
     }
 
 
@@ -499,17 +499,17 @@ public class ClientCounterBehaviour : NetworkBehaviour
     [ClientRpc]
     private void OnSendMultiParametersClientRpc(int count, float floatValue, long longValue, ClientRpcParams parameters = default)
     {
-        if (m_MutliParameterIntValue == count && floatValue == m_MutliParameterFloatValue && m_MutliParameterLongValue == longValue)
+        if (m_MultiParameterIntValue == count && floatValue == m_MultiParameterFloatValue && m_MultiParameterLongValue == longValue)
         {
-            m_MutliParameterValuesCount++;
+            m_MultiParameterValuesCount++;
         }
         else
         {
-            m_MutliParameterValuesCount--;
+            m_MultiParameterValuesCount--;
         }
-        m_MutliParameterIntValue = Random.Range(0, 100);
-        m_MutliParameterFloatValue = Random.Range(0.0f, 1.0f);
-        m_MutliParameterLongValue = (long)Random.Range(0, 10000);
+        m_MultiParameterIntValue = Random.Range(0, 100);
+        m_MultiParameterFloatValue = Random.Range(0.0f, 1.0f);
+        m_MultiParameterLongValue = (long)Random.Range(0, 10000);
     }
 
     /// <summary>
@@ -569,7 +569,7 @@ public class ClientCounterBehaviour : NetworkBehaviour
         }
 
         m_CounterTextObject.text = $"Client-ID [{m_LocalClientId}]  Broadcast Rpcs Received:  {m_GlobalCounter - m_GlobalCounterOffset}  |  Direct Rpcs Received: {m_GlobalDirectCounter} \n";
-        m_CounterTextObject.text += $"{nameof(m_MutliParameterValuesCount)} : {m_MutliParameterValuesCount}  |  {nameof(m_MutliParameterNoneCount)} : {m_MutliParameterNoneCount}";
+        m_CounterTextObject.text += $"{nameof(m_MultiParameterValuesCount)} : {m_MultiParameterValuesCount}  |  {nameof(m_MultiParameterNoneCount)} : {m_MultiParameterNoneCount}";
 
         if (m_ClientProgressBar)
         {
@@ -588,7 +588,7 @@ public class ClientCounterBehaviour : NetworkBehaviour
             if (entry.Key == 0 && IsHost)
             {
                 updatedCounters += $"Client-ID [{entry.Key}]  Client to Server Rpcs Received: {entry.Value}  |  Broadcast Rpcs Sent:{m_GlobalCounter} -- Direct Rpcs Sent:{m_GlobalDirectCounter}\n";
-                updatedCounters += $"{nameof(m_MutliParameterValuesCount)} : {m_MutliParameterValuesCount}  |  {nameof(m_MutliParameterNoneCount)} : {m_MutliParameterNoneCount}\n";
+                updatedCounters += $"{nameof(m_MultiParameterValuesCount)} : {m_MultiParameterValuesCount}  |  {nameof(m_MultiParameterNoneCount)} : {m_MultiParameterNoneCount}\n";
                 updatedCounters += $"{nameof(m_RpcPerSecond)} : {m_RpcPerSecond}\n ";
             }
             else
