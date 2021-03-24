@@ -242,7 +242,7 @@ public class ClientCounterBehaviour : NetworkBehaviour
     /// <summary>
     /// Both the Server and Client update here
     /// </summary>
-    void Update()
+    private void Update()
     {
         if (NetworkManager.Singleton.IsListening)
         {
