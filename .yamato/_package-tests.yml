@@ -4,6 +4,7 @@
 # to generate its independent package tests and validation tests.
 # The idea is to only run validation once per package and not mix.
 # the results with package tests
+{% for package in projects.first.packages -%}
 {% for editor in test_editors -%}
 {% for platform in test_platforms -%}
 test_{{ package.name }}_{{ platform.name }}_{{ editor }}:
@@ -22,5 +23,6 @@ test_{{ package.name }}_{{ platform.name }}_{{ editor }}:
   dependencies:
     - .yamato/project-pack.yml#pack_{{ projects.first.name }}
 
+{% endfor -%}
 {% endfor -%}
 {% endfor -%}
