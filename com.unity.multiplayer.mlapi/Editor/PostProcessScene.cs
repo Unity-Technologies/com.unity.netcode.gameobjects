@@ -11,6 +11,8 @@ namespace UnityEditor
         [PostProcessScene(int.MaxValue)]
         public static void ProcessScene()
         {
+            // find all scene objects that have not been spawned yet
+            // TODO: long term, replace the means of finding candidate objects to repace FindObjectsOfType
             var traverseSortedObjects = FindObjectsOfType<NetworkObject>().Where(x => x.IsSceneObject == null).ToList();
 
             traverseSortedObjects.Sort((x, y) =>
