@@ -46,7 +46,7 @@ public class ClientCounterBehaviour : NetworkBehaviour
     private int m_GlobalCounter;
     private int m_GlobalDirectCounter;
     private int m_GlobalDirectCurrentClientIdIndex;
-    private int m_localClientCounter;
+    private int m_LocalClientCounter;
     private int m_GlobalCounterOffset;
     private int m_RpcPerSecond;
     private int m_GlobalDirectScale;
@@ -290,8 +290,8 @@ public class ClientCounterBehaviour : NetworkBehaviour
                 if (m_LocalCounterDelay < Time.realtimeSinceStartup)
                 {
                     m_LocalCounterDelay = Time.realtimeSinceStartup + 0.25f;
-                    m_localClientCounter++;
-                    OnSendCounterServerRpc(m_localClientCounter);
+                    m_LocalClientCounter++;
+                    OnSendCounterServerRpc(m_LocalClientCounter);
                     m_RpcMessagesSent++;
                 }
                 else if (m_LocalMultiDelay < Time.realtimeSinceStartup)
