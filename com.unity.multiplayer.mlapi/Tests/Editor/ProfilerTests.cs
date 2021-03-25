@@ -31,7 +31,7 @@ namespace MLAPI.RuntimeTests
         }
     }
 
-    public class TestProfiler : IHasProfilableTransport
+    public class TestProfiler : IProfilableTransportProvider
     {
         internal static class ProfilerConstants
         {
