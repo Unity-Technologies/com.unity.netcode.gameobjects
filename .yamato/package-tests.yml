@@ -4,17 +4,18 @@
 # to generate its independent package tests and validation tests.
 # The idea is to only run validation once per package and not mix.
 # the results with package tests
+{% for project in projects.first -%}
 {% for editor in test_editors -%}
 {% for platform in test_platforms -%}
-test_{{  projects.first.packages.first.name }}_{{ platform.name }}_{{ editor }}:
-  name : test_{{  projects.first.packages.first.name }}_{{ platform.name }}_{{ editor }}
+test_{{  project.packages.first.name }}_{{ platform.name }}_{{ editor }}:
+  name : test_{{  project.packages.first.name }}_{{ platform.name }}_{{ editor }}
   agent:
     type: {{ platform.type }}
     image: {{ platform.image }}
     flavor: {{ platform.flavor}}
   commands:
     - npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
-    - {% if platform.name == "centos" %}DISPLAY=:0 {% endif %}upm-ci project test -u {{ editor }} --type package-tests --package-filter {{ projects.first.packages.first.name }}
+    - {% if platform.name == "centos" %}DISPLAY=:0 {% endif %}upm-ci project test -u {{ editor }} --type package-tests --project-path {{ project.path }} --package-filter {{ projects.first.packages.first.name }}
   artifacts:
     logs:
       paths:
@@ -22,5 +23,6 @@ test_{{  projects.first.packages.first.name }}_{{ platform.name }}_{{ editor }}:
   dependencies:
     - .yamato/project-pack.yml#pack_{{ projects.first.name }}
 
+{% endfor -%}
 {% endfor -%}
 {% endfor -%}
