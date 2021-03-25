@@ -13,21 +13,21 @@ namespace MLAPI.Profiling
 
         public static event NoTickDataHandler OnNoTickDataEvent;
 
-        private static IHasProfilableTransport s_HasProfilableTransport;
+        private static IProfilableTransportProvider s_ProfilableTransportProvider;
         private static bool s_FailsafeCheck;
 
-        public static void Initialize(IHasProfilableTransport hasProfilableNetwork)
+        public static void Initialize(IProfilableTransportProvider profilableNetwork)
         {
-            s_HasProfilableTransport = hasProfilableNetwork
+            s_ProfilableTransportProvider = profilableNetwork
                                        ?? throw new ArgumentNullException(
-                                           $"{nameof(hasProfilableNetwork)} was not set");
+                                           $"{nameof(profilableNetwork)} was not set");
             s_FailsafeCheck = false;
         }
 
         public static void ProfilerBeginTick()
         {
             PerformanceDataManager.BeginNewTick();
-            var transport = s_HasProfilableTransport.Transport;
+            var transport = s_ProfilableTransportProvider.Transport;
             transport?.BeginNewTick();
             s_FailsafeCheck = true;
         }
@@ -45,7 +45,7 @@ namespace MLAPI.Profiling
             {
                 if (data != null)
                 {
-                    var transport = s_HasProfilableTransport.Transport;
+                    var transport = s_ProfilableTransportProvider.Transport;
                     if (transport != null)
                     {
                         var transportProfilerData = transport.GetTransportProfilerData();

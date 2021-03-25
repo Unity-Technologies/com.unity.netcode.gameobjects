@@ -1,6 +1,6 @@
 namespace MLAPI.Profiling
 {
-    public interface IHasProfilableTransport
+    public interface IProfilableTransportProvider
     {
         ITransportProfilerData Transport { get; }
     }

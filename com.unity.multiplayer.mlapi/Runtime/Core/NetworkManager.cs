@@ -29,7 +29,7 @@ namespace MLAPI
     /// The main component of the library
     /// </summary>
     [AddComponentMenu("MLAPI/NetworkManager", -100)]
-    public class NetworkManager : MonoBehaviour, INetworkUpdateSystem, IHasProfilableTransport
+    public class NetworkManager : MonoBehaviour, INetworkUpdateSystem, IProfilableTransportProvider
     {
         [Browsable(false)]
         [EditorBrowsable(EditorBrowsableState.Never)]
