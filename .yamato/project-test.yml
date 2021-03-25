@@ -72,7 +72,7 @@ badges_test_trigger:
     - .yamato/project-test.yml#validate_{{ projects.first.packages.first.name }}_{{ test_platforms.first.name }}_{{ test_editors.first }}
 {% for editor in test_editors -%}
 {% for platform in test_platforms -%}
-    - .yamato/project-test.yml#test_{{ projects.first.package.first.name }}_{{ package.name }}_{{ platform.name }}_{{ editor }}
+    - .yamato/project-test.yml#test_{{ projects.first.packages.first.name }}_{{ package.name }}_{{ platform.name }}_{{ editor }}
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}
