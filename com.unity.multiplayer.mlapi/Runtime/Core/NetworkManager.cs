@@ -29,7 +29,7 @@ namespace MLAPI
     /// The main component of the library
     /// </summary>
     [AddComponentMenu("MLAPI/NetworkManager", -100)]
-    public class NetworkManager : MonoBehaviour, INetworkUpdateSystem
+    public class NetworkManager : MonoBehaviour, INetworkUpdateSystem, IProfilableTransportProvider
     {
         [Browsable(false)]
         [EditorBrowsable(EditorBrowsableState.Never)]
@@ -55,10 +55,6 @@ namespace MLAPI
 
         internal RpcQueueContainer RpcQueueContainer { get; private set; }
         internal NetworkTickSystem NetworkTickSystem { get; private set; }
-
-        public delegate void PerformanceDataEventHandler(PerformanceTickData profilerData);
-
-        public static event PerformanceDataEventHandler OnPerformanceDataEvent;
 
         /// <summary>
         /// A synchronized time, represents the time in seconds since the server application started. Is replicated across all clients
@@ -386,6 +382,8 @@ namespace MLAPI
             NetworkConfig.NetworkTransport.ResetChannelCache();
 
             NetworkConfig.NetworkTransport.Init();
+
+            ProfilerNotifier.Initialize(this);
         }
 
         /// <summary>
@@ -1483,34 +1481,17 @@ namespace MLAPI
 
         private void ProfilerBeginTick()
         {
-            PerformanceDataManager.BeginNewTick();
-            if (NetworkConfig.NetworkTransport is ITransportProfilerData profileTransport)
-            {
-                profileTransport.BeginNewTick();
-            }
+            ProfilerNotifier.ProfilerBeginTick();
         }
 
         private void NotifyProfilerListeners()
         {
-            var data = PerformanceDataManager.GetData();
-            var eventHandler = OnPerformanceDataEvent;
-            if (eventHandler != null)
-            {
-                if (data != null)
-                {
-                    if (NetworkConfig.NetworkTransport is ITransportProfilerData profileTransport)
-                    {
-                        var transportProfilerData = profileTransport.GetTransportProfilerData();
-                        PerformanceDataManager.AddTransportData(transportProfilerData);
-                    }
+            ProfilerNotifier.NotifyProfilerListeners();
+        }
 
-                    eventHandler.Invoke(data);
-                }
-                else
-                {
-                    NetworkLog.LogWarning($"No data available. Did you forget to call {nameof(PerformanceDataManager)}.{nameof(PerformanceDataManager.BeginNewTick)}() first?");
-                }
-            }
+        public ITransportProfilerData Transport
+        {
+            get { return NetworkConfig.NetworkTransport as ITransportProfilerData; }
         }
     }
 }
