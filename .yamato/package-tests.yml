@@ -1,14 +1,14 @@
 {% metadata_file .yamato/project.metafile %}
 ---
+
 # Go through all platforms, editors and packages in the metadata
 # to generate its independent package tests and validation tests.
 # The idea is to only run validation once per package and not mix.
 # the results with package tests
-{% for project in projects.first -%}
 {% for editor in test_editors -%}
 {% for platform in test_platforms -%}
-test_{{  project.packages.first.name }}_{{ platform.name }}_{{ editor }}:
-  name : test_{{  project.packages.first.name }}_{{ platform.name }}_{{ editor }}
+test_{{  projects.first.packages.first.name }}_{{ platform.name }}_{{ editor }}:
+  name : test_{{ projects.first.packages.first.name }}_{{ platform.name }}_{{ editor }}
   agent:
     type: {{ platform.type }}
     image: {{ platform.image }}
@@ -23,6 +23,5 @@ test_{{  project.packages.first.name }}_{{ platform.name }}_{{ editor }}:
   dependencies:
     - .yamato/project-pack.yml#pack_{{ projects.first.name }}
 
-{% endfor -%}
 {% endfor -%}
 {% endfor -%}
