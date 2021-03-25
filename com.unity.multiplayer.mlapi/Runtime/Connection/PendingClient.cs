@@ -1,4 +1,4 @@
-﻿namespace MLAPI.Connection
+namespace MLAPI.Connection
 {
     /// <summary>
     /// A class representing a client that is currently in the process of connecting

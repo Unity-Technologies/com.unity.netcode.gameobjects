@@ -107,7 +107,10 @@ namespace MLAPI
         public void __endSendServerRpc(NetworkSerializer serializer, ServerRpcParams serverRpcParams, RpcDelivery rpcDelivery)
 #endif
         {
-            if (serializer == null) return;
+            if (serializer == null)
+            {
+                return;
+            }
 
             var rpcQueueContainer = NetworkManager.Singleton.RpcQueueContainer;
             if (IsHost)
@@ -205,7 +208,10 @@ namespace MLAPI
         public void __endSendClientRpc(NetworkSerializer serializer, ClientRpcParams clientRpcParams, RpcDelivery rpcDelivery)
 #endif
         {
-            if (serializer == null) return;
+            if (serializer == null)
+            {
+                return;
+            }
 
             var rpcQueueContainer = NetworkManager.Singleton.RpcQueueContainer;
 
@@ -410,7 +416,11 @@ namespace MLAPI
 
         internal void InitializeVariables()
         {
-            if (m_VarInit) return;
+            if (m_VarInit)
+            {
+                return;
+            }
+
             m_VarInit = true;
 
             FieldInfo[] sortedFields = GetFieldInfoForType(GetType());
@@ -421,7 +431,7 @@ namespace MLAPI
 
                 if (fieldType.HasInterface(typeof(INetworkVariable)))
                 {
-                    INetworkVariable instance = (INetworkVariable)sortedFields[i].GetValue(this);
+                    var instance = (INetworkVariable)sortedFields[i].GetValue(this);
 
                     if (instance == null)
                     {
@@ -555,7 +565,10 @@ namespace MLAPI
 
         internal void VariableUpdate(ulong clientId)
         {
-            if (!m_VarInit) InitializeVariables();
+            if (!m_VarInit)
+            {
+                InitializeVariables();
+            }
 
             PreNetworkVariableWrite();
             NetworkVariableUpdate(clientId);
@@ -566,7 +579,10 @@ namespace MLAPI
 
         private void NetworkVariableUpdate(ulong clientId)
         {
-            if (!CouldHaveDirtyNetworkVariables()) return;
+            if (!CouldHaveDirtyNetworkVariables())
+            {
+                return;
+            }
 
             for (int j = 0; j < m_ChannelMappedNetworkVariableIndexes.Count; j++)
             {
@@ -663,7 +679,10 @@ namespace MLAPI
             // TODO: There should be a better way by reading one dirty variable vs. 'n'
             for (int i = 0; i < NetworkVariableFields.Count; i++)
             {
-                if (NetworkVariableFields[i].IsDirty()) return true;
+                if (NetworkVariableFields[i].IsDirty())
+                {
+                    return true;
+                }
             }
 
             return false;
@@ -684,11 +703,17 @@ namespace MLAPI
                     {
                         varSize = reader.ReadUInt16Packed();
 
-                        if (varSize == 0) continue;
+                        if (varSize == 0)
+                        {
+                            continue;
+                        }
                     }
                     else
                     {
-                        if (!reader.ReadBool()) continue;
+                        if (!reader.ReadBool())
+                        {
+                            continue;
+                        }
                     }
 
                     if (IsServer && !networkVariableList[i].CanClientWrite(clientId))
@@ -772,11 +797,17 @@ namespace MLAPI
                     {
                         varSize = reader.ReadUInt16Packed();
 
-                        if (varSize == 0) continue;
+                        if (varSize == 0)
+                        {
+                            continue;
+                        }
                     }
                     else
                     {
-                        if (!reader.ReadBool()) continue;
+                        if (!reader.ReadBool())
+                        {
+                            continue;
+                        }
                     }
 
                     if (IsServer && !networkVariableList[i].CanClientWrite(clientId))
@@ -847,7 +878,10 @@ namespace MLAPI
 
         internal static void WriteNetworkVariableData(List<INetworkVariable> networkVariableList, Stream stream, ulong clientId)
         {
-            if (networkVariableList.Count == 0) return;
+            if (networkVariableList.Count == 0)
+            {
+                return;
+            }
 
             using (var writer = PooledNetworkWriter.Get(stream))
             {
@@ -891,7 +925,10 @@ namespace MLAPI
 
         internal static void SetNetworkVariableData(List<INetworkVariable> networkVariableList, Stream stream)
         {
-            if (networkVariableList.Count == 0) return;
+            if (networkVariableList.Count == 0)
+            {
+                return;
+            }
 
             using (var reader = PooledNetworkReader.Get(stream))
             {
@@ -903,11 +940,17 @@ namespace MLAPI
                     {
                         varSize = reader.ReadUInt16Packed();
 
-                        if (varSize == 0) continue;
+                        if (varSize == 0)
+                        {
+                            continue;
+                        }
                     }
                     else
                     {
-                        if (!reader.ReadBool()) continue;
+                        if (!reader.ReadBool())
+                        {
+                            continue;
+                        }
                     }
 
                     long readStartPos = stream.Position;

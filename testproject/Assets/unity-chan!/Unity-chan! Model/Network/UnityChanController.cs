@@ -1,4 +1,4 @@
-﻿using MLAPI;
+using MLAPI;
 using UnityEngine;
 
 [RequireComponent(typeof(Animator))]

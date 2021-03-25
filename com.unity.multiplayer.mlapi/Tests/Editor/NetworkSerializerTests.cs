@@ -502,9 +502,9 @@ namespace MLAPI.EditorTests
             using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
-                Color32 outValueA = new Color32(0, 0, 0, byte.MaxValue);
-                Color32 outValueB = new Color32(byte.MaxValue, byte.MaxValue, byte.MaxValue, byte.MaxValue);
-                Color32 outValueC = new Color32(Byte.MaxValue, 0, 0, byte.MaxValue);
+                var outValueA = new Color32(0, 0, 0, byte.MaxValue);
+                var outValueB = new Color32(byte.MaxValue, byte.MaxValue, byte.MaxValue, byte.MaxValue);
+                var outValueC = new Color32(byte.MaxValue, 0, 0, byte.MaxValue);
                 var outSerializer = new NetworkSerializer(outWriter);
                 outSerializer.Serialize(ref outValueA);
                 outSerializer.Serialize(ref outValueB);
@@ -643,8 +643,8 @@ namespace MLAPI.EditorTests
             {
                 // serialize
                 Quaternion outValueA = Quaternion.identity;
-                Quaternion outValueB = Quaternion.Euler(new Vector3(30, 45, -60));
-                Quaternion outValueC = Quaternion.Euler(new Vector3(90, -90, 180));
+                var outValueB = Quaternion.Euler(new Vector3(30, 45, -60));
+                var outValueC = Quaternion.Euler(new Vector3(90, -90, 180));
                 var outSerializer = new NetworkSerializer(outWriter);
                 outSerializer.Serialize(ref outValueA);
                 outSerializer.Serialize(ref outValueB);
@@ -677,9 +677,9 @@ namespace MLAPI.EditorTests
             using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
-                Ray outValueA = new Ray(Vector3.zero, Vector3.forward);
-                Ray outValueB = new Ray(Vector3.zero, Vector3.left);
-                Ray outValueC = new Ray(Vector3.zero, Vector3.up);
+                var outValueA = new Ray(Vector3.zero, Vector3.forward);
+                var outValueB = new Ray(Vector3.zero, Vector3.left);
+                var outValueC = new Ray(Vector3.zero, Vector3.up);
                 var outSerializer = new NetworkSerializer(outWriter);
                 outSerializer.Serialize(ref outValueA);
                 outSerializer.Serialize(ref outValueB);
@@ -712,9 +712,9 @@ namespace MLAPI.EditorTests
             using (var inReader = PooledNetworkReader.Get(inStream))
             {
                 // serialize
-                Ray2D outValueA = new Ray2D(Vector2.zero, Vector2.up);
-                Ray2D outValueB = new Ray2D(Vector2.zero, Vector2.left);
-                Ray2D outValueC = new Ray2D(Vector2.zero, Vector2.right);
+                var outValueA = new Ray2D(Vector2.zero, Vector2.up);
+                var outValueB = new Ray2D(Vector2.zero, Vector2.left);
+                var outValueC = new Ray2D(Vector2.zero, Vector2.right);
                 var outSerializer = new NetworkSerializer(outWriter);
                 outSerializer.Serialize(ref outValueA);
                 outSerializer.Serialize(ref outValueB);
@@ -781,7 +781,7 @@ namespace MLAPI.EditorTests
                 EnumB outValueB = EnumB.X;
                 EnumC outValueC = EnumC.N;
                 EnumD outValueD = EnumD.T;
-                EnumD outValueX = (EnumD)123;
+                var outValueX = (EnumD)123;
                 var outSerializer = new NetworkSerializer(outWriter);
                 outSerializer.Serialize(ref outValueA);
                 outSerializer.Serialize(ref outValueB);
@@ -1244,7 +1244,7 @@ namespace MLAPI.EditorTests
                 // serialize
                 string[] outArrayA = null;
                 string[] outArrayB = new string[0];
-                string[] outArrayC = { Guid.NewGuid().ToString("N"), String.Empty, null };
+                string[] outArrayC = { Guid.NewGuid().ToString("N"), string.Empty, null };
                 var outSerializer = new NetworkSerializer(outWriter);
                 outSerializer.Serialize(ref outArrayA);
                 outSerializer.Serialize(ref outArrayB);
@@ -1278,7 +1278,7 @@ namespace MLAPI.EditorTests
             {
                 // serialize
                 Color[] outArrayA = null;
-                Color[] outArrayB = new Color[0];
+                var outArrayB = new Color[0];
                 Color[] outArrayC = { Color.black, Color.red, Color.white };
                 var outSerializer = new NetworkSerializer(outWriter);
                 outSerializer.Serialize(ref outArrayA);
@@ -1313,12 +1313,12 @@ namespace MLAPI.EditorTests
             {
                 // serialize
                 Color32[] outArrayA = null;
-                Color32[] outArrayB = new Color32[0];
+                var outArrayB = new Color32[0];
                 Color32[] outArrayC =
                 {
                     new Color32(0, 0, 0, byte.MaxValue),
                     new Color32(byte.MaxValue, byte.MaxValue, byte.MaxValue, byte.MaxValue),
-                    new Color32(Byte.MaxValue, 0, 0, byte.MaxValue)
+                    new Color32(byte.MaxValue, 0, 0, byte.MaxValue)
                 };
                 var outSerializer = new NetworkSerializer(outWriter);
                 outSerializer.Serialize(ref outArrayA);
@@ -1353,7 +1353,7 @@ namespace MLAPI.EditorTests
             {
                 // serialize
                 Vector2[] outArrayA = null;
-                Vector2[] outArrayB = new Vector2[0];
+                var outArrayB = new Vector2[0];
                 Vector2[] outArrayC = { Vector2.up, Vector2.negativeInfinity, Vector2.positiveInfinity };
                 var outSerializer = new NetworkSerializer(outWriter);
                 outSerializer.Serialize(ref outArrayA);
@@ -1388,7 +1388,7 @@ namespace MLAPI.EditorTests
             {
                 // serialize
                 Vector3[] outArrayA = null;
-                Vector3[] outArrayB = new Vector3[0];
+                var outArrayB = new Vector3[0];
                 Vector3[] outArrayC = { Vector3.forward, Vector3.negativeInfinity, Vector3.positiveInfinity };
                 var outSerializer = new NetworkSerializer(outWriter);
                 outSerializer.Serialize(ref outArrayA);
@@ -1423,7 +1423,7 @@ namespace MLAPI.EditorTests
             {
                 // serialize
                 Vector4[] outArrayA = null;
-                Vector4[] outArrayB = new Vector4[0];
+                var outArrayB = new Vector4[0];
                 Vector4[] outArrayC = { Vector4.one, Vector4.negativeInfinity, Vector4.positiveInfinity };
                 var outSerializer = new NetworkSerializer(outWriter);
                 outSerializer.Serialize(ref outArrayA);
@@ -1458,7 +1458,7 @@ namespace MLAPI.EditorTests
             {
                 // serialize
                 Quaternion[] outArrayA = null;
-                Quaternion[] outArrayB = new Quaternion[0];
+                var outArrayB = new Quaternion[0];
                 Quaternion[] outArrayC = { Quaternion.identity, Quaternion.Euler(new Vector3(30, 45, -60)), Quaternion.Euler(new Vector3(90, -90, 180)) };
                 var outSerializer = new NetworkSerializer(outWriter);
                 outSerializer.Serialize(ref outArrayA);
@@ -1496,7 +1496,7 @@ namespace MLAPI.EditorTests
             {
                 // serialize
                 Ray[] outArrayA = null;
-                Ray[] outArrayB = new Ray[0];
+                var outArrayB = new Ray[0];
                 Ray[] outArrayC =
                 {
                     new Ray(Vector3.zero, Vector3.forward),
@@ -1536,7 +1536,7 @@ namespace MLAPI.EditorTests
             {
                 // serialize
                 Ray2D[] outArrayA = null;
-                Ray2D[] outArrayB = new Ray2D[0];
+                var outArrayB = new Ray2D[0];
                 Ray2D[] outArrayC =
                 {
                     new Ray2D(Vector2.zero, Vector2.up),
@@ -1576,7 +1576,7 @@ namespace MLAPI.EditorTests
             {
                 // serialize
                 EnumA[] outArrayA = null;
-                EnumB[] outArrayB = new EnumB[0];
+                var outArrayB = new EnumB[0];
                 EnumC[] outArrayC = { EnumC.U, EnumC.N, EnumC.I, EnumC.T, EnumC.Y, (EnumC)128 };
                 var outSerializer = new NetworkSerializer(outWriter);
                 outSerializer.Serialize(ref outArrayA);

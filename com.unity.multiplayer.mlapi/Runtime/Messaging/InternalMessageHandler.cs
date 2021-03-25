@@ -83,7 +83,7 @@ namespace MLAPI.Messaging
                 NetworkManager.Singleton.LocalClientId = reader.ReadUInt64Packed();
 
                 uint sceneIndex = 0;
-                Guid sceneSwitchProgressGuid = new Guid();
+                var sceneSwitchProgressGuid = new Guid();
 
                 if (NetworkManager.Singleton.NetworkConfig.EnableSceneManagement)
                 {
@@ -311,7 +311,7 @@ namespace MLAPI.Messaging
             using (var reader = PooledNetworkReader.Get(stream))
             {
                 uint sceneIndex = reader.ReadUInt32Packed();
-                Guid switchSceneGuid = new Guid(reader.ReadByteArray());
+                var switchSceneGuid = new Guid(reader.ReadByteArray());
 
                 var objectBuffer = new NetworkBuffer();
                 objectBuffer.CopyUnreadFrom(stream);
@@ -618,7 +618,7 @@ namespace MLAPI.Messaging
 #endif
             using (var reader = PooledNetworkReader.Get(stream))
             {
-                NetworkLog.LogType logType = (NetworkLog.LogType)reader.ReadByte();
+                var logType = (NetworkLog.LogType)reader.ReadByte();
                 string message = reader.ReadStringPacked();
 
                 switch (logType)

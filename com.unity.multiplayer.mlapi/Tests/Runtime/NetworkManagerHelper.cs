@@ -24,9 +24,9 @@ namespace MLAPI.RuntimeTests
         public static Transports.Tasks.SocketTasks s_StartHostSocketTasks { get; internal set; }
         public static GameObject s_NetworkManagerObject { get; internal set; }
 
-        internal static Dictionary<Guid,GameObject> s_InstantiatedGameObjects = new Dictionary<Guid, GameObject>();
+        internal static Dictionary<Guid, GameObject> s_InstantiatedGameObjects = new Dictionary<Guid, GameObject>();
 
-        internal static Dictionary<Guid,NetworkObject> s_InstantiatedNetworkObjects = new Dictionary<Guid, NetworkObject>();
+        internal static Dictionary<Guid, NetworkObject> s_InstantiatedNetworkObjects = new Dictionary<Guid, NetworkObject>();
 
         internal static NetworkManagerOperatingMode s_CurrentNetworkManagerMode;
 
@@ -103,7 +103,7 @@ namespace MLAPI.RuntimeTests
         /// <returns></returns>
         public static Guid AddGameNetworkObject(string nameOfGameObject)
         {
-            Guid gameObjectId = Guid.NewGuid();
+            var gameObjectId = Guid.NewGuid();
 
             //Create the player object that we will spawn as a host
             var gameObject = new GameObject(nameOfGameObject);
