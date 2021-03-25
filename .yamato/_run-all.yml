@@ -24,7 +24,7 @@ all_package_tests:
 {% for editor in test_editors -%}
 {% for platform in test_platforms -%}
 {% for project in projects -%}
-    - .yamato/package-tests.yml#test_{{ projects.first.packages.first.name }}_{{ editor }}_{{ platform.name }}
+    - .yamato/package-tests.yml#test_{{ projects.first.packages.first.name }}_{{ platform.name }}_{{ editor }}
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}
