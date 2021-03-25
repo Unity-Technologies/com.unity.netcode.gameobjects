@@ -29,11 +29,15 @@ namespace MLAPI.NetworkVariable
         /// <summary>
         /// Delegate type for value changed event
         /// </summary>
-        /// <param name="previousValue">The value before the change</param>
+        /// <param name="oldValue">The value before the change</param>
         /// <param name="newValue">The new value</param>
-        public delegate void OnValueChangedDelegate(T previousValue, T newValue);
+        public delegate void OnValueChangedDelegate(T oldValue, T newValue);
         /// <summary>
-        /// The callback to be invoked when the value gets changed
+        /// The callback to be invoked before the value gets changed
+        /// </summary>
+        public OnValueChangedDelegate OnBeforeValueChange;
+        /// <summary>
+        /// The callback to be invoked after the value gets changed
         /// </summary>
         public OnValueChangedDelegate OnValueChanged;
 
@@ -91,9 +95,10 @@ namespace MLAPI.NetworkVariable
                 RemoteTick = NetworkTickSystem.NoTick;
 
                 m_IsDirty = true;
-                T previousValue = m_InternalValue;
+                T oldValue = m_InternalValue;
+                OnBeforeValueChange?.Invoke(oldValue, value);
                 m_InternalValue = value;
-                OnValueChanged?.Invoke(previousValue, m_InternalValue);
+                OnValueChanged?.Invoke(oldValue, m_InternalValue);
             }
         }
 
@@ -183,12 +188,14 @@ namespace MLAPI.NetworkVariable
 
             using (var reader = PooledNetworkReader.Get(stream))
             {
-                T previousValue = m_InternalValue;
-                m_InternalValue = (T)reader.ReadObjectPacked(typeof(T));
+                T oldValue = m_InternalValue;
+                T newValue = (T)reader.ReadObjectPacked(typeof(T));
+                OnBeforeValueChange?.Invoke(oldValue, newValue);
+                m_InternalValue = newValue;
 
                 if (keepDirtyDelta) m_IsDirty = true;
 
-                OnValueChanged?.Invoke(previousValue, m_InternalValue);
+                OnValueChanged?.Invoke(oldValue, newValue);
             }
         }
 
