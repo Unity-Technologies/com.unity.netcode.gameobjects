@@ -15,7 +15,7 @@ test_{{  projects.first.packages.first.name }}_{{ platform.name }}_{{ editor }}:
     flavor: {{ platform.flavor}}
   commands:
     - npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
-    - {% if platform.name == "centos" %}DISPLAY=:0 {% endif %}upm-ci project test -u {{ editor }} --type package-tests --project-path projects.first.path --package-filter {{ projects.first.packages.first.name }}
+    - {% if platform.name == "centos" %}DISPLAY=:0 {% endif %}upm-ci project test -u {{ editor }} --type package-tests --project-path {{ projects.first.path }} --package-filter {{ projects.first.packages.first.name }}
   artifacts:
     logs:
       paths:
