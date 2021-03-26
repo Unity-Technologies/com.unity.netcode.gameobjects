@@ -1,0 +1,51 @@
+{% metadata_file .yamato/project.metafile %}
+---
+
+# Run all relevant tasks when a pull request targeting the develop
+# branch is created or updated. Currently only mlapi package tests are
+# enabled, since the others are missing test coverage and will fail CI.
+pull_request_trigger:
+  name: Pull Request Trigger (master, develop, & release branches)
+  dependencies:
+    - .yamato/project-test.yml#validate_com.unity.multiplayer.mlapi_{{ test_platforms.first.name }}_{{ test_editors.first }}
+{% for platform in test_platforms -%}
+    - .yamato/project-test.yml#test_{{ projects.first.packages.first.name }}_{{ platform.name }}_{{ test_editors.first }}
+{% endfor -%}
+  triggers:
+    cancel_old_ci: true
+    pull_requests:
+    - targets:
+        only:
+          - "master"
+          - "develop"
+          - "/release\/.*/"
+          
+# Currently, we need to have a trigger to updated badges
+# Only package badges currently exist
+badges_test_trigger:
+  name: Badges Tests Trigger
+  agent:
+    type: Unity::VM
+    image: package-ci/ubuntu:stable
+    flavor: b1.small
+  commands:
+    - npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
+    - upm-ci package izon -t
+  artifacts:
+    logs:
+      paths:
+        - "upm-ci~/test-results/**/*"
+    packages:
+      paths:
+        - "upm-ci~/packages/**/*"
+  dependencies:
+{% for project in projects -%}
+{% for package in projects.first.packages -%}
+    - .yamato/project-test.yml#validate_{{ projects.first.packages.first.name }}_{{ test_platforms.first.name }}_{{ test_editors.first }}
+{% for editor in test_editors -%}
+{% for platform in test_platforms -%}
+    - .yamato/project-test.yml#test_{{ projects.first.packages.first.name }}_{{ package.name }}_{{ platform.name }}_{{ editor }}
+{% endfor -%}
+{% endfor -%}
+{% endfor -%}
+{% endfor -%}
