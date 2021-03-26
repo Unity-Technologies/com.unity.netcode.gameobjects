@@ -4,7 +4,7 @@ run_all_tests:
   name: Run All Package and Project Tests
   dependencies:
     # Pull in package and validate jobs through the badges job
-    #- .yamato/project-tests.yml#badges_test_trigger
+    - .yamato/project-tests.yml#badges_test_trigger
 {% for editor in test_editors -%}
 {% for platform in test_platforms -%}
 {% for project in projects -%}
@@ -18,7 +18,7 @@ all_project_tests:
   name: Run All Project Tests
   dependencies:
     # Pull in package and validate jobs through the badges job
-    #- .yamato/project-test.yml#badges_test_trigger
+    - .yamato/project-tests.yml#badges_test_trigger
 {% for editor in test_editors -%}
 {% for platform in test_platforms -%}
 {% for project in projects -%}
@@ -31,7 +31,7 @@ all_package_tests:
   name: Run All Package Tests
   dependencies:
     # Pull in package and validate jobs through the badges job
-    #- .yamato/project-test.yml#badges_test_trigger
+    #- .yamato/project-tests.yml#badges_test_trigger
 {% for editor in test_editors -%}
 {% for platform in test_platforms -%}
 {% for project in projects -%}
