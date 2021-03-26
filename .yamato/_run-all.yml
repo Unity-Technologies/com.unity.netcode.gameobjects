@@ -19,13 +19,29 @@ all_project_tests:
   dependencies:
     # Pull in package and validate jobs through the badges job
     #- .yamato/project-test.yml#badges_test_trigger
-{% for editor in test_editors -%}
-{% for platform in test_platforms -%}
-{% for project in projects -%}
-    - .yamato/project-test.yml#test_{{ projects.first.name }}_{{ editor }}_{{ platform.name }}
-{% endfor -%}
-{% endfor -%}
-{% endfor -%}
+    
+    - .yamato/project-test.yml#test_testproject_2021.1_win
+    - .yamato/project-test.yml#test_testproject_2021.1_mac
+    - .yamato/project-test.yml#test_testproject_2021.1_ubuntu
+    - .yamato/project-test.yml#test_testproject_2021.2_win
+    - .yamato/project-test.yml#test_testproject_2021.2_mac
+    - .yamato/project-test.yml#test_testproject_2021.2_ubuntu
+    - .yamato/project-test.yml#test_testproject_2020.3_win
+    - .yamato/project-test.yml#test_testproject_2020.3_mac
+    - .yamato/project-test.yml#test_testproject_2020.3_ubuntu
+    - .yamato/project-test.yml#test_testproject_2019.4_win
+    - .yamato/project-test.yml#test_testproject_2019.4_mac
+    - .yamato/project-test.yml#test_testproject_2019.4_ubuntu
+    - .yamato/project-test.yml#test_testproject_trunk_win
+    - .yamato/project-test.yml#test_testproject_trunk_mac
+    - .yamato/project-test.yml#test_testproject_trunk_ubuntu
+#{% for editor in test_editors -%}
+#{% for platform in test_platforms -%}
+#{% for project in projects -%}
+#    - .yamato/project-test.yml#test_{{ projects.first.name }}_{{ editor }}_{{ platform.name }}
+#{% endfor -%}
+#{% endfor -%}
+#{% endfor -%}
 
 all_package_tests:
   name: Run All Package Tests
