@@ -56,6 +56,7 @@ dotnet_naming_rule.interface_naming_rule.style = interface_naming_style
 dotnet_naming_rule.interface_naming_rule.severity = error
 
 # class NetworkVariable<T>
+# class NetworkDictionary<TKey, TValue>
 dotnet_naming_symbols.typeparam_naming_symbols.applicable_kinds = type_parameter
 dotnet_naming_symbols.typeparam_naming_symbols.applicable_accessibilities = public, internal
 dotnet_naming_style.typeparam_naming_style.required_prefix = T
