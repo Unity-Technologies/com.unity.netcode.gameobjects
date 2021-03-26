@@ -1,7 +1,4 @@
-using System;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using Unity.Collections.LowLevel.Unsafe;
 #if UNITY_2020_2_OR_NEWER
 using Unity.Profiling;
 using Unity.Profiling.LowLevel;

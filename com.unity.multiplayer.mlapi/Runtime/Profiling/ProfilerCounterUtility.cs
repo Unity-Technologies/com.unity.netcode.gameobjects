@@ -1,5 +1,3 @@
-using System;
-
 #if UNITY_2020_2_OR_NEWER
 using Unity.Profiling.LowLevel;
 #endif

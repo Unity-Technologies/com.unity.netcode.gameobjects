@@ -85,7 +85,9 @@ namespace MLAPI.Transports
         /// <summary>
         /// The channels the MLAPI will use when sending internal messages.
         /// </summary>
+#pragma warning disable IDE1006
         private readonly TransportChannel[] MLAPI_INTERNAL_CHANNELS =
+#pragma warning restore IDE1006
         {
             new TransportChannel(NetworkChannel.Internal, NetworkDelivery.ReliableFragmentedSequenced),
             new TransportChannel(NetworkChannel.ReliableRpc, NetworkDelivery.ReliableSequenced),

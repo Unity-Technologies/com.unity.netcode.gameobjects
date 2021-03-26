@@ -432,7 +432,7 @@ namespace MLAPI.RuntimeTests
                 Assert.AreEqual(kRunTotalFrames, netUpdates[kNetPreUpdateIndex]);
                 Assert.AreEqual(netUpdates[kNetPreUpdateIndex], monoUpdates[kMonoUpdateIndex]);
 
-                GameObject.DestroyImmediate(gameObject);
+                UnityEngine.Object.DestroyImmediate(gameObject);
             }
         }
     }

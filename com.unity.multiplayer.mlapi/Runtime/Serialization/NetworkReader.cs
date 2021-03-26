@@ -1049,32 +1049,35 @@ namespace MLAPI.Serialization
             if (m_NetworkSource != null)
             {
                 //If no offset was passed, used the current position
-                int Offset = offset == -1 ? (int)m_NetworkSource.Position : offset;
-                int CopySize = sizeToCopy == -1 && offset == -1 ? (int)m_NetworkSource.Length : sizeToCopy;
-                if (CopySize > 0)
+                bool noOffset = offset == -1;
+                bool noSizeToCopy = sizeToCopy == -1;
+
+                offset = noOffset ? (int)m_NetworkSource.Position : offset;
+                sizeToCopy = noSizeToCopy && noOffset ? (int)m_NetworkSource.Length : sizeToCopy;
+                if (sizeToCopy > 0)
                 {
                     //Check to make sure we won't be copying beyond our bounds
-                    if ((m_NetworkSource.Length - Offset) >= CopySize)
+                    if ((m_NetworkSource.Length - offset) >= sizeToCopy)
                     {
-                        return new ArraySegment<byte>(m_NetworkSource.GetBuffer(), Offset, CopySize);
+                        return new ArraySegment<byte>(m_NetworkSource.GetBuffer(), offset, sizeToCopy);
                     }
 
                     //If we didn't pass anything in or passed the length of the buffer
-                    if (CopySize == m_NetworkSource.Length)
+                    if (sizeToCopy == m_NetworkSource.Length)
                     {
-                        Offset = 0;
+                        offset = 0;
                     }
                     else
                     {
-                        Debug.LogError($"{nameof(CopySize)} ({CopySize}) exceeds bounds with an {nameof(Offset)} of ({Offset})! <returning empty array segment>");
+                        Debug.LogError($"{nameof(sizeToCopy)} ({sizeToCopy}) exceeds bounds with an {nameof(offset)} of ({offset})! <returning empty array segment>");
                         return new ArraySegment<byte>();
                     }
 
                     //Return the request array segment
-                    return new ArraySegment<byte>(m_NetworkSource.GetBuffer(), Offset, CopySize);
+                    return new ArraySegment<byte>(m_NetworkSource.GetBuffer(), offset, sizeToCopy);
                 }
 
-                Debug.LogError($"{nameof(CopySize)} ({CopySize}) is zero or less! <returning empty array segment>");
+                Debug.LogError($"{nameof(sizeToCopy)} ({sizeToCopy}) is zero or less! <returning empty array segment>");
             }
             else
             {

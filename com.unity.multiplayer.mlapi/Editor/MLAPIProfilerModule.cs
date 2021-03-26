@@ -1,9 +1,4 @@
-using System;
-using System.Collections.Generic;
-using MLAPI.Profiling;
-using Unity.Profiling;
 using UnityEditor;
-using UnityEngine;
 
 namespace MLAPI
 {

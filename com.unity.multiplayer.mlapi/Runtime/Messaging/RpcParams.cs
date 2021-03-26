@@ -36,6 +36,7 @@ namespace MLAPI.Messaging
         public ClientRpcReceiveParams Receive;
     }
 
+#pragma warning disable IDE1006
 #if UNITY_2020_2_OR_NEWER
     // RuntimeAccessModifiersILPP will make this `public`
     internal struct __RpcParams
@@ -43,6 +44,7 @@ namespace MLAPI.Messaging
     [Obsolete("Please do not use, will no longer be exposed in the future versions (framework internal)")]
     public struct __RpcParams
 #endif
+#pragma warning restore IDE1006
     {
         public ServerRpcParams Server;
         public ClientRpcParams Client;
