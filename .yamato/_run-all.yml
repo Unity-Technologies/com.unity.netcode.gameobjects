@@ -1,17 +1,28 @@
 {% metadata_file .yamato/project.metafile %}
 ---
 run_all_tests:
-  name: Run All Tests
+  name: Run All Package and Project Tests
   dependencies:
     # Pull in package and validate jobs through the badges job
     - .yamato/project-test.yml#badges_test_trigger
-{% for package in projects.first.packages -%}
 {% for editor in test_editors -%}
 {% for platform in test_platforms -%}
-{% for project in projects -%}
-    - .yamato/package-tests.yml#test_{{ package.name }}_{{ platform.name }}_{{ editor }}
+{% for project in projects -%
+    - .yamato/package-tests.yml#test_{{ projects.first.packages.first.name }}_{{ editor }}_{{ platform.name }}
     - .yamato/project-test.yml#test_{{ project.name }}_{{ editor }}_{{ platform.name }}
 {% endfor -%}
+{% endfor -%}
+{% endfor -%}
+
+all_project_tests:
+  name: Run All Project Tests
+  dependencies:
+    # Pull in package and validate jobs through the badges job
+    #- .yamato/project-test.yml#badges_test_trigger
+{% for editor in test_editors -%}
+{% for platform in test_platforms -%}
+{% for project in projects -%
+    - .yamato/project-test.yml#test_{{ project.name }}_{{ editor }}_{{ platform.name }}
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}
@@ -23,8 +34,8 @@ all_package_tests:
     #- .yamato/project-test.yml#badges_test_trigger
 {% for editor in test_editors -%}
 {% for platform in test_platforms -%}
-{% for project in projects -%}
-    - .yamato/package-tests.yml#test_{{ projects.first.packages.first.name }}_{{ platform.name }}_{{ editor }}
+{% for project in projects -%
+    - .yamato/package-tests.yml#test_{{ projects.first.packages.first.name }}_{{ editor }}_{{ platform.name }}
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}
