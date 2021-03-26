@@ -7,7 +7,7 @@
 
 {% for package in projects.first.packages -%}
 validate_{{ package.name }}_{{ test_platforms.first.name }}_{{ test_editors.first }}:
-  name : Validate Package {{ projects.first.packages.first.name }} - {{ test_editors.first }} on {{ test_platforms.first.name }}
+  name : Validate Package {{ package.name }} - {{ test_editors.first }} on {{ test_platforms.first.name }}
   agent:
     type: {{ test_platforms.first.type }}
     image: {{ test_platforms.first.image }}
