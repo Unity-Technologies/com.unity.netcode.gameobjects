@@ -5,7 +5,7 @@
 # platform and editor meta data
 # Validation only occurs in editmode.
 
-{% for project in projects.first -%}
+{% for project in projects -%}
 {% for package in project.packages -%}
 validate_{{ package.name }}_{{ test_platforms.first.name }}_{{ test_editors.first }}:
   name : Validate Package {{ package.name }} - {{ test_editors.first }} on {{ test_platforms.first.name }}
