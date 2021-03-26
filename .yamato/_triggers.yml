@@ -13,16 +13,17 @@ develop_nightly_trigger:
     - .yamato/code-coverage.yml#code_coverage_win_{{ project.name }}
 {% endfor -%}
     
+{% for package in projects.first.packages -%}
 # Run all relevant tasks when a pull request targeting the develop
 # branch is created or updated. Currently only mlapi package tests are
 # enabled, since the others are missing test coverage and will fail CI.
 pull_request_trigger:
   name: Pull Request Trigger on {{ test_editors.first }} (master, develop, & release branches)
   dependencies:
-    - .yamato/project-tests.yml#validate_com.unity.multiplayer.mlapi_{{ test_platforms.first.name }}_{{ test_editors.first }}
+    - .yamato/project-tests.yml#validate_{{ package.name }}_{{ test_platforms.first.name }}_{{ test_editors.first }}
 {% for platform in test_platforms -%}
 {% for project in projects -%}
-    - .yamato/package-tests.yml#test_{{ projects.first.packages.first.name }}_{{ test_editors.first }}_{{ platform.name }}
+    - .yamato/package-tests.yml#test_{{ package.name }}_{{ test_editors.first }}_{{ platform.name }}
 {% endfor -%}
 {% endfor -%}
   triggers:
@@ -33,6 +34,7 @@ pull_request_trigger:
           - "master"
           - "develop"
           - "/release\/.*/"
+{% endfor -%}
           
 # Currently, we need to have a trigger to updated badges
 # Only package badges currently exist
