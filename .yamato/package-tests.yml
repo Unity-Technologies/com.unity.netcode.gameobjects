@@ -8,7 +8,7 @@
 {% for editor in test_editors -%}
 {% for platform in test_platforms -%}
 test_{{  projects.first.packages.first.name }}_{{ editor }}_{{ platform.name }}:
-  name : test_{{ projects.first.packages.first.name }}_{{ editor }}_{{ platform.name }}
+  name : {{ projects.first.packages.first.name }} package tests - {{ editor }} on {{ platform.name }}
   agent:
     type: {{ platform.type }}
     image: {{ platform.image }}
