@@ -5,7 +5,7 @@
 # branch is created or updated. Currently only mlapi package tests are
 # enabled, since the others are missing test coverage and will fail CI.
 pull_request_trigger:
-  name: Pull Request Trigger (master, develop, & release branches)
+  name: Pull Request Trigger on {{ test_editors.first }} (master, develop, & release branches)
   dependencies:
     - .yamato/project-tests.yml#validate_com.unity.multiplayer.mlapi_{{ test_platforms.first.name }}_{{ test_editors.first }}
 {% for platform in test_platforms -%}
