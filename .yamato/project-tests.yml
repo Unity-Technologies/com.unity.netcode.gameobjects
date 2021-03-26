@@ -5,7 +5,7 @@
 # platform and editor meta data
 # Validation only occurs in editmode.
 
-{% for package in projects.first.packages -%}
+{% for project in projects.first -%}
 validate_{{ package.name }}_{{ test_platforms.first.name }}_{{ test_editors.first }}:
   name : Validate Package {{ package.name }} - {{ test_editors.first }} on {{ test_platforms.first.name }}
   agent:
@@ -14,7 +14,7 @@ validate_{{ package.name }}_{{ test_platforms.first.name }}_{{ test_editors.firs
     flavor: {{ test_platforms.first.flavor}}
   commands:
     - npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
-    - {% if platform.name == "centos" %}DISPLAY=:0 {% endif %}upm-ci project test -u {{ test_editors.first }} --type vetting-tests --package-filter {{ package.name }} --platform editmode
+    - {% if platform.name == "centos" %}DISPLAY=:0 {% endif %}upm-ci project test -u {{ test_editors.first }} --type vetting-tests --project-path {{ project.path }} --package-filter {{ project.packages.first.name }} --platform editmode
   artifacts:
     logs:
       paths:
