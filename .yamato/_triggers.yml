@@ -7,9 +7,11 @@
 pull_request_trigger:
   name: Pull Request Trigger (master, develop, & release branches)
   dependencies:
-    - .yamato/project-test.yml#validate_com.unity.multiplayer.mlapi_{{ test_platforms.first.name }}_{{ test_editors.first }}
+    - .yamato/project-tests.yml#validate_com.unity.multiplayer.mlapi_{{ test_platforms.first.name }}_{{ test_editors.first }}
 {% for platform in test_platforms -%}
-    - .yamato/project-test.yml#test_{{ projects.first.packages.first.name }}_{{ platform.name }}_{{ test_editors.first }}
+{% for project in projects -%}
+    - .yamato/package-tests.yml#test_{{ projects.first.packages.first.name }}_{{ test_editors.first }}_{{ platform.name }}
+{% endfor -%}
 {% endfor -%}
   triggers:
     cancel_old_ci: true
