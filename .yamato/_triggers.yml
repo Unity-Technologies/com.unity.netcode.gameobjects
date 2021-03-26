@@ -55,10 +55,10 @@ badges_test_trigger:
   dependencies:
 {% for project in projects -%}
 {% for package in projects.first.packages -%}
-    - .yamato/project-tests.yml#validate_com.unity.multiplayer.mlapi_{{ test_platforms.first.name }}_{{ test_editors.first }}
+    - .yamato/project-tests.yml#validate_{{ package.name }}_{{ test_platforms.first.name }}_{{ test_editors.first }}
 {% for editor in test_editors -%}
 {% for platform in test_platforms -%}
-    - .yamato/package-tests.yml#test_{{ projects.first.packages.first.name }}_{{ editor }}_{{ platform.name }}
+    - .yamato/package-tests.yml#test_{{ package.name }}_{{ editor }}_{{ platform.name }}
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}
