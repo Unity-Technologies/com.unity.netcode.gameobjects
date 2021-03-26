@@ -20,12 +20,10 @@ develop_nightly_trigger:
 pull_request_trigger:
   name: Pull Request Trigger on {{ test_editors.first }} (master, develop, & release branches)
   dependencies:
-{% for package in projects.first.packages -%}
-    - .yamato/project-tests.yml#validate_{{ package.name }}_{{ test_platforms.first.name }}_{{ test_editors.first }}
+    - .yamato/project-tests.yml#validate_{{ project.packages.first.name }}_{{ test_platforms.first.name }}_{{ test_editors.first }}
 {% for platform in test_platforms -%}
 {% for project in projects -%}
-    - .yamato/package-tests.yml#test_{{ package.name }}_{{ test_editors.first }}_{{ platform.name }}
-{% endfor -%}
+    - .yamato/package-tests.yml#test_{{ project.packages.first.name }}_{{ test_editors.first }}_{{ platform.name }}
 {% endfor -%}
 {% endfor -%}
   triggers:
@@ -57,12 +55,10 @@ badges_test_trigger:
         - "upm-ci~/packages/**/*"
   dependencies:
 {% for project in projects -%}
-{% for package in projects.first.packages -%}
-    - .yamato/project-tests.yml#validate_{{ package.name }}_{{ test_platforms.first.name }}_{{ test_editors.first }}
+    - .yamato/project-tests.yml#validate_{{ project.packages.first.name }}_{{ test_platforms.first.name }}_{{ test_editors.first }}
 {% for editor in test_editors -%}
 {% for platform in test_platforms -%}
-    - .yamato/package-tests.yml#test_{{ package.name }}_{{ editor }}_{{ platform.name }}
-{% endfor -%}
+    - .yamato/package-tests.yml#test_{{ project.packages.first.name }}_{{ editor }}_{{ platform.name }}
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}

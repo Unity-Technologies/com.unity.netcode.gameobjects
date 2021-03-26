@@ -6,7 +6,7 @@
 # Validation only occurs in editmode.
 
 {% for project in projects -%}
-validate_{{ package.name }}_{{ test_platforms.first.name }}_{{ test_editors.first }}:
+validate_{{ project.packages.first.name }}_{{ test_platforms.first.name }}_{{ test_editors.first }}:
   name : Validate Package {{ project.packages.first.name }} - {{ test_editors.first }} on {{ test_platforms.first.name }}
   agent:
     type: {{ test_platforms.first.type }}
