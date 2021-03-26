@@ -1,4 +1,4 @@
-﻿namespace MLAPI.Hashing
+namespace MLAPI.Hashing
 {
     /// <summary>
     /// Provides extension methods for getting hashes

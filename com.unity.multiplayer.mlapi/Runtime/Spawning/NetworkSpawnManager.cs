@@ -159,7 +159,11 @@ namespace MLAPI.Spawning
         /// <returns>The local player object or null if one does not exist</returns>
         public static NetworkObject GetLocalPlayerObject()
         {
-            if (!NetworkManager.Singleton.ConnectedClients.ContainsKey(NetworkManager.Singleton.LocalClientId)) return null;
+            if (!NetworkManager.Singleton.ConnectedClients.ContainsKey(NetworkManager.Singleton.LocalClientId))
+            {
+                return null;
+            }
+
             return NetworkManager.Singleton.ConnectedClients[NetworkManager.Singleton.LocalClientId].PlayerObject;
         }
 
@@ -169,7 +173,11 @@ namespace MLAPI.Spawning
         /// <returns>The player object with a given clientId or null if one does not exist</returns>
         public static NetworkObject GetPlayerNetworkObject(ulong clientId)
         {
-            if (!NetworkManager.Singleton.ConnectedClients.ContainsKey(clientId)) return null;
+            if (!NetworkManager.Singleton.ConnectedClients.ContainsKey(clientId))
+            {
+                return null;
+            }
+
             return NetworkManager.Singleton.ConnectedClients[clientId].PlayerObject;
         }
 
@@ -252,7 +260,10 @@ namespace MLAPI.Spawning
             }
             else if (parentNetworkId != null)
             {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Cannot find parent. Parent objects always have to be spawned and replicated BEFORE the child");
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                {
+                    NetworkLog.LogWarning("Cannot find parent. Parent objects always have to be spawned and replicated BEFORE the child");
+                }
             }
 
             if (!NetworkManager.Singleton.NetworkConfig.EnableSceneManagement || NetworkManager.Singleton.NetworkConfig.UsePrefabSync || !softCreate)
@@ -347,7 +358,10 @@ namespace MLAPI.Spawning
                 networkObject.SetNetworkVariableData(dataStream);
             }
 
-            if (SpawnedObjects.ContainsKey(networkObject.NetworkObjectId)) return;
+            if (SpawnedObjects.ContainsKey(networkObject.NetworkObjectId))
+            {
+                return;
+            }
 
             networkObject.IsSpawned = true;
 
@@ -508,7 +522,10 @@ namespace MLAPI.Spawning
                     networkObject.WriteNetworkVariableData(buffer, clientId);
                 }
 
-                if (payload != null) buffer.CopyFrom(payload);
+                if (payload != null)
+                {
+                    buffer.CopyFrom(payload);
+                }
             }
         }
 
@@ -661,7 +678,10 @@ namespace MLAPI.Spawning
 
         internal static void OnDestroyObject(ulong networkId, bool destroyGameObject)
         {
-            if (NetworkManager.Singleton == null) return;
+            if (NetworkManager.Singleton == null)
+            {
+                return;
+            }
 
             //Removal of spawned object
             if (!SpawnedObjects.ContainsKey(networkId))

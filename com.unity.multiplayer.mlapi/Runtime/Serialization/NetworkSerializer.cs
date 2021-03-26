@@ -27,74 +27,146 @@ namespace MLAPI.Serialization
 
         public void Serialize(ref bool value)
         {
-            if (IsReading) value = m_Reader.ReadBool();
-            else m_Writer.WriteBool(value);
+            if (IsReading)
+            {
+                value = m_Reader.ReadBool();
+            }
+            else
+            {
+                m_Writer.WriteBool(value);
+            }
         }
 
         public void Serialize(ref char value)
         {
-            if (IsReading) value = m_Reader.ReadCharPacked();
-            else m_Writer.WriteCharPacked(value);
+            if (IsReading)
+            {
+                value = m_Reader.ReadCharPacked();
+            }
+            else
+            {
+                m_Writer.WriteCharPacked(value);
+            }
         }
 
         public void Serialize(ref sbyte value)
         {
-            if (IsReading) value = m_Reader.ReadSByte();
-            else m_Writer.WriteSByte(value);
+            if (IsReading)
+            {
+                value = m_Reader.ReadSByte();
+            }
+            else
+            {
+                m_Writer.WriteSByte(value);
+            }
         }
 
         public void Serialize(ref byte value)
         {
-            if (IsReading) value = m_Reader.ReadByteDirect();
-            else m_Writer.WriteByte(value);
+            if (IsReading)
+            {
+                value = m_Reader.ReadByteDirect();
+            }
+            else
+            {
+                m_Writer.WriteByte(value);
+            }
         }
 
         public void Serialize(ref short value)
         {
-            if (IsReading) value = m_Reader.ReadInt16Packed();
-            else m_Writer.WriteInt16Packed(value);
+            if (IsReading)
+            {
+                value = m_Reader.ReadInt16Packed();
+            }
+            else
+            {
+                m_Writer.WriteInt16Packed(value);
+            }
         }
 
         public void Serialize(ref ushort value)
         {
-            if (IsReading) value = m_Reader.ReadUInt16Packed();
-            else m_Writer.WriteUInt16Packed(value);
+            if (IsReading)
+            {
+                value = m_Reader.ReadUInt16Packed();
+            }
+            else
+            {
+                m_Writer.WriteUInt16Packed(value);
+            }
         }
 
         public void Serialize(ref int value)
         {
-            if (IsReading) value = m_Reader.ReadInt32Packed();
-            else m_Writer.WriteInt32Packed(value);
+            if (IsReading)
+            {
+                value = m_Reader.ReadInt32Packed();
+            }
+            else
+            {
+                m_Writer.WriteInt32Packed(value);
+            }
         }
 
         public void Serialize(ref uint value)
         {
-            if (IsReading) value = m_Reader.ReadUInt32Packed();
-            else m_Writer.WriteUInt32Packed(value);
+            if (IsReading)
+            {
+                value = m_Reader.ReadUInt32Packed();
+            }
+            else
+            {
+                m_Writer.WriteUInt32Packed(value);
+            }
         }
 
         public void Serialize(ref long value)
         {
-            if (IsReading) value = m_Reader.ReadInt64Packed();
-            else m_Writer.WriteInt64Packed(value);
+            if (IsReading)
+            {
+                value = m_Reader.ReadInt64Packed();
+            }
+            else
+            {
+                m_Writer.WriteInt64Packed(value);
+            }
         }
 
         public void Serialize(ref ulong value)
         {
-            if (IsReading) value = m_Reader.ReadUInt64Packed();
-            else m_Writer.WriteUInt64Packed(value);
+            if (IsReading)
+            {
+                value = m_Reader.ReadUInt64Packed();
+            }
+            else
+            {
+                m_Writer.WriteUInt64Packed(value);
+            }
         }
 
         public void Serialize(ref float value)
         {
-            if (IsReading) value = m_Reader.ReadSinglePacked();
-            else m_Writer.WriteSinglePacked(value);
+            if (IsReading)
+            {
+                value = m_Reader.ReadSinglePacked();
+            }
+            else
+            {
+                m_Writer.WriteSinglePacked(value);
+            }
         }
 
         public void Serialize(ref double value)
         {
-            if (IsReading) value = m_Reader.ReadDoublePacked();
-            else m_Writer.WriteDoublePacked(value);
+            if (IsReading)
+            {
+                value = m_Reader.ReadDoublePacked();
+            }
+            else
+            {
+                m_Writer.WriteDoublePacked(value);
+            }
         }
 
         public void Serialize(ref string value)
@@ -117,50 +189,98 @@ namespace MLAPI.Serialization
 
         public void Serialize(ref Color value)
         {
-            if (IsReading) value = m_Reader.ReadColorPacked();
-            else m_Writer.WriteColorPacked(value);
+            if (IsReading)
+            {
+                value = m_Reader.ReadColorPacked();
+            }
+            else
+            {
+                m_Writer.WriteColorPacked(value);
+            }
         }
 
         public void Serialize(ref Color32 value)
         {
-            if (IsReading) value = m_Reader.ReadColor32();
-            else m_Writer.WriteColor32(value);
+            if (IsReading)
+            {
+                value = m_Reader.ReadColor32();
+            }
+            else
+            {
+                m_Writer.WriteColor32(value);
+            }
         }
 
         public void Serialize(ref Vector2 value)
         {
-            if (IsReading) value = m_Reader.ReadVector2Packed();
-            else m_Writer.WriteVector2Packed(value);
+            if (IsReading)
+            {
+                value = m_Reader.ReadVector2Packed();
+            }
+            else
+            {
+                m_Writer.WriteVector2Packed(value);
+            }
         }
 
         public void Serialize(ref Vector3 value)
         {
-            if (IsReading) value = m_Reader.ReadVector3Packed();
-            else m_Writer.WriteVector3Packed(value);
+            if (IsReading)
+            {
+                value = m_Reader.ReadVector3Packed();
+            }
+            else
+            {
+                m_Writer.WriteVector3Packed(value);
+            }
         }
 
         public void Serialize(ref Vector4 value)
         {
-            if (IsReading) value = m_Reader.ReadVector4Packed();
-            else m_Writer.WriteVector4Packed(value);
+            if (IsReading)
+            {
+                value = m_Reader.ReadVector4Packed();
+            }
+            else
+            {
+                m_Writer.WriteVector4Packed(value);
+            }
         }
 
         public void Serialize(ref Quaternion value)
         {
-            if (IsReading) value = m_Reader.ReadRotationPacked();
-            else m_Writer.WriteRotationPacked(value);
+            if (IsReading)
+            {
+                value = m_Reader.ReadRotationPacked();
+            }
+            else
+            {
+                m_Writer.WriteRotationPacked(value);
+            }
         }
 
         public void Serialize(ref Ray value)
         {
-            if (IsReading) value = m_Reader.ReadRayPacked();
-            else m_Writer.WriteRayPacked(value);
+            if (IsReading)
+            {
+                value = m_Reader.ReadRayPacked();
+            }
+            else
+            {
+                m_Writer.WriteRayPacked(value);
+            }
         }
 
         public void Serialize(ref Ray2D value)
         {
-            if (IsReading) value = m_Reader.ReadRay2DPacked();
-            else m_Writer.WriteRay2DPacked(value);
+            if (IsReading)
+            {
+                value = m_Reader.ReadRay2DPacked();
+            }
+            else
+            {
+                m_Writer.WriteRay2DPacked(value);
+            }
         }
 
         public unsafe void Serialize<TEnum>(ref TEnum value) where TEnum : unmanaged, Enum

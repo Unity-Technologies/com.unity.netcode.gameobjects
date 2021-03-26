@@ -1,4 +1,4 @@
-﻿using System.Runtime.CompilerServices;
+using System.Runtime.CompilerServices;
 
 #if UNITY_2020_2_OR_NEWER && UNITY_EDITOR
 [assembly: InternalsVisibleTo("Unity.Multiplayer.MLAPI.Editor.CodeGen")]

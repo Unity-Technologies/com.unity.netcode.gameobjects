@@ -22,7 +22,7 @@ using MLAPI.Messaging;
 /// </summary>
 public class ClientCounterBehaviour : NetworkBehaviour
 {
-    private const float  k_ProgressBarDivisor = 1.0f/200.0f;
+    private const float k_ProgressBarDivisor = 1.0f / 200.0f;
 
     [SerializeField]
     private Text m_CounterTextObject;
@@ -33,11 +33,11 @@ public class ClientCounterBehaviour : NetworkBehaviour
     [SerializeField]
     private GameObject m_ConnectionModeButtonParent;
 
-    private Dictionary<ulong,int> m_ClientSpecificCounters = new Dictionary<ulong, int>();
+    private Dictionary<ulong, int> m_ClientSpecificCounters = new Dictionary<ulong, int>();
     private List<ulong> m_ClientIds = new List<ulong>();
     private List<ulong> m_ClientIndices = new List<ulong>();
 
-    private bool   m_MultiParameterCanSend;
+    private bool m_MultiParameterCanSend;
 
     private int m_MultiParameterIntValue;
     private int m_MultiParameterValuesCount;
@@ -51,7 +51,7 @@ public class ClientCounterBehaviour : NetworkBehaviour
     private int m_RpcPerSecond;
     private int m_GlobalDirectScale;
 
-    private long  m_MultiParameterLongValue;
+    private long m_MultiParameterLongValue;
     private ulong m_LocalClientId;
 
     private float m_MultiParameterFloatValue;
@@ -404,7 +404,7 @@ public class ClientCounterBehaviour : NetworkBehaviour
         if (m_ClientIndices.Count == 0)
         {
             m_ClientIndices.Add(m_ClientIds[m_GlobalDirectCurrentClientIdIndex]);
-            var divFactor = (float)m_ClientIds.Count*0.5f;
+            var divFactor = (float)m_ClientIds.Count * 0.5f;
             var modFactor = (m_GlobalDirectCurrentClientIdIndex + (int)divFactor) % m_ClientIds.Count;
             m_ClientIndices.Add(m_ClientIds[modFactor]);
         }
