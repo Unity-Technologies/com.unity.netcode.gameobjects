@@ -20,7 +20,11 @@ namespace MLAPI.Editor.CodeGen
 
         public override ILPostProcessResult Process(ICompiledAssembly compiledAssembly)
         {
-            if (!WillProcess(compiledAssembly)) return null;
+            if (!WillProcess(compiledAssembly))
+            {
+                return null;
+            }
+
             m_Diagnostics.Clear();
 
             // read
@@ -37,7 +41,10 @@ namespace MLAPI.Editor.CodeGen
             {
                 foreach (var typeDefinition in mainModule.Types)
                 {
-                    if (!typeDefinition.IsClass) continue;
+                    if (!typeDefinition.IsClass)
+                    {
+                        continue;
+                    }
 
                     switch (typeDefinition.Name)
                     {
@@ -53,7 +60,10 @@ namespace MLAPI.Editor.CodeGen
                     }
                 }
             }
-            else m_Diagnostics.AddError($"Cannot get main module from MLAPI Runtime assembly definition: {compiledAssembly.Name}");
+            else
+            {
+                m_Diagnostics.AddError($"Cannot get main module from MLAPI Runtime assembly definition: {compiledAssembly.Name}");
+            }
 
             // write
             var pe = new MemoryStream();

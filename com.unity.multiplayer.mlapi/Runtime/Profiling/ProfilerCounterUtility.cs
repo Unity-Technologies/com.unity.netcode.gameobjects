@@ -1,4 +1,5 @@
 #if UNITY_2020_2_OR_NEWER
+using System;
 using Unity.Profiling.LowLevel;
 #endif
 
