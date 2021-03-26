@@ -7,7 +7,7 @@ run_all_tests:
     - .yamato/project-test.yml#badges_test_trigger
 {% for editor in test_editors -%}
 {% for platform in test_platforms -%}
-{% for project in projects -%
+{% for project in projects -%}
     - .yamato/package-tests.yml#test_{{ projects.first.packages.first.name }}_{{ editor }}_{{ platform.name }}
     - .yamato/project-test.yml#test_{{ project.name }}_{{ editor }}_{{ platform.name }}
 {% endfor -%}
@@ -21,7 +21,7 @@ all_project_tests:
     #- .yamato/project-test.yml#badges_test_trigger
 {% for editor in test_editors -%}
 {% for platform in test_platforms -%}
-{% for project in projects -%
+{% for project in projects -%}
     - .yamato/project-test.yml#test_{{ project.name }}_{{ editor }}_{{ platform.name }}
 {% endfor -%}
 {% endfor -%}
@@ -34,7 +34,7 @@ all_package_tests:
     #- .yamato/project-test.yml#badges_test_trigger
 {% for editor in test_editors -%}
 {% for platform in test_platforms -%}
-{% for project in projects -%
+{% for project in projects -%}
     - .yamato/package-tests.yml#test_{{ projects.first.packages.first.name }}_{{ editor }}_{{ platform.name }}
 {% endfor -%}
 {% endfor -%}
