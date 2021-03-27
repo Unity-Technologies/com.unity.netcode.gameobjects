@@ -368,7 +368,7 @@ namespace MLAPI
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void SpawnInternal(Stream spawnPayload, bool destroyWithScene , ulong? ownerClientId, bool playerObject)
+        private void SpawnInternal(Stream spawnPayload, bool destroyWithScene, ulong? ownerClientId, bool playerObject)
         {
             if (!NetworkManager.Singleton.IsListening)
             {
@@ -380,7 +380,10 @@ namespace MLAPI
                 throw new NotServerException($"Only server can spawn {nameof(NetworkObject)}s");
             }
 
-            if (spawnPayload != null) spawnPayload.Position = 0;
+            if (spawnPayload != null)
+            {
+                spawnPayload.Position = 0;
+            }
 
             NetworkSpawnManager.SpawnNetworkObjectLocally(this, NetworkSpawnManager.GetNetworkObjectId(), false, playerObject, ownerClientId, spawnPayload, spawnPayload != null, spawnPayload == null ? 0 : (int)spawnPayload.Length, false, destroyWithScene);
 

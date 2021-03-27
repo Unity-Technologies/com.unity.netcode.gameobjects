@@ -33,11 +33,14 @@ namespace MLAPI.Serialization.Pooled
                     }
 
                     object weakBuffer = null;
-                    while (s_OverflowBuffers.Count > 0 && ((weakBuffer = s_OverflowBuffers.Dequeue().Target) == null)) ;
+                    while (s_OverflowBuffers.Count > 0 && ((weakBuffer = s_OverflowBuffers.Dequeue().Target) == null))
+                    {
+                        ;
+                    }
 
                     if (weakBuffer != null)
                     {
-                        PooledNetworkBuffer strongBuffer = (PooledNetworkBuffer)weakBuffer;
+                        var strongBuffer = (PooledNetworkBuffer)weakBuffer;
 
                         strongBuffer.SetLength(0);
                         strongBuffer.Position = 0;
@@ -48,9 +51,15 @@ namespace MLAPI.Serialization.Pooled
 
                 if (s_CreatedBuffers == k_MaxBitPoolBuffers)
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning($"{k_MaxBitPoolBuffers} buffers have been created. Did you forget to dispose?");
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                    {
+                        NetworkLog.LogWarning($"{k_MaxBitPoolBuffers} buffers have been created. Did you forget to dispose?");
+                    }
                 }
-                else if (s_CreatedBuffers < k_MaxBitPoolBuffers) s_CreatedBuffers++;
+                else if (s_CreatedBuffers < k_MaxBitPoolBuffers)
+                {
+                    s_CreatedBuffers++;
+                }
 
                 return new PooledNetworkBuffer();
             }

@@ -89,7 +89,10 @@ namespace MLAPI.Serialization
 
         internal static FieldInfo[] GetFieldsForType(Type type)
         {
-            if (s_FieldCache.ContainsKey(type)) return s_FieldCache[type];
+            if (s_FieldCache.ContainsKey(type))
+            {
+                return s_FieldCache[type];
+            }
 
             FieldInfo[] fields = type
                 .GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)

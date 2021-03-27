@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using MLAPI.Logging;
 using UnityEngine;
 

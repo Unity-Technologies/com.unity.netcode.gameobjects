@@ -1,4 +1,4 @@
-﻿using MLAPI.Logging;
+using MLAPI.Logging;
 using MLAPI.Serialization;
 using MLAPI.Configuration;
 using MLAPI.Serialization.Pooled;
@@ -14,7 +14,11 @@ namespace MLAPI.Internal
             {
                 if (inputBuffer.Length < 1)
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogError("The incoming message was too small");
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                    {
+                        NetworkLog.LogError("The incoming message was too small");
+                    }
+
                     messageType = NetworkConstants.INVALID;
 
                     return null;

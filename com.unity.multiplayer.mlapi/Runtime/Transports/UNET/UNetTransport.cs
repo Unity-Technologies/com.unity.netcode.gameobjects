@@ -292,7 +292,10 @@ namespace MLAPI.Transports.UNET
                 }
                 else
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogError("Cannot create websocket host when using MLAPI relay");
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
+                    {
+                        NetworkLog.LogError("Cannot create websocket host when using MLAPI relay");
+                    }
                 }
             }
 

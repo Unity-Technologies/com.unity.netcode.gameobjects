@@ -761,7 +761,7 @@ namespace MLAPI.EditorTests
 
             // Read diff directly to StringBuilder
             inNetworkBuffer.BitPosition = 0;
-            StringBuilder stringCompare = new StringBuilder(originalString);
+            var stringCompare = new StringBuilder(originalString);
             inNetworkReader.ReadStringDiff(stringCompare);
 
             // Read single-byte diff
@@ -788,7 +788,7 @@ namespace MLAPI.EditorTests
 
             // Read diff directly to StringBuilder
             inNetworkBuffer.BitPosition = 0;
-            StringBuilder stringCompare = new StringBuilder(originalString);
+            var stringCompare = new StringBuilder(originalString);
             inNetworkReader.ReadStringPackedDiff(stringCompare);
 
             Assert.That(readBuilder.ToString(), Is.EqualTo(testString));

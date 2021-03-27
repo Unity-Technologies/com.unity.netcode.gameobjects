@@ -14,7 +14,10 @@ namespace MLAPI.Messaging
         {
             messageBuffer.PadBuffer();
 
-            if (NetworkManager.Singleton.IsServer && clientId == NetworkManager.Singleton.ServerClientId) return;
+            if (NetworkManager.Singleton.IsServer && clientId == NetworkManager.Singleton.ServerClientId)
+            {
+                return;
+            }
 
             using (var buffer = MessagePacker.WrapMessage(messageType, messageBuffer))
             {
@@ -42,7 +45,10 @@ namespace MLAPI.Messaging
 
                 for (int i = 0; i < NetworkManager.Singleton.ConnectedClientsList.Count; i++)
                 {
-                    if (NetworkManager.Singleton.IsServer && NetworkManager.Singleton.ConnectedClientsList[i].ClientId == NetworkManager.Singleton.ServerClientId) continue;
+                    if (NetworkManager.Singleton.IsServer && NetworkManager.Singleton.ConnectedClientsList[i].ClientId == NetworkManager.Singleton.ServerClientId)
+                    {
+                        continue;
+                    }
 
                     NetworkManager.Singleton.NetworkConfig.NetworkTransport.Send(NetworkManager.Singleton.ConnectedClientsList[i].ClientId, new ArraySegment<byte>(buffer.GetBuffer(), 0, (int)buffer.Length), networkChannel);
                     ProfilerStatManager.BytesSent.Record((int)buffer.Length);
@@ -73,7 +79,10 @@ namespace MLAPI.Messaging
 
                 for (int i = 0; i < clientIds.Count; i++)
                 {
-                    if (NetworkManager.Singleton.IsServer && clientIds[i] == NetworkManager.Singleton.ServerClientId) continue;
+                    if (NetworkManager.Singleton.IsServer && clientIds[i] == NetworkManager.Singleton.ServerClientId)
+                    {
+                        continue;
+                    }
 
                     NetworkManager.Singleton.NetworkConfig.NetworkTransport.Send(clientIds[i], new ArraySegment<byte>(buffer.GetBuffer(), 0, (int)buffer.Length), networkChannel);
                     ProfilerStatManager.BytesSent.Record((int)buffer.Length);
