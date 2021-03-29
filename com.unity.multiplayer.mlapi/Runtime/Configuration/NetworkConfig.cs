@@ -296,7 +296,10 @@ namespace MLAPI.Configuration
         /// <returns></returns>
         public ulong GetConfig(bool cache = true)
         {
-            if (m_ConfigHash != null && cache) return m_ConfigHash.Value;
+            if (m_ConfigHash != null && cache)
+            {
+                return m_ConfigHash.Value;
+            }
 
             Sort();
 

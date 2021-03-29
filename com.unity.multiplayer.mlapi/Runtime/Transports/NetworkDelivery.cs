@@ -1,4 +1,4 @@
-﻿namespace MLAPI.Transports
+namespace MLAPI.Transports
 {
     /// <summary>
     /// Delivery methods

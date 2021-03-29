@@ -121,41 +121,41 @@ namespace MLAPI.Messaging
                 switch (queueItem.QueueItemType)
                 {
                     case RpcQueueContainer.QueueItemType.CreateObject:
-                    {
-                        if (isListening)
                         {
-                            foreach (ulong clientId in queueItem.ClientNetworkIds)
+                            if (isListening)
                             {
-                                InternalMessageSender.Send(clientId, NetworkConstants.ADD_OBJECT, queueItem.NetworkChannel, PoolStream);
+                                foreach (ulong clientId in queueItem.ClientNetworkIds)
+                                {
+                                    InternalMessageSender.Send(clientId, NetworkConstants.ADD_OBJECT, queueItem.NetworkChannel, PoolStream);
+                                }
+
+                                PerformanceDataManager.Increment(ProfilerConstants.RpcSent, queueItem.ClientNetworkIds.Length);
+                                ProfilerStatManager.RpcsSent.Record(queueItem.ClientNetworkIds.Length);
+                                break;
                             }
 
                             PerformanceDataManager.Increment(ProfilerConstants.RpcSent, queueItem.ClientNetworkIds.Length);
                             ProfilerStatManager.RpcsSent.Record(queueItem.ClientNetworkIds.Length);
                             break;
                         }
-
-                        PerformanceDataManager.Increment(ProfilerConstants.RpcSent, queueItem.ClientNetworkIds.Length);
-                        ProfilerStatManager.RpcsSent.Record(queueItem.ClientNetworkIds.Length);
-                        break;
-                    }
                     case RpcQueueContainer.QueueItemType.DestroyObject:
-                    {
-                        if (isListening)
                         {
-                            foreach (ulong clientId in queueItem.ClientNetworkIds)
+                            if (isListening)
                             {
-                                InternalMessageSender.Send(clientId, NetworkConstants.DESTROY_OBJECT, queueItem.NetworkChannel, PoolStream);
+                                foreach (ulong clientId in queueItem.ClientNetworkIds)
+                                {
+                                    InternalMessageSender.Send(clientId, NetworkConstants.DESTROY_OBJECT, queueItem.NetworkChannel, PoolStream);
+                                }
+
+                                PerformanceDataManager.Increment(ProfilerConstants.RpcSent, queueItem.ClientNetworkIds.Length);
+                                ProfilerStatManager.RpcsSent.Record(queueItem.ClientNetworkIds.Length);
+                                break;
                             }
 
                             PerformanceDataManager.Increment(ProfilerConstants.RpcSent, queueItem.ClientNetworkIds.Length);
                             ProfilerStatManager.RpcsSent.Record(queueItem.ClientNetworkIds.Length);
                             break;
                         }
-
-                        PerformanceDataManager.Increment(ProfilerConstants.RpcSent, queueItem.ClientNetworkIds.Length);
-                        ProfilerStatManager.RpcsSent.Record(queueItem.ClientNetworkIds.Length);
-                        break;
-                    }
                 }
 
                 PoolStream.Dispose();
@@ -239,34 +239,34 @@ namespace MLAPI.Messaging
             switch (queueItem.QueueItemType)
             {
                 case RpcQueueContainer.QueueItemType.ServerRpc:
-                {
-                    m_RpcQueueContainer.m_NetworkManager.NetworkConfig.NetworkTransport.Send(queueItem.NetworkId, queueItem.MessageData, queueItem.NetworkChannel);
-
-                    //For each packet sent, we want to record how much data we have sent
-
-                    PerformanceDataManager.Increment(ProfilerConstants.ByteSent, (int)queueItem.StreamSize);
-                    PerformanceDataManager.Increment(ProfilerConstants.RpcSent);
-                    ProfilerStatManager.BytesSent.Record((int)queueItem.StreamSize);
-                    ProfilerStatManager.RpcsSent.Record();
-                    break;
-                }
-                case RpcQueueContainer.QueueItemType.ClientRpc:
-                {
-                    foreach (ulong clientid in queueItem.ClientNetworkIds)
                     {
-                        m_RpcQueueContainer.m_NetworkManager.NetworkConfig.NetworkTransport.Send(clientid, queueItem.MessageData, queueItem.NetworkChannel);
+                        m_RpcQueueContainer.m_NetworkManager.NetworkConfig.NetworkTransport.Send(queueItem.NetworkId, queueItem.MessageData, queueItem.NetworkChannel);
 
                         //For each packet sent, we want to record how much data we have sent
+
                         PerformanceDataManager.Increment(ProfilerConstants.ByteSent, (int)queueItem.StreamSize);
+                        PerformanceDataManager.Increment(ProfilerConstants.RpcSent);
                         ProfilerStatManager.BytesSent.Record((int)queueItem.StreamSize);
+                        ProfilerStatManager.RpcsSent.Record();
+                        break;
                     }
+                case RpcQueueContainer.QueueItemType.ClientRpc:
+                    {
+                        foreach (ulong clientid in queueItem.ClientNetworkIds)
+                        {
+                            m_RpcQueueContainer.m_NetworkManager.NetworkConfig.NetworkTransport.Send(clientid, queueItem.MessageData, queueItem.NetworkChannel);
 
-                    //For each client we send to, we want to record how many RPCs we have sent
-                    PerformanceDataManager.Increment(ProfilerConstants.RpcSent, queueItem.ClientNetworkIds.Length);
-                    ProfilerStatManager.RpcsSent.Record(queueItem.ClientNetworkIds.Length);
+                            //For each packet sent, we want to record how much data we have sent
+                            PerformanceDataManager.Increment(ProfilerConstants.ByteSent, (int)queueItem.StreamSize);
+                            ProfilerStatManager.BytesSent.Record((int)queueItem.StreamSize);
+                        }
 
-                    break;
-                }
+                        //For each client we send to, we want to record how many RPCs we have sent
+                        PerformanceDataManager.Increment(ProfilerConstants.RpcSent, queueItem.ClientNetworkIds.Length);
+                        ProfilerStatManager.RpcsSent.Record(queueItem.ClientNetworkIds.Length);
+
+                        break;
+                    }
             }
         }
 

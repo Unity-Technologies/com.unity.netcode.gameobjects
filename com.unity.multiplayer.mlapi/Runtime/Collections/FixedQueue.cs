@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace MLAPI.Collections
 {
@@ -57,7 +57,11 @@ namespace MLAPI.Collections
         /// <returns></returns>
         public T Dequeue()
         {
-            if (--m_QueueCount == -1) throw new IndexOutOfRangeException("Cannot dequeue empty queue!");
+            if (--m_QueueCount == -1)
+            {
+                throw new IndexOutOfRangeException("Cannot dequeue empty queue!");
+            }
+
             T res = m_Queue[m_QueueStart];
             m_QueueStart = (m_QueueStart + 1) % m_Queue.Length;
             return res;

@@ -123,7 +123,7 @@ namespace MLAPI.RuntimeTests
             ulong senderNetworkId = 1;
 
             //Create ficticious list of clients to send to
-            ulong[] psuedoClients = new ulong[]{0};
+            ulong[] psuedoClients = new ulong[] { 0 };
 
             var randomGeneratedDataArray = preCalculatedBufferValues.ToArray();
             var maximumOffsetValue = preCalculatedBufferValues.Count;
@@ -134,7 +134,7 @@ namespace MLAPI.RuntimeTests
                 //Increment our offset into our randomly generated data for next entry;
                 indexOffset = (i * messageChunkSize) % maximumOffsetValue;
 
-                var writer = rpcQueueContainer.BeginAddQueueItemToFrame(RpcQueueContainer.QueueItemType.ServerRpc, Time.realtimeSinceStartup,Transports.NetworkChannel.DefaultMessage,
+                var writer = rpcQueueContainer.BeginAddQueueItemToFrame(RpcQueueContainer.QueueItemType.ServerRpc, Time.realtimeSinceStartup, Transports.NetworkChannel.DefaultMessage,
                         senderNetworkId, psuedoClients, RpcQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
 
 

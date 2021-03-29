@@ -26,11 +26,11 @@ public class TransportTest : MonoBehaviour
     {
         ForceNetworkObjectShutdown();
 
-        GameObject o = new GameObject();
-        NetworkManager nm = (NetworkManager)o.AddComponent(typeof(NetworkManager));
+        var o = new GameObject();
+        var nm = (NetworkManager)o.AddComponent(typeof(NetworkManager));
         nm.SetSingleton();
         nm.NetworkConfig = new NetworkConfig();
-        UNetTransport ut = (UNetTransport)o.AddComponent(typeof(UNetTransport));
+        var ut = (UNetTransport)o.AddComponent(typeof(UNetTransport));
 
         ut.ServerListenPort = 7777;
         nm.NetworkConfig.NetworkTransport = ut;

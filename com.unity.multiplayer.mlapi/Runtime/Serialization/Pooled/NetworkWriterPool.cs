@@ -23,9 +23,15 @@ namespace MLAPI.Serialization.Pooled
             {
                 if (s_CreatedWriters == 254)
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("255 writers have been created. Did you forget to dispose?");
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                    {
+                        NetworkLog.LogWarning("255 writers have been created. Did you forget to dispose?");
+                    }
                 }
-                else if (s_CreatedWriters < 255) s_CreatedWriters++;
+                else if (s_CreatedWriters < 255)
+                {
+                    s_CreatedWriters++;
+                }
 
                 return new PooledNetworkWriter(stream);
             }
@@ -42,7 +48,10 @@ namespace MLAPI.Serialization.Pooled
         /// <param name="writer">The writer to put in the pool</param>
         public static void PutBackInPool(PooledNetworkWriter writer)
         {
-            if (s_Writers.Count < 64) s_Writers.Enqueue(writer);
+            if (s_Writers.Count < 64)
+            {
+                s_Writers.Enqueue(writer);
+            }
             else if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
             {
                 NetworkLog.LogInfo($"{nameof(NetworkWriterPool)} already has 64 queued. Throwing to GC. Did you forget to dispose?");

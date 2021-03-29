@@ -40,13 +40,13 @@ public class PlayerMovement : NetworkBehaviour
 
             if (Input.GetKey(KeyCode.RightArrow))
             {
-                Quaternion rot = Quaternion.Euler(0, 90 * m_RotSpeed * Time.fixedDeltaTime, 0);
+                var rot = Quaternion.Euler(0, 90 * m_RotSpeed * Time.fixedDeltaTime, 0);
                 transform.rotation = rot * transform.rotation;
             }
 
             if (Input.GetKey(KeyCode.LeftArrow))
             {
-                Quaternion rot = Quaternion.Euler(0, -90 * m_RotSpeed * Time.fixedDeltaTime, 0);
+                var rot = Quaternion.Euler(0, -90 * m_RotSpeed * Time.fixedDeltaTime, 0);
                 transform.rotation = rot * transform.rotation;
             }
         }

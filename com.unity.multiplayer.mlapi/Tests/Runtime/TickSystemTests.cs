@@ -6,10 +6,10 @@ using NUnit.Framework;
 
 namespace MLAPI.RuntimeTests
 {
-    public class TickSystemTests: IDisposable
+    public class TickSystemTests : IDisposable
     {
         private NetworkTickSystem m_TickSystem = null;
-        private float m_TestDuration = 5.0f;
+        private float m_TestDuration = 3.0f;
         private float m_SleepInterval = 0.001f;
         private float m_TickInterval = 0.010f;
 
@@ -25,27 +25,27 @@ namespace MLAPI.RuntimeTests
         {
             m_TickSystem = new NetworkTickSystem(m_TickInterval);
 
-            ushort tick0 = m_TickSystem.GetTick();
-            ushort lastTick = tick0;
-            float t0 = Time.unscaledTime;
-            float t1;
+            var startTick = m_TickSystem.GetTick();
+            var startTime = Time.unscaledTime;
 
+            var lastTick = startTick;
             do
             {
-                t1 = Time.unscaledTime;
-                ushort tick = m_TickSystem.GetTick();
+                var currentTick = m_TickSystem.GetTick();
+                Assert.IsTrue(currentTick >= lastTick); // check monotonicity of ticks
+                lastTick = currentTick;
 
-                Assert.IsTrue(tick >= lastTick); // check monotonicity of ticks
-
-                lastTick = tick;
                 yield return new WaitForSeconds(m_SleepInterval);
-            } while (t1 - t0 <= m_TestDuration);
+            } while (Time.unscaledTime - startTime <= m_TestDuration);
 
-            int ticks = lastTick - tick0;
-            int expectedTicks = (int)(m_TestDuration / m_TickInterval);
+            var endTick = m_TickSystem.GetTick();
+            var endTime = Time.unscaledTime;
 
-            // check overall number of ticks is within one tick of the expected value
-            Assert.IsTrue(Math.Abs(expectedTicks - ticks) < 2);
+            var elapsedTicks = endTick - startTick;
+            var elapsedTime = endTime - startTime;
+
+            var elapsedTicksExpected = (int)(elapsedTime / m_TickInterval);
+            Assert.Less(Math.Abs(elapsedTicksExpected - elapsedTicks), 2); // +/- 1 is OK
         }
     }
 }
