@@ -46,23 +46,10 @@ namespace MLAPI.Messaging
 #endif
             if (NetworkManager.Singleton.PendingClients.TryGetValue(clientId, out PendingClient client))
             {
-                if (client.HasSentConnectionRequest)
-                {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                    {
-                        NetworkLog.LogWarning($"Client with id {clientId} sent multiple messages of type: {nameof(NetworkConstants.CONNECTION_REQUEST)}. This should not happen. Possible external attack.");
-                    }
-                
-                    // Immediately cancel out of connection request handling to make sure a client sending invalid/tampered data can't trigger connection approval multiple times and cause potential issues.
-                    return;
-                }
-                else
-                {
-                    // Set to true to prevent future connection requests from being accepted
-                    client.HasSentConnectionRequest = true;
-                }
+                // Set to pending approval to prevent future connection requests from being approved
+                client.ConnectionState = PendingClient.State.PendingApproval;
             }
-            
+
             using (var reader = PooledNetworkReader.Get(stream))
             {
                 ulong configHash = reader.ReadUInt64Packed();
