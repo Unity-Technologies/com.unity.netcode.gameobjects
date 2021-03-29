@@ -1,6 +1,4 @@
-#if !UNITY_2020_2_OR_NEWER
 using System;
-#endif
 
 namespace MLAPI.Messaging
 {

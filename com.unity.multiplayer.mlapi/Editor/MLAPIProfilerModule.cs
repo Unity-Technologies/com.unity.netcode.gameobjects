@@ -1,11 +1,9 @@
-#if UNITY_2020_2_OR_NEWER
 using System;
 using System.Collections.Generic;
-using Unity.Profiling;
-using UnityEngine;
 using MLAPI.Profiling;
-#endif
+using Unity.Profiling;
 using UnityEditor;
+using UnityEngine;
 
 namespace MLAPI
 {
