@@ -44,6 +44,12 @@ namespace MLAPI.Messaging
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleConnectionRequest.Begin();
 #endif
+            if (NetworkManager.Singleton.PendingClients.TryGetValue(clientId, out PendingClient client))
+            {
+                // Set to pending approval to prevent future connection requests from being approved
+                client.ConnectionState = PendingClient.State.PendingApproval;
+            }
+
             using (var reader = PooledNetworkReader.Get(stream))
             {
                 ulong configHash = reader.ReadUInt64Packed();
