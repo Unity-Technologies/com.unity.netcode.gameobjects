@@ -166,6 +166,24 @@ public class NetworkManagerEditor : Editor
         m_NetworkPrefabsList = new ReorderableList(serializedObject, serializedObject.FindProperty(nameof(NetworkManager.NetworkConfig)).FindPropertyRelative(nameof(NetworkConfig.NetworkPrefabs)), true, true, true, true);
         m_NetworkPrefabsList.drawElementCallback = (Rect rect, int index, bool isActive, bool isFocused) =>
         {
+            for (int i = 0; i < m_NetworkManager.NetworkConfig.NetworkPrefabs.Count; i++)
+            {
+                // Find the first playerPrefab
+                if (m_NetworkManager.NetworkConfig.NetworkPrefabs[i].PlayerPrefab)
+                {
+                    // Iterate over all other and set player prefab to false
+                    for (int j = 0; j < m_NetworkManager.NetworkConfig.NetworkPrefabs.Count; j++)
+                    {
+                        if (j != i && m_NetworkManager.NetworkConfig.NetworkPrefabs[j].PlayerPrefab)
+                        {
+                            m_NetworkManager.NetworkConfig.NetworkPrefabs[j].PlayerPrefab = false;
+                        }
+                    }
+
+                    break;
+                }
+            }
+
             var element = m_NetworkPrefabsList.serializedProperty.GetArrayElementAtIndex(index);
             int firstLabelWidth = 50;
             int secondLabelWidth = 140;
