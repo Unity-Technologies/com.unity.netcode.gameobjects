@@ -22,6 +22,9 @@ namespace MLAPI.EditorTests
             Object.DestroyImmediate(networkObject);
 
             Assert.That(networkBehaviour.HasNetworkObject, Is.False);
+
+            // Cleanup
+            Object.DestroyImmediate(gameObject);
         }
 
         [Test]
@@ -49,6 +52,9 @@ namespace MLAPI.EditorTests
             {
                 var x = networkBehaviour.NetworkObject;
             });
+
+            // Cleanup
+            Object.DestroyImmediate(gameObject);
         }
 
         public class EmptyNetworkBehaviour : NetworkBehaviour

@@ -20,6 +20,9 @@ namespace MLAPI.EditorTests
             Assert.That(networkObject.GetNetworkBehaviourAtOrderIndex(0), Is.Null);
             Assert.That(networkObject.GetNetworkBehaviourAtOrderIndex(1), Is.Null);
             Assert.That(networkObject.GetNetworkBehaviourAtOrderIndex(2), Is.Null);
+
+            // Cleanup
+            Object.DestroyImmediate(gameObject);
         }
 
         [Test]
@@ -36,6 +39,9 @@ namespace MLAPI.EditorTests
             Assert.That(networkObject.GetNetworkBehaviourAtOrderIndex(0), Is.EqualTo(networkBehaviour));
             Assert.That(networkObject.GetNetworkBehaviourAtOrderIndex(1), Is.Null);
             Assert.That(networkObject.GetNetworkBehaviourAtOrderIndex(2), Is.Null);
+
+            // Cleanup
+            Object.DestroyImmediate(gameObject);
         }
 
         public class EmptyNetworkBehaviour : NetworkBehaviour
