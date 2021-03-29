@@ -25,7 +25,7 @@ namespace MLAPI
     /// </summary>
     public abstract class NetworkBehaviour : MonoBehaviour
     {
-#pragma warning disable IDE1006
+#pragma warning disable IDE1006 // disable naming rule violation check
         [Browsable(false)]
         [EditorBrowsable(EditorBrowsableState.Never)]
 #if UNITY_2020_2_OR_NEWER
@@ -35,7 +35,7 @@ namespace MLAPI
         [Obsolete("Please do not use, will no longer be exposed in the future versions (framework internal)")]
         public enum __NExec
 #endif
-#pragma warning restore IDE1006
+#pragma warning restore IDE1006 // restore naming rule violation check
         {
             None = 0,
             Server = 1,
@@ -43,7 +43,7 @@ namespace MLAPI
         }
 
 #pragma warning disable 414
-#pragma warning disable IDE1006
+#pragma warning disable IDE1006 // disable naming rule violation check
         [NonSerialized]
         [Browsable(false)]
         [EditorBrowsable(EditorBrowsableState.Never)]
@@ -56,9 +56,9 @@ namespace MLAPI
         public __NExec __nexec = __NExec.None;
 #endif
 #pragma warning restore 414
-#pragma warning restore IDE1006
+#pragma warning restore IDE1006 // restore naming rule violation check
 
-#pragma warning disable IDE1006
+#pragma warning disable IDE1006 // disable naming rule violation check
         [Browsable(false)]
         [EditorBrowsable(EditorBrowsableState.Never)]
 #if UNITY_2020_2_OR_NEWER
@@ -68,7 +68,7 @@ namespace MLAPI
         [Obsolete("Please do not use, will no longer be exposed in the future versions (framework internal)")]
         public NetworkSerializer __beginSendServerRpc(ServerRpcParams serverRpcParams, RpcDelivery rpcDelivery)
 #endif
-#pragma warning restore IDE1006
+#pragma warning restore IDE1006 // restore naming rule violation check
         {
             PooledNetworkWriter writer;
 
@@ -103,7 +103,7 @@ namespace MLAPI
             return writer.Serializer;
         }
 
-#pragma warning disable IDE1006
+#pragma warning disable IDE1006 // disable naming rule violation check
         [Browsable(false)]
         [EditorBrowsable(EditorBrowsableState.Never)]
 #if UNITY_2020_2_OR_NEWER
@@ -113,7 +113,7 @@ namespace MLAPI
         [Obsolete("Please do not use, will no longer be exposed in the future versions (framework internal)")]
         public void __endSendServerRpc(NetworkSerializer serializer, ServerRpcParams serverRpcParams, RpcDelivery rpcDelivery)
 #endif
-#pragma warning restore IDE1006
+#pragma warning restore IDE1006 // restore naming rule violation check
         {
             if (serializer == null)
             {
@@ -131,7 +131,7 @@ namespace MLAPI
             }
         }
 
-#pragma warning disable IDE1006
+#pragma warning disable IDE1006 // disable naming rule violation check
         [Browsable(false)]
         [EditorBrowsable(EditorBrowsableState.Never)]
 #if UNITY_2020_2_OR_NEWER
@@ -141,7 +141,7 @@ namespace MLAPI
         [Obsolete("Please do not use, will no longer be exposed in the future versions (framework internal)")]
         public NetworkSerializer __beginSendClientRpc(ClientRpcParams clientRpcParams, RpcDelivery rpcDelivery)
 #endif
-#pragma warning restore IDE1006
+#pragma warning restore IDE1006 // restore naming rule violation check
         {
             PooledNetworkWriter writer;
 
@@ -208,7 +208,7 @@ namespace MLAPI
             return writer.Serializer;
         }
 
-#pragma warning disable IDE1006
+#pragma warning disable IDE1006 // disable naming rule violation check
         [Browsable(false)]
         [EditorBrowsable(EditorBrowsableState.Never)]
 #if UNITY_2020_2_OR_NEWER
@@ -218,7 +218,7 @@ namespace MLAPI
         [Obsolete("Please do not use, will no longer be exposed in the future versions (framework internal)")]
         public void __endSendClientRpc(NetworkSerializer serializer, ClientRpcParams clientRpcParams, RpcDelivery rpcDelivery)
 #endif
-#pragma warning restore IDE1006
+#pragma warning restore IDE1006 // restore naming rule violation check
         {
             if (serializer == null)
             {

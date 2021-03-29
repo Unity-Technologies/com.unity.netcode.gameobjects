@@ -17,6 +17,7 @@ namespace MLAPI
         private const string k_OperationModuleName = "MLAPI Operations";
         private const string k_MessageModuleName = "MLAPI Messages";
 
+#pragma warning disable IDE1006 // disable naming rule violation check
         /// <summary>
         /// This needs to be in synced with the internal dynamic module structure to provide our own counters
         /// </summary>
@@ -46,6 +47,7 @@ namespace MLAPI
             // Note: These fields are named this way for internal serialization
             public List<MLAPIProfilerModuleData> Modules;
         }
+#pragma warning restore IDE1006 // restore naming rule violation check
 
         private static List<MLAPIProfilerCounter> CreateRPCCounters() => new List<MLAPIProfilerCounter>()
         {
