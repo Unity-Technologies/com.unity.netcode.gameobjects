@@ -85,7 +85,10 @@ public class NetworkManagerEditor : Editor
 
     private void Init()
     {
-        if (m_Initialized) return;
+        if (m_Initialized)
+        {
+            return;
+        }
 
         m_Initialized = true;
         m_NetworkManager = (NetworkManager)target;
@@ -392,17 +395,35 @@ public class NetworkManagerEditor : Editor
         {
             string instanceType = string.Empty;
 
-            if (m_NetworkManager.IsHost) instanceType = "Host";
-            else if (m_NetworkManager.IsServer) instanceType = "Server";
-            else if (m_NetworkManager.IsClient) instanceType = "Client";
+            if (m_NetworkManager.IsHost)
+            {
+                instanceType = "Host";
+            }
+            else if (m_NetworkManager.IsServer)
+            {
+                instanceType = "Server";
+            }
+            else if (m_NetworkManager.IsClient)
+            {
+                instanceType = "Client";
+            }
 
             EditorGUILayout.HelpBox("You cannot edit the NetworkConfig when a " + instanceType + " is running.", MessageType.Info);
 
             if (GUILayout.Button(new GUIContent("Stop " + instanceType, "Stops the " + instanceType + " instance.")))
             {
-                if (m_NetworkManager.IsHost) m_NetworkManager.StopHost();
-                else if (m_NetworkManager.IsServer) m_NetworkManager.StopServer();
-                else if (m_NetworkManager.IsClient) m_NetworkManager.StopClient();
+                if (m_NetworkManager.IsHost)
+                {
+                    m_NetworkManager.StopHost();
+                }
+                else if (m_NetworkManager.IsServer)
+                {
+                    m_NetworkManager.StopServer();
+                }
+                else if (m_NetworkManager.IsClient)
+                {
+                    m_NetworkManager.StopClient();
+                }
             }
         }
     }

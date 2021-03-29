@@ -1,4 +1,4 @@
-﻿namespace MLAPI.Serialization
+namespace MLAPI.Serialization
 {
     /// <summary>
     /// Arithmetic helper class

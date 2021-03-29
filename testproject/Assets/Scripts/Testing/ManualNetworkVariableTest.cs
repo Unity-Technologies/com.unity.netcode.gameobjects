@@ -35,7 +35,7 @@ namespace MLAPI
 
         private const int k_EndIterations = 1000;
 
-        void Start()
+        private void Start()
         {
             m_TestVar.OnValueChanged += ValueChanged;
             m_TestVar.Settings.WritePermission = NetworkVariablePermission.Everyone;

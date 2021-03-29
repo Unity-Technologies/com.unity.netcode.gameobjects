@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
 using MLAPI.Connection;
@@ -52,7 +52,10 @@ namespace MLAPI.Prototyping
 
         private void Update()
         {
-            if (!IsOwner) return;
+            if (!IsOwner)
+            {
+                return;
+            }
 
             if (m_Agent.destination != m_LastDestination)
             {

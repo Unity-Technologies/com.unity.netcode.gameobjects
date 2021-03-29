@@ -32,7 +32,11 @@ namespace MLAPI.Editor.CodeGen
 
         public override ILPostProcessResult Process(ICompiledAssembly compiledAssembly)
         {
-            if (!WillProcess(compiledAssembly)) return null;
+            if (!WillProcess(compiledAssembly))
+            {
+                return null;
+            }
+
             m_Diagnostics.Clear();
 
             // read
@@ -55,9 +59,15 @@ namespace MLAPI.Editor.CodeGen
                         .ToList()
                         .ForEach(ProcessNetworkBehaviour);
                 }
-                else m_Diagnostics.AddError($"Cannot import references into main module: {mainModule.Name}");
+                else
+                {
+                    m_Diagnostics.AddError($"Cannot import references into main module: {mainModule.Name}");
+                }
             }
-            else m_Diagnostics.AddError($"Cannot get main module from assembly definition: {compiledAssembly.Name}");
+            else
+            {
+                m_Diagnostics.AddError($"Cannot get main module from assembly definition: {compiledAssembly.Name}");
+            }
 
             // write
             var pe = new MemoryStream();
@@ -181,7 +191,11 @@ namespace MLAPI.Editor.CodeGen
                 switch (methodInfo.Name)
                 {
                     case k_Debug_LogWarning:
-                        if (methodInfo.GetParameters().Length == 1) Debug_LogWarning_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                        if (methodInfo.GetParameters().Length == 1)
+                        {
+                            Debug_LogWarning_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                        }
+
                         break;
                 }
             }
@@ -317,55 +331,193 @@ namespace MLAPI.Editor.CodeGen
             NetworkSerializer_TypeRef = moduleDefinition.ImportReference(networkSerializerType);
             foreach (var methodInfo in networkSerializerType.GetMethods())
             {
-                if (methodInfo.Name != nameof(NetworkSerializer.Serialize)) continue;
+                if (methodInfo.Name != nameof(NetworkSerializer.Serialize))
+                {
+                    continue;
+                }
+
                 var methodParams = methodInfo.GetParameters();
-                if (methodParams.Length != 1) continue;
+                if (methodParams.Length != 1)
+                {
+                    continue;
+                }
+
                 var paramType = methodParams[0].ParameterType;
-                if (paramType.IsByRef == false) continue;
+                if (paramType.IsByRef == false)
+                {
+                    continue;
+                }
+
                 var paramTypeName = paramType.Name;
 
-                if (paramTypeName == typeof(bool).MakeByRefType().Name) NetworkSerializer_SerializeBool_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(char).MakeByRefType().Name) NetworkSerializer_SerializeChar_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(sbyte).MakeByRefType().Name) NetworkSerializer_SerializeSbyte_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(byte).MakeByRefType().Name) NetworkSerializer_SerializeByte_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(short).MakeByRefType().Name) NetworkSerializer_SerializeShort_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(ushort).MakeByRefType().Name) NetworkSerializer_SerializeUshort_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(int).MakeByRefType().Name) NetworkSerializer_SerializeInt_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(uint).MakeByRefType().Name) NetworkSerializer_SerializeUint_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(long).MakeByRefType().Name) NetworkSerializer_SerializeLong_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(ulong).MakeByRefType().Name) NetworkSerializer_SerializeUlong_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(float).MakeByRefType().Name) NetworkSerializer_SerializeFloat_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(double).MakeByRefType().Name) NetworkSerializer_SerializeDouble_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(string).MakeByRefType().Name) NetworkSerializer_SerializeString_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(Color).MakeByRefType().Name) NetworkSerializer_SerializeColor_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(Color32).MakeByRefType().Name) NetworkSerializer_SerializeColor32_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(Vector2).MakeByRefType().Name) NetworkSerializer_SerializeVector2_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(Vector3).MakeByRefType().Name) NetworkSerializer_SerializeVector3_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(Vector4).MakeByRefType().Name) NetworkSerializer_SerializeVector4_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(Quaternion).MakeByRefType().Name) NetworkSerializer_SerializeQuaternion_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(Ray).MakeByRefType().Name) NetworkSerializer_SerializeRay_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(Ray2D).MakeByRefType().Name) NetworkSerializer_SerializeRay2D_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(bool[]).MakeByRefType().Name) NetworkSerializer_SerializeBoolArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(char[]).MakeByRefType().Name) NetworkSerializer_SerializeCharArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(sbyte[]).MakeByRefType().Name) NetworkSerializer_SerializeSbyteArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(byte[]).MakeByRefType().Name) NetworkSerializer_SerializeByteArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(short[]).MakeByRefType().Name) NetworkSerializer_SerializeShortArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(ushort[]).MakeByRefType().Name) NetworkSerializer_SerializeUshortArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(int[]).MakeByRefType().Name) NetworkSerializer_SerializeIntArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(uint[]).MakeByRefType().Name) NetworkSerializer_SerializeUintArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(long[]).MakeByRefType().Name) NetworkSerializer_SerializeLongArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(ulong[]).MakeByRefType().Name) NetworkSerializer_SerializeUlongArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(float[]).MakeByRefType().Name) NetworkSerializer_SerializeFloatArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(double[]).MakeByRefType().Name) NetworkSerializer_SerializeDoubleArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(string[]).MakeByRefType().Name) NetworkSerializer_SerializeStringArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(Color[]).MakeByRefType().Name) NetworkSerializer_SerializeColorArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(Color32[]).MakeByRefType().Name) NetworkSerializer_SerializeColor32Array_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(Vector2[]).MakeByRefType().Name) NetworkSerializer_SerializeVector2Array_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(Vector3[]).MakeByRefType().Name) NetworkSerializer_SerializeVector3Array_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(Vector4[]).MakeByRefType().Name) NetworkSerializer_SerializeVector4Array_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(Quaternion[]).MakeByRefType().Name) NetworkSerializer_SerializeQuaternionArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(Ray[]).MakeByRefType().Name) NetworkSerializer_SerializeRayArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(Ray2D[]).MakeByRefType().Name) NetworkSerializer_SerializeRay2DArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                if (paramTypeName == typeof(bool).MakeByRefType().Name)
+                {
+                    NetworkSerializer_SerializeBool_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                }
+                else if (paramTypeName == typeof(char).MakeByRefType().Name)
+                {
+                    NetworkSerializer_SerializeChar_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                }
+                else if (paramTypeName == typeof(sbyte).MakeByRefType().Name)
+                {
+                    NetworkSerializer_SerializeSbyte_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                }
+                else if (paramTypeName == typeof(byte).MakeByRefType().Name)
+                {
+                    NetworkSerializer_SerializeByte_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                }
+                else if (paramTypeName == typeof(short).MakeByRefType().Name)
+                {
+                    NetworkSerializer_SerializeShort_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                }
+                else if (paramTypeName == typeof(ushort).MakeByRefType().Name)
+                {
+                    NetworkSerializer_SerializeUshort_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                }
+                else if (paramTypeName == typeof(int).MakeByRefType().Name)
+                {
+                    NetworkSerializer_SerializeInt_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                }
+                else if (paramTypeName == typeof(uint).MakeByRefType().Name)
+                {
+                    NetworkSerializer_SerializeUint_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                }
+                else if (paramTypeName == typeof(long).MakeByRefType().Name)
+                {
+                    NetworkSerializer_SerializeLong_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                }
+                else if (paramTypeName == typeof(ulong).MakeByRefType().Name)
+                {
+                    NetworkSerializer_SerializeUlong_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                }
+                else if (paramTypeName == typeof(float).MakeByRefType().Name)
+                {
+                    NetworkSerializer_SerializeFloat_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                }
+                else if (paramTypeName == typeof(double).MakeByRefType().Name)
+                {
+                    NetworkSerializer_SerializeDouble_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                }
+                else if (paramTypeName == typeof(string).MakeByRefType().Name)
+                {
+                    NetworkSerializer_SerializeString_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                }
+                else if (paramTypeName == typeof(Color).MakeByRefType().Name)
+                {
+                    NetworkSerializer_SerializeColor_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                }
+                else if (paramTypeName == typeof(Color32).MakeByRefType().Name)
+                {
+                    NetworkSerializer_SerializeColor32_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                }
+                else if (paramTypeName == typeof(Vector2).MakeByRefType().Name)
+                {
+                    NetworkSerializer_SerializeVector2_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                }
+                else if (paramTypeName == typeof(Vector3).MakeByRefType().Name)
+                {
+                    NetworkSerializer_SerializeVector3_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                }
+                else if (paramTypeName == typeof(Vector4).MakeByRefType().Name)
+                {
+                    NetworkSerializer_SerializeVector4_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                }
+                else if (paramTypeName == typeof(Quaternion).MakeByRefType().Name)
+                {
+                    NetworkSerializer_SerializeQuaternion_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                }
+                else if (paramTypeName == typeof(Ray).MakeByRefType().Name)
+                {
+                    NetworkSerializer_SerializeRay_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                }
+                else if (paramTypeName == typeof(Ray2D).MakeByRefType().Name)
+                {
+                    NetworkSerializer_SerializeRay2D_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                }
+                else if (paramTypeName == typeof(bool[]).MakeByRefType().Name)
+                {
+                    NetworkSerializer_SerializeBoolArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                }
+                else if (paramTypeName == typeof(char[]).MakeByRefType().Name)
+                {
+                    NetworkSerializer_SerializeCharArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                }
+                else if (paramTypeName == typeof(sbyte[]).MakeByRefType().Name)
+                {
+                    NetworkSerializer_SerializeSbyteArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                }
+                else if (paramTypeName == typeof(byte[]).MakeByRefType().Name)
+                {
+                    NetworkSerializer_SerializeByteArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                }
+                else if (paramTypeName == typeof(short[]).MakeByRefType().Name)
+                {
+                    NetworkSerializer_SerializeShortArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                }
+                else if (paramTypeName == typeof(ushort[]).MakeByRefType().Name)
+                {
+                    NetworkSerializer_SerializeUshortArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                }
+                else if (paramTypeName == typeof(int[]).MakeByRefType().Name)
+                {
+                    NetworkSerializer_SerializeIntArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                }
+                else if (paramTypeName == typeof(uint[]).MakeByRefType().Name)
+                {
+                    NetworkSerializer_SerializeUintArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                }
+                else if (paramTypeName == typeof(long[]).MakeByRefType().Name)
+                {
+                    NetworkSerializer_SerializeLongArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                }
+                else if (paramTypeName == typeof(ulong[]).MakeByRefType().Name)
+                {
+                    NetworkSerializer_SerializeUlongArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                }
+                else if (paramTypeName == typeof(float[]).MakeByRefType().Name)
+                {
+                    NetworkSerializer_SerializeFloatArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                }
+                else if (paramTypeName == typeof(double[]).MakeByRefType().Name)
+                {
+                    NetworkSerializer_SerializeDoubleArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                }
+                else if (paramTypeName == typeof(string[]).MakeByRefType().Name)
+                {
+                    NetworkSerializer_SerializeStringArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                }
+                else if (paramTypeName == typeof(Color[]).MakeByRefType().Name)
+                {
+                    NetworkSerializer_SerializeColorArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                }
+                else if (paramTypeName == typeof(Color32[]).MakeByRefType().Name)
+                {
+                    NetworkSerializer_SerializeColor32Array_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                }
+                else if (paramTypeName == typeof(Vector2[]).MakeByRefType().Name)
+                {
+                    NetworkSerializer_SerializeVector2Array_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                }
+                else if (paramTypeName == typeof(Vector3[]).MakeByRefType().Name)
+                {
+                    NetworkSerializer_SerializeVector3Array_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                }
+                else if (paramTypeName == typeof(Vector4[]).MakeByRefType().Name)
+                {
+                    NetworkSerializer_SerializeVector4Array_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                }
+                else if (paramTypeName == typeof(Quaternion[]).MakeByRefType().Name)
+                {
+                    NetworkSerializer_SerializeQuaternionArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                }
+                else if (paramTypeName == typeof(Ray[]).MakeByRefType().Name)
+                {
+                    NetworkSerializer_SerializeRayArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                }
+                else if (paramTypeName == typeof(Ray2D[]).MakeByRefType().Name)
+                {
+                    NetworkSerializer_SerializeRay2DArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                }
             }
 
             return true;
@@ -377,10 +529,16 @@ namespace MLAPI.Editor.CodeGen
             foreach (var methodDefinition in typeDefinition.Methods)
             {
                 var rpcAttribute = CheckAndGetRPCAttribute(methodDefinition);
-                if (rpcAttribute == null) continue;
+                if (rpcAttribute == null)
+                {
+                    continue;
+                }
 
                 var methodDefHash = methodDefinition.Hash();
-                if (methodDefHash == 0) continue;
+                if (methodDefHash == 0)
+                {
+                    continue;
+                }
 
                 InjectWriteAndCallBlocks(methodDefinition, rpcAttribute, methodDefHash);
                 staticHandlers.Add((methodDefHash, GenerateStaticHandler(methodDefinition, rpcAttribute)));
@@ -406,7 +564,10 @@ namespace MLAPI.Editor.CodeGen
                 var processor = staticCtorMethodDef.Body.GetILProcessor();
                 foreach (var (hash, method) in staticHandlers)
                 {
-                    if (hash == 0 || method == null) continue;
+                    if (hash == 0 || method == null)
+                    {
+                        continue;
+                    }
 
                     typeDefinition.Methods.Add(method);
 
@@ -504,11 +665,20 @@ namespace MLAPI.Editor.CodeGen
                 var paramType = paramDef.ParameterType;
 
                 // Serializable
-                if (paramType.IsSerializable()) continue;
+                if (paramType.IsSerializable())
+                {
+                    continue;
+                }
                 // ServerRpcParams
-                if (paramType.FullName == CodeGenHelpers.ServerRpcParams_FullName && isServerRpc && paramIndex == paramCount - 1) continue;
+                if (paramType.FullName == CodeGenHelpers.ServerRpcParams_FullName && isServerRpc && paramIndex == paramCount - 1)
+                {
+                    continue;
+                }
                 // ClientRpcParams
-                if (paramType.FullName == CodeGenHelpers.ClientRpcParams_FullName && !isServerRpc && paramIndex == paramCount - 1) continue;
+                if (paramType.FullName == CodeGenHelpers.ClientRpcParams_FullName && !isServerRpc && paramIndex == paramCount - 1)
+                {
+                    continue;
+                }
 
                 m_Diagnostics.AddError(methodDefinition, $"RPC method parameter does not support serialization: {paramType.FullName}");
                 rpcAttribute = null;
@@ -555,7 +725,11 @@ namespace MLAPI.Editor.CodeGen
             methodDefinition.Body.Variables.Add(new VariableDefinition(typeSystem.UInt32));
             int methodHashLocIdx = methodDefinition.Body.Variables.Count - 1;
             // XXXRpcParams
-            if (!hasRpcParams) methodDefinition.Body.Variables.Add(new VariableDefinition(isServerRpc ? ServerRpcParams_TypeRef : ClientRpcParams_TypeRef));
+            if (!hasRpcParams)
+            {
+                methodDefinition.Body.Variables.Add(new VariableDefinition(isServerRpc ? ServerRpcParams_TypeRef : ClientRpcParams_TypeRef));
+            }
+
             int rpcParamsIdx = !hasRpcParams ? methodDefinition.Body.Variables.Count - 1 : -1;
 
             {
@@ -1577,7 +1751,7 @@ namespace MLAPI.Editor.CodeGen
                         break;
                 }
             }
-            
+
             nhandler.Body.InitLocals = true;
             // NetworkManager networkManager;
             nhandler.Body.Variables.Add(new VariableDefinition(NetworkManager_TypeRef));

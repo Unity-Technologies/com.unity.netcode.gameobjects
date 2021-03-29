@@ -14,7 +14,10 @@ namespace UnityEditor
 
         private void Init()
         {
-            if (m_Initialized) return;
+            if (m_Initialized)
+            {
+                return;
+            }
 
             m_Initialized = true;
             m_NetworkObject = (NetworkObject)target;

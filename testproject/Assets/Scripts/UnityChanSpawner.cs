@@ -1,10 +1,10 @@
-﻿using MLAPI;
+using MLAPI;
 using UnityEngine;
 
 public class UnityChanSpawner : MonoBehaviour
 {
     public GameObject unityChanPrefab;
-    
+
     private void Start()
     {
         NetworkManager.Singleton.OnServerStarted += () =>
