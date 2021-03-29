@@ -25,8 +25,8 @@ namespace MLAPI
         private class MLAPIProfilerCounter
         {
             // Note: These fields are named this way for internal serialization
-            public string Name;
-            public string Category;
+            public string m_Name;
+            public string m_Category;
         }
 
         /// <summary>
@@ -36,62 +36,65 @@ namespace MLAPI
         private class MLAPIProfilerModuleData
         {
             // Note: These fields are named this way for internal serialization
-            public List<MLAPIProfilerCounter> ChartCounters = new List<MLAPIProfilerCounter>();
-            public List<MLAPIProfilerCounter> DetailCounters = new List<MLAPIProfilerCounter>();
-            public string Name;
+            public List<MLAPIProfilerCounter> m_ChartCounters = new List<MLAPIProfilerCounter>();
+            public List<MLAPIProfilerCounter> m_DetailCounters = new List<MLAPIProfilerCounter>();
+            public string m_Name;
         }
 
+        /// <summary>
+        /// This needs to be in synced with the internal dynamic module structure to provide our own counters
+        /// </summary>
         [Serializable]
         private class MLAPIModules
         {
             // Note: These fields are named this way for internal serialization
-            public List<MLAPIProfilerModuleData> Modules;
+            public List<MLAPIProfilerModuleData> m_Modules;
         }
 #pragma warning restore IDE1006 // restore naming rule violation check
 
         private static List<MLAPIProfilerCounter> CreateRPCCounters() => new List<MLAPIProfilerCounter>()
         {
-            new MLAPIProfilerCounter { Name = ProfilerConstants.RpcSent, Category = ProfilerCategory.Network.Name },
-            new MLAPIProfilerCounter { Name = ProfilerConstants.RpcReceived, Category = ProfilerCategory.Network.Name },
-            new MLAPIProfilerCounter { Name = ProfilerConstants.RpcBatchesSent, Category = ProfilerCategory.Network.Name },
-            new MLAPIProfilerCounter { Name = ProfilerConstants.RpcBatchesReceived, Category = ProfilerCategory.Network.Name },
-            new MLAPIProfilerCounter { Name = ProfilerConstants.RpcQueueProcessed, Category = ProfilerCategory.Network.Name },
-            new MLAPIProfilerCounter { Name = ProfilerConstants.RpcInQueueSize, Category = ProfilerCategory.Network.Name },
-            new MLAPIProfilerCounter { Name = ProfilerConstants.RpcOutQueueSize, Category = ProfilerCategory.Network.Name },
+            new MLAPIProfilerCounter { m_Name = ProfilerConstants.RpcSent, m_Category = ProfilerCategory.Network.Name },
+            new MLAPIProfilerCounter { m_Name = ProfilerConstants.RpcReceived, m_Category = ProfilerCategory.Network.Name },
+            new MLAPIProfilerCounter { m_Name = ProfilerConstants.RpcBatchesSent, m_Category = ProfilerCategory.Network.Name },
+            new MLAPIProfilerCounter { m_Name = ProfilerConstants.RpcBatchesReceived, m_Category = ProfilerCategory.Network.Name },
+            new MLAPIProfilerCounter { m_Name = ProfilerConstants.RpcQueueProcessed, m_Category = ProfilerCategory.Network.Name },
+            new MLAPIProfilerCounter { m_Name = ProfilerConstants.RpcInQueueSize, m_Category = ProfilerCategory.Network.Name },
+            new MLAPIProfilerCounter { m_Name = ProfilerConstants.RpcOutQueueSize, m_Category = ProfilerCategory.Network.Name },
         };
 
         private static List<MLAPIProfilerCounter> CreateOperationsCounters() => new List<MLAPIProfilerCounter>()
         {
-            new MLAPIProfilerCounter { Name = ProfilerConstants.Connections, Category = ProfilerCategory.Network.Name },
-            new MLAPIProfilerCounter { Name = ProfilerConstants.ReceiveTickRate, Category = ProfilerCategory.Network.Name },
+            new MLAPIProfilerCounter { m_Name = ProfilerConstants.Connections, m_Category = ProfilerCategory.Network.Name },
+            new MLAPIProfilerCounter { m_Name = ProfilerConstants.ReceiveTickRate, m_Category = ProfilerCategory.Network.Name },
         };
 
         private static List<MLAPIProfilerCounter> CreateMessagesCounters() => new List<MLAPIProfilerCounter>()
         {
-            new MLAPIProfilerCounter { Name = ProfilerConstants.NamedMessageReceived, Category = ProfilerCategory.Network.Name },
-            new MLAPIProfilerCounter { Name = ProfilerConstants.UnnamedMessageReceived, Category = ProfilerCategory.Network.Name },
-            new MLAPIProfilerCounter { Name = ProfilerConstants.NamedMessageSent, Category = ProfilerCategory.Network.Name },
-            new MLAPIProfilerCounter { Name = ProfilerConstants.UnnamedMessageSent, Category = ProfilerCategory.Network.Name },
-            new MLAPIProfilerCounter { Name = ProfilerConstants.ByteSent, Category = ProfilerCategory.Network.Name },
-            new MLAPIProfilerCounter { Name = ProfilerConstants.ByteReceived, Category = ProfilerCategory.Network.Name },
-            new MLAPIProfilerCounter { Name = ProfilerConstants.NetworkVarUpdates, Category = ProfilerCategory.Network.Name },
-            new MLAPIProfilerCounter { Name = ProfilerConstants.NetworkVarDeltas, Category = ProfilerCategory.Network.Name },
+            new MLAPIProfilerCounter { m_Name = ProfilerConstants.NamedMessageReceived, m_Category = ProfilerCategory.Network.Name },
+            new MLAPIProfilerCounter { m_Name = ProfilerConstants.UnnamedMessageReceived, m_Category = ProfilerCategory.Network.Name },
+            new MLAPIProfilerCounter { m_Name = ProfilerConstants.NamedMessageSent, m_Category = ProfilerCategory.Network.Name },
+            new MLAPIProfilerCounter { m_Name = ProfilerConstants.UnnamedMessageSent, m_Category = ProfilerCategory.Network.Name },
+            new MLAPIProfilerCounter { m_Name = ProfilerConstants.ByteSent, m_Category = ProfilerCategory.Network.Name },
+            new MLAPIProfilerCounter { m_Name = ProfilerConstants.ByteReceived, m_Category = ProfilerCategory.Network.Name },
+            new MLAPIProfilerCounter { m_Name = ProfilerConstants.NetworkVarUpdates, m_Category = ProfilerCategory.Network.Name },
+            new MLAPIProfilerCounter { m_Name = ProfilerConstants.NetworkVarDeltas, m_Category = ProfilerCategory.Network.Name },
         };
 
         private delegate List<MLAPIProfilerCounter> CounterListFactoryDelegate();
 
         private static bool CreateMLAPIDynamicModule(ref MLAPIModules mlapiModules, string moduleName, CounterListFactoryDelegate counterListFactoryDelegate)
         {
-            var module = mlapiModules.Modules.Find(x => x.Name == moduleName);
+            var module = mlapiModules.m_Modules.Find(x => x.m_Name == moduleName);
             if (module == null)
             {
                 var newModule = new MLAPIProfilerModuleData
                 {
-                    Name = moduleName,
-                    ChartCounters = counterListFactoryDelegate(),
-                    DetailCounters = counterListFactoryDelegate(),
+                    m_Name = moduleName,
+                    m_ChartCounters = counterListFactoryDelegate(),
+                    m_DetailCounters = counterListFactoryDelegate(),
                 };
-                mlapiModules.Modules.Add(newModule);
+                mlapiModules.m_Modules.Add(newModule);
                 return true;
             }
 
