@@ -558,7 +558,7 @@ namespace MLAPI
         /// <summary>
         /// Starts a Host
         /// </summary>
-        public SocketTasks StartHost(Vector3? position = null, Quaternion? rotation = null, bool? createPlayerObject = null, ulong? prefabHash = null, Stream payloadStream = null)
+        public SocketTasks StartHost()
         {
             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
             {
@@ -594,24 +594,25 @@ namespace MLAPI
             IsClient = true;
             IsListening = true;
 
-            ulong hostClientId = NetworkConfig.NetworkTransport.ServerClientId;
-
-            ConnectedClients.Add(hostClientId, new NetworkClient()
+            if (NetworkConfig.ConnectionApproval)
             {
-                ClientId = hostClientId
-            });
-
-            ConnectedClientsList.Add(ConnectedClients[hostClientId]);
-
-            if ((createPlayerObject == null && NetworkConfig.CreatePlayerPrefab) || (createPlayerObject != null && createPlayerObject.Value))
-            {
-                var networkObject = NetworkSpawnManager.CreateLocalNetworkObject(false, 0, prefabHash ?? NetworkConfig.PlayerPrefabHash.Value, null, position, rotation);
-                NetworkSpawnManager.SpawnNetworkObjectLocally(networkObject, NetworkSpawnManager.GetNetworkObjectId(), false, true, hostClientId, payloadStream, payloadStream != null, payloadStream == null ? 0 : (int)payloadStream.Length, false, false);
-
-                if (networkObject.CheckObjectVisibility == null || networkObject.CheckObjectVisibility(hostClientId))
+                InvokeConnectionApproval(NetworkConfig.ConnectionData, ServerClientId, (createPlayerObject, playerPrefabHash, approved, position, rotation) =>
                 {
-                    networkObject.m_Observers.Add(hostClientId);
-                }
+                    // You cannot decline the local server. Force approved to true
+                    if (!approved)
+                    {
+                        if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                        {
+                            NetworkLog.LogWarning("You cannot decline the host connection. The connection was automatically approved.");
+                        }
+                    }
+
+                    HandleApproval(ServerClientId, createPlayerObject, playerPrefabHash, true, position, rotation);
+                });
+            }
+            else
+            {
+                HandleApproval(ServerClientId, NetworkConfig.CreatePlayerPrefab, null, true, null, null);
             }
 
             NetworkSpawnManager.ServerSpawnSceneObjectsOnStartSweep();
@@ -1441,7 +1442,6 @@ namespace MLAPI
                 // This packet is unreliable, but if it gets through it should provide a much better sync than the potentially huge approval message.
                 SyncTime();
 
-
                 if (createPlayerObject)
                 {
                     var networkObject = NetworkSpawnManager.CreateLocalNetworkObject(false, 0, playerPrefabHash ?? NetworkConfig.PlayerPrefabHash.Value, null, position, rotation);
@@ -1461,97 +1461,100 @@ namespace MLAPI
                     }
                 }
 
-                using (var buffer = PooledNetworkBuffer.Get())
-                using (var writer = PooledNetworkWriter.Get(buffer))
+                if (clientId != ServerClientId)
                 {
-                    writer.WriteUInt64Packed(clientId);
-
-                    if (NetworkConfig.EnableSceneManagement)
+                    // Don't send any data over the wire if the host "connected"
+                    using (var buffer = PooledNetworkBuffer.Get())
+                    using (var writer = PooledNetworkWriter.Get(buffer))
                     {
-                        writer.WriteUInt32Packed(NetworkSceneManager.CurrentSceneIndex);
-                        writer.WriteByteArray(NetworkSceneManager.CurrentSceneSwitchProgressGuid.ToByteArray());
-                    }
+                        writer.WriteUInt64Packed(clientId);
 
-                    writer.WriteSinglePacked(Time.realtimeSinceStartup);
-                    writer.WriteUInt32Packed((uint)m_ObservedObjects.Count);
-
-                    for (int i = 0; i < m_ObservedObjects.Count; i++)
-                    {
-                        var observedObject = m_ObservedObjects[i];
-                        writer.WriteBool(observedObject.IsPlayerObject);
-                        writer.WriteUInt64Packed(observedObject.NetworkObjectId);
-                        writer.WriteUInt64Packed(observedObject.OwnerClientId);
-
-                        NetworkObject parent = null;
-
-                        if (!observedObject.AlwaysReplicateAsRoot && observedObject.transform.parent != null)
+                        if (NetworkConfig.EnableSceneManagement)
                         {
-                            parent = observedObject.transform.parent.GetComponent<NetworkObject>();
+                            writer.WriteUInt32Packed(NetworkSceneManager.CurrentSceneIndex);
+                            writer.WriteByteArray(NetworkSceneManager.CurrentSceneSwitchProgressGuid.ToByteArray());
                         }
 
-                        if (parent == null)
-                        {
-                            writer.WriteBool(false);
-                        }
-                        else
-                        {
-                            writer.WriteBool(true);
-                            writer.WriteUInt64Packed(parent.NetworkObjectId);
-                        }
+                        writer.WriteSinglePacked(Time.realtimeSinceStartup);
+                        writer.WriteUInt32Packed((uint)m_ObservedObjects.Count);
 
-                        if (!NetworkConfig.EnableSceneManagement || NetworkConfig.UsePrefabSync)
+                        for (int i = 0; i < m_ObservedObjects.Count; i++)
                         {
-                            writer.WriteUInt64Packed(observedObject.PrefabHash);
-                        }
-                        else
-                        {
-                            // Is this a scene object that we will soft map
-                            writer.WriteBool(observedObject.IsSceneObject ?? true);
+                            var observedObject = m_ObservedObjects[i];
+                            writer.WriteBool(observedObject.IsPlayerObject);
+                            writer.WriteUInt64Packed(observedObject.NetworkObjectId);
+                            writer.WriteUInt64Packed(observedObject.OwnerClientId);
 
-                            if (observedObject.IsSceneObject == null || observedObject.IsSceneObject.Value)
+                            NetworkObject parent = null;
+
+                            if (!observedObject.AlwaysReplicateAsRoot && observedObject.transform.parent != null)
                             {
-                                writer.WriteUInt64Packed(observedObject.NetworkInstanceId);
+                                parent = observedObject.transform.parent.GetComponent<NetworkObject>();
+                            }
+
+                            if (parent == null)
+                            {
+                                writer.WriteBool(false);
                             }
                             else
                             {
+                                writer.WriteBool(true);
+                                writer.WriteUInt64Packed(parent.NetworkObjectId);
+                            }
+
+                            if (!NetworkConfig.EnableSceneManagement || NetworkConfig.UsePrefabSync)
+                            {
                                 writer.WriteUInt64Packed(observedObject.PrefabHash);
+                            }
+                            else
+                            {
+                                // Is this a scene object that we will soft map
+                                writer.WriteBool(observedObject.IsSceneObject ?? true);
+
+                                if (observedObject.IsSceneObject == null || observedObject.IsSceneObject.Value)
+                                {
+                                    writer.WriteUInt64Packed(observedObject.NetworkInstanceId);
+                                }
+                                else
+                                {
+                                    writer.WriteUInt64Packed(observedObject.PrefabHash);
+                                }
+                            }
+
+                            if (observedObject.IncludeTransformWhenSpawning == null || observedObject.IncludeTransformWhenSpawning(clientId))
+                            {
+                                writer.WriteBool(true);
+                                writer.WriteSinglePacked(observedObject.transform.position.x);
+                                writer.WriteSinglePacked(observedObject.transform.position.y);
+                                writer.WriteSinglePacked(observedObject.transform.position.z);
+
+                                writer.WriteSinglePacked(observedObject.transform.rotation.eulerAngles.x);
+                                writer.WriteSinglePacked(observedObject.transform.rotation.eulerAngles.y);
+                                writer.WriteSinglePacked(observedObject.transform.rotation.eulerAngles.z);
+                            }
+                            else
+                            {
+                                writer.WriteBool(false);
+                            }
+
+                            if (NetworkConfig.EnableNetworkVariable)
+                            {
+                                observedObject.WriteNetworkVariableData(buffer, clientId);
                             }
                         }
 
-                        if (observedObject.IncludeTransformWhenSpawning == null || observedObject.IncludeTransformWhenSpawning(clientId))
-                        {
-                            writer.WriteBool(true);
-                            writer.WriteSinglePacked(observedObject.transform.position.x);
-                            writer.WriteSinglePacked(observedObject.transform.position.y);
-                            writer.WriteSinglePacked(observedObject.transform.position.z);
-
-                            writer.WriteSinglePacked(observedObject.transform.rotation.eulerAngles.x);
-                            writer.WriteSinglePacked(observedObject.transform.rotation.eulerAngles.y);
-                            writer.WriteSinglePacked(observedObject.transform.rotation.eulerAngles.z);
-                        }
-                        else
-                        {
-                            writer.WriteBool(false);
-                        }
-
-                        if (NetworkConfig.EnableNetworkVariable)
-                        {
-                            observedObject.WriteNetworkVariableData(buffer, clientId);
-                        }
+                        InternalMessageSender.Send(clientId, NetworkConstants.CONNECTION_APPROVED, NetworkChannel.Internal, buffer);
                     }
-
-                    InternalMessageSender.Send(clientId, NetworkConstants.CONNECTION_APPROVED, NetworkChannel.Internal, buffer);
-
-                    OnClientConnectedCallback?.Invoke(clientId);
                 }
+
+                OnClientConnectedCallback?.Invoke(clientId);
 
                 if (!createPlayerObject || (playerPrefabHash == null && NetworkConfig.PlayerPrefabHash == null))
                 {
                     return;
                 }
 
-                //Inform old clients of the new player
-
+                // Inform old clients of the new player
                 foreach (KeyValuePair<ulong, NetworkClient> clientPair in ConnectedClients)
                 {
                     if (clientPair.Key == clientId ||
