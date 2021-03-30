@@ -1424,18 +1424,18 @@ namespace MLAPI
 
         private readonly List<NetworkObject> m_ObservedObjects = new List<NetworkObject>();
 
-        internal void HandleApproval(ulong clientId, bool createPlayerObject, ulong? playerPrefabHash, bool approved, Vector3? position, Quaternion? rotation)
+        internal void HandleApproval(ulong ownerClientId, bool createPlayerObject, ulong? playerPrefabHash, bool approved, Vector3? position, Quaternion? rotation)
         {
             if (approved)
             {
                 // Inform new client it got approved
-                if (PendingClients.ContainsKey(clientId))
+                if (PendingClients.ContainsKey(ownerClientId))
                 {
-                    PendingClients.Remove(clientId);
+                    PendingClients.Remove(ownerClientId);
                 }
 
-                var client = new NetworkClient { ClientId = clientId, };
-                ConnectedClients.Add(clientId, client);
+                var client = new NetworkClient { ClientId = ownerClientId, };
+                ConnectedClients.Add(ownerClientId, client);
                 ConnectedClientsList.Add(client);
 
                 PerformanceDataManager.Increment(ProfilerConstants.Connections);
@@ -1446,30 +1446,30 @@ namespace MLAPI
 
                 if (createPlayerObject)
                 {
-                    var networkObject = NetworkSpawnManager.CreateLocalNetworkObject(false, 0, playerPrefabHash ?? NetworkConfig.PlayerPrefabHash.Value, clientId, null, position, rotation);
-                    NetworkSpawnManager.SpawnNetworkObjectLocally(networkObject, NetworkSpawnManager.GetNetworkObjectId(), false, true, clientId, null, false, 0, false, false);
+                    var networkObject = NetworkSpawnManager.CreateLocalNetworkObject(false, 0, playerPrefabHash ?? NetworkConfig.PlayerPrefabHash.Value, ownerClientId, null, position, rotation);
+                    NetworkSpawnManager.SpawnNetworkObjectLocally(networkObject, NetworkSpawnManager.GetNetworkObjectId(), false, true, ownerClientId, null, false, 0, false, false);
 
-                    ConnectedClients[clientId].PlayerObject = networkObject;
+                    ConnectedClients[ownerClientId].PlayerObject = networkObject;
                 }
 
                 m_ObservedObjects.Clear();
 
                 foreach (var sobj in NetworkSpawnManager.SpawnedObjectsList)
                 {
-                    if (clientId == ServerClientId || sobj.CheckObjectVisibility == null || sobj.CheckObjectVisibility(clientId))
+                    if (ownerClientId == ServerClientId || sobj.CheckObjectVisibility == null || sobj.CheckObjectVisibility(ownerClientId))
                     {
                         m_ObservedObjects.Add(sobj);
-                        sobj.Observers.Add(clientId);
+                        sobj.Observers.Add(ownerClientId);
                     }
                 }
 
-                if (clientId != ServerClientId)
+                if (ownerClientId != ServerClientId)
                 {
                     // Don't send any data over the wire if the host "connected"
                     using (var buffer = PooledNetworkBuffer.Get())
                     using (var writer = PooledNetworkWriter.Get(buffer))
                     {
-                        writer.WriteUInt64Packed(clientId);
+                        writer.WriteUInt64Packed(ownerClientId);
 
                         if (NetworkConfig.EnableSceneManagement)
                         {
@@ -1523,7 +1523,7 @@ namespace MLAPI
                                 }
                             }
 
-                            if (observedObject.IncludeTransformWhenSpawning == null || observedObject.IncludeTransformWhenSpawning(clientId))
+                            if (observedObject.IncludeTransformWhenSpawning == null || observedObject.IncludeTransformWhenSpawning(ownerClientId))
                             {
                                 writer.WriteBool(true);
                                 writer.WriteSinglePacked(observedObject.transform.position.x);
@@ -1541,15 +1541,15 @@ namespace MLAPI
 
                             if (NetworkConfig.EnableNetworkVariable)
                             {
-                                observedObject.WriteNetworkVariableData(buffer, clientId);
+                                observedObject.WriteNetworkVariableData(buffer, ownerClientId);
                             }
                         }
 
-                        InternalMessageSender.Send(clientId, NetworkConstants.CONNECTION_APPROVED, NetworkChannel.Internal, buffer);
+                        InternalMessageSender.Send(ownerClientId, NetworkConstants.CONNECTION_APPROVED, NetworkChannel.Internal, buffer);
                     }
                 }
 
-                OnClientConnectedCallback?.Invoke(clientId);
+                OnClientConnectedCallback?.Invoke(ownerClientId);
 
                 if (!createPlayerObject || (playerPrefabHash == null && NetworkConfig.PlayerPrefabHash == null))
                 {
@@ -1559,9 +1559,9 @@ namespace MLAPI
                 // Inform old clients of the new player
                 foreach (KeyValuePair<ulong, NetworkClient> clientPair in ConnectedClients)
                 {
-                    if (clientPair.Key == clientId ||
-                        ConnectedClients[clientId].PlayerObject == null ||
-                        !ConnectedClients[clientId].PlayerObject.Observers.Contains(clientPair.Key))
+                    if (clientPair.Key == ownerClientId ||
+                        ConnectedClients[ownerClientId].PlayerObject == null ||
+                        !ConnectedClients[ownerClientId].PlayerObject.Observers.Contains(clientPair.Key))
                     {
                         continue; //The new client.
                     }
@@ -1570,8 +1570,8 @@ namespace MLAPI
                     using (var writer = PooledNetworkWriter.Get(buffer))
                     {
                         writer.WriteBool(true);
-                        writer.WriteUInt64Packed(ConnectedClients[clientId].PlayerObject.NetworkObjectId);
-                        writer.WriteUInt64Packed(clientId);
+                        writer.WriteUInt64Packed(ConnectedClients[ownerClientId].PlayerObject.NetworkObjectId);
+                        writer.WriteUInt64Packed(ownerClientId);
 
                         //Does not have a parent
                         writer.WriteBool(false);
@@ -1587,16 +1587,16 @@ namespace MLAPI
                             writer.WriteUInt64Packed(playerPrefabHash ?? NetworkConfig.PlayerPrefabHash.Value);
                         }
 
-                        if (ConnectedClients[clientId].PlayerObject.IncludeTransformWhenSpawning == null || ConnectedClients[clientId].PlayerObject.IncludeTransformWhenSpawning(clientId))
+                        if (ConnectedClients[ownerClientId].PlayerObject.IncludeTransformWhenSpawning == null || ConnectedClients[ownerClientId].PlayerObject.IncludeTransformWhenSpawning(ownerClientId))
                         {
                             writer.WriteBool(true);
-                            writer.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.position.x);
-                            writer.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.position.y);
-                            writer.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.position.z);
+                            writer.WriteSinglePacked(ConnectedClients[ownerClientId].PlayerObject.transform.position.x);
+                            writer.WriteSinglePacked(ConnectedClients[ownerClientId].PlayerObject.transform.position.y);
+                            writer.WriteSinglePacked(ConnectedClients[ownerClientId].PlayerObject.transform.position.z);
 
-                            writer.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.rotation.eulerAngles.x);
-                            writer.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.rotation.eulerAngles.y);
-                            writer.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.rotation.eulerAngles.z);
+                            writer.WriteSinglePacked(ConnectedClients[ownerClientId].PlayerObject.transform.rotation.eulerAngles.x);
+                            writer.WriteSinglePacked(ConnectedClients[ownerClientId].PlayerObject.transform.rotation.eulerAngles.y);
+                            writer.WriteSinglePacked(ConnectedClients[ownerClientId].PlayerObject.transform.rotation.eulerAngles.z);
                         }
                         else
                         {
@@ -1607,7 +1607,7 @@ namespace MLAPI
 
                         if (NetworkConfig.EnableNetworkVariable)
                         {
-                            ConnectedClients[clientId].PlayerObject.WriteNetworkVariableData(buffer, clientPair.Key);
+                            ConnectedClients[ownerClientId].PlayerObject.WriteNetworkVariableData(buffer, clientPair.Key);
                         }
 
                         InternalMessageSender.Send(clientPair.Key, NetworkConstants.ADD_OBJECT, NetworkChannel.Internal, buffer);
@@ -1616,12 +1616,12 @@ namespace MLAPI
             }
             else
             {
-                if (PendingClients.ContainsKey(clientId))
+                if (PendingClients.ContainsKey(ownerClientId))
                 {
-                    PendingClients.Remove(clientId);
+                    PendingClients.Remove(ownerClientId);
                 }
 
-                NetworkConfig.NetworkTransport.DisconnectRemoteClient(clientId);
+                NetworkConfig.NetworkTransport.DisconnectRemoteClient(ownerClientId);
             }
         }
 
