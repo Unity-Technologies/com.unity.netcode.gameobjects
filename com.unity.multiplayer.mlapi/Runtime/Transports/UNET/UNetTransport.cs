@@ -64,16 +64,16 @@ namespace MLAPI.Transports.UNET
         private SocketTask m_ConnectTask;
         public override ulong ServerClientId => GetMLAPIClientId(0, 0, true);
 
-        #if UNITY_EDITOR
+#if UNITY_EDITOR
         private void OnValidate()
         {
             for (int i = 0; i < Channels.Count; i++)
             {
                 // Set the channels to a incrementing value
-                Channels[i].Id = (byte)((byte) NetworkChannel.ChannelUnused + i);
+                Channels[i].Id = (byte)((byte)NetworkChannel.ChannelUnused + i);
             }
         }
-        #endif
+#endif
 
         protected void LateUpdate()
         {
