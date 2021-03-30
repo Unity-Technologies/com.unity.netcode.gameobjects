@@ -366,7 +366,7 @@ namespace MLAPI.SceneManagement
                             rotation = Quaternion.Euler(reader.ReadSinglePacked(), reader.ReadSinglePacked(), reader.ReadSinglePacked());
                         }
 
-                        var networkObject = NetworkSpawnManager.CreateLocalNetworkObject(false, 0, prefabHash, parentNetworkId, position, rotation);
+                        var networkObject = NetworkSpawnManager.CreateLocalNetworkObject(false, 0, prefabHash, owner, parentNetworkId, position, rotation);
                         NetworkSpawnManager.SpawnNetworkObjectLocally(networkObject, networkId, true, isPlayerObject, owner, objectStream, false, 0, true, false);
 
                         var bufferQueue = BufferManager.ConsumeBuffersForNetworkId(networkId);
@@ -408,7 +408,7 @@ namespace MLAPI.SceneManagement
 
                         ulong instanceId = reader.ReadUInt64Packed();
 
-                        var networkObject = NetworkSpawnManager.CreateLocalNetworkObject(true, instanceId, 0, parentNetworkId, null, null);
+                        var networkObject = NetworkSpawnManager.CreateLocalNetworkObject(true, instanceId, 0, owner, parentNetworkId, null, null);
                         NetworkSpawnManager.SpawnNetworkObjectLocally(networkObject, networkId, true, isPlayerObject, owner, objectStream, false, 0, true, false);
 
                         var bufferQueue = BufferManager.ConsumeBuffersForNetworkId(networkId);

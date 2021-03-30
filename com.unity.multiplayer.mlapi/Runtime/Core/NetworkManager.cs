@@ -1446,7 +1446,7 @@ namespace MLAPI
 
                 if (createPlayerObject)
                 {
-                    var networkObject = NetworkSpawnManager.CreateLocalNetworkObject(false, 0, playerPrefabHash ?? NetworkConfig.PlayerPrefabHash.Value, null, position, rotation);
+                    var networkObject = NetworkSpawnManager.CreateLocalNetworkObject(false, 0, playerPrefabHash ?? NetworkConfig.PlayerPrefabHash.Value, clientId, null, position, rotation);
                     NetworkSpawnManager.SpawnNetworkObjectLocally(networkObject, NetworkSpawnManager.GetNetworkObjectId(), false, true, clientId, null, false, 0, false, false);
 
                     ConnectedClients[clientId].PlayerObject = networkObject;
