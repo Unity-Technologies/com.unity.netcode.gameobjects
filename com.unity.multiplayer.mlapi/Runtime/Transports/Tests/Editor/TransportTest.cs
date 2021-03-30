@@ -38,7 +38,7 @@ public class TransportTest : MonoBehaviour
         byte CustomChannel = 0;
 
         // test 1: add a legit channel.
-        ut.Channels.Add(new UNetChannel { Id = NetworkChannel.ChannelUnused + CustomChannel, Type = QosType.Unreliable });
+        ut.Channels.Add(new UNetChannel { Id = (byte)(NetworkChannel.ChannelUnused + CustomChannel), Type = QosType.Unreliable });
 
         try
         {
@@ -54,7 +54,7 @@ public class TransportTest : MonoBehaviour
 
         ut.Channels.Clear();
         // test 2: add a bogus channel (one that intersects with the MLAPI built-in ones.)  Expect failure
-        ut.Channels.Add(new UNetChannel { Id = NetworkChannel.Internal, Type = QosType.Unreliable });
+        ut.Channels.Add(new UNetChannel { Id = (byte)NetworkChannel.Internal, Type = QosType.Unreliable });
 
         try
         {
