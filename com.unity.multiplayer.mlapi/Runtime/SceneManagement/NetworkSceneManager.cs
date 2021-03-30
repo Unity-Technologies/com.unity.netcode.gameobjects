@@ -347,7 +347,7 @@ namespace MLAPI.SceneManagement
                     {
                         bool isPlayerObject = reader.ReadBool();
                         ulong networkId = reader.ReadUInt64Packed();
-                        ulong owner = reader.ReadUInt64Packed();
+                        ulong ownerClientId = reader.ReadUInt64Packed();
                         bool hasParent = reader.ReadBool();
                         ulong? parentNetworkId = null;
 
@@ -366,8 +366,8 @@ namespace MLAPI.SceneManagement
                             rotation = Quaternion.Euler(reader.ReadSinglePacked(), reader.ReadSinglePacked(), reader.ReadSinglePacked());
                         }
 
-                        var networkObject = NetworkSpawnManager.CreateLocalNetworkObject(false, 0, prefabHash, owner, parentNetworkId, position, rotation);
-                        NetworkSpawnManager.SpawnNetworkObjectLocally(networkObject, networkId, true, isPlayerObject, owner, objectStream, false, 0, true, false);
+                        var networkObject = NetworkSpawnManager.CreateLocalNetworkObject(false, 0, prefabHash, ownerClientId, parentNetworkId, position, rotation);
+                        NetworkSpawnManager.SpawnNetworkObjectLocally(networkObject, networkId, true, isPlayerObject, ownerClientId, objectStream, false, 0, true, false);
 
                         var bufferQueue = BufferManager.ConsumeBuffersForNetworkId(networkId);
 
@@ -397,7 +397,7 @@ namespace MLAPI.SceneManagement
                     {
                         bool isPlayerObject = reader.ReadBool();
                         ulong networkId = reader.ReadUInt64Packed();
-                        ulong owner = reader.ReadUInt64Packed();
+                        ulong ownerClientId = reader.ReadUInt64Packed();
                         bool hasParent = reader.ReadBool();
                         ulong? parentNetworkId = null;
 
@@ -408,8 +408,8 @@ namespace MLAPI.SceneManagement
 
                         ulong instanceId = reader.ReadUInt64Packed();
 
-                        var networkObject = NetworkSpawnManager.CreateLocalNetworkObject(true, instanceId, 0, owner, parentNetworkId, null, null);
-                        NetworkSpawnManager.SpawnNetworkObjectLocally(networkObject, networkId, true, isPlayerObject, owner, objectStream, false, 0, true, false);
+                        var networkObject = NetworkSpawnManager.CreateLocalNetworkObject(true, instanceId, 0, ownerClientId, parentNetworkId, null, null);
+                        NetworkSpawnManager.SpawnNetworkObjectLocally(networkObject, networkId, true, isPlayerObject, ownerClientId, objectStream, false, 0, true, false);
 
                         var bufferQueue = BufferManager.ConsumeBuffersForNetworkId(networkId);
 
