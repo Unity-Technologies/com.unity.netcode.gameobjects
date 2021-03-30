@@ -1,7 +1,7 @@
 #if UNITY_2020_2_OR_NEWER
+using UnityEngine;
 using Unity.Profiling;
 #endif
-using UnityEngine;
 
 namespace MLAPI.Profiling
 {

@@ -21,14 +21,12 @@ namespace MLAPI.RuntimeTests
     /// </summary>
     public static class NetworkManagerHelper
     {
-        public static Transports.Tasks.SocketTasks s_StartHostSocketTasks { get; internal set; }
-        public static GameObject s_NetworkManagerObject { get; internal set; }
+        public static Transports.Tasks.SocketTasks StartHostSocketTasks { get; internal set; }
+        public static GameObject NetworkManagerObject { get; internal set; }
 
-        internal static Dictionary<Guid, GameObject> s_InstantiatedGameObjects = new Dictionary<Guid, GameObject>();
-
-        internal static Dictionary<Guid, NetworkObject> s_InstantiatedNetworkObjects = new Dictionary<Guid, NetworkObject>();
-
-        internal static NetworkManagerOperatingMode s_CurrentNetworkManagerMode;
+        internal static Dictionary<Guid, GameObject> InstantiatedGameObjects = new Dictionary<Guid, GameObject>();
+        internal static Dictionary<Guid, NetworkObject> InstantiatedNetworkObjects = new Dictionary<Guid, NetworkObject>();
+        internal static NetworkManagerOperatingMode CurrentNetworkManagerMode;
 
         /// <summary>
         /// This provides the ability to start NetworkManager in various modes
@@ -53,15 +51,15 @@ namespace MLAPI.RuntimeTests
         public static bool StartNetworkManager(NetworkManagerOperatingMode managerMode = NetworkManagerOperatingMode.Host)
         {
             //If we are changing the current manager mode and the current manager mode is not "None", then stop the NetworkManager mode
-            if (s_CurrentNetworkManagerMode != managerMode && s_CurrentNetworkManagerMode != NetworkManagerOperatingMode.None)
+            if (CurrentNetworkManagerMode != managerMode && CurrentNetworkManagerMode != NetworkManagerOperatingMode.None)
             {
                 StopNetworkManagerMode();
             }
 
             if (NetworkManager.Singleton == null)
             {
-                s_NetworkManagerObject = new GameObject(nameof(NetworkManager));
-                var networkManagerComponent = s_NetworkManagerObject.AddComponent<NetworkManager>();
+                NetworkManagerObject = new GameObject(nameof(NetworkManager));
+                var networkManagerComponent = NetworkManagerObject.AddComponent<NetworkManager>();
                 if (networkManagerComponent == null)
                 {
                     return false;
@@ -69,7 +67,7 @@ namespace MLAPI.RuntimeTests
 
                 Debug.Log($"{nameof(NetworkManager)} Instantiated.");
 
-                var unetTransport = s_NetworkManagerObject.AddComponent<UNetTransport>();
+                var unetTransport = NetworkManagerObject.AddComponent<UNetTransport>();
 
                 networkManagerComponent.NetworkConfig = new Configuration.NetworkConfig
                 {
@@ -114,11 +112,11 @@ namespace MLAPI.RuntimeTests
 
             Assert.IsNotNull(networkObject);
 
-            Assert.IsFalse(s_InstantiatedGameObjects.ContainsKey(gameObjectId));
-            Assert.IsFalse(s_InstantiatedNetworkObjects.ContainsKey(gameObjectId));
+            Assert.IsFalse(InstantiatedGameObjects.ContainsKey(gameObjectId));
+            Assert.IsFalse(InstantiatedNetworkObjects.ContainsKey(gameObjectId));
 
-            s_InstantiatedGameObjects.Add(gameObjectId, gameObject);
-            s_InstantiatedNetworkObjects.Add(gameObjectId, networkObject);
+            InstantiatedGameObjects.Add(gameObjectId, gameObject);
+            InstantiatedNetworkObjects.Add(gameObjectId, networkObject);
 
             return gameObjectId;
         }
@@ -131,8 +129,8 @@ namespace MLAPI.RuntimeTests
         /// <returns></returns>
         public static T AddComponentToObject<T>(Guid gameObjectIdentifier) where T : NetworkBehaviour
         {
-            Assert.IsTrue(s_InstantiatedGameObjects.ContainsKey(gameObjectIdentifier));
-            return s_InstantiatedGameObjects[gameObjectIdentifier].AddComponent<T>();
+            Assert.IsTrue(InstantiatedGameObjects.ContainsKey(gameObjectIdentifier));
+            return InstantiatedGameObjects[gameObjectIdentifier].AddComponent<T>();
         }
 
         /// <summary>
@@ -141,10 +139,10 @@ namespace MLAPI.RuntimeTests
         /// <param name="gameObjectIdentifier">ID returned to reference the game object</param>
         public static void SpawnNetworkObject(Guid gameObjectIdentifier)
         {
-            Assert.IsTrue(s_InstantiatedNetworkObjects.ContainsKey(gameObjectIdentifier));
-            if (!s_InstantiatedNetworkObjects[gameObjectIdentifier].IsSpawned)
+            Assert.IsTrue(InstantiatedNetworkObjects.ContainsKey(gameObjectIdentifier));
+            if (!InstantiatedNetworkObjects[gameObjectIdentifier].IsSpawned)
             {
-                s_InstantiatedNetworkObjects[gameObjectIdentifier].Spawn();
+                InstantiatedNetworkObjects[gameObjectIdentifier].Spawn();
             }
         }
 
@@ -154,8 +152,8 @@ namespace MLAPI.RuntimeTests
         /// <param name="managerMode">the mode to start the NetworkManager as</param>
         private static void StartNetworkManagerMode(NetworkManagerOperatingMode managerMode)
         {
-            s_CurrentNetworkManagerMode = managerMode;
-            switch (s_CurrentNetworkManagerMode)
+            CurrentNetworkManagerMode = managerMode;
+            switch (CurrentNetworkManagerMode)
             {
                 case NetworkManagerOperatingMode.Host:
                     {
@@ -176,7 +174,7 @@ namespace MLAPI.RuntimeTests
                         break;
                     }
             }
-            Debug.Log($"{s_CurrentNetworkManagerMode} started.");
+            Debug.Log($"{CurrentNetworkManagerMode} started.");
         }
 
         /// <summary>
@@ -184,7 +182,7 @@ namespace MLAPI.RuntimeTests
         /// </summary>
         private static void StopNetworkManagerMode()
         {
-            switch (s_CurrentNetworkManagerMode)
+            switch (CurrentNetworkManagerMode)
             {
                 case NetworkManagerOperatingMode.Host:
                     {
@@ -206,22 +204,22 @@ namespace MLAPI.RuntimeTests
                     }
             }
 
-            Debug.Log($"{s_CurrentNetworkManagerMode} stopped.");
-            s_CurrentNetworkManagerMode = NetworkManagerOperatingMode.None;
+            Debug.Log($"{CurrentNetworkManagerMode} stopped.");
+            CurrentNetworkManagerMode = NetworkManagerOperatingMode.None;
         }
 
         //This is called, even if we assert and exit early from a test
         public static void ShutdownNetworkManager()
         {
             //clean up any game objects created with custom unit testing components
-            foreach (var entry in s_InstantiatedGameObjects)
+            foreach (var entry in InstantiatedGameObjects)
             {
-                GameObject.Destroy(entry.Value);
+                UnityEngine.Object.Destroy(entry.Value);
             }
 
-            s_InstantiatedGameObjects.Clear();
+            InstantiatedGameObjects.Clear();
 
-            if (s_NetworkManagerObject != null)
+            if (NetworkManagerObject != null)
             {
                 StopNetworkManagerMode();
 
@@ -230,7 +228,7 @@ namespace MLAPI.RuntimeTests
 
                 Debug.Log($"{nameof(NetworkManager)} shutdown.");
 
-                GameObject.Destroy(s_NetworkManagerObject);
+                UnityEngine.Object.Destroy(NetworkManagerObject);
 
                 Debug.Log($"{nameof(NetworkManager)} destroyed.");
             }

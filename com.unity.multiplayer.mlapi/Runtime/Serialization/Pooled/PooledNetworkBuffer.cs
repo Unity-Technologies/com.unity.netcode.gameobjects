@@ -7,7 +7,7 @@ namespace MLAPI.Serialization.Pooled
     /// </summary>
     public sealed class PooledNetworkBuffer : NetworkBuffer, IDisposable
     {
-        private bool isDisposed = false;
+        private bool m_IsDisposed = false;
 
         internal PooledNetworkBuffer() { }
 
@@ -18,7 +18,7 @@ namespace MLAPI.Serialization.Pooled
         public static PooledNetworkBuffer Get()
         {
             var buffer = NetworkBufferPool.GetBuffer();
-            buffer.isDisposed = false;
+            buffer.m_IsDisposed = false;
             return buffer;
         }
 
@@ -27,9 +27,9 @@ namespace MLAPI.Serialization.Pooled
         /// </summary>
         public new void Dispose()
         {
-            if (!isDisposed)
+            if (!m_IsDisposed)
             {
-                isDisposed = true;
+                m_IsDisposed = true;
                 NetworkBufferPool.PutBackInPool(this);
             }
         }

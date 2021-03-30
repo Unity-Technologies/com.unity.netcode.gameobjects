@@ -267,7 +267,7 @@ namespace MLAPI.Transports.UNET
             return ret;
         }
 
-        private static readonly byte[] disconnectBuffer = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, (byte)MessageType.ClientDisconnect };
+        private static byte[] s_DisconnectBuffer = { 0, 0, 0, 0, 0, 0, 0, 0, (byte)MessageType.ClientDisconnect };
 
         public static bool Disconnect(int hostId, int connectionId, out byte error)
         {
@@ -280,10 +280,10 @@ namespace MLAPI.Transports.UNET
             {
                 for (byte i = 0; i < sizeof(ulong); i++)
                 {
-                    disconnectBuffer[i] = ((byte)((ulong)connectionId >> (i * 8)));
+                    s_DisconnectBuffer[i] = ((byte)((ulong)connectionId >> (i * 8)));
                 }
 
-                return UnityEngine.Networking.NetworkTransport.Send(hostId, s_RelayConnectionId, s_DefaultChannelId, disconnectBuffer, 9, out error);
+                return UnityEngine.Networking.NetworkTransport.Send(hostId, s_RelayConnectionId, s_DefaultChannelId, s_DisconnectBuffer, 9, out error);
             }
 
             return UnityEngine.Networking.NetworkTransport.Disconnect(hostId, connectionId, out error);
@@ -407,7 +407,7 @@ namespace MLAPI.Transports.UNET
                                 {
                                     if (!s_IsClient)
                                     {
-                                        ulong _connectionId = (((ulong)buffer[receivedSize - 9]) |
+                                        ulong connIdFromBuffer = (((ulong)buffer[receivedSize - 9]) |
                                                                ((ulong)buffer[receivedSize - 8] << 8) |
                                                                ((ulong)buffer[receivedSize - 7] << 16) |
                                                                ((ulong)buffer[receivedSize - 6] << 24) |
@@ -416,7 +416,7 @@ namespace MLAPI.Transports.UNET
                                                                ((ulong)buffer[receivedSize - 3] << 48) |
                                                                ((ulong)buffer[receivedSize - 2] << 56));
 
-                                        connectionId = (int)_connectionId;
+                                        connectionId = (int)connIdFromBuffer;
                                     }
 
                                     return NetworkEventType.ConnectEvent;
@@ -432,7 +432,7 @@ namespace MLAPI.Transports.UNET
                                     {
                                         receivedSize -= 9;
 
-                                        ulong _connectionId = (((ulong)buffer[receivedSize]) |
+                                        ulong connIdFromBuffer = (((ulong)buffer[receivedSize]) |
                                                                ((ulong)buffer[receivedSize + 1] << 8) |
                                                                ((ulong)buffer[receivedSize + 2] << 16) |
                                                                ((ulong)buffer[receivedSize + 3] << 24) |
@@ -441,14 +441,14 @@ namespace MLAPI.Transports.UNET
                                                                ((ulong)buffer[receivedSize + 6] << 48) |
                                                                ((ulong)buffer[receivedSize + 7] << 56));
 
-                                        connectionId = (int)_connectionId;
+                                        connectionId = (int)connIdFromBuffer;
                                     }
 
                                     return NetworkEventType.DataEvent;
                                 }
                             case MessageType.ClientDisconnect:
                                 {
-                                    ulong _connectionId = (((ulong)buffer[0]) |
+                                    ulong connIdFromBuffer = (((ulong)buffer[0]) |
                                                            ((ulong)buffer[1] << 8) |
                                                            ((ulong)buffer[2] << 16) |
                                                            ((ulong)buffer[3] << 24) |
@@ -457,7 +457,7 @@ namespace MLAPI.Transports.UNET
                                                            ((ulong)buffer[6] << 48) |
                                                            ((ulong)buffer[7] << 56));
 
-                                    connectionId = (int)_connectionId;
+                                    connectionId = (int)connIdFromBuffer;
 
                                     return NetworkEventType.DisconnectEvent;
                                 }

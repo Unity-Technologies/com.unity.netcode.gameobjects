@@ -18,39 +18,39 @@ namespace MLAPI.Profiling
         }
 
         public string PrettyPrintName;
-        protected int MaxSamples = 10;
+        protected int m_MaxSamples = 10;
 
-        protected LinkedList<Sample> Data = new LinkedList<Sample>();
+        protected LinkedList<Sample> m_Data = new LinkedList<Sample>();
 
         private bool m_IsDirty = true;
 
-        protected float LastCount;
-        protected float LastTime;
+        protected float m_LastCount;
+        protected float m_LastTime;
 
         public virtual void Record(int amt = 1)
         {
             m_IsDirty = true;
-            var t_now = Time.time;
+            var timeNow = Time.time;
             // 'Record' can get called many times in the same frame (for the same exact timestamp)
             //   This not only blows out the samples but makes the rate computation break since we 
             //   have n samples with a time delta of zero.
             // 
             //   Instead, if we want to record a value at the same exact time as our last
             //   sample, just adjust that sample
-            if (Data.First != null && Data.First.Value.TimeRecorded == t_now)
+            if (m_Data.First != null && m_Data.First.Value.TimeRecorded == timeNow)
             {
-                Data.First.Value = new Sample()
+                m_Data.First.Value = new Sample()
                 {
-                    Count = Data.First.Value.Count + amt,
-                    TimeRecorded = Data.First.Value.TimeRecorded
+                    Count = m_Data.First.Value.Count + amt,
+                    TimeRecorded = m_Data.First.Value.TimeRecorded
                 };
             }
             else
             {
-                Data.AddFirst(new Sample() { Count = amt, TimeRecorded = Time.time });
-                while (Data.Count > MaxSamples)
+                m_Data.AddFirst(new Sample() { Count = amt, TimeRecorded = Time.time });
+                while (m_Data.Count > m_MaxSamples)
                 {
-                    Data.RemoveLast();
+                    m_Data.RemoveLast();
                 }
             }
         }
@@ -59,26 +59,26 @@ namespace MLAPI.Profiling
         {
             if (m_IsDirty)
             {
-                LinkedListNode<Sample> node = Data.First;
-                LastCount = 0;
-                LastTime = Data.Last?.Value.TimeRecorded ?? 0.0f;
+                LinkedListNode<Sample> node = m_Data.First;
+                m_LastCount = 0;
+                m_LastTime = m_Data.Last?.Value.TimeRecorded ?? 0.0f;
 
                 while (node != null)
                 {
-                    LastCount += node.Value.Count;
+                    m_LastCount += node.Value.Count;
                     node = node.Next;
                 }
 
                 m_IsDirty = false;
             }
 
-            float delta = Time.time - LastTime;
+            float delta = Time.time - m_LastTime;
             if (delta == 0.0f)
             {
                 return 0.0f;
             }
 
-            return LastCount / delta;
+            return m_LastCount / delta;
         }
     }
 
@@ -90,10 +90,10 @@ namespace MLAPI.Profiling
 
         public override void Record(int amt = 1)
         {
-            Data.AddFirst(new Sample() { Count = amt, TimeRecorded = Time.time });
-            while (Data.Count > MaxSamples)
+            m_Data.AddFirst(new Sample() { Count = amt, TimeRecorded = Time.time });
+            while (m_Data.Count > m_MaxSamples)
             {
-                Data.RemoveLast();
+                m_Data.RemoveLast();
             }
 
             m_InternalValue += amt;

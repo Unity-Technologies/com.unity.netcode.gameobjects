@@ -35,7 +35,9 @@ namespace MLAPI.Profiling
         public static void NotifyProfilerListeners()
         {
             if (!s_FailsafeCheck)
+            {
                 return;
+            }
 
             s_FailsafeCheck = false;
 

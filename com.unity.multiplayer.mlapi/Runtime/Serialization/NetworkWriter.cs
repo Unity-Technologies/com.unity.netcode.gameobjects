@@ -968,33 +968,31 @@ namespace MLAPI.Serialization
         /// <param name="targetSize"></param>
         public void WriteBytes(byte[] buffer, long targetSize, int offset = 0)
         {
-            long TargetSize = targetSize;
-            long LargeInt64Blocks = TargetSize >> 3; //Divide by 8
-            int IndexOffset = offset;
+            long largeInt64Blocks = targetSize >> 3; //Divide by 8
             //8 Byte blocks
-            for (long i = 0; i < LargeInt64Blocks; i++)
+            for (long i = 0; i < largeInt64Blocks; i++)
             {
-                WriteInt64(BitConverter.ToInt64(buffer, IndexOffset));
-                IndexOffset += 8;
+                WriteInt64(BitConverter.ToInt64(buffer, offset));
+                offset += 8;
             }
 
-            long Offset = LargeInt64Blocks * 8;
-            long Remainder = TargetSize - Offset;
+            long blockOffset = largeInt64Blocks * 8;
+            long remainder = targetSize - blockOffset;
 
             //4 byte block
-            if (Remainder >= 4)
+            if (remainder >= 4)
             {
-                WriteInt32(BitConverter.ToInt32(buffer, IndexOffset));
-                IndexOffset += 4;
-                Offset += 4;
+                WriteInt32(BitConverter.ToInt32(buffer, offset));
+                offset += 4;
+                blockOffset += 4;
             }
 
             //Remainder of bytes < 4
-            if (TargetSize - Offset > 0)
+            if (targetSize - blockOffset > 0)
             {
-                for (long i = 0; i < (TargetSize - Offset); i++)
+                for (long i = 0; i < (targetSize - blockOffset); i++)
                 {
-                    WriteByte(buffer[IndexOffset + i]);
+                    WriteByte(buffer[offset + i]);
                 }
             }
         }
@@ -1014,29 +1012,28 @@ namespace MLAPI.Serialization
         /// <param name="targetSize"></param>
         public void ReadAndWrite(NetworkReader sourceReader, long targetSize)
         {
-            long TargetSize = targetSize;
-            long LargeInt64Blocks = TargetSize >> 3; //Divide by 8
+            long largeInt64Blocks = targetSize >> 3; //Divide by 8
 
             //8 Byte blocks
-            for (long i = 0; i < LargeInt64Blocks; i++)
+            for (long i = 0; i < largeInt64Blocks; i++)
             {
                 WriteInt64(sourceReader.ReadInt64());
             }
 
-            long Offset = LargeInt64Blocks * 8;
-            long Remainder = TargetSize - Offset;
+            long offset = largeInt64Blocks * 8;
+            long remainder = targetSize - offset;
 
             //4 byte block
-            if (Remainder >= 4)
+            if (remainder >= 4)
             {
                 WriteInt32(sourceReader.ReadInt32());
-                Offset += 4;
+                offset += 4;
             }
 
             //Remainder of bytes < 4
-            if (TargetSize - Offset > 0)
+            if (targetSize - offset > 0)
             {
-                for (long i = 0; i < (TargetSize - Offset); i++)
+                for (long i = 0; i < (targetSize - offset); i++)
                 {
                     WriteByte(sourceReader.ReadByteDirect());
                 }

@@ -28,7 +28,7 @@ namespace MLAPI.Messaging
         private readonly List<RpcFrameQueueItem> m_InternalMLAPISendQueue = new List<RpcFrameQueueItem>();
 
         //The RpcQueueContainer that is associated with this RpcQueueProcessor
-        internal RpcQueueContainer m_RpcQueueContainer;
+        private RpcQueueContainer m_RpcQueueContainer;
 
         /// <summary>
         /// ProcessReceiveQueue
@@ -116,7 +116,7 @@ namespace MLAPI.Messaging
         {
             foreach (RpcFrameQueueItem queueItem in m_InternalMLAPISendQueue)
             {
-                var PoolStream = queueItem.NetworkBuffer;
+                var poolStream = queueItem.NetworkBuffer;
 
                 switch (queueItem.QueueItemType)
                 {
@@ -126,7 +126,7 @@ namespace MLAPI.Messaging
                             {
                                 foreach (ulong clientId in queueItem.ClientNetworkIds)
                                 {
-                                    InternalMessageSender.Send(clientId, NetworkConstants.ADD_OBJECT, queueItem.NetworkChannel, PoolStream);
+                                    InternalMessageSender.Send(clientId, NetworkConstants.ADD_OBJECT, queueItem.NetworkChannel, poolStream);
                                 }
 
                                 PerformanceDataManager.Increment(ProfilerConstants.RpcSent, queueItem.ClientNetworkIds.Length);
@@ -144,7 +144,7 @@ namespace MLAPI.Messaging
                             {
                                 foreach (ulong clientId in queueItem.ClientNetworkIds)
                                 {
-                                    InternalMessageSender.Send(clientId, NetworkConstants.DESTROY_OBJECT, queueItem.NetworkChannel, PoolStream);
+                                    InternalMessageSender.Send(clientId, NetworkConstants.DESTROY_OBJECT, queueItem.NetworkChannel, poolStream);
                                 }
 
                                 PerformanceDataManager.Increment(ProfilerConstants.RpcSent, queueItem.ClientNetworkIds.Length);
@@ -158,7 +158,7 @@ namespace MLAPI.Messaging
                         }
                 }
 
-                PoolStream.Dispose();
+                poolStream.Dispose();
             }
 
             m_InternalMLAPISendQueue.Clear();
@@ -226,7 +226,7 @@ namespace MLAPI.Messaging
             var bytes = sendStream.Buffer.GetBuffer();
             var sendBuffer = new ArraySegment<byte>(bytes, 0, length);
 
-            m_RpcQueueContainer.m_NetworkManager.NetworkConfig.NetworkTransport.Send(clientId, sendBuffer, sendStream.NetworkChannel);
+            m_RpcQueueContainer.NetworkManager.NetworkConfig.NetworkTransport.Send(clientId, sendBuffer, sendStream.NetworkChannel);
         }
 
         /// <summary>
@@ -240,7 +240,7 @@ namespace MLAPI.Messaging
             {
                 case RpcQueueContainer.QueueItemType.ServerRpc:
                     {
-                        m_RpcQueueContainer.m_NetworkManager.NetworkConfig.NetworkTransport.Send(queueItem.NetworkId, queueItem.MessageData, queueItem.NetworkChannel);
+                        m_RpcQueueContainer.NetworkManager.NetworkConfig.NetworkTransport.Send(queueItem.NetworkId, queueItem.MessageData, queueItem.NetworkChannel);
 
                         //For each packet sent, we want to record how much data we have sent
 
@@ -254,7 +254,7 @@ namespace MLAPI.Messaging
                     {
                         foreach (ulong clientid in queueItem.ClientNetworkIds)
                         {
-                            m_RpcQueueContainer.m_NetworkManager.NetworkConfig.NetworkTransport.Send(clientid, queueItem.MessageData, queueItem.NetworkChannel);
+                            m_RpcQueueContainer.NetworkManager.NetworkConfig.NetworkTransport.Send(clientid, queueItem.MessageData, queueItem.NetworkChannel);
 
                             //For each packet sent, we want to record how much data we have sent
                             PerformanceDataManager.Increment(ProfilerConstants.ByteSent, (int)queueItem.StreamSize);

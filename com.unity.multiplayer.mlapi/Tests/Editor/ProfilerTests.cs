@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using MLAPI.Profiling;
 using NUnit.Framework;
-using UnityEditor;
 
 namespace MLAPI.RuntimeTests
 {
@@ -13,16 +12,16 @@ namespace MLAPI.RuntimeTests
             public const string TransportTestData = nameof(TransportTestData);
         }
 
-        private static readonly ProfilingDataStore TransportProfilerData = new ProfilingDataStore();
+        private static ProfilingDataStore s_TransportProfilerData = new ProfilingDataStore();
 
         public void BeginNewTick()
         {
-            TransportProfilerData.Clear();
+            s_TransportProfilerData.Clear();
         }
 
         public IReadOnlyDictionary<string, int> GetTransportProfilerData()
         {
-            return TransportProfilerData.GetReadonly();
+            return s_TransportProfilerData.GetReadonly();
         }
 
         public void Send(string testMessage)

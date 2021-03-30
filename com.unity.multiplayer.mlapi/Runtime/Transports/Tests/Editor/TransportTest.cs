@@ -35,10 +35,10 @@ public class TransportTest : MonoBehaviour
         ut.ServerListenPort = 7777;
         nm.NetworkConfig.NetworkTransport = ut;
 
-        byte CustomChannel = 0;
+        byte customChannel = 0;
 
         // test 1: add a legit channel.
-        ut.Channels.Add(new UNetChannel { Id = NetworkChannel.ChannelUnused + CustomChannel, Type = QosType.Unreliable });
+        ut.Channels.Add(new UNetChannel { Id = NetworkChannel.ChannelUnused + customChannel, Type = QosType.Unreliable });
 
         try
         {

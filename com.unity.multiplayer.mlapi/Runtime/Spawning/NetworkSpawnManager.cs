@@ -280,7 +280,7 @@ namespace MLAPI.Spawning
 
                     if (NetworkSceneManager.IsSpawnedObjectsPendingInDontDestroyOnLoad)
                     {
-                        GameObject.DontDestroyOnLoad(networkObject.gameObject);
+                        UnityEngine.Object.DontDestroyOnLoad(networkObject.gameObject);
                     }
 
                     return networkObject;
@@ -300,7 +300,7 @@ namespace MLAPI.Spawning
                     }
 
                     var prefab = NetworkManager.Singleton.NetworkConfig.NetworkPrefabs[prefabIndex].Prefab;
-                    var networkObject = ((position == null && rotation == null) ? MonoBehaviour.Instantiate(prefab) : MonoBehaviour.Instantiate(prefab, position.GetValueOrDefault(Vector3.zero), rotation.GetValueOrDefault(Quaternion.identity))).GetComponent<NetworkObject>();
+                    var networkObject = ((position == null && rotation == null) ? UnityEngine.Object.Instantiate(prefab) : UnityEngine.Object.Instantiate(prefab, position.GetValueOrDefault(Vector3.zero), rotation.GetValueOrDefault(Quaternion.identity))).GetComponent<NetworkObject>();
 
                     if (parentNetworkObject != null)
                     {
@@ -309,7 +309,7 @@ namespace MLAPI.Spawning
 
                     if (NetworkSceneManager.IsSpawnedObjectsPendingInDontDestroyOnLoad)
                     {
-                        GameObject.DontDestroyOnLoad(networkObject.gameObject);
+                        UnityEngine.Object.DontDestroyOnLoad(networkObject.gameObject);
                     }
 
                     return networkObject;
@@ -401,7 +401,7 @@ namespace MLAPI.Spawning
                 {
                     if (networkObject.CheckObjectVisibility == null || networkObject.CheckObjectVisibility(NetworkManager.Singleton.ConnectedClientsList[i].ClientId))
                     {
-                        networkObject.m_Observers.Add(NetworkManager.Singleton.ConnectedClientsList[i].ClientId);
+                        networkObject.Observers.Add(NetworkManager.Singleton.ConnectedClientsList[i].ClientId);
                     }
                 }
             }
@@ -580,7 +580,7 @@ namespace MLAPI.Spawning
                     else
                     {
                         SpawnedObjectsList.Remove(sobj);
-                        MonoBehaviour.Destroy(sobj.gameObject);
+                        UnityEngine.Object.Destroy(sobj.gameObject);
                     }
                 }
             }
@@ -588,7 +588,7 @@ namespace MLAPI.Spawning
 
         internal static void DestroyNonSceneObjects()
         {
-            var networkObjects = MonoBehaviour.FindObjectsOfType<NetworkObject>();
+            var networkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>();
 
             for (int i = 0; i < networkObjects.Length; i++)
             {
@@ -601,7 +601,7 @@ namespace MLAPI.Spawning
                     }
                     else
                     {
-                        MonoBehaviour.Destroy(networkObjects[i].gameObject);
+                        UnityEngine.Object.Destroy(networkObjects[i].gameObject);
                     }
                 }
             }
@@ -609,7 +609,7 @@ namespace MLAPI.Spawning
 
         internal static void DestroySceneObjects()
         {
-            var networkObjects = MonoBehaviour.FindObjectsOfType<NetworkObject>();
+            var networkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>();
 
             for (int i = 0; i < networkObjects.Length; i++)
             {
@@ -622,7 +622,7 @@ namespace MLAPI.Spawning
                     }
                     else
                     {
-                        MonoBehaviour.Destroy(networkObjects[i].gameObject);
+                        UnityEngine.Object.Destroy(networkObjects[i].gameObject);
                     }
                 }
             }
@@ -642,14 +642,14 @@ namespace MLAPI.Spawning
 
                 for (int i = 0; i < networkObjectsToDestroy.Count; i++)
                 {
-                    MonoBehaviour.Destroy(networkObjectsToDestroy[i].gameObject);
+                    UnityEngine.Object.Destroy(networkObjectsToDestroy[i].gameObject);
                 }
             }
         }
 
         internal static void ServerSpawnSceneObjectsOnStartSweep()
         {
-            var networkObjects = MonoBehaviour.FindObjectsOfType<NetworkObject>();
+            var networkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>();
 
             for (int i = 0; i < networkObjects.Length; i++)
             {
@@ -664,7 +664,7 @@ namespace MLAPI.Spawning
         {
             if (networkObjects == null)
             {
-                networkObjects = MonoBehaviour.FindObjectsOfType<NetworkObject>();
+                networkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>();
             }
 
             for (int i = 0; i < networkObjects.Length; i++)
@@ -758,7 +758,7 @@ namespace MLAPI.Spawning
                 }
                 else
                 {
-                    MonoBehaviour.Destroy(gobj);
+                    UnityEngine.Object.Destroy(gobj);
                 }
             }
 

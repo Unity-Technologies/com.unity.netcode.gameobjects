@@ -51,7 +51,7 @@ namespace MLAPI.Editor.CodeGen
             }
         }
 
-        public static bool IsSubclassOf(this TypeDefinition typeDefinition, string ClassTypeFullName)
+        public static bool IsSubclassOf(this TypeDefinition typeDefinition, string classTypeFullName)
         {
             if (!typeDefinition.IsClass)
             {
@@ -61,7 +61,7 @@ namespace MLAPI.Editor.CodeGen
             var baseTypeRef = typeDefinition.BaseType;
             while (baseTypeRef != null)
             {
-                if (baseTypeRef.FullName == ClassTypeFullName)
+                if (baseTypeRef.FullName == classTypeFullName)
                 {
                     return true;
                 }
@@ -79,7 +79,7 @@ namespace MLAPI.Editor.CodeGen
             return false;
         }
 
-        public static bool HasInterface(this TypeReference typeReference, string InterfaceTypeFullName)
+        public static bool HasInterface(this TypeReference typeReference, string interfaceTypeFullName)
         {
             if (typeReference.IsArray)
             {
@@ -90,7 +90,7 @@ namespace MLAPI.Editor.CodeGen
             {
                 var typeDef = typeReference.Resolve();
                 var typeFaces = typeDef.Interfaces;
-                return typeFaces.Any(iface => iface.InterfaceType.FullName == InterfaceTypeFullName);
+                return typeFaces.Any(iface => iface.InterfaceType.FullName == interfaceTypeFullName);
             }
             catch
             {
