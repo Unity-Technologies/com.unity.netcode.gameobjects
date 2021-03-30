@@ -227,7 +227,7 @@ namespace MLAPI.Messaging
             {
                 bool isPlayerObject = reader.ReadBool();
                 ulong networkId = reader.ReadUInt64Packed();
-                ulong ownerId = reader.ReadUInt64Packed();
+                ulong ownerClientId = reader.ReadUInt64Packed();
                 bool hasParent = reader.ReadBool();
                 ulong? parentNetworkId = null;
 
@@ -273,8 +273,8 @@ namespace MLAPI.Messaging
                 bool hasPayload = reader.ReadBool();
                 int payLoadLength = hasPayload ? reader.ReadInt32Packed() : 0;
 
-                var networkObject = NetworkSpawnManager.CreateLocalNetworkObject(softSync, instanceId, prefabHash, ownerId, parentNetworkId, pos, rot);
-                NetworkSpawnManager.SpawnNetworkObjectLocally(networkObject, networkId, softSync, isPlayerObject, ownerId, stream, hasPayload, payLoadLength, true, false);
+                var networkObject = NetworkSpawnManager.CreateLocalNetworkObject(softSync, instanceId, prefabHash, ownerClientId, parentNetworkId, pos, rot);
+                NetworkSpawnManager.SpawnNetworkObjectLocally(networkObject, networkId, softSync, isPlayerObject, ownerClientId, stream, hasPayload, payLoadLength, true, false);
 
                 Queue<BufferManager.BufferedMessage> bufferQueue = BufferManager.ConsumeBuffersForNetworkId(networkId);
 
