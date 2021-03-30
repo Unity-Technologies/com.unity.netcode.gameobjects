@@ -80,9 +80,9 @@ public class ClientCounterBehaviour : NetworkBehaviour
 
     private ClientRpcDirectTestingModes m_ClientRpcDirectTestingMode;
 
-    private ServerRpcParams m_ServerParams;
-    private ClientRpcParams m_ClientParams;
-    private ClientRpcParams m_ClientParamsMultiParameter;
+    private ServerRpcParams m_ServerRpcParams;
+    private ClientRpcParams m_ClientRpcParams;
+    private ClientRpcParams m_ClientRpcParamsMultiParameter;
 
     private void Start()
     {
@@ -126,8 +126,8 @@ public class ClientCounterBehaviour : NetworkBehaviour
     /// </summary>
     private void InitializeNetworkManager()
     {
-        m_ClientParams.Send.TargetClientIds = new ulong[] { 0 };
-        m_ClientParamsMultiParameter.Send.TargetClientIds = new ulong[] { 0 };
+        m_ClientRpcParams.Send.TargetClientIds = new ulong[] { 0 };
+        m_ClientRpcParamsMultiParameter.Send.TargetClientIds = new ulong[] { 0 };
         m_ClientRpcDirectTestingMode = ClientRpcDirectTestingModes.Single;
         m_ConnectionModeButtonParent.SetActive(false);
         m_MultiParameterCanSend = true;
@@ -135,24 +135,24 @@ public class ClientCounterBehaviour : NetworkBehaviour
         m_GlobalDirectScale = 2;
         m_GlobalDirectFrequency = 1.0f / (100.0f / (float)m_GlobalDirectScale);
 
-
         if (m_CounterTextObject)
         {
             m_CounterTextObject.gameObject.SetActive(true);
         }
+
         switch (m_CurrentNetworkManagerMode)
         {
             case NetworkManagerMode.Client:
                 {
                     NetworkManager.Singleton.StartClient();
-                    m_ServerParams.Send.UpdateStage = NetworkUpdateStage.Update;
+                    m_ServerRpcParams.Send.UpdateStage = NetworkUpdateStage.Update;
                     Screen.SetResolution(800, 80, FullScreenMode.Windowed);
                     break;
                 }
             case NetworkManagerMode.Host:
                 {
                     NetworkManager.Singleton.StartHost();
-                    m_ClientParams.Send.UpdateStage = NetworkUpdateStage.PreUpdate;
+                    m_ClientRpcParams.Send.UpdateStage = NetworkUpdateStage.PreUpdate;
                     Screen.SetResolution(800, 480, FullScreenMode.Windowed);
                     break;
                 }
@@ -160,7 +160,7 @@ public class ClientCounterBehaviour : NetworkBehaviour
                 {
                     NetworkManager.Singleton.StartServer();
                     m_ClientProgressBar.enabled = false;
-                    m_ClientParams.Send.UpdateStage = NetworkUpdateStage.PostLateUpdate;
+                    m_ClientRpcParams.Send.UpdateStage = NetworkUpdateStage.PostLateUpdate;
                     Screen.SetResolution(800, 480, FullScreenMode.Windowed);
                     break;
                 }
@@ -284,14 +284,13 @@ public class ClientCounterBehaviour : NetworkBehaviour
             }
 
             //Hosts and Clients execute this
-            if ((IsHost || IsClient))
+            if (IsHost || IsClient)
             {
-
                 if (m_LocalCounterDelay < Time.realtimeSinceStartup)
                 {
                     m_LocalCounterDelay = Time.realtimeSinceStartup + 0.25f;
                     m_LocalClientCounter++;
-                    OnSendCounterServerRpc(m_LocalClientCounter);
+                    OnSendCounterServerRpc(m_LocalClientCounter, m_ServerRpcParams);
                     m_RpcMessagesSent++;
                 }
                 else if (m_LocalMultiDelay < Time.realtimeSinceStartup)
@@ -301,13 +300,13 @@ public class ClientCounterBehaviour : NetworkBehaviour
                     {
                         m_MultiParameterCanSend = false;
                         //Multi Parameters
-                        OnSendMultiParametersServerRpc(m_MultiParameterIntValue, m_MultiParameterFloatValue, m_MultiParameterLongValue);
+                        OnSendMultiParametersServerRpc(m_MultiParameterIntValue, m_MultiParameterFloatValue, m_MultiParameterLongValue, m_ServerRpcParams);
                         m_RpcMessagesSent++;
                     }
                     else
                     {
                         m_MultiParameterCanSend = true;
-                        OnSendNoParametersServerRpc();
+                        OnSendNoParametersServerRpc(m_ServerRpcParams);
                         m_RpcMessagesSent++;
                     }
                 }
@@ -376,11 +375,11 @@ public class ClientCounterBehaviour : NetworkBehaviour
             m_ClientIndices.Add(m_ClientIds[m_GlobalDirectCurrentClientIdIndex]);
         }
 
-        m_ClientParams.Send.TargetClientIds = m_ClientIndices.ToArray();
+        m_ClientRpcParams.Send.TargetClientIds = m_ClientIndices.ToArray();
 
         m_GlobalDirectCounter = Mathf.Clamp(m_GlobalDirectCounter += m_GlobalDirectScale, 0, 100);
 
-        OnSendDirectCounterClientRpc(m_GlobalDirectCounter, m_ClientParams);
+        OnSendDirectCounterClientRpc(m_GlobalDirectCounter, m_ClientRpcParams);
     }
 
     /// <summary>
@@ -409,10 +408,10 @@ public class ClientCounterBehaviour : NetworkBehaviour
             m_ClientIndices.Add(m_ClientIds[modFactor]);
         }
 
-        m_ClientParams.Send.TargetClientIds = m_ClientIndices.ToArray();
+        m_ClientRpcParams.Send.TargetClientIds = m_ClientIndices.ToArray();
         m_GlobalDirectCounter = Mathf.Clamp(m_GlobalDirectCounter += m_GlobalDirectScale, 0, 100);
 
-        OnSendDirectCounterClientRpc(m_GlobalDirectCounter, m_ClientParams);
+        OnSendDirectCounterClientRpc(m_GlobalDirectCounter, m_ClientRpcParams);
     }
 
     /// <summary>
@@ -427,10 +426,10 @@ public class ClientCounterBehaviour : NetworkBehaviour
             return;
         }
 
-        m_ClientParams.Send.TargetClientIds = m_ClientIds.ToArray();
+        m_ClientRpcParams.Send.TargetClientIds = m_ClientIds.ToArray();
         m_GlobalDirectCounter = Mathf.Clamp(m_GlobalDirectCounter += m_GlobalDirectScale, 0, 100);
 
-        OnSendDirectCounterClientRpc(m_GlobalDirectCounter, m_ClientParams);
+        OnSendDirectCounterClientRpc(m_GlobalDirectCounter, m_ClientRpcParams);
     }
 
     /// <summary>
@@ -461,9 +460,9 @@ public class ClientCounterBehaviour : NetworkBehaviour
     [ServerRpc(RequireOwnership = false)]
     private void OnSendNoParametersServerRpc(ServerRpcParams parameters = default)
     {
-        m_ClientParamsMultiParameter.Send.TargetClientIds[0] = parameters.Receive.SenderClientId;
-        m_ClientParamsMultiParameter.Send.UpdateStage = NetworkUpdateStage.Update;
-        OnSendNoParametersClientRpc(m_ClientParamsMultiParameter);
+        m_ClientRpcParamsMultiParameter.Send.TargetClientIds[0] = parameters.Receive.SenderClientId;
+        m_ClientRpcParamsMultiParameter.Send.UpdateStage = NetworkUpdateStage.Update;
+        OnSendNoParametersClientRpc(m_ClientRpcParamsMultiParameter);
     }
 
     /// <summary>
@@ -474,9 +473,9 @@ public class ClientCounterBehaviour : NetworkBehaviour
     [ServerRpc(RequireOwnership = false)]
     private void OnSendMultiParametersServerRpc(int count, float floatValue, long longValue, ServerRpcParams parameters = default)
     {
-        m_ClientParamsMultiParameter.Send.TargetClientIds[0] = parameters.Receive.SenderClientId;
-        m_ClientParamsMultiParameter.Send.UpdateStage = NetworkUpdateStage.EarlyUpdate;
-        OnSendMultiParametersClientRpc(count, floatValue, longValue, m_ClientParamsMultiParameter);
+        m_ClientRpcParamsMultiParameter.Send.TargetClientIds[0] = parameters.Receive.SenderClientId;
+        m_ClientRpcParamsMultiParameter.Send.UpdateStage = NetworkUpdateStage.EarlyUpdate;
+        OnSendMultiParametersClientRpc(count, floatValue, longValue, m_ClientRpcParamsMultiParameter);
     }
 
     /// <summary>
