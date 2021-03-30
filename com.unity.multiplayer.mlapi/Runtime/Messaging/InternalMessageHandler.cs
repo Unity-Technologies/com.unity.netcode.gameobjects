@@ -166,7 +166,7 @@ namespace MLAPI.Messaging
                                 rot = Quaternion.Euler(continuationReader.ReadSinglePacked(), continuationReader.ReadSinglePacked(), continuationReader.ReadSinglePacked());
                             }
 
-                            var networkObject = NetworkSpawnManager.CreateLocalNetworkObject(softSync, instanceId, prefabHash, parentNetworkId, pos, rot);
+                            var networkObject = NetworkSpawnManager.CreateLocalNetworkObject(softSync, instanceId, prefabHash, ownerId, parentNetworkId, pos, rot);
                             NetworkSpawnManager.SpawnNetworkObjectLocally(networkObject, networkId, softSync, isPlayerObject, ownerId, continuationStream, false, 0, true, false);
 
                             Queue<BufferManager.BufferedMessage> bufferQueue = BufferManager.ConsumeBuffersForNetworkId(networkId);
@@ -273,7 +273,7 @@ namespace MLAPI.Messaging
                 bool hasPayload = reader.ReadBool();
                 int payLoadLength = hasPayload ? reader.ReadInt32Packed() : 0;
 
-                var networkObject = NetworkSpawnManager.CreateLocalNetworkObject(softSync, instanceId, prefabHash, parentNetworkId, pos, rot);
+                var networkObject = NetworkSpawnManager.CreateLocalNetworkObject(softSync, instanceId, prefabHash, ownerId, parentNetworkId, pos, rot);
                 NetworkSpawnManager.SpawnNetworkObjectLocally(networkObject, networkId, softSync, isPlayerObject, ownerId, stream, hasPayload, payLoadLength, true, false);
 
                 Queue<BufferManager.BufferedMessage> bufferQueue = BufferManager.ConsumeBuffersForNetworkId(networkId);
