@@ -1502,14 +1502,15 @@ namespace MLAPI.Editor.CodeGen
                     {
                         var paramTypeDef = paramType.Resolve();
                         var paramTypeNetworkSerialize_MethodDef = paramTypeDef.Methods.FirstOrDefault(m => m.Name == CodeGenHelpers.INetworkSerializable_NetworkSerialize_Name);
-                        if (paramTypeNetworkSerialize_MethodDef != null)
+                        var paramTypeNetworkSerialize_MethodRef = methodDefinition.Module.ImportReference(paramTypeNetworkSerialize_MethodDef);
+                        if (paramTypeNetworkSerialize_MethodRef != null)
                         {
                             if (paramType.IsValueType)
                             {
                                 // struct (pass by value)
                                 instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
                                 instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
-                                instructions.Add(processor.Create(OpCodes.Call, paramTypeNetworkSerialize_MethodDef));
+                                instructions.Add(processor.Create(OpCodes.Call, paramTypeNetworkSerialize_MethodRef));
                             }
                             else
                             {
@@ -1533,7 +1534,7 @@ namespace MLAPI.Editor.CodeGen
 
                                 instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
                                 instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
-                                instructions.Add(processor.Create(OpCodes.Callvirt, paramTypeNetworkSerialize_MethodDef));
+                                instructions.Add(processor.Create(OpCodes.Callvirt, paramTypeNetworkSerialize_MethodRef));
 
                                 instructions.Add(notSetInstr);
                             }
@@ -1548,7 +1549,8 @@ namespace MLAPI.Editor.CodeGen
                         var paramElemType = paramType.GetElementType();
                         var paramElemTypeDef = paramElemType.Resolve();
                         var paramElemNetworkSerialize_MethodDef = paramElemTypeDef.Methods.FirstOrDefault(m => m.Name == CodeGenHelpers.INetworkSerializable_NetworkSerialize_Name);
-                        if (paramElemNetworkSerialize_MethodDef != null)
+                        var paramElemNetworkSerialize_MethodRef = methodDefinition.Module.ImportReference(paramElemNetworkSerialize_MethodDef);
+                        if (paramElemNetworkSerialize_MethodRef != null)
                         {
                             methodDefinition.Body.Variables.Add(new VariableDefinition(typeSystem.Int32));
                             int arrLenLocalIndex = methodDefinition.Body.Variables.Count - 1;
@@ -1589,7 +1591,7 @@ namespace MLAPI.Editor.CodeGen
                                 instructions.Add(processor.Create(OpCodes.Ldloc, counterLocalIndex));
                                 instructions.Add(processor.Create(OpCodes.Ldelema, paramElemType));
                                 instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
-                                instructions.Add(processor.Create(OpCodes.Call, paramElemNetworkSerialize_MethodDef));
+                                instructions.Add(processor.Create(OpCodes.Call, paramElemNetworkSerialize_MethodRef));
                             }
                             else
                             {
@@ -1617,7 +1619,7 @@ namespace MLAPI.Editor.CodeGen
                                 instructions.Add(processor.Create(OpCodes.Ldloc, counterLocalIndex));
                                 instructions.Add(processor.Create(OpCodes.Ldelem_Ref));
                                 instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
-                                instructions.Add(processor.Create(OpCodes.Callvirt, paramElemNetworkSerialize_MethodDef));
+                                instructions.Add(processor.Create(OpCodes.Callvirt, paramElemNetworkSerialize_MethodRef));
 
                                 instructions.Add(notSetInstr);
                             }
@@ -2458,14 +2460,15 @@ namespace MLAPI.Editor.CodeGen
                 {
                     var paramTypeDef = paramType.Resolve();
                     var paramTypeNetworkSerialize_MethodDef = paramTypeDef.Methods.FirstOrDefault(m => m.Name == CodeGenHelpers.INetworkSerializable_NetworkSerialize_Name);
-                    if (paramTypeNetworkSerialize_MethodDef != null)
+                    var paramTypeNetworkSerialize_MethodRef = methodDefinition.Module.ImportReference(paramTypeNetworkSerialize_MethodDef);
+                    if (paramTypeNetworkSerialize_MethodRef != null)
                     {
                         if (paramType.IsValueType)
                         {
                             // struct (pass by value)
                             processor.Emit(OpCodes.Ldloca, localIndex);
                             processor.Emit(OpCodes.Ldarg_1);
-                            processor.Emit(OpCodes.Call, paramTypeNetworkSerialize_MethodDef);
+                            processor.Emit(OpCodes.Call, paramTypeNetworkSerialize_MethodRef);
                         }
                         else
                         {
@@ -2492,7 +2495,7 @@ namespace MLAPI.Editor.CodeGen
                                 // INetworkSerializable.NetworkSerialize(serializer)
                                 processor.Emit(OpCodes.Ldloc, localIndex);
                                 processor.Emit(OpCodes.Ldarg_1);
-                                processor.Emit(OpCodes.Callvirt, paramTypeNetworkSerialize_MethodDef);
+                                processor.Emit(OpCodes.Callvirt, paramTypeNetworkSerialize_MethodRef);
 
                                 processor.Append(notSetInstr);
                             }
@@ -2508,7 +2511,8 @@ namespace MLAPI.Editor.CodeGen
                     var paramElemType = paramType.GetElementType();
                     var paramElemTypeDef = paramElemType.Resolve();
                     var paramElemNetworkSerialize_MethodDef = paramElemTypeDef.Methods.FirstOrDefault(m => m.Name == CodeGenHelpers.INetworkSerializable_NetworkSerialize_Name);
-                    if (paramElemNetworkSerialize_MethodDef != null)
+                    var paramElemNetworkSerialize_MethodRef = methodDefinition.Module.ImportReference(paramElemNetworkSerialize_MethodDef);
+                    if (paramElemNetworkSerialize_MethodRef != null)
                     {
                         nhandler.Body.Variables.Add(new VariableDefinition(typeSystem.Int32));
                         int arrLenLocalIndex = nhandler.Body.Variables.Count - 1;
@@ -2546,7 +2550,7 @@ namespace MLAPI.Editor.CodeGen
                             processor.Emit(OpCodes.Ldloc, counterLocalIndex);
                             processor.Emit(OpCodes.Ldelema, paramElemType);
                             processor.Emit(OpCodes.Ldarg_1);
-                            processor.Emit(OpCodes.Call, paramElemNetworkSerialize_MethodDef);
+                            processor.Emit(OpCodes.Call, paramElemNetworkSerialize_MethodRef);
                         }
                         else
                         {
@@ -2575,7 +2579,7 @@ namespace MLAPI.Editor.CodeGen
                                 processor.Emit(OpCodes.Ldloc, counterLocalIndex);
                                 processor.Emit(OpCodes.Ldelem_Ref);
                                 processor.Emit(OpCodes.Ldarg_1);
-                                processor.Emit(OpCodes.Call, paramElemNetworkSerialize_MethodDef);
+                                processor.Emit(OpCodes.Call, paramElemNetworkSerialize_MethodRef);
 
                                 processor.Append(notSetInstr);
                             }
