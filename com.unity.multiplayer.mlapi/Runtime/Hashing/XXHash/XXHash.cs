@@ -7,7 +7,7 @@
 
 using System.Runtime.CompilerServices;
 
-namespace MLAPI.Editor.CodeGen
+namespace MLAPI.Hashing
 {
     /// <summary>
     /// XXHash implementation.
