@@ -251,7 +251,7 @@ namespace MLAPI.Spawning
         }
 
         // Only ran on Client
-        internal static NetworkObject CreateLocalNetworkObject(bool softCreate, ulong instanceId, ulong prefabHash, ulong clientId, ulong? parentNetworkId, Vector3? position, Quaternion? rotation)
+        internal static NetworkObject CreateLocalNetworkObject(bool softCreate, ulong instanceId, ulong prefabHash, ulong ownerClientId, ulong? parentNetworkId, Vector3? position, Quaternion? rotation)
         {
             NetworkObject parentNetworkObject = null;
 
@@ -272,7 +272,7 @@ namespace MLAPI.Spawning
                 // Create the object
                 if (CustomSpawnHandlers.ContainsKey(prefabHash))
                 {
-                    var networkObject = CustomSpawnHandlers[prefabHash](clientId, position.GetValueOrDefault(Vector3.zero), rotation.GetValueOrDefault(Quaternion.identity));
+                    var networkObject = CustomSpawnHandlers[prefabHash](ownerClientId, position.GetValueOrDefault(Vector3.zero), rotation.GetValueOrDefault(Quaternion.identity));
 
                     if (parentNetworkObject != null)
                     {
