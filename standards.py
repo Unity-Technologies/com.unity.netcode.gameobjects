@@ -7,8 +7,8 @@ import argparse
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument("-i", "--install", action="store_true")
-parser.add_argument("-r", "--remove", action="store_true")
+parser.add_argument("-i", "--hook", action="store_true")
+parser.add_argument("-r", "--unhook", action="store_true")
 parser.add_argument("-c", "--check", action="store_true")
 parser.add_argument("-f", "--fix", action="store_true")
 
@@ -19,40 +19,48 @@ if len(sys.argv) == 1:
 args = parser.parse_args()
 
 
-if args.install:
-    print("execute install")
+hook_path = "./.git/hooks/pre-push"
+hook_exec = f"python3 {os.path.basename(sys.argv[0])} --check"
 
-    version_exec = os.system("dotnet-format --version")
-    if version_exec != 0:
-        exit(
-            "cannot execute `dotnet-format --version` command\n"
-            "please make sure to have `dotnet-format` installed\n"
-            "https://github.com/dotnet/format#how-to-install"
-        )
+if args.hook:
+    print("execute hook")
 
-    hook_path = "./.git/hooks/pre-push"
     if os.path.exists(hook_path):
         exit(
-            f"git pre-push hook file already exists: `{hook_path}`\n"
-            "please make sure to backup and delete pre-push hook file\n"
-            "installation WILL NOT continue and override existing file"
+            f"fail: git pre-push hook file already exists: `{hook_path}`\n"
+            "please make sure to backup and delete the existing pre-push hook file"
         )
 
     print("write git pre-push hook file contents")
     hook_file = open(hook_path, "w")
-    hook_file.write(f"#!/bin/sh\n\npython3 {os.path.basename(sys.argv[0])} --check\n")
+    hook_file.write(f"#!/bin/sh\n\n{hook_exec}\n")
     hook_file.close()
 
     print("make git pre-push hook file executable")
     hook_stat = os.stat(hook_path)
     os.chmod(hook_path, hook_stat.st_mode | stat.S_IEXEC)
 
-    print("installation complete!")
+    print("succeed: git pre-push hook created!")
 
 
-if args.remove:
-    print("execute remove")
-    # todo
+if args.unhook:
+    print("execute unhook")
+
+    hook_path = "./.git/hooks/pre-push"
+    if os.path.isfile(hook_path):
+        print(f"found `{hook_path}`")
+        delete = False
+        hook_file = open(hook_path, "r")
+        if hook_exec in hook_file.read():
+            delete = True
+        else:
+            exit(f"fail: existing git pre-push hook file was not created by this script")
+        hook_file.close()
+        if delete:
+            os.remove(hook_path)
+            print(f"delete file: `{hook_path}`")
+
+    print("succeed: git pre-push hook removed!")
 
 
 if args.check:
