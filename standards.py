@@ -7,10 +7,10 @@ import argparse
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument("-h", "--hook", action="store_true")
-parser.add_argument("-u", "--unhook", action="store_true")
-parser.add_argument("-c", "--check", action="store_true")
-parser.add_argument("-f", "--fix", action="store_true")
+parser.add_argument("--hook", action="store_true")
+parser.add_argument("--unhook", action="store_true")
+parser.add_argument("--check", action="store_true")
+parser.add_argument("--fix", action="store_true")
 
 if len(sys.argv) == 1:
     parser.print_help(sys.stderr)
