@@ -35,9 +35,10 @@ namespace MLAPI.Spawning
         /// <summary>
         /// The delegate used when spawning a NetworkObject
         /// </summary>
+        /// <param name="ownerClientId">The owner client id of the object that is being spawned</param>
         /// <param name="position">The position to spawn the object at</param>
         /// <param name="rotation">The rotation to spawn the object with</param>
-        public delegate NetworkObject SpawnHandlerDelegate(ulong clientId, Vector3 position, Quaternion rotation);
+        public delegate NetworkObject SpawnHandlerDelegate(ulong ownerClientId, Vector3 position, Quaternion rotation);
 
         /// <summary>
         /// The delegate used when destroying NetworkObjects
