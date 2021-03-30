@@ -88,11 +88,11 @@ namespace MLAPI.Messaging
             {
                 //Outbound we care about both channel and clients
                 m_CurrentQueueItem.NetworkChannel = (NetworkChannel)QueueReader.ReadByteDirect();
-                int NumClients = QueueReader.ReadInt32();
-                if (NumClients > 0 && NumClients < m_MaximumClients)
+                int numClients = QueueReader.ReadInt32();
+                if (numClients > 0 && numClients < m_MaximumClients)
                 {
-                    ulong[] clientIdArray = new ulong[NumClients];
-                    for (int i = 0; i < NumClients; i++)
+                    ulong[] clientIdArray = new ulong[numClients];
+                    for (int i = 0; i < numClients; i++)
                     {
                         clientIdArray[i] = QueueReader.ReadUInt64();
                     }
@@ -120,7 +120,7 @@ namespace MLAPI.Messaging
                 if (m_QueueFrameType == QueueFrameType.Inbound)
                 {
                     //Get our offset
-                    long Position = QueueReader.ReadInt64();
+                    long position = QueueReader.ReadInt64();
 
                     //Always make sure we are positioned at the start of the stream before we write
                     m_CurrentQueueItem.NetworkBuffer.Position = 0;
@@ -130,7 +130,7 @@ namespace MLAPI.Messaging
 
                     //Reset the position back to the offset so std rpc API can process the message properly
                     //(i.e. minus the already processed header)
-                    m_CurrentQueueItem.NetworkBuffer.Position = Position;
+                    m_CurrentQueueItem.NetworkBuffer.Position = position;
                 }
                 else
                 {

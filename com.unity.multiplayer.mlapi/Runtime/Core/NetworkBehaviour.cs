@@ -25,6 +25,7 @@ namespace MLAPI
     /// </summary>
     public abstract class NetworkBehaviour : MonoBehaviour
     {
+#pragma warning disable IDE1006 // disable naming rule violation check
         [Browsable(false)]
         [EditorBrowsable(EditorBrowsableState.Never)]
 #if UNITY_2020_2_OR_NEWER
@@ -34,6 +35,7 @@ namespace MLAPI
         [Obsolete("Please do not use, will no longer be exposed in the future versions (framework internal)")]
         public enum __NExec
 #endif
+#pragma warning restore IDE1006 // restore naming rule violation check
         {
             None = 0,
             Server = 1,
@@ -41,6 +43,7 @@ namespace MLAPI
         }
 
 #pragma warning disable 414
+#pragma warning disable IDE1006 // disable naming rule violation check
         [NonSerialized]
         [Browsable(false)]
         [EditorBrowsable(EditorBrowsableState.Never)]
@@ -53,7 +56,9 @@ namespace MLAPI
         public __NExec __nexec = __NExec.None;
 #endif
 #pragma warning restore 414
+#pragma warning restore IDE1006 // restore naming rule violation check
 
+#pragma warning disable IDE1006 // disable naming rule violation check
         [Browsable(false)]
         [EditorBrowsable(EditorBrowsableState.Never)]
 #if UNITY_2020_2_OR_NEWER
@@ -63,6 +68,7 @@ namespace MLAPI
         [Obsolete("Please do not use, will no longer be exposed in the future versions (framework internal)")]
         public NetworkSerializer __beginSendServerRpc(ServerRpcParams serverRpcParams, RpcDelivery rpcDelivery)
 #endif
+#pragma warning restore IDE1006 // restore naming rule violation check
         {
             PooledNetworkWriter writer;
 
@@ -97,6 +103,7 @@ namespace MLAPI
             return writer.Serializer;
         }
 
+#pragma warning disable IDE1006 // disable naming rule violation check
         [Browsable(false)]
         [EditorBrowsable(EditorBrowsableState.Never)]
 #if UNITY_2020_2_OR_NEWER
@@ -106,6 +113,7 @@ namespace MLAPI
         [Obsolete("Please do not use, will no longer be exposed in the future versions (framework internal)")]
         public void __endSendServerRpc(NetworkSerializer serializer, ServerRpcParams serverRpcParams, RpcDelivery rpcDelivery)
 #endif
+#pragma warning restore IDE1006 // restore naming rule violation check
         {
             if (serializer == null)
             {
@@ -123,6 +131,7 @@ namespace MLAPI
             }
         }
 
+#pragma warning disable IDE1006 // disable naming rule violation check
         [Browsable(false)]
         [EditorBrowsable(EditorBrowsableState.Never)]
 #if UNITY_2020_2_OR_NEWER
@@ -132,6 +141,7 @@ namespace MLAPI
         [Obsolete("Please do not use, will no longer be exposed in the future versions (framework internal)")]
         public NetworkSerializer __beginSendClientRpc(ClientRpcParams clientRpcParams, RpcDelivery rpcDelivery)
 #endif
+#pragma warning restore IDE1006 // restore naming rule violation check
         {
             PooledNetworkWriter writer;
 
@@ -140,32 +150,32 @@ namespace MLAPI
             var isUsingBatching = rpcQueueContainer.IsUsingBatching();
             var transportChannel = rpcDelivery == RpcDelivery.Reliable ? NetworkChannel.ReliableRpc : NetworkChannel.UnreliableRpc;
 
-            ulong[] ClientIds = clientRpcParams.Send.TargetClientIds ?? NetworkManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray();
+            ulong[] clientIds = clientRpcParams.Send.TargetClientIds ?? NetworkManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray();
             if (clientRpcParams.Send.TargetClientIds != null && clientRpcParams.Send.TargetClientIds.Length == 0)
             {
-                ClientIds = NetworkManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray();
+                clientIds = NetworkManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray();
             }
 
             //NOTES ON BELOW CHANGES:
             //The following checks for IsHost and whether the host client id is part of the clients to recieve the RPC
             //Is part of a patch-fix to handle looping back RPCs into the next frame's inbound queue.
             //!!! This code is temporary and will change (soon) when NetworkSerializer can be configured for mutliple NetworkWriters!!!
-            var ContainsServerClientId = ClientIds.Contains(NetworkManager.Singleton.ServerClientId);
-            if (IsHost && ContainsServerClientId)
+            var containsServerClientId = clientIds.Contains(NetworkManager.Singleton.ServerClientId);
+            if (IsHost && containsServerClientId)
             {
                 //Always write to the next frame's inbound queue
                 writer = rpcQueueContainer.BeginAddQueueItemToFrame(RpcQueueContainer.QueueItemType.ClientRpc, Time.realtimeSinceStartup, transportChannel,
                     NetworkManager.Singleton.ServerClientId, null, RpcQueueHistoryFrame.QueueFrameType.Inbound, clientRpcParams.Send.UpdateStage);
 
                 //Handle sending to the other clients, if so the above notes explain why this code is here (a temporary patch-fix)
-                if (ClientIds.Length > 1)
+                if (clientIds.Length > 1)
                 {
                     //Set the loopback frame
                     rpcQueueContainer.SetLoopBackFrameItem(clientRpcParams.Send.UpdateStage);
 
                     //Switch to the outbound queue
                     writer = rpcQueueContainer.BeginAddQueueItemToFrame(RpcQueueContainer.QueueItemType.ClientRpc, Time.realtimeSinceStartup, transportChannel, NetworkObjectId,
-                        ClientIds, RpcQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
+                        clientIds, RpcQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
 
                     if (!isUsingBatching)
                     {
@@ -183,7 +193,7 @@ namespace MLAPI
             else
             {
                 writer = rpcQueueContainer.BeginAddQueueItemToFrame(RpcQueueContainer.QueueItemType.ClientRpc, Time.realtimeSinceStartup, transportChannel, NetworkObjectId,
-                    ClientIds, RpcQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
+                    clientIds, RpcQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
 
                 if (!isUsingBatching)
                 {
@@ -198,6 +208,7 @@ namespace MLAPI
             return writer.Serializer;
         }
 
+#pragma warning disable IDE1006 // disable naming rule violation check
         [Browsable(false)]
         [EditorBrowsable(EditorBrowsableState.Never)]
 #if UNITY_2020_2_OR_NEWER
@@ -207,6 +218,7 @@ namespace MLAPI
         [Obsolete("Please do not use, will no longer be exposed in the future versions (framework internal)")]
         public void __endSendClientRpc(NetworkSerializer serializer, ClientRpcParams clientRpcParams, RpcDelivery rpcDelivery)
 #endif
+#pragma warning restore IDE1006 // restore naming rule violation check
         {
             if (serializer == null)
             {
@@ -217,14 +229,14 @@ namespace MLAPI
 
             if (IsHost)
             {
-                ulong[] ClientIds = clientRpcParams.Send.TargetClientIds ?? NetworkManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray();
+                ulong[] clientIds = clientRpcParams.Send.TargetClientIds ?? NetworkManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray();
                 if (clientRpcParams.Send.TargetClientIds != null && clientRpcParams.Send.TargetClientIds.Length == 0)
                 {
-                    ClientIds = NetworkManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray();
+                    clientIds = NetworkManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray();
                 }
 
-                var ContainsServerClientId = ClientIds.Contains(NetworkManager.Singleton.ServerClientId);
-                if (ContainsServerClientId && ClientIds.Length == 1)
+                var containsServerClientId = clientIds.Contains(NetworkManager.Singleton.ServerClientId);
+                if (containsServerClientId && clientIds.Length == 1)
                 {
                     rpcQueueContainer.EndAddQueueItemToFrame(serializer.Writer, RpcQueueHistoryFrame.QueueFrameType.Inbound, clientRpcParams.Send.UpdateStage);
                     return;

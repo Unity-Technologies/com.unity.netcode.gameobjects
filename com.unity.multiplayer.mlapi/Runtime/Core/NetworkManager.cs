@@ -31,6 +31,7 @@ namespace MLAPI
     [AddComponentMenu("MLAPI/NetworkManager", -100)]
     public class NetworkManager : MonoBehaviour, INetworkUpdateSystem, IProfilableTransportProvider
     {
+#pragma warning disable IDE1006 // disable naming rule violation check
         [Browsable(false)]
         [EditorBrowsable(EditorBrowsableState.Never)]
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
@@ -41,6 +42,7 @@ namespace MLAPI
         [Obsolete("Please do not use, will no longer be exposed in the future versions (framework internal)")]
         public static readonly Dictionary<uint, Action<NetworkBehaviour, NetworkSerializer, __RpcParams>> __ntable = new Dictionary<uint, Action<NetworkBehaviour, NetworkSerializer, __RpcParams>>();
 #endif
+#pragma warning restore IDE1006 // restore naming rule violation check
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
         private static ProfilerMarker s_EventTick = new ProfilerMarker($"{nameof(NetworkManager)}.EventTick");
@@ -1380,7 +1382,7 @@ namespace MLAPI
 
                     foreach (var sobj in NetworkSpawnManager.SpawnedObjectsList)
                     {
-                        sobj.m_Observers.Remove(clientId);
+                        sobj.Observers.Remove(clientId);
                     }
                 }
 
@@ -1457,7 +1459,7 @@ namespace MLAPI
                     if (clientId == ServerClientId || sobj.CheckObjectVisibility == null || sobj.CheckObjectVisibility(clientId))
                     {
                         m_ObservedObjects.Add(sobj);
-                        sobj.m_Observers.Add(clientId);
+                        sobj.Observers.Add(clientId);
                     }
                 }
 
@@ -1559,7 +1561,7 @@ namespace MLAPI
                 {
                     if (clientPair.Key == clientId ||
                         ConnectedClients[clientId].PlayerObject == null ||
-                        !ConnectedClients[clientId].PlayerObject.m_Observers.Contains(clientPair.Key))
+                        !ConnectedClients[clientId].PlayerObject.Observers.Contains(clientPair.Key))
                     {
                         continue; //The new client.
                     }

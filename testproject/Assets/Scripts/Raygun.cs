@@ -4,7 +4,7 @@ using MLAPI;
 
 public class Raygun : NetworkBehaviour
 {
-    public float m_Range = 10;
+    public float Range = 10;
 
     private GameObject m_CurrentTarget;
     private LineRenderer m_LineRenderer;
@@ -19,7 +19,7 @@ public class Raygun : NetworkBehaviour
 
     private void FixedUpdate()
     {
-        var forward = transform.forward * m_Range;
+        var forward = transform.forward * Range;
 
         m_LineRenderer.positionCount = 2;
         m_LineRenderer.SetPosition(0, transform.position);

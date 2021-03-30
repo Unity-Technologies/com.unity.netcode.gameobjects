@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using UnityEngine;
 using MLAPI.Messaging;
@@ -48,7 +47,7 @@ namespace MLAPI.RuntimeTests
             m_PreCalculatedBufferValues = new List<byte>(MaximumBufferSize + 1);
             while (m_PreCalculatedBufferValues.Count <= MaximumBufferSize)
             {
-                m_PreCalculatedBufferValues.Add((byte)UnityEngine.Random.Range(0, 255));
+                m_PreCalculatedBufferValues.Add((byte)Random.Range(0, 255));
             }
         }
 
