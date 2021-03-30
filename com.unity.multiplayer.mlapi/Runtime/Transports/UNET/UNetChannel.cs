@@ -1,5 +1,7 @@
 using System;
+#if UNITY_EDITOR
 using UnityEditor;
+#endif
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -14,7 +16,9 @@ namespace MLAPI.Transports
         /// <summary>
         /// The name of the channel
         /// </summary>
+        #if UNITY_EDITOR
         [ReadOnly]
+        #endif
         public byte Id;
 
         /// <summary>
@@ -22,6 +26,7 @@ namespace MLAPI.Transports
         /// </summary>
         public QosType Type;
 
+        #if UNITY_EDITOR
         private class ReadOnlyAttribute : PropertyAttribute { }
 
         [CustomPropertyDrawer(typeof(ReadOnlyAttribute))]
@@ -42,5 +47,6 @@ namespace MLAPI.Transports
                 GUI.enabled = previousGUIState;
             }
         }
+        #endif
     }
 }
