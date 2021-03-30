@@ -7,8 +7,8 @@ import argparse
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument("-i", "--hook", action="store_true")
-parser.add_argument("-r", "--unhook", action="store_true")
+parser.add_argument("-h", "--hook", action="store_true")
+parser.add_argument("-u", "--unhook", action="store_true")
 parser.add_argument("-c", "--check", action="store_true")
 parser.add_argument("-f", "--fix", action="store_true")
 
