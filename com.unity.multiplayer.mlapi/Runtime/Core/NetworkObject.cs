@@ -84,7 +84,7 @@ namespace MLAPI
         /// </summary>
         [HideInInspector]
         [SerializeField]
-        public ulong NetworkInstanceId;
+        internal ulong NetworkInstanceId;
 
         /// <summary>
         /// The Prefab unique hash. This should not be set my the user but rather changed by editing the PrefabHashGenerator.
