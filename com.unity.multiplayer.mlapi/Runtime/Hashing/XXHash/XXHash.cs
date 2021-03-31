@@ -31,12 +31,11 @@ namespace MLAPI.Hashing
         public static uint Hash32(string text, Encoding encoding) => Hash32(encoding.GetBytes(text));
         public static uint Hash32(byte[] buffer)
         {
-            var bufLen = buffer.Length;
             unsafe
             {
-                fixed (byte* bufPtr = buffer)
+                fixed (byte* ptr = buffer)
                 {
-                    return Hash32(bufPtr, bufLen);
+                    return Hash32(ptr, buffer.Length);
                 }
             }
         }
@@ -85,12 +84,11 @@ namespace MLAPI.Hashing
         public static ulong Hash64(string text, Encoding encoding) => Hash64(encoding.GetBytes(text));
         public static ulong Hash64(byte[] buffer)
         {
-            var bufLen = buffer.Length;
             unsafe
             {
-                fixed (byte* bufPtr = buffer)
+                fixed (byte* ptr = buffer)
                 {
-                    return Hash64(bufPtr, bufLen);
+                    return Hash64(ptr, buffer.Length);
                 }
             }
         }
