@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using MLAPI.Hashing;
 using MLAPI.Messaging;
 using MLAPI.Serialization;
 using Mono.Cecil;
