@@ -33,7 +33,7 @@ namespace MLAPI
                 PrefabHashGenerator = gameObject.name;
             }
 
-            PrefabHash = PrefabHashGenerator.GetStableHash64();
+            PrefabHash = XXHash.Hash64(PrefabHashGenerator);
         }
 
         /// <summary>
@@ -84,7 +84,7 @@ namespace MLAPI
         /// </summary>
         [HideInInspector]
         [SerializeField]
-        public ulong NetworkInstanceId;
+        internal ulong NetworkInstanceId;
 
         /// <summary>
         /// The Prefab unique hash. This should not be set my the user but rather changed by editing the PrefabHashGenerator.
