@@ -33,7 +33,7 @@ namespace MLAPI
                 PrefabHashGenerator = gameObject.name;
             }
 
-            PrefabHash = PrefabHashGenerator.GetStableHash64();
+            PrefabHash = XXHash.Hash64(PrefabHashGenerator);
         }
 
         /// <summary>

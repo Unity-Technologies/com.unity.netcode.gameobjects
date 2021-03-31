@@ -173,8 +173,8 @@ namespace MLAPI.Configuration
         /// <summary>
         /// Decides how many bytes to use for Rpc messaging. Leave this to 2 bytes unless you are facing hash collisions
         /// </summary>
-        [Tooltip("The maximum amount of bytes to use for RPC messages. Leave this to 2 unless you are facing hash collisions")]
-        public HashSize RpcHashSize = HashSize.VarIntTwoBytes;
+        [Tooltip("The maximum amount of bytes to use for RPC messages.")]
+        public HashSize RpcHashSize = HashSize.VarIntFourBytes;
 
         /// <summary>
         /// The amount of seconds to wait on all clients to load requested scene before the SwitchSceneProgress onComplete callback, that waits for all clients to complete loading, is called anyway.
@@ -336,11 +336,11 @@ namespace MLAPI.Configuration
 
                 if (cache)
                 {
-                    m_ConfigHash = buffer.ToArray().GetStableHash64();
+                    m_ConfigHash = XXHash.Hash64(buffer.ToArray());
                     return m_ConfigHash.Value;
                 }
 
-                return buffer.ToArray().GetStableHash64();
+                return XXHash.Hash64(buffer.ToArray());
             }
         }
 
