@@ -41,6 +41,18 @@ namespace MLAPI.Hashing
             }
         }
 
+        public static uint Hash32(byte[] buffer)
+        {
+            var bufLen = buffer.Length;
+            unsafe
+            {
+                fixed (byte* bufPtr = buffer)
+                {
+                    return Hash32(bufPtr, bufLen);
+                }
+            }
+        }
+
         /// <summary>
         /// Generate a 32-bit xxHash value.
         /// </summary>
@@ -91,6 +103,18 @@ namespace MLAPI.Hashing
                 fixed (byte* strPtr = strBuf)
                 {
                     return Hash64(strPtr, strLen);
+                }
+            }
+        }
+
+        public static ulong Hash64(byte[] buffer)
+        {
+            var bufLen = buffer.Length;
+            unsafe
+            {
+                fixed (byte* bufPtr = buffer)
+                {
+                    return Hash64(bufPtr, bufLen);
                 }
             }
         }
