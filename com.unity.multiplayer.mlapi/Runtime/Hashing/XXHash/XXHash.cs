@@ -28,19 +28,7 @@ namespace MLAPI.Hashing
         private const uint k_Prime32v5 = 374761393u;
 
         public static uint Hash32(string text) => Hash32(text, Encoding.UTF8);
-        public static uint Hash32(string text, Encoding encoding)
-        {
-            var strBuf = encoding.GetBytes(text);
-            var strLen = strBuf.Length;
-            unsafe
-            {
-                fixed (byte* strPtr = strBuf)
-                {
-                    return Hash32(strPtr, strLen);
-                }
-            }
-        }
-
+        public static uint Hash32(string text, Encoding encoding) => Hash32(encoding.GetBytes(text));
         public static uint Hash32(byte[] buffer)
         {
             var bufLen = buffer.Length;
@@ -94,19 +82,7 @@ namespace MLAPI.Hashing
         }
 
         public static ulong Hash64(string text) => Hash64(text, Encoding.UTF8);
-        public static ulong Hash64(string text, Encoding encoding)
-        {
-            var strBuf = encoding.GetBytes(text);
-            var strLen = strBuf.Length;
-            unsafe
-            {
-                fixed (byte* strPtr = strBuf)
-                {
-                    return Hash64(strPtr, strLen);
-                }
-            }
-        }
-
+        public static ulong Hash64(string text, Encoding encoding) => Hash64(encoding.GetBytes(text));
         public static ulong Hash64(byte[] buffer)
         {
             var bufLen = buffer.Length;
