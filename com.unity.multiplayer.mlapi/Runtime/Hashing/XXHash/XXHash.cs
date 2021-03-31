@@ -81,6 +81,20 @@ namespace MLAPI.Hashing
             return avalanche32(acc);
         }
 
+        public static ulong Hash64(string text) => Hash64(text, Encoding.UTF8);
+        public static ulong Hash64(string text, Encoding encoding)
+        {
+            var strBuf = encoding.GetBytes(text);
+            var strLen = strBuf.Length;
+            unsafe
+            {
+                fixed (byte* strPtr = strBuf)
+                {
+                    return Hash64(strPtr, strLen);
+                }
+            }
+        }
+
         /// <summary>
         /// Generate a 64-bit xxHash value.
         /// </summary>
