@@ -35,9 +35,10 @@ namespace MLAPI.Spawning
         /// <summary>
         /// The delegate used when spawning a NetworkObject
         /// </summary>
+        /// <param name="ownerClientId">The owner client id of the object that is being spawned</param>
         /// <param name="position">The position to spawn the object at</param>
         /// <param name="rotation">The rotation to spawn the object with</param>
-        public delegate NetworkObject SpawnHandlerDelegate(Vector3 position, Quaternion rotation);
+        public delegate NetworkObject SpawnHandlerDelegate(ulong ownerClientId, Vector3 position, Quaternion rotation);
 
         /// <summary>
         /// The delegate used when destroying NetworkObjects
@@ -250,7 +251,7 @@ namespace MLAPI.Spawning
         }
 
         // Only ran on Client
-        internal static NetworkObject CreateLocalNetworkObject(bool softCreate, ulong instanceId, ulong prefabHash, ulong? parentNetworkId, Vector3? position, Quaternion? rotation)
+        internal static NetworkObject CreateLocalNetworkObject(bool softCreate, ulong instanceId, ulong prefabHash, ulong ownerClientId, ulong? parentNetworkId, Vector3? position, Quaternion? rotation)
         {
             NetworkObject parentNetworkObject = null;
 
@@ -271,7 +272,7 @@ namespace MLAPI.Spawning
                 // Create the object
                 if (CustomSpawnHandlers.ContainsKey(prefabHash))
                 {
-                    var networkObject = CustomSpawnHandlers[prefabHash](position.GetValueOrDefault(Vector3.zero), rotation.GetValueOrDefault(Quaternion.identity));
+                    var networkObject = CustomSpawnHandlers[prefabHash](ownerClientId, position.GetValueOrDefault(Vector3.zero), rotation.GetValueOrDefault(Quaternion.identity));
 
                     if (parentNetworkObject != null)
                     {
