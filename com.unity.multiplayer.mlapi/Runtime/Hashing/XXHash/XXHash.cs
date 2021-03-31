@@ -5,6 +5,7 @@
 
 // @mfatihmar (Unity): Modified for Unity support
 
+using System.Text;
 using System.Runtime.CompilerServices;
 
 namespace MLAPI.Hashing
@@ -25,6 +26,20 @@ namespace MLAPI.Hashing
         private const uint k_Prime32v3 = 3266489917u;
         private const uint k_Prime32v4 = 668265263u;
         private const uint k_Prime32v5 = 374761393u;
+
+        public static uint Hash32(string text) => Hash32(text, Encoding.UTF8);
+        public static uint Hash32(string text, Encoding encoding)
+        {
+            var strBuf = encoding.GetBytes(text);
+            var strLen = strBuf.Length;
+            unsafe
+            {
+                fixed (byte* strPtr = strBuf)
+                {
+                    return Hash32(strPtr, strLen);
+                }
+            }
+        }
 
         /// <summary>
         /// Generate a 32-bit xxHash value.
