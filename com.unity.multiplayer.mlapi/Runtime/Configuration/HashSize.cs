@@ -8,11 +8,6 @@ namespace MLAPI.Configuration
     public enum HashSize
     {
         /// <summary>
-        /// Two byte hash
-        /// </summary>
-        VarIntTwoBytes,
-
-        /// <summary>
         /// Four byte hash
         /// </summary>
         VarIntFourBytes,

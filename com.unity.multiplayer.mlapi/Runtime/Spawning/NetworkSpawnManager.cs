@@ -150,7 +150,7 @@ namespace MLAPI.Spawning
         /// <returns>The hash for the given generator</returns>
         public static ulong GetPrefabHashFromGenerator(string generator)
         {
-            return generator.GetStableHash64();
+            return XXHash.Hash64(generator);
         }
 
         /// <summary>
