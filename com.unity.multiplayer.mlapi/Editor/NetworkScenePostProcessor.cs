@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace UnityEditor
 {
-    internal static class NetworkScenePostProcessor
+    internal class NetworkScenePostProcessor
     {
         [PostProcessScene(int.MaxValue)]
         public static void ProcessScene()
