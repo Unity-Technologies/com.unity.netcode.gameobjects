@@ -1223,7 +1223,7 @@ namespace MLAPI
             var networkUpdateStage = queueItem.NetworkReader.ReadByteDirect();
             var networkMethodId = queueItem.NetworkReader.ReadUInt32Packed();
 
-            if (__ntable.TryGetValue(networkMethodId, out Action<NetworkBehaviour, NetworkSerializer, __RpcParams> action))
+            if (__ntable.ContainsKey(networkMethodId))
             {
                 if (!NetworkSpawnManager.SpawnedObjects.ContainsKey(networkObjectId))
                 {
@@ -1262,7 +1262,7 @@ namespace MLAPI
                         break;
                 }
 
-                action(networkBehaviour, new NetworkSerializer(queueItem.NetworkReader), rpcParams);
+                __ntable[networkMethodId](networkBehaviour, new NetworkSerializer(queueItem.NetworkReader), rpcParams);
             }
 #pragma warning restore 618
 
