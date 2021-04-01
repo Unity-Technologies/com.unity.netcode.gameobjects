@@ -87,15 +87,6 @@ namespace MLAPI
         internal ulong? OwnerClientIdInternal = null;
 
         /// <summary>
-        /// InstanceId is the id that is unique to the object and scene for a scene object when UsePrefabSync is false.
-        /// If UsePrefabSync is true or if it's used on non scene objects, this has no effect.
-        /// Should not be set manually
-        /// </summary>
-        [HideInInspector]
-        [SerializeField]
-        internal ulong NetworkInstanceId;
-
-        /// <summary>
         /// The Prefab unique hash. This should not be set my the user but rather changed by editing the PrefabHashGenerator.
         /// It has to be the same for all instances of a prefab
         /// </summary>
