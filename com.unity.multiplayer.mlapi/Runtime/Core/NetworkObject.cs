@@ -20,11 +20,20 @@ namespace MLAPI
     [DisallowMultipleComponent]
     public sealed class NetworkObject : MonoBehaviour
     {
+        [HideInInspector]
+        [SerializeField]
+        internal ulong GlobalObjectIdHash64;
+
+#if UNITY_EDITOR
         private void OnValidate()
         {
+            var globalObjectIdString = UnityEditor.GlobalObjectId.GetGlobalObjectIdSlow(this).ToString();
+            GlobalObjectIdHash64 = XXHash.Hash64(globalObjectIdString);
+
             // Set this so the hash can be serialized on Scene objects. For prefabs, they are generated at runtime.
             ValidateHash();
         }
+#endif
 
         internal void ValidateHash()
         {
