@@ -487,7 +487,7 @@ namespace MLAPI.Spawning
 
                     if (networkObject.IsSceneObject == null || networkObject.IsSceneObject.Value)
                     {
-                        writer.WriteUInt64Packed(networkObject.NetworkInstanceId);
+                        writer.WriteUInt64Packed(networkObject.GlobalObjectIdHash64);
                     }
                     else
                     {
@@ -672,7 +672,7 @@ namespace MLAPI.Spawning
             {
                 if (networkObjects[i].IsSceneObject == null)
                 {
-                    PendingSoftSyncObjects.Add(networkObjects[i].NetworkInstanceId, networkObjects[i]);
+                    PendingSoftSyncObjects.Add(networkObjects[i].GlobalObjectIdHash64, networkObjects[i]);
                 }
             }
         }

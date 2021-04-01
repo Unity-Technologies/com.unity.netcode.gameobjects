@@ -1515,7 +1515,7 @@ namespace MLAPI
 
                                 if (observedObject.IsSceneObject == null || observedObject.IsSceneObject.Value)
                                 {
-                                    writer.WriteUInt64Packed(observedObject.NetworkInstanceId);
+                                    writer.WriteUInt64Packed(observedObject.GlobalObjectIdHash64);
                                 }
                                 else
                                 {
