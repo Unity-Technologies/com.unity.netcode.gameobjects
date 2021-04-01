@@ -28,16 +28,19 @@ public class Raygun : NetworkBehaviour
         if (IsLocalPlayer && Input.GetKeyDown(KeyCode.P))
         {
             m_CurrentTarget = FindTarget();
-            transform.position = m_CurrentTarget.transform.position + forward;
+            if (m_CurrentTarget != null)
+            {
+                transform.position = m_CurrentTarget.transform.position + forward;
+            }
         }
     }
 
     private GameObject FindTarget()
     {
         var targetsObjs = GameObject.FindGameObjectsWithTag("Target");
-        var list = new List<GameObject>(targetsObjs);
-        list.Remove(gameObject);
+        var targetList = new List<GameObject>(targetsObjs);
+        targetList.Remove(gameObject); // remove self
 
-        return list.Count == 0 ? null : list[Random.Range(0, list.Count)];
+        return targetList.Count == 0 ? null : targetList[Random.Range(0, targetList.Count)];
     }
 }
