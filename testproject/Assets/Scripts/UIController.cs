@@ -4,21 +4,21 @@ using MLAPI;
 public class UIController : MonoBehaviour
 {
     public NetworkManager NetworkManager;
-    public GameObject ButtonsUI;
+    public GameObject ButtonsRoot;
 
-    public void CreateServer()
+    public void StartServer()
     {
         NetworkManager.StartServer();
         HideButtons();
     }
 
-    public void CreateHost()
+    public void StartHost()
     {
         NetworkManager.StartHost();
         HideButtons();
     }
 
-    public void JoinGame()
+    public void StartClient()
     {
         NetworkManager.StartClient();
         HideButtons();
@@ -26,6 +26,6 @@ public class UIController : MonoBehaviour
 
     private void HideButtons()
     {
-        ButtonsUI.SetActive(false);
+        ButtonsRoot.SetActive(false);
     }
 }
