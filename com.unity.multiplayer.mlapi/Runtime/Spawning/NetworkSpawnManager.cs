@@ -479,7 +479,7 @@ namespace MLAPI.Spawning
 
                 if (!NetworkManager.Singleton.NetworkConfig.EnableSceneManagement || NetworkManager.Singleton.NetworkConfig.UsePrefabSync)
                 {
-                    writer.WriteUInt64Packed(networkObject.PrefabHash);
+                    writer.WriteUInt64Packed(networkObject.GlobalObjectIdHash);
                 }
                 else
                 {
@@ -491,7 +491,7 @@ namespace MLAPI.Spawning
                     }
                     else
                     {
-                        writer.WriteUInt64Packed(networkObject.PrefabHash);
+                        writer.WriteUInt64Packed(networkObject.GlobalObjectIdHash);
                     }
                 }
 
@@ -572,10 +572,10 @@ namespace MLAPI.Spawning
             {
                 if ((sobj.IsSceneObject != null && sobj.IsSceneObject == true) || sobj.DestroyWithScene)
                 {
-                    if (CustomDestroyHandlers.ContainsKey(sobj.PrefabHash))
+                    if (CustomDestroyHandlers.ContainsKey(sobj.GlobalObjectIdHash))
                     {
                         SpawnedObjectsList.Remove(sobj);
-                        CustomDestroyHandlers[sobj.PrefabHash](sobj);
+                        CustomDestroyHandlers[sobj.GlobalObjectIdHash](sobj);
                         OnDestroyObject(sobj.NetworkObjectId, false);
                     }
                     else
@@ -595,9 +595,9 @@ namespace MLAPI.Spawning
             {
                 if (networkObjects[i].IsSceneObject != null && networkObjects[i].IsSceneObject.Value == false)
                 {
-                    if (CustomDestroyHandlers.ContainsKey(networkObjects[i].PrefabHash))
+                    if (CustomDestroyHandlers.ContainsKey(networkObjects[i].GlobalObjectIdHash))
                     {
-                        CustomDestroyHandlers[networkObjects[i].PrefabHash](networkObjects[i]);
+                        CustomDestroyHandlers[networkObjects[i].GlobalObjectIdHash](networkObjects[i]);
                         OnDestroyObject(networkObjects[i].NetworkObjectId, false);
                     }
                     else
@@ -616,9 +616,9 @@ namespace MLAPI.Spawning
             {
                 if (networkObjects[i].IsSceneObject == null || networkObjects[i].IsSceneObject.Value == true)
                 {
-                    if (CustomDestroyHandlers.ContainsKey(networkObjects[i].PrefabHash))
+                    if (CustomDestroyHandlers.ContainsKey(networkObjects[i].GlobalObjectIdHash))
                     {
-                        CustomDestroyHandlers[networkObjects[i].PrefabHash](networkObjects[i]);
+                        CustomDestroyHandlers[networkObjects[i].GlobalObjectIdHash](networkObjects[i]);
                         OnDestroyObject(networkObjects[i].NetworkObjectId, false);
                     }
                     else
@@ -752,9 +752,9 @@ namespace MLAPI.Spawning
 
             if (destroyGameObject && gobj != null)
             {
-                if (CustomDestroyHandlers.ContainsKey(sobj.PrefabHash))
+                if (CustomDestroyHandlers.ContainsKey(sobj.GlobalObjectIdHash))
                 {
-                    CustomDestroyHandlers[sobj.PrefabHash](sobj);
+                    CustomDestroyHandlers[sobj.GlobalObjectIdHash](sobj);
                     OnDestroyObject(networkId, false);
                 }
                 else

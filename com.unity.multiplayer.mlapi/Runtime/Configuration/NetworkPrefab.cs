@@ -5,11 +5,21 @@ using UnityEngine;
 namespace MLAPI.Configuration
 {
     /// <summary>
-    /// A class that represents a NetworkPrefab
+    /// Class that represents a NetworkPrefab
     /// </summary>
     [Serializable]
     public class NetworkPrefab
     {
+        /// <summary>
+        /// Asset reference of the network prefab
+        /// </summary>
+        public GameObject Prefab;
+
+        /// <summary>
+        /// Whether or not this is a player prefab
+        /// </summary>
+        public bool PlayerPrefab;
+
         internal ulong Hash
         {
             get
@@ -18,7 +28,7 @@ namespace MLAPI.Configuration
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                     {
-                        NetworkLog.LogWarning($"{nameof(NetworkPrefab)} is not assigned");
+                        NetworkLog.LogWarning($"{nameof(NetworkPrefab)} does not have a prefab assigned");
                     }
 
                     return 0;
@@ -29,24 +39,14 @@ namespace MLAPI.Configuration
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                     {
-                        NetworkLog.LogWarning($"{nameof(NetworkPrefab)} {Prefab.name} does not have a {nameof(NetworkObject)}");
+                        NetworkLog.LogWarning($"{nameof(NetworkPrefab)} {Prefab.name} does not have a {nameof(NetworkObject)} component");
                     }
 
                     return 0;
                 }
 
-                return networkObject.PrefabHash;
+                return networkObject.GlobalObjectIdHash;
             }
         }
-
-        /// <summary>
-        /// The gameobject of the prefab
-        /// </summary>
-        public GameObject Prefab;
-
-        /// <summary>
-        /// Whether or not this is a playerPrefab
-        /// </summary>
-        public bool PlayerPrefab;
     }
 }

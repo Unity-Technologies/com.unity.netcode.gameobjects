@@ -29,21 +29,8 @@ namespace MLAPI
         {
             var globalObjectIdString = UnityEditor.GlobalObjectId.GetGlobalObjectIdSlow(this).ToString();
             GlobalObjectIdHash = XXHash.Hash64(globalObjectIdString);
-
-            // Set this so the hash can be serialized on Scene objects. For prefabs, they are generated at runtime.
-            ValidateHash();
         }
 #endif
-
-        internal void ValidateHash()
-        {
-            if (string.IsNullOrEmpty(PrefabHashGenerator))
-            {
-                PrefabHashGenerator = gameObject.name;
-            }
-
-            PrefabHash = XXHash.Hash64(PrefabHashGenerator);
-        }
 
         /// <summary>
         /// Gets the NetworkManager that owns this NetworkObject instance
@@ -85,21 +72,6 @@ namespace MLAPI
         }
 
         internal ulong? OwnerClientIdInternal = null;
-
-        /// <summary>
-        /// The Prefab unique hash. This should not be set my the user but rather changed by editing the PrefabHashGenerator.
-        /// It has to be the same for all instances of a prefab
-        /// </summary>
-        [HideInInspector]
-        [SerializeField]
-        public ulong PrefabHash;
-
-        /// <summary>
-        /// The generator used to change the PrefabHash. This should be set the same for all instances of a prefab.
-        /// It has to be unique in relation to other prefabs
-        /// </summary>
-        [SerializeField]
-        public string PrefabHashGenerator;
 
         /// <summary>
         /// If true, the object will always be replicated as root on clients and the parent will be ignored.
