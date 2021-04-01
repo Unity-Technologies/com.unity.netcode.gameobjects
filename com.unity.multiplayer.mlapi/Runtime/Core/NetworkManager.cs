@@ -1027,7 +1027,7 @@ namespace MLAPI
                 }
 
                 // Client tried to send a network message that was not the connection request before he was accepted.
-                if (PendingClients.TryGetValue(clientId, out PendingClient client) && client.ConnectionState == PendingClient.State.PendingApproval || (client.ConnectionState == PendingClient.State.PendingConnection && messageType != NetworkConstants.CONNECTION_REQUEST)
+                if (PendingClients.TryGetValue(clientId, out PendingClient client) && client.ConnectionState == PendingClient.State.PendingApproval || client.ConnectionState == PendingClient.State.PendingConnection && messageType != NetworkConstants.CONNECTION_REQUEST)
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                     {
@@ -1421,7 +1421,7 @@ namespace MLAPI
             if (approved)
             {
                 // Inform new client it got approved
-                PendingClients.Remove(clientId);
+                PendingClients.Remove(ownerClientId);
 
                 var client = new NetworkClient { ClientId = ownerClientId, };
                 ConnectedClients.Add(ownerClientId, client);

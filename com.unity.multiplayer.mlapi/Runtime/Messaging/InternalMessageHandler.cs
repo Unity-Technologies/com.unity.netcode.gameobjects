@@ -448,7 +448,7 @@ namespace MLAPI.Messaging
 
                 if (NetworkSpawnManager.SpawnedObjects.TryGetValue(networkObjectId, out NetworkObject networkObject))
                 {
-                    var networkBehaviour = networkObject.GetNetworkBehaviourAtOrderIndex(networkBehaviourIndex);
+                    NetworkBehaviour instance = networkObject.GetNetworkBehaviourAtOrderIndex(networkBehaviourIndex);
 
                     if (instance == null)
                     {
