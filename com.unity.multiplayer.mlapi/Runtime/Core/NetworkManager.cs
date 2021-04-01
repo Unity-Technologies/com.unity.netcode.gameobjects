@@ -242,24 +242,24 @@ namespace MLAPI
                 }
             }
 
-            int playerPrefabCount = NetworkConfig.NetworkPrefabs.Count(x => x.PlayerPrefab);
+            int playerPrefabCount = NetworkConfig.NetworkPrefabs.Count(x => x.IsPlayer);
 
             if (playerPrefabCount == 0 && !NetworkConfig.ConnectionApproval && NetworkConfig.CreatePlayerPrefab)
             {
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                 {
-                    NetworkLog.LogWarning($"There is no {nameof(NetworkPrefab)} marked as a {nameof(NetworkPrefab.PlayerPrefab)}");
+                    NetworkLog.LogWarning($"There is no {nameof(NetworkPrefab)} marked as a {nameof(NetworkPrefab.IsPlayer)}");
                 }
             }
             else if (playerPrefabCount > 1)
             {
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                 {
-                    NetworkLog.LogWarning($"Only one {nameof(NetworkPrefab)} can be marked as a {nameof(NetworkPrefab.PlayerPrefab)}");
+                    NetworkLog.LogWarning($"Only one {nameof(NetworkPrefab)} can be marked as a {nameof(NetworkPrefab.IsPlayer)}");
                 }
             }
 
-            var networkPrefab = NetworkConfig.NetworkPrefabs.FirstOrDefault(x => x.PlayerPrefab);
+            var networkPrefab = NetworkConfig.NetworkPrefabs.FirstOrDefault(x => x.IsPlayer);
 
             if (networkPrefab == null)
             {

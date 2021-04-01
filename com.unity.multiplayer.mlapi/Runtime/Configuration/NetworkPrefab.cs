@@ -18,7 +18,7 @@ namespace MLAPI.Configuration
         /// <summary>
         /// Whether or not this is a player prefab
         /// </summary>
-        public bool PlayerPrefab;
+        public bool IsPlayer;
 
         internal ulong Hash
         {
