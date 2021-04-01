@@ -67,7 +67,9 @@ namespace MLAPI.Messaging
                 if (NetworkManager.Singleton.NetworkConfig.ConnectionApproval)
                 {
                     byte[] connectionBuffer = reader.ReadByteArray();
-                    NetworkManager.Singleton.InvokeConnectionApproval(connectionBuffer, clientId, (createPlayerObject, playerPrefabHash, approved, position, rotation) => { NetworkManager.Singleton.HandleApproval(clientId, createPlayerObject, playerPrefabHash, approved, position, rotation); });
+                    NetworkManager.Singleton.InvokeConnectionApproval(connectionBuffer, clientId,
+                        (createPlayerObject, playerPrefabHash, approved, position, rotation) =>
+                            NetworkManager.Singleton.HandleApproval(clientId, createPlayerObject, playerPrefabHash, approved, position, rotation));
                 }
                 else
                 {
