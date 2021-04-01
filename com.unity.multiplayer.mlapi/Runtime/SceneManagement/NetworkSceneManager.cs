@@ -307,7 +307,7 @@ namespace MLAPI.SceneManagement
                                 }
                                 else
                                 {
-                                    writer.WriteUInt64Packed(newSceneObjects[i].GlobalObjectIdHash64);
+                                    writer.WriteUInt64Packed(newSceneObjects[i].GlobalObjectIdHash);
                                 }
 
                                 if (NetworkManager.Singleton.NetworkConfig.EnableNetworkVariable)
