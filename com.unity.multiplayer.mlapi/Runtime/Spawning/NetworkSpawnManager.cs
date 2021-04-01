@@ -474,15 +474,7 @@ namespace MLAPI.Spawning
                 else
                 {
                     writer.WriteBool(networkObject.IsSceneObject ?? true);
-
-                    if (networkObject.IsSceneObject == null || networkObject.IsSceneObject.Value)
-                    {
-                        writer.WriteUInt64Packed(networkObject.GlobalObjectIdHash);
-                    }
-                    else
-                    {
-                        writer.WriteUInt64Packed(networkObject.GlobalObjectIdHash);
-                    }
+                    writer.WriteUInt64Packed(networkObject.GlobalObjectIdHash);
                 }
 
                 if (networkObject.IncludeTransformWhenSpawning == null || networkObject.IncludeTransformWhenSpawning(clientId))
