@@ -145,16 +145,6 @@ namespace MLAPI.Spawning
         }
 
         /// <summary>
-        /// Returns the prefab hash for a given prefab hash generator
-        /// </summary>
-        /// <param name="generator">The prefab hash generator</param>
-        /// <returns>The hash for the given generator</returns>
-        public static ulong GetPrefabHashFromGenerator(string generator)
-        {
-            return XXHash.Hash64(generator);
-        }
-
-        /// <summary>
         /// Returns the local player object or null if one does not exist
         /// </summary>
         /// <returns>The local player object or null if one does not exist</returns>
