@@ -10,17 +10,17 @@ publish_{{ project.name }}_{{ package.name }}:
     flavor: b1.large
   commands:
     - npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
-    - upm-ci package publish --package-path {{ package.path }} --dry-run
+    - upm-ci package publish --package-path {{ project.packages.first.path }}
   artifacts:
     artifacts:
       paths:
         - "upm-ci~/packages/*.tgz"
   dependencies:
     - .yamato/project-pack.yml#pack_{{ project.name }}
-    - .yamato/project-test.yml#validate_{{ project.name }}_{{ package.name }}_{{ test_platforms.first.name }}_{{ test_editors.first }}
+    - .yamato/project-tests.yml#validate_{{ project.name }}_{{ project.packages.first.name }}_{{ test_platforms.first.name }}_{{ test_editors.first }}
 {% for editor in test_editors -%}
 {% for platform in test_platforms -%}
-    - .yamato/project-test.yml#test_{{ project.name }}_{{ package.name }}_{{ platform.name }}_{{ editor }}
+    - .yamato/project-tests.yml#test_{{ project.name }}_{{ project.packages.first.name }}_{{ platform.name }}_{{ editor }}
 {% endfor -%}
 {% endfor -%}
 
@@ -41,6 +41,6 @@ publish_{{ project.name }}:
         - "upm-ci~/packages/*.tgz"
   dependencies:
     - .yamato/project-pack.yml#pack_{{ project.name }}
-    - .yamato/project-test.yml#all_tests_trigger
+    - .yamato/_run-all.yml#run_all_tests
 
 {% endfor -%}

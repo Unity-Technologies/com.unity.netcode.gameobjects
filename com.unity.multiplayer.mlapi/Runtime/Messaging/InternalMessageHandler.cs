@@ -44,6 +44,12 @@ namespace MLAPI.Messaging
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleConnectionRequest.Begin();
 #endif
+            if (NetworkManager.Singleton.PendingClients.TryGetValue(clientId, out PendingClient client))
+            {
+                // Set to pending approval to prevent future connection requests from being approved
+                client.ConnectionState = PendingClient.State.PendingApproval;
+            }
+
             using (var reader = PooledNetworkReader.Get(stream))
             {
                 ulong configHash = reader.ReadUInt64Packed();
@@ -83,7 +89,7 @@ namespace MLAPI.Messaging
                 NetworkManager.Singleton.LocalClientId = reader.ReadUInt64Packed();
 
                 uint sceneIndex = 0;
-                Guid sceneSwitchProgressGuid = new Guid();
+                var sceneSwitchProgressGuid = new Guid();
 
                 if (NetworkManager.Singleton.NetworkConfig.EnableSceneManagement)
                 {
@@ -160,7 +166,7 @@ namespace MLAPI.Messaging
                                 rot = Quaternion.Euler(continuationReader.ReadSinglePacked(), continuationReader.ReadSinglePacked(), continuationReader.ReadSinglePacked());
                             }
 
-                            var networkObject = NetworkSpawnManager.CreateLocalNetworkObject(softSync, instanceId, prefabHash, parentNetworkId, pos, rot);
+                            var networkObject = NetworkSpawnManager.CreateLocalNetworkObject(softSync, instanceId, prefabHash, ownerId, parentNetworkId, pos, rot);
                             NetworkSpawnManager.SpawnNetworkObjectLocally(networkObject, networkId, softSync, isPlayerObject, ownerId, continuationStream, false, 0, true, false);
 
                             Queue<BufferManager.BufferedMessage> bufferQueue = BufferManager.ConsumeBuffersForNetworkId(networkId);
@@ -221,7 +227,7 @@ namespace MLAPI.Messaging
             {
                 bool isPlayerObject = reader.ReadBool();
                 ulong networkId = reader.ReadUInt64Packed();
-                ulong ownerId = reader.ReadUInt64Packed();
+                ulong ownerClientId = reader.ReadUInt64Packed();
                 bool hasParent = reader.ReadBool();
                 ulong? parentNetworkId = null;
 
@@ -267,8 +273,8 @@ namespace MLAPI.Messaging
                 bool hasPayload = reader.ReadBool();
                 int payLoadLength = hasPayload ? reader.ReadInt32Packed() : 0;
 
-                var networkObject = NetworkSpawnManager.CreateLocalNetworkObject(softSync, instanceId, prefabHash, parentNetworkId, pos, rot);
-                NetworkSpawnManager.SpawnNetworkObjectLocally(networkObject, networkId, softSync, isPlayerObject, ownerId, stream, hasPayload, payLoadLength, true, false);
+                var networkObject = NetworkSpawnManager.CreateLocalNetworkObject(softSync, instanceId, prefabHash, ownerClientId, parentNetworkId, pos, rot);
+                NetworkSpawnManager.SpawnNetworkObjectLocally(networkObject, networkId, softSync, isPlayerObject, ownerClientId, stream, hasPayload, payLoadLength, true, false);
 
                 Queue<BufferManager.BufferedMessage> bufferQueue = BufferManager.ConsumeBuffersForNetworkId(networkId);
 
@@ -311,7 +317,7 @@ namespace MLAPI.Messaging
             using (var reader = PooledNetworkReader.Get(stream))
             {
                 uint sceneIndex = reader.ReadUInt32Packed();
-                Guid switchSceneGuid = new Guid(reader.ReadByteArray());
+                var switchSceneGuid = new Guid(reader.ReadByteArray());
 
                 var objectBuffer = new NetworkBuffer();
                 objectBuffer.CopyUnreadFrom(stream);
@@ -550,7 +556,7 @@ namespace MLAPI.Messaging
             }
 
             ProfilerStatManager.RpcsRcvd.Record();
-            PerformanceDataManager.Increment(ProfilerConstants.NumberOfRPCsReceived);
+            PerformanceDataManager.Increment(ProfilerConstants.RpcReceived);
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             switch (queueItemType)
@@ -582,7 +588,7 @@ namespace MLAPI.Messaging
 
         internal static void HandleUnnamedMessage(ulong clientId, Stream stream)
         {
-            PerformanceDataManager.Increment(ProfilerConstants.NumberOfUnnamedMessages);
+            PerformanceDataManager.Increment(ProfilerConstants.UnnamedMessageReceived);
             ProfilerStatManager.UnnamedMessage.Record();
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleUnnamedMessage.Begin();
@@ -595,7 +601,7 @@ namespace MLAPI.Messaging
 
         internal static void HandleNamedMessage(ulong clientId, Stream stream)
         {
-            PerformanceDataManager.Increment(ProfilerConstants.NumberOfNamedMessages);
+            PerformanceDataManager.Increment(ProfilerConstants.NamedMessageReceived);
             ProfilerStatManager.NamedMessage.Record();
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleNamedMessage.Begin();
@@ -618,7 +624,7 @@ namespace MLAPI.Messaging
 #endif
             using (var reader = PooledNetworkReader.Get(stream))
             {
-                NetworkLog.LogType logType = (NetworkLog.LogType)reader.ReadByte();
+                var logType = (NetworkLog.LogType)reader.ReadByte();
                 string message = reader.ReadStringPacked();
 
                 switch (logType)

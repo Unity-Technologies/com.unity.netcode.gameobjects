@@ -232,7 +232,7 @@ namespace MLAPI.SceneManagement
             // Justification: Rare alloc, could(should?) reuse
             var newSceneObjects = new List<NetworkObject>();
             {
-                var networkObjects = MonoBehaviour.FindObjectsOfType<NetworkObject>();
+                var networkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>();
                 for (int i = 0; i < networkObjects.Length; i++)
                 {
                     if (networkObjects[i].IsSceneObject == null)
@@ -256,7 +256,7 @@ namespace MLAPI.SceneManagement
                         uint sceneObjectsToSpawn = 0;
                         for (int i = 0; i < newSceneObjects.Count; i++)
                         {
-                            if (newSceneObjects[i].m_Observers.Contains(NetworkManager.Singleton.ConnectedClientsList[j].ClientId))
+                            if (newSceneObjects[i].Observers.Contains(NetworkManager.Singleton.ConnectedClientsList[j].ClientId))
                             {
                                 sceneObjectsToSpawn++;
                             }
@@ -266,7 +266,7 @@ namespace MLAPI.SceneManagement
 
                         for (int i = 0; i < newSceneObjects.Count; i++)
                         {
-                            if (newSceneObjects[i].m_Observers.Contains(NetworkManager.Singleton.ConnectedClientsList[j].ClientId))
+                            if (newSceneObjects[i].Observers.Contains(NetworkManager.Singleton.ConnectedClientsList[j].ClientId))
                             {
                                 writer.WriteBool(newSceneObjects[i].IsPlayerObject);
                                 writer.WriteUInt64Packed(newSceneObjects[i].NetworkObjectId);
@@ -343,7 +343,7 @@ namespace MLAPI.SceneManagement
                     {
                         bool isPlayerObject = reader.ReadBool();
                         ulong networkId = reader.ReadUInt64Packed();
-                        ulong owner = reader.ReadUInt64Packed();
+                        ulong ownerClientId = reader.ReadUInt64Packed();
                         bool hasParent = reader.ReadBool();
                         ulong? parentNetworkId = null;
 
@@ -362,8 +362,8 @@ namespace MLAPI.SceneManagement
                             rotation = Quaternion.Euler(reader.ReadSinglePacked(), reader.ReadSinglePacked(), reader.ReadSinglePacked());
                         }
 
-                        var networkObject = NetworkSpawnManager.CreateLocalNetworkObject(false, 0, prefabHash, parentNetworkId, position, rotation);
-                        NetworkSpawnManager.SpawnNetworkObjectLocally(networkObject, networkId, true, isPlayerObject, owner, objectStream, false, 0, true, false);
+                        var networkObject = NetworkSpawnManager.CreateLocalNetworkObject(false, 0, prefabHash, ownerClientId, parentNetworkId, position, rotation);
+                        NetworkSpawnManager.SpawnNetworkObjectLocally(networkObject, networkId, true, isPlayerObject, ownerClientId, objectStream, false, 0, true, false);
 
                         var bufferQueue = BufferManager.ConsumeBuffersForNetworkId(networkId);
 
@@ -382,7 +382,7 @@ namespace MLAPI.SceneManagement
             }
             else
             {
-                var networkObjects = MonoBehaviour.FindObjectsOfType<NetworkObject>();
+                var networkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>();
                 NetworkSpawnManager.ClientCollectSoftSyncSceneObjectSweep(networkObjects);
 
                 using (var reader = PooledNetworkReader.Get(objectStream))
@@ -393,7 +393,7 @@ namespace MLAPI.SceneManagement
                     {
                         bool isPlayerObject = reader.ReadBool();
                         ulong networkId = reader.ReadUInt64Packed();
-                        ulong owner = reader.ReadUInt64Packed();
+                        ulong ownerClientId = reader.ReadUInt64Packed();
                         bool hasParent = reader.ReadBool();
                         ulong? parentNetworkId = null;
 
@@ -404,8 +404,8 @@ namespace MLAPI.SceneManagement
 
                         ulong instanceId = reader.ReadUInt64Packed();
 
-                        var networkObject = NetworkSpawnManager.CreateLocalNetworkObject(true, instanceId, 0, parentNetworkId, null, null);
-                        NetworkSpawnManager.SpawnNetworkObjectLocally(networkObject, networkId, true, isPlayerObject, owner, objectStream, false, 0, true, false);
+                        var networkObject = NetworkSpawnManager.CreateLocalNetworkObject(true, instanceId, 0, ownerClientId, parentNetworkId, null, null);
+                        NetworkSpawnManager.SpawnNetworkObjectLocally(networkObject, networkId, true, isPlayerObject, ownerClientId, objectStream, false, 0, true, false);
 
                         var bufferQueue = BufferManager.ConsumeBuffersForNetworkId(networkId);
 
@@ -474,7 +474,7 @@ namespace MLAPI.SceneManagement
                     sobj.gameObject.transform.parent = null;
                 }
 
-                MonoBehaviour.DontDestroyOnLoad(sobj.gameObject);
+                UnityEngine.Object.DontDestroyOnLoad(sobj.gameObject);
             }
         }
 

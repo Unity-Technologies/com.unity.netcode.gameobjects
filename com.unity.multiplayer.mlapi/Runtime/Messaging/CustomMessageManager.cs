@@ -5,6 +5,7 @@ using MLAPI.Logging;
 using MLAPI.Serialization;
 using MLAPI.Serialization.Pooled;
 using MLAPI.Hashing;
+using MLAPI.Profiling;
 using MLAPI.Transports;
 
 namespace MLAPI.Messaging
@@ -41,11 +42,16 @@ namespace MLAPI.Messaging
         {
             if (!NetworkManager.Singleton.IsServer)
             {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogWarning("Can not send unnamed messages to multiple users as a client");
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
+                {
+                    NetworkLog.LogWarning("Can not send unnamed messages to multiple users as a client");
+                }
+
                 return;
             }
 
             InternalMessageSender.Send(NetworkConstants.UNNAMED_MESSAGE, networkChannel, clientIds, buffer);
+            PerformanceDataManager.Increment(ProfilerConstants.UnnamedMessageSent);
         }
 
         /// <summary>
@@ -57,6 +63,7 @@ namespace MLAPI.Messaging
         public static void SendUnnamedMessage(ulong clientId, NetworkBuffer buffer, NetworkChannel networkChannel = NetworkChannel.Internal)
         {
             InternalMessageSender.Send(clientId, NetworkConstants.UNNAMED_MESSAGE, networkChannel, buffer);
+            PerformanceDataManager.Increment(ProfilerConstants.UnnamedMessageSent);
         }
 
         #endregion
@@ -68,7 +75,6 @@ namespace MLAPI.Messaging
         /// </summary>
         public delegate void HandleNamedMessageDelegate(ulong sender, Stream payload);
 
-        private static Dictionary<ulong, HandleNamedMessageDelegate> s_NamedMessageHandlers16 = new Dictionary<ulong, HandleNamedMessageDelegate>();
         private static Dictionary<ulong, HandleNamedMessageDelegate> s_NamedMessageHandlers32 = new Dictionary<ulong, HandleNamedMessageDelegate>();
         private static Dictionary<ulong, HandleNamedMessageDelegate> s_NamedMessageHandlers64 = new Dictionary<ulong, HandleNamedMessageDelegate>();
 
@@ -77,11 +83,6 @@ namespace MLAPI.Messaging
             if (NetworkManager.Singleton == null)
             {
                 // We dont know what size to use. Try every (more collision prone)
-                if (s_NamedMessageHandlers16.TryGetValue(hash, out HandleNamedMessageDelegate messageHandler16))
-                {
-                    messageHandler16(sender, stream);
-                }
-
                 if (s_NamedMessageHandlers32.TryGetValue(hash, out HandleNamedMessageDelegate messageHandler32))
                 {
                     messageHandler32(sender, stream);
@@ -95,26 +96,20 @@ namespace MLAPI.Messaging
             else
             {
                 // Only check the right size.
-                if (NetworkManager.Singleton.NetworkConfig.RpcHashSize == HashSize.VarIntTwoBytes)
+                switch (NetworkManager.Singleton.NetworkConfig.RpcHashSize)
                 {
-                    if (s_NamedMessageHandlers16.TryGetValue(hash, out HandleNamedMessageDelegate messageHandler16))
-                    {
-                        messageHandler16(sender, stream);
-                    }
-                }
-                else if (NetworkManager.Singleton.NetworkConfig.RpcHashSize == HashSize.VarIntFourBytes)
-                {
-                    if (s_NamedMessageHandlers32.TryGetValue(hash, out HandleNamedMessageDelegate messageHandler32))
-                    {
-                        messageHandler32(sender, stream);
-                    }
-                }
-                else if (NetworkManager.Singleton.NetworkConfig.RpcHashSize == HashSize.VarIntEightBytes)
-                {
-                    if (s_NamedMessageHandlers64.TryGetValue(hash, out HandleNamedMessageDelegate messageHandler64))
-                    {
-                        messageHandler64(sender, stream);
-                    }
+                    case HashSize.VarIntFourBytes:
+                        if (s_NamedMessageHandlers32.TryGetValue(hash, out HandleNamedMessageDelegate messageHandler32))
+                        {
+                            messageHandler32(sender, stream);
+                        }
+                        break;
+                    case HashSize.VarIntEightBytes:
+                        if (s_NamedMessageHandlers64.TryGetValue(hash, out HandleNamedMessageDelegate messageHandler64))
+                        {
+                            messageHandler64(sender, stream);
+                        }
+                        break;
                 }
             }
         }
@@ -126,9 +121,8 @@ namespace MLAPI.Messaging
         /// <param name="callback">The callback to run when a named message is received.</param>
         public static void RegisterNamedMessageHandler(string name, HandleNamedMessageDelegate callback)
         {
-            s_NamedMessageHandlers16[name.GetStableHash16()] = callback;
-            s_NamedMessageHandlers32[name.GetStableHash32()] = callback;
-            s_NamedMessageHandlers64[name.GetStableHash64()] = callback;
+            s_NamedMessageHandlers32[XXHash.Hash32(name)] = callback;
+            s_NamedMessageHandlers64[XXHash.Hash64(name)] = callback;
         }
 
         /// <summary>
@@ -137,9 +131,8 @@ namespace MLAPI.Messaging
         /// <param name="name">The name of the message.</param>
         public static void UnregisterNamedMessageHandler(string name)
         {
-            s_NamedMessageHandlers16.Remove(name.GetStableHash16());
-            s_NamedMessageHandlers32.Remove(name.GetStableHash32());
-            s_NamedMessageHandlers64.Remove(name.GetStableHash64());
+            s_NamedMessageHandlers32.Remove(XXHash.Hash32(name));
+            s_NamedMessageHandlers64.Remove(XXHash.Hash64(name));
         }
 
         /// <summary>
@@ -154,14 +147,11 @@ namespace MLAPI.Messaging
             ulong hash = 0;
             switch (NetworkManager.Singleton.NetworkConfig.RpcHashSize)
             {
-                case HashSize.VarIntTwoBytes:
-                    hash = name.GetStableHash16();
-                    break;
                 case HashSize.VarIntFourBytes:
-                    hash = name.GetStableHash32();
+                    hash = XXHash.Hash32(name);
                     break;
                 case HashSize.VarIntEightBytes:
-                    hash = name.GetStableHash64();
+                    hash = XXHash.Hash64(name);
                     break;
             }
 
@@ -173,6 +163,7 @@ namespace MLAPI.Messaging
                 messageBuffer.CopyFrom(stream);
 
                 InternalMessageSender.Send(clientId, NetworkConstants.NAMED_MESSAGE, networkChannel, messageBuffer);
+                PerformanceDataManager.Increment(ProfilerConstants.NamedMessageSent);
             }
         }
 
@@ -188,14 +179,11 @@ namespace MLAPI.Messaging
             ulong hash = 0;
             switch (NetworkManager.Singleton.NetworkConfig.RpcHashSize)
             {
-                case HashSize.VarIntTwoBytes:
-                    hash = name.GetStableHash16();
-                    break;
                 case HashSize.VarIntFourBytes:
-                    hash = name.GetStableHash32();
+                    hash = XXHash.Hash32(name);
                     break;
                 case HashSize.VarIntEightBytes:
-                    hash = name.GetStableHash64();
+                    hash = XXHash.Hash64(name);
                     break;
             }
 
@@ -208,11 +196,16 @@ namespace MLAPI.Messaging
 
                 if (!NetworkManager.Singleton.IsServer)
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogWarning("Can not send named messages to multiple users as a client");
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
+                    {
+                        NetworkLog.LogWarning("Can not send named messages to multiple users as a client");
+                    }
+
                     return;
                 }
 
                 InternalMessageSender.Send(NetworkConstants.NAMED_MESSAGE, networkChannel, clientIds, messageBuffer);
+                PerformanceDataManager.Increment(ProfilerConstants.NamedMessageSent);
             }
         }
 

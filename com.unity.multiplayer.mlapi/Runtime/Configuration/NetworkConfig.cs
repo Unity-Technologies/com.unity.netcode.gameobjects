@@ -6,6 +6,7 @@ using MLAPI.Transports;
 using MLAPI.Hashing;
 using MLAPI.Serialization;
 using MLAPI.Serialization.Pooled;
+using UnityEngine.Serialization;
 
 namespace MLAPI.Configuration
 {
@@ -52,6 +53,7 @@ namespace MLAPI.Configuration
         /// A list of spawnable prefabs
         /// </summary>
         [Tooltip("The prefabs that can be spawned across the network")]
+        [FormerlySerializedAs("NetworkedPrefabs")]
         public List<NetworkPrefab> NetworkPrefabs = new List<NetworkPrefab>();
 
         /// <summary>
@@ -73,6 +75,12 @@ namespace MLAPI.Configuration
         public int ReceiveTickrate = 64;
 
         /// <summary>
+        /// Duration in seconds between network ticks.
+        /// </summary>
+        [Tooltip("Duration in seconds between network ticks")]
+        public float NetworkTickIntervalSec = 0.050f;
+
+        /// <summary>
         /// The max amount of messages to process per ReceiveTickrate. This is to prevent flooding.
         /// </summary>
         [Tooltip("The maximum amount of Receive events to poll per Receive tick. This is to prevent flooding and freezing on the server")]
@@ -81,7 +89,7 @@ namespace MLAPI.Configuration
         /// <summary>
         /// The amount of times per second internal frame events will occur, e.g. send checking.
         /// </summary>
-        [Tooltip("The amount of times per second the internal event loop will run. This includes for example NetworkVariable checking and LagCompensation tracking")]
+        [Tooltip("The amount of times per second the internal event loop will run. This includes for example NetworkVariable checking.")]
         public int EventTickrate = 64;
 
         /// <summary>
@@ -101,12 +109,6 @@ namespace MLAPI.Configuration
         /// </summary>
         [Tooltip("The connection data sent along with connection requests")]
         public byte[] ConnectionData = new byte[0];
-
-        /// <summary>
-        /// The amount of seconds to keep a lag compensation position history
-        /// </summary>
-        [Tooltip("The amount of seconds to keep lag compensation position history")]
-        public int SecondsHistory = 5;
 
         /// <summary>
         /// If your logic uses the NetworkTime, this should probably be turned off. If however it's needed to maximize accuracy, this is recommended to be turned on
@@ -171,8 +173,8 @@ namespace MLAPI.Configuration
         /// <summary>
         /// Decides how many bytes to use for Rpc messaging. Leave this to 2 bytes unless you are facing hash collisions
         /// </summary>
-        [Tooltip("The maximum amount of bytes to use for RPC messages. Leave this to 2 unless you are facing hash collisions")]
-        public HashSize RpcHashSize = HashSize.VarIntTwoBytes;
+        [Tooltip("The maximum amount of bytes to use for RPC messages.")]
+        public HashSize RpcHashSize = HashSize.VarIntFourBytes;
 
         /// <summary>
         /// The amount of seconds to wait on all clients to load requested scene before the SwitchSceneProgress onComplete callback, that waits for all clients to complete loading, is called anyway.
@@ -225,7 +227,6 @@ namespace MLAPI.Configuration
                 writer.WriteInt32Packed(config.EventTickrate);
                 writer.WriteInt32Packed(config.ClientConnectionBufferTimeout);
                 writer.WriteBool(config.ConnectionApproval);
-                writer.WriteInt32Packed(config.SecondsHistory);
                 writer.WriteInt32Packed(config.LoadSceneTimeOut);
                 writer.WriteBool(config.EnableTimeResync);
                 writer.WriteBool(config.EnsureNetworkVariableLengthSafety);
@@ -270,7 +271,6 @@ namespace MLAPI.Configuration
                 config.EventTickrate = reader.ReadInt32Packed();
                 config.ClientConnectionBufferTimeout = reader.ReadInt32Packed();
                 config.ConnectionApproval = reader.ReadBool();
-                config.SecondsHistory = reader.ReadInt32Packed();
                 config.LoadSceneTimeOut = reader.ReadInt32Packed();
                 config.EnableTimeResync = reader.ReadBool();
                 config.EnsureNetworkVariableLengthSafety = reader.ReadBool();
@@ -296,7 +296,10 @@ namespace MLAPI.Configuration
         /// <returns></returns>
         public ulong GetConfig(bool cache = true)
         {
-            if (m_ConfigHash != null && cache) return m_ConfigHash.Value;
+            if (m_ConfigHash != null && cache)
+            {
+                return m_ConfigHash.Value;
+            }
 
             Sort();
 
@@ -333,11 +336,11 @@ namespace MLAPI.Configuration
 
                 if (cache)
                 {
-                    m_ConfigHash = buffer.ToArray().GetStableHash64();
+                    m_ConfigHash = XXHash.Hash64(buffer.ToArray());
                     return m_ConfigHash.Value;
                 }
 
-                return buffer.ToArray().GetStableHash64();
+                return XXHash.Hash64(buffer.ToArray());
             }
         }
 

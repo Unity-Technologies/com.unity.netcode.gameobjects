@@ -25,6 +25,7 @@ namespace MLAPI
     /// </summary>
     public abstract class NetworkBehaviour : MonoBehaviour
     {
+#pragma warning disable IDE1006 // disable naming rule violation check
         [Browsable(false)]
         [EditorBrowsable(EditorBrowsableState.Never)]
 #if UNITY_2020_2_OR_NEWER
@@ -34,6 +35,7 @@ namespace MLAPI
         [Obsolete("Please do not use, will no longer be exposed in the future versions (framework internal)")]
         public enum __NExec
 #endif
+#pragma warning restore IDE1006 // restore naming rule violation check
         {
             None = 0,
             Server = 1,
@@ -41,6 +43,7 @@ namespace MLAPI
         }
 
 #pragma warning disable 414
+#pragma warning disable IDE1006 // disable naming rule violation check
         [NonSerialized]
         [Browsable(false)]
         [EditorBrowsable(EditorBrowsableState.Never)]
@@ -53,7 +56,9 @@ namespace MLAPI
         public __NExec __nexec = __NExec.None;
 #endif
 #pragma warning restore 414
+#pragma warning restore IDE1006 // restore naming rule violation check
 
+#pragma warning disable IDE1006 // disable naming rule violation check
         [Browsable(false)]
         [EditorBrowsable(EditorBrowsableState.Never)]
 #if UNITY_2020_2_OR_NEWER
@@ -63,6 +68,7 @@ namespace MLAPI
         [Obsolete("Please do not use, will no longer be exposed in the future versions (framework internal)")]
         public NetworkSerializer __beginSendServerRpc(ServerRpcParams serverRpcParams, RpcDelivery rpcDelivery)
 #endif
+#pragma warning restore IDE1006 // restore naming rule violation check
         {
             PooledNetworkWriter writer;
 
@@ -97,6 +103,7 @@ namespace MLAPI
             return writer.Serializer;
         }
 
+#pragma warning disable IDE1006 // disable naming rule violation check
         [Browsable(false)]
         [EditorBrowsable(EditorBrowsableState.Never)]
 #if UNITY_2020_2_OR_NEWER
@@ -106,8 +113,12 @@ namespace MLAPI
         [Obsolete("Please do not use, will no longer be exposed in the future versions (framework internal)")]
         public void __endSendServerRpc(NetworkSerializer serializer, ServerRpcParams serverRpcParams, RpcDelivery rpcDelivery)
 #endif
+#pragma warning restore IDE1006 // restore naming rule violation check
         {
-            if (serializer == null) return;
+            if (serializer == null)
+            {
+                return;
+            }
 
             var rpcQueueContainer = NetworkManager.Singleton.RpcQueueContainer;
             if (IsHost)
@@ -120,6 +131,7 @@ namespace MLAPI
             }
         }
 
+#pragma warning disable IDE1006 // disable naming rule violation check
         [Browsable(false)]
         [EditorBrowsable(EditorBrowsableState.Never)]
 #if UNITY_2020_2_OR_NEWER
@@ -129,6 +141,7 @@ namespace MLAPI
         [Obsolete("Please do not use, will no longer be exposed in the future versions (framework internal)")]
         public NetworkSerializer __beginSendClientRpc(ClientRpcParams clientRpcParams, RpcDelivery rpcDelivery)
 #endif
+#pragma warning restore IDE1006 // restore naming rule violation check
         {
             PooledNetworkWriter writer;
 
@@ -137,32 +150,32 @@ namespace MLAPI
             var isUsingBatching = rpcQueueContainer.IsUsingBatching();
             var transportChannel = rpcDelivery == RpcDelivery.Reliable ? NetworkChannel.ReliableRpc : NetworkChannel.UnreliableRpc;
 
-            ulong[] ClientIds = clientRpcParams.Send.TargetClientIds ?? NetworkManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray();
+            ulong[] clientIds = clientRpcParams.Send.TargetClientIds ?? NetworkManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray();
             if (clientRpcParams.Send.TargetClientIds != null && clientRpcParams.Send.TargetClientIds.Length == 0)
             {
-                ClientIds = NetworkManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray();
+                clientIds = NetworkManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray();
             }
 
             //NOTES ON BELOW CHANGES:
             //The following checks for IsHost and whether the host client id is part of the clients to recieve the RPC
             //Is part of a patch-fix to handle looping back RPCs into the next frame's inbound queue.
             //!!! This code is temporary and will change (soon) when NetworkSerializer can be configured for mutliple NetworkWriters!!!
-            var ContainsServerClientId = ClientIds.Contains(NetworkManager.Singleton.ServerClientId);
-            if (IsHost && ContainsServerClientId)
+            var containsServerClientId = clientIds.Contains(NetworkManager.Singleton.ServerClientId);
+            if (IsHost && containsServerClientId)
             {
                 //Always write to the next frame's inbound queue
                 writer = rpcQueueContainer.BeginAddQueueItemToFrame(RpcQueueContainer.QueueItemType.ClientRpc, Time.realtimeSinceStartup, transportChannel,
                     NetworkManager.Singleton.ServerClientId, null, RpcQueueHistoryFrame.QueueFrameType.Inbound, clientRpcParams.Send.UpdateStage);
 
                 //Handle sending to the other clients, if so the above notes explain why this code is here (a temporary patch-fix)
-                if (ClientIds.Length > 1)
+                if (clientIds.Length > 1)
                 {
                     //Set the loopback frame
                     rpcQueueContainer.SetLoopBackFrameItem(clientRpcParams.Send.UpdateStage);
 
                     //Switch to the outbound queue
-                    writer = rpcQueueContainer.BeginAddQueueItemToFrame(RpcQueueContainer.QueueItemType.ClientRpc, Time.realtimeSinceStartup, NetworkChannel.ReliableRpc, NetworkObjectId,
-                        ClientIds, RpcQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
+                    writer = rpcQueueContainer.BeginAddQueueItemToFrame(RpcQueueContainer.QueueItemType.ClientRpc, Time.realtimeSinceStartup, transportChannel, NetworkObjectId,
+                        clientIds, RpcQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
 
                     if (!isUsingBatching)
                     {
@@ -180,7 +193,7 @@ namespace MLAPI
             else
             {
                 writer = rpcQueueContainer.BeginAddQueueItemToFrame(RpcQueueContainer.QueueItemType.ClientRpc, Time.realtimeSinceStartup, transportChannel, NetworkObjectId,
-                    ClientIds, RpcQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
+                    clientIds, RpcQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
 
                 if (!isUsingBatching)
                 {
@@ -195,6 +208,7 @@ namespace MLAPI
             return writer.Serializer;
         }
 
+#pragma warning disable IDE1006 // disable naming rule violation check
         [Browsable(false)]
         [EditorBrowsable(EditorBrowsableState.Never)]
 #if UNITY_2020_2_OR_NEWER
@@ -204,21 +218,25 @@ namespace MLAPI
         [Obsolete("Please do not use, will no longer be exposed in the future versions (framework internal)")]
         public void __endSendClientRpc(NetworkSerializer serializer, ClientRpcParams clientRpcParams, RpcDelivery rpcDelivery)
 #endif
+#pragma warning restore IDE1006 // restore naming rule violation check
         {
-            if (serializer == null) return;
+            if (serializer == null)
+            {
+                return;
+            }
 
             var rpcQueueContainer = NetworkManager.Singleton.RpcQueueContainer;
 
             if (IsHost)
             {
-                ulong[] ClientIds = clientRpcParams.Send.TargetClientIds ?? NetworkManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray();
+                ulong[] clientIds = clientRpcParams.Send.TargetClientIds ?? NetworkManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray();
                 if (clientRpcParams.Send.TargetClientIds != null && clientRpcParams.Send.TargetClientIds.Length == 0)
                 {
-                    ClientIds = NetworkManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray();
+                    clientIds = NetworkManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray();
                 }
 
-                var ContainsServerClientId = ClientIds.Contains(NetworkManager.Singleton.ServerClientId);
-                if (ContainsServerClientId && ClientIds.Length == 1)
+                var containsServerClientId = clientIds.Contains(NetworkManager.Singleton.ServerClientId);
+                if (containsServerClientId && clientIds.Length == 1)
                 {
                     rpcQueueContainer.EndAddQueueItemToFrame(serializer.Writer, RpcQueueHistoryFrame.QueueFrameType.Inbound, clientRpcParams.Send.UpdateStage);
                     return;
@@ -272,12 +290,12 @@ namespace MLAPI
         {
             get
             {
-                if (ReferenceEquals(m_NetworkObject, null))
+                if (m_NetworkObject == null)
                 {
                     m_NetworkObject = GetComponentInParent<NetworkObject>();
                 }
 
-                if (ReferenceEquals(m_NetworkObject, null))
+                if (m_NetworkObject == null)
                 {
                     throw new NullReferenceException($"Could not get {nameof(NetworkObject)} for the {nameof(NetworkBehaviour)}. Are you missing a {nameof(NetworkObject)} component?");
                 }
@@ -293,12 +311,12 @@ namespace MLAPI
         {
             get
             {
-                if (ReferenceEquals(m_NetworkObject, null))
+                if (m_NetworkObject == null)
                 {
                     m_NetworkObject = GetComponentInParent<NetworkObject>();
                 }
 
-                return !ReferenceEquals(m_NetworkObject, null);
+                return m_NetworkObject != null;
             }
         }
 
@@ -410,7 +428,11 @@ namespace MLAPI
 
         internal void InitializeVariables()
         {
-            if (m_VarInit) return;
+            if (m_VarInit)
+            {
+                return;
+            }
+
             m_VarInit = true;
 
             FieldInfo[] sortedFields = GetFieldInfoForType(GetType());
@@ -421,7 +443,7 @@ namespace MLAPI
 
                 if (fieldType.HasInterface(typeof(INetworkVariable)))
                 {
-                    INetworkVariable instance = (INetworkVariable)sortedFields[i].GetValue(this);
+                    var instance = (INetworkVariable)sortedFields[i].GetValue(this);
 
                     if (instance == null)
                     {
@@ -555,7 +577,10 @@ namespace MLAPI
 
         internal void VariableUpdate(ulong clientId)
         {
-            if (!m_VarInit) InitializeVariables();
+            if (!m_VarInit)
+            {
+                InitializeVariables();
+            }
 
             PreNetworkVariableWrite();
             NetworkVariableUpdate(clientId);
@@ -566,7 +591,10 @@ namespace MLAPI
 
         private void NetworkVariableUpdate(ulong clientId)
         {
-            if (!CouldHaveDirtyNetworkVariables()) return;
+            if (!CouldHaveDirtyNetworkVariables())
+            {
+                return;
+            }
 
             for (int j = 0; j < m_ChannelMappedNetworkVariableIndexes.Count; j++)
             {
@@ -621,6 +649,10 @@ namespace MLAPI
                             {
                                 writtenAny = true;
 
+                                // write the network tick at which this NetworkVariable was modified remotely
+                                // this will allow lag-compensation
+                                writer.WriteUInt16Packed(NetworkVariableFields[k].RemoteTick);
+
                                 if (NetworkManager.Singleton.NetworkConfig.EnsureNetworkVariableLengthSafety)
                                 {
                                     using (var varBuffer = PooledNetworkBuffer.Get())
@@ -659,7 +691,10 @@ namespace MLAPI
             // TODO: There should be a better way by reading one dirty variable vs. 'n'
             for (int i = 0; i < NetworkVariableFields.Count; i++)
             {
-                if (NetworkVariableFields[i].IsDirty()) return true;
+                if (NetworkVariableFields[i].IsDirty())
+                {
+                    return true;
+                }
             }
 
             return false;
@@ -680,11 +715,17 @@ namespace MLAPI
                     {
                         varSize = reader.ReadUInt16Packed();
 
-                        if (varSize == 0) continue;
+                        if (varSize == 0)
+                        {
+                            continue;
+                        }
                     }
                     else
                     {
-                        if (!reader.ReadBool()) continue;
+                        if (!reader.ReadBool())
+                        {
+                            continue;
+                        }
                     }
 
                     if (IsServer && !networkVariableList[i].CanClientWrite(clientId))
@@ -725,7 +766,7 @@ namespace MLAPI
                     long readStartPos = stream.Position;
 
                     networkVariableList[i].ReadDelta(stream, IsServer, localTick, remoteTick);
-                    PerformanceDataManager.Increment(ProfilerConstants.NumberNetworkVarsReceived);
+                    PerformanceDataManager.Increment(ProfilerConstants.NetworkVarDeltas);
 
                     ProfilerStatManager.NetworkVarsRcvd.Record();
 
@@ -768,11 +809,17 @@ namespace MLAPI
                     {
                         varSize = reader.ReadUInt16Packed();
 
-                        if (varSize == 0) continue;
+                        if (varSize == 0)
+                        {
+                            continue;
+                        }
                     }
                     else
                     {
-                        if (!reader.ReadBool()) continue;
+                        if (!reader.ReadBool())
+                        {
+                            continue;
+                        }
                     }
 
                     if (IsServer && !networkVariableList[i].CanClientWrite(clientId))
@@ -806,7 +853,7 @@ namespace MLAPI
                     long readStartPos = stream.Position;
 
                     networkVariableList[i].ReadField(stream, NetworkTickSystem.NoTick, NetworkTickSystem.NoTick);
-                    PerformanceDataManager.Increment(ProfilerConstants.NumberNetworkVarsReceived);
+                    PerformanceDataManager.Increment(ProfilerConstants.NetworkVarUpdates);
 
                     ProfilerStatManager.NetworkVarsRcvd.Record();
 
@@ -843,7 +890,10 @@ namespace MLAPI
 
         internal static void WriteNetworkVariableData(List<INetworkVariable> networkVariableList, Stream stream, ulong clientId)
         {
-            if (networkVariableList.Count == 0) return;
+            if (networkVariableList.Count == 0)
+            {
+                return;
+            }
 
             using (var writer = PooledNetworkWriter.Get(stream))
             {
@@ -887,7 +937,10 @@ namespace MLAPI
 
         internal static void SetNetworkVariableData(List<INetworkVariable> networkVariableList, Stream stream)
         {
-            if (networkVariableList.Count == 0) return;
+            if (networkVariableList.Count == 0)
+            {
+                return;
+            }
 
             using (var reader = PooledNetworkReader.Get(stream))
             {
@@ -899,11 +952,17 @@ namespace MLAPI
                     {
                         varSize = reader.ReadUInt16Packed();
 
-                        if (varSize == 0) continue;
+                        if (varSize == 0)
+                        {
+                            continue;
+                        }
                     }
                     else
                     {
-                        if (!reader.ReadBool()) continue;
+                        if (!reader.ReadBool())
+                        {
+                            continue;
+                        }
                     }
 
                     long readStartPos = stream.Position;

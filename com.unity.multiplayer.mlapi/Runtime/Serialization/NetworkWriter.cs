@@ -193,7 +193,7 @@ namespace MLAPI.Serialization
             else if (value is GameObject)
             {
                 var networkObject = ((GameObject)value).GetComponent<NetworkObject>();
-                if (ReferenceEquals(networkObject, null))
+                if (networkObject == null)
                 {
                     throw new ArgumentException($"{nameof(NetworkWriter)} cannot write {nameof(GameObject)} types that does not has a {nameof(NetworkObject)} component attached. {nameof(GameObject)}: {((GameObject)value).name}");
                 }
@@ -436,10 +436,21 @@ namespace MLAPI.Serialization
         /// <param name="bytes">How many bytes the compressed result should occupy. Must be between 1 and 4 (inclusive)</param>
         public void WriteRangedSingle(float value, float minValue, float maxValue, int bytes)
         {
-            if (bytes < 1 || bytes > 4) throw new ArgumentOutOfRangeException("Result must occupy between 1 and 4 bytes!");
-            if (value < minValue || value > maxValue) throw new ArgumentOutOfRangeException("Given value does not match the given constraints!");
+            if (bytes < 1 || bytes > 4)
+            {
+                throw new ArgumentOutOfRangeException("Result must occupy between 1 and 4 bytes!");
+            }
+
+            if (value < minValue || value > maxValue)
+            {
+                throw new ArgumentOutOfRangeException("Given value does not match the given constraints!");
+            }
+
             uint result = (uint)(((value + minValue) / (maxValue + minValue)) * ((0x100 * bytes) - 1));
-            for (int i = 0; i < bytes; ++i) m_Sink.WriteByte((byte)(result >> (i << 3)));
+            for (int i = 0; i < bytes; ++i)
+            {
+                m_Sink.WriteByte((byte)(result >> (i << 3)));
+            }
         }
 
         /// <summary>
@@ -451,10 +462,21 @@ namespace MLAPI.Serialization
         /// <param name="bytes">How many bytes the compressed result should occupy. Must be between 1 and 8 (inclusive)</param>
         public void WriteRangedDouble(double value, double minValue, double maxValue, int bytes)
         {
-            if (bytes < 1 || bytes > 8) throw new ArgumentOutOfRangeException("Result must occupy between 1 and 8 bytes!");
-            if (value < minValue || value > maxValue) throw new ArgumentOutOfRangeException("Given value does not match the given constraints!");
+            if (bytes < 1 || bytes > 8)
+            {
+                throw new ArgumentOutOfRangeException("Result must occupy between 1 and 8 bytes!");
+            }
+
+            if (value < minValue || value > maxValue)
+            {
+                throw new ArgumentOutOfRangeException("Given value does not match the given constraints!");
+            }
+
             ulong result = (ulong)(((value + minValue) / (maxValue + minValue)) * ((0x100 * bytes) - 1));
-            for (int i = 0; i < bytes; ++i) WriteByte((byte)(result >> (i << 3)));
+            for (int i = 0; i < bytes; ++i)
+            {
+                WriteByte((byte)(result >> (i << 3)));
+            }
         }
 
         /// <summary>
@@ -495,7 +517,11 @@ namespace MLAPI.Serialization
         /// <param name="bit"></param>
         public void WriteBit(bool bit)
         {
-            if (m_NetworkSink == null) throw new InvalidOperationException($"Cannot write bits on a non-{nameof(NetworkBuffer)} stream");
+            if (m_NetworkSink == null)
+            {
+                throw new InvalidOperationException($"Cannot write bits on a non-{nameof(NetworkBuffer)} stream");
+            }
+
             m_NetworkSink.WriteBit(bit);
         }
 
@@ -521,7 +547,10 @@ namespace MLAPI.Serialization
         /// </summary>
         public void WritePadBits()
         {
-            while (!m_NetworkSink.BitAligned) WriteBit(false);
+            while (!m_NetworkSink.BitAligned)
+            {
+                WriteBit(false);
+            }
         }
 
         /// <summary>
@@ -544,12 +573,31 @@ namespace MLAPI.Serialization
         /// <param name="bitCount">Amount of bits to write</param>
         public void WriteBits(ulong value, int bitCount)
         {
-            if (m_NetworkSink == null) throw new InvalidOperationException($"Cannot write bits on a non-{nameof(NetworkBuffer)} stream");
-            if (bitCount > 64) throw new ArgumentOutOfRangeException(nameof(bitCount), "Cannot read more than 64 bits from a 64-bit value!");
-            if (bitCount < 0) throw new ArgumentOutOfRangeException(nameof(bitCount), "Cannot read fewer than 0 bits!");
+            if (m_NetworkSink == null)
+            {
+                throw new InvalidOperationException($"Cannot write bits on a non-{nameof(NetworkBuffer)} stream");
+            }
+
+            if (bitCount > 64)
+            {
+                throw new ArgumentOutOfRangeException(nameof(bitCount), "Cannot read more than 64 bits from a 64-bit value!");
+            }
+
+            if (bitCount < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(bitCount), "Cannot read fewer than 0 bits!");
+            }
+
             int count = 0;
-            for (; count + 8 < bitCount; count += 8) m_NetworkSink.WriteByte((byte)(value >> count));
-            for (; count < bitCount; ++count) m_NetworkSink.WriteBit((value & (1UL << count)) != 0);
+            for (; count + 8 < bitCount; count += 8)
+            {
+                m_NetworkSink.WriteByte((byte)(value >> count));
+            }
+
+            for (; count < bitCount; ++count)
+            {
+                m_NetworkSink.WriteBit((value & (1UL << count)) != 0);
+            }
         }
 
 
@@ -560,8 +608,15 @@ namespace MLAPI.Serialization
         /// <param name="bitCount">Amount of bits to write.</param>
         public void WriteBits(byte value, int bitCount)
         {
-            if (m_NetworkSink == null) throw new InvalidOperationException($"Cannot write bits on a non-{nameof(NetworkBuffer)} stream");
-            for (int i = 0; i < bitCount; ++i) m_NetworkSink.WriteBit(((value >> i) & 1) != 0);
+            if (m_NetworkSink == null)
+            {
+                throw new InvalidOperationException($"Cannot write bits on a non-{nameof(NetworkBuffer)} stream");
+            }
+
+            for (int i = 0; i < bitCount; ++i)
+            {
+                m_NetworkSink.WriteBit(((value >> i) & 1) != 0);
+            }
         }
 
         /// <summary>
@@ -674,7 +729,10 @@ namespace MLAPI.Serialization
         /// <param name="value">Value to write</param>
         public void WriteUInt64Packed(ulong value)
         {
-            if (value <= 240) WriteULongByte(value);
+            if (value <= 240)
+            {
+                WriteULongByte(value);
+            }
             else if (value <= 2287)
             {
                 WriteULongByte(((value - 240) >> 8) + 241);
@@ -698,7 +756,10 @@ namespace MLAPI.Serialization
 
                 WriteULongByte(header);
                 int max = (int)(header - 247);
-                for (int i = 0; i < max; ++i) WriteULongByte(value >> (i << 3));
+                for (int i = 0; i < max; ++i)
+                {
+                    WriteULongByte(value >> (i << 3));
+                }
             }
         }
 
@@ -735,8 +796,14 @@ namespace MLAPI.Serialization
             int target = s.Length;
             for (int i = 0; i < target; ++i)
             {
-                if (oneByteChars) WriteByte((byte)s[i]);
-                else WriteChar(s[i]);
+                if (oneByteChars)
+                {
+                    WriteByte((byte)s[i]);
+                }
+                else
+                {
+                    WriteChar(s[i]);
+                }
             }
         }
 
@@ -748,7 +815,10 @@ namespace MLAPI.Serialization
         {
             WriteUInt32Packed((uint)s.Length);
             int target = s.Length;
-            for (int i = 0; i < target; ++i) WriteCharPacked(s[i]);
+            for (int i = 0; i < target; ++i)
+            {
+                WriteCharPacked(s[i]);
+            }
         }
 
         /// <summary>
@@ -772,7 +842,10 @@ namespace MLAPI.Serialization
 #else
             target = a1.Length;
 #endif
-            for (int i = 0; i < target; ++i) WriteBit(write[i] != compare[i]);
+            for (int i = 0; i < target; ++i)
+            {
+                WriteBit(write[i] != compare[i]);
+            }
 #else
             target = write.Length;
 #endif
@@ -784,8 +857,14 @@ namespace MLAPI.Serialization
 #endif
                 if (b)
                 {
-                    if (oneByteChars) WriteByte((byte)write[i]);
-                    else WriteChar(write[i]);
+                    if (oneByteChars)
+                    {
+                        WriteByte((byte)write[i]);
+                    }
+                    else
+                    {
+                        WriteChar(write[i]);
+                    }
                 }
             }
         }
@@ -810,7 +889,10 @@ namespace MLAPI.Serialization
 #else
             target = a1.Length;
 #endif
-            for (int i = 0; i < target; ++i) WriteBit(write[i] != compare[i]);
+            for (int i = 0; i < target; ++i)
+            {
+                WriteBit(write[i] != compare[i]);
+            }
 #else
             target = write.Length;
 #endif
@@ -820,7 +902,10 @@ namespace MLAPI.Serialization
 #if !ARRAY_WRITE_PREMAP
                 WriteBit(!b);
 #endif
-                if (b) WriteCharPacked(write[i]);
+                if (b)
+                {
+                    WriteCharPacked(write[i]);
+                }
             }
         }
 
@@ -831,7 +916,10 @@ namespace MLAPI.Serialization
         {
             long target;
             target = Math.Min(a1.LongLength, a2.LongLength);
-            for (long i = 0; i < target; ++i) WriteBit(!a1.GetValue(i).Equals(a2.GetValue(i)));
+            for (long i = 0; i < target; ++i)
+            {
+                WriteBit(!a1.GetValue(i).Equals(a2.GetValue(i)));
+            }
             // TODO: Byte-align here
         }
 
@@ -840,7 +928,11 @@ namespace MLAPI.Serialization
             ulong write = (ulong)(length >= 0 ? length : a1.LongLength);
             if (length < 0)
             {
-                if (length > a1.LongLength) throw new IndexOutOfRangeException("Cannot write more data than is available");
+                if (length > a1.LongLength)
+                {
+                    throw new IndexOutOfRangeException("Cannot write more data than is available");
+                }
+
                 WriteUInt64Packed(write);
             }
 
@@ -855,7 +947,10 @@ namespace MLAPI.Serialization
         public void WriteByteArray(byte[] b, long count = -1)
         {
             ulong target = WriteArraySize(b, null, count);
-            for (ulong i = 0; i < target; ++i) m_Sink.WriteByte(b[i]);
+            for (ulong i = 0; i < target; ++i)
+            {
+                m_Sink.WriteByte(b[i]);
+            }
         }
 
 
@@ -873,33 +968,31 @@ namespace MLAPI.Serialization
         /// <param name="targetSize"></param>
         public void WriteBytes(byte[] buffer, long targetSize, int offset = 0)
         {
-            long TargetSize = targetSize;
-            long LargeInt64Blocks = TargetSize >> 3; //Divide by 8
-            int IndexOffset = offset;
+            long largeInt64Blocks = targetSize >> 3; //Divide by 8
             //8 Byte blocks
-            for (long i = 0; i < LargeInt64Blocks; i++)
+            for (long i = 0; i < largeInt64Blocks; i++)
             {
-                WriteInt64(BitConverter.ToInt64(buffer, IndexOffset));
-                IndexOffset += 8;
+                WriteInt64(BitConverter.ToInt64(buffer, offset));
+                offset += 8;
             }
 
-            long Offset = LargeInt64Blocks * 8;
-            long Remainder = TargetSize - Offset;
+            long blockOffset = largeInt64Blocks * 8;
+            long remainder = targetSize - blockOffset;
 
             //4 byte block
-            if (Remainder >= 4)
+            if (remainder >= 4)
             {
-                WriteInt32(BitConverter.ToInt32(buffer, IndexOffset));
-                IndexOffset += 4;
-                Offset += 4;
+                WriteInt32(BitConverter.ToInt32(buffer, offset));
+                offset += 4;
+                blockOffset += 4;
             }
 
             //Remainder of bytes < 4
-            if (TargetSize - Offset > 0)
+            if (targetSize - blockOffset > 0)
             {
-                for (long i = 0; i < (TargetSize - Offset); i++)
+                for (long i = 0; i < (targetSize - blockOffset); i++)
                 {
-                    WriteByte(buffer[IndexOffset + i]);
+                    WriteByte(buffer[offset + i]);
                 }
             }
         }
@@ -919,33 +1012,28 @@ namespace MLAPI.Serialization
         /// <param name="targetSize"></param>
         public void ReadAndWrite(NetworkReader sourceReader, long targetSize)
         {
-            long TargetSize = targetSize;
-            long LargeInt64Blocks = TargetSize >> 3; //Divide by 8
-            if (targetSize > 131072 || targetSize < 0)
-            {
-                return;
-            }
+            long largeInt64Blocks = targetSize >> 3; //Divide by 8
 
             //8 Byte blocks
-            for (long i = 0; i < LargeInt64Blocks; i++)
+            for (long i = 0; i < largeInt64Blocks; i++)
             {
                 WriteInt64(sourceReader.ReadInt64());
             }
 
-            long Offset = LargeInt64Blocks * 8;
-            long Remainder = TargetSize - Offset;
+            long offset = largeInt64Blocks * 8;
+            long remainder = targetSize - offset;
 
             //4 byte block
-            if (Remainder >= 4)
+            if (remainder >= 4)
             {
                 WriteInt32(sourceReader.ReadInt32());
-                Offset += 4;
+                offset += 4;
             }
 
             //Remainder of bytes < 4
-            if (TargetSize - Offset > 0)
+            if (targetSize - offset > 0)
             {
-                for (long i = 0; i < (TargetSize - Offset); i++)
+                for (long i = 0; i < (targetSize - offset); i++)
                 {
                     WriteByte(sourceReader.ReadByteDirect());
                 }
@@ -969,7 +1057,10 @@ namespace MLAPI.Serialization
 #if !ARRAY_WRITE_PREMAP
                 WriteBit(b);
 #endif
-                if (b) WriteByte(write[i]);
+                if (b)
+                {
+                    WriteByte(write[i]);
+                }
             }
         }
 
@@ -981,7 +1072,10 @@ namespace MLAPI.Serialization
         public void WriteShortArray(short[] b, long count = -1)
         {
             ulong target = WriteArraySize(b, null, count);
-            for (ulong i = 0; i < target; ++i) WriteInt16(b[i]);
+            for (ulong i = 0; i < target; ++i)
+            {
+                WriteInt16(b[i]);
+            }
         }
 
         /// <summary>
@@ -1001,7 +1095,10 @@ namespace MLAPI.Serialization
 #if !ARRAY_WRITE_PREMAP
                 WriteBit(!b);
 #endif
-                if (b) WriteInt16(write[i]);
+                if (b)
+                {
+                    WriteInt16(write[i]);
+                }
             }
         }
 
@@ -1013,7 +1110,10 @@ namespace MLAPI.Serialization
         public void WriteUShortArray(ushort[] b, long count = -1)
         {
             ulong target = WriteArraySize(b, null, count);
-            for (ulong i = 0; i < target; ++i) WriteUInt16(b[i]);
+            for (ulong i = 0; i < target; ++i)
+            {
+                WriteUInt16(b[i]);
+            }
         }
 
         /// <summary>
@@ -1033,7 +1133,10 @@ namespace MLAPI.Serialization
 #if !ARRAY_WRITE_PREMAP
                 WriteBit(!b);
 #endif
-                if (b) WriteUInt16(write[i]);
+                if (b)
+                {
+                    WriteUInt16(write[i]);
+                }
             }
         }
 
@@ -1045,7 +1148,10 @@ namespace MLAPI.Serialization
         public void WriteCharArray(char[] b, long count = -1)
         {
             ulong target = WriteArraySize(b, null, count);
-            for (ulong i = 0; i < target; ++i) WriteChar(b[i]);
+            for (ulong i = 0; i < target; ++i)
+            {
+                WriteChar(b[i]);
+            }
         }
 
         /// <summary>
@@ -1065,7 +1171,10 @@ namespace MLAPI.Serialization
 #if !ARRAY_WRITE_PREMAP
                 WriteBit(!b);
 #endif
-                if (b) WriteChar(write[i]);
+                if (b)
+                {
+                    WriteChar(write[i]);
+                }
             }
         }
 
@@ -1077,7 +1186,10 @@ namespace MLAPI.Serialization
         public void WriteIntArray(int[] b, long count = -1)
         {
             ulong target = WriteArraySize(b, null, count);
-            for (ulong i = 0; i < target; ++i) WriteInt32(b[i]);
+            for (ulong i = 0; i < target; ++i)
+            {
+                WriteInt32(b[i]);
+            }
         }
 
         /// <summary>
@@ -1097,7 +1209,10 @@ namespace MLAPI.Serialization
 #if !ARRAY_WRITE_PREMAP
                 WriteBit(!b);
 #endif
-                if (b) WriteInt32(write[i]);
+                if (b)
+                {
+                    WriteInt32(write[i]);
+                }
             }
         }
 
@@ -1109,7 +1224,10 @@ namespace MLAPI.Serialization
         public void WriteUIntArray(uint[] b, long count = -1)
         {
             ulong target = WriteArraySize(b, null, count);
-            for (ulong i = 0; i < target; ++i) WriteUInt32(b[i]);
+            for (ulong i = 0; i < target; ++i)
+            {
+                WriteUInt32(b[i]);
+            }
         }
 
         /// <summary>
@@ -1129,7 +1247,10 @@ namespace MLAPI.Serialization
 #if !ARRAY_WRITE_PREMAP
                 WriteBit(!b);
 #endif
-                if (b) WriteUInt32(write[i]);
+                if (b)
+                {
+                    WriteUInt32(write[i]);
+                }
             }
         }
 
@@ -1141,7 +1262,10 @@ namespace MLAPI.Serialization
         public void WriteLongArray(long[] b, long count = -1)
         {
             ulong target = WriteArraySize(b, null, count);
-            for (ulong i = 0; i < target; ++i) WriteInt64(b[i]);
+            for (ulong i = 0; i < target; ++i)
+            {
+                WriteInt64(b[i]);
+            }
         }
 
         /// <summary>
@@ -1161,7 +1285,10 @@ namespace MLAPI.Serialization
 #if !ARRAY_WRITE_PREMAP
                 WriteBit(!b);
 #endif
-                if (b) WriteInt64(write[i]);
+                if (b)
+                {
+                    WriteInt64(write[i]);
+                }
             }
         }
 
@@ -1173,7 +1300,10 @@ namespace MLAPI.Serialization
         public void WriteULongArray(ulong[] b, long count = -1)
         {
             ulong target = WriteArraySize(b, null, count);
-            for (ulong i = 0; i < target; ++i) WriteUInt64(b[i]);
+            for (ulong i = 0; i < target; ++i)
+            {
+                WriteUInt64(b[i]);
+            }
         }
 
         /// <summary>
@@ -1193,7 +1323,10 @@ namespace MLAPI.Serialization
 #if !ARRAY_WRITE_PREMAP
                 WriteBit(!b);
 #endif
-                if (b) WriteUInt64(write[i]);
+                if (b)
+                {
+                    WriteUInt64(write[i]);
+                }
             }
         }
 
@@ -1205,7 +1338,10 @@ namespace MLAPI.Serialization
         public void WriteFloatArray(float[] b, long count = -1)
         {
             ulong target = WriteArraySize(b, null, count);
-            for (ulong i = 0; i < target; ++i) WriteSingle(b[i]);
+            for (ulong i = 0; i < target; ++i)
+            {
+                WriteSingle(b[i]);
+            }
         }
 
         /// <summary>
@@ -1225,7 +1361,10 @@ namespace MLAPI.Serialization
 #if !ARRAY_WRITE_PREMAP
                 WriteBit(!b);
 #endif
-                if (b) WriteSingle(write[i]);
+                if (b)
+                {
+                    WriteSingle(write[i]);
+                }
             }
         }
 
@@ -1237,7 +1376,10 @@ namespace MLAPI.Serialization
         public void WriteDoubleArray(double[] b, long count = -1)
         {
             ulong target = WriteArraySize(b, null, count);
-            for (ulong i = 0; i < target; ++i) WriteDouble(b[i]);
+            for (ulong i = 0; i < target; ++i)
+            {
+                WriteDouble(b[i]);
+            }
         }
 
         /// <summary>
@@ -1257,7 +1399,10 @@ namespace MLAPI.Serialization
 #if !ARRAY_WRITE_PREMAP
                 WriteBit(!b);
 #endif
-                if (b) WriteDouble(write[i]);
+                if (b)
+                {
+                    WriteDouble(write[i]);
+                }
             }
         }
 
@@ -1275,19 +1420,52 @@ namespace MLAPI.Serialization
 
 
 #if ARRAY_WRITE_PERMISSIVE
-            if (arrayType == typeof(byte[])) WriteByteArray(a as byte[], count);
+            if (arrayType == typeof(byte[]))
+            {
+                WriteByteArray(a as byte[], count);
+            }
             else
 #endif
-            if (arrayType == typeof(short[])) WriteShortArrayPacked(a as short[], count);
-            else if (arrayType == typeof(ushort[])) WriteUShortArrayPacked(a as ushort[], count);
-            else if (arrayType == typeof(char[])) WriteCharArrayPacked(a as char[], count);
-            else if (arrayType == typeof(int[])) WriteIntArrayPacked(a as int[], count);
-            else if (arrayType == typeof(uint[])) WriteUIntArrayPacked(a as uint[], count);
-            else if (arrayType == typeof(long[])) WriteLongArrayPacked(a as long[], count);
-            else if (arrayType == typeof(ulong[])) WriteULongArrayPacked(a as ulong[], count);
-            else if (arrayType == typeof(float[])) WriteFloatArrayPacked(a as float[], count);
-            else if (arrayType == typeof(double[])) WriteDoubleArrayPacked(a as double[], count);
-            else throw new InvalidDataException("Unknown array type! Please serialize manually!");
+            if (arrayType == typeof(short[]))
+            {
+                WriteShortArrayPacked(a as short[], count);
+            }
+            else if (arrayType == typeof(ushort[]))
+            {
+                WriteUShortArrayPacked(a as ushort[], count);
+            }
+            else if (arrayType == typeof(char[]))
+            {
+                WriteCharArrayPacked(a as char[], count);
+            }
+            else if (arrayType == typeof(int[]))
+            {
+                WriteIntArrayPacked(a as int[], count);
+            }
+            else if (arrayType == typeof(uint[]))
+            {
+                WriteUIntArrayPacked(a as uint[], count);
+            }
+            else if (arrayType == typeof(long[]))
+            {
+                WriteLongArrayPacked(a as long[], count);
+            }
+            else if (arrayType == typeof(ulong[]))
+            {
+                WriteULongArrayPacked(a as ulong[], count);
+            }
+            else if (arrayType == typeof(float[]))
+            {
+                WriteFloatArrayPacked(a as float[], count);
+            }
+            else if (arrayType == typeof(double[]))
+            {
+                WriteDoubleArrayPacked(a as double[], count);
+            }
+            else
+            {
+                throw new InvalidDataException("Unknown array type! Please serialize manually!");
+            }
         }
 
         /// <summary>
@@ -1299,22 +1477,58 @@ namespace MLAPI.Serialization
         public void WriteArrayPackedDiff(Array write, Array compare, long count = -1)
         {
             var arrayType = write.GetType();
-            if (arrayType != compare.GetType()) throw new ArrayTypeMismatchException("Cannot write diff of two differing array types");
+            if (arrayType != compare.GetType())
+            {
+                throw new ArrayTypeMismatchException("Cannot write diff of two differing array types");
+            }
 
 #if ARRAY_WRITE_PERMISSIVE
-            if (arrayType == typeof(byte[])) WriteByteArrayDiff(write as byte[], compare as byte[], count);
+            if (arrayType == typeof(byte[]))
+            {
+                WriteByteArrayDiff(write as byte[], compare as byte[], count);
+            }
             else
 #endif
-            if (arrayType == typeof(short[])) WriteShortArrayPackedDiff(write as short[], compare as short[], count);
-            else if (arrayType == typeof(ushort[])) WriteUShortArrayPackedDiff(write as ushort[], compare as ushort[], count);
-            else if (arrayType == typeof(char[])) WriteCharArrayPackedDiff(write as char[], compare as char[], count);
-            else if (arrayType == typeof(int[])) WriteIntArrayPackedDiff(write as int[], compare as int[], count);
-            else if (arrayType == typeof(uint[])) WriteUIntArrayPackedDiff(write as uint[], compare as uint[], count);
-            else if (arrayType == typeof(long[])) WriteLongArrayPackedDiff(write as long[], compare as long[], count);
-            else if (arrayType == typeof(ulong[])) WriteULongArrayPackedDiff(write as ulong[], compare as ulong[], count);
-            else if (arrayType == typeof(float[])) WriteFloatArrayPackedDiff(write as float[], compare as float[], count);
-            else if (arrayType == typeof(double[])) WriteDoubleArrayPackedDiff(write as double[], compare as double[], count);
-            else throw new InvalidDataException("Unknown array type! Please serialize manually!");
+            if (arrayType == typeof(short[]))
+            {
+                WriteShortArrayPackedDiff(write as short[], compare as short[], count);
+            }
+            else if (arrayType == typeof(ushort[]))
+            {
+                WriteUShortArrayPackedDiff(write as ushort[], compare as ushort[], count);
+            }
+            else if (arrayType == typeof(char[]))
+            {
+                WriteCharArrayPackedDiff(write as char[], compare as char[], count);
+            }
+            else if (arrayType == typeof(int[]))
+            {
+                WriteIntArrayPackedDiff(write as int[], compare as int[], count);
+            }
+            else if (arrayType == typeof(uint[]))
+            {
+                WriteUIntArrayPackedDiff(write as uint[], compare as uint[], count);
+            }
+            else if (arrayType == typeof(long[]))
+            {
+                WriteLongArrayPackedDiff(write as long[], compare as long[], count);
+            }
+            else if (arrayType == typeof(ulong[]))
+            {
+                WriteULongArrayPackedDiff(write as ulong[], compare as ulong[], count);
+            }
+            else if (arrayType == typeof(float[]))
+            {
+                WriteFloatArrayPackedDiff(write as float[], compare as float[], count);
+            }
+            else if (arrayType == typeof(double[]))
+            {
+                WriteDoubleArrayPackedDiff(write as double[], compare as double[], count);
+            }
+            else
+            {
+                throw new InvalidDataException("Unknown array type! Please serialize manually!");
+            }
         }
 #endif
 
@@ -1326,7 +1540,10 @@ namespace MLAPI.Serialization
         public void WriteShortArrayPacked(short[] b, long count = -1)
         {
             ulong target = WriteArraySize(b, null, count);
-            for (ulong i = 0; i < target; ++i) WriteInt16Packed(b[i]);
+            for (ulong i = 0; i < target; ++i)
+            {
+                WriteInt16Packed(b[i]);
+            }
         }
 
         /// <summary>
@@ -1346,7 +1563,10 @@ namespace MLAPI.Serialization
 #if !ARRAY_WRITE_PREMAP
                 WriteBit(!b);
 #endif
-                if (b) WriteInt16Packed(write[i]);
+                if (b)
+                {
+                    WriteInt16Packed(write[i]);
+                }
             }
         }
 
@@ -1358,7 +1578,10 @@ namespace MLAPI.Serialization
         public void WriteUShortArrayPacked(ushort[] b, long count = -1)
         {
             ulong target = WriteArraySize(b, null, count);
-            for (ulong i = 0; i < target; ++i) WriteUInt16Packed(b[i]);
+            for (ulong i = 0; i < target; ++i)
+            {
+                WriteUInt16Packed(b[i]);
+            }
         }
 
         /// <summary>
@@ -1378,7 +1601,10 @@ namespace MLAPI.Serialization
 #if !ARRAY_WRITE_PREMAP
                 WriteBit(!b);
 #endif
-                if (b) WriteUInt16Packed(write[i]);
+                if (b)
+                {
+                    WriteUInt16Packed(write[i]);
+                }
             }
         }
 
@@ -1390,7 +1616,10 @@ namespace MLAPI.Serialization
         public void WriteCharArrayPacked(char[] b, long count = -1)
         {
             ulong target = WriteArraySize(b, null, count);
-            for (ulong i = 0; i < target; ++i) WriteCharPacked(b[i]);
+            for (ulong i = 0; i < target; ++i)
+            {
+                WriteCharPacked(b[i]);
+            }
         }
 
         /// <summary>
@@ -1410,7 +1639,10 @@ namespace MLAPI.Serialization
 #if !ARRAY_WRITE_PREMAP
                 WriteBit(!b);
 #endif
-                if (b) WriteCharPacked(write[i]);
+                if (b)
+                {
+                    WriteCharPacked(write[i]);
+                }
             }
         }
 
@@ -1422,7 +1654,10 @@ namespace MLAPI.Serialization
         public void WriteIntArrayPacked(int[] b, long count = -1)
         {
             ulong target = WriteArraySize(b, null, count);
-            for (ulong i = 0; i < target; ++i) WriteInt32Packed(b[i]);
+            for (ulong i = 0; i < target; ++i)
+            {
+                WriteInt32Packed(b[i]);
+            }
         }
 
         /// <summary>
@@ -1442,7 +1677,10 @@ namespace MLAPI.Serialization
 #if !ARRAY_WRITE_PREMAP
                 WriteBit(!b);
 #endif
-                if (b) WriteInt32Packed(write[i]);
+                if (b)
+                {
+                    WriteInt32Packed(write[i]);
+                }
             }
         }
 
@@ -1454,7 +1692,10 @@ namespace MLAPI.Serialization
         public void WriteUIntArrayPacked(uint[] b, long count = -1)
         {
             ulong target = WriteArraySize(b, null, count);
-            for (ulong i = 0; i < target; ++i) WriteUInt32Packed(b[i]);
+            for (ulong i = 0; i < target; ++i)
+            {
+                WriteUInt32Packed(b[i]);
+            }
         }
 
         /// <summary>
@@ -1474,7 +1715,10 @@ namespace MLAPI.Serialization
 #if !ARRAY_WRITE_PREMAP
                 WriteBit(!b);
 #endif
-                if (b) WriteUInt32Packed(write[i]);
+                if (b)
+                {
+                    WriteUInt32Packed(write[i]);
+                }
             }
         }
 
@@ -1486,7 +1730,10 @@ namespace MLAPI.Serialization
         public void WriteLongArrayPacked(long[] b, long count = -1)
         {
             ulong target = WriteArraySize(b, null, count);
-            for (ulong i = 0; i < target; ++i) WriteInt64Packed(b[i]);
+            for (ulong i = 0; i < target; ++i)
+            {
+                WriteInt64Packed(b[i]);
+            }
         }
 
         /// <summary>
@@ -1506,7 +1753,10 @@ namespace MLAPI.Serialization
 #if !ARRAY_WRITE_PREMAP
                 WriteBit(!b);
 #endif
-                if (b) WriteInt64Packed(write[i]);
+                if (b)
+                {
+                    WriteInt64Packed(write[i]);
+                }
             }
         }
 
@@ -1518,7 +1768,10 @@ namespace MLAPI.Serialization
         public void WriteULongArrayPacked(ulong[] b, long count = -1)
         {
             ulong target = WriteArraySize(b, null, count);
-            for (ulong i = 0; i < target; ++i) WriteUInt64Packed(b[i]);
+            for (ulong i = 0; i < target; ++i)
+            {
+                WriteUInt64Packed(b[i]);
+            }
         }
 
         /// <summary>
@@ -1538,7 +1791,10 @@ namespace MLAPI.Serialization
 #if !ARRAY_WRITE_PREMAP
                 WriteBit(!b);
 #endif
-                if (b) WriteUInt64Packed(write[i]);
+                if (b)
+                {
+                    WriteUInt64Packed(write[i]);
+                }
             }
         }
 
@@ -1550,7 +1806,10 @@ namespace MLAPI.Serialization
         public void WriteFloatArrayPacked(float[] b, long count = -1)
         {
             ulong target = WriteArraySize(b, null, count);
-            for (ulong i = 0; i < target; ++i) WriteSinglePacked(b[i]);
+            for (ulong i = 0; i < target; ++i)
+            {
+                WriteSinglePacked(b[i]);
+            }
         }
 
         /// <summary>
@@ -1570,7 +1829,10 @@ namespace MLAPI.Serialization
 #if !ARRAY_WRITE_PREMAP
                 WriteBit(!b);
 #endif
-                if (b) WriteSinglePacked(write[i]);
+                if (b)
+                {
+                    WriteSinglePacked(write[i]);
+                }
             }
         }
 
@@ -1582,7 +1844,10 @@ namespace MLAPI.Serialization
         public void WriteDoubleArrayPacked(double[] b, long count = -1)
         {
             ulong target = WriteArraySize(b, null, count);
-            for (ulong i = 0; i < target; ++i) WriteDoublePacked(b[i]);
+            for (ulong i = 0; i < target; ++i)
+            {
+                WriteDoublePacked(b[i]);
+            }
         }
 
         /// <summary>
@@ -1602,7 +1867,10 @@ namespace MLAPI.Serialization
 #if !ARRAY_WRITE_PREMAP
                 WriteBit(!b);
 #endif
-                if (b) WriteDoublePacked(write[i]);
+                if (b)
+                {
+                    WriteDoublePacked(write[i]);
+                }
             }
         }
     }

@@ -1,11 +1,11 @@
+using System.Runtime.InteropServices;
+#if UNITY_2020_2_OR_NEWER
 using System;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
-using Unity.Collections.LowLevel.Unsafe;
-#if UNITY_2020_2_OR_NEWER
 using Unity.Profiling;
 using Unity.Profiling.LowLevel;
 using Unity.Profiling.LowLevel.Unsafe;
+using Unity.Collections.LowLevel.Unsafe;
 #endif
 
 namespace MLAPI.Profiling
@@ -21,7 +21,7 @@ namespace MLAPI.Profiling
 #if ENABLE_PROFILER
         [NativeDisableUnsafePtrRestriction]
         [NonSerialized]
-        readonly unsafe T* m_Value;
+        private readonly unsafe T* m_Value;
 #endif
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

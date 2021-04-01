@@ -5,9 +5,10 @@
 
 // @mfatihmar (Unity): Modified for Unity support
 
+using System.Text;
 using System.Runtime.CompilerServices;
 
-namespace MLAPI.Editor.CodeGen
+namespace MLAPI.Hashing
 {
     /// <summary>
     /// XXHash implementation.
@@ -25,6 +26,19 @@ namespace MLAPI.Editor.CodeGen
         private const uint k_Prime32v3 = 3266489917u;
         private const uint k_Prime32v4 = 668265263u;
         private const uint k_Prime32v5 = 374761393u;
+
+        public static uint Hash32(string text) => Hash32(text, Encoding.UTF8);
+        public static uint Hash32(string text, Encoding encoding) => Hash32(encoding.GetBytes(text));
+        public static uint Hash32(byte[] buffer)
+        {
+            unsafe
+            {
+                fixed (byte* ptr = buffer)
+                {
+                    return Hash32(ptr, buffer.Length);
+                }
+            }
+        }
 
         /// <summary>
         /// Generate a 32-bit xxHash value.
@@ -64,6 +78,19 @@ namespace MLAPI.Editor.CodeGen
             acc = processRemaining32(pInput, acc, remainingLen);
 
             return avalanche32(acc);
+        }
+
+        public static ulong Hash64(string text) => Hash64(text, Encoding.UTF8);
+        public static ulong Hash64(string text, Encoding encoding) => Hash64(encoding.GetBytes(text));
+        public static ulong Hash64(byte[] buffer)
+        {
+            unsafe
+            {
+                fixed (byte* ptr = buffer)
+                {
+                    return Hash64(ptr, buffer.Length);
+                }
+            }
         }
 
         /// <summary>

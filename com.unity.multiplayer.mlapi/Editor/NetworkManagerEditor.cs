@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
-using System.Reflection;
 using UnityEditor;
 using UnityEngine;
 using UnityEditorInternal;
 using MLAPI;
+using MLAPI.Configuration;
 using MLAPI.Transports;
 
 [CustomEditor(typeof(NetworkManager), true)]
@@ -24,12 +24,12 @@ public class NetworkManagerEditor : Editor
     private SerializedProperty m_AllowRuntimeSceneChangesProperty;
     private SerializedProperty m_NetworkTransportProperty;
     private SerializedProperty m_ReceiveTickrateProperty;
+    private SerializedProperty m_NetworkTickIntervalSecProperty;
     private SerializedProperty m_MaxReceiveEventsPerTickRateProperty;
     private SerializedProperty m_EventTickrateProperty;
     private SerializedProperty m_MaxObjectUpdatesPerTickProperty;
     private SerializedProperty m_ClientConnectionBufferTimeoutProperty;
     private SerializedProperty m_ConnectionApprovalProperty;
-    private SerializedProperty m_SecondsHistoryProperty;
     private SerializedProperty m_EnableTimeResyncProperty;
     private SerializedProperty m_TimeResyncIntervalProperty;
     private SerializedProperty m_EnableNetworkVariableProperty;
@@ -84,27 +84,30 @@ public class NetworkManagerEditor : Editor
 
     private void Init()
     {
-        if (m_Initialized) return;
+        if (m_Initialized)
+        {
+            return;
+        }
 
         m_Initialized = true;
         m_NetworkManager = (NetworkManager)target;
 
         // Base properties
-        m_DontDestroyOnLoadProperty = serializedObject.FindProperty("DontDestroy");
-        m_RunInBackgroundProperty = serializedObject.FindProperty("RunInBackground");
-        m_LogLevelProperty = serializedObject.FindProperty("LogLevel");
-        m_NetworkConfigProperty = serializedObject.FindProperty("NetworkConfig");
+        m_DontDestroyOnLoadProperty = serializedObject.FindProperty(nameof(NetworkManager.DontDestroy));
+        m_RunInBackgroundProperty = serializedObject.FindProperty(nameof(NetworkManager.RunInBackground));
+        m_LogLevelProperty = serializedObject.FindProperty(nameof(NetworkManager.LogLevel));
+        m_NetworkConfigProperty = serializedObject.FindProperty(nameof(NetworkManager.NetworkConfig));
 
         // NetworkConfig properties
         m_ProtocolVersionProperty = m_NetworkConfigProperty.FindPropertyRelative("ProtocolVersion");
         m_AllowRuntimeSceneChangesProperty = m_NetworkConfigProperty.FindPropertyRelative("AllowRuntimeSceneChanges");
         m_NetworkTransportProperty = m_NetworkConfigProperty.FindPropertyRelative("NetworkTransport");
         m_ReceiveTickrateProperty = m_NetworkConfigProperty.FindPropertyRelative("ReceiveTickrate");
+        m_NetworkTickIntervalSecProperty = m_NetworkConfigProperty.FindPropertyRelative("NetworkTickIntervalSec");
         m_MaxReceiveEventsPerTickRateProperty = m_NetworkConfigProperty.FindPropertyRelative("MaxReceiveEventsPerTickRate");
         m_EventTickrateProperty = m_NetworkConfigProperty.FindPropertyRelative("EventTickrate");
         m_ClientConnectionBufferTimeoutProperty = m_NetworkConfigProperty.FindPropertyRelative("ClientConnectionBufferTimeout");
         m_ConnectionApprovalProperty = m_NetworkConfigProperty.FindPropertyRelative("ConnectionApproval");
-        m_SecondsHistoryProperty = m_NetworkConfigProperty.FindPropertyRelative("SecondsHistory");
         m_EnableTimeResyncProperty = m_NetworkConfigProperty.FindPropertyRelative("EnableTimeResync");
         m_TimeResyncIntervalProperty = m_NetworkConfigProperty.FindPropertyRelative("TimeResyncInterval");
         m_EnableNetworkVariableProperty = m_NetworkConfigProperty.FindPropertyRelative("EnableNetworkVariable");
@@ -127,21 +130,21 @@ public class NetworkManagerEditor : Editor
     private void CheckNullProperties()
     {
         // Base properties
-        m_DontDestroyOnLoadProperty = serializedObject.FindProperty("DontDestroy");
-        m_RunInBackgroundProperty = serializedObject.FindProperty("RunInBackground");
-        m_LogLevelProperty = serializedObject.FindProperty("LogLevel");
-        m_NetworkConfigProperty = serializedObject.FindProperty("NetworkConfig");
+        m_DontDestroyOnLoadProperty = serializedObject.FindProperty(nameof(NetworkManager.DontDestroy));
+        m_RunInBackgroundProperty = serializedObject.FindProperty(nameof(NetworkManager.RunInBackground));
+        m_LogLevelProperty = serializedObject.FindProperty(nameof(NetworkManager.LogLevel));
+        m_NetworkConfigProperty = serializedObject.FindProperty(nameof(NetworkManager.NetworkConfig));
 
         // NetworkConfig properties
         m_ProtocolVersionProperty = m_NetworkConfigProperty.FindPropertyRelative("ProtocolVersion");
         m_AllowRuntimeSceneChangesProperty = m_NetworkConfigProperty.FindPropertyRelative("AllowRuntimeSceneChanges");
         m_NetworkTransportProperty = m_NetworkConfigProperty.FindPropertyRelative("NetworkTransport");
         m_ReceiveTickrateProperty = m_NetworkConfigProperty.FindPropertyRelative("ReceiveTickrate");
+        m_NetworkTickIntervalSecProperty = m_NetworkConfigProperty.FindPropertyRelative("NetworkTickIntervalSec");
         m_MaxReceiveEventsPerTickRateProperty = m_NetworkConfigProperty.FindPropertyRelative("MaxReceiveEventsPerTickRate");
         m_EventTickrateProperty = m_NetworkConfigProperty.FindPropertyRelative("EventTickrate");
         m_ClientConnectionBufferTimeoutProperty = m_NetworkConfigProperty.FindPropertyRelative("ClientConnectionBufferTimeout");
         m_ConnectionApprovalProperty = m_NetworkConfigProperty.FindPropertyRelative("ConnectionApproval");
-        m_SecondsHistoryProperty = m_NetworkConfigProperty.FindPropertyRelative("SecondsHistory");
         m_EnableTimeResyncProperty = m_NetworkConfigProperty.FindPropertyRelative("EnableTimeResync");
         m_TimeResyncIntervalProperty = m_NetworkConfigProperty.FindPropertyRelative("TimeResyncInterval");
         m_EnableNetworkVariableProperty = m_NetworkConfigProperty.FindPropertyRelative("EnableNetworkVariable");
@@ -160,9 +163,27 @@ public class NetworkManagerEditor : Editor
 
     private void OnEnable()
     {
-        m_NetworkPrefabsList = new ReorderableList(serializedObject, serializedObject.FindProperty("NetworkConfig").FindPropertyRelative("NetworkPrefabs"), true, true, true, true);
+        m_NetworkPrefabsList = new ReorderableList(serializedObject, serializedObject.FindProperty(nameof(NetworkManager.NetworkConfig)).FindPropertyRelative(nameof(NetworkConfig.NetworkPrefabs)), true, true, true, true);
         m_NetworkPrefabsList.drawElementCallback = (Rect rect, int index, bool isActive, bool isFocused) =>
         {
+            for (int i = 0; i < m_NetworkManager.NetworkConfig.NetworkPrefabs.Count; i++)
+            {
+                // Find the first playerPrefab
+                if (m_NetworkManager.NetworkConfig.NetworkPrefabs[i].PlayerPrefab)
+                {
+                    // Iterate over all other and set player prefab to false
+                    for (int j = 0; j < m_NetworkManager.NetworkConfig.NetworkPrefabs.Count; j++)
+                    {
+                        if (j != i && m_NetworkManager.NetworkConfig.NetworkPrefabs[j].PlayerPrefab)
+                        {
+                            m_NetworkManager.NetworkConfig.NetworkPrefabs[j].PlayerPrefab = false;
+                        }
+                    }
+
+                    break;
+                }
+            }
+
             var element = m_NetworkPrefabsList.serializedProperty.GetArrayElementAtIndex(index);
             int firstLabelWidth = 50;
             int secondLabelWidth = 140;
@@ -171,7 +192,7 @@ public class NetworkManagerEditor : Editor
 
             EditorGUI.LabelField(new Rect(rect.x, rect.y, firstLabelWidth, EditorGUIUtility.singleLineHeight), "Prefab");
             EditorGUI.PropertyField(new Rect(rect.x + firstLabelWidth, rect.y, rect.width - firstLabelWidth - secondLabelWidth - secondFieldWidth - reduceFirstWidth,
-                EditorGUIUtility.singleLineHeight), element.FindPropertyRelative("Prefab"), GUIContent.none);
+                EditorGUIUtility.singleLineHeight), element.FindPropertyRelative(nameof(NetworkPrefab.Prefab)), GUIContent.none);
 
             EditorGUI.LabelField(new Rect(rect.width - secondLabelWidth - secondFieldWidth, rect.y, secondLabelWidth, EditorGUIUtility.singleLineHeight), "Default Player Prefab");
 
@@ -189,14 +210,14 @@ public class NetworkManagerEditor : Editor
             using (new EditorGUI.DisabledScope(playerPrefabIndex != -1 && playerPrefabIndex != index))
             {
                 EditorGUI.PropertyField(new Rect(rect.width - secondFieldWidth, rect.y, secondFieldWidth,
-                    EditorGUIUtility.singleLineHeight), element.FindPropertyRelative("PlayerPrefab"), GUIContent.none);
+                    EditorGUIUtility.singleLineHeight), element.FindPropertyRelative(nameof(NetworkPrefab.PlayerPrefab)), GUIContent.none);
             }
         };
 
         m_NetworkPrefabsList.drawHeaderCallback = (Rect rect) => { EditorGUI.LabelField(rect, "NetworkPrefabs"); };
 
 
-        m_RegisteredScenesList = new ReorderableList(serializedObject, serializedObject.FindProperty("NetworkConfig").FindPropertyRelative("RegisteredScenes"), true, true, true, true);
+        m_RegisteredScenesList = new ReorderableList(serializedObject, serializedObject.FindProperty(nameof(NetworkManager.NetworkConfig)).FindPropertyRelative(nameof(NetworkConfig.RegisteredScenes)), true, true, true, true);
         m_RegisteredScenesList.drawElementCallback = (Rect rect, int index, bool isActive, bool isFocused) =>
         {
             var element = m_RegisteredScenesList.serializedProperty.GetArrayElementAtIndex(index);
@@ -263,7 +284,7 @@ public class NetworkManagerEditor : Editor
 
                     var transportComponent = m_NetworkManager.gameObject.GetComponent(m_TransportTypes[selection - 1]);
 
-                    if (ReferenceEquals(transportComponent, null))
+                    if (transportComponent == null)
                     {
                         transportComponent = m_NetworkManager.gameObject.AddComponent(m_TransportTypes[selection - 1]);
                     }
@@ -283,6 +304,7 @@ public class NetworkManagerEditor : Editor
 
             EditorGUILayout.LabelField("Performance", EditorStyles.boldLabel);
             EditorGUILayout.PropertyField(m_ReceiveTickrateProperty);
+            EditorGUILayout.PropertyField(m_NetworkTickIntervalSecProperty);
             EditorGUILayout.PropertyField(m_MaxReceiveEventsPerTickRateProperty);
             EditorGUILayout.PropertyField(m_EventTickrateProperty);
             EditorGUILayout.PropertyField(m_EnableNetworkVariableProperty);
@@ -304,9 +326,6 @@ public class NetworkManagerEditor : Editor
             {
                 EditorGUILayout.PropertyField(m_ClientConnectionBufferTimeoutProperty);
             }
-
-            EditorGUILayout.LabelField("Lag Compensation", EditorStyles.boldLabel);
-            EditorGUILayout.PropertyField(m_SecondsHistoryProperty);
 
             EditorGUILayout.LabelField("Spawning", EditorStyles.boldLabel);
             EditorGUILayout.PropertyField(m_CreatePlayerPrefabProperty);
@@ -393,17 +412,35 @@ public class NetworkManagerEditor : Editor
         {
             string instanceType = string.Empty;
 
-            if (m_NetworkManager.IsHost) instanceType = "Host";
-            else if (m_NetworkManager.IsServer) instanceType = "Server";
-            else if (m_NetworkManager.IsClient) instanceType = "Client";
+            if (m_NetworkManager.IsHost)
+            {
+                instanceType = "Host";
+            }
+            else if (m_NetworkManager.IsServer)
+            {
+                instanceType = "Server";
+            }
+            else if (m_NetworkManager.IsClient)
+            {
+                instanceType = "Client";
+            }
 
             EditorGUILayout.HelpBox("You cannot edit the NetworkConfig when a " + instanceType + " is running.", MessageType.Info);
 
             if (GUILayout.Button(new GUIContent("Stop " + instanceType, "Stops the " + instanceType + " instance.")))
             {
-                if (m_NetworkManager.IsHost) m_NetworkManager.StopHost();
-                else if (m_NetworkManager.IsServer) m_NetworkManager.StopServer();
-                else if (m_NetworkManager.IsClient) m_NetworkManager.StopClient();
+                if (m_NetworkManager.IsHost)
+                {
+                    m_NetworkManager.StopHost();
+                }
+                else if (m_NetworkManager.IsServer)
+                {
+                    m_NetworkManager.StopServer();
+                }
+                else if (m_NetworkManager.IsClient)
+                {
+                    m_NetworkManager.StopClient();
+                }
             }
         }
     }

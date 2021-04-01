@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+using System.Collections.Generic;
 
 namespace MLAPI.Profiling
 {
@@ -16,9 +15,12 @@ namespace MLAPI.Profiling
 
         public void AddNonDuplicateData(IReadOnlyDictionary<string, int> transportProfilerData)
         {
-            var nonDuplicates = transportProfilerData.Where(entry => !m_TickData.HasData(entry.Key));
-            foreach (var entry in nonDuplicates)
+            foreach (var entry in transportProfilerData)
             {
+                if (m_TickData.HasData(entry.Key))
+                {
+                    continue;
+                }
                 m_TickData.Add(entry.Key, entry.Value);
             }
         }
@@ -26,6 +28,16 @@ namespace MLAPI.Profiling
         public int GetData(string fieldName)
         {
             return m_TickData.GetData(fieldName);
+        }
+
+        public bool HasData(string fieldName)
+        {
+            return m_TickData.HasData(fieldName);
+        }
+
+        public void Reset()
+        {
+            m_TickData.Clear();
         }
     }
 }

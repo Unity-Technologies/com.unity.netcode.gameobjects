@@ -12,7 +12,74 @@ namespace MLAPI.RuntimeTests
     public class NetworkUpdateLoopTests
     {
         [Test]
-        public void UpdateStageInjection()
+        public void RegisterCustomLoopInTheMiddle()
+        {
+            // caching the current PlayerLoop (to prevent side-effects on other tests)
+            var cachedPlayerLoop = PlayerLoop.GetCurrentPlayerLoop();
+            {
+                // since current PlayerLoop already took NetworkUpdateLoop systems inside,
+                // we are going to swap it with the default PlayerLoop temporarily for testing
+                PlayerLoop.SetPlayerLoop(PlayerLoop.GetDefaultPlayerLoop());
+
+                NetworkUpdateLoop.RegisterLoopSystems();
+
+                var curPlayerLoop = PlayerLoop.GetCurrentPlayerLoop();
+                int initSubsystemCount = curPlayerLoop.subSystemList[0].subSystemList.Length;
+                var newInitSubsystems = new PlayerLoopSystem[initSubsystemCount + 1];
+                Array.Copy(curPlayerLoop.subSystemList[0].subSystemList, newInitSubsystems, initSubsystemCount);
+                newInitSubsystems[initSubsystemCount] = new PlayerLoopSystem { type = typeof(NetworkUpdateLoopTests) };
+                curPlayerLoop.subSystemList[0].subSystemList = newInitSubsystems;
+                PlayerLoop.SetPlayerLoop(curPlayerLoop);
+
+                NetworkUpdateLoop.UnregisterLoopSystems();
+
+                // our custom `PlayerLoopSystem` with the type of `NetworkUpdateLoopTests` should still exist
+                Assert.AreEqual(typeof(NetworkUpdateLoopTests), PlayerLoop.GetCurrentPlayerLoop().subSystemList[0].subSystemList.Last().type);
+            }
+            // replace the current PlayerLoop with the cached PlayerLoop after the test
+            PlayerLoop.SetPlayerLoop(cachedPlayerLoop);
+        }
+
+        [UnityTest]
+        public IEnumerator RegisterAndUnregisterSystems()
+        {
+            // caching the current PlayerLoop (it will have NetworkUpdateLoop systems registered)
+            var cachedPlayerLoop = PlayerLoop.GetCurrentPlayerLoop();
+            {
+                // since current PlayerLoop already took NetworkUpdateLoop systems inside,
+                // we are going to swap it with the default PlayerLoop temporarily for testing
+                PlayerLoop.SetPlayerLoop(PlayerLoop.GetDefaultPlayerLoop());
+
+                var oldPlayerLoop = PlayerLoop.GetCurrentPlayerLoop();
+
+                NetworkUpdateLoop.RegisterLoopSystems();
+
+                int nextFrameNumber = Time.frameCount + 1;
+                yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
+
+                NetworkUpdateLoop.UnregisterLoopSystems();
+
+                var newPlayerLoop = PlayerLoop.GetCurrentPlayerLoop();
+
+                // recursively compare old and new PlayerLoop systems and their subsystems
+                AssertAreEqualPlayerLoopSystems(newPlayerLoop, oldPlayerLoop);
+            }
+            // replace the current PlayerLoop with the cached PlayerLoop after the test
+            PlayerLoop.SetPlayerLoop(cachedPlayerLoop);
+        }
+
+        private void AssertAreEqualPlayerLoopSystems(PlayerLoopSystem leftPlayerLoop, PlayerLoopSystem rightPlayerLoop)
+        {
+            Assert.AreEqual(leftPlayerLoop.type, rightPlayerLoop.type);
+            Assert.AreEqual(leftPlayerLoop.subSystemList?.Length ?? 0, rightPlayerLoop.subSystemList?.Length ?? 0);
+            for (int i = 0; i < (leftPlayerLoop.subSystemList?.Length ?? 0); i++)
+            {
+                AssertAreEqualPlayerLoopSystems(leftPlayerLoop.subSystemList[i], rightPlayerLoop.subSystemList[i]);
+            }
+        }
+
+        [Test]
+        public void UpdateStageSystems()
         {
             var currentPlayerLoop = PlayerLoop.GetCurrentPlayerLoop();
             for (int i = 0; i < currentPlayerLoop.subSystemList.Length; i++)
@@ -365,7 +432,7 @@ namespace MLAPI.RuntimeTests
                 Assert.AreEqual(kRunTotalFrames, netUpdates[kNetPreUpdateIndex]);
                 Assert.AreEqual(netUpdates[kNetPreUpdateIndex], monoUpdates[kMonoUpdateIndex]);
 
-                GameObject.DestroyImmediate(gameObject);
+                UnityEngine.Object.DestroyImmediate(gameObject);
             }
         }
     }

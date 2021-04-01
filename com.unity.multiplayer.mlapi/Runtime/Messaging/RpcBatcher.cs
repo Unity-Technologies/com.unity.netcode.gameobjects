@@ -27,7 +27,7 @@ namespace MLAPI.Messaging
         }
 
         // Stores the stream of batched RPC to send to each client, by ClientId
-        private readonly Dictionary<ulong, SendStream> k_SendDict = new Dictionary<ulong, SendStream>();
+        private readonly Dictionary<ulong, SendStream> m_SendDict = new Dictionary<ulong, SendStream>();
 
         // Used to store targets, internally
         private ulong[] m_TargetList = new ulong[0];
@@ -114,14 +114,14 @@ namespace MLAPI.Messaging
 
             foreach (ulong clientId in m_TargetList)
             {
-                if (!k_SendDict.ContainsKey(clientId))
+                if (!m_SendDict.ContainsKey(clientId))
                 {
                     // todo: consider what happens if many clients join and leave the game consecutively
                     // we probably need a cleanup mechanism at some point
-                    k_SendDict[clientId] = new SendStream();
+                    m_SendDict[clientId] = new SendStream();
                 }
 
-                SendStream sendStream = k_SendDict[clientId];
+                SendStream sendStream = m_SendDict[clientId];
 
                 if (sendStream.IsEmpty)
                 {
@@ -148,8 +148,8 @@ namespace MLAPI.Messaging
 
                 ProfilerStatManager.BytesSent.Record(queueItem.MessageData.Count);
                 ProfilerStatManager.RpcsSent.Record();
-                PerformanceDataManager.Increment(ProfilerConstants.NumberBytesSent, queueItem.MessageData.Count);
-                PerformanceDataManager.Increment(ProfilerConstants.NumberOfRPCsSent);
+                PerformanceDataManager.Increment(ProfilerConstants.ByteSent, queueItem.MessageData.Count);
+                PerformanceDataManager.Increment(ProfilerConstants.RpcSent);
             }
         }
 
@@ -165,12 +165,12 @@ namespace MLAPI.Messaging
         /// <param name="sendCallback"> the function to call for sending the batch</param>
         public void SendItems(int thresholdBytes, SendCallbackType sendCallback)
         {
-            foreach (KeyValuePair<ulong, SendStream> entry in k_SendDict)
+            foreach (KeyValuePair<ulong, SendStream> entry in m_SendDict)
             {
                 if (!entry.Value.IsEmpty)
                 {
                     // read the queued message
-                    int length = (int)k_SendDict[entry.Key].Buffer.Length;
+                    int length = (int)m_SendDict[entry.Key].Buffer.Length;
 
                     if (length >= thresholdBytes)
                     {
@@ -180,7 +180,7 @@ namespace MLAPI.Messaging
                         entry.Value.Buffer.Position = 0;
                         entry.Value.IsEmpty = true;
                         ProfilerStatManager.RpcBatchesSent.Record();
-                        PerformanceDataManager.Increment(ProfilerConstants.NumberOfRPCBatchesSent);
+                        PerformanceDataManager.Increment(ProfilerConstants.RpcBatchesSent);
                     }
                 }
             }

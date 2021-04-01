@@ -11,8 +11,31 @@ using UnityEngine;
 
 using Assembly = System.Reflection.Assembly;
 
+using ILPPInterface = Unity.CompilationPipeline.Common.ILPostProcessing.ILPostProcessor;
+
 namespace MLAPI.Editor.CodeGen
 {
+    // There is a behaviour difference between 2019.4 and 2020+ codegen
+    // that essentially does checking on the existence of ILPP vs if a CodeGen assembly
+    // is present. So in order to make sure ILPP runs properly in 2019.4 from a clean
+    // import of the project we add this dummy ILPP which forces the callback to made
+    // and meets the internal ScriptCompilation pipeline requirements
+    internal sealed class ILPP2019CodegenWorkaround : ILPPInterface
+    {
+        public override ILPPInterface GetInstance()
+        {
+            return this;
+        }
+
+        public override ILPostProcessResult Process(ICompiledAssembly compiledAssembly)
+        {
+            return null;
+        }
+
+        public override bool WillProcess(ICompiledAssembly compiledAssembly) => compiledAssembly.References.Any(filePath => Path.GetFileNameWithoutExtension(filePath) == CodeGenHelpers.RuntimeAssemblyName);
+
+    }
+
     internal static class ILPostProcessProgram
     {
         private static ILPostProcessor[] s_ILPostProcessors { get; set; }
@@ -185,7 +208,10 @@ namespace MLAPI.Editor.CodeGen
             foreach (var i in s_ILPostProcessors)
             {
                 var result = i.Process(targetCompiledAssembly);
-                if (result == null) continue;
+                if (result == null)
+                {
+                    continue;
+                }
 
                 if (result.Diagnostics.Count > 0)
                 {

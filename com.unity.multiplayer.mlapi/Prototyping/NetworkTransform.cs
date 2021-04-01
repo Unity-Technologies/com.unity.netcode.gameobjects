@@ -120,15 +120,29 @@ namespace MLAPI.Prototyping
         private void OnValidate()
         {
             if (!AssumeSyncedSends && InterpolatePosition)
+            {
                 InterpolatePosition = false;
+            }
+
             if (InterpolateServer && !InterpolatePosition)
+            {
                 InterpolateServer = false;
+            }
+
             if (MinDegrees < 0)
+            {
                 MinDegrees = 0;
+            }
+
             if (MinMeters < 0)
+            {
                 MinMeters = 0;
+            }
+
             if (EnableNonProvokedResendChecks && !EnableRange)
+            {
                 EnableNonProvokedResendChecks = false;
+            }
         }
 
         private float GetTimeForLerp(Vector3 pos1, Vector3 pos2)
@@ -187,19 +201,29 @@ namespace MLAPI.Prototyping
                     m_LerpTime += Time.unscaledDeltaTime / sendDelay;
 
                     if (ExtrapolatePosition && Time.unscaledTime - m_LastReceiveTime < sendDelay * MaxSendsToExtrapolate)
+                    {
                         transform.position = Vector3.LerpUnclamped(m_LerpStartPos, m_LerpEndPos, m_LerpTime);
+                    }
                     else
+                    {
                         transform.position = Vector3.Lerp(m_LerpStartPos, m_LerpEndPos, m_LerpTime);
+                    }
 
                     if (ExtrapolatePosition && Time.unscaledTime - m_LastReceiveTime < sendDelay * MaxSendsToExtrapolate)
+                    {
                         transform.rotation = Quaternion.SlerpUnclamped(m_LerpStartRot, m_LerpEndRot, m_LerpTime);
+                    }
                     else
+                    {
                         transform.rotation = Quaternion.Slerp(m_LerpStartRot, m_LerpEndRot, m_LerpTime);
+                    }
                 }
             }
 
             if (IsServer && EnableRange && EnableNonProvokedResendChecks)
+            {
                 CheckForMissedSends();
+            }
         }
 
         [ClientRpc]
@@ -214,7 +238,9 @@ namespace MLAPI.Prototyping
         private void ApplyTransformInternal(Vector3 position, Quaternion rotation)
         {
             if (!enabled)
+            {
                 return;
+            }
 
             if (InterpolatePosition && (!IsServer || InterpolateServer))
             {
@@ -236,7 +262,9 @@ namespace MLAPI.Prototyping
         private void SubmitTransformServerRpc(Vector3 position, Vector3 eulerAngles, ServerRpcParams rpcParams = default)
         {
             if (!enabled)
+            {
                 return;
+            }
 
             if (IsMoveValidDelegate != null && !IsMoveValidDelegate(rpcParams.Receive.SenderClientId, m_LerpEndPos, position))
             {

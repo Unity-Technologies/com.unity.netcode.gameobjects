@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using MLAPI.Logging;
 using UnityEngine;
 
@@ -14,7 +14,7 @@ namespace MLAPI.Configuration
         {
             get
             {
-                if (ReferenceEquals(Prefab, null))
+                if (Prefab == null)
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                     {
@@ -25,7 +25,7 @@ namespace MLAPI.Configuration
                 }
 
                 var networkObject = Prefab.GetComponent<NetworkObject>();
-                if (ReferenceEquals(networkObject, null))
+                if (networkObject == null)
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                     {

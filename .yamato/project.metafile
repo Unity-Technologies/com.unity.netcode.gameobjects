@@ -1,7 +1,12 @@
 # Editors where tests will happen. The first entry of this array is also used
-# for validation
+# for validation.
+#
+# Therefore, **do not** put an older V1-lifecycle ver. 
+#  like 2020.x or 2019.x on top of 'test_editors'
 test_editors:
   - 2021.1
+  - 2021.2
+  - 2020.3
   - 2019.4
   - trunk
 
@@ -24,7 +29,7 @@ test_platforms:
 # Projects within the repository that will be tested. Name will be used
 # for job ids, so it should not contain spaces/non-supported characters
 projects:
-  - name: project
+  - name: testproject
     path: testproject
     # Packages within a project that will be tested
     packages:

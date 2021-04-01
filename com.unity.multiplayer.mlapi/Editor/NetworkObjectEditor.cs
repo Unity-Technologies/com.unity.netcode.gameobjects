@@ -14,7 +14,10 @@ namespace UnityEditor
 
         private void Init()
         {
-            if (m_Initialized) return;
+            if (m_Initialized)
+            {
+                return;
+            }
 
             m_Initialized = true;
             m_NetworkObject = (NetworkObject)target;
@@ -24,7 +27,7 @@ namespace UnityEditor
         {
             Init();
 
-            if (!m_NetworkObject.IsSpawned && !ReferenceEquals(NetworkManager.Singleton, null) && NetworkManager.Singleton.IsServer)
+            if (!m_NetworkObject.IsSpawned && NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer)
             {
                 EditorGUILayout.BeginHorizontal();
                 EditorGUILayout.LabelField(new GUIContent("Spawn", "Spawns the object across the network"));

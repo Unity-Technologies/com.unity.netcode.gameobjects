@@ -5,7 +5,7 @@ using System.Text;
 
 namespace MLAPI.EditorTests
 {
-    public class BitStreamTests
+    public class NetworkBufferTests
     {
         [Test]
         public void TestEmptyStream()
@@ -761,7 +761,7 @@ namespace MLAPI.EditorTests
 
             // Read diff directly to StringBuilder
             inNetworkBuffer.BitPosition = 0;
-            StringBuilder stringCompare = new StringBuilder(originalString);
+            var stringCompare = new StringBuilder(originalString);
             inNetworkReader.ReadStringDiff(stringCompare);
 
             // Read single-byte diff
@@ -788,11 +788,27 @@ namespace MLAPI.EditorTests
 
             // Read diff directly to StringBuilder
             inNetworkBuffer.BitPosition = 0;
-            StringBuilder stringCompare = new StringBuilder(originalString);
+            var stringCompare = new StringBuilder(originalString);
             inNetworkReader.ReadStringPackedDiff(stringCompare);
 
             Assert.That(readBuilder.ToString(), Is.EqualTo(testString));
             Assert.That(stringCompare.ToString(), Is.EqualTo(testString));
+        }
+
+        [Test]
+        public void TestSerializationPipelineBool()
+        {
+            var buffer = new NetworkBuffer();
+            var writer = new NetworkWriter(buffer);
+            var reader = new NetworkReader(buffer);
+
+            writer.WriteObjectPacked(true);
+            writer.WriteObjectPacked(false);
+
+            buffer.BitPosition = 0;
+
+            Assert.That(reader.ReadObjectPacked(typeof(bool)), Is.EqualTo(true));
+            Assert.That(reader.ReadObjectPacked(typeof(bool)), Is.EqualTo(false));
         }
     }
 }
