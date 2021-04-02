@@ -217,8 +217,12 @@ namespace MLAPI
 #if UNITY_EDITOR
                 UnityEditor.EditorApplication.delayCall += () =>
                 {
-                    UnityEditor.EditorUtility.SetDirty(this);
-                    UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(activeScene);
+                    // 'this' is sometimes invalid by the time the delayed call executes
+                    if (this != null && activeScene != null)
+                    {
+                        UnityEditor.EditorUtility.SetDirty(this);
+                        UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(activeScene);
+                    }
                 };
 #endif
             }
