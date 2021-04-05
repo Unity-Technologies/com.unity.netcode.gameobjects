@@ -101,86 +101,20 @@ namespace MLAPI.Messaging
 
                 void DelayedSpawnAction(Stream continuationStream)
                 {
-                    using (var continuationReader = PooledNetworkReader.Get(continuationStream))
+                    if (!NetworkManager.Singleton.NetworkConfig.EnableSceneManagement || NetworkManager.Singleton.NetworkConfig.UsePrefabSync)
                     {
-                        if (!NetworkManager.Singleton.NetworkConfig.EnableSceneManagement || NetworkManager.Singleton.NetworkConfig.UsePrefabSync)
-                        {
-                            NetworkSpawnManager.DestroySceneObjects();
-                        }
-                        else
-                        {
-                            NetworkSpawnManager.ClientCollectSoftSyncSceneObjectSweep(null);
-                        }
-
-                        uint objectCount = continuationReader.ReadUInt32Packed();
-                        for (int i = 0; i < objectCount; i++)
-                        {
-                            bool isPlayerObject = continuationReader.ReadBool();
-                            ulong networkId = continuationReader.ReadUInt64Packed();
-                            ulong ownerId = continuationReader.ReadUInt64Packed();
-                            bool hasParent = continuationReader.ReadBool();
-                            ulong? parentNetworkId = null;
-
-                            if (hasParent)
-                            {
-                                parentNetworkId = continuationReader.ReadUInt64Packed();
-                            }
-
-                            ulong prefabHash;
-                            ulong instanceId;
-                            bool softSync;
-
-                            if (!NetworkManager.Singleton.NetworkConfig.EnableSceneManagement || NetworkManager.Singleton.NetworkConfig.UsePrefabSync)
-                            {
-                                softSync = false;
-                                instanceId = 0;
-                                prefabHash = continuationReader.ReadUInt64Packed();
-                            }
-                            else
-                            {
-                                softSync = continuationReader.ReadBool();
-
-                                if (softSync)
-                                {
-                                    instanceId = continuationReader.ReadUInt64Packed();
-                                    prefabHash = 0;
-                                }
-                                else
-                                {
-                                    prefabHash = continuationReader.ReadUInt64Packed();
-                                    instanceId = 0;
-                                }
-                            }
-
-                            Vector3? pos = null;
-                            Quaternion? rot = null;
-                            if (continuationReader.ReadBool())
-                            {
-                                pos = new Vector3(continuationReader.ReadSinglePacked(), continuationReader.ReadSinglePacked(), continuationReader.ReadSinglePacked());
-                                rot = Quaternion.Euler(continuationReader.ReadSinglePacked(), continuationReader.ReadSinglePacked(), continuationReader.ReadSinglePacked());
-                            }
-
-                            var networkObject = NetworkSpawnManager.CreateLocalNetworkObject(softSync, instanceId, prefabHash, parentNetworkId, pos, rot);
-                            NetworkSpawnManager.SpawnNetworkObjectLocally(networkObject, networkId, softSync, isPlayerObject, ownerId, continuationStream, false, 0, true, false);
-
-                            Queue<BufferManager.BufferedMessage> bufferQueue = BufferManager.ConsumeBuffersForNetworkId(networkId);
-
-                            // Apply buffered messages
-                            if (bufferQueue != null)
-                            {
-                                while (bufferQueue.Count > 0)
-                                {
-                                    BufferManager.BufferedMessage message = bufferQueue.Dequeue();
-                                    NetworkManager.Singleton.HandleIncomingData(message.SenderClientId, message.NetworkChannel, new ArraySegment<byte>(message.NetworkBuffer.GetBuffer(), (int)message.NetworkBuffer.Position, (int)message.NetworkBuffer.Length), message.ReceiveTime, false);
-                                    BufferManager.RecycleConsumedBufferedMessage(message);
-                                }
-                            }
-                        }
-
-                        NetworkSpawnManager.CleanDiffedSceneObjects();
-                        NetworkManager.Singleton.IsConnectedClient = true;
-                        NetworkManager.Singleton.InvokeOnClientConnectedCallback(NetworkManager.Singleton.LocalClientId);
+                        NetworkSpawnManager.DestroySceneObjects();
                     }
+                    else
+                    {
+                        NetworkSpawnManager.ClientCollectSoftSyncSceneObjectSweep(null);
+                    }
+
+                    NetworkSpawnManager.ReadAndCallSpawnForMultipleObjects(continuationStream);
+
+                    NetworkSpawnManager.CleanDiffedSceneObjects();
+                    NetworkManager.Singleton.IsConnectedClient = true;
+                    NetworkManager.Singleton.InvokeOnClientConnectedCallback(NetworkManager.Singleton.LocalClientId);
                 }
 
                 if (sceneSwitch)

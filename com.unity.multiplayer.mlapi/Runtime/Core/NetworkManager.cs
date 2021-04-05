@@ -1332,82 +1332,24 @@ namespace MLAPI
                 }
 
                 using (var buffer = PooledNetworkBuffer.Get())
-                using (var writer = PooledNetworkWriter.Get(buffer))
                 {
-                    writer.WriteUInt64Packed(clientId);
-
-                    if (NetworkConfig.EnableSceneManagement)
+                    using (var writer = PooledNetworkWriter.Get(buffer))
                     {
-                        writer.WriteUInt32Packed(NetworkSceneManager.CurrentSceneIndex);
-                        writer.WriteByteArray(NetworkSceneManager.CurrentSceneSwitchProgressGuid.ToByteArray());
-                    }
+                        writer.WriteUInt64Packed(clientId);
 
-                    writer.WriteSinglePacked(Time.realtimeSinceStartup);
-                    writer.WriteUInt32Packed((uint)m_ObservedObjects.Count);
+                        if (NetworkConfig.EnableSceneManagement)
+                        {
+                            writer.WriteUInt32Packed(NetworkSceneManager.CurrentSceneIndex);
+                            writer.WriteByteArray(NetworkSceneManager.CurrentSceneSwitchProgressGuid.ToByteArray());
+                        }
+
+                        writer.WriteSinglePacked(Time.realtimeSinceStartup);
+                        writer.WriteUInt32Packed((uint)m_ObservedObjects.Count);
+                    }
 
                     for (int i = 0; i < m_ObservedObjects.Count; i++)
                     {
-                        var observedObject = m_ObservedObjects[i];
-                        writer.WriteBool(observedObject.IsPlayerObject);
-                        writer.WriteUInt64Packed(observedObject.NetworkObjectId);
-                        writer.WriteUInt64Packed(observedObject.OwnerClientId);
-
-                        NetworkObject parent = null;
-
-                        if (!observedObject.AlwaysReplicateAsRoot && observedObject.transform.parent != null)
-                        {
-                            parent = observedObject.transform.parent.GetComponent<NetworkObject>();
-                        }
-
-                        if (parent == null)
-                        {
-                            writer.WriteBool(false);
-                        }
-                        else
-                        {
-                            writer.WriteBool(true);
-                            writer.WriteUInt64Packed(parent.NetworkObjectId);
-                        }
-
-                        if (!NetworkConfig.EnableSceneManagement || NetworkConfig.UsePrefabSync)
-                        {
-                            writer.WriteUInt64Packed(observedObject.PrefabHash);
-                        }
-                        else
-                        {
-                            // Is this a scene object that we will soft map
-                            writer.WriteBool(observedObject.IsSceneObject ?? true);
-
-                            if (observedObject.IsSceneObject == null || observedObject.IsSceneObject.Value)
-                            {
-                                writer.WriteUInt64Packed(observedObject.NetworkInstanceId);
-                            }
-                            else
-                            {
-                                writer.WriteUInt64Packed(observedObject.PrefabHash);
-                            }
-                        }
-
-                        if (observedObject.IncludeTransformWhenSpawning == null || observedObject.IncludeTransformWhenSpawning(clientId))
-                        {
-                            writer.WriteBool(true);
-                            writer.WriteSinglePacked(observedObject.transform.position.x);
-                            writer.WriteSinglePacked(observedObject.transform.position.y);
-                            writer.WriteSinglePacked(observedObject.transform.position.z);
-
-                            writer.WriteSinglePacked(observedObject.transform.rotation.eulerAngles.x);
-                            writer.WriteSinglePacked(observedObject.transform.rotation.eulerAngles.y);
-                            writer.WriteSinglePacked(observedObject.transform.rotation.eulerAngles.z);
-                        }
-                        else
-                        {
-                            writer.WriteBool(false);
-                        }
-
-                        if (NetworkConfig.EnableNetworkVariable)
-                        {
-                            observedObject.WriteNetworkVariableData(buffer, clientId);
-                        }
+                        NetworkSpawnManager.WriteSpawnCallForObject(buffer, clientId, m_ObservedObjects[i], null);
                     }
 
                     InternalMessageSender.Send(clientId, NetworkConstants.CONNECTION_APPROVED, NetworkChannel.Internal, buffer);
