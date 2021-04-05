@@ -7,6 +7,7 @@ using MLAPI.Exceptions;
 using MLAPI.Hashing;
 using MLAPI.Logging;
 using MLAPI.Messaging;
+using MLAPI.Messaging.Buffering;
 using MLAPI.SceneManagement;
 using MLAPI.Serialization.Pooled;
 using MLAPI.Transports;
@@ -509,6 +510,92 @@ namespace MLAPI.Spawning
                 }
 
                 if (payload != null) buffer.CopyFrom(payload);
+            }
+        }
+
+        internal static void ReadAndCallSpawnForMultipleObjects(Stream objectStream)
+        {
+            uint newObjectsCount = 0;
+
+            using (var reader = PooledNetworkReader.Get(objectStream))
+            {
+                newObjectsCount = reader.ReadUInt32Packed();
+            }
+
+            for (int i = 0; i < newObjectsCount; i++)
+            {
+                ReadAndCallSpawnForObject(objectStream);
+            }
+        }
+
+        internal static void ReadAndCallSpawnForObject(Stream stream)
+        {
+            using (var reader = PooledNetworkReader.Get(stream))
+            {
+                bool isPlayerObject = reader.ReadBool();
+                ulong networkId = reader.ReadUInt64Packed();
+                ulong ownerId = reader.ReadUInt64Packed();
+                bool hasParent = reader.ReadBool();
+                ulong? parentNetworkId = null;
+
+                if (hasParent)
+                {
+                    parentNetworkId = reader.ReadUInt64Packed();
+                }
+
+                ulong prefabHash;
+                ulong instanceId;
+                bool softSync;
+
+                if (!NetworkManager.Singleton.NetworkConfig.EnableSceneManagement || NetworkManager.Singleton.NetworkConfig.UsePrefabSync)
+                {
+                    softSync = false;
+                    instanceId = 0;
+                    prefabHash = reader.ReadUInt64Packed();
+                }
+                else
+                {
+                    softSync = reader.ReadBool();
+
+                    if (softSync)
+                    {
+                        instanceId = reader.ReadUInt64Packed();
+                        prefabHash = 0;
+                    }
+                    else
+                    {
+                        prefabHash = reader.ReadUInt64Packed();
+                        instanceId = 0;
+                    }
+                }
+
+                Vector3? pos = null;
+                Quaternion? rot = null;
+				
+                if (reader.ReadBool())
+                {
+                    pos = new Vector3(reader.ReadSinglePacked(), reader.ReadSinglePacked(), reader.ReadSinglePacked());
+                    rot = Quaternion.Euler(reader.ReadSinglePacked(), reader.ReadSinglePacked(), reader.ReadSinglePacked());
+                }
+
+                bool hasPayload = reader.ReadBool();
+                int payLoadLength = hasPayload ? reader.ReadInt32Packed() : 0;
+
+                var networkObject = NetworkSpawnManager.CreateLocalNetworkObject(softSync, instanceId, prefabHash, parentNetworkId, pos, rot);
+                NetworkSpawnManager.SpawnNetworkObjectLocally(networkObject, networkId, softSync, isPlayerObject, ownerId, stream, hasPayload, payLoadLength, true, false);
+
+                Queue<BufferManager.BufferedMessage> bufferQueue = BufferManager.ConsumeBuffersForNetworkId(networkId);
+
+                // Apply buffered messages
+                if (bufferQueue != null)
+                {
+                    while (bufferQueue.Count > 0)
+                    {
+                        BufferManager.BufferedMessage message = bufferQueue.Dequeue();
+                        NetworkManager.Singleton.HandleIncomingData(message.SenderClientId, message.NetworkChannel, new ArraySegment<byte>(message.NetworkBuffer.GetBuffer(), (int)message.NetworkBuffer.Position, (int)message.NetworkBuffer.Length), message.ReceiveTime, false);
+                        BufferManager.RecycleConsumedBufferedMessage(message);
+                    }
+                }
             }
         }
 
