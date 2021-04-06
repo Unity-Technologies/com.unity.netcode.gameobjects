@@ -90,6 +90,11 @@ namespace MLAPI
         public static NetworkManager Singleton { get; private set; }
 
         /// <summary>
+        /// Gets the SpawnManager for this NetworkManager
+        /// </summary>
+        public NetworkSpawnManager SpawnManager { get; private set; }
+
+        /// <summary>
         /// Gets the networkId of the server
         /// </summary>
         public ulong ServerClientId => NetworkConfig.NetworkTransport?.ServerClientId ?? throw new NullReferenceException($"The transport in the active {nameof(NetworkConfig)} is null");
@@ -313,10 +318,9 @@ namespace MLAPI
             ConnectedClients.Clear();
             ConnectedClientsList.Clear();
 
-            NetworkSpawnManager.SpawnedObjects.Clear();
-            NetworkSpawnManager.SpawnedObjectsList.Clear();
-            NetworkSpawnManager.ReleasedNetworkObjectIds.Clear();
-            NetworkSpawnManager.PendingSoftSyncObjects.Clear();
+            // Create spawn manager instance
+            SpawnManager = new NetworkSpawnManager(this);
+
             NetworkSceneManager.RegisteredSceneNames.Clear();
             NetworkSceneManager.SceneIndexToString.Clear();
             NetworkSceneManager.SceneNameToIndex.Clear();
@@ -441,7 +445,7 @@ namespace MLAPI
             IsClient = false;
             IsListening = true;
 
-            NetworkSpawnManager.ServerSpawnSceneObjectsOnStartSweep();
+            SpawnManager.ServerSpawnSceneObjectsOnStartSweep();
 
             OnServerStarted?.Invoke();
 
@@ -617,7 +621,7 @@ namespace MLAPI
                 HandleApproval(ServerClientId, NetworkConfig.CreatePlayerPrefab, null, true, null, null);
             }
 
-            NetworkSpawnManager.ServerSpawnSceneObjectsOnStartSweep();
+            SpawnManager.ServerSpawnSceneObjectsOnStartSweep();
 
             OnServerStarted?.Invoke();
 
@@ -691,8 +695,14 @@ namespace MLAPI
             IsServer = false;
             IsClient = false;
             NetworkConfig.NetworkTransport.OnTransportEvent -= HandleRawTransportPoll;
-            NetworkSpawnManager.DestroyNonSceneObjects();
-            NetworkSpawnManager.ServerResetShudownStateForSceneObjects();
+
+            if (SpawnManager != null)
+            {
+                SpawnManager.DestroyNonSceneObjects();
+                SpawnManager.ServerResetShudownStateForSceneObjects();
+
+                SpawnManager = null;
+            }
 
             //The Transport is set during Init time, thus it is possible for the Transport to be null
             NetworkConfig?.NetworkTransport?.Shutdown();
@@ -1213,7 +1223,7 @@ namespace MLAPI
         /// </summary>
         /// <param name="queueItem">frame queue item to invoke</param>
 #pragma warning disable 618
-        internal static void InvokeRpc(RpcFrameQueueItem queueItem)
+        internal void InvokeRpc(RpcFrameQueueItem queueItem)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_InvokeRpc.Begin();
@@ -1225,12 +1235,12 @@ namespace MLAPI
 
             if (__ntable.ContainsKey(networkMethodId))
             {
-                if (!NetworkSpawnManager.SpawnedObjects.ContainsKey(networkObjectId))
+                if (!SpawnManager.SpawnedObjects.ContainsKey(networkObjectId))
                 {
                     return;
                 }
 
-                var networkObject = NetworkSpawnManager.SpawnedObjects[networkObjectId];
+                var networkObject = SpawnManager.SpawnedObjects[networkObjectId];
 
                 var networkBehaviour = networkObject.GetNetworkBehaviourAtOrderIndex(networkBehaviourId);
                 if (networkBehaviour == null)
@@ -1344,10 +1354,10 @@ namespace MLAPI
                 {
                     if (ConnectedClients[clientId].PlayerObject != null)
                     {
-                        if (NetworkSpawnManager.CustomDestroyHandlers.ContainsKey(ConnectedClients[clientId].PlayerObject.PrefabHash))
+                        if (SpawnManager.CustomDestroyHandlers.ContainsKey(ConnectedClients[clientId].PlayerObject.PrefabHash))
                         {
-                            NetworkSpawnManager.CustomDestroyHandlers[ConnectedClients[clientId].PlayerObject.PrefabHash](ConnectedClients[clientId].PlayerObject);
-                            NetworkSpawnManager.OnDestroyObject(ConnectedClients[clientId].PlayerObject.NetworkObjectId, false);
+                            SpawnManager.CustomDestroyHandlers[ConnectedClients[clientId].PlayerObject.PrefabHash](ConnectedClients[clientId].PlayerObject);
+                            SpawnManager.OnDestroyObject(ConnectedClients[clientId].PlayerObject.NetworkObjectId, false);
                         }
                         else
                         {
@@ -1361,10 +1371,10 @@ namespace MLAPI
                         {
                             if (!ConnectedClients[clientId].OwnedObjects[i].DontDestroyWithOwner)
                             {
-                                if (NetworkSpawnManager.CustomDestroyHandlers.ContainsKey(ConnectedClients[clientId].OwnedObjects[i].PrefabHash))
+                                if (SpawnManager.CustomDestroyHandlers.ContainsKey(ConnectedClients[clientId].OwnedObjects[i].PrefabHash))
                                 {
-                                    NetworkSpawnManager.CustomDestroyHandlers[ConnectedClients[clientId].OwnedObjects[i].PrefabHash](ConnectedClients[clientId].OwnedObjects[i]);
-                                    NetworkSpawnManager.OnDestroyObject(ConnectedClients[clientId].OwnedObjects[i].NetworkObjectId, false);
+                                    SpawnManager.CustomDestroyHandlers[ConnectedClients[clientId].OwnedObjects[i].PrefabHash](ConnectedClients[clientId].OwnedObjects[i]);
+                                    SpawnManager.OnDestroyObject(ConnectedClients[clientId].OwnedObjects[i].NetworkObjectId, false);
                                 }
                                 else
                                 {
@@ -1380,7 +1390,7 @@ namespace MLAPI
 
                     // TODO: Could(should?) be replaced with more memory per client, by storing the visiblity
 
-                    foreach (var sobj in NetworkSpawnManager.SpawnedObjectsList)
+                    foreach (var sobj in SpawnManager.SpawnedObjectsList)
                     {
                         sobj.Observers.Remove(clientId);
                     }
@@ -1446,15 +1456,15 @@ namespace MLAPI
 
                 if (createPlayerObject)
                 {
-                    var networkObject = NetworkSpawnManager.CreateLocalNetworkObject(false, 0, playerPrefabHash ?? NetworkConfig.PlayerPrefabHash.Value, ownerClientId, null, position, rotation);
-                    NetworkSpawnManager.SpawnNetworkObjectLocally(networkObject, NetworkSpawnManager.GetNetworkObjectId(), false, true, ownerClientId, null, false, 0, false, false);
+                    var networkObject = SpawnManager.CreateLocalNetworkObject(false, 0, playerPrefabHash ?? NetworkConfig.PlayerPrefabHash.Value, ownerClientId, null, position, rotation);
+                    SpawnManager.SpawnNetworkObjectLocally(networkObject, SpawnManager.GetNetworkObjectId(), false, true, ownerClientId, null, false, 0, false, false);
 
                     ConnectedClients[ownerClientId].PlayerObject = networkObject;
                 }
 
                 m_ObservedObjects.Clear();
 
-                foreach (var sobj in NetworkSpawnManager.SpawnedObjectsList)
+                foreach (var sobj in SpawnManager.SpawnedObjectsList)
                 {
                     if (ownerClientId == ServerClientId || sobj.CheckObjectVisibility == null || sobj.CheckObjectVisibility(ownerClientId))
                     {
