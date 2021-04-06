@@ -94,6 +94,8 @@ namespace MLAPI
         /// </summary>
         public NetworkSpawnManager SpawnManager { get; private set; }
 
+        internal readonly BufferManager BufferManager = new BufferManager();
+
         /// <summary>
         /// Gets the networkId of the server
         /// </summary>
