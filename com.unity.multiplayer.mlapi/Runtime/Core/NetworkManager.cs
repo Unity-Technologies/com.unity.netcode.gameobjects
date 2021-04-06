@@ -94,6 +94,8 @@ namespace MLAPI
         /// </summary>
         public NetworkSpawnManager SpawnManager { get; private set; }
 
+        internal BufferManager BufferManager { get; private set; }
+
         /// <summary>
         /// Gets the networkId of the server
         /// </summary>
@@ -320,6 +322,8 @@ namespace MLAPI
 
             // Create spawn manager instance
             SpawnManager = new NetworkSpawnManager(this);
+
+            BufferManager = new BufferManager();
 
             NetworkSceneManager.RegisteredSceneNames.Clear();
             NetworkSceneManager.SceneIndexToString.Clear();
@@ -695,6 +699,11 @@ namespace MLAPI
             IsServer = false;
             IsClient = false;
             NetworkConfig.NetworkTransport.OnTransportEvent -= HandleRawTransportPoll;
+
+            if (BufferManager != null)
+            {
+                BufferManager = null;
+            }
 
             if (SpawnManager != null)
             {

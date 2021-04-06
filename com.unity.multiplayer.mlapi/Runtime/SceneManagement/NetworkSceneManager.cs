@@ -369,7 +369,7 @@ namespace MLAPI.SceneManagement
                         var networkObject = NetworkManager.Singleton.SpawnManager.CreateLocalNetworkObject(false, 0, prefabHash, ownerClientId, parentNetworkId, position, rotation);
                         NetworkManager.Singleton.SpawnManager.SpawnNetworkObjectLocally(networkObject, networkId, true, isPlayerObject, ownerClientId, objectStream, false, 0, true, false);
 
-                        var bufferQueue = BufferManager.ConsumeBuffersForNetworkId(networkId);
+                        var bufferQueue = NetworkManager.Singleton.BufferManager.ConsumeBuffersForNetworkId(networkId);
 
                         // Apply buffered messages
                         if (bufferQueue != null)
@@ -411,7 +411,7 @@ namespace MLAPI.SceneManagement
                         var networkObject = NetworkManager.Singleton.SpawnManager.CreateLocalNetworkObject(true, instanceId, 0, ownerClientId, parentNetworkId, null, null);
                         NetworkManager.Singleton.SpawnManager.SpawnNetworkObjectLocally(networkObject, networkId, true, isPlayerObject, ownerClientId, objectStream, false, 0, true, false);
 
-                        var bufferQueue = BufferManager.ConsumeBuffersForNetworkId(networkId);
+                        var bufferQueue = NetworkManager.Singleton.BufferManager.ConsumeBuffersForNetworkId(networkId);
 
                         // Apply buffered messages
                         if (bufferQueue != null)
