@@ -93,9 +93,10 @@ namespace MLAPI
         /// Gets the SpawnManager for this NetworkManager
         /// </summary>
         public NetworkSpawnManager SpawnManager { get; private set; }
-        
 
         internal BufferManager BufferManager { get; private set; }
+
+        internal readonly InternalMessageHandler MessageHandler = new InternalMessageHandler();
 
         /// <summary>
         /// Gets the networkId of the server
