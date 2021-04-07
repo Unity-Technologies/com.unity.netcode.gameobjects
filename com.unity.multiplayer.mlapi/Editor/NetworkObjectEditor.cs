@@ -59,6 +59,7 @@ namespace MLAPI.Editor
                 {
                     EditorGUILayout.TextField(nameof(NetworkObject.IsSceneObject), "null");
                 }
+                EditorGUILayout.Toggle(nameof(NetworkObject.DestroyWithScene), m_NetworkObject.DestroyWithScene);
                 GUI.enabled = guiEnabled;
 
                 if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer)
