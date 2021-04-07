@@ -1486,82 +1486,24 @@ namespace MLAPI
                 {
                     // Don't send any data over the wire if the host "connected"
                     using (var buffer = PooledNetworkBuffer.Get())
-                    using (var writer = PooledNetworkWriter.Get(buffer))
-                    {
-                        writer.WriteUInt64Packed(ownerClientId);
-
-                        if (NetworkConfig.EnableSceneManagement)
+                    { 
+                        using (var writer = PooledNetworkWriter.Get(buffer))
                         {
-                            writer.WriteUInt32Packed(NetworkSceneManager.CurrentSceneIndex);
-                            writer.WriteByteArray(NetworkSceneManager.CurrentSceneSwitchProgressGuid.ToByteArray());
-                        }
+                            writer.WriteUInt64Packed(ownerClientId);
 
-                        writer.WriteSinglePacked(Time.realtimeSinceStartup);
-                        writer.WriteUInt32Packed((uint)m_ObservedObjects.Count);
+                            if (NetworkConfig.EnableSceneManagement)
+                            {
+                                writer.WriteUInt32Packed(NetworkSceneManager.CurrentSceneIndex);
+                                writer.WriteByteArray(NetworkSceneManager.CurrentSceneSwitchProgressGuid.ToByteArray());
+                            }
+
+                            writer.WriteSinglePacked(Time.realtimeSinceStartup);
+                            writer.WriteUInt32Packed((uint)m_ObservedObjects.Count);
+                        }
 
                         for (int i = 0; i < m_ObservedObjects.Count; i++)
                         {
-                            var observedObject = m_ObservedObjects[i];
-                            writer.WriteBool(observedObject.IsPlayerObject);
-                            writer.WriteUInt64Packed(observedObject.NetworkObjectId);
-                            writer.WriteUInt64Packed(observedObject.OwnerClientId);
-
-                            NetworkObject parent = null;
-
-                            if (!observedObject.AlwaysReplicateAsRoot && observedObject.transform.parent != null)
-                            {
-                                parent = observedObject.transform.parent.GetComponent<NetworkObject>();
-                            }
-
-                            if (parent == null)
-                            {
-                                writer.WriteBool(false);
-                            }
-                            else
-                            {
-                                writer.WriteBool(true);
-                                writer.WriteUInt64Packed(parent.NetworkObjectId);
-                            }
-
-                            if (!NetworkConfig.EnableSceneManagement || NetworkConfig.UsePrefabSync)
-                            {
-                                writer.WriteUInt64Packed(observedObject.PrefabHash);
-                            }
-                            else
-                            {
-                                // Is this a scene object that we will soft map
-                                writer.WriteBool(observedObject.IsSceneObject ?? true);
-
-                                if (observedObject.IsSceneObject == null || observedObject.IsSceneObject.Value)
-                                {
-                                    writer.WriteUInt64Packed(observedObject.GlobalObjectIdHash64);
-                                }
-                                else
-                                {
-                                    writer.WriteUInt64Packed(observedObject.PrefabHash);
-                                }
-                            }
-
-                            if (observedObject.IncludeTransformWhenSpawning == null || observedObject.IncludeTransformWhenSpawning(ownerClientId))
-                            {
-                                writer.WriteBool(true);
-                                writer.WriteSinglePacked(observedObject.transform.position.x);
-                                writer.WriteSinglePacked(observedObject.transform.position.y);
-                                writer.WriteSinglePacked(observedObject.transform.position.z);
-
-                                writer.WriteSinglePacked(observedObject.transform.rotation.eulerAngles.x);
-                                writer.WriteSinglePacked(observedObject.transform.rotation.eulerAngles.y);
-                                writer.WriteSinglePacked(observedObject.transform.rotation.eulerAngles.z);
-                            }
-                            else
-                            {
-                                writer.WriteBool(false);
-                            }
-
-                            if (NetworkConfig.EnableNetworkVariable)
-                            {
-                                observedObject.WriteNetworkVariableData(buffer, ownerClientId);
-                            }
+                            SpawnManager.WriteSpawnCallForObject(buffer, ownerClientId, m_ObservedObjects[i], null);
                         }
 
                         InternalMessageSender.Send(ownerClientId, NetworkConstants.CONNECTION_APPROVED, NetworkChannel.Internal, buffer);
@@ -1586,48 +1528,10 @@ namespace MLAPI
                     }
 
                     using (var buffer = PooledNetworkBuffer.Get())
-                    using (var writer = PooledNetworkWriter.Get(buffer))
                     {
-                        writer.WriteBool(true);
-                        writer.WriteUInt64Packed(ConnectedClients[ownerClientId].PlayerObject.NetworkObjectId);
-                        writer.WriteUInt64Packed(ownerClientId);
-
-                        //Does not have a parent
-                        writer.WriteBool(false);
-
-                        if (!NetworkConfig.EnableSceneManagement || NetworkConfig.UsePrefabSync)
-                        {
-                            writer.WriteUInt64Packed(playerPrefabHash ?? NetworkConfig.PlayerPrefabHash.Value);
-                        }
-                        else
-                        {
-                            // Not a softmap aka scene object
-                            writer.WriteBool(false);
-                            writer.WriteUInt64Packed(playerPrefabHash ?? NetworkConfig.PlayerPrefabHash.Value);
-                        }
-
-                        if (ConnectedClients[ownerClientId].PlayerObject.IncludeTransformWhenSpawning == null || ConnectedClients[ownerClientId].PlayerObject.IncludeTransformWhenSpawning(ownerClientId))
-                        {
-                            writer.WriteBool(true);
-                            writer.WriteSinglePacked(ConnectedClients[ownerClientId].PlayerObject.transform.position.x);
-                            writer.WriteSinglePacked(ConnectedClients[ownerClientId].PlayerObject.transform.position.y);
-                            writer.WriteSinglePacked(ConnectedClients[ownerClientId].PlayerObject.transform.position.z);
-
-                            writer.WriteSinglePacked(ConnectedClients[ownerClientId].PlayerObject.transform.rotation.eulerAngles.x);
-                            writer.WriteSinglePacked(ConnectedClients[ownerClientId].PlayerObject.transform.rotation.eulerAngles.y);
-                            writer.WriteSinglePacked(ConnectedClients[ownerClientId].PlayerObject.transform.rotation.eulerAngles.z);
-                        }
-                        else
-                        {
-                            writer.WriteBool(false);
-                        }
-
-                        writer.WriteBool(false); //No payload data
-
-                        if (NetworkConfig.EnableNetworkVariable)
-                        {
-                            ConnectedClients[ownerClientId].PlayerObject.WriteNetworkVariableData(buffer, clientPair.Key);
-                        }
+                        // TODO: Check and review this part because of the (old) special handling for the prefab hash (playerPrefabHash ?? NetworkConfig.PlayerPrefabHash.Value)
+                        // Should be ok, since the player object contains the hash from spawning
+                        SpawnManager.WriteSpawnCallForObject(buffer, ownerClientId, ConnectedClients[ownerClientId].PlayerObject, null);
 
                         InternalMessageSender.Send(clientPair.Key, NetworkConstants.ADD_OBJECT, NetworkChannel.Internal, buffer);
                     }
