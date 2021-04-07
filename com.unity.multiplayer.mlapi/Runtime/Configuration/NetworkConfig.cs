@@ -53,7 +53,6 @@ namespace MLAPI.Configuration
         /// A list of spawnable prefabs
         /// </summary>
         [Tooltip("The prefabs that can be spawned across the network")]
-        [FormerlySerializedAs("NetworkedPrefabs")]
         public List<NetworkPrefab> NetworkPrefabs = new List<NetworkPrefab>();
 
         /// <summary>
