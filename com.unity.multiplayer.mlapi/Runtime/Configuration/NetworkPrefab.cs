@@ -4,6 +4,13 @@ using UnityEngine;
 
 namespace MLAPI.Configuration
 {
+    public enum NetworkPrefabOverride
+    {
+        Unset,
+        Prefab,
+        Hash
+    }
+
     /// <summary>
     /// Class that represents a NetworkPrefab
     /// </summary>
@@ -15,10 +22,11 @@ namespace MLAPI.Configuration
         /// </summary>
         public GameObject Prefab;
 
-        /// <summary>
-        /// Whether or not this is a player prefab
-        /// </summary>
-        public bool IsPlayer;
+        public NetworkPrefabOverride Override;
+
+        public ulong OverridingSourceHash;
+        public GameObject OverridingSourcePrefab;
+        public GameObject OverridingTargetPrefab;
 
         internal ulong Hash
         {

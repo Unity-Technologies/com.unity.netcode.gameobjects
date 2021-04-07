@@ -20,6 +20,7 @@ public class NetworkManagerEditor : Editor
     private SerializedProperty m_NetworkConfigProperty;
 
     // NetworkConfig fields
+    private SerializedProperty m_PlayerPrefabProperty;
     private SerializedProperty m_ProtocolVersionProperty;
     private SerializedProperty m_AllowRuntimeSceneChangesProperty;
     private SerializedProperty m_NetworkTransportProperty;
@@ -99,6 +100,7 @@ public class NetworkManagerEditor : Editor
         m_NetworkConfigProperty = serializedObject.FindProperty(nameof(NetworkManager.NetworkConfig));
 
         // NetworkConfig properties
+        m_PlayerPrefabProperty = m_NetworkConfigProperty.FindPropertyRelative(nameof(NetworkConfig.PlayerPrefab));
         m_ProtocolVersionProperty = m_NetworkConfigProperty.FindPropertyRelative("ProtocolVersion");
         m_AllowRuntimeSceneChangesProperty = m_NetworkConfigProperty.FindPropertyRelative("AllowRuntimeSceneChanges");
         m_NetworkTransportProperty = m_NetworkConfigProperty.FindPropertyRelative("NetworkTransport");
@@ -136,6 +138,7 @@ public class NetworkManagerEditor : Editor
         m_NetworkConfigProperty = serializedObject.FindProperty(nameof(NetworkManager.NetworkConfig));
 
         // NetworkConfig properties
+        m_PlayerPrefabProperty = m_NetworkConfigProperty.FindPropertyRelative(nameof(NetworkConfig.PlayerPrefab));
         m_ProtocolVersionProperty = m_NetworkConfigProperty.FindPropertyRelative("ProtocolVersion");
         m_AllowRuntimeSceneChangesProperty = m_NetworkConfigProperty.FindPropertyRelative("AllowRuntimeSceneChanges");
         m_NetworkTransportProperty = m_NetworkConfigProperty.FindPropertyRelative("NetworkTransport");
@@ -164,9 +167,10 @@ public class NetworkManagerEditor : Editor
     private void OnEnable()
     {
         m_NetworkPrefabsList = new ReorderableList(serializedObject, serializedObject.FindProperty(nameof(NetworkManager.NetworkConfig)).FindPropertyRelative(nameof(NetworkConfig.NetworkPrefabs)), true, true, true, true);
-        m_NetworkPrefabsList.drawElementCallback = (Rect rect, int index, bool isActive, bool isFocused) =>
+        m_NetworkPrefabsList.elementHeightCallback = index => (EditorGUIUtility.singleLineHeight * 5) + 10;
+        m_NetworkPrefabsList.drawElementCallback = (rect, index, isActive, isFocused) =>
         {
-            for (int i = 0; i < m_NetworkManager.NetworkConfig.NetworkPrefabs.Count; i++)
+            /*for (int i = 0; i < m_NetworkManager.NetworkConfig.NetworkPrefabs.Count; i++)
             {
                 // Find the first playerPrefab
                 if (m_NetworkManager.NetworkConfig.NetworkPrefabs[i].IsPlayer)
@@ -182,19 +186,24 @@ public class NetworkManagerEditor : Editor
 
                     break;
                 }
-            }
+            }*/
 
             var element = m_NetworkPrefabsList.serializedProperty.GetArrayElementAtIndex(index);
-            int firstLabelWidth = 50;
-            int secondLabelWidth = 140;
-            float secondFieldWidth = 10;
-            int reduceFirstWidth = 45;
+            EditorGUI.PropertyField(new Rect(rect.x, rect.y, rect.width, EditorGUIUtility.singleLineHeight), element.FindPropertyRelative(nameof(NetworkPrefab.Prefab)), GUIContent.none);
 
-            EditorGUI.LabelField(new Rect(rect.x, rect.y, firstLabelWidth, EditorGUIUtility.singleLineHeight), "Prefab");
-            EditorGUI.PropertyField(new Rect(rect.x + firstLabelWidth, rect.y, rect.width - firstLabelWidth - secondLabelWidth - secondFieldWidth - reduceFirstWidth,
-                EditorGUIUtility.singleLineHeight), element.FindPropertyRelative(nameof(NetworkPrefab.Prefab)), GUIContent.none);
+            rect.y += EditorGUIUtility.singleLineHeight;
+            EditorGUI.PropertyField(new Rect(rect.x, rect.y, rect.width, EditorGUIUtility.singleLineHeight), element.FindPropertyRelative(nameof(NetworkPrefab.Override)), GUIContent.none);
 
-            EditorGUI.LabelField(new Rect(rect.width - secondLabelWidth - secondFieldWidth, rect.y, secondLabelWidth, EditorGUIUtility.singleLineHeight), "Default Player Prefab");
+            rect.y += EditorGUIUtility.singleLineHeight;
+            EditorGUI.PropertyField(new Rect(rect.x, rect.y, rect.width, EditorGUIUtility.singleLineHeight), element.FindPropertyRelative(nameof(NetworkPrefab.OverridingSourceHash)), GUIContent.none);
+
+            rect.y += EditorGUIUtility.singleLineHeight;
+            EditorGUI.PropertyField(new Rect(rect.x, rect.y, rect.width, EditorGUIUtility.singleLineHeight), element.FindPropertyRelative(nameof(NetworkPrefab.OverridingSourcePrefab)), GUIContent.none);
+
+            rect.y += EditorGUIUtility.singleLineHeight;
+            EditorGUI.PropertyField(new Rect(rect.x, rect.y, rect.width, EditorGUIUtility.singleLineHeight), element.FindPropertyRelative(nameof(NetworkPrefab.OverridingTargetPrefab)), GUIContent.none);
+
+            /*EditorGUI.LabelField(new Rect(rect.width - secondLabelWidth - secondFieldWidth, rect.y, secondLabelWidth, EditorGUIUtility.singleLineHeight), "Default Player Prefab");
 
             int playerPrefabIndex = -1;
 
@@ -211,7 +220,7 @@ public class NetworkManagerEditor : Editor
             {
                 EditorGUI.PropertyField(new Rect(rect.width - secondFieldWidth, rect.y, secondFieldWidth,
                     EditorGUIUtility.singleLineHeight), element.FindPropertyRelative(nameof(NetworkPrefab.IsPlayer)), GUIContent.none);
-            }
+            }*/
         };
 
         m_NetworkPrefabsList.drawHeaderCallback = (Rect rect) => { EditorGUI.LabelField(rect, "NetworkPrefabs"); };
@@ -256,9 +265,13 @@ public class NetworkManagerEditor : Editor
             EditorGUILayout.PropertyField(m_DontDestroyOnLoadProperty);
             EditorGUILayout.PropertyField(m_RunInBackgroundProperty);
             EditorGUILayout.PropertyField(m_LogLevelProperty);
-
             EditorGUILayout.Space();
+
+            EditorGUILayout.PropertyField(m_PlayerPrefabProperty);
+            EditorGUILayout.Space();
+
             m_NetworkPrefabsList.DoLayoutList();
+            EditorGUILayout.Space();
 
             using (new EditorGUI.DisabledScope(!m_NetworkManager.NetworkConfig.EnableSceneManagement))
             {
