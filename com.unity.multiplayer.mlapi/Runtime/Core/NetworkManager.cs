@@ -1531,7 +1531,7 @@ namespace MLAPI
                     {
                         // TODO: Check and review this part because of the (old) special handling for the prefab hash (playerPrefabHash ?? NetworkConfig.PlayerPrefabHash.Value)
                         // Should be ok, since the player object contains the hash from spawning
-                        SpawnManager.WriteSpawnCallForObject(buffer, ownerClientId, ConnectedClients[ownerClientId].PlayerObject, null);
+                        SpawnManager.WriteSpawnCallForObject(buffer, clientPair.Key, ConnectedClients[ownerClientId].PlayerObject, null);
 
                         InternalMessageSender.Send(clientPair.Key, NetworkConstants.ADD_OBJECT, NetworkChannel.Internal, buffer);
                     }
