@@ -24,11 +24,11 @@ namespace MLAPI.Configuration
 
         public NetworkPrefabOverride Override;
 
-        public ulong OverridingSourceHash;
+        public uint OverridingSourceHash;
         public GameObject OverridingSourcePrefab;
         public GameObject OverridingTargetPrefab;
 
-        internal ulong Hash
+        internal uint Hash
         {
             get
             {

@@ -356,7 +356,7 @@ namespace MLAPI.SceneManagement
                             parentNetworkId = reader.ReadUInt64Packed();
                         }
 
-                        ulong prefabHash = reader.ReadUInt64Packed();
+                        uint prefabHash = reader.ReadUInt32Packed();
 
                         Vector3? position = null;
                         Quaternion? rotation = null;
