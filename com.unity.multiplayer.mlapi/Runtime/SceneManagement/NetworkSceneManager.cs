@@ -118,7 +118,7 @@ namespace MLAPI.SceneManagement
                 return null;
             }
 
-            NetworkSpawnManager.ServerDestroySpawnedSceneObjects(); //Destroy current scene objects before switching.
+            NetworkManager.Singleton.SpawnManager.ServerDestroySpawnedSceneObjects(); //Destroy current scene objects before switching.
             s_IsSwitching = true;
             s_LastScene = SceneManager.GetActiveScene();
 
@@ -241,7 +241,7 @@ namespace MLAPI.SceneManagement
                 {
                     if (networkObjects[i].IsSceneObject == null)
                     {
-                        NetworkSpawnManager.SpawnNetworkObjectLocally(networkObjects[i], NetworkSpawnManager.GetNetworkObjectId(), true, false, null, null, false, 0, false, true);
+                        NetworkManager.Singleton.SpawnManager.SpawnNetworkObjectLocally(networkObjects[i], NetworkManager.Singleton.SpawnManager.GetNetworkObjectId(), true, false, null, null, false, 0, false, true);
                         newSceneObjects.Add(networkObjects[i]);
                     }
                 }
@@ -337,7 +337,7 @@ namespace MLAPI.SceneManagement
         {
             if (!NetworkManager.Singleton.NetworkConfig.EnableSceneManagement || NetworkManager.Singleton.NetworkConfig.UsePrefabSync)
             {
-                NetworkSpawnManager.DestroySceneObjects();
+                NetworkManager.Singleton.SpawnManager.DestroySceneObjects();
 
                 using (var reader = PooledNetworkReader.Get(objectStream))
                 {
@@ -366,10 +366,10 @@ namespace MLAPI.SceneManagement
                             rotation = Quaternion.Euler(reader.ReadSinglePacked(), reader.ReadSinglePacked(), reader.ReadSinglePacked());
                         }
 
-                        var networkObject = NetworkSpawnManager.CreateLocalNetworkObject(false, 0, prefabHash, ownerClientId, parentNetworkId, position, rotation);
-                        NetworkSpawnManager.SpawnNetworkObjectLocally(networkObject, networkId, true, isPlayerObject, ownerClientId, objectStream, false, 0, true, false);
+                        var networkObject = NetworkManager.Singleton.SpawnManager.CreateLocalNetworkObject(false, 0, prefabHash, ownerClientId, parentNetworkId, position, rotation);
+                        NetworkManager.Singleton.SpawnManager.SpawnNetworkObjectLocally(networkObject, networkId, true, isPlayerObject, ownerClientId, objectStream, false, 0, true, false);
 
-                        var bufferQueue = BufferManager.ConsumeBuffersForNetworkId(networkId);
+                        var bufferQueue = NetworkManager.Singleton.BufferManager.ConsumeBuffersForNetworkId(networkId);
 
                         // Apply buffered messages
                         if (bufferQueue != null)
@@ -387,7 +387,7 @@ namespace MLAPI.SceneManagement
             else
             {
                 var networkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>();
-                NetworkSpawnManager.ClientCollectSoftSyncSceneObjectSweep(networkObjects);
+                NetworkManager.Singleton.SpawnManager.ClientCollectSoftSyncSceneObjectSweep(networkObjects);
 
                 using (var reader = PooledNetworkReader.Get(objectStream))
                 {
@@ -408,10 +408,10 @@ namespace MLAPI.SceneManagement
 
                         ulong instanceId = reader.ReadUInt64Packed();
 
-                        var networkObject = NetworkSpawnManager.CreateLocalNetworkObject(true, instanceId, 0, ownerClientId, parentNetworkId, null, null);
-                        NetworkSpawnManager.SpawnNetworkObjectLocally(networkObject, networkId, true, isPlayerObject, ownerClientId, objectStream, false, 0, true, false);
+                        var networkObject = NetworkManager.Singleton.SpawnManager.CreateLocalNetworkObject(true, instanceId, 0, ownerClientId, parentNetworkId, null, null);
+                        NetworkManager.Singleton.SpawnManager.SpawnNetworkObjectLocally(networkObject, networkId, true, isPlayerObject, ownerClientId, objectStream, false, 0, true, false);
 
-                        var bufferQueue = BufferManager.ConsumeBuffersForNetworkId(networkId);
+                        var bufferQueue = NetworkManager.Singleton.BufferManager.ConsumeBuffersForNetworkId(networkId);
 
                         // Apply buffered messages
                         if (bufferQueue != null)
@@ -470,7 +470,7 @@ namespace MLAPI.SceneManagement
         private static void MoveObjectsToDontDestroyOnLoad()
         {
             // Move ALL NetworkObjects to the temp scene
-            var objectsToKeep = NetworkSpawnManager.SpawnedObjectsList;
+            var objectsToKeep = NetworkManager.Singleton.SpawnManager.SpawnedObjectsList;
 
             foreach (var sobj in objectsToKeep)
             {
@@ -487,7 +487,7 @@ namespace MLAPI.SceneManagement
         private static void MoveObjectsToScene(Scene scene)
         {
             // Move ALL NetworkObjects to the temp scene
-            var objectsToKeep = NetworkSpawnManager.SpawnedObjectsList;
+            var objectsToKeep = NetworkManager.Singleton.SpawnManager.SpawnedObjectsList;
 
             foreach (var sobj in objectsToKeep)
             {

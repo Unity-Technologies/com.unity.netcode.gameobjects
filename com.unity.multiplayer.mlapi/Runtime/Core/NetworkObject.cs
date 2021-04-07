@@ -197,7 +197,7 @@ namespace MLAPI
             // Send spawn call
             Observers.Add(clientId);
 
-            NetworkSpawnManager.SendSpawnCallForObject(clientId, this, payload);
+            NetworkManager.Singleton.SpawnManager.SendSpawnCallForObject(clientId, this, payload);
         }
 
         /// <summary>
@@ -237,7 +237,7 @@ namespace MLAPI
                     // Send spawn call
                     networkObjects[i].Observers.Add(clientId);
 
-                    NetworkSpawnManager.WriteSpawnCallForObject(buffer, clientId, networkObjects[i], payload);
+                    NetworkManager.Singleton.SpawnManager.WriteSpawnCallForObject(buffer, clientId, networkObjects[i], payload);
                 }
 
                 InternalMessageSender.Send(clientId, NetworkConstants.ADD_OBJECTS, NetworkChannel.Internal, buffer);
@@ -333,9 +333,9 @@ namespace MLAPI
 
         private void OnDestroy()
         {
-            if (NetworkManager.Singleton != null && NetworkSpawnManager.SpawnedObjects.ContainsKey(NetworkObjectId))
+            if (NetworkManager.Singleton != null && NetworkManager.Singleton.SpawnManager.SpawnedObjects.ContainsKey(NetworkObjectId))
             {
-                NetworkSpawnManager.OnDestroyObject(NetworkObjectId, false);
+                NetworkManager.Singleton.SpawnManager.OnDestroyObject(NetworkObjectId, false);
             }
         }
 
@@ -357,13 +357,13 @@ namespace MLAPI
                 spawnPayload.Position = 0;
             }
 
-            NetworkSpawnManager.SpawnNetworkObjectLocally(this, NetworkSpawnManager.GetNetworkObjectId(), false, playerObject, ownerClientId, spawnPayload, spawnPayload != null, spawnPayload == null ? 0 : (int)spawnPayload.Length, false, destroyWithScene);
+            NetworkManager.Singleton.SpawnManager.SpawnNetworkObjectLocally(this, NetworkManager.Singleton.SpawnManager.GetNetworkObjectId(), false, playerObject, ownerClientId, spawnPayload, spawnPayload != null, spawnPayload == null ? 0 : (int)spawnPayload.Length, false, destroyWithScene);
 
             for (int i = 0; i < NetworkManager.Singleton.ConnectedClientsList.Count; i++)
             {
                 if (Observers.Contains(NetworkManager.Singleton.ConnectedClientsList[i].ClientId))
                 {
-                    NetworkSpawnManager.SendSpawnCallForObject(NetworkManager.Singleton.ConnectedClientsList[i].ClientId, this, spawnPayload);
+                    NetworkManager.Singleton.SpawnManager.SendSpawnCallForObject(NetworkManager.Singleton.ConnectedClientsList[i].ClientId, this, spawnPayload);
                 }
             }
         }
@@ -405,7 +405,7 @@ namespace MLAPI
         /// </summary>
         public void Despawn(bool destroy = false)
         {
-            NetworkSpawnManager.DespawnObject(this, destroy);
+            NetworkManager.Singleton.SpawnManager.DespawnObject(this, destroy);
         }
 
 
@@ -414,7 +414,7 @@ namespace MLAPI
         /// </summary>
         public void RemoveOwnership()
         {
-            NetworkSpawnManager.RemoveOwnership(this);
+            NetworkManager.Singleton.SpawnManager.RemoveOwnership(this);
         }
 
         /// <summary>
@@ -423,7 +423,7 @@ namespace MLAPI
         /// <param name="newOwnerClientId">The new owner clientId</param>
         public void ChangeOwnership(ulong newOwnerClientId)
         {
-            NetworkSpawnManager.ChangeOwnership(this, newOwnerClientId);
+            NetworkManager.Singleton.SpawnManager.ChangeOwnership(this, newOwnerClientId);
         }
 
         internal void InvokeBehaviourOnLostOwnership()

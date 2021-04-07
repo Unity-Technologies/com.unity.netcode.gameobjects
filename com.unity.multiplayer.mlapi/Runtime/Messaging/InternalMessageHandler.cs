@@ -113,11 +113,11 @@ namespace MLAPI.Messaging
                     {
                         if (!NetworkManager.Singleton.NetworkConfig.EnableSceneManagement || NetworkManager.Singleton.NetworkConfig.UsePrefabSync)
                         {
-                            NetworkSpawnManager.DestroySceneObjects();
+                            NetworkManager.Singleton.SpawnManager.DestroySceneObjects();
                         }
                         else
                         {
-                            NetworkSpawnManager.ClientCollectSoftSyncSceneObjectSweep(null);
+                            NetworkManager.Singleton.SpawnManager.ClientCollectSoftSyncSceneObjectSweep(null);
                         }
 
                         uint objectCount = continuationReader.ReadUInt32Packed();
@@ -168,10 +168,10 @@ namespace MLAPI.Messaging
                                 rot = Quaternion.Euler(continuationReader.ReadSinglePacked(), continuationReader.ReadSinglePacked(), continuationReader.ReadSinglePacked());
                             }
 
-                            var networkObject = NetworkSpawnManager.CreateLocalNetworkObject(softSync, instanceId, prefabHash, ownerId, parentNetworkId, pos, rot);
-                            NetworkSpawnManager.SpawnNetworkObjectLocally(networkObject, networkId, softSync, isPlayerObject, ownerId, continuationStream, false, 0, true, false);
+                            var networkObject = NetworkManager.Singleton.SpawnManager.CreateLocalNetworkObject(softSync, instanceId, prefabHash, ownerId, parentNetworkId, pos, rot);
+                            NetworkManager.Singleton.SpawnManager.SpawnNetworkObjectLocally(networkObject, networkId, softSync, isPlayerObject, ownerId, continuationStream, false, 0, true, false);
 
-                            Queue<BufferManager.BufferedMessage> bufferQueue = BufferManager.ConsumeBuffersForNetworkId(networkId);
+                            Queue<BufferManager.BufferedMessage> bufferQueue = NetworkManager.Singleton.BufferManager.ConsumeBuffersForNetworkId(networkId);
 
                             // Apply buffered messages
                             if (bufferQueue != null)
@@ -185,7 +185,7 @@ namespace MLAPI.Messaging
                             }
                         }
 
-                        NetworkSpawnManager.CleanDiffedSceneObjects();
+                        NetworkManager.Singleton.SpawnManager.CleanDiffedSceneObjects();
                         NetworkManager.Singleton.IsConnectedClient = true;
                         NetworkManager.Singleton.InvokeOnClientConnectedCallback(NetworkManager.Singleton.LocalClientId);
                     }
@@ -275,10 +275,10 @@ namespace MLAPI.Messaging
                 bool hasPayload = reader.ReadBool();
                 int payLoadLength = hasPayload ? reader.ReadInt32Packed() : 0;
 
-                var networkObject = NetworkSpawnManager.CreateLocalNetworkObject(softSync, instanceId, prefabHash, ownerClientId, parentNetworkId, pos, rot);
-                NetworkSpawnManager.SpawnNetworkObjectLocally(networkObject, networkId, softSync, isPlayerObject, ownerClientId, stream, hasPayload, payLoadLength, true, false);
+                var networkObject = NetworkManager.Singleton.SpawnManager.CreateLocalNetworkObject(softSync, instanceId, prefabHash, ownerClientId, parentNetworkId, pos, rot);
+                NetworkManager.Singleton.SpawnManager.SpawnNetworkObjectLocally(networkObject, networkId, softSync, isPlayerObject, ownerClientId, stream, hasPayload, payLoadLength, true, false);
 
-                Queue<BufferManager.BufferedMessage> bufferQueue = BufferManager.ConsumeBuffersForNetworkId(networkId);
+                Queue<BufferManager.BufferedMessage> bufferQueue = NetworkManager.Singleton.BufferManager.ConsumeBuffersForNetworkId(networkId);
 
                 // Apply buffered messages
                 if (bufferQueue != null)
@@ -304,7 +304,7 @@ namespace MLAPI.Messaging
             using (var reader = PooledNetworkReader.Get(stream))
             {
                 ulong networkId = reader.ReadUInt64Packed();
-                NetworkSpawnManager.OnDestroyObject(networkId, true);
+                NetworkManager.Singleton.SpawnManager.OnDestroyObject(networkId, true);
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleDestroyObject.End();
@@ -356,19 +356,19 @@ namespace MLAPI.Messaging
                 ulong networkId = reader.ReadUInt64Packed();
                 ulong ownerClientId = reader.ReadUInt64Packed();
 
-                if (NetworkSpawnManager.SpawnedObjects[networkId].OwnerClientId == NetworkManager.Singleton.LocalClientId)
+                if (NetworkManager.Singleton.SpawnManager.SpawnedObjects[networkId].OwnerClientId == NetworkManager.Singleton.LocalClientId)
                 {
                     //We are current owner.
-                    NetworkSpawnManager.SpawnedObjects[networkId].InvokeBehaviourOnLostOwnership();
+                    NetworkManager.Singleton.SpawnManager.SpawnedObjects[networkId].InvokeBehaviourOnLostOwnership();
                 }
 
                 if (ownerClientId == NetworkManager.Singleton.LocalClientId)
                 {
                     //We are new owner.
-                    NetworkSpawnManager.SpawnedObjects[networkId].InvokeBehaviourOnGainedOwnership();
+                    NetworkManager.Singleton.SpawnManager.SpawnedObjects[networkId].InvokeBehaviourOnGainedOwnership();
                 }
 
-                NetworkSpawnManager.SpawnedObjects[networkId].OwnerClientId = ownerClientId;
+                NetworkManager.Singleton.SpawnManager.SpawnedObjects[networkId].OwnerClientId = ownerClientId;
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleChangeOwner.End();
@@ -448,9 +448,9 @@ namespace MLAPI.Messaging
                 ulong networkObjectId = reader.ReadUInt64Packed();
                 ushort networkBehaviourIndex = reader.ReadUInt16Packed();
 
-                if (NetworkSpawnManager.SpawnedObjects.ContainsKey(networkObjectId))
+                if (NetworkManager.Singleton.SpawnManager.SpawnedObjects.ContainsKey(networkObjectId))
                 {
-                    NetworkBehaviour instance = NetworkSpawnManager.SpawnedObjects[networkObjectId].GetNetworkBehaviourAtOrderIndex(networkBehaviourIndex);
+                    NetworkBehaviour instance = NetworkManager.Singleton.SpawnManager.SpawnedObjects[networkObjectId].GetNetworkBehaviourAtOrderIndex(networkBehaviourIndex);
 
                     if (instance == null)
                     {
@@ -506,9 +506,9 @@ namespace MLAPI.Messaging
                 ulong networkObjectId = reader.ReadUInt64Packed();
                 ushort networkBehaviourIndex = reader.ReadUInt16Packed();
 
-                if (NetworkSpawnManager.SpawnedObjects.ContainsKey(networkObjectId))
+                if (NetworkManager.Singleton.SpawnManager.SpawnedObjects.ContainsKey(networkObjectId))
                 {
-                    var networkBehaviour = NetworkSpawnManager.SpawnedObjects[networkObjectId].GetNetworkBehaviourAtOrderIndex(networkBehaviourIndex);
+                    var networkBehaviour = NetworkManager.Singleton.SpawnManager.SpawnedObjects[networkObjectId].GetNetworkBehaviourAtOrderIndex(networkBehaviourIndex);
 
                     if (networkBehaviour == null)
                     {
