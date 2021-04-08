@@ -1131,6 +1131,10 @@ namespace MLAPI
                         {
                             InternalMessageHandler.HandleClientSwitchSceneCompleted(clientId, messageStream);
                         }
+                        else if (!NetworkConfig.EnableSceneManagement)
+                        {
+                            NetworkLog.LogWarning($"Server received CLIENT_SWITCH_SCENE_COMPLETED from client id {clientId}");
+                        }
 
                         break;
                     case NetworkConstants.SERVER_LOG:
@@ -1440,7 +1444,7 @@ namespace MLAPI
 
                 if (createPlayerObject)
                 {
-                    var networkObject = SpawnManager.CreateLocalNetworkObject(false, 0, playerPrefabHash ?? NetworkConfig.PlayerPrefabHash.Value, ownerClientId, null, position, rotation);
+                    var networkObject = SpawnManager.CreateLocalNetworkObject(false, playerPrefabHash ?? NetworkConfig.PlayerPrefabHash.Value, ownerClientId, null, position, rotation);
                     SpawnManager.SpawnNetworkObjectLocally(networkObject, SpawnManager.GetNetworkObjectId(), false, true, ownerClientId, null, false, 0, false, false);
 
                     ConnectedClients[ownerClientId].PlayerObject = networkObject;

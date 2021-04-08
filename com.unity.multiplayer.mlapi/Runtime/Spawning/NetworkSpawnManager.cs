@@ -250,7 +250,7 @@ namespace MLAPI.Spawning
         }
 
         // Only ran on Client
-        internal NetworkObject CreateLocalNetworkObject(bool softCreate, ulong instanceId, ulong prefabHash, ulong ownerClientId, ulong? parentNetworkId, Vector3? position, Quaternion? rotation)
+        internal NetworkObject CreateLocalNetworkObject(bool softCreate, ulong prefabHash, ulong ownerClientId, ulong? parentNetworkId, Vector3? position, Quaternion? rotation)
         {
             NetworkObject parentNetworkObject = null;
 
@@ -266,8 +266,13 @@ namespace MLAPI.Spawning
                 }
             }
 
+#if PREFABSYNC
             if (!NetworkManager.NetworkConfig.EnableSceneManagement || NetworkManager.NetworkConfig.UsePrefabSync || !softCreate)
             {
+#else
+            if (!NetworkManager.NetworkConfig.EnableSceneManagement || !softCreate)
+            {
+#endif
                 // Create the object
                 if (CustomSpawnHandlers.ContainsKey(prefabHash))
                 {
@@ -318,7 +323,7 @@ namespace MLAPI.Spawning
             else
             {
                 // SoftSync them by mapping
-                if (!PendingSoftSyncObjects.ContainsKey(instanceId))
+                if (!PendingSoftSyncObjects.ContainsKey(prefabHash))
                 {
                     // TODO: Fix this message
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
@@ -328,8 +333,8 @@ namespace MLAPI.Spawning
                     return null;
                 }
 
-                var networkObject = PendingSoftSyncObjects[instanceId];
-                PendingSoftSyncObjects.Remove(instanceId);
+                var networkObject = PendingSoftSyncObjects[prefabHash];
+                PendingSoftSyncObjects.Remove(prefabHash);
 
                 if (parentNetworkObject != null)
                 {

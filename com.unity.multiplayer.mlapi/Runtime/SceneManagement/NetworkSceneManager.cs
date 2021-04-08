@@ -96,6 +96,13 @@ namespace MLAPI.SceneManagement
             if (!NetworkManager.Singleton.IsServer)
             {
                 throw new NotServerException("Only server can start a scene switch");
+
+            }
+
+            if (!NetworkManager.Singleton.NetworkConfig.EnableSceneManagement)
+            {
+                //Log message about enabling SceneManagement
+                throw new NotServerException("EnableSceneManagement is not enabled in the NetworkManager.  Set EnableSceneManagement to true before calling this method.");
             }
 
             if (s_IsSwitching)
@@ -311,14 +318,21 @@ namespace MLAPI.SceneManagement
                                 }
 #else
                                 writer.WriteUInt64Packed(newSceneObjects[i].GlobalObjectIdHash);
+                                if (newSceneObjects[i].IncludeTransformWhenSpawning == null || newSceneObjects[i].IncludeTransformWhenSpawning(newSceneObjects[i].OwnerClientId))
+                                {
+                                    writer.WriteBool(true);
+                                    writer.WriteSinglePacked(newSceneObjects[i].transform.position.x);
+                                    writer.WriteSinglePacked(newSceneObjects[i].transform.position.y);
+                                    writer.WriteSinglePacked(newSceneObjects[i].transform.position.z);
 
-                                writer.WriteSinglePacked(newSceneObjects[i].transform.position.x);
-                                writer.WriteSinglePacked(newSceneObjects[i].transform.position.y);
-                                writer.WriteSinglePacked(newSceneObjects[i].transform.position.z);
-
-                                writer.WriteSinglePacked(newSceneObjects[i].transform.rotation.eulerAngles.x);
-                                writer.WriteSinglePacked(newSceneObjects[i].transform.rotation.eulerAngles.y);
-                                writer.WriteSinglePacked(newSceneObjects[i].transform.rotation.eulerAngles.z);
+                                    writer.WriteSinglePacked(newSceneObjects[i].transform.rotation.eulerAngles.x);
+                                    writer.WriteSinglePacked(newSceneObjects[i].transform.rotation.eulerAngles.y);
+                                    writer.WriteSinglePacked(newSceneObjects[i].transform.rotation.eulerAngles.z);
+                                }
+                                else
+                                {
+                                    writer.WriteBool(false);
+                                }
 #endif
 
                                 if (NetworkManager.Singleton.NetworkConfig.EnableNetworkVariable)
@@ -474,14 +488,17 @@ namespace MLAPI.SceneManagement
                         parentNetworkId = reader.ReadUInt64Packed();
                     }
 
-                    ulong instanceId = reader.ReadUInt64Packed();
+                    ulong prefabHash = reader.ReadUInt64Packed();
                     Vector3? position = null;
                     Quaternion? rotation = null;
-                    position = new Vector3(reader.ReadSinglePacked(), reader.ReadSinglePacked(), reader.ReadSinglePacked());
-                    rotation = Quaternion.Euler(reader.ReadSinglePacked(), reader.ReadSinglePacked(), reader.ReadSinglePacked());
 
+                    if (reader.ReadBool())
+                    {
+                        position = new Vector3(reader.ReadSinglePacked(), reader.ReadSinglePacked(), reader.ReadSinglePacked());
+                        rotation = Quaternion.Euler(reader.ReadSinglePacked(), reader.ReadSinglePacked(), reader.ReadSinglePacked());
+                    }
 
-                    var networkObject = NetworkManager.Singleton.SpawnManager.CreateLocalNetworkObject(true, instanceId, 0, ownerClientId, parentNetworkId, position, rotation);
+                    var networkObject = NetworkManager.Singleton.SpawnManager.CreateLocalNetworkObject(true, prefabHash, ownerClientId, parentNetworkId, position, rotation);
                     NetworkManager.Singleton.SpawnManager.SpawnNetworkObjectLocally(networkObject, networkId, true, isPlayerObject, ownerClientId, objectStream, false, 0, true, false);
 
                     var bufferQueue = NetworkManager.Singleton.BufferManager.ConsumeBuffersForNetworkId(networkId);

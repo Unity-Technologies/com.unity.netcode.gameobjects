@@ -140,7 +140,6 @@ namespace MLAPI.Messaging
                             }
 
                             ulong prefabHash;
-                            ulong instanceId;
                             bool softSync;
 #if PREFABSYNC
                             if (!NetworkManager.Singleton.NetworkConfig.EnableSceneManagement || NetworkManager.Singleton.NetworkConfig.UsePrefabSync)
@@ -166,17 +165,7 @@ namespace MLAPI.Messaging
                             }
 #else
                             softSync = continuationReader.ReadBool();
-
-                            if (softSync)
-                            {
-                                instanceId = continuationReader.ReadUInt64Packed();
-                                prefabHash = 0;
-                            }
-                            else
-                            {
-                                prefabHash = continuationReader.ReadUInt64Packed();
-                                instanceId = 0;
-                            }
+                            prefabHash = continuationReader.ReadUInt64Packed();
 #endif
                             Vector3? pos = null;
                             Quaternion? rot = null;
@@ -186,7 +175,7 @@ namespace MLAPI.Messaging
                                 rot = Quaternion.Euler(continuationReader.ReadSinglePacked(), continuationReader.ReadSinglePacked(), continuationReader.ReadSinglePacked());
                             }
 
-                            var networkObject = NetworkManager.Singleton.SpawnManager.CreateLocalNetworkObject(softSync, instanceId, prefabHash, ownerId, parentNetworkId, pos, rot);
+                            var networkObject = NetworkManager.Singleton.SpawnManager.CreateLocalNetworkObject(softSync, prefabHash, ownerId, parentNetworkId, pos, rot);
                             NetworkManager.Singleton.SpawnManager.SpawnNetworkObjectLocally(networkObject, networkId, softSync, isPlayerObject, ownerId, continuationStream, false, 0, true, false);
 
                             Queue<BufferManager.BufferedMessage> bufferQueue = NetworkManager.Singleton.BufferManager.ConsumeBuffersForNetworkId(networkId);
@@ -257,7 +246,6 @@ namespace MLAPI.Messaging
                 }
 
                 ulong prefabHash;
-                ulong instanceId;
                 bool softSync;
 #if PREFABSYNC
                 if (!NetworkManager.Singleton.NetworkConfig.EnableSceneManagement || NetworkManager.Singleton.NetworkConfig.UsePrefabSync)
@@ -283,17 +271,7 @@ namespace MLAPI.Messaging
                 }
 #else
                 softSync = reader.ReadBool();
-
-                if (softSync)
-                {
-                    instanceId = reader.ReadUInt64Packed();
-                    prefabHash = 0;
-                }
-                else
-                {
-                    prefabHash = reader.ReadUInt64Packed();
-                    instanceId = 0;
-                }
+                prefabHash = reader.ReadUInt64Packed();
 #endif
 
 
@@ -308,7 +286,7 @@ namespace MLAPI.Messaging
                 bool hasPayload = reader.ReadBool();
                 int payLoadLength = hasPayload ? reader.ReadInt32Packed() : 0;
 
-                var networkObject = NetworkManager.Singleton.SpawnManager.CreateLocalNetworkObject(softSync, instanceId, prefabHash, ownerClientId, parentNetworkId, pos, rot);
+                var networkObject = NetworkManager.Singleton.SpawnManager.CreateLocalNetworkObject(softSync, prefabHash, ownerClientId, parentNetworkId, pos, rot);
                 NetworkManager.Singleton.SpawnManager.SpawnNetworkObjectLocally(networkObject, networkId, softSync, isPlayerObject, ownerClientId, stream, hasPayload, payLoadLength, true, false);
 
                 Queue<BufferManager.BufferedMessage> bufferQueue = NetworkManager.Singleton.BufferManager.ConsumeBuffersForNetworkId(networkId);

@@ -10,6 +10,26 @@ namespace MLAPI.SceneManagement
     /// </summary>
     public class SceneSwitchProgress
     {
+        public enum SceneSwitchProgressStates
+        {
+            None,
+            Loading,
+            Loaded,
+            Error
+        }
+
+        public SceneSwitchProgressStates SceneSwitchProgressState;
+
+
+        public bool HasError()
+        {
+            if(SceneSwitchProgressState == SceneSwitchProgressStates.Error)
+            {
+                return true;
+            }
+            return false;
+        }
+
         /// <summary>
         /// List of clientIds of those clients that is done loading the scene.
         /// </summary>
