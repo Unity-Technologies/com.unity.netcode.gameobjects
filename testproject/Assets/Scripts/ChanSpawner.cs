@@ -1,15 +1,15 @@
 using MLAPI;
 using UnityEngine;
 
-public class UnityChanSpawner : MonoBehaviour
+public class ChanSpawner : MonoBehaviour
 {
-    public GameObject UnityChanPrefab;
+    public GameObject ChanPrefab;
 
     private void Start()
     {
         NetworkManager.Singleton.OnServerStarted += () =>
         {
-            var unityChanGameObj = Instantiate(UnityChanPrefab);
+            var unityChanGameObj = Instantiate(ChanPrefab);
             var unityChanNetObj = unityChanGameObj.GetComponent<NetworkObject>();
             unityChanNetObj.Spawn();
         };

@@ -786,13 +786,13 @@ MonoBehaviour:
       OverridingSourceHash: 0
       OverridingSourcePrefab: {fileID: 0}
       OverridingTargetPrefab: {fileID: 0}
-    - Prefab: {fileID: 442217489085244684, guid: 5eca8a21314fe4278ba2571c289a9773,
+    - Prefab: {fileID: 3375576151314869687, guid: 5e1b5e86175194143aed8c4fdcb7e621,
         type: 3}
       Override: 1
       OverridingSourceHash: 0
-      OverridingSourcePrefab: {fileID: 442217489085244684, guid: 5eca8a21314fe4278ba2571c289a9773,
+      OverridingSourcePrefab: {fileID: 3375576151314869687, guid: 5e1b5e86175194143aed8c4fdcb7e621,
         type: 3}
-      OverridingTargetPrefab: {fileID: 3375576151314869687, guid: 5e1b5e86175194143aed8c4fdcb7e621,
+      OverridingTargetPrefab: {fileID: 442217489085244684, guid: 5eca8a21314fe4278ba2571c289a9773,
         type: 3}
     CreatePlayerPrefab: 1
     ReceiveTickrate: 64
@@ -1668,7 +1668,7 @@ GameObject:
   - component: {fileID: 1202924674}
   - component: {fileID: 1202924673}
   m_Layer: 0
-  m_Name: UnityChanSpawner
+  m_Name: ChanSpawner
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1686,7 +1686,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 05037a80244af4174806bc7f242e4432, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  UnityChanPrefab: {fileID: 442217489085244684, guid: 5eca8a21314fe4278ba2571c289a9773,
+  ChanPrefab: {fileID: 3375576151314869687, guid: 5e1b5e86175194143aed8c4fdcb7e621,
     type: 3}
 --- !u!4 &1202924674
 Transform:
