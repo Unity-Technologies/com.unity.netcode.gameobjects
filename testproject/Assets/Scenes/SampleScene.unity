@@ -780,10 +780,10 @@ MonoBehaviour:
     NetworkPrefabs:
     - Prefab: {fileID: 8685790303553767886, guid: 96e0a72e30d0c46c8a5c9a750e8f5807,
         type: 3}
-      PlayerPrefab: 1
+      IsPlayer: 1
     - Prefab: {fileID: 442217489085244684, guid: 5eca8a21314fe4278ba2571c289a9773,
         type: 3}
-      PlayerPrefab: 0
+      IsPlayer: 0
     PlayerPrefabHash:
       id: 0
     CreatePlayerPrefab: 1
@@ -813,7 +813,7 @@ MonoBehaviour:
     00000000:
       type: {class: NullableBoolSerializable, ns: MLAPI.Configuration, asm: Unity.Multiplayer.MLAPI.Runtime}
       data:
-        Value: 14951230177878111678
+        Value: 14422508629381042771
 --- !u!4 &620561612
 Transform:
   m_ObjectHideFlags: 0
@@ -822,7 +822,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 620561609}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.40890312, y: 4.89, z: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 1}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}

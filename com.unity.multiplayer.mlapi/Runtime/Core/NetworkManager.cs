@@ -246,48 +246,27 @@ namespace MLAPI
                             NetworkLog.LogWarning($"{nameof(NetworkPrefab)} [{i}] does not have a {nameof(NetworkObject)} component");
                         }
                     }
-                    else
-                    {
-                        NetworkConfig.NetworkPrefabs[i].Prefab.GetComponent<NetworkObject>().ValidateHash();
-                    }
                 }
             }
 
-            // TODO: Show which two prefab generators that collide
-            var hashes = new HashSet<ulong>();
-
-            for (int i = 0; i < NetworkConfig.NetworkPrefabs.Count; i++)
-            {
-                if (hashes.Contains(NetworkConfig.NetworkPrefabs[i].Hash))
-                {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                    {
-                        var prefabHashGenerator = NetworkConfig.NetworkPrefabs[i].Prefab.GetComponent<NetworkObject>().PrefabHashGenerator;
-                        NetworkLog.LogError($"PrefabHash collision! You have two prefabs with the same hash ({nameof(NetworkObject.PrefabHashGenerator)} = {prefabHashGenerator}). This is not supported");
-                    }
-                }
-
-                hashes.Add(NetworkConfig.NetworkPrefabs[i].Hash);
-            }
-
-            int playerPrefabCount = NetworkConfig.NetworkPrefabs.Count(x => x.PlayerPrefab);
+            int playerPrefabCount = NetworkConfig.NetworkPrefabs.Count(x => x.IsPlayer);
 
             if (playerPrefabCount == 0 && !NetworkConfig.ConnectionApproval && NetworkConfig.CreatePlayerPrefab)
             {
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                 {
-                    NetworkLog.LogWarning($"There is no {nameof(NetworkPrefab)} marked as a {nameof(NetworkPrefab.PlayerPrefab)}");
+                    NetworkLog.LogWarning($"There is no {nameof(NetworkPrefab)} marked as a {nameof(NetworkPrefab.IsPlayer)}");
                 }
             }
             else if (playerPrefabCount > 1)
             {
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                 {
-                    NetworkLog.LogWarning($"Only one {nameof(NetworkPrefab)} can be marked as a {nameof(NetworkPrefab.PlayerPrefab)}");
+                    NetworkLog.LogWarning($"Only one {nameof(NetworkPrefab)} can be marked as a {nameof(NetworkPrefab.IsPlayer)}");
                 }
             }
 
-            var networkPrefab = NetworkConfig.NetworkPrefabs.FirstOrDefault(x => x.PlayerPrefab);
+            var networkPrefab = NetworkConfig.NetworkPrefabs.FirstOrDefault(x => x.IsPlayer);
 
             if (networkPrefab == null)
             {
@@ -394,10 +373,6 @@ namespace MLAPI
                     {
                         NetworkLog.LogError($"{nameof(NetworkPrefab)} (\"{NetworkConfig.NetworkPrefabs[i].Prefab.name}\") is missing a {nameof(NetworkObject)} component");
                     }
-                }
-                else
-                {
-                    NetworkConfig.NetworkPrefabs[i].Prefab.GetComponent<NetworkObject>().ValidateHash();
                 }
             }
 
@@ -1363,9 +1338,9 @@ namespace MLAPI
                 {
                     if (ConnectedClients[clientId].PlayerObject != null)
                     {
-                        if (SpawnManager.CustomDestroyHandlers.ContainsKey(ConnectedClients[clientId].PlayerObject.PrefabHash))
+                        if (SpawnManager.CustomDestroyHandlers.ContainsKey(ConnectedClients[clientId].PlayerObject.GlobalObjectIdHash))
                         {
-                            SpawnManager.CustomDestroyHandlers[ConnectedClients[clientId].PlayerObject.PrefabHash](ConnectedClients[clientId].PlayerObject);
+                            SpawnManager.CustomDestroyHandlers[ConnectedClients[clientId].PlayerObject.GlobalObjectIdHash](ConnectedClients[clientId].PlayerObject);
                             SpawnManager.OnDestroyObject(ConnectedClients[clientId].PlayerObject.NetworkObjectId, false);
                         }
                         else
@@ -1380,9 +1355,9 @@ namespace MLAPI
                         {
                             if (!ConnectedClients[clientId].OwnedObjects[i].DontDestroyWithOwner)
                             {
-                                if (SpawnManager.CustomDestroyHandlers.ContainsKey(ConnectedClients[clientId].OwnedObjects[i].PrefabHash))
+                                if (SpawnManager.CustomDestroyHandlers.ContainsKey(ConnectedClients[clientId].OwnedObjects[i].GlobalObjectIdHash))
                                 {
-                                    SpawnManager.CustomDestroyHandlers[ConnectedClients[clientId].OwnedObjects[i].PrefabHash](ConnectedClients[clientId].OwnedObjects[i]);
+                                    SpawnManager.CustomDestroyHandlers[ConnectedClients[clientId].OwnedObjects[i].GlobalObjectIdHash](ConnectedClients[clientId].OwnedObjects[i]);
                                     SpawnManager.OnDestroyObject(ConnectedClients[clientId].OwnedObjects[i].NetworkObjectId, false);
                                 }
                                 else
@@ -1525,7 +1500,7 @@ namespace MLAPI
 
                             if (!NetworkConfig.EnableSceneManagement || NetworkConfig.UsePrefabSync)
                             {
-                                writer.WriteUInt64Packed(observedObject.PrefabHash);
+                                writer.WriteUInt64Packed(observedObject.GlobalObjectIdHash);
                             }
                             else
                             {
@@ -1534,11 +1509,11 @@ namespace MLAPI
 
                                 if (observedObject.IsSceneObject == null || observedObject.IsSceneObject.Value)
                                 {
-                                    writer.WriteUInt64Packed(observedObject.GlobalObjectIdHash64);
+                                    writer.WriteUInt64Packed(observedObject.GlobalObjectIdHash);
                                 }
                                 else
                                 {
-                                    writer.WriteUInt64Packed(observedObject.PrefabHash);
+                                    writer.WriteUInt64Packed(observedObject.GlobalObjectIdHash);
                                 }
                             }
 

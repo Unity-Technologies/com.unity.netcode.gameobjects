@@ -295,7 +295,7 @@ namespace MLAPI.SceneManagement
 
                                 if (!NetworkManager.Singleton.NetworkConfig.EnableSceneManagement || NetworkManager.Singleton.NetworkConfig.UsePrefabSync)
                                 {
-                                    writer.WriteUInt64Packed(newSceneObjects[i].PrefabHash);
+                                    writer.WriteUInt64Packed(newSceneObjects[i].GlobalObjectIdHash);
 
                                     writer.WriteSinglePacked(newSceneObjects[i].transform.position.x);
                                     writer.WriteSinglePacked(newSceneObjects[i].transform.position.y);
@@ -307,7 +307,7 @@ namespace MLAPI.SceneManagement
                                 }
                                 else
                                 {
-                                    writer.WriteUInt64Packed(newSceneObjects[i].GlobalObjectIdHash64);
+                                    writer.WriteUInt64Packed(newSceneObjects[i].GlobalObjectIdHash);
                                 }
 
                                 if (NetworkManager.Singleton.NetworkConfig.EnableNetworkVariable)
