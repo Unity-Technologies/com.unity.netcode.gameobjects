@@ -97,7 +97,7 @@ namespace MLAPI
         internal BufferManager BufferManager { get; private set; }
 
         // Has to have setter for tests
-        internal IInternalMessageHandler MessageHandler {get; set;} = new InternalMessageHandler();
+        internal IInternalMessageHandler MessageHandler { get; set; } = new InternalMessageHandler();
 
         /// <summary>
         /// Gets the networkId of the server
