@@ -5,8 +5,9 @@
 # platform and editor meta data
 # Validation only occurs in editmode.
 
-{% for package in projects.first.packages -%}
-validate_{{ project.packages.first.name }}_{{ test_platforms.first.name }}_{{ test_editors.first }}:
+{% for project in projects -%}
+{% for package in project.packages -%}
+validate_{{ package.name }}_{{ test_platforms.first.name }}_{{ test_editors.first }}:
   name : Validate Package {{ package.name }} - {{ test_editors.first }} on {{ test_platforms.first.name }}
   agent:
     type: {{ test_platforms.first.type }}
@@ -14,13 +15,14 @@ validate_{{ project.packages.first.name }}_{{ test_platforms.first.name }}_{{ te
     flavor: {{ test_platforms.first.flavor}}
   commands:
     - npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
-    - {% if platform.name == "centos" %}DISPLAY=:0 {% endif %}upm-ci project test -u {{ test_editors.first }} --type vetting-tests --project-path {{ projects.first.path }} --package-filter {{ package.name }} --platform editmode
+    - {% if platform.name == "centos" %}DISPLAY=:0 {% endif %}upm-ci project test -u {{ test_editors.first }} --type vetting-tests --project-path {{ projects.path }} --package-filter {{ package.name }} --platform editmode
   artifacts:
     logs:
       paths:
         - "upm-ci~/test-results/**/*"
   dependencies:
-    - .yamato/project-pack.yml#pack_{{ projects.first.name }}
+    - .yamato/project-pack.yml#pack_{{ projects.name }}
+{% endfor -%}
 {% endfor -%}
 
 # For every platform and editor version, run its project tests without
