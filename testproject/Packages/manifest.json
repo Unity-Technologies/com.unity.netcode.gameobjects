@@ -44,6 +44,7 @@
     "com.unity.modules.xr": "1.0.0"
   },
   "testables": [
-    "com.unity.multiplayer.mlapi"
+    "com.unity.multiplayer.mlapi",
+    "com.unity.multiplayer.transport.utp"
   ]
 }
