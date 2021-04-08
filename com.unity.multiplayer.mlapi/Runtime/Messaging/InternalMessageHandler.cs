@@ -111,6 +111,8 @@ namespace MLAPI.Messaging
                 {
                     using (var continuationReader = PooledNetworkReader.Get(continuationStream))
                     {
+
+#if PREFABSYNC
                         if (!NetworkManager.Singleton.NetworkConfig.EnableSceneManagement || NetworkManager.Singleton.NetworkConfig.UsePrefabSync)
                         {
                             NetworkManager.Singleton.SpawnManager.DestroySceneObjects();
@@ -119,6 +121,9 @@ namespace MLAPI.Messaging
                         {
                             NetworkManager.Singleton.SpawnManager.ClientCollectSoftSyncSceneObjectSweep(null);
                         }
+#else
+                        NetworkManager.Singleton.SpawnManager.ClientCollectSoftSyncSceneObjectSweep(null);
+#endif
 
                         uint objectCount = continuationReader.ReadUInt32Packed();
                         for (int i = 0; i < objectCount; i++)
