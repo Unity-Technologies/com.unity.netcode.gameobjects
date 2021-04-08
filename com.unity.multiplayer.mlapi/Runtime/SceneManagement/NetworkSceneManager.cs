@@ -300,7 +300,7 @@ namespace MLAPI.SceneManagement
                                     writer.WriteUInt64Packed(parentNetworkObject.NetworkObjectId);
                                 }
 
-                                writer.ReadUInt32Packed(newSceneObjects[i].GlobalObjectIdHash);
+                                writer.WriteUInt32Packed(newSceneObjects[i].GlobalObjectIdHash);
                                 if (newSceneObjects[i].IncludeTransformWhenSpawning == null || newSceneObjects[i].IncludeTransformWhenSpawning(newSceneObjects[i].OwnerClientId))
                                 {
                                     writer.WriteBool(true);

@@ -1430,7 +1430,7 @@ namespace MLAPI
 
                 if (createPlayerObject)
                 {
-                    var networkObject = SpawnManager.CreateLocalNetworkObject(false, playerPrefabHash ?? NetworkConfig.PlayerPrefabHash.Value, ownerClientId, null, position, rotation);
+                    var networkObject = SpawnManager.CreateLocalNetworkObject(false, playerPrefabHash ?? NetworkConfig.PlayerPrefabHash, ownerClientId, null, position, rotation);
                     SpawnManager.SpawnNetworkObjectLocally(networkObject, SpawnManager.GetNetworkObjectId(), false, true, ownerClientId, null, false, 0, false, false);
 
                     ConnectedClients[ownerClientId].PlayerObject = networkObject;
@@ -1547,7 +1547,7 @@ namespace MLAPI
                         // This is not a scene object
                         writer.WriteBool(false);
 
-                        writer.WriteUInt32Packed(playerPrefabHash ?? NetworkConfig.PlayerPrefabHash.Value);
+                        writer.WriteUInt32Packed(playerPrefabHash ?? NetworkConfig.PlayerPrefabHash);
 
                         if (ConnectedClients[ownerClientId].PlayerObject.IncludeTransformWhenSpawning == null || ConnectedClients[ownerClientId].PlayerObject.IncludeTransformWhenSpawning(ownerClientId))
                         {

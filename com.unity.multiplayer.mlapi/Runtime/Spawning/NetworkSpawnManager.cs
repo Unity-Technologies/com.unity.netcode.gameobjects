@@ -250,7 +250,7 @@ namespace MLAPI.Spawning
         }
 
         // Only ran on Client
-        internal NetworkObject CreateLocalNetworkObject(bool softCreate, ulong prefabHash, ulong ownerClientId, ulong? parentNetworkId, Vector3? position, Quaternion? rotation)
+        internal NetworkObject CreateLocalNetworkObject(bool softCreate, uint prefabHash, ulong ownerClientId, ulong? parentNetworkId, Vector3? position, Quaternion? rotation)
         {
             NetworkObject parentNetworkObject = null;
 
