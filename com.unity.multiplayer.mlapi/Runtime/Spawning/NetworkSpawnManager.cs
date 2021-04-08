@@ -112,7 +112,7 @@ namespace MLAPI.Spawning
         }
 
         internal readonly Queue<ReleasedNetworkId> ReleasedNetworkObjectIds = new Queue<ReleasedNetworkId>();
-        private ulong s_NetworkObjectIdCounter;
+        private ulong m_NetworkObjectIdCounter;
 
         internal ulong GetNetworkObjectId()
         {
@@ -121,9 +121,9 @@ namespace MLAPI.Spawning
                 return ReleasedNetworkObjectIds.Dequeue().NetworkId;
             }
 
-            s_NetworkObjectIdCounter++;
+            m_NetworkObjectIdCounter++;
 
-            return s_NetworkObjectIdCounter;
+            return m_NetworkObjectIdCounter;
         }
 
         /// <summary>
