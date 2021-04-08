@@ -112,8 +112,7 @@ namespace MLAPI.Messaging
                     using (var continuationReader = PooledNetworkReader.Get(continuationStream))
                     {
 
-#if PREFABSYNC
-                        if (!NetworkManager.Singleton.NetworkConfig.EnableSceneManagement || NetworkManager.Singleton.NetworkConfig.UsePrefabSync)
+                        if (!NetworkManager.Singleton.NetworkConfig.EnableSceneManagement)
                         {
                             NetworkManager.Singleton.SpawnManager.DestroySceneObjects();
                         }
@@ -121,17 +120,14 @@ namespace MLAPI.Messaging
                         {
                             NetworkManager.Singleton.SpawnManager.ClientCollectSoftSyncSceneObjectSweep(null);
                         }
-#else
-                        NetworkManager.Singleton.SpawnManager.ClientCollectSoftSyncSceneObjectSweep(null);
-#endif
 
-                        uint objectCount = continuationReader.ReadUInt32Packed();
+                        var objectCount = continuationReader.ReadUInt32Packed();
                         for (int i = 0; i < objectCount; i++)
                         {
-                            bool isPlayerObject = continuationReader.ReadBool();
-                            ulong networkId = continuationReader.ReadUInt64Packed();
-                            ulong ownerId = continuationReader.ReadUInt64Packed();
-                            bool hasParent = continuationReader.ReadBool();
+                            var isPlayerObject = continuationReader.ReadBool();
+                            var networkId = continuationReader.ReadUInt64Packed();
+                            var ownerId = continuationReader.ReadUInt64Packed();
+                            var hasParent = continuationReader.ReadBool();
                             ulong? parentNetworkId = null;
 
                             if (hasParent)
@@ -139,34 +135,9 @@ namespace MLAPI.Messaging
                                 parentNetworkId = continuationReader.ReadUInt64Packed();
                             }
 
-                            ulong prefabHash;
-                            bool softSync;
-#if PREFABSYNC
-                            if (!NetworkManager.Singleton.NetworkConfig.EnableSceneManagement || NetworkManager.Singleton.NetworkConfig.UsePrefabSync)
-                            {
-                                softSync = false;
-                                instanceId = 0;
-                                prefabHash = continuationReader.ReadUInt64Packed();
-                            }
-                            else
-                            {
-                                softSync = continuationReader.ReadBool();
+                            var softSync = continuationReader.ReadBool();
+                            var prefabHash = continuationReader.ReadUInt64Packed();
 
-                                if (softSync)
-                                {
-                                    instanceId = continuationReader.ReadUInt64Packed();
-                                    prefabHash = 0;
-                                }
-                                else
-                                {
-                                    prefabHash = continuationReader.ReadUInt64Packed();
-                                    instanceId = 0;
-                                }
-                            }
-#else
-                            softSync = continuationReader.ReadBool();
-                            prefabHash = continuationReader.ReadUInt64Packed();
-#endif
                             Vector3? pos = null;
                             Quaternion? rot = null;
                             if (continuationReader.ReadBool())
@@ -234,10 +205,10 @@ namespace MLAPI.Messaging
 #endif
             using (var reader = PooledNetworkReader.Get(stream))
             {
-                bool isPlayerObject = reader.ReadBool();
-                ulong networkId = reader.ReadUInt64Packed();
-                ulong ownerClientId = reader.ReadUInt64Packed();
-                bool hasParent = reader.ReadBool();
+                var isPlayerObject = reader.ReadBool();
+                var networkId = reader.ReadUInt64Packed();
+                var ownerClientId = reader.ReadUInt64Packed();
+                var hasParent = reader.ReadBool();
                 ulong? parentNetworkId = null;
 
                 if (hasParent)
@@ -245,35 +216,8 @@ namespace MLAPI.Messaging
                     parentNetworkId = reader.ReadUInt64Packed();
                 }
 
-                ulong prefabHash;
-                bool softSync;
-#if PREFABSYNC
-                if (!NetworkManager.Singleton.NetworkConfig.EnableSceneManagement || NetworkManager.Singleton.NetworkConfig.UsePrefabSync)
-                {
-                    softSync = false;
-                    instanceId = 0;
-                    prefabHash = reader.ReadUInt64Packed();
-                }
-                else
-                {
-                    softSync = reader.ReadBool();
-
-                    if (softSync)
-                    {
-                        instanceId = reader.ReadUInt64Packed();
-                        prefabHash = 0;
-                    }
-                    else
-                    {
-                        prefabHash = reader.ReadUInt64Packed();
-                        instanceId = 0;
-                    }
-                }
-#else
-                softSync = reader.ReadBool();
-                prefabHash = reader.ReadUInt64Packed();
-#endif
-
+                var softSync = reader.ReadBool();
+                var prefabHash = reader.ReadUInt64Packed();
 
                 Vector3? pos = null;
                 Quaternion? rot = null;
@@ -283,8 +227,8 @@ namespace MLAPI.Messaging
                     rot = Quaternion.Euler(reader.ReadSinglePacked(), reader.ReadSinglePacked(), reader.ReadSinglePacked());
                 }
 
-                bool hasPayload = reader.ReadBool();
-                int payLoadLength = hasPayload ? reader.ReadInt32Packed() : 0;
+                var hasPayload = reader.ReadBool();
+                var payLoadLength = hasPayload ? reader.ReadInt32Packed() : 0;
 
                 var networkObject = NetworkManager.Singleton.SpawnManager.CreateLocalNetworkObject(softSync, prefabHash, ownerClientId, parentNetworkId, pos, rot);
                 NetworkManager.Singleton.SpawnManager.SpawnNetworkObjectLocally(networkObject, networkId, softSync, isPlayerObject, ownerClientId, stream, hasPayload, payLoadLength, true, false);

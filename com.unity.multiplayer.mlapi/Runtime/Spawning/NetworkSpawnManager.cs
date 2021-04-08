@@ -266,13 +266,9 @@ namespace MLAPI.Spawning
                 }
             }
 
-#if PREFABSYNC
-            if (!NetworkManager.NetworkConfig.EnableSceneManagement || NetworkManager.NetworkConfig.UsePrefabSync || !softCreate)
-            {
-#else
+
             if (!NetworkManager.NetworkConfig.EnableSceneManagement || !softCreate)
             {
-#endif
                 // Create the object
                 if (CustomSpawnHandlers.ContainsKey(prefabHash))
                 {
@@ -292,7 +288,7 @@ namespace MLAPI.Spawning
                 }
                 else
                 {
-                    int prefabIndex = GetNetworkPrefabIndexOfHash(prefabHash);
+                    var prefabIndex = GetNetworkPrefabIndexOfHash(prefabHash);
 
                     if (prefabIndex < 0)
                     {
@@ -481,21 +477,9 @@ namespace MLAPI.Spawning
                     writer.WriteUInt64Packed(parentNetworkObject.NetworkObjectId);
                 }
 
-
-#if PREFABSYNC
-                if (!NetworkManager.NetworkConfig.EnableSceneManagement || NetworkManager.NetworkConfig.UsePrefabSync)
-                {
-                    writer.WriteUInt64Packed(networkObject.GlobalObjectIdHash);
-                }
-                else
-                {
-                    writer.WriteBool(networkObject.IsSceneObject ?? true);
-                    writer.WriteUInt64Packed(networkObject.GlobalObjectIdHash);
-                }
-#else
                 writer.WriteBool(networkObject.IsSceneObject ?? true);
                 writer.WriteUInt64Packed(networkObject.GlobalObjectIdHash);
-#endif
+
                 if (networkObject.IncludeTransformWhenSpawning == null || networkObject.IncludeTransformWhenSpawning(clientId))
                 {
                     writer.WriteBool(true);
