@@ -783,15 +783,17 @@ MonoBehaviour:
     - Prefab: {fileID: 8685790303553767886, guid: 96e0a72e30d0c46c8a5c9a750e8f5807,
         type: 3}
       Override: 0
-      OverridingSourceHash: 4294967295
+      OverridingSourceHash: 0
       OverridingSourcePrefab: {fileID: 0}
       OverridingTargetPrefab: {fileID: 0}
     - Prefab: {fileID: 442217489085244684, guid: 5eca8a21314fe4278ba2571c289a9773,
         type: 3}
-      Override: 0
+      Override: 1
       OverridingSourceHash: 0
-      OverridingSourcePrefab: {fileID: 0}
-      OverridingTargetPrefab: {fileID: 0}
+      OverridingSourcePrefab: {fileID: 442217489085244684, guid: 5eca8a21314fe4278ba2571c289a9773,
+        type: 3}
+      OverridingTargetPrefab: {fileID: 3375576151314869687, guid: 5e1b5e86175194143aed8c4fdcb7e621,
+        type: 3}
     CreatePlayerPrefab: 1
     ReceiveTickrate: 64
     NetworkTickIntervalSec: 0.05

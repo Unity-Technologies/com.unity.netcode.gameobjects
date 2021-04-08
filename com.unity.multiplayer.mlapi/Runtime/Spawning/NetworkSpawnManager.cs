@@ -130,7 +130,7 @@ namespace MLAPI.Spawning
         /// </summary>
         /// <param name="hash">The hash of the prefab</param>
         /// <returns>The index of the prefab</returns>
-        public int GetNetworkPrefabIndexOfHash(ulong hash)
+        public int GetNetworkPrefabIndexOfHash(uint hash)
         {
             for (int i = 0; i < NetworkManager.NetworkConfig.NetworkPrefabs.Count; i++)
             {
@@ -148,7 +148,7 @@ namespace MLAPI.Spawning
         /// </summary>
         /// <param name="index">The NetworkPrefab index</param>
         /// <returns>The prefab hash for the given prefab index</returns>
-        public ulong GetPrefabHashFromIndex(int index)
+        public uint GetPrefabHashFromIndex(int index)
         {
             return NetworkManager.NetworkConfig.NetworkPrefabs[index].Hash;
         }
@@ -287,20 +287,44 @@ namespace MLAPI.Spawning
                 }
                 else
                 {
-                    int prefabIndex = GetNetworkPrefabIndexOfHash(prefabHash);
+                    GameObject networkPrefabReference = null;
+                    for (int i = 0; networkPrefabReference == null && i < NetworkManager.NetworkConfig.NetworkPrefabs.Count; i++)
+                    {
+                        var element = NetworkManager.NetworkConfig.NetworkPrefabs[i];
+                        switch (element.Override)
+                        {
+                            default:
+                            case NetworkPrefabOverride.Unset:
+                                if (element.Hash == prefabHash)
+                                {
+                                    networkPrefabReference = element.Prefab;
+                                }
+                                break;
+                            case NetworkPrefabOverride.Prefab:
+                                if (element.OverridingSourcePrefab.GetComponent<NetworkObject>().GlobalObjectIdHash == prefabHash)
+                                {
+                                    networkPrefabReference = element.OverridingTargetPrefab;
+                                }
+                                break;
+                            case NetworkPrefabOverride.Hash:
+                                if (element.OverridingSourceHash == prefabHash)
+                                {
+                                    networkPrefabReference = element.OverridingTargetPrefab;
+                                }
+                                break;
+                        }
+                    }
 
-                    if (prefabIndex < 0)
+                    if (networkPrefabReference == null)
                     {
                         if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
                         {
-                            NetworkLog.LogError($"Failed to create object locally. [{nameof(prefabHash)}={prefabHash}]. Hash could not be found. Is the prefab registered?");
+                            NetworkLog.LogError($"Failed to create object locally. [{nameof(prefabHash)}={prefabHash}]. {nameof(NetworkPrefab)} could not be found. Is the prefab registered with {nameof(NetworkManager)}?");
                         }
-
                         return null;
                     }
 
-                    var prefab = NetworkManager.NetworkConfig.NetworkPrefabs[prefabIndex].Prefab;
-                    var networkObject = ((position == null && rotation == null) ? UnityEngine.Object.Instantiate(prefab) : UnityEngine.Object.Instantiate(prefab, position.GetValueOrDefault(Vector3.zero), rotation.GetValueOrDefault(Quaternion.identity))).GetComponent<NetworkObject>();
+                    var networkObject = ((position == null && rotation == null) ? UnityEngine.Object.Instantiate(networkPrefabReference) : UnityEngine.Object.Instantiate(networkPrefabReference, position.GetValueOrDefault(Vector3.zero), rotation.GetValueOrDefault(Quaternion.identity))).GetComponent<NetworkObject>();
 
                     if (parentNetworkObject != null)
                     {
@@ -325,6 +349,7 @@ namespace MLAPI.Spawning
                     {
                         NetworkLog.LogError("Cannot find pending soft sync object. Is the projects the same?");
                     }
+
                     return null;
                 }
 
