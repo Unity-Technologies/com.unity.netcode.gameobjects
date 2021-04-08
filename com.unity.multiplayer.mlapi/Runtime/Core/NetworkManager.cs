@@ -1502,29 +1502,9 @@ namespace MLAPI
                                 writer.WriteUInt64Packed(parent.NetworkObjectId);
                             }
 
-#if PREFABSYNC
-                            if (!NetworkConfig.EnableSceneManagement || NetworkConfig.UsePrefabSync)
-                            {
-                                writer.WriteUInt64Packed(observedObject.GlobalObjectIdHash);
-                            }
-                            else
-                            {
-                                // Is this a scene object that we will soft map
-                                writer.WriteBool(observedObject.IsSceneObject ?? true);
-
-                                if (observedObject.IsSceneObject == null || observedObject.IsSceneObject.Value)
-                                {
-                                    writer.WriteUInt64Packed(observedObject.GlobalObjectIdHash);
-                                }
-                                else
-                                {
-                                    writer.WriteUInt64Packed(observedObject.GlobalObjectIdHash);
-                                }
-                            }
-#else
                             writer.WriteBool(observedObject.IsSceneObject ?? true);
                             writer.WriteUInt64Packed(observedObject.GlobalObjectIdHash);
-#endif
+
                             if (observedObject.IncludeTransformWhenSpawning == null || observedObject.IncludeTransformWhenSpawning(ownerClientId))
                             {
                                 writer.WriteBool(true);
@@ -1578,21 +1558,10 @@ namespace MLAPI
                         //Does not have a parent
                         writer.WriteBool(false);
 
-#if PREFABSYNC
-                        if (!NetworkConfig.EnableSceneManagement || NetworkConfig.UsePrefabSync)
-                        {
-                            writer.WriteUInt64Packed(playerPrefabHash ?? NetworkConfig.PlayerPrefabHash.Value);
-                        }
-                        else
-                        {
-                            // Not a softmap aka scene object
-                            writer.WriteBool(false);
-                            writer.WriteUInt64Packed(playerPrefabHash ?? NetworkConfig.PlayerPrefabHash.Value);
-                        }
-#else
+                        // This is not a scene object
                         writer.WriteBool(false);
+
                         writer.WriteUInt64Packed(playerPrefabHash ?? NetworkConfig.PlayerPrefabHash.Value);
-#endif
 
                         if (ConnectedClients[ownerClientId].PlayerObject.IncludeTransformWhenSpawning == null || ConnectedClients[ownerClientId].PlayerObject.IncludeTransformWhenSpawning(ownerClientId))
                         {
