@@ -17,7 +17,7 @@ using Unity.Profiling;
 
 namespace MLAPI.Messaging
 {
-    internal class InternalMessageHandler
+    internal class InternalMessageHandler : IInternalMessageHandler
     {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
         private static ProfilerMarker s_HandleConnectionRequest = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleConnectionRequest)}");
@@ -39,7 +39,7 @@ namespace MLAPI.Messaging
         private static ProfilerMarker s_RpcReceiveQueueItemClientRpc = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(RpcReceiveQueueItem)}.{nameof(RpcQueueContainer.QueueItemType.ClientRpc)}");
 #endif
 
-        internal void HandleConnectionRequest(ulong clientId, Stream stream)
+        public void HandleConnectionRequest(ulong clientId, Stream stream)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleConnectionRequest.Begin();
@@ -79,7 +79,7 @@ namespace MLAPI.Messaging
 #endif
         }
 
-        internal void HandleConnectionApproved(ulong clientId, Stream stream, float receiveTime)
+        public void HandleConnectionApproved(ulong clientId, Stream stream, float receiveTime)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleConnectionApproved.Begin();
@@ -218,7 +218,7 @@ namespace MLAPI.Messaging
 #endif
         }
 
-        internal void HandleAddObject(ulong clientId, Stream stream)
+        public void HandleAddObject(ulong clientId, Stream stream)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleAddObject.Begin();
@@ -294,7 +294,7 @@ namespace MLAPI.Messaging
 #endif
         }
 
-        internal void HandleDestroyObject(ulong clientId, Stream stream)
+        public void HandleDestroyObject(ulong clientId, Stream stream)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleDestroyObject.Begin();
@@ -309,7 +309,7 @@ namespace MLAPI.Messaging
 #endif
         }
 
-        internal void HandleSwitchScene(ulong clientId, Stream stream)
+        public void HandleSwitchScene(ulong clientId, Stream stream)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleSwitchScene.Begin();
@@ -330,7 +330,7 @@ namespace MLAPI.Messaging
 #endif
         }
 
-        internal void HandleClientSwitchSceneCompleted(ulong clientId, Stream stream)
+        public void HandleClientSwitchSceneCompleted(ulong clientId, Stream stream)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleClientSwitchSceneCompleted.Begin();
@@ -344,7 +344,7 @@ namespace MLAPI.Messaging
 #endif
         }
 
-        internal void HandleChangeOwner(ulong clientId, Stream stream)
+        public void HandleChangeOwner(ulong clientId, Stream stream)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleChangeOwner.Begin();
@@ -373,7 +373,7 @@ namespace MLAPI.Messaging
 #endif
         }
 
-        internal void HandleAddObjects(ulong clientId, Stream stream)
+        public void HandleAddObjects(ulong clientId, Stream stream)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleAddObjects.Begin();
@@ -392,7 +392,7 @@ namespace MLAPI.Messaging
 #endif
         }
 
-        internal void HandleDestroyObjects(ulong clientId, Stream stream)
+        public void HandleDestroyObjects(ulong clientId, Stream stream)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleDestroyObjects.Begin();
@@ -411,7 +411,7 @@ namespace MLAPI.Messaging
 #endif
         }
 
-        internal void HandleTimeSync(ulong clientId, Stream stream, float receiveTime)
+        public void HandleTimeSync(ulong clientId, Stream stream, float receiveTime)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleTimeSync.Begin();
@@ -426,7 +426,7 @@ namespace MLAPI.Messaging
 #endif
         }
 
-        internal void HandleNetworkVariableDelta(ulong clientId, Stream stream, Action<ulong, PreBufferPreset> bufferCallback, PreBufferPreset bufferPreset)
+        public void HandleNetworkVariableDelta(ulong clientId, Stream stream, Action<ulong, PreBufferPreset> bufferCallback, PreBufferPreset bufferPreset)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleNetworkVariableDelta.Begin();
@@ -484,7 +484,7 @@ namespace MLAPI.Messaging
 #endif
         }
 
-        internal void HandleNetworkVariableUpdate(ulong clientId, Stream stream, Action<ulong, PreBufferPreset> bufferCallback, PreBufferPreset bufferPreset)
+        public void HandleNetworkVariableUpdate(ulong clientId, Stream stream, Action<ulong, PreBufferPreset> bufferCallback, PreBufferPreset bufferPreset)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleNetworkVariableUpdate.Begin();
@@ -548,7 +548,7 @@ namespace MLAPI.Messaging
         /// <param name="clientId"></param>
         /// <param name="stream"></param>
         /// <param name="receiveTime"></param>
-        internal void RpcReceiveQueueItem(ulong clientId, Stream stream, float receiveTime, RpcQueueContainer.QueueItemType queueItemType)
+        public void RpcReceiveQueueItem(ulong clientId, Stream stream, float receiveTime, RpcQueueContainer.QueueItemType queueItemType)
         {
             if (NetworkManager.Singleton.IsServer && clientId == NetworkManager.Singleton.ServerClientId)
             {
@@ -586,7 +586,7 @@ namespace MLAPI.Messaging
 #endif
         }
 
-        internal void HandleUnnamedMessage(ulong clientId, Stream stream)
+        public void HandleUnnamedMessage(ulong clientId, Stream stream)
         {
             PerformanceDataManager.Increment(ProfilerConstants.UnnamedMessageReceived);
             ProfilerStatManager.UnnamedMessage.Record();
@@ -599,7 +599,7 @@ namespace MLAPI.Messaging
 #endif
         }
 
-        internal void HandleNamedMessage(ulong clientId, Stream stream)
+        public void HandleNamedMessage(ulong clientId, Stream stream)
         {
             PerformanceDataManager.Increment(ProfilerConstants.NamedMessageReceived);
             ProfilerStatManager.NamedMessage.Record();
@@ -617,7 +617,7 @@ namespace MLAPI.Messaging
 #endif
         }
 
-        internal void HandleNetworkLog(ulong clientId, Stream stream)
+        public void HandleNetworkLog(ulong clientId, Stream stream)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleNetworkLog.Begin();
