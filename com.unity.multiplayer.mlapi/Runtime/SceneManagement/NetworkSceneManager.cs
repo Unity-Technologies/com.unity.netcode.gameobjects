@@ -295,7 +295,7 @@ namespace MLAPI.SceneManagement
 
                                 if (!NetworkManager.Singleton.NetworkConfig.EnableSceneManagement || NetworkManager.Singleton.NetworkConfig.UsePrefabSync)
                                 {
-                                    writer.WriteUInt64Packed(newSceneObjects[i].GlobalObjectIdHash);
+                                    writer.WriteUInt32Packed(newSceneObjects[i].GlobalObjectIdHash);
 
                                     writer.WriteSinglePacked(newSceneObjects[i].transform.position.x);
                                     writer.WriteSinglePacked(newSceneObjects[i].transform.position.y);
@@ -307,7 +307,7 @@ namespace MLAPI.SceneManagement
                                 }
                                 else
                                 {
-                                    writer.WriteUInt64Packed(newSceneObjects[i].GlobalObjectIdHash);
+                                    writer.WriteUInt32Packed(newSceneObjects[i].GlobalObjectIdHash);
                                 }
 
                                 if (NetworkManager.Singleton.NetworkConfig.EnableNetworkVariable)
@@ -356,7 +356,7 @@ namespace MLAPI.SceneManagement
                             parentNetworkId = reader.ReadUInt64Packed();
                         }
 
-                        ulong prefabHash = reader.ReadUInt64Packed();
+                        uint prefabHash = reader.ReadUInt32Packed();
 
                         Vector3? position = null;
                         Quaternion? rotation = null;
