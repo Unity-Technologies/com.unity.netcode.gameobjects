@@ -1,12 +1,13 @@
 {
-    "name": "Unity MLAPI Transport",
+    "name": "Unity.MLAPI.Transport",
     "rootNamespace": "",
     "references": [
         "Unity.Collections",
         "Unity.Networking.Transport",
-        "Unity.Jobs",
         "Unity.Burst",
-        "Unity.Multiplayer.MLAPI.Runtime"
+        "Unity.Multiplayer.MLAPI.Runtime",
+        "Unity.Mathematics",
+        ""
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

@@ -1,400 +1,378 @@
 using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
 
 using MLAPI.Transports;
 using MLAPI.Transports.Tasks;
 
-using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
+using Unity.MLPI.UTP;
 using Unity.Networking.Transport;
 
 using UnityEngine;
 using UnityEngine.Assertions;
 
-
-[StructLayout(LayoutKind.Explicit)]
-public unsafe struct RawNetworkMessage
+public class UTPTransport : NetworkTransport
 {
-    [FieldOffset(0)] public int length;
-    [FieldOffset(4)] public uint type;
-    [FieldOffset(8)] public int id;
-    [FieldOffset(12)] public byte padding;
-    [FieldOffset(13)] public byte channelId;
-    [FieldOffset(14)] public fixed byte data[NetworkParameterConstants.MTU];
-}
+    public int MessageBufferSize = 1024 * 5;
+    public int MaxConnections = 100;
+    public int MaxSentMessageQueueSize = 128;
 
-[BurstCompile]
-struct ClientUpdateJob : IJob
-{
-    public NetworkDriver driver;
-    public NativeArray<NetworkConnection> connection;
-    public NativeQueue<RawNetworkMessage> packetData;
-
-    unsafe public void Execute()
-    {
-        if (!connection[0].IsCreated) {
-            return;
-        }
-
-        DataStreamReader streamReader;
-        NetworkEvent.Type cmd;
-
-        while ((cmd = connection[0].PopEvent(driver, out streamReader)) != NetworkEvent.Type.Empty) {
-            if (cmd == NetworkEvent.Type.Connect) {
-                var d = new RawNetworkMessage() { length = 0, type = (uint)NetEventType.Connect, id = connection[0].InternalId };
-                packetData.Enqueue(d);
-            }
-            else if (cmd == NetworkEvent.Type.Data) {
-                byte channelId = streamReader.ReadByte();
-                int messageSize = streamReader.ReadInt();
-
-                var temp = new NativeArray<byte>(messageSize, Allocator.Temp);
-                streamReader.ReadBytes(temp);
-
-                var d = new RawNetworkMessage()
-                {
-                        length = messageSize,
-                        type = (uint)NetEventType.Data,
-                        id = connection[0].InternalId,
-                        channelId = channelId
-                };
-
-                UnsafeUtility.MemCpy(d.data, temp.GetUnsafePtr(), d.length);
-
-                packetData.Enqueue(d);
-            }
-            else if (cmd == NetworkEvent.Type.Disconnect) {
-                connection[0] = default;
-            }
-        }
-    }
-}
-
-[BurstCompile]
-struct ServerUpdateJob : IJobParallelForDefer
-{
-    public NetworkDriver.Concurrent driver;
-    public NativeArray<NetworkConnection> connections;
-    public NativeQueue<RawNetworkMessage>.ParallelWriter packetData;
-
-    private unsafe void QueueMessage(ref DataStreamReader streamReader, int index)
-    {
-        byte channelId = streamReader.ReadByte();
-        int messageSize = streamReader.ReadInt();
-
-        var temp = new NativeArray<byte>(messageSize, Allocator.Temp);
-        streamReader.ReadBytes(temp);
-
-      //  Debug.Log($"Server: Got a message {channelId} {messageSize} ");
-
-        var d = new RawNetworkMessage() {
-            length = messageSize,
-            type = (uint)NetEventType.Data,
-            id = index,
-            channelId = channelId
-        };
-
-        UnsafeUtility.MemCpy(d.data, temp.GetUnsafePtr(), d.length);
-        packetData.Enqueue(d);
-    }
-
-    public unsafe void Execute(int index)
-    {
-        DataStreamReader streamReader;
-        Assert.IsTrue(connections[index].IsCreated);
-
-        NetworkEvent.Type command;
-        while ((command = driver.PopEventForConnection(connections[index], out streamReader)) != NetworkEvent.Type.Empty) {
-            if (command == NetworkEvent.Type.Data) {
-                QueueMessage(ref streamReader, index);
-            }
-            else if (command == NetworkEvent.Type.Connect) {
-                var d = new RawNetworkMessage() { length = 0, type = (uint)NetEventType.Connect, id = index };
-                packetData.Enqueue(d);
-            }
-            else if (command == NetworkEvent.Type.Disconnect) {
-                var d = new RawNetworkMessage() { length = 0, type = (uint)NetEventType.Disconnect, id = index };
-                packetData.Enqueue(d);
-                connections[index] = default;
-            }
-        }
-    }
-}
-
-[BurstCompile]
-struct ServerUpdateConnectionsJob : IJob
-{
-    public NetworkDriver driver;
-    public NativeList<NetworkConnection> connections;
-    public NativeQueue<RawNetworkMessage>.ParallelWriter packetData;
-
-    public void Execute()
-    {
-        // Clean up connections
-        for (int i = 0; i < connections.Length; i++) {
-            if (!connections[i].IsCreated) {
-                connections.RemoveAtSwapBack(i);
-                --i;
-            }
-        }
-        // Accept new connections
-        NetworkConnection c;
-        while ((c = driver.Accept()) != default(NetworkConnection)) {
-            connections.Add(c);
-            var d = new RawNetworkMessage() { length = 0, type = (uint)NetEventType.Connect, id = c.InternalId };
-            packetData.Enqueue(d);
-            Debug.Log("Accepted a connection");
-        }
-    }
-}
-
-public class UTPTransport : Transport
-{
     public ushort Port = 7777;
     public string Address = "127.0.0.1";
-
-
-    [Serializable]
-    public struct UTPChannel
-    {
-        [UnityEngine.HideInInspector]
-        public byte Id;
-        public string Name;
-        public UTPDelivery Flags;
-    }
-
-    public enum UTPDelivery
-    {
-        UnreliableSequenced,
-        ReliableSequenced,
-        Unreliable
-    }
-
-    public NetworkDriver m_Driver;
-    public NativeList<NetworkConnection> m_Connections;
-    public NativeQueue<RawNetworkMessage> m_packetData;
-    private NativeArray<byte> m_packetProcessBuffer;
-
-    private JobHandle m_jobHandle;
 
     private bool isClient = false;
     private bool isServer = false;
 
-
     public override ulong ServerClientId => 0;
 
-    public override void DisconnectLocalClient() { m_Driver.Disconnect(m_Connections[0]); }
+    public NetworkDriver m_Driver;
+    private NetworkDriver.Concurrent m_ConcurrentDriver;
+
+    public NativeList<NetworkConnection> m_Connections;
+
+    private NativeQueue<NetworkConnection> m_newConnections;
+    private NativeQueue<int> m_pendingHandlesToProcess;
+
+    [NativeDisableContainerSafetyRestriction]
+    private UnsafePayloadBuffer m_payloadsRx;
+
+    [NativeDisableContainerSafetyRestriction]
+    private UnsafePayloadBuffer m_payloadsTx;
+
+    private JobHandle m_jobHandle;
+
+    private UnsafeAtomicFreeList m_connectionIdPool;
+    private Dictionary<int, int> m_internalIdToClientID = new Dictionary<int, int>();
+
+    [NativeDisableContainerSafetyRestriction]
+    private NativeQueue<SendDataMessage> m_pendingSendMessages;
+
+
+   // [BurstCompile]
+   // [BurstCompatible]
+    internal unsafe struct ReceiveJob : IJob
+    {
+        public NetworkDriver.Concurrent driver;
+
+        [NativeDisableUnsafePtrRestriction]
+        public UnsafePayloadBuffer Rx;
+
+        [NativeDisableContainerSafetyRestriction]
+        public NativeArray<NetworkConnection> connections;
+
+        [NativeDisableContainerSafetyRestriction]
+        public NativeQueue<NetworkConnection> newConnections;
+
+        [NativeDisableContainerSafetyRestriction]
+        public NativeQueue<int>.ParallelWriter handles;
+
+        public unsafe void Execute()
+        {
+            for (int index = 0; index < connections.Length; index++)
+            {
+                Assert.IsTrue(connections[index].IsCreated);
+                Unity.Networking.Transport.NetworkEvent.Type evt;
+                while ((evt = driver.PopEventForConnection(connections[index], out var reader)) !=
+                       Unity.Networking.Transport.NetworkEvent.Type.Empty)
+                {
+                    switch (evt)
+                    {
+                        case Unity.Networking.Transport.NetworkEvent.Type.Connect:
+                            newConnections.Enqueue(connections[index]);
+                        break;
+                        case Unity.Networking.Transport.NetworkEvent.Type.Data:
+                        {
+                                // we need to get a handle of some data?
+                                var handle = Rx.Allocate();
+                                if (handle != -1)
+                                {
+                                    // We don't actually process the data here that needs
+                                    // to happen on the main thread
+                                    var rawData = Rx[handle];
+
+                                    reader.ReadBytes((byte*)rawData, reader.Length);
+                                    handles.Enqueue(handle);
+                                }
+                                else
+                                {
+                                    // Log some error here ? 
+                                }
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+  //  [BurstCompatible]
+    public struct SendDataMessage
+    {
+        public byte channelIndex;
+        public int clientId;
+        public int length;
+        public NetworkConnection connection;
+        public NetworkPipeline pipeline;
+        public int handle;
+    }
+
+  //  [BurstCompile]
+  //  [BurstCompatible]
+    struct FlushSendJob : IJob
+    {
+        public NetworkDriver.Concurrent driver;
+
+        [NativeDisableUnsafePtrRestriction]
+        public UnsafePayloadBuffer Tx;
+
+        [NativeDisableContainerSafetyRestriction]
+        public NativeQueue<SendDataMessage> messages;
+
+        public void Execute()
+        {
+            SendDataMessage message;
+            while (messages.TryDequeue(out message))
+            {
+                driver.BeginSend(message.pipeline, message.connection, out var writer);
+
+                if (!writer.IsCreated)
+                {
+                    Tx.Free(message.handle);
+                    return;
+                }
+
+                unsafe
+                {
+                    writer.WriteInt(message.clientId);
+                    writer.WriteByte(message.channelIndex);
+                    writer.WriteInt(message.length);
+                    writer.WriteBytes((byte*)Tx[message.handle], message.length);
+                }
+               
+                driver.EndSend(writer);
+
+                // We free up the handle
+                Tx.Free(message.handle);
+            }
+        }
+    }
+
+  //  [BurstCompile]
+  //  [BurstCompatible]
+    struct ConnectionsAcceptJob : IJob
+    {
+        public NetworkDriver driver;
+
+        [NativeDisableContainerSafetyRestriction]
+        public NativeQueue<NetworkConnection> newConnections;
+
+        public void Execute()
+        {
+            // Accept new connections
+            NetworkConnection con;
+            while ((con = driver.Accept()) != default(NetworkConnection))
+            {
+                DataStreamReader reader;
+                if (con.PopEvent(driver, out reader) != Unity.Networking.Transport.NetworkEvent.Type.Empty)
+                {
+                    con.Disconnect(driver);
+                    continue;
+                }
+
+                newConnections.Enqueue(con);
+            }
+        }
+    }
+
+    public override void DisconnectLocalClient()
+    {
+        throw new NotImplementedException();
+    }
+
     public override void DisconnectRemoteClient(ulong clientId)
     {
-        GetUTPConnectionDetails(clientId, out uint peerId);
-        var con = GetConnection(peerId);
-        if (con != default)
-            m_Driver.Disconnect(con);
+        // We don't need to tell the driver it gets cleaned up in the connection
+        // job
+        ReleaseClientID((int)clientId);
     }
 
-    private NetworkConnection GetConnection(uint id)
+    public override ulong GetCurrentRtt(ulong clientId)
     {
-        foreach (var item in m_Connections) {
-            if (item.InternalId == id)
-                return item;
-        }
-
-        return default;
+        throw new NotImplementedException();
     }
-
-    public override ulong GetCurrentRtt(ulong clientId) => 0;
-
-    private NetworkPipeline[] networkPipelines = new NetworkPipeline[3];
-    private readonly Dictionary<string, byte> channelNameToId = new Dictionary<string, byte>();
-    private readonly Dictionary<byte, string> channelIdToName = new Dictionary<byte, string>();
-    private readonly Dictionary<byte, UTPChannel> internalChannels = new Dictionary<byte, UTPChannel>();
 
     public override void Init()
     {
+        m_jobHandle.Complete();
+
         m_Driver = NetworkDriver.Create();
 
-        // So we have a bunch of different pipelines we can send :D
-        networkPipelines[0] = m_Driver.CreatePipeline(typeof(NullPipelineStage));
-        networkPipelines[1] = m_Driver.CreatePipeline(typeof(ReliableSequencedPipelineStage));
-        networkPipelines[2] = m_Driver.CreatePipeline(typeof(UnreliableSequencedPipelineStage));
+        //// So we have a bunch of different pipelines we can send :D
+        //networkPipelines[0] = m_Driver.CreatePipeline(typeof(NullPipelineStage));
+        //networkPipelines[1] = m_Driver.CreatePipeline(typeof(ReliableSequencedPipelineStage));
+        //networkPipelines[2] = m_Driver.CreatePipeline(typeof(UnreliableSequencedPipelineStage));
 
-        internalChannels.Clear();
-        channelIdToName.Clear();
-        channelNameToId.Clear();
+        m_ConcurrentDriver = m_Driver.ToConcurrent();
+        m_newConnections = new NativeQueue<NetworkConnection>(Allocator.Persistent);
+        m_pendingHandlesToProcess = new NativeQueue<int>(Allocator.Persistent);
+        m_connectionIdPool = new UnsafeAtomicFreeList(MaxConnections, Allocator.Persistent);
+        m_pendingSendMessages = new NativeQueue<SendDataMessage>(Allocator.Persistent);
 
-        // MLAPI Channels
-        for (byte i = 0; i < MLAPI_CHANNELS.Length; i++) {
-            channelIdToName.Add(i, MLAPI_CHANNELS[i].Name);
-            channelNameToId.Add(MLAPI_CHANNELS[i].Name, i);
-            internalChannels.Add(i, new UTPChannel() {
-                Id = i,
-                Name = MLAPI_CHANNELS[i].Name,
-                Flags = MLAPIChannelTypeToPacketFlag(MLAPI_CHANNELS[i].Type)
-            });
-        }
-
-        m_packetData = new NativeQueue<RawNetworkMessage>(Allocator.Persistent);
-        m_packetProcessBuffer = new NativeArray<byte>(1000, Allocator.Persistent);
+        m_payloadsTx = new UnsafePayloadBuffer(MaxSentMessageQueueSize * MessageBufferSize, MessageBufferSize);
+        m_payloadsRx = new UnsafePayloadBuffer(MaxSentMessageQueueSize * MessageBufferSize, MessageBufferSize);
     }
 
-    public UTPDelivery MLAPIChannelTypeToPacketFlag(ChannelType type)
-    {
-        switch (type) {
-            case ChannelType.Unreliable: {
-                return UTPDelivery.Unreliable;
-            }
-            case ChannelType.Reliable: {
-
-                return UTPDelivery.ReliableSequenced;
-            }
-            case ChannelType.ReliableSequenced: {
-                return UTPDelivery.ReliableSequenced;
-            }
-            case ChannelType.ReliableFragmentedSequenced: {
-                return UTPDelivery.ReliableSequenced;
-            }
-            case ChannelType.UnreliableSequenced: {
-                return UTPDelivery.UnreliableSequenced;
-            }
-            default: {
-                throw new ArgumentOutOfRangeException(nameof(type), type, null);
-            }
-        }
-    }
-
-    public override NetEventType PollEvent(out ulong clientId, out string channelName, out ArraySegment<byte> payload, out float receiveTime)
+    public override MLAPI.Transports.NetworkEvent PollEvent(out ulong clientId, out NetworkChannel networkChannel, out ArraySegment<byte> payload, out float receiveTime)
     {
         clientId = 0;
-        channelName = "";
+        networkChannel = 0;
         payload = new ArraySegment<byte>(Array.Empty<byte>());
         receiveTime = 0;
 
-        return NetEventType.Nothing;
+        return MLAPI.Transports.NetworkEvent.Nothing;
     }
 
-    void Update()
+    public void Update()
     {
-        if (isServer || isClient) {
-            RawNetworkMessage message;
-            while (m_packetData.TryDequeue(out message)) {
-                var data = m_packetProcessBuffer.Slice(0, message.length);
-                unsafe {
-                    UnsafeUtility.MemClear(data.GetUnsafePtr(), message.length);
-                    UnsafeUtility.MemCpy(data.GetUnsafePtr(), message.data, message.length);
-                }
-                var clientId = GetMLAPIClientId((uint)message.id, false);
+        if (!isServer && !isClient)
+            return;
 
-                switch ((NetEventType)message.type) {
-                    case NetEventType.Data:
-                        int size = message.length;
-                        byte[] arr = new byte[size];
-                        unsafe {
-                            Marshal.Copy((IntPtr)message.data, arr, 0, size);
-                            var payload = new ArraySegment<byte>(arr);
-                            InvokeOnTransportEvent((NetEventType)message.type, clientId, channelIdToName[message.channelId], payload, Time.realtimeSinceStartup);
-                        }
 
-                    break;
-                    case NetEventType.Connect: {
-                        InvokeOnTransportEvent((NetEventType)message.type, clientId, null, new ArraySegment<byte>(), Time.realtimeSinceStartup);
-                    }
-                    break;
-                    case NetEventType.Disconnect:
-                        InvokeOnTransportEvent((NetEventType)message.type, clientId, null, new ArraySegment<byte>(), Time.realtimeSinceStartup);
-                    break;
-                    case NetEventType.Nothing:
-                        InvokeOnTransportEvent((NetEventType)message.type, clientId, null, new ArraySegment<byte>(), Time.realtimeSinceStartup);
-                    break;
+        m_jobHandle.Complete();
+
+        // we should process new connections here!
+        while (!m_newConnections.IsEmpty())
+        {
+            var con = m_newConnections.Dequeue();
+            m_Connections.Add(con);
+
+            InvokeOnTransportEvent(MLAPI.Transports.NetworkEvent.Connect, (ulong)AllocateClientID(m_Connections.Length - 1), NetworkChannel.ChannelUnused, new ArraySegment<byte>(), Time.realtimeSinceStartup);
+        }
+
+        m_jobHandle = m_Driver.ScheduleUpdate(m_jobHandle);
+
+        if (isServer)
+        {
+            var connectionJob = new ConnectionsAcceptJob
+            {
+                driver = m_Driver,
+                newConnections = m_newConnections
+            };
+
+            m_jobHandle = connectionJob.Schedule(m_jobHandle);
+        }
+
+        var updateJob = new ReceiveJob
+        {
+            driver = m_ConcurrentDriver,
+            connections = m_Connections,
+            newConnections = m_newConnections,
+            handles = m_pendingHandlesToProcess.AsParallelWriter(),
+            Rx = m_payloadsRx
+        };
+
+        m_jobHandle = updateJob.Schedule(m_jobHandle);
+
+        var sendJob = new FlushSendJob
+        {
+            driver = m_ConcurrentDriver,
+            messages = m_pendingSendMessages,
+            Tx = m_payloadsTx
+        };
+        m_jobHandle = sendJob.Schedule(m_jobHandle);
+        m_jobHandle = m_Driver.ScheduleFlushSend(m_jobHandle);
+
+        int handle = 1;
+        while(m_pendingHandlesToProcess.TryDequeue(out handle))
+        {
+            unsafe
+            {
+                var data = m_payloadsRx[handle];
+
+                var array = new NativeArray<byte>(MessageBufferSize, Allocator.None);
+                var ptr = array.GetUnsafePtr();
+                ptr = data;
+
+                DataStreamReader reader = new DataStreamReader(array);
+                var clientId = reader.ReadInt();
+                var channelByte = reader.ReadByte();
+                var dataLength = reader.ReadInt();
+
+                var dataArray = new byte[dataLength];
+                fixed (byte* pDest = dataArray)
+                {
+                    reader.ReadBytes(pDest, dataLength);
                 }
+
+                var payload = new ArraySegment<byte>(dataArray);
+                InvokeOnTransportEvent(MLAPI.Transports.NetworkEvent.Data, (ulong)clientId, (NetworkChannel)channelByte, payload, Time.realtimeSinceStartup);
+
+                m_payloadsRx.Free(handle);
             }
+        }
+    }
 
 
-            if (m_jobHandle.IsCompleted) {
+    public override void Send(ulong clientId, ArraySegment<byte> data, NetworkChannel networkChannel)
+    {
+        int connectionIndex = -1;
+        if (m_internalIdToClientID.TryGetValue((int)clientId, out connectionIndex)) {
+            var handle = m_payloadsTx.Allocate();
+            unsafe
+            {
+                var allocator = new UnsafeScratchAllocator((void*)m_payloadsTx[handle], MessageBufferSize);
+                var dataBytes = (byte*)allocator.Allocate<byte>(data.Count);
+                fixed (byte* pDest = data.Array)
+                    UnsafeUtility.MemCpy(dataBytes, pDest, data.Count);
 
-                if (isServer) {
-                    var connectionJob = new ServerUpdateConnectionsJob {
-                        driver = m_Driver,
-                        connections = m_Connections,
-                        packetData = m_packetData.AsParallelWriter()
+                var queuedMessage = new SendDataMessage()
+                {
+                    channelIndex = (byte)networkChannel,
+                    pipeline = NetworkPipeline.Null,
+                    connection = m_Connections[connectionIndex],
+                    length = data.Count,
+                    handle = handle,
+                    clientId = (int)clientId
+                };
 
-                    };
-
-                    var serverUpdateJob = new ServerUpdateJob {
-                        driver = m_Driver.ToConcurrent(),
-                        connections = m_Connections.AsDeferredJobArray(),
-                        packetData = m_packetData.AsParallelWriter()
-                    };
-
-                    m_jobHandle = m_Driver.ScheduleUpdate();
-                    m_jobHandle = connectionJob.Schedule(m_jobHandle);
-                    m_jobHandle = serverUpdateJob.Schedule(m_Connections, 1, m_jobHandle);
-                }
-
-                if (isClient) {
-                    var job = new ClientUpdateJob {
-                        driver = m_Driver,
-                        connection = m_Connections,
-                        packetData = m_packetData
-                    };
-                    m_jobHandle = m_Driver.ScheduleUpdate();
-                    m_jobHandle = job.Schedule(m_jobHandle);
-                }
+                m_pendingSendMessages.Enqueue(queuedMessage);
             }
-
-            m_jobHandle.Complete();
-        }
-    }
-
-    [BurstCompile]
-    public void SendToClient(NativeArray<byte> packet, ulong clientId, int index)
-    {
-        for (int i = 0; i < m_Connections.Length; i++) {
-            if (m_Connections[i].InternalId != (int)clientId)
-                continue;
-
-            var writer = m_Driver.BeginSend(networkPipelines[index], m_Connections[i]);
-
-            if (!writer.IsCreated)
-                continue;
-
-            writer.WriteBytes(packet);
-
-            m_Driver.EndSend(writer);
-        }
-    }
-
-    public unsafe override void Send(ulong clientId, ArraySegment<byte> data, string channelName)
-    {
-        var pipelineIndex = MLAPIChannelToPipeline(internalChannels[channelNameToId[channelName]].Flags);
-
-        GetUTPConnectionDetails(clientId, out uint peerId);
-
-        DataStreamWriter writer = new DataStreamWriter(data.Count + 1 + 4, Allocator.Temp);
-        writer.WriteByte(channelNameToId[channelName]);
-        writer.WriteInt(data.Count);
-
-        fixed (byte* dataArrayPtr = data.Array) {
-            writer.WriteBytes(dataArrayPtr, data.Count);
         }
 
-        SendToClient(writer.AsNativeArray(), peerId, pipelineIndex);
+
+        //throw new NotImplementedException();
     }
 
     public override void Shutdown()
     {
         m_jobHandle.Complete();
-        m_packetData.Dispose();
-        m_Connections.Dispose();
-        m_Driver.Dispose();
-        m_packetProcessBuffer.Dispose();
+
+        if (m_Connections.IsCreated)
+            m_Connections.Dispose();
+
+        if (m_Driver.IsCreated)
+            m_Driver.Dispose();
+
+        if (m_pendingSendMessages.IsCreated)
+            m_pendingSendMessages.Dispose();
+
+        if (m_pendingHandlesToProcess.IsCreated)
+            m_pendingHandlesToProcess.Dispose();
+
+        if (m_newConnections.IsCreated)
+            m_newConnections.Dispose();
+
+        m_payloadsRx.Dispose();
+        m_payloadsTx.Dispose();
+
     }
 
-    // This is kind of a mess!
     public override SocketTasks StartClient()
     {
+        m_jobHandle.Complete();
+
         m_Connections = new NativeList<NetworkConnection>(1, Allocator.Persistent);
         var endpoint = NetworkEndPoint.Parse(Address, Port);
         m_Connections.Add(m_Driver.Connect(endpoint));
@@ -402,59 +380,42 @@ public class UTPTransport : Transport
 
         Debug.Log("StartClient");
         return SocketTask.Working.AsTasks();
-
-    }
-
-    public int MLAPIChannelToPipeline(UTPDelivery type)
-    {
-        switch (type) {
-            case UTPDelivery.UnreliableSequenced:
-            return 2;
-            case UTPDelivery.ReliableSequenced:
-            return 1;
-            case UTPDelivery.Unreliable:
-            return 0;
-        }
-
-        return 0;
-    }
-
-    public ulong GetMLAPIClientId(uint peerId, bool isServer)
-    {
-        if (isServer) {
-            return 0;
-        }
-        else {
-            return peerId + 1;
-        }
-    }
-
-    public void GetUTPConnectionDetails(ulong clientId, out uint peerId)
-    {
-        if (clientId == 0) {
-            peerId = (uint)ServerClientId;
-        }
-        else {
-            peerId = (uint)clientId - 1;
-        }
     }
 
     public override SocketTasks StartServer()
     {
-        m_Connections = new NativeList<NetworkConnection>(300, Allocator.Persistent);
+        m_jobHandle.Complete();
+
+        m_Connections = new NativeList<NetworkConnection>(MaxConnections, Allocator.Persistent);
         var endpoint = NetworkEndPoint.Parse(Address, Port);
         isServer = true;
 
         Debug.Log("StartServer");
 
-        if (m_Driver.Bind(endpoint) != 0) {
+        if (m_Driver.Bind(endpoint) != 0)
+        {
             Debug.LogError("Failed to bind to port " + Port);
         }
-        else {
+        else
+        {
             m_Driver.Listen();
         }
 
         return SocketTask.Working.AsTasks();
+    }
+
+    private int AllocateClientID(int connectionIndex)
+    {
+        var clientID = m_connectionIdPool.Pop();
+        m_internalIdToClientID[clientID] = connectionIndex;
+
+        return clientID;
+    }
+
+    private void ReleaseClientID(int clientID)
+    {
+        m_connectionIdPool.Push(clientID);
+        m_internalIdToClientID.Remove(clientID);
     }
 }
 

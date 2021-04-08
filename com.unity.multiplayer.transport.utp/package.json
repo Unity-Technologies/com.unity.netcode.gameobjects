@@ -1,5 +1,5 @@
 {
-  "name": "com.unity.multiplayer.transport.utp",
+  "name": "com.unity.malpi.unity.transport",
   "displayName": "Unity Transport for MLAPI",
   "version": "0.0.1-preview.1",
   "unity": "2019.4",
@@ -10,9 +10,8 @@
   ],
   "dependencies": {
     "com.unity.multiplayer.mlapi": "0.0.1-preview.1",
-    "com.unity.transport": "0.4.1-preview.1",
-    "com.unity.jobs":"0.2.10-preview.13"
+    "com.unity.transport": "0.6.0-preview.7"
   },
-  "type": "library",
+  "registry": "https://artifactory.prd.it.unity3d.com/artifactory/api/npm/upm-candidates",
   "hideInEditor": false
 }
