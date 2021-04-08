@@ -63,15 +63,15 @@ namespace MLAPI.Spawning
         /// </summary>
         /// <param name="prefabHash">The prefab hash to spawn</param>
         /// <param name="handler">The delegate handler</param>
-        public void RegisterSpawnHandler(NetworkObject networkObject, SpawnHandlerDelegate handler)
+        public void RegisterSpawnHandler(ulong prefabHash, SpawnHandlerDelegate handler)
         {
-            if (CustomSpawnHandlers.ContainsKey(networkObject.GlobalObjectIdHash))
+            if (CustomSpawnHandlers.ContainsKey(prefabHash))
             {
-                CustomSpawnHandlers[networkObject.GlobalObjectIdHash] = handler;
+                CustomSpawnHandlers[prefabHash] = handler;
             }
             else
             {
-                CustomSpawnHandlers.Add(networkObject.GlobalObjectIdHash, handler);
+                CustomSpawnHandlers.Add(prefabHash, handler);
             }
         }
 
@@ -80,15 +80,15 @@ namespace MLAPI.Spawning
         /// </summary>
         /// <param name="prefabHash">The prefab hash to destroy</param>
         /// <param name="handler">The delegate handler</param>
-        public void RegisterDestroyHandler(NetworkObject networkObject, DestroyHandlerDelegate handler)
+        public void RegisterDestroyHandler(ulong prefabHash, DestroyHandlerDelegate handler)
         {
-            if (CustomDestroyHandlers.ContainsKey(networkObject.GlobalObjectIdHash))
+            if (CustomDestroyHandlers.ContainsKey(prefabHash))
             {
-                CustomDestroyHandlers[networkObject.GlobalObjectIdHash] = handler;
+                CustomDestroyHandlers[prefabHash] = handler;
             }
             else
             {
-                CustomDestroyHandlers.Add(networkObject.GlobalObjectIdHash, handler);
+                CustomDestroyHandlers.Add(prefabHash, handler);
             }
         }
 
