@@ -1119,7 +1119,7 @@ namespace MLAPI
                         }
                         else if (!NetworkConfig.EnableSceneManagement)
                         {
-                            NetworkLog.LogWarning($"Server received CLIENT_SWITCH_SCENE_COMPLETED from client id {clientId}");
+                            NetworkLog.LogWarning($"Server received {nameof(NetworkConstants.CLIENT_SWITCH_SCENE_COMPLETED)} from client id {clientId}");
                         }
 
                         break;
