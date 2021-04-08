@@ -137,7 +137,7 @@ namespace MLAPI.Messaging
                             ulong prefabHash;
                             ulong instanceId;
                             bool softSync;
-
+#if PREFABSYNC
                             if (!NetworkManager.Singleton.NetworkConfig.EnableSceneManagement || NetworkManager.Singleton.NetworkConfig.UsePrefabSync)
                             {
                                 softSync = false;
@@ -159,7 +159,20 @@ namespace MLAPI.Messaging
                                     instanceId = 0;
                                 }
                             }
+#else
+                            softSync = continuationReader.ReadBool();
 
+                            if (softSync)
+                            {
+                                instanceId = continuationReader.ReadUInt64Packed();
+                                prefabHash = 0;
+                            }
+                            else
+                            {
+                                prefabHash = continuationReader.ReadUInt64Packed();
+                                instanceId = 0;
+                            }
+#endif
                             Vector3? pos = null;
                             Quaternion? rot = null;
                             if (continuationReader.ReadBool())
@@ -241,7 +254,7 @@ namespace MLAPI.Messaging
                 ulong prefabHash;
                 ulong instanceId;
                 bool softSync;
-
+#if PREFABSYNC
                 if (!NetworkManager.Singleton.NetworkConfig.EnableSceneManagement || NetworkManager.Singleton.NetworkConfig.UsePrefabSync)
                 {
                     softSync = false;
@@ -263,6 +276,21 @@ namespace MLAPI.Messaging
                         instanceId = 0;
                     }
                 }
+#else
+                softSync = reader.ReadBool();
+
+                if (softSync)
+                {
+                    instanceId = reader.ReadUInt64Packed();
+                    prefabHash = 0;
+                }
+                else
+                {
+                    prefabHash = reader.ReadUInt64Packed();
+                    instanceId = 0;
+                }
+#endif
+
 
                 Vector3? pos = null;
                 Quaternion? rot = null;

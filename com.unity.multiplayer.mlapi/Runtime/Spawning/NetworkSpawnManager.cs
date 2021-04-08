@@ -63,15 +63,15 @@ namespace MLAPI.Spawning
         /// </summary>
         /// <param name="prefabHash">The prefab hash to spawn</param>
         /// <param name="handler">The delegate handler</param>
-        public void RegisterSpawnHandler(ulong prefabHash, SpawnHandlerDelegate handler)
+        public void RegisterSpawnHandler(NetworkObject networkObject, SpawnHandlerDelegate handler)
         {
-            if (CustomSpawnHandlers.ContainsKey(prefabHash))
+            if (CustomSpawnHandlers.ContainsKey(networkObject.GlobalObjectIdHash))
             {
-                CustomSpawnHandlers[prefabHash] = handler;
+                CustomSpawnHandlers[networkObject.GlobalObjectIdHash] = handler;
             }
             else
             {
-                CustomSpawnHandlers.Add(prefabHash, handler);
+                CustomSpawnHandlers.Add(networkObject.GlobalObjectIdHash, handler);
             }
         }
 
@@ -80,15 +80,15 @@ namespace MLAPI.Spawning
         /// </summary>
         /// <param name="prefabHash">The prefab hash to destroy</param>
         /// <param name="handler">The delegate handler</param>
-        public void RegisterDestroyHandler(ulong prefabHash, DestroyHandlerDelegate handler)
+        public void RegisterDestroyHandler(NetworkObject networkObject, DestroyHandlerDelegate handler)
         {
-            if (CustomDestroyHandlers.ContainsKey(prefabHash))
+            if (CustomDestroyHandlers.ContainsKey(networkObject.GlobalObjectIdHash))
             {
-                CustomDestroyHandlers[prefabHash] = handler;
+                CustomDestroyHandlers[networkObject.GlobalObjectIdHash] = handler;
             }
             else
             {
-                CustomDestroyHandlers.Add(prefabHash, handler);
+                CustomDestroyHandlers.Add(networkObject.GlobalObjectIdHash, handler);
             }
         }
 
@@ -476,6 +476,8 @@ namespace MLAPI.Spawning
                     writer.WriteUInt64Packed(parentNetworkObject.NetworkObjectId);
                 }
 
+
+#if PREFABSYNC
                 if (!NetworkManager.NetworkConfig.EnableSceneManagement || NetworkManager.NetworkConfig.UsePrefabSync)
                 {
                     writer.WriteUInt64Packed(networkObject.GlobalObjectIdHash);
@@ -485,7 +487,10 @@ namespace MLAPI.Spawning
                     writer.WriteBool(networkObject.IsSceneObject ?? true);
                     writer.WriteUInt64Packed(networkObject.GlobalObjectIdHash);
                 }
-
+#else
+                writer.WriteBool(networkObject.IsSceneObject ?? true);
+                writer.WriteUInt64Packed(networkObject.GlobalObjectIdHash);
+#endif
                 if (networkObject.IncludeTransformWhenSpawning == null || networkObject.IncludeTransformWhenSpawning(clientId))
                 {
                     writer.WriteBool(true);

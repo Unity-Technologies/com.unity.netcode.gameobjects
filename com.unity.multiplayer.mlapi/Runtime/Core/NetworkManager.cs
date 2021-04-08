@@ -1498,6 +1498,7 @@ namespace MLAPI
                                 writer.WriteUInt64Packed(parent.NetworkObjectId);
                             }
 
+#if PREFABSYNC
                             if (!NetworkConfig.EnableSceneManagement || NetworkConfig.UsePrefabSync)
                             {
                                 writer.WriteUInt64Packed(observedObject.GlobalObjectIdHash);
@@ -1516,7 +1517,10 @@ namespace MLAPI
                                     writer.WriteUInt64Packed(observedObject.GlobalObjectIdHash);
                                 }
                             }
-
+#else
+                            writer.WriteBool(observedObject.IsSceneObject ?? true);
+                            writer.WriteUInt64Packed(observedObject.GlobalObjectIdHash);
+#endif
                             if (observedObject.IncludeTransformWhenSpawning == null || observedObject.IncludeTransformWhenSpawning(ownerClientId))
                             {
                                 writer.WriteBool(true);
@@ -1570,6 +1574,7 @@ namespace MLAPI
                         //Does not have a parent
                         writer.WriteBool(false);
 
+#if PREFABSYNC
                         if (!NetworkConfig.EnableSceneManagement || NetworkConfig.UsePrefabSync)
                         {
                             writer.WriteUInt64Packed(playerPrefabHash ?? NetworkConfig.PlayerPrefabHash.Value);
@@ -1580,6 +1585,10 @@ namespace MLAPI
                             writer.WriteBool(false);
                             writer.WriteUInt64Packed(playerPrefabHash ?? NetworkConfig.PlayerPrefabHash.Value);
                         }
+#else
+                        writer.WriteBool(false);
+                        writer.WriteUInt64Packed(playerPrefabHash ?? NetworkConfig.PlayerPrefabHash.Value);
+#endif
 
                         if (ConnectedClients[ownerClientId].PlayerObject.IncludeTransformWhenSpawning == null || ConnectedClients[ownerClientId].PlayerObject.IncludeTransformWhenSpawning(ownerClientId))
                         {
