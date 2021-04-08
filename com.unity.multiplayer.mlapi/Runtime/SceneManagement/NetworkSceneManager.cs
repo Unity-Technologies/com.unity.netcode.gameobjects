@@ -300,7 +300,7 @@ namespace MLAPI.SceneManagement
                                     writer.WriteUInt64Packed(parentNetworkObject.NetworkObjectId);
                                 }
 
-                                writer.WriteUInt64Packed(newSceneObjects[i].GlobalObjectIdHash);
+                                writer.ReadUInt32Packed(newSceneObjects[i].GlobalObjectIdHash);
                                 if (newSceneObjects[i].IncludeTransformWhenSpawning == null || newSceneObjects[i].IncludeTransformWhenSpawning(newSceneObjects[i].OwnerClientId))
                                 {
                                     writer.WriteBool(true);
@@ -358,10 +358,10 @@ namespace MLAPI.SceneManagement
 
                     if (hasParent)
                     {
-                        parentNetworkId = reader.ReadUInt64Packed();
+                        parentNetworkId = reader.ReadUInt32Packed();
                     }
 
-                    var prefabHash = reader.ReadUInt64Packed();
+                    var prefabHash = reader.ReadUInt32Packed();
                     Vector3? position = null;
                     Quaternion? rotation = null;
 

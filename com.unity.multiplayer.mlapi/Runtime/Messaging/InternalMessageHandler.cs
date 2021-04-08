@@ -136,7 +136,7 @@ namespace MLAPI.Messaging
                             }
 
                             var softSync = continuationReader.ReadBool();
-                            var prefabHash = continuationReader.ReadUInt64Packed();
+                            var prefabHash = continuationReader.ReadUInt32Packed();
 
                             Vector3? pos = null;
                             Quaternion? rot = null;
@@ -217,7 +217,7 @@ namespace MLAPI.Messaging
                 }
 
                 var softSync = reader.ReadBool();
-                var prefabHash = reader.ReadUInt64Packed();
+                var prefabHash = reader.ReadUInt32Packed();
 
                 Vector3? pos = null;
                 Quaternion? rot = null;
