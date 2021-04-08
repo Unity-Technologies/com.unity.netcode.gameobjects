@@ -8,25 +8,16 @@ namespace MLAPI.Editor
     [CanEditMultipleObjects]
     public class NetworkObjectEditor : UnityEditor.Editor
     {
-        private bool m_Initialized;
         private NetworkObject m_NetworkObject;
         private bool m_ShowObservers;
 
-        private void Initialize()
+        private void OnEnable()
         {
-            if (m_Initialized)
-            {
-                return;
-            }
-
-            m_Initialized = true;
             m_NetworkObject = (NetworkObject)target;
         }
 
         public override void OnInspectorGUI()
         {
-            Initialize();
-
             if (!m_NetworkObject.IsSpawned && NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer)
             {
                 EditorGUILayout.BeginHorizontal();
