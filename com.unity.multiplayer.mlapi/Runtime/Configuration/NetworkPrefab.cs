@@ -20,7 +20,7 @@ namespace MLAPI.Configuration
         /// </summary>
         public bool IsPlayer;
 
-        internal ulong Hash
+        internal uint Hash
         {
             get
             {

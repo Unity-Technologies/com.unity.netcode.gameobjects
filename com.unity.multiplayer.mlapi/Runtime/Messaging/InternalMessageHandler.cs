@@ -134,7 +134,7 @@ namespace MLAPI.Messaging
                                 parentNetworkId = continuationReader.ReadUInt64Packed();
                             }
 
-                            ulong prefabHash;
+                            uint prefabHash;
                             ulong instanceId;
                             bool softSync;
 
@@ -142,7 +142,7 @@ namespace MLAPI.Messaging
                             {
                                 softSync = false;
                                 instanceId = 0;
-                                prefabHash = continuationReader.ReadUInt64Packed();
+                                prefabHash = continuationReader.ReadUInt32Packed();
                             }
                             else
                             {
@@ -155,7 +155,7 @@ namespace MLAPI.Messaging
                                 }
                                 else
                                 {
-                                    prefabHash = continuationReader.ReadUInt64Packed();
+                                    prefabHash = continuationReader.ReadUInt32Packed();
                                     instanceId = 0;
                                 }
                             }
@@ -238,7 +238,7 @@ namespace MLAPI.Messaging
                     parentNetworkId = reader.ReadUInt64Packed();
                 }
 
-                ulong prefabHash;
+                uint prefabHash;
                 ulong instanceId;
                 bool softSync;
 
@@ -246,7 +246,7 @@ namespace MLAPI.Messaging
                 {
                     softSync = false;
                     instanceId = 0;
-                    prefabHash = reader.ReadUInt64Packed();
+                    prefabHash = reader.ReadUInt32Packed();
                 }
                 else
                 {
@@ -259,7 +259,7 @@ namespace MLAPI.Messaging
                     }
                     else
                     {
-                        prefabHash = reader.ReadUInt64Packed();
+                        prefabHash = reader.ReadUInt32Packed();
                         instanceId = 0;
                     }
                 }
