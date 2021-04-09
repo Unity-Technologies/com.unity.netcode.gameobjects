@@ -56,6 +56,7 @@ namespace MLAPI
 
         internal RpcQueueContainer RpcQueueContainer { get; private set; }
         internal NetworkTickSystem NetworkTickSystem { get; private set; }
+        public NetworkPrefabHandler PrefabHandler { get; private set; }
 
         /// <summary>
         /// A synchronized time, represents the time in seconds since the server application started. Is replicated across all clients
@@ -598,6 +599,11 @@ namespace MLAPI
             Singleton = this;
 
             OnSingletonReady?.Invoke();
+        }
+
+        private void Awake()
+        {
+            PrefabHandler = new NetworkPrefabHandler();
         }
 
         private void OnEnable()
@@ -1324,9 +1330,9 @@ namespace MLAPI
                 {
                     if (ConnectedClients[clientId].PlayerObject != null)
                     {
-                        if (SpawnManager.CustomDestroyHandlers.ContainsKey(ConnectedClients[clientId].PlayerObject.GlobalObjectIdHash))
+                        if (PrefabHandler.ContainsHandler(ConnectedClients[clientId].PlayerObject.GlobalObjectIdHash))
                         {
-                            SpawnManager.CustomDestroyHandlers[ConnectedClients[clientId].PlayerObject.GlobalObjectIdHash](ConnectedClients[clientId].PlayerObject);
+                            PrefabHandler.HandleNetworkPrefabDestroy(ConnectedClients[clientId].PlayerObject);
                             SpawnManager.OnDestroyObject(ConnectedClients[clientId].PlayerObject.NetworkObjectId, false);
                         }
                         else
@@ -1341,9 +1347,10 @@ namespace MLAPI
                         {
                             if (!ConnectedClients[clientId].OwnedObjects[i].DontDestroyWithOwner)
                             {
-                                if (SpawnManager.CustomDestroyHandlers.ContainsKey(ConnectedClients[clientId].OwnedObjects[i].GlobalObjectIdHash))
+
+                                if (PrefabHandler.ContainsHandler(ConnectedClients[clientId].OwnedObjects[i].GlobalObjectIdHash))
                                 {
-                                    SpawnManager.CustomDestroyHandlers[ConnectedClients[clientId].OwnedObjects[i].GlobalObjectIdHash](ConnectedClients[clientId].OwnedObjects[i]);
+                                    PrefabHandler.HandleNetworkPrefabDestroy(ConnectedClients[clientId].OwnedObjects[i]);
                                     SpawnManager.OnDestroyObject(ConnectedClients[clientId].OwnedObjects[i].NetworkObjectId, false);
                                 }
                                 else
