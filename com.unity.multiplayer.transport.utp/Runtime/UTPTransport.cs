@@ -344,8 +344,12 @@ public class UTPTransport : NetworkTransport
     public override void Shutdown()
     {
         m_JobHandle.Complete();
-        PacketData.Dispose();
-        Connections.Dispose();
+
+        if (PacketData.IsCreated)
+            PacketData.Dispose();
+        if (Connections.IsCreated)
+            Connections.Dispose();
+
         Driver.Dispose();
         m_PacketProcessBuffer.Dispose();
     }
