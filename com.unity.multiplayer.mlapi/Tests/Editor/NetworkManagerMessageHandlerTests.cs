@@ -16,7 +16,7 @@ using Object = UnityEngine.Object;
 
 namespace MLAPI.EditorTests
 {
-    public class InternalMessageHandlerTests
+    public class NetworkManagerMessageHandlerTests
     {
         [Test]
         public void MessageHandlerReceivedMessageServerClient()
@@ -331,7 +331,7 @@ namespace MLAPI.EditorTests
 
         private void VerifyCalled(string method)
         {
-            Debug.Log(nameof(InternalMessageHandlerTests.MessageHandlerReceivedMessageServerClient) + " " + method);
+            Debug.Log(nameof(NetworkManagerMessageHandlerTests.MessageHandlerReceivedMessageServerClient) + " " + method);
         }
     }
 
