@@ -1,0 +1,11 @@
+{% metadata_file .yamato/project.metafile %}
+---
+standards_{{ projects.first.name }}:
+  name: Standards Check {{ project.name }}
+  agent:
+    type: Unity::VM
+    image: package-ci/ubuntu:stable
+    flavor: b1.small
+  commands:
+    - dotnet --version
+    - dotnet-format --version
