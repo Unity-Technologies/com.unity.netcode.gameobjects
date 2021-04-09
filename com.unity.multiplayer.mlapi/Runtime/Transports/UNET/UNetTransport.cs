@@ -79,6 +79,9 @@ namespace MLAPI.Transports.UNET
         {
             if (UnityEngine.Networking.NetworkTransport.IsStarted && MessageSendMode == SendMode.Queued)
             {
+#if UNITY_WEBGL
+                Debug.LogError("Cannot use queued sending mode for WebGL");
+#else
                 if (NetworkManager.Singleton.IsServer)
                 {
                     for (int i = 0; i < NetworkManager.Singleton.ConnectedClientsList.Count; i++)
@@ -90,6 +93,7 @@ namespace MLAPI.Transports.UNET
                 {
                     SendQueued(NetworkManager.Singleton.LocalClientId);
                 }
+#endif
             }
         }
 
@@ -146,7 +150,11 @@ namespace MLAPI.Transports.UNET
 
             if (MessageSendMode == SendMode.Queued)
             {
+#if UNITY_WEBGL
+                Debug.LogError("Cannot use queued sending mode for WebGL");
+#else
                 RelayTransport.QueueMessageForSending(hostId, connectionId, channelId, buffer, data.Count, out byte error);
+#endif
             }
             else
             {
