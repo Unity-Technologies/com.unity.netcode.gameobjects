@@ -169,14 +169,14 @@ public class NetworkManagerEditor : Editor
             for (int i = 0; i < m_NetworkManager.NetworkConfig.NetworkPrefabs.Count; i++)
             {
                 // Find the first playerPrefab
-                if (m_NetworkManager.NetworkConfig.NetworkPrefabs[i].PlayerPrefab)
+                if (m_NetworkManager.NetworkConfig.NetworkPrefabs[i].IsPlayer)
                 {
                     // Iterate over all other and set player prefab to false
                     for (int j = 0; j < m_NetworkManager.NetworkConfig.NetworkPrefabs.Count; j++)
                     {
-                        if (j != i && m_NetworkManager.NetworkConfig.NetworkPrefabs[j].PlayerPrefab)
+                        if (j != i && m_NetworkManager.NetworkConfig.NetworkPrefabs[j].IsPlayer)
                         {
-                            m_NetworkManager.NetworkConfig.NetworkPrefabs[j].PlayerPrefab = false;
+                            m_NetworkManager.NetworkConfig.NetworkPrefabs[j].IsPlayer = false;
                         }
                     }
 
@@ -200,7 +200,7 @@ public class NetworkManagerEditor : Editor
 
             for (int i = 0; i < m_NetworkManager.NetworkConfig.NetworkPrefabs.Count; i++)
             {
-                if (m_NetworkManager.NetworkConfig.NetworkPrefabs[i].PlayerPrefab)
+                if (m_NetworkManager.NetworkConfig.NetworkPrefabs[i].IsPlayer)
                 {
                     playerPrefabIndex = i;
                     break;
@@ -210,7 +210,7 @@ public class NetworkManagerEditor : Editor
             using (new EditorGUI.DisabledScope(playerPrefabIndex != -1 && playerPrefabIndex != index))
             {
                 EditorGUI.PropertyField(new Rect(rect.width - secondFieldWidth, rect.y, secondFieldWidth,
-                    EditorGUIUtility.singleLineHeight), element.FindPropertyRelative(nameof(NetworkPrefab.PlayerPrefab)), GUIContent.none);
+                    EditorGUIUtility.singleLineHeight), element.FindPropertyRelative(nameof(NetworkPrefab.IsPlayer)), GUIContent.none);
             }
         };
 

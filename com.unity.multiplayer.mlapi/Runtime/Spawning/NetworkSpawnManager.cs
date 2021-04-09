@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using MLAPI.Configuration;
 using MLAPI.Exceptions;
-using MLAPI.Hashing;
 using MLAPI.Logging;
 using MLAPI.Messaging;
 using MLAPI.Messaging.Buffering;
@@ -47,8 +46,8 @@ namespace MLAPI.Spawning
         /// <param name="networkObject">The NetworkObject to be destroy</param>
         public delegate void DestroyHandlerDelegate(NetworkObject networkObject);
 
-        internal readonly Dictionary<ulong, SpawnHandlerDelegate> CustomSpawnHandlers = new Dictionary<ulong, SpawnHandlerDelegate>();
-        internal readonly Dictionary<ulong, DestroyHandlerDelegate> CustomDestroyHandlers = new Dictionary<ulong, DestroyHandlerDelegate>();
+        internal readonly Dictionary<uint, SpawnHandlerDelegate> CustomSpawnHandlers = new Dictionary<uint, SpawnHandlerDelegate>();
+        internal readonly Dictionary<uint, DestroyHandlerDelegate> CustomDestroyHandlers = new Dictionary<uint, DestroyHandlerDelegate>();
 
         /// <summary>
         /// Gets the NetworkManager associated with this SpawnManager.
@@ -65,7 +64,7 @@ namespace MLAPI.Spawning
         /// </summary>
         /// <param name="prefabHash">The prefab hash to spawn</param>
         /// <param name="handler">The delegate handler</param>
-        public void RegisterSpawnHandler(ulong prefabHash, SpawnHandlerDelegate handler)
+        public void RegisterSpawnHandler(uint prefabHash, SpawnHandlerDelegate handler)
         {
             if (CustomSpawnHandlers.ContainsKey(prefabHash))
             {
@@ -82,7 +81,7 @@ namespace MLAPI.Spawning
         /// </summary>
         /// <param name="prefabHash">The prefab hash to destroy</param>
         /// <param name="handler">The delegate handler</param>
-        public void RegisterDestroyHandler(ulong prefabHash, DestroyHandlerDelegate handler)
+        public void RegisterDestroyHandler(uint prefabHash, DestroyHandlerDelegate handler)
         {
             if (CustomDestroyHandlers.ContainsKey(prefabHash))
             {
@@ -98,7 +97,7 @@ namespace MLAPI.Spawning
         /// Unregisters the custom spawn handler for a specific prefab hash
         /// </summary>
         /// <param name="prefabHash">The prefab hash of the prefab spawn handler that is to be removed</param>
-        public void UnregisterSpawnHandler(ulong prefabHash)
+        public void UnregisterSpawnHandler(uint prefabHash)
         {
             CustomSpawnHandlers.Remove(prefabHash);
         }
@@ -107,7 +106,7 @@ namespace MLAPI.Spawning
         /// Unregisters the custom destroy handler for a specific prefab hash
         /// </summary>
         /// <param name="prefabHash">The prefab hash of the prefab destroy handler that is to be removed</param>
-        public void UnregisterDestroyHandler(ulong prefabHash)
+        public void UnregisterDestroyHandler(uint prefabHash)
         {
             CustomDestroyHandlers.Remove(prefabHash);
         }
@@ -132,7 +131,7 @@ namespace MLAPI.Spawning
         /// </summary>
         /// <param name="hash">The hash of the prefab</param>
         /// <returns>The index of the prefab</returns>
-        public int GetNetworkPrefabIndexOfHash(ulong hash)
+        public int GetNetworkPrefabIndexOfHash(uint hash)
         {
             for (int i = 0; i < NetworkManager.NetworkConfig.NetworkPrefabs.Count; i++)
             {
@@ -150,19 +149,9 @@ namespace MLAPI.Spawning
         /// </summary>
         /// <param name="index">The NetworkPrefab index</param>
         /// <returns>The prefab hash for the given prefab index</returns>
-        public ulong GetPrefabHashFromIndex(int index)
+        public uint GetPrefabHashFromIndex(int index)
         {
             return NetworkManager.NetworkConfig.NetworkPrefabs[index].Hash;
-        }
-
-        /// <summary>
-        /// Returns the prefab hash for a given prefab hash generator
-        /// </summary>
-        /// <param name="generator">The prefab hash generator</param>
-        /// <returns>The hash for the given generator</returns>
-        public ulong GetPrefabHashFromGenerator(string generator)
-        {
-            return XXHash.Hash64(generator);
         }
 
         /// <summary>
@@ -262,7 +251,7 @@ namespace MLAPI.Spawning
         }
 
         // Only ran on Client
-        internal NetworkObject CreateLocalNetworkObject(bool softCreate, ulong instanceId, ulong prefabHash, ulong ownerClientId, ulong? parentNetworkId, Vector3? position, Quaternion? rotation)
+        internal NetworkObject CreateLocalNetworkObject(bool softCreate, ulong instanceId, uint prefabHash, ulong ownerClientId, ulong? parentNetworkId, Vector3? position, Quaternion? rotation)
         {
             NetworkObject parentNetworkObject = null;
 
@@ -490,20 +479,12 @@ namespace MLAPI.Spawning
 
                 if (!NetworkManager.NetworkConfig.EnableSceneManagement || NetworkManager.NetworkConfig.UsePrefabSync)
                 {
-                    writer.WriteUInt64Packed(networkObject.PrefabHash);
+                    writer.WriteUInt32Packed(networkObject.GlobalObjectIdHash);
                 }
                 else
                 {
                     writer.WriteBool(networkObject.IsSceneObject ?? true);
-
-                    if (networkObject.IsSceneObject == null || networkObject.IsSceneObject.Value)
-                    {
-                        writer.WriteUInt64Packed(networkObject.GlobalObjectIdHash64);
-                    }
-                    else
-                    {
-                        writer.WriteUInt64Packed(networkObject.PrefabHash);
-                    }
+                    writer.WriteUInt32Packed(networkObject.GlobalObjectIdHash);
                 }
 
                 if (networkObject.IncludeTransformWhenSpawning == null || networkObject.IncludeTransformWhenSpawning(clientId))
@@ -571,7 +552,7 @@ namespace MLAPI.Spawning
                     parentNetworkId = reader.ReadUInt64Packed();
                 }
 
-                ulong prefabHash;
+                uint prefabHash;
                 ulong instanceId;
                 bool softSync;
 
@@ -579,7 +560,7 @@ namespace MLAPI.Spawning
                 {
                     softSync = false;
                     instanceId = 0;
-                    prefabHash = reader.ReadUInt64Packed();
+                    prefabHash = reader.ReadUInt32Packed();
                 }
                 else
                 {
@@ -592,7 +573,7 @@ namespace MLAPI.Spawning
                     }
                     else
                     {
-                        prefabHash = reader.ReadUInt64Packed();
+                        prefabHash = reader.ReadUInt32Packed();
                         instanceId = 0;
                     }
                 }
@@ -668,10 +649,10 @@ namespace MLAPI.Spawning
             {
                 if ((sobj.IsSceneObject != null && sobj.IsSceneObject == true) || sobj.DestroyWithScene)
                 {
-                    if (CustomDestroyHandlers.ContainsKey(sobj.PrefabHash))
+                    if (CustomDestroyHandlers.ContainsKey(sobj.GlobalObjectIdHash))
                     {
                         SpawnedObjectsList.Remove(sobj);
-                        CustomDestroyHandlers[sobj.PrefabHash](sobj);
+                        CustomDestroyHandlers[sobj.GlobalObjectIdHash](sobj);
                         OnDestroyObject(sobj.NetworkObjectId, false);
                     }
                     else
@@ -691,9 +672,9 @@ namespace MLAPI.Spawning
             {
                 if (networkObjects[i].IsSceneObject != null && networkObjects[i].IsSceneObject.Value == false)
                 {
-                    if (CustomDestroyHandlers.ContainsKey(networkObjects[i].PrefabHash))
+                    if (CustomDestroyHandlers.ContainsKey(networkObjects[i].GlobalObjectIdHash))
                     {
-                        CustomDestroyHandlers[networkObjects[i].PrefabHash](networkObjects[i]);
+                        CustomDestroyHandlers[networkObjects[i].GlobalObjectIdHash](networkObjects[i]);
                         OnDestroyObject(networkObjects[i].NetworkObjectId, false);
                     }
                     else
@@ -712,9 +693,9 @@ namespace MLAPI.Spawning
             {
                 if (networkObjects[i].IsSceneObject == null || networkObjects[i].IsSceneObject.Value == true)
                 {
-                    if (CustomDestroyHandlers.ContainsKey(networkObjects[i].PrefabHash))
+                    if (CustomDestroyHandlers.ContainsKey(networkObjects[i].GlobalObjectIdHash))
                     {
-                        CustomDestroyHandlers[networkObjects[i].PrefabHash](networkObjects[i]);
+                        CustomDestroyHandlers[networkObjects[i].GlobalObjectIdHash](networkObjects[i]);
                         OnDestroyObject(networkObjects[i].NetworkObjectId, false);
                     }
                     else
@@ -768,7 +749,7 @@ namespace MLAPI.Spawning
             {
                 if (networkObjects[i].IsSceneObject == null)
                 {
-                    PendingSoftSyncObjects.Add(networkObjects[i].GlobalObjectIdHash64, networkObjects[i]);
+                    PendingSoftSyncObjects.Add(networkObjects[i].GlobalObjectIdHash, networkObjects[i]);
                 }
             }
         }
@@ -848,9 +829,9 @@ namespace MLAPI.Spawning
 
             if (destroyGameObject && gobj != null)
             {
-                if (CustomDestroyHandlers.ContainsKey(sobj.PrefabHash))
+                if (CustomDestroyHandlers.ContainsKey(sobj.GlobalObjectIdHash))
                 {
-                    CustomDestroyHandlers[sobj.PrefabHash](sobj);
+                    CustomDestroyHandlers[sobj.GlobalObjectIdHash](sobj);
                     OnDestroyObject(networkId, false);
                 }
                 else

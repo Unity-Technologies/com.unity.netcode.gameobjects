@@ -7,7 +7,6 @@ using UnityEngine;
 using System.Linq;
 using MLAPI.Logging;
 using UnityEngine.SceneManagement;
-using System.IO;
 using MLAPI.Configuration;
 using MLAPI.Internal;
 using MLAPI.Profiling;
@@ -179,7 +178,7 @@ namespace MLAPI
         /// <param name="approved">Whether or not the client was approved</param>
         /// <param name="position">The position to spawn the client at. If null, the prefab position is used.</param>
         /// <param name="rotation">The rotation to spawn the client with. If null, the prefab position is used.</param>
-        public delegate void ConnectionApprovedDelegate(bool createPlayerObject, ulong? playerPrefabHash, bool approved, Vector3? position, Quaternion? rotation);
+        public delegate void ConnectionApprovedDelegate(bool createPlayerObject, uint? playerPrefabHash, bool approved, Vector3? position, Quaternion? rotation);
 
         /// <summary>
         /// The callback to invoke during connection approval
@@ -246,62 +245,28 @@ namespace MLAPI
                             NetworkLog.LogWarning($"{nameof(NetworkPrefab)} [{i}] does not have a {nameof(NetworkObject)} component");
                         }
                     }
-                    else
-                    {
-                        NetworkConfig.NetworkPrefabs[i].Prefab.GetComponent<NetworkObject>().ValidateHash();
-                    }
                 }
             }
 
-            // TODO: Show which two prefab generators that collide
-            var hashes = new HashSet<ulong>();
-
-            for (int i = 0; i < NetworkConfig.NetworkPrefabs.Count; i++)
-            {
-                if (hashes.Contains(NetworkConfig.NetworkPrefabs[i].Hash))
-                {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                    {
-                        var prefabHashGenerator = NetworkConfig.NetworkPrefabs[i].Prefab.GetComponent<NetworkObject>().PrefabHashGenerator;
-                        NetworkLog.LogError($"PrefabHash collision! You have two prefabs with the same hash ({nameof(NetworkObject.PrefabHashGenerator)} = {prefabHashGenerator}). This is not supported");
-                    }
-                }
-
-                hashes.Add(NetworkConfig.NetworkPrefabs[i].Hash);
-            }
-
-            int playerPrefabCount = NetworkConfig.NetworkPrefabs.Count(x => x.PlayerPrefab);
+            int playerPrefabCount = NetworkConfig.NetworkPrefabs.Count(x => x.IsPlayer);
 
             if (playerPrefabCount == 0 && !NetworkConfig.ConnectionApproval && NetworkConfig.CreatePlayerPrefab)
             {
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                 {
-                    NetworkLog.LogWarning($"There is no {nameof(NetworkPrefab)} marked as a {nameof(NetworkPrefab.PlayerPrefab)}");
+                    NetworkLog.LogWarning($"There is no {nameof(NetworkPrefab)} marked as a {nameof(NetworkPrefab.IsPlayer)}");
                 }
             }
             else if (playerPrefabCount > 1)
             {
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                 {
-                    NetworkLog.LogWarning($"Only one {nameof(NetworkPrefab)} can be marked as a {nameof(NetworkPrefab.PlayerPrefab)}");
+                    NetworkLog.LogWarning($"Only one {nameof(NetworkPrefab)} can be marked as a {nameof(NetworkPrefab.IsPlayer)}");
                 }
             }
 
-            var networkPrefab = NetworkConfig.NetworkPrefabs.FirstOrDefault(x => x.PlayerPrefab);
-
-            if (networkPrefab == null)
-            {
-                NetworkConfig.PlayerPrefabHash = null;
-            }
-            else
-            {
-                if (NetworkConfig.PlayerPrefabHash == null)
-                {
-                    NetworkConfig.PlayerPrefabHash = new NullableBoolSerializable();
-                }
-
-                NetworkConfig.PlayerPrefabHash.Value = networkPrefab.Hash;
-            }
+            var networkPrefab = NetworkConfig.NetworkPrefabs.FirstOrDefault(x => x.IsPlayer);
+            NetworkConfig.PlayerPrefabHash = networkPrefab?.Hash ?? (uint)0;
         }
 
         private void Init(bool server)
@@ -394,10 +359,6 @@ namespace MLAPI
                     {
                         NetworkLog.LogError($"{nameof(NetworkPrefab)} (\"{NetworkConfig.NetworkPrefabs[i].Prefab.name}\") is missing a {nameof(NetworkObject)} component");
                     }
-                }
-                else
-                {
-                    NetworkConfig.NetworkPrefabs[i].Prefab.GetComponent<NetworkObject>().ValidateHash();
                 }
             }
 
@@ -1363,9 +1324,9 @@ namespace MLAPI
                 {
                     if (ConnectedClients[clientId].PlayerObject != null)
                     {
-                        if (SpawnManager.CustomDestroyHandlers.ContainsKey(ConnectedClients[clientId].PlayerObject.PrefabHash))
+                        if (SpawnManager.CustomDestroyHandlers.ContainsKey(ConnectedClients[clientId].PlayerObject.GlobalObjectIdHash))
                         {
-                            SpawnManager.CustomDestroyHandlers[ConnectedClients[clientId].PlayerObject.PrefabHash](ConnectedClients[clientId].PlayerObject);
+                            SpawnManager.CustomDestroyHandlers[ConnectedClients[clientId].PlayerObject.GlobalObjectIdHash](ConnectedClients[clientId].PlayerObject);
                             SpawnManager.OnDestroyObject(ConnectedClients[clientId].PlayerObject.NetworkObjectId, false);
                         }
                         else
@@ -1380,9 +1341,9 @@ namespace MLAPI
                         {
                             if (!ConnectedClients[clientId].OwnedObjects[i].DontDestroyWithOwner)
                             {
-                                if (SpawnManager.CustomDestroyHandlers.ContainsKey(ConnectedClients[clientId].OwnedObjects[i].PrefabHash))
+                                if (SpawnManager.CustomDestroyHandlers.ContainsKey(ConnectedClients[clientId].OwnedObjects[i].GlobalObjectIdHash))
                                 {
-                                    SpawnManager.CustomDestroyHandlers[ConnectedClients[clientId].OwnedObjects[i].PrefabHash](ConnectedClients[clientId].OwnedObjects[i]);
+                                    SpawnManager.CustomDestroyHandlers[ConnectedClients[clientId].OwnedObjects[i].GlobalObjectIdHash](ConnectedClients[clientId].OwnedObjects[i]);
                                     SpawnManager.OnDestroyObject(ConnectedClients[clientId].OwnedObjects[i].NetworkObjectId, false);
                                 }
                                 else
@@ -1443,7 +1404,7 @@ namespace MLAPI
 
         private readonly List<NetworkObject> m_ObservedObjects = new List<NetworkObject>();
 
-        internal void HandleApproval(ulong ownerClientId, bool createPlayerObject, ulong? playerPrefabHash, bool approved, Vector3? position, Quaternion? rotation)
+        internal void HandleApproval(ulong ownerClientId, bool createPlayerObject, uint? playerPrefabHash, bool approved, Vector3? position, Quaternion? rotation)
         {
             if (approved)
             {
@@ -1465,7 +1426,7 @@ namespace MLAPI
 
                 if (createPlayerObject)
                 {
-                    var networkObject = SpawnManager.CreateLocalNetworkObject(false, 0, playerPrefabHash ?? NetworkConfig.PlayerPrefabHash.Value, ownerClientId, null, position, rotation);
+                    var networkObject = SpawnManager.CreateLocalNetworkObject(false, 0, playerPrefabHash ?? NetworkConfig.PlayerPrefabHash, ownerClientId, null, position, rotation);
                     SpawnManager.SpawnNetworkObjectLocally(networkObject, SpawnManager.GetNetworkObjectId(), false, true, ownerClientId, null, false, 0, false, false);
 
                     ConnectedClients[ownerClientId].PlayerObject = networkObject;
@@ -1486,7 +1447,7 @@ namespace MLAPI
                 {
                     // Don't send any data over the wire if the host "connected"
                     using (var buffer = PooledNetworkBuffer.Get())
-                    { 
+                    {
                         using (var writer = PooledNetworkWriter.Get(buffer))
                         {
                             writer.WriteUInt64Packed(ownerClientId);
@@ -1512,7 +1473,7 @@ namespace MLAPI
 
                 OnClientConnectedCallback?.Invoke(ownerClientId);
 
-                if (!createPlayerObject || (playerPrefabHash == null && NetworkConfig.PlayerPrefabHash == null))
+                if (!createPlayerObject || (playerPrefabHash == null && NetworkConfig.PlayerPrefabHash == 0))
                 {
                     return;
                 }
@@ -1532,6 +1493,7 @@ namespace MLAPI
                         // TODO: Check and review this part because of the (old) special handling for the prefab hash (playerPrefabHash ?? NetworkConfig.PlayerPrefabHash.Value)
                         // Should be ok, since the player object contains the hash from spawning
                         SpawnManager.WriteSpawnCallForObject(buffer, clientPair.Key, ConnectedClients[ownerClientId].PlayerObject, null);
+
 
                         InternalMessageSender.Send(clientPair.Key, NetworkConstants.ADD_OBJECT, NetworkChannel.Internal, buffer);
                     }

@@ -6,17 +6,9 @@ using MLAPI.Transports;
 using MLAPI.Hashing;
 using MLAPI.Serialization;
 using MLAPI.Serialization.Pooled;
-using UnityEngine.Serialization;
 
 namespace MLAPI.Configuration
 {
-    [Serializable]
-    internal class NullableBoolSerializable
-    {
-        [SerializeField]
-        public ulong Value;
-    }
-
     /// <summary>
     /// The configuration object used to start server, client and hosts
     /// </summary>
@@ -59,7 +51,7 @@ namespace MLAPI.Configuration
         /// The default player prefab
         /// </summary>
         [SerializeReference]
-        internal NullableBoolSerializable PlayerPrefabHash;
+        internal uint PlayerPrefabHash;
 
         /// <summary>
         /// Whether or not a player object should be created by default. This value can be overriden on a case by case basis with ConnectionApproval.
@@ -321,7 +313,7 @@ namespace MLAPI.Configuration
                     var sortedPrefabList = NetworkPrefabs.OrderBy(x => x.Hash).ToList();
                     for (int i = 0; i < sortedPrefabList.Count; i++)
                     {
-                        writer.WriteUInt64Packed(sortedPrefabList[i].Hash);
+                        writer.WriteUInt32Packed(sortedPrefabList[i].Hash);
                     }
                 }
 
