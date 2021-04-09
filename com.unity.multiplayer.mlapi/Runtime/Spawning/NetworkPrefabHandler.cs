@@ -20,7 +20,7 @@ namespace MLAPI.Spawning
     public class NetworkPrefabHandler
     {
         /// <summary>
-        ///
+        /// Links a network prefab asset to a class with the INetworkPrefabInstanceHandler interface
         /// </summary>
         private readonly Dictionary<uint, INetworkPrefabInstanceHandler> m_PrefabAssetToPrefabHandler = new Dictionary<uint, INetworkPrefabInstanceHandler>();
 

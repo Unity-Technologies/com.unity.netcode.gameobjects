@@ -122,7 +122,7 @@ namespace MLAPI.RuntimeTests
             var indexOffset = 0;
             ulong senderNetworkId = 1;
 
-            //Create ficticious list of clients to send to
+            //Create fictitious list of clients to send to
             ulong[] psuedoClients = new ulong[] { 0 };
 
             var randomGeneratedDataArray = preCalculatedBufferValues.ToArray();
