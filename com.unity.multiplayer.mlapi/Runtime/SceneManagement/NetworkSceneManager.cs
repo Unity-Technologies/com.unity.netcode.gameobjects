@@ -292,28 +292,36 @@ namespace MLAPI.SceneManagement
 
                                 if (parentNetworkObject == null)
                                 {
+                                    //We don't have a parent
                                     writer.WriteBool(false);
                                 }
                                 else
                                 {
+                                    //We do have a parent
                                     writer.WriteBool(true);
+                                    //Write the parent's NetworkObjectId to be used for linking back to the child
                                     writer.WriteUInt64Packed(parentNetworkObject.NetworkObjectId);
                                 }
 
                                 writer.WriteUInt32Packed(newSceneObjects[i].GlobalObjectIdHash);
                                 if (newSceneObjects[i].IncludeTransformWhenSpawning == null || newSceneObjects[i].IncludeTransformWhenSpawning(newSceneObjects[i].OwnerClientId))
                                 {
+                                    //Set the position and rotation data marker to true (i.e. flag to know, when reading from the stream, that postion and roation data follows).
                                     writer.WriteBool(true);
+
+                                    //Write position
                                     writer.WriteSinglePacked(newSceneObjects[i].transform.position.x);
                                     writer.WriteSinglePacked(newSceneObjects[i].transform.position.y);
                                     writer.WriteSinglePacked(newSceneObjects[i].transform.position.z);
 
+                                    //Write rotation
                                     writer.WriteSinglePacked(newSceneObjects[i].transform.rotation.eulerAngles.x);
                                     writer.WriteSinglePacked(newSceneObjects[i].transform.rotation.eulerAngles.y);
                                     writer.WriteSinglePacked(newSceneObjects[i].transform.rotation.eulerAngles.z);
                                 }
                                 else
                                 {
+                                    //Set the position and rotation data marker to false (i.e. flag to know, when reading from the stream, that postion and roation data *was not included*) 
                                     writer.WriteBool(false);
                                 }
 

@@ -42,7 +42,7 @@ namespace MLAPI.Configuration
         public bool AllowRuntimeSceneChanges = false;
 
         /// <summary>
-        /// A list of spawn-able prefabs
+        /// A list of spawnable prefabs
         /// </summary>
         [Tooltip("The prefabs that can be spawned across the network")]
         public List<NetworkPrefab> NetworkPrefabs = new List<NetworkPrefab>();
