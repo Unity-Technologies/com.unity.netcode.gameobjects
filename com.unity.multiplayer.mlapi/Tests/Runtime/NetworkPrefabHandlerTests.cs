@@ -8,7 +8,7 @@ namespace MLAPI.RuntimeTests
 {
     /// <summary>
     /// The NetworkPrefabHandler unit tests validates:
-    /// Registering with GameObject, NetworkObject, or GlobalObjectHashId
+    /// Registering with GameObject, NetworkObject, or GlobalObjectIdHash
     /// Newly assigned rotation or position values for newly spawned NetworkObject instances are valid
     /// Destroying a newly spawned NetworkObject instance works
     /// Removing a INetworkPrefabInstanceHandler is removed and can be verified (very last check)
