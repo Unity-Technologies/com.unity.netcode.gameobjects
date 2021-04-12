@@ -135,7 +135,7 @@ namespace MLAPI.Spawning
         /// <summary>
         /// Check to see if a networkPrefabHash(GlobalObjectIdHash) component has an INetworkPrefabInstanceHandler derived class associated with it
         /// </summary>
-        /// <param name="networkPrefab"></param>
+        /// <param name="networkPrefabHash"></param>
         /// <returns>true or false</returns>
         internal bool ContainsHandler(uint networkPrefabHash)
         {
