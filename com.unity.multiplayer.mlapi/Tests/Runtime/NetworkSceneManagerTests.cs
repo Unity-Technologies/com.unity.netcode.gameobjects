@@ -1,5 +1,6 @@
 using System;
 using MLAPI.SceneManagement;
+using MLAPI.Configuration;
 using NUnit.Framework;
 namespace MLAPI.RuntimeTests
 {
@@ -17,7 +18,10 @@ namespace MLAPI.RuntimeTests
             }
             catch(Exception ex)
             {
-                threwException = true;
+                if(ex.Message.Contains($"{nameof(NetworkConfig.EnableSceneManagement)} flag is not enabled in the {nameof(NetworkManager)}'s {nameof(NetworkConfig)}. Please set {nameof(NetworkConfig.EnableSceneManagement)} flag to true before calling this method."))
+                {
+                    threwException = true;
+                }                
             }
 
             Assert.IsTrue(threwException);
