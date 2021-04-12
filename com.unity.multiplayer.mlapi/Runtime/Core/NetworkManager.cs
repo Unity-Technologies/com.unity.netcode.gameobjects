@@ -294,7 +294,11 @@ namespace MLAPI
 
             BufferManager = new BufferManager();
 
-            MessageHandler = new InternalMessageHandler(this);
+            if (MessageHandler == null)
+            {
+                // Only create this if it's not already set (like in test cases)
+                MessageHandler = new InternalMessageHandler(this);
+            }
 
             NetworkSceneManager.RegisteredSceneNames.Clear();
             NetworkSceneManager.SceneIndexToString.Clear();

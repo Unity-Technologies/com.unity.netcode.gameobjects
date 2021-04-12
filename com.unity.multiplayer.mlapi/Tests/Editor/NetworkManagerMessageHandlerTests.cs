@@ -161,6 +161,9 @@ namespace MLAPI.EditorTests
                 // Stop server to trigger full shutdown
                 networkManager.StopServer();
 
+                // Replace the real message handler with a dummy one that just prints a result
+                networkManager.MessageHandler = new DummyMessageHandler();
+
                 // Start client since pre-message-handler passes IsServer & IsClient checks
                 networkManager.StartClient();
 
