@@ -79,7 +79,7 @@ namespace MLAPI.RuntimeTests
             //Register via GlobalObjectIdHash
             gameObjectRegistered = networkPrefabHandler.AddHandler(baseObject.GlobalObjectIdHash, networkPrefaInstanceHandler);
 
-            //Test result of registering via GlobalObjectHashId reference
+            //Test result of registering via GlobalObjectIdHash reference
             Assert.True(gameObjectRegistered);
 
             //Change it up
