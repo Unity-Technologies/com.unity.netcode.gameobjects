@@ -89,7 +89,7 @@ namespace MLAPI.Spawning
         }
 
         /// <summary>
-        ///  Use the networkPrefabHash(GlobalObjectHashId) of the network prefab asset to remove a INetworkPrefabInstanceHandler derived class
+        ///  Use the networkPrefabHash(GlobalObjectIdHash) of the network prefab asset to remove a INetworkPrefabInstanceHandler derived class
         /// </summary>
         /// <param name="networkPrefabHash"></param>
         /// <returns>true or false</returns>
