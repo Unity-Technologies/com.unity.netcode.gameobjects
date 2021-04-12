@@ -6,6 +6,7 @@ namespace MLAPI.Messaging
 {
     internal interface IInternalMessageHandler
     {
+        NetworkManager NetworkManager { get; }
         void HandleConnectionRequest(ulong clientId, Stream stream);
         void HandleConnectionApproved(ulong clientId, Stream stream, float receiveTime);
         void HandleAddObject(ulong clientId, Stream stream);

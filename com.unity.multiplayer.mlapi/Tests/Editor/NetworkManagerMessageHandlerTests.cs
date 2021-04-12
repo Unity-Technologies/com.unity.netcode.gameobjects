@@ -297,6 +297,8 @@ namespace MLAPI.EditorTests
 
     internal class DummyMessageHandler : IInternalMessageHandler
     {
+        public NetworkManager NetworkManager { get; }
+
         public void HandleConnectionRequest(ulong clientId, Stream stream) => VerifyCalled(nameof(HandleConnectionRequest));
 
         public void HandleConnectionApproved(ulong clientId, Stream stream, float receiveTime) => VerifyCalled(nameof(HandleConnectionApproved));

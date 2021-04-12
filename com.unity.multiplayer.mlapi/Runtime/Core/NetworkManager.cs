@@ -21,6 +21,7 @@ using MLAPI.Exceptions;
 using MLAPI.Transports.Tasks;
 using MLAPI.Messaging.Buffering;
 using Unity.Profiling;
+using UnityEditor.VersionControl;
 
 namespace MLAPI
 {
@@ -96,7 +97,7 @@ namespace MLAPI
         internal BufferManager BufferManager { get; private set; }
 
         // Has to have setter for tests
-        internal IInternalMessageHandler MessageHandler { get; set; } = new InternalMessageHandler();
+        internal IInternalMessageHandler MessageHandler { get; set; }
 
         /// <summary>
         /// Gets the networkId of the server
@@ -292,6 +293,8 @@ namespace MLAPI
             SpawnManager = new NetworkSpawnManager(this);
 
             BufferManager = new BufferManager();
+
+            MessageHandler = new InternalMessageHandler(this);
 
             NetworkSceneManager.RegisteredSceneNames.Clear();
             NetworkSceneManager.SceneIndexToString.Clear();
@@ -675,6 +678,11 @@ namespace MLAPI
                 SpawnManager.ServerResetShudownStateForSceneObjects();
 
                 SpawnManager = null;
+            }
+
+            if (MessageHandler != null)
+            {
+                MessageHandler = null;
             }
 
             //The Transport is set during Init time, thus it is possible for the Transport to be null
