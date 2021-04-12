@@ -76,7 +76,7 @@ namespace MLAPI.RuntimeTests
             networkPrefabHandler.HandleNetworkPrefabDestroy(spawnedObject);     //Destroy our prefab instance
             networkPrefabHandler.RemoveHandler(baseObject);                     //Remove our handler
 
-            //Register via GlobalObjectHashId
+            //Register via GlobalObjectIdHash
             gameObjectRegistered = networkPrefabHandler.AddHandler(baseObject.GlobalObjectIdHash, networkPrefaInstanceHandler);
 
             //Test result of registering via GlobalObjectHashId reference
