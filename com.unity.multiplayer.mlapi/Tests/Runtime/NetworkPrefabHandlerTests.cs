@@ -1,19 +1,21 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using NUnit.Framework;
 using MLAPI.Spawning;
+using NUnit.Framework;
+
+
 
 namespace MLAPI.RuntimeTests
 {
     /// <summary>
     /// The NetworkPrefabHandler unit tests validates:
-    /// Registering with GameObject, NetworkObject, or GlobalObjectHashId
+    /// Registering with GameObject, NetworkObject, or GlobalObjectIdHash
     /// Newly assigned rotation or position values for newly spawned NetworkObject instances are valid
     /// Destroying a newly spawned NetworkObject instance works
     /// Removing a INetworkPrefabInstanceHandler is removed and can be verified (very last check)
     /// </summary>
-    public class NetworkPrefabHandlerTests:IDisposable
+    public class NetworkPrefabHandlerTests
     {
         [Test]
         public void NetworkPrefabHandlerClass()
@@ -79,7 +81,7 @@ namespace MLAPI.RuntimeTests
             //Register via GlobalObjectIdHash
             gameObjectRegistered = networkPrefabHandler.AddHandler(baseObject.GlobalObjectIdHash, networkPrefaInstanceHandler);
 
-            //Test result of registering via GlobalObjectHashId reference
+            //Test result of registering via GlobalObjectIdHash reference
             Assert.True(gameObjectRegistered);
 
             //Change it up
@@ -104,16 +106,18 @@ namespace MLAPI.RuntimeTests
             Assert.False(networkPrefaInstanceHandler.StillHasInstances());
         }
 
-        public void Dispose()
-        {
-            //Stop, shutdown, and destroy
-            NetworkManagerHelper.ShutdownNetworkManager();
-        }
-
-        public NetworkPrefabHandlerTests()
+        [SetUp]
+        public void Setup()
         {
             //Create, instantiate, and host
             NetworkManagerHelper.StartNetworkManager();
+        }
+
+        [TearDown]
+        public void TearDown()
+        {
+            //Stop, shutdown, and destroy
+            NetworkManagerHelper.ShutdownNetworkManager();
         }
     }
 
