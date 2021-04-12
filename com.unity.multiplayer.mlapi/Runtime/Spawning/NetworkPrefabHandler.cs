@@ -53,7 +53,7 @@ namespace MLAPI.Spawning
         }
 
         /// <summary>
-        /// Use a networkPrefabHash(GlobalObjectHashId) to add a INetworkPrefabInstanceHandler derived class
+        /// Use a networkPrefabHash(GlobalObjectIdHash) to add a INetworkPrefabInstanceHandler derived class
         /// </summary>
         /// <param name="networkPrefabHash"></param>
         /// <param name="instanceHandler"></param>
