@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -90,7 +89,7 @@ namespace MLAPI.Spawning
         }
 
         /// <summary>
-        ///  Use the networkPrefabHash(GlobalObjectHashId) of the network prefab asset to remove a INetworkPrefabInstanceHandler derived class
+        ///  Use the networkPrefabHash(GlobalObjectIdHash) of the network prefab asset to remove a INetworkPrefabInstanceHandler derived class
         /// </summary>
         /// <param name="networkPrefabHash"></param>
         /// <returns>true or false</returns>
@@ -126,7 +125,7 @@ namespace MLAPI.Spawning
         /// <summary>
         /// Check to see if a NetworkObject component has an INetworkPrefabInstanceHandler derived class associated with it
         /// </summary>
-        /// <param name="networkPrefab"></param>
+        /// <param name="networkObject"></param>
         /// <returns>true or false</returns>
         internal bool ContainsHandler(NetworkObject networkObject)
         {
@@ -134,9 +133,9 @@ namespace MLAPI.Spawning
         }
 
         /// <summary>
-        /// Check to see if a networkPrefabHash(GlobalObjectHashId) component has an INetworkPrefabInstanceHandler derived class associated with it
+        /// Check to see if a networkPrefabHash(GlobalObjectIdHash) component has an INetworkPrefabInstanceHandler derived class associated with it
         /// </summary>
-        /// <param name="networkPrefab"></param>
+        /// <param name="networkPrefabHash"></param>
         /// <returns>true or false</returns>
         internal bool ContainsHandler(uint networkPrefabHash)
         {
@@ -158,7 +157,7 @@ namespace MLAPI.Spawning
             {
                 var networkObjectInstance = m_PrefabAssetToPrefabHandler[networkPrefabAssetHash].HandleNetworkPrefabSpawn(ownerClientId, position, rotation);
 
-                //Now we must make sure this alternate PrefabAsset spawned in place of the prefab asset with the networkPrefabAssetHash (GlobalObjectHashId)
+                //Now we must make sure this alternate PrefabAsset spawned in place of the prefab asset with the networkPrefabAssetHash (GlobalObjectIdHash)
                 //is registered and linked to the networkPrefabAssetHash so during the HandleNetworkPrefabDestroy process we can identify the alternate prefab asset.
                 if (networkObjectInstance != null && !m_PrefabInstanceToPrefabAsset.ContainsKey(networkObjectInstance.GlobalObjectIdHash))
                 {
