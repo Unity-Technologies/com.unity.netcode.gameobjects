@@ -121,7 +121,7 @@ namespace MLAPI.RuntimeTests
     /// <summary>
     /// The Prefab instance handler to use for this test
     /// </summary>
-    public class NetworkPrefaInstanceHandler:INetworkPrefabInstanceHandler
+    public class NetworkPrefaInstanceHandler : INetworkPrefabInstanceHandler
     {
         private NetworkObject m_NetworkObject;
 
