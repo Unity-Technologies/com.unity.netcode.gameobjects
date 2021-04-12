@@ -373,6 +373,7 @@ namespace MLAPI.SceneManagement
                     Vector3? position = null;
                     Quaternion? rotation = null;
 
+                    //Check to see if we have position and rotation information to get from the scene
                     if (reader.ReadBool())
                     {
                         position = new Vector3(reader.ReadSinglePacked(), reader.ReadSinglePacked(), reader.ReadSinglePacked());
