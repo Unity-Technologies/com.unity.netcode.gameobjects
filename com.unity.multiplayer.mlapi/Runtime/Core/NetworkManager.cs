@@ -56,6 +56,7 @@ namespace MLAPI
 
         internal RpcQueueContainer RpcQueueContainer { get; private set; }
         internal NetworkTickSystem NetworkTickSystem { get; private set; }
+        internal SnapshotSystem SnapshotSystem { get; private set; }
         public NetworkPrefabHandler PrefabHandler { get; private set; }
 
         /// <summary>
@@ -799,7 +800,7 @@ namespace MLAPI
                     if (NetworkConfig.EnableNetworkVariable)
                     {
                         // Do NetworkVariable updates
-                        NetworkBehaviour.NetworkBehaviourUpdate();
+                        NetworkBehaviour.NetworkBehaviourUpdate(SnapshotSystem);
                     }
 
                     if (!IsServer && NetworkConfig.EnableMessageBuffering)

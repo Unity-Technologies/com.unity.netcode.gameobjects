@@ -42,6 +42,9 @@ namespace MLAPI
             Client = 2
         }
 
+        static private bool m_UseClassicDelta = true;
+        static private bool m_UseSnapshot = true;
+
 #pragma warning disable 414
 #pragma warning disable IDE1006 // disable naming rule violation check
         [NonSerialized]
@@ -486,7 +489,7 @@ namespace MLAPI
         private static ProfilerMarker s_NetworkBehaviourUpdate = new ProfilerMarker($"{nameof(NetworkBehaviour)}.{nameof(NetworkBehaviourUpdate)}");
 #endif
 
-        internal static void NetworkBehaviourUpdate()
+        internal static void NetworkBehaviourUpdate(SnapshotSystem snapshot)
         {
             // Do not execute NetworkBehaviourUpdate more than once per network tick
             ushort tick = NetworkManager.Singleton.NetworkTickSystem.GetTick();
@@ -515,7 +518,7 @@ namespace MLAPI
                             // Sync just the variables for just the objects this client sees
                             for (int k = 0; k < sobj.ChildNetworkBehaviours.Count; k++)
                             {
-                                sobj.ChildNetworkBehaviours[k].VariableUpdate(client.ClientId);
+                                sobj.ChildNetworkBehaviours[k].VariableUpdate(client.ClientId, snapshot);
                             }
                         }
                     }
@@ -536,7 +539,7 @@ namespace MLAPI
                     {
                         for (int k = 0; k < sobj.ChildNetworkBehaviours.Count; k++)
                         {
-                            sobj.ChildNetworkBehaviours[k].VariableUpdate(NetworkManager.Singleton.ServerClientId);
+                            sobj.ChildNetworkBehaviours[k].VariableUpdate(NetworkManager.Singleton.ServerClientId, snapshot);
                         }
                     }
 
@@ -575,7 +578,7 @@ namespace MLAPI
             }
         }
 
-        internal void VariableUpdate(ulong clientId)
+        internal void VariableUpdate(ulong clientId, SnapshotSystem snapshot)
         {
             if (!m_VarInit)
             {
@@ -583,21 +586,33 @@ namespace MLAPI
             }
 
             PreNetworkVariableWrite();
-            NetworkVariableUpdate(clientId);
+            NetworkVariableUpdate(clientId, snapshot);
         }
 
         private readonly List<int> m_NetworkVariableIndexesToReset = new List<int>();
         private readonly HashSet<int> m_NetworkVariableIndexesToResetSet = new HashSet<int>();
 
-        private void NetworkVariableUpdate(ulong clientId)
+        private void NetworkVariableUpdate(ulong clientId, SnapshotSystem snapshot)
         {
             if (!CouldHaveDirtyNetworkVariables())
             {
                 return;
             }
 
+            if (m_UseSnapshot)
+            {
+                for (int k = 0; k < NetworkVariableFields.Count; k++)
+                {
+                    snapshot.Store(NetworkObjectId, k, NetworkVariableFields[k]);
+                }
+            }
+
             for (int j = 0; j < m_ChannelMappedNetworkVariableIndexes.Count; j++)
             {
+                if (!m_UseClassicDelta)
+                {
+                    break;
+                }
                 using (var buffer = PooledNetworkBuffer.Get())
                 {
                     using (var writer = PooledNetworkWriter.Get(buffer))
