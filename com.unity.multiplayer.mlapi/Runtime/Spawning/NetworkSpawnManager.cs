@@ -522,7 +522,7 @@ namespace MLAPI.Spawning
             }
         }
 
-        internal void ReadAndCallSpawnForMultipleObjects(Stream objectStream)
+        internal void ReadSpawnCallForMultipleObjects(Stream objectStream)
         {
             uint newObjectsCount = 0;
 
@@ -533,11 +533,11 @@ namespace MLAPI.Spawning
 
             for (int i = 0; i < newObjectsCount; i++)
             {
-                ReadAndCallSpawnForObject(objectStream);
+                ReadSpawnCallForObject(objectStream);
             }
         }
 
-        internal void ReadAndCallSpawnForObject(Stream stream)
+        internal void ReadSpawnCallForObject(Stream stream)
         {
             using (var reader = PooledNetworkReader.Get(stream))
             {

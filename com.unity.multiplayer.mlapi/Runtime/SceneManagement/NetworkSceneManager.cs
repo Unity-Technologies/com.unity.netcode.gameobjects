@@ -305,7 +305,7 @@ namespace MLAPI.SceneManagement
                 NetworkManager.Singleton.SpawnManager.ClientCollectSoftSyncSceneObjectSweep(networkObjects);
             }
 
-            NetworkManager.Singleton.SpawnManager.ReadAndCallSpawnForMultipleObjects(objectStream);
+            NetworkManager.Singleton.SpawnManager.ReadSpawnCallForMultipleObjects(objectStream);
 
             using (var buffer = PooledNetworkBuffer.Get())
             using (var writer = PooledNetworkWriter.Get(buffer))

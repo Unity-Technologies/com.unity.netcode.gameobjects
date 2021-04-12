@@ -118,7 +118,7 @@ namespace MLAPI.Messaging
                         NetworkManager.Singleton.SpawnManager.ClientCollectSoftSyncSceneObjectSweep(null);
                     }
 
-                    NetworkManager.Singleton.SpawnManager.ReadAndCallSpawnForMultipleObjects(continuationStream);
+                    NetworkManager.Singleton.SpawnManager.ReadSpawnCallForMultipleObjects(continuationStream);
 
                     NetworkManager.Singleton.SpawnManager.CleanDiffedSceneObjects();
                     NetworkManager.Singleton.IsConnectedClient = true;
@@ -159,7 +159,7 @@ namespace MLAPI.Messaging
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleAddObject.Begin();
 #endif
-            NetworkManager.Singleton.SpawnManager.ReadAndCallSpawnForObject(stream);
+            NetworkManager.Singleton.SpawnManager.ReadSpawnCallForObject(stream);
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleAddObject.End();
 #endif
