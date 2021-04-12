@@ -133,7 +133,7 @@ namespace MLAPI.Spawning
         }
 
         /// <summary>
-        /// Check to see if a networkPrefabHash(GlobalObjectHashId) component has an INetworkPrefabInstanceHandler derived class associated with it
+        /// Check to see if a networkPrefabHash(GlobalObjectIdHash) component has an INetworkPrefabInstanceHandler derived class associated with it
         /// </summary>
         /// <param name="networkPrefab"></param>
         /// <returns>true or false</returns>
