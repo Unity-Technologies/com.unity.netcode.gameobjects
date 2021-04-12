@@ -333,7 +333,7 @@ namespace MLAPI
 
         private void OnDestroy()
         {
-            if (NetworkManager.Singleton != null && NetworkManager.Singleton.SpawnManager != null && NetworkManager.Singleton.SpawnManager.SpawnedObjects.ContainsKey(NetworkObjectId))
+            if (NetworkManager.Singleton != null && NetworkManager.Singleton.SpawnManager.SpawnedObjects.ContainsKey(NetworkObjectId))
             {
                 NetworkManager.Singleton.SpawnManager.OnDestroyObject(NetworkObjectId, false);
             }
