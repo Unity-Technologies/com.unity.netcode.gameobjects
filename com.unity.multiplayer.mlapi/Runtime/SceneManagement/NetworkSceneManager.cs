@@ -102,7 +102,7 @@ namespace MLAPI.SceneManagement
             if (!NetworkManager.Singleton.NetworkConfig.EnableSceneManagement)
             {
                 //Log message about enabling SceneManagement
-                throw new NotServerException($"{nameof(NetworkConfig.EnableSceneManagement)} flag is not enabled in the {nameof(NetworkManager)}'s {nameof(NetworkConfig)}. Please set {nameof(NetworkConfig.EnableSceneManagement)} flag to true before calling this method.");
+                throw new Exception($"{nameof(NetworkConfig.EnableSceneManagement)} flag is not enabled in the {nameof(NetworkManager)}'s {nameof(NetworkConfig)}. Please set {nameof(NetworkConfig.EnableSceneManagement)} flag to true before calling this method.");
             }
 
             if (s_IsSwitching)
