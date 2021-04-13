@@ -5,7 +5,6 @@ using MLAPI.Spawning;
 using NUnit.Framework;
 
 
-
 namespace MLAPI.RuntimeTests
 {
     /// <summary>
@@ -43,7 +42,6 @@ namespace MLAPI.RuntimeTests
 
             //Test that something was instantiated
             Assert.NotNull(spawnedObject);
-
             
             //Test that this is indeed an instance of our original object
             Assert.True(spawnedObject.name.Contains(testPrefabObjectName));
@@ -68,9 +66,7 @@ namespace MLAPI.RuntimeTests
             spawnedObject = networkPrefabHandler.HandleNetworkPrefabSpawn(baseObject.GlobalObjectIdHash, 0, prefabPosition, prefabRotation);
 
             //Test that something was instantiated
-            Assert.NotNull(spawnedObject);
-
-            
+            Assert.NotNull(spawnedObject);            
 
             //Test that this is indeed an instance of our original object
             Assert.True(spawnedObject.name.Contains(testPrefabObjectName));
@@ -124,7 +120,6 @@ namespace MLAPI.RuntimeTests
             NetworkManagerHelper.ShutdownNetworkManager();
         }
     }
-
 
     /// <summary>
     /// The Prefab instance handler to use for this test
