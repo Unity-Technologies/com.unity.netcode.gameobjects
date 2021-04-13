@@ -22,8 +22,9 @@ namespace MLAPI.RuntimeTests
         {
             //Only used to create a network object based game asset
             Assert.IsTrue(NetworkManagerHelper.StartNetworkManager());
+            var testPrefabObjectName = "NetworkPrefabHandlerTestObject";
 
-            Guid baseObjectID = NetworkManagerHelper.AddGameNetworkObject("NetworkPrefabHandlerTestObject");
+            Guid baseObjectID = NetworkManagerHelper.AddGameNetworkObject(testPrefabObjectName);
             NetworkObject baseObject = NetworkManagerHelper.InstantiatedNetworkObjects[baseObjectID];
 
             var networkPrefabHandler = new NetworkPrefabHandler();
@@ -43,8 +44,9 @@ namespace MLAPI.RuntimeTests
             //Test that something was instantiated
             Assert.NotNull(spawnedObject);
 
+            
             //Test that this is indeed an instance of our original object
-            Assert.True(spawnedObject.name.Contains("NetworkPrefabHandlerTestObject"));
+            Assert.True(spawnedObject.name.Contains(testPrefabObjectName));
 
             //Test for position and rotation
             Assert.True(prefabPosition == spawnedObject.transform.position);
@@ -68,8 +70,10 @@ namespace MLAPI.RuntimeTests
             //Test that something was instantiated
             Assert.NotNull(spawnedObject);
 
+            
+
             //Test that this is indeed an instance of our original object
-            Assert.True(spawnedObject.name.Contains("NetworkPrefabHandlerTestObject"));
+            Assert.True(spawnedObject.name.Contains(testPrefabObjectName));
 
             //Test for position and rotation
             Assert.True(prefabPosition == spawnedObject.transform.position);
@@ -94,7 +98,7 @@ namespace MLAPI.RuntimeTests
             Assert.NotNull(spawnedObject);
 
             //Test that this is indeed an instance of our original object
-            Assert.True(spawnedObject.name.Contains("NetworkPrefabHandlerTestObject"));
+            Assert.True(spawnedObject.name.Contains(testPrefabObjectName));
 
             //Test for position and rotation
             Assert.True(prefabPosition == spawnedObject.transform.position);
@@ -144,12 +148,8 @@ namespace MLAPI.RuntimeTests
         {
             var instancesContainsNetworkObject = m_Instances.Contains(networkObject);
             Assert.True(instancesContainsNetworkObject);
-
-            if(instancesContainsNetworkObject)
-            {
-                m_Instances.Remove(networkObject);
-                UnityEngine.Object.Destroy(networkObject.gameObject);
-            }
+            m_Instances.Remove(networkObject);
+            UnityEngine.Object.Destroy(networkObject.gameObject);
         }
 
         public bool StillHasInstances()
