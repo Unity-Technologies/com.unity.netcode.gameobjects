@@ -343,7 +343,16 @@ namespace MLAPI
                 return;
             }
 
-            // This 'if' should never enter
+            //This 'if' should never enter
+            if (SnapshotSystem != null)
+            {
+                SnapshotSystem.Dispose();
+                SnapshotSystem = null;
+            }
+
+            SnapshotSystem = new SnapshotSystem();
+
+            //This 'if' should never enter
             if (NetworkTickSystem != null)
             {
                 NetworkTickSystem.Dispose();
@@ -765,6 +774,12 @@ namespace MLAPI
                 RpcQueueContainer = null;
             }
 
+            if (SnapshotSystem != null)
+            {
+                SnapshotSystem.Dispose();
+                SnapshotSystem = null;
+            }
+
             if (NetworkTickSystem != null)
             {
                 NetworkTickSystem.Dispose();
@@ -1157,6 +1172,10 @@ namespace MLAPI
 
                 switch (messageType)
                 {
+                    case NetworkConstants.SNAPSHOT_DATA:
+                        UnityEngine.Debug.Log("Received Snapshot Data");
+
+                        break;
                     case NetworkConstants.CONNECTION_REQUEST:
                         if (IsServer)
                         {
