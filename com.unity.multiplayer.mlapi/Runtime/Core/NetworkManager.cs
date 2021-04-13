@@ -56,6 +56,7 @@ namespace MLAPI
 
         internal RpcQueueContainer RpcQueueContainer { get; private set; }
         internal NetworkTickSystem NetworkTickSystem { get; private set; }
+        public NetworkPrefabHandler PrefabHandler { get; private set; }
 
         /// <summary>
         /// A synchronized time, represents the time in seconds since the server application started. Is replicated across all clients
@@ -600,6 +601,11 @@ namespace MLAPI
             OnSingletonReady?.Invoke();
         }
 
+        private void Awake()
+        {
+            PrefabHandler = new NetworkPrefabHandler();
+        }
+
         private void OnEnable()
         {
             if (Singleton != null && Singleton != this)
@@ -1117,6 +1123,10 @@ namespace MLAPI
                         {
                             InternalMessageHandler.HandleClientSwitchSceneCompleted(clientId, messageStream);
                         }
+                        else if (!NetworkConfig.EnableSceneManagement)
+                        {
+                            NetworkLog.LogWarning($"Server received {nameof(NetworkConstants.CLIENT_SWITCH_SCENE_COMPLETED)} from client id {clientId}");
+                        }
 
                         break;
                     case NetworkConstants.SERVER_LOG:
@@ -1324,9 +1334,9 @@ namespace MLAPI
                 {
                     if (ConnectedClients[clientId].PlayerObject != null)
                     {
-                        if (SpawnManager.CustomDestroyHandlers.ContainsKey(ConnectedClients[clientId].PlayerObject.GlobalObjectIdHash))
+                        if (PrefabHandler.ContainsHandler(ConnectedClients[clientId].PlayerObject.GlobalObjectIdHash))
                         {
-                            SpawnManager.CustomDestroyHandlers[ConnectedClients[clientId].PlayerObject.GlobalObjectIdHash](ConnectedClients[clientId].PlayerObject);
+                            PrefabHandler.HandleNetworkPrefabDestroy(ConnectedClients[clientId].PlayerObject);
                             SpawnManager.OnDestroyObject(ConnectedClients[clientId].PlayerObject.NetworkObjectId, false);
                         }
                         else
@@ -1341,9 +1351,10 @@ namespace MLAPI
                         {
                             if (!ConnectedClients[clientId].OwnedObjects[i].DontDestroyWithOwner)
                             {
-                                if (SpawnManager.CustomDestroyHandlers.ContainsKey(ConnectedClients[clientId].OwnedObjects[i].GlobalObjectIdHash))
+
+                                if (PrefabHandler.ContainsHandler(ConnectedClients[clientId].OwnedObjects[i].GlobalObjectIdHash))
                                 {
-                                    SpawnManager.CustomDestroyHandlers[ConnectedClients[clientId].OwnedObjects[i].GlobalObjectIdHash](ConnectedClients[clientId].OwnedObjects[i]);
+                                    PrefabHandler.HandleNetworkPrefabDestroy(ConnectedClients[clientId].OwnedObjects[i]);
                                     SpawnManager.OnDestroyObject(ConnectedClients[clientId].OwnedObjects[i].NetworkObjectId, false);
                                 }
                                 else
@@ -1426,7 +1437,7 @@ namespace MLAPI
 
                 if (createPlayerObject)
                 {
-                    var networkObject = SpawnManager.CreateLocalNetworkObject(false, 0, playerPrefabHash ?? NetworkConfig.PlayerPrefabHash, ownerClientId, null, position, rotation);
+                    var networkObject = SpawnManager.CreateLocalNetworkObject(false, playerPrefabHash ?? NetworkConfig.PlayerPrefabHash, ownerClientId, null, position, rotation);
                     SpawnManager.SpawnNetworkObjectLocally(networkObject, SpawnManager.GetNetworkObjectId(), false, true, ownerClientId, null, false, 0, false, false);
 
                     ConnectedClients[ownerClientId].PlayerObject = networkObject;
@@ -1484,24 +1495,8 @@ namespace MLAPI
                                 writer.WriteUInt64Packed(parent.NetworkObjectId);
                             }
 
-                            if (!NetworkConfig.EnableSceneManagement || NetworkConfig.UsePrefabSync)
-                            {
-                                writer.WriteUInt32Packed(observedObject.GlobalObjectIdHash);
-                            }
-                            else
-                            {
-                                // Is this a scene object that we will soft map
-                                writer.WriteBool(observedObject.IsSceneObject ?? true);
-
-                                if (observedObject.IsSceneObject == null || observedObject.IsSceneObject.Value)
-                                {
-                                    writer.WriteUInt32Packed(observedObject.GlobalObjectIdHash);
-                                }
-                                else
-                                {
-                                    writer.WriteUInt32Packed(observedObject.GlobalObjectIdHash);
-                                }
-                            }
+                            writer.WriteBool(observedObject.IsSceneObject ?? true);
+                            writer.WriteUInt32Packed(observedObject.GlobalObjectIdHash);
 
                             if (observedObject.IncludeTransformWhenSpawning == null || observedObject.IncludeTransformWhenSpawning(ownerClientId))
                             {
@@ -1556,16 +1551,10 @@ namespace MLAPI
                         //Does not have a parent
                         writer.WriteBool(false);
 
-                        if (!NetworkConfig.EnableSceneManagement || NetworkConfig.UsePrefabSync)
-                        {
-                            writer.WriteUInt32Packed(playerPrefabHash ?? NetworkConfig.PlayerPrefabHash);
-                        }
-                        else
-                        {
-                            // Not a softmap aka scene object
-                            writer.WriteBool(false);
-                            writer.WriteUInt32Packed(playerPrefabHash ?? NetworkConfig.PlayerPrefabHash);
-                        }
+                        // This is not a scene object
+                        writer.WriteBool(false);
+
+                        writer.WriteUInt32Packed(playerPrefabHash ?? NetworkConfig.PlayerPrefabHash);
 
                         if (ConnectedClients[ownerClientId].PlayerObject.IncludeTransformWhenSpawning == null || ConnectedClients[ownerClientId].PlayerObject.IncludeTransformWhenSpawning(ownerClientId))
                         {
