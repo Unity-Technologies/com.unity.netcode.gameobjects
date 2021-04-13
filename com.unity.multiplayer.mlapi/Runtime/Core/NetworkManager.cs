@@ -21,6 +21,7 @@ using MLAPI.Exceptions;
 using MLAPI.Transports.Tasks;
 using MLAPI.Messaging.Buffering;
 using Unity.Profiling;
+using Debug = UnityEngine.Debug;
 
 namespace MLAPI
 {
@@ -323,6 +324,15 @@ namespace MLAPI
 
                 return;
             }
+
+            //This 'if' should never enter
+            if (SnapshotSystem != null)
+            {
+                SnapshotSystem.Dispose();
+                SnapshotSystem = null;
+            }
+
+            SnapshotSystem = new SnapshotSystem();
 
             //This 'if' should never enter
             if (NetworkTickSystem != null)
@@ -669,6 +679,12 @@ namespace MLAPI
             {
                 RpcQueueContainer.Dispose();
                 RpcQueueContainer = null;
+            }
+
+            if (SnapshotSystem != null)
+            {
+                SnapshotSystem.Dispose();
+                SnapshotSystem = null;
             }
 
             if (NetworkTickSystem != null)
@@ -1060,6 +1076,10 @@ namespace MLAPI
 
                 switch (messageType)
                 {
+                    case NetworkConstants.SNAPSHOT_DATA:
+                        Debug.Log("Received Snapshot Data");
+
+                        break;
                     case NetworkConstants.CONNECTION_REQUEST:
                         if (IsServer)
                         {
