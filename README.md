@@ -80,4 +80,4 @@ public class Chat : NetworkBehaviour
 ```
 
 ### License
-[MIT License](LICENSE)
+[MIT License](LICENSE.md)
