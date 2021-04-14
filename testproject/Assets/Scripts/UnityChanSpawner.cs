@@ -3,6 +3,8 @@ using UnityEngine;
 
 public class UnityChanSpawner : MonoBehaviour
 {
+    private int badName;
+
     public GameObject UnityChanPrefab;
 
     private void Start()
