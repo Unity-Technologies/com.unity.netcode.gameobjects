@@ -22,13 +22,13 @@ namespace MLAPI
     {
         [HideInInspector]
         [SerializeField]
-        internal ulong GlobalObjectIdHash;
+        internal uint GlobalObjectIdHash;
 
 #if UNITY_EDITOR
         private void OnValidate()
         {
             var globalObjectIdString = UnityEditor.GlobalObjectId.GetGlobalObjectIdSlow(this).ToString();
-            GlobalObjectIdHash = XXHash.Hash64(globalObjectIdString);
+            GlobalObjectIdHash = XXHash.Hash32(globalObjectIdString);
         }
 #endif
 
