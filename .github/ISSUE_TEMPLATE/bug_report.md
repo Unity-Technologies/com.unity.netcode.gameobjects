@@ -17,7 +17,10 @@ Steps to reproduce the behavior:
 3. Scroll down to '....'
 4. See error
 
-**Expected behavior**
+**Actual outcome**
+A clear and concise description of what broke.
+
+**Expected outcome**
 A clear and concise description of what you expected to happen.
 
 **Screenshots**
@@ -30,4 +33,4 @@ If applicable, add screenshots to help explain your problem.
  - MLAPI Commit: [e.g. https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi/commit/c102935df1d7e0928283b48948fe96e5d96dd961]
 
 **Additional context**
-Add any other context about the problem here.
+Add any other context about the problem here. Logs, code snippets would be useful here but please also consider attaching a minimal Unity project that reproduces the issue.
