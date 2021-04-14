@@ -109,7 +109,7 @@ namespace MLAPI.Messaging
 
                 void DelayedSpawnAction(Stream continuationStream)
                 {
-                    if (!NetworkManager.Singleton.NetworkConfig.EnableSceneManagement || NetworkManager.Singleton.NetworkConfig.UsePrefabSync)
+                    if (!NetworkManager.Singleton.NetworkConfig.EnableSceneManagement)
                     {
                         NetworkManager.Singleton.SpawnManager.DestroySceneObjects();
                     }
@@ -160,6 +160,7 @@ namespace MLAPI.Messaging
             s_HandleAddObject.Begin();
 #endif
             NetworkManager.Singleton.SpawnManager.ReadSpawnCallForObject(stream);
+
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleAddObject.End();
 #endif

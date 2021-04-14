@@ -32,22 +32,6 @@ namespace MLAPI.Spawning
         /// </summary>
         public readonly HashSet<NetworkObject> SpawnedObjectsList = new HashSet<NetworkObject>();
 
-        /// <summary>
-        /// The delegate used when spawning a NetworkObject
-        /// </summary>
-        /// <param name="ownerClientId">The owner client id of the object that is being spawned</param>
-        /// <param name="position">The position to spawn the object at</param>
-        /// <param name="rotation">The rotation to spawn the object with</param>
-        public delegate NetworkObject SpawnHandlerDelegate(ulong ownerClientId, Vector3 position, Quaternion rotation);
-
-        /// <summary>
-        /// The delegate used when destroying NetworkObjects
-        /// </summary>
-        /// <param name="networkObject">The NetworkObject to be destroy</param>
-        public delegate void DestroyHandlerDelegate(NetworkObject networkObject);
-
-        internal readonly Dictionary<uint, SpawnHandlerDelegate> CustomSpawnHandlers = new Dictionary<uint, SpawnHandlerDelegate>();
-        internal readonly Dictionary<uint, DestroyHandlerDelegate> CustomDestroyHandlers = new Dictionary<uint, DestroyHandlerDelegate>();
 
         /// <summary>
         /// Gets the NetworkManager associated with this SpawnManager.
@@ -57,58 +41,6 @@ namespace MLAPI.Spawning
         internal NetworkSpawnManager(NetworkManager networkManager)
         {
             NetworkManager = networkManager;
-        }
-
-        /// <summary>
-        /// Registers a delegate for spawning NetworkPrefabs, useful for object pooling
-        /// </summary>
-        /// <param name="prefabHash">The prefab hash to spawn</param>
-        /// <param name="handler">The delegate handler</param>
-        public void RegisterSpawnHandler(uint prefabHash, SpawnHandlerDelegate handler)
-        {
-            if (CustomSpawnHandlers.ContainsKey(prefabHash))
-            {
-                CustomSpawnHandlers[prefabHash] = handler;
-            }
-            else
-            {
-                CustomSpawnHandlers.Add(prefabHash, handler);
-            }
-        }
-
-        /// <summary>
-        /// Registers a delegate for destroying NetworkObjects, useful for object pooling
-        /// </summary>
-        /// <param name="prefabHash">The prefab hash to destroy</param>
-        /// <param name="handler">The delegate handler</param>
-        public void RegisterDestroyHandler(uint prefabHash, DestroyHandlerDelegate handler)
-        {
-            if (CustomDestroyHandlers.ContainsKey(prefabHash))
-            {
-                CustomDestroyHandlers[prefabHash] = handler;
-            }
-            else
-            {
-                CustomDestroyHandlers.Add(prefabHash, handler);
-            }
-        }
-
-        /// <summary>
-        /// Unregisters the custom spawn handler for a specific prefab hash
-        /// </summary>
-        /// <param name="prefabHash">The prefab hash of the prefab spawn handler that is to be removed</param>
-        public void UnregisterSpawnHandler(uint prefabHash)
-        {
-            CustomSpawnHandlers.Remove(prefabHash);
-        }
-
-        /// <summary>
-        /// Unregisters the custom destroy handler for a specific prefab hash
-        /// </summary>
-        /// <param name="prefabHash">The prefab hash of the prefab destroy handler that is to be removed</param>
-        public void UnregisterDestroyHandler(uint prefabHash)
-        {
-            CustomDestroyHandlers.Remove(prefabHash);
         }
 
         internal readonly Queue<ReleasedNetworkId> ReleasedNetworkObjectIds = new Queue<ReleasedNetworkId>();
@@ -251,7 +183,7 @@ namespace MLAPI.Spawning
         }
 
         // Only ran on Client
-        internal NetworkObject CreateLocalNetworkObject(bool softCreate, ulong instanceId, uint prefabHash, ulong ownerClientId, ulong? parentNetworkId, Vector3? position, Quaternion? rotation)
+        internal NetworkObject CreateLocalNetworkObject(bool softCreate, uint prefabHash, ulong ownerClientId, ulong? parentNetworkId, Vector3? position, Quaternion? rotation)
         {
             NetworkObject parentNetworkObject = null;
 
@@ -267,12 +199,13 @@ namespace MLAPI.Spawning
                 }
             }
 
-            if (!NetworkManager.NetworkConfig.EnableSceneManagement || NetworkManager.NetworkConfig.UsePrefabSync || !softCreate)
+
+            if (!NetworkManager.NetworkConfig.EnableSceneManagement || !softCreate)
             {
                 // Create the object
-                if (CustomSpawnHandlers.ContainsKey(prefabHash))
+                if (NetworkManager.PrefabHandler.ContainsHandler(prefabHash))
                 {
-                    var networkObject = CustomSpawnHandlers[prefabHash](ownerClientId, position.GetValueOrDefault(Vector3.zero), rotation.GetValueOrDefault(Quaternion.identity));
+                    var networkObject = NetworkManager.PrefabHandler.HandleNetworkPrefabSpawn(prefabHash, ownerClientId, position.GetValueOrDefault(Vector3.zero), rotation.GetValueOrDefault(Quaternion.identity));
 
                     if (parentNetworkObject != null)
                     {
@@ -288,7 +221,7 @@ namespace MLAPI.Spawning
                 }
                 else
                 {
-                    int prefabIndex = GetNetworkPrefabIndexOfHash(prefabHash);
+                    var prefabIndex = GetNetworkPrefabIndexOfHash(prefabHash);
 
                     if (prefabIndex < 0)
                     {
@@ -319,7 +252,7 @@ namespace MLAPI.Spawning
             else
             {
                 // SoftSync them by mapping
-                if (!PendingSoftSyncObjects.ContainsKey(instanceId))
+                if (!PendingSoftSyncObjects.ContainsKey(prefabHash))
                 {
                     // TODO: Fix this message
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
@@ -329,8 +262,8 @@ namespace MLAPI.Spawning
                     return null;
                 }
 
-                var networkObject = PendingSoftSyncObjects[instanceId];
-                PendingSoftSyncObjects.Remove(instanceId);
+                var networkObject = PendingSoftSyncObjects[prefabHash];
+                PendingSoftSyncObjects.Remove(prefabHash);
 
                 if (parentNetworkObject != null)
                 {
@@ -477,15 +410,8 @@ namespace MLAPI.Spawning
                     writer.WriteUInt64Packed(parentNetworkObject.NetworkObjectId);
                 }
 
-                if (!NetworkManager.NetworkConfig.EnableSceneManagement || NetworkManager.NetworkConfig.UsePrefabSync)
-                {
-                    writer.WriteUInt32Packed(networkObject.GlobalObjectIdHash);
-                }
-                else
-                {
-                    writer.WriteBool(networkObject.IsSceneObject ?? true);
-                    writer.WriteUInt32Packed(networkObject.GlobalObjectIdHash);
-                }
+                writer.WriteBool(networkObject.IsSceneObject ?? true);
+                writer.WriteUInt32Packed(networkObject.GlobalObjectIdHash);
 
                 if (networkObject.IncludeTransformWhenSpawning == null || networkObject.IncludeTransformWhenSpawning(clientId))
                 {
@@ -541,10 +467,10 @@ namespace MLAPI.Spawning
         {
             using (var reader = PooledNetworkReader.Get(stream))
             {
-                bool isPlayerObject = reader.ReadBool();
-                ulong networkId = reader.ReadUInt64Packed();
-                ulong ownerClientId = reader.ReadUInt64Packed();
-                bool hasParent = reader.ReadBool();
+                var isPlayerObject = reader.ReadBool();
+                var networkId = reader.ReadUInt64Packed();
+                var ownerClientId = reader.ReadUInt64Packed();
+                var hasParent = reader.ReadBool();
                 ulong? parentNetworkId = null;
 
                 if (hasParent)
@@ -552,31 +478,8 @@ namespace MLAPI.Spawning
                     parentNetworkId = reader.ReadUInt64Packed();
                 }
 
-                uint prefabHash;
-                ulong instanceId;
-                bool softSync;
-
-                if (!NetworkManager.NetworkConfig.EnableSceneManagement || NetworkManager.NetworkConfig.UsePrefabSync)
-                {
-                    softSync = false;
-                    instanceId = 0;
-                    prefabHash = reader.ReadUInt32Packed();
-                }
-                else
-                {
-                    softSync = reader.ReadBool();
-
-                    if (softSync)
-                    {
-                        instanceId = reader.ReadUInt64Packed();
-                        prefabHash = 0;
-                    }
-                    else
-                    {
-                        prefabHash = reader.ReadUInt32Packed();
-                        instanceId = 0;
-                    }
-                }
+                var softSync = reader.ReadBool();
+                var prefabHash = reader.ReadUInt32Packed();
 
                 Vector3? pos = null;
                 Quaternion? rot = null;
@@ -586,10 +489,10 @@ namespace MLAPI.Spawning
                     rot = Quaternion.Euler(reader.ReadSinglePacked(), reader.ReadSinglePacked(), reader.ReadSinglePacked());
                 }
 
-                bool hasPayload = reader.ReadBool();
-                int payLoadLength = hasPayload ? reader.ReadInt32Packed() : 0;
+                var hasPayload = reader.ReadBool();
+                var payLoadLength = hasPayload ? reader.ReadInt32Packed() : 0;
 
-                var networkObject = CreateLocalNetworkObject(softSync, instanceId, prefabHash, ownerClientId, parentNetworkId, pos, rot);
+                var networkObject = CreateLocalNetworkObject(softSync, prefabHash, ownerClientId, parentNetworkId, pos, rot);
                 SpawnNetworkObjectLocally(networkObject, networkId, softSync, isPlayerObject, ownerClientId, stream, hasPayload, payLoadLength, true, false);
 
                 Queue<BufferManager.BufferedMessage> bufferQueue = NetworkManager.BufferManager.ConsumeBuffersForNetworkId(networkId);
@@ -649,10 +552,10 @@ namespace MLAPI.Spawning
             {
                 if ((sobj.IsSceneObject != null && sobj.IsSceneObject == true) || sobj.DestroyWithScene)
                 {
-                    if (CustomDestroyHandlers.ContainsKey(sobj.GlobalObjectIdHash))
+                    if (NetworkManager.PrefabHandler.ContainsHandler(sobj))
                     {
                         SpawnedObjectsList.Remove(sobj);
-                        CustomDestroyHandlers[sobj.GlobalObjectIdHash](sobj);
+                        NetworkManager.PrefabHandler.HandleNetworkPrefabDestroy(sobj);
                         OnDestroyObject(sobj.NetworkObjectId, false);
                     }
                     else
@@ -672,9 +575,10 @@ namespace MLAPI.Spawning
             {
                 if (networkObjects[i].IsSceneObject != null && networkObjects[i].IsSceneObject.Value == false)
                 {
-                    if (CustomDestroyHandlers.ContainsKey(networkObjects[i].GlobalObjectIdHash))
+                    if (NetworkManager.PrefabHandler.ContainsHandler(networkObjects[i]))
                     {
-                        CustomDestroyHandlers[networkObjects[i].GlobalObjectIdHash](networkObjects[i]);
+                        NetworkManager.PrefabHandler.HandleNetworkPrefabDestroy(networkObjects[i]);
+
                         OnDestroyObject(networkObjects[i].NetworkObjectId, false);
                     }
                     else
@@ -693,9 +597,9 @@ namespace MLAPI.Spawning
             {
                 if (networkObjects[i].IsSceneObject == null || networkObjects[i].IsSceneObject.Value == true)
                 {
-                    if (CustomDestroyHandlers.ContainsKey(networkObjects[i].GlobalObjectIdHash))
+                    if (NetworkManager.PrefabHandler.ContainsHandler(networkObjects[i]))
                     {
-                        CustomDestroyHandlers[networkObjects[i].GlobalObjectIdHash](networkObjects[i]);
+                        NetworkManager.PrefabHandler.HandleNetworkPrefabDestroy(networkObjects[i]);
                         OnDestroyObject(networkObjects[i].NetworkObjectId, false);
                     }
                     else
@@ -829,9 +733,9 @@ namespace MLAPI.Spawning
 
             if (destroyGameObject && gobj != null)
             {
-                if (CustomDestroyHandlers.ContainsKey(sobj.GlobalObjectIdHash))
+                if (NetworkManager.PrefabHandler.ContainsHandler(sobj))
                 {
-                    CustomDestroyHandlers[sobj.GlobalObjectIdHash](sobj);
+                    NetworkManager.PrefabHandler.HandleNetworkPrefabDestroy(sobj);
                     OnDestroyObject(networkId, false);
                 }
                 else

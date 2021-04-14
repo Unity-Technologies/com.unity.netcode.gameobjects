@@ -56,6 +56,7 @@ namespace MLAPI
 
         internal RpcQueueContainer RpcQueueContainer { get; private set; }
         internal NetworkTickSystem NetworkTickSystem { get; private set; }
+        public NetworkPrefabHandler PrefabHandler { get; private set; }
 
         /// <summary>
         /// A synchronized time, represents the time in seconds since the server application started. Is replicated across all clients
@@ -600,6 +601,11 @@ namespace MLAPI
             OnSingletonReady?.Invoke();
         }
 
+        private void Awake()
+        {
+            PrefabHandler = new NetworkPrefabHandler();
+        }
+
         private void OnEnable()
         {
             if (Singleton != null && Singleton != this)
@@ -1117,6 +1123,10 @@ namespace MLAPI
                         {
                             InternalMessageHandler.HandleClientSwitchSceneCompleted(clientId, messageStream);
                         }
+                        else if (!NetworkConfig.EnableSceneManagement)
+                        {
+                            NetworkLog.LogWarning($"Server received {nameof(NetworkConstants.CLIENT_SWITCH_SCENE_COMPLETED)} from client id {clientId}");
+                        }
 
                         break;
                     case NetworkConstants.SERVER_LOG:
@@ -1324,9 +1334,9 @@ namespace MLAPI
                 {
                     if (ConnectedClients[clientId].PlayerObject != null)
                     {
-                        if (SpawnManager.CustomDestroyHandlers.ContainsKey(ConnectedClients[clientId].PlayerObject.GlobalObjectIdHash))
+                        if (PrefabHandler.ContainsHandler(ConnectedClients[clientId].PlayerObject.GlobalObjectIdHash))
                         {
-                            SpawnManager.CustomDestroyHandlers[ConnectedClients[clientId].PlayerObject.GlobalObjectIdHash](ConnectedClients[clientId].PlayerObject);
+                            PrefabHandler.HandleNetworkPrefabDestroy(ConnectedClients[clientId].PlayerObject);
                             SpawnManager.OnDestroyObject(ConnectedClients[clientId].PlayerObject.NetworkObjectId, false);
                         }
                         else
@@ -1341,9 +1351,10 @@ namespace MLAPI
                         {
                             if (!ConnectedClients[clientId].OwnedObjects[i].DontDestroyWithOwner)
                             {
-                                if (SpawnManager.CustomDestroyHandlers.ContainsKey(ConnectedClients[clientId].OwnedObjects[i].GlobalObjectIdHash))
+
+                                if (PrefabHandler.ContainsHandler(ConnectedClients[clientId].OwnedObjects[i].GlobalObjectIdHash))
                                 {
-                                    SpawnManager.CustomDestroyHandlers[ConnectedClients[clientId].OwnedObjects[i].GlobalObjectIdHash](ConnectedClients[clientId].OwnedObjects[i]);
+                                    PrefabHandler.HandleNetworkPrefabDestroy(ConnectedClients[clientId].OwnedObjects[i]);
                                     SpawnManager.OnDestroyObject(ConnectedClients[clientId].OwnedObjects[i].NetworkObjectId, false);
                                 }
                                 else
@@ -1426,7 +1437,7 @@ namespace MLAPI
 
                 if (createPlayerObject)
                 {
-                    var networkObject = SpawnManager.CreateLocalNetworkObject(false, 0, playerPrefabHash ?? NetworkConfig.PlayerPrefabHash, ownerClientId, null, position, rotation);
+                    var networkObject = SpawnManager.CreateLocalNetworkObject(false, playerPrefabHash ?? NetworkConfig.PlayerPrefabHash, ownerClientId, null, position, rotation);
                     SpawnManager.SpawnNetworkObjectLocally(networkObject, SpawnManager.GetNetworkObjectId(), false, true, ownerClientId, null, false, 0, false, false);
 
                     ConnectedClients[ownerClientId].PlayerObject = networkObject;
@@ -1493,7 +1504,6 @@ namespace MLAPI
                         // TODO: Check and review this part because of the (old) special handling for the prefab hash (playerPrefabHash ?? NetworkConfig.PlayerPrefabHash.Value)
                         // Should be ok, since the player object contains the hash from spawning
                         SpawnManager.WriteSpawnCallForObject(buffer, clientPair.Key, ConnectedClients[ownerClientId].PlayerObject, null);
-
 
                         InternalMessageSender.Send(clientPair.Key, NetworkConstants.ADD_OBJECT, NetworkChannel.Internal, buffer);
                     }

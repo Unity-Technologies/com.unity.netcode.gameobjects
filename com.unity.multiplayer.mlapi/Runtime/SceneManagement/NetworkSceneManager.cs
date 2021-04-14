@@ -2,7 +2,6 @@ using MLAPI.Configuration;
 using MLAPI.Exceptions;
 using MLAPI.Logging;
 using MLAPI.Messaging;
-using MLAPI.Messaging.Buffering;
 using MLAPI.Serialization.Pooled;
 using MLAPI.Transports;
 using System;
@@ -95,6 +94,13 @@ namespace MLAPI.SceneManagement
             if (!NetworkManager.Singleton.IsServer)
             {
                 throw new NotServerException("Only server can start a scene switch");
+
+            }
+
+            if (!NetworkManager.Singleton.NetworkConfig.EnableSceneManagement)
+            {
+                //Log message about enabling SceneManagement
+                throw new Exception($"{nameof(NetworkConfig.EnableSceneManagement)} flag is not enabled in the {nameof(NetworkManager)}'s {nameof(NetworkConfig)}. Please set {nameof(NetworkConfig.EnableSceneManagement)} flag to true before calling this method.");
             }
 
             if (s_IsSwitching)
@@ -251,7 +257,7 @@ namespace MLAPI.SceneManagement
                 if (NetworkManager.Singleton.ConnectedClientsList[j].ClientId != NetworkManager.Singleton.ServerClientId)
                 {
                     using (var buffer = PooledNetworkBuffer.Get())
-                    { 
+                    {
                         using (var writer = PooledNetworkWriter.Get(buffer))
                         {
                             writer.WriteUInt32Packed(CurrentActiveSceneIndex);
@@ -295,15 +301,8 @@ namespace MLAPI.SceneManagement
 
         private static void OnSceneUnloadClient(Guid switchSceneGuid, Stream objectStream)
         {
-            if (!NetworkManager.Singleton.NetworkConfig.EnableSceneManagement || NetworkManager.Singleton.NetworkConfig.UsePrefabSync)
-            {
-                NetworkManager.Singleton.SpawnManager.DestroySceneObjects();
-            }
-            else
-            {
-                var networkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>();
-                NetworkManager.Singleton.SpawnManager.ClientCollectSoftSyncSceneObjectSweep(networkObjects);
-            }
+            var networkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>();
+            NetworkManager.Singleton.SpawnManager.ClientCollectSoftSyncSceneObjectSweep(networkObjects);
 
             NetworkManager.Singleton.SpawnManager.ReadSpawnCallForMultipleObjects(objectStream);
 
