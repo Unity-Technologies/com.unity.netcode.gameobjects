@@ -15,7 +15,7 @@ using UnityEngine;
 using UnityEngine.Assertions;
 
 using NetworkEvent = Unity.Networking.Transport.NetworkEvent;
-using MALAPINetworkEvent = MLAPI.Transports.NetworkEvent;
+using MLAPINetworkEvent = MLAPI.Transports.NetworkEvent;
 
 [StructLayout(LayoutKind.Explicit)]
 public unsafe struct RawNetworkMessage
@@ -46,7 +46,7 @@ internal struct ClientUpdateJob : IJob
 
         while ((cmd = Connection[0].PopEvent(Driver, out streamReader)) != NetworkEvent.Type.Empty) {
             if (cmd == NetworkEvent.Type.Connect) {
-                var d = new RawNetworkMessage() { Length = 0, Type = (uint)MALAPINetworkEvent.Connect, Id = Connection[0].InternalId };
+                var d = new RawNetworkMessage() { Length = 0, Type = (uint)MLAPINetworkEvent.Connect, Id = Connection[0].InternalId };
                 PacketData.Enqueue(d);
             }
             else if (cmd == NetworkEvent.Type.Data) {
@@ -59,7 +59,7 @@ internal struct ClientUpdateJob : IJob
                 var d = new RawNetworkMessage()
                 {
                         Length = messageSize,
-                        Type = (uint)MALAPINetworkEvent.Data,
+                        Type = (uint)MLAPINetworkEvent.Data,
                         Id = Connection[0].InternalId,
                         ChannelId = channelId
                 };
@@ -94,7 +94,7 @@ internal struct ServerUpdateJob : IJobParallelForDefer
 
         var d = new RawNetworkMessage() {
             Length = messageSize,
-            Type = (uint)MALAPINetworkEvent.Data,
+            Type = (uint)MLAPINetworkEvent.Data,
             Id = index,
             ChannelId = channelId
         };
@@ -114,11 +114,11 @@ internal struct ServerUpdateJob : IJobParallelForDefer
                 QueueMessage(ref streamReader, index);
             }
             else if (command == NetworkEvent.Type.Connect) {
-                var d = new RawNetworkMessage() { Length = 0, Type = (uint)MALAPINetworkEvent.Connect, Id = index };
+                var d = new RawNetworkMessage() { Length = 0, Type = (uint)MLAPINetworkEvent.Connect, Id = index };
                 PacketData.Enqueue(d);
             }
             else if (command == NetworkEvent.Type.Disconnect) {
-                var d = new RawNetworkMessage() { Length = 0, Type = (uint)MALAPINetworkEvent.Disconnect, Id = index };
+                var d = new RawNetworkMessage() { Length = 0, Type = (uint)MLAPINetworkEvent.Disconnect, Id = index };
                 PacketData.Enqueue(d);
                 Connections[index] = default;
             }
@@ -146,7 +146,7 @@ internal struct ServerUpdateConnectionsJob : IJob
         NetworkConnection c;
         while ((c = Driver.Accept()) != default(NetworkConnection)) {
             Connections.Add(c);
-            var d = new RawNetworkMessage() { Length = 0, Type = (uint)MALAPINetworkEvent.Connect, Id = c.InternalId };
+            var d = new RawNetworkMessage() { Length = 0, Type = (uint)MLAPINetworkEvent.Connect, Id = c.InternalId };
             PacketData.Enqueue(d);
             Debug.Log("Accepted a connection");
         }
@@ -255,7 +255,7 @@ public class UTPTransport : NetworkTransport
 
         SendToClient(writer.AsNativeArray(), peerId, pipelineIndex);
     }
-    public override MALAPINetworkEvent PollEvent(out ulong clientId, out NetworkChannel networkChannel, out ArraySegment<byte> payload, out float receiveTime)
+    public override MLAPINetworkEvent PollEvent(out ulong clientId, out NetworkChannel networkChannel, out ArraySegment<byte> payload, out float receiveTime)
     {
         clientId = 0;
         networkChannel = NetworkChannel.ChannelUnused;
@@ -263,7 +263,7 @@ public class UTPTransport : NetworkTransport
         payload = new ArraySegment<byte>(Array.Empty<byte>());
         receiveTime = 0;
 
-        return MALAPINetworkEvent.Nothing;
+        return MLAPINetworkEvent.Nothing;
     }
 
     public override ulong GetCurrentRtt(ulong clientId) => 0;
@@ -280,26 +280,26 @@ public class UTPTransport : NetworkTransport
                 }
                 var clientId = GetMLAPIClientId((uint)message.Id, false);
 
-                switch ((MALAPINetworkEvent)message.Type) {
-                    case MALAPINetworkEvent.Data:
+                switch ((MLAPINetworkEvent)message.Type) {
+                    case MLAPINetworkEvent.Data:
                         int size = message.Length;
                         byte[] arr = new byte[size];
                         unsafe {
                             Marshal.Copy((IntPtr)message.Data, arr, 0, size);
                             var payload = new ArraySegment<byte>(arr);
-                            InvokeOnTransportEvent((MALAPINetworkEvent)message.Type, clientId, (NetworkChannel)message.ChannelId, payload, Time.realtimeSinceStartup);
+                            InvokeOnTransportEvent((MLAPINetworkEvent)message.Type, clientId, (NetworkChannel)message.ChannelId, payload, Time.realtimeSinceStartup);
                         }
 
                     break;
-                    case MALAPINetworkEvent.Connect: {
-                        InvokeOnTransportEvent((MALAPINetworkEvent)message.Type, clientId, NetworkChannel.ChannelUnused, new ArraySegment<byte>(), Time.realtimeSinceStartup);
+                    case MLAPINetworkEvent.Connect: {
+                        InvokeOnTransportEvent((MLAPINetworkEvent)message.Type, clientId, NetworkChannel.ChannelUnused, new ArraySegment<byte>(), Time.realtimeSinceStartup);
                     }
                     break;
-                    case MALAPINetworkEvent.Disconnect:
-                        InvokeOnTransportEvent((MALAPINetworkEvent)message.Type, clientId, NetworkChannel.ChannelUnused, new ArraySegment<byte>(), Time.realtimeSinceStartup);
+                    case MLAPINetworkEvent.Disconnect:
+                        InvokeOnTransportEvent((MLAPINetworkEvent)message.Type, clientId, NetworkChannel.ChannelUnused, new ArraySegment<byte>(), Time.realtimeSinceStartup);
                     break;
-                    case MALAPINetworkEvent.Nothing:
-                        InvokeOnTransportEvent((MALAPINetworkEvent)message.Type, clientId, NetworkChannel.ChannelUnused, new ArraySegment<byte>(), Time.realtimeSinceStartup);
+                    case MLAPINetworkEvent.Nothing:
+                        InvokeOnTransportEvent((MLAPINetworkEvent)message.Type, clientId, NetworkChannel.ChannelUnused, new ArraySegment<byte>(), Time.realtimeSinceStartup);
                     break;
                 }
             }

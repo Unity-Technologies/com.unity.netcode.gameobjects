@@ -21,8 +21,8 @@ pull_request_trigger:
   name: Pull Request Trigger on {{ test_editors.first }} (master, develop, & release branches)
   dependencies:
 {% for project in projects -%}
-    - .yamato/project-tests.yml#validate_{{ project.packages.first.name }}_{{ test_platforms.first.name }}_{{ test_editors.first }}
 {% for package in project.packages -%}
+    - .yamato/project-tests.yml#validate_{{ package.name }}_{{ test_platforms.first.name }}_{{ test_editors.first }}
 {% for platform in test_platforms -%}
     - .yamato/package-tests.yml#test_{{ package.name }}_{{ test_editors.first }}_{{ platform.name }}
 {% endfor -%}
