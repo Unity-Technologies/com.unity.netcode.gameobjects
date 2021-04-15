@@ -30,6 +30,8 @@ namespace MLAPI.Messaging
         //The RpcQueueContainer that is associated with this RpcQueueProcessor
         private RpcQueueContainer m_RpcQueueContainer;
 
+        private readonly NetworkManager m_NetworkManager;
+
         /// <summary>
         /// ProcessReceiveQueue
         /// Public facing interface method to start processing all RPCs in the current inbound frame
@@ -126,7 +128,7 @@ namespace MLAPI.Messaging
                             {
                                 foreach (ulong clientId in queueItem.ClientNetworkIds)
                                 {
-                                    InternalMessageSender.Send(clientId, NetworkConstants.ADD_OBJECT, queueItem.NetworkChannel, poolStream);
+                                    m_NetworkManager.MessageSender.Send(clientId, NetworkConstants.ADD_OBJECT, queueItem.NetworkChannel, poolStream);
                                 }
 
                                 PerformanceDataManager.Increment(ProfilerConstants.RpcSent, queueItem.ClientNetworkIds.Length);
@@ -144,7 +146,7 @@ namespace MLAPI.Messaging
                             {
                                 foreach (ulong clientId in queueItem.ClientNetworkIds)
                                 {
-                                    InternalMessageSender.Send(clientId, NetworkConstants.DESTROY_OBJECT, queueItem.NetworkChannel, poolStream);
+                                    m_NetworkManager.MessageSender.Send(clientId, NetworkConstants.DESTROY_OBJECT, queueItem.NetworkChannel, poolStream);
                                 }
 
                                 PerformanceDataManager.Increment(ProfilerConstants.RpcSent, queueItem.ClientNetworkIds.Length);
@@ -270,9 +272,10 @@ namespace MLAPI.Messaging
             }
         }
 
-        internal RpcQueueProcessor(RpcQueueContainer rpcQueueContainer)
+        internal RpcQueueProcessor(RpcQueueContainer rpcQueueContainer, NetworkManager networkManager)
         {
             m_RpcQueueContainer = rpcQueueContainer;
+            m_NetworkManager = networkManager;
         }
     }
 }
