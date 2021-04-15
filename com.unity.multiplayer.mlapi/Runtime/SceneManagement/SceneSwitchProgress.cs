@@ -55,9 +55,12 @@ namespace MLAPI.SceneManagement
         private Coroutine m_TimeOutCoroutine;
         private AsyncOperation m_SceneLoadOperation;
 
-        internal SceneSwitchProgress()
+        private NetworkManager m_NetworkManager { get; }
+
+        internal SceneSwitchProgress(NetworkManager networkManager)
         {
-            m_TimeOutCoroutine = NetworkManager.Singleton.StartCoroutine(NetworkManager.Singleton.TimeOutSwitchSceneProgress(this));
+            m_NetworkManager = networkManager;
+            m_TimeOutCoroutine = m_NetworkManager.StartCoroutine(m_NetworkManager.TimeOutSwitchSceneProgress(this));
         }
 
         internal void AddClientAsDone(ulong clientId)
@@ -85,10 +88,10 @@ namespace MLAPI.SceneManagement
             {
                 IsCompleted = true;
                 IsAllClientsDoneLoading = true;
-                NetworkSceneManager.SceneSwitchProgresses.Remove(Guid);
+                m_NetworkManager.SceneManager.SceneSwitchProgresses.Remove(Guid);
                 OnComplete?.Invoke(false);
 
-                NetworkManager.Singleton.StopCoroutine(m_TimeOutCoroutine);
+                m_NetworkManager.StopCoroutine(m_TimeOutCoroutine);
             }
         }
 
@@ -97,7 +100,7 @@ namespace MLAPI.SceneManagement
             if (!IsCompleted)
             {
                 IsCompleted = true;
-                NetworkSceneManager.SceneSwitchProgresses.Remove(Guid);
+                m_NetworkManager.SceneManager.SceneSwitchProgresses.Remove(Guid);
                 OnComplete?.Invoke(true);
             }
         }

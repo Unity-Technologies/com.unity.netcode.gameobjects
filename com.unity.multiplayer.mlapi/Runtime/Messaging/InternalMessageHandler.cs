@@ -107,7 +107,7 @@ namespace MLAPI.Messaging
                     sceneSwitchProgressGuid = new Guid(reader.ReadByteArray());
                 }
 
-                bool sceneSwitch = NetworkManager.NetworkConfig.EnableSceneManagement && NetworkSceneManager.HasSceneMismatch(sceneIndex);
+                bool sceneSwitch = NetworkManager.NetworkConfig.EnableSceneManagement && NetworkManager.SceneManager.HasSceneMismatch(sceneIndex);
 
                 float netTime = reader.ReadSinglePacked();
                 NetworkManager.UpdateNetworkTime(clientId, netTime, receiveTime, true);
@@ -216,7 +216,7 @@ namespace MLAPI.Messaging
 
                     onSceneLoaded = (oldScene, newScene) => { OnSceneLoadComplete(); };
                     SceneManager.activeSceneChanged += onSceneLoaded;
-                    NetworkSceneManager.OnFirstSceneSwitchSync(sceneIndex, sceneSwitchProgressGuid);
+                    m_NetworkManager.SceneManager.OnFirstSceneSwitchSync(sceneIndex, sceneSwitchProgressGuid);
                 }
                 else
                 {
@@ -333,7 +333,7 @@ namespace MLAPI.Messaging
                 objectBuffer.CopyUnreadFrom(stream);
                 objectBuffer.Position = 0;
 
-                NetworkSceneManager.OnSceneSwitch(sceneIndex, switchSceneGuid, objectBuffer);
+                m_NetworkManager.SceneManager.OnSceneSwitch(sceneIndex, switchSceneGuid, objectBuffer);
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleSwitchScene.End();
@@ -347,7 +347,7 @@ namespace MLAPI.Messaging
 #endif
             using (var reader = PooledNetworkReader.Get(stream))
             {
-                NetworkSceneManager.OnClientSwitchSceneCompleted(clientId, new Guid(reader.ReadByteArray()));
+                m_NetworkManager.SceneManager.OnClientSwitchSceneCompleted(clientId, new Guid(reader.ReadByteArray()));
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleClientSwitchSceneCompleted.End();

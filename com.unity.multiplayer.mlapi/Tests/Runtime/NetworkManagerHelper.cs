@@ -86,7 +86,7 @@ namespace MLAPI.RuntimeTests
                 var currentActiveScene = SceneManager.GetActiveScene();
 
                 //Add our test scene name
-                NetworkSceneManager.AddRuntimeSceneName(currentActiveScene.name, 0);
+                NetworkManager.Singleton.SceneManager.AddRuntimeSceneName(currentActiveScene.name, 0);
 
                 //Starts the network manager in the mode specified
                 StartNetworkManagerMode(managerMode);
