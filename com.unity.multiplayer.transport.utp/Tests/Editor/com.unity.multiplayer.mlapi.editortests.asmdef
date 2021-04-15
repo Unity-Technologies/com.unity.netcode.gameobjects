@@ -5,8 +5,8 @@
         "Unity.Multiplayer.MLAPI.Runtime",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",
-        "Unity MLAPI Transport",
-        "Unity.Networking.Transport"
+        "Unity.Networking.Transport",
+        "Unity.Multiplayer.Transport.UTP"
     ],
     "includePlatforms": [
         "Editor"
