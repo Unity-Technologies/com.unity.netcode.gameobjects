@@ -8,8 +8,9 @@ run_all_tests:
 {% for editor in test_editors -%}
 {% for platform in test_platforms -%}
 {% for project in projects -%}
-    - .yamato/package-tests.yml#test_{{ projects.first.packages.first.name }}_{{ editor }}_{{ platform.name }}
-    - .yamato/package-tests.yml#test_{{ projects.first.packages.second.name }}_{{ editor }}_{{ platform.name }}
+{% for package in project.packages -%}
+    - .yamato/package-tests.yml#test_{{ package.name }}_{{ editor }}_{{ platform.name }}
+{% endfor -%}
     - .yamato/project-tests.yml#test_{{ project.name }}_{{ editor }}_{{ platform.name }}
 {% endfor -%}
 {% endfor -%}
@@ -36,7 +37,9 @@ all_package_tests:
 {% for editor in test_editors -%}
 {% for platform in test_platforms -%}
 {% for project in projects -%}
-    - .yamato/package-tests.yml#test_{{ projects.first.packages.first.name }}_{{ editor }}_{{ platform.name }}
+{% for package in project.packages -%}
+    - .yamato/package-tests.yml#test_{{ package.name }}_{{ editor }}_{{ platform.name }}
+{% endfor -%}
     - .yamato/package-tests.yml#test_{{ projects.first.packages.second.name }}_{{ editor }}_{{ platform.name }}
 {% endfor -%}
 {% endfor -%}
