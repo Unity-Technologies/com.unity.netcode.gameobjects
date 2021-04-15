@@ -78,6 +78,3 @@ public class Chat : NetworkBehaviour
     }
 }
 ```
-
-### License
-[MIT License](LICENSE.md)
