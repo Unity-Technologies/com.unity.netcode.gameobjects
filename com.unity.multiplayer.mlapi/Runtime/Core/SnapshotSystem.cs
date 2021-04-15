@@ -2,9 +2,9 @@ using System;
 using MLAPI.Configuration;
 using MLAPI.Messaging;
 using MLAPI.NetworkVariable;
+using MLAPI.Serialization;
 using MLAPI.Serialization.Pooled;
 using MLAPI.Transports;
-using Unity.Collections;
 using UnityEngine;
 
 namespace MLAPI
@@ -21,10 +21,10 @@ namespace MLAPI
 
     public class SnapshotSystem : INetworkUpdateSystem, IDisposable
     {
-        private NativeArray<Entry> m_Entries = new NativeArray<Entry>(64, Allocator.Persistent);
-        private NativeArray<char> m_Buffer = new NativeArray<char>(20000, Allocator.Persistent);
-
+        Entry[] m_Entries = new Entry[64];
         private int m_LastEntry = 0;
+
+        byte[] m_Buffer = new byte[20000];
         private int m_Beg = 0;
         private int m_End = 0;
 
@@ -47,23 +47,52 @@ namespace MLAPI
                     for (int i = 0; i < NetworkManager.Singleton.ConnectedClientsList.Count; i++)
                     {
                         var clientId = NetworkManager.Singleton.ConnectedClientsList[i].ClientId;
-                        // todo: code here that just sends keepalive unreliable packets
+
+
+                        // todo: code here that reads the buffer and sends it
+                        // todo: demonstrates how to send a byte[] section
                         var buffer = PooledNetworkBuffer.Get();
+
+                        WriteIndex(buffer);
+                        WriteBuffer(buffer);
+
                         NetworkManager.Singleton.MessageSender.Send(clientId, NetworkConstants.SNAPSHOT_DATA, NetworkChannel.SnapshotExchange, buffer);
                         buffer.Dispose();
-                        // todo: code here that reads the native array and sends it
-
                     }
+
+                    DebugDisplayStore(m_Entries, m_LastEntry);
                     break;
             }
         }
 
+        private void WriteIndex(NetworkBuffer buffer)
+        {
+            using (var writer = PooledNetworkWriter.Get(buffer))
+            {
+                writer.WriteInt16((short)m_LastEntry);
+
+                for (var i = 0; i < m_LastEntry; i++)
+                {
+                    writer.WriteUInt64(m_Entries[i].m_NetworkObjectId);
+                    writer.WriteUInt16(m_Entries[i].m_Index);
+                    writer.WriteUInt16(m_Entries[i].m_Position);
+                    writer.WriteUInt16(m_Entries[i].m_Length);
+                }
+            }
+        }
+
+        private void WriteBuffer(NetworkBuffer buffer)
+        {
+            // todo: this sends the whole buffer
+            // we'll need to build a per-client list
+            buffer.Write(m_Buffer, 0, m_End);
+        }
+
         public int Find(ulong networkObjectId, int index)
         {
-            for(int i = 0; i < m_LastEntry; i++)
+            for (int i = 0; i < m_LastEntry; i++)
             {
-                var entry = m_Entries[i];
-                if (entry.m_NetworkObjectId == networkObjectId && entry.m_Index == index)
+                if (m_Entries[i].m_NetworkObjectId == networkObjectId && m_Entries[i].m_Index == index)
                 {
                     return i;
                 }
@@ -74,15 +103,26 @@ namespace MLAPI
 
         public int AddEntry(ulong networkObjectId, int index)
         {
-            int pos = m_LastEntry;
-            var entry = m_Entries[m_LastEntry++];
+            var pos = m_LastEntry++;
+            var entry = m_Entries[pos];
 
             entry.m_NetworkObjectId = networkObjectId;
             entry.m_Index = (ushort)index;
             entry.m_Position = 0;
             entry.m_Length = 0;
+            m_Entries[pos] = entry;
 
             return pos;
+        }
+
+        public void AllocateEntry(int pos, long size)
+        {
+            // todo: deal with free space
+            // todo: deal with full buffer
+
+            m_Entries[pos].m_Position = (ushort)m_Beg;
+            m_Entries[pos].m_Length = (ushort)size;
+            m_Beg += (int)size;
         }
 
         public void Store(ulong networkObjectId, int index, INetworkVariable networkVariable)
@@ -94,8 +134,31 @@ namespace MLAPI
                 pos = AddEntry(networkObjectId, index);
             }
 
-            // todo: write var into buffer, possibly adjusting entry's position and length
+            // write var into buffer, possibly adjusting entry's position and length
+            using (var varBuffer = PooledNetworkBuffer.Get())
+            {
+                networkVariable.WriteDelta(varBuffer);
+                if (varBuffer.Length > m_Entries[pos].m_Length)
+                {
+                    // allocate this Entry's buffer
+                    AllocateEntry(pos, varBuffer.Length);
+                }
+
+                // Copy the serialized NetworkVariable into our buffer
+                Buffer.BlockCopy(varBuffer.GetBuffer(), 0, m_Buffer, m_Entries[pos].m_Position, (int)varBuffer.Length);
+
+            }
         }
 
+        private static void DebugDisplayStore(Entry[] entries, int entryLength)
+        {
+            string table = "=== Snapshot table ===\n";
+            for (int i = 0; i < entryLength; i++)
+            {
+                table += string.Format("NetworkObject {0}:{1} range [{2}, {3}]\n", entries[i].m_NetworkObjectId,
+                    entries[i].m_Index, entries[i].m_Position, entries[i].m_Position + entries[i].m_Length);
+            }
+            Debug.Log(table);
+        }
     }
 }

@@ -572,5 +572,11 @@ namespace MLAPI.Messaging
             s_HandleNetworkLog.End();
 #endif
         }
+
+        internal static void HandleSnapshot(ulong clientId, Stream messageStream)
+        {
+            //todo
+
+        }
     }
 }

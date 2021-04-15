@@ -364,7 +364,7 @@ namespace MLAPI
             // This should never happen, but in the event that it does there should be (at a minimum) a unity error logged.
             if (RpcQueueContainer != null)
             {
-                UnityEngine.Debug.LogError("Init was invoked, but rpcQueueContainer was already initialized! (destroying previous instance)");
+                Debug.LogError("Init was invoked, but rpcQueueContainer was already initialized! (destroying previous instance)");
                 RpcQueueContainer.Dispose();
                 RpcQueueContainer = null;
             }
@@ -1174,7 +1174,7 @@ namespace MLAPI
                 {
                     case NetworkConstants.SNAPSHOT_DATA:
                         UnityEngine.Debug.Log("Received Snapshot Data");
-
+                        InternalMessageHandler.HandleSnapshot(clientId, messageStream);
                         break;
                     case NetworkConstants.CONNECTION_REQUEST:
                         if (IsServer)
