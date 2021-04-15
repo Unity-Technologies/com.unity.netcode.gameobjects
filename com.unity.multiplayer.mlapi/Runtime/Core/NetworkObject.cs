@@ -27,6 +27,12 @@ namespace MLAPI
 #if UNITY_EDITOR
         private void OnValidate()
         {
+            if (UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                // do NOT override GlobalObjectIdHash while getting into PlayMode in the Editor
+                return;
+            }
+
             var globalObjectIdString = UnityEditor.GlobalObjectId.GetGlobalObjectIdSlow(this).ToString();
             GlobalObjectIdHash = XXHash.Hash32(globalObjectIdString);
         }
