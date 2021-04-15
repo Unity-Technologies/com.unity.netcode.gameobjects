@@ -14,8 +14,15 @@ namespace MLAPI.Messaging
     /// The manager class to manage custom messages, note that this is different from the NetworkManager custom messages.
     /// These are named and are much easier to use.
     /// </summary>
-    public static class CustomMessagingManager
+    public class CustomMessagingManager
     {
+        private NetworkManager m_NetworkManager { get; }
+
+        internal CustomMessagingManager(NetworkManager networkManager)
+        {
+            m_NetworkManager = networkManager;
+        }
+
         #region Unnamed
 
         /// <summary>
@@ -28,9 +35,9 @@ namespace MLAPI.Messaging
         /// <summary>
         /// Event invoked when unnamed messages arrive
         /// </summary>
-        public static event UnnamedMessageDelegate OnUnnamedMessage;
+        public event UnnamedMessageDelegate OnUnnamedMessage;
 
-        internal static void InvokeUnnamedMessage(ulong clientId, Stream stream) => OnUnnamedMessage?.Invoke(clientId, stream);
+        internal void InvokeUnnamedMessage(ulong clientId, Stream stream) => OnUnnamedMessage?.Invoke(clientId, stream);
 
         /// <summary>
         /// Sends unnamed message to a list of clients
@@ -38,7 +45,7 @@ namespace MLAPI.Messaging
         /// <param name="clientIds">The clients to send to, sends to everyone if null</param>
         /// <param name="buffer">The message stream containing the data</param>
         /// <param name="networkChannel">The channel to send the data on</param>
-        public static void SendUnnamedMessage(List<ulong> clientIds, NetworkBuffer buffer, NetworkChannel networkChannel = NetworkChannel.Internal)
+        public void SendUnnamedMessage(List<ulong> clientIds, NetworkBuffer buffer, NetworkChannel networkChannel = NetworkChannel.Internal)
         {
             if (!NetworkManager.Singleton.IsServer)
             {
@@ -75,10 +82,10 @@ namespace MLAPI.Messaging
         /// </summary>
         public delegate void HandleNamedMessageDelegate(ulong sender, Stream payload);
 
-        private static Dictionary<ulong, HandleNamedMessageDelegate> s_NamedMessageHandlers32 = new Dictionary<ulong, HandleNamedMessageDelegate>();
-        private static Dictionary<ulong, HandleNamedMessageDelegate> s_NamedMessageHandlers64 = new Dictionary<ulong, HandleNamedMessageDelegate>();
+        private Dictionary<ulong, HandleNamedMessageDelegate> s_NamedMessageHandlers32 = new Dictionary<ulong, HandleNamedMessageDelegate>();
+        private Dictionary<ulong, HandleNamedMessageDelegate> s_NamedMessageHandlers64 = new Dictionary<ulong, HandleNamedMessageDelegate>();
 
-        internal static void InvokeNamedMessage(ulong hash, ulong sender, Stream stream)
+        internal void InvokeNamedMessage(ulong hash, ulong sender, Stream stream)
         {
             if (NetworkManager.Singleton == null)
             {
@@ -119,7 +126,7 @@ namespace MLAPI.Messaging
         /// </summary>
         /// <param name="name">Name of the message.</param>
         /// <param name="callback">The callback to run when a named message is received.</param>
-        public static void RegisterNamedMessageHandler(string name, HandleNamedMessageDelegate callback)
+        public void RegisterNamedMessageHandler(string name, HandleNamedMessageDelegate callback)
         {
             s_NamedMessageHandlers32[XXHash.Hash32(name)] = callback;
             s_NamedMessageHandlers64[XXHash.Hash64(name)] = callback;
@@ -129,7 +136,7 @@ namespace MLAPI.Messaging
         /// Unregisters a named message handler.
         /// </summary>
         /// <param name="name">The name of the message.</param>
-        public static void UnregisterNamedMessageHandler(string name)
+        public void UnregisterNamedMessageHandler(string name)
         {
             s_NamedMessageHandlers32.Remove(XXHash.Hash32(name));
             s_NamedMessageHandlers64.Remove(XXHash.Hash64(name));
@@ -142,7 +149,7 @@ namespace MLAPI.Messaging
         /// <param name="clientId">The client to send the message to</param>
         /// <param name="stream">The message stream containing the data</param>
         /// <param name="networkChannel">The channel to send the data on</param>
-        public static void SendNamedMessage(string name, ulong clientId, Stream stream, NetworkChannel networkChannel = NetworkChannel.Internal)
+        public void SendNamedMessage(string name, ulong clientId, Stream stream, NetworkChannel networkChannel = NetworkChannel.Internal)
         {
             ulong hash = 0;
             switch (NetworkManager.Singleton.NetworkConfig.RpcHashSize)
@@ -174,7 +181,7 @@ namespace MLAPI.Messaging
         /// <param name="clientIds">The clients to send to, sends to everyone if null</param>
         /// <param name="stream">The message stream containing the data</param>
         /// <param name="networkChannel">The channel to send the data on</param>
-        public static void SendNamedMessage(string name, List<ulong> clientIds, Stream stream, NetworkChannel networkChannel = NetworkChannel.Internal)
+        public void SendNamedMessage(string name, List<ulong> clientIds, Stream stream, NetworkChannel networkChannel = NetworkChannel.Internal)
         {
             ulong hash = 0;
             switch (NetworkManager.Singleton.NetworkConfig.RpcHashSize)
