@@ -47,7 +47,7 @@ namespace MLAPI.Messaging
         /// <param name="networkChannel">The channel to send the data on</param>
         public void SendUnnamedMessage(List<ulong> clientIds, NetworkBuffer buffer, NetworkChannel networkChannel = NetworkChannel.Internal)
         {
-            if (!NetworkManager.Singleton.IsServer)
+            if (!m_NetworkManager.IsServer)
             {
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
                 {
@@ -67,7 +67,7 @@ namespace MLAPI.Messaging
         /// <param name="clientId">The client to send the message to</param>
         /// <param name="buffer">The message stream containing the data</param>
         /// <param name="networkChannel">The channel tos end the data on</param>
-        public static void SendUnnamedMessage(ulong clientId, NetworkBuffer buffer, NetworkChannel networkChannel = NetworkChannel.Internal)
+        public void SendUnnamedMessage(ulong clientId, NetworkBuffer buffer, NetworkChannel networkChannel = NetworkChannel.Internal)
         {
             InternalMessageSender.Send(clientId, NetworkConstants.UNNAMED_MESSAGE, networkChannel, buffer);
             PerformanceDataManager.Increment(ProfilerConstants.UnnamedMessageSent);
@@ -87,7 +87,7 @@ namespace MLAPI.Messaging
 
         internal void InvokeNamedMessage(ulong hash, ulong sender, Stream stream)
         {
-            if (NetworkManager.Singleton == null)
+            if (m_NetworkManager == null)
             {
                 // We dont know what size to use. Try every (more collision prone)
                 if (s_NamedMessageHandlers32.ContainsKey(hash))
@@ -103,7 +103,7 @@ namespace MLAPI.Messaging
             else
             {
                 // Only check the right size.
-                switch (NetworkManager.Singleton.NetworkConfig.RpcHashSize)
+                switch (m_NetworkManager.NetworkConfig.RpcHashSize)
                 {
                     case HashSize.VarIntFourBytes:
                         if (s_NamedMessageHandlers32.ContainsKey(hash))
@@ -152,7 +152,7 @@ namespace MLAPI.Messaging
         public void SendNamedMessage(string name, ulong clientId, Stream stream, NetworkChannel networkChannel = NetworkChannel.Internal)
         {
             ulong hash = 0;
-            switch (NetworkManager.Singleton.NetworkConfig.RpcHashSize)
+            switch (m_NetworkManager.NetworkConfig.RpcHashSize)
             {
                 case HashSize.VarIntFourBytes:
                     hash = XXHash.Hash32(name);
@@ -184,7 +184,7 @@ namespace MLAPI.Messaging
         public void SendNamedMessage(string name, List<ulong> clientIds, Stream stream, NetworkChannel networkChannel = NetworkChannel.Internal)
         {
             ulong hash = 0;
-            switch (NetworkManager.Singleton.NetworkConfig.RpcHashSize)
+            switch (m_NetworkManager.NetworkConfig.RpcHashSize)
             {
                 case HashSize.VarIntFourBytes:
                     hash = XXHash.Hash32(name);
@@ -201,7 +201,7 @@ namespace MLAPI.Messaging
 
                 messageBuffer.CopyFrom(stream);
 
-                if (!NetworkManager.Singleton.IsServer)
+                if (!m_NetworkManager.IsServer)
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
                     {
