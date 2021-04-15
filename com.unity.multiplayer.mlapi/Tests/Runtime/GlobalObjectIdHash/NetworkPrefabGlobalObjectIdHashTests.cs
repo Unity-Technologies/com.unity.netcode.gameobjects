@@ -26,7 +26,7 @@ namespace MLAPI.RuntimeTests
         public IEnumerator Setup()
         {
             NetworkManager.IsTestRun = true;
-            
+
             SceneManager.sceneLoaded += OnSceneLoaded;
 
             var execAssembly = Assembly.GetExecutingAssembly();
