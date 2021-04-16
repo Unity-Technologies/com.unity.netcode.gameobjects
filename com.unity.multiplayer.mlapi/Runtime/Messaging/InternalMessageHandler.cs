@@ -557,7 +557,7 @@ namespace MLAPI.Messaging
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleUnnamedMessage.Begin();
 #endif
-            CustomMessagingManager.InvokeUnnamedMessage(clientId, stream);
+            NetworkManager.CustomMessagingManager.InvokeUnnamedMessage(clientId, stream);
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleUnnamedMessage.End();
 #endif
@@ -574,7 +574,7 @@ namespace MLAPI.Messaging
             {
                 ulong hash = reader.ReadUInt64Packed();
 
-                CustomMessagingManager.InvokeNamedMessage(hash, clientId, stream);
+                NetworkManager.CustomMessagingManager.InvokeNamedMessage(hash, clientId, stream);
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleNamedMessage.End();

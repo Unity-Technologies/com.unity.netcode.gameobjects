@@ -95,6 +95,8 @@ namespace MLAPI
         /// </summary>
         public NetworkSpawnManager SpawnManager { get; private set; }
 
+        public CustomMessagingManager CustomMessagingManager { get; private set; }
+
         internal BufferManager BufferManager { get; private set; }
 
         // Has to have setter for tests
@@ -207,7 +209,7 @@ namespace MLAPI
 
 #if UNITY_EDITOR
         internal static bool IsTestRun = false;
-        
+
         private void OnValidate()
         {
             if (NetworkConfig == null)
@@ -297,6 +299,8 @@ namespace MLAPI
 
             // Create spawn manager instance
             SpawnManager = new NetworkSpawnManager(this);
+
+            CustomMessagingManager = new CustomMessagingManager(this);
 
             BufferManager = new BufferManager();
 
@@ -698,6 +702,11 @@ namespace MLAPI
             if (MessageHandler != null)
             {
                 MessageHandler = null;
+            }
+
+            if (CustomMessagingManager != null)
+            {
+                CustomMessagingManager = null;
             }
 
             //The Transport is set during Init time, thus it is possible for the Transport to be null
