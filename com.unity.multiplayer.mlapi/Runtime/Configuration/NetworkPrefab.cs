@@ -4,6 +4,13 @@ using UnityEngine;
 
 namespace MLAPI.Configuration
 {
+    public enum NetworkPrefabOverride
+    {
+        Unset,
+        Prefab,
+        Hash
+    }
+
     /// <summary>
     /// Class that represents a NetworkPrefab
     /// </summary>
@@ -14,6 +21,25 @@ namespace MLAPI.Configuration
         /// Asset reference of the network prefab
         /// </summary>
         public GameObject Prefab;
+
+        public NetworkPrefabOverride Override;
+
+        /// <summary>
+        /// The original "source" prefab
+        /// </summary>
+        public GameObject OverridingSourcePrefab;
+
+        /// <summary>
+        /// The original "source" prefab's hash
+        /// This is used typically in multi-project patterns where a separate project contains the
+        /// source prefab and the GlobalObjectIdHash was copied and pasted into this field.
+        /// </summary>
+        public uint OverridingSourceHash;
+
+        /// <summary>
+        /// The prefab to replace the OverridingSourcePrefab with
+        /// </summary>
+        public GameObject OverridingTargetPrefab;
 
         /// <summary>
         /// Whether or not this is a player prefab

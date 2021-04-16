@@ -422,7 +422,7 @@ PrefabInstance:
     - target: {fileID: 6633621479308595792, guid: d725b5588e1b956458798319e6541d84,
         type: 3}
       propertyPath: m_AnchorMax.y
-      value: 0.5
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6633621479308595792, guid: d725b5588e1b956458798319e6541d84,
         type: 3}
@@ -432,7 +432,7 @@ PrefabInstance:
     - target: {fileID: 6633621479308595792, guid: d725b5588e1b956458798319e6541d84,
         type: 3}
       propertyPath: m_AnchorMin.y
-      value: 0.5
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6633621479308595792, guid: d725b5588e1b956458798319e6541d84,
         type: 3}
@@ -487,7 +487,7 @@ PrefabInstance:
     - target: {fileID: 6633621479308595792, guid: d725b5588e1b956458798319e6541d84,
         type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 0
+      value: -90
       objectReference: {fileID: 0}
     - target: {fileID: 6633621479308595792, guid: d725b5588e1b956458798319e6541d84,
         type: 3}
@@ -808,11 +808,18 @@ MonoBehaviour:
     RegisteredScenes:
     - RpcTesting
     AllowRuntimeSceneChanges: 0
+    PlayerPrefab: {fileID: 4700706668509470175, guid: 7eeaaf9e50c0afc4dab93584a54fb0d6,
+      type: 3}
     NetworkPrefabs:
     - Prefab: {fileID: 4700706668509470175, guid: 7eeaaf9e50c0afc4dab93584a54fb0d6,
         type: 3}
-      IsPlayer: 1
-    PlayerPrefabHash: 315939022
+      Override: 0
+      OverridingSourcePrefab: {fileID: 4700706668509470175, guid: 7eeaaf9e50c0afc4dab93584a54fb0d6,
+        type: 3}
+      OverridingSourceHash: 0
+      OverridingTargetPrefab: {fileID: 8685790303553767886, guid: 96e0a72e30d0c46c8a5c9a750e8f5807,
+        type: 3}
+      IsPlayer: 0
     CreatePlayerPrefab: 1
     ReceiveTickrate: 64
     NetworkTickIntervalSec: 0.05
@@ -827,7 +834,6 @@ MonoBehaviour:
     EnsureNetworkVariableLengthSafety: 0
     EnableSceneManagement: 1
     ForceSamePrefabs: 1
-    UsePrefabSync: 0
     RecycleNetworkIds: 1
     NetworkIdRecycleDelay: 120
     RpcHashSize: 0

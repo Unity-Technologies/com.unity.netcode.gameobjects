@@ -220,20 +220,61 @@ namespace MLAPI.Spawning
                 }
                 else
                 {
-                    var prefabIndex = GetNetworkPrefabIndexOfHash(prefabHash);
+                    GameObject networkPrefabReference = null;
+                    if(NetworkManager.NetworkConfig.HashedNetworkPrefabs.ContainsKey(prefabHash))
+                    {
+                        switch (NetworkManager.NetworkConfig.HashedNetworkPrefabs[prefabHash].Override)
+                        {
+                            default:
+                            case NetworkPrefabOverride.Unset:
+                                networkPrefabReference = NetworkManager.NetworkConfig.HashedNetworkPrefabs[prefabHash].Prefab;
+                                break;
+                            case NetworkPrefabOverride.Hash:
+                            case NetworkPrefabOverride.Prefab:
+                                networkPrefabReference = NetworkManager.NetworkConfig.HashedNetworkPrefabs[prefabHash].OverridingTargetPrefab;
+                                break;
+                        }
+                    }
 
-                    if (prefabIndex < 0)
+                    //for (int i = 0; networkPrefabReference == null && i < NetworkManager.NetworkConfig.NetworkPrefabs.Count; i++)
+                    //{
+                    //    var element = NetworkManager.NetworkConfig.NetworkPrefabs[i];
+                        
+                    //    switch (element.Override)
+                    //    {
+                    //        default:
+                    //        case NetworkPrefabOverride.Unset:
+                    //            if (element.Hash == prefabHash)
+                    //            {
+                    //                networkPrefabReference = element.Prefab;
+                    //            }
+                    //            break;
+                    //        case NetworkPrefabOverride.Prefab:
+                    //            if (element.OverridingSourcePrefab.GetComponent<NetworkObject>().GlobalObjectIdHash == prefabHash)
+                    //            {
+                    //                networkPrefabReference = element.OverridingTargetPrefab;
+                    //            }
+                    //            break;
+                    //        case NetworkPrefabOverride.Hash:
+                    //            if (element.OverridingSourceHash == prefabHash)
+                    //            {
+                    //                networkPrefabReference = element.OverridingTargetPrefab;
+                    //            }
+                    //            break;
+                    //    }
+                    //}
+
+                    if (networkPrefabReference == null)
                     {
                         if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
                         {
-                            NetworkLog.LogError($"Failed to create object locally. [{nameof(prefabHash)}={prefabHash}]. Hash could not be found. Is the prefab registered?");
+                            NetworkLog.LogError($"Failed to create object locally. [{nameof(prefabHash)}={prefabHash}]. {nameof(NetworkPrefab)} could not be found. Is the prefab registered with {nameof(NetworkManager)}?");
                         }
 
                         return null;
                     }
 
-                    var prefab = NetworkManager.NetworkConfig.NetworkPrefabs[prefabIndex].Prefab;
-                    var networkObject = ((position == null && rotation == null) ? UnityEngine.Object.Instantiate(prefab) : UnityEngine.Object.Instantiate(prefab, position.GetValueOrDefault(Vector3.zero), rotation.GetValueOrDefault(Quaternion.identity))).GetComponent<NetworkObject>();
+                    var networkObject = ((position == null && rotation == null) ? UnityEngine.Object.Instantiate(networkPrefabReference) : UnityEngine.Object.Instantiate(networkPrefabReference, position.GetValueOrDefault(Vector3.zero), rotation.GetValueOrDefault(Quaternion.identity))).GetComponent<NetworkObject>();
 
                     if (parentNetworkObject != null)
                     {

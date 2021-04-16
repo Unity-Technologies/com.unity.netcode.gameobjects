@@ -42,16 +42,18 @@ namespace MLAPI.Configuration
         public bool AllowRuntimeSceneChanges = false;
 
         /// <summary>
+        /// The default player prefab
+        /// </summary>
+        public GameObject PlayerPrefab;
+
+        /// <summary>
         /// A list of spawnable prefabs
         /// </summary>
         [Tooltip("The prefabs that can be spawned across the network")]
         public List<NetworkPrefab> NetworkPrefabs = new List<NetworkPrefab>();
 
-        /// <summary>
-        /// The default player prefab
-        /// </summary>
-        [SerializeReference]
-        internal uint PlayerPrefabHash;
+
+        public Dictionary<uint, NetworkPrefab> HashedNetworkPrefabs = new Dictionary<uint, NetworkPrefab>();
 
         /// <summary>
         /// Whether or not a player object should be created by default. This value can be overridden on a case by case basis with ConnectionApproval.
