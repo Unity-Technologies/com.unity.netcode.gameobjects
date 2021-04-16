@@ -49,7 +49,7 @@ namespace MLAPI.RuntimeTests
         /// </summary>
         /// <param name="managerMode">parameter to specify which mode you want to start the NetworkManager</param>
         /// <returns>true if it was instantiated or is already instantiate otherwise false means it failed to instantiate</returns>
-        public static bool StartNetworkManager(NetworkManagerOperatingMode managerMode = NetworkManagerOperatingMode.Host)
+        public static bool StartNetworkManager(out NetworkManager networkManager, NetworkManagerOperatingMode managerMode = NetworkManagerOperatingMode.Host)
         {
             //If we are changing the current manager mode and the current manager mode is not "None", then stop the NetworkManager mode
             if (CurrentNetworkManagerMode != managerMode && CurrentNetworkManagerMode != NetworkManagerOperatingMode.None)
@@ -60,7 +60,7 @@ namespace MLAPI.RuntimeTests
             if (NetworkManagerGameObject == null)
             {
                 NetworkManagerGameObject = new GameObject(nameof(NetworkManager));
-                NetworkManagerObject = NetworkManagerGameObject.AddComponent<NetworkManager>();
+                networkManager = NetworkManagerGameObject.AddComponent<NetworkManager>();
                 if (NetworkManagerObject == null)
                 {
                     return false;
@@ -92,6 +92,11 @@ namespace MLAPI.RuntimeTests
                 //Starts the network manager in the mode specified
                 StartNetworkManagerMode(managerMode);
             }
+            else
+            {
+                networkManager = null;
+            }
+
             return true;
         }
 
