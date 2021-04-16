@@ -201,6 +201,9 @@ namespace MLAPI
 
         internal static event Action OnSingletonReady;
 
+#if UNITY_EDITOR
+        internal static bool IsTestRun = false;
+        
         private void OnValidate()
         {
             if (NetworkConfig == null)
@@ -226,7 +229,6 @@ namespace MLAPI
                 }
 
                 NetworkConfig.RegisteredScenes.Add(activeSceneName);
-#if UNITY_EDITOR
                 UnityEditor.EditorApplication.delayCall += () =>
                 {
                     if (!UnityEditor.EditorApplication.isPlaying)
@@ -235,7 +237,6 @@ namespace MLAPI
                         UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(activeScene);
                     }
                 };
-#endif
             }
 
             for (int i = 0; i < NetworkConfig.NetworkPrefabs.Count; i++)
@@ -272,6 +273,7 @@ namespace MLAPI
             var networkPrefab = NetworkConfig.NetworkPrefabs.FirstOrDefault(x => x.IsPlayer);
             NetworkConfig.PlayerPrefabHash = networkPrefab?.Hash ?? (uint)0;
         }
+#endif
 
         private void Init(bool server)
         {
