@@ -244,21 +244,22 @@ namespace MLAPI
                 };
             }
 
-            if (NetworkConfig.PlayerPrefab == null && NetworkConfig.CreatePlayerPrefab && !NetworkConfig.ConnectionApproval)
-            {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                {
-                    NetworkLog.LogWarning($"There is no {nameof(NetworkPrefab)} marked as a {nameof(NetworkPrefab.IsPlayer)}");
-                }
-                //Exit if we don't find a player prefab under these conditions
-                return;
-            }
+            //if (NetworkConfig.PlayerPrefab == null && NetworkConfig.CreatePlayerPrefab && !NetworkConfig.ConnectionApproval)
+            //{
+            //    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+            //    {
+            //        NetworkLog.LogWarning($"There is no {nameof(NetworkPrefab)} marked as a {nameof(NetworkPrefab.IsPlayer)}");
+            //    }
+            //    //Exit if we don't find a player prefab under these conditions
+            //    return;
+            //}
 
             var scanForPlayerPrefab = (NetworkConfig.PlayerPrefab == null && NetworkConfig.CreatePlayerPrefab);
 
             //Clear this out and rebuild
             NetworkConfig.NetworkPrefabOverrideLinks.Clear();
 
+            
             //Check network prefabs and assign to dictionary for quick look up
             for (int i = 0; i < NetworkConfig.NetworkPrefabs.Count; i++)
             {
@@ -286,35 +287,18 @@ namespace MLAPI
                                 NetworkConfig.NetworkPrefabOverrideLinks.Add(networkObject.GlobalObjectIdHash, NetworkConfig.NetworkPrefabs[i]);
                                 break;
                             case NetworkPrefabOverride.Prefab:
-                                NetworkConfig.NetworkPrefabOverrideLinks.Add(NetworkConfig.NetworkPrefabs[i].OverridingSourcePrefab.GetComponent<NetworkObject>().GlobalObjectIdHash, NetworkConfig.NetworkPrefabs[i]);
+                                {
+                                    if(NetworkConfig.NetworkPrefabs[i].OverridingSourcePrefab == null && NetworkConfig.NetworkPrefabs[i].Prefab != null)
+                                    {
+                                        NetworkConfig.NetworkPrefabs[i].OverridingSourcePrefab = NetworkConfig.NetworkPrefabs[i].Prefab;
+                                    }
+                                    NetworkConfig.NetworkPrefabOverrideLinks.Add(NetworkConfig.NetworkPrefabs[i].OverridingSourcePrefab.GetComponent<NetworkObject>().GlobalObjectIdHash, NetworkConfig.NetworkPrefabs[i]);
+                                }
                                 break;
                             case NetworkPrefabOverride.Hash:
                                 NetworkConfig.NetworkPrefabOverrideLinks.Add(NetworkConfig.NetworkPrefabs[i].OverridingSourceHash, NetworkConfig.NetworkPrefabs[i]);
                                 break;
                         }
-                    }
-                }
-            }
-
-            //If we have a player prefab then we need to verify it is in the list of NetworkPrefabOverrideLinks for client side spawning.
-            if (NetworkConfig.PlayerPrefab != null)
-            {
-                var playerPrefabNetworkObject = NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>();
-                if (playerPrefabNetworkObject != null)
-                {
-                    //If we don't have a reference (i.e. someone didn't already add it to the NetworkPrefab list) 
-                    if (!NetworkConfig.NetworkPrefabOverrideLinks.ContainsKey(NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash))
-                    {
-                        //Create a prefab entry
-                        var playerNetworkPrefab = new NetworkPrefab();
-                        playerNetworkPrefab.Prefab = NetworkConfig.PlayerPrefab;
-                        playerNetworkPrefab.IsPlayer = true;
-
-                        //Add it to the prefab list
-                        NetworkConfig.NetworkPrefabs.Add(playerNetworkPrefab);
-
-                        //assign its NetworkPrefabOverrideLink
-                        NetworkConfig.NetworkPrefabOverrideLinks.Add(playerPrefabNetworkObject.GlobalObjectIdHash, playerNetworkPrefab);
                     }
                 }
             }
@@ -404,15 +388,21 @@ namespace MLAPI
                 NetworkSceneManager.SetCurrentSceneIndex();
             }
 
+            //Remove entries not needed (only during runtime)
+            var removeEmptyPrefabs = new List<int>();
             for (int i = 0; i < NetworkConfig.NetworkPrefabs.Count; i++)
             {
-                var networkObject = NetworkConfig.NetworkPrefabs[i].Prefab.GetComponent<NetworkObject>();
+               
                 if (NetworkConfig.NetworkPrefabs[i] == null || NetworkConfig.NetworkPrefabs[i].Prefab == null)
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
                     {
                         NetworkLog.LogError($"{nameof(NetworkPrefab)} cannot be null ({nameof(NetworkPrefab)} at index: {i})");
                     }
+                    removeEmptyPrefabs.Add(i);
+
+                    //Ignore this entry due to the error
+                    continue;
                 }
                 else if (NetworkConfig.NetworkPrefabs[i].Prefab.GetComponent<NetworkObject>() == null)
                 {
@@ -420,7 +410,14 @@ namespace MLAPI
                     {
                         NetworkLog.LogError($"{nameof(NetworkPrefab)} (\"{NetworkConfig.NetworkPrefabs[i].Prefab.name}\") is missing a {nameof(NetworkObject)} component");
                     }
+                    removeEmptyPrefabs.Add(i);
+
+                    //Ignore this entry due to the error
+                    continue;
                 }
+
+                var networkObject = NetworkConfig.NetworkPrefabs[i].Prefab.GetComponent<NetworkObject>();
+
                 if (!NetworkConfig.NetworkPrefabOverrideLinks.ContainsKey(networkObject.GlobalObjectIdHash))
                 {
                     switch (NetworkConfig.NetworkPrefabs[i].Override)
@@ -438,6 +435,37 @@ namespace MLAPI
                     }
                 }
             }
+
+            //If we have a player prefab then we need to verify it is in the list of NetworkPrefabOverrideLinks for client side spawning.
+            if (NetworkConfig.PlayerPrefab != null && NetworkConfig.CreatePlayerPrefab)
+            {
+                var playerPrefabNetworkObject = NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>();
+                if (playerPrefabNetworkObject != null)
+                {
+                    //If we don't have a reference (i.e. someone didn't already add it to the NetworkPrefab list) 
+                    if (!NetworkConfig.NetworkPrefabOverrideLinks.ContainsKey(NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash))
+                    {
+                        //Create a prefab entry
+                        var playerNetworkPrefab = new NetworkPrefab();
+                        playerNetworkPrefab.Prefab = NetworkConfig.PlayerPrefab;
+                        playerNetworkPrefab.IsPlayer = true;
+
+                        //Add it to the prefab list
+                        NetworkConfig.NetworkPrefabs.Insert(0, playerNetworkPrefab);
+
+                        //assign its NetworkPrefabOverrideLink
+                        NetworkConfig.NetworkPrefabOverrideLinks.Add(playerPrefabNetworkObject.GlobalObjectIdHash, playerNetworkPrefab);
+                    }
+                }
+            }
+
+
+            foreach ( var networkPrefabIndexToRemove in removeEmptyPrefabs)
+            {
+                NetworkConfig.NetworkPrefabs.RemoveAt(networkPrefabIndexToRemove);
+            }
+
+            removeEmptyPrefabs.Clear();
 
             NetworkConfig.NetworkTransport.OnTransportEvent += HandleRawTransportPoll;
 
