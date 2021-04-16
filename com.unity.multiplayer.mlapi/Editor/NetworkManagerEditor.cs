@@ -36,7 +36,6 @@ public class NetworkManagerEditor : Editor
     private SerializedProperty m_EnsureNetworkVariableLengthSafetyProperty;
     private SerializedProperty m_CreatePlayerPrefabProperty;
     private SerializedProperty m_ForceSamePrefabsProperty;
-    private SerializedProperty m_UsePrefabSyncProperty;
     private SerializedProperty m_EnableSceneManagementProperty;
     private SerializedProperty m_RecycleNetworkIdsProperty;
     private SerializedProperty m_NetworkIdRecycleDelayProperty;
@@ -114,7 +113,6 @@ public class NetworkManagerEditor : Editor
         m_EnsureNetworkVariableLengthSafetyProperty = m_NetworkConfigProperty.FindPropertyRelative("EnsureNetworkVariableLengthSafety");
         m_CreatePlayerPrefabProperty = m_NetworkConfigProperty.FindPropertyRelative("CreatePlayerPrefab");
         m_ForceSamePrefabsProperty = m_NetworkConfigProperty.FindPropertyRelative("ForceSamePrefabs");
-        m_UsePrefabSyncProperty = m_NetworkConfigProperty.FindPropertyRelative("UsePrefabSync");
         m_EnableSceneManagementProperty = m_NetworkConfigProperty.FindPropertyRelative("EnableSceneManagement");
         m_RecycleNetworkIdsProperty = m_NetworkConfigProperty.FindPropertyRelative("RecycleNetworkIds");
         m_NetworkIdRecycleDelayProperty = m_NetworkConfigProperty.FindPropertyRelative("NetworkIdRecycleDelay");
@@ -151,7 +149,6 @@ public class NetworkManagerEditor : Editor
         m_EnsureNetworkVariableLengthSafetyProperty = m_NetworkConfigProperty.FindPropertyRelative("EnsureNetworkVariableLengthSafety");
         m_CreatePlayerPrefabProperty = m_NetworkConfigProperty.FindPropertyRelative("CreatePlayerPrefab");
         m_ForceSamePrefabsProperty = m_NetworkConfigProperty.FindPropertyRelative("ForceSamePrefabs");
-        m_UsePrefabSyncProperty = m_NetworkConfigProperty.FindPropertyRelative("UsePrefabSync");
         m_EnableSceneManagementProperty = m_NetworkConfigProperty.FindPropertyRelative("EnableSceneManagement");
         m_RecycleNetworkIdsProperty = m_NetworkConfigProperty.FindPropertyRelative("RecycleNetworkIds");
         m_NetworkIdRecycleDelayProperty = m_NetworkConfigProperty.FindPropertyRelative("NetworkIdRecycleDelay");
@@ -330,23 +327,6 @@ public class NetworkManagerEditor : Editor
             EditorGUILayout.LabelField("Spawning", EditorStyles.boldLabel);
             EditorGUILayout.PropertyField(m_CreatePlayerPrefabProperty);
             EditorGUILayout.PropertyField(m_ForceSamePrefabsProperty);
-
-            using (new EditorGUI.DisabledScope(!m_NetworkManager.NetworkConfig.EnableSceneManagement))
-            {
-                bool value = m_NetworkManager.NetworkConfig.UsePrefabSync;
-
-                if (!m_NetworkManager.NetworkConfig.EnableSceneManagement)
-                {
-                    m_UsePrefabSyncProperty.boolValue = true;
-                }
-
-                EditorGUILayout.PropertyField(m_UsePrefabSyncProperty);
-
-                if (!m_NetworkManager.NetworkConfig.EnableSceneManagement)
-                {
-                    m_UsePrefabSyncProperty.boolValue = value;
-                }
-            }
 
             EditorGUILayout.PropertyField(m_RecycleNetworkIdsProperty);
 

@@ -22,7 +22,8 @@ namespace MLAPI.RuntimeTests
     public static class NetworkManagerHelper
     {
         public static Transports.Tasks.SocketTasks StartHostSocketTasks { get; internal set; }
-        public static GameObject NetworkManagerObject { get; internal set; }
+        public static NetworkManager NetworkManagerObject { get; internal set; }
+        public static GameObject NetworkManagerGameObject { get; internal set; }
 
         internal static Dictionary<Guid, GameObject> InstantiatedGameObjects = new Dictionary<Guid, GameObject>();
         internal static Dictionary<Guid, NetworkObject> InstantiatedNetworkObjects = new Dictionary<Guid, NetworkObject>();
@@ -56,20 +57,20 @@ namespace MLAPI.RuntimeTests
                 StopNetworkManagerMode();
             }
 
-            if (NetworkManager.Singleton == null)
+            if (NetworkManagerGameObject == null)
             {
-                NetworkManagerObject = new GameObject(nameof(NetworkManager));
-                var networkManagerComponent = NetworkManagerObject.AddComponent<NetworkManager>();
-                if (networkManagerComponent == null)
+                NetworkManagerGameObject = new GameObject(nameof(NetworkManager));
+                NetworkManagerObject = NetworkManagerGameObject.AddComponent<NetworkManager>();
+                if (NetworkManagerObject == null)
                 {
                     return false;
                 }
 
                 Debug.Log($"{nameof(NetworkManager)} Instantiated.");
 
-                var unetTransport = NetworkManagerObject.AddComponent<UNetTransport>();
+                var unetTransport = NetworkManagerGameObject.AddComponent<UNetTransport>();
 
-                networkManagerComponent.NetworkConfig = new Configuration.NetworkConfig
+                NetworkManagerObject.NetworkConfig = new Configuration.NetworkConfig
                 {
                     CreatePlayerPrefab = false,
                     AllowRuntimeSceneChanges = true,
@@ -81,7 +82,7 @@ namespace MLAPI.RuntimeTests
                 unetTransport.MessageBufferSize = 65535;
                 unetTransport.MaxConnections = 100;
                 unetTransport.MessageSendMode = UNetTransport.SendMode.Immediately;
-                networkManagerComponent.NetworkConfig.NetworkTransport = unetTransport;
+                NetworkManagerObject.NetworkConfig.NetworkTransport = unetTransport;
 
                 var currentActiveScene = SceneManager.GetActiveScene();
 
@@ -158,19 +159,19 @@ namespace MLAPI.RuntimeTests
                 case NetworkManagerOperatingMode.Host:
                     {
                         //Starts the host
-                        NetworkManager.Singleton.StartHost();
+                        NetworkManagerObject.StartHost();
                         break;
                     }
                 case NetworkManagerOperatingMode.Server:
                     {
                         //Starts the server
-                        NetworkManager.Singleton.StartServer();
+                        NetworkManagerObject.StartServer();
                         break;
                     }
                 case NetworkManagerOperatingMode.Client:
                     {
                         //Starts the client
-                        NetworkManager.Singleton.StartClient();
+                        NetworkManagerObject.StartClient();
                         break;
                     }
             }
@@ -187,19 +188,19 @@ namespace MLAPI.RuntimeTests
                 case NetworkManagerOperatingMode.Host:
                     {
                         //Stop the host
-                        NetworkManager.Singleton.StopHost();
+                        NetworkManagerObject.StopHost();
                         break;
                     }
                 case NetworkManagerOperatingMode.Server:
                     {
                         //Stop the server
-                        NetworkManager.Singleton.StopServer();
+                        NetworkManagerObject.StopServer();
                         break;
                     }
                 case NetworkManagerOperatingMode.Client:
                     {
                         //Stop the client
-                        NetworkManager.Singleton.StopClient();
+                        NetworkManagerObject.StopClient();
                         break;
                     }
             }
@@ -219,19 +220,17 @@ namespace MLAPI.RuntimeTests
 
             InstantiatedGameObjects.Clear();
 
-            if (NetworkManagerObject != null)
+            if (NetworkManagerGameObject != null)
             {
-                StopNetworkManagerMode();
-
-                //Shutdown the NetworkManager
-                NetworkManager.Singleton.Shutdown();
-
+                NetworkManagerObject.ConnectedClientsList.Clear();
                 Debug.Log($"{nameof(NetworkManager)} shutdown.");
 
-                UnityEngine.Object.Destroy(NetworkManagerObject);
-
+                StopNetworkManagerMode();
+                UnityEngine.Object.Destroy(NetworkManagerGameObject);
                 Debug.Log($"{nameof(NetworkManager)} destroyed.");
             }
+            NetworkManagerGameObject = null;
+            NetworkManagerObject = null;
         }
 
         public static bool BuffersMatch(int indexOffset, long targetSize, byte[] sourceArray, byte[] originalArray)
