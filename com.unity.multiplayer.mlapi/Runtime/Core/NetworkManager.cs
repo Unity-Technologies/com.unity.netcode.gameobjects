@@ -254,8 +254,10 @@ namespace MLAPI
                 return;
             }
 
+            var scanForPlayerPrefab = (NetworkConfig.PlayerPrefab == null && NetworkConfig.CreatePlayerPrefab);
+
             //Clear this out and rebuild
-            NetworkConfig.HashedNetworkPrefabs.Clear();
+            NetworkConfig.NetworkPrefabOverrideLinks.Clear();
 
             //Check network prefabs and assign to dictionary for quick look up
             for (int i = 0; i < NetworkConfig.NetworkPrefabs.Count; i++)
@@ -272,22 +274,50 @@ namespace MLAPI
                     }
                     else
                     {
+                        //If someone is transitioning to this new format, then go ahead and populate the PlayerPrefab reference for them.
+                        if(scanForPlayerPrefab && NetworkConfig.NetworkPrefabs[i].IsPlayer)
+                        {
+                            NetworkConfig.PlayerPrefab = NetworkConfig.NetworkPrefabs[i].Prefab;
+                        }
                         switch (NetworkConfig.NetworkPrefabs[i].Override)
                         {
                             default:
-                            case NetworkPrefabOverride.Unset:
-                                NetworkConfig.HashedNetworkPrefabs.Add(networkObject.GlobalObjectIdHash, NetworkConfig.NetworkPrefabs[i]);
+                            case NetworkPrefabOverride.None:
+                                NetworkConfig.NetworkPrefabOverrideLinks.Add(networkObject.GlobalObjectIdHash, NetworkConfig.NetworkPrefabs[i]);
                                 break;
                             case NetworkPrefabOverride.Prefab:
-                                NetworkConfig.HashedNetworkPrefabs.Add(NetworkConfig.NetworkPrefabs[i].OverridingSourcePrefab.GetComponent<NetworkObject>().GlobalObjectIdHash, NetworkConfig.NetworkPrefabs[i]);
+                                NetworkConfig.NetworkPrefabOverrideLinks.Add(NetworkConfig.NetworkPrefabs[i].OverridingSourcePrefab.GetComponent<NetworkObject>().GlobalObjectIdHash, NetworkConfig.NetworkPrefabs[i]);
                                 break;
                             case NetworkPrefabOverride.Hash:
-                                NetworkConfig.HashedNetworkPrefabs.Add(NetworkConfig.NetworkPrefabs[i].OverridingSourceHash, NetworkConfig.NetworkPrefabs[i]);
+                                NetworkConfig.NetworkPrefabOverrideLinks.Add(NetworkConfig.NetworkPrefabs[i].OverridingSourceHash, NetworkConfig.NetworkPrefabs[i]);
                                 break;
                         }
                     }
                 }
-            }            
+            }
+
+            //If we have a player prefab then we need to verify it is in the list of NetworkPrefabOverrideLinks for client side spawning.
+            if (NetworkConfig.PlayerPrefab != null)
+            {
+                var playerPrefabNetworkObject = NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>();
+                if (playerPrefabNetworkObject != null)
+                {
+                    //If we don't have a reference (i.e. someone didn't already add it to the NetworkPrefab list) 
+                    if (!NetworkConfig.NetworkPrefabOverrideLinks.ContainsKey(NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash))
+                    {
+                        //Create a prefab entry
+                        var playerNetworkPrefab = new NetworkPrefab();
+                        playerNetworkPrefab.Prefab = NetworkConfig.PlayerPrefab;
+                        playerNetworkPrefab.IsPlayer = true;
+
+                        //Add it to the prefab list
+                        NetworkConfig.NetworkPrefabs.Add(playerNetworkPrefab);
+
+                        //assign its NetworkPrefabOverrideLink
+                        NetworkConfig.NetworkPrefabOverrideLinks.Add(playerPrefabNetworkObject.GlobalObjectIdHash, playerNetworkPrefab);
+                    }
+                }
+            }
         }
 #endif
 
@@ -391,19 +421,19 @@ namespace MLAPI
                         NetworkLog.LogError($"{nameof(NetworkPrefab)} (\"{NetworkConfig.NetworkPrefabs[i].Prefab.name}\") is missing a {nameof(NetworkObject)} component");
                     }
                 }
-                if (!NetworkConfig.HashedNetworkPrefabs.ContainsKey(networkObject.GlobalObjectIdHash))
+                if (!NetworkConfig.NetworkPrefabOverrideLinks.ContainsKey(networkObject.GlobalObjectIdHash))
                 {
                     switch (NetworkConfig.NetworkPrefabs[i].Override)
                     {
                         default:
-                        case NetworkPrefabOverride.Unset:
-                            NetworkConfig.HashedNetworkPrefabs.Add(networkObject.GlobalObjectIdHash, NetworkConfig.NetworkPrefabs[i]);
+                        case NetworkPrefabOverride.None:
+                            NetworkConfig.NetworkPrefabOverrideLinks.Add(networkObject.GlobalObjectIdHash, NetworkConfig.NetworkPrefabs[i]);
                             break;
                         case NetworkPrefabOverride.Prefab:
-                            NetworkConfig.HashedNetworkPrefabs.Add(NetworkConfig.NetworkPrefabs[i].OverridingSourcePrefab.GetComponent<NetworkObject>().GlobalObjectIdHash, NetworkConfig.NetworkPrefabs[i]);
+                            NetworkConfig.NetworkPrefabOverrideLinks.Add(NetworkConfig.NetworkPrefabs[i].OverridingSourcePrefab.GetComponent<NetworkObject>().GlobalObjectIdHash, NetworkConfig.NetworkPrefabs[i]);
                             break;
                         case NetworkPrefabOverride.Hash:
-                            NetworkConfig.HashedNetworkPrefabs.Add(NetworkConfig.NetworkPrefabs[i].OverridingSourceHash, NetworkConfig.NetworkPrefabs[i]);
+                            NetworkConfig.NetworkPrefabOverrideLinks.Add(NetworkConfig.NetworkPrefabs[i].OverridingSourceHash, NetworkConfig.NetworkPrefabs[i]);
                             break;
                     }
                 }

@@ -188,7 +188,7 @@ namespace MLAPI.Editor
                 var networkOverrideInt = networkOverrideProp.enumValueIndex;
                 var networkOverrideEnum = (NetworkPrefabOverride)networkOverrideInt;
                 EditorGUI.LabelField(new Rect(rect.x + rect.width - 70, rect.y, 60, EditorGUIUtility.singleLineHeight), "Override");
-                if (networkOverrideEnum == NetworkPrefabOverride.Unset)
+                if (networkOverrideEnum == NetworkPrefabOverride.None)
                 {
                     if (EditorGUI.Toggle(new Rect(rect.x + rect.width - 15, rect.y, 10, EditorGUIUtility.singleLineHeight), false))
                     {
@@ -200,11 +200,11 @@ namespace MLAPI.Editor
                     if (!EditorGUI.Toggle(new Rect(rect.x + rect.width - 15, rect.y, 10, EditorGUIUtility.singleLineHeight), true))
                     {
                         networkOverrideProp.enumValueIndex = 0;
-                        networkOverrideEnum = NetworkPrefabOverride.Unset;
+                        networkOverrideEnum = NetworkPrefabOverride.None;
                     }
                 }
 
-                if (networkOverrideEnum == NetworkPrefabOverride.Unset)
+                if (networkOverrideEnum == NetworkPrefabOverride.None)
                 {
                     EditorGUI.PropertyField(new Rect(rect.x, rect.y, rect.width - 80, EditorGUIUtility.singleLineHeight), networkPrefabProp, GUIContent.none);
                 }

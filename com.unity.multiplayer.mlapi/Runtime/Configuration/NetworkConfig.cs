@@ -53,7 +53,7 @@ namespace MLAPI.Configuration
         public List<NetworkPrefab> NetworkPrefabs = new List<NetworkPrefab>();
 
 
-        public Dictionary<uint, NetworkPrefab> HashedNetworkPrefabs = new Dictionary<uint, NetworkPrefab>();
+        public Dictionary<uint, NetworkPrefab>NetworkPrefabOverrideLinks = new Dictionary<uint, NetworkPrefab>();
 
         /// <summary>
         /// Whether or not a player object should be created by default. This value can be overridden on a case by case basis with ConnectionApproval.

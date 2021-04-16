@@ -6,7 +6,7 @@ namespace MLAPI.Configuration
 {
     public enum NetworkPrefabOverride
     {
-        Unset,
+        None,
         Prefab,
         Hash
     }

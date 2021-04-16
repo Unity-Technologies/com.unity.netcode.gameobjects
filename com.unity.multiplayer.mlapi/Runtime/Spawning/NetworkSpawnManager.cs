@@ -221,48 +221,20 @@ namespace MLAPI.Spawning
                 else
                 {
                     GameObject networkPrefabReference = null;
-                    if(NetworkManager.NetworkConfig.HashedNetworkPrefabs.ContainsKey(prefabHash))
+                    if(NetworkManager.NetworkConfig.NetworkPrefabOverrideLinks.ContainsKey(prefabHash))
                     {
-                        switch (NetworkManager.NetworkConfig.HashedNetworkPrefabs[prefabHash].Override)
+                        switch (NetworkManager.NetworkConfig.NetworkPrefabOverrideLinks[prefabHash].Override)
                         {
                             default:
-                            case NetworkPrefabOverride.Unset:
-                                networkPrefabReference = NetworkManager.NetworkConfig.HashedNetworkPrefabs[prefabHash].Prefab;
+                            case NetworkPrefabOverride.None:
+                                networkPrefabReference = NetworkManager.NetworkConfig.NetworkPrefabOverrideLinks[prefabHash].Prefab;
                                 break;
                             case NetworkPrefabOverride.Hash:
                             case NetworkPrefabOverride.Prefab:
-                                networkPrefabReference = NetworkManager.NetworkConfig.HashedNetworkPrefabs[prefabHash].OverridingTargetPrefab;
+                                networkPrefabReference = NetworkManager.NetworkConfig.NetworkPrefabOverrideLinks[prefabHash].OverridingTargetPrefab;
                                 break;
                         }
                     }
-
-                    //for (int i = 0; networkPrefabReference == null && i < NetworkManager.NetworkConfig.NetworkPrefabs.Count; i++)
-                    //{
-                    //    var element = NetworkManager.NetworkConfig.NetworkPrefabs[i];
-                        
-                    //    switch (element.Override)
-                    //    {
-                    //        default:
-                    //        case NetworkPrefabOverride.Unset:
-                    //            if (element.Hash == prefabHash)
-                    //            {
-                    //                networkPrefabReference = element.Prefab;
-                    //            }
-                    //            break;
-                    //        case NetworkPrefabOverride.Prefab:
-                    //            if (element.OverridingSourcePrefab.GetComponent<NetworkObject>().GlobalObjectIdHash == prefabHash)
-                    //            {
-                    //                networkPrefabReference = element.OverridingTargetPrefab;
-                    //            }
-                    //            break;
-                    //        case NetworkPrefabOverride.Hash:
-                    //            if (element.OverridingSourceHash == prefabHash)
-                    //            {
-                    //                networkPrefabReference = element.OverridingTargetPrefab;
-                    //            }
-                    //            break;
-                    //    }
-                    //}
 
                     if (networkPrefabReference == null)
                     {
