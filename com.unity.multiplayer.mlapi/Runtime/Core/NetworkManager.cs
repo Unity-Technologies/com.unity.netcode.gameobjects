@@ -21,6 +21,7 @@ using MLAPI.Exceptions;
 using MLAPI.Transports.Tasks;
 using MLAPI.Messaging.Buffering;
 using Unity.Profiling;
+using UnityEditor.VersionControl;
 
 namespace MLAPI
 {
@@ -95,6 +96,9 @@ namespace MLAPI
         public NetworkSpawnManager SpawnManager { get; private set; }
 
         internal BufferManager BufferManager { get; private set; }
+
+        // Has to have setter for tests
+        internal IInternalMessageHandler MessageHandler { get; set; }
 
         /// <summary>
         /// Gets the networkId of the server
@@ -295,6 +299,12 @@ namespace MLAPI
             SpawnManager = new NetworkSpawnManager(this);
 
             BufferManager = new BufferManager();
+
+            if (MessageHandler == null)
+            {
+                // Only create this if it's not already set (like in test cases)
+                MessageHandler = new InternalMessageHandler(this);
+            }
 
             NetworkSceneManager.RegisteredSceneNames.Clear();
             NetworkSceneManager.SceneIndexToString.Clear();
@@ -685,6 +695,11 @@ namespace MLAPI
                 SpawnManager = null;
             }
 
+            if (MessageHandler != null)
+            {
+                MessageHandler = null;
+            }
+
             //The Transport is set during Init time, thus it is possible for the Transport to be null
             NetworkConfig?.NetworkTransport?.Shutdown();
         }
@@ -1035,68 +1050,68 @@ namespace MLAPI
                     case NetworkConstants.CONNECTION_REQUEST:
                         if (IsServer)
                         {
-                            InternalMessageHandler.HandleConnectionRequest(clientId, messageStream);
+                            MessageHandler.HandleConnectionRequest(clientId, messageStream);
                         }
 
                         break;
                     case NetworkConstants.CONNECTION_APPROVED:
                         if (IsClient)
                         {
-                            InternalMessageHandler.HandleConnectionApproved(clientId, messageStream, receiveTime);
+                            MessageHandler.HandleConnectionApproved(clientId, messageStream, receiveTime);
                         }
 
                         break;
                     case NetworkConstants.ADD_OBJECT:
                         if (IsClient)
                         {
-                            InternalMessageHandler.HandleAddObject(clientId, messageStream);
+                            MessageHandler.HandleAddObject(clientId, messageStream);
                         }
 
                         break;
                     case NetworkConstants.DESTROY_OBJECT:
                         if (IsClient)
                         {
-                            InternalMessageHandler.HandleDestroyObject(clientId, messageStream);
+                            MessageHandler.HandleDestroyObject(clientId, messageStream);
                         }
 
                         break;
                     case NetworkConstants.SWITCH_SCENE:
                         if (IsClient)
                         {
-                            InternalMessageHandler.HandleSwitchScene(clientId, messageStream);
+                            MessageHandler.HandleSwitchScene(clientId, messageStream);
                         }
 
                         break;
                     case NetworkConstants.CHANGE_OWNER:
                         if (IsClient)
                         {
-                            InternalMessageHandler.HandleChangeOwner(clientId, messageStream);
+                            MessageHandler.HandleChangeOwner(clientId, messageStream);
                         }
 
                         break;
                     case NetworkConstants.ADD_OBJECTS:
                         if (IsClient)
                         {
-                            InternalMessageHandler.HandleAddObjects(clientId, messageStream);
+                            MessageHandler.HandleAddObjects(clientId, messageStream);
                         }
 
                         break;
                     case NetworkConstants.DESTROY_OBJECTS:
                         if (IsClient)
                         {
-                            InternalMessageHandler.HandleDestroyObjects(clientId, messageStream);
+                            MessageHandler.HandleDestroyObjects(clientId, messageStream);
                         }
 
                         break;
                     case NetworkConstants.TIME_SYNC:
                         if (IsClient)
                         {
-                            InternalMessageHandler.HandleTimeSync(clientId, messageStream, receiveTime);
+                            MessageHandler.HandleTimeSync(clientId, messageStream, receiveTime);
                         }
 
                         break;
                     case NetworkConstants.NETWORK_VARIABLE_DELTA:
-                        InternalMessageHandler.HandleNetworkVariableDelta(clientId, messageStream, BufferCallback, new PreBufferPreset()
+                        MessageHandler.HandleNetworkVariableDelta(clientId, messageStream, BufferCallback, new PreBufferPreset()
                         {
                             AllowBuffer = allowBuffer,
                             NetworkChannel = networkChannel,
@@ -1107,7 +1122,7 @@ namespace MLAPI
                         });
                         break;
                     case NetworkConstants.NETWORK_VARIABLE_UPDATE:
-                        InternalMessageHandler.HandleNetworkVariableUpdate(clientId, messageStream, BufferCallback, new PreBufferPreset()
+                        MessageHandler.HandleNetworkVariableUpdate(clientId, messageStream, BufferCallback, new PreBufferPreset()
                         {
                             AllowBuffer = allowBuffer,
                             NetworkChannel = networkChannel,
@@ -1118,15 +1133,15 @@ namespace MLAPI
                         });
                         break;
                     case NetworkConstants.UNNAMED_MESSAGE:
-                        InternalMessageHandler.HandleUnnamedMessage(clientId, messageStream);
+                        MessageHandler.HandleUnnamedMessage(clientId, messageStream);
                         break;
                     case NetworkConstants.NAMED_MESSAGE:
-                        InternalMessageHandler.HandleNamedMessage(clientId, messageStream);
+                        MessageHandler.HandleNamedMessage(clientId, messageStream);
                         break;
                     case NetworkConstants.CLIENT_SWITCH_SCENE_COMPLETED:
                         if (IsServer && NetworkConfig.EnableSceneManagement)
                         {
-                            InternalMessageHandler.HandleClientSwitchSceneCompleted(clientId, messageStream);
+                            MessageHandler.HandleClientSwitchSceneCompleted(clientId, messageStream);
                         }
                         else if (!NetworkConfig.EnableSceneManagement)
                         {
@@ -1137,7 +1152,7 @@ namespace MLAPI
                     case NetworkConstants.SERVER_LOG:
                         if (IsServer && NetworkConfig.EnableNetworkLogs)
                         {
-                            InternalMessageHandler.HandleNetworkLog(clientId, messageStream);
+                            MessageHandler.HandleNetworkLog(clientId, messageStream);
                         }
 
                         break;
@@ -1153,7 +1168,7 @@ namespace MLAPI
                                 }
                                 else
                                 {
-                                    InternalMessageHandler.RpcReceiveQueueItem(clientId, messageStream, receiveTime, RpcQueueContainer.QueueItemType.ServerRpc);
+                                    MessageHandler.RpcReceiveQueueItem(clientId, messageStream, receiveTime, RpcQueueContainer.QueueItemType.ServerRpc);
                                 }
                             }
 
@@ -1171,7 +1186,7 @@ namespace MLAPI
                                 }
                                 else
                                 {
-                                    InternalMessageHandler.RpcReceiveQueueItem(clientId, messageStream, receiveTime, RpcQueueContainer.QueueItemType.ClientRpc);
+                                    MessageHandler.RpcReceiveQueueItem(clientId, messageStream, receiveTime, RpcQueueContainer.QueueItemType.ClientRpc);
                                 }
                             }
 
@@ -1197,9 +1212,9 @@ namespace MLAPI
 #endif
         }
 
-        private static void ReceiveCallback(NetworkBuffer messageBuffer, RpcQueueContainer.QueueItemType messageType, ulong clientId, float receiveTime)
+        private void ReceiveCallback(NetworkBuffer messageBuffer, RpcQueueContainer.QueueItemType messageType, ulong clientId, float receiveTime)
         {
-            InternalMessageHandler.RpcReceiveQueueItem(clientId, messageBuffer, receiveTime, messageType);
+            MessageHandler.RpcReceiveQueueItem(clientId, messageBuffer, receiveTime, messageType);
         }
 
         /// <summary>
