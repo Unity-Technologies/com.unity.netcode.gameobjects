@@ -236,7 +236,7 @@ namespace MLAPI
 
                 if (networkObjects[i].NetworkManager != networkManager)
                 {
-                    throw new ArgumentException("All NetworkObjects has to belong to the same " + nameof(NetworkManager));
+                    throw new ArgumentNullException("All " + nameof(NetworkObject) + "s must belong to the same " + nameof(NetworkManager));
                 }
             }
 
@@ -335,7 +335,7 @@ namespace MLAPI
 
                 if (networkObjects[i].NetworkManager != networkManager)
                 {
-                    throw new ArgumentException("All NetworkObjects has to belong to the same " + nameof(NetworkManager));
+                    throw new ArgumentNullException("All " + nameof(NetworkObject) + "s must belong to the same " + nameof(NetworkManager));
                 }
             }
 
