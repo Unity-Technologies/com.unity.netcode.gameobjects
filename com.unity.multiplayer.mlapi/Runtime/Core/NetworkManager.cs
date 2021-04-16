@@ -302,7 +302,7 @@ namespace MLAPI
 
             CustomMessagingManager = new CustomMessagingManager(this);
 
-            BufferManager = new BufferManager();
+            BufferManager = new BufferManager(this);
 
             if (MessageHandler == null)
             {
