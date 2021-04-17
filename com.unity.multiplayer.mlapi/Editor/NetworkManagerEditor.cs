@@ -180,8 +180,8 @@ namespace MLAPI.Editor
 
                 var networkPrefab = m_NetworkPrefabsList.serializedProperty.GetArrayElementAtIndex(index);
                 var networkPrefabProp = networkPrefab.FindPropertyRelative(nameof(NetworkPrefab.Prefab));
-                var networkSourceHashProp = networkPrefab.FindPropertyRelative(nameof(NetworkPrefab.OverridingSourceHash));
-                var networkSourcePrefabProp = networkPrefab.FindPropertyRelative(nameof(NetworkPrefab.OverridingSourcePrefab));
+                var networkSourceHashProp = networkPrefab.FindPropertyRelative(nameof(NetworkPrefab.SourceHashToOverride));
+                var networkSourcePrefabProp = networkPrefab.FindPropertyRelative(nameof(NetworkPrefab.SourcePrefabToOverride));
                 var networkTargetPrefabProp = networkPrefab.FindPropertyRelative(nameof(NetworkPrefab.OverridingTargetPrefab));
                 var networkOverrideProp = networkPrefab.FindPropertyRelative(nameof(NetworkPrefab.Override));
                 var networkOverrideInt = networkOverrideProp.enumValueIndex;

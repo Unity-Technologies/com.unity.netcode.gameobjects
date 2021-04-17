@@ -27,14 +27,14 @@ namespace MLAPI.Configuration
         /// <summary>
         /// The original "source" prefab
         /// </summary>
-        public GameObject OverridingSourcePrefab;
+        public GameObject SourcePrefabToOverride;
 
         /// <summary>
         /// The original "source" prefab's hash
         /// This is used typically in multi-project patterns where a separate project contains the
         /// source prefab and the GlobalObjectIdHash was copied and pasted into this field.
         /// </summary>
-        public uint OverridingSourceHash;
+        public uint SourceHashToOverride;
 
         /// <summary>
         /// The prefab to replace the OverridingSourcePrefab with

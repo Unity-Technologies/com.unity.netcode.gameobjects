@@ -41,12 +41,25 @@ namespace MLAPI.Configuration
                  "If this is true, clients with different initial configurations will not work together.")]
         public bool AllowRuntimeSceneChanges = false;
 
-#if UNITY_EDITOR
         /// <summary>
-        /// The default player prefab
+        /// The previously set default player prefab
+        /// Note: this is only for an editor specific scenario where we need to determine during the
+        /// NetworkManager.OnValidate invocation period there is no PlayerPrefab value yet there is a
+        /// NetworkPrefab entry that has IsPlayer set to true.  This is also used to determine if
+        /// we are loading from a previous MLAPI version where the NetworkPrefab.IsPlayer was predominantly
+        /// used.
+        /// There are two scenarios where this is used:
+        /// 1.) If the PreviousPlayerPrefab and PlayerPrefab values are not set but a NetworkPrefab has
+        /// an entry with the NetworkPrefab.IsPlayer set to true, then we want to assign the PlayerPrefab
+        /// and PreviousPlayerPrefab
+        /// 2.) If the PlayerPrefab is null, the PreviousPlayer prefab is not, a NetworkPrefab entry
+        /// has its NetworkPrefab.IsPlayer set to true, and that NetworkPrefab entry's prefab's
+        /// NetworkObject.GlobalObjectIdHash is the same as the PreviousPlayerPrefab's NetworkObject.GlobalObjectIdHash
+        /// then the user deleted the PlayerPrefab so we can mark the NetworkPrefab.IsPlayer value of the matching
+        /// NetworkPrefab to false and the PreviousPlayerPrefab to null.
+        /// (The next time PlayerPrefab is set see scenario #1)
         /// </summary>
-        public GameObject PreviousPlayerPrefab;
-#endif
+        internal GameObject PreviousPlayerPrefab;
 
         /// <summary>
         /// The default player prefab
