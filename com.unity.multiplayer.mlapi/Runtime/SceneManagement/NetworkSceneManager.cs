@@ -381,6 +381,13 @@ namespace MLAPI.SceneManagement
                     }
 
                     var networkObject = NetworkManager.Singleton.SpawnManager.CreateLocalNetworkObject(true, prefabHash, ownerClientId, parentNetworkId, position, rotation);
+                    if (networkObject == null)
+                    {
+                        //This will prevent one misconfigured issues from breaking the entire loading process.
+                        Debug.LogError($"Failed to spawn NetowrkObject for Hash {prefabHash}, ignoring and continuing to load.");
+                        continue;
+                    }
+
                     NetworkManager.Singleton.SpawnManager.SpawnNetworkObjectLocally(networkObject, networkId, true, isPlayerObject, ownerClientId, objectStream, false, 0, true, false);
 
                     var bufferQueue = NetworkManager.Singleton.BufferManager.ConsumeBuffersForNetworkId(networkId);

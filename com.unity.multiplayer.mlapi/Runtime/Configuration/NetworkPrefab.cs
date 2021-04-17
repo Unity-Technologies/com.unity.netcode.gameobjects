@@ -25,19 +25,17 @@ namespace MLAPI.Configuration
         public NetworkPrefabOverride Override;
 
         /// <summary>
-        /// The original "source" prefab
+        /// Used when prefab is selected for the source prefab to override value (i.e. direct reference, the prefab is within the same project)
         /// </summary>
         public GameObject SourcePrefabToOverride;
 
         /// <summary>
-        /// The original "source" prefab's hash
-        /// This is used typically in multi-project patterns where a separate project contains the
-        /// source prefab and the GlobalObjectIdHash was copied and pasted into this field.
+        /// Used when hash is selected for the source prefab to override value (i.e. a direct reference is not possible such as in a multi-project pattern)
         /// </summary>
         public uint SourceHashToOverride;
 
         /// <summary>
-        /// The prefab to replace the OverridingSourcePrefab with
+        /// The prefab to replace (override) the source prefab with
         /// </summary>
         public GameObject OverridingTargetPrefab;
 

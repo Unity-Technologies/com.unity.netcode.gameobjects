@@ -154,6 +154,12 @@ namespace MLAPI.Messaging
                             }
 
                             var networkObject = NetworkManager.Singleton.SpawnManager.CreateLocalNetworkObject(softSync, prefabHash, ownerId, parentNetworkId, pos, rot);
+                            if (networkObject == null)
+                            {
+                                //This will prevent one misconfigured issues from breaking the entire loading process.
+                                Debug.LogError($"Failed to spawn NetowrkObject for Hash {prefabHash}, ignoring and continuing to load.");
+                                continue;
+                            }
                             NetworkManager.Singleton.SpawnManager.SpawnNetworkObjectLocally(networkObject, networkId, softSync, isPlayerObject, ownerId, continuationStream, false, 0, true, false);
 
                             Queue<BufferManager.BufferedMessage> bufferQueue = NetworkManager.BufferManager.ConsumeBuffersForNetworkId(networkId);

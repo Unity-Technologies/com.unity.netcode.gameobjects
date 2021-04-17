@@ -244,11 +244,13 @@ namespace MLAPI
                 };
             }
 
-            //Should we see if there is already a defined player prefab in the Network prefab list?
+            //If true, check to see if there is a defined player prefab in the Network prefab list
+            //This helps migrate v0.1.0 projects (i.e. no PlayerPrefab was assigned) as well as helps detect
+            //specific interface related issues related to the NetworkPrefabs list.
             var scanForPlayerPrefab = (NetworkConfig.PlayerPrefab == null && NetworkConfig.CreatePlayerPrefab);
 
             //During OnValidate we will always clear out NetworkPrefabOverrideLinks and rebuild it in order to
-            //detect specific edge case scenarios (See PreviousPlayerPrefab comments)
+            //detect specific edge case scenarios (See NtworkConfig.PreviousPlayerPrefab comments)
             NetworkConfig.NetworkPrefabOverrideLinks.Clear();
 
             //Check network prefabs and assign to dictionary for quick look up
@@ -274,7 +276,7 @@ namespace MLAPI
                             //then we want to set the default player prefab.  We also want to set the
                             //previous player prefab value in the event the user decides to delete the
                             //PlayerPrefab value from within the editor inspector view.
-                            //(See PreviousPlayerPrefab comments for more information)
+                            //(See NtworkConfig.PreviousPlayerPrefab comments for more information)
                             if (NetworkConfig.PreviousPlayerPrefab == null)
                             {
                                 NetworkConfig.PlayerPrefab = NetworkConfig.NetworkPrefabs[i].Prefab;
@@ -295,9 +297,10 @@ namespace MLAPI
                             }
                         }
 
+                        //Defautlt to the standard NetworkPrefab.Prefab's NetworkObject first
                         var globalObjectIdHash = networkObject.GlobalObjectIdHash;
 
-                        //Check to see if the NetworkPrefab has an override
+                        //Now check to see if it has an override
                         switch (NetworkConfig.NetworkPrefabs[i].Override)
                         {
                             case NetworkPrefabOverride.Prefab:
@@ -315,7 +318,7 @@ namespace MLAPI
                                 break;
                         }
 
-                        //Add to the NetworkPrefabOverrideLinks or handle new (blank) entries
+                        //Add to the NetworkPrefabOverrideLinks or handle a new (blank) entries
                         if (!NetworkConfig.NetworkPrefabOverrideLinks.ContainsKey(globalObjectIdHash))
                         {
                             NetworkConfig.NetworkPrefabOverrideLinks.Add(globalObjectIdHash, NetworkConfig.NetworkPrefabs[i]);
@@ -418,7 +421,7 @@ namespace MLAPI
             //This is used to remove entries not needed or invalid 
             var removeEmptyPrefabs = new List<int>();
 
-            //Prepare our NetworkPrefabOverrideLinks quick look up table
+            //Build the NetworkPrefabOverrideLinks dictionary
             for (int i = 0; i < NetworkConfig.NetworkPrefabs.Count; i++)
             {
                 if (NetworkConfig.NetworkPrefabs[i] == null || NetworkConfig.NetworkPrefabs[i].Prefab == null)
@@ -427,9 +430,12 @@ namespace MLAPI
                     {
                         NetworkLog.LogWarning($"{nameof(NetworkPrefab)} cannot be null ({nameof(NetworkPrefab)} at index: {i})");
                     }
+
+                    //Provide the name of the prefab with issues so the user can more easily find the prefab and fix it
+                    UnityEngine.Debug.LogWarning($"{nameof(NetworkPrefab)} (\"{NetworkConfig.NetworkPrefabs[i].Prefab.name}\") will be removed and ignored.");
                     removeEmptyPrefabs.Add(i);
 
-                    //Ignore this entry due to the error
+                    //Ignore this entry due to the error (it will be removed during runtime)
                     continue;
                 }
                 else if (NetworkConfig.NetworkPrefabs[i].Prefab.GetComponent<NetworkObject>() == null)
@@ -438,12 +444,16 @@ namespace MLAPI
                     {
                         NetworkLog.LogWarning($"{nameof(NetworkPrefab)} (\"{NetworkConfig.NetworkPrefabs[i].Prefab.name}\") is missing a {nameof(NetworkObject)} component");
                     }
+
+                    //Provide the name of the prefab with issues so the user can more easily find the prefab and fix it
+                    UnityEngine.Debug.LogWarning($"{nameof(NetworkPrefab)} (\"{NetworkConfig.NetworkPrefabs[i].Prefab.name}\") will be removed and ignored.");
                     removeEmptyPrefabs.Add(i);
 
-                    //Ignore this entry due to the error
+                    //Ignore this entry due to the error (it will be removed during runtime)
                     continue;
                 }
 
+                //Get the default NetworkObject first
                 var networkObject = NetworkConfig.NetworkPrefabs[i].Prefab.GetComponent<NetworkObject>();
 
                 //Assign the appropriate GlobalObjectIdHash to the appropriate NetworkPrefab
@@ -463,9 +473,15 @@ namespace MLAPI
                             break;
                     }
                 }
+                else
+                {
+                    //This should never happen, but in the case it somehow does log an error and remove the duplicate entry
+                    UnityEngine.Debug.LogError($"{nameof(NetworkPrefab)} (\"{NetworkConfig.NetworkPrefabs[i].Prefab.name}\") has a duplicate GlobalObjectIdHash {networkObject.GlobalObjectIdHash.ToString("X")} entry! Removing entry from list!");
+                    removeEmptyPrefabs.Add(i);
+                }
             }
 
-            //If we have a player prefab then we need to verify it is in the list of NetworkPrefabOverrideLinks for client side spawning.
+            //If we have a player prefab, then we need to verify it is in the list of NetworkPrefabOverrideLinks for client side spawning.
             if (NetworkConfig.PlayerPrefab != null && NetworkConfig.CreatePlayerPrefab)
             {
                 var playerPrefabNetworkObject = NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>();
@@ -491,6 +507,7 @@ namespace MLAPI
             //Clear out anything that is invalid or not used (for invalid entries we already logged warnings to the user earlier)
             foreach (var networkPrefabIndexToRemove in removeEmptyPrefabs)
             {
+               
                 NetworkConfig.NetworkPrefabs.RemoveAt(networkPrefabIndexToRemove);
             }
             removeEmptyPrefabs.Clear();
