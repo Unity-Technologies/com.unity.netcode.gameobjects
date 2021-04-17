@@ -5,6 +5,7 @@ import sys
 import stat
 import glob
 import argparse
+import datetime
 
 
 parser = argparse.ArgumentParser()
@@ -71,9 +72,27 @@ if args.unhook:
 
 if args.check or args.fix:
     glob_match = os.path.join(args.project_path, args.project_glob)
-    print(f"glob: looking for files matching -> {glob_match}")
     glob_files = glob.glob(glob_match)
-    print(f"glob: found {len(glob_files)} matching files")
+    print(f"glob: found {len(glob_files)} files matching -> {glob_match}")
+
+    if len(glob_files) == 0:
+        print("glob: no project files found!")
+        print("glob: \tdid you forget to generate your solution and project files in Unity?")
+        print("glob: \tdid you double-check --project-path and/or --project-glob arguments?")
+        exit(f"glob: failed")
+
+    any_old = False
+    for project_file in glob_files:
+        file_stat = os.stat(project_file)
+        check_days = 7
+        modified_time = datetime.datetime.fromtimestamp(file_stat.st_mtime)
+        days_ago_time = datetime.datetime.now() - datetime.timedelta(days=check_days)
+        if modified_time < days_ago_time:
+            any_old = True
+            print(f"glob: last modified more than {check_days} days ago -> {project_file}")
+    if any_old:
+        print(f"glob: some project files are not modified for more than {check_days} days ago")
+        print("glob: please consider regenerating project files in Unity")
 
 
 if args.check:
