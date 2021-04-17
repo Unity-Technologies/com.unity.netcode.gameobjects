@@ -244,22 +244,11 @@ namespace MLAPI
                 };
             }
 
-            //if (NetworkConfig.PlayerPrefab == null && NetworkConfig.CreatePlayerPrefab && !NetworkConfig.ConnectionApproval)
-            //{
-            //    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-            //    {
-            //        NetworkLog.LogWarning($"There is no {nameof(NetworkPrefab)} marked as a {nameof(NetworkPrefab.IsPlayer)}");
-            //    }
-            //    //Exit if we don't find a player prefab under these conditions
-            //    return;
-            //}
-
             var scanForPlayerPrefab = (NetworkConfig.PlayerPrefab == null && NetworkConfig.CreatePlayerPrefab);
 
             //Clear this out and rebuild
             NetworkConfig.NetworkPrefabOverrideLinks.Clear();
 
-            
             //Check network prefabs and assign to dictionary for quick look up
             for (int i = 0; i < NetworkConfig.NetworkPrefabs.Count; i++)
             {
@@ -276,28 +265,56 @@ namespace MLAPI
                     else
                     {
                         //If someone is transitioning to this new format, then go ahead and populate the PlayerPrefab reference for them.
-                        if(scanForPlayerPrefab && NetworkConfig.NetworkPrefabs[i].IsPlayer)
+                        if (scanForPlayerPrefab && NetworkConfig.NetworkPrefabs[i].IsPlayer)
                         {
-                            NetworkConfig.PlayerPrefab = NetworkConfig.NetworkPrefabs[i].Prefab;
+                            if (NetworkConfig.PreviousPlayerPrefab == null)
+                            {
+                                NetworkConfig.PlayerPrefab = NetworkConfig.NetworkPrefabs[i].Prefab;
+                                NetworkConfig.PreviousPlayerPrefab = NetworkConfig.PlayerPrefab;
+                            }
+                            else if (NetworkConfig.NetworkPrefabs[i].Prefab != null)
+                            {
+                                var playerPrefabNetworkObject = NetworkConfig.PreviousPlayerPrefab.GetComponent<NetworkObject>();
+                                var prefabNetworkObject = NetworkConfig.NetworkPrefabs[i].Prefab.GetComponent<NetworkObject>();
+                                if (playerPrefabNetworkObject != null && prefabNetworkObject != null)
+                                {
+                                    if (playerPrefabNetworkObject.GlobalObjectIdHash == prefabNetworkObject.GlobalObjectIdHash)
+                                    {
+                                        NetworkConfig.NetworkPrefabs[i].IsPlayer = false;
+                                        NetworkConfig.PreviousPlayerPrefab = null;
+                                    }
+                                }
+                            }
                         }
+
+                        var globalObjectIdHash = networkObject.GlobalObjectIdHash;
+
                         switch (NetworkConfig.NetworkPrefabs[i].Override)
                         {
-                            default:
-                            case NetworkPrefabOverride.None:
-                                NetworkConfig.NetworkPrefabOverrideLinks.Add(networkObject.GlobalObjectIdHash, NetworkConfig.NetworkPrefabs[i]);
-                                break;
                             case NetworkPrefabOverride.Prefab:
                                 {
-                                    if(NetworkConfig.NetworkPrefabs[i].OverridingSourcePrefab == null && NetworkConfig.NetworkPrefabs[i].Prefab != null)
+                                    if (NetworkConfig.NetworkPrefabs[i].OverridingSourcePrefab == null && NetworkConfig.NetworkPrefabs[i].Prefab != null)
                                     {
                                         NetworkConfig.NetworkPrefabs[i].OverridingSourcePrefab = NetworkConfig.NetworkPrefabs[i].Prefab;
                                     }
-                                    NetworkConfig.NetworkPrefabOverrideLinks.Add(NetworkConfig.NetworkPrefabs[i].OverridingSourcePrefab.GetComponent<NetworkObject>().GlobalObjectIdHash, NetworkConfig.NetworkPrefabs[i]);
+                                    globalObjectIdHash = NetworkConfig.NetworkPrefabs[i].OverridingSourcePrefab.GetComponent<NetworkObject>().GlobalObjectIdHash;
+
                                 }
                                 break;
                             case NetworkPrefabOverride.Hash:
-                                NetworkConfig.NetworkPrefabOverrideLinks.Add(NetworkConfig.NetworkPrefabs[i].OverridingSourceHash, NetworkConfig.NetworkPrefabs[i]);
+                                globalObjectIdHash = NetworkConfig.NetworkPrefabs[i].OverridingSourceHash;
                                 break;
+                        }
+
+                        //Add to the NetworkPrefabOverrideLinks or handle new (blank) entries
+                        if (!NetworkConfig.NetworkPrefabOverrideLinks.ContainsKey(globalObjectIdHash))
+                        {
+                            NetworkConfig.NetworkPrefabOverrideLinks.Add(globalObjectIdHash, NetworkConfig.NetworkPrefabs[i]);
+                        }
+                        else
+                        {
+                            //We just created a new entry or somehow we duplicated one.  Turn it into a new blank entry
+                            NetworkConfig.NetworkPrefabs[i] = new NetworkPrefab();
                         }
                     }
                 }
@@ -388,16 +405,17 @@ namespace MLAPI
                 NetworkSceneManager.SetCurrentSceneIndex();
             }
 
-            //Remove entries not needed (only during runtime)
+            //This is used to remove entries not needed or invalid 
             var removeEmptyPrefabs = new List<int>();
+
+            //Prepare our NetworkPrefabOverrideLinks quick look up table
             for (int i = 0; i < NetworkConfig.NetworkPrefabs.Count; i++)
             {
-               
                 if (NetworkConfig.NetworkPrefabs[i] == null || NetworkConfig.NetworkPrefabs[i].Prefab == null)
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
                     {
-                        NetworkLog.LogError($"{nameof(NetworkPrefab)} cannot be null ({nameof(NetworkPrefab)} at index: {i})");
+                        NetworkLog.LogWarning($"{nameof(NetworkPrefab)} cannot be null ({nameof(NetworkPrefab)} at index: {i})");
                     }
                     removeEmptyPrefabs.Add(i);
 
@@ -408,7 +426,7 @@ namespace MLAPI
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
                     {
-                        NetworkLog.LogError($"{nameof(NetworkPrefab)} (\"{NetworkConfig.NetworkPrefabs[i].Prefab.name}\") is missing a {nameof(NetworkObject)} component");
+                        NetworkLog.LogWarning($"{nameof(NetworkPrefab)} (\"{NetworkConfig.NetworkPrefabs[i].Prefab.name}\") is missing a {nameof(NetworkObject)} component");
                     }
                     removeEmptyPrefabs.Add(i);
 
@@ -418,6 +436,7 @@ namespace MLAPI
 
                 var networkObject = NetworkConfig.NetworkPrefabs[i].Prefab.GetComponent<NetworkObject>();
 
+                //Assign the appropriate GlobalObjectIdHash to the appropriate NetworkPrefab
                 if (!NetworkConfig.NetworkPrefabOverrideLinks.ContainsKey(networkObject.GlobalObjectIdHash))
                 {
                     switch (NetworkConfig.NetworkPrefabs[i].Override)
@@ -459,12 +478,11 @@ namespace MLAPI
                 }
             }
 
-
-            foreach ( var networkPrefabIndexToRemove in removeEmptyPrefabs)
+            //Clear out anything that is invalid or not used (for invalid entries we already logged warnings to the user earlier)
+            foreach (var networkPrefabIndexToRemove in removeEmptyPrefabs)
             {
                 NetworkConfig.NetworkPrefabs.RemoveAt(networkPrefabIndexToRemove);
             }
-
             removeEmptyPrefabs.Clear();
 
             NetworkConfig.NetworkTransport.OnTransportEvent += HandleRawTransportPoll;

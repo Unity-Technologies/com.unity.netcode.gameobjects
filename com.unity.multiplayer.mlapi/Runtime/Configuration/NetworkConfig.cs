@@ -41,6 +41,13 @@ namespace MLAPI.Configuration
                  "If this is true, clients with different initial configurations will not work together.")]
         public bool AllowRuntimeSceneChanges = false;
 
+#if UNITY_EDITOR
+        /// <summary>
+        /// The default player prefab
+        /// </summary>
+        public GameObject PreviousPlayerPrefab;
+#endif
+
         /// <summary>
         /// The default player prefab
         /// </summary>
