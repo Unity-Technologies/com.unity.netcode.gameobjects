@@ -244,6 +244,7 @@ namespace MLAPI
                 };
             }
 
+            //Should we see if there is already a defined player prefab in the Network prefab list?
             var scanForPlayerPrefab = (NetworkConfig.PlayerPrefab == null && NetworkConfig.CreatePlayerPrefab);
 
             //Clear this out and rebuild
@@ -289,6 +290,7 @@ namespace MLAPI
 
                         var globalObjectIdHash = networkObject.GlobalObjectIdHash;
 
+                        //Check to see if the NetworkPrefab has an override
                         switch (NetworkConfig.NetworkPrefabs[i].Override)
                         {
                             case NetworkPrefabOverride.Prefab:
