@@ -575,8 +575,7 @@ namespace MLAPI.Messaging
 
         internal static void HandleSnapshot(ulong clientId, Stream messageStream)
         {
-            //todo
-
+            NetworkManager.Singleton.SnapshotSystem.ReadSnapshot(messageStream);
         }
     }
 }
