@@ -20,7 +20,7 @@ namespace MLAPI.RuntimeTests
         public void NetworkPrefabHandlerClass()
         {
             //Only used to create a network object based game asset
-            Assert.IsTrue(NetworkManagerHelper.StartNetworkManager());
+            Assert.IsTrue(NetworkManagerHelper.StartNetworkManager(out _));
             var testPrefabObjectName = "NetworkPrefabHandlerTestObject";
 
             Guid baseObjectID = NetworkManagerHelper.AddGameNetworkObject(testPrefabObjectName);
@@ -110,7 +110,7 @@ namespace MLAPI.RuntimeTests
         public void Setup()
         {
             //Create, instantiate, and host
-            NetworkManagerHelper.StartNetworkManager();
+            NetworkManagerHelper.StartNetworkManager(out _);
         }
 
         [TearDown]

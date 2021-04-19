@@ -10,11 +10,11 @@ namespace MLAPI.RuntimeTests
         public void SwitchSceneWithoutSceneManagement()
         {
             //Only used to create a network object based game asset
-            Assert.IsTrue(NetworkManagerHelper.StartNetworkManager());
+            Assert.IsTrue(NetworkManagerHelper.StartNetworkManager(out NetworkManager networkManager));
             var threwException = false;
             try
             {
-                NetworkSceneManager.SwitchScene("SomeSceneNane");
+                networkManager.SceneManager.SwitchScene("SomeSceneNane");
             }
             catch (Exception ex)
             {
@@ -31,7 +31,7 @@ namespace MLAPI.RuntimeTests
         public void Setup()
         {
             //Create, instantiate, and host
-            NetworkManagerHelper.StartNetworkManager();
+            NetworkManagerHelper.StartNetworkManager(out _);
         }
 
         [TearDown]

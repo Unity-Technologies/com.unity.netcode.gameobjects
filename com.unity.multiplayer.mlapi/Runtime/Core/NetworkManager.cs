@@ -96,6 +96,8 @@ namespace MLAPI
 
         public CustomMessagingManager CustomMessagingManager { get; private set; }
 
+        public NetworkSceneManager SceneManager { get; private set; }
+
         internal BufferManager BufferManager { get; private set; }
 
         // Has to have setter for tests
@@ -224,7 +226,7 @@ namespace MLAPI
                 }
             }
 
-            var activeScene = SceneManager.GetActiveScene();
+            var activeScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
             var activeSceneName = activeScene.name;
             if (!NetworkConfig.RegisteredScenes.Contains(activeSceneName))
             {
@@ -301,6 +303,8 @@ namespace MLAPI
 
             CustomMessagingManager = new CustomMessagingManager(this);
 
+            SceneManager = new NetworkSceneManager(this);
+
             BufferManager = new BufferManager();
 
             if (MessageHandler == null)
@@ -308,11 +312,6 @@ namespace MLAPI
                 // Only create this if it's not already set (like in test cases)
                 MessageHandler = new InternalMessageHandler(this);
             }
-
-            NetworkSceneManager.RegisteredSceneNames.Clear();
-            NetworkSceneManager.SceneIndexToString.Clear();
-            NetworkSceneManager.SceneNameToIndex.Clear();
-            NetworkSceneManager.SceneSwitchProgresses.Clear();
 
             if (NetworkConfig.NetworkTransport == null)
             {
@@ -355,12 +354,12 @@ namespace MLAPI
 
                 for (int i = 0; i < NetworkConfig.RegisteredScenes.Count; i++)
                 {
-                    NetworkSceneManager.RegisteredSceneNames.Add(NetworkConfig.RegisteredScenes[i]);
-                    NetworkSceneManager.SceneIndexToString.Add((uint)i, NetworkConfig.RegisteredScenes[i]);
-                    NetworkSceneManager.SceneNameToIndex.Add(NetworkConfig.RegisteredScenes[i], (uint)i);
+                    SceneManager.RegisteredSceneNames.Add(NetworkConfig.RegisteredScenes[i]);
+                    SceneManager.SceneIndexToString.Add((uint)i, NetworkConfig.RegisteredScenes[i]);
+                    SceneManager.SceneNameToIndex.Add(NetworkConfig.RegisteredScenes[i], (uint)i);
                 }
 
-                NetworkSceneManager.SetCurrentSceneIndex();
+                SceneManager.SetCurrentSceneIndex();
             }
 
             for (int i = 0; i < NetworkConfig.NetworkPrefabs.Count; i++)
@@ -696,6 +695,11 @@ namespace MLAPI
                 SpawnManager.ServerResetShudownStateForSceneObjects();
 
                 SpawnManager = null;
+            }
+
+            if (SceneManager != null)
+            {
+                SceneManager = null;
             }
 
             if (MessageHandler != null)
