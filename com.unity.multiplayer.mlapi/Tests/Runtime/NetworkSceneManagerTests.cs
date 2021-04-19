@@ -16,12 +16,12 @@ namespace MLAPI.RuntimeTests
             {
                 NetworkSceneManager.SwitchScene("SomeSceneNane");
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-                if(ex.Message.Contains($"{nameof(NetworkConfig.EnableSceneManagement)} flag is not enabled in the {nameof(NetworkManager)}'s {nameof(NetworkConfig)}. Please set {nameof(NetworkConfig.EnableSceneManagement)} flag to true before calling this method."))
+                if (ex.Message.Contains($"{nameof(NetworkConfig.EnableSceneManagement)} flag is not enabled in the {nameof(NetworkManager)}'s {nameof(NetworkConfig)}. Please set {nameof(NetworkConfig.EnableSceneManagement)} flag to true before calling this method."))
                 {
                     threwException = true;
-                }                
+                }
             }
 
             Assert.IsTrue(threwException);
