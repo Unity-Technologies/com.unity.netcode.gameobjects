@@ -212,7 +212,7 @@ namespace MLAPI.Spawning
                 // If the prefab hash has a registered INetworkPrefabInstanceHandler derived class 
                 if (NetworkManager.PrefabHandler.ContainsHandler(prefabHash))
                 {
-                    //Let the handler spawn the NetworkObject
+                    // Let the handler spawn the NetworkObject
                     var networkObject = NetworkManager.PrefabHandler.HandleNetworkPrefabSpawn(prefabHash, ownerClientId, position.GetValueOrDefault(Vector3.zero), rotation.GetValueOrDefault(Quaternion.identity));
 
                     if (parentNetworkObject != null)
@@ -229,7 +229,7 @@ namespace MLAPI.Spawning
                 }
                 else
                 {
-                    //See if there is a valid registered NetworkPrefabOverrideLink associated with the provided prefabHash
+                    // See if there is a valid registered NetworkPrefabOverrideLink associated with the provided prefabHash
                     GameObject networkPrefabReference = null;
                     if(NetworkManager.NetworkConfig.NetworkPrefabOverrideLinks.ContainsKey(prefabHash))
                     {
@@ -246,7 +246,7 @@ namespace MLAPI.Spawning
                         }
                     }
 
-                    //If not, then there is an issue (user possibly didn't register the prefab properly?)
+                    // If not, then there is an issue (user possibly didn't register the prefab properly?)
                     if (networkPrefabReference == null)
                     {
                         if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
@@ -257,7 +257,7 @@ namespace MLAPI.Spawning
                         return null;
                     }
 
-                    //Otherwise, instantiate an instance of the NetworkPrefab linked to the prefabHash
+                    // Otherwise, instantiate an instance of the NetworkPrefab linked to the prefabHash
                     var networkObject = ((position == null && rotation == null) ? UnityEngine.Object.Instantiate(networkPrefabReference) : UnityEngine.Object.Instantiate(networkPrefabReference, position.GetValueOrDefault(Vector3.zero), rotation.GetValueOrDefault(Quaternion.identity))).GetComponent<NetworkObject>();
 
                     if (parentNetworkObject != null)

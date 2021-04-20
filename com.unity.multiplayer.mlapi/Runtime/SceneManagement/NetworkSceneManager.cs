@@ -304,31 +304,31 @@ namespace MLAPI.SceneManagement
                                 }
                                 else
                                 {
-                                    //We do have a parent
+                                    // We do have a parent
                                     writer.WriteBool(true);
-                                    //Write the parent's NetworkObjectId to be used for linking back to the child
+                                    // Write the parent's NetworkObjectId to be used for linking back to the child
                                     writer.WriteUInt64Packed(parentNetworkObject.NetworkObjectId);
                                 }
 
                                 writer.WriteUInt32Packed(newSceneObjects[i].GlobalObjectIdHash);
                                 if (newSceneObjects[i].IncludeTransformWhenSpawning == null || newSceneObjects[i].IncludeTransformWhenSpawning(newSceneObjects[i].OwnerClientId))
                                 {
-                                    //Set the position and rotation data marker to true (i.e. flag to know, when reading from the stream, that postion and roation data follows).
+                                    // Set the position and rotation data marker to true (i.e. flag to know, when reading from the stream, that postion and roation data follows).
                                     writer.WriteBool(true);
 
-                                    //Write position
+                                    // Write position
                                     writer.WriteSinglePacked(newSceneObjects[i].transform.position.x);
                                     writer.WriteSinglePacked(newSceneObjects[i].transform.position.y);
                                     writer.WriteSinglePacked(newSceneObjects[i].transform.position.z);
 
-                                    //Write rotation
+                                    // Write rotation
                                     writer.WriteSinglePacked(newSceneObjects[i].transform.rotation.eulerAngles.x);
                                     writer.WriteSinglePacked(newSceneObjects[i].transform.rotation.eulerAngles.y);
                                     writer.WriteSinglePacked(newSceneObjects[i].transform.rotation.eulerAngles.z);
                                 }
                                 else
                                 {
-                                    //Set the position and rotation data marker to false (i.e. flag to know, when reading from the stream, that postion and roation data *was not included*)
+                                    // Set the position and rotation data marker to false (i.e. flag to know, when reading from the stream, that postion and roation data *was not included*)
                                     writer.WriteBool(false);
                                 }
 
@@ -344,7 +344,7 @@ namespace MLAPI.SceneManagement
                 }
             }
 
-            //Tell server that scene load is completed
+            // Tell server that scene load is completed
             if (m_NetworkManager.IsHost)
             {
                 OnClientSwitchSceneCompleted(m_NetworkManager.LocalClientId, switchSceneGuid);
@@ -381,7 +381,7 @@ namespace MLAPI.SceneManagement
                     Vector3? position = null;
                     Quaternion? rotation = null;
 
-                    //Check to see if we have position and rotation values that follows
+                    // Check to see if we have position and rotation values that follows
                     if (reader.ReadBool())
                     {
                         position = new Vector3(reader.ReadSinglePacked(), reader.ReadSinglePacked(), reader.ReadSinglePacked());
@@ -391,7 +391,7 @@ namespace MLAPI.SceneManagement
                     var networkObject = m_NetworkManager.SpawnManager.CreateLocalNetworkObject(true, prefabHash, ownerClientId, parentNetworkId, position, rotation);
                     if (networkObject == null)
                     {
-                        //This will prevent one misconfigured issue (or more) from breaking the entire loading process.
+                        // This will prevent one misconfigured issue (or more) from breaking the entire loading process.
                         Debug.LogError($"Failed to spawn NetowrkObject for Hash {prefabHash}, ignoring and continuing to load.");
                         continue;
                     }
@@ -432,7 +432,7 @@ namespace MLAPI.SceneManagement
         {
             if (switchSceneGuid == Guid.Empty)
             {
-                //If Guid is empty it means the client has loaded the start scene of the server and the server would never have a switchSceneProgresses created for the start scene.
+                // If Guid is empty it means the client has loaded the start scene of the server and the server would never have a switchSceneProgresses created for the start scene.
                 return;
             }
 
