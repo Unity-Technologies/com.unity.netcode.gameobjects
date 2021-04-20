@@ -64,6 +64,7 @@ namespace MLAPI.Configuration
         /// <summary>
         /// The default player prefab
         /// </summary>
+        [Tooltip("When set, the network manager will automatically create and spawn the assigned player prefab.  The Player Prefab can be overriden by adding it to the NetworkPrefabs list and selecting override.")]
         public GameObject PlayerPrefab;
 
         /// <summary>
