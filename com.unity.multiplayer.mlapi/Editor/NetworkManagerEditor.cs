@@ -36,9 +36,7 @@ namespace MLAPI.Editor
         private SerializedProperty m_TimeResyncIntervalProperty;
         private SerializedProperty m_EnableNetworkVariableProperty;
         private SerializedProperty m_EnsureNetworkVariableLengthSafetyProperty;
-        private SerializedProperty m_CreatePlayerPrefabProperty;
-        private SerializedProperty m_ForceSamePrefabsProperty;
-        private SerializedProperty m_UsePrefabSyncProperty;
+        private SerializedProperty m_ForceSamePrefabsProperty;        
         private SerializedProperty m_EnableSceneManagementProperty;
         private SerializedProperty m_RecycleNetworkIdsProperty;
         private SerializedProperty m_NetworkIdRecycleDelayProperty;
@@ -114,8 +112,7 @@ namespace MLAPI.Editor
             m_EnableTimeResyncProperty = m_NetworkConfigProperty.FindPropertyRelative("EnableTimeResync");
             m_TimeResyncIntervalProperty = m_NetworkConfigProperty.FindPropertyRelative("TimeResyncInterval");
             m_EnableNetworkVariableProperty = m_NetworkConfigProperty.FindPropertyRelative("EnableNetworkVariable");
-            m_EnsureNetworkVariableLengthSafetyProperty = m_NetworkConfigProperty.FindPropertyRelative("EnsureNetworkVariableLengthSafety");
-            m_CreatePlayerPrefabProperty = m_NetworkConfigProperty.FindPropertyRelative("CreatePlayerPrefab");
+            m_EnsureNetworkVariableLengthSafetyProperty = m_NetworkConfigProperty.FindPropertyRelative("EnsureNetworkVariableLengthSafety");            
             m_ForceSamePrefabsProperty = m_NetworkConfigProperty.FindPropertyRelative("ForceSamePrefabs");
             m_EnableSceneManagementProperty = m_NetworkConfigProperty.FindPropertyRelative("EnableSceneManagement");
             m_RecycleNetworkIdsProperty = m_NetworkConfigProperty.FindPropertyRelative("RecycleNetworkIds");
@@ -152,7 +149,6 @@ namespace MLAPI.Editor
             m_TimeResyncIntervalProperty = m_NetworkConfigProperty.FindPropertyRelative("TimeResyncInterval");
             m_EnableNetworkVariableProperty = m_NetworkConfigProperty.FindPropertyRelative("EnableNetworkVariable");
             m_EnsureNetworkVariableLengthSafetyProperty = m_NetworkConfigProperty.FindPropertyRelative("EnsureNetworkVariableLengthSafety");
-            m_CreatePlayerPrefabProperty = m_NetworkConfigProperty.FindPropertyRelative("CreatePlayerPrefab");
             m_ForceSamePrefabsProperty = m_NetworkConfigProperty.FindPropertyRelative("ForceSamePrefabs");
             m_EnableSceneManagementProperty = m_NetworkConfigProperty.FindPropertyRelative("EnableSceneManagement");
             m_RecycleNetworkIdsProperty = m_NetworkConfigProperty.FindPropertyRelative("RecycleNetworkIds");
@@ -341,7 +337,6 @@ namespace MLAPI.Editor
                 }
 
                 EditorGUILayout.LabelField("Spawning", EditorStyles.boldLabel);
-                EditorGUILayout.PropertyField(m_CreatePlayerPrefabProperty);
                 EditorGUILayout.PropertyField(m_ForceSamePrefabsProperty);
 
 

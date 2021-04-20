@@ -81,7 +81,7 @@ namespace MLAPI.Messaging
                 }
                 else
                 {
-                    NetworkManager.HandleApproval(clientId, NetworkManager.NetworkConfig.CreatePlayerPrefab, null, true, null, null);
+                    NetworkManager.HandleApproval(clientId, NetworkManager.NetworkConfig.PlayerPrefab != null, null, true, null, null);
                 }
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR

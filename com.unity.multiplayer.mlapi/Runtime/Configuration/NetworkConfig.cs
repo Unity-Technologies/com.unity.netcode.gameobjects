@@ -72,14 +72,11 @@ namespace MLAPI.Configuration
         [Tooltip("The prefabs that can be spawned across the network")]
         public List<NetworkPrefab> NetworkPrefabs = new List<NetworkPrefab>();
 
-
-        public Dictionary<uint, NetworkPrefab>NetworkPrefabOverrideLinks = new Dictionary<uint, NetworkPrefab>();
-
         /// <summary>
-        /// Whether or not a player object should be created by default. This value can be overridden on a case by case basis with ConnectionApproval.
+        /// This dictionary provides a quick way to check and see if a NetworkPrefab has a NetworkPrefab override.
+        /// Generated at runtime and OnValidate
         /// </summary>
-        [Tooltip("Whether or not a player object should be created by default. This value can be overridden on a case by case basis with ConnectionApproval.")]
-        public bool CreatePlayerPrefab = true;
+        public Dictionary<uint, NetworkPrefab>NetworkPrefabOverrideLinks = new Dictionary<uint, NetworkPrefab>();
 
         /// <summary>
         /// Amount of times per second the receive queue is emptied and all messages inside are processed.

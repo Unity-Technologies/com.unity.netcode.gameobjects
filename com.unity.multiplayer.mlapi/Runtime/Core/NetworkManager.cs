@@ -21,7 +21,7 @@ using MLAPI.Exceptions;
 using MLAPI.Transports.Tasks;
 using MLAPI.Messaging.Buffering;
 using Unity.Profiling;
-using UnityEditor.VersionControl;
+//using UnityEditor.VersionControl;
 
 namespace MLAPI
 {
@@ -252,7 +252,7 @@ namespace MLAPI
             //If true, check to see if there is a defined player prefab in the Network prefab list
             //This helps migrate v0.1.0 projects (i.e. no PlayerPrefab was assigned) as well as helps detect
             //specific interface related issues related to the NetworkPrefabs list.
-            var scanForPlayerPrefab = (NetworkConfig.PlayerPrefab == null && NetworkConfig.CreatePlayerPrefab);
+            var scanForPlayerPrefab = NetworkConfig.PlayerPrefab == null;
 
             //During OnValidate we will always clear out NetworkPrefabOverrideLinks and rebuild it in order to
             //detect specific edge case scenarios (See NtworkConfig.PreviousPlayerPrefab comments)
@@ -486,7 +486,7 @@ namespace MLAPI
             }
 
             //If we have a player prefab, then we need to verify it is in the list of NetworkPrefabOverrideLinks for client side spawning.
-            if (NetworkConfig.PlayerPrefab != null && NetworkConfig.CreatePlayerPrefab)
+            if (NetworkConfig.PlayerPrefab != null )
             {
                 var playerPrefabNetworkObject = NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>();
                 if (playerPrefabNetworkObject != null)
@@ -737,7 +737,7 @@ namespace MLAPI
             }
             else
             {
-                HandleApproval(ServerClientId, NetworkConfig.CreatePlayerPrefab, null, true, null, null);
+                HandleApproval(ServerClientId, NetworkConfig.PlayerPrefab != null, null, true, null, null);
             }
 
             SpawnManager.ServerSpawnSceneObjectsOnStartSweep();
