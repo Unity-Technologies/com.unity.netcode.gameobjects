@@ -8,13 +8,20 @@ using MLAPI.Transports;
 
 namespace MLAPI.Messaging
 {
-    internal static class InternalMessageSender
+    internal class InternalMessageSender
     {
-        internal static void Send(ulong clientId, byte messageType, NetworkChannel networkChannel, NetworkBuffer messageBuffer)
+        private NetworkManager m_NetworkManager { get; }
+
+        internal InternalMessageSender(NetworkManager networkManager)
+        {
+            m_NetworkManager = networkManager;
+        }
+
+        internal void Send(ulong clientId, byte messageType, NetworkChannel networkChannel, NetworkBuffer messageBuffer)
         {
             messageBuffer.PadBuffer();
 
-            if (NetworkManager.Singleton.IsServer && clientId == NetworkManager.Singleton.ServerClientId)
+            if (m_NetworkManager.IsServer && clientId == m_NetworkManager.ServerClientId)
             {
                 return;
             }
@@ -23,7 +30,7 @@ namespace MLAPI.Messaging
             {
                 NetworkProfiler.StartEvent(TickType.Send, (uint)buffer.Length, networkChannel, NetworkConstants.MESSAGE_NAMES[messageType]);
 
-                NetworkManager.Singleton.NetworkConfig.NetworkTransport.Send(clientId, new ArraySegment<byte>(buffer.GetBuffer(), 0, (int)buffer.Length), networkChannel);
+                m_NetworkManager.NetworkConfig.NetworkTransport.Send(clientId, new ArraySegment<byte>(buffer.GetBuffer(), 0, (int)buffer.Length), networkChannel);
                 ProfilerStatManager.BytesSent.Record((int)buffer.Length);
                 PerformanceDataManager.Increment(ProfilerConstants.ByteSent, (int)buffer.Length);
 
@@ -33,7 +40,7 @@ namespace MLAPI.Messaging
             }
         }
 
-        internal static void Send(byte messageType, NetworkChannel networkChannel, NetworkBuffer messageBuffer)
+        internal void Send(byte messageType, NetworkChannel networkChannel, NetworkBuffer messageBuffer)
         {
             messageBuffer.PadBuffer();
 
@@ -43,14 +50,14 @@ namespace MLAPI.Messaging
                 NetworkProfiler.StartEvent(TickType.Send, (uint)buffer.Length, networkChannel, NetworkConstants.MESSAGE_NAMES[messageType]);
 #endif
 
-                for (int i = 0; i < NetworkManager.Singleton.ConnectedClientsList.Count; i++)
+                for (int i = 0; i < m_NetworkManager.ConnectedClientsList.Count; i++)
                 {
-                    if (NetworkManager.Singleton.IsServer && NetworkManager.Singleton.ConnectedClientsList[i].ClientId == NetworkManager.Singleton.ServerClientId)
+                    if (m_NetworkManager.IsServer && m_NetworkManager.ConnectedClientsList[i].ClientId == m_NetworkManager.ServerClientId)
                     {
                         continue;
                     }
 
-                    NetworkManager.Singleton.NetworkConfig.NetworkTransport.Send(NetworkManager.Singleton.ConnectedClientsList[i].ClientId, new ArraySegment<byte>(buffer.GetBuffer(), 0, (int)buffer.Length), networkChannel);
+                    m_NetworkManager.NetworkConfig.NetworkTransport.Send(m_NetworkManager.ConnectedClientsList[i].ClientId, new ArraySegment<byte>(buffer.GetBuffer(), 0, (int)buffer.Length), networkChannel);
                     ProfilerStatManager.BytesSent.Record((int)buffer.Length);
                     PerformanceDataManager.Increment(ProfilerConstants.ByteSent, (int)buffer.Length);
                 }
@@ -61,7 +68,7 @@ namespace MLAPI.Messaging
             }
         }
 
-        internal static void Send(byte messageType, NetworkChannel networkChannel, List<ulong> clientIds, NetworkBuffer messageBuffer)
+        internal void Send(byte messageType, NetworkChannel networkChannel, List<ulong> clientIds, NetworkBuffer messageBuffer)
         {
             if (clientIds == null)
             {
@@ -79,12 +86,12 @@ namespace MLAPI.Messaging
 
                 for (int i = 0; i < clientIds.Count; i++)
                 {
-                    if (NetworkManager.Singleton.IsServer && clientIds[i] == NetworkManager.Singleton.ServerClientId)
+                    if (m_NetworkManager.IsServer && clientIds[i] == m_NetworkManager.ServerClientId)
                     {
                         continue;
                     }
 
-                    NetworkManager.Singleton.NetworkConfig.NetworkTransport.Send(clientIds[i], new ArraySegment<byte>(buffer.GetBuffer(), 0, (int)buffer.Length), networkChannel);
+                    m_NetworkManager.NetworkConfig.NetworkTransport.Send(clientIds[i], new ArraySegment<byte>(buffer.GetBuffer(), 0, (int)buffer.Length), networkChannel);
                     ProfilerStatManager.BytesSent.Record((int)buffer.Length);
                     PerformanceDataManager.Increment(ProfilerConstants.ByteSent, (int)buffer.Length);
                 }
@@ -95,7 +102,7 @@ namespace MLAPI.Messaging
             }
         }
 
-        internal static void Send(byte messageType, NetworkChannel networkChannel, ulong clientIdToIgnore, NetworkBuffer messageBuffer)
+        internal void Send(byte messageType, NetworkChannel networkChannel, ulong clientIdToIgnore, NetworkBuffer messageBuffer)
         {
             messageBuffer.PadBuffer();
 
@@ -105,15 +112,15 @@ namespace MLAPI.Messaging
                 NetworkProfiler.StartEvent(TickType.Send, (uint)buffer.Length, networkChannel, NetworkConstants.MESSAGE_NAMES[messageType]);
 #endif
 
-                for (int i = 0; i < NetworkManager.Singleton.ConnectedClientsList.Count; i++)
+                for (int i = 0; i < m_NetworkManager.ConnectedClientsList.Count; i++)
                 {
-                    if (NetworkManager.Singleton.ConnectedClientsList[i].ClientId == clientIdToIgnore ||
-                        (NetworkManager.Singleton.IsServer && NetworkManager.Singleton.ConnectedClientsList[i].ClientId == NetworkManager.Singleton.ServerClientId))
+                    if (m_NetworkManager.ConnectedClientsList[i].ClientId == clientIdToIgnore ||
+                        (m_NetworkManager.IsServer && m_NetworkManager.ConnectedClientsList[i].ClientId == m_NetworkManager.ServerClientId))
                     {
                         continue;
                     }
 
-                    NetworkManager.Singleton.NetworkConfig.NetworkTransport.Send(NetworkManager.Singleton.ConnectedClientsList[i].ClientId, new ArraySegment<byte>(buffer.GetBuffer(), 0, (int)buffer.Length), networkChannel);
+                    m_NetworkManager.NetworkConfig.NetworkTransport.Send(m_NetworkManager.ConnectedClientsList[i].ClientId, new ArraySegment<byte>(buffer.GetBuffer(), 0, (int)buffer.Length), networkChannel);
                     ProfilerStatManager.BytesSent.Record((int)buffer.Length);
                     PerformanceDataManager.Increment(ProfilerConstants.ByteSent, (int)buffer.Length);
                 }

@@ -605,7 +605,7 @@ namespace MLAPI.Messaging
 
             ClearParameters();
 
-            m_RpcQueueProcessor = new RpcQueueProcessor(this);
+            m_RpcQueueProcessor = new RpcQueueProcessor(this, NetworkManager);
             m_MaxFrameHistory = maxFrameHistory + k_MinQueueHistory;
 
             if (!m_QueueHistory.ContainsKey(RpcQueueHistoryFrame.QueueFrameType.Inbound))
