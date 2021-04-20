@@ -84,7 +84,7 @@ namespace MLAPI.RuntimeTests
                 unetTransport.MessageBufferSize = 65535;
                 unetTransport.MaxConnections = 100;
                 unetTransport.MessageSendMode = UNetTransport.SendMode.Immediately;
-                networkManagerComponent.NetworkConfig.NetworkTransport = unetTransport;
+                NetworkManagerObject.NetworkConfig.NetworkTransport = unetTransport;
 
                 var currentActiveScene = SceneManager.GetActiveScene();
 
