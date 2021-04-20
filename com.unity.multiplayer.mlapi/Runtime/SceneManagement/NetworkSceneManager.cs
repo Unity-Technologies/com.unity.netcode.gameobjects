@@ -29,6 +29,10 @@ namespace MLAPI.SceneManagement
         /// </summary>
         public delegate void SceneSwitchStartedDelegate(AsyncOperation operation);
 
+        public delegate void OnClientLoadedSceneDelegate(SceneSwitchProgress progress, ulong clientId);
+
+        public delegate void OnAllClientsLoadedSceneDelegate(SceneSwitchProgress progress, bool timedOut);
+
         /// <summary>
         /// Event that is invoked when the scene is switched
         /// </summary>
@@ -38,6 +42,10 @@ namespace MLAPI.SceneManagement
         /// Event that is invoked when a local scene switch has started
         /// </summary>
         public event SceneSwitchStartedDelegate OnSceneSwitchStarted;
+
+        public event OnClientLoadedSceneDelegate OnClientLoadedScene;
+
+        public event OnAllClientsLoadedSceneDelegate OnAllClientsLoadedScene;
 
         internal readonly HashSet<string> RegisteredSceneNames = new HashSet<string>();
         internal readonly Dictionary<string, uint> SceneNameToIndex = new Dictionary<string, uint>();
@@ -139,6 +147,9 @@ namespace MLAPI.SceneManagement
             var switchSceneProgress = new SceneSwitchProgress(m_NetworkManager);
             SceneSwitchProgresses.Add(switchSceneProgress.Guid, switchSceneProgress);
             CurrentSceneSwitchProgressGuid = switchSceneProgress.Guid;
+            
+            switchSceneProgress.OnClientLoadedScene += clientId => { OnClientLoadedScene?.Invoke(switchSceneProgress, clientId); };
+            switchSceneProgress.OnComplete += timedOut => { OnAllClientsLoadedScene?.Invoke(switchSceneProgress, timedOut); };
 
             // Move ALL NetworkObjects to the temp scene
             MoveObjectsToDontDestroyOnLoad();
