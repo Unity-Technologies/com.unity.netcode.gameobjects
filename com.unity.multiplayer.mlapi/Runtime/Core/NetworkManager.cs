@@ -423,6 +423,9 @@ namespace MLAPI
             // This is used to remove entries not needed or invalid 
             var removeEmptyPrefabs = new List<int>();
 
+            // Always clear our prefab override links before building
+            NetworkConfig.NetworkPrefabOverrideLinks.Clear();
+
             // Build the NetworkPrefabOverrideLinks dictionary
             for (int i = 0; i < NetworkConfig.NetworkPrefabs.Count; i++)
             {
