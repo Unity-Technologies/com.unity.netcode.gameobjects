@@ -68,7 +68,7 @@ public class ServerBoxGenerator : NetworkBehaviour
         {
             SwitchScene.OnSceneSwitchBegin -= OnSceneSwitchBegin;
         }
-        if (EnableNetworkPrefabInstanceHandler && myCustomPrefabSpawnHandler != null)
+        if (NetworkManager && EnableNetworkPrefabInstanceHandler && myCustomPrefabSpawnHandler != null)
         {
             var no = ServerObjectToPool.GetComponent<NetworkObject>();
             NetworkManager.PrefabHandler.RemoveHandler(no);
