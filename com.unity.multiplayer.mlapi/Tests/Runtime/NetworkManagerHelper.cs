@@ -86,11 +86,6 @@ namespace MLAPI.RuntimeTests
                 unetTransport.MessageSendMode = UNetTransport.SendMode.Immediately;
                 NetworkManagerObject.NetworkConfig.NetworkTransport = unetTransport;
 
-                var currentActiveScene = SceneManager.GetActiveScene();
-
-                //Add our test scene name
-                NetworkManager.Singleton.SceneManager.AddRuntimeSceneName(currentActiveScene.name, 0);
-
                 //Starts the network manager in the mode specified
                 StartNetworkManagerMode(managerMode);
             }
