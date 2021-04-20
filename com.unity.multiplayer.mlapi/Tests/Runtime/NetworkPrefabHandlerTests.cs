@@ -20,7 +20,7 @@ namespace MLAPI.RuntimeTests
         public void NetworkPrefabHandlerClass()
         {
             //Only used to create a network object based game asset
-            Assert.IsTrue(NetworkManagerHelper.StartNetworkManager());
+            Assert.IsTrue(NetworkManagerHelper.StartNetworkManager(out _));
             var testPrefabObjectName = "NetworkPrefabHandlerTestObject";
 
             Guid baseObjectID = NetworkManagerHelper.AddGameNetworkObject(testPrefabObjectName);
@@ -42,7 +42,7 @@ namespace MLAPI.RuntimeTests
 
             //Test that something was instantiated
             Assert.NotNull(spawnedObject);
-            
+
             //Test that this is indeed an instance of our original object
             Assert.True(spawnedObject.name.Contains(testPrefabObjectName));
 
@@ -66,7 +66,7 @@ namespace MLAPI.RuntimeTests
             spawnedObject = networkPrefabHandler.HandleNetworkPrefabSpawn(baseObject.GlobalObjectIdHash, 0, prefabPosition, prefabRotation);
 
             //Test that something was instantiated
-            Assert.NotNull(spawnedObject);            
+            Assert.NotNull(spawnedObject);
 
             //Test that this is indeed an instance of our original object
             Assert.True(spawnedObject.name.Contains(testPrefabObjectName));
@@ -85,7 +85,7 @@ namespace MLAPI.RuntimeTests
             Assert.True(gameObjectRegistered);
 
             //Change it up
-            prefabPosition = new Vector3(6.0f, 4.0f,1.0f);
+            prefabPosition = new Vector3(6.0f, 4.0f, 1.0f);
             prefabRotation = new Quaternion(3f, 2f, 4f, 1f);
 
             spawnedObject = networkPrefabHandler.HandleNetworkPrefabSpawn(baseObject.GlobalObjectIdHash, 0, prefabPosition, prefabRotation);
@@ -110,7 +110,7 @@ namespace MLAPI.RuntimeTests
         public void Setup()
         {
             //Create, instantiate, and host
-            NetworkManagerHelper.StartNetworkManager();
+            NetworkManagerHelper.StartNetworkManager(out _);
         }
 
         [TearDown]

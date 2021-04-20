@@ -10,18 +10,18 @@ namespace MLAPI.RuntimeTests
         public void SwitchSceneWithoutSceneManagement()
         {
             //Only used to create a network object based game asset
-            Assert.IsTrue(NetworkManagerHelper.StartNetworkManager());
+            Assert.IsTrue(NetworkManagerHelper.StartNetworkManager(out NetworkManager networkManager));
             var threwException = false;
             try
             {
-                NetworkSceneManager.SwitchScene("SomeSceneNane");
+                networkManager.SceneManager.SwitchScene("SomeSceneNane");
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-                if(ex.Message.Contains($"{nameof(NetworkConfig.EnableSceneManagement)} flag is not enabled in the {nameof(NetworkManager)}'s {nameof(NetworkConfig)}. Please set {nameof(NetworkConfig.EnableSceneManagement)} flag to true before calling this method."))
+                if (ex.Message.Contains($"{nameof(NetworkConfig.EnableSceneManagement)} flag is not enabled in the {nameof(NetworkManager)}'s {nameof(NetworkConfig)}. Please set {nameof(NetworkConfig.EnableSceneManagement)} flag to true before calling this method."))
                 {
                     threwException = true;
-                }                
+                }
             }
 
             Assert.IsTrue(threwException);
@@ -31,7 +31,7 @@ namespace MLAPI.RuntimeTests
         public void Setup()
         {
             //Create, instantiate, and host
-            NetworkManagerHelper.StartNetworkManager();
+            NetworkManagerHelper.StartNetworkManager(out _);
         }
 
         [TearDown]
