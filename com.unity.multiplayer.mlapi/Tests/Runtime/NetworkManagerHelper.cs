@@ -22,7 +22,8 @@ namespace MLAPI.RuntimeTests
     public static class NetworkManagerHelper
     {
         public static Transports.Tasks.SocketTasks StartHostSocketTasks { get; internal set; }
-        public static GameObject NetworkManagerObject { get; internal set; }
+        public static NetworkManager NetworkManagerObject { get; internal set; }
+        public static GameObject NetworkManagerGameObject { get; internal set; }
 
         internal static Dictionary<Guid, GameObject> InstantiatedGameObjects = new Dictionary<Guid, GameObject>();
         internal static Dictionary<Guid, NetworkObject> InstantiatedNetworkObjects = new Dictionary<Guid, NetworkObject>();
@@ -48,7 +49,7 @@ namespace MLAPI.RuntimeTests
         /// </summary>
         /// <param name="managerMode">parameter to specify which mode you want to start the NetworkManager</param>
         /// <returns>true if it was instantiated or is already instantiate otherwise false means it failed to instantiate</returns>
-        public static bool StartNetworkManager(NetworkManagerOperatingMode managerMode = NetworkManagerOperatingMode.Host)
+        public static bool StartNetworkManager(out NetworkManager networkManager, NetworkManagerOperatingMode managerMode = NetworkManagerOperatingMode.Host)
         {
             //If we are changing the current manager mode and the current manager mode is not "None", then stop the NetworkManager mode
             if (CurrentNetworkManagerMode != managerMode && CurrentNetworkManagerMode != NetworkManagerOperatingMode.None)
@@ -56,24 +57,26 @@ namespace MLAPI.RuntimeTests
                 StopNetworkManagerMode();
             }
 
-            if (NetworkManager.Singleton == null)
+            if (NetworkManagerGameObject == null)
             {
-                NetworkManagerObject = new GameObject(nameof(NetworkManager));
-                var networkManagerComponent = NetworkManagerObject.AddComponent<NetworkManager>();
-                if (networkManagerComponent == null)
+                NetworkManagerGameObject = new GameObject(nameof(NetworkManager));
+                NetworkManagerObject = NetworkManagerGameObject.AddComponent<NetworkManager>();
+
+                if (NetworkManagerObject == null)
                 {
+                    networkManager = null;
                     return false;
                 }
 
                 Debug.Log($"{nameof(NetworkManager)} Instantiated.");
 
-                var unetTransport = NetworkManagerObject.AddComponent<UNetTransport>();
+                var unetTransport = NetworkManagerGameObject.AddComponent<UNetTransport>();
 
-                networkManagerComponent.NetworkConfig = new Configuration.NetworkConfig
+                NetworkManagerObject.NetworkConfig = new Configuration.NetworkConfig
                 {
                     CreatePlayerPrefab = false,
-                    AllowRuntimeSceneChanges = true,
-                    EnableSceneManagement = false
+                    EnableSceneManagement = false,
+                    RegisteredScenes = new List<string>(){SceneManager.GetActiveScene().name}
                 };
                 unetTransport.ConnectAddress = "127.0.0.1";
                 unetTransport.ConnectPort = 7777;
@@ -91,6 +94,9 @@ namespace MLAPI.RuntimeTests
                 //Starts the network manager in the mode specified
                 StartNetworkManagerMode(managerMode);
             }
+
+            networkManager = NetworkManagerObject;
+
             return true;
         }
 
@@ -158,19 +164,19 @@ namespace MLAPI.RuntimeTests
                 case NetworkManagerOperatingMode.Host:
                     {
                         //Starts the host
-                        NetworkManager.Singleton.StartHost();
+                        NetworkManagerObject.StartHost();
                         break;
                     }
                 case NetworkManagerOperatingMode.Server:
                     {
                         //Starts the server
-                        NetworkManager.Singleton.StartServer();
+                        NetworkManagerObject.StartServer();
                         break;
                     }
                 case NetworkManagerOperatingMode.Client:
                     {
                         //Starts the client
-                        NetworkManager.Singleton.StartClient();
+                        NetworkManagerObject.StartClient();
                         break;
                     }
             }
@@ -187,19 +193,19 @@ namespace MLAPI.RuntimeTests
                 case NetworkManagerOperatingMode.Host:
                     {
                         //Stop the host
-                        NetworkManager.Singleton.StopHost();
+                        NetworkManagerObject.StopHost();
                         break;
                     }
                 case NetworkManagerOperatingMode.Server:
                     {
                         //Stop the server
-                        NetworkManager.Singleton.StopServer();
+                        NetworkManagerObject.StopServer();
                         break;
                     }
                 case NetworkManagerOperatingMode.Client:
                     {
                         //Stop the client
-                        NetworkManager.Singleton.StopClient();
+                        NetworkManagerObject.StopClient();
                         break;
                     }
             }
@@ -219,19 +225,17 @@ namespace MLAPI.RuntimeTests
 
             InstantiatedGameObjects.Clear();
 
-            if (NetworkManagerObject != null)
+            if (NetworkManagerGameObject != null)
             {
-                StopNetworkManagerMode();
-
-                //Shutdown the NetworkManager
-                NetworkManager.Singleton.Shutdown();
-
+                NetworkManagerObject.ConnectedClientsList.Clear();
                 Debug.Log($"{nameof(NetworkManager)} shutdown.");
 
-                UnityEngine.Object.Destroy(NetworkManagerObject);
-
+                StopNetworkManagerMode();
+                UnityEngine.Object.Destroy(NetworkManagerGameObject);
                 Debug.Log($"{nameof(NetworkManager)} destroyed.");
             }
+            NetworkManagerGameObject = null;
+            NetworkManagerObject = null;
         }
 
         public static bool BuffersMatch(int indexOffset, long targetSize, byte[] sourceArray, byte[] originalArray)
