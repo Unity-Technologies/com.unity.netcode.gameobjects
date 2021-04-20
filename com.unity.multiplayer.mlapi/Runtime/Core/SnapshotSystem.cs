@@ -24,7 +24,9 @@ namespace MLAPI
 
     internal class EntryBlock
     {
-        public Entry[] m_Entries = new Entry[64];
+        private const int k_MaxVariables = 64;
+
+        public Entry[] m_Entries = new Entry[k_MaxVariables];
         public int m_LastEntry = 0;
 
         public int Find(ulong networkObjectId, int index)
@@ -161,7 +163,7 @@ namespace MLAPI
 
         public void ReadSnapshot(Stream snapshotStream)
         {
-            // todo: this is sub-optimal, review
+            // todo: this is sub-optimal, as it allocates. Review
             List<int> entriesPositionToRead = new List<int>();
 
 
