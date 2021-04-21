@@ -280,62 +280,14 @@ namespace MLAPI.SceneManagement
                             }
                         }
 
+                        // Write number of scene objects to spawn
                         writer.WriteUInt32Packed(sceneObjectsToSpawn);
 
                         for (int i = 0; i < newSceneObjects.Count; i++)
                         {
                             if (newSceneObjects[i].Observers.Contains(m_NetworkManager.ConnectedClientsList[j].ClientId))
                             {
-                                writer.WriteBool(newSceneObjects[i].IsPlayerObject);
-                                writer.WriteUInt64Packed(newSceneObjects[i].NetworkObjectId);
-                                writer.WriteUInt64Packed(newSceneObjects[i].OwnerClientId);
-
-                                NetworkObject parentNetworkObject = null;
-
-                                if (!newSceneObjects[i].AlwaysReplicateAsRoot && newSceneObjects[i].transform.parent != null)
-                                {
-                                    parentNetworkObject = newSceneObjects[i].transform.parent.GetComponent<NetworkObject>();
-                                }
-
-                                if (parentNetworkObject == null)
-                                {
-                                    //We don't have a parent
-                                    writer.WriteBool(false);
-                                }
-                                else
-                                {
-                                    // We do have a parent
-                                    writer.WriteBool(true);
-                                    // Write the parent's NetworkObjectId to be used for linking back to the child
-                                    writer.WriteUInt64Packed(parentNetworkObject.NetworkObjectId);
-                                }
-
-                                writer.WriteUInt32Packed(newSceneObjects[i].GlobalObjectIdHash);
-                                if (newSceneObjects[i].IncludeTransformWhenSpawning == null || newSceneObjects[i].IncludeTransformWhenSpawning(newSceneObjects[i].OwnerClientId))
-                                {
-                                    // Set the position and rotation data marker to true (i.e. flag to know, when reading from the stream, that postion and roation data follows).
-                                    writer.WriteBool(true);
-
-                                    // Write position
-                                    writer.WriteSinglePacked(newSceneObjects[i].transform.position.x);
-                                    writer.WriteSinglePacked(newSceneObjects[i].transform.position.y);
-                                    writer.WriteSinglePacked(newSceneObjects[i].transform.position.z);
-
-                                    // Write rotation
-                                    writer.WriteSinglePacked(newSceneObjects[i].transform.rotation.eulerAngles.x);
-                                    writer.WriteSinglePacked(newSceneObjects[i].transform.rotation.eulerAngles.y);
-                                    writer.WriteSinglePacked(newSceneObjects[i].transform.rotation.eulerAngles.z);
-                                }
-                                else
-                                {
-                                    // Set the position and rotation data marker to false (i.e. flag to know, when reading from the stream, that postion and roation data *was not included*)
-                                    writer.WriteBool(false);
-                                }
-
-                                if (m_NetworkManager.NetworkConfig.EnableNetworkVariable)
-                                {
-                                    newSceneObjects[i].WriteNetworkVariableData(buffer, m_NetworkManager.ConnectedClientsList[j].ClientId);
-                                }
+                                newSceneObjects[i].SerializeSceneObject(writer, m_NetworkManager.ConnectedClientsList[j].ClientId);
                             }
                         }
 
@@ -366,50 +318,7 @@ namespace MLAPI.SceneManagement
 
                 for (int i = 0; i < newObjectsCount; i++)
                 {
-                    var isPlayerObject = reader.ReadBool();
-                    var networkId = reader.ReadUInt64Packed();
-                    var ownerClientId = reader.ReadUInt64Packed();
-                    var hasParent = reader.ReadBool();
-                    ulong? parentNetworkId = null;
-
-                    if (hasParent)
-                    {
-                        parentNetworkId = reader.ReadUInt32Packed();
-                    }
-
-                    var prefabHash = reader.ReadUInt32Packed();
-                    Vector3? position = null;
-                    Quaternion? rotation = null;
-
-                    // Check to see if we have position and rotation values that follows
-                    if (reader.ReadBool())
-                    {
-                        position = new Vector3(reader.ReadSinglePacked(), reader.ReadSinglePacked(), reader.ReadSinglePacked());
-                        rotation = Quaternion.Euler(reader.ReadSinglePacked(), reader.ReadSinglePacked(), reader.ReadSinglePacked());
-                    }
-
-                    var networkObject = m_NetworkManager.SpawnManager.CreateLocalNetworkObject(true, prefabHash, ownerClientId, parentNetworkId, position, rotation);
-                    if (networkObject == null)
-                    {
-                        // This will prevent one misconfigured issue (or more) from breaking the entire loading process.
-                        Debug.LogError($"Failed to spawn NetowrkObject for Hash {prefabHash}, ignoring and continuing to load.");
-                        continue;
-                    }
-
-                    m_NetworkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, networkId, true, isPlayerObject, ownerClientId, objectStream, false, 0, true, false);
-
-                    var bufferQueue = m_NetworkManager.BufferManager.ConsumeBuffersForNetworkId(networkId);
-
-                    // Apply buffered messages
-                    if (bufferQueue != null)
-                    {
-                        while (bufferQueue.Count > 0)
-                        {
-                            BufferManager.BufferedMessage message = bufferQueue.Dequeue();
-                            m_NetworkManager.HandleIncomingData(message.SenderClientId, message.NetworkChannel, new ArraySegment<byte>(message.NetworkBuffer.GetBuffer(), (int)message.NetworkBuffer.Position, (int)message.NetworkBuffer.Length), message.ReceiveTime, false);
-                            BufferManager.RecycleConsumedBufferedMessage(message);
-                        }
-                    }
+                    NetworkObject.DeserializeSceneObject(objectStream as Serialization.NetworkBuffer, reader, m_NetworkManager);
                 }
             }
 

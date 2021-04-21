@@ -1614,51 +1614,7 @@ namespace MLAPI
 
                         for (int i = 0; i < m_ObservedObjects.Count; i++)
                         {
-                            var observedObject = m_ObservedObjects[i];
-                            writer.WriteBool(observedObject.IsPlayerObject);
-                            writer.WriteUInt64Packed(observedObject.NetworkObjectId);
-                            writer.WriteUInt64Packed(observedObject.OwnerClientId);
-
-                            NetworkObject parent = null;
-
-                            if (!observedObject.AlwaysReplicateAsRoot && observedObject.transform.parent != null)
-                            {
-                                parent = observedObject.transform.parent.GetComponent<NetworkObject>();
-                            }
-
-                            if (parent == null)
-                            {
-                                writer.WriteBool(false);
-                            }
-                            else
-                            {
-                                writer.WriteBool(true);
-                                writer.WriteUInt64Packed(parent.NetworkObjectId);
-                            }
-
-                            writer.WriteBool(observedObject.IsSceneObject ?? true);
-                            writer.WriteUInt32Packed(observedObject.GlobalObjectIdHash);
-
-                            if (observedObject.IncludeTransformWhenSpawning == null || observedObject.IncludeTransformWhenSpawning(ownerClientId))
-                            {
-                                writer.WriteBool(true);
-                                writer.WriteSinglePacked(observedObject.transform.position.x);
-                                writer.WriteSinglePacked(observedObject.transform.position.y);
-                                writer.WriteSinglePacked(observedObject.transform.position.z);
-
-                                writer.WriteSinglePacked(observedObject.transform.rotation.eulerAngles.x);
-                                writer.WriteSinglePacked(observedObject.transform.rotation.eulerAngles.y);
-                                writer.WriteSinglePacked(observedObject.transform.rotation.eulerAngles.z);
-                            }
-                            else
-                            {
-                                writer.WriteBool(false);
-                            }
-
-                            if (NetworkConfig.EnableNetworkVariable)
-                            {
-                                observedObject.WriteNetworkVariableData(buffer, ownerClientId);
-                            }
+                            m_ObservedObjects[i].SerializeSceneObject(writer, ownerClientId);
                         }
 
                         MessageSender.Send(ownerClientId, NetworkConstants.CONNECTION_APPROVED, NetworkChannel.Internal, buffer);

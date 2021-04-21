@@ -131,49 +131,7 @@ namespace MLAPI.Messaging
                         var objectCount = continuationReader.ReadUInt32Packed();
                         for (int i = 0; i < objectCount; i++)
                         {
-                            var isPlayerObject = continuationReader.ReadBool();
-                            var networkId = continuationReader.ReadUInt64Packed();
-                            var ownerId = continuationReader.ReadUInt64Packed();
-                            var hasParent = continuationReader.ReadBool();
-                            ulong? parentNetworkId = null;
-
-                            if (hasParent)
-                            {
-                                parentNetworkId = continuationReader.ReadUInt64Packed();
-                            }
-
-                            var softSync = continuationReader.ReadBool();
-                            var prefabHash = continuationReader.ReadUInt32Packed();
-
-                            Vector3? pos = null;
-                            Quaternion? rot = null;
-                            if (continuationReader.ReadBool())
-                            {
-                                pos = new Vector3(continuationReader.ReadSinglePacked(), continuationReader.ReadSinglePacked(), continuationReader.ReadSinglePacked());
-                                rot = Quaternion.Euler(continuationReader.ReadSinglePacked(), continuationReader.ReadSinglePacked(), continuationReader.ReadSinglePacked());
-                            }
-
-                            var networkObject = NetworkManager.SpawnManager.CreateLocalNetworkObject(softSync, prefabHash, ownerId, parentNetworkId, pos, rot);
-                            if (networkObject == null)
-                            {
-                                // This will prevent one misconfigured issue (or more) from breaking the entire loading process.
-                                Debug.LogError($"Failed to spawn NetowrkObject for Hash {prefabHash}, ignoring and continuing to load.");
-                                continue;
-                            }
-                            NetworkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, networkId, softSync, isPlayerObject, ownerId, continuationStream, false, 0, true, false);
-
-                            Queue<BufferManager.BufferedMessage> bufferQueue = NetworkManager.BufferManager.ConsumeBuffersForNetworkId(networkId);
-
-                            // Apply buffered messages
-                            if (bufferQueue != null)
-                            {
-                                while (bufferQueue.Count > 0)
-                                {
-                                    BufferManager.BufferedMessage message = bufferQueue.Dequeue();
-                                    NetworkManager.HandleIncomingData(message.SenderClientId, message.NetworkChannel, new ArraySegment<byte>(message.NetworkBuffer.GetBuffer(), (int)message.NetworkBuffer.Position, (int)message.NetworkBuffer.Length), message.ReceiveTime, false);
-                                    BufferManager.RecycleConsumedBufferedMessage(message);
-                                }
-                            }
+                            NetworkObject.DeserializeSceneObject(continuationStream as NetworkBuffer, continuationReader, m_NetworkManager);
                         }
 
                         NetworkManager.SpawnManager.CleanDiffedSceneObjects();

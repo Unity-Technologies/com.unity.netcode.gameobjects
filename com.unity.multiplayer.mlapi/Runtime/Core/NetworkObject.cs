@@ -572,5 +572,167 @@ namespace MLAPI
 
             return ChildNetworkBehaviours[index];
         }
+
+        /// <summary>
+        /// Used to serialize a NetworkObjects during scene syncrhonization that occurs
+        /// upon a client being approved or a scene transition.
+        /// </summary>
+        /// <param name="writer">writer into the outbound stream</param>
+        /// <param name="targetClientId">clientid we are targeting</param>
+        internal void SerializeSceneObject(PooledNetworkWriter writer, ulong targetClientId)
+        {
+            writer.WriteBool(IsPlayerObject);
+            writer.WriteUInt64Packed(NetworkObjectId);
+            writer.WriteUInt64Packed(OwnerClientId);
+
+            NetworkObject parentNetworkObject = null;
+
+            if (!AlwaysReplicateAsRoot &&transform.parent != null)
+            {
+                parentNetworkObject = transform.parent.GetComponent<NetworkObject>();
+            }
+
+            if (parentNetworkObject == null)
+            {
+                // We don't have a parent
+                writer.WriteBool(false);
+            }
+            else
+            {
+                // We do have a parent
+                writer.WriteBool(true);
+                // Write the parent's NetworkObjectId to be used for linking back to the child
+                writer.WriteUInt64Packed(parentNetworkObject.NetworkObjectId);
+            }
+
+            // Write if we are a scene object or not
+            writer.WriteBool(IsSceneObject ?? true);
+
+            // Write the hash for this NetworkObject
+            writer.WriteUInt32Packed(GlobalObjectIdHash);
+
+            if (IncludeTransformWhenSpawning == null || IncludeTransformWhenSpawning(OwnerClientId))
+            {
+                // Set the position and rotation data marker to true (i.e. flag to know, when reading from the stream, that postion and roation data follows).
+                writer.WriteBool(true);
+
+                // Write position
+                writer.WriteSinglePacked(transform.position.x);
+                writer.WriteSinglePacked(transform.position.y);
+                writer.WriteSinglePacked(transform.position.z);
+
+                // Write rotation
+                writer.WriteSinglePacked(transform.rotation.eulerAngles.x);
+                writer.WriteSinglePacked(transform.rotation.eulerAngles.y);
+                writer.WriteSinglePacked(transform.rotation.eulerAngles.z);
+            }
+            else
+            {
+                // Set the position and rotation data marker to false (i.e. flag to know, when reading from the stream, that postion and roation data *was not included*)
+                writer.WriteBool(false);
+            }
+
+            //Write whether we are including network variable data
+            writer.WriteBool(NetworkManager.NetworkConfig.EnableNetworkVariable);
+
+            if (NetworkManager.NetworkConfig.EnableNetworkVariable)
+            {
+                var buffer = writer.GetStream() as Serialization.NetworkBuffer;
+                // Mark our curent position and set the network variable data size initially to zero (NOT as a packed value)
+                var currentStreamPosition = buffer.Position;
+                writer.WriteUInt32(0);
+
+                //Write the network variable data
+                WriteNetworkVariableData(writer.GetStream(), targetClientId);
+
+                //As long as something was written
+                if (buffer.Position > currentStreamPosition)
+                {
+                    //Get the new updated stream buffer position
+                    var updatedPosition = buffer.Position;
+
+                    //Move back to the position just before we wrote our size
+                    buffer.Position = currentStreamPosition;
+
+                    //Write how much data was written
+                    writer.WriteUInt32((uint)(buffer.Position - currentStreamPosition));
+
+                    //Revert the buffer position back to the end of the network variable data written
+                    buffer.Position = updatedPosition;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Ueed to deserialize a serialized scene object which occurs
+        /// when the client is approved or during a scene transition
+        /// </summary>
+        /// <param name="objectStream">inbound stream</param>
+        /// <param name="reader">reader for the stream</param>
+        /// <param name="networkManager">NetworkManager instance</param>
+        static internal void DeserializeSceneObject(Serialization.NetworkBuffer objectStream, PooledNetworkReader reader, NetworkManager networkManager)
+        {
+            var isPlayerObject = reader.ReadBool();
+            var networkId = reader.ReadUInt64Packed();
+            var ownerClientId = reader.ReadUInt64Packed();
+            var hasParent = reader.ReadBool();
+            ulong? parentNetworkId = null;
+
+            if (hasParent)
+            {
+                parentNetworkId = reader.ReadUInt32Packed();
+            }
+
+            var isSceneObject = reader.ReadBool();
+
+            var prefabHash = reader.ReadUInt32Packed();
+            Vector3? position = null;
+            Quaternion? rotation = null;
+
+            // Check to see if we have position and rotation values that follows
+            if (reader.ReadBool())
+            {
+                position = new Vector3(reader.ReadSinglePacked(), reader.ReadSinglePacked(), reader.ReadSinglePacked());
+                rotation = Quaternion.Euler(reader.ReadSinglePacked(), reader.ReadSinglePacked(), reader.ReadSinglePacked());
+            }
+
+            var networkObject = networkManager.SpawnManager.CreateLocalNetworkObject(isSceneObject, prefabHash, ownerClientId, parentNetworkId, position, rotation);
+
+            //Determine if we have network variable data to read
+            var hasNetworkVariableData = reader.ReadBool();
+
+            //If we do, then check to make sure we actually constructed a NetworkObject locally
+            if (hasNetworkVariableData)
+            {
+                var networkVariableDataSize = reader.ReadUInt32();
+                if (networkObject == null)
+                {
+                    // This will prevent one misconfigured issue (or more) from breaking the entire loading process.
+                    Debug.LogError($"Failed to spawn NetowrkObject for Hash {prefabHash}.");
+                    
+                    //If we failed to load this NetworkObject, then skip past the network variable data
+                    objectStream.Position += networkVariableDataSize;
+
+                    //We have nothing left to do here.
+                    return;
+                }
+            }
+
+            //Spawn the NetworkObject
+            networkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, networkId, isSceneObject, isPlayerObject, ownerClientId, objectStream, false, 0, true, false);
+
+            var bufferQueue = networkManager.BufferManager.ConsumeBuffersForNetworkId(networkId);
+
+            // Apply buffered messages
+            if (bufferQueue != null)
+            {
+                while (bufferQueue.Count > 0)
+                {
+                    Messaging.Buffering.BufferManager.BufferedMessage message = bufferQueue.Dequeue();
+                    networkManager.HandleIncomingData(message.SenderClientId, message.NetworkChannel, new ArraySegment<byte>(message.NetworkBuffer.GetBuffer(), (int)message.NetworkBuffer.Position, (int)message.NetworkBuffer.Length), message.ReceiveTime, false);
+                    Messaging.Buffering.BufferManager.RecycleConsumedBufferedMessage(message);
+                }
+            }            
+        }
     }
 }
