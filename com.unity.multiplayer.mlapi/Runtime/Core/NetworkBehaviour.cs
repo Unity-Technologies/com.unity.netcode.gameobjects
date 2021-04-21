@@ -43,7 +43,7 @@ namespace MLAPI
         }
 
         static private bool m_UseClassicDelta = true;
-        static private bool m_UseSnapshot = true;
+        static private bool m_UseSnapshot = false;
 
 #pragma warning disable 414
 #pragma warning disable IDE1006 // disable naming rule violation check
