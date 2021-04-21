@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using MLAPI.Serialization;
 
 /// <summary>
@@ -15,14 +15,14 @@ public struct StatsInfoContainer : INetworkSerializable
     {
         if (serializer.IsReading)
         {
-            float[] StatValuesArray = null;
-            serializer.Serialize(ref StatValuesArray);
-            StatValues = new List<float>(StatValuesArray);
+            float[] statValuesArray = null;
+            serializer.Serialize(ref statValuesArray);
+            StatValues = new List<float>(statValuesArray);
         }
         else
         {
-            float[] StatValuesArray = StatValues?.ToArray() ?? new float[0];
-            serializer.Serialize(ref StatValuesArray);
+            float[] statValuesArray = StatValues?.ToArray() ?? new float[0];
+            serializer.Serialize(ref statValuesArray);
         }
     }
 }

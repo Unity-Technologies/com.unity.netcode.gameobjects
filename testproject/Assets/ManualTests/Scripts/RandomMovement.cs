@@ -1,28 +1,23 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
 using Random = UnityEngine.Random;
 using UnityEditor.Experimental;
 
 public class RandomMovement : MonoBehaviour, IPlayerMovement
-{
-
-
-    [SerializeField]
-    private Vector3 direction;
-    private Rigidbody rb;
-
-
+{    
+    private Vector3 m_Direction;
+    private Rigidbody m_Rigidbody;
 
     public void Start()
     {
-        rb = GetComponent<Rigidbody>();
+        m_Rigidbody = GetComponent<Rigidbody>();
         ChangeDirection(true, true);
     }
 
     public void Move(int speed)
     {
-        rb.MovePosition(transform.position + direction * (speed * Time.fixedDeltaTime));
+        m_Rigidbody.MovePosition(transform.position + m_Direction * (speed * Time.fixedDeltaTime));
     }
 
     private void OnCollisionStay(Collision collision)
@@ -41,10 +36,10 @@ public class RandomMovement : MonoBehaviour, IPlayerMovement
     {
         float ang = Random.Range(0, 2 * Mathf.PI);
 
-        direction.x = Mathf.Cos(ang);
-        direction.y = 0.0f;
+        m_Direction.x = Mathf.Cos(ang);
+        m_Direction.y = 0.0f;
         ang = Random.Range(0, 2 * Mathf.PI);
-        direction.z = Mathf.Sin(ang);
-        direction.Normalize();
+        m_Direction.z = Mathf.Sin(ang);
+        m_Direction.Normalize();
     }
 }

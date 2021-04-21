@@ -33,8 +33,7 @@ public class SwitchSceneHandler : NetworkBehaviour
         StopAllCoroutines();
     }
 
-
-    IEnumerator CheckForVisibility()
+    private IEnumerator CheckForVisibility()
     {
         while(!m_ExitingScene)
         {

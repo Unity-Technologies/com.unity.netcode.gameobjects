@@ -1124,7 +1124,7 @@ GameObject:
   - component: {fileID: 1113539279}
   - component: {fileID: 1113539281}
   m_Layer: 0
-  m_Name: ServerBoxGenerator
+  m_Name: PooledPrefabSpawnHandler
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1142,18 +1142,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8c48ea35c67e64f7fac22a3f6831ca88, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  AutoSpawnEnable: 1
   InitialSpawnDelay: 0.2
-  spawnsPerSecond: 5
-  BoxPoolSize: 128
-  BoxSpeed: 6
-  EnableNetworkPrefabInstanceHandler: 1
+  SpawnsPerSecond: 5
+  PoolSize: 128
+  ObjectSpeed: 8
+  EnableHandler: 1
   ServerObjectToPool: {fileID: 771575417923360811, guid: c0a45bdb516f341498d933b7a7ed4fc1,
     type: 3}
   ClientObjectToPool: {fileID: 1086419352113069865, guid: ed799d5402b325c4f8f41918224a1ba7,
     type: 3}
-  SwitchScene: {fileID: 0}
-  spawnSlider: {fileID: 2058276877}
-  spawnSliderValueText: {fileID: 562991980}
+  SwitchScene: {fileID: 2051885574}
+  SpawnSlider: {fileID: 2058276877}
+  SpawnSliderValueText: {fileID: 562991980}
 --- !u!4 &1113539280
 Transform:
   m_ObjectHideFlags: 0

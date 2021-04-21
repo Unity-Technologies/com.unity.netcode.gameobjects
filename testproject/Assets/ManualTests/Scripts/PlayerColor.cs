@@ -1,18 +1,18 @@
-﻿using MLAPI;
+using MLAPI;
 using System;
 using UnityEngine;
 
 public class PlayerColor : MonoBehaviour
 {
-    private static Color[] colors = {
-                Color.red, Color.yellow, Color.green, Color.blue, Color.cyan, Color.magenta, Color.white
-            };
+    private static Color[] s_Colors = { Color.red, Color.yellow, Color.green, Color.blue, Color.cyan, Color.magenta, Color.white };
 
-        // Start is called before the first frame update
-        void Start()
+    /// <summary>
+    /// Sets the mesh renderer's material's color based on the NetworkObject's OwnerClientId
+    /// </summary>
+    private void Start()
         {
             MeshRenderer meshRenderer = GetComponent<MeshRenderer>();
             ulong myId = GetComponent<NetworkObject>().OwnerClientId;
-            meshRenderer.material.color = colors[myId % Convert.ToUInt64(colors.Length)];
+            meshRenderer.material.color = s_Colors[myId % Convert.ToUInt64(s_Colors.Length)];
         }
 }

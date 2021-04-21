@@ -3,6 +3,10 @@ using System.Collections.Generic;
 using UnityEngine;
 using MLAPI;
 
+
+/// <summary>
+/// Used in tandem with the ConnectModeButtons prefab asset in test project
+/// </summary>
 public class ConnectionModeScript : MonoBehaviour
 {
     [SerializeField]

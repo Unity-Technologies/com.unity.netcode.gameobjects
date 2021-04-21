@@ -1173,15 +1173,14 @@ MonoBehaviour:
     PlayerPrefab: {fileID: 4079352819444256614, guid: c16f03336b6104576a565ef79ad643c0,
       type: 3}
     NetworkPrefabs:
-    - Prefab: {fileID: 771575417923360811, guid: c0a45bdb516f341498d933b7a7ed4fc1,
+    - Override: 1
+      Prefab: {fileID: 771575417923360811, guid: c0a45bdb516f341498d933b7a7ed4fc1,
         type: 3}
-      Override: 1
       SourcePrefabToOverride: {fileID: 771575417923360811, guid: c0a45bdb516f341498d933b7a7ed4fc1,
         type: 3}
       SourceHashToOverride: 0
       OverridingTargetPrefab: {fileID: 8059323910720821982, guid: d143db9172e1f234e99d450286b77695,
         type: 3}
-      IsPlayer: 0
     ReceiveTickrate: 64
     NetworkTickIntervalSec: 0.05
     MaxReceiveEventsPerTickRate: 500
@@ -1253,7 +1252,7 @@ GameObject:
   - component: {fileID: 1113539281}
   - component: {fileID: 1113539279}
   m_Layer: 0
-  m_Name: ServerBoxGenerator
+  m_Name: PooledPrefabSpawnHandler
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1271,17 +1270,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8c48ea35c67e64f7fac22a3f6831ca88, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  AutoSpawnEnable: 1
   InitialSpawnDelay: 0.2
-  spawnsPerSecond: 5
-  BoxPoolSize: 128
-  BoxSpeed: 6
-  EnableNetworkPrefabInstanceHandler: 0
+  SpawnsPerSecond: 5
+  PoolSize: 128
+  ObjectSpeed: 8
+  EnableHandler: 0
   ServerObjectToPool: {fileID: 771575417923360811, guid: c0a45bdb516f341498d933b7a7ed4fc1,
     type: 3}
   ClientObjectToPool: {fileID: 0}
   SwitchScene: {fileID: 34066667}
-  spawnSlider: {fileID: 2058276877}
-  spawnSliderValueText: {fileID: 562991980}
+  SpawnSlider: {fileID: 2058276877}
+  SpawnSliderValueText: {fileID: 562991980}
 --- !u!4 &1113539280
 Transform:
   m_ObjectHideFlags: 0
