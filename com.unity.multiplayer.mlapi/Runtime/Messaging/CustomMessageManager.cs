@@ -57,7 +57,7 @@ namespace MLAPI.Messaging
                 return;
             }
 
-            InternalMessageSender.Send(NetworkConstants.UNNAMED_MESSAGE, networkChannel, clientIds, buffer);
+            m_NetworkManager.MessageSender.Send(NetworkConstants.UNNAMED_MESSAGE, networkChannel, clientIds, buffer);
             PerformanceDataManager.Increment(ProfilerConstants.UnnamedMessageSent);
         }
 
@@ -69,7 +69,7 @@ namespace MLAPI.Messaging
         /// <param name="networkChannel">The channel tos end the data on</param>
         public void SendUnnamedMessage(ulong clientId, NetworkBuffer buffer, NetworkChannel networkChannel = NetworkChannel.Internal)
         {
-            InternalMessageSender.Send(clientId, NetworkConstants.UNNAMED_MESSAGE, networkChannel, buffer);
+            m_NetworkManager.MessageSender.Send(clientId, NetworkConstants.UNNAMED_MESSAGE, networkChannel, buffer);
             PerformanceDataManager.Increment(ProfilerConstants.UnnamedMessageSent);
         }
 
@@ -169,7 +169,7 @@ namespace MLAPI.Messaging
 
                 messageBuffer.CopyFrom(stream);
 
-                InternalMessageSender.Send(clientId, NetworkConstants.NAMED_MESSAGE, networkChannel, messageBuffer);
+                m_NetworkManager.MessageSender.Send(clientId, NetworkConstants.NAMED_MESSAGE, networkChannel, messageBuffer);
                 PerformanceDataManager.Increment(ProfilerConstants.NamedMessageSent);
             }
         }
@@ -211,7 +211,7 @@ namespace MLAPI.Messaging
                     return;
                 }
 
-                InternalMessageSender.Send(NetworkConstants.NAMED_MESSAGE, networkChannel, clientIds, messageBuffer);
+                m_NetworkManager.MessageSender.Send(NetworkConstants.NAMED_MESSAGE, networkChannel, clientIds, messageBuffer);
                 PerformanceDataManager.Increment(ProfilerConstants.NamedMessageSent);
             }
         }

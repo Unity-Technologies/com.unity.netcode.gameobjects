@@ -21,6 +21,7 @@ using MLAPI.Exceptions;
 using MLAPI.Transports.Tasks;
 using MLAPI.Messaging.Buffering;
 using Unity.Profiling;
+using UnityEditor.VersionControl;
 
 namespace MLAPI
 {
@@ -103,6 +104,8 @@ namespace MLAPI
 
         // Has to have setter for tests
         internal IInternalMessageHandler MessageHandler { get; set; }
+
+        internal InternalMessageSender MessageSender { get; set; }
 
         /// <summary>
         /// Gets the networkId of the server
@@ -313,6 +316,8 @@ namespace MLAPI
                 // Only create this if it's not already set (like in test cases)
                 MessageHandler = new InternalMessageHandler(this);
             }
+
+            MessageSender = new InternalMessageSender(this);
 
             if (NetworkConfig.NetworkTransport == null)
             {
@@ -723,6 +728,11 @@ namespace MLAPI
                 MessageHandler = null;
             }
 
+            if (MessageSender != null)
+            {
+                MessageSender = null;
+            }
+
             if (CustomMessagingManager != null)
             {
                 CustomMessagingManager = null;
@@ -886,7 +896,7 @@ namespace MLAPI
                     writer.WriteByteArray(NetworkConfig.ConnectionData);
                 }
 
-                InternalMessageSender.Send(ServerClientId, NetworkConstants.CONNECTION_REQUEST, NetworkChannel.Internal, buffer);
+                MessageSender.Send(ServerClientId, NetworkConstants.CONNECTION_REQUEST, NetworkChannel.Internal, buffer);
             }
         }
 
@@ -1458,7 +1468,7 @@ namespace MLAPI
             using (var writer = PooledNetworkWriter.Get(buffer))
             {
                 writer.WriteSinglePacked(Time.realtimeSinceStartup);
-                InternalMessageSender.Send(NetworkConstants.TIME_SYNC, NetworkChannel.SyncChannel, buffer);
+                MessageSender.Send(NetworkConstants.TIME_SYNC, NetworkChannel.SyncChannel, buffer);
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_SyncTime.End();
@@ -1572,7 +1582,7 @@ namespace MLAPI
                             }
                         }
 
-                        InternalMessageSender.Send(ownerClientId, NetworkConstants.CONNECTION_APPROVED, NetworkChannel.Internal, buffer);
+                        MessageSender.Send(ownerClientId, NetworkConstants.CONNECTION_APPROVED, NetworkChannel.Internal, buffer);
                     }
                 }
 
@@ -1631,7 +1641,7 @@ namespace MLAPI
                             ConnectedClients[ownerClientId].PlayerObject.WriteNetworkVariableData(buffer, clientPair.Key);
                         }
 
-                        InternalMessageSender.Send(clientPair.Key, NetworkConstants.ADD_OBJECT, NetworkChannel.Internal, buffer);
+                        MessageSender.Send(clientPair.Key, NetworkConstants.ADD_OBJECT, NetworkChannel.Internal, buffer);
                     }
                 }
             }
