@@ -332,6 +332,16 @@ namespace MLAPI.EditorTests
         }
 
         [Test]
+        public void TestRangedSingle()
+        {
+        }
+
+        [Test]
+        public void TestRangedDouble()
+        {
+        }
+
+        [Test]
         public void TestWritePackedSingle()
         {
             float somenumber = (float)Math.PI;
