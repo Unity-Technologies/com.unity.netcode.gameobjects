@@ -95,7 +95,7 @@ namespace MLAPI
                         WriteIndex(buffer);
                         WriteBuffer(buffer);
 
-                        InternalMessageSender.Send(clientId, NetworkConstants.SNAPSHOT_DATA, NetworkChannel.SnapshotExchange, buffer);
+                        NetworkManager.Singleton.MessageSender.Send(clientId, NetworkConstants.SNAPSHOT_DATA, NetworkChannel.SnapshotExchange, buffer);
                         buffer.Dispose();
 
                     }
