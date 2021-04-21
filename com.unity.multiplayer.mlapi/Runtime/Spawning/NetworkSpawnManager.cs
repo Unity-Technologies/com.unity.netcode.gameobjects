@@ -182,15 +182,8 @@ namespace MLAPI.Spawning
         }
 
         /// <summary>
-        /// Only run on the client 
+        /// Should only run on the client 
         /// </summary>
-        /// <param name="softCreate"></param>
-        /// <param name="prefabHash"></param>
-        /// <param name="ownerClientId"></param>
-        /// <param name="parentNetworkId"></param>
-        /// <param name="position"></param>
-        /// <param name="rotation"></param>
-        /// <returns></returns>
         internal NetworkObject CreateLocalNetworkObject(bool softCreate, uint prefabHash, ulong ownerClientId, ulong? parentNetworkId, Vector3? position, Quaternion? rotation)
         {
             NetworkObject parentNetworkObject = null;
