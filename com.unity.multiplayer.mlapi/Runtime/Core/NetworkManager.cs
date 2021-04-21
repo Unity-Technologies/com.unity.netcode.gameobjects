@@ -364,7 +364,7 @@ namespace MLAPI
             // This should never happen, but in the event that it does there should be (at a minimum) a unity error logged.
             if (RpcQueueContainer != null)
             {
-                Debug.LogError("Init was invoked, but rpcQueueContainer was already initialized! (destroying previous instance)");
+                UnityEngine.Debug.LogError("Init was invoked, but rpcQueueContainer was already initialized! (destroying previous instance)");
                 RpcQueueContainer.Dispose();
                 RpcQueueContainer = null;
             }
