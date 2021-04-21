@@ -29,11 +29,21 @@ namespace MLAPI.SceneManagement
         /// </summary>
         public delegate void SceneSwitchStartedDelegate(AsyncOperation operation);
 
+        /// <summary>
+        /// Delegate for when a client has reported to the server that it has completed scene transition
+        /// </summary>
         public delegate void OnClientLoadedSceneDelegate(SceneSwitchProgress progress, ulong clientId);
 
+        
+        /// <summary>
+        /// Delegate for when all clients have reported to the server that they have completed scene transition or timed out
+        /// </summary>
         public delegate void OnAllClientsLoadedSceneDelegate(SceneSwitchProgress progress, bool timedOut);
 
-        public delegate void AllClientsReadyDelegate(ulong[] clientIds);
+        /// <summary>
+        /// Delegate for when the clients get notified by the server that all clients have completed their scene transitions
+        /// </summary>
+        public delegate void AllClientsReadyDelegate(ulong[] clientIds, ulong[] timedOutClientIds);
 
         /// <summary>
         /// Event that is invoked when the scene is switched
@@ -56,7 +66,7 @@ namespace MLAPI.SceneManagement
         public event OnAllClientsLoadedSceneDelegate OnAllClientsLoadedScene;
 
         /// <summary>
-        /// Event that is invoked on the client after all clients have successfully completed scene transition
+        /// Event that is invoked on the clients after all clients have successfully completed scene transition or timed out
         /// </summary>
         public event AllClientsReadyDelegate OnAllClientsReady; 
 
@@ -514,9 +524,9 @@ namespace MLAPI.SceneManagement
             }
         }
 
-        internal void AllClientsReady(ulong[] clientIds)
+        internal void AllClientsReady(ulong[] clientIds, ulong[] timedOutClientIds)
         {
-            OnAllClientsReady?.Invoke(clientIds);
+            OnAllClientsReady?.Invoke(clientIds, timedOutClientIds);
         }
     }
 }

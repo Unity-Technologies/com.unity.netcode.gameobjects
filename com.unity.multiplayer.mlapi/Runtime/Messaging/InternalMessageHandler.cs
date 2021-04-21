@@ -9,6 +9,7 @@ using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.SceneManagement;
 using System.Collections.Generic;
+using System.Linq;
 using MLAPI.Configuration;
 using MLAPI.Messaging.Buffering;
 using MLAPI.Profiling;
@@ -618,8 +619,8 @@ namespace MLAPI.Messaging
             using (var reader = PooledNetworkReader.Get(stream))
             {
                 var clientIds = reader.ReadULongArray();
-
-                NetworkManager.SceneManager.AllClientsReady(clientIds);
+                var timedOutClients = m_NetworkManager.ConnectedClients.Keys.Except(clientIds).ToArray();
+                NetworkManager.SceneManager.AllClientsReady(clientIds, timedOutClients);
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleAllClientsSwitchSceneCompleted.End();
