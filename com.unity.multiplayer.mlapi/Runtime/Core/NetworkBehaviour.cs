@@ -9,6 +9,7 @@ using System.IO;
 using MLAPI.Configuration;
 using MLAPI.Logging;
 using MLAPI.Messaging;
+using MLAPI.NetworkTime;
 using MLAPI.NetworkVariable;
 using MLAPI.Profiling;
 using MLAPI.Reflection;
@@ -489,7 +490,7 @@ namespace MLAPI
         internal static void NetworkBehaviourUpdate()
         {
             // Do not execute NetworkBehaviourUpdate more than once per network tick
-            ushort tick = NetworkManager.Singleton.NetworkTickSystem.GetTick();
+            ushort tick = 0; // = NetworkManager.Singleton.NetworkTickSystem.GetTick(); // TODO this should only get called once with new tick system
             if (tick == CurrentTick)
             {
                 return;

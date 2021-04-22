@@ -60,28 +60,16 @@ namespace MLAPI.Configuration
         public bool CreatePlayerPrefab = true;
 
         /// <summary>
-        /// Amount of times per second the receive queue is emptied and all messages inside are processed.
+        /// The max amount of messages to process per ReceiveTickrate. This is to prevent flooding.
         /// </summary>
-        [Tooltip("The amount of times per second the receive queue is emptied from pending incoming messages")]
-        public int ReceiveTickrate = 64;
-
-        /// <summary>
-        /// Duration in seconds between network ticks.
-        /// </summary>
-        [Tooltip("Duration in seconds between network ticks")]
-        public float NetworkTickIntervalSec = 0.050f;
+        [Tooltip("The maximum amount of Receive events to poll per Receive tick. This is to prevent flooding and freezing on the server")]
+        public int TickRate = 60;
 
         /// <summary>
         /// The max amount of messages to process per ReceiveTickrate. This is to prevent flooding.
         /// </summary>
         [Tooltip("The maximum amount of Receive events to poll per Receive tick. This is to prevent flooding and freezing on the server")]
         public int MaxReceiveEventsPerTickRate = 500;
-
-        /// <summary>
-        /// The amount of times per second internal frame events will occur, e.g. send checking.
-        /// </summary>
-        [Tooltip("The amount of times per second the internal event loop will run. This includes for example NetworkVariable checking.")]
-        public int EventTickrate = 64;
 
         /// <summary>
         /// The amount of seconds to wait for handshake to complete before timing out a client
@@ -205,9 +193,8 @@ namespace MLAPI.Configuration
                     writer.WriteString(config.RegisteredScenes[i]);
                 }
 
-                writer.WriteInt32Packed(config.ReceiveTickrate);
+                writer.WriteInt32Packed(config.TickRate);
                 writer.WriteInt32Packed(config.MaxReceiveEventsPerTickRate);
-                writer.WriteInt32Packed(config.EventTickrate);
                 writer.WriteInt32Packed(config.ClientConnectionBufferTimeout);
                 writer.WriteBool(config.ConnectionApproval);
                 writer.WriteInt32Packed(config.LoadSceneTimeOut);
@@ -248,9 +235,8 @@ namespace MLAPI.Configuration
                     config.RegisteredScenes.Add(reader.ReadString().ToString());
                 }
 
-                config.ReceiveTickrate = reader.ReadInt32Packed();
+                config.TickRate = reader.ReadInt32Packed();
                 config.MaxReceiveEventsPerTickRate = reader.ReadInt32Packed();
-                config.EventTickrate = reader.ReadInt32Packed();
                 config.ClientConnectionBufferTimeout = reader.ReadInt32Packed();
                 config.ConnectionApproval = reader.ReadBool();
                 config.LoadSceneTimeOut = reader.ReadInt32Packed();

@@ -20,6 +20,7 @@ using MLAPI.Spawning;
 using MLAPI.Exceptions;
 using MLAPI.Transports.Tasks;
 using MLAPI.Messaging.Buffering;
+using MLAPI.NetworkTime;
 using Unity.Profiling;
 using UnityEditor.VersionControl;
 
@@ -328,14 +329,7 @@ namespace MLAPI
                 return;
             }
 
-            //This 'if' should never enter
-            if (NetworkTickSystem != null)
-            {
-                NetworkTickSystem.Dispose();
-                NetworkTickSystem = null;
-            }
-
-            NetworkTickSystem = new NetworkTickSystem(NetworkConfig.NetworkTickIntervalSec);
+            NetworkTickSystem = new NetworkTickSystem(NetworkConfig.TickRate);
 
             //This should never happen, but in the event that it does there should be (at a minimum) a unity error logged.
             if (RpcQueueContainer != null)
@@ -675,12 +669,6 @@ namespace MLAPI
                 RpcQueueContainer = null;
             }
 
-            if (NetworkTickSystem != null)
-            {
-                NetworkTickSystem.Dispose();
-                NetworkTickSystem = null;
-            }
-
 #if !UNITY_2020_2_OR_NEWER
             NetworkProfiler.Stop();
 #endif
@@ -752,7 +740,7 @@ namespace MLAPI
             if (IsListening)
             {
                 // Process received data
-                if ((NetworkTime - m_LastReceiveTickTime >= (1f / NetworkConfig.ReceiveTickrate)) || NetworkConfig.ReceiveTickrate <= 0)
+                if ((NetworkTime - m_LastReceiveTickTime >= (1f / NetworkConfig.TickRate)) || NetworkConfig.TickRate <= 0)
                 {
                     PerformanceDataManager.Increment(ProfilerConstants.ReceiveTickRate);
                     ProfilerStatManager.RcvTickRate.Record();
@@ -797,7 +785,7 @@ namespace MLAPI
         {
             if (IsListening)
             {
-                if (((NetworkTime - m_LastEventTickTime >= (1f / NetworkConfig.EventTickrate))))
+                if (((NetworkTime - m_LastEventTickTime >= (1f / NetworkConfig.TickRate))))
                 {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                     s_EventTick.Begin();
