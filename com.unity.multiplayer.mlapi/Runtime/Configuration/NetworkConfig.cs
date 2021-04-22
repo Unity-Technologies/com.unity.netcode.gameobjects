@@ -54,9 +54,9 @@ namespace MLAPI.Configuration
         internal uint PlayerPrefabHash;
 
         /// <summary>
-        /// Whether or not a player object should be created by default. This value can be overriden on a case by case basis with ConnectionApproval.
+        /// Whether or not a player object should be created by default. This value can be overridden on a case by case basis with ConnectionApproval.
         /// </summary>
-        [Tooltip("Whether or not a player object should be created by default. This value can be overriden on a case by case basis with ConnectionApproval.")]
+        [Tooltip("Whether or not a player object should be created by default. This value can be overridden on a case by case basis with ConnectionApproval.")]
         public bool CreatePlayerPrefab = true;
 
         /// <summary>
@@ -104,13 +104,13 @@ namespace MLAPI.Configuration
         /// <summary>
         /// If your logic uses the NetworkTime, this should probably be turned off. If however it's needed to maximize accuracy, this is recommended to be turned on
         /// </summary>
-        [Tooltip("Enable this to resync the NetworkTime after the initial sync")]
+        [Tooltip("Enable this to re-sync the NetworkTime after the initial sync")]
         public bool EnableTimeResync = false;
 
         /// <summary>
-        /// If time resync is turned on, this specifies the interval between syncs in seconds.
+        /// If time re-sync is turned on, this specifies the interval between syncs in seconds.
         /// </summary>
-        [Tooltip("The amount of seconds between resyncs of NetworkTime, if enabled")]
+        [Tooltip("The amount of seconds between re-syncs of NetworkTime, if enabled")]
         public int TimeResyncInterval = 30;
 
         /// <summary>
@@ -121,16 +121,16 @@ namespace MLAPI.Configuration
         public bool EnableNetworkVariable = true;
 
         /// <summary>
-        /// Whether or not to ensure that NetworkVariables can be read even if a client accidentally writes where its not allowed to. This costs some CPU and bandwdith.
+        /// Whether or not to ensure that NetworkVariables can be read even if a client accidentally writes where its not allowed to. This costs some CPU and bandwidth.
         /// </summary>
         [Tooltip("Ensures that NetworkVariables can be read even if a client accidental writes where its not allowed to. This will cost some CPU time and bandwidth")]
         public bool EnsureNetworkVariableLengthSafety = false;
 
         /// <summary>
-        /// Enables scene management. This will allow network scene switches and automatic scene diff corrections upon connect.
+        /// Enables scene management. This will allow network scene switches and automatic scene difference corrections upon connect.
         /// SoftSynced scene objects wont work with this disabled. That means that disabling SceneManagement also enables PrefabSync.
         /// </summary>
-        [Tooltip("Enables scene management. This will allow network scene switches and automatic scene diff corrections upon connect.\n" +
+        [Tooltip("Enables scene management. This will allow network scene switches and automatic scene difference corrections upon connect.\n" +
                  "SoftSynced scene objects wont work with this disabled. That means that disabling SceneManagement also enables PrefabSync.")]
         public bool EnableSceneManagement = true;
 
@@ -140,14 +140,6 @@ namespace MLAPI.Configuration
         /// </summary>
         [Tooltip("Whether or not the MLAPI should check for differences in the prefab lists at connection")]
         public bool ForceSamePrefabs = true;
-
-        /// <summary>
-        /// If true, all NetworkObjects need to be prefabs and all scene objects will be replaced on server side which causes all serialization to be lost. Useful for multi project setups
-        /// If false, Only non scene objects have to be prefabs. Scene objects will be matched using their PrefabInstanceId which can be precomputed globally for a scene at build time. Useful for single projects
-        /// </summary>
-        [Tooltip("If true, all NetworkObjects need to be prefabs and all scene objects will be replaced on server side which causes all serialization to be lost. Useful for multi project setups\n" +
-                 "If false, Only non scene objects have to be prefabs. Scene objects will be matched using their PrefabInstanceId which can be precomputed globally for a scene at build time. Useful for single projects")]
-        public bool UsePrefabSync = false;
 
         /// <summary>
         /// If true, NetworkIds will be reused after the NetworkIdRecycleDelay.
@@ -196,7 +188,7 @@ namespace MLAPI.Configuration
         }
 
         /// <summary>
-        /// Returns a base64 encoded version of the config
+        /// Returns a base64 encoded version of the configuration
         /// </summary>
         /// <returns></returns>
         public string ToBase64()
@@ -223,7 +215,6 @@ namespace MLAPI.Configuration
                 writer.WriteBool(config.EnsureNetworkVariableLengthSafety);
                 writer.WriteBits((byte)config.RpcHashSize, 2);
                 writer.WriteBool(ForceSamePrefabs);
-                writer.WriteBool(UsePrefabSync);
                 writer.WriteBool(EnableSceneManagement);
                 writer.WriteBool(RecycleNetworkIds);
                 writer.WriteSinglePacked(NetworkIdRecycleDelay);
@@ -267,7 +258,6 @@ namespace MLAPI.Configuration
                 config.EnsureNetworkVariableLengthSafety = reader.ReadBool();
                 config.RpcHashSize = (HashSize)reader.ReadBits(2);
                 config.ForceSamePrefabs = reader.ReadBool();
-                config.UsePrefabSync = reader.ReadBool();
                 config.EnableSceneManagement = reader.ReadBool();
                 config.RecycleNetworkIds = reader.ReadBool();
                 config.NetworkIdRecycleDelay = reader.ReadSinglePacked();
@@ -319,7 +309,6 @@ namespace MLAPI.Configuration
 
                 writer.WriteBool(EnableNetworkVariable);
                 writer.WriteBool(ForceSamePrefabs);
-                writer.WriteBool(UsePrefabSync);
                 writer.WriteBool(EnableSceneManagement);
                 writer.WriteBool(EnsureNetworkVariableLengthSafety);
                 writer.WriteBits((byte)RpcHashSize, 2);

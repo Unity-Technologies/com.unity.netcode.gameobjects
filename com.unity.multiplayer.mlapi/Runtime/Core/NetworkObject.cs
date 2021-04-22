@@ -8,7 +8,6 @@ using MLAPI.Hashing;
 using MLAPI.Logging;
 using MLAPI.Messaging;
 using MLAPI.Serialization.Pooled;
-using MLAPI.Spawning;
 using MLAPI.Transports;
 using UnityEngine;
 
@@ -28,6 +27,12 @@ namespace MLAPI
 #if UNITY_EDITOR
         private void OnValidate()
         {
+            if (UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode && !NetworkManager.IsTestRun)
+            {
+                // do NOT override GlobalObjectIdHash while getting into PlayMode in the Editor
+                return;
+            }
+
             var globalObjectIdString = UnityEditor.GlobalObjectId.GetGlobalObjectIdSlow(this).ToString();
             GlobalObjectIdHash = XXHash.Hash32(globalObjectIdString);
         }
@@ -236,7 +241,7 @@ namespace MLAPI
 
                 if (networkObjects[i].NetworkManager != networkManager)
                 {
-                    throw new ArgumentException("All NetworkObjects has to belong to the same " + nameof(NetworkManager));
+                    throw new ArgumentNullException("All " + nameof(NetworkObject) + "s must belong to the same " + nameof(NetworkManager));
                 }
             }
 
@@ -335,7 +340,7 @@ namespace MLAPI
 
                 if (networkObjects[i].NetworkManager != networkManager)
                 {
-                    throw new ArgumentException("All NetworkObjects has to belong to the same " + nameof(NetworkManager));
+                    throw new ArgumentNullException("All " + nameof(NetworkObject) + "s must belong to the same " + nameof(NetworkManager));
                 }
             }
 
@@ -358,7 +363,7 @@ namespace MLAPI
 
         private void OnDestroy()
         {
-            if (NetworkManager.Singleton != null && NetworkManager.Singleton.SpawnManager.SpawnedObjects.ContainsKey(NetworkObjectId))
+            if (NetworkManager.Singleton != null && NetworkManager.Singleton.SpawnManager != null && NetworkManager.Singleton.SpawnManager.SpawnedObjects.ContainsKey(NetworkObjectId))
             {
                 NetworkManager.Singleton.SpawnManager.OnDestroyObject(NetworkObjectId, false);
             }

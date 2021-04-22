@@ -24,7 +24,7 @@ namespace MLAPI.RuntimeTests
         [UnityTest]
         public IEnumerator UpdateStagesInvocation()
         {
-            Assert.IsTrue(NetworkManagerHelper.StartNetworkManager());
+            Assert.IsTrue(NetworkManagerHelper.StartNetworkManager(out _));
 
             Guid updateStagesTestId = NetworkManagerHelper.AddGameNetworkObject("UpdateStagesTest");
             var rpcPipelineTestComponent = NetworkManagerHelper.AddComponentToObject<NetworkUpdateStagesComponent>(updateStagesTestId);
@@ -67,7 +67,7 @@ namespace MLAPI.RuntimeTests
         [UnityTest]
         public IEnumerator BufferDataValidation()
         {
-            Assert.IsTrue(NetworkManagerHelper.StartNetworkManager());
+            Assert.IsTrue(NetworkManagerHelper.StartNetworkManager(out _));
 
             Guid gameObjectId = NetworkManagerHelper.AddGameNetworkObject("GrowingBufferObject");
 
@@ -101,7 +101,7 @@ namespace MLAPI.RuntimeTests
         [Test]
         public void RpcQueueContainerClass()
         {
-            Assert.IsTrue(NetworkManagerHelper.StartNetworkManager());
+            Assert.IsTrue(NetworkManagerHelper.StartNetworkManager(out _));
 
             //Create a testing rpcQueueContainer that doesn't get added to the network update loop so we don't try to send or process during the test
             var rpcQueueContainer = new RpcQueueContainer(NetworkManager.Singleton, 0, true);
@@ -122,7 +122,7 @@ namespace MLAPI.RuntimeTests
             var indexOffset = 0;
             ulong senderNetworkId = 1;
 
-            //Create ficticious list of clients to send to
+            //Create fictitious list of clients to send to
             ulong[] psuedoClients = new ulong[] { 0 };
 
             var randomGeneratedDataArray = preCalculatedBufferValues.ToArray();
@@ -181,7 +181,7 @@ namespace MLAPI.RuntimeTests
         public RpcQueueTests()
         {
             //Create, instantiate, and host
-            NetworkManagerHelper.StartNetworkManager();
+            NetworkManagerHelper.StartNetworkManager(out _);
         }
     }
 }
