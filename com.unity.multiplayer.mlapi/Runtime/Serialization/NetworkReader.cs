@@ -429,7 +429,7 @@ namespace MLAPI.Serialization
                 read |= (uint)ReadByte() << (i << 3);
             }
 
-            return (((float)read / ((0x100 * bytes) - 1)) * (minValue + maxValue)) - minValue;
+            return ((float)read / ((0x100 * bytes) - 1) * (maxValue - minValue)) + minValue;
         }
 
         /// <summary>
@@ -452,7 +452,7 @@ namespace MLAPI.Serialization
                 read |= (ulong)ReadByte() << (i << 3);
             }
 
-            return (((double)read / ((0x100 * bytes) - 1)) * (minValue + maxValue)) - minValue;
+            return ((double)read / ((0x100 * bytes) - 1) * (maxValue - minValue)) + minValue;
         }
 
         /// <summary>

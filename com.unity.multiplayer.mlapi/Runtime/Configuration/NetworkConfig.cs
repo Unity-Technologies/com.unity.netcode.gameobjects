@@ -50,8 +50,9 @@ namespace MLAPI.Configuration
         /// <summary>
         /// A list of spawnable prefabs
         /// </summary>
+        [SerializeField]
         [Tooltip("The prefabs that can be spawned across the network")]
-        public List<NetworkPrefab> NetworkPrefabs = new List<NetworkPrefab>();
+        internal List<NetworkPrefab> NetworkPrefabs = new List<NetworkPrefab>();
 
         /// <summary>
         /// This dictionary provides a quick way to check and see if a NetworkPrefab has a NetworkPrefab override.

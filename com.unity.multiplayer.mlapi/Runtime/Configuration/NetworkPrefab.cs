@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace MLAPI.Configuration
 {
-    public enum NetworkPrefabOverride
+    internal enum NetworkPrefabOverride
     {
         None,
         Prefab,
@@ -15,7 +15,7 @@ namespace MLAPI.Configuration
     /// Class that represents a NetworkPrefab
     /// </summary>
     [Serializable]
-    public class NetworkPrefab
+    internal class NetworkPrefab
     {
         /// <summary>
         /// The override setttings for this NetworkPrefab
@@ -53,7 +53,6 @@ namespace MLAPI.Configuration
                     {
                         NetworkLog.LogWarning($"{nameof(NetworkPrefab)} does not have a prefab assigned");
                     }
-
                     return 0;
                 }
 
