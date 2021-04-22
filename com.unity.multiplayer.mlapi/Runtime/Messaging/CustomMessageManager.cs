@@ -57,7 +57,7 @@ namespace MLAPI.Messaging
                 return;
             }
 
-            InternalMessageSender.Send(NetworkConstants.UNNAMED_MESSAGE, networkChannel, clientIds, buffer);
+            m_NetworkManager.MessageSender.Send(NetworkConstants.UNNAMED_MESSAGE, networkChannel, clientIds, buffer);
             PerformanceDataManager.Increment(ProfilerConstants.UnnamedMessageSent);
         }
 
@@ -69,7 +69,7 @@ namespace MLAPI.Messaging
         /// <param name="networkChannel">The channel tos end the data on</param>
         public void SendUnnamedMessage(ulong clientId, NetworkBuffer buffer, NetworkChannel networkChannel = NetworkChannel.Internal)
         {
-            InternalMessageSender.Send(clientId, NetworkConstants.UNNAMED_MESSAGE, networkChannel, buffer);
+            m_NetworkManager.MessageSender.Send(clientId, NetworkConstants.UNNAMED_MESSAGE, networkChannel, buffer);
             PerformanceDataManager.Increment(ProfilerConstants.UnnamedMessageSent);
         }
 
@@ -82,22 +82,22 @@ namespace MLAPI.Messaging
         /// </summary>
         public delegate void HandleNamedMessageDelegate(ulong sender, Stream payload);
 
-        private Dictionary<ulong, HandleNamedMessageDelegate> s_NamedMessageHandlers32 = new Dictionary<ulong, HandleNamedMessageDelegate>();
-        private Dictionary<ulong, HandleNamedMessageDelegate> s_NamedMessageHandlers64 = new Dictionary<ulong, HandleNamedMessageDelegate>();
+        private Dictionary<ulong, HandleNamedMessageDelegate> m_NamedMessageHandlers32 = new Dictionary<ulong, HandleNamedMessageDelegate>();
+        private Dictionary<ulong, HandleNamedMessageDelegate> m_NamedMessageHandlers64 = new Dictionary<ulong, HandleNamedMessageDelegate>();
 
         internal void InvokeNamedMessage(ulong hash, ulong sender, Stream stream)
         {
             if (m_NetworkManager == null)
             {
                 // We dont know what size to use. Try every (more collision prone)
-                if (s_NamedMessageHandlers32.ContainsKey(hash))
+                if (m_NamedMessageHandlers32.ContainsKey(hash))
                 {
-                    s_NamedMessageHandlers32[hash](sender, stream);
+                    m_NamedMessageHandlers32[hash](sender, stream);
                 }
 
-                if (s_NamedMessageHandlers64.ContainsKey(hash))
+                if (m_NamedMessageHandlers64.ContainsKey(hash))
                 {
-                    s_NamedMessageHandlers64[hash](sender, stream);
+                    m_NamedMessageHandlers64[hash](sender, stream);
                 }
             }
             else
@@ -106,15 +106,15 @@ namespace MLAPI.Messaging
                 switch (m_NetworkManager.NetworkConfig.RpcHashSize)
                 {
                     case HashSize.VarIntFourBytes:
-                        if (s_NamedMessageHandlers32.ContainsKey(hash))
+                        if (m_NamedMessageHandlers32.ContainsKey(hash))
                         {
-                            s_NamedMessageHandlers32[hash](sender, stream);
+                            m_NamedMessageHandlers32[hash](sender, stream);
                         }
                         break;
                     case HashSize.VarIntEightBytes:
-                        if (s_NamedMessageHandlers64.ContainsKey(hash))
+                        if (m_NamedMessageHandlers64.ContainsKey(hash))
                         {
-                            s_NamedMessageHandlers64[hash](sender, stream);
+                            m_NamedMessageHandlers64[hash](sender, stream);
                         }
                         break;
                 }
@@ -128,8 +128,8 @@ namespace MLAPI.Messaging
         /// <param name="callback">The callback to run when a named message is received.</param>
         public void RegisterNamedMessageHandler(string name, HandleNamedMessageDelegate callback)
         {
-            s_NamedMessageHandlers32[XXHash.Hash32(name)] = callback;
-            s_NamedMessageHandlers64[XXHash.Hash64(name)] = callback;
+            m_NamedMessageHandlers32[XXHash.Hash32(name)] = callback;
+            m_NamedMessageHandlers64[XXHash.Hash64(name)] = callback;
         }
 
         /// <summary>
@@ -138,8 +138,8 @@ namespace MLAPI.Messaging
         /// <param name="name">The name of the message.</param>
         public void UnregisterNamedMessageHandler(string name)
         {
-            s_NamedMessageHandlers32.Remove(XXHash.Hash32(name));
-            s_NamedMessageHandlers64.Remove(XXHash.Hash64(name));
+            m_NamedMessageHandlers32.Remove(XXHash.Hash32(name));
+            m_NamedMessageHandlers64.Remove(XXHash.Hash64(name));
         }
 
         /// <summary>
@@ -169,7 +169,7 @@ namespace MLAPI.Messaging
 
                 messageBuffer.CopyFrom(stream);
 
-                InternalMessageSender.Send(clientId, NetworkConstants.NAMED_MESSAGE, networkChannel, messageBuffer);
+                m_NetworkManager.MessageSender.Send(clientId, NetworkConstants.NAMED_MESSAGE, networkChannel, messageBuffer);
                 PerformanceDataManager.Increment(ProfilerConstants.NamedMessageSent);
             }
         }
@@ -211,7 +211,7 @@ namespace MLAPI.Messaging
                     return;
                 }
 
-                InternalMessageSender.Send(NetworkConstants.NAMED_MESSAGE, networkChannel, clientIds, messageBuffer);
+                m_NetworkManager.MessageSender.Send(NetworkConstants.NAMED_MESSAGE, networkChannel, clientIds, messageBuffer);
                 PerformanceDataManager.Increment(ProfilerConstants.NamedMessageSent);
             }
         }
