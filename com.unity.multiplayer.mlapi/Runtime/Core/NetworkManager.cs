@@ -20,7 +20,6 @@ using MLAPI.Transports.Tasks;
 using MLAPI.Messaging.Buffering;
 using Unity.Profiling;
 
-
 namespace MLAPI
 {
     /// <summary>
