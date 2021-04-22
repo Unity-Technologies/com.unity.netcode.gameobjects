@@ -352,9 +352,9 @@ namespace MLAPI.EditorTests
             var inNetworkBufferA = new NetworkBuffer(rawBufferBytesA);
             var inNetworkReaderA = new NetworkReader(inNetworkBufferA);
 
-            Assert.That(inNetworkReaderA.ReadRangedSingle(rangeMinA, rangeMaxA, rangeBytesA), Is.EqualTo(randFloatValueA));
-            Assert.That(inNetworkReaderA.ReadRangedSingle(rangeMinA, rangeMaxA, rangeBytesA), Is.EqualTo(rangeMinA));
-            Assert.That(inNetworkReaderA.ReadRangedSingle(rangeMinA, rangeMaxA, rangeBytesA), Is.EqualTo(rangeMaxA));
+            Assert.That(Math.Abs(randFloatValueA - inNetworkReaderA.ReadRangedSingle(rangeMinA, rangeMaxA, rangeBytesA)), Is.LessThan(1.6f));
+            Assert.That(Math.Abs(rangeMinA - inNetworkReaderA.ReadRangedSingle(rangeMinA, rangeMaxA, rangeBytesA)), Is.LessThan(1.6f));
+            Assert.That(Math.Abs(rangeMaxA - inNetworkReaderA.ReadRangedSingle(rangeMinA, rangeMaxA, rangeBytesA)), Is.LessThan(1.6f));
 
 
 
@@ -376,9 +376,9 @@ namespace MLAPI.EditorTests
             var inNetworkBufferB = new NetworkBuffer(rawBufferBytesB);
             var inNetworkReaderB = new NetworkReader(inNetworkBufferB);
 
-            Assert.That(inNetworkReaderB.ReadRangedSingle(rangeMinB, rangeMaxB, rangeBytesB), Is.EqualTo(randFloatValueB));
-            Assert.That(inNetworkReaderB.ReadRangedSingle(rangeMinB, rangeMaxB, rangeBytesB), Is.EqualTo(rangeMinB));
-            Assert.That(inNetworkReaderB.ReadRangedSingle(rangeMinB, rangeMaxB, rangeBytesB), Is.EqualTo(rangeMaxB));
+            Assert.That(Math.Abs(randFloatValueB - inNetworkReaderB.ReadRangedSingle(rangeMinB, rangeMaxB, rangeBytesB)), Is.LessThan(0.4f));
+            Assert.That(Math.Abs(rangeMinB - inNetworkReaderB.ReadRangedSingle(rangeMinB, rangeMaxB, rangeBytesB)), Is.LessThan(0.4f));
+            Assert.That(Math.Abs(rangeMaxB - inNetworkReaderB.ReadRangedSingle(rangeMinB, rangeMaxB, rangeBytesB)), Is.LessThan(0.4f));
         }
 
         [Test]
@@ -402,9 +402,9 @@ namespace MLAPI.EditorTests
             var inNetworkBufferA = new NetworkBuffer(rawBufferBytesA);
             var inNetworkReaderA = new NetworkReader(inNetworkBufferA);
 
-            Assert.That(inNetworkReaderA.ReadRangedDouble(rangeMinA, rangeMaxA, rangeBytesA), Is.EqualTo(randDoubleValueA));
-            Assert.That(inNetworkReaderA.ReadRangedDouble(rangeMinA, rangeMaxA, rangeBytesA), Is.EqualTo(rangeMinA));
-            Assert.That(inNetworkReaderA.ReadRangedDouble(rangeMinA, rangeMaxA, rangeBytesA), Is.EqualTo(rangeMaxA));
+            Assert.That(Math.Abs(randDoubleValueA - inNetworkReaderA.ReadRangedDouble(rangeMinA, rangeMaxA, rangeBytesA)), Is.LessThan(1.6f));
+            Assert.That(Math.Abs(rangeMinA - inNetworkReaderA.ReadRangedDouble(rangeMinA, rangeMaxA, rangeBytesA)), Is.LessThan(1.6f));
+            Assert.That(Math.Abs(rangeMaxA - inNetworkReaderA.ReadRangedDouble(rangeMinA, rangeMaxA, rangeBytesA)), Is.LessThan(1.6f));
 
 
 
@@ -426,9 +426,9 @@ namespace MLAPI.EditorTests
             var inNetworkBufferB = new NetworkBuffer(rawBufferBytesB);
             var inNetworkReaderB = new NetworkReader(inNetworkBufferB);
 
-            Assert.That(inNetworkReaderB.ReadRangedDouble(rangeMinB, rangeMaxB, rangeBytesB), Is.EqualTo(randDoubleValueB));
-            Assert.That(inNetworkReaderB.ReadRangedDouble(rangeMinB, rangeMaxB, rangeBytesB), Is.EqualTo(rangeMinB));
-            Assert.That(inNetworkReaderB.ReadRangedDouble(rangeMinB, rangeMaxB, rangeBytesB), Is.EqualTo(rangeMaxB));
+            Assert.That(Math.Abs(randDoubleValueB - inNetworkReaderB.ReadRangedDouble(rangeMinB, rangeMaxB, rangeBytesB)), Is.LessThan(0.4f));
+            Assert.That(Math.Abs(rangeMinB - inNetworkReaderB.ReadRangedDouble(rangeMinB, rangeMaxB, rangeBytesB)), Is.LessThan(0.4f));
+            Assert.That(Math.Abs(rangeMaxB - inNetworkReaderB.ReadRangedDouble(rangeMinB, rangeMaxB, rangeBytesB)), Is.LessThan(0.4f));
         }
 
         [Test]
