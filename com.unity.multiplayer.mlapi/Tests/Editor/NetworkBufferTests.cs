@@ -332,6 +332,106 @@ namespace MLAPI.EditorTests
         }
 
         [Test]
+        public void TestRangedSingle()
+        {
+            const float rangeMinA = -180;
+            const float rangeMaxA = 180;
+            const int rangeBytesA = 2;
+
+            float randFloatValueA = UnityEngine.Random.Range(rangeMinA, rangeMaxA);
+
+            var outNetworkBufferA = new NetworkBuffer();
+            var outNetworkWriterA = new NetworkWriter(outNetworkBufferA);
+
+            outNetworkWriterA.WriteRangedSingle(randFloatValueA, rangeMinA, rangeMaxA, rangeBytesA);
+            outNetworkWriterA.WriteRangedSingle(rangeMinA, rangeMinA, rangeMaxA, rangeBytesA);
+            outNetworkWriterA.WriteRangedSingle(rangeMaxA, rangeMinA, rangeMaxA, rangeBytesA);
+
+            var rawBufferBytesA = outNetworkBufferA.GetBuffer();
+
+            var inNetworkBufferA = new NetworkBuffer(rawBufferBytesA);
+            var inNetworkReaderA = new NetworkReader(inNetworkBufferA);
+
+            Assert.That(Math.Abs(randFloatValueA - inNetworkReaderA.ReadRangedSingle(rangeMinA, rangeMaxA, rangeBytesA)), Is.LessThan(1.6f));
+            Assert.That(Math.Abs(rangeMinA - inNetworkReaderA.ReadRangedSingle(rangeMinA, rangeMaxA, rangeBytesA)), Is.LessThan(1.6f));
+            Assert.That(Math.Abs(rangeMaxA - inNetworkReaderA.ReadRangedSingle(rangeMinA, rangeMaxA, rangeBytesA)), Is.LessThan(1.6f));
+
+
+
+            const float rangeMinB = 0;
+            const float rangeMaxB = 360;
+            const int rangeBytesB = 4;
+
+            float randFloatValueB = UnityEngine.Random.Range(rangeMinB, rangeMaxB);
+
+            var outNetworkBufferB = new NetworkBuffer();
+            var outNetworkWriterB = new NetworkWriter(outNetworkBufferB);
+
+            outNetworkWriterB.WriteRangedSingle(randFloatValueB, rangeMinB, rangeMaxB, rangeBytesB);
+            outNetworkWriterB.WriteRangedSingle(rangeMinB, rangeMinB, rangeMaxB, rangeBytesB);
+            outNetworkWriterB.WriteRangedSingle(rangeMaxB, rangeMinB, rangeMaxB, rangeBytesB);
+
+            var rawBufferBytesB = outNetworkBufferB.GetBuffer();
+
+            var inNetworkBufferB = new NetworkBuffer(rawBufferBytesB);
+            var inNetworkReaderB = new NetworkReader(inNetworkBufferB);
+
+            Assert.That(Math.Abs(randFloatValueB - inNetworkReaderB.ReadRangedSingle(rangeMinB, rangeMaxB, rangeBytesB)), Is.LessThan(0.4f));
+            Assert.That(Math.Abs(rangeMinB - inNetworkReaderB.ReadRangedSingle(rangeMinB, rangeMaxB, rangeBytesB)), Is.LessThan(0.4f));
+            Assert.That(Math.Abs(rangeMaxB - inNetworkReaderB.ReadRangedSingle(rangeMinB, rangeMaxB, rangeBytesB)), Is.LessThan(0.4f));
+        }
+
+        [Test]
+        public void TestRangedDouble()
+        {
+            const double rangeMinA = -180;
+            const double rangeMaxA = 180;
+            const int rangeBytesA = 2;
+
+            double randDoubleValueA = new Random().NextDouble() * (rangeMaxA - rangeMinA) + rangeMinA;
+
+            var outNetworkBufferA = new NetworkBuffer();
+            var outNetworkWriterA = new NetworkWriter(outNetworkBufferA);
+
+            outNetworkWriterA.WriteRangedDouble(randDoubleValueA, rangeMinA, rangeMaxA, rangeBytesA);
+            outNetworkWriterA.WriteRangedDouble(rangeMinA, rangeMinA, rangeMaxA, rangeBytesA);
+            outNetworkWriterA.WriteRangedDouble(rangeMaxA, rangeMinA, rangeMaxA, rangeBytesA);
+
+            var rawBufferBytesA = outNetworkBufferA.GetBuffer();
+
+            var inNetworkBufferA = new NetworkBuffer(rawBufferBytesA);
+            var inNetworkReaderA = new NetworkReader(inNetworkBufferA);
+
+            Assert.That(Math.Abs(randDoubleValueA - inNetworkReaderA.ReadRangedDouble(rangeMinA, rangeMaxA, rangeBytesA)), Is.LessThan(1.6f));
+            Assert.That(Math.Abs(rangeMinA - inNetworkReaderA.ReadRangedDouble(rangeMinA, rangeMaxA, rangeBytesA)), Is.LessThan(1.6f));
+            Assert.That(Math.Abs(rangeMaxA - inNetworkReaderA.ReadRangedDouble(rangeMinA, rangeMaxA, rangeBytesA)), Is.LessThan(1.6f));
+
+
+
+            const double rangeMinB = 0;
+            const double rangeMaxB = 360;
+            const int rangeBytesB = 4;
+
+            double randDoubleValueB = new Random().NextDouble() * (rangeMaxB - rangeMinB) + rangeMinB;
+
+            var outNetworkBufferB = new NetworkBuffer();
+            var outNetworkWriterB = new NetworkWriter(outNetworkBufferB);
+
+            outNetworkWriterB.WriteRangedDouble(randDoubleValueB, rangeMinB, rangeMaxB, rangeBytesB);
+            outNetworkWriterB.WriteRangedDouble(rangeMinB, rangeMinB, rangeMaxB, rangeBytesB);
+            outNetworkWriterB.WriteRangedDouble(rangeMaxB, rangeMinB, rangeMaxB, rangeBytesB);
+
+            var rawBufferBytesB = outNetworkBufferB.GetBuffer();
+
+            var inNetworkBufferB = new NetworkBuffer(rawBufferBytesB);
+            var inNetworkReaderB = new NetworkReader(inNetworkBufferB);
+
+            Assert.That(Math.Abs(randDoubleValueB - inNetworkReaderB.ReadRangedDouble(rangeMinB, rangeMaxB, rangeBytesB)), Is.LessThan(0.4f));
+            Assert.That(Math.Abs(rangeMinB - inNetworkReaderB.ReadRangedDouble(rangeMinB, rangeMaxB, rangeBytesB)), Is.LessThan(0.4f));
+            Assert.That(Math.Abs(rangeMaxB - inNetworkReaderB.ReadRangedDouble(rangeMinB, rangeMaxB, rangeBytesB)), Is.LessThan(0.4f));
+        }
+
+        [Test]
         public void TestWritePackedSingle()
         {
             float somenumber = (float)Math.PI;
