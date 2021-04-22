@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using MLAPI.Profiling;
 using NUnit.Framework;
 
-namespace MLAPI.RuntimeTests
+namespace MLAPI.EditorTests
 {
     public class TestTransport : ITransportProfilerData
     {
