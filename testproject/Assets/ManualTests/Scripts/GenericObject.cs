@@ -1,6 +1,10 @@
 using MLAPI;
 using UnityEngine;
 
+
+/// <summary>
+/// A general object that can be used for testing purposes
+/// </summary>
 public class GenericObject : NetworkBehaviour
 {
     [SerializeField]
@@ -16,7 +20,11 @@ public class GenericObject : NetworkBehaviour
         m_RigidBody = GetComponent<Rigidbody>();
     }
 
-
+    /// <summary>
+    /// Sets the object's direction and velocity
+    /// </summary>
+    /// <param name="direction">vector3 direction</param>
+    /// <param name="velocity">float velocity</param>
     public void SetDirectionAndVelocity(Vector3 direction, float velocity)
     {
         m_Direction = direction;
@@ -25,6 +33,9 @@ public class GenericObject : NetworkBehaviour
         m_Velocity = velocity;
     }
 
+    /// <summary>
+    /// Handles moving the object based on its current direction and velocity
+    /// </summary>
     private void FixedUpdate()
     {
         if (NetworkManager != null && NetworkManager.IsListening)
@@ -55,10 +66,6 @@ public class GenericObject : NetworkBehaviour
         }
     }
 
-    private void OnDestroy()
-    {
-        gameObject.SetActive(false);
-    }
 
     private void OnTriggerEnter(Collider other)
     {

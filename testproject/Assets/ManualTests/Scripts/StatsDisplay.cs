@@ -1,10 +1,10 @@
 using System.Collections;
 using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.UI;
 using MLAPI;
 using MLAPI.Messaging;
 using MLAPI.Profiling;
-using UnityEngine;
-using UnityEngine.UI;
 
 public class StatsDisplay : NetworkBehaviour
 {
@@ -29,7 +29,7 @@ public class StatsDisplay : NetworkBehaviour
             m_ClientServerToggleText = m_ClientServerToggle.GetComponentInChildren<Text>();
         }
 
-        if(NetworkManager && NetworkManager.IsListening && !NetworkManager.IsServer)
+        if (NetworkManager && NetworkManager.IsListening && !NetworkManager.IsServer)
         {
             m_ClientServerToggle.SetActive(true);
         }
@@ -37,15 +37,14 @@ public class StatsDisplay : NetworkBehaviour
         {
             m_ClientServerToggle.SetActive(false);
         }
-  
     }
 
     public override void NetworkStart()
     {
-        if (NetworkManager.Singleton.IsServer)
+        if (NetworkManager.IsServer)
         {
             m_IsServer = true;
-            NetworkManager.Singleton.OnClientConnectedCallback += Singleton_OnClientConnectedCallback;
+            NetworkManager.OnClientConnectedCallback += OnClientConnectedCallback;
         }
         else
         {
@@ -55,7 +54,11 @@ public class StatsDisplay : NetworkBehaviour
         StartCoroutine("UpdateTextStatus");
     }
 
-    private void Singleton_OnClientConnectedCallback(ulong clientId)
+    /// <summary>
+    /// Invoked when a client connects
+    /// </summary>
+    /// <param name="clientId"></param>
+    private void OnClientConnectedCallback(ulong clientId)
     {
         if (!IsServer)
         {
@@ -67,6 +70,9 @@ public class StatsDisplay : NetworkBehaviour
         }
     }
 
+    /// <summary>
+    /// Used by UI Button click event
+    /// </summary>
     public void ToggleClientSever()
     {
         if (NetworkManager.Singleton.IsClient)
@@ -76,6 +82,10 @@ public class StatsDisplay : NetworkBehaviour
             UpdateButton();
         }
     }
+
+    /// <summary>
+    /// Draw the stats
+    /// </summary>
     private void OnGUI()
     {
         if (NetworkManager && NetworkManager.IsListening)
@@ -84,6 +94,10 @@ public class StatsDisplay : NetworkBehaviour
         }
     }
 
+
+    /// <summary>
+    /// Updates the text of the button for switching between server and client stats
+    /// </summary>
     private void UpdateButton()
     {
         if (m_ClientServerToggleText != null)
@@ -91,7 +105,11 @@ public class StatsDisplay : NetworkBehaviour
             m_ClientServerToggleText.text = m_ClientMode ? "Show Server Stats" : "Show Client Stats";
         }
     }
- 
+
+    /// <summary>
+    /// RPC Used for the server to send stats info to the client
+    /// </summary>
+    /// <param name="statsinfo"></param>
     [ClientRpc]
     private void ReceiveStatsClientRPC(StatsInfoContainer statsinfo)
     {
@@ -116,6 +134,10 @@ public class StatsDisplay : NetworkBehaviour
         }
     }
 
+    /// <summary>
+    /// RPC used to notify server that a specific client wants to receive its stats info
+    /// </summary>
+    /// <param name="clientId"></param>
     [ServerRpc(RequireOwnership = false)]
     public void GetStatsServerRPC(ulong clientId)
     {
@@ -128,13 +150,18 @@ public class StatsDisplay : NetworkBehaviour
             m_ClientsToUpdate.Remove(clientId);
         }
     }
+
+    /// <summary>
+    /// Coroutine to update the stats information
+    /// </summary>
+    /// <returns></returns>
     private IEnumerator UpdateTextStatus()
     {
         while (true)
         {
             if (m_ClientMode)
             {
-                m_LastStatsDump = m_IsServer ? "Server Stats":"Client Stats";
+                m_LastStatsDump = m_IsServer ? "Server Stats" : "Client Stats";
                 m_LastStatsDump += "\ndeltaTime: [" + Time.deltaTime.ToString() + "]";
                 foreach (ProfilerStat p in ProfilerStatManager.AllStats)
                 {

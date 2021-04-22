@@ -4,8 +4,6 @@ using MLAPI.Serialization;
 /// <summary>
 /// StatsInfoContainer
 /// Used to transfer server statistics to a requesting client
-/// Experimental Phase:
-/// The Try/Catch blocks are only to catch any issues during experimental phase
 /// </summary>
 public struct StatsInfoContainer : INetworkSerializable
 {

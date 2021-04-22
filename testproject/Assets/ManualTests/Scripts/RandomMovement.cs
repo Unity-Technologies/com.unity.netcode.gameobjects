@@ -1,6 +1,9 @@
 using UnityEngine;
 using Random = UnityEngine.Random;
 
+/// <summary>
+/// Used with GenericObjects to randomly move them around
+/// </summary>
 public class RandomMovement : MonoBehaviour, IPlayerMovement
 {    
     private Vector3 m_Direction;

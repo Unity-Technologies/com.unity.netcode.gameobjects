@@ -1,6 +1,9 @@
 using MLAPI;
 using UnityEngine;
 
+/// <summary>
+/// Used to simulate a player moving around
+/// </summary>
 public class PlayerMovementManager : MonoBehaviour
 {
     public int MoveSpeed = 10;

@@ -20,7 +20,7 @@ using MLAPI.Messaging;
 ///     Send client to server no parameters and then multiple parameters
 ///     Send server to client no parameters and then multiple parameters
 /// </summary>
-public class ClientCounterBehaviour : NetworkBehaviour
+public class RpcQueueManualTests : NetworkBehaviour
 {
     private const float k_ProgressBarDivisor = 1.0f / 200.0f;
 
