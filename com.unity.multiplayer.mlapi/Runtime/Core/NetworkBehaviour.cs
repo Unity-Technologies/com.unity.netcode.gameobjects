@@ -42,6 +42,8 @@ namespace MLAPI
             Client = 2
         }
 
+        // todo: transitional. For the next release, only Snapshot should remain
+        // The booleans allow iterative development and testing in the meantime
         static private bool m_UseClassicDelta = true;
         static private bool m_UseSnapshot = false;
 
