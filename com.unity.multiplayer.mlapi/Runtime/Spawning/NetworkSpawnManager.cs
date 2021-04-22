@@ -58,34 +58,6 @@ namespace MLAPI.Spawning
         }
 
         /// <summary>
-        /// Gets the prefab index of a given prefab hash
-        /// </summary>
-        /// <param name="hash">The hash of the prefab</param>
-        /// <returns>The index of the prefab</returns>
-        public int GetNetworkPrefabIndexOfHash(uint hash)
-        {
-            for (int i = 0; i < NetworkManager.NetworkConfig.NetworkPrefabs.Count; i++)
-            {
-                if (NetworkManager.NetworkConfig.NetworkPrefabs[i].Hash == hash)
-                {
-                    return i;
-                }
-            }
-
-            return -1;
-        }
-
-        /// <summary>
-        /// Returns the prefab hash for the NetworkPrefab with a given index
-        /// </summary>
-        /// <param name="index">The NetworkPrefab index</param>
-        /// <returns>The prefab hash for the given prefab index</returns>
-        public uint GetPrefabHashFromIndex(int index)
-        {
-            return NetworkManager.NetworkConfig.NetworkPrefabs[index].Hash;
-        }
-
-        /// <summary>
         /// Returns the local player object or null if one does not exist
         /// </summary>
         /// <returns>The local player object or null if one does not exist</returns>
@@ -273,7 +245,7 @@ namespace MLAPI.Spawning
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
                     {
-                        NetworkLog.LogError($"{nameof(NetworkPrefab)} hash was not found! In-Scene placed NetworkObject soft synchronization failure for Hash: {prefabHash.ToString("X")}!");
+                        NetworkLog.LogError($"{nameof(NetworkPrefab)} hash was not found! In-Scene placed {nameof(NetworkObject)} soft synchronization failure for Hash: {prefabHash}!");
                     }
                     return null;
                 }

@@ -157,7 +157,7 @@ namespace MLAPI.Messaging
                             if (networkObject == null)
                             {
                                 // This will prevent one misconfigured issue (or more) from breaking the entire loading process.
-                                Debug.LogError($"Failed to spawn NetowrkObject for Hash {prefabHash}, ignoring and continuing to load.");
+                                Debug.LogError($"Failed to spawn {nameof(NetworkObject)} for Hash {prefabHash}, ignoring and continuing to load.");
                                 continue;
                             }
                             NetworkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, networkId, softSync, isPlayerObject, ownerId, continuationStream, false, 0, true, false);
