@@ -334,6 +334,51 @@ namespace MLAPI.EditorTests
         [Test]
         public void TestRangedSingle()
         {
+            const float rangeMinA = -180;
+            const float rangeMaxA = 180;
+            const int rangeBytesA = 2;
+
+            float randFloatValueA = UnityEngine.Random.Range(rangeMinA, rangeMaxA);
+
+            var outNetworkBufferA = new NetworkBuffer();
+            var outNetworkWriterA = new NetworkWriter(outNetworkBufferA);
+
+            outNetworkWriterA.WriteRangedSingle(randFloatValueA, rangeMinA, rangeMaxA, rangeBytesA);
+            outNetworkWriterA.WriteRangedSingle(rangeMinA, rangeMinA, rangeMaxA, rangeBytesA);
+            outNetworkWriterA.WriteRangedSingle(rangeMaxA, rangeMinA, rangeMaxA, rangeBytesA);
+
+            var rawBufferBytesA = outNetworkBufferA.GetBuffer();
+
+            var inNetworkBufferA = new NetworkBuffer(rawBufferBytesA);
+            var inNetworkReaderA = new NetworkReader(inNetworkBufferA);
+
+            Assert.That(inNetworkReaderA.ReadRangedSingle(rangeMinA, rangeMaxA, rangeBytesA), Is.EqualTo(randFloatValueA));
+            Assert.That(inNetworkReaderA.ReadRangedSingle(rangeMinA, rangeMaxA, rangeBytesA), Is.EqualTo(rangeMinA));
+            Assert.That(inNetworkReaderA.ReadRangedSingle(rangeMinA, rangeMaxA, rangeBytesA), Is.EqualTo(rangeMaxA));
+
+
+
+            const float rangeMinB = 0;
+            const float rangeMaxB = 360;
+            const int rangeBytesB = 4;
+
+            float randFloatValueB = UnityEngine.Random.Range(rangeMinB, rangeMaxB);
+
+            var outNetworkBufferB = new NetworkBuffer();
+            var outNetworkWriterB = new NetworkWriter(outNetworkBufferB);
+
+            outNetworkWriterB.WriteRangedSingle(randFloatValueB, rangeMinB, rangeMaxB, rangeBytesB);
+            outNetworkWriterB.WriteRangedSingle(rangeMinB, rangeMinB, rangeMaxB, rangeBytesB);
+            outNetworkWriterB.WriteRangedSingle(rangeMaxB, rangeMinB, rangeMaxB, rangeBytesB);
+
+            var rawBufferBytesB = outNetworkBufferB.GetBuffer();
+
+            var inNetworkBufferB = new NetworkBuffer(rawBufferBytesB);
+            var inNetworkReaderB = new NetworkReader(inNetworkBufferB);
+
+            Assert.That(inNetworkReaderB.ReadRangedSingle(rangeMinB, rangeMaxB, rangeBytesB), Is.EqualTo(randFloatValueB));
+            Assert.That(inNetworkReaderB.ReadRangedSingle(rangeMinB, rangeMaxB, rangeBytesB), Is.EqualTo(rangeMinB));
+            Assert.That(inNetworkReaderB.ReadRangedSingle(rangeMinB, rangeMaxB, rangeBytesB), Is.EqualTo(rangeMaxB));
         }
 
         [Test]
