@@ -341,7 +341,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: Option A
+  m_Text: 
 --- !u!1 &8786710034828175749
 GameObject:
   m_ObjectHideFlags: 0
@@ -608,13 +608,25 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_AvailableScenes: []
   m_ScenesToLoad:
-  - {fileID: 102900000, guid: 197ba614e9ae3054a8dea7b2bdacad6a, type: 3}
-  - {fileID: 102900000, guid: 1c2375a896b2e8c4a841aa61224b8494, type: 3}
-  - {fileID: 102900000, guid: 79c2bf7d6b7a06a42a94982aaf1904d8, type: 3}
-  - {fileID: 102900000, guid: 931469794d88a874998f1d5edd265522, type: 3}
+  - Scene: {fileID: 102900000, guid: 197ba614e9ae3054a8dea7b2bdacad6a, type: 3}
+    SceneType: 0
+  - Scene: {fileID: 102900000, guid: 1c2375a896b2e8c4a841aa61224b8494, type: 3}
+    SceneType: 1
+  - Scene: {fileID: 102900000, guid: 79c2bf7d6b7a06a42a94982aaf1904d8, type: 3}
+    SceneType: 0
+  - Scene: {fileID: 102900000, guid: 637ab8340e96a2949adfe5bfdd42b924, type: 3}
+    SceneType: 0
+  - Scene: {fileID: 102900000, guid: 931469794d88a874998f1d5edd265522, type: 3}
+    SceneType: 1
   SceneDropDownList: {fileID: 8786710035000454136}
   HorizontalResolution: 800
   VerticalResolution: 600
+  m_OptionsList:
+    m_Options:
+    - m_Text: SceneTransitioningTest
+      m_Image: {fileID: 0}
+    - m_Text: RpcTesting
+      m_Image: {fileID: 0}
 --- !u!114 &8786710035000454136
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -663,13 +675,7 @@ MonoBehaviour:
   m_ItemImage: {fileID: 0}
   m_Value: 0
   m_Options:
-    m_Options:
-    - m_Text: Option A
-      m_Image: {fileID: 0}
-    - m_Text: Option B
-      m_Image: {fileID: 0}
-    - m_Text: Option C
-      m_Image: {fileID: 0}
+    m_Options: []
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls: []

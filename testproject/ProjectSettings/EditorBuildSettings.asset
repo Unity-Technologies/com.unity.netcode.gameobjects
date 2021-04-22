@@ -6,10 +6,10 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/ManualTests/MainMenu.unity
+    path: Assets/ManualTests/MTTManualTests.unity
     guid: 197ba614e9ae3054a8dea7b2bdacad6a
   - enabled: 1
-    path: Assets/ManualTests/SceneTransitioning/FirstSceneToLoad.unity
+    path: Assets/ManualTests/SceneTransitioning/SceneTransitioningTest.unity
     guid: 1c2375a896b2e8c4a841aa61224b8494
   - enabled: 0
     path: Assets/Scenes/SampleScene.unity
@@ -20,4 +20,7 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/ManualTests/RpcTesting/RpcTesting.unity
     guid: 931469794d88a874998f1d5edd265522
+  - enabled: 1
+    path: Assets/ManualTests/SceneTransitioning/ThirdSceneToLoad.unity
+    guid: 637ab8340e96a2949adfe5bfdd42b924
   m_configObjects: {}

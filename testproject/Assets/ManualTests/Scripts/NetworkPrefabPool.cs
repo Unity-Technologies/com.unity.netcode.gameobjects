@@ -19,6 +19,10 @@ public class NetworkPrefabPool : NetworkBehaviour
     [Header("Prefab Instance Handling")]
     [Tooltip("When enabled, this will utilize the NetworkPrefabHandler to register a custom INetworkPrefabInstanceHandler")]
     public bool EnableHandler;
+
+    [Tooltip("When enabled, this will register register a custom INetworkPrefabInstanceHandler using a NetworkObject reference")]
+    public bool RegisterUsingNetworkObject;
+
     [Tooltip("What is going to be spawned on the server side from the pool.")]
     public GameObject ServerObjectToPool;
     [Tooltip("What is going to be spawned on the client side from the ")]
@@ -45,14 +49,6 @@ public class NetworkPrefabPool : NetworkBehaviour
     #region MonoBehaviour Initialization and Destruction Related Methods
 
     /// <summary>
-    /// TODO: Remove and move to menu
-    /// </summary>
-    private void Awake()
-    {
-        Screen.SetResolution(1024, 768, FullScreenMode.Windowed);
-    }
-
-    /// <summary>
     /// Called when enabled, if already connected we register any custom prefab spawn handler here
     /// </summary>
     private void OnEnable()
@@ -62,11 +58,34 @@ public class NetworkPrefabPool : NetworkBehaviour
             SpawnSlider.gameObject.SetActive(false);
         }
 
+        //This registers early under the condition of a scene transition
+        RegisterCustomPrefabHandler();
+    }
+
+    /// <summary>
+    /// Handles registering the custom prefab handler 
+    /// </summary>
+    private void RegisterCustomPrefabHandler()
+    {
         // Register the custom spawn handler?
-        if (m_MyCustomPrefabSpawnHandler == null && EnableHandler && NetworkManager && NetworkManager.PrefabHandler != null)
+        if (m_MyCustomPrefabSpawnHandler == null && EnableHandler)
         {
-            m_MyCustomPrefabSpawnHandler = new MyCustomPrefabSpawnHandler(this);
-            NetworkManager.PrefabHandler.AddHandler(ServerObjectToPool, m_MyCustomPrefabSpawnHandler);
+            if (NetworkManager && NetworkManager.PrefabHandler != null)
+            {
+                m_MyCustomPrefabSpawnHandler = new MyCustomPrefabSpawnHandler(this);
+                if (RegisterUsingNetworkObject)
+                {
+                    NetworkManager.PrefabHandler.AddHandler(ServerObjectToPool.GetComponent<NetworkObject>(), m_MyCustomPrefabSpawnHandler);
+                }
+                else
+                {
+                    NetworkManager.PrefabHandler.AddHandler(ServerObjectToPool, m_MyCustomPrefabSpawnHandler);
+                }
+            }
+            else if (!IsServer)
+            {
+                Debug.LogWarning($"Failed to register custom spawn handler and {nameof(EnableHandler)} is set to true!");
+            }
         }
     }
 
@@ -109,19 +128,9 @@ public class NetworkPrefabPool : NetworkBehaviour
             SwitchScene.OnSceneSwitchBegin += OnSceneSwitchBegin;
         }
 
-        // Register the custom spawn handler?
-        if (m_MyCustomPrefabSpawnHandler == null && EnableHandler)
-        {
-            if (NetworkManager && NetworkManager.PrefabHandler != null)
-            {
-                m_MyCustomPrefabSpawnHandler = new MyCustomPrefabSpawnHandler(this);
-                NetworkManager.PrefabHandler.AddHandler(ServerObjectToPool, m_MyCustomPrefabSpawnHandler);
-            }
-            else if (!IsServer)
-            {
-                Debug.LogWarning($"Failed to register custom spawn handler and {nameof(EnableHandler)} is set to true!");
-            }
-        }
+        //Call this again in case we didn't have access to the NetworkManager already (i.e. first scene loaded)
+        RegisterCustomPrefabHandler();
+
     }
 
     #endregion

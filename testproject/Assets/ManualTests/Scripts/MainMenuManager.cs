@@ -18,7 +18,7 @@ public class MainMenuManager : NetworkBehaviour
 
 #if UNITY_EDITOR
     [SerializeField]
-    private List<SceneAsset> m_ScenesToLoad;
+    private List<IncludedSceneProperties> m_ScenesToLoad;
 #endif
 
     public Dropdown SceneDropDownList;
@@ -32,72 +32,77 @@ public class MainMenuManager : NetworkBehaviour
     private int m_CurrentLoadedScene;
     private int m_NextSceneToLoad;
 
-    private Dictionary<int,int> m_DropDownToSceneIndex = new Dictionary<int, int>();
-    private Dictionary<string,int> m_SceneIndexesByName = new Dictionary<string, int>();
+    [HideInInspector]
+    [SerializeField]
+    private Dictionary<int, int> m_DropDownToSceneIndex = new Dictionary<int, int>();
+
+    [HideInInspector]
+    [SerializeField]
+    public Dictionary<string, int> SceneIndexesByName = new Dictionary<string, int>();
+
+    [HideInInspector]
+    [SerializeField]
     private Dropdown.OptionDataList m_OptionsList = new Dropdown.OptionDataList();
 
-    private void AddSceneToOptions(string scenename,int index)
+    private void AddSceneToOptions(string scenename, int index)
     {
-        if(scenename != SceneManager.GetActiveScene().name && !m_SceneIndexesByName.ContainsKey(scenename))
+        if (scenename != SceneManager.GetActiveScene().name && !SceneIndexesByName.ContainsKey(scenename))
         {
             var optionData = new Dropdown.OptionData();
             optionData.text = scenename;
 
-            m_SceneIndexesByName.Add(scenename, index);
+            SceneIndexesByName.Add(scenename, index);
             m_DropDownToSceneIndex.Add(m_OptionsList.options.Count, index);
             m_OptionsList.options.Add(optionData);
         }
     }
-
-    private void Start()
+#if (UNITY_EDITOR)
+    private void OnValidate()
     {
-        Screen.SetResolution(HorizontalResolution, VerticalResolution, false);
-
-        SceneManager.sceneLoaded += SceneManager_sceneLoaded;
-
-        if(SceneDropDownList != null)
+        if (SceneDropDownList != null)
         {
             SceneDropDownList.ClearOptions();
+            SceneIndexesByName.Clear();
+            m_DropDownToSceneIndex.Clear();
+            m_OptionsList.options.Clear();
 
             // The SceneManager.sceneCountInBuildSettings is only populated in actual builds, and as such
             //we have to use the EditorBuildSettingsScene to get the values when running from an editor instance
-#if (UNITY_EDITOR)
-
-            var selectedSceneAssets = new Dictionary<string, SceneAsset>();
+            var selectedSceneAssets = new Dictionary<string, IncludedSceneProperties>();
             var currentSceneAssets = new Dictionary<string, EditorBuildSettingsScene>();
-
             var scenesToBeAdded = new List<EditorBuildSettingsScene>();
 
             foreach (var sceneEntry in m_ScenesToLoad)
             {
-                if(!selectedSceneAssets.ContainsKey(sceneEntry.name))
+                if (!selectedSceneAssets.ContainsKey(sceneEntry.Scene.name))
                 {
-                    selectedSceneAssets.Add(sceneEntry.name, sceneEntry);
+                    selectedSceneAssets.Add(sceneEntry.Scene.name, sceneEntry);
                 }
             }
+
             foreach (var nextscene in EditorBuildSettings.scenes)
             {
                 var sceneFilename = nextscene.path.Substring(nextscene.path.LastIndexOf('/') + 1);
                 var splitSceneFileName = sceneFilename.Split('.');
-                if(!currentSceneAssets.ContainsKey(splitSceneFileName[0]))
+                if (!currentSceneAssets.ContainsKey(splitSceneFileName[0]))
                 {
                     currentSceneAssets.Add(splitSceneFileName[0], nextscene);
                 }
             }
 
             //Make sure we add all scenes we want to load into the build settings.
-            foreach(var sceneToLoad in selectedSceneAssets)
+            foreach (var sceneToLoad in selectedSceneAssets)
             {
                 if (!currentSceneAssets.ContainsKey(sceneToLoad.Key))
                 {
-                    var sceneToadd = SceneManager.GetSceneByName(sceneToLoad.Value.name);                    
-                    var newEditorBuildSettingsScene = new EditorBuildSettingsScene(sceneToadd.path,true);
+                    var sceneToadd = SceneManager.GetSceneByName(sceneToLoad.Key);
+                    var newEditorBuildSettingsScene = new EditorBuildSettingsScene(sceneToadd.path, true);
                     scenesToBeAdded.Add(newEditorBuildSettingsScene);
                 }
                 else
                 {
                     //Scene is already added, make sure it is enabled
-                    if(!currentSceneAssets[sceneToLoad.Key].enabled)
+                    if (!currentSceneAssets[sceneToLoad.Key].enabled)
                     {
                         currentSceneAssets[sceneToLoad.Key].enabled = true;
                     }
@@ -108,7 +113,7 @@ public class MainMenuManager : NetworkBehaviour
             foreach (var nextscene in currentSceneAssets)
             {
                 //Scene is not part of our selection, disable it
-                if(!selectedSceneAssets.ContainsKey(nextscene.Key))
+                if (!selectedSceneAssets.ContainsKey(nextscene.Key))
                 {
                     nextscene.Value.enabled = false;
                 }
@@ -119,8 +124,7 @@ public class MainMenuManager : NetworkBehaviour
 
             //Apply the updated scenes to the build settings.
             EditorBuildSettings.scenes = finalBuildSettingsScenes.ToArray();
-
-            //Now populate our drop down
+            //Now populate our drop down while also only allowing IncludedSceneProperties.SceneTypes.Selectable
             var sceneCounter = 0;
             foreach (var nextscene in EditorBuildSettings.scenes)
             {
@@ -128,21 +132,47 @@ public class MainMenuManager : NetworkBehaviour
                 {
                     var sceneFilename = nextscene.path.Substring(nextscene.path.LastIndexOf('/') + 1);
                     var splitSceneFileName = sceneFilename.Split('.');
-                    AddSceneToOptions(splitSceneFileName[0], sceneCounter);
+                    if (selectedSceneAssets.ContainsKey(splitSceneFileName[0]) && selectedSceneAssets[splitSceneFileName[0]].SceneType == IncludedSceneProperties.SceneTypes.Selectable)
+                    {
+                        AddSceneToOptions(splitSceneFileName[0], sceneCounter);
+                    }
                     sceneCounter++;
                 }
 
             }
-#else
-            for(int i = 0; i < SceneManager.sceneCountInBuildSettings; i++)
+        }
+    }
+#endif
+
+    private void Start()
+    {
+        Screen.SetResolution(HorizontalResolution, VerticalResolution, false);
+
+        SceneManager.sceneLoaded += SceneManager_sceneLoaded;
+
+#if !UNITY_EDITOR
+        if (SceneDropDownList && Application.isPlaying)
+        {
+            var validScenes = new List<string>();
+            foreach(var entry in m_OptionsList.options)
+            {
+                validScenes.Add(entry.text);
+            }
+            SceneIndexesByName.Clear();
+            m_OptionsList.options.Clear();
+            m_DropDownToSceneIndex.Clear();
+            for (int i = 0; i < SceneManager.sceneCountInBuildSettings; i++)
             {
                 var path = SceneUtility.GetScenePathByBuildIndex(i);
                 var sceneName = Path.GetFileNameWithoutExtension(path);
-                AddSceneToOptions(sceneName, i);
-            }
-#endif
-                SceneDropDownList.options = m_OptionsList.options;
+                if(validScenes.Contains(sceneName))
+                {
+                    AddSceneToOptions(sceneName, i);
+                }                
+            }            
         }
+#endif
+        SceneDropDownList.options = m_OptionsList.options;
     }
 
 
@@ -154,7 +184,7 @@ public class MainMenuManager : NetworkBehaviour
 
     private void LoadNextScene()
     {
-        if(m_NextSceneToLoad == 0 && m_CurrentLoadedScene != 0 || m_NextSceneToLoad != 0)
+        if (m_NextSceneToLoad == 0 && m_CurrentLoadedScene != 0 || m_NextSceneToLoad != 0)
         {
             SceneManager.LoadSceneAsync(m_NextSceneToLoad, LoadSceneMode.Single);
         }
@@ -162,7 +192,7 @@ public class MainMenuManager : NetworkBehaviour
 
     public void OnLoadSelectedScene()
     {
-        if(m_DropDownToSceneIndex.ContainsKey(SceneDropDownList.value))
+        if (m_DropDownToSceneIndex.ContainsKey(SceneDropDownList.value))
         {
             m_NextSceneToLoad = m_DropDownToSceneIndex[SceneDropDownList.value];
 
@@ -170,3 +200,18 @@ public class MainMenuManager : NetworkBehaviour
         }
     }
 }
+
+#if UNITY_EDITOR
+[Serializable]
+public class IncludedSceneProperties
+{
+    public enum SceneTypes
+    {
+        IncludeOnly,
+        Selectable,
+    }
+
+    public SceneAsset Scene;
+    public SceneTypes SceneType;
+}
+#endif
