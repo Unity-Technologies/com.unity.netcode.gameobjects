@@ -20,7 +20,6 @@ using MLAPI.Exceptions;
 using MLAPI.Transports.Tasks;
 using MLAPI.Messaging.Buffering;
 using Unity.Profiling;
-using UnityEditor.VersionControl;
 
 namespace MLAPI
 {
