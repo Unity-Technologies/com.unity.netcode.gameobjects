@@ -296,8 +296,6 @@ namespace MLAPI
             LocalClientId = 0;
             m_NetworkTimeOffset = 0f;
             m_CurrentNetworkTimeOffset = 0f;
-            m_LastReceiveTickTime = 0f;
-            m_LastReceiveTickTime = 0f;
             PendingClients.Clear();
             ConnectedClients.Clear();
             ConnectedClientsList.Clear();
@@ -728,7 +726,6 @@ namespace MLAPI
             }
         }
 
-        private float m_LastReceiveTickTime;
         private float m_LastEventTickTime;
         private float m_LastTimeSyncTime;
 
@@ -739,36 +736,31 @@ namespace MLAPI
 
             if (IsListening)
             {
-                // Process received data
-                if ((NetworkTime - m_LastReceiveTickTime >= (1f / NetworkConfig.TickRate)) || NetworkConfig.TickRate <= 0)
-                {
-                    PerformanceDataManager.Increment(ProfilerConstants.ReceiveTickRate);
+                PerformanceDataManager.Increment(ProfilerConstants.ReceiveTickRate);
                     ProfilerStatManager.RcvTickRate.Record();
+
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-                    s_ReceiveTick.Begin();
+                s_ReceiveTick.Begin();
 #endif
-                    var isLoopBack = false;
+                var isLoopBack = false;
 
 #if !UNITY_2020_2_OR_NEWER
                     NetworkProfiler.StartTick(TickType.Receive);
 #endif
-
-                    //If we are in loopback mode, we don't need to touch the transport
-                    if (!isLoopBack)
+                //If we are in loopback mode, we don't need to touch the transport
+                if (!isLoopBack)
+                {
+                    NetworkEvent networkEvent;
+                    int processedEvents = 0;
+                    do
                     {
-                        NetworkEvent networkEvent;
-                        int processedEvents = 0;
-                        do
-                        {
-                            processedEvents++;
-                            networkEvent = NetworkConfig.NetworkTransport.PollEvent(out ulong clientId, out NetworkChannel networkChannel, out ArraySegment<byte> payload, out float receiveTime);
-                            HandleRawTransportPoll(networkEvent, clientId, networkChannel, payload, receiveTime);
+                        processedEvents++;
+                        networkEvent = NetworkConfig.NetworkTransport.PollEvent(out ulong clientId, out NetworkChannel networkChannel, out ArraySegment<byte> payload, out float receiveTime);
+                        HandleRawTransportPoll(networkEvent, clientId, networkChannel, payload, receiveTime);
 
-                            // Only do another iteration if: there are no more messages AND (there is no limit to max events or we have processed less than the maximum)
-                        } while (IsListening && (networkEvent != NetworkEvent.Nothing) && (NetworkConfig.MaxReceiveEventsPerTickRate <= 0 || processedEvents < NetworkConfig.MaxReceiveEventsPerTickRate));
-                    }
-
-                    m_LastReceiveTickTime = NetworkTime;
+                        // Only do another iteration if: there are no more messages AND (there is no limit to max events or we have processed less than the maximum)
+                    } while (IsListening && (networkEvent != NetworkEvent.Nothing) && (NetworkConfig.MaxReceiveEventsPerTickRate <= 0 || processedEvents < NetworkConfig.MaxReceiveEventsPerTickRate));
+                }
 
 #if !UNITY_2020_2_OR_NEWER
                     NetworkProfiler.EndTick();
@@ -777,7 +769,6 @@ namespace MLAPI
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                     s_ReceiveTick.End();
 #endif
-                }
             }
         }
 
@@ -805,10 +796,6 @@ namespace MLAPI
                         BufferManager.CleanBuffer();
                     }
 
-                    if (IsServer)
-                    {
-                        m_LastEventTickTime = NetworkTime;
-                    }
 #if UNITY_EDITOR && !UNITY_2020_2_OR_NEWER
                     NetworkProfiler.EndTick();
 #endif

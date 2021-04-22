@@ -44,11 +44,7 @@ namespace MLAPI.NetworkTime
         /// </summary>
         private void UpdateNetworkTick(float deltaTime)
         {
-            int lastReceivedServerTick;
-
             m_NetworkTimeProvider.HandleTime(ref m_PredictedTime, ref m_ServerTime,  deltaTime);
-
-
 
 
             //m_NetworkTickCount = (int)(Time.unscaledTime / m_TickIntervalSec);
