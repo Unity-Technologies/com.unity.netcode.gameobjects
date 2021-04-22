@@ -384,6 +384,51 @@ namespace MLAPI.EditorTests
         [Test]
         public void TestRangedDouble()
         {
+            const double rangeMinA = -180;
+            const double rangeMaxA = 180;
+            const int rangeBytesA = 2;
+
+            double randDoubleValueA = new Random().NextDouble() * (rangeMaxA - rangeMinA) + rangeMinA;
+
+            var outNetworkBufferA = new NetworkBuffer();
+            var outNetworkWriterA = new NetworkWriter(outNetworkBufferA);
+
+            outNetworkWriterA.WriteRangedDouble(randDoubleValueA, rangeMinA, rangeMaxA, rangeBytesA);
+            outNetworkWriterA.WriteRangedDouble(rangeMinA, rangeMinA, rangeMaxA, rangeBytesA);
+            outNetworkWriterA.WriteRangedDouble(rangeMaxA, rangeMinA, rangeMaxA, rangeBytesA);
+
+            var rawBufferBytesA = outNetworkBufferA.GetBuffer();
+
+            var inNetworkBufferA = new NetworkBuffer(rawBufferBytesA);
+            var inNetworkReaderA = new NetworkReader(inNetworkBufferA);
+
+            Assert.That(inNetworkReaderA.ReadRangedDouble(rangeMinA, rangeMaxA, rangeBytesA), Is.EqualTo(randDoubleValueA));
+            Assert.That(inNetworkReaderA.ReadRangedDouble(rangeMinA, rangeMaxA, rangeBytesA), Is.EqualTo(rangeMinA));
+            Assert.That(inNetworkReaderA.ReadRangedDouble(rangeMinA, rangeMaxA, rangeBytesA), Is.EqualTo(rangeMaxA));
+
+
+
+            const double rangeMinB = 0;
+            const double rangeMaxB = 360;
+            const int rangeBytesB = 4;
+
+            double randDoubleValueB = new Random().NextDouble() * (rangeMaxB - rangeMinB) + rangeMinB;
+
+            var outNetworkBufferB = new NetworkBuffer();
+            var outNetworkWriterB = new NetworkWriter(outNetworkBufferB);
+
+            outNetworkWriterB.WriteRangedDouble(randDoubleValueB, rangeMinB, rangeMaxB, rangeBytesB);
+            outNetworkWriterB.WriteRangedDouble(rangeMinB, rangeMinB, rangeMaxB, rangeBytesB);
+            outNetworkWriterB.WriteRangedDouble(rangeMaxB, rangeMinB, rangeMaxB, rangeBytesB);
+
+            var rawBufferBytesB = outNetworkBufferB.GetBuffer();
+
+            var inNetworkBufferB = new NetworkBuffer(rawBufferBytesB);
+            var inNetworkReaderB = new NetworkReader(inNetworkBufferB);
+
+            Assert.That(inNetworkReaderB.ReadRangedDouble(rangeMinB, rangeMaxB, rangeBytesB), Is.EqualTo(randDoubleValueB));
+            Assert.That(inNetworkReaderB.ReadRangedDouble(rangeMinB, rangeMaxB, rangeBytesB), Is.EqualTo(rangeMinB));
+            Assert.That(inNetworkReaderB.ReadRangedDouble(rangeMinB, rangeMaxB, rangeBytesB), Is.EqualTo(rangeMaxB));
         }
 
         [Test]
