@@ -6,7 +6,6 @@ using System.Diagnostics;
 using UnityEngine;
 using System.Linq;
 using MLAPI.Logging;
-using UnityEngine.SceneManagement;
 using MLAPI.Configuration;
 using MLAPI.Internal;
 using MLAPI.Profiling;
@@ -21,7 +20,6 @@ using MLAPI.Exceptions;
 using MLAPI.Transports.Tasks;
 using MLAPI.Messaging.Buffering;
 using Unity.Profiling;
-using UnityEditor.VersionControl;
 
 namespace MLAPI
 {
