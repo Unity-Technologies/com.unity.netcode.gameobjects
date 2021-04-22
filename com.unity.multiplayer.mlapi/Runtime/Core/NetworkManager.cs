@@ -759,7 +759,7 @@ namespace MLAPI
                         HandleRawTransportPoll(networkEvent, clientId, networkChannel, payload, receiveTime);
 
                         // Only do another iteration if: there are no more messages AND (there is no limit to max events or we have processed less than the maximum)
-                    } while (IsListening && (networkEvent != NetworkEvent.Nothing) && (NetworkConfig.MaxReceiveEventsPerTickRate <= 0 || processedEvents < NetworkConfig.MaxReceiveEventsPerTickRate));
+                    } while (IsListening && networkEvent != NetworkEvent.Nothing);
                 }
 
 #if !UNITY_2020_2_OR_NEWER

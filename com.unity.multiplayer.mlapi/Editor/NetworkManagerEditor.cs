@@ -24,7 +24,6 @@ public class NetworkManagerEditor : Editor
     private SerializedProperty m_AllowRuntimeSceneChangesProperty;
     private SerializedProperty m_NetworkTransportProperty;
     private SerializedProperty m_TickRateProperty;
-    private SerializedProperty m_MaxReceiveEventsPerTickRateProperty;
     private SerializedProperty m_MaxObjectUpdatesPerTickProperty;
     private SerializedProperty m_ClientConnectionBufferTimeoutProperty;
     private SerializedProperty m_ConnectionApprovalProperty;
@@ -100,7 +99,6 @@ public class NetworkManagerEditor : Editor
         m_AllowRuntimeSceneChangesProperty = m_NetworkConfigProperty.FindPropertyRelative("AllowRuntimeSceneChanges");
         m_NetworkTransportProperty = m_NetworkConfigProperty.FindPropertyRelative("NetworkTransport");
         m_TickRateProperty = m_NetworkConfigProperty.FindPropertyRelative("TickRate");
-        m_MaxReceiveEventsPerTickRateProperty = m_NetworkConfigProperty.FindPropertyRelative("MaxReceiveEventsPerTickRate");
         m_ClientConnectionBufferTimeoutProperty = m_NetworkConfigProperty.FindPropertyRelative("ClientConnectionBufferTimeout");
         m_ConnectionApprovalProperty = m_NetworkConfigProperty.FindPropertyRelative("ConnectionApproval");
         m_EnableTimeResyncProperty = m_NetworkConfigProperty.FindPropertyRelative("EnableTimeResync");
@@ -134,7 +132,6 @@ public class NetworkManagerEditor : Editor
         m_AllowRuntimeSceneChangesProperty = m_NetworkConfigProperty.FindPropertyRelative("AllowRuntimeSceneChanges");
         m_NetworkTransportProperty = m_NetworkConfigProperty.FindPropertyRelative("NetworkTransport");
         m_TickRateProperty = m_NetworkConfigProperty.FindPropertyRelative("TickRate");
-        m_MaxReceiveEventsPerTickRateProperty = m_NetworkConfigProperty.FindPropertyRelative("MaxReceiveEventsPerTickRate");
         m_ClientConnectionBufferTimeoutProperty = m_NetworkConfigProperty.FindPropertyRelative("ClientConnectionBufferTimeout");
         m_ConnectionApprovalProperty = m_NetworkConfigProperty.FindPropertyRelative("ConnectionApproval");
         m_EnableTimeResyncProperty = m_NetworkConfigProperty.FindPropertyRelative("EnableTimeResync");
@@ -297,7 +294,6 @@ public class NetworkManagerEditor : Editor
             EditorGUILayout.PropertyField(m_TickRateProperty);
 
             EditorGUILayout.LabelField("Performance", EditorStyles.boldLabel);
-            EditorGUILayout.PropertyField(m_MaxReceiveEventsPerTickRateProperty);
             EditorGUILayout.PropertyField(m_EnableNetworkVariableProperty);
 
             using (new EditorGUI.DisabledScope(!m_NetworkManager.NetworkConfig.EnableNetworkVariable))

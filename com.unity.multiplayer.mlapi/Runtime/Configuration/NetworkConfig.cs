@@ -66,12 +66,6 @@ namespace MLAPI.Configuration
         public int TickRate = 60;
 
         /// <summary>
-        /// The max amount of messages to process per ReceiveTickrate. This is to prevent flooding.
-        /// </summary>
-        [Tooltip("The maximum amount of Receive events to poll per Receive tick. This is to prevent flooding and freezing on the server")]
-        public int MaxReceiveEventsPerTickRate = 500;
-
-        /// <summary>
         /// The amount of seconds to wait for handshake to complete before timing out a client
         /// </summary>
         [Tooltip("The amount of seconds to wait for the handshake to complete before the client times out")]
@@ -194,7 +188,6 @@ namespace MLAPI.Configuration
                 }
 
                 writer.WriteInt32Packed(config.TickRate);
-                writer.WriteInt32Packed(config.MaxReceiveEventsPerTickRate);
                 writer.WriteInt32Packed(config.ClientConnectionBufferTimeout);
                 writer.WriteBool(config.ConnectionApproval);
                 writer.WriteInt32Packed(config.LoadSceneTimeOut);
@@ -236,7 +229,6 @@ namespace MLAPI.Configuration
                 }
 
                 config.TickRate = reader.ReadInt32Packed();
-                config.MaxReceiveEventsPerTickRate = reader.ReadInt32Packed();
                 config.ClientConnectionBufferTimeout = reader.ReadInt32Packed();
                 config.ConnectionApproval = reader.ReadBool();
                 config.LoadSceneTimeOut = reader.ReadInt32Packed();
