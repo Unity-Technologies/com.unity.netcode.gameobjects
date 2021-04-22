@@ -61,9 +61,9 @@ namespace MLAPI.RuntimeTests
             Assert.That(networkManager.NetworkConfig.NetworkPrefabs.Count, Is.GreaterThan(1));
 
             var hashSet = new HashSet<uint>();
-            foreach (var networkPrefab in networkManager.NetworkConfig.NetworkPrefabs)
+            foreach (var networkPrefab in networkManager.NetworkConfig.NetworkPrefabOverrideLinks)
             {
-                var idHash = networkPrefab.Hash;
+                var idHash = networkPrefab.Key;
                 Assert.That(idHash, Is.Not.EqualTo(0));
                 Assert.That(hashSet.Contains(idHash), Is.False);
                 hashSet.Add(idHash);

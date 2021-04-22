@@ -301,10 +301,10 @@ namespace MLAPI.Configuration
 
                 if (ForceSamePrefabs)
                 {
-                    var sortedPrefabList = NetworkPrefabs.OrderBy(x => x.Hash).ToList();
-                    for (int i = 0; i < sortedPrefabList.Count; i++)
+                    var sortedDictionary = NetworkPrefabOverrideLinks.OrderBy(x => x.Key);
+                    foreach (var sortedEntry in sortedDictionary)
                     {
-                        writer.WriteUInt32Packed(sortedPrefabList[i].Hash);
+                        writer.WriteUInt32Packed(sortedEntry.Key);
                     }
                 }
 
