@@ -457,7 +457,7 @@ namespace MLAPI
                 if (playerPrefabNetworkObject != null)
                 {
                     //In the event there is no NetworkPrefab entry (i.e. no override for default player prefab)
-                    if (!NetworkConfig.NetworkPrefabOverrideLinks.ContainsKey(NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash))
+                    if (!NetworkConfig.NetworkPrefabOverrideLinks.ContainsKey(playerPrefabNetworkObject.GlobalObjectIdHash))
                     {
                         // Create a prefab entry
                         var playerNetworkPrefab = new NetworkPrefab();
