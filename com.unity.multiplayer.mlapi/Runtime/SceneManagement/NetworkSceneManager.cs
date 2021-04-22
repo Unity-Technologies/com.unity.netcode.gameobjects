@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System;
 using System.IO;
+using System.Linq;
 using MLAPI.Configuration;
 using MLAPI.Exceptions;
 using MLAPI.Logging;
@@ -179,7 +180,12 @@ namespace MLAPI.SceneManagement
                 using (var buffer = PooledNetworkBuffer.Get())
                 using (var writer = PooledNetworkWriter.Get(buffer))
                 {
-                    writer.WriteULongArray(switchSceneProgress.DoneClients.ToArray(), switchSceneProgress.DoneClients.Count);
+                    var doneClientIds = switchSceneProgress.DoneClients.ToArray();
+                    var timedOutClientIds = m_NetworkManager.ConnectedClients.Keys.Except(doneClientIds).ToArray();
+                    
+                    writer.WriteULongArray(doneClientIds, doneClientIds.Length);
+                    writer.WriteULongArray(timedOutClientIds, timedOutClientIds.Length);
+                    
                     m_NetworkManager.MessageSender.Send(NetworkManager.Singleton.ServerClientId, NetworkConstants.ALL_CLIENTS_SWITCH_SCENE_COMPLETED, NetworkChannel.Internal, buffer);
                 }
             };
