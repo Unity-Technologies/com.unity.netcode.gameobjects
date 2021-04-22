@@ -63,6 +63,7 @@ namespace MLAPI
         private EntryBlock m_Snapshot = new EntryBlock();
         private EntryBlock m_ReceivedSnapshot = new EntryBlock();
 
+        // todo: split this buffer into parts per EntryBlock. Move the beg and end marker into an associated class, too
         byte[] m_Buffer = new byte[20000];
         private int m_Beg = 0;
         private int m_End = 0;
