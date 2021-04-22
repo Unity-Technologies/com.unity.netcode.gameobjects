@@ -42,48 +42,5 @@ namespace MLAPI.Configuration
         /// The prefab to replace (override) the source prefab with
         /// </summary>
         public GameObject OverridingTargetPrefab;
-
-        internal uint Hash
-        {
-            get
-            {
-                if (Prefab == null)
-                {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                    {
-                        NetworkLog.LogWarning($"{nameof(NetworkPrefab)} does not have a prefab assigned");
-                    }
-                    return 0;
-                }
-
-                var prefabGameObject = Prefab;
-                
-                switch(Override)
-                {
-                    case NetworkPrefabOverride.Prefab:
-                        {
-                            prefabGameObject = SourcePrefabToOverride;
-                            break;
-                        }
-                    case NetworkPrefabOverride.Hash:
-                        {
-                            return SourceHashToOverride;
-                        }
-                }
-
-                var networkObject = prefabGameObject.GetComponent<NetworkObject>();
-                if (networkObject == null)
-                {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                    {
-                        NetworkLog.LogWarning($"{nameof(NetworkPrefab)} {prefabGameObject.name} does not have a {nameof(NetworkObject)} component");
-                    }
-
-                    return 0;
-                }
-
-                return networkObject.GlobalObjectIdHash;
-            }
-        }
     }
 }
