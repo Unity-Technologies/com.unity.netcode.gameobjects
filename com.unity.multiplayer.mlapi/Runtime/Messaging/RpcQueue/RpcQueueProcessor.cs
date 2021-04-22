@@ -60,7 +60,7 @@ namespace MLAPI.Messaging
 
                         if (!isTesting)
                         {
-                            NetworkManager.Singleton.InvokeRpc(currentQueueItem);
+                            m_NetworkManager.InvokeRpc(currentQueueItem);
                         }
 
                         ProfilerStatManager.RpcsQueueProc.Record();
