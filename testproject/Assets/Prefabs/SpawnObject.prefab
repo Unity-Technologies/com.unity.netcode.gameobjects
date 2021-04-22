@@ -17,8 +17,8 @@ GameObject:
   - component: {fileID: 7930095664763784808}
   - component: {fileID: 4600632750638426092}
   m_Layer: 9
-  m_Name: Bullet
-  m_TagString: Bullet
+  m_Name: SpawnObject
+  m_TagString: GenericObject
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -129,8 +129,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_MoveRandomly: 1
-  m_Id:
-    m_InternalValue: 0
 --- !u!114 &7930095664763784808
 MonoBehaviour:
   m_ObjectHideFlags: 0

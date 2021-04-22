@@ -76,6 +76,12 @@ public class NetworkPrefabPool : NetworkBehaviour
     private void OnDisable()
     {
         m_IsSpawningObjects = false;
+        if (NetworkManager.Singleton && EnableHandler && m_MyCustomPrefabSpawnHandler != null)
+        {
+            var no = ServerObjectToPool.GetComponent<NetworkObject>();
+            NetworkManager.Singleton.PrefabHandler.RemoveHandler(no);
+            m_MyCustomPrefabSpawnHandler = null;
+        }
     }
 
     /// <summary>
@@ -87,11 +93,6 @@ public class NetworkPrefabPool : NetworkBehaviour
         if (SwitchScene)
         {
             SwitchScene.OnSceneSwitchBegin -= OnSceneSwitchBegin;
-        }
-        if (NetworkManager && EnableHandler && m_MyCustomPrefabSpawnHandler != null)
-        {
-            var no = ServerObjectToPool.GetComponent<NetworkObject>();
-            NetworkManager.PrefabHandler.RemoveHandler(no);
         }
     }
 
@@ -109,14 +110,17 @@ public class NetworkPrefabPool : NetworkBehaviour
         }
 
         // Register the custom spawn handler?
-        if (m_MyCustomPrefabSpawnHandler == null && EnableHandler && NetworkManager && NetworkManager.PrefabHandler != null)
+        if (m_MyCustomPrefabSpawnHandler == null && EnableHandler)
         {
-            m_MyCustomPrefabSpawnHandler = new MyCustomPrefabSpawnHandler(this);
-            NetworkManager.PrefabHandler.AddHandler(ServerObjectToPool, m_MyCustomPrefabSpawnHandler);
-        }
-        else if (EnableHandler) //Otherwise, we need to notify that we failed
-        {
-            Debug.LogWarning($"Failed to register custom spawn handler and {nameof(EnableHandler)} is set to true!");
+            if (NetworkManager && NetworkManager.PrefabHandler != null)
+            {
+                m_MyCustomPrefabSpawnHandler = new MyCustomPrefabSpawnHandler(this);
+                NetworkManager.PrefabHandler.AddHandler(ServerObjectToPool, m_MyCustomPrefabSpawnHandler);
+            }
+            else if (!IsServer)
+            {
+                Debug.LogWarning($"Failed to register custom spawn handler and {nameof(EnableHandler)} is set to true!");
+            }
         }
     }
 
@@ -294,8 +298,7 @@ public class NetworkPrefabPool : NetworkBehaviour
                             go.transform.position = transform.position;
 
                             float ang = Random.Range(0.0f, 2 * Mathf.PI);
-                            go.GetComponent<Bullet>().SetDirectionAndVelocity(new Vector3(Mathf.Cos(ang), 0, Mathf.Sin(ang)), ObjectSpeed);
-
+                            go.GetComponent<GenericObject>().SetDirectionAndVelocity(new Vector3(Mathf.Cos(ang), 0, Mathf.Sin(ang)), ObjectSpeed);
 
                             var no = go.GetComponent<NetworkObject>();
                             if (!no.IsSpawned)

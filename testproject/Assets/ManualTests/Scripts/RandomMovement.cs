@@ -1,8 +1,5 @@
-using System.Diagnostics;
 using UnityEngine;
-using Debug = UnityEngine.Debug;
 using Random = UnityEngine.Random;
-using UnityEditor.Experimental;
 
 public class RandomMovement : MonoBehaviour, IPlayerMovement
 {    
@@ -22,7 +19,7 @@ public class RandomMovement : MonoBehaviour, IPlayerMovement
 
     private void OnCollisionStay(Collision collision)
     {
-        if (collision.gameObject.CompareTag("Floor") || collision.gameObject.CompareTag("Bullet"))
+        if (collision.gameObject.CompareTag("Floor") || collision.gameObject.CompareTag("GenericObject"))
         {
             return;
         }
