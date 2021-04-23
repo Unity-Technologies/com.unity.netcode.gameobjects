@@ -72,14 +72,14 @@ namespace MLAPI
         {
             PooledNetworkWriter writer;
 
-            var rpcQueueContainer = NetworkObject.NetworkManager.RpcQueueContainer;
+            var rpcQueueContainer = NetworkManager.RpcQueueContainer;
             var isUsingBatching = rpcQueueContainer.IsUsingBatching();
             var transportChannel = rpcDelivery == RpcDelivery.Reliable ? NetworkChannel.ReliableRpc : NetworkChannel.UnreliableRpc;
 
             if (IsHost)
             {
                 writer = rpcQueueContainer.BeginAddQueueItemToFrame(RpcQueueContainer.QueueItemType.ServerRpc, Time.realtimeSinceStartup, transportChannel,
-                    NetworkObject.NetworkManager.ServerClientId, null, RpcQueueHistoryFrame.QueueFrameType.Inbound, serverRpcParams.Send.UpdateStage);
+                    NetworkManager.ServerClientId, null, RpcQueueHistoryFrame.QueueFrameType.Inbound, serverRpcParams.Send.UpdateStage);
 
                 if (!isUsingBatching)
                 {
@@ -89,7 +89,7 @@ namespace MLAPI
             else
             {
                 writer = rpcQueueContainer.BeginAddQueueItemToFrame(RpcQueueContainer.QueueItemType.ServerRpc, Time.realtimeSinceStartup, transportChannel,
-                    NetworkObject.NetworkManager.ServerClientId, null, RpcQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
+                    NetworkManager.ServerClientId, null, RpcQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
                 if (!isUsingBatching)
                 {
                     writer.WriteByte(NetworkConstants.SERVER_RPC); // MessageType
@@ -120,7 +120,7 @@ namespace MLAPI
                 return;
             }
 
-            var rpcQueueContainer = NetworkObject.NetworkManager.RpcQueueContainer;
+            var rpcQueueContainer = NetworkManager.RpcQueueContainer;
             if (IsHost)
             {
                 rpcQueueContainer.EndAddQueueItemToFrame(serializer.Writer, RpcQueueHistoryFrame.QueueFrameType.Inbound, serverRpcParams.Send.UpdateStage);
@@ -146,26 +146,26 @@ namespace MLAPI
             PooledNetworkWriter writer;
 
             // This will start a new queue item entry and will then return the writer to the current frame's stream
-            var rpcQueueContainer = NetworkObject.NetworkManager.RpcQueueContainer;
+            var rpcQueueContainer = NetworkManager.RpcQueueContainer;
             var isUsingBatching = rpcQueueContainer.IsUsingBatching();
             var transportChannel = rpcDelivery == RpcDelivery.Reliable ? NetworkChannel.ReliableRpc : NetworkChannel.UnreliableRpc;
 
-            ulong[] clientIds = clientRpcParams.Send.TargetClientIds ?? NetworkObject.NetworkManager.ConnectedClientsList.Select(c => c.ClientId).ToArray();
+            ulong[] clientIds = clientRpcParams.Send.TargetClientIds ?? NetworkManager.ConnectedClientsList.Select(c => c.ClientId).ToArray();
             if (clientRpcParams.Send.TargetClientIds != null && clientRpcParams.Send.TargetClientIds.Length == 0)
             {
-                clientIds = NetworkObject.NetworkManager.ConnectedClientsList.Select(c => c.ClientId).ToArray();
+                clientIds = NetworkManager.ConnectedClientsList.Select(c => c.ClientId).ToArray();
             }
 
             //NOTES ON BELOW CHANGES:
             //The following checks for IsHost and whether the host client id is part of the clients to recieve the RPC
             //Is part of a patch-fix to handle looping back RPCs into the next frame's inbound queue.
             //!!! This code is temporary and will change (soon) when NetworkSerializer can be configured for mutliple NetworkWriters!!!
-            var containsServerClientId = clientIds.Contains(NetworkObject.NetworkManager.ServerClientId);
+            var containsServerClientId = clientIds.Contains(NetworkManager.ServerClientId);
             if (IsHost && containsServerClientId)
             {
                 //Always write to the next frame's inbound queue
                 writer = rpcQueueContainer.BeginAddQueueItemToFrame(RpcQueueContainer.QueueItemType.ClientRpc, Time.realtimeSinceStartup, transportChannel,
-                    NetworkObject.NetworkManager.ServerClientId, null, RpcQueueHistoryFrame.QueueFrameType.Inbound, clientRpcParams.Send.UpdateStage);
+                    NetworkManager.ServerClientId, null, RpcQueueHistoryFrame.QueueFrameType.Inbound, clientRpcParams.Send.UpdateStage);
 
                 //Handle sending to the other clients, if so the above notes explain why this code is here (a temporary patch-fix)
                 if (clientIds.Length > 1)
@@ -225,17 +225,17 @@ namespace MLAPI
                 return;
             }
 
-            var rpcQueueContainer = NetworkObject.NetworkManager.RpcQueueContainer;
+            var rpcQueueContainer = NetworkManager.RpcQueueContainer;
 
             if (IsHost)
             {
-                ulong[] clientIds = clientRpcParams.Send.TargetClientIds ?? NetworkObject.NetworkManager.ConnectedClientsList.Select(c => c.ClientId).ToArray();
+                ulong[] clientIds = clientRpcParams.Send.TargetClientIds ?? NetworkManager.ConnectedClientsList.Select(c => c.ClientId).ToArray();
                 if (clientRpcParams.Send.TargetClientIds != null && clientRpcParams.Send.TargetClientIds.Length == 0)
                 {
-                    clientIds = NetworkObject.NetworkManager.ConnectedClientsList.Select(c => c.ClientId).ToArray();
+                    clientIds = NetworkManager.ConnectedClientsList.Select(c => c.ClientId).ToArray();
                 }
 
-                var containsServerClientId = clientIds.Contains(NetworkObject.NetworkManager.ServerClientId);
+                var containsServerClientId = clientIds.Contains(NetworkManager.ServerClientId);
                 if (containsServerClientId && clientIds.Length == 1)
                 {
                     rpcQueueContainer.EndAddQueueItemToFrame(serializer.Writer, RpcQueueHistoryFrame.QueueFrameType.Inbound, clientRpcParams.Send.UpdateStage);
@@ -264,19 +264,19 @@ namespace MLAPI
         /// <summary>
         /// Gets if we are executing as server
         /// </summary>
-        protected bool IsServer => IsRunning && NetworkObject.NetworkManager.IsServer;
+        protected bool IsServer => IsRunning && NetworkManager.IsServer;
 
         /// <summary>
         /// Gets if we are executing as client
         /// </summary>
-        protected bool IsClient => IsRunning && NetworkObject.NetworkManager.IsClient;
+        protected bool IsClient => IsRunning && NetworkManager.IsClient;
 
         /// <summary>
         /// Gets if we are executing as Host, I.E Server and Client
         /// </summary>
-        protected bool IsHost => IsRunning && NetworkObject.NetworkManager.IsHost;
+        protected bool IsHost => IsRunning && NetworkManager.IsHost;
 
-        private bool IsRunning => NetworkObject.NetworkManager != null && NetworkObject.NetworkManager.IsListening;
+        private bool IsRunning => NetworkManager != null && NetworkManager.IsListening;
 
         /// <summary>
         /// Gets Whether or not the object has a owner
@@ -615,7 +615,7 @@ namespace MLAPI
                             if (!m_ChannelMappedNetworkVariableIndexes[j].Contains(k))
                             {
                                 // This var does not belong to the currently iterating channel group.
-                                if (NetworkObject.NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
+                                if (NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                                 {
                                     writer.WriteUInt16Packed(0);
                                 }
@@ -633,7 +633,7 @@ namespace MLAPI
                             //   if I'm dirty AND the server AND the client can read me, send.
                             bool shouldWrite = isDirty && (!IsServer || NetworkVariableFields[k].CanClientRead(clientId));
 
-                            if (NetworkObject.NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
+                            if (NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                             {
                                 if (!shouldWrite)
                                 {
@@ -653,7 +653,7 @@ namespace MLAPI
                                 // this will allow lag-compensation
                                 writer.WriteUInt16Packed(NetworkVariableFields[k].RemoteTick);
 
-                                if (NetworkObject.NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
+                                if (NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                                 {
                                     using (var varBuffer = PooledNetworkBuffer.Get())
                                     {
