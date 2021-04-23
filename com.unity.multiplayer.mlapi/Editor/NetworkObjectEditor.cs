@@ -60,6 +60,7 @@ namespace MLAPI.Editor
                     EditorGUILayout.TextField(nameof(NetworkObject.IsSceneObject), "null");
                 }
                 EditorGUILayout.Toggle(nameof(NetworkObject.DestroyWithScene), m_NetworkObject.DestroyWithScene);
+                EditorGUILayout.TextField(nameof(NetworkObject.NetworkManagerOwner), m_NetworkObject.NetworkManagerOwner.gameObject.name);
                 GUI.enabled = guiEnabled;
 
                 if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer)
