@@ -8,6 +8,7 @@ TagManager:
   - Boundary
   - Floor
   - GenericObject
+  - Target
   layers:
   - Default
   - TransparentFX
@@ -44,4 +45,10 @@ TagManager:
   m_SortingLayers:
   - name: Default
     uniqueID: 0
+    locked: 0
+  - name: Background
+    uniqueID: 360676703
+    locked: 0
+  - name: Menu
+    uniqueID: 2972627295
     locked: 0
