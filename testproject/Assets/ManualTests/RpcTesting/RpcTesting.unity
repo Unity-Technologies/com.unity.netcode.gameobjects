@@ -1036,7 +1036,17 @@ MonoBehaviour:
     AllowRuntimeSceneChanges: 0
     PlayerPrefab: {fileID: 4700706668509470175, guid: 7eeaaf9e50c0afc4dab93584a54fb0d6,
       type: 3}
-    NetworkPrefabs: []
+    NetworkPrefabs:
+    - Prefab: {fileID: 4700706668509470175, guid: 7eeaaf9e50c0afc4dab93584a54fb0d6,
+        type: 3}
+      Override: 0
+      OverridingSourcePrefab: {fileID: 4700706668509470175, guid: 7eeaaf9e50c0afc4dab93584a54fb0d6,
+        type: 3}
+      OverridingSourceHash: 0
+      OverridingTargetPrefab: {fileID: 8685790303553767886, guid: 96e0a72e30d0c46c8a5c9a750e8f5807,
+        type: 3}
+      IsPlayer: 0
+    CreatePlayerPrefab: 1
     ReceiveTickrate: 64
     NetworkTickIntervalSec: 0.05
     MaxReceiveEventsPerTickRate: 500
