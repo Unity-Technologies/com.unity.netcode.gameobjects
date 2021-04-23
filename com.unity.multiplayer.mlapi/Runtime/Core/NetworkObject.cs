@@ -224,7 +224,7 @@ namespace MLAPI
         {
             if (networkObjects == null || networkObjects.Count == 0)
             {
-                throw new ArgumentNullException("At least one NetworkObject has to be provided");
+                throw new ArgumentNullException("At least one " + nameof(NetworkObject) + " has to be provided");
             }
 
             NetworkManager networkManager = networkObjects[0].NetworkManager;
@@ -319,7 +319,7 @@ namespace MLAPI
         {
             if (networkObjects == null || networkObjects.Count == 0)
             {
-                throw new ArgumentNullException("At least one NetworkObject has to be provided");
+                throw new ArgumentNullException("At least one " + nameof(NetworkObject) + " has to be provided");
             }
 
             NetworkManager networkManager = networkObjects[0].NetworkManager;
