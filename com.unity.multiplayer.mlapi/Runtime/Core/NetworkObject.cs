@@ -41,9 +41,15 @@ namespace MLAPI
         /// <summary>
         /// Gets the NetworkManager that owns this NetworkObject instance
         /// </summary>
-        public NetworkManager NetworkManager => NetworkManagerTestOverride != null ? NetworkManagerTestOverride : NetworkManager.Singleton;
+        public NetworkManager NetworkManager => NetworkManagerOwner != null ? NetworkManagerOwner : NetworkManager.Singleton;
 
-        internal NetworkManager NetworkManagerTestOverride;
+        /// <summary>
+        /// The NetworkManager that owns this NetworkObject.
+        /// This property controls where this NetworkObject belongs.
+        /// This property is null by default currently, which means that the above NetworkManager getter will return the Singleton.
+        /// In the future this is the path where alternative NetworkManagers should be injected for running multi NetworkManagers
+        /// </summary>
+        internal NetworkManager NetworkManagerOwner;
 
         /// <summary>
         /// Gets the unique Id of this object that is synced across the network
