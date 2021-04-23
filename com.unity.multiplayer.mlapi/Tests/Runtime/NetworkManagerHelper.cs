@@ -74,7 +74,6 @@ namespace MLAPI.RuntimeTests
 
                 NetworkManagerObject.NetworkConfig = new Configuration.NetworkConfig
                 {
-                    CreatePlayerPrefab = false,
                     EnableSceneManagement = false,
                     RegisteredScenes = new List<string>(){SceneManager.GetActiveScene().name}
                 };

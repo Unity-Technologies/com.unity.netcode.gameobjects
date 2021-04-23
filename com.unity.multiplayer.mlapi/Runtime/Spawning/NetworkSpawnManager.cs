@@ -58,34 +58,6 @@ namespace MLAPI.Spawning
         }
 
         /// <summary>
-        /// Gets the prefab index of a given prefab hash
-        /// </summary>
-        /// <param name="hash">The hash of the prefab</param>
-        /// <returns>The index of the prefab</returns>
-        public int GetNetworkPrefabIndexOfHash(uint hash)
-        {
-            for (int i = 0; i < NetworkManager.NetworkConfig.NetworkPrefabs.Count; i++)
-            {
-                if (NetworkManager.NetworkConfig.NetworkPrefabs[i].Hash == hash)
-                {
-                    return i;
-                }
-            }
-
-            return -1;
-        }
-
-        /// <summary>
-        /// Returns the prefab hash for the NetworkPrefab with a given index
-        /// </summary>
-        /// <param name="index">The NetworkPrefab index</param>
-        /// <returns>The prefab hash for the given prefab index</returns>
-        public uint GetPrefabHashFromIndex(int index)
-        {
-            return NetworkManager.NetworkConfig.NetworkPrefabs[index].Hash;
-        }
-
-        /// <summary>
         /// Returns the local player object or null if one does not exist
         /// </summary>
         /// <returns>The local player object or null if one does not exist</returns>
@@ -181,7 +153,9 @@ namespace MLAPI.Spawning
             }
         }
 
-        // Only ran on Client
+        /// <summary>
+        /// Should only run on the client 
+        /// </summary>
         internal NetworkObject CreateLocalNetworkObject(bool softCreate, uint prefabHash, ulong ownerClientId, ulong? parentNetworkId, Vector3? position, Quaternion? rotation)
         {
             NetworkObject parentNetworkObject = null;
@@ -198,12 +172,12 @@ namespace MLAPI.Spawning
                 }
             }
 
-
             if (!NetworkManager.NetworkConfig.EnableSceneManagement || !softCreate)
             {
-                // Create the object
+                // If the prefab hash has a registered INetworkPrefabInstanceHandler derived class 
                 if (NetworkManager.PrefabHandler.ContainsHandler(prefabHash))
                 {
+                    // Let the handler spawn the NetworkObject
                     var networkObject = NetworkManager.PrefabHandler.HandleNetworkPrefabSpawn(prefabHash, ownerClientId, position.GetValueOrDefault(Vector3.zero), rotation.GetValueOrDefault(Quaternion.identity));
 
                     if (parentNetworkObject != null)
@@ -220,20 +194,36 @@ namespace MLAPI.Spawning
                 }
                 else
                 {
-                    var prefabIndex = GetNetworkPrefabIndexOfHash(prefabHash);
+                    // See if there is a valid registered NetworkPrefabOverrideLink associated with the provided prefabHash
+                    GameObject networkPrefabReference = null;
+                    if(NetworkManager.NetworkConfig.NetworkPrefabOverrideLinks.ContainsKey(prefabHash))
+                    {
+                        switch (NetworkManager.NetworkConfig.NetworkPrefabOverrideLinks[prefabHash].Override)
+                        {
+                            default:
+                            case NetworkPrefabOverride.None:
+                                networkPrefabReference = NetworkManager.NetworkConfig.NetworkPrefabOverrideLinks[prefabHash].Prefab;
+                                break;
+                            case NetworkPrefabOverride.Hash:
+                            case NetworkPrefabOverride.Prefab:
+                                networkPrefabReference = NetworkManager.NetworkConfig.NetworkPrefabOverrideLinks[prefabHash].OverridingTargetPrefab;
+                                break;
+                        }
+                    }
 
-                    if (prefabIndex < 0)
+                    // If not, then there is an issue (user possibly didn't register the prefab properly?)
+                    if (networkPrefabReference == null)
                     {
                         if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
                         {
-                            NetworkLog.LogError($"Failed to create object locally. [{nameof(prefabHash)}={prefabHash}]. Hash could not be found. Is the prefab registered?");
+                            NetworkLog.LogError($"Failed to create object locally. [{nameof(prefabHash)}={prefabHash}]. {nameof(NetworkPrefab)} could not be found. Is the prefab registered with {nameof(NetworkManager)}?");
                         }
 
                         return null;
                     }
 
-                    var prefab = NetworkManager.NetworkConfig.NetworkPrefabs[prefabIndex].Prefab;
-                    var networkObject = ((position == null && rotation == null) ? UnityEngine.Object.Instantiate(prefab) : UnityEngine.Object.Instantiate(prefab, position.GetValueOrDefault(Vector3.zero), rotation.GetValueOrDefault(Quaternion.identity))).GetComponent<NetworkObject>();
+                    // Otherwise, instantiate an instance of the NetworkPrefab linked to the prefabHash
+                    var networkObject = ((position == null && rotation == null) ? UnityEngine.Object.Instantiate(networkPrefabReference) : UnityEngine.Object.Instantiate(networkPrefabReference, position.GetValueOrDefault(Vector3.zero), rotation.GetValueOrDefault(Quaternion.identity))).GetComponent<NetworkObject>();
 
                     if (parentNetworkObject != null)
                     {
@@ -250,13 +240,12 @@ namespace MLAPI.Spawning
             }
             else
             {
-                // SoftSync them by mapping
+                // Check to see if the hash is in our pending in-scene objects waiting to be "soft synchronized"
                 if (!PendingSoftSyncObjects.ContainsKey(prefabHash))
                 {
-                    // TODO: Fix this message
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
                     {
-                        NetworkLog.LogError("Cannot find pending soft sync object. Is the projects the same?");
+                        NetworkLog.LogError($"{nameof(NetworkPrefab)} hash was not found! In-Scene placed {nameof(NetworkObject)} soft synchronization failure for Hash: {prefabHash}!");
                     }
                     return null;
                 }
