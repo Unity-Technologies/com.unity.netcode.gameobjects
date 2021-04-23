@@ -7,6 +7,26 @@ namespace MLAPI.EditorTests
     public class NetworkObjectTests
     {
         [Test]
+        public void NetworkManagerOverrideTest()
+        {
+            // Create "bait"
+            var singletonNetworkManager = new GameObject(nameof(NetworkManager)).AddComponent<NetworkManager>();
+            singletonNetworkManager.SetSingleton();
+
+            // Create override
+            var networkManager = new GameObject(nameof(NetworkManager)).AddComponent<NetworkManager>();
+
+            // NetworkObject
+            var gameObject = new GameObject(nameof(NetworkManagerOverrideTest));
+            var networkObject = gameObject.AddComponent<NetworkObject>();
+
+            // Set override
+            networkObject.NetworkManagerTestOverride = networkManager;
+
+            Debug.Assert(networkObject.NetworkManager == networkManager);
+        }
+
+        [Test]
         public void GetBehaviourIndexNone()
         {
             var gameObject = new GameObject(nameof(GetBehaviourIndexNone));
