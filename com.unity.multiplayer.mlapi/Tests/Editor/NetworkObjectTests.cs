@@ -24,6 +24,10 @@ namespace MLAPI.EditorTests
             networkObject.NetworkManagerTestOverride = networkManager;
 
             Debug.Assert(networkObject.NetworkManager == networkManager);
+
+            Object.DestroyImmediate(singletonNetworkManager.gameObject);
+            Object.DestroyImmediate(networkManager.gameObject);
+            Object.DestroyImmediate(gameObject);
         }
 
         [Test]
