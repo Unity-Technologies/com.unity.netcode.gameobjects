@@ -721,14 +721,6 @@ namespace MLAPI
 
         private void OnEnable()
         {
-            if (Singleton != null && Singleton != this)
-            {
-                Destroy(gameObject);
-                return;
-            }
-
-            SetSingleton();
-
             if (DontDestroy)
             {
                 DontDestroyOnLoad(gameObject);
@@ -738,6 +730,13 @@ namespace MLAPI
             {
                 Application.runInBackground = true;
             }
+
+            if (Singleton != null && Singleton != this)
+            {
+                return;
+            }
+
+            SetSingleton();
         }
 
         private void OnDestroy()
