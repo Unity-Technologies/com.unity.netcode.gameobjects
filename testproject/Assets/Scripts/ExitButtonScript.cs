@@ -26,11 +26,11 @@ public class ExitButtonScript : MonoBehaviour
             {
                 NetworkManager.Singleton.StopServer();
             }
-            Destroy(NetworkManager.Singleton.gameObject);
+            Destroy(NetworkManager.Singleton);
         }
 
         if (m_SceneMenuToLoad != null && m_SceneMenuToLoad.SceneName != string.Empty)
-        {
+        {           
             SceneManager.LoadSceneAsync(m_SceneMenuToLoad.SceneName, LoadSceneMode.Single);
         }
         else
@@ -39,5 +39,4 @@ public class ExitButtonScript : MonoBehaviour
         }
         
     }
-
 }

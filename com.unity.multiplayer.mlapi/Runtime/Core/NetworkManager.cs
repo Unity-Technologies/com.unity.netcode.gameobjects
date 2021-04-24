@@ -1550,7 +1550,6 @@ namespace MLAPI
 
         internal void HandleApproval(ulong ownerClientId, bool createPlayerObject, uint? playerPrefabHash, bool approved, Vector3? position, Quaternion? rotation)
         {
-
             if (playerPrefabHash == null && createPlayerObject)
             {
                 playerPrefabHash = NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash;

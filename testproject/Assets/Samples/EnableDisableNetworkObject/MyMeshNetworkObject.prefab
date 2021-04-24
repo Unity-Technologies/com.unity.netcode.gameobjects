@@ -64,6 +64,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_MyMeshRenderer: {fileID: 7914308651485899481}
   m_MyBoxCollider: {fileID: 3738766586356797253}
+  m_ActivateObjectButton: {fileID: 0}
 --- !u!33 &6210590501307069555
 MeshFilter:
   m_ObjectHideFlags: 0

@@ -27,20 +27,68 @@ namespace MLAPI
 #if UNITY_EDITOR
         private void OnValidate()
         {
-            if (UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode && !NetworkManager.IsTestRun)
+            if(gameObject.scene != null && !string.IsNullOrEmpty(gameObject.scene.name))
+            {
+                
+                if (gameObject.scene.name != gameObject.name)
+                {
+                    Debug.Log($"{gameObject.name}:{nameof(NetworkObject.OnValidate)}-----{nameof(gameObject.scene)}:{gameObject.scene.name}");
+                    return;
+                }
+                else
+                {
+                    //If we are the exact same name as our scene, then we are viewing a prefab
+                    if (GlobalObjectIdHash != 0)
+                    {
+                        return;
+                    }
+                }
+            }
+
+#if GLOBALOBJECTIDHASH_LOGGING
+            var previousGobalObjectIdHash = GlobalObjectIdHash;
+            string warningChanged = $"{nameof(GlobalObjectIdHash)} changed from {GlobalObjectIdHash} to ";
+            
+            if (UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                Debug.Log($"{gameObject.name}:{nameof(NetworkObject.OnValidate)}-----{nameof(UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)}");
+            }
+            if (UnityEditor.EditorApplication.isPlaying)
+            {
+                Debug.Log($"{gameObject.name}:{nameof(NetworkObject.OnValidate)}-----{nameof(UnityEditor.EditorApplication.isPlaying)}");
+            }
+            if (UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                Debug.Log($"{gameObject.name}:{nameof(NetworkObject.OnValidate)}-----{nameof(UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)}");
+            }
+            if (UnityEditor.EditorApplication.isUpdating)
+            {
+                Debug.Log($"{gameObject.name}:{nameof(NetworkObject.OnValidate)}-----{nameof(UnityEditor.EditorApplication.isUpdating)}");
+            }
+#endif
+
+            /// Only when we are changing playing state while not considered playing and not executing a test run  (tranistioning to a stop or start but not testing) 
+            /// =or=
+            /// We are doing a simple update
+            if (UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode && !UnityEditor.EditorApplication.isPlaying && !NetworkManager.IsTestRun || UnityEditor.EditorApplication.isUpdating)
             {
                 // do NOT override GlobalObjectIdHash while getting into PlayMode in the Editor
                 return;
             }
-
+            
             var globalObjectIdString = UnityEditor.GlobalObjectId.GetGlobalObjectIdSlow(this).ToString();
             GlobalObjectIdHash = XXHash.Hash32(globalObjectIdString);
+
+#if GLOBALOBJECTIDHASH_LOGGING
+            warningChanged += $"{GlobalObjectIdHash}!";
+            Debug.LogWarning(warningChanged);
+#endif
         }
 #endif
 
-        /// <summary>
-        /// Gets the NetworkManager that owns this NetworkObject instance
-        /// </summary>
+            /// <summary>
+            /// Gets the NetworkManager that owns this NetworkObject instance
+            /// </summary>
         public NetworkManager NetworkManager => NetworkManager.Singleton;
 
         /// <summary>

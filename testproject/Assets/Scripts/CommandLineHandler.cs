@@ -18,6 +18,7 @@ using MLAPI.Transports.UNET;
 public class CommandLineProcessor
 {
     private static CommandLineProcessor s_Singleton;
+    private static uint s_LoadingIterations;
 
     private string m_SceneToLoad;
     private Dictionary<string, string> m_CommandLineArguments = new Dictionary<string, string>();
@@ -90,20 +91,19 @@ public class CommandLineProcessor
             if (m_CommandLineArguments.TryGetValue("-ip", out string ipValue))
             {
                 SetTransportAddress(ipValue);
+                m_CommandLineArguments.Remove("-ip");
             }
 
             if (m_CommandLineArguments.TryGetValue("-p", out string port))
             {
                 SetPort(ushort.Parse(port));
+                m_CommandLineArguments.Remove("-p");
             }
 
-            if (m_CommandLineArguments.TryGetValue("-framerate", out string frameRate))
+            if (m_CommandLineArguments.TryGetValue("-fr", out string frameRate))
             {
                 Application.targetFrameRate = int.Parse(frameRate);
-            }
-            else
-            {
-                Application.targetFrameRate = 60;
+                m_CommandLineArguments.Remove("-fr");
             }
 
             if (m_CommandLineArguments.TryGetValue("-m", out string mlapiValue))
@@ -130,6 +130,7 @@ public class CommandLineProcessor
         {
             SceneManager.sceneLoaded += SceneManager_sceneLoaded;
             SceneManager.LoadSceneAsync(m_SceneToLoad, LoadSceneMode.Single);
+            m_CommandLineArguments.Remove("-s");
         }
     }
 
@@ -145,15 +146,18 @@ public class CommandLineProcessor
                 if (m_ConnectionModeScript)
                 {
                     m_ConnectionModeScript.SetCommandLineHandler(this);
+         
                     return;
                 }
             }
             ProcessCommandLine();
+
         }
     }
 
     private void StartServer()
     {
+        m_CommandLineArguments.Remove("-m");
         if (m_ConnectionModeScript)
         {
             m_ConnectionModeScript.OnStartServer();
@@ -218,8 +222,13 @@ public class CommandLineProcessor
 /// </summary>
 public class CommandLineHandler : MonoBehaviour
 {
+    private static CommandLineProcessor s_CommandLineProcessorInstance;
     private void Start()
     {
-        new CommandLineProcessor(Environment.GetCommandLineArgs());
+        if(s_CommandLineProcessorInstance == null)
+        {
+            s_CommandLineProcessorInstance = new CommandLineProcessor(Environment.GetCommandLineArgs());
+        }
+        
     }
 }
