@@ -478,6 +478,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fa32b4a74f166fd44bd2cf187de1c5d8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  m_SceneMenuToLoad: {fileID: 11400000, guid: b31a2686a77cc4c489d6bde3a5f3c114, type: 2}
 --- !u!114 &964909097
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1036,17 +1037,7 @@ MonoBehaviour:
     AllowRuntimeSceneChanges: 0
     PlayerPrefab: {fileID: 4700706668509470175, guid: 7eeaaf9e50c0afc4dab93584a54fb0d6,
       type: 3}
-    NetworkPrefabs:
-    - Prefab: {fileID: 4700706668509470175, guid: 7eeaaf9e50c0afc4dab93584a54fb0d6,
-        type: 3}
-      Override: 0
-      OverridingSourcePrefab: {fileID: 4700706668509470175, guid: 7eeaaf9e50c0afc4dab93584a54fb0d6,
-        type: 3}
-      OverridingSourceHash: 0
-      OverridingTargetPrefab: {fileID: 8685790303553767886, guid: 96e0a72e30d0c46c8a5c9a750e8f5807,
-        type: 3}
-      IsPlayer: 0
-    CreatePlayerPrefab: 1
+    NetworkPrefabs: []
     ReceiveTickrate: 64
     NetworkTickIntervalSec: 0.05
     MaxReceiveEventsPerTickRate: 500

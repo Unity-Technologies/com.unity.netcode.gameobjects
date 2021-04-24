@@ -5,16 +5,19 @@ EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Scenes:
-  - enabled: 0
-    path: Assets/SamplesMenu.unity
+  - enabled: 1
+    path: Assets/MainMenu.unity
+    guid: 21c7fd68cda9dd9488fc0cc01f885e39
+  - enabled: 1
+    path: Assets/Samples/SamplesMenu.unity
     guid: 037562c9b1a469f498dfb34256ddf86f
   - enabled: 1
-    path: Assets/ManualTests/MTTManualTests.unity
+    path: Assets/ManualTests/ManualTestsMenu.unity
     guid: 197ba614e9ae3054a8dea7b2bdacad6a
   - enabled: 1
     path: Assets/ManualTests/SceneTransitioning/SceneTransitioningTest.unity
     guid: 1c2375a896b2e8c4a841aa61224b8494
-  - enabled: 0
+  - enabled: 1
     path: Assets/Scenes/SampleScene.unity
     guid: 9fc0d4010bbf28b4594072e72b8655ab
   - enabled: 1

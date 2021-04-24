@@ -1,5 +1,5 @@
+using System;
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using MLAPI;
 
@@ -11,6 +11,42 @@ public class ConnectionModeScript : MonoBehaviour
 {
     [SerializeField]
     private GameObject m_ConnectionModeButtons;
+
+    private CommandLineProcessor m_CommandLineProcessor;
+    internal void SetCommandLineHandler(CommandLineProcessor commandLineProcessor)
+    {
+        m_CommandLineProcessor = commandLineProcessor;
+        if(m_CommandLineProcessor.AutoConnectEnabled())
+        {
+            StartCoroutine(WaitForNetworkManager());
+        }
+    }
+
+    public delegate void OnNotifyConnectionEventDelegateHandler();
+
+    public event OnNotifyConnectionEventDelegateHandler OnNotifyConnectionEventServer;
+    public event OnNotifyConnectionEventDelegateHandler OnNotifyConnectionEventHost;
+    public event OnNotifyConnectionEventDelegateHandler OnNotifyConnectionEventClient;
+
+
+    private IEnumerator WaitForNetworkManager()
+    {
+        while(true)
+        {
+            yield return new WaitForSeconds(0.5f);
+            try
+            {
+                if (NetworkManager.Singleton && !NetworkManager.Singleton.IsListening)
+                {
+                    m_ConnectionModeButtons.SetActive(false);
+                    m_CommandLineProcessor.ProcessCommandLine();
+                    break;
+                }
+            }
+            catch { }            
+        }
+        yield return null;
+    }
 
     // Start is called before the first frame update
     private void Start()
@@ -30,7 +66,9 @@ public class ConnectionModeScript : MonoBehaviour
         if (NetworkManager.Singleton && !NetworkManager.Singleton.IsListening && m_ConnectionModeButtons)
         {
             NetworkManager.Singleton.StartServer();
+            OnNotifyConnectionEventServer?.Invoke();
             m_ConnectionModeButtons.SetActive(false);
+            
         }
     }
 
@@ -42,6 +80,7 @@ public class ConnectionModeScript : MonoBehaviour
         if (NetworkManager.Singleton && !NetworkManager.Singleton.IsListening && m_ConnectionModeButtons)
         {
             NetworkManager.Singleton.StartHost();
+            OnNotifyConnectionEventHost?.Invoke();
             m_ConnectionModeButtons.SetActive(false);
         }
     }
@@ -54,9 +93,8 @@ public class ConnectionModeScript : MonoBehaviour
         if (NetworkManager.Singleton && !NetworkManager.Singleton.IsListening && m_ConnectionModeButtons)
         {
             NetworkManager.Singleton.StartClient();
+            OnNotifyConnectionEventClient?.Invoke();
             m_ConnectionModeButtons.SetActive(false);
         }
     }
-
-
 }

@@ -159,28 +159,31 @@ public class StatsDisplay : NetworkBehaviour
     {
         while (true)
         {
-            if (m_ClientMode)
+            if (NetworkManager.Singleton)
             {
-                m_LastStatsDump = m_IsServer ? "Server Stats" : "Client Stats";
-                m_LastStatsDump += "\ndeltaTime: [" + Time.deltaTime.ToString() + "]";
-                foreach (ProfilerStat p in ProfilerStatManager.AllStats)
+                if (m_ClientMode)
                 {
-                    if (m_LastStatsDump != string.Empty)
+                    m_LastStatsDump = m_IsServer ? "Server Stats" : "Client Stats";
+                    m_LastStatsDump += "\ndeltaTime: [" + Time.deltaTime.ToString() + "]";
+                    foreach (ProfilerStat p in ProfilerStatManager.AllStats)
                     {
-                        m_LastStatsDump += "\n";
+                        if (m_LastStatsDump != string.Empty)
+                        {
+                            m_LastStatsDump += "\n";
+                        }
+                        m_LastStatsDump += p.PrettyPrintName + ": " + p.SampleRate().ToString("0.0");
                     }
-                    m_LastStatsDump += p.PrettyPrintName + ": " + p.SampleRate().ToString("0.0");
                 }
-            }
-            if (NetworkManager.Singleton.IsServer && m_ClientsToUpdate.Count > 0)
-            {
-                var statsInfoContainer = new StatsInfoContainer();
-                statsInfoContainer.StatValues = new List<float>();
-                foreach (ProfilerStat p in ProfilerStatManager.AllStats)
+                if (NetworkManager.Singleton.IsServer && m_ClientsToUpdate.Count > 0)
                 {
-                    statsInfoContainer.StatValues.Add(p.SampleRate());
+                    var statsInfoContainer = new StatsInfoContainer();
+                    statsInfoContainer.StatValues = new List<float>();
+                    foreach (ProfilerStat p in ProfilerStatManager.AllStats)
+                    {
+                        statsInfoContainer.StatValues.Add(p.SampleRate());
+                    }
+                    ReceiveStatsClientRPC(statsInfoContainer);
                 }
-                ReceiveStatsClientRPC(statsInfoContainer);
             }
             yield return new WaitForSeconds(0.5f);
         }
