@@ -10,6 +10,7 @@ using MLAPI.Messaging;
 using MLAPI.Serialization.Pooled;
 using MLAPI.Transports;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace MLAPI
 {
@@ -20,13 +21,39 @@ namespace MLAPI
     [DisallowMultipleComponent]
     public sealed class NetworkObject : MonoBehaviour
     {
+        internal uint GlobalObjectIdHash
+        {
+            // Get the globalObjectIdHash except the first bit (override bit)
+            get => globalObjectIdHash & ((uint.MaxValue << 1) >> 1);
+            set
+            {
+                if (value == 0)
+                {
+                    // Reset the objectId. Setting this to 0 returns it to it's "natural" state.
+                    globalObjectIdHash = 0;
+                }
+                else
+                {
+                    // Set the globalObjectIdHash but replace the first bit with a 1 (override bit)
+                    globalObjectIdHash = (value | (1U << 31));
+                }
+            }
+        }
+
         [HideInInspector]
         [SerializeField]
-        internal uint GlobalObjectIdHash;
+        [FormerlySerializedAs("GlobalObjectIdHash")]
+        private uint globalObjectIdHash;
 
 #if UNITY_EDITOR
         private void OnValidate()
         {
+            if ((globalObjectIdHash & (1U << 31)) >> 31 == 1)
+            {
+                // If the first bit in the ObjectIdHash is 1, it's a overriden value and should not be naturally (re)generated.
+                return;
+            }
+
             if (UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode && !NetworkManager.IsTestRun)
             {
                 // do NOT override GlobalObjectIdHash while getting into PlayMode in the Editor
@@ -34,7 +61,9 @@ namespace MLAPI
             }
 
             var globalObjectIdString = UnityEditor.GlobalObjectId.GetGlobalObjectIdSlow(this).ToString();
-            GlobalObjectIdHash = XXHash.Hash32(globalObjectIdString);
+
+            // Shift hash by one bit. This results in the first bit being set to 0 (indicating this is a naturally generated value as opposed to a overriden value which should not be touched)
+            globalObjectIdHash = XXHash.Hash32(globalObjectIdString) >> 1;
         }
 #endif
 
