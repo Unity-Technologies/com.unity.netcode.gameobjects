@@ -42,7 +42,6 @@ namespace MLAPI
 
         [HideInInspector]
         [SerializeField]
-        [FormerlySerializedAs("GlobalObjectIdHash")]
         private uint globalObjectIdHash;
 
 #if UNITY_EDITOR
