@@ -33,6 +33,12 @@ namespace MLAPI
                 return;
             }
 
+            if (GlobalObjectIdHash != default)
+            {
+                // This hash is already generated. Do not regenerate it
+                return;
+            }
+
             var globalObjectIdString = UnityEditor.GlobalObjectId.GetGlobalObjectIdSlow(this).ToString();
             GlobalObjectIdHash = XXHash.Hash32(globalObjectIdString);
         }
