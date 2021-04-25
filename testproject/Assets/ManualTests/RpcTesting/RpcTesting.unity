@@ -478,7 +478,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fa32b4a74f166fd44bd2cf187de1c5d8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_SceneMenuToLoad: {fileID: 11400000, guid: b31a2686a77cc4c489d6bde3a5f3c114, type: 2}
+  m_SceneMenuToLoad: {fileID: 11400000, guid: 4a3cdce12e998384f8aca207b5a2c700, type: 2}
 --- !u!114 &964909097
 MonoBehaviour:
   m_ObjectHideFlags: 0

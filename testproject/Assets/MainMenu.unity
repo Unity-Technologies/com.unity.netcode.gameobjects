@@ -1989,9 +1989,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_SceneMenus:
-  - {fileID: 11400000, guid: 998045a93d07153408dbf9e54053b9f5, type: 2}
-  - {fileID: 11400000, guid: b31a2686a77cc4c489d6bde3a5f3c114, type: 2}
-  SceneMenusDropDownList: {fileID: 463394874}
+  - {fileID: 11400000, guid: c10d995498e0c514a853c3506031d3fb, type: 2}
+  - {fileID: 11400000, guid: 4a3cdce12e998384f8aca207b5a2c700, type: 2}
+  m_SceneMenusDropDownList: {fileID: 463394874}
+  m_OptionsList:
+    m_Options: []
   HorizontalResolution: 1280
   VerticalResolution: 720
 --- !u!114 &8786710034940264813

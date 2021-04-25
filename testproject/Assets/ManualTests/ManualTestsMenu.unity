@@ -240,6 +240,12 @@ PrefabInstance:
       propertyPath: m_Name
       value: ExitButton
       objectReference: {fileID: 0}
+    - target: {fileID: 5266522511616468950, guid: 3200770c16e3b2b4ebe7f604154faac7,
+        type: 3}
+      propertyPath: m_SceneMenuToLoad
+      value: 
+      objectReference: {fileID: 11400000, guid: 0c59fa26bc04c0f43b7487b42bca86da,
+        type: 2}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 3200770c16e3b2b4ebe7f604154faac7, type: 3}
 --- !u!224 &742723029 stripped
@@ -907,25 +913,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 307394a23dd73c543a987d6e26afedad, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_AvailableScenes: []
-  m_ScenesToLoad:
-  - Scene: {fileID: 102900000, guid: 1c2375a896b2e8c4a841aa61224b8494, type: 3}
-    SceneType: 1
-  - Scene: {fileID: 102900000, guid: 79c2bf7d6b7a06a42a94982aaf1904d8, type: 3}
-    SceneType: 0
-  - Scene: {fileID: 102900000, guid: 637ab8340e96a2949adfe5bfdd42b924, type: 3}
-    SceneType: 0
-  - Scene: {fileID: 102900000, guid: 931469794d88a874998f1d5edd265522, type: 3}
-    SceneType: 1
-  SceneDropDownList: {fileID: 8786710035000454136}
-  HorizontalResolution: 1280
-  VerticalResolution: 720
+  m_SceneMenus:
+  - {fileID: 11400000, guid: d8c6d81e6a2574f4aa66a10aeb02f946, type: 2}
+  - {fileID: 11400000, guid: 50c51a066c0971b49ab65929d5ba9630, type: 2}
+  m_SceneMenusDropDownList: {fileID: 8786710035000454136}
   m_OptionsList:
     m_Options:
     - m_Text: SceneTransitioningTest
       m_Image: {fileID: 0}
     - m_Text: RpcTesting
       m_Image: {fileID: 0}
+  HorizontalResolution: 1280
+  VerticalResolution: 720
 --- !u!114 &8786710035000454136
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1627,8 +1626,8 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 8786710034940264812}
-        m_TargetAssemblyTypeName: MainMenuManager, Core
-        m_MethodName: OnLoadSelectedScene
+        m_TargetAssemblyTypeName: MenuManager`1[[SceneReference, Assembly-CSharp
+        m_MethodName: SelectMenuScene
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}

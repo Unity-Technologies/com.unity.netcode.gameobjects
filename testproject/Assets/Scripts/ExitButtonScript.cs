@@ -5,7 +5,7 @@ using MLAPI;
 public class ExitButtonScript : MonoBehaviour
 {
     [SerializeField]
-    private SceneMenuReference m_SceneMenuToLoad;
+    private MenuReference m_SceneMenuToLoad;
 
     /// <summary>
     /// A very basic way to exit back to the first scene in the build settings
@@ -29,9 +29,9 @@ public class ExitButtonScript : MonoBehaviour
             Destroy(NetworkManager.Singleton);
         }
 
-        if (m_SceneMenuToLoad != null && m_SceneMenuToLoad.SceneName != string.Empty)
+        if (m_SceneMenuToLoad != null && m_SceneMenuToLoad.GetReferencedScenes()[0] != string.Empty)
         {           
-            SceneManager.LoadSceneAsync(m_SceneMenuToLoad.SceneName, LoadSceneMode.Single);
+            SceneManager.LoadSceneAsync(m_SceneMenuToLoad.GetReferencedScenes()[0], LoadSceneMode.Single);
         }
         else
         {

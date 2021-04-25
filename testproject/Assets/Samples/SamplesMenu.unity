@@ -863,8 +863,8 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 8786710034940264812}
-        m_TargetAssemblyTypeName: SceneMenuManager, Assembly-CSharp
-        m_MethodName: OnLoadSelectedScene
+        m_TargetAssemblyTypeName: MenuManager`1[[SceneReference, Assembly-CSharp
+        m_MethodName: SelectMenuScene
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -2494,23 +2494,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 307394a23dd73c543a987d6e26afedad, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_AvailableScenes: []
-  m_ScenesToLoad:
-  - Scene: {fileID: 102900000, guid: 037562c9b1a469f498dfb34256ddf86f, type: 3}
-    SceneType: 0
-  - Scene: {fileID: 102900000, guid: 9fc0d4010bbf28b4594072e72b8655ab, type: 3}
-    SceneType: 1
-  - Scene: {fileID: 102900000, guid: 619b9eba5892d5a4e9dd1d6cafb0059a, type: 3}
-    SceneType: 1
-  SceneDropDownList: {fileID: 1362704539}
-  HorizontalResolution: 1280
-  VerticalResolution: 720
+  m_SceneMenus:
+  - {fileID: 11400000, guid: 21aae92071ad50448a45b013d8346639, type: 2}
+  - {fileID: 11400000, guid: 138603ab28f532140b48a57bea0e54b0, type: 2}
+  m_SceneMenusDropDownList: {fileID: 1362704539}
   m_OptionsList:
     m_Options:
     - m_Text: SampleScene
       m_Image: {fileID: 0}
     - m_Text: EnableDisableSceneNetworkObject
       m_Image: {fileID: 0}
+  HorizontalResolution: 1280
+  VerticalResolution: 720
 --- !u!114 &8786710035000454136
 MonoBehaviour:
   m_ObjectHideFlags: 0

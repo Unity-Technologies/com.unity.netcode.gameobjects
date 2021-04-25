@@ -6,7 +6,6 @@ using MLAPI.Configuration;
 using MLAPI.Exceptions;
 using MLAPI.Hashing;
 using MLAPI.Logging;
-using MLAPI.Messaging;
 using MLAPI.Serialization.Pooled;
 using MLAPI.Transports;
 using UnityEngine;
@@ -32,7 +31,9 @@ namespace MLAPI
                 
                 if (gameObject.scene.name != gameObject.name)
                 {
+#if GLOBALOBJECTIDHASH_LOGGING
                     Debug.Log($"{gameObject.name}:{nameof(NetworkObject.OnValidate)}-----{nameof(gameObject.scene)}:{gameObject.scene.name}");
+#endif
                     return;
                 }
                 else
@@ -66,7 +67,6 @@ namespace MLAPI
                 Debug.Log($"{gameObject.name}:{nameof(NetworkObject.OnValidate)}-----{nameof(UnityEditor.EditorApplication.isUpdating)}");
             }
 #endif
-
             /// Only when we are changing playing state while not considered playing and not executing a test run  (tranistioning to a stop or start but not testing) 
             /// =or=
             /// We are doing a simple update
@@ -86,9 +86,9 @@ namespace MLAPI
         }
 #endif
 
-            /// <summary>
-            /// Gets the NetworkManager that owns this NetworkObject instance
-            /// </summary>
+        /// <summary>
+        /// Gets the NetworkManager that owns this NetworkObject instance
+        /// </summary>
         public NetworkManager NetworkManager => NetworkManager.Singleton;
 
         /// <summary>

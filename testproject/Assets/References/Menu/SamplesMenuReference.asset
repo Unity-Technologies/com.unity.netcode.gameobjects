@@ -9,9 +9,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 39a16938ffb5cd846a9f6df7a686a9c4, type: 3}
+  m_Script: {fileID: 11500000, guid: 4c5b790462d4f3541a04d89f73d3f15a, type: 3}
   m_Name: SamplesMenuReference
   m_EditorClassIdentifier: 
-  m_Scene: {fileID: 102900000, guid: 037562c9b1a469f498dfb34256ddf86f, type: 3}
-  SceneName: SamplesMenu
-  DisplayName: Samples
+  MenuScene: {fileID: 102900000, guid: 037562c9b1a469f498dfb34256ddf86f, type: 3}
+  m_DisplayName: Samples Menu
+  m_ReferencedScenes:
+  - SamplesMenu

@@ -808,7 +808,7 @@ PrefabInstance:
         type: 3}
       propertyPath: m_SceneMenuToLoad
       value: 
-      objectReference: {fileID: 11400000, guid: 998045a93d07153408dbf9e54053b9f5,
+      objectReference: {fileID: 11400000, guid: c10d995498e0c514a853c3506031d3fb,
         type: 2}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 3200770c16e3b2b4ebe7f604154faac7, type: 3}
@@ -1611,7 +1611,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 00cf8ac777c8c42e8967157f70fbfcbf, type: 2}
+  - {fileID: 2100000, guid: 39357ab8089f6ad4f8c6652af74fd9f3, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0

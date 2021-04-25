@@ -10,8 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 39a16938ffb5cd846a9f6df7a686a9c4, type: 3}
-  m_Name: ManualTestsMenuReference
+  m_Name: SampleSceneReference
   m_EditorClassIdentifier: 
-  m_Scene: {fileID: 102900000, guid: 197ba614e9ae3054a8dea7b2bdacad6a, type: 3}
-  SceneName: MTTManualTests
-  DisplayName: Manual Tests
+  SceneToReference: {fileID: 102900000, guid: 9fc0d4010bbf28b4594072e72b8655ab, type: 3}
+  m_DisplayName: Sample Scene
+  m_IncludedScenes: []
+  m_ReferencedScenes:
+  - SampleScene
