@@ -3,7 +3,6 @@
     "rootNamespace": "",
     "references": [
         "Unity.Collections",
-        "Unity.Networking.Transport",
         "Unity.Jobs",
         "Unity.Burst",
         "Unity.Multiplayer.MLAPI.Runtime"
