@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: EnableDisableNetworkObjectReference
   m_EditorClassIdentifier: 
   SceneToReference: {fileID: 102900000, guid: 619b9eba5892d5a4e9dd1d6cafb0059a, type: 3}
-  m_DisplayName: Enable Disalbe NetworkObject Components
   m_IncludedScenes: []
+  m_DisplayName: 'Enable Disable In-Scene NetworkObject '
   m_ReferencedScenes:
   - EnableDisableSceneNetworkObject

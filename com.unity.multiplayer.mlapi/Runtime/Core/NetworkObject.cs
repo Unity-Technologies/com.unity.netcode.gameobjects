@@ -26,29 +26,9 @@ namespace MLAPI
 #if UNITY_EDITOR
         private void OnValidate()
         {
-            if(gameObject.scene != null && !string.IsNullOrEmpty(gameObject.scene.name))
-            {
-                
-                if (gameObject.scene.name != gameObject.name)
-                {
-#if GLOBALOBJECTIDHASH_LOGGING
-                    Debug.Log($"{gameObject.name}:{nameof(NetworkObject.OnValidate)}-----{nameof(gameObject.scene)}:{gameObject.scene.name}");
-#endif
-                    return;
-                }
-                else
-                {
-                    //If we are the exact same name as our scene, then we are viewing a prefab
-                    if (GlobalObjectIdHash != 0)
-                    {
-                        return;
-                    }
-                }
-            }
-
 #if GLOBALOBJECTIDHASH_LOGGING
             var previousGobalObjectIdHash = GlobalObjectIdHash;
-            string warningChanged = $"{nameof(GlobalObjectIdHash)} changed from {GlobalObjectIdHash} to ";
+            string warningChanged = $"{gameObject.name}:{nameof(GlobalObjectIdHash)} changed from {GlobalObjectIdHash} to ";
             
             if (UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
             {
@@ -67,12 +47,57 @@ namespace MLAPI
                 Debug.Log($"{gameObject.name}:{nameof(NetworkObject.OnValidate)}-----{nameof(UnityEditor.EditorApplication.isUpdating)}");
             }
 #endif
+
+            //Source and In-Scene Prefab GlobalObjectIdHash Synchronization:
+            //This assures in-scene placed prefabs cannot generate more than one unique GlobalObjectIdHash when using an editor to connect to a build instance.
+#if !INSCENEPREFABSYNCHRONIZATION
+            var isInScenePerefab = false;
+            var instanceStatus = UnityEditor.PrefabUtility.GetPrefabInstanceStatus(this);
+
+            if (instanceStatus == UnityEditor.PrefabInstanceStatus.Connected)
+            {
+                var originalPrefab = UnityEditor.PrefabUtility.GetCorrespondingObjectFromOriginalSource(gameObject);
+                var originalPrefabNetworkObject = originalPrefab.GetComponent<NetworkObject>();
+                if (originalPrefabNetworkObject.GlobalObjectIdHash != GlobalObjectIdHash)
+                {
+                    return;
+                }
+#if GLOBALOBJECTIDHASH_LOGGING
+                else
+                {
+                    Debug.Log($"{gameObject.name}:Source Prefab GlobalObjectIdHash {originalPrefabNetworkObject.GlobalObjectIdHash} is the same as the current instance {GlobalObjectIdHash}.  [Update GlobalObjectIdHash]");
+                }
+#endif
+            }
+
+            //Source Prefab Check
+            if (gameObject.scene != null && !string.IsNullOrEmpty(gameObject.scene.name))
+            {
+                isInScenePerefab = true;
+                if (gameObject.scene.name == gameObject.name)
+                {
+                    //If we are the exact same name as our scene, then we are viewing a prefab
+                    if (GlobalObjectIdHash != 0)
+                    {
+                        return;
+                    }
+                }
+            }
+
+#endif
+
+
             /// Only when we are changing playing state while not considered playing and not executing a test run  (tranistioning to a stop or start but not testing) 
             /// =or=
             /// We are doing a simple update
             if (UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode && !UnityEditor.EditorApplication.isPlaying && !NetworkManager.IsTestRun || UnityEditor.EditorApplication.isUpdating)
             {
                 // do NOT override GlobalObjectIdHash while getting into PlayMode in the Editor
+                return;
+            }
+
+            if(UnityEditor.EditorApplication.isPlaying && isInScenePerefab)
+            {
                 return;
             }
             
@@ -86,9 +111,9 @@ namespace MLAPI
         }
 #endif
 
-        /// <summary>
-        /// Gets the NetworkManager that owns this NetworkObject instance
-        /// </summary>
+            /// <summary>
+            /// Gets the NetworkManager that owns this NetworkObject instance
+            /// </summary>
         public NetworkManager NetworkManager => NetworkManager.Singleton;
 
         /// <summary>
