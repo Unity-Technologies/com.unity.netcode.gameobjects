@@ -46,5 +46,6 @@
   "testables": [
     "com.unity.multiplayer.mlapi",
     "com.unity.multiplayer.transport.utp"
-  ]
+  ],
+  "registry": "https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-candidates"
 }
