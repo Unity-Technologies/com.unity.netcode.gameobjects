@@ -67,7 +67,8 @@ namespace MLAPI.SceneManagement
         public event OnAllClientsLoadedSceneDelegate OnAllClientsLoadedScene;
 
         /// <summary>
-        /// Event that is invoked on the clients after all clients have successfully completed scene transition or timed out
+        /// Event that is invoked on the clients after all clients have successfully completed scene transition or timed out.
+        /// This event relies on MessageSender, which doesn't send events from the server to itself (which is the case for a Host client).
         /// </summary>
         public event AllClientsReadyDelegate OnAllClientsReady; 
 
