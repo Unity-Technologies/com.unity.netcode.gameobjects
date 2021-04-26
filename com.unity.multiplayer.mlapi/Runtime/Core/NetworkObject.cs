@@ -26,11 +26,13 @@ namespace MLAPI
 #if UNITY_EDITOR
         private void OnValidate()
         {
+            // do NOT regenerate GlobalObjectIdHash for NetworkPrefabs while Editor is in PlayMode
             if (UnityEditor.EditorApplication.isPlaying && !string.IsNullOrEmpty(gameObject.scene.name))
             {
                 return;
             }
 
+            // do NOT regenerate GlobalObjectIdHash if the Editor is transitining into or out of the PlayMode
             if (!UnityEditor.EditorApplication.isPlaying && UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
             {
                 return;
