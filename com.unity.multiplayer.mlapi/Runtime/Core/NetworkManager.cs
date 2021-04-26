@@ -731,12 +731,10 @@ namespace MLAPI
                 Application.runInBackground = true;
             }
 
-            if (Singleton != null && Singleton != this)
+            if (Singleton == null)
             {
-                return;
+                SetSingleton();
             }
-
-            SetSingleton();
         }
 
         private void OnDestroy()
