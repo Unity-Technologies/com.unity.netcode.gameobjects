@@ -352,9 +352,4 @@ public class MyCustomPrefabSpawnHandler : INetworkPrefabInstanceHandler
     {
         m_PrefabPool = objectPool;
     }
-
-    public void Dispose()
-    {
-
-    }
 }
