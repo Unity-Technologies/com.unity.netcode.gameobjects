@@ -81,7 +81,7 @@ namespace MLAPI.Messaging
                 }
                 else
                 {
-                    NetworkManager.HandleApproval(clientId, NetworkManager.NetworkConfig.CreatePlayerPrefab, null, true, null, null);
+                    NetworkManager.HandleApproval(clientId, NetworkManager.NetworkConfig.PlayerPrefab != null, null, true, null, null);
                 }
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
@@ -107,7 +107,7 @@ namespace MLAPI.Messaging
                     sceneSwitchProgressGuid = new Guid(reader.ReadByteArray());
                 }
 
-                bool sceneSwitch = NetworkManager.NetworkConfig.EnableSceneManagement && NetworkSceneManager.HasSceneMismatch(sceneIndex);
+                bool sceneSwitch = NetworkManager.NetworkConfig.EnableSceneManagement && NetworkManager.SceneManager.HasSceneMismatch(sceneIndex);
 
                 float netTime = reader.ReadSinglePacked();
                 NetworkManager.UpdateNetworkTime(clientId, netTime, receiveTime, true);
@@ -119,7 +119,7 @@ namespace MLAPI.Messaging
                 {
                     using (var continuationReader = PooledNetworkReader.Get(continuationStream))
                     {
-                        if (!NetworkManager.Singleton.NetworkConfig.EnableSceneManagement)
+                        if (!NetworkManager.NetworkConfig.EnableSceneManagement)
                         {
                             NetworkManager.SpawnManager.DestroySceneObjects();
                         }
@@ -153,8 +153,8 @@ namespace MLAPI.Messaging
                                 rot = Quaternion.Euler(continuationReader.ReadSinglePacked(), continuationReader.ReadSinglePacked(), continuationReader.ReadSinglePacked());
                             }
 
-                            var networkObject = NetworkManager.Singleton.SpawnManager.CreateLocalNetworkObject(softSync, prefabHash, ownerId, parentNetworkId, pos, rot);
-                            NetworkManager.Singleton.SpawnManager.SpawnNetworkObjectLocally(networkObject, networkId, softSync, isPlayerObject, ownerId, continuationStream, false, 0, true, false);
+                            var networkObject = NetworkManager.SpawnManager.CreateLocalNetworkObject(softSync, prefabHash, ownerId, parentNetworkId, pos, rot);
+                            NetworkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, networkId, softSync, isPlayerObject, ownerId, continuationStream, false, 0, true, false);
 
                             Queue<BufferManager.BufferedMessage> bufferQueue = NetworkManager.BufferManager.ConsumeBuffersForNetworkId(networkId);
 
@@ -193,7 +193,7 @@ namespace MLAPI.Messaging
 
                     onSceneLoaded = (oldScene, newScene) => { OnSceneLoadComplete(); };
                     SceneManager.activeSceneChanged += onSceneLoaded;
-                    NetworkSceneManager.OnFirstSceneSwitchSync(sceneIndex, sceneSwitchProgressGuid);
+                    m_NetworkManager.SceneManager.OnFirstSceneSwitchSync(sceneIndex, sceneSwitchProgressGuid);
                 }
                 else
                 {
@@ -237,8 +237,8 @@ namespace MLAPI.Messaging
                 var hasPayload = reader.ReadBool();
                 var payLoadLength = hasPayload ? reader.ReadInt32Packed() : 0;
 
-                var networkObject = NetworkManager.Singleton.SpawnManager.CreateLocalNetworkObject(softSync, prefabHash, ownerClientId, parentNetworkId, pos, rot);
-                NetworkManager.Singleton.SpawnManager.SpawnNetworkObjectLocally(networkObject, networkId, softSync, isPlayerObject, ownerClientId, stream, hasPayload, payLoadLength, true, false);
+                var networkObject = NetworkManager.SpawnManager.CreateLocalNetworkObject(softSync, prefabHash, ownerClientId, parentNetworkId, pos, rot);
+                NetworkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, networkId, softSync, isPlayerObject, ownerClientId, stream, hasPayload, payLoadLength, true, false);
 
                 Queue<BufferManager.BufferedMessage> bufferQueue = NetworkManager.BufferManager.ConsumeBuffersForNetworkId(networkId);
 
@@ -287,7 +287,7 @@ namespace MLAPI.Messaging
                 objectBuffer.CopyUnreadFrom(stream);
                 objectBuffer.Position = 0;
 
-                NetworkSceneManager.OnSceneSwitch(sceneIndex, switchSceneGuid, objectBuffer);
+                m_NetworkManager.SceneManager.OnSceneSwitch(sceneIndex, switchSceneGuid, objectBuffer);
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleSwitchScene.End();
@@ -301,7 +301,7 @@ namespace MLAPI.Messaging
 #endif
             using (var reader = PooledNetworkReader.Get(stream))
             {
-                NetworkSceneManager.OnClientSwitchSceneCompleted(clientId, new Guid(reader.ReadByteArray()));
+                m_NetworkManager.SceneManager.OnClientSwitchSceneCompleted(clientId, new Guid(reader.ReadByteArray()));
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleClientSwitchSceneCompleted.End();

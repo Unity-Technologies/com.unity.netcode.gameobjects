@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.CompilerServices;
@@ -5,7 +6,6 @@ using MLAPI.Configuration;
 using MLAPI.Exceptions;
 using MLAPI.Hashing;
 using MLAPI.Logging;
-using MLAPI.Messaging;
 using MLAPI.Serialization.Pooled;
 using MLAPI.Transports;
 using UnityEngine;
@@ -26,9 +26,15 @@ namespace MLAPI
 #if UNITY_EDITOR
         private void OnValidate()
         {
-            if (UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode && !NetworkManager.IsTestRun)
+            // do NOT regenerate GlobalObjectIdHash for NetworkPrefabs while Editor is in PlayMode
+            if (UnityEditor.EditorApplication.isPlaying && !string.IsNullOrEmpty(gameObject.scene.name))
             {
-                // do NOT override GlobalObjectIdHash while getting into PlayMode in the Editor
+                return;
+            }
+
+            // do NOT regenerate GlobalObjectIdHash if Editor is transitining into or out of PlayMode
+            if (!UnityEditor.EditorApplication.isPlaying && UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
+            {
                 return;
             }
 
@@ -218,6 +224,13 @@ namespace MLAPI
                 throw new NotServerException("Only server can change visibility");
             }
 
+            if (networkObjects == null || networkObjects.Count == 0)
+            {
+                throw new ArgumentNullException("At least one NetworkObject has to be provided");
+            }
+
+            NetworkManager networkManager = networkObjects[0].NetworkManager;
+
             // Do the safety loop first to prevent putting the MLAPI in an invalid state.
             for (int i = 0; i < networkObjects.Count; i++)
             {
@@ -229,6 +242,11 @@ namespace MLAPI
                 if (networkObjects[i].Observers.Contains(clientId))
                 {
                     throw new VisibilityChangeException($"{nameof(NetworkObject)} with NetworkId: {networkObjects[i].NetworkObjectId} is already visible");
+                }
+
+                if (networkObjects[i].NetworkManager != networkManager)
+                {
+                    throw new ArgumentNullException("All " + nameof(NetworkObject) + "s must belong to the same " + nameof(NetworkManager));
                 }
             }
 
@@ -245,7 +263,7 @@ namespace MLAPI
                     NetworkManager.Singleton.SpawnManager.WriteSpawnCallForObject(buffer, clientId, networkObjects[i], payload);
                 }
 
-                InternalMessageSender.Send(clientId, NetworkConstants.ADD_OBJECTS, NetworkChannel.Internal, buffer);
+                networkManager.MessageSender.Send(clientId, NetworkConstants.ADD_OBJECTS, NetworkChannel.Internal, buffer);
             }
         }
 
@@ -284,7 +302,7 @@ namespace MLAPI
             {
                 writer.WriteUInt64Packed(NetworkObjectId);
 
-                InternalMessageSender.Send(clientId, NetworkConstants.DESTROY_OBJECT, NetworkChannel.Internal, buffer);
+                NetworkManager.MessageSender.Send(clientId, NetworkConstants.DESTROY_OBJECT, NetworkChannel.Internal, buffer);
             }
         }
 
@@ -305,6 +323,13 @@ namespace MLAPI
                 throw new VisibilityChangeException("Cannot hide an object from the server");
             }
 
+            if (networkObjects == null || networkObjects.Count == 0)
+            {
+                throw new ArgumentNullException("At least one NetworkObject has to be provided");
+            }
+
+            NetworkManager networkManager = networkObjects[0].NetworkManager;
+
             // Do the safety loop first to prevent putting the MLAPI in an invalid state.
             for (int i = 0; i < networkObjects.Count; i++)
             {
@@ -316,6 +341,11 @@ namespace MLAPI
                 if (!networkObjects[i].Observers.Contains(clientId))
                 {
                     throw new VisibilityChangeException($"{nameof(NetworkObject)} with {nameof(NetworkObjectId)}: {networkObjects[i].NetworkObjectId} is already hidden");
+                }
+
+                if (networkObjects[i].NetworkManager != networkManager)
+                {
+                    throw new ArgumentNullException("All " + nameof(NetworkObject) + "s must belong to the same " + nameof(NetworkManager));
                 }
             }
 
@@ -332,7 +362,7 @@ namespace MLAPI
                     writer.WriteUInt64Packed(networkObjects[i].NetworkObjectId);
                 }
 
-                InternalMessageSender.Send(clientId, NetworkConstants.DESTROY_OBJECTS, NetworkChannel.Internal, buffer);
+                networkManager.MessageSender.Send(clientId, NetworkConstants.DESTROY_OBJECTS, NetworkChannel.Internal, buffer);
             }
         }
 

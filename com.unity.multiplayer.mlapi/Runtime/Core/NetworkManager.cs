@@ -4,9 +4,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using UnityEngine;
-using System.Linq;
 using MLAPI.Logging;
-using UnityEngine.SceneManagement;
 using MLAPI.Configuration;
 using MLAPI.Internal;
 using MLAPI.Profiling;
@@ -96,10 +94,14 @@ namespace MLAPI
 
         public CustomMessagingManager CustomMessagingManager { get; private set; }
 
+        public NetworkSceneManager SceneManager { get; private set; }
+
         internal BufferManager BufferManager { get; private set; }
 
         // Has to have setter for tests
         internal IInternalMessageHandler MessageHandler { get; set; }
+
+        internal InternalMessageSender MessageSender { get; set; }
 
         /// <summary>
         /// Gets the networkId of the server
@@ -207,13 +209,11 @@ namespace MLAPI
         internal static event Action OnSingletonReady;
 
 #if UNITY_EDITOR
-        internal static bool IsTestRun = false;
-
         private void OnValidate()
         {
             if (NetworkConfig == null)
             {
-                return; //May occur when the component is added
+                return; // May occur when the component is added
             }
 
             if (GetComponentInChildren<NetworkObject>() != null)
@@ -224,7 +224,7 @@ namespace MLAPI
                 }
             }
 
-            var activeScene = SceneManager.GetActiveScene();
+            var activeScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
             var activeSceneName = activeScene.name;
             if (!NetworkConfig.RegisteredScenes.Contains(activeSceneName))
             {
@@ -244,39 +244,58 @@ namespace MLAPI
                 };
             }
 
+            // During OnValidate we will always clear out NetworkPrefabOverrideLinks and rebuild it
+            NetworkConfig.NetworkPrefabOverrideLinks.Clear();
+
+            // Check network prefabs and assign to dictionary for quick look up
             for (int i = 0; i < NetworkConfig.NetworkPrefabs.Count; i++)
             {
                 if (NetworkConfig.NetworkPrefabs[i] != null && NetworkConfig.NetworkPrefabs[i].Prefab != null)
                 {
-                    if (NetworkConfig.NetworkPrefabs[i].Prefab.GetComponent<NetworkObject>() == null)
+                    var networkObject = NetworkConfig.NetworkPrefabs[i].Prefab.GetComponent<NetworkObject>();
+                    if (networkObject == null)
                     {
                         if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                         {
                             NetworkLog.LogWarning($"{nameof(NetworkPrefab)} [{i}] does not have a {nameof(NetworkObject)} component");
                         }
                     }
+                    else
+                    {
+                        // Default to the standard NetworkPrefab.Prefab's NetworkObject first
+                        var globalObjectIdHash = networkObject.GlobalObjectIdHash;
+
+                        // Now check to see if it has an override
+                        switch (NetworkConfig.NetworkPrefabs[i].Override)
+                        {
+                            case NetworkPrefabOverride.Prefab:
+                                {
+                                    if (NetworkConfig.NetworkPrefabs[i].SourcePrefabToOverride == null && NetworkConfig.NetworkPrefabs[i].Prefab != null)
+                                    {
+                                        NetworkConfig.NetworkPrefabs[i].SourcePrefabToOverride = NetworkConfig.NetworkPrefabs[i].Prefab;
+                                    }
+                                    globalObjectIdHash = NetworkConfig.NetworkPrefabs[i].SourcePrefabToOverride.GetComponent<NetworkObject>().GlobalObjectIdHash;
+                                }
+                                break;
+                            case NetworkPrefabOverride.Hash:
+                                globalObjectIdHash = NetworkConfig.NetworkPrefabs[i].SourceHashToOverride;
+                                break;
+                        }
+
+                        // Add to the NetworkPrefabOverrideLinks or handle a new (blank) entries
+                        if (!NetworkConfig.NetworkPrefabOverrideLinks.ContainsKey(globalObjectIdHash))
+                        {
+                            NetworkConfig.NetworkPrefabOverrideLinks.Add(globalObjectIdHash, NetworkConfig.NetworkPrefabs[i]);
+                        }
+                        else
+                        {
+                            // Duplicate entries can happen when adding a new entry into a list of existing entries
+                            // Either this is user error or a new entry, either case we replace it with a new, blank, NetworkPrefab under this condition
+                            NetworkConfig.NetworkPrefabs[i] = new NetworkPrefab();
+                        }
+                    }
                 }
             }
-
-            int playerPrefabCount = NetworkConfig.NetworkPrefabs.Count(x => x.IsPlayer);
-
-            if (playerPrefabCount == 0 && !NetworkConfig.ConnectionApproval && NetworkConfig.CreatePlayerPrefab)
-            {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                {
-                    NetworkLog.LogWarning($"There is no {nameof(NetworkPrefab)} marked as a {nameof(NetworkPrefab.IsPlayer)}");
-                }
-            }
-            else if (playerPrefabCount > 1)
-            {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                {
-                    NetworkLog.LogWarning($"Only one {nameof(NetworkPrefab)} can be marked as a {nameof(NetworkPrefab.IsPlayer)}");
-                }
-            }
-
-            var networkPrefab = NetworkConfig.NetworkPrefabs.FirstOrDefault(x => x.IsPlayer);
-            NetworkConfig.PlayerPrefabHash = networkPrefab?.Hash ?? (uint)0;
         }
 #endif
 
@@ -301,7 +320,9 @@ namespace MLAPI
 
             CustomMessagingManager = new CustomMessagingManager(this);
 
-            BufferManager = new BufferManager();
+            BufferManager = new BufferManager(this);
+
+            SceneManager = new NetworkSceneManager(this);
 
             if (MessageHandler == null)
             {
@@ -309,10 +330,7 @@ namespace MLAPI
                 MessageHandler = new InternalMessageHandler(this);
             }
 
-            NetworkSceneManager.RegisteredSceneNames.Clear();
-            NetworkSceneManager.SceneIndexToString.Clear();
-            NetworkSceneManager.SceneNameToIndex.Clear();
-            NetworkSceneManager.SceneSwitchProgresses.Clear();
+            MessageSender = new InternalMessageSender(this);
 
             if (NetworkConfig.NetworkTransport == null)
             {
@@ -324,7 +342,7 @@ namespace MLAPI
                 return;
             }
 
-            //This 'if' should never enter
+            // This 'if' should never enter
             if (NetworkTickSystem != null)
             {
                 NetworkTickSystem.Dispose();
@@ -333,7 +351,7 @@ namespace MLAPI
 
             NetworkTickSystem = new NetworkTickSystem(NetworkConfig.NetworkTickIntervalSec);
 
-            //This should never happen, but in the event that it does there should be (at a minimum) a unity error logged.
+            // This should never happen, but in the event that it does there should be (at a minimum) a unity error logged.
             if (RpcQueueContainer != null)
             {
                 UnityEngine.Debug.LogError("Init was invoked, but rpcQueueContainer was already initialized! (destroying previous instance)");
@@ -341,8 +359,8 @@ namespace MLAPI
                 RpcQueueContainer = null;
             }
 
-            //The RpcQueueContainer must be initialized within the Init method ONLY
-            //It should ONLY be shutdown and destroyed in the Shutdown method (other than just above)
+            // The RpcQueueContainer must be initialized within the Init method ONLY
+            // It should ONLY be shutdown and destroyed in the Shutdown method (other than just above)
             RpcQueueContainer = new RpcQueueContainer(this);
 
             // Register INetworkUpdateSystem (always register this after rpcQueueContainer has been instantiated)
@@ -355,31 +373,106 @@ namespace MLAPI
 
                 for (int i = 0; i < NetworkConfig.RegisteredScenes.Count; i++)
                 {
-                    NetworkSceneManager.RegisteredSceneNames.Add(NetworkConfig.RegisteredScenes[i]);
-                    NetworkSceneManager.SceneIndexToString.Add((uint)i, NetworkConfig.RegisteredScenes[i]);
-                    NetworkSceneManager.SceneNameToIndex.Add(NetworkConfig.RegisteredScenes[i], (uint)i);
+                    SceneManager.RegisteredSceneNames.Add(NetworkConfig.RegisteredScenes[i]);
+                    SceneManager.SceneIndexToString.Add((uint)i, NetworkConfig.RegisteredScenes[i]);
+                    SceneManager.SceneNameToIndex.Add(NetworkConfig.RegisteredScenes[i], (uint)i);
                 }
 
-                NetworkSceneManager.SetCurrentSceneIndex();
+                SceneManager.SetCurrentSceneIndex();
             }
 
+            // This is used to remove entries not needed or invalid
+            var removeEmptyPrefabs = new List<int>();
+
+            // Always clear our prefab override links before building
+            NetworkConfig.NetworkPrefabOverrideLinks.Clear();
+
+            // Build the NetworkPrefabOverrideLinks dictionary
             for (int i = 0; i < NetworkConfig.NetworkPrefabs.Count; i++)
             {
                 if (NetworkConfig.NetworkPrefabs[i] == null || NetworkConfig.NetworkPrefabs[i].Prefab == null)
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
                     {
-                        NetworkLog.LogError($"{nameof(NetworkPrefab)} cannot be null ({nameof(NetworkPrefab)} at index: {i})");
+                        NetworkLog.LogWarning($"{nameof(NetworkPrefab)} cannot be null ({nameof(NetworkPrefab)} at index: {i})");
                     }
+
+                    // Provide the name of the prefab with issues so the user can more easily find the prefab and fix it
+                    UnityEngine.Debug.LogWarning($"{nameof(NetworkPrefab)} (\"{NetworkConfig.NetworkPrefabs[i].Prefab.name}\") will be removed and ignored.");
+                    removeEmptyPrefabs.Add(i);
+
+                    continue;
                 }
                 else if (NetworkConfig.NetworkPrefabs[i].Prefab.GetComponent<NetworkObject>() == null)
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
                     {
-                        NetworkLog.LogError($"{nameof(NetworkPrefab)} (\"{NetworkConfig.NetworkPrefabs[i].Prefab.name}\") is missing a {nameof(NetworkObject)} component");
+                        NetworkLog.LogWarning($"{nameof(NetworkPrefab)} (\"{NetworkConfig.NetworkPrefabs[i].Prefab.name}\") is missing a {nameof(NetworkObject)} component");
+                    }
+
+                    // Provide the name of the prefab with issues so the user can more easily find the prefab and fix it
+                    UnityEngine.Debug.LogWarning($"{nameof(NetworkPrefab)} (\"{NetworkConfig.NetworkPrefabs[i].Prefab.name}\") will be removed and ignored.");
+                    removeEmptyPrefabs.Add(i);
+
+                    continue;
+                }
+
+                var networkObject = NetworkConfig.NetworkPrefabs[i].Prefab.GetComponent<NetworkObject>();
+
+                // Assign the appropriate GlobalObjectIdHash to the appropriate NetworkPrefab
+                if (!NetworkConfig.NetworkPrefabOverrideLinks.ContainsKey(networkObject.GlobalObjectIdHash))
+                {
+                    switch (NetworkConfig.NetworkPrefabs[i].Override)
+                    {
+                        default:
+                        case NetworkPrefabOverride.None:
+                            NetworkConfig.NetworkPrefabOverrideLinks.Add(networkObject.GlobalObjectIdHash, NetworkConfig.NetworkPrefabs[i]);
+                            break;
+                        case NetworkPrefabOverride.Prefab:
+                            NetworkConfig.NetworkPrefabOverrideLinks.Add(NetworkConfig.NetworkPrefabs[i].SourcePrefabToOverride.GetComponent<NetworkObject>().GlobalObjectIdHash, NetworkConfig.NetworkPrefabs[i]);
+                            break;
+                        case NetworkPrefabOverride.Hash:
+                            NetworkConfig.NetworkPrefabOverrideLinks.Add(NetworkConfig.NetworkPrefabs[i].SourceHashToOverride, NetworkConfig.NetworkPrefabs[i]);
+                            break;
                     }
                 }
+                else
+                {
+                    // This should never happen, but in the case it somehow does log an error and remove the duplicate entry
+                    UnityEngine.Debug.LogError($"{nameof(NetworkPrefab)} (\"{NetworkConfig.NetworkPrefabs[i].Prefab.name}\") has a duplicate {nameof(NetworkObject.GlobalObjectIdHash)} {networkObject.GlobalObjectIdHash} entry! Removing entry from list!");
+                    removeEmptyPrefabs.Add(i);
+                }
             }
+
+            // If we have a player prefab, then we need to verify it is in the list of NetworkPrefabOverrideLinks for client side spawning.
+            if (NetworkConfig.PlayerPrefab != null)
+            {
+                var playerPrefabNetworkObject = NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>();
+                if (playerPrefabNetworkObject != null)
+                {
+                    //In the event there is no NetworkPrefab entry (i.e. no override for default player prefab)
+                    if (!NetworkConfig.NetworkPrefabOverrideLinks.ContainsKey(playerPrefabNetworkObject.GlobalObjectIdHash))
+                    {
+                        //Then add a new entry for the player prefab
+                        var playerNetworkPrefab = new NetworkPrefab();
+                        playerNetworkPrefab.Prefab = NetworkConfig.PlayerPrefab;
+                        NetworkConfig.NetworkPrefabs.Insert(0, playerNetworkPrefab);
+                        NetworkConfig.NetworkPrefabOverrideLinks.Add(playerPrefabNetworkObject.GlobalObjectIdHash, playerNetworkPrefab);
+                    }
+                }
+                else
+                {
+                    // Provide the name of the prefab with issues so the user can more easily find the prefab and fix it
+                    UnityEngine.Debug.LogError($"{nameof(NetworkConfig.PlayerPrefab)} (\"{NetworkConfig.PlayerPrefab.name}\") has no NetworkObject assigned to it!.");
+                }
+            }
+
+            // Clear out anything that is invalid or not used (for invalid entries we already logged warnings to the user earlier)
+            foreach (var networkPrefabIndexToRemove in removeEmptyPrefabs)
+            {
+                NetworkConfig.NetworkPrefabs.RemoveAt(networkPrefabIndexToRemove);
+            }
+            removeEmptyPrefabs.Clear();
 
             NetworkConfig.NetworkTransport.OnTransportEvent += HandleRawTransportPoll;
 
@@ -602,7 +695,7 @@ namespace MLAPI
             }
             else
             {
-                HandleApproval(ServerClientId, NetworkConfig.CreatePlayerPrefab, null, true, null, null);
+                HandleApproval(ServerClientId, NetworkConfig.PlayerPrefab != null, null, true, null, null);
             }
 
             SpawnManager.ServerSpawnSceneObjectsOnStartSweep();
@@ -698,9 +791,19 @@ namespace MLAPI
                 SpawnManager = null;
             }
 
+            if (SceneManager != null)
+            {
+                SceneManager = null;
+            }
+
             if (MessageHandler != null)
             {
                 MessageHandler = null;
+            }
+
+            if (MessageSender != null)
+            {
+                MessageSender = null;
             }
 
             if (CustomMessagingManager != null)
@@ -866,7 +969,7 @@ namespace MLAPI
                     writer.WriteByteArray(NetworkConfig.ConnectionData);
                 }
 
-                InternalMessageSender.Send(ServerClientId, NetworkConstants.CONNECTION_REQUEST, NetworkChannel.Internal, buffer);
+                MessageSender.Send(ServerClientId, NetworkConstants.CONNECTION_REQUEST, NetworkChannel.Internal, buffer);
             }
         }
 
@@ -1434,7 +1537,7 @@ namespace MLAPI
             using (var writer = PooledNetworkWriter.Get(buffer))
             {
                 writer.WriteSinglePacked(Time.realtimeSinceStartup);
-                InternalMessageSender.Send(NetworkConstants.TIME_SYNC, NetworkChannel.SyncChannel, buffer);
+                MessageSender.Send(NetworkConstants.TIME_SYNC, NetworkChannel.SyncChannel, buffer);
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_SyncTime.End();
@@ -1465,7 +1568,7 @@ namespace MLAPI
 
                 if (createPlayerObject)
                 {
-                    var networkObject = SpawnManager.CreateLocalNetworkObject(false, playerPrefabHash ?? NetworkConfig.PlayerPrefabHash, ownerClientId, null, position, rotation);
+                    var networkObject = SpawnManager.CreateLocalNetworkObject(false, playerPrefabHash ?? NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash, ownerClientId, null, position, rotation);
                     SpawnManager.SpawnNetworkObjectLocally(networkObject, SpawnManager.GetNetworkObjectId(), false, true, ownerClientId, null, false, 0, false, false);
 
                     ConnectedClients[ownerClientId].PlayerObject = networkObject;
@@ -1548,13 +1651,13 @@ namespace MLAPI
                             }
                         }
 
-                        InternalMessageSender.Send(ownerClientId, NetworkConstants.CONNECTION_APPROVED, NetworkChannel.Internal, buffer);
+                        MessageSender.Send(ownerClientId, NetworkConstants.CONNECTION_APPROVED, NetworkChannel.Internal, buffer);
                     }
                 }
 
                 OnClientConnectedCallback?.Invoke(ownerClientId);
 
-                if (!createPlayerObject || (playerPrefabHash == null && NetworkConfig.PlayerPrefabHash == 0))
+                if (!createPlayerObject || (playerPrefabHash == null && NetworkConfig.PlayerPrefab == null))
                 {
                     return;
                 }
@@ -1582,7 +1685,7 @@ namespace MLAPI
                         // This is not a scene object
                         writer.WriteBool(false);
 
-                        writer.WriteUInt32Packed(playerPrefabHash ?? NetworkConfig.PlayerPrefabHash);
+                        writer.WriteUInt32Packed(playerPrefabHash ?? NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash);
 
                         if (ConnectedClients[ownerClientId].PlayerObject.IncludeTransformWhenSpawning == null || ConnectedClients[ownerClientId].PlayerObject.IncludeTransformWhenSpawning(ownerClientId))
                         {
@@ -1607,7 +1710,7 @@ namespace MLAPI
                             ConnectedClients[ownerClientId].PlayerObject.WriteNetworkVariableData(buffer, clientPair.Key);
                         }
 
-                        InternalMessageSender.Send(clientPair.Key, NetworkConstants.ADD_OBJECT, NetworkChannel.Internal, buffer);
+                        MessageSender.Send(clientPair.Key, NetworkConstants.ADD_OBJECT, NetworkChannel.Internal, buffer);
                     }
                 }
             }

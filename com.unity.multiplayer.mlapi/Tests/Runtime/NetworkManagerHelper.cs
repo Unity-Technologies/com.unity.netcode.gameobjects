@@ -49,7 +49,7 @@ namespace MLAPI.RuntimeTests
         /// </summary>
         /// <param name="managerMode">parameter to specify which mode you want to start the NetworkManager</param>
         /// <returns>true if it was instantiated or is already instantiate otherwise false means it failed to instantiate</returns>
-        public static bool StartNetworkManager(NetworkManagerOperatingMode managerMode = NetworkManagerOperatingMode.Host)
+        public static bool StartNetworkManager(out NetworkManager networkManager, NetworkManagerOperatingMode managerMode = NetworkManagerOperatingMode.Host)
         {
             //If we are changing the current manager mode and the current manager mode is not "None", then stop the NetworkManager mode
             if (CurrentNetworkManagerMode != managerMode && CurrentNetworkManagerMode != NetworkManagerOperatingMode.None)
@@ -61,8 +61,10 @@ namespace MLAPI.RuntimeTests
             {
                 NetworkManagerGameObject = new GameObject(nameof(NetworkManager));
                 NetworkManagerObject = NetworkManagerGameObject.AddComponent<NetworkManager>();
+
                 if (NetworkManagerObject == null)
                 {
+                    networkManager = null;
                     return false;
                 }
 
@@ -72,9 +74,8 @@ namespace MLAPI.RuntimeTests
 
                 NetworkManagerObject.NetworkConfig = new Configuration.NetworkConfig
                 {
-                    CreatePlayerPrefab = false,
-                    AllowRuntimeSceneChanges = true,
-                    EnableSceneManagement = false
+                    EnableSceneManagement = false,
+                    RegisteredScenes = new List<string>(){SceneManager.GetActiveScene().name}
                 };
                 unetTransport.ConnectAddress = "127.0.0.1";
                 unetTransport.ConnectPort = 7777;
@@ -84,14 +85,12 @@ namespace MLAPI.RuntimeTests
                 unetTransport.MessageSendMode = UNetTransport.SendMode.Immediately;
                 NetworkManagerObject.NetworkConfig.NetworkTransport = unetTransport;
 
-                var currentActiveScene = SceneManager.GetActiveScene();
-
-                //Add our test scene name
-                NetworkSceneManager.AddRuntimeSceneName(currentActiveScene.name, 0);
-
                 //Starts the network manager in the mode specified
                 StartNetworkManagerMode(managerMode);
             }
+
+            networkManager = NetworkManagerObject;
+
             return true;
         }
 
