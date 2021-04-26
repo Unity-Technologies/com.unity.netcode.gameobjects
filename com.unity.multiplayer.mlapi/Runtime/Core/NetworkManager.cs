@@ -20,7 +20,6 @@ using MLAPI.Transports.Tasks;
 using MLAPI.Messaging.Buffering;
 using Unity.Profiling;
 
-
 namespace MLAPI
 {
     /// <summary>
@@ -265,7 +264,7 @@ namespace MLAPI
                     }
                     else
                     {
-                        // Defautlt to the standard NetworkPrefab.Prefab's NetworkObject first
+                        // Default to the standard NetworkPrefab.Prefab's NetworkObject first
                         var globalObjectIdHash = networkObject.GlobalObjectIdHash;
 
                         // Now check to see if it has an override
@@ -292,8 +291,8 @@ namespace MLAPI
                         }
                         else
                         {
-                            // This happens when a new duplicate entry is created.
-                            // We just turn it into a new blank entry
+                            // Duplicate entries can happen when adding a new entry into a list of existing entries
+                            // Either this is user error or a new entry, either case we replace it with a new, blank, NetworkPrefab under this condition
                             NetworkConfig.NetworkPrefabs[i] = new NetworkPrefab();
                         }
                     }
@@ -322,10 +321,10 @@ namespace MLAPI
             SpawnManager = new NetworkSpawnManager(this);
 
             CustomMessagingManager = new CustomMessagingManager(this);
+            
+            BufferManager = new BufferManager(this);
 
             SceneManager = new NetworkSceneManager(this);
-
-            BufferManager = new BufferManager();
 
             if (MessageHandler == null)
             {
@@ -404,7 +403,6 @@ namespace MLAPI
                     UnityEngine.Debug.LogWarning($"{nameof(NetworkPrefab)} (\"{NetworkConfig.NetworkPrefabs[i].Prefab.name}\") will be removed and ignored.");
                     removeEmptyPrefabs.Add(i);
 
-                    // Ignore this entry due to the error (it will be removed during runtime)
                     continue;
                 }
                 else if (NetworkConfig.NetworkPrefabs[i].Prefab.GetComponent<NetworkObject>() == null)
@@ -418,11 +416,9 @@ namespace MLAPI
                     UnityEngine.Debug.LogWarning($"{nameof(NetworkPrefab)} (\"{NetworkConfig.NetworkPrefabs[i].Prefab.name}\") will be removed and ignored.");
                     removeEmptyPrefabs.Add(i);
 
-                    // Ignore this entry due to the error (it will be removed during runtime)
                     continue;
                 }
 
-                // Get the default NetworkObject first
                 var networkObject = NetworkConfig.NetworkPrefabs[i].Prefab.GetComponent<NetworkObject>();
 
                 // Assign the appropriate GlobalObjectIdHash to the appropriate NetworkPrefab
@@ -445,7 +441,7 @@ namespace MLAPI
                 else
                 {
                     // This should never happen, but in the case it somehow does log an error and remove the duplicate entry
-                    UnityEngine.Debug.LogError($"{nameof(NetworkPrefab)} (\"{NetworkConfig.NetworkPrefabs[i].Prefab.name}\") has a duplicate GlobalObjectIdHash {networkObject.GlobalObjectIdHash.ToString("X")} entry! Removing entry from list!");
+                    UnityEngine.Debug.LogError($"{nameof(NetworkPrefab)} (\"{NetworkConfig.NetworkPrefabs[i].Prefab.name}\") has a duplicate {nameof(NetworkObject.GlobalObjectIdHash)} {networkObject.GlobalObjectIdHash} entry! Removing entry from list!");
                     removeEmptyPrefabs.Add(i);
                 }
             }
@@ -457,16 +453,12 @@ namespace MLAPI
                 if (playerPrefabNetworkObject != null)
                 {
                     //In the event there is no NetworkPrefab entry (i.e. no override for default player prefab)
-                    if (!NetworkConfig.NetworkPrefabOverrideLinks.ContainsKey(NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash))
+                    if (!NetworkConfig.NetworkPrefabOverrideLinks.ContainsKey(playerPrefabNetworkObject.GlobalObjectIdHash))
                     {
-                        // Create a prefab entry
+                        //Then add a new entry for the player prefab
                         var playerNetworkPrefab = new NetworkPrefab();
                         playerNetworkPrefab.Prefab = NetworkConfig.PlayerPrefab;                        
-
-                        // Add it to the prefab list
                         NetworkConfig.NetworkPrefabs.Insert(0, playerNetworkPrefab);
-
-                        // assign its NetworkPrefabOverrideLink
                         NetworkConfig.NetworkPrefabOverrideLinks.Add(playerPrefabNetworkObject.GlobalObjectIdHash, playerNetworkPrefab);
                     }
                 }
@@ -476,6 +468,13 @@ namespace MLAPI
                     UnityEngine.Debug.LogError($"{nameof(NetworkConfig.PlayerPrefab)} (\"{NetworkConfig.PlayerPrefab.name}\") has no NetworkObject assigned to it!.");
                 }
             }
+
+            // Clear out anything that is invalid or not used (for invalid entries we already logged warnings to the user earlier)
+            foreach (var networkPrefabIndexToRemove in removeEmptyPrefabs)
+            {
+                NetworkConfig.NetworkPrefabs.RemoveAt(networkPrefabIndexToRemove);
+            }
+            removeEmptyPrefabs.Clear();
 
             // Clear out anything that is invalid or not used (for invalid entries we already logged warnings to the user earlier)
             foreach (var networkPrefabIndexToRemove in removeEmptyPrefabs)

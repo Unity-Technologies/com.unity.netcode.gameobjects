@@ -50,8 +50,9 @@ namespace MLAPI.Configuration
         /// <summary>
         /// A list of spawnable prefabs
         /// </summary>
+        [SerializeField]
         [Tooltip("The prefabs that can be spawned across the network")]
-        public List<NetworkPrefab> NetworkPrefabs = new List<NetworkPrefab>();
+        internal List<NetworkPrefab> NetworkPrefabs = new List<NetworkPrefab>();
 
         /// <summary>
         /// This dictionary provides a quick way to check and see if a NetworkPrefab has a NetworkPrefab override.
@@ -300,10 +301,10 @@ namespace MLAPI.Configuration
 
                 if (ForceSamePrefabs)
                 {
-                    var sortedPrefabList = NetworkPrefabs.OrderBy(x => x.Hash).ToList();
-                    for (int i = 0; i < sortedPrefabList.Count; i++)
+                    var sortedDictionary = NetworkPrefabOverrideLinks.OrderBy(x => x.Key);
+                    foreach (var sortedEntry in sortedDictionary)
                     {
-                        writer.WriteUInt32Packed(sortedPrefabList[i].Hash);
+                        writer.WriteUInt32Packed(sortedEntry.Key);
                     }
                 }
 
