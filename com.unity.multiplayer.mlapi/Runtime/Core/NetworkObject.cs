@@ -32,7 +32,7 @@ namespace MLAPI
                 return;
             }
 
-            // do NOT regenerate GlobalObjectIdHash if the Editor is transitining into or out of the PlayMode
+            // do NOT regenerate GlobalObjectIdHash if Editor is transitining into or out of PlayMode
             if (!UnityEditor.EditorApplication.isPlaying && UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
             {
                 return;
