@@ -476,13 +476,6 @@ namespace MLAPI
             }
             removeEmptyPrefabs.Clear();
 
-            // Clear out anything that is invalid or not used (for invalid entries we already logged warnings to the user earlier)
-            foreach (var networkPrefabIndexToRemove in removeEmptyPrefabs)
-            {
-                NetworkConfig.NetworkPrefabs.RemoveAt(networkPrefabIndexToRemove);
-            }
-            removeEmptyPrefabs.Clear();
-
             NetworkConfig.NetworkTransport.OnTransportEvent += HandleRawTransportPoll;
 
             NetworkConfig.NetworkTransport.ResetChannelCache();
