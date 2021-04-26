@@ -209,8 +209,6 @@ namespace MLAPI
         internal static event Action OnSingletonReady;
 
 #if UNITY_EDITOR
-        internal static bool IsTestRun = false;
-
         private void OnValidate()
         {
             if (NetworkConfig == null)
@@ -321,7 +319,7 @@ namespace MLAPI
             SpawnManager = new NetworkSpawnManager(this);
 
             CustomMessagingManager = new CustomMessagingManager(this);
-            
+
             BufferManager = new BufferManager(this);
 
             SceneManager = new NetworkSceneManager(this);
@@ -383,7 +381,7 @@ namespace MLAPI
                 SceneManager.SetCurrentSceneIndex();
             }
 
-            // This is used to remove entries not needed or invalid 
+            // This is used to remove entries not needed or invalid
             var removeEmptyPrefabs = new List<int>();
 
             // Always clear our prefab override links before building
@@ -457,7 +455,7 @@ namespace MLAPI
                     {
                         //Then add a new entry for the player prefab
                         var playerNetworkPrefab = new NetworkPrefab();
-                        playerNetworkPrefab.Prefab = NetworkConfig.PlayerPrefab;                        
+                        playerNetworkPrefab.Prefab = NetworkConfig.PlayerPrefab;
                         NetworkConfig.NetworkPrefabs.Insert(0, playerNetworkPrefab);
                         NetworkConfig.NetworkPrefabOverrideLinks.Add(playerPrefabNetworkObject.GlobalObjectIdHash, playerNetworkPrefab);
                     }
