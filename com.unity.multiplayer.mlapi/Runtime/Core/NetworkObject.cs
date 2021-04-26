@@ -31,7 +31,7 @@ namespace MLAPI
                 return;
             }
 
-            if (UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode && !UnityEditor.EditorApplication.isPlaying)
+            if (!UnityEditor.EditorApplication.isPlaying && UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
             {
                 return;
             }
