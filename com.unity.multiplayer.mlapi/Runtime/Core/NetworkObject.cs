@@ -26,17 +26,20 @@ namespace MLAPI
 #if UNITY_EDITOR
         private void OnValidate()
         {
+            // do NOT regenerate GlobalObjectIdHash for NetworkPrefabs while Editor is in PlayMode
             if (UnityEditor.EditorApplication.isPlaying && !string.IsNullOrEmpty(gameObject.scene.name))
             {
                 return;
             }
 
+            // do NOT regenerate GlobalObjectIdHash if Editor is transitining into or out of PlayMode
             if (!UnityEditor.EditorApplication.isPlaying && UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
             {
                 return;
             }
+
             var globalObjectIdString = UnityEditor.GlobalObjectId.GetGlobalObjectIdSlow(this).ToString();
-            GlobalObjectIdHash = XXHash.Hash32(globalObjectIdString);            
+            GlobalObjectIdHash = XXHash.Hash32(globalObjectIdString);
         }
 #endif
 
