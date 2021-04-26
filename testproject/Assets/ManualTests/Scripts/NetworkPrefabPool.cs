@@ -175,7 +175,6 @@ public class NetworkPrefabPool : NetworkBehaviour
                 StartSpawningBoxes();
             }
         }
-        base.NetworkStart();
     }
 
     #region Object Pool Related Methods
