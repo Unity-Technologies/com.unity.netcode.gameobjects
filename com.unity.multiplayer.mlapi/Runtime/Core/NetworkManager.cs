@@ -1550,11 +1550,6 @@ namespace MLAPI
 
         internal void HandleApproval(ulong ownerClientId, bool createPlayerObject, uint? playerPrefabHash, bool approved, Vector3? position, Quaternion? rotation)
         {
-            if (playerPrefabHash == null && createPlayerObject)
-            {
-                playerPrefabHash = NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash;
-            }
-
             if (approved)
             {
                 // Inform new client it got approved
@@ -1575,7 +1570,7 @@ namespace MLAPI
 
                 if (createPlayerObject)
                 {
-                    var networkObject = SpawnManager.CreateLocalNetworkObject(false, playerPrefabHash.Value, ownerClientId, null, position, rotation);
+                    var networkObject = SpawnManager.CreateLocalNetworkObject(false, playerPrefabHash ?? NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash, ownerClientId, null, position, rotation);
                     SpawnManager.SpawnNetworkObjectLocally(networkObject, SpawnManager.GetNetworkObjectId(), false, true, ownerClientId, null, false, 0, false, false);
 
                     ConnectedClients[ownerClientId].PlayerObject = networkObject;
@@ -1692,7 +1687,7 @@ namespace MLAPI
                         // This is not a scene object
                         writer.WriteBool(false);
 
-                        writer.WriteUInt32Packed(playerPrefabHash.Value);
+                        writer.WriteUInt32Packed(playerPrefabHash ?? NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash);
 
                         if (ConnectedClients[ownerClientId].PlayerObject.IncludeTransformWhenSpawning == null || ConnectedClients[ownerClientId].PlayerObject.IncludeTransformWhenSpawning(ownerClientId))
                         {
