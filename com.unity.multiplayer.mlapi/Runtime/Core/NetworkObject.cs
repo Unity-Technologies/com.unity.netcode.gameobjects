@@ -25,12 +25,13 @@ namespace MLAPI
 
 #if UNITY_EDITOR
         private void OnValidate()
-        {           
-            if(UnityEditor.EditorApplication.isPlaying && !string.IsNullOrEmpty(gameObject.scene.name))
+        {
+            if (UnityEditor.EditorApplication.isPlaying && !string.IsNullOrEmpty(gameObject.scene.name))
             {
                 return;
             }
-            if (UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode && !UnityEditor.EditorApplication.isPlaying)
+
+            if (!UnityEditor.EditorApplication.isPlaying && UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
             {
                 return;
             }
