@@ -119,6 +119,9 @@ public class CommandLineProcessor
                     case "client":
                         StartClient();
                         break;
+                    default:
+                        Debug.LogWarning($"Invalid MLAPI argument: {mlapiValue}");
+                        break;
                 }
             }
         }
