@@ -5,7 +5,7 @@ using UnityEngine;
 /// <summary>
 /// A general object that can be used for testing purposes
 /// </summary>
-public class GenericObject : NetworkBehaviour
+public class GenericNetworkObjectBehaviour : NetworkBehaviour
 {
     [SerializeField]
     [Tooltip("This will make the spawned objects move around randomly.  !Caution! You can generate a lot of objects this way!")]
@@ -55,12 +55,12 @@ public class GenericObject : NetworkBehaviour
             {
                 if (NetworkObject != null && !NetworkObject.isActiveAndEnabled)
                 {
-                    Debug.LogWarning($"{nameof(GenericObject)} id {NetworkObject.NetworkObjectId} is not active and enabled but game object is still active!");
+                    Debug.LogWarning($"{nameof(GenericNetworkObjectBehaviour)} id {NetworkObject.NetworkObjectId} is not active and enabled but game object is still active!");
                 }
 
                 if (NetworkObject != null && !NetworkObject.IsSpawned)
                 {
-                    Debug.LogWarning($"{nameof(GenericObject)} id {NetworkObject.NetworkObjectId} is not spawned but still active and enabled");
+                    Debug.LogWarning($"{nameof(GenericNetworkObjectBehaviour)} id {NetworkObject.NetworkObjectId} is not spawned but still active and enabled");
                 }
             }
         }

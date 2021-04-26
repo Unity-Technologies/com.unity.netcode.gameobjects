@@ -307,7 +307,7 @@ public class NetworkPrefabPool : NetworkBehaviour
                             go.transform.position = transform.position;
 
                             float ang = Random.Range(0.0f, 2 * Mathf.PI);
-                            go.GetComponent<GenericObject>().SetDirectionAndVelocity(new Vector3(Mathf.Cos(ang), 0, Mathf.Sin(ang)), ObjectSpeed);
+                            go.GetComponent<GenericNetworkObjectBehaviour>().SetDirectionAndVelocity(new Vector3(Mathf.Cos(ang), 0, Mathf.Sin(ang)), ObjectSpeed);
 
                             var no = go.GetComponent<NetworkObject>();
                             if (!no.IsSpawned)
