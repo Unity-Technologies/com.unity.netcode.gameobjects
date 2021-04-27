@@ -672,7 +672,7 @@ namespace MLAPI
                 writer.WriteUInt32(0);
 
                 //Write the network variable data
-                WriteNetworkVariableData(writer.GetStream(), targetClientId);
+                WriteNetworkVariableData(buffer, targetClientId);
 
                 //As long as something was written
                 if (buffer.Position > currentStreamPosition)
