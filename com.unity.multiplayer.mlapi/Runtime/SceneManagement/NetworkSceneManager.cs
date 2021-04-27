@@ -251,12 +251,16 @@ namespace MLAPI.SceneManagement
             var newSceneObjects = new List<NetworkObject>();
             {
                 var networkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>();
+
                 for (int i = 0; i < networkObjects.Length; i++)
                 {
-                    if (networkObjects[i].IsSceneObject == null)
+                    if (networkObjects[i].NetworkManager == m_NetworkManager)
                     {
-                        m_NetworkManager.SpawnManager.SpawnNetworkObjectLocally(networkObjects[i], m_NetworkManager.SpawnManager.GetNetworkObjectId(), true, false, null, null, false, 0, false, true);
-                        newSceneObjects.Add(networkObjects[i]);
+                        if (networkObjects[i].IsSceneObject == null)
+                        {
+                            m_NetworkManager.SpawnManager.SpawnNetworkObjectLocally(networkObjects[i], m_NetworkManager.SpawnManager.GetNetworkObjectId(), true, false, null, null, false, 0, false, true);
+                            newSceneObjects.Add(networkObjects[i]);
+                        }
                     }
                 }
             }
@@ -310,6 +314,7 @@ namespace MLAPI.SceneManagement
         private void OnSceneUnloadClient(Guid switchSceneGuid, Stream objectStream)
         {
             var networkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>();
+
             m_NetworkManager.SpawnManager.ClientCollectSoftSyncSceneObjectSweep(networkObjects);
 
             using (var reader = PooledNetworkReader.Get(objectStream))

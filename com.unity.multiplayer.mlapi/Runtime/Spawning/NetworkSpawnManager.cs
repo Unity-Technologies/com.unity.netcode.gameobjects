@@ -154,7 +154,7 @@ namespace MLAPI.Spawning
         }
 
         /// <summary>
-        /// Should only run on the client 
+        /// Should only run on the client
         /// </summary>
         internal NetworkObject CreateLocalNetworkObject(bool softCreate, uint prefabHash, ulong ownerClientId, ulong? parentNetworkId, Vector3? position, Quaternion? rotation)
         {
@@ -174,7 +174,7 @@ namespace MLAPI.Spawning
 
             if (!NetworkManager.NetworkConfig.EnableSceneManagement || !softCreate)
             {
-                // If the prefab hash has a registered INetworkPrefabInstanceHandler derived class 
+                // If the prefab hash has a registered INetworkPrefabInstanceHandler derived class
                 if (NetworkManager.PrefabHandler.ContainsHandler(prefabHash))
                 {
                     // Let the handler spawn the NetworkObject
@@ -499,17 +499,20 @@ namespace MLAPI.Spawning
 
             for (int i = 0; i < networkObjects.Length; i++)
             {
-                if (networkObjects[i].IsSceneObject != null && networkObjects[i].IsSceneObject.Value == false)
+                if (networkObjects[i].NetworkManager == NetworkManager)
                 {
-                    if (NetworkManager.PrefabHandler.ContainsHandler(networkObjects[i]))
+                    if (networkObjects[i].IsSceneObject != null && networkObjects[i].IsSceneObject.Value == false)
                     {
-                        NetworkManager.PrefabHandler.HandleNetworkPrefabDestroy(networkObjects[i]);
+                        if (NetworkManager.PrefabHandler.ContainsHandler(networkObjects[i]))
+                        {
+                            NetworkManager.PrefabHandler.HandleNetworkPrefabDestroy(networkObjects[i]);
 
-                        OnDestroyObject(networkObjects[i].NetworkObjectId, false);
-                    }
-                    else
-                    {
-                        UnityEngine.Object.Destroy(networkObjects[i].gameObject);
+                            OnDestroyObject(networkObjects[i].NetworkObjectId, false);
+                        }
+                        else
+                        {
+                            UnityEngine.Object.Destroy(networkObjects[i].gameObject);
+                        }
                     }
                 }
             }
@@ -521,16 +524,19 @@ namespace MLAPI.Spawning
 
             for (int i = 0; i < networkObjects.Length; i++)
             {
-                if (networkObjects[i].IsSceneObject == null || networkObjects[i].IsSceneObject.Value == true)
+                if (networkObjects[i].NetworkManager == NetworkManager)
                 {
-                    if (NetworkManager.PrefabHandler.ContainsHandler(networkObjects[i]))
+                    if (networkObjects[i].IsSceneObject == null || networkObjects[i].IsSceneObject.Value == true)
                     {
-                        NetworkManager.PrefabHandler.HandleNetworkPrefabDestroy(networkObjects[i]);
-                        OnDestroyObject(networkObjects[i].NetworkObjectId, false);
-                    }
-                    else
-                    {
-                        UnityEngine.Object.Destroy(networkObjects[i].gameObject);
+                        if (NetworkManager.PrefabHandler.ContainsHandler(networkObjects[i]))
+                        {
+                            NetworkManager.PrefabHandler.HandleNetworkPrefabDestroy(networkObjects[i]);
+                            OnDestroyObject(networkObjects[i].NetworkObjectId, false);
+                        }
+                        else
+                        {
+                            UnityEngine.Object.Destroy(networkObjects[i].gameObject);
+                        }
                     }
                 }
             }
@@ -561,9 +567,12 @@ namespace MLAPI.Spawning
 
             for (int i = 0; i < networkObjects.Length; i++)
             {
-                if (networkObjects[i].IsSceneObject == null)
+                if (networkObjects[i].NetworkManager == NetworkManager)
                 {
-                    SpawnNetworkObjectLocally(networkObjects[i], GetNetworkObjectId(), true, false, null, null, false, 0, false, true);
+                    if (networkObjects[i].IsSceneObject == null)
+                    {
+                        SpawnNetworkObjectLocally(networkObjects[i], GetNetworkObjectId(), true, false, null, null, false, 0, false, true);
+                    }
                 }
             }
         }
@@ -577,9 +586,12 @@ namespace MLAPI.Spawning
 
             for (int i = 0; i < networkObjects.Length; i++)
             {
-                if (networkObjects[i].IsSceneObject == null)
+                if (networkObjects[i].NetworkManager == NetworkManager)
                 {
-                    PendingSoftSyncObjects.Add(networkObjects[i].GlobalObjectIdHash, networkObjects[i]);
+                    if (networkObjects[i].IsSceneObject == null)
+                    {
+                        PendingSoftSyncObjects.Add(networkObjects[i].GlobalObjectIdHash, networkObjects[i]);
+                    }
                 }
             }
         }
