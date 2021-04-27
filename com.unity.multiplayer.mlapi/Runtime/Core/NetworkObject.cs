@@ -659,35 +659,43 @@ namespace MLAPI
                 writer.WriteBool(false);
             }
 
-            //Write whether we are including network variable data
+            // Write whether we are including network variable data
             writer.WriteBool(NetworkManager.NetworkConfig.EnableNetworkVariable);
 
+            //If we are including NetworkVariable data
             if (NetworkManager.NetworkConfig.EnableNetworkVariable)
             {
                 var buffer = writer.GetStream() as NetworkBuffer;
-                // Mark our current position and set the network variable data size initially to zero (NOT as a packed value)
-                var currentStreamPosition = buffer.Position;
 
-                // Write variable data size placeholder initially as zero
+                // Write placeholder size, NOT as a packed value, initially as zero (i.e. we do not know how much NetworkVariable data will be written yet)
                 writer.WriteUInt32(0);
 
-                //Write the network variable data
+                // Mark our current position before we potentially write any NetworkVariable data 
+                var positionBeforeNetworkVariableData = buffer.Position;
+
+                // Write network variable data 
                 WriteNetworkVariableData(buffer, targetClientId);
 
-                //As long as something was written
-                if (buffer.Position > currentStreamPosition)
+                // If our current buffer position is greater than our positionBeforeNetworkVariableData then we wrote NetworkVariable data
+                // Part 1: This will include the total NetworkVariable data size, if there was NetworkVariable data written, to the stream
+                // in order to be able to skip past this entry on the de-serialization side in the event this NetworkObject fails to be
+                // constructed (See Part 2 below in the DeserializeSceneObject method) 
+                if (buffer.Position > positionBeforeNetworkVariableData)
                 {
-                    //Get the new updated stream buffer position
-                    var updatedPosition = buffer.Position;
+                    // Store our current stream buffer position 
+                    var endOfNetworkVariableData = buffer.Position;
 
-                    //Move back to the position just before we wrote our size
-                    buffer.Position = currentStreamPosition;
+                    // Calculate the total NetworkVariable data size written        
+                    var networkVariableDataSize = endOfNetworkVariableData - positionBeforeNetworkVariableData;
 
-                    // Replace the zero value placeholder with the size of data written into the stream by WriteNetworkVariableData
-                    writer.WriteUInt32((uint)(buffer.Position - currentStreamPosition));
+                    // Move the stream position back to just before we wrote our size (we include the unpacked UInt32 data size placeholder)
+                    buffer.Position = positionBeforeNetworkVariableData - sizeof(uint);
 
-                    //Revert the buffer position back to the end of the network variable data written
-                    buffer.Position = updatedPosition;
+                    // Now write the actual data size written into our unpacked UInt32 placeholder position
+                    writer.WriteUInt32((uint)(networkVariableDataSize));
+
+                    // Finally, revert the buffer position back to the end of the network variable data written
+                    buffer.Position = endOfNetworkVariableData;
                 }
             }
         }
@@ -725,29 +733,34 @@ namespace MLAPI
                 rotation = Quaternion.Euler(reader.ReadSinglePacked(), reader.ReadSinglePacked(), reader.ReadSinglePacked());
             }
 
+            //Attemp to create a local NetworkObject
             var networkObject = networkManager.SpawnManager.CreateLocalNetworkObject(isSceneObject, prefabHash, ownerClientId, parentNetworkId, position, rotation);
 
-            //Determine if we have network variable data to read
-            var hasNetworkVariableData = reader.ReadBool();
+            // Determine if this NetworkObject has NetworkVariable data to read
+            var networkVariableDataIsIncluded = reader.ReadBool();
 
-            //If we do, then check to make sure we actually constructed a NetworkObject locally
-            if (hasNetworkVariableData)
+            if (networkVariableDataIsIncluded)
             {
+                // (See Part 1 above in the NetworkObject.SerializeSceneObject method to better understand this) 
+                // Part 2: This makes sure that if one NetworkObject fails to construct (for whatever reason) then we can "skip past"
+                // that specific NetworkObject but continue processing any remaining serialized NetworkObjects as opposed to just
+                // throwing an exception and skipping the remaining (if any) NetworkObjects.  This will prevent one misconfigured
+                // issue (or more) from breaking the entire loading process.
                 var networkVariableDataSize = reader.ReadUInt32();
                 if (networkObject == null)
                 {
-                    // This will prevent one misconfigured issue (or more) from breaking the entire loading process.
+                    // Log the error that the NetworkObject failed to construct
                     Debug.LogError($"Failed to spawn {nameof(NetworkObject)} for Hash {prefabHash}.");
 
-                    //If we failed to load this NetworkObject, then skip past the network variable data
+                    // If we failed to load this NetworkObject, then skip past the network variable data
                     objectStream.Position += networkVariableDataSize;
 
-                    //We have nothing left to do here.
+                    // We have nothing left to do here.
                     return;
                 }
             }
 
-            //Spawn the NetworkObject
+            // Spawn the NetworkObject
             networkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, networkId, isSceneObject, isPlayerObject, ownerClientId, objectStream, false, 0, true, false);
 
             var bufferQueue = networkManager.BufferManager.ConsumeBuffersForNetworkId(networkId);
