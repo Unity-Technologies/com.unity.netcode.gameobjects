@@ -14,6 +14,7 @@ parser.add_argument("--hook", action="store_true")
 parser.add_argument("--unhook", action="store_true")
 parser.add_argument("--check", action="store_true")
 parser.add_argument("--fix", action="store_true")
+parser.add_argument("--yamato", action="store_true")
 
 parser.add_argument("--tool-path", default="dotnet-format")
 parser.add_argument("--project-path", default="testproject")
@@ -70,7 +71,7 @@ if args.unhook:
     print("unhook: succeeded")
 
 
-if args.check or args.fix:
+if args.check or args.fix or args.yamato:
     glob_match = os.path.join(args.project_path, args.project_glob)
     glob_files = glob.glob(glob_match)
     print(f"glob: found {len(glob_files)} files matching -> {glob_match}")
@@ -98,11 +99,13 @@ if args.check or args.fix:
 if args.check:
     print("check: execute")
 
+    any_error = False
     for project_file in glob_files:
         print(f"check: project -> {project_file}")
-        check_exec = os.system(f"{args.tool_path} {project_file} --fix-whitespace --fix-style error --check")
-        if check_exec != 0:
-            exit(f"check: failed, exit code -> {check_exec}")
+        any_error = 0 != os.system(f"{args.tool_path} {project_file} --fix-whitespace --fix-style error --check")
+
+    if any_error:
+        exit(f"check: failed")
 
     print("check: succeeded")
 
@@ -110,10 +113,23 @@ if args.check:
 if args.fix:
     print("fix: execute")
 
+    any_error = False
     for project_file in glob_files:
         print(f"fix: project -> {project_file}")
-        fix_exec = os.system(f"{args.tool_path} {project_file} --fix-whitespace --fix-style error")
-        if fix_exec != 0:
-            exit(f"fix: failed, exit code -> {fix_exec}")
+        any_error = 0 != os.system(f"{args.tool_path} {project_file} --fix-whitespace --fix-style error")
+
+    if any_error:
+        exit(f"fix: failed")
 
     print("fix: succeeded")
+
+if args.yamato:
+    print("yamato: execute")
+
+    for project_file in glob_files:
+        print(f"yamato: project -> {project_file}")
+        yamato_exec = os.system(f"{args.tool_path} {project_file} --fix-style error --check")
+        if yamato_exec != 0:
+            exit(f"yamato: failed, exit code -> {yamato_exec}")
+
+    print("yamato: succeeded")
