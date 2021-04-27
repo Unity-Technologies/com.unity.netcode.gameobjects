@@ -1,6 +1,5 @@
 {% metadata_file .yamato/project.metafile %}
 ---
-
 develop_nightly_trigger:
   name: Develop Branch Nightly Trigger
   triggers:
@@ -20,6 +19,7 @@ develop_nightly_trigger:
 pull_request_trigger:
   name: Pull Request Trigger on {{ test_editors.first }} (master, develop, & release branches)
   dependencies:
+    - .yamato/project-standards.yml#standards_{{ projects.first.name }}
 {% for project in projects -%}
 {% for package in project.packages -%}
     - .yamato/project-tests.yml#validate_{{ package.name }}_{{ test_platforms.first.name }}_{{ test_editors.first }}

@@ -6,7 +6,6 @@ using MLAPI.Configuration;
 using MLAPI.Exceptions;
 using MLAPI.Hashing;
 using MLAPI.Logging;
-using MLAPI.Messaging;
 using MLAPI.Serialization.Pooled;
 using MLAPI.Transports;
 using UnityEngine;
@@ -25,11 +24,29 @@ namespace MLAPI
         internal uint GlobalObjectIdHash;
 
 #if UNITY_EDITOR
+        // HEAD: DO NOT USE! TEST ONLY TEMP IMPL, WILL BE REMOVED
+        internal uint TempGlobalObjectIdHashOverride = 0;
+        // TAIL: DO NOT USE! TEST ONLY TEMP IMPL, WILL BE REMOVED
+
         private void OnValidate()
         {
-            if (UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode && !NetworkManager.IsTestRun)
+            // HEAD: DO NOT USE! TEST ONLY TEMP IMPL, WILL BE REMOVED
+            if (TempGlobalObjectIdHashOverride != 0)
             {
-                // do NOT override GlobalObjectIdHash while getting into PlayMode in the Editor
+                GlobalObjectIdHash = TempGlobalObjectIdHashOverride;
+                return;
+            }
+            // TAIL: DO NOT USE! TEST ONLY TEMP IMPL, WILL BE REMOVED
+
+            // do NOT regenerate GlobalObjectIdHash for NetworkPrefabs while Editor is in PlayMode
+            if (UnityEditor.EditorApplication.isPlaying && !string.IsNullOrEmpty(gameObject.scene.name))
+            {
+                return;
+            }
+
+            // do NOT regenerate GlobalObjectIdHash if Editor is transitining into or out of PlayMode
+            if (!UnityEditor.EditorApplication.isPlaying && UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
+            {
                 return;
             }
 
