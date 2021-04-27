@@ -8,6 +8,7 @@ using MLAPI.Hashing;
 using MLAPI.Logging;
 using MLAPI.Serialization.Pooled;
 using MLAPI.Transports;
+using MLAPI.Serialization;
 using UnityEngine;
 
 namespace MLAPI
@@ -605,7 +606,7 @@ namespace MLAPI
         /// </summary>
         /// <param name="writer">writer into the outbound stream</param>
         /// <param name="targetClientId">clientid we are targeting</param>
-        internal void SerializeSceneObject(PooledNetworkWriter writer, ulong targetClientId)
+        internal void SerializeSceneObject(NetworkWriter writer, ulong targetClientId)
         {
             writer.WriteBool(IsPlayerObject);
             writer.WriteUInt64Packed(NetworkObjectId);
@@ -663,9 +664,11 @@ namespace MLAPI
 
             if (NetworkManager.NetworkConfig.EnableNetworkVariable)
             {
-                var buffer = writer.GetStream() as Serialization.NetworkBuffer;
+                var buffer = writer.GetStream() as NetworkBuffer;
                 // Mark our current position and set the network variable data size initially to zero (NOT as a packed value)
                 var currentStreamPosition = buffer.Position;
+
+                // Write variable data size placeholder initially as zero
                 writer.WriteUInt32(0);
 
                 //Write the network variable data
@@ -680,7 +683,7 @@ namespace MLAPI
                     //Move back to the position just before we wrote our size
                     buffer.Position = currentStreamPosition;
 
-                    //Write how much data was written
+                    // Replace the zero value placeholder with the size of data written into the stream by WriteNetworkVariableData
                     writer.WriteUInt32((uint)(buffer.Position - currentStreamPosition));
 
                     //Revert the buffer position back to the end of the network variable data written
@@ -696,7 +699,7 @@ namespace MLAPI
         /// <param name="objectStream">inbound stream</param>
         /// <param name="reader">reader for the stream</param>
         /// <param name="networkManager">NetworkManager instance</param>
-        static internal void DeserializeSceneObject(Serialization.NetworkBuffer objectStream, PooledNetworkReader reader, NetworkManager networkManager)
+        internal static void DeserializeSceneObject(NetworkBuffer objectStream, NetworkReader reader, NetworkManager networkManager)
         {
             var isPlayerObject = reader.ReadBool();
             var networkId = reader.ReadUInt64Packed();
@@ -734,8 +737,8 @@ namespace MLAPI
                 if (networkObject == null)
                 {
                     // This will prevent one misconfigured issue (or more) from breaking the entire loading process.
-                    Debug.LogError($"Failed to spawn NetowrkObject for Hash {prefabHash}.");
-                    
+                    Debug.LogError($"Failed to spawn {nameof(NetworkObject)} for Hash {prefabHash}.");
+
                     //If we failed to load this NetworkObject, then skip past the network variable data
                     objectStream.Position += networkVariableDataSize;
 
@@ -758,7 +761,7 @@ namespace MLAPI
                     networkManager.HandleIncomingData(message.SenderClientId, message.NetworkChannel, new ArraySegment<byte>(message.NetworkBuffer.GetBuffer(), (int)message.NetworkBuffer.Position, (int)message.NetworkBuffer.Length), message.ReceiveTime, false);
                     Messaging.Buffering.BufferManager.RecycleConsumedBufferedMessage(message);
                 }
-            }            
+            }
         }
     }
 }
