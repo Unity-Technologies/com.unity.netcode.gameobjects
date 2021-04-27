@@ -652,7 +652,7 @@ namespace MLAPI
             if (NetworkManager.NetworkConfig.EnableNetworkVariable)
             {
                 var buffer = writer.GetStream() as Serialization.NetworkBuffer;
-                // Mark our curent position and set the network variable data size initially to zero (NOT as a packed value)
+                // Mark our current position and set the network variable data size initially to zero (NOT as a packed value)
                 var currentStreamPosition = buffer.Position;
                 writer.WriteUInt32(0);
 
