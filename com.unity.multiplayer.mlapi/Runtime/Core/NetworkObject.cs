@@ -601,7 +601,7 @@ namespace MLAPI
 
             NetworkObject parentNetworkObject = null;
 
-            if (!AlwaysReplicateAsRoot &&transform.parent != null)
+            if (!AlwaysReplicateAsRoot && transform.parent != null)
             {
                 parentNetworkObject = transform.parent.GetComponent<NetworkObject>();
             }
