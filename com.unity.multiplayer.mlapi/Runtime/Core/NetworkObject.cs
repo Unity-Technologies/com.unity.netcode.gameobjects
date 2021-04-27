@@ -627,7 +627,7 @@ namespace MLAPI
 
             if (IncludeTransformWhenSpawning == null || IncludeTransformWhenSpawning(OwnerClientId))
             {
-                // Set the position and rotation data marker to true (i.e. flag to know, when reading from the stream, that postion and roation data follows).
+                // Set the position and rotation data marker to true (i.e. flag to know, when reading from the stream, that position and rotation data follows).
                 writer.WriteBool(true);
 
                 // Write position
