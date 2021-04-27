@@ -642,7 +642,7 @@ namespace MLAPI
             }
             else
             {
-                // Set the position and rotation data marker to false (i.e. flag to know, when reading from the stream, that postion and roation data *was not included*)
+                // Set the position and rotation data marker to false (i.e. flag to know, when reading from the stream, that position and rotation data *was not included*)
                 writer.WriteBool(false);
             }
 
