@@ -75,7 +75,7 @@ namespace MLAPI.RuntimeTests
                 NetworkManagerObject.NetworkConfig = new Configuration.NetworkConfig
                 {
                     EnableSceneManagement = false,
-                    RegisteredScenes = new List<string>(){SceneManager.GetActiveScene().name}
+                    RegisteredScenes = new List<string>() { SceneManager.GetActiveScene().name }
                 };
                 unetTransport.ConnectAddress = "127.0.0.1";
                 unetTransport.ConnectPort = 7777;
