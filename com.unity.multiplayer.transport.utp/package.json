@@ -14,7 +14,6 @@
     "com.unity.jobs": "0.2.10-preview.13",
     "com.unity.services.relay": "0.0.1-preview.1"
   },
-  "registry": "https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-candidates",
   "type": "library",
   "hideInEditor": false
 }
