@@ -1154,8 +1154,6 @@ namespace MLAPI
                     return;
                 }
 
-                #region INTERNAL MESSAGE
-
                 switch (messageType)
                 {
                     case NetworkConstants.CONNECTION_REQUEST:
@@ -1311,8 +1309,6 @@ namespace MLAPI
 
                         break;
                 }
-
-                #endregion
 
 #if !UNITY_2020_2_OR_NEWER
                 NetworkProfiler.EndEvent();

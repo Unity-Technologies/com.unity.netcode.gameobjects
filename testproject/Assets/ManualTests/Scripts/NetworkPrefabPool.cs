@@ -7,7 +7,6 @@ using MLAPI.Spawning;
 
 public class NetworkPrefabPool : NetworkBehaviour
 {
-    #region Inspector Exposed Properties
     [Header("General Settings")]
     public bool AutoSpawnEnable = true;
     public float InitialSpawnDelay;
@@ -15,7 +14,7 @@ public class NetworkPrefabPool : NetworkBehaviour
     public int PoolSize;
     public float ObjectSpeed = 10.0f;
 
-    
+
     [Header("Prefab Instance Handling")]
     [Tooltip("When enabled, this will utilize the NetworkPrefabHandler to register a custom INetworkPrefabInstanceHandler")]
     public bool EnableHandler;
@@ -32,9 +31,7 @@ public class NetworkPrefabPool : NetworkBehaviour
     public SwitchSceneHandler SwitchScene;
     public Slider SpawnSlider;
     public Text SpawnSliderValueText;
-    #endregion
 
-    #region private properties
     private bool m_IsSpawningObjects;
 
     private float m_EntitiesPerFrame;
@@ -44,9 +41,6 @@ public class NetworkPrefabPool : NetworkBehaviour
     private List<GameObject> m_ObjectPool;
 
     private MyCustomPrefabSpawnHandler m_MyCustomPrefabSpawnHandler;
-    #endregion
-
-    #region MonoBehaviour Initialization and Destruction Related Methods
 
     /// <summary>
     /// Called when enabled, if already connected we register any custom prefab spawn handler here
@@ -63,7 +57,7 @@ public class NetworkPrefabPool : NetworkBehaviour
     }
 
     /// <summary>
-    /// Handles registering the custom prefab handler 
+    /// Handles registering the custom prefab handler
     /// </summary>
     private void RegisterCustomPrefabHandler()
     {
@@ -133,8 +127,6 @@ public class NetworkPrefabPool : NetworkBehaviour
 
     }
 
-    #endregion
-
     /// <summary>
     /// Detect when we are switching scenes in order
     /// to assure we stop spawning objects
@@ -177,10 +169,9 @@ public class NetworkPrefabPool : NetworkBehaviour
         }
     }
 
-    #region Object Pool Related Methods
     /// <summary>
     /// Determines which object is going to be spawned and then
-    /// initializes the object pool based on 
+    /// initializes the object pool based on
     /// </summary>
     public void InitializeObjectPool()
     {
@@ -234,12 +225,9 @@ public class NetworkPrefabPool : NetworkBehaviour
         m_ObjectPool.Add(obj);
         return obj;
     }
-    #endregion
-
-    #region Spawn Objects Related Methods
 
     /// <summary>
-    /// Starts the 
+    /// Starts the
     /// </summary>
     private void StartSpawningBoxes()
     {
@@ -324,7 +312,6 @@ public class NetworkPrefabPool : NetworkBehaviour
             }
         }
     }
-    #endregion
 }
 
 
