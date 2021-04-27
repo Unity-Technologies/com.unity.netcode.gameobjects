@@ -209,8 +209,6 @@ namespace MLAPI
         internal static event Action OnSingletonReady;
 
 #if UNITY_EDITOR
-        internal static bool IsTestRun = false;
-
         private void OnValidate()
         {
             if (NetworkConfig == null)
@@ -321,7 +319,7 @@ namespace MLAPI
             SpawnManager = new NetworkSpawnManager(this);
 
             CustomMessagingManager = new CustomMessagingManager(this);
-            
+
             BufferManager = new BufferManager(this);
 
             SceneManager = new NetworkSceneManager(this);
@@ -1156,8 +1154,6 @@ namespace MLAPI
                     return;
                 }
 
-                #region INTERNAL MESSAGE
-
                 switch (messageType)
                 {
                     case NetworkConstants.CONNECTION_REQUEST:
@@ -1313,8 +1309,6 @@ namespace MLAPI
 
                         break;
                 }
-
-                #endregion
 
 #if !UNITY_2020_2_OR_NEWER
                 NetworkProfiler.EndEvent();

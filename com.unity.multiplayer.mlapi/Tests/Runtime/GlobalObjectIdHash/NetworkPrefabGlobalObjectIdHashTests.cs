@@ -25,8 +25,6 @@ namespace MLAPI.RuntimeTests
         [UnitySetUp]
         public IEnumerator Setup()
         {
-            NetworkManager.IsTestRun = true;
-
             SceneManager.sceneLoaded += OnSceneLoaded;
 
             var execAssembly = Assembly.GetExecutingAssembly();
@@ -45,8 +43,6 @@ namespace MLAPI.RuntimeTests
             {
                 yield return SceneManager.UnloadSceneAsync(m_TestScene);
             }
-
-            NetworkManager.IsTestRun = false;
         }
 
         [Test]

@@ -23,8 +23,6 @@ namespace MLAPI.Messaging
             m_NetworkManager = networkManager;
         }
 
-        #region Unnamed
-
         /// <summary>
         /// Delegate used for incoming unnamed messages
         /// </summary>
@@ -72,10 +70,6 @@ namespace MLAPI.Messaging
             m_NetworkManager.MessageSender.Send(clientId, NetworkConstants.UNNAMED_MESSAGE, networkChannel, buffer);
             PerformanceDataManager.Increment(ProfilerConstants.UnnamedMessageSent);
         }
-
-        #endregion
-
-        #region Named
 
         /// <summary>
         /// Delegate used to handle named messages
@@ -215,7 +209,5 @@ namespace MLAPI.Messaging
                 PerformanceDataManager.Increment(ProfilerConstants.NamedMessageSent);
             }
         }
-
-        #endregion
     }
 }
