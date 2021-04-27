@@ -385,8 +385,6 @@ namespace MLAPI
         /// </summary>
         public virtual void OnLostOwnership() { }
 
-        #region NetworkVariable
-
         private bool m_VarInit = false;
 
         private readonly List<HashSet<int>> m_ChannelMappedNetworkVariableIndexes = new List<HashSet<int>>();
@@ -998,8 +996,6 @@ namespace MLAPI
                 }
             }
         }
-
-        #endregion
 
         /// <summary>
         /// Gets the local instance of a object with a given NetworkId
