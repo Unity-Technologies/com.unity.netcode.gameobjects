@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using MLAPI.Configuration;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using NUnit.Framework;
@@ -48,8 +49,9 @@ namespace MLAPI.RuntimeTests
         /// As such, the default setting is to start in Host mode.
         /// </summary>
         /// <param name="managerMode">parameter to specify which mode you want to start the NetworkManager</param>
+        /// <param name="networkConfig">parameter to specify custom NetworkConfig settings</param>
         /// <returns>true if it was instantiated or is already instantiate otherwise false means it failed to instantiate</returns>
-        public static bool StartNetworkManager(out NetworkManager networkManager, NetworkManagerOperatingMode managerMode = NetworkManagerOperatingMode.Host)
+        public static bool StartNetworkManager(out NetworkManager networkManager, NetworkManagerOperatingMode managerMode = NetworkManagerOperatingMode.Host, NetworkConfig networkConfig = null)
         {
             //If we are changing the current manager mode and the current manager mode is not "None", then stop the NetworkManager mode
             if (CurrentNetworkManagerMode != managerMode && CurrentNetworkManagerMode != NetworkManagerOperatingMode.None)
@@ -61,7 +63,7 @@ namespace MLAPI.RuntimeTests
             {
                 NetworkManagerGameObject = new GameObject(nameof(NetworkManager));
                 NetworkManagerObject = NetworkManagerGameObject.AddComponent<NetworkManager>();
-
+                
                 if (NetworkManagerObject == null)
                 {
                     networkManager = null;
@@ -72,12 +74,18 @@ namespace MLAPI.RuntimeTests
 
                 var unetTransport = NetworkManagerGameObject.AddComponent<UNetTransport>();
 
-                NetworkManagerObject.NetworkConfig = new Configuration.NetworkConfig
+                if (networkConfig == null)
                 {
-                    CreatePlayerPrefab = false,
-                    EnableSceneManagement = false,
-                    RegisteredScenes = new List<string>(){SceneManager.GetActiveScene().name}
-                };
+                    networkConfig = new NetworkConfig
+                    {
+                        CreatePlayerPrefab = false,
+                        EnableSceneManagement = false,
+                        RegisteredScenes = new List<string>() {SceneManager.GetActiveScene().name}
+                    };
+                }
+
+                NetworkManagerObject.NetworkConfig = networkConfig;
+                
                 unetTransport.ConnectAddress = "127.0.0.1";
                 unetTransport.ConnectPort = 7777;
                 unetTransport.ServerListenPort = 7777;
