@@ -24,8 +24,20 @@ namespace MLAPI
         internal uint GlobalObjectIdHash;
 
 #if UNITY_EDITOR
+        // HEAD: DO NOT USE! TEST ONLY TEMP IMPL, WILL BE REMOVED
+        internal uint TempGlobalObjectIdHashOverride = 0;
+        // TAIL: DO NOT USE! TEST ONLY TEMP IMPL, WILL BE REMOVED
+
         private void OnValidate()
         {
+            // HEAD: DO NOT USE! TEST ONLY TEMP IMPL, WILL BE REMOVED
+            if (TempGlobalObjectIdHashOverride != 0)
+            {
+                GlobalObjectIdHash = TempGlobalObjectIdHashOverride;
+                return;
+            }
+            // TAIL: DO NOT USE! TEST ONLY TEMP IMPL, WILL BE REMOVED
+
             // do NOT regenerate GlobalObjectIdHash for NetworkPrefabs while Editor is in PlayMode
             if (UnityEditor.EditorApplication.isPlaying && !string.IsNullOrEmpty(gameObject.scene.name))
             {
