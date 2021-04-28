@@ -82,7 +82,7 @@ namespace MLAPI.Messaging
                 }
                 else
                 {
-                    NetworkManager.HandleApproval(clientId, NetworkManager.NetworkConfig.CreatePlayerPrefab, null, true, null, null);
+                    NetworkManager.HandleApproval(clientId, NetworkManager.NetworkConfig.PlayerPrefab != null, null, true, null, null);
                 }
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
@@ -424,7 +424,7 @@ namespace MLAPI.Messaging
                     }
                     else
                     {
-                        NetworkBehaviour.HandleNetworkVariableDeltas(instance.NetworkVariableFields, stream, clientId, instance);
+                        NetworkBehaviour.HandleNetworkVariableDeltas(instance.NetworkVariableFields, stream, clientId, instance, NetworkManager);
                     }
                 }
                 else if (NetworkManager.IsServer || !NetworkManager.NetworkConfig.EnableMessageBuffering)
@@ -482,7 +482,7 @@ namespace MLAPI.Messaging
                     }
                     else
                     {
-                        NetworkBehaviour.HandleNetworkVariableUpdate(networkBehaviour.NetworkVariableFields, stream, clientId, networkBehaviour);
+                        NetworkBehaviour.HandleNetworkVariableUpdate(networkBehaviour.NetworkVariableFields, stream, clientId, networkBehaviour, NetworkManager);
                     }
                 }
                 else if (NetworkManager.IsServer || !NetworkManager.NetworkConfig.EnableMessageBuffering)

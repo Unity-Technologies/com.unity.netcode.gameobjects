@@ -19,7 +19,6 @@ namespace MLAPI.RuntimeTests
             
             var networkConfig = new NetworkConfig
             {
-                CreatePlayerPrefab = false,
                 EnableSceneManagement = true,
                 LoadSceneTimeOut = 5,
             };

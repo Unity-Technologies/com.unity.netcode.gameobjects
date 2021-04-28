@@ -20,7 +20,7 @@ using MLAPI.Messaging;
 ///     Send client to server no parameters and then multiple parameters
 ///     Send server to client no parameters and then multiple parameters
 /// </summary>
-public class ClientCounterBehaviour : NetworkBehaviour
+public class RpcQueueManualTests : NetworkBehaviour
 {
     private const float k_ProgressBarDivisor = 1.0f / 200.0f;
 
@@ -37,6 +37,7 @@ public class ClientCounterBehaviour : NetworkBehaviour
     private List<ulong> m_ClientIds = new List<ulong>();
     private List<ulong> m_ClientIndices = new List<ulong>();
 
+    private bool m_ConnectionEventOccurred;
     private bool m_MultiParameterCanSend;
 
     private int m_MultiParameterIntValue;
@@ -84,6 +85,7 @@ public class ClientCounterBehaviour : NetworkBehaviour
     private ClientRpcParams m_ClientRpcParams;
     private ClientRpcParams m_ClientRpcParamsMultiParameter;
 
+
     private void Start()
     {
         //Start at a smaller resolution until connection mode is selected.
@@ -92,6 +94,34 @@ public class ClientCounterBehaviour : NetworkBehaviour
         {
             m_CounterTextObject.gameObject.SetActive(false);
         }
+        if(m_ConnectionModeButtonParent)
+        {
+            var connectionModeScript = m_ConnectionModeButtonParent.GetComponent<ConnectionModeScript>();
+            if(connectionModeScript)
+            {
+                connectionModeScript.OnNotifyConnectionEventClient += OnNotifyConnectionEventClient;
+                connectionModeScript.OnNotifyConnectionEventHost += OnNotifyConnectionEventHost;
+                connectionModeScript.OnNotifyConnectionEventServer += OnNotifyConnectionEventServer;
+            }
+        }
+    }
+
+    private void OnNotifyConnectionEventServer()
+    {
+        m_ConnectionEventOccurred = true;
+        OnCreateServer();
+    }
+
+    private void OnNotifyConnectionEventHost()
+    {
+        m_ConnectionEventOccurred = true;
+        OnCreateHost();
+    }
+
+    private void OnNotifyConnectionEventClient()
+    {
+        m_ConnectionEventOccurred = true;
+        OnCreateClient();
     }
 
     /// <summary>
@@ -144,21 +174,30 @@ public class ClientCounterBehaviour : NetworkBehaviour
         {
             case NetworkManagerMode.Client:
                 {
-                    NetworkManager.Singleton.StartClient();
+                    if (!m_ConnectionEventOccurred)
+                    {
+                        NetworkManager.Singleton.StartClient();
+                    }
                     m_ServerRpcParams.Send.UpdateStage = NetworkUpdateStage.Update;
                     Screen.SetResolution(800, 80, FullScreenMode.Windowed);
                     break;
                 }
             case NetworkManagerMode.Host:
                 {
-                    NetworkManager.Singleton.StartHost();
+                    if (!m_ConnectionEventOccurred)
+                    {
+                        NetworkManager.Singleton.StartHost();
+                    }
                     m_ClientRpcParams.Send.UpdateStage = NetworkUpdateStage.PreUpdate;
                     Screen.SetResolution(800, 480, FullScreenMode.Windowed);
                     break;
                 }
             case NetworkManagerMode.Server:
                 {
-                    NetworkManager.Singleton.StartServer();
+                    if (!m_ConnectionEventOccurred)
+                    {
+                        NetworkManager.Singleton.StartServer();
+                    }
                     m_ClientProgressBar.enabled = false;
                     m_ClientRpcParams.Send.UpdateStage = NetworkUpdateStage.PostLateUpdate;
                     Screen.SetResolution(800, 480, FullScreenMode.Windowed);
@@ -243,7 +282,7 @@ public class ClientCounterBehaviour : NetworkBehaviour
     /// </summary>
     private void Update()
     {
-        if (NetworkManager.Singleton.IsListening)
+        if (NetworkManager.Singleton && NetworkManager.Singleton.IsListening)
         {
             if (IsServer)
             {

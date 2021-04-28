@@ -446,7 +446,7 @@ namespace MLAPI.Serialization
                 throw new ArgumentOutOfRangeException("Given value does not match the given constraints!");
             }
 
-            uint result = (uint)(((value + minValue) / (maxValue + minValue)) * ((0x100 * bytes) - 1));
+            uint result = (uint)((value - minValue) / (maxValue - minValue) * ((0x100 * bytes) - 1));
             for (int i = 0; i < bytes; ++i)
             {
                 m_Sink.WriteByte((byte)(result >> (i << 3)));
@@ -472,7 +472,7 @@ namespace MLAPI.Serialization
                 throw new ArgumentOutOfRangeException("Given value does not match the given constraints!");
             }
 
-            ulong result = (ulong)(((value + minValue) / (maxValue + minValue)) * ((0x100 * bytes) - 1));
+            ulong result = (ulong)((value - minValue) / (maxValue - minValue) * ((0x100 * bytes) - 1));
             for (int i = 0; i < bytes; ++i)
             {
                 WriteByte((byte)(result >> (i << 3)));
