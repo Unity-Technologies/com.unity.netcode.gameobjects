@@ -78,7 +78,7 @@ namespace MLAPI.RuntimeTests
 
                     networkObjectsToTest.Add(gameObject);
 
-                    //Serialzie the valid NetworkObject
+                    //Serialize the valid NetworkObject
                     networkObject.SerializeSceneObject(writer, 0);
 
                     //Add this valid NetworkObject into the PendinigSoftSyncObjects list
@@ -103,7 +103,7 @@ namespace MLAPI.RuntimeTests
                     // Turn off Network Logging to avoid other errors that we know will happen after the below LogAssert.Expect message occurs.
                     NetworkManager.Singleton.LogLevel = Logging.LogLevel.Nothing;
 
-                    //Trap for this specifc error message so we don't make Test Runner think we failed (it will fail on Debug.LogError)
+                    //Trap for this specific error message so we don't make Test Runner think we failed (it will fail on Debug.LogError)
                     UnityEngine.TestTools.LogAssert.Expect(LogType.Error, $"Failed to spawn {nameof(NetworkObject)} for Hash {invalidNetworkObjectIdCount[invalidNetworkObjectCount]}.");
 
                     invalidNetworkObjectCount++;
@@ -158,7 +158,7 @@ namespace MLAPI.RuntimeTests
     /// when the NetworkVariable is serialized
     /// </summary>
     public class NetworkBehaviourWithNetworkVariables : NetworkBehaviour
-    {        
+    {
         private const uint k_MinDataBlocks = 1;
         private const uint k_MaxDataBlocks = 64;
 
