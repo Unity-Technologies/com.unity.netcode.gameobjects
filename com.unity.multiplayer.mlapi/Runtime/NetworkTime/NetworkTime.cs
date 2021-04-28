@@ -14,6 +14,8 @@ namespace MLAPI.NetworkTime
 
         public float RenderTime => m_Tick * m_TickInterval + m_TickDuration;
 
+        public int Tick => m_Tick;
+
         public int TickRate => m_TickRate;
 
         public NetworkTime(int tickRate)

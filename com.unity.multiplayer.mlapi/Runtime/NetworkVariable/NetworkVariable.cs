@@ -19,14 +19,9 @@ namespace MLAPI.NetworkVariable
         /// </summary>
         public readonly NetworkVariableSettings Settings = new NetworkVariableSettings();
 
-        /// <summary>
-        /// The last time the variable was written to locally
-        /// </summary>
-        public ushort LocalTick { get; internal set; }
-        /// <summary>
-        /// The last time the variable was written to remotely. Uses the remote timescale
-        /// </summary>
-        public ushort RemoteTick { get; internal set; }
+        /// <inheritdoc />
+        public ushort LastModifiedTick { get; internal set; }
+
         /// <summary>
         /// Delegate type for value changed event
         /// </summary>
@@ -181,17 +176,10 @@ namespace MLAPI.NetworkVariable
             return true;
         }
 
-        /// <summary>
-        /// Reads value from the reader and applies it
-        /// </summary>
-        /// <param name="stream">The stream to read the value from</param>
-        /// <param name="keepDirtyDelta">Whether or not the container should keep the dirty delta, or mark the delta as consumed</param>
-        public void ReadDelta(Stream stream, bool keepDirtyDelta, ushort localTick, ushort remoteTick)
+        public void ReadDelta(Stream stream, bool keepDirtyDelta, ushort remoteTick)
         {
-            // todo: This allows the host-returned value to be set back to an old value
-            // this will need to be adjusted to check if we're have a most recent value
-            LocalTick = localTick;
-            RemoteTick = remoteTick;
+            // TODO The change to the NetworkVariable should be ignored here if LastModified tick is newer then remote tick so that client authoritative writes work. But I'm afraid that this will break other stuff so I'm leaving it for now.
+            LastModifiedTick = remoteTick;
 
             using (var reader = PooledNetworkReader.Get(stream))
             {
@@ -214,16 +202,14 @@ namespace MLAPI.NetworkVariable
         }
 
         /// <inheritdoc />
-        public void ReadField(Stream stream, ushort localTick, ushort remoteTick)
+        public void ReadField(Stream stream, ushort remoteTick)
         {
-            ReadDelta(stream, false, localTick, remoteTick);
+            ReadDelta(stream, false, remoteTick);
         }
 
         /// <inheritdoc />
         public void WriteField(Stream stream)
         {
-            // Store the local tick at which this NetworkVariable was modified
-            LocalTick = NetworkBehaviour.CurrentTick;
             using (var writer = PooledNetworkWriter.Get(stream))
             {
                 writer.WriteObjectPacked(m_InternalValue); //BOX

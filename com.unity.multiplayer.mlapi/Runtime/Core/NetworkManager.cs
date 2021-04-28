@@ -726,7 +726,7 @@ namespace MLAPI
             }
         }
 
-        private float m_LastEventTickTime;
+     //   private float m_LastEventTickTime;
         private float m_LastTimeSyncTime;
 
         private void OnNetworkEarlyUpdate()
@@ -776,33 +776,17 @@ namespace MLAPI
         {
             if (IsListening)
             {
-                if (((NetworkTime - m_LastEventTickTime >= (1f / NetworkConfig.TickRate))))
+                // store old predicted tick to know how many fixed ticks passed
+                var previousPredictedTick = NetworkTickSystem.PredictedTime.Tick;
+
+                // update the tick system with delta time
+                NetworkTickSystem.UpdateNetworkTick(Time.deltaTime);
+
+                var currentPredictedTick = NetworkTickSystem.PredictedTime.Tick;
+
+                for (int i = previousPredictedTick; i < currentPredictedTick; i++)
                 {
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-                    s_EventTick.Begin();
-#endif
-#if UNITY_EDITOR && !UNITY_2020_2_OR_NEWER
-                    NetworkProfiler.StartTick(TickType.Event);
-#endif
 
-                    if (NetworkConfig.EnableNetworkVariable)
-                    {
-                        // Do NetworkVariable updates
-                        NetworkBehaviour.NetworkBehaviourUpdate();
-                    }
-
-                    if (!IsServer && NetworkConfig.EnableMessageBuffering)
-                    {
-                        BufferManager.CleanBuffer();
-                    }
-
-#if UNITY_EDITOR && !UNITY_2020_2_OR_NEWER
-                    NetworkProfiler.EndTick();
-#endif
-
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-                    s_EventTick.End();
-#endif
                 }
 
                 if (IsServer && NetworkConfig.EnableTimeResync && NetworkTime - m_LastTimeSyncTime >= NetworkConfig.TimeResyncInterval)
@@ -825,6 +809,42 @@ namespace MLAPI
                     m_CurrentNetworkTimeOffset += Mathf.Clamp(m_NetworkTimeOffset - m_CurrentNetworkTimeOffset, -maxDelta, maxDelta);
                 }
             }
+        }
+
+        /// <summary>
+        /// This function runs once whenever the predicted tick is incremented and is responsible for the following (in order):
+        /// - collect commands/inputs and send them to the server (TBD)
+        /// - call NetworkFixedUpdate on all NetworkBehaviours in prediction/client authority mode
+        /// - create a snapshot from resulting state
+        /// </summary>
+        private void NetworkFixedTick(int tick)
+        {
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            s_EventTick.Begin();
+#endif
+#if UNITY_EDITOR && !UNITY_2020_2_OR_NEWER
+            NetworkProfiler.StartTick(TickType.Event);
+#endif
+
+
+            if (NetworkConfig.EnableNetworkVariable)
+            {
+                // Do NetworkVariable updates
+                NetworkBehaviour.NetworkBehaviourUpdate();
+            }
+
+            if (!IsServer && NetworkConfig.EnableMessageBuffering)
+            {
+                BufferManager.CleanBuffer();
+            }
+
+
+#if UNITY_EDITOR && !UNITY_2020_2_OR_NEWER
+            NetworkProfiler.EndTick();
+#endif
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            s_EventTick.End();
+#endif
         }
 
         internal void UpdateNetworkTime(ulong clientId, float netTime, float receiveTime, bool warp = false)

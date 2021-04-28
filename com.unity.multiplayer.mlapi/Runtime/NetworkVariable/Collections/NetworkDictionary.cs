@@ -88,7 +88,7 @@ namespace MLAPI.NetworkVariable.Collections
         }
 
         /// <inheritdoc />
-        public void ReadDelta(Stream stream, bool keepDirtyDelta, ushort localTick, ushort remoteTick)
+        public void ReadDelta(Stream stream, bool keepDirtyDelta, ushort remoteTick)
         {
             using (var reader = PooledNetworkReader.Get(stream))
             {
@@ -236,7 +236,7 @@ namespace MLAPI.NetworkVariable.Collections
         }
 
         /// <inheritdoc />
-        public void ReadField(Stream stream, ushort localTick, ushort remoteTick)
+        public void ReadField(Stream stream, ushort remoteTick)
         {
             using (var reader = PooledNetworkReader.Get(stream))
             {
@@ -574,7 +574,7 @@ namespace MLAPI.NetworkVariable.Collections
             }
         }
 
-        public ushort RemoteTick
+        public ushort LastModifiedTick
         {
             get
             {

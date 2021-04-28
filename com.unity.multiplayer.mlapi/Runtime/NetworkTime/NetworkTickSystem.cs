@@ -3,14 +3,8 @@ using UnityEngine;
 
 namespace MLAPI.NetworkTime
 {
-    // todo: This is a pretty minimal tick system. It will be improved in the future
-    // It currently relies on Time.unscaledTime and, as such, will start suffering
-    // numerical precision issues after 2^23 ticks have passed (float have 23 bits mantissa)
-    // For future releases, we'll need to improve on this, probably by leveraging FixedUpdate
-
     public class NetworkTickSystem
     {
-
         private INetworkTimeProvider m_NetworkTimeProvider;
 
         private NetworkTime m_PredictedTime;
@@ -20,9 +14,11 @@ namespace MLAPI.NetworkTime
         public const ushort NoTick = ushort.MaxValue;
 
         // Number of ticks over which the tick number wraps back to 0
-        public const ushort TickPeriod = NoTick - 1;
+        // public const ushort TickPeriod = NoTick - 1;
 
-        public NetworkTime LastReceivedServerSnapshot { get; }
+        //public NetworkTime LastReceivedServerSnapshot { get; }
+
+        public NetworkTime PredictedTime => m_PredictedTime;
 
         /// <summary>
         /// Constructor
@@ -42,7 +38,7 @@ namespace MLAPI.NetworkTime
         /// UpdateNetworkTick
         /// Called each network loop update during the PreUpdate stage
         /// </summary>
-        private void UpdateNetworkTick(float deltaTime)
+        public void UpdateNetworkTick(float deltaTime)
         {
             m_NetworkTimeProvider.HandleTime(ref m_PredictedTime, ref m_ServerTime,  deltaTime);
 
