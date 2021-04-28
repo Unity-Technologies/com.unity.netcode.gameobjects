@@ -1,10 +1,6 @@
-using System;
 using System.Collections.Generic;
 using UnityEngine;
-using MLAPI;
-using MLAPI.Spawning;
-using MLAPI.Serialization;
-using MLAPI.NetworkVariable;
+using MLAPI.NetworkVariable.Collections;
 using MLAPI.Serialization.Pooled;
 using NUnit.Framework;
 
@@ -19,20 +15,23 @@ namespace MLAPI.RuntimeTests
         /// will continue to be processed even if one of the NetworkObjects is invalid.
         /// </summary>
         [Test]
-        public void NetworkObjectSceneSerializationFailureTest()
+        public void NetworkObjectSceneSerializationFailure()
         {
             var networkObjectsToTest = new List<GameObject>();
 
             var pooledBuffer = PooledNetworkBuffer.Get();
             var writer = PooledNetworkWriter.Get(pooledBuffer);
             var reader = PooledNetworkReader.Get(pooledBuffer);
-            long positionExpect = 0;
+            var invalidNetworkObjectOffsets = new List<long>();
+            var invalidNetworkObjectIdCount = new List<int>();
+            var invalidNetworkObjectFrequency = 3;
 
             //Construct 10 NetworkObjects, the one in the middle of the stream is going to be invalid
-            for (int i = 0; i < 9; i++)
+            for (int i = 0; i < 50; i++)
             {
-                // Inject an invalid NetworkObject
-                if (i == 5)
+
+                // Inject an invalid NetworkObject every 3rd entry
+                if ((i % invalidNetworkObjectFrequency) == 0)
                 {
                     // Create the invalid NetworkObject
                     var gameObject = new GameObject($"InvalidTestObject{i}");
@@ -46,8 +45,21 @@ namespace MLAPI.RuntimeTests
                     var networkVariableComponent = gameObject.AddComponent<NetworkBehaviourWithNetworkVariables>();
                     Assert.IsNotNull(networkVariableComponent);
 
-                    positionExpect = pooledBuffer.Position;
+                    //Add invalid NetworkObject's starting position before serialization to handle trapping for the Debug.LogError message
+                    //that we know will be thrown
+                    invalidNetworkObjectOffsets.Add(pooledBuffer.Position);
+
+                    networkObject.GlobalObjectIdHash = (uint)(i);
+                    invalidNetworkObjectIdCount.Add(i);
+
+                    //Serialize the invalid NetworkObject 
                     networkObject.SerializeSceneObject(writer, 0);
+
+                    Debug.Log($"NetworkObject Size {pooledBuffer.Position - invalidNetworkObjectOffsets[invalidNetworkObjectOffsets.Count - 1]}");
+
+                    //Now adjust how frequent we will inject invalid NetworkObjects
+                    invalidNetworkObjectFrequency = Random.Range(2, 5);
+
                 }
                 else
                 {
@@ -62,13 +74,15 @@ namespace MLAPI.RuntimeTests
                     Assert.IsNotNull(networkVariableComponent);
 
                     Assert.IsNotNull(networkObject);
-                    
-                    networkObject.GlobalObjectIdHash = (uint)(i + 10);
+
+                    networkObject.GlobalObjectIdHash = (uint)(i + 4096);
 
                     networkObjectsToTest.Add(gameObject);
 
+                    //Serialzie the valid NetworkObject
                     networkObject.SerializeSceneObject(writer, 0);
 
+                    //Add this valid NetworkObject into the PendinigSoftSyncObjects list
                     NetworkManagerHelper.NetworkManagerObject.SpawnManager.PendingSoftSyncObjects.Add(networkObject.GlobalObjectIdHash, networkObject);
                 }
             }
@@ -79,15 +93,18 @@ namespace MLAPI.RuntimeTests
 
             var networkObjectsDeSerialized = new List<NetworkObject>();
             var currentLogLevel = NetworkManager.Singleton.LogLevel;
-
+            var invalidNetworkObjectCount = 0;
             while (pooledBuffer.Position != totalBufferSize)
             {
                 // If we reach the point where we expect it to fail, then make sure we let TestRunner know it should expect this log error message
-                if (pooledBuffer.Position == positionExpect)
+                if (invalidNetworkObjectOffsets.Count > 0 && pooledBuffer.Position == invalidNetworkObjectOffsets[0])
                 {
-                    // Turn off Network Logging to avoid other errors that we know will happen when the below LogAssert.Expect message occurs.
+                    invalidNetworkObjectOffsets.RemoveAt(0);
+
+                    // Turn off Network Logging to avoid other errors that we know will happen after the below LogAssert.Expect message occurs.
                     NetworkManager.Singleton.LogLevel = Logging.LogLevel.Nothing;
-                    UnityEngine.TestTools.LogAssert.Expect(LogType.Error, "Failed to spawn NetworkObject for Hash 0.");
+                    UnityEngine.TestTools.LogAssert.Expect(LogType.Error, $"Failed to spawn NetworkObject for Hash {invalidNetworkObjectIdCount[invalidNetworkObjectCount]}.");
+                    invalidNetworkObjectCount++;
                 }
                 var deserializedNetworkObject = NetworkObject.DeserializeSceneObject(pooledBuffer, reader, NetworkManagerHelper.NetworkManagerObject);
                 if (deserializedNetworkObject != null)
@@ -96,10 +113,13 @@ namespace MLAPI.RuntimeTests
                 }
                 else
                 {
-                    // We are expecting null and will set our log level back to the original value
+                    // Under this condition, we are expecting null (i.e. no NetworkObject instantiated)
+                    // and will set our log level back to the original value to assure the valid NetworkObjects
+                    // aren't causing any log Errors to occur
                     NetworkManager.Singleton.LogLevel = currentLogLevel;
                 }
             }
+
             reader.Dispose();
             writer.Dispose();
             NetworkBufferPool.PutBackInPool(pooledBuffer);
@@ -113,41 +133,45 @@ namespace MLAPI.RuntimeTests
 
         }
 
-
         [SetUp]
         public void Setup()
         {
-            //Create, instantiate, and host
-            NetworkManagerHelper.StartNetworkManager(out NetworkManager networkManager,NetworkManagerHelper.NetworkManagerOperatingMode.None);
+            // Create, instantiate, and host
+            NetworkManagerHelper.StartNetworkManager(out NetworkManager networkManager, NetworkManagerHelper.NetworkManagerOperatingMode.None);
             networkManager.NetworkConfig.EnableSceneManagement = true;
             networkManager.StartHost();
         }
 
-
         [TearDown]
         public void TearDown()
         {
-            //Stop, shutdown, and destroy
+            // Stop, shutdown, and destroy
             NetworkManagerHelper.ShutdownNetworkManager();
         }
-
     }
 
 
-    public class NetworkBehaviourWithNetworkVariables:NetworkBehaviour
-    {
-        public NetworkVariableVector4 Vector4ValueOne;
-        public NetworkVariableVector4 Vector4ValueTwo;
-        public NetworkVariableVector4 Vector4ValueThree;
-        public NetworkVariableVector4 Vector4ValueFour;
+    /// <summary>
+    /// A simple test class that will provide varying NetworkBuffer stream sizes
+    /// when the NetworkVariable is serialized
+    /// </summary>
+    public class NetworkBehaviourWithNetworkVariables : NetworkBehaviour
+    {        
+        private const uint k_MinDataBlocks = 1;
+        private const uint k_MaxDataBlocks = 64;
 
-        private void Start()
+        public NetworkList<ulong> NetworkVariableData;
+
+        private void Awake()
         {
-            Vector4ValueOne = new NetworkVariableVector4(new Vector4(1.0f, 2.0f, 3.0f, 4.0f));
-            Vector4ValueTwo = new NetworkVariableVector4(new Vector4(1.0f, 2.0f, 3.0f, 4.0f));
-            Vector4ValueThree = new NetworkVariableVector4(new Vector4(1.0f, 2.0f, 3.0f, 4.0f));
-            Vector4ValueFour = new NetworkVariableVector4(new Vector4(1.0f, 2.0f, 3.0f, 4.0f));
-        }
+            var dataBlocksAssigned = new List<ulong>();
+            var numberDataBlocks = Random.Range(k_MinDataBlocks, k_MaxDataBlocks);
+            for (var i = 0; i < numberDataBlocks; i++)
+            {
+                dataBlocksAssigned.Add((ulong)Random.Range(0.0f, float.MaxValue));
+            }
 
+            NetworkVariableData = new NetworkList<ulong>(dataBlocksAssigned);
+        }
     }
 }
