@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using MLAPI.Configuration;
 using NUnit.Framework;
+using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
@@ -10,6 +11,25 @@ namespace MLAPI.RuntimeTests
 {
     public class NetworkSceneManagerCallbackTests
     {
+        
+        [UnitySetUp]
+        public IEnumerator Setup()
+        {
+            yield return EditorSceneManager.LoadSceneAsyncInPlayMode("Packages/com.unity.multiplayer.mlapi/Tests/Runtime/OnAllClientsReady/SceneWeAreSwitchingFrom.unity", new LoadSceneParameters(LoadSceneMode.Single));
+            
+            var networkConfig = new NetworkConfig
+            {
+                CreatePlayerPrefab = false,
+                EnableSceneManagement = true,
+                LoadSceneTimeOut = 5,
+            };
+
+            networkConfig.RegisteredScenes.Add("SceneWeAreSwitchingTo");
+            
+            //Create, instantiate, and host
+            NetworkManagerHelper.StartNetworkManager(out _, NetworkManagerHelper.NetworkManagerOperatingMode.Host, networkConfig);
+        }
+        
         [UnityTest]
         public IEnumerator TestOnClientLoadedScene()
         {
@@ -33,7 +53,7 @@ namespace MLAPI.RuntimeTests
 
             Assert.IsTrue(callbackReceived);
         }
-
+        
         [UnityTest]
         public IEnumerator TestOnAllClientsLoadedScene()
         {
@@ -56,22 +76,6 @@ namespace MLAPI.RuntimeTests
             } while ((DateTime.UtcNow - startTime).TotalSeconds < networkManager.NetworkConfig.LoadSceneTimeOut && !callbackReceived);
 
             Assert.IsTrue(callbackReceived);
-        }
-
-        [SetUp]
-        public void Setup()
-        {
-            var networkConfig = new NetworkConfig
-            {
-                CreatePlayerPrefab = false,
-                EnableSceneManagement = true,
-                LoadSceneTimeOut = 5,
-            };
-            networkConfig.RegisteredScenes.Add(SceneManager.GetActiveScene().name);
-            networkConfig.RegisteredScenes.Add("SceneWeAreSwitchingTo");
-            
-            //Create, instantiate, and host
-            NetworkManagerHelper.StartNetworkManager(out _, NetworkManagerHelper.NetworkManagerOperatingMode.Host, networkConfig);
         }
 
         [TearDown]
