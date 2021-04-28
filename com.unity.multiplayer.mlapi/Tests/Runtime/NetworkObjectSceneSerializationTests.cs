@@ -29,7 +29,7 @@ namespace MLAPI.RuntimeTests
             //Construct 50 NetworkObjects
             for (int i = 0; i < 50; i++)
             {
-                // Inject an invalid NetworkObject every 3rd entry
+                // Inject an invalid NetworkObject every [invalidNetworkObjectFrequency] entry
                 if ((i % invalidNetworkObjectFrequency) == 0)
                 {
                     // Create the invalid NetworkObject
