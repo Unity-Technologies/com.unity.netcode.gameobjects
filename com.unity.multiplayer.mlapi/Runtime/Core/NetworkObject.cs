@@ -707,7 +707,8 @@ namespace MLAPI
         /// <param name="objectStream">inbound stream</param>
         /// <param name="reader">reader for the stream</param>
         /// <param name="networkManager">NetworkManager instance</param>
-        internal static void DeserializeSceneObject(NetworkBuffer objectStream, NetworkReader reader, NetworkManager networkManager)
+        /// <returns>optional to use NetworkObject deserialized</returns>
+        internal static NetworkObject DeserializeSceneObject(NetworkBuffer objectStream, NetworkReader reader, NetworkManager networkManager)
         {
             var isPlayerObject = reader.ReadBool();
             var networkId = reader.ReadUInt64Packed();
@@ -756,7 +757,7 @@ namespace MLAPI
                     objectStream.Position += networkVariableDataSize;
 
                     // We have nothing left to do here.
-                    return;
+                    return null;
                 }
             }
 
@@ -775,6 +776,8 @@ namespace MLAPI
                     Messaging.Buffering.BufferManager.RecycleConsumedBufferedMessage(message);
                 }
             }
+
+            return networkObject;
         }
     }
 }
