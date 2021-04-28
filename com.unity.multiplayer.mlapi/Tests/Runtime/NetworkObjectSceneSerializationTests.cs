@@ -26,10 +26,9 @@ namespace MLAPI.RuntimeTests
             var invalidNetworkObjectIdCount = new List<int>();
             var invalidNetworkObjectFrequency = 3;
 
-            //Construct 10 NetworkObjects, the one in the middle of the stream is going to be invalid
+            //Construct 50 NetworkObjects
             for (int i = 0; i < 50; i++)
             {
-
                 // Inject an invalid NetworkObject every 3rd entry
                 if ((i % invalidNetworkObjectFrequency) == 0)
                 {
@@ -55,7 +54,7 @@ namespace MLAPI.RuntimeTests
                     //Serialize the invalid NetworkObject 
                     networkObject.SerializeSceneObject(writer, 0);
 
-                    Debug.Log($"NetworkObject Size {pooledBuffer.Position - invalidNetworkObjectOffsets[invalidNetworkObjectOffsets.Count - 1]}");
+                    Debug.Log($"Invalid {nameof(NetworkObject)} Size {pooledBuffer.Position - invalidNetworkObjectOffsets[invalidNetworkObjectOffsets.Count - 1]}");
 
                     //Now adjust how frequent we will inject invalid NetworkObjects
                     invalidNetworkObjectFrequency = Random.Range(2, 5);
@@ -103,7 +102,10 @@ namespace MLAPI.RuntimeTests
 
                     // Turn off Network Logging to avoid other errors that we know will happen after the below LogAssert.Expect message occurs.
                     NetworkManager.Singleton.LogLevel = Logging.LogLevel.Nothing;
-                    UnityEngine.TestTools.LogAssert.Expect(LogType.Error, $"Failed to spawn NetworkObject for Hash {invalidNetworkObjectIdCount[invalidNetworkObjectCount]}.");
+
+                    //Trap for this specifc error message so we don't make Test Runner think we failed (it will fail on Debug.LogError)
+                    UnityEngine.TestTools.LogAssert.Expect(LogType.Error, $"Failed to spawn {nameof(NetworkObject)} for Hash {invalidNetworkObjectIdCount[invalidNetworkObjectCount]}.");
+
                     invalidNetworkObjectCount++;
                 }
                 var deserializedNetworkObject = NetworkObject.DeserializeSceneObject(pooledBuffer, reader, NetworkManagerHelper.NetworkManagerObject);
