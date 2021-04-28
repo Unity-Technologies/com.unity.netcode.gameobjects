@@ -45,7 +45,7 @@ namespace MLAPI
         // todo: transitional. For the next release, only Snapshot should remain
         // The booleans allow iterative development and testing in the meantime
         static private bool m_UseClassicDelta = true;
-        static private bool m_UseSnapshot = false;
+        static private bool m_UseSnapshot = true;
 
 #pragma warning disable 414
 #pragma warning disable IDE1006 // disable naming rule violation check
@@ -518,7 +518,7 @@ namespace MLAPI
                             // Sync just the variables for just the objects this client sees
                             for (int k = 0; k < sobj.ChildNetworkBehaviours.Count; k++)
                             {
-                                sobj.ChildNetworkBehaviours[k].VariableUpdate(client.ClientId, snapshot);
+                                sobj.ChildNetworkBehaviours[k].VariableUpdate(client.ClientId, k, snapshot);
                             }
                         }
                     }
@@ -539,7 +539,7 @@ namespace MLAPI
                     {
                         for (int k = 0; k < sobj.ChildNetworkBehaviours.Count; k++)
                         {
-                            sobj.ChildNetworkBehaviours[k].VariableUpdate(networkManager.ServerClientId, snapshot);
+                            sobj.ChildNetworkBehaviours[k].VariableUpdate(networkManager.ServerClientId, k, snapshot);
                         }
                     }
 
@@ -578,7 +578,7 @@ namespace MLAPI
             }
         }
 
-        internal void VariableUpdate(ulong clientId, SnapshotSystem snapshot)
+        internal void VariableUpdate(ulong clientId, int behaviourIndex, SnapshotSystem snapshot)
         {
             if (!m_VarInit)
             {
@@ -586,13 +586,13 @@ namespace MLAPI
             }
 
             PreNetworkVariableWrite();
-            NetworkVariableUpdate(clientId, snapshot);
+            NetworkVariableUpdate(clientId, behaviourIndex, snapshot);
         }
 
         private readonly List<int> m_NetworkVariableIndexesToReset = new List<int>();
         private readonly HashSet<int> m_NetworkVariableIndexesToResetSet = new HashSet<int>();
 
-        private void NetworkVariableUpdate(ulong clientId, SnapshotSystem snapshot)
+        private void NetworkVariableUpdate(ulong clientId, int behaviourIndex, SnapshotSystem snapshot)
         {
             if (!CouldHaveDirtyNetworkVariables())
             {
@@ -603,7 +603,7 @@ namespace MLAPI
             {
                 for (int k = 0; k < NetworkVariableFields.Count; k++)
                 {
-                    snapshot.Store(NetworkObjectId, k, NetworkVariableFields[k]);
+                    snapshot.Store(NetworkObjectId, behaviourIndex, k, NetworkVariableFields[k]);
                 }
             }
 
