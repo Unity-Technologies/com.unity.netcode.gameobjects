@@ -28,7 +28,7 @@ namespace MLAPI.RuntimeTests
         /// ** This does not include any of the MLAPI to Transport code **
         /// </summary>
         /// <returns>IEnumerator</returns>
-        [UnityTest,Order(0)]
+        [UnityTest,Order(1)]
         public IEnumerator UpdateStagesInvocation()
         {
             Guid updateStagesTestId = NetworkManagerHelper.AddGameNetworkObject("UpdateStagesTest");
@@ -48,7 +48,7 @@ namespace MLAPI.RuntimeTests
             while (!testsAreComplete && !exceededMaximumStageIterations)
             {
                 //Wait for 20ms
-                yield return new WaitForSeconds(0.02f);
+                yield return new WaitForSeconds(0.003f);
 
                 testsAreComplete = rpcPipelineTestComponent.IsTestComplete();
                 Assert.IsFalse(rpcPipelineTestComponent.ExceededMaxIterations());
@@ -67,11 +67,10 @@ namespace MLAPI.RuntimeTests
         }
 
         /// <summary>
-        /// This tests the RPC Queue outbound and inbound buffer capabilities.
-        /// It will send
+        /// This tests the RPC Queue outbound and inbound buffer capabilities.        
         /// </summary>
         /// <returns>IEnumerator</returns>
-        [UnityTest, Order(1)]
+        [UnityTest, Order(2)]
         public IEnumerator BufferDataValidation()
         {
             Guid gameObjectId = NetworkManagerHelper.AddGameNetworkObject("GrowingBufferObject");
@@ -89,7 +88,7 @@ namespace MLAPI.RuntimeTests
             while (!testsAreComplete)
             {
                 //Wait for 20ms
-                yield return new WaitForSeconds(0.02f);
+                yield return new WaitForSeconds(0.003f);
 
                 testsAreComplete = growingRpcBufferSizeComponent.IsTestComplete();
             }
