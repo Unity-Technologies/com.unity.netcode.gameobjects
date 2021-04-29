@@ -1,4 +1,5 @@
 #if !NET35
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -329,6 +330,8 @@ namespace MLAPI.NetworkVariable.Collections
         /// <inheritdoc />
         void ICollection<T>.Add(T item)
         {
+            EnsureInitialized();
+
             if (m_NetworkBehaviour.NetworkManager.IsServer)
             {
                 m_Set.Add(item);
@@ -412,6 +415,8 @@ namespace MLAPI.NetworkVariable.Collections
         /// <inheritdoc />
         public void SymmetricExceptWith(IEnumerable<T> other)
         {
+            EnsureInitialized();
+
             foreach (T value in other)
             {
                 if (m_Set.Contains(value))
@@ -443,6 +448,8 @@ namespace MLAPI.NetworkVariable.Collections
         /// <inheritdoc />
         public void UnionWith(IEnumerable<T> other)
         {
+            EnsureInitialized();
+
             foreach (T value in other)
             {
                 if (!m_Set.Contains(value))
@@ -470,6 +477,8 @@ namespace MLAPI.NetworkVariable.Collections
         /// <inheritdoc />
         bool ISet<T>.Add(T item)
         {
+            EnsureInitialized();
+
             if (m_NetworkBehaviour.NetworkManager.IsServer)
             {
                 m_Set.Add(item);
@@ -493,6 +502,8 @@ namespace MLAPI.NetworkVariable.Collections
         /// <inheritdoc />
         public void Clear()
         {
+            EnsureInitialized();
+
             if (m_NetworkBehaviour.NetworkManager.IsServer)
             {
                 m_Set.Clear();
@@ -525,6 +536,8 @@ namespace MLAPI.NetworkVariable.Collections
         /// <inheritdoc />
         public bool Remove(T item)
         {
+            EnsureInitialized();
+
             if (m_NetworkBehaviour.NetworkManager.IsServer)
             {
                 m_Set.Remove(item);
@@ -557,6 +570,14 @@ namespace MLAPI.NetworkVariable.Collections
             {
                 // todo: implement proper network tick for NetworkSet
                 return NetworkTickSystem.NoTick;
+            }
+        }
+
+        private void EnsureInitialized()
+        {
+            if (m_NetworkBehaviour == null)
+            {
+                throw new InvalidOperationException("Cannot access " + nameof(NetworkSet<T>) + " before it's initialized");
             }
         }
     }

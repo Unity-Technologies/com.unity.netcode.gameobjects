@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -428,6 +429,8 @@ namespace MLAPI.NetworkVariable.Collections
         /// <inheritdoc />
         public void Add(T item)
         {
+            EnsureInitialized();
+
             if (m_NetworkBehaviour.NetworkManager.IsServer)
             {
                 m_List.Add(item);
@@ -446,6 +449,8 @@ namespace MLAPI.NetworkVariable.Collections
         /// <inheritdoc />
         public void Clear()
         {
+            EnsureInitialized();
+
             if (m_NetworkBehaviour.NetworkManager.IsServer)
             {
                 m_List.Clear();
@@ -474,6 +479,8 @@ namespace MLAPI.NetworkVariable.Collections
         /// <inheritdoc />
         public bool Remove(T item)
         {
+            EnsureInitialized();
+
             if (m_NetworkBehaviour.NetworkManager.IsServer)
             {
                 m_List.Remove(item);
@@ -504,6 +511,8 @@ namespace MLAPI.NetworkVariable.Collections
         /// <inheritdoc />
         public void Insert(int index, T item)
         {
+            EnsureInitialized();
+
             if (m_NetworkBehaviour.NetworkManager.IsServer)
             {
                 m_List.Insert(index, item);
@@ -522,6 +531,8 @@ namespace MLAPI.NetworkVariable.Collections
         /// <inheritdoc />
         public void RemoveAt(int index)
         {
+            EnsureInitialized();
+
             if (m_NetworkBehaviour.NetworkManager.IsServer)
             {
                 m_List.RemoveAt(index);
@@ -543,6 +554,8 @@ namespace MLAPI.NetworkVariable.Collections
             get => m_List[index];
             set
             {
+                EnsureInitialized();
+
                 if (m_NetworkBehaviour.NetworkManager.IsServer)
                 {
                     m_List[index] = value;
@@ -582,6 +595,14 @@ namespace MLAPI.NetworkVariable.Collections
             {
                 // todo: implement proper network tick for NetworkList
                 return NetworkTickSystem.NoTick;
+            }
+        }
+
+        private void EnsureInitialized()
+        {
+            if (m_NetworkBehaviour == null)
+            {
+                throw new InvalidOperationException("Cannot access " + nameof(NetworkList<T>) + " before it's initialized");
             }
         }
     }
