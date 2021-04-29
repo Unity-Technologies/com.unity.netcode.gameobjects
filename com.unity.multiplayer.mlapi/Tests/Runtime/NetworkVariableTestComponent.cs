@@ -151,7 +151,7 @@ namespace MLAPI.RuntimeTests
 
 
             // Use this nifty class: NetworkVariableHelper
-            // In order to detect that each NetworkVariable I changed invoked the OnValueChanged callback
+            // Tracks if NetworkVariable changed invokes the OnValueChanged callback for the given instance type
             Bool_Var = new NetworkVariableHelper<bool>(m_NetworkVariableBool);
             Byte_Var = new NetworkVariableHelper<byte>(m_NetworkVariableByte);
             Color_Var = new NetworkVariableHelper<Color>(m_NetworkVariableColor);
@@ -173,6 +173,9 @@ namespace MLAPI.RuntimeTests
             Ushort_Var = new NetworkVariableHelper<ushort>(m_NetworkVariableUShort);
         }
 
+        /// <summary>
+        /// Test result for all values changed the expected number of times (once per unique NetworkVariable type)
+        /// </summary>
         public bool DidAllValuesChange()
         {
             if (BaseNetworkVariableHelper.VarChangedCount == BaseNetworkVariableHelper.InstanceCount)
@@ -188,10 +191,8 @@ namespace MLAPI.RuntimeTests
         /// <summary>
         /// Returns back whether the test has completed the total number of iterations
         /// </summary>
-        /// <returns></returns>
         public bool IsTestComplete()
         {
-
             return m_FinishedTests;
         }
 
