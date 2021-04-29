@@ -59,6 +59,8 @@ namespace MLAPI.RuntimeTests
             {
                 CheckVariableChanged(previous as IEquatable<T>, next as IEquatable<T>);
             }
+
+            OnValueChanged?.Invoke(previous,next);
         }
 
         public NetworkVariableHelper(INetworkVariable networkVariable) : base(networkVariable)

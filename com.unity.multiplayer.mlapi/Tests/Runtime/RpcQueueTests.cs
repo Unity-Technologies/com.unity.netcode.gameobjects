@@ -44,10 +44,9 @@ namespace MLAPI.RuntimeTests
 
             Debug.Log("Running TestNetworkUpdateStages: ");
 
-            // Wait for the rpc pipeline test to complete or if we exceeded the maximum iterations bail
+            // Wait for the RPC pipeline test to complete or if we exceeded the maximum iterations bail
             while (!testsAreComplete && !exceededMaximumStageIterations)
             {
-                //Wait for 20ms
                 yield return new WaitForSeconds(0.003f);
 
                 testsAreComplete = rpcPipelineTestComponent.IsTestComplete();
@@ -84,10 +83,9 @@ namespace MLAPI.RuntimeTests
 
             var testsAreComplete = growingRpcBufferSizeComponent.IsTestComplete();
 
-            // Wait for the rpc pipeline test to complete or if we exceeded the maximum iterations bail
+            // Wait for the RPC pipeline test to complete or if we exceeded the maximum iterations bail
             while (!testsAreComplete)
             {
-                //Wait for 20ms
                 yield return new WaitForSeconds(0.003f);
 
                 testsAreComplete = growingRpcBufferSizeComponent.IsTestComplete();
@@ -112,7 +110,7 @@ namespace MLAPI.RuntimeTests
             // Create a testing rpcQueueContainer that doesn't get added to the network update loop so we don't try to send or process during the test
             var rpcQueueContainer = new RpcQueueContainer(NetworkManagerHelper.NetworkManagerObject, 0, true);
 
-            // Make sure we set testing mode so we don't try to invoke rpcs
+            // Make sure we set testing mode so we don't try to invoke RPCs
             rpcQueueContainer.SetTestingState(true);
 
             var maxRpcEntries = 8;
