@@ -21,7 +21,7 @@ namespace MLAPI.EditorTests
             var networkObject = gameObject.AddComponent<NetworkObject>();
 
             // Set override
-            networkObject.NetworkManagerTestOverride = networkManager;
+            networkObject.NetworkManagerOwner = networkManager;
 
             Debug.Assert(networkObject.NetworkManager == networkManager);
 

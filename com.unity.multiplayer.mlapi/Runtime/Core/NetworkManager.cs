@@ -321,10 +321,10 @@ namespace MLAPI
             SpawnManager = new NetworkSpawnManager(this);
 
             CustomMessagingManager = new CustomMessagingManager(this);
+            
+            BufferManager = new BufferManager(this);
 
             SceneManager = new NetworkSceneManager(this);
-
-            BufferManager = new BufferManager();
 
             if (MessageHandler == null)
             {
