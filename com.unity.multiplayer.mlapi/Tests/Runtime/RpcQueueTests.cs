@@ -14,30 +14,37 @@ namespace MLAPI.RuntimeTests
     /// That all RPCs invoke at the appropriate NetworkUpdateStage (Client and Server)
     /// A lower level RpcQueueContainer test that validates RpcQueueFrameItems after they have been put into the queue
     /// </summary>
-    public class RpcQueueTests : IDisposable
+    public class RpcQueueTests
     {
+        [SetUp]
+        public void Setup()
+        {
+            // Create, instantiate, and host
+            Assert.IsTrue(NetworkManagerHelper.StartNetworkManager(out _));
+        }
+
         /// <summary>
-        /// Tests to make sure providing differen
+        /// Tests to make sure providing different
         /// ** This does not include any of the MLAPI to Transport code **
         /// </summary>
         /// <returns>IEnumerator</returns>
-        [UnityTest]
+        [UnityTest,Order(0)]
         public IEnumerator UpdateStagesInvocation()
         {
-            Assert.IsTrue(NetworkManagerHelper.StartNetworkManager(out _));
-
             Guid updateStagesTestId = NetworkManagerHelper.AddGameNetworkObject("UpdateStagesTest");
             var rpcPipelineTestComponent = NetworkManagerHelper.AddComponentToObject<NetworkUpdateStagesComponent>(updateStagesTestId);
+      
             NetworkManagerHelper.SpawnNetworkObject(updateStagesTestId);
+            
             var testsAreComplete = rpcPipelineTestComponent.IsTestComplete();
             var exceededMaximumStageIterations = rpcPipelineTestComponent.ExceededMaxIterations();
 
-            //Start testing
+            // Start testing
             rpcPipelineTestComponent.EnableTesting = true;
 
             Debug.Log("Running TestNetworkUpdateStages: ");
 
-            //Wait for the rpc pipeline test to complete or if we exceeded the maximum iterations bail
+            // Wait for the rpc pipeline test to complete or if we exceeded the maximum iterations bail
             while (!testsAreComplete && !exceededMaximumStageIterations)
             {
                 //Wait for 20ms
@@ -48,15 +55,15 @@ namespace MLAPI.RuntimeTests
             }
             var testsAreValidated = rpcPipelineTestComponent.ValidateUpdateStages();
 
-            //Stop testing
+            // Stop testing
             rpcPipelineTestComponent.EnableTesting = false;
 
             Debug.Log($"Exiting status => {nameof(testsAreComplete)}: {testsAreComplete} - {nameof(testsAreValidated)}: {testsAreValidated} -{nameof(exceededMaximumStageIterations)}: {exceededMaximumStageIterations}");
 
             Assert.IsTrue(testsAreComplete && testsAreValidated);
 
-            //Disable this so it isn't running any longer.
-            rpcPipelineTestComponent.gameObject.SetActive(false);
+            // Disable this so it isn't running any longer.
+            rpcPipelineTestComponent.gameObject.SetActive(false);            
         }
 
         /// <summary>
@@ -64,22 +71,21 @@ namespace MLAPI.RuntimeTests
         /// It will send
         /// </summary>
         /// <returns>IEnumerator</returns>
-        [UnityTest]
+        [UnityTest, Order(1)]
         public IEnumerator BufferDataValidation()
         {
-            Assert.IsTrue(NetworkManagerHelper.StartNetworkManager(out _));
-
             Guid gameObjectId = NetworkManagerHelper.AddGameNetworkObject("GrowingBufferObject");
 
             var growingRpcBufferSizeComponent = NetworkManagerHelper.AddComponentToObject<BufferDataValidationComponent>(gameObjectId);
+            
             NetworkManagerHelper.SpawnNetworkObject(gameObjectId);
-
-            //Start Testing
+            
+            // Start Testing
             growingRpcBufferSizeComponent.EnableTesting = true;
 
             var testsAreComplete = growingRpcBufferSizeComponent.IsTestComplete();
 
-            //Wait for the rpc pipeline test to complete or if we exceeded the maximum iterations bail
+            // Wait for the rpc pipeline test to complete or if we exceeded the maximum iterations bail
             while (!testsAreComplete)
             {
                 //Wait for 20ms
@@ -88,25 +94,26 @@ namespace MLAPI.RuntimeTests
                 testsAreComplete = growingRpcBufferSizeComponent.IsTestComplete();
             }
 
-            //Stop Testing
+            // Stop Testing
             growingRpcBufferSizeComponent.EnableTesting = false;
 
-            //Just disable this once we are done.
+            // Just disable this once we are done.
             growingRpcBufferSizeComponent.gameObject.SetActive(false);
 
             Assert.IsTrue(testsAreComplete);
         }
 
-
-        [Test]
+        /// <summary>
+        /// This tests the RpcQueueContainer and RpcQueueHistoryFrame
+        /// ***NOTE: We want to run this test always LAST!
+        /// </summary>
+        [Test, Order(3)]
         public void RpcQueueContainerClass()
-        {
-            Assert.IsTrue(NetworkManagerHelper.StartNetworkManager(out _));
+        {            
+            // Create a testing rpcQueueContainer that doesn't get added to the network update loop so we don't try to send or process during the test
+            var rpcQueueContainer = new RpcQueueContainer(NetworkManagerHelper.NetworkManagerObject, 0, true);
 
-            //Create a testing rpcQueueContainer that doesn't get added to the network update loop so we don't try to send or process during the test
-            var rpcQueueContainer = new RpcQueueContainer(NetworkManager.Singleton, 0, true);
-
-            //Make sure we set testing mode so we don't try to invoke rpcs
+            // Make sure we set testing mode so we don't try to invoke rpcs
             rpcQueueContainer.SetTestingState(true);
 
             var maxRpcEntries = 8;
@@ -122,16 +129,16 @@ namespace MLAPI.RuntimeTests
             var indexOffset = 0;
             ulong senderNetworkId = 1;
 
-            //Create fictitious list of clients to send to
+            // Create fictitious list of clients to send to
             ulong[] psuedoClients = new ulong[] { 0 };
 
             var randomGeneratedDataArray = preCalculatedBufferValues.ToArray();
             var maximumOffsetValue = preCalculatedBufferValues.Count;
 
-            //Testing outbound side of the RpcQueueContainer
+            // Testing outbound side of the RpcQueueContainer
             for (int i = 0; i < maxRpcEntries; i++)
             {
-                //Increment our offset into our randomly generated data for next entry;
+                // Increment our offset into our randomly generated data for next entry;
                 indexOffset = (i * messageChunkSize) % maximumOffsetValue;
 
                 var writer = rpcQueueContainer.BeginAddQueueItemToFrame(RpcQueueContainer.QueueItemType.ServerRpc, Time.realtimeSinceStartup, Transports.NetworkChannel.DefaultMessage,
@@ -144,44 +151,39 @@ namespace MLAPI.RuntimeTests
                 rpcQueueContainer.EndAddQueueItemToFrame(writer, RpcQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
             }
 
-            //Now verify the data by obtaining the RpcQueueHistoryFrame we just wrote to
+            // Now verify the data by obtaining the RpcQueueHistoryFrame we just wrote to
             var currentFrame = rpcQueueContainer.GetLoopBackHistoryFrame(RpcQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
 
-            //Reset our index offset
+            // Reset our index offset
             indexOffset = 0;
             int queueEntryItemCount = 0;
-            //Parse through the entries written to the current RpcQueueHistoryFrame
+            // Parse through the entries written to the current RpcQueueHistoryFrame
             var currentQueueItem = currentFrame.GetFirstQueueItem();
             while (currentQueueItem.QueueItemType != RpcQueueContainer.QueueItemType.None)
             {
-                //Check to make sure the wrapper information is accurate for the entry
+                // Check to make sure the wrapper information is accurate for the entry
                 Assert.AreEqual(currentQueueItem.NetworkId, senderNetworkId);
                 Assert.AreEqual(currentQueueItem.QueueItemType, RpcQueueContainer.QueueItemType.ServerRpc);
                 Assert.AreEqual(currentQueueItem.UpdateStage, NetworkUpdateStage.PostLateUpdate);
                 Assert.AreEqual(currentQueueItem.NetworkChannel, Transports.NetworkChannel.DefaultMessage);
 
-                //Validate the data in the queue
+                // Validate the data in the queue
                 Assert.IsTrue(NetworkManagerHelper.BuffersMatch(currentQueueItem.MessageData.Offset, messageChunkSize, currentQueueItem.MessageData.Array, randomGeneratedDataArray));
 
-                //Prepare for next queue item
+                // Prepare for next queue item
                 queueEntryItemCount++;
                 currentQueueItem = currentFrame.GetNextQueueItem();
             }
 
             rpcQueueContainer.Dispose();
-            rpcQueueContainer = null;
         }
 
-        public void Dispose()
+
+        [TearDown]
+        public void TearDown()
         {
-            //Stop, shutdown, and destroy
+            // Stop, shutdown, and destroy
             NetworkManagerHelper.ShutdownNetworkManager();
-        }
-
-        public RpcQueueTests()
-        {
-            //Create, instantiate, and host
-            NetworkManagerHelper.StartNetworkManager(out _);
         }
     }
 }
