@@ -76,7 +76,7 @@ namespace MLAPI.NetworkVariable.Collections
         public void ResetDirty()
         {
             m_DirtyEvents.Clear();
-            LastSyncedTime = NetworkManager.Singleton.NetworkTime;
+            LastSyncedTime = m_NetworkBehaviour.NetworkManager.NetworkTime;
         }
 
         /// <inheritdoc />
@@ -97,7 +97,7 @@ namespace MLAPI.NetworkVariable.Collections
                 return false;
             }
 
-            if (NetworkManager.Singleton.NetworkTime - LastSyncedTime >= (1f / Settings.SendTickrate))
+            if (m_NetworkBehaviour.NetworkManager.NetworkTime - LastSyncedTime >= (1f / Settings.SendTickrate))
             {
                 return true;
             }
@@ -329,7 +329,7 @@ namespace MLAPI.NetworkVariable.Collections
         /// <inheritdoc />
         void ICollection<T>.Add(T item)
         {
-            if (NetworkManager.Singleton.IsServer)
+            if (m_NetworkBehaviour.NetworkManager.IsServer)
             {
                 m_Set.Add(item);
             }
@@ -341,7 +341,7 @@ namespace MLAPI.NetworkVariable.Collections
             };
             m_DirtyEvents.Add(setEvent);
 
-            if (NetworkManager.Singleton.IsServer && OnSetChanged != null)
+            if (m_NetworkBehaviour.NetworkManager.IsServer && OnSetChanged != null)
             {
                 OnSetChanged(setEvent);
             }
@@ -420,7 +420,7 @@ namespace MLAPI.NetworkVariable.Collections
                 }
                 else
                 {
-                    if (NetworkManager.Singleton.IsServer)
+                    if (m_NetworkBehaviour.NetworkManager.IsServer)
                     {
                         m_Set.Add(value);
                     }
@@ -432,7 +432,7 @@ namespace MLAPI.NetworkVariable.Collections
                     };
                     m_DirtyEvents.Add(setEvent);
 
-                    if (NetworkManager.Singleton.IsServer && OnSetChanged != null)
+                    if (m_NetworkBehaviour.NetworkManager.IsServer && OnSetChanged != null)
                     {
                         OnSetChanged(setEvent);
                     }
@@ -447,7 +447,7 @@ namespace MLAPI.NetworkVariable.Collections
             {
                 if (!m_Set.Contains(value))
                 {
-                    if (NetworkManager.Singleton.IsServer)
+                    if (m_NetworkBehaviour.NetworkManager.IsServer)
                     {
                         m_Set.Add(value);
                     }
@@ -459,7 +459,7 @@ namespace MLAPI.NetworkVariable.Collections
                     };
                     m_DirtyEvents.Add(setEvent);
 
-                    if (NetworkManager.Singleton.IsServer && OnSetChanged != null)
+                    if (m_NetworkBehaviour.NetworkManager.IsServer && OnSetChanged != null)
                     {
                         OnSetChanged(setEvent);
                     }
@@ -470,7 +470,7 @@ namespace MLAPI.NetworkVariable.Collections
         /// <inheritdoc />
         bool ISet<T>.Add(T item)
         {
-            if (NetworkManager.Singleton.IsServer)
+            if (m_NetworkBehaviour.NetworkManager.IsServer)
             {
                 m_Set.Add(item);
             }
@@ -482,7 +482,7 @@ namespace MLAPI.NetworkVariable.Collections
             };
             m_DirtyEvents.Add(setEvent);
 
-            if (NetworkManager.Singleton.IsServer && OnSetChanged != null)
+            if (m_NetworkBehaviour.NetworkManager.IsServer && OnSetChanged != null)
             {
                 OnSetChanged(setEvent);
             }
@@ -493,7 +493,7 @@ namespace MLAPI.NetworkVariable.Collections
         /// <inheritdoc />
         public void Clear()
         {
-            if (NetworkManager.Singleton.IsServer)
+            if (m_NetworkBehaviour.NetworkManager.IsServer)
             {
                 m_Set.Clear();
             }
@@ -504,7 +504,7 @@ namespace MLAPI.NetworkVariable.Collections
             };
             m_DirtyEvents.Add(setEvent);
 
-            if (NetworkManager.Singleton.IsServer && OnSetChanged != null)
+            if (m_NetworkBehaviour.NetworkManager.IsServer && OnSetChanged != null)
             {
                 OnSetChanged(setEvent);
             }
@@ -525,7 +525,7 @@ namespace MLAPI.NetworkVariable.Collections
         /// <inheritdoc />
         public bool Remove(T item)
         {
-            if (NetworkManager.Singleton.IsServer)
+            if (m_NetworkBehaviour.NetworkManager.IsServer)
             {
                 m_Set.Remove(item);
             }
@@ -537,7 +537,7 @@ namespace MLAPI.NetworkVariable.Collections
             };
             m_DirtyEvents.Add(setEvent);
 
-            if (NetworkManager.Singleton.IsServer && OnSetChanged != null)
+            if (m_NetworkBehaviour.NetworkManager.IsServer && OnSetChanged != null)
             {
                 OnSetChanged(setEvent);
             }

@@ -75,7 +75,7 @@ namespace MLAPI.NetworkVariable.Collections
         public void ResetDirty()
         {
             m_DirtyEvents.Clear();
-            LastSyncedTime = NetworkManager.Singleton.NetworkTime;
+            LastSyncedTime = m_NetworkBehaviour.NetworkManager.NetworkTime;
         }
 
         /// <inheritdoc />
@@ -96,7 +96,7 @@ namespace MLAPI.NetworkVariable.Collections
                 return false;
             }
 
-            if (NetworkManager.Singleton.NetworkTime - LastSyncedTime >= (1f / Settings.SendTickrate))
+            if (m_NetworkBehaviour.NetworkManager.NetworkTime - LastSyncedTime >= (1f / Settings.SendTickrate))
             {
                 return true;
             }
@@ -428,7 +428,7 @@ namespace MLAPI.NetworkVariable.Collections
         /// <inheritdoc />
         public void Add(T item)
         {
-            if (NetworkManager.Singleton.IsServer)
+            if (m_NetworkBehaviour.NetworkManager.IsServer)
             {
                 m_List.Add(item);
             }
@@ -446,7 +446,7 @@ namespace MLAPI.NetworkVariable.Collections
         /// <inheritdoc />
         public void Clear()
         {
-            if (NetworkManager.Singleton.IsServer)
+            if (m_NetworkBehaviour.NetworkManager.IsServer)
             {
                 m_List.Clear();
             }
@@ -474,7 +474,7 @@ namespace MLAPI.NetworkVariable.Collections
         /// <inheritdoc />
         public bool Remove(T item)
         {
-            if (NetworkManager.Singleton.IsServer)
+            if (m_NetworkBehaviour.NetworkManager.IsServer)
             {
                 m_List.Remove(item);
             }
@@ -504,7 +504,7 @@ namespace MLAPI.NetworkVariable.Collections
         /// <inheritdoc />
         public void Insert(int index, T item)
         {
-            if (NetworkManager.Singleton.IsServer)
+            if (m_NetworkBehaviour.NetworkManager.IsServer)
             {
                 m_List.Insert(index, item);
             }
@@ -522,7 +522,7 @@ namespace MLAPI.NetworkVariable.Collections
         /// <inheritdoc />
         public void RemoveAt(int index)
         {
-            if (NetworkManager.Singleton.IsServer)
+            if (m_NetworkBehaviour.NetworkManager.IsServer)
             {
                 m_List.RemoveAt(index);
             }
@@ -543,7 +543,7 @@ namespace MLAPI.NetworkVariable.Collections
             get => m_List[index];
             set
             {
-                if (NetworkManager.Singleton.IsServer)
+                if (m_NetworkBehaviour.NetworkManager.IsServer)
                 {
                     m_List[index] = value;
                 }
@@ -561,9 +561,9 @@ namespace MLAPI.NetworkVariable.Collections
 
         private void HandleAddListEvent(NetworkListEvent<T> listEvent)
         {
-            if (NetworkManager.Singleton.IsServer)
+            if (m_NetworkBehaviour.NetworkManager.IsServer)
             {
-                if (NetworkManager.Singleton.ConnectedClients.Count > 0)
+                if (m_NetworkBehaviour.NetworkManager.ConnectedClients.Count > 0)
                 {
                     m_DirtyEvents.Add(listEvent);
                 }
