@@ -737,9 +737,10 @@ namespace MLAPI
 
         private void OnDestroy()
         {
-            if (Singleton != null && Singleton == this)
+            Shutdown();
+
+            if (Singleton == this)
             {
-                Shutdown();
                 Singleton = null;
             }
         }
