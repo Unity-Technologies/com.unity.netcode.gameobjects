@@ -225,6 +225,8 @@ namespace MLAPI.Spawning
                     // Otherwise, instantiate an instance of the NetworkPrefab linked to the prefabHash
                     var networkObject = ((position == null && rotation == null) ? UnityEngine.Object.Instantiate(networkPrefabReference) : UnityEngine.Object.Instantiate(networkPrefabReference, position.GetValueOrDefault(Vector3.zero), rotation.GetValueOrDefault(Quaternion.identity))).GetComponent<NetworkObject>();
 
+                    networkObject.NetworkManagerOwner = NetworkManager;
+
                     if (parentNetworkObject != null)
                     {
                         networkObject.transform.SetParent(parentNetworkObject.transform, true);
