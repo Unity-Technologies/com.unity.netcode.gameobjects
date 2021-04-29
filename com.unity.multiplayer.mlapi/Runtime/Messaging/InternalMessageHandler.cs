@@ -29,7 +29,6 @@ namespace MLAPI.Messaging
         private static ProfilerMarker s_HandleChangeOwner = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleChangeOwner)}");
         private static ProfilerMarker s_HandleAddObjects = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleAddObjects)}");
         private static ProfilerMarker s_HandleDestroyObjects = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleDestroyObjects)}");
-        private static ProfilerMarker s_HandleTimeSync = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleTimeSync)}");
         private static ProfilerMarker s_HandleNetworkVariableDelta = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleNetworkVariableDelta)}");
         private static ProfilerMarker s_HandleNetworkVariableUpdate = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleNetworkVariableUpdate)}");
         private static ProfilerMarker s_HandleUnnamedMessage = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleUnnamedMessage)}");
@@ -109,8 +108,8 @@ namespace MLAPI.Messaging
 
                 bool sceneSwitch = NetworkManager.NetworkConfig.EnableSceneManagement && NetworkManager.SceneManager.HasSceneMismatch(sceneIndex);
 
-                float netTime = reader.ReadSinglePacked();
-                NetworkManager.UpdateNetworkTime(clientId, netTime, receiveTime, true);
+                float netTime = reader.ReadSinglePacked(); // TODO read tick and apply to tick system
+                //NetworkManager.UpdateNetworkTime(clientId, netTime, receiveTime, true);
 
                 NetworkManager.ConnectedClients.Add(NetworkManager.LocalClientId, new NetworkClient { ClientId = NetworkManager.LocalClientId });
 
@@ -372,21 +371,6 @@ namespace MLAPI.Messaging
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleDestroyObjects.End();
-#endif
-        }
-
-        public void HandleTimeSync(ulong clientId, Stream stream, float receiveTime)
-        {
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            s_HandleTimeSync.Begin();
-#endif
-            using (var reader = PooledNetworkReader.Get(stream))
-            {
-                float netTime = reader.ReadSinglePacked();
-                NetworkManager.UpdateNetworkTime(clientId, netTime, receiveTime);
-            }
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            s_HandleTimeSync.End();
 #endif
         }
 

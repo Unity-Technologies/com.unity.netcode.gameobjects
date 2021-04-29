@@ -1,7 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using MLAPI.NetworkTime;
+using MLAPI.Timing;
 using MLAPI.Serialization.Pooled;
 using MLAPI.Transports;
 
@@ -20,7 +20,7 @@ namespace MLAPI.NetworkVariable.Collections
         /// <summary>
         /// Gets the last time the variable was synced
         /// </summary>
-        public float LastSyncedTime { get; internal set; }
+        public NetworkTime LastSyncedTime { get; internal set; }
 
         /// <summary>
         /// The settings for this container
@@ -76,7 +76,7 @@ namespace MLAPI.NetworkVariable.Collections
         public void ResetDirty()
         {
             m_DirtyEvents.Clear();
-            LastSyncedTime = NetworkManager.Singleton.NetworkTime;
+            LastSyncedTime = NetworkManager.Singleton.PredictedTime;
         }
 
         /// <inheritdoc />
@@ -97,7 +97,7 @@ namespace MLAPI.NetworkVariable.Collections
                 return false;
             }
 
-            if (NetworkManager.Singleton.NetworkTime - LastSyncedTime >= (1f / Settings.SendTickrate))
+            if (NetworkManager.Singleton.PredictedTime.FixedTime - LastSyncedTime.FixedTime >= (1f / Settings.SendTickrate))
             {
                 return true;
             }
@@ -223,7 +223,7 @@ namespace MLAPI.NetworkVariable.Collections
         }
 
         /// <inheritdoc />
-        public void ReadField(Stream stream, ushort remoteTick)
+        public void ReadField(Stream stream, int remoteTick)
         {
             using (var reader = PooledNetworkReader.Get(stream))
             {
@@ -237,7 +237,7 @@ namespace MLAPI.NetworkVariable.Collections
         }
 
         /// <inheritdoc />
-        public void ReadDelta(Stream stream, bool keepDirtyDelta, ushort remoteTick)
+        public void ReadDelta(Stream stream, bool keepDirtyDelta, int remoteTick)
         {
             using (var reader = PooledNetworkReader.Get(stream))
             {
@@ -577,12 +577,12 @@ namespace MLAPI.NetworkVariable.Collections
             }
         }
 
-        public ushort LastModifiedTick
+        public int LastModifiedTick
         {
             get
             {
                 // todo: implement proper network tick for NetworkList
-                return NetworkTickSystem.NoTick;
+                return NetworkTimeSystem.NoTick;
             }
         }
     }

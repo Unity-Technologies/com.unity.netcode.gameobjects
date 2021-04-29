@@ -9,7 +9,7 @@ using System.IO;
 using MLAPI.Configuration;
 using MLAPI.Logging;
 using MLAPI.Messaging;
-using MLAPI.NetworkTime;
+using MLAPI.Timing;
 using MLAPI.NetworkVariable;
 using MLAPI.Profiling;
 using MLAPI.Reflection;
@@ -631,9 +631,9 @@ namespace MLAPI
                             {
                                 writtenAny = true;
 
-                                // write the network tick at which this NetworkVariable was modified remotely
-                                // this will allow lag-compensation
-                                writer.WriteUInt16Packed(NetworkVariableFields[k].LastModifiedTick);
+                                // write the network tick at which this NetworkVariable was modified
+                                // TODO serialization of tick can use less bandwidth by using a byte/ushort sliding tick window
+                                writer.WriteInt32Packed(NetworkVariableFields[k].LastModifiedTick);
 
                                 if (NetworkManager.Singleton.NetworkConfig.EnsureNetworkVariableLengthSafety)
                                 {
@@ -738,9 +738,8 @@ namespace MLAPI
                         return;
                     }
 
-                    // read the local network tick at which this variable was written.
-                    // if this var was updated from our machine, this local tick will be locally valid
-                    ushort remoteTick = reader.ReadUInt16Packed();
+                    // read the predicted tick at which this variable was written.
+                    int remoteTick = reader.ReadInt32Packed();
 
                     long readStartPos = stream.Position;
 
@@ -831,7 +830,7 @@ namespace MLAPI
 
                     long readStartPos = stream.Position;
 
-                    networkVariableList[i].ReadField(stream, NetworkTickSystem.NoTick); // TODO broken this should be correct
+                    networkVariableList[i].ReadField(stream, NetworkTimeSystem.NoTick); // TODO broken this use the correct tick
                     PerformanceDataManager.Increment(ProfilerConstants.NetworkVarUpdates);
 
                     ProfilerStatManager.NetworkVarsRcvd.Record();
@@ -946,7 +945,7 @@ namespace MLAPI
 
                     long readStartPos = stream.Position;
 
-                    networkVariableList[j].ReadField(stream, NetworkTickSystem.NoTick); // TODO broken this should be server tick
+                    networkVariableList[j].ReadField(stream, NetworkTimeSystem.NoTick); // TODO broken this should be server tick
 
                     if (NetworkManager.Singleton.NetworkConfig.EnsureNetworkVariableLengthSafety)
                     {

@@ -106,7 +106,7 @@ namespace MLAPI.Prototyping
             m_TrackedParamFlags = 0;
         }
 
-        private void FixedUpdate()
+        private void FixedUpdate() // TODO this should use NetworkFixedUpdate
         {
             if (!IsOwner)
             {
@@ -128,7 +128,7 @@ namespace MLAPI.Prototyping
 
         private bool CheckSendRate()
         {
-            var networkTime = NetworkManager.Singleton.NetworkTime;
+            var networkTime = NetworkManager.Singleton.PredictedTime.FixedTime;
             if (SendRate != 0 && m_NextSendTime < networkTime)
             {
                 m_NextSendTime = networkTime + SendRate;

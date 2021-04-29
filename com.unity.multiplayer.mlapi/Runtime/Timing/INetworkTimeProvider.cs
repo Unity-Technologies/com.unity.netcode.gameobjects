@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace MLAPI.NetworkTime
+namespace MLAPI.Timing
 {
     public interface INetworkTimeProvider
     {

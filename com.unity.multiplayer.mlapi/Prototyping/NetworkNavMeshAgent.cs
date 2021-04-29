@@ -79,7 +79,7 @@ namespace MLAPI.Prototyping
                 }
             }
 
-            if (NetworkManager.Singleton.NetworkTime - m_LastCorrectionTime >= CorrectionDelay)
+            if (NetworkManager.Singleton.PredictedTime.Time - m_LastCorrectionTime >= CorrectionDelay) // TODO this is not aliased correctly, is this an issue?
             {
                 if (!EnableProximity)
                 {
@@ -99,7 +99,7 @@ namespace MLAPI.Prototyping
                     OnNavMeshCorrectionUpdateClientRpc(m_Agent.velocity, transform.position, new ClientRpcParams { Send = new ClientRpcSendParams { TargetClientIds = proximityClients.ToArray() } });
                 }
 
-                m_LastCorrectionTime = NetworkManager.Singleton.NetworkTime;
+                m_LastCorrectionTime = NetworkManager.Singleton.PredictedTime.Time;
             }
         }
 

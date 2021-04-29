@@ -20,9 +20,8 @@ using MLAPI.Spawning;
 using MLAPI.Exceptions;
 using MLAPI.Transports.Tasks;
 using MLAPI.Messaging.Buffering;
-using MLAPI.NetworkTime;
+using MLAPI.Timing;
 using Unity.Profiling;
-using UnityEditor.VersionControl;
 
 namespace MLAPI
 {
@@ -57,15 +56,19 @@ namespace MLAPI
 #endif
 
         internal RpcQueueContainer RpcQueueContainer { get; private set; }
-        internal NetworkTickSystem NetworkTickSystem { get; private set; }
+        internal NetworkTimeSystem networkTimeSystem { get; private set; }
         public NetworkPrefabHandler PrefabHandler { get; private set; }
 
         /// <summary>
         /// A synchronized time, represents the time in seconds since the server application started. Is replicated across all clients
         /// </summary>
-        public float NetworkTime => Time.unscaledTime + m_CurrentNetworkTimeOffset;
+        private float NetworkTime => Time.unscaledTime + m_CurrentNetworkTimeOffset;
 
-        private float m_NetworkTimeOffset;
+        public NetworkTime PredictedTime { get; private set; }
+
+        public NetworkTime ServerTime { get; private set; }
+
+        //private float m_NetworkTimeOffset;
         private float m_CurrentNetworkTimeOffset;
 
         /// <summary>
@@ -294,7 +297,6 @@ namespace MLAPI
             }
 
             LocalClientId = 0;
-            m_NetworkTimeOffset = 0f;
             m_CurrentNetworkTimeOffset = 0f;
             PendingClients.Clear();
             ConnectedClients.Clear();
@@ -327,7 +329,7 @@ namespace MLAPI
                 return;
             }
 
-            NetworkTickSystem = new NetworkTickSystem(NetworkConfig.TickRate);
+            networkTimeSystem = new NetworkTimeSystem(NetworkConfig.TickRate);
 
             //This should never happen, but in the event that it does there should be (at a minimum) a unity error logged.
             if (RpcQueueContainer != null)
@@ -777,37 +779,27 @@ namespace MLAPI
             if (IsListening)
             {
                 // store old predicted tick to know how many fixed ticks passed
-                var previousPredictedTick = NetworkTickSystem.PredictedTime.Tick;
+                var previousPredictedTick = networkTimeSystem.PredictedTime.Tick;
 
                 // update the tick system with delta time
-                NetworkTickSystem.UpdateNetworkTick(Time.deltaTime);
+                networkTimeSystem.AdvanceNetworkTime(Time.deltaTime);
 
-                var currentPredictedTick = NetworkTickSystem.PredictedTime.Tick;
+                var currentPredictedTick = networkTimeSystem.PredictedTime.Tick;
+
+                var predictedToServerDifference = currentPredictedTick - networkTimeSystem.ServerTime.Tick;
 
                 for (int i = previousPredictedTick; i < currentPredictedTick; i++)
                 {
+                    // set exposed time values to correct fixed values
+                    PredictedTime = new NetworkTime(networkTimeSystem.TickRate, i);
+                    ServerTime = new NetworkTime();
 
+                    NetworkFixedTick(i);
                 }
 
-                if (IsServer && NetworkConfig.EnableTimeResync && NetworkTime - m_LastTimeSyncTime >= NetworkConfig.TimeResyncInterval)
-                {
-#if UNITY_EDITOR && !UNITY_2020_2_OR_NEWER
-                    NetworkProfiler.StartTick(TickType.Event);
-#endif
-                    SyncTime();
-                    m_LastTimeSyncTime = NetworkTime;
-#if UNITY_EDITOR && !UNITY_2020_2_OR_NEWER
-                    NetworkProfiler.EndTick();
-#endif
-                }
-
-                if (!Mathf.Approximately(m_NetworkTimeOffset, m_CurrentNetworkTimeOffset))
-                {
-                    // Smear network time adjustments by no more than 200ms per second.  This should help code deal with
-                    // changes more gracefully, since the network time will always flow forward at a reasonable pace.
-                    float maxDelta = Mathf.Max(0.001f, 0.2f * Time.unscaledDeltaTime);
-                    m_CurrentNetworkTimeOffset += Mathf.Clamp(m_NetworkTimeOffset - m_CurrentNetworkTimeOffset, -maxDelta, maxDelta);
-                }
+                // Set exposed time to values from tick system
+                PredictedTime = networkTimeSystem.PredictedTime;
+                ServerTime = networkTimeSystem.ServerTime;
             }
         }
 
@@ -845,22 +837,6 @@ namespace MLAPI
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_EventTick.End();
 #endif
-        }
-
-        internal void UpdateNetworkTime(ulong clientId, float netTime, float receiveTime, bool warp = false)
-        {
-            float rtt = NetworkConfig.NetworkTransport.GetCurrentRtt(clientId) / 1000f;
-            m_NetworkTimeOffset = netTime - receiveTime + rtt / 2f;
-
-            if (warp)
-            {
-                m_CurrentNetworkTimeOffset = m_NetworkTimeOffset;
-            }
-
-            if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
-            {
-                NetworkLog.LogInfo($"Received network time {netTime}, RTT to server is {rtt}, {(warp ? "setting" : "smearing")} offset to {m_NetworkTimeOffset} (delta {m_NetworkTimeOffset - m_CurrentNetworkTimeOffset})");
-            }
         }
 
         private void SendConnectionRequest()
@@ -1117,13 +1093,6 @@ namespace MLAPI
                         if (IsClient)
                         {
                             MessageHandler.HandleDestroyObjects(clientId, messageStream);
-                        }
-
-                        break;
-                    case NetworkConstants.TIME_SYNC:
-                        if (IsClient)
-                        {
-                            MessageHandler.HandleTimeSync(clientId, messageStream, receiveTime);
                         }
 
                         break;
@@ -1429,27 +1398,6 @@ namespace MLAPI
             }
         }
 
-        private void SyncTime()
-        {
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            s_SyncTime.Begin();
-#endif
-            if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
-            {
-                NetworkLog.LogInfo("Syncing Time To Clients");
-            }
-
-            using (var buffer = PooledNetworkBuffer.Get())
-            using (var writer = PooledNetworkWriter.Get(buffer))
-            {
-                writer.WriteSinglePacked(Time.realtimeSinceStartup);
-                MessageSender.Send(NetworkConstants.TIME_SYNC, NetworkChannel.SyncChannel, buffer);
-            }
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            s_SyncTime.End();
-#endif
-        }
-
         private readonly List<NetworkObject> m_ObservedObjects = new List<NetworkObject>();
 
         internal void HandleApproval(ulong ownerClientId, bool createPlayerObject, uint? playerPrefabHash, bool approved, Vector3? position, Quaternion? rotation)
@@ -1468,9 +1416,6 @@ namespace MLAPI
 
                 PerformanceDataManager.Increment(ProfilerConstants.Connections);
                 ProfilerStatManager.Connections.Record();
-
-                // This packet is unreliable, but if it gets through it should provide a much better sync than the potentially huge approval message.
-                SyncTime();
 
                 if (createPlayerObject)
                 {

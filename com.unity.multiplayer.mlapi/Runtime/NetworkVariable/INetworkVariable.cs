@@ -56,7 +56,7 @@ namespace MLAPI.NetworkVariable
         /// </summary>
         /// <param name="stream">The stream to read the state from</param>
         /// <param name="remoteTick">The remote tick at which this NetworkVariable was last updated</param>
-        void ReadField(Stream stream, ushort remoteTick);
+        void ReadField(Stream stream, int remoteTick);
 
         /// <summary>
         /// Reads delta from the reader and applies them to the internal value
@@ -64,7 +64,7 @@ namespace MLAPI.NetworkVariable
         /// <param name="stream">The stream to read the delta from</param>
         /// <param name="keepDirtyDelta">Whether or not the delta should be kept as dirty or consumed</param>
         /// <param name="remoteTick">The remote tick at which this NetworkVariable was last update</param>
-        void ReadDelta(Stream stream, bool keepDirtyDelta, ushort remoteTick);
+        void ReadDelta(Stream stream, bool keepDirtyDelta, int remoteTick);
 
         /// <summary>
         /// Sets NetworkBehaviour the container belongs to.
@@ -77,6 +77,6 @@ namespace MLAPI.NetworkVariable
         /// If the last modification was a local write, this is the last predicted tick where this variable was written to.
         /// If the last modification was a received server update, this is the server tick corresponding to that update.
         /// </summary>
-        ushort LastModifiedTick { get; }
+        int LastModifiedTick { get; }
     }
 }

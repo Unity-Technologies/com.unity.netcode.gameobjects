@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.IO;
 using System;
-using MLAPI.NetworkTime;
+using MLAPI.Timing;
 using MLAPI.Serialization.Pooled;
 using MLAPI.Transports;
 
@@ -20,7 +20,7 @@ namespace MLAPI.NetworkVariable
         public readonly NetworkVariableSettings Settings = new NetworkVariableSettings();
 
         /// <inheritdoc />
-        public ushort LastModifiedTick { get; internal set; }
+        public int LastModifiedTick { get; internal set; }
 
         /// <summary>
         /// Delegate type for value changed event
@@ -87,7 +87,7 @@ namespace MLAPI.NetworkVariable
 
                 // Setter is assumed to be called locally, by game code.
                 // When used by the host, it is its responsibility to set the RemoteTick
-                RemoteTick = NetworkTickSystem.NoTick;
+                LastModifiedTick = NetworkManager.Singleton.PredictedTime.Tick;
 
                 m_IsDirty = true;
                 T previousValue = m_InternalValue;
@@ -176,7 +176,7 @@ namespace MLAPI.NetworkVariable
             return true;
         }
 
-        public void ReadDelta(Stream stream, bool keepDirtyDelta, ushort remoteTick)
+        public void ReadDelta(Stream stream, bool keepDirtyDelta, int remoteTick)
         {
             // TODO The change to the NetworkVariable should be ignored here if LastModified tick is newer then remote tick so that client authoritative writes work. But I'm afraid that this will break other stuff so I'm leaving it for now.
             LastModifiedTick = remoteTick;
@@ -202,7 +202,7 @@ namespace MLAPI.NetworkVariable
         }
 
         /// <inheritdoc />
-        public void ReadField(Stream stream, ushort remoteTick)
+        public void ReadField(Stream stream, int remoteTick)
         {
             ReadDelta(stream, false, remoteTick);
         }
