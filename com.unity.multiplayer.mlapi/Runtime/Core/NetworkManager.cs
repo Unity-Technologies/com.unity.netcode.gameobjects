@@ -209,8 +209,6 @@ namespace MLAPI
         internal static event Action OnSingletonReady;
 
 #if UNITY_EDITOR
-        internal static bool IsTestRun = false;
-
         private void OnValidate()
         {
             if (NetworkConfig == null)
@@ -321,7 +319,7 @@ namespace MLAPI
             SpawnManager = new NetworkSpawnManager(this);
 
             CustomMessagingManager = new CustomMessagingManager(this);
-            
+
             BufferManager = new BufferManager(this);
 
             SceneManager = new NetworkSceneManager(this);
@@ -731,19 +729,18 @@ namespace MLAPI
                 Application.runInBackground = true;
             }
 
-            if (Singleton != null && Singleton != this)
+            if (Singleton == null)
             {
-                return;
+                SetSingleton();
             }
-
-            SetSingleton();
         }
 
         private void OnDestroy()
         {
-            if (Singleton != null && Singleton == this)
+            Shutdown();
+
+            if (Singleton == this)
             {
-                Shutdown();
                 Singleton = null;
             }
         }
@@ -1155,8 +1152,6 @@ namespace MLAPI
                     return;
                 }
 
-                #region INTERNAL MESSAGE
-
                 switch (messageType)
                 {
                     case NetworkConstants.CONNECTION_REQUEST:
@@ -1312,8 +1307,6 @@ namespace MLAPI
 
                         break;
                 }
-
-                #endregion
 
 #if !UNITY_2020_2_OR_NEWER
                 NetworkProfiler.EndEvent();
@@ -1605,51 +1598,7 @@ namespace MLAPI
 
                         for (int i = 0; i < m_ObservedObjects.Count; i++)
                         {
-                            var observedObject = m_ObservedObjects[i];
-                            writer.WriteBool(observedObject.IsPlayerObject);
-                            writer.WriteUInt64Packed(observedObject.NetworkObjectId);
-                            writer.WriteUInt64Packed(observedObject.OwnerClientId);
-
-                            NetworkObject parent = null;
-
-                            if (!observedObject.AlwaysReplicateAsRoot && observedObject.transform.parent != null)
-                            {
-                                parent = observedObject.transform.parent.GetComponent<NetworkObject>();
-                            }
-
-                            if (parent == null)
-                            {
-                                writer.WriteBool(false);
-                            }
-                            else
-                            {
-                                writer.WriteBool(true);
-                                writer.WriteUInt64Packed(parent.NetworkObjectId);
-                            }
-
-                            writer.WriteBool(observedObject.IsSceneObject ?? true);
-                            writer.WriteUInt32Packed(observedObject.GlobalObjectIdHash);
-
-                            if (observedObject.IncludeTransformWhenSpawning == null || observedObject.IncludeTransformWhenSpawning(ownerClientId))
-                            {
-                                writer.WriteBool(true);
-                                writer.WriteSinglePacked(observedObject.transform.position.x);
-                                writer.WriteSinglePacked(observedObject.transform.position.y);
-                                writer.WriteSinglePacked(observedObject.transform.position.z);
-
-                                writer.WriteSinglePacked(observedObject.transform.rotation.eulerAngles.x);
-                                writer.WriteSinglePacked(observedObject.transform.rotation.eulerAngles.y);
-                                writer.WriteSinglePacked(observedObject.transform.rotation.eulerAngles.z);
-                            }
-                            else
-                            {
-                                writer.WriteBool(false);
-                            }
-
-                            if (NetworkConfig.EnableNetworkVariable)
-                            {
-                                observedObject.WriteNetworkVariableData(buffer, ownerClientId);
-                            }
+                            m_ObservedObjects[i].SerializeSceneObject(writer, ownerClientId);
                         }
 
                         MessageSender.Send(ownerClientId, NetworkConstants.CONNECTION_APPROVED, NetworkChannel.Internal, buffer);

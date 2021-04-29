@@ -196,7 +196,7 @@ namespace MLAPI.Spawning
                 {
                     // See if there is a valid registered NetworkPrefabOverrideLink associated with the provided prefabHash
                     GameObject networkPrefabReference = null;
-                    if(NetworkManager.NetworkConfig.NetworkPrefabOverrideLinks.ContainsKey(prefabHash))
+                    if (NetworkManager.NetworkConfig.NetworkPrefabOverrideLinks.ContainsKey(prefabHash))
                     {
                         switch (NetworkManager.NetworkConfig.NetworkPrefabOverrideLinks[prefabHash].Override)
                         {

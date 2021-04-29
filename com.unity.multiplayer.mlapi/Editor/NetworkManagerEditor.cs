@@ -36,7 +36,7 @@ namespace MLAPI.Editor
         private SerializedProperty m_TimeResyncIntervalProperty;
         private SerializedProperty m_EnableNetworkVariableProperty;
         private SerializedProperty m_EnsureNetworkVariableLengthSafetyProperty;
-        private SerializedProperty m_ForceSamePrefabsProperty;        
+        private SerializedProperty m_ForceSamePrefabsProperty;
         private SerializedProperty m_EnableSceneManagementProperty;
         private SerializedProperty m_RecycleNetworkIdsProperty;
         private SerializedProperty m_NetworkIdRecycleDelayProperty;
@@ -112,7 +112,7 @@ namespace MLAPI.Editor
             m_EnableTimeResyncProperty = m_NetworkConfigProperty.FindPropertyRelative("EnableTimeResync");
             m_TimeResyncIntervalProperty = m_NetworkConfigProperty.FindPropertyRelative("TimeResyncInterval");
             m_EnableNetworkVariableProperty = m_NetworkConfigProperty.FindPropertyRelative("EnableNetworkVariable");
-            m_EnsureNetworkVariableLengthSafetyProperty = m_NetworkConfigProperty.FindPropertyRelative("EnsureNetworkVariableLengthSafety");            
+            m_EnsureNetworkVariableLengthSafetyProperty = m_NetworkConfigProperty.FindPropertyRelative("EnsureNetworkVariableLengthSafety");
             m_ForceSamePrefabsProperty = m_NetworkConfigProperty.FindPropertyRelative("ForceSamePrefabs");
             m_EnableSceneManagementProperty = m_NetworkConfigProperty.FindPropertyRelative("EnableSceneManagement");
             m_RecycleNetworkIdsProperty = m_NetworkConfigProperty.FindPropertyRelative("RecycleNetworkIds");
@@ -133,7 +133,7 @@ namespace MLAPI.Editor
             m_RunInBackgroundProperty = serializedObject.FindProperty(nameof(NetworkManager.RunInBackground));
             m_LogLevelProperty = serializedObject.FindProperty(nameof(NetworkManager.LogLevel));
             m_NetworkConfigProperty = serializedObject.FindProperty(nameof(NetworkManager.NetworkConfig));
-            
+
             // NetworkConfig properties
             m_PlayerPrefabProperty = m_NetworkConfigProperty.FindPropertyRelative(nameof(NetworkConfig.PlayerPrefab));
             m_ProtocolVersionProperty = m_NetworkConfigProperty.FindPropertyRelative("ProtocolVersion");
