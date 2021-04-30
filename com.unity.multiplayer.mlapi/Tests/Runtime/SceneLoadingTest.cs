@@ -10,9 +10,9 @@ using NUnit;
 using NUnit.Framework;
 using UnityEngine.TestTools;
 using UnityEngine.SceneManagement;
-#if UNITY_EDITOR
+
 using UnityEditor;
-#endif
+
 namespace MLAPI.RuntimeTests
 {
     [TestFixture]
@@ -21,7 +21,7 @@ namespace MLAPI.RuntimeTests
         // Setup the test
         public void Setup()
         {
-#if UNITY_EDITOR
+
             var scenes = new List<EditorBuildSettingsScene>();
             var guids = AssetDatabase.FindAssets("t:Scene", new[] { "Assets/UnitTestScenes" });
             if (guids != null)
@@ -38,7 +38,7 @@ namespace MLAPI.RuntimeTests
             }
             Debug.Log("Adding test scenes to build settings:\n" + string.Join("\n", scenes.Select(scene => scene.path)));
             EditorBuildSettings.scenes = EditorBuildSettings.scenes.Union(scenes).ToArray();
-#endif
+
         }
 
         private NetworkManager m_NetworkManager;
@@ -108,10 +108,9 @@ namespace MLAPI.RuntimeTests
         // Cleanup the test
         public void Cleanup()
         {
-#if UNITY_EDITOR
+
             EditorBuildSettings.scenes = EditorBuildSettings.scenes
                 .Where(scene => !scene.path.StartsWith("Assets/UnitTestScenes")).ToArray();
-#endif
         }
     }
 }
