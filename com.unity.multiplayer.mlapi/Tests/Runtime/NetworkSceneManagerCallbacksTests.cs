@@ -15,7 +15,7 @@ namespace MLAPI.RuntimeTests
         [UnitySetUp]
         public IEnumerator Setup()
         {
-            yield return EditorSceneManager.LoadSceneAsyncInPlayMode("Packages/com.unity.multiplayer.mlapi/Tests/Runtime/OnAllClientsReady/SceneWeAreSwitchingFrom.unity", new LoadSceneParameters(LoadSceneMode.Single));
+            yield return EditorSceneManager.LoadSceneAsyncInPlayMode("Assets/ManualTests/OnAllClientsReady/SceneWeAreSwitchingFrom.unity", new LoadSceneParameters(LoadSceneMode.Single));
             
             var networkConfig = new NetworkConfig
             {
