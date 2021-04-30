@@ -1450,7 +1450,7 @@ namespace MLAPI
                             writer.WriteByteArray(NetworkSceneManager.CurrentSceneSwitchProgressGuid.ToByteArray());
                         }
 
-                        writer.WriteSinglePacked(Time.realtimeSinceStartup);
+                        writer.WriteInt32Packed(networkTimeSystem.PredictedTime.Tick);
                         writer.WriteUInt32Packed((uint)m_ObservedObjects.Count);
 
                         for (int i = 0; i < m_ObservedObjects.Count; i++)
