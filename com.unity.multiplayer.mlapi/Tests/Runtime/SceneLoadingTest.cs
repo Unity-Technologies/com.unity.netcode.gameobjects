@@ -1,12 +1,9 @@
-using System;
 using System.Collections;
 using System.IO;
 using System.Linq;
 using System.Collections.Generic;
+using System.Reflection;
 using UnityEngine;
-using MLAPI;
-using MLAPI.SceneManagement;
-using NUnit;
 using NUnit.Framework;
 using UnityEngine.TestTools;
 using UnityEngine.SceneManagement;
@@ -20,10 +17,12 @@ namespace MLAPI.RuntimeTests
     {
         // Setup the test
         public void Setup()
-        {
-
+        {            
+            var execAssembly = Assembly.GetExecutingAssembly();
+            var packagePath = UnityEditor.PackageManager.PackageInfo.FindForAssembly(execAssembly).assetPath;
+            var scenePath = Path.Combine(packagePath, $"Tests/Runtime/TestScenes/");
             var scenes = new List<EditorBuildSettingsScene>();
-            var guids = AssetDatabase.FindAssets("t:Scene", new[] { "Assets/UnitTestScenes" });
+            var guids = AssetDatabase.FindAssets("t:Scene", new[] { scenePath });
             if (guids != null)
             {
                 foreach (string guid in guids)
