@@ -82,6 +82,10 @@ namespace MLAPI.RuntimeTests
                         RegisteredScenes = new List<string>() {SceneManager.GetActiveScene().name}
                     };
                 }
+                else
+                {
+                    networkConfig.RegisteredScenes.Add(SceneManager.GetActiveScene().name);
+                }
 
                 NetworkManagerObject.NetworkConfig = networkConfig;
                 

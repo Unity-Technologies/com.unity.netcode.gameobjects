@@ -20,9 +20,7 @@ namespace MLAPI.RuntimeTests
         [UnitySetUp]
         public IEnumerator Setup()
         {
-            var execAssembly = Assembly.GetExecutingAssembly();
-            var packagePath = PackageInfo.FindForAssembly(execAssembly).assetPath;
-            var scenePath = Path.Combine(packagePath, $"Tests/Runtime/OnAllClientsReady/SceneWeAreSwitchingFrom.unity");
+            var scenePath = $"{Application.dataPath}/ManualTests/OnAllClientsReady/SceneWeAreSwitchingFrom.unity";
             
             yield return EditorSceneManager.LoadSceneAsyncInPlayMode(scenePath, new LoadSceneParameters(LoadSceneMode.Single));
             
