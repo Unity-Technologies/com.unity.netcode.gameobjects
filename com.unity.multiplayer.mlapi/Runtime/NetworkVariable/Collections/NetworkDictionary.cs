@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -77,7 +78,7 @@ namespace MLAPI.NetworkVariable.Collections
         public void ResetDirty()
         {
             m_DirtyEvents.Clear();
-            LastSyncedTime = NetworkManager.Singleton.NetworkTime;
+            LastSyncedTime = m_NetworkBehaviour.NetworkManager.NetworkTime;
         }
 
         /// <inheritdoc />
@@ -388,7 +389,7 @@ namespace MLAPI.NetworkVariable.Collections
                 return false;
             }
 
-            if (NetworkManager.Singleton.NetworkTime - LastSyncedTime >= (1f / Settings.SendTickrate))
+            if (m_NetworkBehaviour.NetworkManager.NetworkTime - LastSyncedTime >= (1f / Settings.SendTickrate))
             {
                 return true;
             }
@@ -403,7 +404,9 @@ namespace MLAPI.NetworkVariable.Collections
             get => m_Dictionary[key];
             set
             {
-                if (NetworkManager.Singleton.IsServer)
+                EnsureInitialized();
+
+                if (m_NetworkBehaviour.NetworkManager.IsServer)
                 {
                     m_Dictionary[key] = value;
                 }
@@ -434,7 +437,9 @@ namespace MLAPI.NetworkVariable.Collections
         /// <inheritdoc />
         public void Add(TKey key, TValue value)
         {
-            if (NetworkManager.Singleton.IsServer)
+            EnsureInitialized();
+
+            if (m_NetworkBehaviour.NetworkManager.IsServer)
             {
                 m_Dictionary.Add(key, value);
             }
@@ -452,7 +457,9 @@ namespace MLAPI.NetworkVariable.Collections
         /// <inheritdoc />
         public void Add(KeyValuePair<TKey, TValue> item)
         {
-            if (NetworkManager.Singleton.IsServer)
+            EnsureInitialized();
+
+            if (m_NetworkBehaviour.NetworkManager.IsServer)
             {
                 m_Dictionary.Add(item);
             }
@@ -470,7 +477,9 @@ namespace MLAPI.NetworkVariable.Collections
         /// <inheritdoc />
         public void Clear()
         {
-            if (NetworkManager.Singleton.IsServer)
+            EnsureInitialized();
+
+            if (m_NetworkBehaviour.NetworkManager.IsServer)
             {
                 m_Dictionary.Clear();
             }
@@ -510,7 +519,9 @@ namespace MLAPI.NetworkVariable.Collections
         /// <inheritdoc />
         public bool Remove(TKey key)
         {
-            if (NetworkManager.Singleton.IsServer)
+            EnsureInitialized();
+
+            if (m_NetworkBehaviour.NetworkManager.IsServer)
             {
                 m_Dictionary.Remove(key);
             }
@@ -534,7 +545,9 @@ namespace MLAPI.NetworkVariable.Collections
         /// <inheritdoc />
         public bool Remove(KeyValuePair<TKey, TValue> item)
         {
-            if (NetworkManager.Singleton.IsServer)
+            EnsureInitialized();
+
+            if (m_NetworkBehaviour.NetworkManager.IsServer)
             {
                 m_Dictionary.Remove(item);
             }
@@ -558,9 +571,9 @@ namespace MLAPI.NetworkVariable.Collections
 
         private void HandleAddDictionaryEvent(NetworkDictionaryEvent<TKey, TValue> dictionaryEvent)
         {
-            if (NetworkManager.Singleton.IsServer)
+            if (m_NetworkBehaviour.NetworkManager.IsServer)
             {
-                if (NetworkManager.Singleton.ConnectedClients.Count > 0)
+                if (m_NetworkBehaviour.NetworkManager.ConnectedClients.Count > 0)
                 {
                     m_DirtyEvents.Add(dictionaryEvent);
                 }
@@ -579,6 +592,14 @@ namespace MLAPI.NetworkVariable.Collections
             {
                 // todo: implement proper network tick for NetworkDictionary
                 return NetworkTickSystem.NoTick;
+            }
+        }
+
+        private void EnsureInitialized()
+        {
+            if (m_NetworkBehaviour == null)
+            {
+                throw new InvalidOperationException("Cannot access " + nameof(NetworkDictionary<TKey, TValue>) + " before it's initialized");
             }
         }
     }
