@@ -58,6 +58,12 @@ namespace MLAPI.RuntimeTests
         [UnityTest]
         public IEnumerator SceneLoading()
         {
+            Debug.Log($"Scenes in BuildSettings:");
+            foreach (var entry in EditorBuildSettings.scenes)
+            {
+                Debug.Log($"Scene {entry.path}");
+            }
+
             SceneManager.sceneLoaded += SceneManager_sceneLoaded;            
             SceneManager.LoadScene("SceneLoadingTest");
 
