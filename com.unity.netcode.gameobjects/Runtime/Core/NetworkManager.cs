@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
+using Unity.Netcode.Interest;
 using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -53,6 +54,7 @@ namespace Unity.Netcode
             return $"{nameof(NetworkPrefab)} \"{networkPrefab.Prefab.gameObject.name}\"";
         }
 
+        internal InterestManager InterestManager { get; private set; }
         internal SnapshotSystem SnapshotSystem { get; private set; }
         internal NetworkBehaviourUpdater BehaviourUpdater { get; private set; }
 
@@ -379,6 +381,10 @@ namespace Unity.Netcode
 
         internal static event Action OnSingletonReady;
 
+        // the interest settings objects receive unless they have a pre-prefab override
+        public InterestSettings InterestSettings;
+
+
 #if UNITY_EDITOR
         private void OnValidate()
         {
@@ -564,6 +570,7 @@ namespace Unity.Netcode
 
             SnapshotSystem = new SnapshotSystem(this, NetworkConfig, NetworkTickSystem);
 
+            InterestManager = new InterestManager();
             this.RegisterNetworkUpdate(NetworkUpdateStage.PreUpdate);
 
             // This is used to remove entries not needed or invalid
@@ -1057,6 +1064,13 @@ namespace Unity.Netcode
                 NetworkTickSystem = null;
             }
 
+            if (InterestManager != null)
+            {
+                InterestManager.Dispose();
+                InterestManager = null;
+            }
+
+            IsListening = false;
             if (MessagingSystem != null)
             {
                 MessagingSystem.Dispose();
