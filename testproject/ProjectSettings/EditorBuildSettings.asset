@@ -33,6 +33,6 @@ EditorBuildSettings:
     path: Assets/Samples/EnableDisableNetworkObject/EnableDisableSceneNetworkObject.unity
     guid: 619b9eba5892d5a4e9dd1d6cafb0059a
   - enabled: 1
-    path: Assets/ManualTests/OnAllClientsReady/SceneWeAreSwitchingTo.unity
+    path: Packages/com.unity.multiplayer.mlapi/Tests/Runtime/OnAllClientsReady/SceneWeAreSwitchingTo.unity
     guid: ee4d4a69e7f79bc4c861cd9a4b99dd0f
   m_configObjects: {}

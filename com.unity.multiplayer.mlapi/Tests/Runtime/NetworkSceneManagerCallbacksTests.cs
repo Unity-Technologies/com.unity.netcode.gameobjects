@@ -1,11 +1,16 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
+using System.IO;
+using System.Reflection;
 using MLAPI.Configuration;
 using NUnit.Framework;
+using UnityEditor.PackageManager;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
+
 
 namespace MLAPI.RuntimeTests
 {
@@ -15,7 +20,11 @@ namespace MLAPI.RuntimeTests
         [UnitySetUp]
         public IEnumerator Setup()
         {
-            yield return EditorSceneManager.LoadSceneAsyncInPlayMode("Assets/ManualTests/OnAllClientsReady/SceneWeAreSwitchingFrom.unity", new LoadSceneParameters(LoadSceneMode.Single));
+            var execAssembly = Assembly.GetExecutingAssembly();
+            var packagePath = PackageInfo.FindForAssembly(execAssembly).assetPath;
+            var scenePath = Path.Combine(packagePath, $"Tests/Runtime/OnAllClientsReady/SceneWeAreSwitchingFrom.unity");
+            
+            yield return EditorSceneManager.LoadSceneAsyncInPlayMode(scenePath, new LoadSceneParameters(LoadSceneMode.Single));
             
             var networkConfig = new NetworkConfig
             {
