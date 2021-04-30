@@ -45,10 +45,15 @@ namespace MLAPI.Timing
 
                 value = quotient + rawValueRead;
 
-                if (remainder > (k_TickPeriod / 2) && rawValueRead < (k_TickPeriod / 2))
+                if (remainder > (k_TickPeriod * 2 / 3) && rawValueRead < (k_TickPeriod * 1 / 3))
                 {
                     // This happens when the sending side just passed the sliding window. In that case we need to jump to the next period.
                     value += k_TickPeriod;
+                }
+                else if (remainder < (k_TickPeriod * 1 / 3) && rawValueRead > (k_TickPeriod * 2 / 3))
+                {
+                    // This happens when we just passed the sliding window but the sender hasn't yet. In that case we need to jump to the previous period.
+                    value -= k_TickPeriod;
                 }
             }
             else
