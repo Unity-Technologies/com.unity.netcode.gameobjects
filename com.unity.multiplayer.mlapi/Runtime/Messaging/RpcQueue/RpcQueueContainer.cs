@@ -771,49 +771,7 @@ namespace MLAPI.Messaging
 
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        /// <summary>
-        /// LoopbackSendFrame
-        /// Will copy the contents of the current outbound QueueHistoryFrame to the current inbound QueueHistoryFrame
-        /// [NSS]: Leaving this here in the event a portion of this code is useful for doing Batch testing
-        /// </summary>
-        public void LoopbackSendFrame()
-        {
-            //If we do not have loop back or testing mode enabled then ignore the call
-            if (m_IsTestingEnabled)
-            {
-                var rpcQueueHistoryItemOutbound = GetQueueHistoryFrame(RpcQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
-                if (rpcQueueHistoryItemOutbound.QueueItemOffsets.Count > 0)
-                {
-                    //Reset inbound queues based on update stage
-                    foreach (NetworkUpdateStage netUpdateStage in Enum.GetValues(typeof(NetworkUpdateStage)))
-                    {
-                        var rpcQueueHistoryItemInbound = GetQueueHistoryFrame(RpcQueueHistoryFrame.QueueFrameType.Inbound, netUpdateStage);
-                        ResetQueueHistoryFrame(rpcQueueHistoryItemInbound);
-                    }
-
-                    var pooledNetworkBuffer = PooledNetworkBuffer.Get();
-                    var rpcFrameQueueItem = rpcQueueHistoryItemOutbound.GetFirstQueueItem();
-
-                    while (rpcFrameQueueItem.QueueItemType != QueueItemType.None)
-                    {
-                        pooledNetworkBuffer.SetLength(rpcFrameQueueItem.StreamSize);
-                        pooledNetworkBuffer.Position = 0;
-                        byte[] pooledNetworkStreamArray = pooledNetworkBuffer.GetBuffer();
-                        Buffer.BlockCopy(rpcFrameQueueItem.MessageData.Array ?? Array.Empty<byte>(), rpcFrameQueueItem.MessageData.Offset, pooledNetworkStreamArray, 0, (int)rpcFrameQueueItem.StreamSize);
-
-                        if (!IsUsingBatching())
-                        {
-                            pooledNetworkBuffer.Position = 1;
-                        }
-
-                        AddQueueItemToInboundFrame(rpcFrameQueueItem.QueueItemType, UnityEngine.Time.realtimeSinceStartup, rpcFrameQueueItem.NetworkId, pooledNetworkBuffer);
-                        rpcFrameQueueItem = rpcQueueHistoryItemOutbound.GetNextQueueItem();
-                    }
-                }
-            }
-        }
-
-        /// <summary>
+         /// <summary>
         /// Enables testing of the RpcQueueContainer
         /// </summary>
         /// <param name="enabled"></param>
