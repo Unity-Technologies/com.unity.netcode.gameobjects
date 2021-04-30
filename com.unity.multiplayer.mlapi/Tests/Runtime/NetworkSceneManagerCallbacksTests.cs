@@ -20,7 +20,7 @@ namespace MLAPI.RuntimeTests
         [UnitySetUp]
         public IEnumerator Setup()
         {
-            var scenePath = $"{Application.dataPath}/ManualTests/OnAllClientsReady/SceneWeAreSwitchingFrom.unity";
+            var scenePath = "Assets/ManualTests/OnAllClientsReady/SceneWeAreSwitchingFrom.unity";
             
             yield return EditorSceneManager.LoadSceneAsyncInPlayMode(scenePath, new LoadSceneParameters(LoadSceneMode.Single));
             
