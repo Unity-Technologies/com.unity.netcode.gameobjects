@@ -17,6 +17,8 @@ namespace MLAPI.Timing
 
         public float FixedTime => m_Tick * m_TickInterval;
 
+        public float FixedDeltaTime => m_TickInterval;
+
         public int Tick => m_Tick;
 
         public int TickRate => m_TickRate;
@@ -38,26 +40,16 @@ namespace MLAPI.Timing
             m_TickDuration = tickDuration;
         }
 
-        public NetworkTime(int tickRate, float renderTime)
+        public NetworkTime(int tickRate, float time)
             : this(tickRate)
         {
-            AddTime(renderTime);
+            this += time;
         }
 
         // public NetworkTime ToFixedTime()
         // {
         //     return new NetworkTime(TickRate, Tick, 0f);
         // }
-
-        public void AddTime(float time)
-        {
-            m_TickDuration += time;
-
-            var deltaTicks = Mathf.FloorToInt(m_TickDuration * m_TickRate); // Why is there no divrem :(
-            m_TickDuration %= m_TickInterval;
-
-            m_Tick += deltaTicks;
-        }
 
         public static NetworkTime operator -(NetworkTime a, NetworkTime b)
         {
@@ -73,6 +65,46 @@ namespace MLAPI.Timing
             }
 
             return new NetworkTime(a.TickRate, tick, tickDuration);
+        }
+
+        public static NetworkTime operator +(NetworkTime a, NetworkTime b)
+        {
+            Assert.AreEqual(a.TickRate, b.TickRate, $"NetworkTimes must have same TickRate to add.");
+
+            int tick = a.Tick + b.Tick;
+            float tickDuration = a.m_TickDuration + b.m_TickDuration;
+
+            if (tickDuration > a.m_TickInterval)
+            {
+                tick++;
+                tickDuration -= a.m_TickInterval;
+            }
+
+            return new NetworkTime(a.TickRate, tick, tickDuration);
+        }
+
+        public static NetworkTime operator +(NetworkTime a, float b)
+        {
+            a.m_TickDuration += b;
+
+            var deltaTicks = Mathf.FloorToInt(a.m_TickDuration * a.m_TickRate);
+            a.m_TickDuration %= a.m_TickInterval;
+
+            a.m_Tick += deltaTicks;
+
+            return a;
+        }
+
+        public static NetworkTime operator -(NetworkTime a, float b)
+        {
+            a.m_TickDuration -= b;
+
+            var deltaTicks = Mathf.FloorToInt(a.m_TickDuration * a.m_TickRate);
+            a.m_TickDuration %= a.m_TickInterval;
+
+            a.m_Tick += deltaTicks;
+
+            return a;
         }
     }
 }
