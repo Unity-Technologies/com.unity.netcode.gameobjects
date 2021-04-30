@@ -9,6 +9,8 @@ using MLAPI.Logging;
 using MLAPI.Serialization.Pooled;
 using MLAPI.Transports;
 using MLAPI.Serialization;
+using MLAPI.Interest;
+
 using UnityEngine;
 
 namespace MLAPI
@@ -18,8 +20,11 @@ namespace MLAPI
     /// </summary>
     [AddComponentMenu("MLAPI/NetworkObject", -99)]
     [DisallowMultipleComponent]
+
     public sealed class NetworkObject : MonoBehaviour
     {
+        public List<InterestNode> interestNodes = new List<InterestNode>();
+
         [HideInInspector]
         [SerializeField]
         internal uint GlobalObjectIdHash;
@@ -177,6 +182,9 @@ namespace MLAPI
         /// If false, the objects ownership will be given to the server.
         /// </summary>
         public bool DontDestroyWithOwner;
+
+        // [HideInInspector]
+// FIX NEXT        public ReplicationGroupTypes ReplicationGroupType;
 
         internal readonly HashSet<ulong> Observers = new HashSet<ulong>();
 
@@ -469,7 +477,6 @@ namespace MLAPI
         {
             NetworkManager.SpawnManager.DespawnObject(this, destroy);
         }
-
 
         /// <summary>
         /// Removes all ownership of an object from any client. Can only be called from server
@@ -797,6 +804,14 @@ namespace MLAPI
             }
 
             return networkObject;
+        }
+
+        public void UpdateInterest()
+        {
+            foreach (var com in interestNodes)
+            {
+                com?.UpdateObject(this);
+            }
         }
     }
 }

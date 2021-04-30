@@ -18,6 +18,7 @@ using MLAPI.Spawning;
 using MLAPI.Exceptions;
 using MLAPI.Transports.Tasks;
 using MLAPI.Messaging.Buffering;
+using MLAPI.Interest;
 using Unity.Profiling;
 
 namespace MLAPI
@@ -221,6 +222,20 @@ namespace MLAPI
         public string ConnectedHostname { get; private set; }
 
         internal static event Action OnSingletonReady;
+
+        private InterestManager  m_InterestManager;
+        public InterestManager InterestManager
+        {
+            get
+            {
+                if (m_InterestManager == null)
+                {
+                    m_InterestManager = new InterestManager();
+                }
+
+                return m_InterestManager;
+            }
+        }
 
 #if UNITY_EDITOR
         private void OnValidate()
@@ -1518,7 +1533,6 @@ namespace MLAPI
                     }
 
                     // TODO: Could(should?) be replaced with more memory per client, by storing the visiblity
-
                     foreach (var sobj in SpawnManager.SpawnedObjectsList)
                     {
                         sobj.Observers.Remove(clientId);
@@ -1589,7 +1603,6 @@ namespace MLAPI
                 }
 
                 m_ObservedObjects.Clear();
-
                 foreach (var sobj in SpawnManager.SpawnedObjectsList)
                 {
                     if (ownerClientId == ServerClientId || sobj.CheckObjectVisibility == null || sobj.CheckObjectVisibility(ownerClientId))
