@@ -99,7 +99,7 @@ namespace MLAPI.Prototyping
         /// <summary>
         /// Enables server to override local transform
         /// </summary>
-        public bool EnableServerOverride;
+        public bool ForceServerControl;
 
         /// <summary>
         /// The curve to use to calculate the send rate
@@ -158,7 +158,7 @@ namespace MLAPI.Prototyping
 
         private void Update()
         {
-            if (IsOwner && !EnableServerOverride)
+            if (IsOwner && !ForceServerControl)
             {
                 if (NetworkManager.Singleton.NetworkTime - m_LastSendTime >= (1f / FixedSendsPerSecond) && (Vector3.Distance(transform.position, m_LastSentPos) > MinMeters || Quaternion.Angle(transform.rotation, m_LastSentRot) > MinDegrees))
                 {
@@ -206,11 +206,10 @@ namespace MLAPI.Prototyping
             if (IsServer && EnableRange && EnableNonProvokedResendChecks)
                 CheckForMissedSends();
 
-            if (IsServer && EnableServerOverride)
+            if (IsServer && ForceServerControl)
             {
                 // Broadcast server transform to all clients
-                ApplyTransformClientRpc(transform.position, transform.rotation.eulerAngles,
-                                        new ClientRpcParams { Send = new ClientRpcSendParams { TargetClientIds = NetworkManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray() } });
+                ApplyTransformClientRpc(transform.position, transform.rotation.eulerAngles);
             }
         }
 
