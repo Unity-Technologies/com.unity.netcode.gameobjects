@@ -7,73 +7,47 @@ using UnityEngine;
 using NUnit.Framework;
 using UnityEngine.TestTools;
 using UnityEngine.SceneManagement;
+using UnityEditor.SceneManagement;
 
 using UnityEditor;
+using MLAPI.SceneManagement;
 
 namespace MLAPI.RuntimeTests
 {
     [TestFixture]
-    public class SceneLoadingTest : IPrebuildSetup, IPostBuildCleanup
+    public class SceneLoadingTest
     {
-        // Setup the test
-        public void Setup()
-        {            
-            var execAssembly = Assembly.GetExecutingAssembly();
-            var packagePath = UnityEditor.PackageManager.PackageInfo.FindForAssembly(execAssembly).assetPath;
-            var scenePath = Path.Combine(packagePath, $"Tests/Runtime/TestScenes/");
-            var scenes = new List<EditorBuildSettingsScene>();
-            var guids = AssetDatabase.FindAssets("t:Scene", new[] { scenePath });
-            if (guids != null)
-            {
-                foreach (string guid in guids)
-                {
-                    var path = AssetDatabase.GUIDToAssetPath(guid);
-                    if (!string.IsNullOrEmpty(path) && File.Exists(path))
-                    {
-                        var scene = new EditorBuildSettingsScene(path, true);
-                        scenes.Add(scene);
-                    }
-                }
-            }
-            Debug.Log("Adding test scenes to build settings:\n" + string.Join("\n", scenes.Select(scene => scene.path)));
-            EditorBuildSettings.scenes = EditorBuildSettings.scenes.Union(scenes).ToArray();
-
-        }
-
         private NetworkManager m_NetworkManager;
-
-        [SetUp]
-        public void SetUpTest()
-        {
-            //Create, instantiate, and host
-            //NetworkManagerHelper.StartNetworkManager(out NetworkManager networkManager, NetworkManagerHelper.NetworkManagerOperatingMode.None);
-            
-        }
 
         private bool m_SceneLoaded;
         private bool m_HadErrors;
-        private Scene m_TargetScene;
+        private string m_TargetSceneNameToLoad;
+        private Scene m_LoadedScene;
 
         [UnityTest]
         public IEnumerator SceneLoading()
         {
-            Debug.Log($"Scenes in BuildSettings:");
-            foreach (var entry in EditorBuildSettings.scenes)
-            {
-                Debug.Log($"Scene {entry.path}");
-            }
+            var execAssembly = Assembly.GetExecutingAssembly();
+            var packagePath = UnityEditor.PackageManager.PackageInfo.FindForAssembly(execAssembly).assetPath;
+            var scenePath = Path.Combine(packagePath, "Tests/Runtime/TestScenes/SceneLoadingTest.unity");           
 
-            SceneManager.sceneLoaded += SceneManager_sceneLoaded;            
-            SceneManager.LoadScene("SceneLoadingTest");
+            yield return new WaitForSeconds(0.1f);
+            m_TargetSceneNameToLoad = scenePath;
+            SceneManager.sceneLoaded += SceneManager_sceneLoaded;
+            EditorSceneManager.LoadSceneAsyncInPlayMode(scenePath, new LoadSceneParameters(LoadSceneMode.Additive));
 
             while(!m_SceneLoaded && !m_HadErrors)
             {
                 yield return new WaitForSeconds(0.01f);
             }
 
+            Assert.IsTrue(m_SceneLoaded);
+            Assert.IsTrue(!m_HadErrors);
+
             if (SceneManager.GetActiveScene().name != "SceneLoadingTest")
             {
-                SceneManager.SetActiveScene(m_TargetScene);
+                Debug.Log($"Loaded scene not active, activating scene: {scenePath}");
+                SceneManager.SetActiveScene(m_LoadedScene);
             }
 
             var gameObject = GameObject.Find("NetworkManager");
@@ -84,38 +58,50 @@ namespace MLAPI.RuntimeTests
 
             Assert.IsNotNull(m_NetworkManager);
 
-
-            Assert.IsNotNull(m_NetworkManager);
             if (m_NetworkManager)
             {
+                m_NetworkManager.NetworkConfig.AllowRuntimeSceneChanges = true;
                 m_NetworkManager.StartHost();
             }
+            m_NetworkManager.SceneManager.AddRuntimeSceneName("SceneToLoad", (uint)m_NetworkManager.SceneManager.RegisteredSceneNames.Count);
+
+           yield return new WaitForSeconds(0.1f);
+            m_NetworkManager.SceneManager.OverrideLoadSceneAsync = TestRunerSceneLoadingOverride;
+            m_NetworkManager.SceneManager.SwitchScene("SceneToLoad");
+            m_SceneLoaded = false;
+            m_HadErrors = false;
+
+            while (!m_SceneLoaded && !m_HadErrors)
+            {
+                yield return new WaitForSeconds(0.01f);
+            }
+
+            Assert.IsTrue(m_SceneLoaded);
+            Assert.IsTrue(!m_HadErrors);
+
+        }
+
+        public AsyncOperation TestRunerSceneLoadingOverride(string targetscene, LoadSceneMode loadSceneMode)
+        {
+
+            var sceneToBeLoaded = targetscene;
+            if (!targetscene.Contains("Tests/Runtime/TestScenes/"))
+            {
+                var execAssembly = Assembly.GetExecutingAssembly();
+                var packagePath = UnityEditor.PackageManager.PackageInfo.FindForAssembly(execAssembly).assetPath;
+                sceneToBeLoaded = Path.Combine(packagePath, $"Tests/Runtime/TestScenes/{targetscene}.unity");                
+            }
+            m_TargetSceneNameToLoad = sceneToBeLoaded;
+            return EditorSceneManager.LoadSceneAsyncInPlayMode(sceneToBeLoaded, new LoadSceneParameters(loadSceneMode));
         }
 
         private void SceneManager_sceneLoaded(Scene arg0, LoadSceneMode arg1)
         {
-            if(arg0 != null && arg0.name == "SceneLoadingTest")
+            if(arg0 != null && m_TargetSceneNameToLoad.Contains(arg0.name))
             {
                 m_SceneLoaded = true;
-                m_TargetScene = arg0;
+                m_LoadedScene = arg0;
             }
-        }
-
-        [TearDown]
-        public void TearDown()
-        {
-            if(m_NetworkManager != null)
-            {
-                m_NetworkManager.StopHost();
-            }
-        }
-
-        // Cleanup the test
-        public void Cleanup()
-        {
-
-            EditorBuildSettings.scenes = EditorBuildSettings.scenes
-                .Where(scene => !scene.path.StartsWith("Assets/UnitTestScenes")).ToArray();
         }
     }
 }
