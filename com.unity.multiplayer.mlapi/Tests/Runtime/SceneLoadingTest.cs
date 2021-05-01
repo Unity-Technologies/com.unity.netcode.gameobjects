@@ -110,7 +110,7 @@ namespace MLAPI.RuntimeTests
         /// <param name="targetscene">string</param>
         /// <param name="loadSceneMode">LoadSceneMode</param>
         /// <returns>AsyncOperation</returns>
-        public AsyncOperation TestRunerSceneLoadingOverride(string targetscene, LoadSceneMode loadSceneMode)
+        public AsyncOperation TestRunnerSceneLoadingOverride(string targetscene, LoadSceneMode loadSceneMode)
         {
 
             var sceneToBeLoaded = targetscene;
