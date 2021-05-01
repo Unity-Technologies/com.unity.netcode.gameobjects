@@ -72,7 +72,7 @@ namespace MLAPI.RuntimeTests
             m_NetworkManager.SceneManager.AddRuntimeSceneName("SceneToLoad", (uint)m_NetworkManager.SceneManager.RegisteredSceneNames.Count);
 
             // Override NetworkSceneManager's scene loading 
-            m_NetworkManager.SceneManager.OverrideLoadSceneAsync = TestRunerSceneLoadingOverride;
+            m_NetworkManager.SceneManager.OverrideLoadSceneAsync = TestRunnerSceneLoadingOverride;
             m_NetworkManager.SceneManager.SwitchScene("SceneToLoad");
             m_SceneLoaded = false;
 
