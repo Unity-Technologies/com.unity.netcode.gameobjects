@@ -1,0 +1,17 @@
+{
+    "name": "Unity.Multiplayer.MLAPI.TestAssets",
+    "rootNamespace": "MLAPI.TestAssets",
+    "references": [
+        "Unity.Multiplayer.MLAPI.Runtime",
+        "Unity.Multiplayer.MLAPI.Prototyping"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

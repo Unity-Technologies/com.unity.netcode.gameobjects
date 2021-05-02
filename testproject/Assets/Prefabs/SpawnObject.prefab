@@ -14,8 +14,8 @@ GameObject:
   - component: {fileID: 771575417923360819}
   - component: {fileID: -5056059992271333076}
   - component: {fileID: 771575417923360831}
-  - component: {fileID: -143509807225093868}
   - component: {fileID: 4600632750638426092}
+  - component: {fileID: 6767247089624066914}
   m_Layer: 9
   m_Name: SpawnObject
   m_TagString: GenericObject
@@ -131,19 +131,6 @@ Rigidbody:
   m_Interpolate: 1
   m_Constraints: 112
   m_CollisionDetection: 0
---- !u!114 &-143509807225093868
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 771575417923360811}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fa7bfe2bc280049f38557d643d8a3471, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_MoveRandomly: 1
 --- !u!114 &4600632750638426092
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -192,3 +179,16 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!114 &6767247089624066914
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 771575417923360811}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2fd5dccee6f7a94d890102b13f4973d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_MoveRandomly: 1

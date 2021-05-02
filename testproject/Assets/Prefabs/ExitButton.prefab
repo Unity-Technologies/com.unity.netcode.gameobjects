@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 2848221156307247799}
   - component: {fileID: 2848221156307247798}
   - component: {fileID: 2848221156307247793}
-  - component: {fileID: 5266522511616468950}
+  - component: {fileID: 3093904287722791025}
   m_Layer: 5
   m_Name: ExitButton
   m_TagString: Untagged
@@ -122,8 +122,9 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 5266522511616468950}
-        m_TargetAssemblyTypeName: ExitButtonScript, Assembly-CSharp
+      - m_Target: {fileID: 3093904287722791025}
+        m_TargetAssemblyTypeName: MLAPI.TestAssets.MenuManagement.ExitButtonScript,
+          Unity.Multiplayer.MLAPI.TestAssets
         m_MethodName: OnExitScene
         m_Mode: 1
         m_Arguments:
@@ -134,7 +135,7 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
---- !u!114 &5266522511616468950
+--- !u!114 &3093904287722791025
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -143,10 +144,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 2848221156307247795}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fa32b4a74f166fd44bd2cf187de1c5d8, type: 3}
+  m_Script: {fileID: 11500000, guid: 6df34fb44b44b304e83b857a6f4fc991, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_SceneMenuToLoad: {fileID: 11400000, guid: 0c59fa26bc04c0f43b7487b42bca86da, type: 2}
+  m_SceneMenuToLoad: {fileID: 11400000, guid: e7db464c48431ca4bac226a609fd0012, type: 2}
 --- !u!1 &2848221157716786271
 GameObject:
   m_ObjectHideFlags: 0

@@ -10,10 +10,10 @@ GameObject:
   m_Component:
   - component: {fileID: 2642282827940878856}
   - component: {fileID: 8049388878591116617}
-  - component: {fileID: 7830709326079877768}
   - component: {fileID: 6210590501307069555}
   - component: {fileID: 7914308651485899481}
   - component: {fileID: 3738766586356797253}
+  - component: {fileID: 8970689155792771785}
   m_Layer: 0
   m_Name: MyMeshNetworkObject
   m_TagString: Untagged
@@ -50,21 +50,6 @@ MonoBehaviour:
   GlobalObjectIdHash: 951099334
   AlwaysReplicateAsRoot: 0
   DontDestroyWithOwner: 0
---- !u!114 &7830709326079877768
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5085754885400786750}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 47a04f60cc8259b49b1d45f8c469b106, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_MyMeshRenderer: {fileID: 7914308651485899481}
-  m_MyBoxCollider: {fileID: 3738766586356797253}
-  m_ActivateObjectButton: {fileID: 0}
 --- !u!33 &6210590501307069555
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -128,3 +113,18 @@ BoxCollider:
   serializedVersion: 2
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &8970689155792771785
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5085754885400786750}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3bfe3956a0bb25b469f0ebfc6945adec, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_MyMeshRenderer: {fileID: 7914308651485899481}
+  m_MyBoxCollider: {fileID: 3738766586356797253}
+  m_ActivateObjectButton: {fileID: 0}

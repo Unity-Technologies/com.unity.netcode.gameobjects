@@ -862,7 +862,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 8786710034940264812}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: MenuManager`1[[SceneReference, Assembly-CSharp
         m_MethodName: SelectMenuScene
         m_Mode: 1
@@ -2474,15 +2474,15 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8786710034940264808}
-  - component: {fileID: 8786710034940264812}
+  - component: {fileID: 8786710034940264813}
   m_Layer: 0
-  m_Name: MainMenuGroup
+  m_Name: SceneMenuGroup
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &8786710034940264812
+--- !u!114 &8786710034940264813
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -2491,19 +2491,15 @@ MonoBehaviour:
   m_GameObject: {fileID: 8786710034940264811}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 307394a23dd73c543a987d6e26afedad, type: 3}
+  m_Script: {fileID: 11500000, guid: 97e3d3e1af978d64c92b15df7aaf5065, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   m_SceneMenus:
-  - {fileID: 11400000, guid: 21aae92071ad50448a45b013d8346639, type: 2}
-  - {fileID: 11400000, guid: 138603ab28f532140b48a57bea0e54b0, type: 2}
-  m_SceneMenusDropDownList: {fileID: 1362704539}
+  - {fileID: 11400000, guid: 6ae3f584439d49140bc736e9d2245880, type: 2}
+  - {fileID: 11400000, guid: 7533148309419304f8518d60051a0671, type: 2}
+  m_SceneMenusDropDownList: {fileID: 0}
   m_OptionsList:
-    m_Options:
-    - m_Text: SampleScene
-      m_Image: {fileID: 0}
-    - m_Text: EnableDisableSceneNetworkObject
-      m_Image: {fileID: 0}
+    m_Options: []
   HorizontalResolution: 1280
   VerticalResolution: 720
 --- !u!114 &8786710035000454136
@@ -3202,7 +3198,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 8786710034940264812}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: MainMenuManager, Core
         m_MethodName: OnLoadSelectedScene
         m_Mode: 1

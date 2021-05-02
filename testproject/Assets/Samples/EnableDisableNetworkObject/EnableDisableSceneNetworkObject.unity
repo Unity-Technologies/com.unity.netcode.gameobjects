@@ -945,8 +945,9 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1898723253}
-        m_TargetAssemblyTypeName: EnableDisableSceneNetworkObjectComponent, Assembly-CSharp
+      - m_Target: {fileID: 1261499202}
+        m_TargetAssemblyTypeName: MLAPI.TestAssets.SceneManagement.EnableDisableSceneNetworkObjectComponent,
+          Unity.Multiplayer.MLAPI.TestAssets
         m_MethodName: ButtonActivateToggle
         m_Mode: 1
         m_Arguments:
@@ -1264,8 +1265,25 @@ PrefabInstance:
       propertyPath: GlobalObjectIdHash
       value: 1187012931
       objectReference: {fileID: 0}
+    - target: {fileID: 8970689155792771785, guid: f65b5e9dbbff79149a4a7d52e7da2565,
+        type: 3}
+      propertyPath: m_ActivateObjectButton
+      value: 
+      objectReference: {fileID: 1012273277}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: f65b5e9dbbff79149a4a7d52e7da2565, type: 3}
+--- !u!114 &1261499202 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 8970689155792771785, guid: f65b5e9dbbff79149a4a7d52e7da2565,
+    type: 3}
+  m_PrefabInstance: {fileID: 1261499201}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3bfe3956a0bb25b469f0ebfc6945adec, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1372889091
 GameObject:
   m_ObjectHideFlags: 0
@@ -1434,7 +1452,6 @@ MonoBehaviour:
     ProtocolVersion: 0
     NetworkTransport: {fileID: 1706952616}
     RegisteredScenes:
-    - TestEnableDisableSceneNetworkObject
     - EnableDisableSceneNetworkObject
     AllowRuntimeSceneChanges: 0
     PlayerPrefab: {fileID: 4079352819444256614, guid: c16f03336b6104576a565ef79ad643c0,
@@ -1661,15 +1678,3 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1795470924}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
---- !u!114 &1898723253 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 7830709326079877768, guid: f65b5e9dbbff79149a4a7d52e7da2565,
-    type: 3}
-  m_PrefabInstance: {fileID: 1261499201}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 47a04f60cc8259b49b1d45f8c469b106, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 

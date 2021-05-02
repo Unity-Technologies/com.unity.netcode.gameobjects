@@ -1312,9 +1312,10 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 8786710034940264812}
-        m_TargetAssemblyTypeName: MainMenuManager, Assembly-CSharp
-        m_MethodName: OnSelectMenuScene
+      - m_Target: {fileID: 8786710034940264814}
+        m_TargetAssemblyTypeName: MLAPI.TestAssets.MenuManagement.MenuManager`1[[MLAPI.TestAssets.MenuManagement.MenuReference,
+          Unity.Multiplayer.MLAPI.TestAssets
+        m_MethodName: SelectMenuScene
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -1967,10 +1968,10 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8786710034940264808}
-  - component: {fileID: 8786710034940264813}
+  - component: {fileID: 8786710034940264814}
   - component: {fileID: 8786710034940264812}
   m_Layer: 0
-  m_Name: MainMenuGroup
+  m_Name: MenuManager
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1985,18 +1986,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 8786710034940264811}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7733ccd7e34b57449bb793522209686b, type: 3}
+  m_Script: {fileID: 11500000, guid: e6c6b4a5d7fbcf34a9408cb4c8867006, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_SceneMenus:
-  - {fileID: 11400000, guid: c10d995498e0c514a853c3506031d3fb, type: 2}
-  - {fileID: 11400000, guid: 4a3cdce12e998384f8aca207b5a2c700, type: 2}
-  m_SceneMenusDropDownList: {fileID: 463394874}
-  m_OptionsList:
-    m_Options: []
-  HorizontalResolution: 1280
-  VerticalResolution: 720
---- !u!114 &8786710034940264813
+--- !u!114 &8786710034940264814
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -2005,9 +1998,17 @@ MonoBehaviour:
   m_GameObject: {fileID: 8786710034940264811}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1c46db9554bf3a74fb68ea2657375951, type: 3}
+  m_Script: {fileID: 11500000, guid: 2ceb0a58cf8f3384e93df59b69894b84, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  m_SceneMenus:
+  - {fileID: 11400000, guid: a491fd39d4b22614a90c5159cd2fb7c6, type: 2}
+  - {fileID: 11400000, guid: 6fb1845bccde0f4429bb5350a775bc66, type: 2}
+  m_SceneMenusDropDownList: {fileID: 463394874}
+  m_OptionsList:
+    m_Options: []
+  HorizontalResolution: 1280
+  VerticalResolution: 720
 --- !u!1 &8786710035132639489
 GameObject:
   m_ObjectHideFlags: 0
