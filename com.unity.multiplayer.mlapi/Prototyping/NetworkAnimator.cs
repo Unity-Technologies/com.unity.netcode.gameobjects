@@ -9,7 +9,7 @@ namespace MLAPI.Prototyping
     /// <summary>
     /// A prototype component for syncing animations
     /// </summary>
-    [AddComponentMenu("MLAPI/NetworkAnimator")]
+    [AddComponentMenu("MLAPI/ProtoTyping/NetworkAnimator")]
     public class NetworkAnimator : NetworkBehaviour
     {
         private struct AnimParams : INetworkSerializable

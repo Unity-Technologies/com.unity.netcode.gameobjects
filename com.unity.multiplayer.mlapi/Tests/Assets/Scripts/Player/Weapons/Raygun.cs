@@ -3,6 +3,7 @@ using UnityEngine;
 
 namespace MLAPI.TestAssets.Player.Weapons
 {
+    [AddComponentMenu("MLAPI/TestAssets/Player/Weapons/Raygun")]
     public class Raygun : NetworkBehaviour
     {
         public float Range = 10;
