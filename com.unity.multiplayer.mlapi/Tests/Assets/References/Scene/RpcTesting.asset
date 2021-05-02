@@ -9,10 +9,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2699e8104885e5f43927279d0e47a1ee, type: 3}
-  m_Name: SamplesMenu
+  m_Script: {fileID: 11500000, guid: 32b46daeb1857f442adf39db5d6d5f53, type: 3}
+  m_Name: RpcTesting
   m_EditorClassIdentifier: 
-  MenuScene: {fileID: 102900000, guid: 037562c9b1a469f498dfb34256ddf86f, type: 3}
-  m_DisplayName: Samples
+  SceneToReference: {fileID: 102900000, guid: 94c6a044ada39a441adbd5030dd449d6, type: 3}
+  m_IncludedScenes: []
+  m_DisplayName: Rpc Tests
   m_ReferencedScenes:
-  - SamplesMenu
+  - RpcTesting

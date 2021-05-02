@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 32b46daeb1857f442adf39db5d6d5f53, type: 3}
+  m_Name: SceneTransitioning
+  m_EditorClassIdentifier: 
+  SceneToReference: {fileID: 102900000, guid: 39d0a050c25e2b8489b72235a51ec0ec, type: 3}
+  m_IncludedScenes:
+  - {fileID: 102900000, guid: e833c5dec56378e47988f5546f20af4f, type: 3}
+  - {fileID: 102900000, guid: 7cc41299253ac6543a1172ba39ed338f, type: 3}
+  m_DisplayName: Scene Transitioning
+  m_ReferencedScenes:
+  - SceneTransitioningTest
+  - SecondSceneToLoad
+  - ThirdSceneToLoad

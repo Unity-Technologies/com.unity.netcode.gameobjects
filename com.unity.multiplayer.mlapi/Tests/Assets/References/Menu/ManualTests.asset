@@ -10,9 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2699e8104885e5f43927279d0e47a1ee, type: 3}
-  m_Name: SamplesMenu
+  m_Name: ManualTests
   m_EditorClassIdentifier: 
-  MenuScene: {fileID: 102900000, guid: 037562c9b1a469f498dfb34256ddf86f, type: 3}
-  m_DisplayName: Samples
+  MenuScene: {fileID: 102900000, guid: ead06cb9072a5c549917f0f8f38c509d, type: 3}
+  m_DisplayName: Manual Tests
   m_ReferencedScenes:
-  - SamplesMenu
+  - ManualTestsMenu
