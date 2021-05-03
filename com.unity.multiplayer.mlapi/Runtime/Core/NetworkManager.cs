@@ -1256,6 +1256,13 @@ namespace MLAPI
                         }
 
                         break;
+                    case NetworkConstants.ALL_CLIENTS_LOADED_SCENE:
+                        if (IsClient)
+                        {
+                            MessageHandler.HandleAllClientsSwitchSceneCompleted(clientId, messageStream);
+                        }
+                        
+                        break;
                     case NetworkConstants.SERVER_LOG:
                         if (IsServer && NetworkConfig.EnableNetworkLogs)
                         {
