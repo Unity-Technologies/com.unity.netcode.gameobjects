@@ -1258,7 +1258,7 @@ namespace MLAPI
                         }
 
                         break;
-                    case NetworkConstants.ALL_CLIENTS_SWITCH_SCENE_COMPLETED:
+                    case NetworkConstants.ALL_CLIENTS_LOADED_SCENE:
                         if (IsClient)
                         {
                             MessageHandler.HandleAllClientsSwitchSceneCompleted(clientId, messageStream);

@@ -14,14 +14,14 @@ namespace MLAPI
         {
             if (IsServer)
             {
-                NetworkManager.SceneManager.OnClientLoadedScene += (progress, clientId) =>
+                NetworkManager.SceneManager.OnNotifyServerClientLoadedScene += (progress, clientId) =>
                 {
-                    Debug.Log("OnClientLoadedScene invoked on the host - Passed");
+                    Debug.Log("OnNotifyServerClientLoadedScene invoked on the host - Passed");
                 };
             
-                NetworkManager.SceneManager.OnAllClientsLoadedScene += (progress, timedOut) =>
+                NetworkManager.SceneManager.OnNotifyServerAllClientsLoadedScene += (progress, timedOut) =>
                 {
-                    Debug.Log("OnAllClientsLoadedScene invoked on the host - Passed");
+                    Debug.Log("OnNotifyServerAllClientsLoadedScene invoked on the host - Passed");
                 };
             
                 NetworkManager.SceneManager.SwitchScene("SceneWeAreSwitchingTo");

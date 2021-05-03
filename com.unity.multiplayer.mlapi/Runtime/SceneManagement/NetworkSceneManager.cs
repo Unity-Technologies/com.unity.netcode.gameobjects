@@ -32,19 +32,21 @@ namespace MLAPI.SceneManagement
 
         /// <summary>
         /// Delegate for when a client has reported to the server that it has completed scene transition
+        /// <see cref='NetworkSceneManager.OnNotifyServerClientLoadedScene'/>
         /// </summary>
-        public delegate void OnClientLoadedSceneDelegate(SceneSwitchProgress progress, ulong clientId);
+        public delegate void NotifyServerClientLoadedSceneDelegate(SceneSwitchProgress progress, ulong clientId);
 
-        
         /// <summary>
         /// Delegate for when all clients have reported to the server that they have completed scene transition or timed out
+        /// <see cref='NetworkSceneManager.OnNotifyServerAllClientsLoadedScene'/>
         /// </summary>
-        public delegate void OnAllClientsLoadedSceneDelegate(SceneSwitchProgress progress, bool timedOut);
+        public delegate void NotifyServerAllClientsLoadedSceneDelegate(SceneSwitchProgress progress, bool timedOut);
 
         /// <summary>
-        /// Delegate for when the clients get notified by the server that all clients have completed their scene transitions
+        /// Delegate for when the clients get notified by the server that all clients have completed their scene transitions.
+        /// <see cref='NetworkSceneManager.OnNotifyClientAllClientsLoadedScene'/>
         /// </summary>
-        public delegate void AllClientsReadyDelegate(ulong[] clientIds, ulong[] timedOutClientIds);
+        public delegate void NotifyClientAllClientsLoadedSceneDelegate(ulong[] clientIds, ulong[] timedOutClientIds);
 
         /// <summary>
         /// Event that is invoked when the scene is switched
@@ -59,18 +61,19 @@ namespace MLAPI.SceneManagement
         /// <summary>
         /// Event that is invoked on the server when a client completes scene transition
         /// </summary>
-        public event OnClientLoadedSceneDelegate OnClientLoadedScene;
+        public event NotifyServerClientLoadedSceneDelegate OnNotifyServerClientLoadedScene;
 
         /// <summary>
         /// Event that is invoked on the server when all clients have reported that they have completed scene transition
         /// </summary>
-        public event OnAllClientsLoadedSceneDelegate OnAllClientsLoadedScene;
+        public event NotifyServerAllClientsLoadedSceneDelegate OnNotifyServerAllClientsLoadedScene;
 
         /// <summary>
         /// Event that is invoked on the clients after all clients have successfully completed scene transition or timed out.
-        /// This event relies on MessageSender, which doesn't send events from the server to itself (which is the case for a Host client).
+        /// This event happens after <see cref="OnNotifyServerAllClientsLoadedScene"/> fires on the server and a <see cref="NetworkConstants.ALL_CLIENTS_LOADED_SCENE"/> message is sent to the clients.
+        /// It relies on MessageSender, which doesn't send events from the server to itself (which is the case for a Host client).
         /// </summary>
-        public event AllClientsReadyDelegate OnAllClientsReady; 
+        public event NotifyClientAllClientsLoadedSceneDelegate OnNotifyClientAllClientsLoadedScene; 
 
         internal readonly HashSet<string> RegisteredSceneNames = new HashSet<string>();
         internal readonly Dictionary<string, uint> SceneNameToIndex = new Dictionary<string, uint>();
@@ -173,10 +176,10 @@ namespace MLAPI.SceneManagement
             SceneSwitchProgresses.Add(switchSceneProgress.Guid, switchSceneProgress);
             CurrentSceneSwitchProgressGuid = switchSceneProgress.Guid;
             
-            switchSceneProgress.OnClientLoadedScene += clientId => { OnClientLoadedScene?.Invoke(switchSceneProgress, clientId); };
+            switchSceneProgress.OnClientLoadedScene += clientId => { OnNotifyServerClientLoadedScene?.Invoke(switchSceneProgress, clientId); };
             switchSceneProgress.OnComplete += timedOut =>
             {
-                OnAllClientsLoadedScene?.Invoke(switchSceneProgress, timedOut);
+                OnNotifyServerAllClientsLoadedScene?.Invoke(switchSceneProgress, timedOut);
                 
                 using (var buffer = PooledNetworkBuffer.Get())
                 using (var writer = PooledNetworkWriter.Get(buffer))
@@ -187,7 +190,7 @@ namespace MLAPI.SceneManagement
                     writer.WriteULongArray(doneClientIds, doneClientIds.Length);
                     writer.WriteULongArray(timedOutClientIds, timedOutClientIds.Length);
                     
-                    m_NetworkManager.MessageSender.Send(NetworkManager.Singleton.ServerClientId, NetworkConstants.ALL_CLIENTS_SWITCH_SCENE_COMPLETED, NetworkChannel.Internal, buffer);
+                    m_NetworkManager.MessageSender.Send(NetworkManager.Singleton.ServerClientId, NetworkConstants.ALL_CLIENTS_LOADED_SCENE, NetworkChannel.Internal, buffer);
                 }
             };
 
@@ -454,7 +457,7 @@ namespace MLAPI.SceneManagement
 
         internal void AllClientsReady(ulong[] clientIds, ulong[] timedOutClientIds)
         {
-            OnAllClientsReady?.Invoke(clientIds, timedOutClientIds);
+            OnNotifyClientAllClientsLoadedScene?.Invoke(clientIds, timedOutClientIds);
         }
     }
 }
