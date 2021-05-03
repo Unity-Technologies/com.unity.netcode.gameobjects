@@ -70,8 +70,8 @@ namespace MLAPI.SceneManagement
 
         /// <summary>
         /// Event that is invoked on the clients after all clients have successfully completed scene transition or timed out.
-        /// This event happens after <see cref="OnNotifyServerAllClientsLoadedScene"/> fires on the server and a <see cref="NetworkConstants.ALL_CLIENTS_LOADED_SCENE"/> message is sent to the clients.
-        /// It relies on MessageSender, which doesn't send events from the server to itself (which is the case for a Host client).
+        /// <remarks>This event happens after <see cref="OnNotifyServerAllClientsLoadedScene"/> fires on the server and the <see cref="NetworkConstants.ALL_CLIENTS_LOADED_SCENE"/> message is sent to the clients.
+        /// It relies on MessageSender, which doesn't send events from the server to itself (which is the case for a Host client).</remarks>
         /// </summary>
         public event NotifyClientAllClientsLoadedSceneDelegate OnNotifyClientAllClientsLoadedScene; 
 
