@@ -31,6 +31,9 @@ namespace MLAPI
     internal class EntryBlock
     {
         private const int k_MaxVariables = 64;
+        public byte[] m_Buffer = new byte[20000];
+        public int m_Beg = 0; // todo: clarify usage. Right now, this is the beginning of the _free_ space.
+        public int m_End = 0;
 
         public Entry[] m_Entries = new Entry[k_MaxVariables];
         public int m_LastEntry = 0;
@@ -66,17 +69,21 @@ namespace MLAPI
             return pos;
         }
 
+        public void AllocateEntry(ref Entry entry, long size)
+        {
+            // todo: deal with free space
+            // todo: deal with full buffer
+
+            entry.m_Position = (ushort)m_Beg;
+            entry.m_Length = (ushort)size;
+            m_Beg += (int)size;
+        }
     }
 
     public class SnapshotSystem : INetworkUpdateSystem, IDisposable
     {
         private EntryBlock m_Snapshot = new EntryBlock();
         private EntryBlock m_ReceivedSnapshot = new EntryBlock();
-
-        // todo: split this buffer into parts per EntryBlock. Move the beg and end marker into an associated class, too
-        byte[] m_Buffer = new byte[20000];
-        private int m_Beg = 0;
-        private int m_End = 0;
 
         public SnapshotSystem()
         {
@@ -110,8 +117,8 @@ namespace MLAPI
                         buffer.Dispose();
                     }
 
-                    DebugDisplayStore(m_Snapshot.m_Entries, m_Snapshot.m_LastEntry, "Entries");
-                    DebugDisplayStore(m_Snapshot.m_Entries, m_Snapshot.m_LastEntry, "Received Entries");
+                    DebugDisplayStore(m_Snapshot, "Entries");
+                    DebugDisplayStore(m_ReceivedSnapshot, "Received Entries");
                     break;
             }
         }
@@ -136,19 +143,15 @@ namespace MLAPI
 
         private void WriteBuffer(NetworkBuffer buffer)
         {
+            using (var writer = PooledNetworkWriter.Get(buffer))
+            {
+                writer.WriteUInt16((ushort)m_Snapshot.m_Beg);
+            }
+            Debug.Log(String.Format("Writing {0} bytes", m_Snapshot.m_Beg));
+
             // todo: this sends the whole buffer
             // we'll need to build a per-client list
-            buffer.Write(m_Buffer, 0, m_End);
-        }
-
-        private void AllocateEntry(ref Entry entry, long size)
-        {
-            // todo: deal with free space
-            // todo: deal with full buffer
-
-            entry.m_Position = (ushort)m_Beg;
-            entry.m_Length = (ushort)size;
-            m_Beg += (int)size;
+            buffer.Write(m_Snapshot.m_Buffer, 0, m_Snapshot.m_Beg);
         }
 
         public void Store(ulong networkObjectId, int behaviourIndex, int variableIndex, INetworkVariable networkVariable)
@@ -171,12 +174,12 @@ namespace MLAPI
                 if (varBuffer.Length > m_Snapshot.m_Entries[pos].m_Length)
                 {
                     // allocate this Entry's buffer
-                    AllocateEntry(ref m_Snapshot.m_Entries[pos], varBuffer.Length);
+                    m_Snapshot.AllocateEntry(ref m_Snapshot.m_Entries[pos], varBuffer.Length);
                 }
 
                 m_Snapshot.m_Entries[pos].m_TickWritten = NetworkManager.Singleton.NetworkTickSystem.GetTick(); // todo: from here
                 // Copy the serialized NetworkVariable into our buffer
-                Buffer.BlockCopy(varBuffer.GetBuffer(), 0, m_Buffer, m_Snapshot.m_Entries[pos].m_Position, (int)varBuffer.Length);
+                Buffer.BlockCopy(varBuffer.GetBuffer(), 0, m_Snapshot.m_Buffer, m_Snapshot.m_Entries[pos].m_Position, (int)varBuffer.Length);
             }
         }
 
@@ -185,7 +188,7 @@ namespace MLAPI
             // todo: this is sub-optimal, as it allocates. Review
             List<int> entriesPositionToRead = new List<int>();
 
-
+            int snapshotSize = 0;
             using (var reader = PooledNetworkReader.Get(snapshotStream))
             {
                 Entry entry;
@@ -209,45 +212,69 @@ namespace MLAPI
 
                     if (m_ReceivedSnapshot.m_Entries[pos].m_Length < entry.m_Length)
                     {
-                        AllocateEntry(ref entry, entry.m_Length);
+                        m_ReceivedSnapshot.AllocateEntry(ref entry, entry.m_Length);
                     }
                     m_ReceivedSnapshot.m_Entries[pos] = entry;
 
                     entriesPositionToRead.Add(pos);
                 }
+
+                m_ReceivedSnapshot.m_LastEntry = entries;
+                snapshotSize = reader.ReadUInt16();
             }
+
+            Debug.Log(String.Format("Reading {0} bytes", snapshotSize));
+            snapshotStream.Read(m_ReceivedSnapshot.m_Buffer, 0, snapshotSize);
+
+
+            var offset = snapshotStream.Position;
 
             foreach (var pos in entriesPositionToRead)
             {
                 if (m_ReceivedSnapshot.m_Entries[pos].m_TickWritten > 0)
                 {
+                    Debug.Log("applied variable");
 
-                    snapshotStream.Read(m_Buffer, m_ReceivedSnapshot.m_Entries[pos].m_Position,
+                    var nv = FindNetworkVar(m_ReceivedSnapshot.m_Entries[pos].key);
+
+                    MemoryStream stream = new MemoryStream(m_ReceivedSnapshot.m_Buffer, m_ReceivedSnapshot.m_Entries[pos].m_Position,
                         m_ReceivedSnapshot.m_Entries[pos].m_Length);
-
-                    var spawnedObjects = NetworkManager.Singleton.SpawnManager.SpawnedObjects;
-
-                    if (spawnedObjects.ContainsKey(m_ReceivedSnapshot.m_Entries[pos].key.m_NetworkObjectId))
-                    {
-                        var behaviour = spawnedObjects[m_ReceivedSnapshot.m_Entries[pos].key.m_NetworkObjectId]
-                            .GetNetworkBehaviourAtOrderIndex(m_ReceivedSnapshot.m_Entries[pos].key.m_BehaviourIndex);
-                        var nv = behaviour.NetworkVariableFields[m_ReceivedSnapshot.m_Entries[pos].key.m_VariableIndex];
-
-                        MemoryStream stream = new MemoryStream(m_Buffer, m_ReceivedSnapshot.m_Entries[pos].m_Position,
-                            m_ReceivedSnapshot.m_Entries[pos].m_Length);
-                        nv.ReadDelta(stream, false, 0, 0);
-                    }
+                    // todo : read another stream, dump the output for debugging
+                    nv.ReadDelta(stream, false, 0, 0);
                 }
             }
         }
 
-        private void DebugDisplayStore(Entry[] entries, int entryLength, string name)
+        INetworkVariable FindNetworkVar(Key key)
+        {
+            var spawnedObjects = NetworkManager.Singleton.SpawnManager.SpawnedObjects;
+
+            if (spawnedObjects.ContainsKey(key.m_NetworkObjectId))
+            {
+                var behaviour = spawnedObjects[key.m_NetworkObjectId]
+                    .GetNetworkBehaviourAtOrderIndex(key.m_BehaviourIndex);
+                var nv = behaviour.NetworkVariableFields[key.m_VariableIndex];
+
+                return nv;
+            }
+
+            return null;
+        }
+
+        private void DebugDisplayStore(EntryBlock block, string name)
         {
             string table = "=== Snapshot table === " + name + " ===\n";
-            for (int i = 0; i < entryLength; i++)
+            for (int i = 0; i < block.m_LastEntry; i++)
             {
-                table += string.Format("NetworkObject {0}:{1} range [{2}, {3}]\n", entries[i].key.m_NetworkObjectId,
-                    entries[i].key.m_VariableIndex, entries[i].m_Position, entries[i].m_Position + entries[i].m_Length);
+                table += string.Format("NetworkObject {0}:{1}:{2} range [{3}, {4}] ", block.m_Entries[i].key.m_NetworkObjectId, block.m_Entries[i].key.m_BehaviourIndex,
+                    block.m_Entries[i].key.m_VariableIndex, block.m_Entries[i].m_Position, block.m_Entries[i].m_Position + block.m_Entries[i].m_Length);
+
+                for (int j = 0; j < block.m_Entries[i].m_Length && j < 4; j++)
+                {
+                    table += block.m_Buffer[block.m_Entries[i].m_Position + j].ToString("X2") + " ";
+                }
+
+                table += "\n";
             }
             Debug.Log(table);
         }
