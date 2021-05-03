@@ -729,14 +729,6 @@ namespace MLAPI
 
         private void OnEnable()
         {
-            if (Singleton != null && Singleton != this)
-            {
-                Destroy(gameObject);
-                return;
-            }
-
-            SetSingleton();
-
             if (DontDestroy)
             {
                 DontDestroyOnLoad(gameObject);
@@ -746,13 +738,19 @@ namespace MLAPI
             {
                 Application.runInBackground = true;
             }
+
+            if (Singleton == null)
+            {
+                SetSingleton();
+            }
         }
 
         private void OnDestroy()
         {
-            if (Singleton != null && Singleton == this)
+            Shutdown();
+
+            if (Singleton == this)
             {
-                Shutdown();
                 Singleton = null;
             }
         }
@@ -1277,6 +1275,13 @@ namespace MLAPI
                             NetworkLog.LogWarning($"Server received {nameof(NetworkConstants.CLIENT_SWITCH_SCENE_COMPLETED)} from client id {clientId}");
                         }
 
+                        break;
+                    case NetworkConstants.ALL_CLIENTS_LOADED_SCENE:
+                        if (IsClient)
+                        {
+                            MessageHandler.HandleAllClientsSwitchSceneCompleted(clientId, messageStream);
+                        }
+                        
                         break;
                     case NetworkConstants.SERVER_LOG:
                         if (IsServer && NetworkConfig.EnableNetworkLogs)
