@@ -32,19 +32,19 @@ namespace MLAPI.SceneManagement
 
         /// <summary>
         /// Delegate for when a client has reported to the server that it has completed scene transition
-        /// <see cref='NetworkSceneManager.OnNotifyServerClientLoadedScene'/>
+        /// <see cref='OnNotifyServerClientLoadedScene'/>
         /// </summary>
         public delegate void NotifyServerClientLoadedSceneDelegate(SceneSwitchProgress progress, ulong clientId);
 
         /// <summary>
         /// Delegate for when all clients have reported to the server that they have completed scene transition or timed out
-        /// <see cref='NetworkSceneManager.OnNotifyServerAllClientsLoadedScene'/>
+        /// <see cref='OnNotifyServerAllClientsLoadedScene'/>
         /// </summary>
         public delegate void NotifyServerAllClientsLoadedSceneDelegate(SceneSwitchProgress progress, bool timedOut);
 
         /// <summary>
         /// Delegate for when the clients get notified by the server that all clients have completed their scene transitions.
-        /// <see cref='NetworkSceneManager.OnNotifyClientAllClientsLoadedScene'/>
+        /// <see cref='OnNotifyClientAllClientsLoadedScene'/>
         /// </summary>
         public delegate void NotifyClientAllClientsLoadedSceneDelegate(ulong[] clientIds, ulong[] timedOutClientIds);
 
