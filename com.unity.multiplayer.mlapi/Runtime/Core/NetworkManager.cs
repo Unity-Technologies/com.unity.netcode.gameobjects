@@ -329,7 +329,7 @@ namespace MLAPI
                 return;
             }
 
-            networkTimeSystem = new NetworkTimeSystem(NetworkConfig.TickRate);
+            networkTimeSystem = new NetworkTimeSystem(NetworkConfig);
 
             //This should never happen, but in the event that it does there should be (at a minimum) a unity error logged.
             if (RpcQueueContainer != null)
@@ -792,7 +792,7 @@ namespace MLAPI
                 {
                     // set exposed time values to correct fixed values
                     PredictedTime = new NetworkTime(networkTimeSystem.TickRate, i);
-                    ServerTime = new NetworkTime();
+                    ServerTime = new NetworkTime(networkTimeSystem.TickRate, i - predictedToServerDifference);
 
                     NetworkFixedTick(i);
                 }
