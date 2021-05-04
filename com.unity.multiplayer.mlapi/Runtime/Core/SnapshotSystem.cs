@@ -99,27 +99,23 @@ namespace MLAPI
 
         public void NetworkUpdate(NetworkUpdateStage updateStage)
         {
-            switch (updateStage)
+            if (updateStage == NetworkUpdateStage.EarlyUpdate)
             {
-                case NetworkUpdateStage.EarlyUpdate:
+                if (NetworkManager.Singleton.IsServer)
                 {
-                    if (NetworkManager.Singleton.IsServer)
+                    for (int i = 0; i < NetworkManager.Singleton.ConnectedClientsList.Count; i++)
                     {
-                        for (int i = 0; i < NetworkManager.Singleton.ConnectedClientsList.Count; i++)
-                        {
-                            var clientId = NetworkManager.Singleton.ConnectedClientsList[i].ClientId;
-                            SendSnapshot(clientId);
-                        }
+                        var clientId = NetworkManager.Singleton.ConnectedClientsList[i].ClientId;
+                        SendSnapshot(clientId);
                     }
-                    else
-                    {
-                        SendSnapshot(NetworkManager.Singleton.ServerClientId);
-                    }
-
-                    DebugDisplayStore(m_Snapshot, "Entries");
-                    DebugDisplayStore(m_ReceivedSnapshot, "Received Entries");
-                    break;
                 }
+                else
+                {
+                    SendSnapshot(NetworkManager.Singleton.ServerClientId);
+                }
+
+                DebugDisplayStore(m_Snapshot, "Entries");
+                DebugDisplayStore(m_ReceivedSnapshot, "Received Entries");
             }
         }
 
