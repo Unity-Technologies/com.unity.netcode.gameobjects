@@ -329,7 +329,7 @@ namespace MLAPI
                 return;
             }
 
-            networkTimeSystem = new NetworkTimeSystem(NetworkConfig);
+            networkTimeSystem = new NetworkTimeSystem(NetworkConfig, server);
 
             //This should never happen, but in the event that it does there should be (at a minimum) a unity error logged.
             if (RpcQueueContainer != null)
@@ -790,6 +790,9 @@ namespace MLAPI
 
                 for (int i = previousPredictedTick; i < currentPredictedTick; i++)
                 {
+                    // TODO this is temporary code to just make this run somehow will be removed once we have snapshot ack
+                    networkTimeSystem.LastReceivedServerSnapshotTick = new NetworkTime(networkTimeSystem.TickRate, networkTimeSystem.LastReceivedServerSnapshotTick.Tick + 1);
+
                     // set exposed time values to correct fixed values
                     PredictedTime = new NetworkTime(networkTimeSystem.TickRate, i);
                     ServerTime = new NetworkTime(networkTimeSystem.TickRate, i - predictedToServerDifference);

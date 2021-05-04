@@ -60,10 +60,22 @@ namespace MLAPI.Configuration
         public bool CreatePlayerPrefab = true;
 
         /// <summary>
-        /// The max amount of messages to process per ReceiveTickrate. This is to prevent flooding.
+        /// TODO
         /// </summary>
-        [Tooltip("The maximum amount of Receive events to poll per Receive tick. This is to prevent flooding and freezing on the server")]
+        [Tooltip("TODO")]
         public int TickRate = 60;
+
+        /// <summary>
+        /// TODO
+        /// </summary>
+        [Tooltip("TODO")]
+        public float ClientBufferTime = 50;
+
+        /// <summary>
+        /// TODO
+        /// </summary>
+        [Tooltip("TODO")]
+        public float ServerBufferTime = 50;
 
         /// <summary>
         /// The amount of seconds to wait for handshake to complete before timing out a client

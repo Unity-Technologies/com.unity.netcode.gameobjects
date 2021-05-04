@@ -24,6 +24,8 @@ public class NetworkManagerEditor : Editor
     private SerializedProperty m_AllowRuntimeSceneChangesProperty;
     private SerializedProperty m_NetworkTransportProperty;
     private SerializedProperty m_TickRateProperty;
+    private SerializedProperty m_ClientBufferTimeProperty;
+    private SerializedProperty m_ServerBufferTimeProperty;
     private SerializedProperty m_MaxObjectUpdatesPerTickProperty;
     private SerializedProperty m_ClientConnectionBufferTimeoutProperty;
     private SerializedProperty m_ConnectionApprovalProperty;
@@ -99,6 +101,8 @@ public class NetworkManagerEditor : Editor
         m_AllowRuntimeSceneChangesProperty = m_NetworkConfigProperty.FindPropertyRelative("AllowRuntimeSceneChanges");
         m_NetworkTransportProperty = m_NetworkConfigProperty.FindPropertyRelative("NetworkTransport");
         m_TickRateProperty = m_NetworkConfigProperty.FindPropertyRelative("TickRate");
+        m_ClientBufferTimeProperty = m_NetworkConfigProperty.FindPropertyRelative("ClientBufferTime");
+        m_ServerBufferTimeProperty = m_NetworkConfigProperty.FindPropertyRelative("ServerBufferTime");
         m_ClientConnectionBufferTimeoutProperty = m_NetworkConfigProperty.FindPropertyRelative("ClientConnectionBufferTimeout");
         m_ConnectionApprovalProperty = m_NetworkConfigProperty.FindPropertyRelative("ConnectionApproval");
         m_EnableTimeResyncProperty = m_NetworkConfigProperty.FindPropertyRelative("EnableTimeResync");
@@ -132,6 +136,8 @@ public class NetworkManagerEditor : Editor
         m_AllowRuntimeSceneChangesProperty = m_NetworkConfigProperty.FindPropertyRelative("AllowRuntimeSceneChanges");
         m_NetworkTransportProperty = m_NetworkConfigProperty.FindPropertyRelative("NetworkTransport");
         m_TickRateProperty = m_NetworkConfigProperty.FindPropertyRelative("TickRate");
+        m_ClientBufferTimeProperty = m_NetworkConfigProperty.FindPropertyRelative("ClientBufferTime");
+        m_ServerBufferTimeProperty = m_NetworkConfigProperty.FindPropertyRelative("ServerBufferTime");
         m_ClientConnectionBufferTimeoutProperty = m_NetworkConfigProperty.FindPropertyRelative("ClientConnectionBufferTimeout");
         m_ConnectionApprovalProperty = m_NetworkConfigProperty.FindPropertyRelative("ConnectionApproval");
         m_EnableTimeResyncProperty = m_NetworkConfigProperty.FindPropertyRelative("EnableTimeResync");
@@ -292,6 +298,10 @@ public class NetworkManagerEditor : Editor
 
             EditorGUILayout.LabelField("Game Loop", EditorStyles.boldLabel);
             EditorGUILayout.PropertyField(m_TickRateProperty);
+
+            EditorGUILayout.LabelField("Network", EditorStyles.boldLabel);
+            EditorGUILayout.PropertyField(m_ClientBufferTimeProperty);
+            EditorGUILayout.PropertyField(m_ServerBufferTimeProperty);
 
             EditorGUILayout.LabelField("Performance", EditorStyles.boldLabel);
             EditorGUILayout.PropertyField(m_EnableNetworkVariableProperty);
