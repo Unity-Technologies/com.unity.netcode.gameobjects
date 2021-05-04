@@ -24,6 +24,7 @@ namespace MLAPI
         public ushort m_TickWritten; // the network tick at which this variable was set
         public ushort m_Position; // the offset in our m_Buffer
         public ushort m_Length; // the length of the data in m_Buffer
+        public bool m_Fresh; // indicates entries that were just received
 
         public const int k_NotFound = -1;
     }
@@ -64,6 +65,7 @@ namespace MLAPI
             entry.m_TickWritten = 0;
             entry.m_Position = 0;
             entry.m_Length = 0;
+            entry.m_Fresh = false;
             m_Entries[pos] = entry;
 
             return pos;
@@ -185,9 +187,6 @@ namespace MLAPI
 
         public void ReadSnapshot(Stream snapshotStream)
         {
-            // todo: this is sub-optimal, as it allocates. Review
-            List<int> entriesPositionToRead = new List<int>();
-
             int snapshotSize = 0;
             using (var reader = PooledNetworkReader.Get(snapshotStream))
             {
@@ -203,6 +202,7 @@ namespace MLAPI
                     entry.m_TickWritten = reader.ReadUInt16();
                     entry.m_Position = reader.ReadUInt16();
                     entry.m_Length = reader.ReadUInt16();
+                    entry.m_Fresh = true;
 
                     int pos = m_ReceivedSnapshot.Find(entry.key);
                     if (pos == Entry.k_NotFound)
@@ -215,33 +215,29 @@ namespace MLAPI
                         m_ReceivedSnapshot.AllocateEntry(ref entry, entry.m_Length);
                     }
                     m_ReceivedSnapshot.m_Entries[pos] = entry;
-
-                    entriesPositionToRead.Add(pos);
                 }
 
-                m_ReceivedSnapshot.m_LastEntry = entries;
                 snapshotSize = reader.ReadUInt16();
             }
 
             Debug.Log(String.Format("Reading {0} bytes", snapshotSize));
             snapshotStream.Read(m_ReceivedSnapshot.m_Buffer, 0, snapshotSize);
 
-
-            var offset = snapshotStream.Position;
-
-            foreach (var pos in entriesPositionToRead)
+            for (var i = 0; i < m_ReceivedSnapshot.m_LastEntry; i++)
             {
-                if (m_ReceivedSnapshot.m_Entries[pos].m_TickWritten > 0)
+                if (m_ReceivedSnapshot.m_Entries[i].m_Fresh && m_ReceivedSnapshot.m_Entries[i].m_TickWritten > 0)
                 {
                     Debug.Log("applied variable");
 
-                    var nv = FindNetworkVar(m_ReceivedSnapshot.m_Entries[pos].key);
+                    var nv = FindNetworkVar(m_ReceivedSnapshot.m_Entries[i].key);
 
-                    MemoryStream stream = new MemoryStream(m_ReceivedSnapshot.m_Buffer, m_ReceivedSnapshot.m_Entries[pos].m_Position,
-                        m_ReceivedSnapshot.m_Entries[pos].m_Length);
+                    MemoryStream stream = new MemoryStream(m_ReceivedSnapshot.m_Buffer, m_ReceivedSnapshot.m_Entries[i].m_Position,
+                        m_ReceivedSnapshot.m_Entries[i].m_Length);
                     // todo : read another stream, dump the output for debugging
                     nv.ReadDelta(stream, false, 0, 0);
                 }
+
+                m_ReceivedSnapshot.m_Entries[i].m_Fresh = false;
             }
         }
 
