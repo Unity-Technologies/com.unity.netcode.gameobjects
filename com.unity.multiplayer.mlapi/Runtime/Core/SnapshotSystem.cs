@@ -246,7 +246,8 @@ namespace MLAPI
                     var stream = new MemoryStream(m_ReceivedSnapshot.m_Buffer, m_ReceivedSnapshot.m_Entries[i].m_Position,
                         m_ReceivedSnapshot.m_Entries[i].m_Length);
 
-                    nv.ReadDelta(stream, false, 0, 0);
+                    // todo: Review whether tick still belong in netvar or in the snapshot table.
+                    nv.ReadDelta(stream, NetworkManager.Singleton.IsServer, NetworkManager.Singleton.NetworkTickSystem.GetTick(), m_ReceivedSnapshot.m_Entries[i].m_TickWritten);
                 }
 
                 m_ReceivedSnapshot.m_Entries[i].m_Fresh = false;
