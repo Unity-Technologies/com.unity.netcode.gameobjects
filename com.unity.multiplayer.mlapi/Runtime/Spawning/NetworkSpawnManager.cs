@@ -218,7 +218,6 @@ namespace MLAPI.Spawning
                         {
                             NetworkLog.LogError($"Failed to create object locally. [{nameof(prefabHash)}={prefabHash}]. {nameof(NetworkPrefab)} could not be found. Is the prefab registered with {nameof(NetworkManager)}?");
                         }
-
                         return null;
                     }
 
@@ -472,23 +471,26 @@ namespace MLAPI.Spawning
         /// </summary>
         internal void ServerDestroySpawnedSceneObjects()
         {
-            //This Allocation is "ok" for now because this code only executes when a new scene is switched to
-            //We need to create a new copy the HashSet of NetworkObjects (SpawnedObjectsList) so we can remove
-            //objects from the HashSet (SpawnedObjectsList) without causing a list has been modified exception to occur.
+            // This Allocation is "OK" for now because this code only executes when a new scene is switched to
+            // We need to create a new copy the HashSet of NetworkObjects (SpawnedObjectsList) so we can remove
+            // objects from the HashSet (SpawnedObjectsList) without causing a list has been modified exception to occur.
             var spawnedObjects = SpawnedObjectsList.ToList();
+
             foreach (var sobj in spawnedObjects)
             {
                 if ((sobj.IsSceneObject != null && sobj.IsSceneObject == true) || sobj.DestroyWithScene)
                 {
-                    if (NetworkManager.PrefabHandler.ContainsHandler(sobj))
-                    {
-                        SpawnedObjectsList.Remove(sobj);
+                    // This **needs** to be here until we overhaul NetworkSceneManager due to dependencies
+                    // that occur shortly after NetworkSceneManager invokes ServerDestroySpawnedSceneObjects
+                    // within the NetworkSceneManager.SwitchScene method.
+                    SpawnedObjectsList.Remove(sobj);
+                    if (NetworkManager.PrefabHandler != null && NetworkManager.PrefabHandler.ContainsHandler(sobj))
+                    {                        
                         NetworkManager.PrefabHandler.HandleNetworkPrefabDestroy(sobj);
                         OnDestroyObject(sobj.NetworkObjectId, false);
                     }
                     else
-                    {
-                        SpawnedObjectsList.Remove(sobj);
+                    {                        
                         UnityEngine.Object.Destroy(sobj.gameObject);
                     }
                 }

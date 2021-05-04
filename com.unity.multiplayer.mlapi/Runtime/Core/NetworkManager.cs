@@ -315,6 +315,16 @@ namespace MLAPI
             ConnectedClients.Clear();
             ConnectedClientsList.Clear();
 
+            // This is really only for editor unit tests that complete everything in a single frame
+            // The logic is:  An editor unit test could invoke the NetworkManager.StartXXXX (Client,Host, or Server)
+            // and then, during the same frame, call NetworkManager.StopXXXX (Client, Host, or Server) all while the
+            // NetworkManager's Awake method is yet to be invoked.  This is only here to avoid this specific issue.
+#if UNITY_EDITOR
+            if (PrefabHandler == null)
+            {
+                PrefabHandler = new NetworkPrefabHandler();
+            }
+#endif
             // Create spawn manager instance
             SpawnManager = new NetworkSpawnManager(this);
 
@@ -714,7 +724,13 @@ namespace MLAPI
 
         private void Awake()
         {
+            // This needs to be instantiated here to assure that users can assign prefab handler overrides
+            // during the component Start invocation stage and beyond.  It is not recommended to assign
+            // prefab handlers during a component's Awake invocation stage (unless one has changed the execution
+            // order of the NetworkManager script)
+
             PrefabHandler = new NetworkPrefabHandler();
+
         }
 
         private void OnEnable()
