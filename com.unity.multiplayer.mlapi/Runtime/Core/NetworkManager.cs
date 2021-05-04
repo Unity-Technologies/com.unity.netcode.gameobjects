@@ -330,6 +330,7 @@ namespace MLAPI
             }
 
             networkTimeSystem = new NetworkTimeSystem(NetworkConfig, server);
+            networkTimeSystem.OnNetworkTickInternal += NetworkFixedTick;
 
             //This should never happen, but in the event that it does there should be (at a minimum) a unity error logged.
             if (RpcQueueContainer != null)
@@ -710,6 +711,12 @@ namespace MLAPI
                 CustomMessagingManager = null;
             }
 
+            if (networkTimeSystem != null)
+            {
+                networkTimeSystem.OnNetworkTickInternal -= NetworkFixedTick;
+                networkTimeSystem = null;
+            }
+
             //The Transport is set during Init time, thus it is possible for the Transport to be null
             NetworkConfig?.NetworkTransport?.Shutdown();
         }
@@ -778,31 +785,7 @@ namespace MLAPI
         {
             if (IsListening)
             {
-                // store old predicted tick to know how many fixed ticks passed
-                var previousPredictedTick = networkTimeSystem.PredictedTime.Tick;
 
-                // update the tick system with delta time
-                networkTimeSystem.AdvanceNetworkTime(Time.deltaTime);
-
-                var currentPredictedTick = networkTimeSystem.PredictedTime.Tick;
-
-                var predictedToServerDifference = currentPredictedTick - networkTimeSystem.ServerTime.Tick;
-
-                for (int i = previousPredictedTick; i < currentPredictedTick; i++)
-                {
-                    // TODO this is temporary code to just make this run somehow will be removed once we have snapshot ack
-                    networkTimeSystem.LastReceivedServerSnapshotTick = new NetworkTime(networkTimeSystem.TickRate, networkTimeSystem.LastReceivedServerSnapshotTick.Tick + 1);
-
-                    // set exposed time values to correct fixed values
-                    PredictedTime = new NetworkTime(networkTimeSystem.TickRate, i);
-                    ServerTime = new NetworkTime(networkTimeSystem.TickRate, i - predictedToServerDifference);
-
-                    NetworkFixedTick(i);
-                }
-
-                // Set exposed time to values from tick system
-                PredictedTime = networkTimeSystem.PredictedTime;
-                ServerTime = networkTimeSystem.ServerTime;
             }
         }
 
@@ -812,7 +795,7 @@ namespace MLAPI
         /// - call NetworkFixedUpdate on all NetworkBehaviours in prediction/client authority mode
         /// - create a snapshot from resulting state
         /// </summary>
-        private void NetworkFixedTick(int tick)
+        private void NetworkFixedTick(NetworkTime predictedTime)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_EventTick.Begin();

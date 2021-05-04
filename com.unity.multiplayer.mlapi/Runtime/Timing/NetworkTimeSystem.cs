@@ -44,6 +44,22 @@ namespace MLAPI.Timing
         public int TickRate => m_TickRate;
 
         /// <summary>
+        /// Delegate for invoking an event whenever a network tick passes
+        /// </summary>
+        /// <param name="predictedTime">The predicted time for the tick.</param>
+        public delegate void NetworkTickDelegate(NetworkTime predictedTime);
+
+        /// <summary>
+        /// Gets invoked before every network tick.
+        /// </summary>
+        public event NetworkTickDelegate OnNetworkTick = null;
+
+        /// <summary>
+        /// Gets invoked during every network tick. Used by internal components like <see cref="NetworkManager"/>
+        /// </summary>
+        internal event NetworkTickDelegate OnNetworkTickInternal = null;
+
+        /// <summary>
         /// Creates a new instance of the <see cref="NetworkTimeSystem"/>.
         /// </summary>
         /// <param name="config">The network config</param>
@@ -60,7 +76,7 @@ namespace MLAPI.Timing
             {
                 m_NetworkTimeProvider = new DynamicNetworkTimeProvider(this);
             }
-            
+
             m_PredictedTime = new NetworkTime(config.TickRate);
             m_ServerTime = new NetworkTime(config.TickRate);
         }
@@ -70,7 +86,34 @@ namespace MLAPI.Timing
         /// </summary>
         public void AdvanceNetworkTime(float deltaTime)
         {
+            // store old predicted tick to know how many fixed ticks passed
+            var previousPredictedTick = PredictedTime.Tick;
+
             m_NetworkTimeProvider.AdvanceTime(ref m_PredictedTime, ref m_ServerTime, deltaTime);
+
+            // cache times here so that we can adjust them to temporary values while simulating ticks.
+            var cachePredictedTime = m_PredictedTime;
+            var cacheServerTime = m_ServerTime;
+
+            var currentPredictedTick = PredictedTime.Tick;
+            var predictedToServerDifference = currentPredictedTick - ServerTime.Tick;
+
+            for (int i = previousPredictedTick; i < currentPredictedTick; i++)
+            {
+                // TODO this is temporary code to just make this run somehow will be removed once we have snapshot ack
+                LastReceivedServerSnapshotTick = new NetworkTime(TickRate, LastReceivedServerSnapshotTick.Tick + 1);
+
+                // set exposed time values to correct fixed values
+                m_PredictedTime = new NetworkTime(TickRate, i);
+                m_ServerTime = new NetworkTime(TickRate, i - predictedToServerDifference);
+
+                OnNetworkTick?.Invoke(m_PredictedTime);
+                OnNetworkTickInternal.Invoke(m_ServerTime);
+            }
+
+            // Set exposed time to values from tick system
+            m_PredictedTime = cachePredictedTime;
+            m_ServerTime = cacheServerTime;
         }
 
         /// <summary>
