@@ -59,14 +59,12 @@ namespace MLAPI.Editor.CodeGen
 
                     while (true)
                     {
-                        bool nestedTypes = lastNested.Any(t => t.NestedTypes.Count > 0);
+                        lastNested = lastNested.Select(t => t.NestedTypes).SelectMany(t => t).ToList();
 
-                        if (!nestedTypes)
+                        if (lastNested.Count == 0)
                         {
                             break;
                         }
-
-                        lastNested = lastNested.Select(t => t.NestedTypes).SelectMany(t => t).ToList();
 
                         allTypes = allTypes.Union(lastNested).ToList();
                     }
