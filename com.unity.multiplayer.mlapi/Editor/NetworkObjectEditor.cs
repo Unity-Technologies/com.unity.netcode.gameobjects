@@ -60,7 +60,7 @@ namespace MLAPI.Editor
                     EditorGUILayout.TextField(nameof(NetworkObject.IsSceneObject), "null");
                 }
                 EditorGUILayout.Toggle(nameof(NetworkObject.DestroyWithScene), m_NetworkObject.DestroyWithScene);
-                EditorGUILayout.TextField(nameof(NetworkObject.NetworkManager), m_NetworkObject.NetworkManager.gameObject.name);
+                EditorGUILayout.TextField(nameof(NetworkObject.NetworkManager), m_NetworkObject.NetworkManager == null ? "null" : m_NetworkObject.NetworkManager.gameObject.name);
                 GUI.enabled = guiEnabled;
 
                 if (m_NetworkObject.NetworkManager != null && m_NetworkObject.NetworkManager.IsServer)
@@ -96,6 +96,7 @@ namespace MLAPI.Editor
                 var guiEnabled = GUI.enabled;
                 GUI.enabled = false;
                 EditorGUILayout.TextField(nameof(NetworkObject.GlobalObjectIdHash), m_NetworkObject.GlobalObjectIdHash.ToString());
+                EditorGUILayout.TextField(nameof(NetworkObject.NetworkManager), m_NetworkObject.NetworkManager == null ? "null" : m_NetworkObject.NetworkManager.gameObject.name);
                 GUI.enabled = guiEnabled;
             }
         }
