@@ -102,26 +102,38 @@ namespace MLAPI
             switch (updateStage)
             {
                 case NetworkUpdateStage.EarlyUpdate:
-
-                    // todo: ConnectedClientsList is only valid on the host
-                    for (int i = 0; i < NetworkManager.Singleton.ConnectedClientsList.Count; i++)
+                {
+                    if (NetworkManager.Singleton.IsServer)
                     {
-                        var clientId = NetworkManager.Singleton.ConnectedClientsList[i].ClientId;
-
-
-                        // Send the entry index and the buffer where the variables are serialized
-                        var buffer = PooledNetworkBuffer.Get();
-
-                        WriteIndex(buffer);
-                        WriteBuffer(buffer);
-
-                        NetworkManager.Singleton.MessageSender.Send(clientId, NetworkConstants.SNAPSHOT_DATA, NetworkChannel.SnapshotExchange, buffer);
-                        buffer.Dispose();
+                        for (int i = 0; i < NetworkManager.Singleton.ConnectedClientsList.Count; i++)
+                        {
+                            var clientId = NetworkManager.Singleton.ConnectedClientsList[i].ClientId;
+                            SendSnapshot(clientId);
+                        }
+                    }
+                    else
+                    {
+                        SendSnapshot(NetworkManager.Singleton.ServerClientId);
                     }
 
                     DebugDisplayStore(m_Snapshot, "Entries");
                     DebugDisplayStore(m_ReceivedSnapshot, "Received Entries");
                     break;
+                }
+            }
+        }
+
+        private void SendSnapshot(ulong clientId)
+        {
+            // Send the entry index and the buffer where the variables are serialized
+            using (var buffer = PooledNetworkBuffer.Get())
+            {
+                WriteIndex(buffer);
+                WriteBuffer(buffer);
+
+                NetworkManager.Singleton.MessageSender.Send(clientId, NetworkConstants.SNAPSHOT_DATA,
+                    NetworkChannel.SnapshotExchange, buffer);
+                buffer.Dispose();
             }
         }
 
