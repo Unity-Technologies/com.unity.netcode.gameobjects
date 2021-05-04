@@ -149,7 +149,7 @@ namespace MLAPI
             {
                 writer.WriteUInt16((ushort)m_Snapshot.m_Beg);
             }
-            Debug.Log(String.Format("Writing {0} bytes", m_Snapshot.m_Beg));
+            Debug.Log(string.Format("Writing {0} bytes", m_Snapshot.m_Beg));
 
             // todo: this sends the whole buffer
             // we'll need to build a per-client list
@@ -179,7 +179,7 @@ namespace MLAPI
                     m_Snapshot.AllocateEntry(ref m_Snapshot.m_Entries[pos], varBuffer.Length);
                 }
 
-                m_Snapshot.m_Entries[pos].m_TickWritten = NetworkManager.Singleton.NetworkTickSystem.GetTick(); // todo: from here
+                m_Snapshot.m_Entries[pos].m_TickWritten = NetworkManager.Singleton.NetworkTickSystem.GetTick();
                 // Copy the serialized NetworkVariable into our buffer
                 Buffer.BlockCopy(varBuffer.GetBuffer(), 0, m_Snapshot.m_Buffer, m_Snapshot.m_Entries[pos].m_Position, (int)varBuffer.Length);
             }
@@ -220,7 +220,7 @@ namespace MLAPI
                 snapshotSize = reader.ReadUInt16();
             }
 
-            Debug.Log(String.Format("Reading {0} bytes", snapshotSize));
+            Debug.Log(string.Format("Reading {0} bytes", snapshotSize));
             snapshotStream.Read(m_ReceivedSnapshot.m_Buffer, 0, snapshotSize);
 
             for (var i = 0; i < m_ReceivedSnapshot.m_LastEntry; i++)
@@ -231,9 +231,9 @@ namespace MLAPI
 
                     var nv = FindNetworkVar(m_ReceivedSnapshot.m_Entries[i].key);
 
-                    MemoryStream stream = new MemoryStream(m_ReceivedSnapshot.m_Buffer, m_ReceivedSnapshot.m_Entries[i].m_Position,
+                    var stream = new MemoryStream(m_ReceivedSnapshot.m_Buffer, m_ReceivedSnapshot.m_Entries[i].m_Position,
                         m_ReceivedSnapshot.m_Entries[i].m_Length);
-                    // todo : read another stream, dump the output for debugging
+
                     nv.ReadDelta(stream, false, 0, 0);
                 }
 
@@ -241,7 +241,7 @@ namespace MLAPI
             }
         }
 
-        INetworkVariable FindNetworkVar(Key key)
+        private INetworkVariable FindNetworkVar(Key key)
         {
             var spawnedObjects = NetworkManager.Singleton.SpawnManager.SpawnedObjects;
 
