@@ -54,7 +54,7 @@ namespace MLAPI.Editor.CodeGen
                 if (ImportReferences(mainModule))
                 {
                     // process `NetworkBehaviour` types
-                    mainModule.Types
+                    mainModule.GetTypes()
                         .Where(t => t.IsSubclassOf(CodeGenHelpers.NetworkBehaviour_FullName))
                         .ToList()
                         .ForEach(ProcessNetworkBehaviour);
@@ -583,12 +583,6 @@ namespace MLAPI.Editor.CodeGen
                 instructions.Reverse();
                 instructions.ForEach(instruction => processor.Body.Instructions.Insert(0, instruction));
             }
-
-            // process nested `NetworkBehaviour` types
-            typeDefinition.NestedTypes
-                .Where(t => t.IsSubclassOf(CodeGenHelpers.NetworkBehaviour_FullName))
-                .ToList()
-                .ForEach(ProcessNetworkBehaviour);
         }
 
         private CustomAttribute CheckAndGetRPCAttribute(MethodDefinition methodDefinition)
