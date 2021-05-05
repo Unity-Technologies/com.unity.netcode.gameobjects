@@ -37,6 +37,7 @@ namespace MLAPI.Messaging
         private static ProfilerMarker s_HandleNetworkLog = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleNetworkLog)}");
         private static ProfilerMarker s_RpcReceiveQueueItemServerRpc = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(RpcReceiveQueueItem)}.{nameof(RpcQueueContainer.QueueItemType.ServerRpc)}");
         private static ProfilerMarker s_RpcReceiveQueueItemClientRpc = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(RpcReceiveQueueItem)}.{nameof(RpcQueueContainer.QueueItemType.ClientRpc)}");
+        private static ProfilerMarker s_HandleAllClientsSwitchSceneCompleted = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleAllClientsSwitchSceneCompleted)}");
 #endif
 
         public NetworkManager NetworkManager => m_NetworkManager;
@@ -570,6 +571,22 @@ namespace MLAPI.Messaging
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleNetworkLog.End();
+#endif
+        }
+
+        public void HandleAllClientsSwitchSceneCompleted(ulong clientId, Stream stream)
+        {
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            s_HandleAllClientsSwitchSceneCompleted.Begin();
+#endif
+            using (var reader = PooledNetworkReader.Get(stream))
+            {
+                var clientIds = reader.ReadULongArray();
+                var timedOutClientIds = reader.ReadULongArray();
+                NetworkManager.SceneManager.AllClientsReady(clientIds, timedOutClientIds);
+            }
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            s_HandleAllClientsSwitchSceneCompleted.End();
 #endif
         }
     }
