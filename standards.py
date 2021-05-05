@@ -102,10 +102,10 @@ if args.check:
     any_error = False
     for project_file in glob_files:
         print(f"check: project -> {project_file}")
-        any_error = 0 != os.system(f"{args.tool_path} {project_file} --fix-whitespace --fix-style error --check")
+        any_error = any_error or 0 != os.system(f"{args.tool_path} {project_file} --fix-whitespace --fix-style error --check")
 
     if any_error:
-        exit(f"check: failed")
+        exit("check: failed")
 
     print("check: succeeded")
 
@@ -116,10 +116,10 @@ if args.fix:
     any_error = False
     for project_file in glob_files:
         print(f"fix: project -> {project_file}")
-        any_error = 0 != os.system(f"{args.tool_path} {project_file} --fix-whitespace --fix-style error")
+        any_error = any_error or 0 != os.system(f"{args.tool_path} {project_file} --fix-whitespace --fix-style error")
 
     if any_error:
-        exit(f"fix: failed")
+        exit("fix: failed")
 
     print("fix: succeeded")
 
