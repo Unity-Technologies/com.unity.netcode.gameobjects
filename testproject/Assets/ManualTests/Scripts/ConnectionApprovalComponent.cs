@@ -73,7 +73,7 @@ public class ConnectionApprovalComponent : NetworkBehaviour
 
     private void NetworkManager_OnClientDisconnectCallback(ulong obj)
     {
-        Debug.Log($"Client {obj} connected!");
+        Debug.Log($"Client {obj} disconnected!");
     }
 
     private void ConnectionApprovalCallback(byte[] arg1, ulong arg2, NetworkManager.ConnectionApprovedDelegate arg3)
