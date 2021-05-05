@@ -29,7 +29,7 @@ namespace MLAPI
         internal uint TempGlobalObjectIdHashOverride = 0;
         // TAIL: DO NOT USE! TEST ONLY TEMP IMPL, WILL BE REMOVED
 
-        private void OnValidate()
+        internal void OnValidate()
         {
             // HEAD: DO NOT USE! TEST ONLY TEMP IMPL, WILL BE REMOVED
             if (TempGlobalObjectIdHashOverride != 0)
@@ -670,22 +670,22 @@ namespace MLAPI
                 // Write placeholder size, NOT as a packed value, initially as zero (i.e. we do not know how much NetworkVariable data will be written yet)
                 writer.WriteUInt32(0);
 
-                // Mark our current position before we potentially write any NetworkVariable data 
+                // Mark our current position before we potentially write any NetworkVariable data
                 var positionBeforeNetworkVariableData = buffer.Position;
 
-                // Write network variable data 
+                // Write network variable data
                 WriteNetworkVariableData(buffer, targetClientId);
 
                 // If our current buffer position is greater than our positionBeforeNetworkVariableData then we wrote NetworkVariable data
                 // Part 1: This will include the total NetworkVariable data size, if there was NetworkVariable data written, to the stream
                 // in order to be able to skip past this entry on the de-serialization side in the event this NetworkObject fails to be
-                // constructed (See Part 2 below in the DeserializeSceneObject method) 
+                // constructed (See Part 2 below in the DeserializeSceneObject method)
                 if (buffer.Position > positionBeforeNetworkVariableData)
                 {
-                    // Store our current stream buffer position 
+                    // Store our current stream buffer position
                     var endOfNetworkVariableData = buffer.Position;
 
-                    // Calculate the total NetworkVariable data size written        
+                    // Calculate the total NetworkVariable data size written
                     var networkVariableDataSize = endOfNetworkVariableData - positionBeforeNetworkVariableData;
 
                     // Move the stream position back to just before we wrote our size (we include the unpacked UInt32 data size placeholder)
@@ -742,7 +742,7 @@ namespace MLAPI
 
             if (networkVariableDataIsIncluded)
             {
-                // (See Part 1 above in the NetworkObject.SerializeSceneObject method to better understand this) 
+                // (See Part 1 above in the NetworkObject.SerializeSceneObject method to better understand this)
                 // Part 2: This makes sure that if one NetworkObject fails to construct (for whatever reason) then we can "skip past"
                 // that specific NetworkObject but continue processing any remaining serialized NetworkObjects as opposed to just
                 // throwing an exception and skipping the remaining (if any) NetworkObjects.  This will prevent one misconfigured
