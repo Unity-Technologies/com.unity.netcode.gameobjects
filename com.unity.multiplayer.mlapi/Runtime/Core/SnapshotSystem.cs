@@ -32,12 +32,20 @@ namespace MLAPI
     internal class EntryBlock
     {
         private const int k_MaxVariables = 64;
-        public byte[] m_Buffer = new byte[20000];
+        private const int k_BufferSize = 20000;
+
+        public byte[] m_Buffer = new byte[k_BufferSize];
         public int m_Beg = 0; // todo: clarify usage. Right now, this is the beginning of the _free_ space.
         public int m_End = 0;
 
         public Entry[] m_Entries = new Entry[k_MaxVariables];
         public int m_LastEntry = 0;
+        public MemoryStream m_Stream;
+
+        public EntryBlock()
+        {
+            m_Stream = new MemoryStream(m_Buffer, 0, k_BufferSize);
+        }
 
         public int Find(Key key)
         {
@@ -86,6 +94,7 @@ namespace MLAPI
     {
         private EntryBlock m_Snapshot = new EntryBlock();
         private EntryBlock m_ReceivedSnapshot = new EntryBlock();
+        private NetworkManager m_NetworkManager = NetworkManager.Singleton;
 
         public SnapshotSystem()
         {
@@ -101,17 +110,17 @@ namespace MLAPI
         {
             if (updateStage == NetworkUpdateStage.EarlyUpdate)
             {
-                if (NetworkManager.Singleton.IsServer)
+                if (m_NetworkManager.IsServer)
                 {
-                    for (int i = 0; i < NetworkManager.Singleton.ConnectedClientsList.Count; i++)
+                    for (int i = 0; i < m_NetworkManager.ConnectedClientsList.Count; i++)
                     {
-                        var clientId = NetworkManager.Singleton.ConnectedClientsList[i].ClientId;
+                        var clientId = m_NetworkManager.ConnectedClientsList[i].ClientId;
                         SendSnapshot(clientId);
                     }
                 }
                 else
                 {
-                    SendSnapshot(NetworkManager.Singleton.ServerClientId);
+                    SendSnapshot(m_NetworkManager.ServerClientId);
                 }
 
                 DebugDisplayStore(m_Snapshot, "Entries");
@@ -127,7 +136,7 @@ namespace MLAPI
                 WriteIndex(buffer);
                 WriteBuffer(buffer);
 
-                NetworkManager.Singleton.MessageSender.Send(clientId, NetworkConstants.SNAPSHOT_DATA,
+                m_NetworkManager.MessageSender.Send(clientId, NetworkConstants.SNAPSHOT_DATA,
                     NetworkChannel.SnapshotExchange, buffer);
                 buffer.Dispose();
             }
@@ -157,7 +166,6 @@ namespace MLAPI
             {
                 writer.WriteUInt16((ushort)m_Snapshot.m_Beg);
             }
-            Debug.Log(string.Format("Writing {0} bytes", m_Snapshot.m_Beg));
 
             // todo: this sends the whole buffer
             // we'll need to build a per-client list
@@ -187,7 +195,7 @@ namespace MLAPI
                     m_Snapshot.AllocateEntry(ref m_Snapshot.m_Entries[pos], varBuffer.Length);
                 }
 
-                m_Snapshot.m_Entries[pos].m_TickWritten = NetworkManager.Singleton.NetworkTickSystem.GetTick();
+                m_Snapshot.m_Entries[pos].m_TickWritten = m_NetworkManager.NetworkTickSystem.GetTick();
                 // Copy the serialized NetworkVariable into our buffer
                 Buffer.BlockCopy(varBuffer.GetBuffer(), 0, m_Snapshot.m_Buffer, m_Snapshot.m_Entries[pos].m_Position, (int)varBuffer.Length);
             }
@@ -200,7 +208,6 @@ namespace MLAPI
             {
                 Entry entry;
                 short entries = reader.ReadInt16();
-                Debug.Log(string.Format("Got {0} entries", entries));
 
                 for (var i = 0; i < entries; i++)
                 {
@@ -228,22 +235,18 @@ namespace MLAPI
                 snapshotSize = reader.ReadUInt16();
             }
 
-            Debug.Log(string.Format("Reading {0} bytes", snapshotSize));
             snapshotStream.Read(m_ReceivedSnapshot.m_Buffer, 0, snapshotSize);
 
             for (var i = 0; i < m_ReceivedSnapshot.m_LastEntry; i++)
             {
                 if (m_ReceivedSnapshot.m_Entries[i].m_Fresh && m_ReceivedSnapshot.m_Entries[i].m_TickWritten > 0)
                 {
-                    Debug.Log("applied variable");
-
                     var nv = FindNetworkVar(m_ReceivedSnapshot.m_Entries[i].key);
 
-                    var stream = new MemoryStream(m_ReceivedSnapshot.m_Buffer, m_ReceivedSnapshot.m_Entries[i].m_Position,
-                        m_ReceivedSnapshot.m_Entries[i].m_Length);
+                    m_ReceivedSnapshot.m_Stream.Seek(m_ReceivedSnapshot.m_Entries[i].m_Position, SeekOrigin.Begin);
 
                     // todo: Review whether tick still belong in netvar or in the snapshot table.
-                    nv.ReadDelta(stream, NetworkManager.Singleton.IsServer, NetworkManager.Singleton.NetworkTickSystem.GetTick(), m_ReceivedSnapshot.m_Entries[i].m_TickWritten);
+                    nv.ReadDelta(m_ReceivedSnapshot.m_Stream, m_NetworkManager.IsServer, m_NetworkManager.NetworkTickSystem.GetTick(), m_ReceivedSnapshot.m_Entries[i].m_TickWritten);
                 }
 
                 m_ReceivedSnapshot.m_Entries[i].m_Fresh = false;
@@ -252,7 +255,7 @@ namespace MLAPI
 
         private INetworkVariable FindNetworkVar(Key key)
         {
-            var spawnedObjects = NetworkManager.Singleton.SpawnManager.SpawnedObjects;
+            var spawnedObjects = m_NetworkManager.SpawnManager.SpawnedObjects;
 
             if (spawnedObjects.ContainsKey(key.m_NetworkObjectId))
             {
