@@ -147,17 +147,61 @@ namespace MLAPI
             using (var writer = PooledNetworkWriter.Get(buffer))
             {
                 writer.WriteInt16((short)m_Snapshot.LastEntry);
-
                 for (var i = 0; i < m_Snapshot.LastEntry; i++)
                 {
-                    writer.WriteUInt64(m_Snapshot.Entries[i].Key.NetworkObjectId);
-                    writer.WriteUInt16(m_Snapshot.Entries[i].Key.BehaviourIndex);
-                    writer.WriteUInt16(m_Snapshot.Entries[i].Key.VariableIndex);
-                    writer.WriteUInt16(m_Snapshot.Entries[i].TickWritten);
-                    writer.WriteUInt16(m_Snapshot.Entries[i].Position);
-                    writer.WriteUInt16(m_Snapshot.Entries[i].Length);
+                    WriteEntry(writer, in m_Snapshot.Entries[i]);
                 }
             }
+        }
+
+        private void ReadIndex(NetworkReader reader)
+        {
+            Entry entry;
+            short entries = reader.ReadInt16();
+
+            for (var i = 0; i < entries; i++)
+            {
+                entry = ReadEntry(reader);
+                entry.Fresh = true;
+
+                int pos = m_ReceivedSnapshot.Find(entry.Key);
+                if (pos == Entry.NotFound)
+                {
+                    pos = m_ReceivedSnapshot.AddEntry(entry.Key.NetworkObjectId, entry.Key.BehaviourIndex,
+                        entry.Key.VariableIndex);
+                }
+
+                if (m_ReceivedSnapshot.Entries[pos].Length < entry.Length)
+                {
+                    m_ReceivedSnapshot.AllocateEntry(ref entry, entry.Length);
+                }
+
+                m_ReceivedSnapshot.Entries[pos] = entry;
+            }
+        }
+
+        private void WriteEntry(NetworkWriter writer, in Entry entry)
+        {
+            writer.WriteUInt64(entry.Key.NetworkObjectId);
+            writer.WriteUInt16(entry.Key.BehaviourIndex);
+            writer.WriteUInt16(entry.Key.VariableIndex);
+            writer.WriteUInt16(entry.TickWritten);
+            writer.WriteUInt16(entry.Position);
+            writer.WriteUInt16(entry.Length);
+        }
+
+        private Entry ReadEntry(NetworkReader reader)
+        {
+            Entry entry;
+            entry.Key.NetworkObjectId = reader.ReadUInt64();
+            entry.Key.BehaviourIndex = reader.ReadUInt16();
+            entry.Key.VariableIndex = reader.ReadUInt16();
+            entry.TickWritten = reader.ReadUInt16();
+            entry.Position = reader.ReadUInt16();
+            entry.Length = reader.ReadUInt16();
+            entry.Fresh = false;
+
+            return entry;
         }
 
         private void WriteBuffer(NetworkBuffer buffer)
@@ -170,6 +214,29 @@ namespace MLAPI
             // todo: this sends the whole buffer
             // we'll need to build a per-client list
             buffer.Write(m_Snapshot.Buffer, 0, m_Snapshot.Beg);
+        }
+
+        private void ReadBuffer(NetworkReader reader, Stream snapshotStream)
+        {
+            int snapshotSize = reader.ReadUInt16();
+
+            snapshotStream.Read(m_ReceivedSnapshot.Buffer, 0, snapshotSize);
+
+            for (var i = 0; i < m_ReceivedSnapshot.LastEntry; i++)
+            {
+                if (m_ReceivedSnapshot.Entries[i].Fresh && m_ReceivedSnapshot.Entries[i].TickWritten > 0)
+                {
+                    var nv = FindNetworkVar(m_ReceivedSnapshot.Entries[i].Key);
+
+                    m_ReceivedSnapshot.Stream.Seek(m_ReceivedSnapshot.Entries[i].Position, SeekOrigin.Begin);
+
+                    // todo: Review whether tick still belong in netvar or in the snapshot table.
+                    nv.ReadDelta(m_ReceivedSnapshot.Stream, m_NetworkManager.IsServer,
+                        m_NetworkManager.NetworkTickSystem.GetTick(), m_ReceivedSnapshot.Entries[i].TickWritten);
+                }
+
+                m_ReceivedSnapshot.Entries[i].Fresh = false;
+            }
         }
 
         public void Store(ulong networkObjectId, int behaviourIndex, int variableIndex, INetworkVariable networkVariable)
@@ -203,53 +270,10 @@ namespace MLAPI
 
         public void ReadSnapshot(Stream snapshotStream)
         {
-            int snapshotSize = 0;
             using (var reader = PooledNetworkReader.Get(snapshotStream))
             {
-                Entry entry;
-                short entries = reader.ReadInt16();
-
-                for (var i = 0; i < entries; i++)
-                {
-                    entry.Key.NetworkObjectId = reader.ReadUInt64();
-                    entry.Key.BehaviourIndex = reader.ReadUInt16();
-                    entry.Key.VariableIndex = reader.ReadUInt16();
-                    entry.TickWritten = reader.ReadUInt16();
-                    entry.Position = reader.ReadUInt16();
-                    entry.Length = reader.ReadUInt16();
-                    entry.Fresh = true;
-
-                    int pos = m_ReceivedSnapshot.Find(entry.Key);
-                    if (pos == Entry.NotFound)
-                    {
-                        pos = m_ReceivedSnapshot.AddEntry(entry.Key.NetworkObjectId, entry.Key.BehaviourIndex, entry.Key.VariableIndex);
-                    }
-
-                    if (m_ReceivedSnapshot.Entries[pos].Length < entry.Length)
-                    {
-                        m_ReceivedSnapshot.AllocateEntry(ref entry, entry.Length);
-                    }
-                    m_ReceivedSnapshot.Entries[pos] = entry;
-                }
-
-                snapshotSize = reader.ReadUInt16();
-            }
-
-            snapshotStream.Read(m_ReceivedSnapshot.Buffer, 0, snapshotSize);
-
-            for (var i = 0; i < m_ReceivedSnapshot.LastEntry; i++)
-            {
-                if (m_ReceivedSnapshot.Entries[i].Fresh && m_ReceivedSnapshot.Entries[i].TickWritten > 0)
-                {
-                    var nv = FindNetworkVar(m_ReceivedSnapshot.Entries[i].Key);
-
-                    m_ReceivedSnapshot.Stream.Seek(m_ReceivedSnapshot.Entries[i].Position, SeekOrigin.Begin);
-
-                    // todo: Review whether tick still belong in netvar or in the snapshot table.
-                    nv.ReadDelta(m_ReceivedSnapshot.Stream, m_NetworkManager.IsServer, m_NetworkManager.NetworkTickSystem.GetTick(), m_ReceivedSnapshot.Entries[i].TickWritten);
-                }
-
-                m_ReceivedSnapshot.Entries[i].Fresh = false;
+                ReadIndex(reader);
+                ReadBuffer(reader, snapshotStream);
             }
         }
 
@@ -261,9 +285,7 @@ namespace MLAPI
             {
                 var behaviour = spawnedObjects[key.NetworkObjectId]
                     .GetNetworkBehaviourAtOrderIndex(key.BehaviourIndex);
-                var nv = behaviour.NetworkVariableFields[key.VariableIndex];
-
-                return nv;
+                return behaviour.NetworkVariableFields[key.VariableIndex];
             }
 
             return null;
