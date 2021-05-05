@@ -14,19 +14,19 @@ namespace MLAPI
 {
     internal struct Key
     {
-        public ulong m_NetworkObjectId; // the NetworkObjectId of the owning GameObject
-        public ushort m_BehaviourIndex; // the index of the behaviour in this GameObject
-        public ushort m_VariableIndex; // the index of the variable in this NetworkBehaviour
+        public ulong NetworkObjectId; // the NetworkObjectId of the owning GameObject
+        public ushort BehaviourIndex; // the index of the behaviour in this GameObject
+        public ushort VariableIndex; // the index of the variable in this NetworkBehaviour
     }
     internal struct Entry
     {
-        public Key key;
-        public ushort m_TickWritten; // the network tick at which this variable was set
-        public ushort m_Position; // the offset in our m_Buffer
-        public ushort m_Length; // the length of the data in m_Buffer
-        public bool m_Fresh; // indicates entries that were just received
+        public Key Key;
+        public ushort TickWritten; // the network tick at which this variable was set
+        public ushort Position; // the offset in our Buffer
+        public ushort Length; // the length of the data in Buffer
+        public bool Fresh; // indicates entries that were just received
 
-        public const int k_NotFound = -1;
+        public const int NotFound = -1;
     }
 
     internal class EntryBlock
@@ -34,47 +34,47 @@ namespace MLAPI
         private const int k_MaxVariables = 64;
         private const int k_BufferSize = 20000;
 
-        public byte[] m_Buffer = new byte[k_BufferSize];
-        public int m_Beg = 0; // todo: clarify usage. Right now, this is the beginning of the _free_ space.
-        public int m_End = 0;
+        public byte[] Buffer = new byte[k_BufferSize];
+        public int Beg = 0; // todo: clarify usage. Right now, this is the beginning of the _free_ space.
+        public int End = 0;
 
-        public Entry[] m_Entries = new Entry[k_MaxVariables];
-        public int m_LastEntry = 0;
-        public MemoryStream m_Stream;
+        public Entry[] Entries = new Entry[k_MaxVariables];
+        public int LastEntry = 0;
+        public MemoryStream Stream;
 
         public EntryBlock()
         {
-            m_Stream = new MemoryStream(m_Buffer, 0, k_BufferSize);
+            Stream = new MemoryStream(Buffer, 0, k_BufferSize);
         }
 
         public int Find(Key key)
         {
-            for (int i = 0; i < m_LastEntry; i++)
+            for (int i = 0; i < LastEntry; i++)
             {
-                if (m_Entries[i].key.m_NetworkObjectId == key.m_NetworkObjectId &&
-                    m_Entries[i].key.m_BehaviourIndex == key.m_BehaviourIndex &&
-                    m_Entries[i].key.m_VariableIndex == key.m_VariableIndex)
+                if (Entries[i].Key.NetworkObjectId == key.NetworkObjectId &&
+                    Entries[i].Key.BehaviourIndex == key.BehaviourIndex &&
+                    Entries[i].Key.VariableIndex == key.VariableIndex)
                 {
                     return i;
                 }
             }
 
-            return Entry.k_NotFound;
+            return Entry.NotFound;
         }
 
         public int AddEntry(ulong networkObjectId, int behaviourIndex, int variableIndex)
         {
-            var pos = m_LastEntry++;
-            var entry = m_Entries[pos];
+            var pos = LastEntry++;
+            var entry = Entries[pos];
 
-            entry.key.m_NetworkObjectId = networkObjectId;
-            entry.key.m_BehaviourIndex = (ushort)behaviourIndex;
-            entry.key.m_VariableIndex = (ushort)variableIndex;
-            entry.m_TickWritten = 0;
-            entry.m_Position = 0;
-            entry.m_Length = 0;
-            entry.m_Fresh = false;
-            m_Entries[pos] = entry;
+            entry.Key.NetworkObjectId = networkObjectId;
+            entry.Key.BehaviourIndex = (ushort)behaviourIndex;
+            entry.Key.VariableIndex = (ushort)variableIndex;
+            entry.TickWritten = 0;
+            entry.Position = 0;
+            entry.Length = 0;
+            entry.Fresh = false;
+            Entries[pos] = entry;
 
             return pos;
         }
@@ -84,9 +84,9 @@ namespace MLAPI
             // todo: deal with free space
             // todo: deal with full buffer
 
-            entry.m_Position = (ushort)m_Beg;
-            entry.m_Length = (ushort)size;
-            m_Beg += (int)size;
+            entry.Position = (ushort)Beg;
+            entry.Length = (ushort)size;
+            Beg += (int)size;
         }
     }
 
@@ -146,16 +146,16 @@ namespace MLAPI
         {
             using (var writer = PooledNetworkWriter.Get(buffer))
             {
-                writer.WriteInt16((short)m_Snapshot.m_LastEntry);
+                writer.WriteInt16((short)m_Snapshot.LastEntry);
 
-                for (var i = 0; i < m_Snapshot.m_LastEntry; i++)
+                for (var i = 0; i < m_Snapshot.LastEntry; i++)
                 {
-                    writer.WriteUInt64(m_Snapshot.m_Entries[i].key.m_NetworkObjectId);
-                    writer.WriteUInt16(m_Snapshot.m_Entries[i].key.m_BehaviourIndex);
-                    writer.WriteUInt16(m_Snapshot.m_Entries[i].key.m_VariableIndex);
-                    writer.WriteUInt16(m_Snapshot.m_Entries[i].m_TickWritten);
-                    writer.WriteUInt16(m_Snapshot.m_Entries[i].m_Position);
-                    writer.WriteUInt16(m_Snapshot.m_Entries[i].m_Length);
+                    writer.WriteUInt64(m_Snapshot.Entries[i].Key.NetworkObjectId);
+                    writer.WriteUInt16(m_Snapshot.Entries[i].Key.BehaviourIndex);
+                    writer.WriteUInt16(m_Snapshot.Entries[i].Key.VariableIndex);
+                    writer.WriteUInt16(m_Snapshot.Entries[i].TickWritten);
+                    writer.WriteUInt16(m_Snapshot.Entries[i].Position);
+                    writer.WriteUInt16(m_Snapshot.Entries[i].Length);
                 }
             }
         }
@@ -164,23 +164,23 @@ namespace MLAPI
         {
             using (var writer = PooledNetworkWriter.Get(buffer))
             {
-                writer.WriteUInt16((ushort)m_Snapshot.m_Beg);
+                writer.WriteUInt16((ushort)m_Snapshot.Beg);
             }
 
             // todo: this sends the whole buffer
             // we'll need to build a per-client list
-            buffer.Write(m_Snapshot.m_Buffer, 0, m_Snapshot.m_Beg);
+            buffer.Write(m_Snapshot.Buffer, 0, m_Snapshot.Beg);
         }
 
         public void Store(ulong networkObjectId, int behaviourIndex, int variableIndex, INetworkVariable networkVariable)
         {
             Key k;
-            k.m_NetworkObjectId = networkObjectId;
-            k.m_BehaviourIndex = (ushort)behaviourIndex;
-            k.m_VariableIndex = (ushort)variableIndex;
+            k.NetworkObjectId = networkObjectId;
+            k.BehaviourIndex = (ushort)behaviourIndex;
+            k.VariableIndex = (ushort)variableIndex;
 
             int pos = m_Snapshot.Find(k);
-            if (pos == Entry.k_NotFound)
+            if (pos == Entry.NotFound)
             {
                 pos = m_Snapshot.AddEntry(networkObjectId, behaviourIndex, variableIndex);
             }
@@ -189,15 +189,15 @@ namespace MLAPI
             using (var varBuffer = PooledNetworkBuffer.Get())
             {
                 networkVariable.WriteDelta(varBuffer);
-                if (varBuffer.Length > m_Snapshot.m_Entries[pos].m_Length)
+                if (varBuffer.Length > m_Snapshot.Entries[pos].Length)
                 {
                     // allocate this Entry's buffer
-                    m_Snapshot.AllocateEntry(ref m_Snapshot.m_Entries[pos], varBuffer.Length);
+                    m_Snapshot.AllocateEntry(ref m_Snapshot.Entries[pos], varBuffer.Length);
                 }
 
-                m_Snapshot.m_Entries[pos].m_TickWritten = m_NetworkManager.NetworkTickSystem.GetTick();
+                m_Snapshot.Entries[pos].TickWritten = m_NetworkManager.NetworkTickSystem.GetTick();
                 // Copy the serialized NetworkVariable into our buffer
-                Buffer.BlockCopy(varBuffer.GetBuffer(), 0, m_Snapshot.m_Buffer, m_Snapshot.m_Entries[pos].m_Position, (int)varBuffer.Length);
+                Buffer.BlockCopy(varBuffer.GetBuffer(), 0, m_Snapshot.Buffer, m_Snapshot.Entries[pos].Position, (int)varBuffer.Length);
             }
         }
 
@@ -211,45 +211,45 @@ namespace MLAPI
 
                 for (var i = 0; i < entries; i++)
                 {
-                    entry.key.m_NetworkObjectId = reader.ReadUInt64();
-                    entry.key.m_BehaviourIndex = reader.ReadUInt16();
-                    entry.key.m_VariableIndex = reader.ReadUInt16();
-                    entry.m_TickWritten = reader.ReadUInt16();
-                    entry.m_Position = reader.ReadUInt16();
-                    entry.m_Length = reader.ReadUInt16();
-                    entry.m_Fresh = true;
+                    entry.Key.NetworkObjectId = reader.ReadUInt64();
+                    entry.Key.BehaviourIndex = reader.ReadUInt16();
+                    entry.Key.VariableIndex = reader.ReadUInt16();
+                    entry.TickWritten = reader.ReadUInt16();
+                    entry.Position = reader.ReadUInt16();
+                    entry.Length = reader.ReadUInt16();
+                    entry.Fresh = true;
 
-                    int pos = m_ReceivedSnapshot.Find(entry.key);
-                    if (pos == Entry.k_NotFound)
+                    int pos = m_ReceivedSnapshot.Find(entry.Key);
+                    if (pos == Entry.NotFound)
                     {
-                        pos = m_ReceivedSnapshot.AddEntry(entry.key.m_NetworkObjectId, entry.key.m_BehaviourIndex, entry.key.m_VariableIndex);
+                        pos = m_ReceivedSnapshot.AddEntry(entry.Key.NetworkObjectId, entry.Key.BehaviourIndex, entry.Key.VariableIndex);
                     }
 
-                    if (m_ReceivedSnapshot.m_Entries[pos].m_Length < entry.m_Length)
+                    if (m_ReceivedSnapshot.Entries[pos].Length < entry.Length)
                     {
-                        m_ReceivedSnapshot.AllocateEntry(ref entry, entry.m_Length);
+                        m_ReceivedSnapshot.AllocateEntry(ref entry, entry.Length);
                     }
-                    m_ReceivedSnapshot.m_Entries[pos] = entry;
+                    m_ReceivedSnapshot.Entries[pos] = entry;
                 }
 
                 snapshotSize = reader.ReadUInt16();
             }
 
-            snapshotStream.Read(m_ReceivedSnapshot.m_Buffer, 0, snapshotSize);
+            snapshotStream.Read(m_ReceivedSnapshot.Buffer, 0, snapshotSize);
 
-            for (var i = 0; i < m_ReceivedSnapshot.m_LastEntry; i++)
+            for (var i = 0; i < m_ReceivedSnapshot.LastEntry; i++)
             {
-                if (m_ReceivedSnapshot.m_Entries[i].m_Fresh && m_ReceivedSnapshot.m_Entries[i].m_TickWritten > 0)
+                if (m_ReceivedSnapshot.Entries[i].Fresh && m_ReceivedSnapshot.Entries[i].TickWritten > 0)
                 {
-                    var nv = FindNetworkVar(m_ReceivedSnapshot.m_Entries[i].key);
+                    var nv = FindNetworkVar(m_ReceivedSnapshot.Entries[i].Key);
 
-                    m_ReceivedSnapshot.m_Stream.Seek(m_ReceivedSnapshot.m_Entries[i].m_Position, SeekOrigin.Begin);
+                    m_ReceivedSnapshot.Stream.Seek(m_ReceivedSnapshot.Entries[i].Position, SeekOrigin.Begin);
 
                     // todo: Review whether tick still belong in netvar or in the snapshot table.
-                    nv.ReadDelta(m_ReceivedSnapshot.m_Stream, m_NetworkManager.IsServer, m_NetworkManager.NetworkTickSystem.GetTick(), m_ReceivedSnapshot.m_Entries[i].m_TickWritten);
+                    nv.ReadDelta(m_ReceivedSnapshot.Stream, m_NetworkManager.IsServer, m_NetworkManager.NetworkTickSystem.GetTick(), m_ReceivedSnapshot.Entries[i].TickWritten);
                 }
 
-                m_ReceivedSnapshot.m_Entries[i].m_Fresh = false;
+                m_ReceivedSnapshot.Entries[i].Fresh = false;
             }
         }
 
@@ -257,11 +257,11 @@ namespace MLAPI
         {
             var spawnedObjects = m_NetworkManager.SpawnManager.SpawnedObjects;
 
-            if (spawnedObjects.ContainsKey(key.m_NetworkObjectId))
+            if (spawnedObjects.ContainsKey(key.NetworkObjectId))
             {
-                var behaviour = spawnedObjects[key.m_NetworkObjectId]
-                    .GetNetworkBehaviourAtOrderIndex(key.m_BehaviourIndex);
-                var nv = behaviour.NetworkVariableFields[key.m_VariableIndex];
+                var behaviour = spawnedObjects[key.NetworkObjectId]
+                    .GetNetworkBehaviourAtOrderIndex(key.BehaviourIndex);
+                var nv = behaviour.NetworkVariableFields[key.VariableIndex];
 
                 return nv;
             }
@@ -272,14 +272,14 @@ namespace MLAPI
         private void DebugDisplayStore(EntryBlock block, string name)
         {
             string table = "=== Snapshot table === " + name + " ===\n";
-            for (int i = 0; i < block.m_LastEntry; i++)
+            for (int i = 0; i < block.LastEntry; i++)
             {
-                table += string.Format("NetworkObject {0}:{1}:{2} range [{3}, {4}] ", block.m_Entries[i].key.m_NetworkObjectId, block.m_Entries[i].key.m_BehaviourIndex,
-                    block.m_Entries[i].key.m_VariableIndex, block.m_Entries[i].m_Position, block.m_Entries[i].m_Position + block.m_Entries[i].m_Length);
+                table += string.Format("NetworkObject {0}:{1}:{2} range [{3}, {4}] ", block.Entries[i].Key.NetworkObjectId, block.Entries[i].Key.BehaviourIndex,
+                    block.Entries[i].Key.VariableIndex, block.Entries[i].Position, block.Entries[i].Position + block.Entries[i].Length);
 
-                for (int j = 0; j < block.m_Entries[i].m_Length && j < 4; j++)
+                for (int j = 0; j < block.Entries[i].Length && j < 4; j++)
                 {
-                    table += block.m_Buffer[block.m_Entries[i].m_Position + j].ToString("X2") + " ";
+                    table += block.Buffer[block.Entries[i].Position + j].ToString("X2") + " ";
                 }
 
                 table += "\n";
