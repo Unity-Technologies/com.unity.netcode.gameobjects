@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using MLAPI.Prototyping;
 using UnityEditor.Animations;
 using UnityEngine;
@@ -19,7 +19,10 @@ namespace UnityEditor
 
         private void Initialize()
         {
-            if (m_Initialized) return;
+            if (m_Initialized)
+            {
+                return;
+            }
 
             m_Initialized = true;
             m_Target = target as NetworkAnimator;
@@ -32,13 +35,22 @@ namespace UnityEditor
         {
             EditorGUI.BeginChangeCheck();
             EditorGUILayout.PropertyField(m_AnimatorProperty, m_AnimatorLabel);
-            if (EditorGUI.EndChangeCheck()) m_Target.ResetTrackedParams();
+            if (EditorGUI.EndChangeCheck())
+            {
+                m_Target.ResetTrackedParams();
+            }
 
             var animator = m_Target.Animator;
-            if (animator == null) return;
+            if (animator == null)
+            {
+                return;
+            }
 
             var animatorController = animator.runtimeAnimatorController as AnimatorController;
-            if (animatorController == null) return;
+            if (animatorController == null)
+            {
+                return;
+            }
 
             EditorGUI.indentLevel += 1;
             var showWarning = false;
@@ -63,7 +75,11 @@ namespace UnityEditor
                     paramIndex++;
                 }
             }
-            if (showWarning) EditorGUILayout.HelpBox("NetworkAnimator can only select between the first 32 parameters in a mecanim controller", MessageType.Warning);
+            if (showWarning)
+            {
+                EditorGUILayout.HelpBox("NetworkAnimator can only select between the first 32 parameters in a mecanim controller", MessageType.Warning);
+            }
+
             EditorGUI.indentLevel -= 1;
         }
 

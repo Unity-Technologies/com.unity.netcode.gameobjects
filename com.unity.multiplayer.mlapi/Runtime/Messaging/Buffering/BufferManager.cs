@@ -7,13 +7,13 @@ using UnityEngine;
 
 namespace MLAPI.Messaging.Buffering
 {
-    internal static class BufferManager
+    internal class BufferManager
     {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
         private static ProfilerMarker s_CleanBuffer = new ProfilerMarker($"{nameof(BufferManager)}.{nameof(CleanBuffer)}");
 #endif
 
-        private static Dictionary<ulong, Queue<BufferedMessage>> s_BufferQueues = new Dictionary<ulong, Queue<BufferedMessage>>();
+        private readonly Dictionary<ulong, Queue<BufferedMessage>> m_BufferQueues = new Dictionary<ulong, Queue<BufferedMessage>>();
 
         internal struct BufferedMessage
         {
@@ -24,13 +24,20 @@ namespace MLAPI.Messaging.Buffering
             internal float BufferTime;
         }
 
-        internal static Queue<BufferedMessage> ConsumeBuffersForNetworkId(ulong networkId)
-        {
-            if (s_BufferQueues.ContainsKey(networkId))
-            {
-                Queue<BufferedMessage> message = s_BufferQueues[networkId];
+        private NetworkManager m_NetworkManager { get; }
 
-                s_BufferQueues.Remove(networkId);
+        internal BufferManager(NetworkManager networkManager)
+        {
+            m_NetworkManager = networkManager;
+        }
+
+        internal Queue<BufferedMessage> ConsumeBuffersForNetworkId(ulong networkId)
+        {
+            if (m_BufferQueues.ContainsKey(networkId))
+            {
+                Queue<BufferedMessage> message = m_BufferQueues[networkId];
+
+                m_BufferQueues.Remove(networkId);
 
                 return message;
             }
@@ -45,14 +52,14 @@ namespace MLAPI.Messaging.Buffering
             message.NetworkBuffer.Dispose();
         }
 
-        internal static void BufferMessageForNetworkId(ulong networkId, ulong senderClientId, NetworkChannel networkChannel, float receiveTime, ArraySegment<byte> payload)
+        internal void BufferMessageForNetworkId(ulong networkId, ulong senderClientId, NetworkChannel networkChannel, float receiveTime, ArraySegment<byte> payload)
         {
-            if (!s_BufferQueues.ContainsKey(networkId))
+            if (!m_BufferQueues.ContainsKey(networkId))
             {
-                s_BufferQueues.Add(networkId, new Queue<BufferedMessage>());
+                m_BufferQueues.Add(networkId, new Queue<BufferedMessage>());
             }
 
-            Queue<BufferedMessage> queue = s_BufferQueues[networkId];
+            Queue<BufferedMessage> queue = m_BufferQueues[networkId];
 
             var payloadBuffer = PooledNetworkBuffer.Get();
             payloadBuffer.Write(payload.Array, payload.Offset, payload.Count);
@@ -68,16 +75,16 @@ namespace MLAPI.Messaging.Buffering
             });
         }
 
-        private static List<ulong> s_KeysToDestroy = new List<ulong>();
+        private static readonly List<ulong> k_KeysToDestroy = new List<ulong>();
 
-        internal static void CleanBuffer()
+        internal void CleanBuffer()
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_CleanBuffer.Begin();
 #endif
-            foreach (var pair in s_BufferQueues)
+            foreach (var pair in m_BufferQueues)
             {
-                while (pair.Value.Count > 0 && Time.realtimeSinceStartup - pair.Value.Peek().BufferTime >= NetworkManager.Singleton.NetworkConfig.MessageBufferTimeout)
+                while (pair.Value.Count > 0 && Time.realtimeSinceStartup - pair.Value.Peek().BufferTime >= m_NetworkManager.NetworkConfig.MessageBufferTimeout)
                 {
                     BufferedMessage message = pair.Value.Dequeue();
 
@@ -86,16 +93,16 @@ namespace MLAPI.Messaging.Buffering
 
                 if (pair.Value.Count == 0)
                 {
-                    s_KeysToDestroy.Add(pair.Key);
+                    k_KeysToDestroy.Add(pair.Key);
                 }
             }
 
-            for (int i = 0; i < s_KeysToDestroy.Count; i++)
+            for (int i = 0; i < k_KeysToDestroy.Count; i++)
             {
-                s_BufferQueues.Remove(s_KeysToDestroy[i]);
+                m_BufferQueues.Remove(k_KeysToDestroy[i]);
             }
 
-            s_KeysToDestroy.Clear();
+            k_KeysToDestroy.Clear();
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_CleanBuffer.End();
 #endif

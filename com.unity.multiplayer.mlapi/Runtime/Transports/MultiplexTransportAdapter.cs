@@ -176,61 +176,61 @@ namespace MLAPI.Transports.Multiplex
             switch (SpreadMethod)
             {
                 case ConnectionIdSpreadMethod.ReplaceFirstBits:
-                {
-                    // Calculate bits to store transportId
-                    byte bits = (byte)UnityEngine.Mathf.CeilToInt(UnityEngine.Mathf.Log(Transports.Length, 2));
+                    {
+                        // Calculate bits to store transportId
+                        byte bits = (byte)UnityEngine.Mathf.CeilToInt(UnityEngine.Mathf.Log(Transports.Length, 2));
 
-                    // Drop first bits of connectionId
-                    ulong clientId = ((connectionId << bits) >> bits);
+                        // Drop first bits of connectionId
+                        ulong clientId = ((connectionId << bits) >> bits);
 
-                    // Place transportId there
-                    ulong shiftedTransportId = (ulong)transportId << ((sizeof(ulong) * 8) - bits);
+                        // Place transportId there
+                        ulong shiftedTransportId = (ulong)transportId << ((sizeof(ulong) * 8) - bits);
 
-                    return (clientId | shiftedTransportId) + 1;
-                }
+                        return (clientId | shiftedTransportId) + 1;
+                    }
                 case ConnectionIdSpreadMethod.MakeRoomFirstBits:
-                {
-                    // Calculate bits to store transportId
-                    byte bits = (byte)UnityEngine.Mathf.CeilToInt(UnityEngine.Mathf.Log(Transports.Length, 2));
+                    {
+                        // Calculate bits to store transportId
+                        byte bits = (byte)UnityEngine.Mathf.CeilToInt(UnityEngine.Mathf.Log(Transports.Length, 2));
 
-                    // Drop first bits of connectionId
-                    ulong clientId = (connectionId >> bits);
+                        // Drop first bits of connectionId
+                        ulong clientId = (connectionId >> bits);
 
-                    // Place transportId there
-                    ulong shiftedTransportId = (ulong)transportId << ((sizeof(ulong) * 8) - bits);
+                        // Place transportId there
+                        ulong shiftedTransportId = (ulong)transportId << ((sizeof(ulong) * 8) - bits);
 
-                    return (clientId | shiftedTransportId) + 1;
-                }
+                        return (clientId | shiftedTransportId) + 1;
+                    }
                 case ConnectionIdSpreadMethod.ReplaceLastBits:
-                {
-                    // Calculate bits to store transportId
-                    byte bits = (byte)UnityEngine.Mathf.CeilToInt(UnityEngine.Mathf.Log(Transports.Length, 2));
+                    {
+                        // Calculate bits to store transportId
+                        byte bits = (byte)UnityEngine.Mathf.CeilToInt(UnityEngine.Mathf.Log(Transports.Length, 2));
 
-                    // Drop the last bits of connectionId
-                    ulong clientId = ((connectionId >> bits) << bits);
+                        // Drop the last bits of connectionId
+                        ulong clientId = ((connectionId >> bits) << bits);
 
-                    // Return the transport inserted at the end
-                    return (clientId | transportId) + 1;
-                }
+                        // Return the transport inserted at the end
+                        return (clientId | transportId) + 1;
+                    }
                 case ConnectionIdSpreadMethod.MakeRoomLastBits:
-                {
-                    // Calculate bits to store transportId
-                    byte bits = (byte)UnityEngine.Mathf.CeilToInt(UnityEngine.Mathf.Log(Transports.Length, 2));
+                    {
+                        // Calculate bits to store transportId
+                        byte bits = (byte)UnityEngine.Mathf.CeilToInt(UnityEngine.Mathf.Log(Transports.Length, 2));
 
-                    // Drop the last bits of connectionId
-                    ulong clientId = (connectionId << bits);
+                        // Drop the last bits of connectionId
+                        ulong clientId = (connectionId << bits);
 
-                    // Return the transport inserted at the end
-                    return (clientId | transportId) + 1;
-                }
+                        // Return the transport inserted at the end
+                        return (clientId | transportId) + 1;
+                    }
                 case ConnectionIdSpreadMethod.Spread:
-                {
-                    return (connectionId * (ulong)Transports.Length + (ulong)transportId) + 1;
-                }
+                    {
+                        return (connectionId * (ulong)Transports.Length + (ulong)transportId) + 1;
+                    }
                 default:
-                {
-                    return ServerClientId;
-                }
+                    {
+                        return ServerClientId;
+                    }
             }
         }
 
@@ -246,68 +246,68 @@ namespace MLAPI.Transports.Multiplex
                 switch (SpreadMethod)
                 {
                     case ConnectionIdSpreadMethod.ReplaceFirstBits:
-                    {
-                        // The first clientId is reserved. Thus every clientId is always offset by 1
-                        clientId--;
+                        {
+                            // The first clientId is reserved. Thus every clientId is always offset by 1
+                            clientId--;
 
-                        // Calculate bits to store transportId
-                        byte bits = (byte)UnityEngine.Mathf.CeilToInt(UnityEngine.Mathf.Log(Transports.Length, 2));
+                            // Calculate bits to store transportId
+                            byte bits = (byte)UnityEngine.Mathf.CeilToInt(UnityEngine.Mathf.Log(Transports.Length, 2));
 
-                        transportId = (byte)(clientId >> ((sizeof(ulong) * 8) - bits));
-                        connectionId = ((clientId << bits) >> bits);
-                        break;
-                    }
+                            transportId = (byte)(clientId >> ((sizeof(ulong) * 8) - bits));
+                            connectionId = ((clientId << bits) >> bits);
+                            break;
+                        }
                     case ConnectionIdSpreadMethod.MakeRoomFirstBits:
-                    {
-                        // The first clientId is reserved. Thus every clientId is always offset by 1
-                        clientId--;
+                        {
+                            // The first clientId is reserved. Thus every clientId is always offset by 1
+                            clientId--;
 
-                        // Calculate bits to store transportId
-                        byte bits = (byte)UnityEngine.Mathf.CeilToInt(UnityEngine.Mathf.Log(Transports.Length, 2));
+                            // Calculate bits to store transportId
+                            byte bits = (byte)UnityEngine.Mathf.CeilToInt(UnityEngine.Mathf.Log(Transports.Length, 2));
 
-                        transportId = (byte)(clientId >> ((sizeof(ulong) * 8) - bits));
-                        connectionId = (clientId << bits);
-                        break;
-                    }
+                            transportId = (byte)(clientId >> ((sizeof(ulong) * 8) - bits));
+                            connectionId = (clientId << bits);
+                            break;
+                        }
                     case ConnectionIdSpreadMethod.ReplaceLastBits:
-                    {
-                        // The first clientId is reserved. Thus every clientId is always offset by 1
-                        clientId--;
+                        {
+                            // The first clientId is reserved. Thus every clientId is always offset by 1
+                            clientId--;
 
-                        // Calculate bits to store transportId
-                        byte bits = (byte)UnityEngine.Mathf.CeilToInt(UnityEngine.Mathf.Log(Transports.Length, 2));
+                            // Calculate bits to store transportId
+                            byte bits = (byte)UnityEngine.Mathf.CeilToInt(UnityEngine.Mathf.Log(Transports.Length, 2));
 
-                        transportId = (byte)((clientId << ((sizeof(ulong) * 8) - bits)) >> ((sizeof(ulong) * 8) - bits));
-                        connectionId = ((clientId >> bits) << bits);
-                        break;
-                    }
+                            transportId = (byte)((clientId << ((sizeof(ulong) * 8) - bits)) >> ((sizeof(ulong) * 8) - bits));
+                            connectionId = ((clientId >> bits) << bits);
+                            break;
+                        }
                     case ConnectionIdSpreadMethod.MakeRoomLastBits:
-                    {
-                        // The first clientId is reserved. Thus every clientId is always offset by 1
-                        clientId--;
+                        {
+                            // The first clientId is reserved. Thus every clientId is always offset by 1
+                            clientId--;
 
-                        // Calculate bits to store transportId
-                        byte bits = (byte)UnityEngine.Mathf.CeilToInt(UnityEngine.Mathf.Log(Transports.Length, 2));
+                            // Calculate bits to store transportId
+                            byte bits = (byte)UnityEngine.Mathf.CeilToInt(UnityEngine.Mathf.Log(Transports.Length, 2));
 
-                        transportId = (byte)((clientId << ((sizeof(ulong) * 8) - bits)) >> ((sizeof(ulong) * 8) - bits));
-                        connectionId = (clientId >> bits);
-                        break;
-                    }
+                            transportId = (byte)((clientId << ((sizeof(ulong) * 8) - bits)) >> ((sizeof(ulong) * 8) - bits));
+                            connectionId = (clientId >> bits);
+                            break;
+                        }
                     case ConnectionIdSpreadMethod.Spread:
-                    {
-                        // The first clientId is reserved. Thus every clientId is always offset by 1
-                        clientId--;
+                        {
+                            // The first clientId is reserved. Thus every clientId is always offset by 1
+                            clientId--;
 
-                        transportId = (byte)(clientId % (ulong)Transports.Length);
-                        connectionId = (clientId / (ulong)Transports.Length);
-                        break;
-                    }
+                            transportId = (byte)(clientId % (ulong)Transports.Length);
+                            connectionId = (clientId / (ulong)Transports.Length);
+                            break;
+                        }
                     default:
-                    {
-                        transportId = GetFirstSupportedTransportIndex();
-                        connectionId = Transports[transportId].ServerClientId;
-                        break;
-                    }
+                        {
+                            transportId = GetFirstSupportedTransportIndex();
+                            connectionId = Transports[transportId].ServerClientId;
+                            break;
+                        }
                 }
             }
         }

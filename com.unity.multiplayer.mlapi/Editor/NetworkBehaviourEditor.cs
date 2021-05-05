@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Reflection;
 using MLAPI;
@@ -46,7 +46,10 @@ namespace UnityEditor
             {
                 serializedObject.Update();
                 var scriptProperty = serializedObject.FindProperty("m_Script");
-                if (scriptProperty == null) return;
+                if (scriptProperty == null)
+                {
+                    return;
+                }
 
                 var targetScript = scriptProperty.objectReferenceValue as MonoScript;
                 Init(targetScript);
@@ -91,20 +94,58 @@ namespace UnityEditor
             object val = networkVariable.Value;
             string name = m_NetworkVariableNames[index];
 
-            if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
+            var behaviour = (NetworkBehaviour) target;
+
+            if (behaviour.NetworkManager != null && behaviour.NetworkManager.IsListening)
             {
-                if (type == typeof(int)) val = EditorGUILayout.IntField(name, (int)val);
-                else if (type == typeof(uint)) val = (uint)EditorGUILayout.LongField(name, (long)((uint)val));
-                else if (type == typeof(short)) val = (short)EditorGUILayout.IntField(name, (int)((short)val));
-                else if (type == typeof(ushort)) val = (ushort)EditorGUILayout.IntField(name, (int)((ushort)val));
-                else if (type == typeof(sbyte)) val = (sbyte)EditorGUILayout.IntField(name, (int)((sbyte)val));
-                else if (type == typeof(byte)) val = (byte)EditorGUILayout.IntField(name, (int)((byte)val));
-                else if (type == typeof(long)) val = EditorGUILayout.LongField(name, (long)val);
-                else if (type == typeof(ulong)) val = (ulong)EditorGUILayout.LongField(name, (long)((ulong)val));
-                else if (type == typeof(bool)) val = EditorGUILayout.Toggle(name, (bool)val);
-                else if (type == typeof(string)) val = EditorGUILayout.TextField(name, (string)val);
-                else if (type.IsEnum) val = EditorGUILayout.EnumPopup(name, (Enum)val);
-                else EditorGUILayout.LabelField("Type not renderable");
+                if (type == typeof(int))
+                {
+                    val = EditorGUILayout.IntField(name, (int)val);
+                }
+                else if (type == typeof(uint))
+                {
+                    val = (uint)EditorGUILayout.LongField(name, (long)((uint)val));
+                }
+                else if (type == typeof(short))
+                {
+                    val = (short)EditorGUILayout.IntField(name, (int)((short)val));
+                }
+                else if (type == typeof(ushort))
+                {
+                    val = (ushort)EditorGUILayout.IntField(name, (int)((ushort)val));
+                }
+                else if (type == typeof(sbyte))
+                {
+                    val = (sbyte)EditorGUILayout.IntField(name, (int)((sbyte)val));
+                }
+                else if (type == typeof(byte))
+                {
+                    val = (byte)EditorGUILayout.IntField(name, (int)((byte)val));
+                }
+                else if (type == typeof(long))
+                {
+                    val = EditorGUILayout.LongField(name, (long)val);
+                }
+                else if (type == typeof(ulong))
+                {
+                    val = (ulong)EditorGUILayout.LongField(name, (long)((ulong)val));
+                }
+                else if (type == typeof(bool))
+                {
+                    val = EditorGUILayout.Toggle(name, (bool)val);
+                }
+                else if (type == typeof(string))
+                {
+                    val = EditorGUILayout.TextField(name, (string)val);
+                }
+                else if (type.IsEnum)
+                {
+                    val = EditorGUILayout.EnumPopup(name, (Enum)val);
+                }
+                else
+                {
+                    EditorGUILayout.LabelField("Type not renderable");
+                }
 
                 networkVariable.Value = (T)val;
             }
@@ -121,7 +162,10 @@ namespace UnityEditor
             {
                 serializedObject.Update();
                 var scriptProperty = serializedObject.FindProperty("m_Script");
-                if (scriptProperty == null) return;
+                if (scriptProperty == null)
+                {
+                    return;
+                }
 
                 var targetScript = scriptProperty.objectReferenceValue as MonoScript;
                 Init(targetScript);
@@ -141,11 +185,17 @@ namespace UnityEditor
             {
                 if (property.propertyType == SerializedPropertyType.ObjectReference)
                 {
-                    if (property.name == "m_Script") EditorGUI.BeginDisabledGroup(true);
+                    if (property.name == "m_Script")
+                    {
+                        EditorGUI.BeginDisabledGroup(true);
+                    }
 
                     EditorGUILayout.PropertyField(property, true);
 
-                    if (property.name == "m_Script") EditorGUI.EndDisabledGroup();
+                    if (property.name == "m_Script")
+                    {
+                        EditorGUI.EndDisabledGroup();
+                    }
                 }
                 else
                 {

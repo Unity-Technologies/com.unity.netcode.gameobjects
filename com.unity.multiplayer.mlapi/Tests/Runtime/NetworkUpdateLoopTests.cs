@@ -32,7 +32,7 @@ namespace MLAPI.RuntimeTests
                 PlayerLoop.SetPlayerLoop(curPlayerLoop);
 
                 NetworkUpdateLoop.UnregisterLoopSystems();
-                
+
                 // our custom `PlayerLoopSystem` with the type of `NetworkUpdateLoopTests` should still exist
                 Assert.AreEqual(typeof(NetworkUpdateLoopTests), PlayerLoop.GetCurrentPlayerLoop().subSystemList[0].subSystemList.Last().type);
             }
@@ -432,7 +432,7 @@ namespace MLAPI.RuntimeTests
                 Assert.AreEqual(kRunTotalFrames, netUpdates[kNetPreUpdateIndex]);
                 Assert.AreEqual(netUpdates[kNetPreUpdateIndex], monoUpdates[kMonoUpdateIndex]);
 
-                GameObject.DestroyImmediate(gameObject);
+                UnityEngine.Object.DestroyImmediate(gameObject);
             }
         }
     }

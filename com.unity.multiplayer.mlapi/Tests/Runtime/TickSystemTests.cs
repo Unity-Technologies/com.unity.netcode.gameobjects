@@ -6,7 +6,7 @@ using NUnit.Framework;
 
 namespace MLAPI.RuntimeTests
 {
-    public class TickSystemTests: IDisposable
+    public class TickSystemTests : IDisposable
     {
         private NetworkTickSystem m_TickSystem = null;
         private float m_TestDuration = 3.0f;

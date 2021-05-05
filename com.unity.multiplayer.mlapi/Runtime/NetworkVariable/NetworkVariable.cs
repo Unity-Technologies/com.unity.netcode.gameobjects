@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 using System.IO;
 using System;
@@ -84,7 +84,10 @@ namespace MLAPI.NetworkVariable
             get => m_InternalValue;
             set
             {
-                if (EqualityComparer<T>.Default.Equals(m_InternalValue, value)) return;
+                if (EqualityComparer<T>.Default.Equals(m_InternalValue, value))
+                {
+                    return;
+                }
 
                 // Setter is assumed to be called locally, by game code.
                 // When used by the host, it is its responsibility to set the RemoteTick
@@ -131,10 +134,14 @@ namespace MLAPI.NetworkVariable
                 case NetworkVariablePermission.OwnerOnly:
                     return m_NetworkBehaviour.OwnerClientId == clientId;
                 case NetworkVariablePermission.Custom:
-                {
-                    if (Settings.ReadPermissionCallback == null) return false;
-                    return Settings.ReadPermissionCallback(clientId);
-                }
+                    {
+                        if (Settings.ReadPermissionCallback == null)
+                        {
+                            return false;
+                        }
+
+                        return Settings.ReadPermissionCallback(clientId);
+                    }
             }
             return true;
         }
@@ -160,10 +167,14 @@ namespace MLAPI.NetworkVariable
                 case NetworkVariablePermission.OwnerOnly:
                     return m_NetworkBehaviour.OwnerClientId == clientId;
                 case NetworkVariablePermission.Custom:
-                {
-                    if (Settings.WritePermissionCallback == null) return false;
-                    return Settings.WritePermissionCallback(clientId);
-                }
+                    {
+                        if (Settings.WritePermissionCallback == null)
+                        {
+                            return false;
+                        }
+
+                        return Settings.WritePermissionCallback(clientId);
+                    }
             }
 
             return true;
@@ -186,7 +197,10 @@ namespace MLAPI.NetworkVariable
                 T previousValue = m_InternalValue;
                 m_InternalValue = (T)reader.ReadObjectPacked(typeof(T));
 
-                if (keepDirtyDelta) m_IsDirty = true;
+                if (keepDirtyDelta)
+                {
+                    m_IsDirty = true;
+                }
 
                 OnValueChanged?.Invoke(previousValue, m_InternalValue);
             }
