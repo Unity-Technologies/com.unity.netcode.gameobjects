@@ -11,8 +11,7 @@ using UnityEngine;
 /// it's designed for the MLAPI in a way where no networking stack has to be available
 /// it's designed for testing purposes and it's not designed with speed in mind
 /// </summary>
-// TODO: Uncomment once #802 is merged
-// [DontShowInTransportDropdown]
+[DontShowInTransportDropdown]
 public class SIPTransport : NetworkTransport
 {
     private struct Event
