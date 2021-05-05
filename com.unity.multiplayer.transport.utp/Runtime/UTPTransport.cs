@@ -1,3 +1,5 @@
+#define RELAY_BIGENDIAN
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -56,13 +58,6 @@ namespace MLAPI.Transports
                 m_Driver = NetworkDriver.Create(m_NetworkParameters.ToArray());
             else
                 m_Driver = NetworkDriver.Create();
-
-
-            if (m_ProtocolType == ProtocolType.RelayUnityTransport)
-            {
-                Unity.Services.Relay.Configuration.BasePath = m_RelayServer;
-                UnityServices.Initialize();
-            }
         }
 
         private void DisposeDriver()
@@ -366,6 +361,11 @@ namespace MLAPI.Transports
 
             m_NetworkParameters = new List<INetworkParameter>();
             m_MessageBuffer = new byte[m_MessageBufferSize];
+
+            if (m_ProtocolType == ProtocolType.RelayUnityTransport) {
+                Unity.Services.Relay.Configuration.BasePath = m_RelayServer;
+                UnityServices.Initialize();
+            }
         }
 
         public override NetworkEvent PollEvent(out ulong clientId, out NetworkChannel networkChannel, out ArraySegment<byte> payload, out float receiveTime)
