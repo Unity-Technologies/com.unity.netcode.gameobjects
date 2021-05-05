@@ -13,6 +13,7 @@ using UTPNetworkEvent = Unity.Networking.Transport.NetworkEvent;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Services.Relay.Models;
 using System.Linq;
+using Unity.Services.Core;
 
 namespace MLAPI.Transports
 {
@@ -36,6 +37,7 @@ namespace MLAPI.Transports
         [SerializeField] private string m_ServerAddress = "127.0.0.1";
         [SerializeField] private ushort m_ServerPort = 7777;
         [SerializeField] private int m_RelayMaxPlayers = 10;
+        [SerializeField] private string m_RelayServer = "https://relay-allocations-test.cloud.unity3d.com";
 
         private State m_State = State.Disconnected;
         private NetworkDriver m_Driver;
@@ -54,6 +56,13 @@ namespace MLAPI.Transports
                 m_Driver = NetworkDriver.Create(m_NetworkParameters.ToArray());
             else
                 m_Driver = NetworkDriver.Create();
+
+
+            if (m_ProtocolType == ProtocolType.RelayUnityTransport)
+            {
+                Unity.Services.Relay.Configuration.BasePath = m_RelayServer;
+                UnityServices.Initialize();
+            }
         }
 
         private void DisposeDriver()
@@ -81,7 +90,7 @@ namespace MLAPI.Transports
                     yield break;
                 }
 
-                var allocation = joinTask.Result.Data.Allocation;
+                var allocation = joinTask.Result.Result.Data.Allocation;
 
                 serverEndpoint = NetworkEndPoint.Parse(allocation.RelayServer.IpV4, (ushort)allocation.RelayServer.Port);
 #if RELAY_BIGENDIAN
@@ -198,7 +207,7 @@ namespace MLAPI.Transports
                 yield break;
             }
 
-            var allocation = allocationTask.Result.Data.Allocation;
+            var allocation = allocationTask.Result.Result.Data.Allocation;
 
             var joinCodeTask = RelayService.AllocationsApiClient.CreateJoincodeAsync(new CreateJoincodeRequest(new JoinCodeRequest(allocation.AllocationId)));
 
@@ -215,7 +224,7 @@ namespace MLAPI.Transports
                 yield break;
             }
 
-            m_RelayJoinCode = joinCodeTask.Result.Data.JoinCode;
+            m_RelayJoinCode = joinCodeTask.Result.Result.Data.JoinCode;
 
             var serverEndpoint = NetworkEndPoint.Parse(allocation.RelayServer.IpV4, (ushort)allocation.RelayServer.Port);
 #if RELAY_BIGENDIAN

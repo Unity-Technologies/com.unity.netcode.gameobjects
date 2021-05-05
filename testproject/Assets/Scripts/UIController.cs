@@ -1,5 +1,7 @@
 using UnityEngine;
 using MLAPI;
+using Unity.Services.Core;
+using Unity.Services.Authentication;
 
 public class UIController : MonoBehaviour
 {
@@ -27,5 +29,13 @@ public class UIController : MonoBehaviour
     private void HideButtons()
     {
         ButtonsRoot.SetActive(false);
+    }
+
+    public async void OnSignIn()
+    {
+        await UnityServices.Initialize();
+        Debug.Log("OnSignIn");
+        await Authentication.SignInAnonymously();
+        Debug.Log($"Logging in with PlayerID {Authentication.PlayerId}");
     }
 }
