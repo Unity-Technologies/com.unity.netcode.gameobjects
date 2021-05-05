@@ -333,7 +333,7 @@ namespace MLAPI.EditorTests
         public void HandleNamedMessage(ulong clientId, Stream stream) => VerifyCalled(nameof(HandleNamedMessage));
 
         public void HandleNetworkLog(ulong clientId, Stream stream) => VerifyCalled(nameof(HandleNetworkLog));
-        
+
         public void HandleAllClientsSwitchSceneCompleted(ulong clientId, Stream stream) => VerifyCalled(nameof(HandleAllClientsSwitchSceneCompleted));
 
         private void VerifyCalled(string method)
@@ -343,6 +343,7 @@ namespace MLAPI.EditorTests
     }
 
     // Should probably have one of these for more files? In the future we could use the SIPTransport?
+    [DontShowInTransportDropdown]
     internal class DummyTransport : NetworkTransport
     {
         public override ulong ServerClientId { get; } = 0;
