@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -8,28 +9,31 @@ using MLAPI.Messaging;
 using MLAPI.NetworkVariable;
 using MLAPI.NetworkVariable.Collections;
 using NUnit.Framework;
+using UnityEditor;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
 
-/// <summary>
-/// TestCoordinator
-/// Used for coordinating multiprocess end to end tests. Used to call RPCs on other nodes and gather results
-/// /// Needed since the current remote player test runner hardcodes test to run in a bootstrap scene before launching the player.
-/// There's not per-test communication to run these tests, only to get the results per test as they are running
-/// </summary>
+[RequireComponent(typeof(NetworkObject))]
 internal class TestCoordinator : NetworkBehaviour
 {
-    public const float maxWaitTimeout = 20;
-    public const char methodFullNameSplitChar = '.';
+    /// <summary>
+    /// TestCoordinator
+    /// Used for coordinating multiprocess end to end tests. Used to call RPCs on other nodes and gather results
+    /// /// Needed since the current remote player test runner hardcodes test to run in a bootstrap scene before launching the player.
+    /// There's not per-test communication to run these tests, only to get the results per test as they are running
+    /// </summary>
+    public const float maxWaitTimeout = 10;
+    public const char methodFullNameSplitChar = '@';
     public const string buildPath = "Builds/MultiprocessTestBuild";
-    public const string buildName = "unity-unit-test";
+    public const string buildName = "testproject";
+    private bool m_ShouldShutdown = false;
 
     private NetworkDictionary<ulong, float> m_TestResults = new NetworkDictionary<ulong, float>(new NetworkVariableSettings()
     {
         WritePermission = NetworkVariablePermission.Everyone,
         ReadPermission = NetworkVariablePermission.Everyone
     });
-    private NetworkDictionary<ulong, List<string>> m_ErrorMessages = new NetworkDictionary<ulong, List<string>>(new NetworkVariableSettings()
+    private NetworkList<string> m_ErrorMessages = new NetworkList<string>(new NetworkVariableSettings()
     {
         ReadPermission = NetworkVariablePermission.Everyone,
         WritePermission = NetworkVariablePermission.Everyone
@@ -50,11 +54,65 @@ internal class TestCoordinator : NetworkBehaviour
         }
 
         Instance = this;
+        DontDestroyOnLoad(gameObject);
+    }
+
+    // private IEnumerator WaitForClientConnected()
+    // {
+    //     float startTime = Time.time;
+    //     while (Time.time - startTime < maxWaitTimeout)
+    //     {
+    //         yield return new WaitForSeconds(1);
+    //         if (NetworkManager.Singleton.IsConnectedClient)
+    //         {
+    //             yield break;
+    //         }
+    //     }
+    //     // not connected anymore, quitting the player
+    //     Application.Quit();
+    // }
+
+    public void Start()
+    {
+#if UNITY_EDITOR
+        // Debug.Log("starting MLAPI host");
+        // NetworkManager.Singleton.StartHost();
+#else
+        Debug.Log("starting MLAPI client");
+        NetworkManager.Singleton.StartClient();
+        // StartCoroutine(WaitForClientConnected()); // in case builds fail, can't have the old builds just stay idle. If they can't connect after a certain amount of time, disconnect
+#endif
+        m_TestResults.OnDictionaryChanged += OnResultsChanged;
+        m_ErrorMessages.OnListChanged += OnErrorMessageChanged;
+    }
+
+    public void OnDestroy()
+    {
+        m_TestResults.OnDictionaryChanged -= OnResultsChanged;
+        m_ErrorMessages.OnListChanged -= OnErrorMessageChanged;
+    }
+
+    private void OnErrorMessageChanged(NetworkListEvent<string> listChangedEvent)
+    {
+        switch (listChangedEvent.Type)
+        {
+            case NetworkListEvent<string>.EventType.Add:
+            case NetworkListEvent<string>.EventType.Insert:
+            case NetworkListEvent<string>.EventType.Value:
+                Debug.LogError($"Got Exception client side {listChangedEvent.Value}, type is {listChangedEvent.Type} and index is {listChangedEvent.Index}");
+                m_ErrorMessages.RemoveAt(listChangedEvent.Index); // consume error message
+                break;
+        }
+    }
+
+    private void OnResultsChanged(NetworkDictionaryEvent<ulong, float> dictChangedEvent)
+    {
+        Instance.AllClientResults.Add(dictChangedEvent.Key);
     }
 
     public static string GetMethodInfo(Action method)
     {
-        return $"{method.Method.DeclaringType.Name}{methodFullNameSplitChar}{method.Method.Name}";
+        return $"{method.Method.DeclaringType.FullName}{methodFullNameSplitChar}{method.Method.Name}";
     }
 
     public static void WriteResults(float result)
@@ -64,7 +122,9 @@ internal class TestCoordinator : NetworkBehaviour
 
     public static void WriteError(string errorMessage)
     {
-        Instance.m_ErrorMessages[NetworkManager.Singleton.LocalClientId].Add(errorMessage);
+        var localId = NetworkManager.Singleton.LocalClientId;
+
+        Instance.m_ErrorMessages.Add($"{localId}@{errorMessage}");
     }
 
     public static float GetCurrentResult()
@@ -78,13 +138,13 @@ internal class TestCoordinator : NetworkBehaviour
         var startWaitTime = Time.time;
         return () =>
         {
-            if (Instance.m_ErrorMessages.Count != 0)
-            {
-                foreach (var error in Instance.m_ErrorMessages)
-                {
-                    Debug.LogError($"client {error.Key} got error message {error.Value}");
-                }
-            }
+            // if (Instance.m_ErrorMessages.Count != 0)
+            // {
+            //     foreach (var error in Instance.m_ErrorMessages)
+            //     {
+            //         Debug.LogError($"got error message {error}");
+            //     }
+            // }
             if (Time.time - startWaitTime > maxWaitTimeout)
             {
                 Assert.Fail($"timeout while waiting for results, didn't results for {maxWaitTimeout} seconds");
@@ -125,27 +185,35 @@ internal class TestCoordinator : NetworkBehaviour
         }
         catch (Exception e)
         {
-            WriteError(e.ToString());
+            WriteError(e.Message);
+            // throw e;
         }
     }
 
     [ClientRpc]
     public void CloseRemoteClientRpc()
     {
-        Application.Quit();
+        NetworkManager.Singleton.StopClient();
+        m_ShouldShutdown = true; // wait until isConnectedClient is false to run Application Quit in next update
+        Debug.Log("dadou"+0);
+
+        // Application.Quit();
     }
 
     private float m_TimeSinceLastConnected;
     public void Update()
     {
-        // Make sure we don't have zombie processes
+        Debug.Log("dadou"+1);
         if (NetworkManager.Singleton.IsConnectedClient)
         {
+            Debug.Log("dadou"+2);
             m_TimeSinceLastConnected = Time.time;
         }
-        else if (Time.time - m_TimeSinceLastConnected > maxWaitTimeout)
+        else if (Time.time - m_TimeSinceLastConnected > maxWaitTimeout || m_ShouldShutdown)
         {
-            Application.Quit(1);
+            // Make sure we don't have zombie processes
+            Debug.Log("dadou"+3);
+            Application.Quit();
         }
     }
 
@@ -157,14 +225,15 @@ internal class TestCoordinator : NetworkBehaviour
         CurrentResultClient = 0;
     }
 
-    #if UNITY_EDITOR
     public static void StartWorkerNode()
     {
+#if UNITY_EDITOR
+
         var workerNode = new Process();
 
         //TODO this should be replaced eventually by proper orchestration
 #if UNITY_EDITOR_OSX
-        workerNode.StartInfo.FileName = $"{buildPath}.app/Contents/MacOS/{buildName}";
+        workerNode.StartInfo.FileName = $"{buildPath}.app/Contents/MacOS/{PlayerSettings.productName}";
 #elif UNITY_EDITOR_WIN
         workerNode.StartInfo.FileName = $"{buildPath}/buildName.exe";
 #else
@@ -191,6 +260,6 @@ internal class TestCoordinator : NetworkBehaviour
             Debug.LogError($"Error starting process, {e.Message} {e.Data} {e.ErrorCode}");
             throw e;
         }
+#endif
     }
-    #endif
 }

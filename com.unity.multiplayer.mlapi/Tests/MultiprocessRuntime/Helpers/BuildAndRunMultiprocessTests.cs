@@ -1,12 +1,12 @@
+#if UNITY_EDITOR
 using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
+using System.IO;
 using MLAPI.MultiprocessRuntimeTests;
 using UnityEditor;
 using UnityEditor.Build.Reporting;
 using UnityEditor.TestTools.TestRunner.Api;
 using UnityEngine;
+using UnityEngine.WSA;
 
 /// <summary>
 /// This is needed as Unity throws "An abnormal situation has occurred: the PlayerLoop internal function has been called recursively. Please contact Customer Support with a sample project so that we can reproduce the problem and troubleshoot it."
@@ -14,6 +14,7 @@ using UnityEngine;
 /// </summary>
 public class BuildAndRunMultiprocessTests : MonoBehaviour
 {
+
     [MenuItem("MLAPI Tests/Execute multiprocess tests no build %&t")]
     public static void ExecuteNoBuild()
     {
@@ -52,15 +53,23 @@ public class BuildAndRunMultiprocessTests : MonoBehaviour
 
     public static bool Build(string buildPath)
     {
-
+        // deleting so we don't endup testing on outdated builds
+#if UNITY_EDITOR_OSX
+        Directory.Delete(buildPath, recursive: true);
+#elif UNITY_EDITOR_WIN
+        File.Delete(Path.Combine(buildPath, $"{PlayerSettings.productName}.exe"));
+#else
+        throw new NotImplementedException();
+#endif
         var buildOptions = BuildOptions.IncludeTestAssemblies;
-        buildOptions |= BuildOptions.Development | BuildOptions.ConnectToHost | BuildOptions.IncludeTestAssemblies | BuildOptions.StrictMode;
+        buildOptions |= BuildOptions.Development | BuildOptions.IncludeTestAssemblies | BuildOptions.StrictMode;
+        // buildOptions |= BuildOptions.ConnectToHost;
         // buildOptions |= BuildOptions.AllowDebugging; // enable this if you want to debug your players. Your players
         // will have more connection permission popups when launching though
 
         buildOptions &= ~BuildOptions.AutoRunPlayer;
         var buildReport = BuildPipeline.BuildPlayer(
-            new string[] { "Assets/Scenes/MultiprocessTestingScene.unity" },
+            new string[] { $"Assets/Scenes/{BaseMultiprocessTests.mainSceneName}.unity" },
             buildPath,
             BuildTarget.StandaloneOSX,
             buildOptions);
@@ -86,3 +95,4 @@ public class BuildAndRunMultiprocessTests : MonoBehaviour
         );
     }
 }
+#endif

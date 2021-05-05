@@ -9,13 +9,19 @@ namespace MLAPI.MultiprocessRuntimeTests
 {
     public class NetworkVariablePerformanceTests : BaseMultiprocessTests
     {
-        protected override int NbWorkers { get; } = 2;
+        protected override int NbWorkers { get; } = 1;
+
+        public static void ExecuteTest1ClientSide()
+        {
+            //todo
+            TestCoordinator.WriteResults(Time.time);
+        }
 
         [UnityTest]
         public IEnumerator Test1()
         {
             // Call the method
-            TestCoordinator.Instance.TriggerTestClientRpc(TestCoordinator.GetMethodInfo(ExecuteSimpleCoordinatorTest));
+            TestCoordinator.Instance.TriggerTestClientRpc(TestCoordinator.GetMethodInfo(ExecuteTest1ClientSide));
 
             for (int i = 0; i < NbWorkers; i++) // wait and test for the two clients
             {

@@ -1,5 +1,5 @@
 {
-    "name": "Unity.Multiplayer.MLAPI.RuntimeTests",
+    "name": "Unity.Multiplayer.MLAPI.MultiprocessRuntime",
     "rootNamespace": "",
     "references": [
         "Unity.Multiplayer.MLAPI.Runtime",
@@ -7,26 +7,7 @@
         "UnityEditor.TestRunner"
     ],
     "includePlatforms": [],
-    "excludePlatforms": [
-        "Android",
-        "CloudRendering",
-        "GameCoreScarlett",
-        "GameCoreXboxOne",
-        "iOS",
-        "LinuxStandalone64",
-        "Lumin",
-        "macOSStandalone",
-        "PS4",
-        "PS5",
-        "Stadia",
-        "Switch",
-        "tvOS",
-        "WSA",
-        "WebGL",
-        "WindowsStandalone32",
-        "WindowsStandalone64",
-        "XboxOne"
-    ],
+    "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": true,
     "precompiledReferences": [
