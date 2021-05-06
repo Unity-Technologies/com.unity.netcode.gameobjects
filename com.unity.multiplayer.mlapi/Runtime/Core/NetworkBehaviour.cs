@@ -603,7 +603,7 @@ namespace MLAPI
             {
                 for (int k = 0; k < NetworkVariableFields.Count; k++)
                 {
-                    snapshot.Store(NetworkObjectId, behaviourIndex, k, NetworkVariableFields[k]);
+                    NetworkManager.SnapshotSystem.Store(NetworkObjectId, behaviourIndex, k, NetworkVariableFields[k]);
                 }
             }
 
