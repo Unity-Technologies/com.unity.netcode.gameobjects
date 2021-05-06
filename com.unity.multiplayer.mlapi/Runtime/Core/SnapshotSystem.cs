@@ -96,6 +96,8 @@ namespace MLAPI
         private EntryBlock m_ReceivedSnapshot = new EntryBlock();
         private NetworkManager m_NetworkManager = NetworkManager.Singleton;
 
+        private ushort m_CurrentTick = 0;
+
         public SnapshotSystem()
         {
             this.RegisterNetworkUpdate(NetworkUpdateStage.EarlyUpdate);
@@ -110,21 +112,27 @@ namespace MLAPI
         {
             if (updateStage == NetworkUpdateStage.EarlyUpdate)
             {
-                if (m_NetworkManager.IsServer)
-                {
-                    for (int i = 0; i < m_NetworkManager.ConnectedClientsList.Count; i++)
-                    {
-                        var clientId = m_NetworkManager.ConnectedClientsList[i].ClientId;
-                        SendSnapshot(clientId);
-                    }
-                }
-                else
-                {
-                    SendSnapshot(m_NetworkManager.ServerClientId);
-                }
+                var tick = m_NetworkManager.NetworkTickSystem.GetTick();
 
-                DebugDisplayStore(m_Snapshot, "Entries");
-                DebugDisplayStore(m_ReceivedSnapshot, "Received Entries");
+                if (tick != m_CurrentTick)
+                {
+                    m_CurrentTick = tick;
+                    if (m_NetworkManager.IsServer)
+                    {
+                        for (int i = 0; i < m_NetworkManager.ConnectedClientsList.Count; i++)
+                        {
+                            var clientId = m_NetworkManager.ConnectedClientsList[i].ClientId;
+                            SendSnapshot(clientId);
+                        }
+                    }
+                    else
+                    {
+                        SendSnapshot(m_NetworkManager.ServerClientId);
+                    }
+
+                    DebugDisplayStore(m_Snapshot, "Entries");
+                    DebugDisplayStore(m_ReceivedSnapshot, "Received Entries");
+                }
             }
         }
 
@@ -133,6 +141,11 @@ namespace MLAPI
             // Send the entry index and the buffer where the variables are serialized
             using (var buffer = PooledNetworkBuffer.Get())
             {
+                using (var writer = PooledNetworkWriter.Get(buffer))
+                {
+                    writer.WriteUInt16(m_CurrentTick);
+                }
+
                 WriteIndex(buffer);
                 WriteBuffer(buffer);
 
@@ -272,6 +285,8 @@ namespace MLAPI
         {
             using (var reader = PooledNetworkReader.Get(snapshotStream))
             {
+                ushort snapshotTick = reader.ReadUInt16();
+
                 ReadIndex(reader);
                 ReadBuffer(reader, snapshotStream);
             }
@@ -296,8 +311,8 @@ namespace MLAPI
             string table = "=== Snapshot table === " + name + " ===\n";
             for (int i = 0; i < block.LastEntry; i++)
             {
-                table += string.Format("NetworkObject {0}:{1}:{2} range [{3}, {4}] ", block.Entries[i].Key.NetworkObjectId, block.Entries[i].Key.BehaviourIndex,
-                    block.Entries[i].Key.VariableIndex, block.Entries[i].Position, block.Entries[i].Position + block.Entries[i].Length);
+                table += string.Format("NetworkVariable {0}:{1}:{2} written {5}, range [{3}, {4}] ", block.Entries[i].Key.NetworkObjectId, block.Entries[i].Key.BehaviourIndex,
+                    block.Entries[i].Key.VariableIndex, block.Entries[i].Position, block.Entries[i].Position + block.Entries[i].Length, block.Entries[i].TickWritten);
 
                 for (int j = 0; j < block.Entries[i].Length && j < 4; j++)
                 {
