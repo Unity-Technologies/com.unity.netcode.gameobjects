@@ -518,7 +518,7 @@ namespace MLAPI
                             // Sync just the variables for just the objects this client sees
                             for (int k = 0; k < sobj.ChildNetworkBehaviours.Count; k++)
                             {
-                                sobj.ChildNetworkBehaviours[k].VariableUpdate(client.ClientId, k, snapshot);
+                                sobj.ChildNetworkBehaviours[k].VariableUpdate(client.ClientId, snapshot);
                             }
                         }
                     }
@@ -539,7 +539,7 @@ namespace MLAPI
                     {
                         for (int k = 0; k < sobj.ChildNetworkBehaviours.Count; k++)
                         {
-                            sobj.ChildNetworkBehaviours[k].VariableUpdate(networkManager.ServerClientId, k, snapshot);
+                            sobj.ChildNetworkBehaviours[k].VariableUpdate(networkManager.ServerClientId, snapshot);
                         }
                     }
 
@@ -578,7 +578,7 @@ namespace MLAPI
             }
         }
 
-        internal void VariableUpdate(ulong clientId, int behaviourIndex, SnapshotSystem snapshot)
+        internal void VariableUpdate(ulong clientId, SnapshotSystem snapshot)
         {
             if (!m_VarInit)
             {
@@ -586,7 +586,7 @@ namespace MLAPI
             }
 
             PreNetworkVariableWrite();
-            NetworkVariableUpdate(clientId, behaviourIndex, snapshot);
+            NetworkVariableUpdate(clientId, NetworkBehaviourId, snapshot);
         }
 
         private readonly List<int> m_NetworkVariableIndexesToReset = new List<int>();
