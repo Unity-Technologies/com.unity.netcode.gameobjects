@@ -7,6 +7,7 @@ using UnityEditor.Build.Reporting;
 using UnityEditor.TestTools.TestRunner.Api;
 using UnityEngine;
 using UnityEngine.WSA;
+using Application = UnityEngine.Application;
 
 /// <summary>
 /// This is needed as Unity throws "An abnormal situation has occurred: the PlayerLoop internal function has been called recursively. Please contact Customer Support with a sample project so that we can reproduce the problem and troubleshoot it."
@@ -14,18 +15,20 @@ using UnityEngine.WSA;
 /// </summary>
 public class BuildAndRunMultiprocessTests : MonoBehaviour
 {
-
-    [MenuItem("MLAPI Tests/Execute multiprocess tests no build %&t")]
+    public const string BuildMenuName = "MLAPI Tests/Build - Execute multiprocess tests %t";
+    [MenuItem(BuildMenuName)]
+    public static void BuildAndExecute()
+    {
+        Execute(build: true);
+    }
+    public const string NoBuildMenuName = "MLAPI Tests/No Build - Execute multiprocess tests %&t";
+    [MenuItem(NoBuildMenuName)]
     public static void ExecuteNoBuild()
     {
         Execute(build: false);
     }
 
-    [MenuItem("MLAPI Tests/Build and execute multiprocess tests %t")]
-    public static void BuildAndExecute()
-    {
-        Execute(build: true);
-    }
+
 
     /// <summary>
     /// To run these from the command line, call
@@ -35,7 +38,7 @@ public class BuildAndRunMultiprocessTests : MonoBehaviour
     /// <exception cref="Exception"></exception>
     public static void Execute(bool build)
     {
-        var shouldContinue = build ? Build(TestCoordinator.buildPath) : true;
+        var shouldContinue = !build || Build(TestCoordinator.buildPath);
         if (shouldContinue)
         {
             StartMainTestNodeInEditor();
@@ -55,9 +58,18 @@ public class BuildAndRunMultiprocessTests : MonoBehaviour
     {
         // deleting so we don't endup testing on outdated builds
 #if UNITY_EDITOR_OSX
-        Directory.Delete(buildPath, recursive: true);
+        if (Directory.Exists(buildPath))
+        {
+            Directory.Delete(buildPath, recursive: true);
+        }
+
 #elif UNITY_EDITOR_WIN
-        File.Delete(Path.Combine(buildPath, $"{PlayerSettings.productName}.exe"));
+        // todo test on windows
+        var exePath = Path.Combine(buildPath, $"{PlayerSettings.productName}.exe");
+        if (File.Exists(exePath))
+        {
+            File.Delete(exePath);
+        }
 #else
         throw new NotImplementedException();
 #endif

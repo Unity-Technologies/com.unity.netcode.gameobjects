@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.IO;
 using System.Runtime.CompilerServices;
 using MLAPI;
 using MLAPI.Messaging;
@@ -24,9 +25,8 @@ internal class TestCoordinator : NetworkBehaviour
     /// </summary>
     public const float maxWaitTimeout = 10;
     public const char methodFullNameSplitChar = '@';
-    public const string buildPath = "Builds/MultiprocessTestBuild";
-    public const string buildName = "testproject";
-    private bool m_ShouldShutdown = false;
+    public static string buildPath => Path.Combine(Path.GetDirectoryName(Application.dataPath), "Builds/MultiprocessTestBuild");
+    private bool m_ShouldShutdown;
 
     private NetworkDictionary<ulong, float> m_TestResults = new NetworkDictionary<ulong, float>(new NetworkVariableSettings()
     {
@@ -84,12 +84,14 @@ internal class TestCoordinator : NetworkBehaviour
 #endif
         m_TestResults.OnDictionaryChanged += OnResultsChanged;
         m_ErrorMessages.OnListChanged += OnErrorMessageChanged;
+        NetworkManager.OnClientDisconnectCallback += OnClientDisconnectCallback;
     }
 
     public void OnDestroy()
     {
         m_TestResults.OnDictionaryChanged -= OnResultsChanged;
         m_ErrorMessages.OnListChanged -= OnErrorMessageChanged;
+        NetworkManager.OnClientDisconnectCallback -= OnClientDisconnectCallback;
     }
 
     private void OnErrorMessageChanged(NetworkListEvent<string> listChangedEvent)
@@ -108,6 +110,16 @@ internal class TestCoordinator : NetworkBehaviour
     private void OnResultsChanged(NetworkDictionaryEvent<ulong, float> dictChangedEvent)
     {
         Instance.AllClientResults.Add(dictChangedEvent.Key);
+    }
+
+    private void OnClientDisconnectCallback(ulong clientId)
+    {
+        if (clientId == NetworkManager.Singleton.ServerClientId || clientId == NetworkManager.Singleton.LocalClientId)
+        {
+            // if disconnect callback is for me or for server, quit, we're done here
+            Debug.Log($"received disconnect from {clientId}, quitting");
+            Application.Quit();
+        }
     }
 
     public static string GetMethodInfo(Action method)
@@ -195,24 +207,20 @@ internal class TestCoordinator : NetworkBehaviour
     {
         NetworkManager.Singleton.StopClient();
         m_ShouldShutdown = true; // wait until isConnectedClient is false to run Application Quit in next update
-        Debug.Log("dadou"+0);
-
-        // Application.Quit();
+        Debug.Log("Quitting player cleanly");
+        Application.Quit();
     }
 
     private float m_TimeSinceLastConnected;
     public void Update()
     {
-        Debug.Log("dadou"+1);
         if (NetworkManager.Singleton.IsConnectedClient)
         {
-            Debug.Log("dadou"+2);
             m_TimeSinceLastConnected = Time.time;
         }
         else if (Time.time - m_TimeSinceLastConnected > maxWaitTimeout || m_ShouldShutdown)
         {
             // Make sure we don't have zombie processes
-            Debug.Log("dadou"+3);
             Application.Quit();
         }
     }
@@ -257,7 +265,7 @@ internal class TestCoordinator : NetworkBehaviour
         }
         catch (Win32Exception e)
         {
-            Debug.LogError($"Error starting process, {e.Message} {e.Data} {e.ErrorCode}");
+            Debug.LogError($"Error starting player, please make sure you build a player using the '{BuildAndRunMultiprocessTests.BuildMenuName}' menu, {e.Message} {e.Data} {e.ErrorCode}");
             throw e;
         }
 #endif

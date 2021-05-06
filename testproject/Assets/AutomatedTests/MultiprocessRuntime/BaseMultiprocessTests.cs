@@ -74,7 +74,7 @@ namespace MLAPI.MultiprocessRuntimeTests
         }
 
         [UnitySetUp]
-        public IEnumerator Setup()
+        public virtual IEnumerator Setup()
         {
             yield return new WaitUntil(() => NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer);
             var startTime = Time.time;
@@ -112,7 +112,6 @@ namespace MLAPI.MultiprocessRuntimeTests
         }
     }
 
-
     public class TestCoordinatorSmokeTests : BaseMultiprocessTests
     {
         protected override int NbWorkers { get; } = 1;
@@ -122,7 +121,7 @@ namespace MLAPI.MultiprocessRuntimeTests
             TestCoordinator.WriteResults(Time.time);
         }
 
-        [UnityTest, Order(0)]
+        [UnityTest]
         public IEnumerator CheckTestCoordinator()
         {
             //make sure the test coordinator works
