@@ -10,7 +10,7 @@
   ],
   "dependencies": {
     "com.unity.multiplayer.mlapi": "0.1.0",
-    "com.unity.transport": "0.8.0-preview.4",
+    "com.unity.transport": "0.8.0-preview.5",
     "com.unity.jobs": "0.10.0-preview.18",
     "com.unity.services.relay": "0.0.1-preview.2",
     "com.unity.services.authentication": "0.3.1-preview"

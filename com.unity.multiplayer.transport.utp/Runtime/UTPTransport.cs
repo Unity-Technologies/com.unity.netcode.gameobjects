@@ -147,18 +147,20 @@ namespace MLAPI.Transports
                 {
                     Debug.LogError("Client failed to connect to server");
                 }
+
+
             }
 
             task.IsDone = true;
         }
 
-        private IEnumerator ServerBindAndListen(SocketTask task)
+        private IEnumerator ServerBindAndListen(SocketTask task, NetworkEndPoint endPoint)
         {
-            var endpoint = NetworkEndPoint.Parse(m_ServerAddress, m_ServerPort);
+            //var endpoint = NetworkEndPoint.Parse(m_ServerAddress, m_ServerPort);
 
             InitDriver();
 
-            if (m_Driver.Bind(endpoint) != 0)
+            if (m_Driver.Bind(endPoint) != 0)
             {
                 Debug.LogError("Server failed to bind");
             }
@@ -178,6 +180,8 @@ namespace MLAPI.Transports
                 {
                     Debug.LogError("Server failed to listen");
                 }
+
+
             }
 
             task.IsDone = true;
@@ -233,12 +237,13 @@ namespace MLAPI.Transports
             var connectionData = RelayConnectionData.FromByteArray(allocation.ConnectionData.Take(255).ToArray());
             var key = RelayHMACKey.FromByteArray(allocation.Key);
 
+
             var relayServerData = new RelayServerData(serverEndpoint, 0, allocationId, connectionData, connectionData, key);
             relayServerData.ComputeNewNonce();
 
             m_NetworkParameters.Add(new RelayNetworkParameter{ ServerData = relayServerData });
             
-            yield return ServerBindAndListen(task);
+            yield return ServerBindAndListen(task, NetworkEndPoint.AnyIpv4);
         }
 
         private bool ProcessEvent()
@@ -300,6 +305,7 @@ namespace MLAPI.Transports
                 m_Driver.ScheduleUpdate().Complete();
                 while(ProcessEvent() && m_Driver.IsCreated);
             }
+
         }
 
         private static unsafe ulong ParseClientId(NetworkConnection utpConnectionId)
@@ -420,7 +426,7 @@ namespace MLAPI.Transports
             switch (m_ProtocolType)
             {
                 case ProtocolType.UnityTransport:
-                    StartCoroutine(ServerBindAndListen(task));
+                    StartCoroutine(ServerBindAndListen(task, NetworkEndPoint.Parse(m_ServerAddress, m_ServerPort)));
                     break;
                 case ProtocolType.RelayUnityTransport:
                     StartCoroutine(StartRelayServer(task));
