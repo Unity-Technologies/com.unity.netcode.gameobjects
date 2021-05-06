@@ -489,7 +489,7 @@ namespace MLAPI
         private static ProfilerMarker s_NetworkBehaviourUpdate = new ProfilerMarker($"{nameof(NetworkBehaviour)}.{nameof(NetworkBehaviourUpdate)}");
 #endif
 
-        internal static void NetworkBehaviourUpdate(NetworkManager networkManager, SnapshotSystem snapshot)
+        internal static void NetworkBehaviourUpdate(NetworkManager networkManager)
         {
             // Do not execute NetworkBehaviourUpdate more than once per network tick
             ushort tick = networkManager.NetworkTickSystem.GetTick();
@@ -518,7 +518,7 @@ namespace MLAPI
                             // Sync just the variables for just the objects this client sees
                             for (int k = 0; k < sobj.ChildNetworkBehaviours.Count; k++)
                             {
-                                sobj.ChildNetworkBehaviours[k].VariableUpdate(client.ClientId, snapshot);
+                                sobj.ChildNetworkBehaviours[k].VariableUpdate(client.ClientId, networkManager.SnapshotSystem);
                             }
                         }
                     }
@@ -539,7 +539,7 @@ namespace MLAPI
                     {
                         for (int k = 0; k < sobj.ChildNetworkBehaviours.Count; k++)
                         {
-                            sobj.ChildNetworkBehaviours[k].VariableUpdate(networkManager.ServerClientId, snapshot);
+                            sobj.ChildNetworkBehaviours[k].VariableUpdate(networkManager.ServerClientId, networkManager.SnapshotSystem);
                         }
                     }
 
@@ -607,94 +607,97 @@ namespace MLAPI
                 }
             }
 
-            for (int j = 0; j < m_ChannelMappedNetworkVariableIndexes.Count; j++)
+            if (s_UseClassicDelta)
             {
-                if (!s_UseClassicDelta)
+                for (int j = 0; j < m_ChannelMappedNetworkVariableIndexes.Count; j++)
                 {
-                    break;
-                }
-                using (var buffer = PooledNetworkBuffer.Get())
-                {
-                    using (var writer = PooledNetworkWriter.Get(buffer))
+                    using (var buffer = PooledNetworkBuffer.Get())
                     {
-                        writer.WriteUInt64Packed(NetworkObjectId);
-                        writer.WriteUInt16Packed(NetworkObject.GetNetworkBehaviourOrderIndex(this));
-
-                        // Write the current tick frame
-                        // todo: this is currently done per channel, per tick. The snapshot system might improve on this
-                        writer.WriteUInt16Packed(CurrentTick);
-
-                        bool writtenAny = false;
-                        for (int k = 0; k < NetworkVariableFields.Count; k++)
+                        using (var writer = PooledNetworkWriter.Get(buffer))
                         {
-                            if (!m_ChannelMappedNetworkVariableIndexes[j].Contains(k))
+                            writer.WriteUInt64Packed(NetworkObjectId);
+                            writer.WriteUInt16Packed(NetworkObject.GetNetworkBehaviourOrderIndex(this));
+
+                            // Write the current tick frame
+                            // todo: this is currently done per channel, per tick. The snapshot system might improve on this
+                            writer.WriteUInt16Packed(CurrentTick);
+
+                            bool writtenAny = false;
+                            for (int k = 0; k < NetworkVariableFields.Count; k++)
                             {
-                                // This var does not belong to the currently iterating channel group.
-                                if (NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
+                                if (!m_ChannelMappedNetworkVariableIndexes[j].Contains(k))
                                 {
-                                    writer.WriteUInt16Packed(0);
-                                }
-                                else
-                                {
-                                    writer.WriteBool(false);
-                                }
-
-                                continue;
-                            }
-
-                            bool isDirty = NetworkVariableFields[k].IsDirty(); // cache this here. You never know what operations users will do in the dirty methods
-
-                            //   if I'm dirty AND a client, write (server always has all permissions)
-                            //   if I'm dirty AND the server AND the client can read me, send.
-                            bool shouldWrite = isDirty && (!IsServer || NetworkVariableFields[k].CanClientRead(clientId));
-
-                            if (NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
-                            {
-                                if (!shouldWrite)
-                                {
-                                    writer.WriteUInt16Packed(0);
-                                }
-                            }
-                            else
-                            {
-                                writer.WriteBool(shouldWrite);
-                            }
-
-                            if (shouldWrite)
-                            {
-                                writtenAny = true;
-
-                                // write the network tick at which this NetworkVariable was modified remotely
-                                // this will allow lag-compensation
-                                writer.WriteUInt16Packed(NetworkVariableFields[k].RemoteTick);
-
-                                if (NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
-                                {
-                                    using (var varBuffer = PooledNetworkBuffer.Get())
+                                    // This var does not belong to the currently iterating channel group.
+                                    if (NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                                     {
-                                        NetworkVariableFields[k].WriteDelta(varBuffer);
-                                        varBuffer.PadBuffer();
+                                        writer.WriteUInt16Packed(0);
+                                    }
+                                    else
+                                    {
+                                        writer.WriteBool(false);
+                                    }
 
-                                        writer.WriteUInt16Packed((ushort)varBuffer.Length);
-                                        buffer.CopyFrom(varBuffer);
+                                    continue;
+                                }
+
+                                bool isDirty =
+                                    NetworkVariableFields[k]
+                                        .IsDirty(); // cache this here. You never know what operations users will do in the dirty methods
+
+                                //   if I'm dirty AND a client, write (server always has all permissions)
+                                //   if I'm dirty AND the server AND the client can read me, send.
+                                bool shouldWrite = isDirty &&
+                                                   (!IsServer || NetworkVariableFields[k].CanClientRead(clientId));
+
+                                if (NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
+                                {
+                                    if (!shouldWrite)
+                                    {
+                                        writer.WriteUInt16Packed(0);
                                     }
                                 }
                                 else
                                 {
-                                    NetworkVariableFields[k].WriteDelta(buffer);
+                                    writer.WriteBool(shouldWrite);
                                 }
 
-                                if (!m_NetworkVariableIndexesToResetSet.Contains(k))
+                                if (shouldWrite)
                                 {
-                                    m_NetworkVariableIndexesToResetSet.Add(k);
-                                    m_NetworkVariableIndexesToReset.Add(k);
+                                    writtenAny = true;
+
+                                    // write the network tick at which this NetworkVariable was modified remotely
+                                    // this will allow lag-compensation
+                                    writer.WriteUInt16Packed(NetworkVariableFields[k].RemoteTick);
+
+                                    if (NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
+                                    {
+                                        using (var varBuffer = PooledNetworkBuffer.Get())
+                                        {
+                                            NetworkVariableFields[k].WriteDelta(varBuffer);
+                                            varBuffer.PadBuffer();
+
+                                            writer.WriteUInt16Packed((ushort) varBuffer.Length);
+                                            buffer.CopyFrom(varBuffer);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        NetworkVariableFields[k].WriteDelta(buffer);
+                                    }
+
+                                    if (!m_NetworkVariableIndexesToResetSet.Contains(k))
+                                    {
+                                        m_NetworkVariableIndexesToResetSet.Add(k);
+                                        m_NetworkVariableIndexesToReset.Add(k);
+                                    }
                                 }
                             }
-                        }
 
-                        if (writtenAny)
-                        {
-                            NetworkManager.MessageSender.Send(clientId, NetworkConstants.NETWORK_VARIABLE_DELTA, m_ChannelsForNetworkVariableGroups[j], buffer);
+                            if (writtenAny)
+                            {
+                                NetworkManager.MessageSender.Send(clientId, NetworkConstants.NETWORK_VARIABLE_DELTA,
+                                    m_ChannelsForNetworkVariableGroups[j], buffer);
+                            }
                         }
                     }
                 }
