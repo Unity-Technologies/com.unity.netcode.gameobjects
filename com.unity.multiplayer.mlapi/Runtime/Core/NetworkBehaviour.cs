@@ -592,7 +592,7 @@ namespace MLAPI
         private readonly List<int> m_NetworkVariableIndexesToReset = new List<int>();
         private readonly HashSet<int> m_NetworkVariableIndexesToResetSet = new HashSet<int>();
 
-        private void NetworkVariableUpdate(ulong clientId, int behaviourIndex, SnapshotSystem snapshot)
+        private void NetworkVariableUpdate(ulong clientId, int behaviourIndex)
         {
             if (!CouldHaveDirtyNetworkVariables())
             {
