@@ -586,13 +586,13 @@ namespace MLAPI
             }
 
             PreNetworkVariableWrite();
-            NetworkVariableUpdate(clientId, NetworkBehaviourId, snapshot);
+            NetworkVariableUpdate(clientId, NetworkBehaviourId);
         }
 
         private readonly List<int> m_NetworkVariableIndexesToReset = new List<int>();
         private readonly HashSet<int> m_NetworkVariableIndexesToResetSet = new HashSet<int>();
 
-        private void NetworkVariableUpdate(ulong clientId, int behaviourIndex, SnapshotSystem snapshot)
+        private void NetworkVariableUpdate(ulong clientId, int behaviourIndex)
         {
             if (!CouldHaveDirtyNetworkVariables())
             {
@@ -603,7 +603,7 @@ namespace MLAPI
             {
                 for (int k = 0; k < NetworkVariableFields.Count; k++)
                 {
-                    snapshot.Store(NetworkObjectId, behaviourIndex, k, NetworkVariableFields[k]);
+                    NetworkManager.SnapshotSystem.Store(NetworkObjectId, behaviourIndex, k, NetworkVariableFields[k]);
                 }
             }
 
