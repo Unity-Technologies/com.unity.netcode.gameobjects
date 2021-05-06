@@ -2,11 +2,24 @@ using UnityEngine;
 using MLAPI;
 using Unity.Services.Core;
 using Unity.Services.Authentication;
+using MLAPI.Transports;
 
 public class UIController : MonoBehaviour
 {
     public NetworkManager NetworkManager;
     public GameObject ButtonsRoot;
+    public GameObject AuthButton;
+    public GameObject JoinCode;
+
+    public UTPTransport Transport;
+
+    private void Awake()
+    {
+        if (Transport.Protocol == UTPTransport.ProtocolType.RelayUnityTransport) {
+            HideButtons();
+            JoinCode.SetActive(false);
+        }
+    }
 
     public void StartServer()
     {
@@ -37,5 +50,11 @@ public class UIController : MonoBehaviour
         Debug.Log("OnSignIn");
         await Authentication.SignInAnonymously();
         Debug.Log($"Logging in with PlayerID {Authentication.PlayerId}");
+
+        if (Authentication.IsSignedIn) {
+            ButtonsRoot.SetActive(true);
+            JoinCode.SetActive(true);
+            AuthButton.SetActive(false);
+        }
     }
 }

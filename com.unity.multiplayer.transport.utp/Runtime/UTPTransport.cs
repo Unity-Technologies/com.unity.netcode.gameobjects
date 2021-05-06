@@ -50,6 +50,8 @@ namespace MLAPI.Transports
 
         public string RelayJoinCode => m_RelayJoinCode;
 
+        public ProtocolType Protocol => m_ProtocolType;
+
         private void InitDriver()
         {
             if (m_NetworkParameters.Count > 0)
