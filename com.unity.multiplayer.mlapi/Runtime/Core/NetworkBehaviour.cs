@@ -586,7 +586,7 @@ namespace MLAPI
             }
 
             PreNetworkVariableWrite();
-            NetworkVariableUpdate(clientId, NetworkBehaviourId, snapshot);
+            NetworkVariableUpdate(clientId, NetworkBehaviourId);
         }
 
         private readonly List<int> m_NetworkVariableIndexesToReset = new List<int>();
