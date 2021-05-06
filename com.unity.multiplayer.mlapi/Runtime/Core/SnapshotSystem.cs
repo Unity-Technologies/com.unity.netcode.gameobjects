@@ -15,7 +15,7 @@ namespace MLAPI
     // Structure that acts as a key for a NetworkVariable
     // Allows telling which variable we're talking about.
     // Might include tick in a future milestone, to address past variable value
-    internal struct Key
+    internal struct VariableKey
     {
         public ulong NetworkObjectId; // the NetworkObjectId of the owning GameObject
         public ushort BehaviourIndex; // the index of the behaviour in this GameObject
@@ -26,7 +26,7 @@ namespace MLAPI
     // Store when a variable was written and where the variable is serialized
     internal struct Entry
     {
-        public Key Key;
+        public VariableKey Key;
         public ushort TickWritten; // the network tick at which this variable was set
         public ushort Position; // the offset in our Buffer
         public ushort Length; // the length of the data in Buffer
@@ -38,17 +38,16 @@ namespace MLAPI
     // A table of NetworkVariables that constitutes a Snapshot.
     // Stores serialized NetworkVariables
     // todo --M1--
-    // The EntryBlock will change for M1b with memory management, instead of just Beg, there will be data structure
+    // The Snapshot will change for M1b with memory management, instead of just FreeMemoryPosition, there will be data structure
     // around available buffer, etc.
-    internal class EntryBlock
+    internal class Snapshot
     {
         // todo --M1-- functionality to grow these will be needed in a later milestone
         private const int k_MaxVariables = 64;
         private const int k_BufferSize = 20000;
 
         public byte[] Buffer = new byte[k_BufferSize];
-        public int Beg = 0; // todo: clarify usage. Right now, this is the beginning of the _free_ space.
-        public int End = 0;
+        public int FreeMemoryPosition = 0;
 
         public Entry[] Entries = new Entry[k_MaxVariables];
         public int LastEntry = 0;
@@ -56,9 +55,9 @@ namespace MLAPI
 
         /// <summary>
         /// Constructor
-        /// Allocated a MemoryStream to be reused for this EntryBlock
+        /// Allocated a MemoryStream to be reused for this Snapshot
         /// </summary>
-        public EntryBlock()
+        public Snapshot()
         {
             Stream = new MemoryStream(Buffer, 0, k_BufferSize);
         }
@@ -69,7 +68,7 @@ namespace MLAPI
         /// Finds the position of a given NetworkVariable, given its key
         /// </summary>
         /// <param name="key">The key we're looking for</param>
-        public int Find(Key key)
+        public int Find(VariableKey key)
         {
             for (int i = 0; i < LastEntry; i++)
             {
@@ -117,16 +116,16 @@ namespace MLAPI
             // todo: deal with free space
             // todo: deal with full buffer
 
-            entry.Position = (ushort)Beg;
+            entry.Position = (ushort)FreeMemoryPosition;
             entry.Length = (ushort)size;
-            Beg += (int)size;
+            FreeMemoryPosition += (int)size;
         }
     }
 
     public class SnapshotSystem : INetworkUpdateSystem, IDisposable
     {
-        private EntryBlock m_Snapshot = new EntryBlock();
-        private EntryBlock m_ReceivedSnapshot = new EntryBlock();
+        private Snapshot m_Snapshot = new Snapshot();
+        private Snapshot m_ReceivedSnapshot = new Snapshot();
         private NetworkManager m_NetworkManager = NetworkManager.Singleton;
 
         private ushort m_CurrentTick = 0;
@@ -241,6 +240,7 @@ namespace MLAPI
                         entry.Key.VariableIndex);
                 }
 
+                // if we need to allocate more memory (the variable grew in size)
                 if (m_ReceivedSnapshot.Entries[pos].Length < entry.Length)
                 {
                     m_ReceivedSnapshot.AllocateEntry(ref entry, entry.Length);
@@ -293,13 +293,13 @@ namespace MLAPI
         {
             using (var writer = PooledNetworkWriter.Get(buffer))
             {
-                writer.WriteUInt16((ushort)m_Snapshot.Beg);
+                writer.WriteUInt16((ushort)m_Snapshot.FreeMemoryPosition);
             }
 
             // todo --M1--
             // // this sends the whole buffer
             // we'll need to build a per-client list
-            buffer.Write(m_Snapshot.Buffer, 0, m_Snapshot.Beg);
+            buffer.Write(m_Snapshot.Buffer, 0, m_Snapshot.FreeMemoryPosition);
         }
 
         /// <summary>
@@ -341,7 +341,7 @@ namespace MLAPI
         /// <param name="networkVariable">The NetworkVariable to write, or rather, its INetworkVariable</param>
         public void Store(ulong networkObjectId, int behaviourIndex, int variableIndex, INetworkVariable networkVariable)
         {
-            Key k;
+            VariableKey k;
             k.NetworkObjectId = networkObjectId;
             k.BehaviourIndex = (ushort)behaviourIndex;
             k.VariableIndex = (ushort)variableIndex;
@@ -389,7 +389,7 @@ namespace MLAPI
         /// This will look into all spawned objects
         /// </summary>
         /// <param name="key">The key to search for</param>
-        private INetworkVariable FindNetworkVar(Key key)
+        private INetworkVariable FindNetworkVar(VariableKey key)
         {
             var spawnedObjects = m_NetworkManager.SpawnManager.SpawnedObjects;
 
@@ -406,7 +406,7 @@ namespace MLAPI
         // todo --M1--
         // This is temporary debugging code. Once the feature is complete, we can consider removing it
         // But we could also leave it in in debug to help developers
-        private void DebugDisplayStore(EntryBlock block, string name)
+        private void DebugDisplayStore(Snapshot block, string name)
         {
             string table = "=== Snapshot table === " + name + " ===\n";
             for (int i = 0; i < block.LastEntry; i++)

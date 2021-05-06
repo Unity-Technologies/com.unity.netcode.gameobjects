@@ -912,7 +912,7 @@ namespace MLAPI
                     if (NetworkConfig.EnableNetworkVariable)
                     {
                         // Do NetworkVariable updates
-                        NetworkBehaviour.NetworkBehaviourUpdate(this, SnapshotSystem);
+                        NetworkBehaviour.NetworkBehaviourUpdate(this);
                     }
 
                     if (!IsServer && NetworkConfig.EnableMessageBuffering)
@@ -1171,7 +1171,6 @@ namespace MLAPI
                 switch (messageType)
                 {
                     case NetworkConstants.SNAPSHOT_DATA:
-                        UnityEngine.Debug.Log("Received Snapshot Data");
                         InternalMessageHandler.HandleSnapshot(clientId, messageStream);
                         break;
                     case NetworkConstants.CONNECTION_REQUEST:
@@ -1281,7 +1280,7 @@ namespace MLAPI
                         {
                             MessageHandler.HandleAllClientsSwitchSceneCompleted(clientId, messageStream);
                         }
-                        
+
                         break;
                     case NetworkConstants.SERVER_LOG:
                         if (IsServer && NetworkConfig.EnableNetworkLogs)
