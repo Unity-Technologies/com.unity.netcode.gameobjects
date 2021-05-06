@@ -13,7 +13,7 @@ public class SceneLoadingTest
     private NetworkManager m_NetworkManager;
 
     private bool m_SceneLoaded;
-    private bool m_timedOut;
+    private bool m_TimedOut;
     private string m_TargetSceneNameToLoad;
     private Scene m_LoadedScene;
 
@@ -32,18 +32,18 @@ public class SceneLoadingTest
 
         //Wait for the scene to load
         var timeOut = Time.realtimeSinceStartup + 5;
-        m_timedOut = false;
+        m_TimedOut = false;
         while(!m_SceneLoaded)
         {
             yield return new WaitForSeconds(0.01f);
             if(timeOut < Time.realtimeSinceStartup)
             {
-                m_timedOut = true;
+                m_TimedOut = true;
                 break;
             }
         }
 
-        Assert.IsFalse(m_timedOut);
+        Assert.IsFalse(m_TimedOut);
         Assert.IsTrue(m_SceneLoaded);
         Assert.NotNull(m_LoadedScene);
 
@@ -81,19 +81,19 @@ public class SceneLoadingTest
 
         //Wait for the scene to load
         timeOut = Time.realtimeSinceStartup + 5;
-        m_timedOut = false;
+        m_TimedOut = false;
         while (!m_SceneLoaded)
         {
             yield return new WaitForSeconds(0.01f);
             if (timeOut < Time.realtimeSinceStartup)
             {
-                m_timedOut = true;
+                m_TimedOut = true;
                 break;
             }
         }
 
         //Make sure we didn't time out and the scene loaded
-        Assert.IsFalse(m_timedOut);
+        Assert.IsFalse(m_TimedOut);
         Assert.IsTrue(m_SceneLoaded);
         Assert.NotNull(m_LoadedScene);
 
@@ -109,8 +109,8 @@ public class SceneLoadingTest
 
     private void SwitchSceneProgress_OnComplete(bool timedOut)
     {
-        m_timedOut = timedOut;
-        if (!m_timedOut)
+        m_TimedOut = timedOut;
+        if (!m_TimedOut)
         {
             var scene = SceneManager.GetActiveScene();
 
@@ -130,7 +130,6 @@ public class SceneLoadingTest
     /// <returns>AsyncOperation</returns>
     public AsyncOperation TestRunnerSceneLoadingOverride(string targetscene, LoadSceneMode loadSceneMode)
     {
-
         var sceneToBeLoaded = targetscene;
         if (!targetscene.Contains("Assets/ManualTests/SceneTransitioning/"))
         {
