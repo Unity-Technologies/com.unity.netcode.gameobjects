@@ -47,7 +47,7 @@ namespace MLAPI.RuntimeTests
             // Disable this once we are done.
             networkVariableTestComponent.gameObject.SetActive(false);
 
-            Assert.IsTrue(testsAreComplete);            
+            Assert.IsTrue(testsAreComplete);
         }
 
         [TearDown]
