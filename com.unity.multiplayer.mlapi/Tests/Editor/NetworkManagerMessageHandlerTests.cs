@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using MLAPI.Configuration;
+using MLAPI.Editor;
 using MLAPI.Internal;
 using MLAPI.Messaging;
 using MLAPI.Messaging.Buffering;

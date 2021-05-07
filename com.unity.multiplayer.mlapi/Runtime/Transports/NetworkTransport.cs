@@ -5,11 +5,6 @@ using UnityEngine;
 
 namespace MLAPI.Transports
 {
-    public class DontShowInTransportDropdownAttribute : Attribute
-    {
-
-    }
-
     public enum NetworkChannel : byte
     {
         Internal,
