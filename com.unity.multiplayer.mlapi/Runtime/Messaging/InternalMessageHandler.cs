@@ -574,6 +574,11 @@ namespace MLAPI.Messaging
 #endif
         }
 
+        internal static void HandleSnapshot(ulong clientId, Stream messageStream)
+        {
+            NetworkManager.Singleton.SnapshotSystem.ReadSnapshot(messageStream);
+        }
+
         public void HandleAllClientsSwitchSceneCompleted(ulong clientId, Stream stream)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
