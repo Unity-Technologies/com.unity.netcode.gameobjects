@@ -10,6 +10,7 @@ using MLAPI.NetworkVariable;
 using MLAPI.NetworkVariable.Collections;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Events;
 using Debug = UnityEngine.Debug;
 
 [RequireComponent(typeof(NetworkObject))]
@@ -24,6 +25,15 @@ internal class TestCoordinator : NetworkBehaviour
     public const float maxWaitTimeout = 10;
     public const char methodFullNameSplitChar = '@';
     public static string buildPath => Path.Combine(Path.GetDirectoryName(Application.dataPath), "Builds/MultiprocessTestBuild");
+
+    public static List<ulong> AllClientIdExceptMine
+    {
+        get
+        {
+            return NetworkManager.Singleton.ConnectedClients.Keys.ToList().FindAll(client => client != NetworkManager.Singleton.LocalClientId);
+        }
+    }
+
     private bool m_ShouldShutdown;
 
     private NetworkDictionary<ulong, float> m_TestResults = new NetworkDictionary<ulong, float>(new NetworkVariableSettings
@@ -163,7 +173,7 @@ internal class TestCoordinator : NetworkBehaviour
         {
             if (Time.time - startWaitTime > maxWaitTimeout)
             {
-                throw new Exception($"timeout while waiting for results, didn't get results for {maxWaitTimeout} seconds");
+                throw new Exception($"timeout while waiting for results, didn't get results for {Time.time - startWaitTime} seconds");
             }
 
             if (Instance.AllClientIdWithResults.Count > 0)
@@ -177,10 +187,37 @@ internal class TestCoordinator : NetworkBehaviour
         };
     }
 
+    private Dictionary<ulong, bool> m_ClientIsDone = new Dictionary<ulong, bool>();
+
+    public static Func<bool> ClientIsDone(ulong clientId)
+    {
+        var startWaitTime = Time.time;
+        return () =>
+        {
+            if (Time.time - startWaitTime > maxWaitTimeout)
+            {
+                throw new Exception($"timeout while waiting for client done, didn't get results for {Time.time - startWaitTime} seconds");
+            }
+
+            if (Instance.m_ClientIsDone.ContainsKey(clientId) && Instance.m_ClientIsDone[clientId])
+            {
+                Instance.m_ClientIsDone[clientId] = false; // consume
+                return true;
+            }
+            return false;
+        };
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    public void ClientDoneServerRpc(ServerRpcParams p = default)
+    {
+        // signal from clients to the server to say the client is done with it's task
+        m_ClientIsDone[p.Receive.SenderClientId] = true;
+    }
+
     public void TriggerRpc(string methodInfoString)
     {
-        var allClientsButMe = NetworkManager.Singleton.ConnectedClients.Keys.ToList().FindAll(client => client != NetworkManager.Singleton.LocalClientId);
-        TriggerInternalClientRpc(methodInfoString, new ClientRpcParams { Send = new ClientRpcSendParams { TargetClientIds = allClientsButMe.ToArray() } });
+        TriggerInternalClientRpc(methodInfoString, new ClientRpcParams { Send = new ClientRpcSendParams { TargetClientIds = AllClientIdExceptMine.ToArray() } });
     }
 
     [ClientRpc]

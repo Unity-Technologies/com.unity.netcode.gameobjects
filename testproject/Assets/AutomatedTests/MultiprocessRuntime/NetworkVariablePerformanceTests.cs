@@ -5,6 +5,7 @@ using MLAPI.Messaging;
 using MLAPI.NetworkVariable;
 using MLAPI.Spawning;
 using NUnit.Framework;
+using Unity.PerformanceTesting;
 using UnityEngine;
 using UnityEngine.Android;
 using UnityEngine.SceneManagement;
@@ -35,7 +36,7 @@ namespace MLAPI.MultiprocessRuntimeTests
 
             public void HandleNetworkPrefabDestroy(NetworkObject networkObject)
             {
-                throw new NotImplementedException();
+                UnityEngine.Object.Destroy(networkObject.gameObject);
             }
         }
 
@@ -48,7 +49,7 @@ namespace MLAPI.MultiprocessRuntimeTests
             Assert.True(addedHandler);
             var callbacks = NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>();
             callbacks.OnUpdate += UpdateClientForTest1;
-            TestCoordinator.WriteResults(float.PositiveInfinity);
+            TestCoordinator.Instance.ClientDoneServerRpc();
         }
 
         public static void TeardownClientForTest1()
@@ -57,7 +58,7 @@ namespace MLAPI.MultiprocessRuntimeTests
             callbacks.OnUpdate -= UpdateClientForTest1;
             var prefabToSpawn = NetworkManager.Singleton.gameObject.GetComponent<PrefabReference>().referencedPrefab;
             NetworkManager.Singleton.PrefabHandler.RemoveHandler(prefabToSpawn);
-            TestCoordinator.WriteResults(float.PositiveInfinity);
+            TestCoordinator.Instance.ClientDoneServerRpc();
         }
 
         private static void UpdateClientForTest1(float deltaTime)
@@ -102,55 +103,56 @@ namespace MLAPI.MultiprocessRuntimeTests
         //     base.Teardown();
         // }
 
-        [UnityTest, Order(1)]
+        [UnityTest, Order(1), Performance]
         public IEnumerator TestSpawn1Object()
         {
+            // todo be able to run server code in a player and have client code execute from the editor
             yield return TestSpawningManyObjects(1);
         }
 
-        [UnityTest, Order(2)]
+        [UnityTest, Order(2), Performance]
         public IEnumerator TestSpawn10Object()
         {
             yield return TestSpawningManyObjects(10);
         }
 
-        [UnityTest, Order(3)]
+        [UnityTest, Order(3), Performance]
         public IEnumerator TestSpawn100Object()
         {
             yield return TestSpawningManyObjects(100);
         }
 
-        [UnityTest, Order(4)]
+        [UnityTest, Order(4), Performance]
+        public IEnumerator TestSpawn800Object()
+        {
+            yield return TestSpawningManyObjects(800);
+        }
+
+        [UnityTest, Order(5), Performance]
+        public IEnumerator TestSpawn850Object()
+        {
+            yield return TestSpawningManyObjects(850);
+        }
+
+        [UnityTest, Order(6), Performance]
+        public IEnumerator TestSpawn900Object()
+        {
+            yield return TestSpawningManyObjects(900);
+        }
+
+        [UnityTest, Order(7), Performance]
         public IEnumerator TestSpawn1000Object()
         {
             yield return TestSpawningManyObjects(1000);
         }
 
-        [UnityTest, Order(5)]
-        public IEnumerator TestSpawn4000Object()
-        {
-            yield return TestSpawningManyObjects(4000);
-        }
-
-        [UnityTest, Order(6)]
-        public IEnumerator TestSpawn5000Object()
-        {
-            yield return TestSpawningManyObjects(5000);
-        }
-
-        [UnityTest, Order(7)]
-        public IEnumerator TestSpawn6000Object()
-        {
-            yield return TestSpawningManyObjects(6000);
-        }
-
         public IEnumerator TestSpawningManyObjects(int nbObjects)
         {
             TestCoordinator.Instance.TriggerRpc(TestCoordinator.GetMethodInfo(SetupClientForTest1));
-            for (int i = 0; i < NbWorkers; i++)
+            foreach (var clientId in TestCoordinator.AllClientIdExceptMine)
             {
                 // wait for the clients to be ready
-                yield return new WaitUntil(TestCoordinator.ResultIsSet());
+                yield return new WaitUntil(TestCoordinator.ClientIsDone(clientId));
             }
 
             var prefabToSpawn = NetworkManager.Singleton.gameObject.GetComponent<PrefabReference>().referencedPrefab;
@@ -165,7 +167,6 @@ namespace MLAPI.MultiprocessRuntimeTests
 
             try
             {
-                // yield return new WaitForSeconds(1000);
 
                 for (int i = 0; i < NbWorkers; i++) // wait and test for the two clients
                 {
@@ -174,6 +175,15 @@ namespace MLAPI.MultiprocessRuntimeTests
 
                     Debug.Log($"got results, asserting, result is {TestCoordinator.GetCurrentResult()} from key {resKey}");
                     Assert.AreEqual(nbObjects, TestCoordinator.GetCurrentResult());
+
+                    // // todo
+                    // while (result != nbObjects && !timeout)
+                    // {
+                    //     yield return new WaitUntil(TestCoordinator.ResultIsSet());
+                    //
+                    //     var allocated = new SampleGroup($"NbSpawnedPerFrame-{resKey}", SampleUnit.Byte);
+                    //     Measure.Custom(allocated, TestCoordinator.GetCurrentResult());
+                    // }
                 }
             }
             finally
@@ -187,8 +197,11 @@ namespace MLAPI.MultiprocessRuntimeTests
                 m_SpawnedObjects.Clear();
 
             }
-            yield return new WaitUntil(TestCoordinator.ResultIsSet()); // wait for teardown done client side
-
+            foreach (var clientId in TestCoordinator.AllClientIdExceptMine)
+            {
+                // wait for the clients to be ready
+                yield return new WaitUntil(TestCoordinator.ClientIsDone(clientId));
+            }
         }
 
         private static OneNetVar SetupSpawnedObject(GameObject spawnedObject)
