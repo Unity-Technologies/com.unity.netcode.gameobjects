@@ -94,7 +94,7 @@ namespace UnityEditor
             object val = networkVariable.Value;
             string name = m_NetworkVariableNames[index];
 
-            var behaviour = (NetworkBehaviour) target;
+            var behaviour = (NetworkBehaviour)target;
 
             if (behaviour.NetworkManager != null && behaviour.NetworkManager.IsListening)
             {
