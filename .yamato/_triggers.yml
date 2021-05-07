@@ -25,6 +25,7 @@ pull_request_trigger:
     - .yamato/project-tests.yml#validate_{{ package.name }}_{{ test_platforms.first.name }}_{{ test_editors.first }}
 {% for platform in test_platforms -%}
     - .yamato/package-tests.yml#test_{{ package.name }}_{{ test_editors.first }}_{{ platform.name }}
+    - .yamato/project-tests.yml#test_{{ project.name }}_{{ test_editors.first }}_{{ platform.name }}
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}
