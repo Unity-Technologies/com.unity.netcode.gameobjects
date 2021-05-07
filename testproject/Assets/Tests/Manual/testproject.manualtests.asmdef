@@ -1,14 +1,13 @@
 {
-    "name": "Unity.Multiplayer.MLAPI.EditorTests",
+    "name": "TestProject.ManualTests",
     "references": [
+        "TestProject",
         "Unity.Multiplayer.MLAPI.Runtime",
         "Unity.Multiplayer.MLAPI.Editor"
     ],
     "optionalUnityReferences": [
         "TestAssemblies"
     ],
-    "includePlatforms": [
-        "Editor"
-    ],
+    "includePlatforms": [],
     "excludePlatforms": []
 }

@@ -73,7 +73,7 @@ namespace MLAPI.SceneManagement
         /// <remarks>This event happens after <see cref="OnNotifyServerAllClientsLoadedScene"/> fires on the server and the <see cref="NetworkConstants.ALL_CLIENTS_LOADED_SCENE"/> message is sent to the clients.
         /// It relies on MessageSender, which doesn't send events from the server to itself (which is the case for a Host client).</remarks>
         /// </summary>
-        public event NotifyClientAllClientsLoadedSceneDelegate OnNotifyClientAllClientsLoadedScene; 
+        public event NotifyClientAllClientsLoadedSceneDelegate OnNotifyClientAllClientsLoadedScene;
 
         internal readonly HashSet<string> RegisteredSceneNames = new HashSet<string>();
         internal readonly Dictionary<string, uint> SceneNameToIndex = new Dictionary<string, uint>();
@@ -175,21 +175,21 @@ namespace MLAPI.SceneManagement
             var switchSceneProgress = new SceneSwitchProgress(m_NetworkManager);
             SceneSwitchProgresses.Add(switchSceneProgress.Guid, switchSceneProgress);
             CurrentSceneSwitchProgressGuid = switchSceneProgress.Guid;
-            
+
             switchSceneProgress.OnClientLoadedScene += clientId => { OnNotifyServerClientLoadedScene?.Invoke(switchSceneProgress, clientId); };
             switchSceneProgress.OnComplete += timedOut =>
             {
                 OnNotifyServerAllClientsLoadedScene?.Invoke(switchSceneProgress, timedOut);
-                
+
                 using (var buffer = PooledNetworkBuffer.Get())
                 using (var writer = PooledNetworkWriter.Get(buffer))
                 {
                     var doneClientIds = switchSceneProgress.DoneClients.ToArray();
                     var timedOutClientIds = m_NetworkManager.ConnectedClients.Keys.Except(doneClientIds).ToArray();
-                    
+
                     writer.WriteULongArray(doneClientIds, doneClientIds.Length);
                     writer.WriteULongArray(timedOutClientIds, timedOutClientIds.Length);
-                    
+
                     m_NetworkManager.MessageSender.Send(NetworkManager.Singleton.ServerClientId, NetworkConstants.ALL_CLIENTS_LOADED_SCENE, NetworkChannel.Internal, buffer);
                 }
             };
