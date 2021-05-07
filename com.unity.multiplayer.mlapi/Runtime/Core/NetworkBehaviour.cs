@@ -518,7 +518,7 @@ namespace MLAPI
                             // Sync just the variables for just the objects this client sees
                             for (int k = 0; k < sobj.ChildNetworkBehaviours.Count; k++)
                             {
-                                sobj.ChildNetworkBehaviours[k].VariableUpdate(client.ClientId, networkManager.SnapshotSystem);
+                                sobj.ChildNetworkBehaviours[k].VariableUpdate(client.ClientId);
                             }
                         }
                     }
@@ -539,7 +539,7 @@ namespace MLAPI
                     {
                         for (int k = 0; k < sobj.ChildNetworkBehaviours.Count; k++)
                         {
-                            sobj.ChildNetworkBehaviours[k].VariableUpdate(networkManager.ServerClientId, networkManager.SnapshotSystem);
+                            sobj.ChildNetworkBehaviours[k].VariableUpdate(networkManager.ServerClientId);
                         }
                     }
 
@@ -578,7 +578,7 @@ namespace MLAPI
             }
         }
 
-        internal void VariableUpdate(ulong clientId, SnapshotSystem snapshot)
+        internal void VariableUpdate(ulong clientId)
         {
             if (!m_VarInit)
             {
