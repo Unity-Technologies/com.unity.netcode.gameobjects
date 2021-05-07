@@ -1,8 +1,11 @@
 using System.Collections;
+using System.IO;
+using System.Reflection;
 using UnityEngine;
 using NUnit.Framework;
 using UnityEngine.TestTools;
 using UnityEngine.SceneManagement;
+using UnityEditor.SceneManagement;
 using MLAPI;
 
 public class SceneLoadingTest
@@ -17,17 +20,21 @@ public class SceneLoadingTest
     [UnityTest]
     public IEnumerator SceneLoading()
     {
-        m_TargetSceneNameToLoad = "SceneTransitioningTest";
+        // Load the first scene with the predefined NetworkManager
+        //var execAssembly = Assembly.GetExecutingAssembly();
+        //var packagePath = UnityEditor.PackageManager.PackageInfo.FindForAssembly(execAssembly).assetPath;
+        //var scenePath = Path.Combine(packagePath, "Assets/Tests/ManualTests/SceneTransitioning/SceneTransitioningTest.unity");
+        m_TargetSceneNameToLoad = "Assets/Tests/Manual/SceneTransitioning/SceneTransitioningTest.unity";
         SceneManager.sceneLoaded += SceneManager_sceneLoaded;
         SceneManager.LoadScene(m_TargetSceneNameToLoad);
 
         //Wait for the scene to load
         var timeOut = Time.realtimeSinceStartup + 5;
         m_TimedOut = false;
-        while (!m_SceneLoaded)
+        while(!m_SceneLoaded)
         {
             yield return new WaitForSeconds(0.01f);
-            if (timeOut < Time.realtimeSinceStartup)
+            if(timeOut < Time.realtimeSinceStartup)
             {
                 m_TimedOut = true;
                 break;
@@ -63,8 +70,9 @@ public class SceneLoadingTest
 
         // Add any additional scenes we want to load here (just create the next index number for the index value)
         //m_NetworkManager.SceneManager.AddRuntimeSceneName("SecondSceneToLoad", (uint)m_NetworkManager.SceneManager.RegisteredSceneNames.Count);
-        m_TargetSceneNameToLoad = "SecondSceneToLoad";
-
+        m_TargetSceneNameToLoad = "SecondSceneToLoad"; 
+        // Override NetworkSceneManager's scene loading 
+        m_NetworkManager.SceneManager.OverrideLoadSceneAsync = TestRunnerSceneLoadingOverride;
         var switchSceneProgress = m_NetworkManager.SceneManager.SwitchScene(m_TargetSceneNameToLoad);
         switchSceneProgress.OnComplete += SwitchSceneProgress_OnComplete;
         m_SceneLoaded = false;
@@ -94,7 +102,7 @@ public class SceneLoadingTest
             SceneManager.SetActiveScene(m_LoadedScene);
             Assert.IsTrue(SceneManager.GetActiveScene().name == m_LoadedScene.name);
         }
-
+            
     }
 
     private void SwitchSceneProgress_OnComplete(bool timedOut)
@@ -113,12 +121,31 @@ public class SceneLoadingTest
     }
 
     /// <summary>
+    /// Overrides what NetworkSceneManager uses to load scenes
+    /// </summary>
+    /// <param name="targetscene">string</param>
+    /// <param name="loadSceneMode">LoadSceneMode</param>
+    /// <returns>AsyncOperation</returns>
+    public AsyncOperation TestRunnerSceneLoadingOverride(string targetscene, LoadSceneMode loadSceneMode)
+    {
+        var sceneToBeLoaded = targetscene;
+        if (!targetscene.Contains("Assets/ManualTests/SceneTransitioning/"))
+        {
+            //var execAssembly = Assembly.GetExecutingAssembly();
+            //var packagePath = UnityEditor.PackageManager.PackageInfo.FindForAssembly(execAssembly).assetPath;
+            sceneToBeLoaded = $"Assets/Tests/Manual/SceneTransitioning/{targetscene}.unity";
+        }
+        //m_TargetSceneNameToLoad = sceneToBeLoaded;
+        return SceneManager.LoadSceneAsync(sceneToBeLoaded);
+    }
+
+    /// <summary>
     /// When invoked, makes sure the scene loaded is the correct scene
     /// and then set our scene loaded to true and keep a reference to the loaded scene
     /// </summary>
     private void SceneManager_sceneLoaded(Scene scene, LoadSceneMode sceneMode)
     {
-        if (scene != null && m_TargetSceneNameToLoad.Contains(scene.name))
+        if(scene != null && m_TargetSceneNameToLoad.Contains(scene.name))
         {
             m_SceneLoaded = true;
             m_LoadedScene = scene;

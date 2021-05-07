@@ -199,17 +199,28 @@ namespace MLAPI.SceneManagement
 
             IsSpawnedObjectsPendingInDontDestroyOnLoad = true;
 
-            // Switch scene
-            AsyncOperation sceneLoad = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Single);
+            AsyncOperation sceneLoad = null;
+
+            if (OverrideLoadSceneAsync != null)
+            {
+                sceneLoad = OverrideLoadSceneAsync.Invoke(sceneName, LoadSceneMode.Single);
+            }
+            else
+            {
+                sceneLoad = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Single);
+            }
 
             s_NextSceneName = sceneName;
 
             sceneLoad.completed += (AsyncOperation asyncOp2) => { OnSceneLoaded(switchSceneProgress.Guid, null); };
             switchSceneProgress.SetSceneLoadOperation(sceneLoad);
             OnSceneSwitchStarted?.Invoke(sceneLoad);
-
             return switchSceneProgress;
         }
+
+        internal delegate AsyncOperation OverrideLoadSceneAsyncDelegateHandler(string targetscene, LoadSceneMode scenemode);
+
+        internal OverrideLoadSceneAsyncDelegateHandler OverrideLoadSceneAsync;
 
         // Called on client
         internal void OnSceneSwitch(uint sceneIndex, Guid switchSceneGuid, Stream objectStream)
