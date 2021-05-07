@@ -20,11 +20,10 @@ public class SceneLoadingTest
     [UnityTest]
     public IEnumerator SceneLoading()
     {
-        // Load the first scene with the predefined NetworkManager
-        //var execAssembly = Assembly.GetExecutingAssembly();
-        //var packagePath = UnityEditor.PackageManager.PackageInfo.FindForAssembly(execAssembly).assetPath;
-        //var scenePath = Path.Combine(packagePath, "Assets/Tests/ManualTests/SceneTransitioning/SceneTransitioningTest.unity");
+        //Keep track of the original scene
         Scene originalScene = SceneManager.GetActiveScene();
+
+        // Load the first scene with the predefined NetworkManager
         m_TargetSceneNameToLoad = "Assets/Tests/Manual/SceneTransitioning/SceneTransitioningTest.unity";
         SceneManager.sceneLoaded += SceneManager_sceneLoaded;
         SceneManager.LoadScene(m_TargetSceneNameToLoad,LoadSceneMode.Additive);
@@ -42,12 +41,16 @@ public class SceneLoadingTest
             }
         }
 
+        //Verify it loaded
         Assert.IsFalse(m_TimedOut);
         Assert.IsTrue(m_SceneLoaded);
         Assert.NotNull(m_LoadedScene);
 
+        // Keep track of the scene we just loaded
         Scene primaryScene = m_LoadedScene;
-        // Set the scene to be active if it is not the active scene
+
+        // Set the scene to be active if it is not the active scene.
+        // (This is to assure spawned objects instantiate in the newly loaded scene)
         if (SceneManager.GetActiveScene().name != m_LoadedScene.name)
         {
             primaryScene = m_LoadedScene;
@@ -55,11 +58,12 @@ public class SceneLoadingTest
             SceneManager.SetActiveScene(m_LoadedScene);
             Assert.IsTrue(SceneManager.GetActiveScene().name == m_LoadedScene.name);
         }
+
+        // No longer need to be notified of this event
         SceneManager.sceneLoaded -= SceneManager_sceneLoaded;
 
         // Get the NetworkManager instantiated from the scene
         var gameObject = GameObject.Find("NetworkManager");
-
         Assert.IsNotNull(gameObject);
 
         m_NetworkManager = gameObject.GetComponent<NetworkManager>();
@@ -72,17 +76,26 @@ public class SceneLoadingTest
             m_NetworkManager.StartHost();
         }
 
-        // Add any additional scenes we want to load here (just create the next index number for the index value)
+        // [Reference]: Add any additional scenes we want to load here (just create the next index number for the index value)
         //m_NetworkManager.SceneManager.AddRuntimeSceneName("SecondSceneToLoad", (uint)m_NetworkManager.SceneManager.RegisteredSceneNames.Count);
-        m_TargetSceneNameToLoad = "SecondSceneToLoad"; 
-        // Override NetworkSceneManager's scene loading 
+
+        // Next, we want to do a scene transition using NetworkSceneManager
+        m_TargetSceneNameToLoad = "SecondSceneToLoad";
+
+        // Override NetworkSceneManager's scene loading method
+        // (this is a temporary work around for NetworkSceneManager expecting just the name)
+        // (this issue will be addressed when we overhaul the NetworkSceneManager)
         m_NetworkManager.SceneManager.OverrideLoadSceneAsync = TestRunnerSceneLoadingOverride;
+
+        // Store off the currently active scene so we can unload it
         primaryScene = SceneManager.GetActiveScene();
+
+        // Switch the scene using NetworkSceneManager
         var switchSceneProgress = m_NetworkManager.SceneManager.SwitchScene(m_TargetSceneNameToLoad);
         switchSceneProgress.OnComplete += SwitchSceneProgress_OnComplete;
         m_SceneLoaded = false;
 
-        //Wait for the scene to load
+        // Wait for the scene to load
         timeOut = Time.realtimeSinceStartup + 5;
         m_TimedOut = false;
         while (!m_SceneLoaded)
@@ -95,25 +108,29 @@ public class SceneLoadingTest
             }
         }
 
-        //Make sure we didn't time out and the scene loaded
+        // Make sure we didn't time out and the scene loaded
         Assert.IsFalse(m_TimedOut);
         Assert.IsTrue(m_SceneLoaded);
         Assert.NotNull(m_LoadedScene);
+
         switchSceneProgress.OnComplete -= SwitchSceneProgress_OnComplete;
 
         // Set the scene to be active if it is not the active scene
+        // (This is to assure spawned objects instantiate in the newly loaded scene)
         if (SceneManager.GetActiveScene().name != m_LoadedScene.name)
         {
             Debug.Log($"Loaded scene not active, activating scene {m_TargetSceneNameToLoad}");
             SceneManager.SetActiveScene(m_LoadedScene);
             Assert.IsTrue(SceneManager.GetActiveScene().name == m_LoadedScene.name);         
         }
-        if (originalScene != primaryScene)
-        {
-            SceneManager.UnloadSceneAsync(primaryScene).completed += UnloadAsync_completed;
-        }
+
+        // Now unload the previous scene
+        SceneManager.UnloadSceneAsync(primaryScene).completed += UnloadAsync_completed;
+
+        // Now track the newly loaded and currently active scene
         primaryScene = SceneManager.GetActiveScene();
-        //Wait for the scene to unload
+
+        // Wait for the previous scene to unload
         timeOut = Time.realtimeSinceStartup + 5;
         while (!m_SceneLoaded)
         {
@@ -124,16 +141,17 @@ public class SceneLoadingTest
                 break;
             }
         }
-        
-        m_NetworkManager.DontDestroy = false;
-        m_NetworkManager.StopHost();
-   
-        m_NetworkManager = null;
 
+        // We are now done with the NetworkSceneManager switch scene test so stop the host
+        m_NetworkManager.StopHost();           
+
+        // Set the original Test Runner Scene to be the active scene
         SceneManager.SetActiveScene(originalScene);
-        var unloadAsync = SceneManager.UnloadSceneAsync(primaryScene);
-        unloadAsync.completed += UnloadAsync_completed;
-        //Wait for the scene to unload
+
+        // Unload the previously active scene
+        SceneManager.UnloadSceneAsync(primaryScene).completed += UnloadAsync_completed;
+        
+        // Wait for the scene to unload
         timeOut = Time.realtimeSinceStartup + 5;
         while (!m_SceneLoaded)
         {
@@ -144,7 +162,7 @@ public class SceneLoadingTest
                 break;
             }
         }
-
+        // Done!
     }
 
     private void UnloadAsync_completed(AsyncOperation obj)
@@ -178,11 +196,8 @@ public class SceneLoadingTest
         var sceneToBeLoaded = targetscene;
         if (!targetscene.Contains("Assets/ManualTests/SceneTransitioning/"))
         {
-            //var execAssembly = Assembly.GetExecutingAssembly();
-            //var packagePath = UnityEditor.PackageManager.PackageInfo.FindForAssembly(execAssembly).assetPath;
             sceneToBeLoaded = $"Assets/Tests/Manual/SceneTransitioning/{targetscene}.unity";
         }
-        //m_TargetSceneNameToLoad = sceneToBeLoaded;
         return SceneManager.LoadSceneAsync(sceneToBeLoaded, LoadSceneMode.Additive);
     }
 
