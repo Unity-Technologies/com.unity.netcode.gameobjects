@@ -1,5 +1,5 @@
 {
-	"name": "TestProject",
+    "name": "TestProject",
     "references": [
         "Unity.Multiplayer.MLAPI.Runtime",
         "Unity.Multiplayer.MLAPI.Editor"
