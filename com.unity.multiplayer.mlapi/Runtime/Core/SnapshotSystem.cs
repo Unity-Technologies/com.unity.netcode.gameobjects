@@ -163,8 +163,8 @@ namespace MLAPI
                     SendSnapshot(m_NetworkManager.ServerClientId);
                 }
 
-                DebugDisplayStore(m_Snapshot, "Entries");
-                DebugDisplayStore(m_ReceivedSnapshot, "Received Entries");
+                // DebugDisplayStore(m_Snapshot, "Entries");
+                // DebugDisplayStore(m_ReceivedSnapshot, "Received Entries");
             }
         }
 
