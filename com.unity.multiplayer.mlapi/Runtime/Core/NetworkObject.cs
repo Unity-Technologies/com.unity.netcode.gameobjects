@@ -6,9 +6,9 @@ using MLAPI.Configuration;
 using MLAPI.Exceptions;
 using MLAPI.Hashing;
 using MLAPI.Logging;
-using MLAPI.Messaging;
 using MLAPI.Serialization.Pooled;
 using MLAPI.Transports;
+using MLAPI.Serialization;
 using UnityEngine;
 
 namespace MLAPI
@@ -25,11 +25,34 @@ namespace MLAPI
         internal uint GlobalObjectIdHash;
 
 #if UNITY_EDITOR
+        // HEAD: DO NOT USE! TEST ONLY TEMP IMPL, WILL BE REMOVED
+        internal uint TempGlobalObjectIdHashOverride = 0;
+        // TAIL: DO NOT USE! TEST ONLY TEMP IMPL, WILL BE REMOVED
+
         private void OnValidate()
         {
-            if (UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode && !NetworkManager.IsTestRun)
+            GenerateGlobalObjectIdHash();
+        }
+
+        internal void GenerateGlobalObjectIdHash()
+        {
+            // HEAD: DO NOT USE! TEST ONLY TEMP IMPL, WILL BE REMOVED
+            if (TempGlobalObjectIdHashOverride != 0)
             {
-                // do NOT override GlobalObjectIdHash while getting into PlayMode in the Editor
+                GlobalObjectIdHash = TempGlobalObjectIdHashOverride;
+                return;
+            }
+            // TAIL: DO NOT USE! TEST ONLY TEMP IMPL, WILL BE REMOVED
+
+            // do NOT regenerate GlobalObjectIdHash for NetworkPrefabs while Editor is in PlayMode
+            if (UnityEditor.EditorApplication.isPlaying && !string.IsNullOrEmpty(gameObject.scene.name))
+            {
+                return;
+            }
+
+            // do NOT regenerate GlobalObjectIdHash if Editor is transitining into or out of PlayMode
+            if (!UnityEditor.EditorApplication.isPlaying && UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
+            {
                 return;
             }
 
@@ -41,7 +64,15 @@ namespace MLAPI
         /// <summary>
         /// Gets the NetworkManager that owns this NetworkObject instance
         /// </summary>
-        public NetworkManager NetworkManager => NetworkManager.Singleton;
+        public NetworkManager NetworkManager => NetworkManagerOwner != null ? NetworkManagerOwner : NetworkManager.Singleton;
+
+        /// <summary>
+        /// The NetworkManager that owns this NetworkObject.
+        /// This property controls where this NetworkObject belongs.
+        /// This property is null by default currently, which means that the above NetworkManager getter will return the Singleton.
+        /// In the future this is the path where alternative NetworkManagers should be injected for running multi NetworkManagers
+        /// </summary>
+        internal NetworkManager NetworkManagerOwner;
 
         /// <summary>
         /// Gets the unique Id of this object that is synced across the network
@@ -57,7 +88,7 @@ namespace MLAPI
             {
                 if (OwnerClientIdInternal == null)
                 {
-                    return NetworkManager.Singleton != null ? NetworkManager.Singleton.ServerClientId : 0;
+                    return NetworkManager != null ? NetworkManager.ServerClientId : 0;
                 }
                 else
                 {
@@ -66,7 +97,7 @@ namespace MLAPI
             }
             internal set
             {
-                if (NetworkManager.Singleton != null && value == NetworkManager.Singleton.ServerClientId)
+                if (NetworkManager != null && value == NetworkManager.ServerClientId)
                 {
                     OwnerClientIdInternal = null;
                 }
@@ -92,17 +123,17 @@ namespace MLAPI
         /// <summary>
         /// Gets if the object is the the personal clients player object
         /// </summary>
-        public bool IsLocalPlayer => NetworkManager.Singleton != null && IsPlayerObject && OwnerClientId == NetworkManager.Singleton.LocalClientId;
+        public bool IsLocalPlayer => NetworkManager != null && IsPlayerObject && OwnerClientId == NetworkManager.LocalClientId;
 
         /// <summary>
         /// Gets if the object is owned by the local player or if the object is the local player object
         /// </summary>
-        public bool IsOwner => NetworkManager.Singleton != null && OwnerClientId == NetworkManager.Singleton.LocalClientId;
+        public bool IsOwner => NetworkManager != null && OwnerClientId == NetworkManager.LocalClientId;
 
         /// <summary>
         /// Gets Whether or not the object is owned by anyone
         /// </summary>
-        public bool IsOwnedByServer => NetworkManager.Singleton != null && OwnerClientId == NetworkManager.Singleton.ServerClientId;
+        public bool IsOwnedByServer => NetworkManager != null && OwnerClientId == NetworkManager.ServerClientId;
 
         /// <summary>
         /// Gets if the object has yet been spawned across the network
@@ -190,7 +221,7 @@ namespace MLAPI
                 throw new SpawnStateException("Object is not spawned");
             }
 
-            if (!NetworkManager.Singleton.IsServer)
+            if (!NetworkManager.IsServer)
             {
                 throw new NotServerException("Only server can change visibility");
             }
@@ -203,7 +234,7 @@ namespace MLAPI
             // Send spawn call
             Observers.Add(clientId);
 
-            NetworkManager.Singleton.SpawnManager.SendSpawnCallForObject(clientId, this, payload);
+            NetworkManager.SpawnManager.SendSpawnCallForObject(clientId, this, payload);
         }
 
         /// <summary>
@@ -214,17 +245,18 @@ namespace MLAPI
         /// <param name="payload">An optional payload to send as part of the spawns</param>
         public static void NetworkShow(List<NetworkObject> networkObjects, ulong clientId, Stream payload = null)
         {
-            if (!NetworkManager.Singleton.IsServer)
+            if (networkObjects == null || networkObjects.Count == 0)
+            {
+                throw new ArgumentNullException("At least one " + nameof(NetworkObject) + " has to be provided");
+            }
+
+            NetworkManager networkManager = networkObjects[0].NetworkManager;
+
+            if (!networkManager.IsServer)
             {
                 throw new NotServerException("Only server can change visibility");
             }
 
-            if (networkObjects == null || networkObjects.Count == 0)
-            {
-                throw new ArgumentNullException("At least one NetworkObject has to be provided");
-            }
-
-            NetworkManager networkManager = networkObjects[0].NetworkManager;
 
             // Do the safety loop first to prevent putting the MLAPI in an invalid state.
             for (int i = 0; i < networkObjects.Count; i++)
@@ -255,7 +287,7 @@ namespace MLAPI
                     // Send spawn call
                     networkObjects[i].Observers.Add(clientId);
 
-                    NetworkManager.Singleton.SpawnManager.WriteSpawnCallForObject(buffer, clientId, networkObjects[i], payload);
+                    networkManager.SpawnManager.WriteSpawnCallForObject(buffer, clientId, networkObjects[i], payload);
                 }
 
                 networkManager.MessageSender.Send(clientId, NetworkConstants.ADD_OBJECTS, NetworkChannel.Internal, buffer);
@@ -273,7 +305,7 @@ namespace MLAPI
                 throw new SpawnStateException("Object is not spawned");
             }
 
-            if (!NetworkManager.Singleton.IsServer)
+            if (!NetworkManager.IsServer)
             {
                 throw new NotServerException("Only server can change visibility");
             }
@@ -283,7 +315,7 @@ namespace MLAPI
                 throw new VisibilityChangeException("The object is already hidden");
             }
 
-            if (clientId == NetworkManager.Singleton.ServerClientId)
+            if (clientId == NetworkManager.ServerClientId)
             {
                 throw new VisibilityChangeException("Cannot hide an object from the server");
             }
@@ -308,22 +340,22 @@ namespace MLAPI
         /// <param name="clientId">The client to hide the objects from</param>
         public static void NetworkHide(List<NetworkObject> networkObjects, ulong clientId)
         {
-            if (!NetworkManager.Singleton.IsServer)
+            if (networkObjects == null || networkObjects.Count == 0)
+            {
+                throw new ArgumentNullException("At least one " + nameof(NetworkObject) + " has to be provided");
+            }
+
+            NetworkManager networkManager = networkObjects[0].NetworkManager;
+
+            if (!networkManager.IsServer)
             {
                 throw new NotServerException("Only server can change visibility");
             }
 
-            if (clientId == NetworkManager.Singleton.ServerClientId)
+            if (clientId == networkManager.ServerClientId)
             {
                 throw new VisibilityChangeException("Cannot hide an object from the server");
             }
-
-            if (networkObjects == null || networkObjects.Count == 0)
-            {
-                throw new ArgumentNullException("At least one NetworkObject has to be provided");
-            }
-
-            NetworkManager networkManager = networkObjects[0].NetworkManager;
 
             // Do the safety loop first to prevent putting the MLAPI in an invalid state.
             for (int i = 0; i < networkObjects.Count; i++)
@@ -363,21 +395,21 @@ namespace MLAPI
 
         private void OnDestroy()
         {
-            if (NetworkManager.Singleton != null && NetworkManager.Singleton.SpawnManager != null && NetworkManager.Singleton.SpawnManager.SpawnedObjects.ContainsKey(NetworkObjectId))
+            if (NetworkManager != null && NetworkManager.SpawnManager != null && NetworkManager.SpawnManager.SpawnedObjects.ContainsKey(NetworkObjectId))
             {
-                NetworkManager.Singleton.SpawnManager.OnDestroyObject(NetworkObjectId, false);
+                NetworkManager.SpawnManager.OnDestroyObject(NetworkObjectId, false);
             }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void SpawnInternal(Stream spawnPayload, bool destroyWithScene, ulong? ownerClientId, bool playerObject)
         {
-            if (!NetworkManager.Singleton.IsListening)
+            if (!NetworkManager.IsListening)
             {
                 throw new NotListeningException($"{nameof(NetworkManager)} isn't listening, start a server or host before spawning objects.");
             }
 
-            if (!NetworkManager.Singleton.IsServer)
+            if (!NetworkManager.IsServer)
             {
                 throw new NotServerException($"Only server can spawn {nameof(NetworkObject)}s");
             }
@@ -387,13 +419,13 @@ namespace MLAPI
                 spawnPayload.Position = 0;
             }
 
-            NetworkManager.Singleton.SpawnManager.SpawnNetworkObjectLocally(this, NetworkManager.Singleton.SpawnManager.GetNetworkObjectId(), false, playerObject, ownerClientId, spawnPayload, spawnPayload != null, spawnPayload == null ? 0 : (int)spawnPayload.Length, false, destroyWithScene);
+            NetworkManager.SpawnManager.SpawnNetworkObjectLocally(this, NetworkManager.SpawnManager.GetNetworkObjectId(), false, playerObject, ownerClientId, spawnPayload, spawnPayload != null, spawnPayload == null ? 0 : (int)spawnPayload.Length, false, destroyWithScene);
 
-            for (int i = 0; i < NetworkManager.Singleton.ConnectedClientsList.Count; i++)
+            for (int i = 0; i < NetworkManager.ConnectedClientsList.Count; i++)
             {
-                if (Observers.Contains(NetworkManager.Singleton.ConnectedClientsList[i].ClientId))
+                if (Observers.Contains(NetworkManager.ConnectedClientsList[i].ClientId))
                 {
-                    NetworkManager.Singleton.SpawnManager.SendSpawnCallForObject(NetworkManager.Singleton.ConnectedClientsList[i].ClientId, this, spawnPayload);
+                    NetworkManager.SpawnManager.SendSpawnCallForObject(NetworkManager.ConnectedClientsList[i].ClientId, this, spawnPayload);
                 }
             }
         }
@@ -435,7 +467,7 @@ namespace MLAPI
         /// </summary>
         public void Despawn(bool destroy = false)
         {
-            NetworkManager.Singleton.SpawnManager.DespawnObject(this, destroy);
+            NetworkManager.SpawnManager.DespawnObject(this, destroy);
         }
 
 
@@ -444,7 +476,7 @@ namespace MLAPI
         /// </summary>
         public void RemoveOwnership()
         {
-            NetworkManager.Singleton.SpawnManager.RemoveOwnership(this);
+            NetworkManager.SpawnManager.RemoveOwnership(this);
         }
 
         /// <summary>
@@ -453,7 +485,7 @@ namespace MLAPI
         /// <param name="newOwnerClientId">The new owner clientId</param>
         public void ChangeOwnership(ulong newOwnerClientId)
         {
-            NetworkManager.Singleton.SpawnManager.ChangeOwnership(this, newOwnerClientId);
+            NetworkManager.SpawnManager.ChangeOwnership(this, newOwnerClientId);
         }
 
         internal void InvokeBehaviourOnLostOwnership()
@@ -532,7 +564,7 @@ namespace MLAPI
             for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
             {
                 ChildNetworkBehaviours[i].InitializeVariables();
-                NetworkBehaviour.WriteNetworkVariableData(ChildNetworkBehaviours[i].NetworkVariableFields, stream, clientId);
+                NetworkBehaviour.WriteNetworkVariableData(ChildNetworkBehaviours[i].NetworkVariableFields, stream, clientId, NetworkManager);
             }
         }
 
@@ -541,7 +573,7 @@ namespace MLAPI
             for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
             {
                 ChildNetworkBehaviours[i].InitializeVariables();
-                NetworkBehaviour.SetNetworkVariableData(ChildNetworkBehaviours[i].NetworkVariableFields, stream);
+                NetworkBehaviour.SetNetworkVariableData(ChildNetworkBehaviours[i].NetworkVariableFields, stream, NetworkManager);
             }
         }
 
@@ -571,6 +603,186 @@ namespace MLAPI
             }
 
             return ChildNetworkBehaviours[index];
+        }
+
+        /// <summary>
+        /// Used to serialize a NetworkObjects during scene syncrhonization that occurs
+        /// upon a client being approved or a scene transition.
+        /// </summary>
+        /// <param name="writer">writer into the outbound stream</param>
+        /// <param name="targetClientId">clientid we are targeting</param>
+        internal void SerializeSceneObject(NetworkWriter writer, ulong targetClientId)
+        {
+            writer.WriteBool(IsPlayerObject);
+            writer.WriteUInt64Packed(NetworkObjectId);
+            writer.WriteUInt64Packed(OwnerClientId);
+
+            NetworkObject parentNetworkObject = null;
+
+            if (!AlwaysReplicateAsRoot && transform.parent != null)
+            {
+                parentNetworkObject = transform.parent.GetComponent<NetworkObject>();
+            }
+
+            if (parentNetworkObject == null)
+            {
+                // We don't have a parent
+                writer.WriteBool(false);
+            }
+            else
+            {
+                // We do have a parent
+                writer.WriteBool(true);
+                // Write the parent's NetworkObjectId to be used for linking back to the child
+                writer.WriteUInt64Packed(parentNetworkObject.NetworkObjectId);
+            }
+
+            // Write if we are a scene object or not
+            writer.WriteBool(IsSceneObject ?? true);
+
+            // Write the hash for this NetworkObject
+            writer.WriteUInt32Packed(GlobalObjectIdHash);
+
+            if (IncludeTransformWhenSpawning == null || IncludeTransformWhenSpawning(OwnerClientId))
+            {
+                // Set the position and rotation data marker to true (i.e. flag to know, when reading from the stream, that position and rotation data follows).
+                writer.WriteBool(true);
+
+                // Write position
+                writer.WriteSinglePacked(transform.position.x);
+                writer.WriteSinglePacked(transform.position.y);
+                writer.WriteSinglePacked(transform.position.z);
+
+                // Write rotation
+                writer.WriteSinglePacked(transform.rotation.eulerAngles.x);
+                writer.WriteSinglePacked(transform.rotation.eulerAngles.y);
+                writer.WriteSinglePacked(transform.rotation.eulerAngles.z);
+            }
+            else
+            {
+                // Set the position and rotation data marker to false (i.e. flag to know, when reading from the stream, that position and rotation data *was not included*)
+                writer.WriteBool(false);
+            }
+
+            // Write whether we are including network variable data
+            writer.WriteBool(NetworkManager.NetworkConfig.EnableNetworkVariable);
+
+            //If we are including NetworkVariable data
+            if (NetworkManager.NetworkConfig.EnableNetworkVariable)
+            {
+                var buffer = writer.GetStream() as NetworkBuffer;
+
+                // Write placeholder size, NOT as a packed value, initially as zero (i.e. we do not know how much NetworkVariable data will be written yet)
+                writer.WriteUInt32(0);
+
+                // Mark our current position before we potentially write any NetworkVariable data
+                var positionBeforeNetworkVariableData = buffer.Position;
+
+                // Write network variable data
+                WriteNetworkVariableData(buffer, targetClientId);
+
+                // If our current buffer position is greater than our positionBeforeNetworkVariableData then we wrote NetworkVariable data
+                // Part 1: This will include the total NetworkVariable data size, if there was NetworkVariable data written, to the stream
+                // in order to be able to skip past this entry on the de-serialization side in the event this NetworkObject fails to be
+                // constructed (See Part 2 below in the DeserializeSceneObject method)
+                if (buffer.Position > positionBeforeNetworkVariableData)
+                {
+                    // Store our current stream buffer position
+                    var endOfNetworkVariableData = buffer.Position;
+
+                    // Calculate the total NetworkVariable data size written
+                    var networkVariableDataSize = endOfNetworkVariableData - positionBeforeNetworkVariableData;
+
+                    // Move the stream position back to just before we wrote our size (we include the unpacked UInt32 data size placeholder)
+                    buffer.Position = positionBeforeNetworkVariableData - sizeof(uint);
+
+                    // Now write the actual data size written into our unpacked UInt32 placeholder position
+                    writer.WriteUInt32((uint)(networkVariableDataSize));
+
+                    // Finally, revert the buffer position back to the end of the network variable data written
+                    buffer.Position = endOfNetworkVariableData;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Ueed to deserialize a serialized scene object which occurs
+        /// when the client is approved or during a scene transition
+        /// </summary>
+        /// <param name="objectStream">inbound stream</param>
+        /// <param name="reader">reader for the stream</param>
+        /// <param name="networkManager">NetworkManager instance</param>
+        /// <returns>optional to use NetworkObject deserialized</returns>
+        internal static NetworkObject DeserializeSceneObject(NetworkBuffer objectStream, NetworkReader reader, NetworkManager networkManager)
+        {
+            var isPlayerObject = reader.ReadBool();
+            var networkId = reader.ReadUInt64Packed();
+            var ownerClientId = reader.ReadUInt64Packed();
+            var hasParent = reader.ReadBool();
+            ulong? parentNetworkId = null;
+
+            if (hasParent)
+            {
+                parentNetworkId = reader.ReadUInt32Packed();
+            }
+
+            var isSceneObject = reader.ReadBool();
+
+            var prefabHash = reader.ReadUInt32Packed();
+            Vector3? position = null;
+            Quaternion? rotation = null;
+
+            // Check to see if we have position and rotation values that follows
+            if (reader.ReadBool())
+            {
+                position = new Vector3(reader.ReadSinglePacked(), reader.ReadSinglePacked(), reader.ReadSinglePacked());
+                rotation = Quaternion.Euler(reader.ReadSinglePacked(), reader.ReadSinglePacked(), reader.ReadSinglePacked());
+            }
+
+            //Attemp to create a local NetworkObject
+            var networkObject = networkManager.SpawnManager.CreateLocalNetworkObject(isSceneObject, prefabHash, ownerClientId, parentNetworkId, position, rotation);
+
+            // Determine if this NetworkObject has NetworkVariable data to read
+            var networkVariableDataIsIncluded = reader.ReadBool();
+
+            if (networkVariableDataIsIncluded)
+            {
+                // (See Part 1 above in the NetworkObject.SerializeSceneObject method to better understand this)
+                // Part 2: This makes sure that if one NetworkObject fails to construct (for whatever reason) then we can "skip past"
+                // that specific NetworkObject but continue processing any remaining serialized NetworkObjects as opposed to just
+                // throwing an exception and skipping the remaining (if any) NetworkObjects.  This will prevent one misconfigured
+                // issue (or more) from breaking the entire loading process.
+                var networkVariableDataSize = reader.ReadUInt32();
+                if (networkObject == null)
+                {
+                    // Log the error that the NetworkObject failed to construct
+                    Debug.LogError($"Failed to spawn {nameof(NetworkObject)} for Hash {prefabHash}.");
+
+                    // If we failed to load this NetworkObject, then skip past the network variable data
+                    objectStream.Position += networkVariableDataSize;
+
+                    // We have nothing left to do here.
+                    return null;
+                }
+            }
+
+            // Spawn the NetworkObject
+            networkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, networkId, isSceneObject, isPlayerObject, ownerClientId, objectStream, false, 0, true, false);
+
+            var bufferQueue = networkManager.BufferManager.ConsumeBuffersForNetworkId(networkId);
+
+            // Apply buffered messages
+            if (bufferQueue != null)
+            {
+                while (bufferQueue.Count > 0)
+                {
+                    Messaging.Buffering.BufferManager.BufferedMessage message = bufferQueue.Dequeue();
+                    networkManager.HandleIncomingData(message.SenderClientId, message.NetworkChannel, new ArraySegment<byte>(message.NetworkBuffer.GetBuffer(), (int)message.NetworkBuffer.Position, (int)message.NetworkBuffer.Length), message.ReceiveTime, false);
+                    Messaging.Buffering.BufferManager.RecycleConsumedBufferedMessage(message);
+                }
+            }
+
+            return networkObject;
         }
     }
 }

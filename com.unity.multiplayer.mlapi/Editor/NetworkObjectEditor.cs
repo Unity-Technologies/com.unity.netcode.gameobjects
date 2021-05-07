@@ -27,7 +27,7 @@ namespace MLAPI.Editor
         {
             Initialize();
 
-            if (!m_NetworkObject.IsSpawned && NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer)
+            if (!m_NetworkObject.IsSpawned && m_NetworkObject.NetworkManager != null && m_NetworkObject.NetworkManager.IsServer)
             {
                 EditorGUILayout.BeginHorizontal();
                 EditorGUILayout.LabelField(new GUIContent("Spawn", "Spawns the object across the network"));
@@ -60,9 +60,10 @@ namespace MLAPI.Editor
                     EditorGUILayout.TextField(nameof(NetworkObject.IsSceneObject), "null");
                 }
                 EditorGUILayout.Toggle(nameof(NetworkObject.DestroyWithScene), m_NetworkObject.DestroyWithScene);
+                EditorGUILayout.TextField(nameof(NetworkObject.NetworkManager), m_NetworkObject.NetworkManager == null ? "null" : m_NetworkObject.NetworkManager.gameObject.name);
                 GUI.enabled = guiEnabled;
 
-                if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer)
+                if (m_NetworkObject.NetworkManager != null && m_NetworkObject.NetworkManager.IsServer)
                 {
                     m_ShowObservers = EditorGUILayout.Foldout(m_ShowObservers, "Observers");
 
@@ -74,9 +75,9 @@ namespace MLAPI.Editor
 
                         while (observerClientIds.MoveNext())
                         {
-                            if (NetworkManager.Singleton.ConnectedClients[observerClientIds.Current].PlayerObject != null)
+                            if (m_NetworkObject.NetworkManager.ConnectedClients[observerClientIds.Current].PlayerObject != null)
                             {
-                                EditorGUILayout.ObjectField($"ClientId: {observerClientIds.Current}", NetworkManager.Singleton.ConnectedClients[observerClientIds.Current].PlayerObject, typeof(GameObject), false);
+                                EditorGUILayout.ObjectField($"ClientId: {observerClientIds.Current}", m_NetworkObject.NetworkManager.ConnectedClients[observerClientIds.Current].PlayerObject, typeof(GameObject), false);
                             }
                             else
                             {
@@ -95,6 +96,7 @@ namespace MLAPI.Editor
                 var guiEnabled = GUI.enabled;
                 GUI.enabled = false;
                 EditorGUILayout.TextField(nameof(NetworkObject.GlobalObjectIdHash), m_NetworkObject.GlobalObjectIdHash.ToString());
+                EditorGUILayout.TextField(nameof(NetworkObject.NetworkManager), m_NetworkObject.NetworkManager == null ? "null" : m_NetworkObject.NetworkManager.gameObject.name);
                 GUI.enabled = guiEnabled;
             }
         }

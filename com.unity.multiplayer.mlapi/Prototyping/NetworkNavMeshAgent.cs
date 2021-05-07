@@ -67,7 +67,7 @@ namespace MLAPI.Prototyping
                 else
                 {
                     var proximityClients = new List<ulong>();
-                    foreach (KeyValuePair<ulong, NetworkClient> client in NetworkManager.Singleton.ConnectedClients)
+                    foreach (KeyValuePair<ulong, NetworkClient> client in NetworkManager.ConnectedClients)
                     {
                         if (client.Value.PlayerObject == null || Vector3.Distance(client.Value.PlayerObject.transform.position, transform.position) <= ProximityRange)
                         {
@@ -79,7 +79,7 @@ namespace MLAPI.Prototyping
                 }
             }
 
-            if (NetworkManager.Singleton.PredictedTime.Time - m_LastCorrectionTime >= CorrectionDelay) // TODO this is not aliased correctly, is this an issue?
+            if (NetworkManager.PredictedTime.Time - m_LastCorrectionTime >= CorrectionDelay) // TODO this is not aliased correctly, is this an issue?
             {
                 if (!EnableProximity)
                 {
@@ -88,7 +88,7 @@ namespace MLAPI.Prototyping
                 else
                 {
                     var proximityClients = new List<ulong>();
-                    foreach (KeyValuePair<ulong, NetworkClient> client in NetworkManager.Singleton.ConnectedClients)
+                    foreach (KeyValuePair<ulong, NetworkClient> client in NetworkManager.ConnectedClients)
                     {
                         if (client.Value.PlayerObject == null || Vector3.Distance(client.Value.PlayerObject.transform.position, transform.position) <= ProximityRange)
                         {
@@ -99,7 +99,7 @@ namespace MLAPI.Prototyping
                     OnNavMeshCorrectionUpdateClientRpc(m_Agent.velocity, transform.position, new ClientRpcParams { Send = new ClientRpcSendParams { TargetClientIds = proximityClients.ToArray() } });
                 }
 
-                m_LastCorrectionTime = NetworkManager.Singleton.PredictedTime.Time;
+                m_LastCorrectionTime = NetworkManager.PredictedTime.Time;
             }
         }
 

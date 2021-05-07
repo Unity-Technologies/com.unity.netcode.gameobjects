@@ -128,7 +128,7 @@ namespace MLAPI.Prototyping
 
         private bool CheckSendRate()
         {
-            var networkTime = NetworkManager.Singleton.PredictedTime.FixedTime;
+            var networkTime = NetworkManager.PredictedTime.FixedTime;
             if (SendRate != 0 && m_NextSendTime < networkTime)
             {
                 m_NextSendTime = networkTime + SendRate;
@@ -223,8 +223,8 @@ namespace MLAPI.Prototyping
                 {
                     Send = new ClientRpcSendParams
                     {
-                        TargetClientIds = NetworkManager.Singleton.ConnectedClientsList
-                            .Where(c => c.ClientId != NetworkManager.Singleton.ServerClientId)
+                        TargetClientIds = NetworkManager.ConnectedClientsList
+                            .Where(c => c.ClientId != NetworkManager.ServerClientId)
                             .Select(c => c.ClientId)
                             .ToArray()
                     }
@@ -247,8 +247,8 @@ namespace MLAPI.Prototyping
                 {
                     Send = new ClientRpcSendParams
                     {
-                        TargetClientIds = NetworkManager.Singleton.ConnectedClientsList
-                            .Where(c => c.ClientId != NetworkManager.Singleton.ServerClientId)
+                        TargetClientIds = NetworkManager.ConnectedClientsList
+                            .Where(c => c.ClientId != NetworkManager.ServerClientId)
                             .Select(c => c.ClientId)
                             .ToArray()
                     }
@@ -277,7 +277,7 @@ namespace MLAPI.Prototyping
             {
                 Send = new ClientRpcSendParams
                 {
-                    TargetClientIds = NetworkManager.Singleton.ConnectedClientsList
+                    TargetClientIds = NetworkManager.ConnectedClientsList
                         .Where(c => c.ClientId != serverRpcParams.Receive.SenderClientId)
                         .Select(c => c.ClientId)
                         .ToArray()
@@ -311,7 +311,7 @@ namespace MLAPI.Prototyping
             {
                 Send = new ClientRpcSendParams
                 {
-                    TargetClientIds = NetworkManager.Singleton.ConnectedClientsList
+                    TargetClientIds = NetworkManager.ConnectedClientsList
                         .Where(c => c.ClientId != serverRpcParams.Receive.SenderClientId)
                         .Select(c => c.ClientId)
                         .ToArray()

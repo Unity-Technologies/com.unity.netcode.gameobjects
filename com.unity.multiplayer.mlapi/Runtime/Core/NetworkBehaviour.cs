@@ -73,14 +73,14 @@ namespace MLAPI
         {
             PooledNetworkWriter writer;
 
-            var rpcQueueContainer = NetworkManager.Singleton.RpcQueueContainer;
+            var rpcQueueContainer = NetworkManager.RpcQueueContainer;
             var isUsingBatching = rpcQueueContainer.IsUsingBatching();
             var transportChannel = rpcDelivery == RpcDelivery.Reliable ? NetworkChannel.ReliableRpc : NetworkChannel.UnreliableRpc;
 
             if (IsHost)
             {
                 writer = rpcQueueContainer.BeginAddQueueItemToFrame(RpcQueueContainer.QueueItemType.ServerRpc, Time.realtimeSinceStartup, transportChannel,
-                    NetworkManager.Singleton.ServerClientId, null, RpcQueueHistoryFrame.QueueFrameType.Inbound, serverRpcParams.Send.UpdateStage);
+                    NetworkManager.ServerClientId, null, RpcQueueHistoryFrame.QueueFrameType.Inbound, serverRpcParams.Send.UpdateStage);
 
                 if (!isUsingBatching)
                 {
@@ -90,7 +90,7 @@ namespace MLAPI
             else
             {
                 writer = rpcQueueContainer.BeginAddQueueItemToFrame(RpcQueueContainer.QueueItemType.ServerRpc, Time.realtimeSinceStartup, transportChannel,
-                    NetworkManager.Singleton.ServerClientId, null, RpcQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
+                    NetworkManager.ServerClientId, null, RpcQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
                 if (!isUsingBatching)
                 {
                     writer.WriteByte(NetworkConstants.SERVER_RPC); // MessageType
@@ -121,7 +121,7 @@ namespace MLAPI
                 return;
             }
 
-            var rpcQueueContainer = NetworkManager.Singleton.RpcQueueContainer;
+            var rpcQueueContainer = NetworkManager.RpcQueueContainer;
             if (IsHost)
             {
                 rpcQueueContainer.EndAddQueueItemToFrame(serializer.Writer, RpcQueueHistoryFrame.QueueFrameType.Inbound, serverRpcParams.Send.UpdateStage);
@@ -147,26 +147,26 @@ namespace MLAPI
             PooledNetworkWriter writer;
 
             // This will start a new queue item entry and will then return the writer to the current frame's stream
-            var rpcQueueContainer = NetworkManager.Singleton.RpcQueueContainer;
+            var rpcQueueContainer = NetworkManager.RpcQueueContainer;
             var isUsingBatching = rpcQueueContainer.IsUsingBatching();
             var transportChannel = rpcDelivery == RpcDelivery.Reliable ? NetworkChannel.ReliableRpc : NetworkChannel.UnreliableRpc;
 
-            ulong[] clientIds = clientRpcParams.Send.TargetClientIds ?? NetworkManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray();
+            ulong[] clientIds = clientRpcParams.Send.TargetClientIds ?? NetworkManager.ConnectedClientsList.Select(c => c.ClientId).ToArray();
             if (clientRpcParams.Send.TargetClientIds != null && clientRpcParams.Send.TargetClientIds.Length == 0)
             {
-                clientIds = NetworkManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray();
+                clientIds = NetworkManager.ConnectedClientsList.Select(c => c.ClientId).ToArray();
             }
 
             //NOTES ON BELOW CHANGES:
             //The following checks for IsHost and whether the host client id is part of the clients to recieve the RPC
             //Is part of a patch-fix to handle looping back RPCs into the next frame's inbound queue.
             //!!! This code is temporary and will change (soon) when NetworkSerializer can be configured for mutliple NetworkWriters!!!
-            var containsServerClientId = clientIds.Contains(NetworkManager.Singleton.ServerClientId);
+            var containsServerClientId = clientIds.Contains(NetworkManager.ServerClientId);
             if (IsHost && containsServerClientId)
             {
                 //Always write to the next frame's inbound queue
                 writer = rpcQueueContainer.BeginAddQueueItemToFrame(RpcQueueContainer.QueueItemType.ClientRpc, Time.realtimeSinceStartup, transportChannel,
-                    NetworkManager.Singleton.ServerClientId, null, RpcQueueHistoryFrame.QueueFrameType.Inbound, clientRpcParams.Send.UpdateStage);
+                    NetworkManager.ServerClientId, null, RpcQueueHistoryFrame.QueueFrameType.Inbound, clientRpcParams.Send.UpdateStage);
 
                 //Handle sending to the other clients, if so the above notes explain why this code is here (a temporary patch-fix)
                 if (clientIds.Length > 1)
@@ -226,17 +226,17 @@ namespace MLAPI
                 return;
             }
 
-            var rpcQueueContainer = NetworkManager.Singleton.RpcQueueContainer;
+            var rpcQueueContainer = NetworkManager.RpcQueueContainer;
 
             if (IsHost)
             {
-                ulong[] clientIds = clientRpcParams.Send.TargetClientIds ?? NetworkManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray();
+                ulong[] clientIds = clientRpcParams.Send.TargetClientIds ?? NetworkManager.ConnectedClientsList.Select(c => c.ClientId).ToArray();
                 if (clientRpcParams.Send.TargetClientIds != null && clientRpcParams.Send.TargetClientIds.Length == 0)
                 {
-                    clientIds = NetworkManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray();
+                    clientIds = NetworkManager.ConnectedClientsList.Select(c => c.ClientId).ToArray();
                 }
 
-                var containsServerClientId = clientIds.Contains(NetworkManager.Singleton.ServerClientId);
+                var containsServerClientId = clientIds.Contains(NetworkManager.ServerClientId);
                 if (containsServerClientId && clientIds.Length == 1)
                 {
                     rpcQueueContainer.EndAddQueueItemToFrame(serializer.Writer, RpcQueueHistoryFrame.QueueFrameType.Inbound, clientRpcParams.Send.UpdateStage);
@@ -265,19 +265,19 @@ namespace MLAPI
         /// <summary>
         /// Gets if we are executing as server
         /// </summary>
-        protected static bool IsServer => IsRunning && NetworkManager.Singleton.IsServer;
+        protected bool IsServer => IsRunning && NetworkManager.IsServer;
 
         /// <summary>
         /// Gets if we are executing as client
         /// </summary>
-        protected bool IsClient => IsRunning && NetworkManager.Singleton.IsClient;
+        protected bool IsClient => IsRunning && NetworkManager.IsClient;
 
         /// <summary>
         /// Gets if we are executing as Host, I.E Server and Client
         /// </summary>
-        protected bool IsHost => IsRunning && NetworkManager.Singleton.IsHost;
+        protected bool IsHost => IsRunning && NetworkManager.IsHost;
 
-        private static bool IsRunning => NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening;
+        private bool IsRunning => NetworkManager != null && NetworkManager.IsListening;
 
         /// <summary>
         /// Gets Whether or not the object has a owner
@@ -380,8 +380,6 @@ namespace MLAPI
         /// </summary>
         public virtual void OnLostOwnership() { }
 
-        #region NetworkVariable
-
         private bool m_VarInit = false;
 
         private readonly List<HashSet<int>> m_ChannelMappedNetworkVariableIndexes = new List<HashSet<int>>();
@@ -481,20 +479,20 @@ namespace MLAPI
         private static ProfilerMarker s_NetworkBehaviourUpdate = new ProfilerMarker($"{nameof(NetworkBehaviour)}.{nameof(NetworkBehaviourUpdate)}");
 #endif
 
-        internal static void NetworkBehaviourUpdate()
+        internal static void NetworkBehaviourUpdate(NetworkManager networkManager)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_NetworkBehaviourUpdate.Begin();
 #endif
             try
             {
-                if (IsServer)
+                if (networkManager.IsServer)
                 {
                     s_Touched.Clear();
-                    for (int i = 0; i < NetworkManager.Singleton.ConnectedClientsList.Count; i++)
+                    for (int i = 0; i < networkManager.ConnectedClientsList.Count; i++)
                     {
-                        var client = NetworkManager.Singleton.ConnectedClientsList[i];
-                        var spawnedObjs = NetworkManager.Singleton.SpawnManager.SpawnedObjectsList;
+                        var client = networkManager.ConnectedClientsList[i];
+                        var spawnedObjs = networkManager.SpawnManager.SpawnedObjectsList;
                         s_Touched.UnionWith(spawnedObjs);
                         foreach (var sobj in spawnedObjs)
                         {
@@ -518,16 +516,16 @@ namespace MLAPI
                 else
                 {
                     // when client updates the sever, it tells it about all its objects
-                    foreach (var sobj in NetworkManager.Singleton.SpawnManager.SpawnedObjectsList)
+                    foreach (var sobj in networkManager.SpawnManager.SpawnedObjectsList)
                     {
                         for (int k = 0; k < sobj.ChildNetworkBehaviours.Count; k++)
                         {
-                            sobj.ChildNetworkBehaviours[k].VariableUpdate(NetworkManager.Singleton.ServerClientId);
+                            sobj.ChildNetworkBehaviours[k].VariableUpdate(networkManager.ServerClientId);
                         }
                     }
 
                     // Now, reset all the no-longer-dirty variables
-                    foreach (var sobj in NetworkManager.Singleton.SpawnManager.SpawnedObjectsList)
+                    foreach (var sobj in networkManager.SpawnManager.SpawnedObjectsList)
                     {
                         for (int k = 0; k < sobj.ChildNetworkBehaviours.Count; k++)
                         {
@@ -597,7 +595,7 @@ namespace MLAPI
                             if (!m_ChannelMappedNetworkVariableIndexes[j].Contains(k))
                             {
                                 // This var does not belong to the currently iterating channel group.
-                                if (NetworkManager.Singleton.NetworkConfig.EnsureNetworkVariableLengthSafety)
+                                if (NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                                 {
                                     writer.WriteUInt16Packed(0);
                                 }
@@ -615,7 +613,7 @@ namespace MLAPI
                             //   if I'm dirty AND the server AND the client can read me, send.
                             bool shouldWrite = isDirty && (!IsServer || NetworkVariableFields[k].CanClientRead(clientId));
 
-                            if (NetworkManager.Singleton.NetworkConfig.EnsureNetworkVariableLengthSafety)
+                            if (NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                             {
                                 if (!shouldWrite)
                                 {
@@ -635,7 +633,7 @@ namespace MLAPI
                                 // TODO serialization of tick can use less bandwidth by using a byte/ushort sliding tick window
                                 writer.WriteInt32Packed(NetworkVariableFields[k].LastModifiedTick);
 
-                                if (NetworkManager.Singleton.NetworkConfig.EnsureNetworkVariableLengthSafety)
+                                if (NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                                 {
                                     using (var varBuffer = PooledNetworkBuffer.Get())
                                     {
@@ -682,7 +680,7 @@ namespace MLAPI
             return false;
         }
 
-        internal static void HandleNetworkVariableDeltas(List<INetworkVariable> networkVariableList, Stream stream, ulong clientId, NetworkBehaviour logInstance)
+        internal static void HandleNetworkVariableDeltas(List<INetworkVariable> networkVariableList, Stream stream, ulong clientId, NetworkBehaviour logInstance, NetworkManager networkManager)
         {
             using (var reader = PooledNetworkReader.Get(stream))
             {
@@ -690,7 +688,7 @@ namespace MLAPI
                 {
                     ushort varSize = 0;
 
-                    if (NetworkManager.Singleton.NetworkConfig.EnsureNetworkVariableLengthSafety)
+                    if (networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                     {
                         varSize = reader.ReadUInt16Packed();
 
@@ -707,9 +705,9 @@ namespace MLAPI
                         }
                     }
 
-                    if (IsServer && !networkVariableList[i].CanClientWrite(clientId))
+                    if (networkManager.IsServer && !networkVariableList[i].CanClientWrite(clientId))
                     {
-                        if (NetworkManager.Singleton.NetworkConfig.EnsureNetworkVariableLengthSafety)
+                        if (networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                         {
                             if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                             {
@@ -743,12 +741,12 @@ namespace MLAPI
 
                     long readStartPos = stream.Position;
 
-                    networkVariableList[i].ReadDelta(stream, IsServer, remoteTick);
+                    networkVariableList[i].ReadDelta(stream, networkManager.IsServer, remoteTick);
                     PerformanceDataManager.Increment(ProfilerConstants.NetworkVarDeltas);
 
                     ProfilerStatManager.NetworkVarsRcvd.Record();
 
-                    if (NetworkManager.Singleton.NetworkConfig.EnsureNetworkVariableLengthSafety)
+                    if (networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                     {
                         (stream as NetworkBuffer).SkipPadBits();
 
@@ -775,7 +773,7 @@ namespace MLAPI
             }
         }
 
-        internal static void HandleNetworkVariableUpdate(List<INetworkVariable> networkVariableList, Stream stream, ulong clientId, NetworkBehaviour logInstance)
+        internal static void HandleNetworkVariableUpdate(List<INetworkVariable> networkVariableList, Stream stream, ulong clientId, NetworkBehaviour logInstance, NetworkManager networkManager)
         {
             using (var reader = PooledNetworkReader.Get(stream))
             {
@@ -783,7 +781,7 @@ namespace MLAPI
                 {
                     ushort varSize = 0;
 
-                    if (NetworkManager.Singleton.NetworkConfig.EnsureNetworkVariableLengthSafety)
+                    if (networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                     {
                         varSize = reader.ReadUInt16Packed();
 
@@ -800,9 +798,9 @@ namespace MLAPI
                         }
                     }
 
-                    if (IsServer && !networkVariableList[i].CanClientWrite(clientId))
+                    if (networkManager.IsServer && !networkVariableList[i].CanClientWrite(clientId))
                     {
-                        if (NetworkManager.Singleton.NetworkConfig.EnsureNetworkVariableLengthSafety)
+                        if (networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                         {
                             if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                             {
@@ -835,7 +833,7 @@ namespace MLAPI
 
                     ProfilerStatManager.NetworkVarsRcvd.Record();
 
-                    if (NetworkManager.Singleton.NetworkConfig.EnsureNetworkVariableLengthSafety)
+                    if (networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                     {
                         if (stream is NetworkBuffer networkBuffer)
                         {
@@ -866,7 +864,7 @@ namespace MLAPI
         }
 
 
-        internal static void WriteNetworkVariableData(List<INetworkVariable> networkVariableList, Stream stream, ulong clientId)
+        internal static void WriteNetworkVariableData(List<INetworkVariable> networkVariableList, Stream stream, ulong clientId, NetworkManager networkManager)
         {
             if (networkVariableList.Count == 0)
             {
@@ -879,7 +877,7 @@ namespace MLAPI
                 {
                     bool canClientRead = networkVariableList[j].CanClientRead(clientId);
 
-                    if (NetworkManager.Singleton.NetworkConfig.EnsureNetworkVariableLengthSafety)
+                    if (networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                     {
                         if (!canClientRead)
                         {
@@ -893,7 +891,7 @@ namespace MLAPI
 
                     if (canClientRead)
                     {
-                        if (NetworkManager.Singleton.NetworkConfig.EnsureNetworkVariableLengthSafety)
+                        if (networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                         {
                             using (var varBuffer = PooledNetworkBuffer.Get())
                             {
@@ -913,7 +911,7 @@ namespace MLAPI
             }
         }
 
-        internal static void SetNetworkVariableData(List<INetworkVariable> networkVariableList, Stream stream)
+        internal static void SetNetworkVariableData(List<INetworkVariable> networkVariableList, Stream stream, NetworkManager networkManager)
         {
             if (networkVariableList.Count == 0)
             {
@@ -926,7 +924,7 @@ namespace MLAPI
                 {
                     ushort varSize = 0;
 
-                    if (NetworkManager.Singleton.NetworkConfig.EnsureNetworkVariableLengthSafety)
+                    if (networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                     {
                         varSize = reader.ReadUInt16Packed();
 
@@ -947,7 +945,7 @@ namespace MLAPI
 
                     networkVariableList[j].ReadField(stream, NetworkTimeSystem.NoTick); // TODO broken this should be server tick
 
-                    if (NetworkManager.Singleton.NetworkConfig.EnsureNetworkVariableLengthSafety)
+                    if (networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                     {
                         if (stream is NetworkBuffer networkBuffer)
                         {
@@ -977,13 +975,11 @@ namespace MLAPI
             }
         }
 
-        #endregion
-
         /// <summary>
         /// Gets the local instance of a object with a given NetworkId
         /// </summary>
         /// <param name="networkId"></param>
         /// <returns></returns>
-        protected NetworkObject GetNetworkObject(ulong networkId) => NetworkManager.Singleton.SpawnManager.SpawnedObjects.ContainsKey(networkId) ? NetworkManager.Singleton.SpawnManager.SpawnedObjects[networkId] : null;
+        protected NetworkObject GetNetworkObject(ulong networkId) => NetworkManager.SpawnManager.SpawnedObjects.ContainsKey(networkId) ? NetworkManager.SpawnManager.SpawnedObjects[networkId] : null;
     }
 }

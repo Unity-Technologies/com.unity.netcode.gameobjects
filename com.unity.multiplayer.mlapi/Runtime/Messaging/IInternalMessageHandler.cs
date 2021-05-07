@@ -22,5 +22,6 @@ namespace MLAPI.Messaging
         void HandleUnnamedMessage(ulong clientId, Stream stream);
         void HandleNamedMessage(ulong clientId, Stream stream);
         void HandleNetworkLog(ulong clientId, Stream stream);
+        void HandleAllClientsSwitchSceneCompleted(ulong clientId, Stream stream);
     }
 }

@@ -42,22 +42,23 @@ namespace MLAPI.Configuration
         public bool AllowRuntimeSceneChanges = false;
 
         /// <summary>
-        /// A list of spawnable prefabs
-        /// </summary>
-        [Tooltip("The prefabs that can be spawned across the network")]
-        public List<NetworkPrefab> NetworkPrefabs = new List<NetworkPrefab>();
-
-        /// <summary>
         /// The default player prefab
         /// </summary>
-        [SerializeReference]
-        internal uint PlayerPrefabHash;
+        [Tooltip("When set, NetworkManager will automatically create and spawn the assigned player prefab. This can be overridden by adding it to the NetworkPrefabs list and selecting override.")]
+        public GameObject PlayerPrefab;
 
         /// <summary>
-        /// Whether or not a player object should be created by default. This value can be overridden on a case by case basis with ConnectionApproval.
+        /// A list of spawnable prefabs
         /// </summary>
-        [Tooltip("Whether or not a player object should be created by default. This value can be overridden on a case by case basis with ConnectionApproval.")]
-        public bool CreatePlayerPrefab = true;
+        [SerializeField]
+        [Tooltip("The prefabs that can be spawned across the network")]
+        internal List<NetworkPrefab> NetworkPrefabs = new List<NetworkPrefab>();
+
+        /// <summary>
+        /// This dictionary provides a quick way to check and see if a NetworkPrefab has a NetworkPrefab override.
+        /// Generated at runtime and OnValidate
+        /// </summary>
+        internal Dictionary<uint, NetworkPrefab> NetworkPrefabOverrideLinks = new Dictionary<uint, NetworkPrefab>();
 
         /// <summary>
         /// TODO
@@ -290,10 +291,10 @@ namespace MLAPI.Configuration
 
                 if (ForceSamePrefabs)
                 {
-                    var sortedPrefabList = NetworkPrefabs.OrderBy(x => x.Hash).ToList();
-                    for (int i = 0; i < sortedPrefabList.Count; i++)
+                    var sortedDictionary = NetworkPrefabOverrideLinks.OrderBy(x => x.Key);
+                    foreach (var sortedEntry in sortedDictionary)
                     {
-                        writer.WriteUInt32Packed(sortedPrefabList[i].Hash);
+                        writer.WriteUInt32Packed(sortedEntry.Key);
                     }
                 }
 

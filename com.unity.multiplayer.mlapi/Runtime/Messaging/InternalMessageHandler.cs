@@ -36,6 +36,7 @@ namespace MLAPI.Messaging
         private static ProfilerMarker s_HandleNetworkLog = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleNetworkLog)}");
         private static ProfilerMarker s_RpcReceiveQueueItemServerRpc = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(RpcReceiveQueueItem)}.{nameof(RpcQueueContainer.QueueItemType.ServerRpc)}");
         private static ProfilerMarker s_RpcReceiveQueueItemClientRpc = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(RpcReceiveQueueItem)}.{nameof(RpcQueueContainer.QueueItemType.ClientRpc)}");
+        private static ProfilerMarker s_HandleAllClientsSwitchSceneCompleted = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleAllClientsSwitchSceneCompleted)}");
 #endif
 
         public NetworkManager NetworkManager => m_NetworkManager;
@@ -80,7 +81,7 @@ namespace MLAPI.Messaging
                 }
                 else
                 {
-                    NetworkManager.HandleApproval(clientId, NetworkManager.NetworkConfig.CreatePlayerPrefab, null, true, null, null);
+                    NetworkManager.HandleApproval(clientId, NetworkManager.NetworkConfig.PlayerPrefab != null, null, true, null, null);
                 }
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
@@ -132,43 +133,7 @@ namespace MLAPI.Messaging
                         var objectCount = continuationReader.ReadUInt32Packed();
                         for (int i = 0; i < objectCount; i++)
                         {
-                            var isPlayerObject = continuationReader.ReadBool();
-                            var networkId = continuationReader.ReadUInt64Packed();
-                            var ownerId = continuationReader.ReadUInt64Packed();
-                            var hasParent = continuationReader.ReadBool();
-                            ulong? parentNetworkId = null;
-
-                            if (hasParent)
-                            {
-                                parentNetworkId = continuationReader.ReadUInt64Packed();
-                            }
-
-                            var softSync = continuationReader.ReadBool();
-                            var prefabHash = continuationReader.ReadUInt32Packed();
-
-                            Vector3? pos = null;
-                            Quaternion? rot = null;
-                            if (continuationReader.ReadBool())
-                            {
-                                pos = new Vector3(continuationReader.ReadSinglePacked(), continuationReader.ReadSinglePacked(), continuationReader.ReadSinglePacked());
-                                rot = Quaternion.Euler(continuationReader.ReadSinglePacked(), continuationReader.ReadSinglePacked(), continuationReader.ReadSinglePacked());
-                            }
-
-                            var networkObject = NetworkManager.SpawnManager.CreateLocalNetworkObject(softSync, prefabHash, ownerId, parentNetworkId, pos, rot);
-                            NetworkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, networkId, softSync, isPlayerObject, ownerId, continuationStream, false, 0, true, false);
-
-                            Queue<BufferManager.BufferedMessage> bufferQueue = NetworkManager.BufferManager.ConsumeBuffersForNetworkId(networkId);
-
-                            // Apply buffered messages
-                            if (bufferQueue != null)
-                            {
-                                while (bufferQueue.Count > 0)
-                                {
-                                    BufferManager.BufferedMessage message = bufferQueue.Dequeue();
-                                    NetworkManager.HandleIncomingData(message.SenderClientId, message.NetworkChannel, new ArraySegment<byte>(message.NetworkBuffer.GetBuffer(), (int)message.NetworkBuffer.Position, (int)message.NetworkBuffer.Length), message.ReceiveTime, false);
-                                    BufferManager.RecycleConsumedBufferedMessage(message);
-                                }
-                            }
+                            NetworkObject.DeserializeSceneObject(continuationStream as NetworkBuffer, continuationReader, m_NetworkManager);
                         }
 
                         NetworkManager.SpawnManager.CleanDiffedSceneObjects();
@@ -409,7 +374,7 @@ namespace MLAPI.Messaging
                     }
                     else
                     {
-                        NetworkBehaviour.HandleNetworkVariableDeltas(instance.NetworkVariableFields, stream, clientId, instance);
+                        NetworkBehaviour.HandleNetworkVariableDeltas(instance.NetworkVariableFields, stream, clientId, instance, NetworkManager);
                     }
                 }
                 else if (NetworkManager.IsServer || !NetworkManager.NetworkConfig.EnableMessageBuffering)
@@ -467,7 +432,7 @@ namespace MLAPI.Messaging
                     }
                     else
                     {
-                        NetworkBehaviour.HandleNetworkVariableUpdate(networkBehaviour.NetworkVariableFields, stream, clientId, networkBehaviour);
+                        NetworkBehaviour.HandleNetworkVariableUpdate(networkBehaviour.NetworkVariableFields, stream, clientId, networkBehaviour, NetworkManager);
                     }
                 }
                 else if (NetworkManager.IsServer || !NetworkManager.NetworkConfig.EnableMessageBuffering)
@@ -592,6 +557,22 @@ namespace MLAPI.Messaging
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleNetworkLog.End();
+#endif
+        }
+
+        public void HandleAllClientsSwitchSceneCompleted(ulong clientId, Stream stream)
+        {
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            s_HandleAllClientsSwitchSceneCompleted.Begin();
+#endif
+            using (var reader = PooledNetworkReader.Get(stream))
+            {
+                var clientIds = reader.ReadULongArray();
+                var timedOutClientIds = reader.ReadULongArray();
+                NetworkManager.SceneManager.AllClientsReady(clientIds, timedOutClientIds);
+            }
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            s_HandleAllClientsSwitchSceneCompleted.End();
 #endif
         }
     }

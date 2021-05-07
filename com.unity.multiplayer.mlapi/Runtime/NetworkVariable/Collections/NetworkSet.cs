@@ -1,4 +1,5 @@
 #if !NET35
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -77,7 +78,7 @@ namespace MLAPI.NetworkVariable.Collections
         public void ResetDirty()
         {
             m_DirtyEvents.Clear();
-            LastSyncedTime = NetworkManager.Singleton.PredictedTime;
+            LastSyncedTime = m_NetworkBehaviour.NetworkManager.PredictedTime;
         }
 
         /// <inheritdoc />
@@ -98,7 +99,7 @@ namespace MLAPI.NetworkVariable.Collections
                 return false;
             }
 
-            if ((NetworkManager.Singleton.PredictedTime.FixedTime - LastSyncedTime.FixedTime) >= (1f / Settings.SendTickrate))
+            if ((m_NetworkBehaviour.NetworkManager.PredictedTime.FixedTime - LastSyncedTime.FixedTime) >= (1f / Settings.SendTickrate))
             {
                 return true;
             }
@@ -330,7 +331,9 @@ namespace MLAPI.NetworkVariable.Collections
         /// <inheritdoc />
         void ICollection<T>.Add(T item)
         {
-            if (NetworkManager.Singleton.IsServer)
+            EnsureInitialized();
+
+            if (m_NetworkBehaviour.NetworkManager.IsServer)
             {
                 m_Set.Add(item);
             }
@@ -342,7 +345,7 @@ namespace MLAPI.NetworkVariable.Collections
             };
             m_DirtyEvents.Add(setEvent);
 
-            if (NetworkManager.Singleton.IsServer && OnSetChanged != null)
+            if (m_NetworkBehaviour.NetworkManager.IsServer && OnSetChanged != null)
             {
                 OnSetChanged(setEvent);
             }
@@ -413,6 +416,8 @@ namespace MLAPI.NetworkVariable.Collections
         /// <inheritdoc />
         public void SymmetricExceptWith(IEnumerable<T> other)
         {
+            EnsureInitialized();
+
             foreach (T value in other)
             {
                 if (m_Set.Contains(value))
@@ -421,7 +426,7 @@ namespace MLAPI.NetworkVariable.Collections
                 }
                 else
                 {
-                    if (NetworkManager.Singleton.IsServer)
+                    if (m_NetworkBehaviour.NetworkManager.IsServer)
                     {
                         m_Set.Add(value);
                     }
@@ -433,7 +438,7 @@ namespace MLAPI.NetworkVariable.Collections
                     };
                     m_DirtyEvents.Add(setEvent);
 
-                    if (NetworkManager.Singleton.IsServer && OnSetChanged != null)
+                    if (m_NetworkBehaviour.NetworkManager.IsServer && OnSetChanged != null)
                     {
                         OnSetChanged(setEvent);
                     }
@@ -444,11 +449,13 @@ namespace MLAPI.NetworkVariable.Collections
         /// <inheritdoc />
         public void UnionWith(IEnumerable<T> other)
         {
+            EnsureInitialized();
+
             foreach (T value in other)
             {
                 if (!m_Set.Contains(value))
                 {
-                    if (NetworkManager.Singleton.IsServer)
+                    if (m_NetworkBehaviour.NetworkManager.IsServer)
                     {
                         m_Set.Add(value);
                     }
@@ -460,7 +467,7 @@ namespace MLAPI.NetworkVariable.Collections
                     };
                     m_DirtyEvents.Add(setEvent);
 
-                    if (NetworkManager.Singleton.IsServer && OnSetChanged != null)
+                    if (m_NetworkBehaviour.NetworkManager.IsServer && OnSetChanged != null)
                     {
                         OnSetChanged(setEvent);
                     }
@@ -471,7 +478,9 @@ namespace MLAPI.NetworkVariable.Collections
         /// <inheritdoc />
         bool ISet<T>.Add(T item)
         {
-            if (NetworkManager.Singleton.IsServer)
+            EnsureInitialized();
+
+            if (m_NetworkBehaviour.NetworkManager.IsServer)
             {
                 m_Set.Add(item);
             }
@@ -483,7 +492,7 @@ namespace MLAPI.NetworkVariable.Collections
             };
             m_DirtyEvents.Add(setEvent);
 
-            if (NetworkManager.Singleton.IsServer && OnSetChanged != null)
+            if (m_NetworkBehaviour.NetworkManager.IsServer && OnSetChanged != null)
             {
                 OnSetChanged(setEvent);
             }
@@ -494,7 +503,9 @@ namespace MLAPI.NetworkVariable.Collections
         /// <inheritdoc />
         public void Clear()
         {
-            if (NetworkManager.Singleton.IsServer)
+            EnsureInitialized();
+
+            if (m_NetworkBehaviour.NetworkManager.IsServer)
             {
                 m_Set.Clear();
             }
@@ -505,7 +516,7 @@ namespace MLAPI.NetworkVariable.Collections
             };
             m_DirtyEvents.Add(setEvent);
 
-            if (NetworkManager.Singleton.IsServer && OnSetChanged != null)
+            if (m_NetworkBehaviour.NetworkManager.IsServer && OnSetChanged != null)
             {
                 OnSetChanged(setEvent);
             }
@@ -526,7 +537,9 @@ namespace MLAPI.NetworkVariable.Collections
         /// <inheritdoc />
         public bool Remove(T item)
         {
-            if (NetworkManager.Singleton.IsServer)
+            EnsureInitialized();
+
+            if (m_NetworkBehaviour.NetworkManager.IsServer)
             {
                 m_Set.Remove(item);
             }
@@ -538,7 +551,7 @@ namespace MLAPI.NetworkVariable.Collections
             };
             m_DirtyEvents.Add(setEvent);
 
-            if (NetworkManager.Singleton.IsServer && OnSetChanged != null)
+            if (m_NetworkBehaviour.NetworkManager.IsServer && OnSetChanged != null)
             {
                 OnSetChanged(setEvent);
             }
@@ -558,6 +571,14 @@ namespace MLAPI.NetworkVariable.Collections
             {
                 // todo: implement proper network tick for NetworkSet
                 return NetworkTimeSystem.NoTick;
+            }
+        }
+
+        private void EnsureInitialized()
+        {
+            if (m_NetworkBehaviour == null)
+            {
+                throw new InvalidOperationException("Cannot access " + nameof(NetworkSet<T>) + " before it's initialized");
             }
         }
     }

@@ -17,6 +17,7 @@ namespace MLAPI.Configuration
         internal const byte ADD_OBJECTS = 10;
         internal const byte NETWORK_VARIABLE_DELTA = 12;
         internal const byte NETWORK_VARIABLE_UPDATE = 13;
+        internal const byte ALL_CLIENTS_LOADED_SCENE = 14;
         internal const byte UNNAMED_MESSAGE = 20;
         internal const byte DESTROY_OBJECTS = 21;
         internal const byte NAMED_MESSAGE = 22;
@@ -41,7 +42,7 @@ namespace MLAPI.Configuration
             "",
             "NETWORK_VARIABLE_DELTA",
             "NETWORK_VARIABLE_UPDATE",
-            "",
+            "ALL_CLIENTS_SWITCH_SCENE_COMPLETED",
             "",
             "", // 16
             "",
