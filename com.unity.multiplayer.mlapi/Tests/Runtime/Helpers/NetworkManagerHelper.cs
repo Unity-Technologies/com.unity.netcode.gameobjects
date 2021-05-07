@@ -63,7 +63,7 @@ namespace MLAPI.RuntimeTests
             {
                 NetworkManagerGameObject = new GameObject(nameof(NetworkManager));
                 NetworkManagerObject = NetworkManagerGameObject.AddComponent<NetworkManager>();
-                
+
                 if (NetworkManagerObject == null)
                 {
                     networkManager = null;
@@ -79,7 +79,7 @@ namespace MLAPI.RuntimeTests
                     networkConfig = new NetworkConfig
                     {
                         EnableSceneManagement = false,
-                        RegisteredScenes = new List<string>() {SceneManager.GetActiveScene().name}
+                        RegisteredScenes = new List<string>() { SceneManager.GetActiveScene().name }
                     };
                 }
                 else
@@ -88,7 +88,7 @@ namespace MLAPI.RuntimeTests
                 }
 
                 NetworkManagerObject.NetworkConfig = networkConfig;
-                
+
                 unetTransport.ConnectAddress = "127.0.0.1";
                 unetTransport.ConnectPort = 7777;
                 unetTransport.ServerListenPort = 7777;
