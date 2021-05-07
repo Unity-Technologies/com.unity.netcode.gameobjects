@@ -85,8 +85,6 @@ namespace MLAPI.NetworkVariable
                     return;
                 }
 
-                // Setter is assumed to be called locally, by game code.
-                // When used by the host, it is its responsibility to set the RemoteTick
                 LastModifiedTick = NetworkManager.Singleton.PredictedTime.Tick;
 
                 m_IsDirty = true;

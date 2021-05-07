@@ -330,7 +330,7 @@ namespace MLAPI
             }
 
             networkTimeSystem = new NetworkTimeSystem(NetworkConfig, server);
-            networkTimeSystem.OnNetworkTickInternal += NetworkFixedTick;
+            networkTimeSystem.OnNetworkTickInternal += NetworkTick;
 
             //This should never happen, but in the event that it does there should be (at a minimum) a unity error logged.
             if (RpcQueueContainer != null)
@@ -713,7 +713,7 @@ namespace MLAPI
 
             if (networkTimeSystem != null)
             {
-                networkTimeSystem.OnNetworkTickInternal -= NetworkFixedTick;
+                networkTimeSystem.OnNetworkTickInternal -= NetworkTick;
                 networkTimeSystem = null;
             }
 
@@ -785,7 +785,7 @@ namespace MLAPI
         {
             if (IsListening)
             {
-
+                networkTimeSystem.AdvanceNetworkTime(Time.deltaTime);
             }
         }
 
@@ -795,7 +795,7 @@ namespace MLAPI
         /// - call NetworkFixedUpdate on all NetworkBehaviours in prediction/client authority mode
         /// - create a snapshot from resulting state
         /// </summary>
-        private void NetworkFixedTick(NetworkTime predictedTime)
+        private void NetworkTick(NetworkTime predictedTime)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_EventTick.Begin();

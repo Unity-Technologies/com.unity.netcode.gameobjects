@@ -8,7 +8,6 @@ namespace MLAPI.Timing
     {
         private INetworkTimeProvider m_NetworkTimeProvider;
         private int m_TickRate;
-        private NetworkConfig m_Config;
 
         private NetworkTime m_PredictedTime;
         private NetworkTime m_ServerTime;
@@ -17,11 +16,6 @@ namespace MLAPI.Timing
         /// Special value to indicate "No tick information"
         /// </summary>
         public const int NoTick = int.MinValue;
-
-        /// <summary>
-        /// The NetworkConfig used for this <see cref="NetworkTimeSystem"/>.
-        /// </summary>
-        public NetworkConfig Config => m_Config;
 
         /// <summary>
         /// Gets the tick of the last server snapshot which has been received.
@@ -46,8 +40,8 @@ namespace MLAPI.Timing
         /// <summary>
         /// Delegate for invoking an event whenever a network tick passes
         /// </summary>
-        /// <param name="predictedTime">The predicted time for the tick.</param>
-        public delegate void NetworkTickDelegate(NetworkTime predictedTime);
+        /// <param name="time">The predicted time for the tick.</param>
+        public delegate void NetworkTickDelegate(NetworkTime time);
 
         /// <summary>
         /// Gets invoked before every network tick.
@@ -63,18 +57,18 @@ namespace MLAPI.Timing
         /// Creates a new instance of the <see cref="NetworkTimeSystem"/>.
         /// </summary>
         /// <param name="config">The network config</param>
+        /// <param name="isServer">true if the system will be used for a server or host.</param>
         public NetworkTimeSystem(NetworkConfig config, bool isServer)
         {
-            m_Config = config;
             m_TickRate = config.TickRate;
 
             if (isServer)
             {
-                m_NetworkTimeProvider = new FixedNetworkTimeProvider();
+                m_NetworkTimeProvider = new ServerNetworkTimeProvider();
             }
             else
             {
-                m_NetworkTimeProvider = new DynamicNetworkTimeProvider(this);
+                m_NetworkTimeProvider = new ClientNetworkTimeProvider(this);
             }
 
             m_PredictedTime = new NetworkTime(config.TickRate);
@@ -84,6 +78,7 @@ namespace MLAPI.Timing
         /// <summary>
         /// Called each network loop update during the <see cref="NetworkUpdateStage.PreUpdate"/> to advance the network time.
         /// </summary>
+        /// <param name="deltaTime">The delta time used to advance time. During normal use this is <see cref="Time.deltaTime"/>.</param>
         public void AdvanceNetworkTime(float deltaTime)
         {
             // store old predicted tick to know how many fixed ticks passed
@@ -98,7 +93,7 @@ namespace MLAPI.Timing
             var currentPredictedTick = PredictedTime.Tick;
             var predictedToServerDifference = currentPredictedTick - ServerTime.Tick;
 
-            for (int i = previousPredictedTick; i < currentPredictedTick; i++)
+            for (int i = previousPredictedTick + 1; i <= currentPredictedTick; i++)
             {
                 // TODO this is temporary code to just make this run somehow will be removed once we have snapshot ack
                 LastReceivedServerSnapshotTick = new NetworkTime(TickRate, LastReceivedServerSnapshotTick.Tick + 1);
@@ -124,12 +119,12 @@ namespace MLAPI.Timing
         {
             LastReceivedServerSnapshotTick = new NetworkTime(TickRate, serverTick);
 
-           m_ServerTime = new NetworkTime(TickRate, serverTick);
+            m_ServerTime = new NetworkTime(TickRate, serverTick);
 
-           // This should be overriden by the time provider but setting it in case it's not
-           m_PredictedTime = new NetworkTime(TickRate, serverTick);
+            // This should be overriden by the time provider but setting it in case it's not
+            m_PredictedTime = new NetworkTime(TickRate, serverTick);
 
-           m_NetworkTimeProvider.InitializeClient(ref m_PredictedTime, ref m_ServerTime);
+            m_NetworkTimeProvider.InitializeClient(ref m_PredictedTime, ref m_ServerTime);
         }
     }
 }
