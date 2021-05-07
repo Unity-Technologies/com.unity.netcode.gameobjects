@@ -20,7 +20,18 @@ namespace MLAPI.RuntimeTests
         /// </summary>
         [UnityTest]
         public IEnumerator TestAllNetworkVariableTypes()
-        {
+        {           
+            if(NetworkManagerHelper.NetworkManagerObject == null || !NetworkManagerHelper.NetworkManagerObject.IsListening)
+            {
+                NetworkManagerHelper.ShutdownNetworkManager();
+                yield return new WaitForSeconds(0.5f);
+                Assert.IsTrue(NetworkManagerHelper.StartNetworkManager(out _));
+            }
+            if (NetworkManager.Singleton != NetworkManagerHelper.NetworkManagerObject)
+            {
+                NetworkManagerHelper.NetworkManagerObject.SetSingleton();
+            }
+
             Guid gameObjectId = NetworkManagerHelper.AddGameNetworkObject("NetworkVariableTestComponent");
 
             var networkVariableTestComponent = NetworkManagerHelper.AddComponentToObject<NetworkVariableTestComponent>(gameObjectId);

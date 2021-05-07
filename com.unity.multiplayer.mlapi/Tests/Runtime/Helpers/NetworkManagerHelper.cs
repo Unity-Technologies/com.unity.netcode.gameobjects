@@ -186,6 +186,10 @@ namespace MLAPI.RuntimeTests
                         break;
                     }
             }
+            if (NetworkManager.Singleton != NetworkManagerObject)
+            {
+                NetworkManagerObject.SetSingleton();
+            }
             Debug.Log($"{CurrentNetworkManagerMode} started.");
         }
 

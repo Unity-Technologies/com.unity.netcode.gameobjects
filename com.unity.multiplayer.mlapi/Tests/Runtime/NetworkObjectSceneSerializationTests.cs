@@ -24,6 +24,7 @@ namespace MLAPI.RuntimeTests
             var reader = PooledNetworkReader.Get(pooledBuffer);
             var invalidNetworkObjectOffsets = new List<long>();
             var invalidNetworkObjectIdCount = new List<int>();
+            var invalidNetworkObjects = new List<GameObject>();
             var invalidNetworkObjectFrequency = 3;
 
             //Construct 50 NetworkObjects
@@ -50,6 +51,8 @@ namespace MLAPI.RuntimeTests
 
                     networkObject.GlobalObjectIdHash = (uint)(i);
                     invalidNetworkObjectIdCount.Add(i);
+
+                    invalidNetworkObjects.Add(gameObject);
 
                     //Serialize the invalid NetworkObject 
                     networkObject.SerializeSceneObject(writer, 0);
@@ -131,7 +134,14 @@ namespace MLAPI.RuntimeTests
             {
                 var entryNetworkObject = entry.GetComponent<NetworkObject>();
                 Assert.IsTrue(networkObjectsDeSerialized.Contains(entryNetworkObject));
+                Object.Destroy(entry);
             }
+
+            foreach (var entry in invalidNetworkObjects)
+            {
+                Object.Destroy(entry);
+            }
+            
 
         }
 
