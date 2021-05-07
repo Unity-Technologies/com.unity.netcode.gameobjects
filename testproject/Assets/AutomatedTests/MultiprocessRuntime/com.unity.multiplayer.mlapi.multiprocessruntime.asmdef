@@ -4,7 +4,8 @@
     "references": [
         "Unity.Multiplayer.MLAPI.Runtime",
         "UnityEngine.TestRunner",
-        "UnityEditor.TestRunner"
+        "UnityEditor.TestRunner",
+        "ScriptsForAutomatedTesting"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

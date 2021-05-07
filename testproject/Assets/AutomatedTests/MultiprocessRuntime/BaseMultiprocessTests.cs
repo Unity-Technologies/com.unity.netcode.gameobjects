@@ -15,8 +15,8 @@ namespace MLAPI.MultiprocessRuntimeTests
 {
     public class MultiprocessTests : CategoryAttribute
     {
-        public const string categoryName = "Multiprocess";
-        public MultiprocessTests(params string[] nodesRequired) : base(categoryName){}
+        public const string multiprocessCategoryName = "Multiprocess";
+        public MultiprocessTests(params string[] nodesRequired) : base(multiprocessCategoryName){}
     }
 
     [MultiprocessTests]
@@ -55,14 +55,11 @@ namespace MLAPI.MultiprocessRuntimeTests
         [OneTimeSetUp]
         public void SetupSuite()
         {
+            // todo cleanup comments
             // Build(TestCoordinator.buildPath);
 
             SceneManager.LoadScene(mainSceneName, LoadSceneMode.Single);
-            SceneManager.sceneLoaded += (scene, mode) =>
-            {
-                Debug.Log("starting MLAPI host");
-                NetworkManager.Singleton.StartHost();
-            };
+            SceneManager.sceneLoaded += OnSceneLoaded;
 
             Debug.Log("starting processes");
             for (int i = 0; i < NbWorkers; i++)
@@ -71,6 +68,12 @@ namespace MLAPI.MultiprocessRuntimeTests
             }
 
             Debug.Log("processes started");
+        }
+
+        private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+            Debug.Log("starting MLAPI host");
+            NetworkManager.Singleton.StartHost();
         }
 
         [UnitySetUp]
@@ -89,7 +92,7 @@ namespace MLAPI.MultiprocessRuntimeTests
         }
 
         [TearDown]
-        public void TeardownSingleTest()
+        public virtual void Teardown()
         {
             TestCoordinator.Instance.TestRunTeardown();
         }
@@ -99,9 +102,11 @@ namespace MLAPI.MultiprocessRuntimeTests
         {
             // if (NetworkManager.Singleton.IsHost)
             {
+                SceneManager.sceneLoaded -= OnSceneLoaded;
                 Debug.Log("Teardown, closing remote clients and stopping host");
                 TestCoordinator.Instance.CloseRemoteClientRpc();
                 NetworkManager.Singleton.StopHost();
+                // SceneManager.UnloadSceneAsync(mainSceneName);
             }
             // var startTime = Time.time;
             // // wait to run next tests until this test is completely torn down
@@ -118,7 +123,7 @@ namespace MLAPI.MultiprocessRuntimeTests
 
         public static void ExecuteSimpleCoordinatorTest()
         {
-            TestCoordinator.WriteResults(Time.time);
+            TestCoordinator.WriteResults(float.PositiveInfinity);
         }
 
         [UnityTest]
@@ -126,18 +131,17 @@ namespace MLAPI.MultiprocessRuntimeTests
         {
             //make sure the test coordinator works
             // Call the method
-            TestCoordinator.Instance.TriggerTestClientRpc(TestCoordinator.GetMethodInfo(ExecuteSimpleCoordinatorTest));
+            TestCoordinator.Instance.TriggerRpc(TestCoordinator.GetMethodInfo(ExecuteSimpleCoordinatorTest));
 
             for (int i = 0; i < NbWorkers; i++) // wait and test for the two clients
             {
-                yield return new WaitUntil(TestCoordinator.SetResults());
-                var resKey = TestCoordinator.Instance.CurrentResultClient;
+                yield return new WaitUntil(TestCoordinator.ResultIsSet());
+                var resKey = TestCoordinator.Instance.CurrentClientIdWithResults;
 
                 Debug.Log($"got results, asserting, result is {TestCoordinator.GetCurrentResult()} from key {resKey}");
-                Assert.True(TestCoordinator.GetCurrentResult() > 0f);
+                Assert.Greater(TestCoordinator.GetCurrentResult(), 0f);
             }
         }
-
     }
 }
 

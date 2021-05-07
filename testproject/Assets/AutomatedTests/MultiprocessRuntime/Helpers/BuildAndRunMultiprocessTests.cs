@@ -38,7 +38,8 @@ public class BuildAndRunMultiprocessTests : MonoBehaviour
     /// <exception cref="Exception"></exception>
     public static void Execute(bool build)
     {
-        var shouldContinue = !build || Build(TestCoordinator.buildPath);
+        var shouldContinue = !build || Build(TestCoordinator.buildPath); // todo try using     yield return new EnterPlayMode(); from edit mode tests so we can
+        // create builds from the test itself
         if (shouldContinue)
         {
             StartMainTestNodeInEditor();
@@ -99,7 +100,7 @@ public class BuildAndRunMultiprocessTests : MonoBehaviour
                 {
                     new Filter()
                     {
-                        categoryNames = new [] {MultiprocessTests.categoryName},
+                        categoryNames = new [] {MultiprocessTests.multiprocessCategoryName},
                         testMode = TestMode.PlayMode
                     },
                 },

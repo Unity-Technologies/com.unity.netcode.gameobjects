@@ -1,15 +1,13 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
-using System.Runtime.CompilerServices;
+using System.Linq;
 using MLAPI;
 using MLAPI.Messaging;
 using MLAPI.NetworkVariable;
 using MLAPI.NetworkVariable.Collections;
-using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
@@ -28,20 +26,21 @@ internal class TestCoordinator : NetworkBehaviour
     public static string buildPath => Path.Combine(Path.GetDirectoryName(Application.dataPath), "Builds/MultiprocessTestBuild");
     private bool m_ShouldShutdown;
 
-    private NetworkDictionary<ulong, float> m_TestResults = new NetworkDictionary<ulong, float>(new NetworkVariableSettings()
+    private NetworkDictionary<ulong, float> m_TestResults = new NetworkDictionary<ulong, float>(new NetworkVariableSettings
     {
         WritePermission = NetworkVariablePermission.Everyone,
         ReadPermission = NetworkVariablePermission.Everyone
-    });
-    private NetworkList<string> m_ErrorMessages = new NetworkList<string>(new NetworkVariableSettings()
+    }); // todo this is starting to look like the wrong way to sync results. If we have multiple results arriving one after the other, there's a risk they'll overwrite one another
+
+    private NetworkList<string> m_ErrorMessages = new NetworkList<string>(new NetworkVariableSettings
     {
         ReadPermission = NetworkVariablePermission.Everyone,
         WritePermission = NetworkVariablePermission.Everyone
     });
 
     [NonSerialized]
-    public List<ulong> AllClientResults = new List<ulong>();
-    public ulong CurrentResultClient { get; set; }
+    public List<ulong> AllClientIdWithResults = new List<ulong>();
+    public ulong CurrentClientIdWithResults { get; private set; }
 
     public static TestCoordinator Instance;
 
@@ -91,7 +90,10 @@ internal class TestCoordinator : NetworkBehaviour
     {
         m_TestResults.OnDictionaryChanged -= OnResultsChanged;
         m_ErrorMessages.OnListChanged -= OnErrorMessageChanged;
-        NetworkManager.OnClientDisconnectCallback -= OnClientDisconnectCallback;
+        if (NetworkManager != null)
+        {
+            NetworkManager.OnClientDisconnectCallback -= OnClientDisconnectCallback;
+        }
     }
 
     private void OnErrorMessageChanged(NetworkListEvent<string> listChangedEvent)
@@ -107,9 +109,18 @@ internal class TestCoordinator : NetworkBehaviour
         }
     }
 
-    private void OnResultsChanged(NetworkDictionaryEvent<ulong, float> dictChangedEvent)
+    private static void OnResultsChanged(NetworkDictionaryEvent<ulong, float> dictChangedEvent)
     {
-        Instance.AllClientResults.Add(dictChangedEvent.Key);
+        if (dictChangedEvent.Key != NetworkManager.Singleton.LocalClientId)
+        {
+            switch (dictChangedEvent.Type)
+            {
+                case NetworkDictionaryEvent<ulong, float>.EventType.Add:
+                case NetworkDictionaryEvent<ulong, float>.EventType.Value:
+                    Instance.AllClientIdWithResults.Add(dictChangedEvent.Key);
+                    break;
+            }
+        }
     }
 
     private void OnClientDisconnectCallback(ulong clientId)
@@ -141,31 +152,24 @@ internal class TestCoordinator : NetworkBehaviour
 
     public static float GetCurrentResult()
     {
-        var clientID = Instance.CurrentResultClient; // we're singlethreaded here right? there's no risk of calling this here?
+        var clientID = Instance.CurrentClientIdWithResults; // we're singlethreaded here right? there's no risk of calling this here?
         return Instance.m_TestResults[clientID];
     }
 
-    public static Func<bool> SetResults()
+    public static Func<bool> ResultIsSet()
     {
         var startWaitTime = Time.time;
         return () =>
         {
-            // if (Instance.m_ErrorMessages.Count != 0)
-            // {
-            //     foreach (var error in Instance.m_ErrorMessages)
-            //     {
-            //         Debug.LogError($"got error message {error}");
-            //     }
-            // }
             if (Time.time - startWaitTime > maxWaitTimeout)
             {
-                Assert.Fail($"timeout while waiting for results, didn't results for {maxWaitTimeout} seconds");
+                throw new Exception($"timeout while waiting for results, didn't get results for {maxWaitTimeout} seconds");
             }
 
-            if (Instance.AllClientResults.Count > 0)
+            if (Instance.AllClientIdWithResults.Count > 0)
             {
-                Instance.CurrentResultClient = Instance.AllClientResults[0];
-                Instance.AllClientResults.RemoveAt(0);
+                Instance.CurrentClientIdWithResults = Instance.AllClientIdWithResults[0];
+                Instance.AllClientIdWithResults.RemoveAt(0);
                 return true;
             }
 
@@ -173,11 +177,18 @@ internal class TestCoordinator : NetworkBehaviour
         };
     }
 
+    public void TriggerRpc(string methodInfoString)
+    {
+        var allClientsButMe = NetworkManager.Singleton.ConnectedClients.Keys.ToList().FindAll(client => client != NetworkManager.Singleton.LocalClientId);
+        TriggerInternalClientRpc(methodInfoString, new ClientRpcParams { Send = new ClientRpcSendParams { TargetClientIds = allClientsButMe.ToArray() } });
+    }
+
     [ClientRpc]
-    public void TriggerTestClientRpc(string methodInfoString)
+    public void TriggerInternalClientRpc(string methodInfoString, ClientRpcParams clientRpcParams = default)
     {
         try
         {
+            Debug.Log($"received client RPC for method {methodInfoString}");
             var split = methodInfoString.Split(methodFullNameSplitChar);
             (string classToExecute, string staticMethodToExecute) info = (split[0], split[1]);
 
@@ -229,8 +240,8 @@ internal class TestCoordinator : NetworkBehaviour
     {
         m_TestResults.Clear();
         m_ErrorMessages.Clear();
-        AllClientResults.Clear();
-        CurrentResultClient = 0;
+        AllClientIdWithResults.Clear();
+        CurrentClientIdWithResults = 0;
     }
 
     public static void StartWorkerNode()
