@@ -75,6 +75,11 @@ namespace MLAPI.SceneManagement
         /// </summary>
         public event NotifyClientAllClientsLoadedSceneDelegate OnNotifyClientAllClientsLoadedScene;
 
+        // This is a temporary solution for switching scenes during unit tests using NetworkSceneManager
+        // When the NetworkSceneManager is overhauled, this will probably no longer be needed.
+        internal delegate AsyncOperation OverrideLoadSceneAsyncDelegateHandler(string targetscene, LoadSceneMode scenemode);
+        internal OverrideLoadSceneAsyncDelegateHandler OverrideLoadSceneAsync;
+
         internal readonly HashSet<string> RegisteredSceneNames = new HashSet<string>();
         internal readonly Dictionary<string, uint> SceneNameToIndex = new Dictionary<string, uint>();
         internal readonly Dictionary<uint, string> SceneIndexToString = new Dictionary<uint, string>();
@@ -199,15 +204,24 @@ namespace MLAPI.SceneManagement
 
             IsSpawnedObjectsPendingInDontDestroyOnLoad = true;
 
-            // Switch scene
-            AsyncOperation sceneLoad = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Single);
+            AsyncOperation sceneLoad = null;
+
+            // See notes under OverrideLoadSceneAsyncDelegateHandler
+            // This is used for scene transitioning during unit tests
+            if (OverrideLoadSceneAsync != null)
+            {
+                sceneLoad = OverrideLoadSceneAsync.Invoke(sceneName, LoadSceneMode.Single);
+            }
+            else
+            {
+                sceneLoad = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Single);
+            }
 
             s_NextSceneName = sceneName;
 
             sceneLoad.completed += (AsyncOperation asyncOp2) => { OnSceneLoaded(switchSceneProgress.Guid, null); };
             switchSceneProgress.SetSceneLoadOperation(sceneLoad);
             OnSceneSwitchStarted?.Invoke(sceneLoad);
-
             return switchSceneProgress;
         }
 
