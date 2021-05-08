@@ -13,6 +13,8 @@ namespace MLAPI.Timing
         private int m_Tick;
         private float m_TickDuration;
 
+        internal float TickDuration => m_TickDuration;
+
         public float Time => m_Tick * m_TickInterval + m_TickDuration;
 
         public float FixedTime => m_Tick * m_TickInterval;
@@ -44,12 +46,13 @@ namespace MLAPI.Timing
             : this(tickRate)
         {
             this += time;
-        }
 
-        // public NetworkTime ToFixedTime()
-        // {
-        //     return new NetworkTime(TickRate, Tick, 0f);
-        // }
+            // This is due to floating point precision issues.
+            if (m_TickDuration < 0)
+            {
+                this += m_TickDuration;
+            }
+        }
 
         public static NetworkTime operator -(NetworkTime a, NetworkTime b)
         {
@@ -74,7 +77,7 @@ namespace MLAPI.Timing
             int tick = a.Tick + b.Tick;
             float tickDuration = a.m_TickDuration + b.m_TickDuration;
 
-            if (tickDuration > a.m_TickInterval)
+            if (tickDuration >= a.m_TickInterval)
             {
                 tick++;
                 tickDuration -= a.m_TickInterval;
@@ -87,8 +90,39 @@ namespace MLAPI.Timing
         {
             a.m_TickDuration += b;
 
+            // This is done to improve precision when incrementing by small amounts of time which is the case under normal operation.
+            if (a.m_TickDuration > 0)
+            {
+                // 5 is just a magic number which should be a good tradeoff between performance and precision.
+                if (a.m_TickDuration < a.m_TickInterval * 5f)
+                {
+                    while (a.m_TickDuration >= a.m_TickInterval )
+                    {
+                        a.m_TickDuration -= a.m_TickInterval;
+                        a.m_Tick++;
+                    }
+
+                    return a;
+                }
+            }
+            else
+            {
+                if (a.m_TickDuration > a.m_TickInterval * -5f)
+                {
+                    while (a.m_TickDuration < 0 )
+                    {
+                        a.m_TickDuration += a.m_TickInterval;
+                        a.m_Tick--;
+                    }
+
+                    return a;
+                }
+            }
+
+
+            // This is quite imprecise for large floating point numbers but there is no easy workaround for this.
             var deltaTicks = Mathf.FloorToInt(a.m_TickDuration * a.m_TickRate);
-            a.m_TickDuration %= a.m_TickInterval;
+            a.m_TickDuration -= deltaTicks * a.m_TickInterval;
 
             a.m_Tick += deltaTicks;
 
@@ -97,14 +131,7 @@ namespace MLAPI.Timing
 
         public static NetworkTime operator -(NetworkTime a, float b)
         {
-            a.m_TickDuration -= b;
-
-            var deltaTicks = Mathf.FloorToInt(a.m_TickDuration * a.m_TickRate);
-            a.m_TickDuration %= a.m_TickInterval;
-
-            a.m_Tick += deltaTicks;
-
-            return a;
+            return a + -b;
         }
     }
 }
