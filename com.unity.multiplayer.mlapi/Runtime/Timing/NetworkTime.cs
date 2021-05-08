@@ -90,36 +90,6 @@ namespace MLAPI.Timing
         {
             a.m_TickDuration += b;
 
-            // This is done to improve precision when incrementing by small amounts of time which is the case under normal operation.
-            if (a.m_TickDuration > 0)
-            {
-                // 5 is just a magic number which should be a good tradeoff between performance and precision.
-                if (a.m_TickDuration < a.m_TickInterval * 5f)
-                {
-                    while (a.m_TickDuration >= a.m_TickInterval )
-                    {
-                        a.m_TickDuration -= a.m_TickInterval;
-                        a.m_Tick++;
-                    }
-
-                    return a;
-                }
-            }
-            else
-            {
-                if (a.m_TickDuration > a.m_TickInterval * -5f)
-                {
-                    while (a.m_TickDuration < 0 )
-                    {
-                        a.m_TickDuration += a.m_TickInterval;
-                        a.m_Tick--;
-                    }
-
-                    return a;
-                }
-            }
-
-
             // This is quite imprecise for large floating point numbers but there is no easy workaround for this.
             var deltaTicks = Mathf.FloorToInt(a.m_TickDuration * a.m_TickRate);
             a.m_TickDuration -= deltaTicks * a.m_TickInterval;
