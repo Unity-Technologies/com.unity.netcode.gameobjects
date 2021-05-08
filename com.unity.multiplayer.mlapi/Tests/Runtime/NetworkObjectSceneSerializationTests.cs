@@ -24,9 +24,10 @@ namespace MLAPI.RuntimeTests
             var reader = PooledNetworkReader.Get(pooledBuffer);
             var invalidNetworkObjectOffsets = new List<long>();
             var invalidNetworkObjectIdCount = new List<int>();
+            var invalidNetworkObjects = new List<GameObject>();
             var invalidNetworkObjectFrequency = 3;
 
-            //Construct 50 NetworkObjects
+            // Construct 50 NetworkObjects
             for (int i = 0; i < 50; i++)
             {
                 // Inject an invalid NetworkObject every [invalidNetworkObjectFrequency] entry
@@ -44,25 +45,27 @@ namespace MLAPI.RuntimeTests
                     var networkVariableComponent = gameObject.AddComponent<NetworkBehaviourWithNetworkVariables>();
                     Assert.IsNotNull(networkVariableComponent);
 
-                    //Add invalid NetworkObject's starting position before serialization to handle trapping for the Debug.LogError message
-                    //that we know will be thrown
+                    // Add invalid NetworkObject's starting position before serialization to handle trapping for the Debug.LogError message
+                    // that we know will be thrown
                     invalidNetworkObjectOffsets.Add(pooledBuffer.Position);
 
                     networkObject.GlobalObjectIdHash = (uint)(i);
                     invalidNetworkObjectIdCount.Add(i);
 
-                    //Serialize the invalid NetworkObject 
+                    invalidNetworkObjects.Add(gameObject);
+
+                    // Serialize the invalid NetworkObject 
                     networkObject.SerializeSceneObject(writer, 0);
 
                     Debug.Log($"Invalid {nameof(NetworkObject)} Size {pooledBuffer.Position - invalidNetworkObjectOffsets[invalidNetworkObjectOffsets.Count - 1]}");
 
-                    //Now adjust how frequent we will inject invalid NetworkObjects
+                    // Now adjust how frequent we will inject invalid NetworkObjects
                     invalidNetworkObjectFrequency = Random.Range(2, 5);
 
                 }
                 else
                 {
-                    //Create a valid NetworkObject
+                    // Create a valid NetworkObject
                     var gameObject = new GameObject($"TestObject{i}");
 
                     Assert.IsNotNull(gameObject);
@@ -78,16 +81,16 @@ namespace MLAPI.RuntimeTests
 
                     networkObjectsToTest.Add(gameObject);
 
-                    //Serialize the valid NetworkObject
+                    // Serialize the valid NetworkObject
                     networkObject.SerializeSceneObject(writer, 0);
 
-                    //Add this valid NetworkObject into the PendinigSoftSyncObjects list
+                    // Add this valid NetworkObject into the PendinigSoftSyncObjects list
                     NetworkManagerHelper.NetworkManagerObject.SpawnManager.PendingSoftSyncObjects.Add(networkObject.GlobalObjectIdHash, networkObject);
                 }
             }
 
             var totalBufferSize = pooledBuffer.Position;
-            //Reset the position for reading this information
+            // Reset the position for reading this information
             pooledBuffer.Position = 0;
 
             var networkObjectsDeSerialized = new List<NetworkObject>();
@@ -103,7 +106,7 @@ namespace MLAPI.RuntimeTests
                     // Turn off Network Logging to avoid other errors that we know will happen after the below LogAssert.Expect message occurs.
                     NetworkManager.Singleton.LogLevel = Logging.LogLevel.Nothing;
 
-                    //Trap for this specific error message so we don't make Test Runner think we failed (it will fail on Debug.LogError)
+                    // Trap for this specific error message so we don't make Test Runner think we failed (it will fail on Debug.LogError)
                     UnityEngine.TestTools.LogAssert.Expect(LogType.Error, $"Failed to spawn {nameof(NetworkObject)} for Hash {invalidNetworkObjectIdCount[invalidNetworkObjectCount]}.");
 
                     invalidNetworkObjectCount++;
@@ -127,12 +130,19 @@ namespace MLAPI.RuntimeTests
             NetworkBufferPool.PutBackInPool(pooledBuffer);
 
             // Now validate all NetworkObjects returned against the original NetworkObjects we created
+            // after they validate, destroy the objects
             foreach (var entry in networkObjectsToTest)
             {
                 var entryNetworkObject = entry.GetComponent<NetworkObject>();
                 Assert.IsTrue(networkObjectsDeSerialized.Contains(entryNetworkObject));
+                Object.Destroy(entry);
             }
 
+            // Destroy the invalid network objects
+            foreach (var entry in invalidNetworkObjects)
+            {
+                Object.Destroy(entry);
+            }
         }
 
         [SetUp]
