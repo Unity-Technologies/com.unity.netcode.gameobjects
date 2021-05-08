@@ -247,10 +247,22 @@ namespace MLAPI
             rpcQueueContainer.EndAddQueueItemToFrame(serializer.Writer, RpcQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
         }
 
+        internal NetworkBehaviourAuthority NetworkBehaviourAuthority;
+
         /// <summary>
         /// Gets the NetworkManager that owns this NetworkBehaviour instance
         /// </summary>
         public NetworkManager NetworkManager => NetworkObject.NetworkManager;
+
+        /// <summary>
+        /// TODO
+        /// </summary>
+        public Authority Authority => NetworkBehaviourAuthority == NetworkBehaviourAuthority.FromNetworkObject ? NetworkObject.Authority : (Authority)NetworkBehaviourAuthority;
+
+        /// <summary>
+        /// TODO
+        /// </summary>
+        public bool HasAuthority => IsOwner ? Authority == Authority.Owner : (IsRunning && NetworkManager.IsServer && Authority == Authority.Server);
 
         /// <summary>
         /// Gets if the object is the the personal clients player object
@@ -369,6 +381,13 @@ namespace MLAPI
         {
             InitializeVariables();
         }
+
+        /// <summary>
+        /// Gets called once per network tick on all active NetworkBehaviours.
+        /// </summary>
+        /// <param name="time">The current time during the fixed tick. The time value is the fixed time based on the current tick without additional frame duration added to it.
+        /// Equal to <see cref="NetworkManager.PredictedTime"/> during <see cref="NetworkFixedUpdate"/></param>
+        public virtual void NetworkFixedUpdate(NetworkTime time){}
 
         /// <summary>
         /// Gets called when the local client gains ownership of this object

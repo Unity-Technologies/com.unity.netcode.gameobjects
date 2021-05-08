@@ -12,6 +12,8 @@ namespace UnityEditor
     public class NetworkBehaviourEditor : Editor
     {
         private bool m_Initialized;
+        private NetworkBehaviour m_NetworkBehaviour;
+        private Authority? m_ForcedAuthority;
         private readonly List<string> m_NetworkVariableNames = new List<string>();
         private readonly Dictionary<string, FieldInfo> m_NetworkVariableFields = new Dictionary<string, FieldInfo>();
         private readonly Dictionary<string, object> m_NetworkVariableObjects = new Dictionary<string, object>();
@@ -37,6 +39,17 @@ namespace UnityEditor
                     m_NetworkVariableNames.Add(fields[i].Name);
                     m_NetworkVariableFields.Add(fields[i].Name, fields[i]);
                 }
+            }
+
+            m_NetworkBehaviour = (NetworkBehaviour)target;
+
+            if (script.GetClass().GetCustomAttribute<ForceAuthorityAttribute>() is { } attribute)
+            {
+                m_ForcedAuthority = attribute.Authority;
+            }
+            else
+            {
+                m_ForcedAuthority = null;
             }
         }
 
@@ -169,6 +182,22 @@ namespace UnityEditor
 
                 var targetScript = scriptProperty.objectReferenceValue as MonoScript;
                 Init(targetScript);
+            }
+
+            if ((m_NetworkBehaviour.HasNetworkObject && m_NetworkBehaviour.NetworkObject.IsSpawned) == false)
+            {
+                if (m_ForcedAuthority.HasValue == false)
+                {
+                    m_NetworkBehaviour.NetworkBehaviourAuthority = (NetworkBehaviourAuthority)EditorGUILayout.EnumPopup(nameof(m_NetworkBehaviour.Authority), m_NetworkBehaviour.NetworkBehaviourAuthority);
+                }
+                else
+                {
+                    var guiEnabled = GUI.enabled;
+                    GUI.enabled = false;
+                    EditorGUILayout.EnumPopup(nameof(m_NetworkBehaviour.Authority), m_ForcedAuthority.Value);
+                    GUI.enabled = guiEnabled;
+                }
+
             }
 
             EditorGUI.BeginChangeCheck();

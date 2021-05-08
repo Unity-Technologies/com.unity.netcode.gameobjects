@@ -9,6 +9,7 @@ namespace MLAPI.Prototyping
     /// A prototype component for syncing transforms
     /// </summary>
     [AddComponentMenu("MLAPI/NetworkTransform")]
+    [ForceAuthority(Authority.Owner)]
     public class NetworkTransform : NetworkBehaviour
     {
         internal class ClientSendInfo

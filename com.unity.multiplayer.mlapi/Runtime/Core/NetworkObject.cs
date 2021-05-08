@@ -20,6 +20,9 @@ namespace MLAPI
     [DisallowMultipleComponent]
     public sealed class NetworkObject : MonoBehaviour
     {
+        [SerializeField]
+        private Authority m_Authority;
+
         [HideInInspector]
         [SerializeField]
         internal uint GlobalObjectIdHash;
@@ -109,6 +112,18 @@ namespace MLAPI
         }
 
         internal ulong? OwnerClientIdInternal = null;
+
+        /// <summary>
+        /// TODO
+        /// </summary>
+        public Authority Authority => m_Authority;
+
+        /// <summary>
+        /// TODO
+        /// </summary>
+        public bool HasAuthority => IsOwner ? Authority == Authority.Owner : (IsRunning && NetworkManager.IsServer && Authority == Authority.Server);
+
+        private bool IsRunning => NetworkManager != null && NetworkManager.IsListening;
 
         /// <summary>
         /// If true, the object will always be replicated as root on clients and the parent will be ignored.

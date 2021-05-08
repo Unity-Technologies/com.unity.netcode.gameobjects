@@ -43,6 +43,7 @@ namespace MLAPI.Editor
             {
                 var guiEnabled = GUI.enabled;
                 GUI.enabled = false;
+                EditorGUILayout.EnumPopup(nameof(NetworkObject.Authority), m_NetworkObject.Authority);
                 EditorGUILayout.TextField(nameof(NetworkObject.GlobalObjectIdHash), m_NetworkObject.GlobalObjectIdHash.ToString());
                 EditorGUILayout.TextField(nameof(NetworkObject.NetworkObjectId), m_NetworkObject.NetworkObjectId.ToString());
                 EditorGUILayout.TextField(nameof(NetworkObject.OwnerClientId), m_NetworkObject.OwnerClientId.ToString());
