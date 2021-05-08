@@ -76,22 +76,22 @@ public class SceneLoadingTest
             m_NetworkManager.StartHost();
         }
 
-        // [Reference]: Add any additional scenes we want to load here (just create the next index number for the index value)
-        //m_NetworkManager.SceneManager.AddRuntimeSceneName("SecondSceneToLoad", (uint)m_NetworkManager.SceneManager.RegisteredSceneNames.Count);
-
         // Next, we want to do a scene transition using NetworkSceneManager
         m_TargetSceneNameToLoad = "SecondSceneToLoad";
 
-        // Override NetworkSceneManager's scene loading method
-        // (this is a temporary work around for NetworkSceneManager expecting just the name)
-        // (this issue will be addressed when we overhaul the NetworkSceneManager)
-        m_NetworkManager.SceneManager.OverrideLoadSceneAsync = TestRunnerSceneLoadingOverride;
+        // Assure we are allowing runtime scene changes
+        // m_NetworkManager.NetworkConfig.AllowRuntimeSceneChanges = true;
+
+        // Even if your scene is in Build Settings, add any additional scenes we want the NetworkSceneManger to load in order to make it past
+        // the RegisteredSceneNames check.
+        // m_NetworkManager.SceneManager.AddRuntimeSceneName(m_TargetSceneNameToLoad, (uint)m_NetworkManager.SceneManager.RegisteredSceneNames.Count);
 
         // Store off the currently active scene so we can unload it
         primaryScene = SceneManager.GetActiveScene();
 
         // Switch the scene using NetworkSceneManager
-        var switchSceneProgress = m_NetworkManager.SceneManager.SwitchScene(m_TargetSceneNameToLoad);
+        var switchSceneProgress = m_NetworkManager.SceneManager.SwitchScene(m_TargetSceneNameToLoad, LoadSceneMode.Additive);
+
         switchSceneProgress.OnComplete += SwitchSceneProgress_OnComplete;
         m_SceneLoaded = false;
 
@@ -117,7 +117,7 @@ public class SceneLoadingTest
 
         // Set the scene to be active if it is not the active scene
         // (This is to assure spawned objects instantiate in the newly loaded scene)
-        if (SceneManager.GetActiveScene().name != m_LoadedScene.name)
+        if (!SceneManager.GetActiveScene().name.Contains(m_LoadedScene.name))
         {
             Debug.Log($"Loaded scene not active, activating scene {m_TargetSceneNameToLoad}");
             SceneManager.SetActiveScene(m_LoadedScene);
@@ -165,11 +165,19 @@ public class SceneLoadingTest
         // Done!
     }
 
+    /// <summary>
+    /// Checks to make sure the scene unloaded
+    /// </summary>
+    /// <param name="obj"></param>
     private void UnloadAsync_completed(AsyncOperation obj)
     {
         m_SceneLoaded = true;
     }
 
+    /// <summary>
+    /// NetworkSceneManager switch scene progress OnComplete event
+    /// </summary>
+    /// <param name="timedOut"></param>
     private void SwitchSceneProgress_OnComplete(bool timedOut)
     {
         m_TimedOut = timedOut;
@@ -183,22 +191,6 @@ public class SceneLoadingTest
                 m_LoadedScene = scene;
             }
         }
-    }
-
-    /// <summary>
-    /// Overrides what NetworkSceneManager uses to load scenes
-    /// </summary>
-    /// <param name="targetscene">string</param>
-    /// <param name="loadSceneMode">LoadSceneMode</param>
-    /// <returns>AsyncOperation</returns>
-    public AsyncOperation TestRunnerSceneLoadingOverride(string targetscene, LoadSceneMode loadSceneMode)
-    {
-        var sceneToBeLoaded = targetscene;
-        if (!targetscene.Contains("Assets/ManualTests/SceneTransitioning/"))
-        {
-            sceneToBeLoaded = $"Assets/Tests/Manual/SceneTransitioning/{targetscene}.unity";
-        }
-        return SceneManager.LoadSceneAsync(sceneToBeLoaded, LoadSceneMode.Additive);
     }
 
     /// <summary>
