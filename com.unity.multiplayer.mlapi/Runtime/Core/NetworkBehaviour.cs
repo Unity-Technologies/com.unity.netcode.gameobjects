@@ -503,6 +503,16 @@ namespace MLAPI
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_NetworkBehaviourUpdate.Begin();
 #endif
+
+            // Call NetworkFixedUpdate on each NetworkBehaviour before syncing variables
+            foreach (var sobj in networkManager.SpawnManager.SpawnedObjectsList)
+            {
+                for (int k = 0; k < sobj.ChildNetworkBehaviours.Count; k++)
+                {
+                    sobj.ChildNetworkBehaviours[k].NetworkFixedUpdate(networkManager.PredictedTime);
+                }
+            }
+
             try
             {
                 if (networkManager.IsServer)
