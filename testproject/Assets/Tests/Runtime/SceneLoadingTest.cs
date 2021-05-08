@@ -8,6 +8,13 @@ using UnityEngine.SceneManagement;
 using UnityEditor.SceneManagement;
 using MLAPI;
 
+/// <summary>
+/// This is nothing more than a template to follow in order to
+/// use a scene to configure your NetworkManager as well as how
+/// to switching between scenes without blowing away the temporary
+/// test runner scene.  This also shows how to switch scenes using
+/// NetworkSceneManager during a unit test.
+/// </summary>
 public class SceneLoadingTest
 {
     private NetworkManager m_NetworkManager;
@@ -79,11 +86,9 @@ public class SceneLoadingTest
         // Next, we want to do a scene transition using NetworkSceneManager
         m_TargetSceneNameToLoad = "SecondSceneToLoad";
 
+        // Reference code for adding scenes not included in build settings:
         // Assure we are allowing runtime scene changes
         // m_NetworkManager.NetworkConfig.AllowRuntimeSceneChanges = true;
-
-        // Even if your scene is in Build Settings, add any additional scenes we want the NetworkSceneManger to load in order to make it past
-        // the RegisteredSceneNames check.
         // m_NetworkManager.SceneManager.AddRuntimeSceneName(m_TargetSceneNameToLoad, (uint)m_NetworkManager.SceneManager.RegisteredSceneNames.Count);
 
         // Store off the currently active scene so we can unload it
