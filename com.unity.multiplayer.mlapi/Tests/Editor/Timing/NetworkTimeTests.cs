@@ -40,6 +40,14 @@ namespace MLAPI.EditorTests.Timing
         }
 
         [Test]
+        public void NetworkTimeDefault()
+        {
+            NetworkTime defaultTime = default;
+
+            Assert.IsTrue(defaultTime.Time == 0f);
+        }
+
+        [Test]
         public void NetworkTimeAddFloatTest()
         {
             float a = 34f;

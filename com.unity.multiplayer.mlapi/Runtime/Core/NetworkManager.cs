@@ -62,9 +62,9 @@ namespace MLAPI
         /// </summary>
         private float NetworkTime => Time.unscaledTime + m_CurrentNetworkTimeOffset;
 
-        public NetworkTime PredictedTime { get; private set; }
+        public NetworkTime PredictedTime => networkTimeSystem?.PredictedTime ?? new NetworkTime() ;
 
-        public NetworkTime ServerTime { get; private set; }
+        public NetworkTime ServerTime  => networkTimeSystem?.ServerTime ?? new NetworkTime() ;
 
         //private float m_NetworkTimeOffset;
         private float m_CurrentNetworkTimeOffset;
