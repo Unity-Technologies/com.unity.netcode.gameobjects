@@ -53,7 +53,7 @@ namespace MLAPI.RuntimeTests
         /// <returns>true if it was instantiated or is already instantiate otherwise false means it failed to instantiate</returns>
         public static bool StartNetworkManager(out NetworkManager networkManager, NetworkManagerOperatingMode managerMode = NetworkManagerOperatingMode.Host, NetworkConfig networkConfig = null)
         {
-            //If we are changing the current manager mode and the current manager mode is not "None", then stop the NetworkManager mode
+            // If we are changing the current manager mode and the current manager mode is not "None", then stop the NetworkManager mode
             if (CurrentNetworkManagerMode != managerMode && CurrentNetworkManagerMode != NetworkManagerOperatingMode.None)
             {
                 StopNetworkManagerMode();
@@ -63,7 +63,7 @@ namespace MLAPI.RuntimeTests
             {
                 NetworkManagerGameObject = new GameObject(nameof(NetworkManager));
                 NetworkManagerObject = NetworkManagerGameObject.AddComponent<NetworkManager>();
-                
+
                 if (NetworkManagerObject == null)
                 {
                     networkManager = null;
@@ -79,7 +79,7 @@ namespace MLAPI.RuntimeTests
                     networkConfig = new NetworkConfig
                     {
                         EnableSceneManagement = false,
-                        RegisteredScenes = new List<string>() {SceneManager.GetActiveScene().name}
+                        RegisteredScenes = new List<string>() { SceneManager.GetActiveScene().name }
                     };
                 }
                 else
@@ -88,7 +88,7 @@ namespace MLAPI.RuntimeTests
                 }
 
                 NetworkManagerObject.NetworkConfig = networkConfig;
-                
+
                 unetTransport.ConnectAddress = "127.0.0.1";
                 unetTransport.ConnectPort = 7777;
                 unetTransport.ServerListenPort = 7777;
@@ -97,7 +97,7 @@ namespace MLAPI.RuntimeTests
                 unetTransport.MessageSendMode = UNetTransport.SendMode.Immediately;
                 NetworkManagerObject.NetworkConfig.NetworkTransport = unetTransport;
 
-                //Starts the network manager in the mode specified
+                // Starts the network manager in the mode specified
                 StartNetworkManagerMode(managerMode);
             }
 
@@ -115,7 +115,7 @@ namespace MLAPI.RuntimeTests
         {
             var gameObjectId = Guid.NewGuid();
 
-            //Create the player object that we will spawn as a host
+            // Create the player object that we will spawn as a host
             var gameObject = new GameObject(nameOfGameObject);
 
             Assert.IsNotNull(gameObject);
@@ -169,24 +169,37 @@ namespace MLAPI.RuntimeTests
             {
                 case NetworkManagerOperatingMode.Host:
                     {
-                        //Starts the host
+                        // Starts the host
                         NetworkManagerObject.StartHost();
                         break;
                     }
                 case NetworkManagerOperatingMode.Server:
                     {
-                        //Starts the server
+                        // Starts the server
                         NetworkManagerObject.StartServer();
                         break;
                     }
                 case NetworkManagerOperatingMode.Client:
                     {
-                        //Starts the client
+                        // Starts the client
                         NetworkManagerObject.StartClient();
                         break;
                     }
             }
-            Debug.Log($"{CurrentNetworkManagerMode} started.");
+
+            // If we started an MLAPI session
+            if (CurrentNetworkManagerMode != NetworkManagerOperatingMode.None)
+            {
+                // With some unit tests the Singleton can still be from a previous unit test
+                // depending upon the order of operations that occurred. 
+                if (NetworkManager.Singleton != NetworkManagerObject)
+                {
+                    NetworkManagerObject.SetSingleton();
+                }
+
+                // Only log this if we started an MLAPI session
+                Debug.Log($"{CurrentNetworkManagerMode} started.");
+            }
         }
 
         /// <summary>
@@ -198,19 +211,19 @@ namespace MLAPI.RuntimeTests
             {
                 case NetworkManagerOperatingMode.Host:
                     {
-                        //Stop the host
+                        // Stop the host
                         NetworkManagerObject.StopHost();
                         break;
                     }
                 case NetworkManagerOperatingMode.Server:
                     {
-                        //Stop the server
+                        // Stop the server
                         NetworkManagerObject.StopServer();
                         break;
                     }
                 case NetworkManagerOperatingMode.Client:
                     {
-                        //Stop the client
+                        // Stop the client
                         NetworkManagerObject.StopClient();
                         break;
                     }
@@ -220,10 +233,10 @@ namespace MLAPI.RuntimeTests
             CurrentNetworkManagerMode = NetworkManagerOperatingMode.None;
         }
 
-        //This is called, even if we assert and exit early from a test
+        // This is called, even if we assert and exit early from a test
         public static void ShutdownNetworkManager()
         {
-            //clean up any game objects created with custom unit testing components
+            // clean up any game objects created with custom unit testing components
             foreach (var entry in InstantiatedGameObjects)
             {
                 UnityEngine.Object.Destroy(entry.Value);
@@ -246,9 +259,9 @@ namespace MLAPI.RuntimeTests
 
         public static bool BuffersMatch(int indexOffset, long targetSize, byte[] sourceArray, byte[] originalArray)
         {
-            long largeInt64Blocks = targetSize >> 3; //Divide by 8
+            long largeInt64Blocks = targetSize >> 3; // Divide by 8
             int originalArrayOffset = 0;
-            //process by 8 byte blocks if we can
+            // process by 8 byte blocks if we can
             for (long i = 0; i < largeInt64Blocks; i++)
             {
                 if (BitConverter.ToInt64(sourceArray, indexOffset) != BitConverter.ToInt64(originalArray, originalArrayOffset))
@@ -262,7 +275,7 @@ namespace MLAPI.RuntimeTests
             long offset = largeInt64Blocks * 8;
             long remainder = targetSize - offset;
 
-            //4 byte block
+            // 4 byte block
             if (remainder >= 4)
             {
                 if (BitConverter.ToInt32(sourceArray, indexOffset) != BitConverter.ToInt32(originalArray, originalArrayOffset))
@@ -274,7 +287,7 @@ namespace MLAPI.RuntimeTests
                 offset += 4;
             }
 
-            //Remainder of bytes < 4
+            // Remainder of bytes < 4
             if (targetSize - offset > 0)
             {
                 for (long i = 0; i < (targetSize - offset); i++)

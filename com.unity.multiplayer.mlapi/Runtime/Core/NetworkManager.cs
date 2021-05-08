@@ -54,6 +54,7 @@ namespace MLAPI
 
         internal RpcQueueContainer RpcQueueContainer { get; private set; }
         internal NetworkTickSystem NetworkTickSystem { get; private set; }
+        internal SnapshotSystem SnapshotSystem { get; private set; }
         public NetworkPrefabHandler PrefabHandler { get; private set; }
 
         /// <summary>
@@ -342,7 +343,16 @@ namespace MLAPI
                 return;
             }
 
-            // This 'if' should never enter
+            //This 'if' should never enter
+            if (SnapshotSystem != null)
+            {
+                SnapshotSystem.Dispose();
+                SnapshotSystem = null;
+            }
+
+            SnapshotSystem = new SnapshotSystem();
+
+            //This 'if' should never enter
             if (NetworkTickSystem != null)
             {
                 NetworkTickSystem.Dispose();
@@ -762,6 +772,12 @@ namespace MLAPI
                 RpcQueueContainer = null;
             }
 
+            if (SnapshotSystem != null)
+            {
+                SnapshotSystem.Dispose();
+                SnapshotSystem = null;
+            }
+
             if (NetworkTickSystem != null)
             {
                 NetworkTickSystem.Dispose();
@@ -1154,6 +1170,9 @@ namespace MLAPI
 
                 switch (messageType)
                 {
+                    case NetworkConstants.SNAPSHOT_DATA:
+                        InternalMessageHandler.HandleSnapshot(clientId, messageStream);
+                        break;
                     case NetworkConstants.CONNECTION_REQUEST:
                         if (IsServer)
                         {
@@ -1261,7 +1280,7 @@ namespace MLAPI
                         {
                             MessageHandler.HandleAllClientsSwitchSceneCompleted(clientId, messageStream);
                         }
-                        
+
                         break;
                     case NetworkConstants.SERVER_LOG:
                         if (IsServer && NetworkConfig.EnableNetworkLogs)
