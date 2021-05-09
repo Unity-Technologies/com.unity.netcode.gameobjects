@@ -21,7 +21,7 @@ namespace MLAPI
     public sealed class NetworkObject : MonoBehaviour
     {
         [SerializeField]
-        private Authority m_Authority;
+        private Authority m_Authority = Authority.Owner;
 
         [HideInInspector]
         [SerializeField]
