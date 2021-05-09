@@ -18,7 +18,7 @@ namespace MLAPI.RuntimeTests
             for (int i = 0; i < clientCount; i++)
             {
                 // Create gameObject
-                GameObject go = new GameObject("NetworkManager - Client - " + i);
+                var go = new GameObject("NetworkManager - Client - " + i);
 
                 // Create networkManager component
                 clients[i] = go.AddComponent<NetworkManager>();
@@ -35,7 +35,7 @@ namespace MLAPI.RuntimeTests
 
             {
                 // Create gameObject
-                GameObject go = new GameObject("NetworkManager - Server");
+                var go = new GameObject("NetworkManager - Server");
 
                 // Create networkManager component
                 server = go.AddComponent<NetworkManager>();
