@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using MLAPI.Editor;
 using MLAPI.Transports;
@@ -229,13 +228,13 @@ public class SIPTransport : NetworkTransport
             return NetworkEvent.Nothing;
         }
 
-        Event @event = m_LocalConnection.IncomingBuffer.Dequeue();
+        var peerEvent = m_LocalConnection.IncomingBuffer.Dequeue();
 
-        clientId = @event.ConnectionId;
-        channel = @event.Channel;
-        payload = @event.Data;
+        clientId = peerEvent.ConnectionId;
+        channel = peerEvent.Channel;
+        payload = peerEvent.Data;
         receiveTime = 0;
 
-        return @event.Type;
+        return peerEvent.Type;
     }
 }
