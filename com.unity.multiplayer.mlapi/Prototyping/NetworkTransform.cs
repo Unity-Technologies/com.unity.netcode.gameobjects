@@ -283,7 +283,7 @@ namespace MLAPI.Prototyping
             {
                 for (int i = 0; i < NetworkManager.ConnectedClientsList.Count; i++)
                 {
-                    if (!m_ClientSendInfo.TryGetValue(NetworkManager.Singleton.ConnectedClientsList[i].ClientId, out ClientSendInfo info))
+                    if (!m_ClientSendInfo.TryGetValue(NetworkManager.ConnectedClientsList[i].ClientId, out ClientSendInfo info))
                     {
                         info = new ClientSendInfo() { LastMissedPosition = null, LastMissedRotation = null, LastSent = 0 };
                         m_ClientSendInfo.Add(NetworkManager.Singleton.ConnectedClientsList[i].ClientId, info);
