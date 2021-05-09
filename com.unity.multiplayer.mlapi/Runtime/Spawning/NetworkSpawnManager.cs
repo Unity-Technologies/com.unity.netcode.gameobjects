@@ -499,12 +499,6 @@ namespace MLAPI.Spawning
             {
                 if (networkObjects[i].NetworkManager == NetworkManager)
                 {
-                    // if (CustomDestroyHandlers.TryGetValue(networkObjects[i].PrefabHash, out DestroyHandlerDelegate destroyHandler))
-                    // {
-                    //     destroyHandler(networkObjects[i]);
-                    //     OnDestroyObject(networkObjects[i].NetworkObjectId, false);
-                    // }
-                    // else
                     if (networkObjects[i].IsSceneObject != null && networkObjects[i].IsSceneObject.Value == false)
                     {
                         if (NetworkManager.PrefabHandler.ContainsHandler(networkObjects[i]))
