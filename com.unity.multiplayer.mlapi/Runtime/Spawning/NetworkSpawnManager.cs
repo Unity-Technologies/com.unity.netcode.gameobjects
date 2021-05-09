@@ -73,7 +73,7 @@ namespace MLAPI.Spawning
         /// <returns>The player object with a given clientId or null if one does not exist</returns>
         public NetworkObject GetPlayerNetworkObject(ulong clientId)
         {
-            if(NetworkManager.ConnectedClients.TryGetValue(clientId, out NetworkClient networkClient))
+            if (NetworkManager.ConnectedClients.TryGetValue(clientId, out NetworkClient networkClient))
             {
                 return networkClient.PlayerObject;
             }
@@ -165,7 +165,10 @@ namespace MLAPI.Spawning
                 }
                 else
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Cannot find parent. Parent objects always have to be spawned and replicated BEFORE the child");
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                    {
+                        NetworkLog.LogWarning("Cannot find parent. Parent objects always have to be spawned and replicated BEFORE the child");
+                    }
                 }
             }
 

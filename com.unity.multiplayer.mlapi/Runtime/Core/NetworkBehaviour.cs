@@ -676,7 +676,7 @@ namespace MLAPI
                                             NetworkVariableFields[k].WriteDelta(varBuffer);
                                             varBuffer.PadBuffer();
 
-                                            writer.WriteUInt16Packed((ushort) varBuffer.Length);
+                                            writer.WriteUInt16Packed((ushort)varBuffer.Length);
                                             buffer.CopyFrom(varBuffer);
                                         }
                                     }
