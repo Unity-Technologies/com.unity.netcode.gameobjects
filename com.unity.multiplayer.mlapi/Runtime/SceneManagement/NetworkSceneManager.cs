@@ -134,12 +134,13 @@ namespace MLAPI.SceneManagement
         /// Switches to a scene with a given name. Can only be called from Server
         /// </summary>
         /// <param name="sceneName">The name of the scene to switch to</param>
-        public SceneSwitchProgress SwitchScene(string sceneName)
+        /// <param name="loadSceneMode">The mode to load the scene (Additive vs Single)</param>
+        /// <returns>SceneSwitchProgress</returns>
+        public SceneSwitchProgress SwitchScene(string sceneName, LoadSceneMode loadSceneMode = LoadSceneMode.Single)
         {
             if (!m_NetworkManager.IsServer)
             {
                 throw new NotServerException("Only server can start a scene switch");
-
             }
 
             if (!m_NetworkManager.NetworkConfig.EnableSceneManagement)
@@ -200,7 +201,7 @@ namespace MLAPI.SceneManagement
             IsSpawnedObjectsPendingInDontDestroyOnLoad = true;
 
             // Switch scene
-            AsyncOperation sceneLoad = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Single);
+            AsyncOperation sceneLoad = SceneManager.LoadSceneAsync(sceneName, loadSceneMode);
 
             s_NextSceneName = sceneName;
 
