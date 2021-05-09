@@ -1,11 +1,8 @@
 using System.Collections;
-using System.IO;
-using System.Reflection;
 using UnityEngine;
 using NUnit.Framework;
 using UnityEngine.TestTools;
 using UnityEngine.SceneManagement;
-using UnityEditor.SceneManagement;
 using MLAPI;
 
 /// <summary>
@@ -27,28 +24,28 @@ public class SceneLoadingTest
     [UnityTest]
     public IEnumerator SceneLoading()
     {
-        //Keep track of the original scene
+        // Keep track of the original test scene
         Scene originalScene = SceneManager.GetActiveScene();
 
         // Load the first scene with the predefined NetworkManager
-        m_TargetSceneNameToLoad = "Assets/Tests/Manual/SceneTransitioning/SceneTransitioningTest.unity";
+        m_TargetSceneNameToLoad = "SceneTransitioningTest";
         SceneManager.sceneLoaded += SceneManager_sceneLoaded;
-        SceneManager.LoadScene(m_TargetSceneNameToLoad,LoadSceneMode.Additive);
+        SceneManager.LoadScene(m_TargetSceneNameToLoad, LoadSceneMode.Additive);
 
-        //Wait for the scene to load
+        // Wait for the scene to load
         var timeOut = Time.realtimeSinceStartup + 5;
         m_TimedOut = false;
-        while(!m_SceneLoaded)
+        while (!m_SceneLoaded)
         {
             yield return new WaitForSeconds(0.01f);
-            if(timeOut < Time.realtimeSinceStartup)
+            if (timeOut < Time.realtimeSinceStartup)
             {
                 m_TimedOut = true;
                 break;
             }
         }
 
-        //Verify it loaded
+        // Verify it loaded
         Assert.IsFalse(m_TimedOut);
         Assert.IsTrue(m_SceneLoaded);
         Assert.NotNull(m_LoadedScene);
@@ -95,9 +92,9 @@ public class SceneLoadingTest
         primaryScene = SceneManager.GetActiveScene();
 
         // Switch the scene using NetworkSceneManager
-        var switchSceneProgress = m_NetworkManager.SceneManager.SwitchScene(m_TargetSceneNameToLoad, LoadSceneMode.Additive);
+        var sceneSwitchProgress = m_NetworkManager.SceneManager.SwitchScene(m_TargetSceneNameToLoad, LoadSceneMode.Additive);
 
-        switchSceneProgress.OnComplete += SwitchSceneProgress_OnComplete;
+        sceneSwitchProgress.OnComplete += SwitchSceneProgress_OnComplete;
         m_SceneLoaded = false;
 
         // Wait for the scene to load
@@ -118,7 +115,7 @@ public class SceneLoadingTest
         Assert.IsTrue(m_SceneLoaded);
         Assert.NotNull(m_LoadedScene);
 
-        switchSceneProgress.OnComplete -= SwitchSceneProgress_OnComplete;
+        sceneSwitchProgress.OnComplete -= SwitchSceneProgress_OnComplete;
 
         // Set the scene to be active if it is not the active scene
         // (This is to assure spawned objects instantiate in the newly loaded scene)
@@ -126,7 +123,7 @@ public class SceneLoadingTest
         {
             Debug.Log($"Loaded scene not active, activating scene {m_TargetSceneNameToLoad}");
             SceneManager.SetActiveScene(m_LoadedScene);
-            Assert.IsTrue(SceneManager.GetActiveScene().name == m_LoadedScene.name);         
+            Assert.IsTrue(SceneManager.GetActiveScene().name == m_LoadedScene.name);
         }
 
         // Now unload the previous scene
@@ -148,14 +145,14 @@ public class SceneLoadingTest
         }
 
         // We are now done with the NetworkSceneManager switch scene test so stop the host
-        m_NetworkManager.StopHost();           
+        m_NetworkManager.StopHost();
 
         // Set the original Test Runner Scene to be the active scene
         SceneManager.SetActiveScene(originalScene);
 
         // Unload the previously active scene
         SceneManager.UnloadSceneAsync(primaryScene).completed += UnloadAsync_completed;
-        
+
         // Wait for the scene to unload
         timeOut = Time.realtimeSinceStartup + 5;
         while (!m_SceneLoaded)
@@ -204,7 +201,7 @@ public class SceneLoadingTest
     /// </summary>
     private void SceneManager_sceneLoaded(Scene scene, LoadSceneMode sceneMode)
     {
-        if(scene != null && m_TargetSceneNameToLoad.Contains(scene.name))
+        if (scene != null && m_TargetSceneNameToLoad.Contains(scene.name))
         {
             m_SceneLoaded = true;
             m_LoadedScene = scene;
