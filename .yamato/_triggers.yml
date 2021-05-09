@@ -1,6 +1,5 @@
 {% metadata_file .yamato/project.metafile %}
 ---
-
 develop_nightly_trigger:
   name: Develop Branch Nightly Trigger
   triggers:
@@ -20,11 +19,14 @@ develop_nightly_trigger:
 pull_request_trigger:
   name: Pull Request Trigger on {{ test_editors.first }} (master, develop, & release branches)
   dependencies:
+    - .yamato/project-standards.yml#standards_{{ projects.first.name }}
 {% for project in projects -%}
-    - .yamato/project-tests.yml#validate_{{ project.packages.first.name }}_{{ test_platforms.first.name }}_{{ test_editors.first }}
+{% for package in project.packages -%}
+    - .yamato/project-tests.yml#validate_{{ package.name }}_{{ test_platforms.first.name }}_{{ test_editors.first }}
 {% for platform in test_platforms -%}
-
-    - .yamato/package-tests.yml#test_{{ project.packages.first.name }}_{{ test_editors.first }}_{{ platform.name }}
+    - .yamato/package-tests.yml#test_{{ package.name }}_{{ test_editors.first }}_{{ platform.name }}
+    - .yamato/project-tests.yml#test_{{ project.name }}_{{ test_editors.first }}_{{ platform.name }}
+{% endfor -%}
 {% endfor -%}
 {% endfor -%}
   triggers:
@@ -56,10 +58,12 @@ badges_test_trigger:
         - "upm-ci~/packages/**/*"
   dependencies:
 {% for project in projects -%}
-    - .yamato/project-tests.yml#validate_{{ project.packages.first.name }}_{{ test_platforms.first.name }}_{{ test_editors.first }}
+{% for package in project.packages -%}
+    - .yamato/project-tests.yml#validate_{{ package.name }}_{{ test_platforms.first.name }}_{{ test_editors.first }}
 {% for editor in test_editors -%}
 {% for platform in test_platforms -%}
-    - .yamato/package-tests.yml#test_{{ project.packages.first.name }}_{{ editor }}_{{ platform.name }}
+    - .yamato/package-tests.yml#test_{{ package.name }}_{{ editor }}_{{ platform.name }}
+{% endfor -%}
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}

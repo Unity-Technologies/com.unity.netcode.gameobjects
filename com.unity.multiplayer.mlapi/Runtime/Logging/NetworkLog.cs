@@ -66,7 +66,7 @@ namespace MLAPI.Logging
                     writer.WriteByte((byte)logType);
                     writer.WriteStringPacked(message);
 
-                    InternalMessageSender.Send(NetworkManager.Singleton.ServerClientId, NetworkConstants.SERVER_LOG, NetworkChannel.Internal, buffer);
+                    NetworkManager.Singleton.MessageSender.Send(NetworkManager.Singleton.ServerClientId, NetworkConstants.SERVER_LOG, NetworkChannel.Internal, buffer);
                 }
             }
         }

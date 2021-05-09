@@ -243,7 +243,7 @@ namespace MLAPI.Serialization
             {
                 ulong networkObjectId = ReadUInt64Packed();
 
-                if (NetworkSpawnManager.SpawnedObjects.TryGetValue(networkObjectId, out NetworkObject networkObject))
+                if (NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(networkObjectId, out NetworkObject networkObject))
                 {
                     return networkObject.gameObject;
                 }
@@ -260,7 +260,7 @@ namespace MLAPI.Serialization
             {
                 ulong networkObjectId = ReadUInt64Packed();
 
-                if (NetworkSpawnManager.SpawnedObjects.TryGetValue(networkObjectId, out NetworkObject networkObject))
+                if (NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(networkObjectId, out NetworkObject networkObject))
                 {
                     return networkObject;
                 }
@@ -277,7 +277,7 @@ namespace MLAPI.Serialization
             {
                 ulong networkObjectId = ReadUInt64Packed();
                 ushort behaviourId = ReadUInt16Packed();
-                if (NetworkSpawnManager.SpawnedObjects.TryGetValue(networkObjectId, out NetworkObject networkObject))
+                if (NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(networkObjectId, out NetworkObject networkObject))
                 {
                     return networkObject.GetNetworkBehaviourAtOrderIndex(behaviourId);
                 }
@@ -429,7 +429,7 @@ namespace MLAPI.Serialization
                 read |= (uint)ReadByte() << (i << 3);
             }
 
-            return (((float)read / ((0x100 * bytes) - 1)) * (minValue + maxValue)) - minValue;
+            return ((float)read / ((0x100 * bytes) - 1) * (maxValue - minValue)) + minValue;
         }
 
         /// <summary>
@@ -452,7 +452,7 @@ namespace MLAPI.Serialization
                 read |= (ulong)ReadByte() << (i << 3);
             }
 
-            return (((double)read / ((0x100 * bytes) - 1)) * (minValue + maxValue)) - minValue;
+            return ((double)read / ((0x100 * bytes) - 1) * (maxValue - minValue)) + minValue;
         }
 
         /// <summary>

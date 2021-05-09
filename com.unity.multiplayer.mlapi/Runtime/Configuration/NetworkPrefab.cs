@@ -4,49 +4,43 @@ using UnityEngine;
 
 namespace MLAPI.Configuration
 {
+    internal enum NetworkPrefabOverride
+    {
+        None,
+        Prefab,
+        Hash
+    }
+
     /// <summary>
-    /// A class that represents a NetworkPrefab
+    /// Class that represents a NetworkPrefab
     /// </summary>
     [Serializable]
-    public class NetworkPrefab
+    internal class NetworkPrefab
     {
-        internal ulong Hash
-        {
-            get
-            {
-                if (Prefab == null)
-                {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                    {
-                        NetworkLog.LogWarning($"{nameof(NetworkPrefab)} is not assigned");
-                    }
-
-                    return 0;
-                }
-
-                var networkObject = Prefab.GetComponent<NetworkObject>();
-                if (networkObject == null)
-                {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                    {
-                        NetworkLog.LogWarning($"{nameof(NetworkPrefab)} {Prefab.name} does not have a {nameof(NetworkObject)}");
-                    }
-
-                    return 0;
-                }
-
-                return networkObject.PrefabHash;
-            }
-        }
+        /// <summary>
+        /// The override setttings for this NetworkPrefab
+        /// </summary>
+        public NetworkPrefabOverride Override;
 
         /// <summary>
-        /// The gameobject of the prefab
+        /// Asset reference of the network prefab
         /// </summary>
         public GameObject Prefab;
 
         /// <summary>
-        /// Whether or not this is a playerPrefab
+        /// Used when prefab is selected for the source prefab to override value (i.e. direct reference, the prefab is within the same project)
+        /// We keep a separate value as the user might want to have something different than the default Prefab for the SourcePrefabToOverride
         /// </summary>
-        public bool PlayerPrefab;
+        public GameObject SourcePrefabToOverride;
+
+        /// <summary>
+        /// Used when hash is selected for the source prefab to override value (i.e. a direct reference is not possible such as in a multi-project pattern)
+        /// </summary>
+        public uint SourceHashToOverride;
+
+        /// <summary>
+        /// The prefab to replace (override) the source prefab with
+        /// </summary>
+        public GameObject OverridingTargetPrefab;
     }
 }
