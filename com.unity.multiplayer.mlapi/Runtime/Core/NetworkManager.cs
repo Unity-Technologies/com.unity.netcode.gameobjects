@@ -407,8 +407,6 @@ namespace MLAPI
                         NetworkLog.LogWarning($"{nameof(NetworkPrefab)} cannot be null ({nameof(NetworkPrefab)} at index: {i})");
                     }
 
-                    // Provide the name of the prefab with issues so the user can more easily find the prefab and fix it
-                    UnityEngine.Debug.LogWarning($"{nameof(NetworkPrefab)} (\"{NetworkConfig.NetworkPrefabs[i].Prefab.name}\") will be removed and ignored.");
                     removeEmptyPrefabs.Add(i);
 
                     continue;
