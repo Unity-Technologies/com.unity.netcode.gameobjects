@@ -26,7 +26,24 @@ internal class TestCoordinator : NetworkBehaviour
     /// </summary>
     public const float maxWaitTimeout = 10;
     public const char methodFullNameSplitChar = '@';
-    public static string buildPath => Path.Combine(Path.GetDirectoryName(Application.dataPath), "Builds/MultiprocessTestBuild");
+    public const string isClientArg = "-isClient";
+    public const string buildInfoFileName = "buildInfo.txt";
+
+//     public static string buildPath
+//     {
+//         get
+//         {
+// #if UNITY_EDITOR || UNITY_STANDALONE_OSX || UNITY_STANDALONE_WIN
+//              return Path.Combine(Path.GetDirectoryName(Application.streamingAssetsPath), "Builds/MultiprocessTestBuild");
+// // #elif UNITY_STANDALONE_OSX
+//             // return Path.Combine(Path.GetDirectoryName(Application.streamingAssetsPath), "");
+// // #elif UNITY_STANDALONE_WIN
+// //             return Path.Combine(Path.GetDirectoryName(Application.dataPath), "");
+// #else
+//             throw new NotImplementedException();
+// #endif
+//         }
+//     }
 
     public static List<ulong> AllClientIdExceptMine
     {
@@ -88,13 +105,14 @@ internal class TestCoordinator : NetworkBehaviour
 
     public void Start()
     {
-#if UNITY_EDITOR
-        // Debug.Log("starting MLAPI host");
-#else
-        Debug.Log("starting MLAPI client");
-        NetworkManager.Singleton.StartClient();
-        // StartCoroutine(WaitForClientConnected()); // in case builds fail, can't have the old builds just stay idle. If they can't connect after a certain amount of time, disconnect
-#endif
+        bool isClient = Environment.GetCommandLineArgs().Any(value => value == isClientArg);
+        if (isClient)
+        {
+            Debug.Log("starting MLAPI client");
+            NetworkManager.Singleton.StartClient();
+            // StartCoroutine(WaitForClientConnected()); // in case builds fail, can't have the old builds just stay idle. If they can't connect after a certain amount of time, disconnect
+        }
+
         m_ErrorMessages.OnListChanged += OnErrorMessageChanged;
         NetworkManager.OnClientDisconnectCallback += OnClientDisconnectCallback;
     }
@@ -345,23 +363,34 @@ internal class TestCoordinator : NetworkBehaviour
 
     public static void StartWorkerNode()
     {
-#if UNITY_EDITOR
+// #if UNITY_EDITOR
 
         var workerNode = new Process();
 
         //TODO this should be replaced eventually by proper orchestration
-#if UNITY_EDITOR_OSX
-        workerNode.StartInfo.FileName = $"{buildPath}.app/Contents/MacOS/{PlayerSettings.productName}";
-#elif UNITY_EDITOR_WIN
-        workerNode.StartInfo.FileName = $"{buildPath}/buildName.exe";
+        // TODO test on windows
+        var exeName = "testproject";
+        string buildInstructions = $"You probably didn't generate your build. Please make sure you build a player using the '{BuildAndRunMultiprocessTests.BuildAndExecuteMenuName}' menu";
+        try
+        {
+            var buildInfo = File.ReadAllText(Path.Combine(Application.streamingAssetsPath, buildInfoFileName));
+#if UNITY_EDITOR_OSX || UNITY_STANDALONE_OSX
+            workerNode.StartInfo.FileName = $"{buildInfo}.app/Contents/MacOS/{exeName}";
+#elif UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN
+            workerNode.StartInfo.FileName = $"{buildInfo}/{exeName}.exe";
 #else
-        throw new NotImplementedException("Current platform not supported");
+            throw new NotImplementedException("StartWorkerNode: Current platform not supported");
 #endif
+        }
+        catch (FileNotFoundException e)
+        {
+            throw new Exception($"Couldn't find build info file. {buildInstructions}");
+        }
 
         workerNode.StartInfo.UseShellExecute = false;
         workerNode.StartInfo.RedirectStandardError = true;
         workerNode.StartInfo.RedirectStandardOutput = true;
-        workerNode.StartInfo.Arguments = "-popupwindow -screen-width 100 -screen-height 100";
+        workerNode.StartInfo.Arguments = $"{isClientArg} -popupwindow -screen-width 100 -screen-height 100";
 
         // workerNode.StartInfo.Arguments = $"-startAsServer";
         try
@@ -375,9 +404,11 @@ internal class TestCoordinator : NetworkBehaviour
         }
         catch (Win32Exception e)
         {
-            Debug.LogError($"Error starting player, please make sure you build a player using the '{BuildAndRunMultiprocessTests.BuildAndExecuteMenuName}' menu, {e.Message} {e.Data} {e.ErrorCode}");
+            Debug.LogError($"Error starting player, {buildInstructions}, {e.Message} {e.Data} {e.ErrorCode}");
             throw e;
         }
-#endif
+// #else
+//         throw new NotImplementedException("worker node launching not supported");
+// #endif
     }
 }

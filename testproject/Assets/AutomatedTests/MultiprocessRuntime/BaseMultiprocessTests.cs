@@ -26,32 +26,6 @@ namespace MLAPI.MultiprocessRuntimeTests
 
         protected abstract int NbWorkers { get; }
 
-//         public static bool Build(string buildPath)
-//         {
-// #if UNITY_EDITOR
-//
-//             PlayerSettings.SetScriptingBackend(BuildPipeline.GetBuildTargetGroup(BuildTarget.StandaloneOSX), PlayerSettings.GetDefaultScriptingBackend(BuildPipeline.GetBuildTargetGroup(BuildTarget.StandaloneOSX)));
-//
-//             var buildOptions = BuildOptions.IncludeTestAssemblies;
-//             buildOptions |= BuildOptions.Development | BuildOptions.ConnectToHost | BuildOptions.IncludeTestAssemblies | BuildOptions.StrictMode;
-//             // buildOptions |= BuildOptions.AllowDebugging;
-//
-//             buildOptions &= ~BuildOptions.AutoRunPlayer;
-//             bool shouldContinue = true;
-//             {
-//                 var buildReport = BuildPipeline.BuildPlayer(
-//                     new string[] { "Assets/Scenes/SampleScene.unity" },
-//                     buildPath,
-//                     BuildTarget.StandaloneOSX,
-//                     buildOptions);
-//                 Debug.Log("Building done !!!!!!");
-//                 shouldContinue = buildReport.summary.result == BuildResult.Succeeded;
-//             }
-//
-//             return shouldContinue;
-// #endif
-//         }
-
         [OneTimeSetUp]
         public virtual void SetupSuite()
         {

@@ -1,13 +1,12 @@
-#if UNITY_EDITOR
 using System;
 using System.IO;
 using MLAPI.MultiprocessRuntimeTests;
+#if UNITY_EDITOR
 using UnityEditor;
 using UnityEditor.Build.Reporting;
 using UnityEditor.TestTools.TestRunner.Api;
+#endif
 using UnityEngine;
-using UnityEngine.WSA;
-using Application = UnityEngine.Application;
 
 /// <summary>
 /// This is needed as Unity throws "An abnormal situation has occurred: the PlayerLoop internal function has been called recursively. Please contact Customer Support with a sample project so that we can reproduce the problem and troubleshoot it."
@@ -15,11 +14,15 @@ using Application = UnityEngine.Application;
 /// </summary>
 public class BuildAndRunMultiprocessTests : MonoBehaviour
 {
+
     public const string BuildAndExecuteMenuName = "MLAPI Tests/Build - Execute multiprocess tests #%t";
+    public static string buildPath => Path.Combine(Path.GetDirectoryName(Application.dataPath), "Builds/MultiprocessTestBuild");
+
+#if UNITY_EDITOR
     [MenuItem(BuildAndExecuteMenuName)]
     public static void BuildAndExecute()
     {
-        var shouldContinue = Build(TestCoordinator.buildPath); // todo try using     yield return new EnterPlayMode(); from edit mode tests so we can
+        var shouldContinue = Build(); // todo try using     yield return new EnterPlayMode(); from edit mode tests so we can
         if (shouldContinue)
         {
             Execute();
@@ -38,7 +41,7 @@ public class BuildAndRunMultiprocessTests : MonoBehaviour
     [MenuItem("MLAPI Tests/Build Test Player #t")]
     public static void BuildNoExecute()
     {
-        var success = Build(TestCoordinator.buildPath);
+        var success = Build();
         if (!success)
         {
             throw new Exception("Build failed!");
@@ -64,14 +67,28 @@ public class BuildAndRunMultiprocessTests : MonoBehaviour
         // get a successful test.
     }
 
-    public static bool Build(string buildPath)
+    /// <summary>
+    /// Needs a separate build than the standalone test builds since we don't want the player to try to connect to the editor to do test
+    /// reporting. We only want to main node to do that, worker nodes should be dumb
+    /// </summary>
+    /// <returns></returns>
+    public static bool Build()
     {
+
+
+        // Save standalone build path to file
+        var f = File.CreateText(Path.Combine(Application.streamingAssetsPath, TestCoordinator.buildInfoFileName));
+        f.Write(buildPath);
+        f.Close();
+
+        // var buildPath = Application.streamingAssetsPath;
         // deleting so we don't endup testing on outdated builds
 #if UNITY_EDITOR_OSX
         if (Directory.Exists(buildPath))
         {
             Directory.Delete(buildPath, recursive: true);
         }
+        var buildTarget = BuildTarget.StandaloneOSX;
 
 #elif UNITY_EDITOR_WIN
         // todo test on windows
@@ -80,11 +97,14 @@ public class BuildAndRunMultiprocessTests : MonoBehaviour
         {
             File.Delete(exePath);
         }
+        var buildTarget = BuildTarget.StandaloneWindows;
 #else
-        throw new NotImplementedException();
+        throw new NotImplementedException("Building for this platform is not supported");
 #endif
-        var buildOptions = BuildOptions.IncludeTestAssemblies;
-        buildOptions |= BuildOptions.Development | BuildOptions.IncludeTestAssemblies | BuildOptions.StrictMode;
+        var buildOptions = BuildOptions.Development;
+        buildOptions |= BuildOptions.IncludeTestAssemblies;
+        buildOptions |= BuildOptions.Development;
+        buildOptions |= BuildOptions.StrictMode;
         // buildOptions |= BuildOptions.ConnectToHost;
         // buildOptions |= BuildOptions.AllowDebugging; // enable this if you want to debug your players. Your players
         // will have more connection permission popups when launching though
@@ -93,7 +113,7 @@ public class BuildAndRunMultiprocessTests : MonoBehaviour
         var buildReport = BuildPipeline.BuildPlayer(
             new string[] { $"Assets/Scenes/{BaseMultiprocessTests.mainSceneName}.unity" },
             buildPath,
-            BuildTarget.StandaloneOSX,
+            buildTarget,
             buildOptions);
 
         return buildReport.summary.result == BuildResult.Succeeded;
@@ -116,5 +136,6 @@ public class BuildAndRunMultiprocessTests : MonoBehaviour
             }
         );
     }
-}
 #endif
+
+}
