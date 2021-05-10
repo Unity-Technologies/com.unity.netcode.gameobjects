@@ -4,6 +4,8 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
+using System.Threading;
 using MLAPI;
 using MLAPI.Messaging;
 using MLAPI.NetworkVariable;
@@ -36,11 +38,13 @@ internal class TestCoordinator : NetworkBehaviour
 
     private bool m_ShouldShutdown;
 
-    private NetworkDictionary<ulong, float> m_TestResults = new NetworkDictionary<ulong, float>(new NetworkVariableSettings
-    {
-        WritePermission = NetworkVariablePermission.Everyone,
-        ReadPermission = NetworkVariablePermission.Everyone
-    }); // todo this is starting to look like the wrong way to sync results. If we have multiple results arriving one after the other, there's a risk they'll overwrite one another
+    // private NetworkDictionary<ulong, float> m_TestResults = new NetworkDictionary<ulong, float>(new NetworkVariableSettings
+    // {
+    //     WritePermission = NetworkVariablePermission.Everyone,
+    //     ReadPermission = NetworkVariablePermission.Everyone
+    // }); // todo this is starting to look like the wrong way to sync results. If we have multiple results arriving one after the other, there's a risk they'll overwrite one another
+
+    private Dictionary<ulong, Queue<float>> m_TestResultsLocal = new Dictionary<ulong, Queue<float>>();
 
     private NetworkList<string> m_ErrorMessages = new NetworkList<string>(new NetworkVariableSettings
     {
@@ -48,9 +52,9 @@ internal class TestCoordinator : NetworkBehaviour
         WritePermission = NetworkVariablePermission.Everyone
     });
 
-    [NonSerialized]
-    public List<ulong> AllClientIdWithResults = new List<ulong>();
-    public ulong CurrentClientIdWithResults { get; private set; }
+    // [NonSerialized]
+    // public List<ulong> AllClientIdWithResults = new List<ulong>();
+    // public ulong CurrentClientIdWithResults { get; private set; }
 
     public static TestCoordinator Instance;
 
@@ -58,6 +62,7 @@ internal class TestCoordinator : NetworkBehaviour
     {
         if (Instance != null)
         {
+            Debug.LogError("Multiple test coordinator! destroying self");
             Destroy(gameObject);
             return;
         }
@@ -85,20 +90,17 @@ internal class TestCoordinator : NetworkBehaviour
     {
 #if UNITY_EDITOR
         // Debug.Log("starting MLAPI host");
-        // NetworkManager.Singleton.StartHost();
 #else
         Debug.Log("starting MLAPI client");
         NetworkManager.Singleton.StartClient();
         // StartCoroutine(WaitForClientConnected()); // in case builds fail, can't have the old builds just stay idle. If they can't connect after a certain amount of time, disconnect
 #endif
-        m_TestResults.OnDictionaryChanged += OnResultsChanged;
         m_ErrorMessages.OnListChanged += OnErrorMessageChanged;
         NetworkManager.OnClientDisconnectCallback += OnClientDisconnectCallback;
     }
 
     public void OnDestroy()
     {
-        m_TestResults.OnDictionaryChanged -= OnResultsChanged;
         m_ErrorMessages.OnListChanged -= OnErrorMessageChanged;
         if (NetworkManager != null)
         {
@@ -119,19 +121,19 @@ internal class TestCoordinator : NetworkBehaviour
         }
     }
 
-    private static void OnResultsChanged(NetworkDictionaryEvent<ulong, float> dictChangedEvent)
-    {
-        if (dictChangedEvent.Key != NetworkManager.Singleton.LocalClientId)
-        {
-            switch (dictChangedEvent.Type)
-            {
-                case NetworkDictionaryEvent<ulong, float>.EventType.Add:
-                case NetworkDictionaryEvent<ulong, float>.EventType.Value:
-                    Instance.AllClientIdWithResults.Add(dictChangedEvent.Key);
-                    break;
-            }
-        }
-    }
+    // private static void OnResultsChanged(NetworkDictionaryEvent<ulong, float> dictChangedEvent)
+    // {
+    //     if (dictChangedEvent.Key != NetworkManager.Singleton.LocalClientId)
+    //     {
+    //         switch (dictChangedEvent.Type)
+    //         {
+    //             case NetworkDictionaryEvent<ulong, float>.EventType.Add:
+    //             case NetworkDictionaryEvent<ulong, float>.EventType.Value:
+    //                 Instance.AllClientIdWithResults.Add(dictChangedEvent.Key);
+    //                 break;
+    //         }
+    //     }
+    // }
 
     private void OnClientDisconnectCallback(ulong clientId)
     {
@@ -143,15 +145,33 @@ internal class TestCoordinator : NetworkBehaviour
         }
     }
 
+    public static string GetMethodInfo(Action<byte[]> method)
+    {
+        return $"{method.Method.DeclaringType.FullName}{methodFullNameSplitChar}{method.Method.Name}";
+    }
     public static string GetMethodInfo(Action method)
     {
         return $"{method.Method.DeclaringType.FullName}{methodFullNameSplitChar}{method.Method.Name}";
     }
 
-    public static void WriteResults(float result)
+    [ServerRpc(RequireOwnership = false)]
+    public void WriteTestResultsServerRpc(float result, ServerRpcParams receiveParams = default)
     {
-        Instance.m_TestResults[NetworkManager.Singleton.LocalClientId] = result;
+        Debug.Log($"received test results {result}");
+        var senderId = receiveParams.Receive.SenderClientId;
+        if (!m_TestResultsLocal.ContainsKey(senderId))
+        {
+            m_TestResultsLocal[senderId] = new Queue<float>();
+        }
+        m_TestResultsLocal[senderId].Enqueue(result);
+        // Instance.CurrentClientIdWithResults = receiveParams.SenderClientId;
     }
+
+    // public static void WriteResults(float result)
+    // {
+    //
+    //     // Instance.m_TestResults[NetworkManager.Singleton.LocalClientId] = result;
+    // }
 
     public static void WriteError(string errorMessage)
     {
@@ -160,28 +180,48 @@ internal class TestCoordinator : NetworkBehaviour
         Instance.m_ErrorMessages.Add($"{localId}@{errorMessage}");
     }
 
-    public static float GetCurrentResult()
+    public static IEnumerable<(ulong clientId, float result)> ConsumeCurrentResult()
     {
-        var clientID = Instance.CurrentClientIdWithResults; // we're singlethreaded here right? there's no risk of calling this here?
-        return Instance.m_TestResults[clientID];
+        foreach (var kv in Instance.m_TestResultsLocal)
+        {
+            while (kv.Value.Count > 0)
+            {
+                var toReturn = (kv.Key, kv.Value.Dequeue());
+                yield return toReturn;
+            }
+        }
+
+        // throw new NotImplementedException("Should not be here");
     }
 
-    public static Func<bool> ResultIsSet()
+    public static Func<bool> ResultIsSet(bool useTimeoutException = true)
     {
         var startWaitTime = Time.time;
         return () =>
         {
             if (Time.time - startWaitTime > maxWaitTimeout)
             {
-                throw new Exception($"timeout while waiting for results, didn't get results for {Time.time - startWaitTime} seconds");
-            }
-
-            if (Instance.AllClientIdWithResults.Count > 0)
-            {
-                Instance.CurrentClientIdWithResults = Instance.AllClientIdWithResults[0];
-                Instance.AllClientIdWithResults.RemoveAt(0);
+                if (useTimeoutException)
+                {
+                    throw new Exception($"timeout while waiting for results, didn't get results for {Time.time - startWaitTime} seconds");
+                }
                 return true;
             }
+
+            foreach (var kv in Instance.m_TestResultsLocal)
+            {
+                if (kv.Value.Count > 0)
+                {
+                    return true;
+                }
+            }
+
+            // if (Instance.AllClientIdWithResults.Count > 0)
+            // {
+            //     Instance.CurrentClientIdWithResults = Instance.AllClientIdWithResults[0];
+            //     Instance.AllClientIdWithResults.RemoveAt(0);
+            //     return true;
+            // }
 
             return false;
         };
@@ -189,14 +229,21 @@ internal class TestCoordinator : NetworkBehaviour
 
     private Dictionary<ulong, bool> m_ClientIsDone = new Dictionary<ulong, bool>();
 
-    public static Func<bool> ClientIsDone(ulong clientId)
+    public static Func<bool> ConsumeClientIsDone(ulong clientId, bool useTimeoutException=true)
     {
         var startWaitTime = Time.time;
         return () =>
         {
             if (Time.time - startWaitTime > maxWaitTimeout)
             {
-                throw new Exception($"timeout while waiting for client done, didn't get results for {Time.time - startWaitTime} seconds");
+                if (useTimeoutException)
+                {
+                    throw new Exception($"timeout while waiting for client done, didn't get results for {Time.time - startWaitTime} seconds");
+                }
+                else
+                {
+                    return true;
+                }
             }
 
             if (Instance.m_ClientIsDone.ContainsKey(clientId) && Instance.m_ClientIsDone[clientId])
@@ -215,13 +262,20 @@ internal class TestCoordinator : NetworkBehaviour
         m_ClientIsDone[p.Receive.SenderClientId] = true;
     }
 
-    public void TriggerRpc(string methodInfoString)
+    public void TriggerRpc(Action<byte[]> methodInfo, params byte[] args)
     {
-        TriggerInternalClientRpc(methodInfoString, new ClientRpcParams { Send = new ClientRpcSendParams { TargetClientIds = AllClientIdExceptMine.ToArray() } });
+        var methodInfoString = GetMethodInfo(methodInfo);
+        TriggerInternalClientRpc(methodInfoString, args, new ClientRpcParams { Send = new ClientRpcSendParams { TargetClientIds = AllClientIdExceptMine.ToArray() } });
+    }
+
+    public void TriggerRpc(Action methodInfo)
+    {
+        var methodInfoString = GetMethodInfo(methodInfo);
+        TriggerInternalClientRpc(methodInfoString, null, new ClientRpcParams { Send = new ClientRpcSendParams { TargetClientIds = AllClientIdExceptMine.ToArray() } });
     }
 
     [ClientRpc]
-    public void TriggerInternalClientRpc(string methodInfoString, ClientRpcParams clientRpcParams = default)
+    public void TriggerInternalClientRpc(string methodInfoString, byte[] args, ClientRpcParams clientRpcParams = default)
     {
         try
         {
@@ -241,7 +295,14 @@ internal class TestCoordinator : NetworkBehaviour
                 throw new Exception($"couldn't find method {info.staticMethodToExecute}");
             }
 
-            foundMethod.Invoke(null, null);
+            if (args != null)
+            {
+                foundMethod.Invoke(null, new[] { args });
+            }
+            else
+            {
+                foundMethod.Invoke(null, null);
+            }
         }
         catch (Exception e)
         {
@@ -275,10 +336,11 @@ internal class TestCoordinator : NetworkBehaviour
 
     public void TestRunTeardown()
     {
-        m_TestResults.Clear();
+        // m_TestResults.Clear();
+        m_TestResultsLocal.Clear();
         m_ErrorMessages.Clear();
-        AllClientIdWithResults.Clear();
-        CurrentClientIdWithResults = 0;
+        // AllClientIdWithResults.Clear();
+        // CurrentClientIdWithResults = 0;
     }
 
     public static void StartWorkerNode()
@@ -313,7 +375,7 @@ internal class TestCoordinator : NetworkBehaviour
         }
         catch (Win32Exception e)
         {
-            Debug.LogError($"Error starting player, please make sure you build a player using the '{BuildAndRunMultiprocessTests.BuildMenuName}' menu, {e.Message} {e.Data} {e.ErrorCode}");
+            Debug.LogError($"Error starting player, please make sure you build a player using the '{BuildAndRunMultiprocessTests.BuildAndExecuteMenuName}' menu, {e.Message} {e.Data} {e.ErrorCode}");
             throw e;
         }
 #endif

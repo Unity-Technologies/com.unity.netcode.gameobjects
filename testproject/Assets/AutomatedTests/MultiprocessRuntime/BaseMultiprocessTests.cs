@@ -53,7 +53,7 @@ namespace MLAPI.MultiprocessRuntimeTests
 //         }
 
         [OneTimeSetUp]
-        public void SetupSuite()
+        public virtual void SetupSuite()
         {
             // todo cleanup comments
             // Build(TestCoordinator.buildPath);
@@ -98,7 +98,7 @@ namespace MLAPI.MultiprocessRuntimeTests
         }
 
         [OneTimeTearDown]
-        public void TeardownSuite()
+        public virtual void TeardownSuite()
         {
             // if (NetworkManager.Singleton.IsHost)
             {
@@ -123,7 +123,7 @@ namespace MLAPI.MultiprocessRuntimeTests
 
         public static void ExecuteSimpleCoordinatorTest()
         {
-            TestCoordinator.WriteResults(float.PositiveInfinity);
+            TestCoordinator.Instance.WriteTestResultsServerRpc(float.PositiveInfinity);
         }
 
         [UnityTest]
@@ -131,15 +131,17 @@ namespace MLAPI.MultiprocessRuntimeTests
         {
             //make sure the test coordinator works
             // Call the method
-            TestCoordinator.Instance.TriggerRpc(TestCoordinator.GetMethodInfo(ExecuteSimpleCoordinatorTest));
+            TestCoordinator.Instance.TriggerRpc(ExecuteSimpleCoordinatorTest);
 
             for (int i = 0; i < NbWorkers; i++) // wait and test for the two clients
             {
                 yield return new WaitUntil(TestCoordinator.ResultIsSet());
-                var resKey = TestCoordinator.Instance.CurrentClientIdWithResults;
 
-                Debug.Log($"got results, asserting, result is {TestCoordinator.GetCurrentResult()} from key {resKey}");
-                Assert.Greater(TestCoordinator.GetCurrentResult(), 0f);
+                foreach (var current in TestCoordinator.ConsumeCurrentResult())
+                {
+                    Debug.Log($"got results, asserting, result is {current.result} from key {current.clientId}");
+                    Assert.Greater(current.result, 0f);
+                }
             }
         }
     }

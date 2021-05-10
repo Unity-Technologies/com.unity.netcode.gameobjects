@@ -15,17 +15,34 @@ using Application = UnityEngine.Application;
 /// </summary>
 public class BuildAndRunMultiprocessTests : MonoBehaviour
 {
-    public const string BuildMenuName = "MLAPI Tests/Build - Execute multiprocess tests %t";
-    [MenuItem(BuildMenuName)]
+    public const string BuildAndExecuteMenuName = "MLAPI Tests/Build - Execute multiprocess tests #%t";
+    [MenuItem(BuildAndExecuteMenuName)]
     public static void BuildAndExecute()
     {
-        Execute(build: true);
+        var shouldContinue = Build(TestCoordinator.buildPath); // todo try using     yield return new EnterPlayMode(); from edit mode tests so we can
+        if (shouldContinue)
+        {
+            Execute();
+        }
+        else
+        {
+            throw new Exception("Build failed to create!!");
+        }
     }
-    public const string NoBuildMenuName = "MLAPI Tests/No Build - Execute multiprocess tests %&t";
-    [MenuItem(NoBuildMenuName)]
+    [MenuItem("MLAPI Tests/No Build - Execute multiprocess tests %t")]
     public static void ExecuteNoBuild()
     {
-        Execute(build: false);
+        Execute();
+    }
+
+    [MenuItem("MLAPI Tests/Build Test Player #t")]
+    public static void BuildNoExecute()
+    {
+        var success = Build(TestCoordinator.buildPath);
+        if (!success)
+        {
+            throw new Exception("Build failed!");
+        }
     }
 
 
@@ -36,23 +53,15 @@ public class BuildAndRunMultiprocessTests : MonoBehaviour
     ///
     /// </summary>
     /// <exception cref="Exception"></exception>
-    public static void Execute(bool build)
+    public static void Execute()
     {
-        var shouldContinue = !build || Build(TestCoordinator.buildPath); // todo try using     yield return new EnterPlayMode(); from edit mode tests so we can
         // create builds from the test itself
-        if (shouldContinue)
-        {
-            StartMainTestNodeInEditor();
-            // todo this doesn't work from the command line. if -executeMethod is used, EditorApplication doesn't update
-            // however, calling from the commandline -runTests with platform playmode does work. Will need to figure out
-            // what's the difference between the two and how to get EditorApplication to run outside of -runTests
-            // right now, can just run both executeMethod (which will launch the players) and -runTests one after the other to
-            // get a successful test.
-        }
-        else
-        {
-            throw new Exception("Build failed to create!!");
-        }
+        StartMainTestNodeInEditor();
+        // todo this doesn't work from the command line. if -executeMethod is used, EditorApplication doesn't update
+        // however, calling from the commandline -runTests with platform playmode does work. Will need to figure out
+        // what's the difference between the two and how to get EditorApplication to run outside of -runTests
+        // right now, can just run both executeMethod (which will launch the players) and -runTests one after the other to
+        // get a successful test.
     }
 
     public static bool Build(string buildPath)
