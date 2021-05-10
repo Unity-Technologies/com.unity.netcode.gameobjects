@@ -33,7 +33,6 @@ namespace MLAPI.RuntimeTests
             // Add a NetworkPrefab with no prefab
             NetworkManagerHelper.NetworkManagerObject.NetworkConfig.NetworkPrefabs.Add(new Configuration.NetworkPrefab());
 
-
             var validNetworkPrefab = new Configuration.NetworkPrefab();
             validNetworkPrefab.Prefab = baseObject.gameObject;
 
@@ -44,7 +43,7 @@ namespace MLAPI.RuntimeTests
             {
                 NetworkManagerHelper.NetworkManagerObject.StartHost();
             }
-            catch(Exception ex)
+            catch
             {
                 exceptionOccurred = true;
             }
