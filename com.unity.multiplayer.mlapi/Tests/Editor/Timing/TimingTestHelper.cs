@@ -15,7 +15,7 @@ namespace MLAPI.EditorTests.Timing
 
             while (totalDuration > 0f)
             {
-                var next = Mathf.InverseLerp(min, max, (float)random.NextDouble());
+                var next = Mathf.Lerp(min, max, (float)random.NextDouble());
                 steps.Add(next);
                 totalDuration -= next;
             }
@@ -33,15 +33,34 @@ namespace MLAPI.EditorTests.Timing
             for (var i = 0; i < steps.Count; i++)
             {
                 var step = steps[i];
-                timeProvider.AdvanceTime(ref predictedTime, ref serverTime, step);
+                var noReset = timeProvider.AdvanceTime(ref predictedTime, ref serverTime, step);
+                if (noReset == false)
+                {
+                    Debug.Log($"step: {i} hard reset");
+                }
                 if (stepCheck != null)
                 {
                     stepCheck(i);
                 }
             }
         }
+    }
 
+    public class DummyNetworkStats: INetworkStats
+    {
+        public float Rtt { get; set; }
 
+        public NetworkTime LastReceivedSnapshotTick { get; set; }
+
+        public float GetRtt()
+        {
+            return Rtt;
+        }
+
+        public NetworkTime GetLastReceivedSnapshotTick()
+        {
+            return LastReceivedSnapshotTick.ToFixedTime();
+        }
     }
 
 }

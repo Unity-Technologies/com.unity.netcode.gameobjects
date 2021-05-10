@@ -16,7 +16,7 @@ namespace MLAPI.EditorTests.Timing
         [Test]
         public void PredictedTimeEqualServerTimeTest()
         {
-            var steps = TimingTestHelper.GetRandomTimeSteps(1000f, 0.01f, 0.1f, 42);
+            var steps = TimingTestHelper.GetRandomTimeSteps(100f, 0.01f, 0.1f, 42);
 
             var serverTimeProvider = new ServerNetworkTimeProvider();
             var serverTime = new NetworkTime(60, 30);
