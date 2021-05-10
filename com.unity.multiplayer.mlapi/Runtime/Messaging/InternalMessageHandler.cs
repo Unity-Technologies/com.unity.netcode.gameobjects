@@ -375,9 +375,9 @@ namespace MLAPI.Messaging
                 ulong networkObjectId = reader.ReadUInt64Packed();
                 ushort networkBehaviourIndex = reader.ReadUInt16Packed();
 
-                if (NetworkManager.SpawnManager.SpawnedObjects.ContainsKey(networkObjectId))
+                if (NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(networkObjectId, out NetworkObject networkObject))
                 {
-                    NetworkBehaviour instance = NetworkManager.SpawnManager.SpawnedObjects[networkObjectId].GetNetworkBehaviourAtOrderIndex(networkBehaviourIndex);
+                    NetworkBehaviour instance = networkObject.GetNetworkBehaviourAtOrderIndex(networkBehaviourIndex);
 
                     if (instance == null)
                     {
@@ -433,9 +433,9 @@ namespace MLAPI.Messaging
                 ulong networkObjectId = reader.ReadUInt64Packed();
                 ushort networkBehaviourIndex = reader.ReadUInt16Packed();
 
-                if (NetworkManager.SpawnManager.SpawnedObjects.ContainsKey(networkObjectId))
+                if (NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(networkObjectId, out NetworkObject networkObject))
                 {
-                    var networkBehaviour = NetworkManager.SpawnManager.SpawnedObjects[networkObjectId].GetNetworkBehaviourAtOrderIndex(networkBehaviourIndex);
+                    var networkBehaviour = networkObject.GetNetworkBehaviourAtOrderIndex(networkBehaviourIndex);
 
                     if (networkBehaviour == null)
                     {

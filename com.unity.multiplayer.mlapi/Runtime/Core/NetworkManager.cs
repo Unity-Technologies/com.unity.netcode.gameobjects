@@ -1156,7 +1156,7 @@ namespace MLAPI
                 }
 
                 // Client tried to send a network message that was not the connection request before he was accepted.
-                if (PendingClients.ContainsKey(clientId) && (PendingClients[clientId].ConnectionState == PendingClient.State.PendingApproval || (PendingClients[clientId].ConnectionState == PendingClient.State.PendingConnection && messageType != NetworkConstants.CONNECTION_REQUEST)))
+                if (PendingClients.TryGetValue(clientId, out PendingClient client) && (client.ConnectionState == PendingClient.State.PendingApproval || client.ConnectionState == PendingClient.State.PendingConnection && messageType != NetworkConstants.CONNECTION_REQUEST))
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                     {
@@ -1447,15 +1447,8 @@ namespace MLAPI
                 throw new NotServerException("Only server can disconnect remote clients. Use StopClient instead.");
             }
 
-            if (ConnectedClients.ContainsKey(clientId))
-            {
-                ConnectedClients.Remove(clientId);
-            }
-
-            if (PendingClients.ContainsKey(clientId))
-            {
-                PendingClients.Remove(clientId);
-            }
+            ConnectedClients.Remove(clientId);
+            PendingClients.Remove(clientId);
 
             for (int i = ConnectedClientsList.Count - 1; i > -1; i--)
             {
@@ -1472,16 +1465,14 @@ namespace MLAPI
 
         internal void OnClientDisconnectFromServer(ulong clientId)
         {
-            if (PendingClients.ContainsKey(clientId))
-            {
-                PendingClients.Remove(clientId);
-            }
+            PendingClients.Remove(clientId);
 
-            if (ConnectedClients.ContainsKey(clientId))
+            if (ConnectedClients.TryGetValue(clientId, out NetworkClient networkClient))
             {
                 if (IsServer)
                 {
-                    if (ConnectedClients[clientId].PlayerObject != null)
+                    var playerObject = networkClient.PlayerObject;
+                    if (playerObject != null)
                     {
                         if (PrefabHandler.ContainsHandler(ConnectedClients[clientId].PlayerObject.GlobalObjectIdHash))
                         {
@@ -1490,17 +1481,17 @@ namespace MLAPI
                         }
                         else
                         {
-                            Destroy(ConnectedClients[clientId].PlayerObject.gameObject);
+                            Destroy(playerObject.gameObject);
                         }
                     }
 
-                    for (int i = 0; i < ConnectedClients[clientId].OwnedObjects.Count; i++)
+                    for (int i = 0; i < networkClient.OwnedObjects.Count; i++)
                     {
-                        if (ConnectedClients[clientId].OwnedObjects[i] != null)
+                        var ownedObject = networkClient.OwnedObjects[i];
+                        if (ownedObject != null)
                         {
-                            if (!ConnectedClients[clientId].OwnedObjects[i].DontDestroyWithOwner)
+                            if (!ownedObject.DontDestroyWithOwner)
                             {
-
                                 if (PrefabHandler.ContainsHandler(ConnectedClients[clientId].OwnedObjects[i].GlobalObjectIdHash))
                                 {
                                     PrefabHandler.HandleNetworkPrefabDestroy(ConnectedClients[clientId].OwnedObjects[i]);
@@ -1508,12 +1499,12 @@ namespace MLAPI
                                 }
                                 else
                                 {
-                                    Destroy(ConnectedClients[clientId].OwnedObjects[i].gameObject);
+                                    Destroy(ownedObject.gameObject);
                                 }
                             }
                             else
                             {
-                                ConnectedClients[clientId].OwnedObjects[i].RemoveOwnership();
+                                ownedObject.RemoveOwnership();
                             }
                         }
                     }
@@ -1569,10 +1560,7 @@ namespace MLAPI
             if (approved)
             {
                 // Inform new client it got approved
-                if (PendingClients.ContainsKey(ownerClientId))
-                {
-                    PendingClients.Remove(ownerClientId);
-                }
+                PendingClients.Remove(ownerClientId);
 
                 var client = new NetworkClient { ClientId = ownerClientId, };
                 ConnectedClients.Add(ownerClientId, client);
@@ -1690,11 +1678,7 @@ namespace MLAPI
             }
             else
             {
-                if (PendingClients.ContainsKey(ownerClientId))
-                {
-                    PendingClients.Remove(ownerClientId);
-                }
-
+                PendingClients.Remove(ownerClientId);
                 NetworkConfig.NetworkTransport.DisconnectRemoteClient(ownerClientId);
             }
         }
