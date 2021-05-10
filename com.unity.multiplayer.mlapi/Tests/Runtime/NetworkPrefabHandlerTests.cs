@@ -21,8 +21,7 @@ namespace MLAPI.RuntimeTests
         /// </summary>
         [Test]
         public void NetworkConfigInvalidNetworkPrefabTest()
-        {
-            Assert.IsTrue(NetworkManagerHelper.StartNetworkManager(out _));
+        {  
             var testPrefabObjectName = "NetworkPrefabHandlerTestObject";
             Guid baseObjectID = NetworkManagerHelper.AddGameNetworkObject(testPrefabObjectName);
             NetworkObject baseObject = NetworkManagerHelper.InstantiatedNetworkObjects[baseObjectID];
