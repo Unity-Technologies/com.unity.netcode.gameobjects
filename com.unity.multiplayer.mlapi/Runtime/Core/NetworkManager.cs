@@ -226,7 +226,9 @@ namespace MLAPI
 
         internal static event Action OnSingletonReady;
 
-        private InterestManager  m_InterestManager;
+        public ReplicationSettings replicationSettings;
+
+        private InterestManager m_InterestManager;
         public InterestManager InterestManager
         {
             get
