@@ -20,7 +20,7 @@ namespace MLAPI.MultiprocessRuntimeTests
     public class NetworkVariablePerformanceTests : BaseMultiprocessTests
     {
         protected override int NbWorkers { get; } = 1;
-        private const int k_MaxObjectstoSpawn = 10000;
+        private const int k_MaxObjectstoSpawn = 100000;
         // todo move all of this static stuff to a self contained object. Could have the concept of a "client side test executor"?
         private static int s_TargetCount = 0;
         private List<NetworkObject> m_SpawnedObjects = new List<NetworkObject>();
@@ -202,21 +202,27 @@ namespace MLAPI.MultiprocessRuntimeTests
         {
             yield return TestSpawningManyObjects(10000); // to run these higher scale tests, we need NetworkManager's max
                                                          // receive events per tick to be set at a high enough value
+                                                         // We also need UNET's MaxSentMessageQueueSize to be set higher
+        }
+        [UnityTest, Order(10), Performance]
+        public IEnumerator TestSpawn15000()
+        {
+            yield return TestSpawningManyObjects(15000);
         }
 
-        [UnityTest, Order(10), Performance]
+        [UnityTest, Order(11), Performance]
         public IEnumerator TestSpawn1000_2()
         {
             yield return TestSpawningManyObjects(1000);
         }
 
-        [UnityTest, Order(11), Performance]
+        [UnityTest, Order(12), Performance]
         public IEnumerator TestSpawn800_2()
         {
             yield return TestSpawningManyObjects(800);
         }
 
-        [UnityTest, Order(12), Performance]
+        [UnityTest, Order(13), Performance]
         public IEnumerator TestSpawn400_2()
         {
             yield return TestSpawningManyObjects(400);
@@ -241,20 +247,21 @@ namespace MLAPI.MultiprocessRuntimeTests
             SceneManager.sceneLoaded += OnSceneLoadedInitSetupSuite;
         }
 
-        public IEnumerator TestSpawningManyObjects(int nbObjects)
+        private IEnumerator TestSpawningManyObjects(int nbObjects)
         {
             Assert.LessOrEqual(nbObjects, k_MaxObjectstoSpawn); // sanity check
+
+            // setup and wait for client to be ready
+            TestCoordinator.Instance.TriggerRpc(NetworkVariablePerformanceTestsClient.SetupClientForTest1, BitConverter.GetBytes(nbObjects));
+            foreach (var clientId in TestCoordinator.AllClientIdExceptMine)
+            {
+                // wait for the clients to be ready
+                yield return new WaitUntil(TestCoordinator.ConsumeClientIsDone(clientId));
+            }
+
+            // start test
             using (Measure.Scope($"Time Taken For Spawning {nbObjects} objects and getting report"))
             {
-                // setup and wait
-                // todo move this in base class? this could be a common API to setup players
-                TestCoordinator.Instance.TriggerRpc(NetworkVariablePerformanceTestsClient.SetupClientForTest1, BitConverter.GetBytes(nbObjects));
-                foreach (var clientId in TestCoordinator.AllClientIdExceptMine)
-                {
-                    // wait for the clients to be ready
-                    yield return new WaitUntil(TestCoordinator.ConsumeClientIsDone(clientId));
-                }
-
                 // spawn prefabs for test
 
                 // todo test with multiple workers
@@ -268,7 +275,7 @@ namespace MLAPI.MultiprocessRuntimeTests
                 }
 
                 // wait for spawn results coming from clients
-                // for (int i = 0; i < NbWorkers; i++)
+                for (int i = 0; i < NbWorkers; i++)
                 {
                     float initialCount = float.NaN;
                     var startTime = Time.time;
