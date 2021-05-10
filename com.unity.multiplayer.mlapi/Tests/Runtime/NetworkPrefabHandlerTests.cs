@@ -16,11 +16,47 @@ namespace MLAPI.RuntimeTests
     /// </summary>
     public class NetworkPrefabHandlerTests
     {
+        /// <summary>
+        /// Tests the NetwokConfig NetworkPrefabs initialization during NetworkManager's Init method
+        /// </summary>
+        [Test]
+        public void NetworkConfigInvalidNetworkPrefabTest()
+        {
+            Assert.IsTrue(NetworkManagerHelper.StartNetworkManager(out _));
+            var testPrefabObjectName = "NetworkPrefabHandlerTestObject";
+            Guid baseObjectID = NetworkManagerHelper.AddGameNetworkObject(testPrefabObjectName);
+            NetworkObject baseObject = NetworkManagerHelper.InstantiatedNetworkObjects[baseObjectID];
+
+            // Add null entry
+            NetworkManagerHelper.NetworkManagerObject.NetworkConfig.NetworkPrefabs.Add(null);
+
+            // Add a NetworkPrefab with no prefab
+            NetworkManagerHelper.NetworkManagerObject.NetworkConfig.NetworkPrefabs.Add(new Configuration.NetworkPrefab());
+
+
+            var validNetworkPrefab = new Configuration.NetworkPrefab();
+            validNetworkPrefab.Prefab = baseObject.gameObject;
+
+            //Add a valid prefab
+            NetworkManagerHelper.NetworkManagerObject.NetworkConfig.NetworkPrefabs.Add(validNetworkPrefab);
+            var exceptionOccurred = false; 
+            try
+            {
+                NetworkManagerHelper.NetworkManagerObject.StartHost();
+            }
+            catch(Exception ex)
+            {
+                exceptionOccurred = true;
+            }
+
+            Assert.False(exceptionOccurred);
+        }
+
+
         [Test]
         public void NetworkPrefabHandlerClass()
         {
-            //Only used to create a network object based game asset
-            Assert.IsTrue(NetworkManagerHelper.StartNetworkManager(out _));
+            NetworkManagerHelper.NetworkManagerObject.StartHost();
             var testPrefabObjectName = "NetworkPrefabHandlerTestObject";
 
             Guid baseObjectID = NetworkManagerHelper.AddGameNetworkObject(testPrefabObjectName);
@@ -110,7 +146,7 @@ namespace MLAPI.RuntimeTests
         public void Setup()
         {
             //Create, instantiate, and host
-            NetworkManagerHelper.StartNetworkManager(out _);
+            NetworkManagerHelper.StartNetworkManager(out _,NetworkManagerHelper.NetworkManagerOperatingMode.None);
         }
 
         [TearDown]
