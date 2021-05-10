@@ -26,6 +26,7 @@ namespace MLAPI.Interest
 
         public SpawnDelegate OnSpawn;
         public SpawnDelegate OnDespawn;
+        public ReplicationSettings ReplcationSettings;
 
         public InterestObjectStorage InterestObjectStorage;
 
@@ -44,7 +45,7 @@ namespace MLAPI.Interest
 
         public InterestNode()
         {
-            ChildNodes = new HashSet<InterestNode>();
+            ChildNodes = new List<InterestNode>();
         }
 
         // externally-called object query function.
@@ -98,6 +99,6 @@ namespace MLAPI.Interest
             ChildNodes.Add(newNode);
         }
 
-        HashSet<InterestNode> ChildNodes;
+        public List<InterestNode> ChildNodes;
     }
 }

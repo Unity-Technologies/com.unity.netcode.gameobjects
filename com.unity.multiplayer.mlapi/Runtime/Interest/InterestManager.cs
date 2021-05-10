@@ -20,14 +20,6 @@ using UnityEngine.UIElements;
 namespace MLAPI.Interest
 {
 
-    public class ReplicationSettings
-    {
-        public long LastReplTime = 0;
-        public int PriortyScale = 1;
-    }
-
-
-
     public class InterestManager
     {
         private readonly InterestNodeStatic m_DefaultInterestNode;
@@ -132,7 +124,7 @@ namespace MLAPI.Interest
             }
         }
 
-        public ReplicationSettings GlobalReplicationSettings; // ugh
+        public ReplicationSettings GlobalReplicationSettings;
 
         private HashSet<InterestNode> m_ChildNodes;
     }
