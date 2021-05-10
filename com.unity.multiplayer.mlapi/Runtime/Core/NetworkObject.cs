@@ -579,10 +579,21 @@ namespace MLAPI
 
         internal ushort GetNetworkBehaviourOrderIndex(NetworkBehaviour instance)
         {
+            // read the cached index, and verify it first
+            if (instance.NetworkBehaviourIdCache < ChildNetworkBehaviours.Count)
+            {
+                if (ChildNetworkBehaviours[instance.NetworkBehaviourIdCache] == instance)
+                {
+                    return instance.NetworkBehaviourIdCache;
+                }
+            }
+
             for (ushort i = 0; i < ChildNetworkBehaviours.Count; i++)
             {
                 if (ChildNetworkBehaviours[i] == instance)
                 {
+                    // cache the id, for next query
+                    instance.NetworkBehaviourIdCache = i;
                     return i;
                 }
             }
