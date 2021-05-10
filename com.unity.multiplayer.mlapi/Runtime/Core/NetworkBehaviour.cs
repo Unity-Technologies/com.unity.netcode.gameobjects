@@ -338,6 +338,11 @@ namespace MLAPI
         public ushort NetworkBehaviourId => NetworkObject.GetNetworkBehaviourOrderIndex(this);
 
         /// <summary>
+        /// Internally caches the Id of this behaviour in a NetworkObject. Makes look-up faster
+        /// </summary>
+        internal ushort NetworkBehaviourIdCache = 0;
+
+        /// <summary>
         /// Returns a the NetworkBehaviour with a given BehaviourId for the current NetworkObject
         /// </summary>
         /// <param name="behaviourId">The behaviourId to return</param>
