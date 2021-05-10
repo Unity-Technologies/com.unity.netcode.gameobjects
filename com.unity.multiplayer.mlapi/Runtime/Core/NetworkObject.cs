@@ -586,6 +586,9 @@ namespace MLAPI
                 {
                     return instance.NetworkBehaviourIdCache;
                 }
+
+                // invalid cached id reset
+                instance.NetworkBehaviourIdCache = default;
             }
 
             for (ushort i = 0; i < ChildNetworkBehaviours.Count; i++)
