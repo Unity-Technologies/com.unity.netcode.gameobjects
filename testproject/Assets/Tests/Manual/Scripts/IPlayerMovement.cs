@@ -1,4 +1,7 @@
-﻿public interface IPlayerMovement
+﻿namespace TestProject.ManualTests
 {
-    void Move(int speed);
+    public interface IPlayerMovement
+    {
+        void Move(int speed);
+    }
 }
