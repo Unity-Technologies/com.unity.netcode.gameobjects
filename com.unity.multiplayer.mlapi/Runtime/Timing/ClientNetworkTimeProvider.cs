@@ -63,7 +63,7 @@ namespace MLAPI.Timing
             {
                 predictedTime = new NetworkTime(predictedTime.TickRate, targetPredictedTime);
                 serverTime = new NetworkTime(serverTime.TickRate, targetServerTime);
-                return false;
+                return true;
             }
 
             // Adjust predicted time scale
@@ -78,7 +78,7 @@ namespace MLAPI.Timing
                 ServerTimeScale += targetServerTime > serverTime.FixedTime ? k_AdjustmentRatio : -k_AdjustmentRatio;
             }
 
-            return true;
+            return false;
         }
 
         public void InitializeClient(ref NetworkTime predictedTime, ref NetworkTime serverTime)
