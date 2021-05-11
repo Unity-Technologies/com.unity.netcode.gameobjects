@@ -28,19 +28,30 @@ namespace MLAPI.EditorTests.Timing
 
         public delegate void StepCheckDelegate(int step);
 
+        public delegate void StepCheckResetDelegate(int step, bool reset);
+
         public static void ApplySteps(INetworkTimeProvider timeProvider, List<float> steps, ref NetworkTime predictedTime, ref NetworkTime serverTime, StepCheckDelegate stepCheck = null)
         {
             for (var i = 0; i < steps.Count; i++)
             {
                 var step = steps[i];
-                var noReset = timeProvider.AdvanceTime(ref predictedTime, ref serverTime, step);
-                if (noReset == false)
-                {
-                    Debug.Log($"step: {i} hard reset");
-                }
+                timeProvider.AdvanceTime(ref predictedTime, ref serverTime, step);
                 if (stepCheck != null)
                 {
                     stepCheck(i);
+                }
+            }
+        }
+
+        public static void ApplySteps(INetworkTimeProvider timeProvider, List<float> steps, ref NetworkTime predictedTime, ref NetworkTime serverTime, StepCheckResetDelegate stepCheck = null)
+        {
+            for (var i = 0; i < steps.Count; i++)
+            {
+                var step = steps[i];
+                var reset = timeProvider.AdvanceTime(ref predictedTime, ref serverTime, step);
+                if (stepCheck != null)
+                {
+                    stepCheck(i, reset);
                 }
             }
         }
