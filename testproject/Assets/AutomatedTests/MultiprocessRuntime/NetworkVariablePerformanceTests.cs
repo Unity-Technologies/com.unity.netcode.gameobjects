@@ -17,6 +17,7 @@ using Random = System.Random;
 
 namespace MLAPI.MultiprocessRuntimeTests
 {
+    // todo profile all this
     public class NetworkVariablePerformanceTests : BaseMultiprocessTests
     {
         protected override int NbWorkers { get; } = 1;
