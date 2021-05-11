@@ -66,7 +66,7 @@ namespace MLAPI.Editor
 
                 foreach (var type in types)
                 {
-                    if (type.IsSubclassOf(typeof(NetworkTransport)))
+                    if (type.IsSubclassOf(typeof(NetworkTransport)) && type.GetCustomAttributes(typeof(DontShowInTransportDropdownAttribute), true).Length == 0)
                     {
                         m_TransportTypes.Add(type);
                     }
