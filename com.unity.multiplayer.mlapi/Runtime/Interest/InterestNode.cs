@@ -26,7 +26,7 @@ namespace MLAPI.Interest
 
         public SpawnDelegate OnSpawn;
         public SpawnDelegate OnDespawn;
-        public ReplicationSettings ReplcationSettings;
+        public InterestSettings ReplcationSettings;
 
         public InterestObjectStorage InterestObjectStorage;
 

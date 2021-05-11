@@ -124,7 +124,7 @@ namespace MLAPI.Interest
             }
         }
 
-        public ReplicationSettings GlobalReplicationSettings;
+        public InterestSettings GlobalInterestSettings;
 
         private HashSet<InterestNode> m_ChildNodes;
     }
