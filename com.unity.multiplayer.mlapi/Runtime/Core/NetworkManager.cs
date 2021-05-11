@@ -226,7 +226,8 @@ namespace MLAPI
 
         internal static event Action OnSingletonReady;
 
-        public ReplicationSettings replicationSettings;
+        // the interest settings objects receive unless they have a pre-prefab override
+        public InterestSettings interestSettings;
 
         private InterestManager m_InterestManager;
         public InterestManager InterestManager

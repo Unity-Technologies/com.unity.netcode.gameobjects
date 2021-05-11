@@ -4,8 +4,8 @@ using UnityEngine;
 
 namespace MLAPI.Interest
 {
-    [CreateAssetMenu(fileName = "ReplicatoinSettings", menuName = "Interest/Settings/ReplicationSettings", order = 1)]
-    public class ReplicationSettings : ScriptableObject
+    [CreateAssetMenu(fileName = "ReplicatoinSettings", menuName = "Interest/Settings/InterestSettings", order = 1)]
+    public class InterestSettings : ScriptableObject
     {
         public int distanceScaleFactor;
         public int timeStarvationScaleFactor;
