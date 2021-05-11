@@ -156,7 +156,7 @@ namespace MLAPI.EditorTests.Timing
         public void NetworkTimeAdvanceTest()
         {
             var random = new Random(42);
-            var randomSteps = Enumerable.Repeat(0f, 1000).Select(t => Mathf.InverseLerp(1/25f, 1.80f, (float)random.NextDouble())).ToList();
+            var randomSteps = Enumerable.Repeat(0f, 1000).Select(t => Mathf.Lerp(1/25f, 1.80f, (float)random.NextDouble())).ToList();
 
             NetworkTimeAdvanceTestInternal(randomSteps, 60, 0f);
             NetworkTimeAdvanceTestInternal(randomSteps, 1, 0f);
@@ -211,7 +211,7 @@ namespace MLAPI.EditorTests.Timing
 
             Assert.IsTrue(Approximately( startTime.Time, (startTime2 - dif).Time, maxAcceptableTotalOffset));
 
-            Debug.Log((startTime.Time - (startTime2 - dif).Time).ToString("n10"));
+            //Debug.Log((startTime.Time - (startTime2 - dif).Time).ToString("n10"));
         }
 
         private static bool Approximately(float a, float b, float epsilon)

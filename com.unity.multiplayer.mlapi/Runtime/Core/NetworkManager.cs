@@ -351,7 +351,7 @@ namespace MLAPI
                 networkTimeSystem = null;
             }
 
-            networkTimeSystem = new NetworkTimeSystem(NetworkConfig, server);
+            networkTimeSystem = new NetworkTimeSystem(NetworkConfig.TickRate, server, this);
             networkTimeSystem.OnNetworkTickInternal += NetworkTick;
 
 

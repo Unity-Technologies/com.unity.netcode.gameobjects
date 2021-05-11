@@ -15,7 +15,7 @@ namespace MLAPI.Timing
         {
             predictedTime += deltaTime;
             serverTime += deltaTime;
-            return true;
+            return false;
         }
 
         /// <inheritdoc/>

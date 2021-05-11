@@ -10,7 +10,7 @@ namespace MLAPI.Timing
         /// <param name="predictedTime">The predicted time to advance.</param>
         /// <param name="serverTime">The server time to advance.</param>
         /// <param name="deltaTime">The real delta time which passed.</param>
-        /// <returns>true if advancing the the time succeeded; otherwise false if there was a hard correction.</returns>
+        /// <returns>false if advancing the the time succeeded; otherwise true if there was a hard correction.</returns>
         public bool AdvanceTime(ref NetworkTime predictedTime, ref NetworkTime serverTime, float deltaTime);
 
         /// <summary>

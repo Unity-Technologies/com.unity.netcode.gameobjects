@@ -1,10 +1,11 @@
 using System;
 using MLAPI.Configuration;
+using MLAPI.Transports;
 using UnityEngine;
 
 namespace MLAPI.Timing
 {
-    public class NetworkTimeSystem
+    public class NetworkTimeSystem: INetworkStats
     {
         private INetworkTimeProvider m_NetworkTimeProvider;
         private int m_TickRate;
@@ -16,11 +17,6 @@ namespace MLAPI.Timing
         /// Special value to indicate "No tick information"
         /// </summary>
         public const int NoTick = int.MinValue;
-
-        /// <summary>
-        /// Gets the tick of the last server snapshot which has been received.
-        /// </summary>
-        public NetworkTime LastReceivedServerSnapshotTick { get; internal set; }
 
         /// <summary>
         /// The current predicted time. This is the time at which predicted or client authoritative objects move. This value is accurate when called in Update or NetworkFixedUpdate but does not work correctly for FixedUpdate.
@@ -56,11 +52,23 @@ namespace MLAPI.Timing
         /// <summary>
         /// Creates a new instance of the <see cref="NetworkTimeSystem"/>.
         /// </summary>
-        /// <param name="config">The network config</param>
+        /// <param name="tickRate">The tickrate.</param>
         /// <param name="isServer">true if the system will be used for a server or host.</param>
-        public NetworkTimeSystem(NetworkConfig config, bool isServer)
+        /// <param name="networkManager">The networkManager to extract the RTT from. Will be removed in the future to reduce dependencies.</param>
+        internal NetworkTimeSystem(int tickRate, bool isServer, NetworkManager networkManager)
         {
-            m_TickRate = config.TickRate;
+            m_NetworkManager = networkManager;
+            Init(tickRate, isServer, this);
+        }
+
+        public NetworkTimeSystem(int tickRate, bool isServer, INetworkStats networkStats)
+        {
+            Init(tickRate, isServer, networkStats);
+        }
+
+        private void Init(int tickRate, bool isServer, INetworkStats networkStats)
+        {
+            m_TickRate = tickRate;
 
             if (isServer)
             {
@@ -68,11 +76,11 @@ namespace MLAPI.Timing
             }
             else
             {
-                m_NetworkTimeProvider = new ClientNetworkTimeProvider(this);
+                m_NetworkTimeProvider = new ClientNetworkTimeProvider(this, tickRate);
             }
 
-            m_PredictedTime = new NetworkTime(config.TickRate);
-            m_ServerTime = new NetworkTime(config.TickRate);
+            m_PredictedTime = new NetworkTime(tickRate);
+            m_ServerTime = new NetworkTime(tickRate);
         }
 
         /// <summary>
@@ -126,5 +134,32 @@ namespace MLAPI.Timing
 
             m_NetworkTimeProvider.InitializeClient(ref m_PredictedTime, ref m_ServerTime);
         }
+
+
+        #region NetworkStats
+        // TODO this is temporary until we have a better way to measure RTT. Most likely a separate stats class will be used to track this.
+
+        private NetworkManager m_NetworkManager;
+
+        /// <summary>
+        /// Gets the tick of the last server snapshot which has been received.
+        /// </summary>
+        internal NetworkTime LastReceivedServerSnapshotTick { get; private set; }
+
+        public float GetRtt()
+        {
+            if (m_NetworkManager.IsServer)
+            {
+                return 0f;
+            }
+            return m_NetworkManager.NetworkConfig.NetworkTransport.GetCurrentRtt(m_NetworkManager.ServerClientId) / 1000f;
+        }
+
+        public NetworkTime GetLastReceivedSnapshotTick()
+        {
+            return LastReceivedServerSnapshotTick;
+        }
+
+        #endregion
     }
 }

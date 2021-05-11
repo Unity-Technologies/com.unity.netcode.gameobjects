@@ -6,44 +6,45 @@ namespace MLAPI.Timing
 {
     public class ClientNetworkTimeProvider : INetworkTimeProvider
     {
-        private const float k_HardResetThreshold = 100f / 1000f; // 100ms
-        private const float k_CorrectionTolerance = 50f / 1000f; // 50ms
+        private const float k_HardResetThreshold = 200f / 1000f; // 200ms
+        private const float k_CorrectionTolerance = 20f / 1000f; // 20ms
         private const float k_AdjustmentRatio = 0.01f;
 
         private const float k_StartRtt = 150f / 1000f; // 150ms
 
-        private readonly float m_TargetClientBufferTime;
-        private readonly float m_TargetServerBufferTime;
+        public float ServerTimeScale { get; private set; } = 1f;
+        public float PredictedTimeScale { get; private set; } = 1f;
 
-        private NetworkTimeSystem m_NetworkTimeSystem;
+        private INetworkStats m_NetworkStats;
 
-        private float m_ServerTimeScale;
-        private float m_PredictedTimeScale;
+        public float TargetClientBufferTime { get; set; }
+        public float TargetServerBufferTime { get; set; }
 
-        public ClientNetworkTimeProvider(NetworkTimeSystem networkTimeSystem)
+        public ClientNetworkTimeProvider(INetworkStats networkStats, int tickRate)
         {
-            m_NetworkTimeSystem = networkTimeSystem;
+            m_NetworkStats = networkStats;
+
+            // default buffer values. Can be manually overriden.
+            TargetClientBufferTime = 1f / tickRate;
+            TargetServerBufferTime = 2f / tickRate;
         }
 
         public bool AdvanceTime(ref NetworkTime predictedTime, ref NetworkTime serverTime, float deltaTime)
         {
-            float rtt = 100f;
-
             // advance time
-            predictedTime += deltaTime * m_PredictedTimeScale;
-            serverTime += deltaTime * m_ServerTimeScale;
-
-            float timeSinceLastSnapshot = m_NetworkTimeSystem.LastReceivedServerSnapshotTick.Time - serverTime.Time;
+            predictedTime += deltaTime * PredictedTimeScale;
+            serverTime += deltaTime * ServerTimeScale;
 
             // time scale adjustment based on whether we are behind / ahead of the server in terms of inputs
             // This implementation uses RTT to calculate that without server input which is not ideal. In the future we might want to add a field to the protocol which allows the server to send the exact input buffers size to the client.
-            float targetServerTime = timeSinceLastSnapshot + m_TargetClientBufferTime;
-            float targetPredictedTime = targetServerTime + rtt + m_TargetServerBufferTime;
+            float lastReceivedSnapshotTime = m_NetworkStats.GetLastReceivedSnapshotTick().Time;
+            float targetServerTime = lastReceivedSnapshotTime - TargetClientBufferTime;
+            float targetPredictedTime = lastReceivedSnapshotTime + m_NetworkStats.GetRtt() + TargetServerBufferTime;
 
             // Reset timescale. Will be recalculated based on new values.
             bool reset = false;
-            m_PredictedTimeScale = 1f;
-            m_ServerTimeScale = 1f;
+            PredictedTimeScale = 1f;
+            ServerTimeScale = 1f;
 
             // reset because too large predicted offset?
             if (predictedTime.FixedTime < targetPredictedTime - k_HardResetThreshold || predictedTime.FixedTime > targetPredictedTime + k_HardResetThreshold)
@@ -62,27 +63,27 @@ namespace MLAPI.Timing
             {
                 predictedTime = new NetworkTime(predictedTime.TickRate, targetPredictedTime);
                 serverTime = new NetworkTime(serverTime.TickRate, targetServerTime);
-                return false;
+                return true;
             }
 
             // Adjust predicted time scale
             if (Mathf.Abs(targetPredictedTime - predictedTime.FixedTime) > k_CorrectionTolerance)
             {
-                m_PredictedTimeScale += targetPredictedTime > predictedTime.FixedTime ? k_AdjustmentRatio : -k_AdjustmentRatio;
+                PredictedTimeScale += targetPredictedTime > predictedTime.FixedTime ? k_AdjustmentRatio : -k_AdjustmentRatio;
             }
 
             // Adjust server time scale
             if (Mathf.Abs(targetServerTime - serverTime.FixedTime) > k_CorrectionTolerance)
             {
-                m_ServerTimeScale += targetServerTime > serverTime.FixedTime ? k_AdjustmentRatio : -k_AdjustmentRatio;
+                ServerTimeScale += targetServerTime > serverTime.FixedTime ? k_AdjustmentRatio : -k_AdjustmentRatio;
             }
 
-            return true;
+            return false;
         }
 
         public void InitializeClient(ref NetworkTime predictedTime, ref NetworkTime serverTime)
         {
-            serverTime += m_TargetClientBufferTime;
+            serverTime += TargetClientBufferTime;
             predictedTime = serverTime;
             predictedTime += k_StartRtt;
         }

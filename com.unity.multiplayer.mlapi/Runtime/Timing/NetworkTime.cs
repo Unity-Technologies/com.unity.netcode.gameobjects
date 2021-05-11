@@ -54,6 +54,11 @@ namespace MLAPI.Timing
             }
         }
 
+        public NetworkTime ToFixedTime()
+        {
+            return new NetworkTime(m_TickRate, m_Tick);
+        }
+
         public static NetworkTime operator -(NetworkTime a, NetworkTime b)
         {
             Assert.AreEqual(a.TickRate, b.TickRate, $"NetworkTimes must have same TickRate to subtract.");
