@@ -33,12 +33,9 @@ namespace MLAPI.Messaging.Buffering
 
         internal Queue<BufferedMessage> ConsumeBuffersForNetworkId(ulong networkId)
         {
-            if (m_BufferQueues.ContainsKey(networkId))
+            if (m_BufferQueues.TryGetValue(networkId, out Queue<BufferedMessage> message))
             {
-                Queue<BufferedMessage> message = m_BufferQueues[networkId];
-
                 m_BufferQueues.Remove(networkId);
-
                 return message;
             }
             else

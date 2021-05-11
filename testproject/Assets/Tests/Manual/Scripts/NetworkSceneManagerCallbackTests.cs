@@ -1,6 +1,7 @@
 using UnityEngine;
+using MLAPI;
 
-namespace MLAPI
+namespace TestProject.ManualTests
 {
     [AddComponentMenu("MLAPI/NetworkSceneManagerCallbackTests")]
     public class NetworkSceneManagerCallbackTests : NetworkBehaviour
@@ -9,7 +10,7 @@ namespace MLAPI
         {
             NetworkManager.StartHost();
         }
-        
+
         public override void NetworkStart()
         {
             if (IsServer)
@@ -18,12 +19,12 @@ namespace MLAPI
                 {
                     Debug.Log("OnNotifyServerClientLoadedScene invoked on the host - Passed");
                 };
-            
+
                 NetworkManager.SceneManager.OnNotifyServerAllClientsLoadedScene += (progress, timedOut) =>
                 {
                     Debug.Log("OnNotifyServerAllClientsLoadedScene invoked on the host - Passed");
                 };
-            
+
                 NetworkManager.SceneManager.SwitchScene("SceneWeAreSwitchingTo");
             }
         }

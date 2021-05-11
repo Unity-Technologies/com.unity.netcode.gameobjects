@@ -9,8 +9,17 @@ using UnityEngine.SceneManagement;
 
 namespace MLAPI.RuntimeTests
 {
+    /// <summary>
+    /// Provides helpers for running multi instance tests.
+    /// </summary>
     internal static class MultiInstanceHelpers
     {
+        /// <summary>
+        /// Creates NetworkingManagers and configures them for use in a multi instance setting.
+        /// </summary>
+        /// <param name="clientCount">The amount of clients</param>
+        /// <param name="server">The server NetworkManager</param>
+        /// <param name="clients">The clients NetworkManagers</param>
         public static bool Create(int clientCount, out NetworkManager server, out NetworkManager[] clients)
         {
             clients = new NetworkManager[clientCount];
@@ -53,6 +62,12 @@ namespace MLAPI.RuntimeTests
             return true;
         }
 
+        /// <summary>
+        /// Starts NetworkManager instances created by the Create method.
+        /// </summary>
+        /// <param name="host">Whether or not to create a Host instead of Server</param>
+        /// <param name="server">The Server NetworkManager</param>
+        /// <param name="clients">The Clients NetworkManager</param>
         public static bool Start(bool host, NetworkManager server, NetworkManager[] clients)
         {
             if (host)
@@ -79,6 +94,10 @@ namespace MLAPI.RuntimeTests
 
         private static CoroutineRunner s_CoroutineRunner;
 
+        /// <summary>
+        /// Runs a IEnumerator as a Coroutine on a dummy GameObject.
+        /// </summary>
+        /// <param name="enumerator">The IEnumerator to run</param>
         public static Coroutine Run(IEnumerator enumerator)
         {
             if (s_CoroutineRunner == null)
@@ -94,6 +113,15 @@ namespace MLAPI.RuntimeTests
             public T Result;
         }
 
+        /// <summary>
+        /// Normally we would only allow player prefabs to be set to a prefab. Not runtime created objects.
+        /// In order to prevent having a Resource folder full of a TON of prefabs that we have to maintain,
+        /// MultiInstanceHelper has a helper function that lets you mark a runtime created object to be
+        /// treated as a prefab by the MLAPI. That's how we can get away with creating the player prefab
+        /// at runtime without it being treated as a SceneObject or causing other conflicts with the MLAPI.
+        /// </summary>
+        /// <param name="networkObject">The networkObject to be treated as Prefab</param>
+        /// <param name="globalObjectIdHash">The GlobalObjectId to force</param>
         public static void MakeNetworkedObjectTestPrefab(NetworkObject networkObject, uint globalObjectIdHash = default)
         {
             // Set a globalObjectId for prefab
@@ -109,6 +137,12 @@ namespace MLAPI.RuntimeTests
             networkObject.IsSceneObject = false;
         }
 
+        /// <summary>
+        /// Waits on the client side to be connected.
+        /// </summary>
+        /// <param name="client">The client</param>
+        /// <param name="result">The result. If null, it will automatically assert</param>
+        /// <param name="maxFrames">The max frames to wait for</param>
         public static IEnumerator WaitForClientConnected(NetworkManager client, CoroutineResultWrapper<bool> result = null, int maxFrames = 64)
         {
             if (client.IsServer)
@@ -136,6 +170,12 @@ namespace MLAPI.RuntimeTests
             }
         }
 
+        /// <summary>
+        /// Waits on the server side for 1 client to be connected
+        /// </summary>
+        /// <param name="server">The server</param>
+        /// <param name="result">The result. If null, it will automatically assert</param>
+        /// <param name="maxFrames">The max frames to wait for</param>
         public static IEnumerator WaitForClientConnectedToServer(NetworkManager server, CoroutineResultWrapper<bool> result = null, int maxFrames = 64)
         {
             if (!server.IsServer)
@@ -163,6 +203,14 @@ namespace MLAPI.RuntimeTests
             }
         }
 
+        /// <summary>
+        /// Gets a NetworkObject instance as it's represented by a certain peer.
+        /// </summary>
+        /// <param name="networkObjectId">The networkObjectId to get</param>
+        /// <param name="representation">The representation to get the object from</param>
+        /// <param name="result">The result</param>
+        /// <param name="failIfNull">Whether or not to fail if no object is found and result is null</param>
+        /// <param name="maxFrames">The max frames to wait for</param>
         public static IEnumerator GetNetworkObjectByRepresentation(ulong networkObjectId, NetworkManager representation, CoroutineResultWrapper<NetworkObject> result, bool failIfNull = true, int maxFrames = 64)
         {
             if (result == null)
@@ -186,6 +234,14 @@ namespace MLAPI.RuntimeTests
             }
         }
 
+        /// <summary>
+        /// Gets a NetworkObject instance as it's represented by a certain peer.
+        /// </summary>
+        /// <param name="predicate">The predicate used to filter for your target NetworkObject</param>
+        /// <param name="representation">The representation to get the object from</param>
+        /// <param name="result">The result</param>
+        /// <param name="failIfNull">Whether or not to fail if no object is found and result is null</param>
+        /// <param name="maxFrames">The max frames to wait for</param>
         public static IEnumerator GetNetworkObjectByRepresentation(Func<NetworkObject, bool> predicate, NetworkManager representation, CoroutineResultWrapper<NetworkObject> result, bool failIfNull = true, int maxFrames = 64)
         {
             if (result == null)
@@ -214,6 +270,12 @@ namespace MLAPI.RuntimeTests
             }
         }
 
+        /// <summary>
+        /// Waits for a predicate condition to be met
+        /// </summary>
+        /// <param name="predicate">The predicate to wait for</param>
+        /// <param name="result">The result. If null, it will fail if the predicate is not met</param>
+        /// <param name="maxFrames">The max frames to wait for</param>
         public static IEnumerator WaitForCondition(Func<bool> predicate, CoroutineResultWrapper<bool> result = null, int maxFrames = 64)
         {
             if (predicate == null)
