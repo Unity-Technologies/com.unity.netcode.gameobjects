@@ -5,6 +5,9 @@ using UnityEngine;
 
 namespace MLAPI.EditorTests.Timing
 {
+    /// <summary>
+    /// Tests for <see cref="ClientNetworkTimeProvider"/>
+    /// </summary>
     public class ClientNetworkTimeProviderTests
     {
         private const float k_AcceptableRttOffset = 0.03f; // 30ms offset is fine
@@ -23,7 +26,7 @@ namespace MLAPI.EditorTests.Timing
         }
 
         /// <summary>
-        /// Tests whether time is stable if RTT is stable
+        /// Tests whether time is stable if RTT is stable.
         /// </summary>
         [Test]
         public void StableRttTest()
@@ -77,6 +80,9 @@ namespace MLAPI.EditorTests.Timing
 
         }
 
+        /// <summary>
+        /// Tests whether predicted time can speed up and slow down to catch up when RTT changes.
+        /// </summary>
         [Test]
         public void RttCatchupSlowdownTest()
         {
@@ -137,6 +143,51 @@ namespace MLAPI.EditorTests.Timing
             Assert.True(Mathf.Abs(totalPredictedSpeedUpTime + 0.1f) < k_AcceptableRttOffset);
             Debug.Log($"Total predicted speed up time slow down: {totalPredictedSpeedUpTime}");
 
+        }
+
+        /// <summary>
+        /// Tests whether time resets when there is a huge spike in RTT and is able to stabilize again.
+        /// </summary>
+        [Test]
+        public void ResetTest()
+        {
+            NetworkTime serverTime = new NetworkTime(60);
+            NetworkTime predictedTime = new NetworkTime(60);
+
+            var networkStats = new DummyNetworkStats() { Rtt = 0.1f, LastReceivedSnapshotTick = serverTime };
+
+            var clientNetworkTimeProvider = new ClientNetworkTimeProvider(networkStats, 60);
+            clientNetworkTimeProvider.InitializeClient(ref predictedTime, ref serverTime);
+
+            var steps = TimingTestHelper.GetRandomTimeSteps(100f, 0.01f, 0.1f, 42);
+            var rttSteps = TimingTestHelper.GetRandomTimeSteps(1000f, 0.095f, 0.105f, 42); // 10ms jitter
+
+            // run for a while so that we reach regular RTT offset
+            TimingTestHelper.ApplySteps(clientNetworkTimeProvider, steps, ref predictedTime, ref serverTime, delegate(int step)
+            {
+                networkStats.LastReceivedSnapshotTick = networkStats.LastReceivedSnapshotTick + steps[step];
+                networkStats.Rtt = rttSteps[step];
+            });
+
+            // increase RTT to ~500ms from ~100ms
+            networkStats.Rtt = 0.5f;
+            var rttSteps2 = TimingTestHelper.GetRandomTimeSteps(1000f, 0.495f, 0.505f, 42);
+
+            // run a single advance expect a hard rest
+            bool reset = clientNetworkTimeProvider.AdvanceTime(ref predictedTime, ref serverTime, 0.02f);
+            Assert.IsTrue(reset);
+
+
+            TimingTestHelper.ApplySteps(clientNetworkTimeProvider, steps, ref predictedTime, ref serverTime, delegate(int step, bool reset)
+            {
+                Assert.IsFalse(reset);
+
+                networkStats.LastReceivedSnapshotTick = networkStats.LastReceivedSnapshotTick + steps[step];
+                networkStats.Rtt = rttSteps2[step]; // note; uses new rtt steps
+
+                // after hard reset time should stay close to rtt
+                Assert.IsTrue(Mathf.Abs((predictedTime - serverTime ).Time - networkStats.Rtt - clientNetworkTimeProvider.TargetServerBufferTime) < k_AcceptableRttOffset);
+            });
         }
 
     }
