@@ -4,10 +4,5 @@
         "TestProject",
         "Unity.Multiplayer.MLAPI.Runtime",
         "Unity.Multiplayer.MLAPI.Editor"
-    ],
-    "optionalUnityReferences": [
-        "TestAssemblies"
-    ],
-    "includePlatforms": [],
-    "excludePlatforms": []
+    ]
 }

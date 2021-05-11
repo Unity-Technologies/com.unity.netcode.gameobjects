@@ -338,6 +338,11 @@ namespace MLAPI
         public ushort NetworkBehaviourId => NetworkObject.GetNetworkBehaviourOrderIndex(this);
 
         /// <summary>
+        /// Internally caches the Id of this behaviour in a NetworkObject. Makes look-up faster
+        /// </summary>
+        internal ushort NetworkBehaviourIdCache = 0;
+
+        /// <summary>
         /// Returns a the NetworkBehaviour with a given BehaviourId for the current NetworkObject
         /// </summary>
         /// <param name="behaviourId">The behaviourId to return</param>
@@ -676,7 +681,7 @@ namespace MLAPI
                                             NetworkVariableFields[k].WriteDelta(varBuffer);
                                             varBuffer.PadBuffer();
 
-                                            writer.WriteUInt16Packed((ushort) varBuffer.Length);
+                                            writer.WriteUInt16Packed((ushort)varBuffer.Length);
                                             buffer.CopyFrom(varBuffer);
                                         }
                                     }
@@ -1022,6 +1027,9 @@ namespace MLAPI
         /// </summary>
         /// <param name="networkId"></param>
         /// <returns></returns>
-        protected NetworkObject GetNetworkObject(ulong networkId) => NetworkManager.SpawnManager.SpawnedObjects.ContainsKey(networkId) ? NetworkManager.SpawnManager.SpawnedObjects[networkId] : null;
+        protected NetworkObject GetNetworkObject(ulong networkId)
+        {
+            return NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(networkId, out NetworkObject networkObject) ? networkObject : null;
+        }
     }
 }
