@@ -9,10 +9,16 @@ namespace MLAPI.Prototyping
     /// </summary>
     public class NetworkTransformV2 : NetworkBehaviour
     {
-        public bool IsClientAuthoritative;
-        public bool IsSharedObject;
+        public enum Authority
+        {
+            Server = 0, // default
+            Client,
+            Shared
+        }
+        [SerializeField, Tooltip("Defines who can update this transform.")]
+        private Authority m_Authority; // todo Luke mentioned an incoming system to manage this at the NetworkBehaviour level, lets sync on this
         [Range(0, 120)]
-        public float FixedSendsPerSecond = 20f;
+        public float FixedSendsPerSecond = 30f; // todo have a global config for this? As a user, I wouldn't want to have to update my 1k objects if I realize it's not high enough late in the project
 
         private Transform m_Transform;
         private NetworkVariableVector3 m_NetworkPosition = new NetworkVariableVector3(); // TODO use netvar interpolation when available
@@ -61,20 +67,18 @@ namespace MLAPI.Prototyping
 
             public override void NetworkStart()
             {
-                if (m_NetworkTransform.IsClientAuthoritative && !m_NetworkTransform.IsSharedObject)
+                if (m_NetworkTransform.m_Authority == Authority.Client)
                 {
                     m_NetworkTransform.m_NetworkPosition.Settings.WritePermission = NetworkVariablePermission.OwnerOnly;
                     m_NetworkTransform.m_NetworkRotation.Settings.WritePermission = NetworkVariablePermission.OwnerOnly;
                     m_NetworkTransform.m_NetworkWorldScale.Settings.WritePermission = NetworkVariablePermission.OwnerOnly;
                 }
-                else if (m_NetworkTransform.IsClientAuthoritative && m_NetworkTransform.IsSharedObject)
+                else if (m_NetworkTransform.m_Authority == Authority.Shared)
                 {
                     m_NetworkTransform.m_NetworkPosition.Settings.WritePermission = NetworkVariablePermission.Everyone;
                     m_NetworkTransform.m_NetworkRotation.Settings.WritePermission = NetworkVariablePermission.Everyone;
                     m_NetworkTransform.m_NetworkWorldScale.Settings.WritePermission = NetworkVariablePermission.Everyone;
                 }
-
-
             }
 
             public override void FixedUpdate()
@@ -92,32 +96,31 @@ namespace MLAPI.Prototyping
         private void Awake()
         {
             m_Transform = transform;
-            m_OldPosition = m_Transform.position;
-            m_OldRotation = m_Transform.rotation;
-            m_OldScale = m_Transform.lossyScale;
         }
+
+        private bool networkStarted;
 
         public override void NetworkStart()
         {
-            if (!NetworkManager.Singleton.IsServer)
+            networkStarted = true;
+            void SetupVar<T>(NetworkVariable<T> v, T initialValue, ref T oldVal)
             {
-                m_Handler = new ClientNetworkTransformHandler(this);
-            }
-            else
-            {
-                m_Handler = new ServerNetworkTransformHandler(this);
+                v.Settings.SendTickrate = FixedSendsPerSecond;
+                if (CanUpdateTransform())
+                {
+                    v.Value = initialValue;
+                }
+
+                oldVal = initialValue;
             }
 
-            m_NetworkPosition.Settings.SendTickrate = FixedSendsPerSecond;
-            m_NetworkRotation.Settings.SendTickrate = FixedSendsPerSecond;
-            m_NetworkWorldScale.Settings.SendTickrate = FixedSendsPerSecond;
+            SetupVar(m_NetworkPosition, m_Transform.position, ref m_OldPosition);
+            SetupVar(m_NetworkRotation, m_Transform.rotation, ref m_OldRotation);
+            SetupVar(m_NetworkWorldScale, m_Transform.lossyScale, ref m_OldScale);
 
-            if (CanUpdateTransform() || IsSharedObject)
-            {
-                m_NetworkPosition.Value = m_Transform.position;
-                m_NetworkRotation.Value = m_Transform.rotation;
-                m_NetworkWorldScale.Value = m_Transform.lossyScale;
-            }
+            // m_OldPosition = m_Transform.position;
+            // m_OldRotation = m_Transform.rotation;
+            // m_OldScale = m_Transform.lossyScale;
 
             m_PositionChangedDelegate = GetOnValueChanged<Vector3>(current =>
             {
@@ -138,6 +141,14 @@ namespace MLAPI.Prototyping
             });
             m_NetworkWorldScale.OnValueChanged += m_ScaleChangedDelegate;
 
+            if (!NetworkManager.Singleton.IsServer)
+            {
+                m_Handler = new ClientNetworkTransformHandler(this);
+            }
+            else
+            {
+                m_Handler = new ServerNetworkTransformHandler(this);
+            }
             m_Handler.NetworkStart();
         }
 
@@ -150,7 +161,7 @@ namespace MLAPI.Prototyping
 
         private bool CanUpdateTransform()
         {
-            return (IsClient && IsClientAuthoritative && IsOwner) || (IsServer && !IsClientAuthoritative);
+            return (IsClient && m_Authority == Authority.Client && IsOwner) || (IsServer && m_Authority == Authority.Server) || m_Authority == Authority.Shared;
         }
 
         private NetworkVariable<T>.OnValueChangedDelegate GetOnValueChanged<T>(Action<T> assignCurrent)
@@ -158,7 +169,8 @@ namespace MLAPI.Prototyping
             return (old, current) =>
             {
                 var isClientOnly = !IsServer;
-                if (IsClientAuthoritative && isClientOnly && !IsSharedObject && IsOwner)
+                // if (m_Authority == Authority.Client && isClientOnly && IsOwner)
+                if (m_Authority == Authority.Client && IsClient && IsOwner)
                 {
                     // this should only happen for my own value changes.
                     // todo this shouldn't happen anymore with new tick system (tick written will be higher than tick read, so netvar wouldn't change in that case
@@ -169,27 +181,15 @@ namespace MLAPI.Prototyping
             };
         }
 
-        // private void OnPositionChanged(Vector3 old, Vector3 current)
-        // {
-        //     var isClientOnly = !IsServer;
-        //     if (IsClientAuthoritative && isClientOnly && !IsSharedObject && IsOwner)
-        //     {
-        //         // this should only happen for my own position changes.
-        //         return;
-        //     }
-        //     transform.position = current;
-        //     m_OldPosition = current;
-        // }
-
         private void FixedUpdate()
         {
-            if (NetworkManager == null || (!NetworkManager.IsServer && !NetworkManager.IsClient))
+            // if (NetworkManager == null || (!NetworkManager.IsServer && !NetworkManager.IsClient))
+            if (!networkStarted)
             {
                 return;
             }
 
-            // saving current network value so we don't override changes coming from the network with changes done locally
-            if (CanUpdateTransform() || IsSharedObject)
+            if (CanUpdateTransform())
             {
                 m_NetworkPosition.Value = m_Transform.position;
                 m_NetworkRotation.Value = m_Transform.rotation;
@@ -200,7 +200,10 @@ namespace MLAPI.Prototyping
                 m_Transform.lossyScale != m_OldScale
             )
             {
-                Debug.LogError("Trying to update transform's position when you're not allowed, please validate your NetworkTransform's authority settings");
+                Debug.LogError($"Trying to update transform's position for object { gameObject.name } with ID {NetworkObjectId} when you're not allowed, please validate your NetworkTransform's authority settings", gameObject);
+                m_OldPosition = m_Transform.position;
+                m_OldRotation = m_Transform.rotation;
+                m_OldScale = m_Transform.lossyScale;
             }
 
             m_Handler?.FixedUpdate();

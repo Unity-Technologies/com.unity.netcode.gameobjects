@@ -454,8 +454,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: eab53a020970f4cbb9ddfe3792b069be, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  IsClientAuthoritative: 0
-  IsSharedObject: 0
+  m_Authority: 0
   FixedSendsPerSecond: 20
 --- !u!1 &403665142
 GameObject:
@@ -796,7 +795,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   DontDestroy: 1
   RunInBackground: 1
-  LogLevel: 0
+  LogLevel: 1
   NetworkConfig:
     ProtocolVersion: 0
     NetworkTransport: {fileID: 620561610}
@@ -1519,8 +1518,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: eab53a020970f4cbb9ddfe3792b069be, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  IsClientAuthoritative: 0
-  IsSharedObject: 0
+  m_Authority: 0
   FixedSendsPerSecond: 20
 --- !u!114 &963826006
 MonoBehaviour:
@@ -1840,9 +1838,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: eab53a020970f4cbb9ddfe3792b069be, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  IsClientAuthoritative: 1
-  IsSharedObject: 1
-  FixedSendsPerSecond: 20
+  m_Authority: 2
+  FixedSendsPerSecond: 30
 --- !u!114 &1397037319
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2572,8 +2569,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: eab53a020970f4cbb9ddfe3792b069be, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  IsClientAuthoritative: 0
-  IsSharedObject: 0
+  m_Authority: 0
   FixedSendsPerSecond: 20
 --- !u!224 &1536251758 stripped
 RectTransform:

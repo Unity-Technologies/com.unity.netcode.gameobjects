@@ -68,10 +68,10 @@ public class GrabbableBall : NetworkBehaviour
             }
         }
 
-        // if (IsOwner && m_IsGrabbed.Value && localPlayerObject != null)
-        // {
-        //     transform.position = localPlayerObject.transform.position + Vector3.up;
-        // }
+        if (IsOwner && m_IsGrabbed.Value && localPlayerObject != null)
+        {
+            transform.position = localPlayerObject.transform.position + Vector3.up;
+        }
     }
 
     [ServerRpc(RequireOwnership = false)]
@@ -85,12 +85,12 @@ public class GrabbableBall : NetworkBehaviour
             {
                 NetworkObject.ChangeOwnership(senderClientId);
 
-                // transform.position = senderPlayerObject.transform.position + Vector3.up;
+                transform.position = senderPlayerObject.transform.position + Vector3.up;
                 m_Rigidbody.velocity = Vector3.zero;
                 m_Rigidbody.rotation = Quaternion.identity;
-                transform.parent = senderPlayerObject.transform;
-                transform.localPosition = Vector3.up*4;
-                transform.localScale = Vector3.one;
+                // transform.parent = senderPlayerObject.transform;
+                // transform.localPosition = Vector3.up*4;
+                // transform.localScale = Vector3.one;
 
                 m_IsGrabbed.Value = true;
             }
@@ -103,8 +103,8 @@ public class GrabbableBall : NetworkBehaviour
         if (m_IsGrabbed.Value)
         {
             NetworkObject.RemoveOwnership();
-            transform.parent = null;
-            transform.localScale = Vector3.one;
+            // transform.parent = null;
+            // transform.localScale = Vector3.one;
             m_IsGrabbed.Value = false;
         }
     }

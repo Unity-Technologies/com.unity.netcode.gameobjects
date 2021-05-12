@@ -12,9 +12,12 @@ public class PlayerMovement : NetworkBehaviour
     private void Start()
     {
         m_Rigidbody = GetComponent<Rigidbody>();
-        var temp = transform.position;
-        temp.y = 0.5f;
-        transform.position = temp;
+        if (IsLocalPlayer)
+        {
+            var temp = transform.position;
+            temp.y = 0.5f;
+            transform.position = temp;
+        }
 
         if (m_Rigidbody)
         {

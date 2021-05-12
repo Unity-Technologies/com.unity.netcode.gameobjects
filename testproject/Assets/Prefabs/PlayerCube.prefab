@@ -56,7 +56,7 @@ Rigidbody:
   m_UseGravity: 1
   m_IsKinematic: 1
   m_Interpolate: 0
-  m_Constraints: 0
+  m_Constraints: 80
   m_CollisionDetection: 0
 --- !u!65 &8685790303553767873
 BoxCollider:
@@ -295,8 +295,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: eab53a020970f4cbb9ddfe3792b069be, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  IsClientAuthoritative: 1
-  IsSharedObject: 0
+  m_Authority: 1
   FixedSendsPerSecond: 20
 --- !u!114 &8685790303553767876
 MonoBehaviour:
