@@ -4,6 +4,9 @@ using UnityEngine;
 
 namespace MLAPI.Prototyping
 {
+    /// <summary>
+    /// TODO remove the V2 after review
+    /// </summary>
     public class NetworkTransformV2 : NetworkBehaviour
     {
         public bool IsClientAuthoritative;
@@ -14,11 +17,12 @@ namespace MLAPI.Prototyping
         private Transform m_Transform;
         private NetworkVariableVector3 m_NetworkPosition = new NetworkVariableVector3(); // TODO use netvar interpolation when available
         private NetworkVariableQuaternion m_NetworkRotation = new NetworkVariableQuaternion();
-        private NetworkVariableVector3 m_NetworkScale = new NetworkVariableVector3();
+        private NetworkVariableVector3 m_NetworkWorldScale = new NetworkVariableVector3();
+        // private NetworkTransform m_NetworkParent; // TODO handle this here? Needs to reparent NetworkObject, since current protocol uses NetworkObject+NetworkBehaviour+NetworkVariable hierarchy
+
         private Vector3 m_OldPosition;
         private Quaternion m_OldRotation;
         private Vector3 m_OldScale;
-        private NetworkObject m_Parent;// = new NetworkObject(); // TODO handle this here?
 
         private NetworkTransformHandler m_Handler;
         private NetworkVariable<Vector3>.OnValueChangedDelegate m_PositionChangedDelegate;
@@ -61,13 +65,13 @@ namespace MLAPI.Prototyping
                 {
                     m_NetworkTransform.m_NetworkPosition.Settings.WritePermission = NetworkVariablePermission.OwnerOnly;
                     m_NetworkTransform.m_NetworkRotation.Settings.WritePermission = NetworkVariablePermission.OwnerOnly;
-                    m_NetworkTransform.m_NetworkScale.Settings.WritePermission = NetworkVariablePermission.OwnerOnly;
+                    m_NetworkTransform.m_NetworkWorldScale.Settings.WritePermission = NetworkVariablePermission.OwnerOnly;
                 }
                 else if (m_NetworkTransform.IsClientAuthoritative && m_NetworkTransform.IsSharedObject)
                 {
                     m_NetworkTransform.m_NetworkPosition.Settings.WritePermission = NetworkVariablePermission.Everyone;
                     m_NetworkTransform.m_NetworkRotation.Settings.WritePermission = NetworkVariablePermission.Everyone;
-                    m_NetworkTransform.m_NetworkScale.Settings.WritePermission = NetworkVariablePermission.Everyone;
+                    m_NetworkTransform.m_NetworkWorldScale.Settings.WritePermission = NetworkVariablePermission.Everyone;
                 }
 
 
@@ -78,12 +82,19 @@ namespace MLAPI.Prototyping
             }
         }
 
+        private void SetWorldScale (Vector3 globalScale)
+        {
+            m_Transform.localScale = Vector3.one;
+            var lossyScale = m_Transform.lossyScale;
+            m_Transform.localScale = new Vector3 (globalScale.x/lossyScale.x, globalScale.y/lossyScale.y, globalScale.z/lossyScale.z);
+        }
+
         private void Awake()
         {
             m_Transform = transform;
             m_OldPosition = m_Transform.position;
             m_OldRotation = m_Transform.rotation;
-            m_OldScale = m_Transform.localScale;
+            m_OldScale = m_Transform.lossyScale;
         }
 
         public override void NetworkStart()
@@ -99,13 +110,13 @@ namespace MLAPI.Prototyping
 
             m_NetworkPosition.Settings.SendTickrate = FixedSendsPerSecond;
             m_NetworkRotation.Settings.SendTickrate = FixedSendsPerSecond;
-            m_NetworkScale.Settings.SendTickrate = FixedSendsPerSecond;
+            m_NetworkWorldScale.Settings.SendTickrate = FixedSendsPerSecond;
 
             if (CanUpdateTransform() || IsSharedObject)
             {
                 m_NetworkPosition.Value = m_Transform.position;
                 m_NetworkRotation.Value = m_Transform.rotation;
-                m_NetworkScale.Value = m_Transform.localScale;
+                m_NetworkWorldScale.Value = m_Transform.lossyScale;
             }
 
             m_PositionChangedDelegate = GetOnValueChanged<Vector3>(current =>
@@ -122,10 +133,10 @@ namespace MLAPI.Prototyping
             m_NetworkRotation.OnValueChanged += m_RotationChangedDelegate;
             m_ScaleChangedDelegate = GetOnValueChanged<Vector3>(current =>
             {
-                transform.localScale = current;
+                SetWorldScale(current);
                 m_OldScale = current;
             });
-            m_NetworkScale.OnValueChanged += m_ScaleChangedDelegate;
+            m_NetworkWorldScale.OnValueChanged += m_ScaleChangedDelegate;
 
             m_Handler.NetworkStart();
         }
@@ -134,7 +145,7 @@ namespace MLAPI.Prototyping
         {
             m_NetworkPosition.OnValueChanged -= m_PositionChangedDelegate;
             m_NetworkRotation.OnValueChanged -= m_RotationChangedDelegate;
-            m_NetworkScale.OnValueChanged -= m_ScaleChangedDelegate;
+            m_NetworkWorldScale.OnValueChanged -= m_ScaleChangedDelegate;
         }
 
         private bool CanUpdateTransform()
@@ -150,6 +161,7 @@ namespace MLAPI.Prototyping
                 if (IsClientAuthoritative && isClientOnly && !IsSharedObject && IsOwner)
                 {
                     // this should only happen for my own value changes.
+                    // todo this shouldn't happen anymore with new tick system (tick written will be higher than tick read, so netvar wouldn't change in that case
                     return;
                 }
 
@@ -181,11 +193,11 @@ namespace MLAPI.Prototyping
             {
                 m_NetworkPosition.Value = m_Transform.position;
                 m_NetworkRotation.Value = m_Transform.rotation;
-                m_NetworkScale.Value = m_Transform.localScale;
+                m_NetworkWorldScale.Value = m_Transform.lossyScale;
             }
             else if (m_Transform.position != m_OldPosition ||
                 m_Transform.rotation != m_OldRotation ||
-                m_Transform.localScale != m_OldScale
+                m_Transform.lossyScale != m_OldScale
             )
             {
                 Debug.LogError("Trying to update transform's position when you're not allowed, please validate your NetworkTransform's authority settings");
