@@ -19,7 +19,7 @@ namespace MLAPI.Prototyping
         }
 
         [SerializeField, Tooltip("Defines who can update this transform.")]
-        private Authority m_Authority; // todo Luke mentioned an incoming system to manage this at the NetworkBehaviour level, lets sync on this
+        public Authority authority; // todo Luke mentioned an incoming system to manage this at the NetworkBehaviour level, lets sync on this
 
         /// <summary>
         /// The base amount of sends per seconds to use when range is disabled
@@ -105,7 +105,7 @@ namespace MLAPI.Prototyping
         {
             return (old, current) =>
             {
-                if (m_Authority == Authority.Client && IsClient && IsOwner)
+                if (authority == Authority.Client && IsClient && IsOwner)
                 {
                     // this should only happen for my own value changes.
                     // todo this shouldn't happen anymore with new tick system (tick written will be higher than tick read, so netvar wouldn't change in that case
@@ -118,7 +118,7 @@ namespace MLAPI.Prototyping
 
         private bool CanUpdateTransform()
         {
-            return (IsClient && m_Authority == Authority.Client && IsOwner) || (IsServer && m_Authority == Authority.Server) || m_Authority == Authority.Shared;
+            return (IsClient && authority == Authority.Client && IsOwner) || (IsServer && authority == Authority.Server) || authority == Authority.Shared;
         }
 
         private void Awake()
@@ -165,13 +165,13 @@ namespace MLAPI.Prototyping
 
             if (IsServer)
             {
-                if (m_Authority == Authority.Client)
+                if (authority == Authority.Client)
                 {
                     m_NetworkPosition.Settings.WritePermission = NetworkVariablePermission.OwnerOnly;
                     m_NetworkRotation.Settings.WritePermission = NetworkVariablePermission.OwnerOnly;
                     m_NetworkWorldScale.Settings.WritePermission = NetworkVariablePermission.OwnerOnly;
                 }
-                else if (m_Authority == Authority.Shared)
+                else if (authority == Authority.Shared)
                 {
                     m_NetworkPosition.Settings.WritePermission = NetworkVariablePermission.Everyone;
                     m_NetworkRotation.Settings.WritePermission = NetworkVariablePermission.Everyone;
