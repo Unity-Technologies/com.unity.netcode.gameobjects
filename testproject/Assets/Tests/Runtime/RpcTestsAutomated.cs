@@ -20,7 +20,7 @@ namespace TestProject.RuntimeTests
             // Set RpcQueueManualTests into unit testing mode
             RpcQueueManualTests.UnitTesting = true;
 
-            // Create 1 Host and 7 clients
+            // Create 1 Host and 9 clients (10 clients and 1 server)
             Assert.True(MultiInstanceHelpers.Create(9, out NetworkManager server, out NetworkManager[] clients));
 
             // Create a default player GameObject to use
