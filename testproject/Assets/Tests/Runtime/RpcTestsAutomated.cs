@@ -4,6 +4,7 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 using TestProject.ManualTests;
+using MLAPI.RuntimeTests;
 using MLAPI;
 using Debug = UnityEngine.Debug;
 
@@ -14,7 +15,7 @@ namespace TestProject.RuntimeTests
         private bool m_TimedOut;
         
         [UnityTest]
-        public IEnumerator AutomatedManualRpcTests()
+        public IEnumerator ManualRpcTestsAutomated()
         {
             // Set RpcQueueManualTests into unit testing mode
             RpcQueueManualTests.UnitTesting = true;

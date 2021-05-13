@@ -6,6 +6,7 @@ using MLAPI.Configuration;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using Object = UnityEngine.Object;
 
 namespace MLAPI.RuntimeTests
 {
@@ -14,6 +15,9 @@ namespace MLAPI.RuntimeTests
     /// </summary>
     public static class MultiInstanceHelpers
     {
+
+        public static List<NetworkManager> NetworkManagerInstances = new List<NetworkManager>();
+
         /// <summary>
         /// Creates NetworkingManagers and configures them for use in a multi instance setting.
         /// </summary>
@@ -28,11 +32,10 @@ namespace MLAPI.RuntimeTests
             {
                 // Create gameObject
                 var go = new GameObject("NetworkManager - Client - " + i);
-
                 // Create networkManager component
                 clients[i] = go.AddComponent<NetworkManager>();
 
-                // Set config
+                // Set the NetworkConfig
                 clients[i].NetworkConfig = new NetworkConfig()
                 {
                     // Set the current scene to prevent unexpected log messages which would trigger a failure
@@ -42,14 +45,17 @@ namespace MLAPI.RuntimeTests
                 };
             }
 
+            NetworkManagerInstances = new List<NetworkManager>(clients);
+
             {
                 // Create gameObject
                 var go = new GameObject("NetworkManager - Server");
 
                 // Create networkManager component
                 server = go.AddComponent<NetworkManager>();
+                NetworkManagerInstances.Insert(0, server);
 
-                // Set config
+                // Set the NetworkConfig
                 server.NetworkConfig = new NetworkConfig()
                 {
                     // Set the current scene to prevent unexpected log messages which would trigger a failure
@@ -60,6 +66,25 @@ namespace MLAPI.RuntimeTests
             }
 
             return true;
+        }
+
+
+        public static void ShutdownAndClean()
+        {
+            // Shutdown the server which forces clients to disconnect
+            foreach (var networkManager in NetworkManagerInstances)
+            {
+                if (networkManager.IsServer)
+                {
+                    networkManager.StopHost();
+                }
+            }
+
+            // Destroy the network manager instances
+            foreach (var networkManager in NetworkManagerInstances)
+            {
+                Object.Destroy(networkManager.gameObject);
+            }
         }
 
         /// <summary>
@@ -170,6 +195,52 @@ namespace MLAPI.RuntimeTests
             }
         }
 
+        public static IEnumerator WaitForClientsConnected(NetworkManager[] clients, CoroutineResultWrapper<bool> result = null, int maxFrames = 64)
+        {
+            // Make sure none are the host client
+            foreach (var client in clients)
+            {
+                if (client.IsServer)
+                {
+                    throw new InvalidOperationException("Cannot wait for connected as server");
+                }
+            }
+
+
+            int startFrame = Time.frameCount;
+            var allConnected = true;
+            while (Time.frameCount - startFrame <= maxFrames)
+            {
+                allConnected = true;
+                foreach (var client in clients)
+                {
+                    if (!client.IsConnectedClient)
+                    {
+                        allConnected = false;
+                        break;
+                    }
+                }
+                if (allConnected)
+                {
+                    break;
+                }
+                int nextFrameId = Time.frameCount + 1;
+                yield return new WaitUntil(() => Time.frameCount >= nextFrameId);
+            }
+
+            if (result != null)
+            {
+                result.Result = allConnected;
+            }
+            else
+            {
+                foreach (var client in clients)
+                {
+                    Assert.True(client.IsConnectedClient, $"Client {client.LocalClientId} never connected");
+                }
+            }
+        }
+
         /// <summary>
         /// Waits on the server side for 1 client to be connected
         /// </summary>
@@ -199,7 +270,40 @@ namespace MLAPI.RuntimeTests
             }
             else
             {
-                Assert.True(res, "Client never connected to server");
+                Assert.True(res, "A Client never connected to server");
+            }
+        }
+
+        /// <summary>
+        /// Waits on the server side for 1 client to be connected
+        /// </summary>
+        /// <param name="server">The server</param>
+        /// <param name="result">The result. If null, it will automatically assert</param>
+        /// <param name="maxFrames">The max frames to wait for</param>
+        public static IEnumerator WaitForClientsConnectedToServer(NetworkManager server, int clientCount, CoroutineResultWrapper<bool> result = null, int maxFrames = 64)
+        {
+            if (!server.IsServer)
+            {
+                throw new InvalidOperationException("Cannot wait for connected as client");
+            }
+
+            int startFrame = Time.frameCount;
+
+            while (Time.frameCount - startFrame <= maxFrames && server.ConnectedClients.Count != clientCount)
+            {
+                int nextFrameId = Time.frameCount + 1;
+                yield return new WaitUntil(() => Time.frameCount >= nextFrameId);
+            }
+
+            bool res = server.ConnectedClients.Count == clientCount;
+
+            if (result != null)
+            {
+                result.Result = res;
+            }
+            else
+            {
+                Assert.True(res, "A client never connected to server");
             }
         }
 
