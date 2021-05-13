@@ -17,6 +17,7 @@ namespace MLAPI.Prototyping
             Client,
             Shared
         }
+
         [SerializeField, Tooltip("Defines who can update this transform.")]
         private Authority m_Authority; // todo Luke mentioned an incoming system to manage this at the NetworkBehaviour level, lets sync on this
 
@@ -90,6 +91,9 @@ namespace MLAPI.Prototyping
         private NetworkVariable<Quaternion>.OnValueChangedDelegate m_RotationChangedDelegate;
         private NetworkVariable<Vector3>.OnValueChangedDelegate m_ScaleChangedDelegate;
 
+        private bool m_NetworkStarted;
+
+        // todo really not happy with that one, hopefully we can have a cleaner solution with reparenting.
         private void SetWorldScale(Vector3 globalScale)
         {
             m_Transform.localScale = Vector3.one;
@@ -97,12 +101,30 @@ namespace MLAPI.Prototyping
             m_Transform.localScale = new Vector3(globalScale.x / lossyScale.x, globalScale.y / lossyScale.y, globalScale.z / lossyScale.z);
         }
 
+        private NetworkVariable<T>.OnValueChangedDelegate GetOnValueChangedDelegate<T>(Action<T> assignCurrent)
+        {
+            return (old, current) =>
+            {
+                if (m_Authority == Authority.Client && IsClient && IsOwner)
+                {
+                    // this should only happen for my own value changes.
+                    // todo this shouldn't happen anymore with new tick system (tick written will be higher than tick read, so netvar wouldn't change in that case
+                    return;
+                }
+
+                assignCurrent.Invoke(current);
+            };
+        }
+
+        private bool CanUpdateTransform()
+        {
+            return (IsClient && m_Authority == Authority.Client && IsOwner) || (IsServer && m_Authority == Authority.Server) || m_Authority == Authority.Shared;
+        }
+
         private void Awake()
         {
             m_Transform = transform;
         }
-
-        private bool m_NetworkStarted;
 
         public override void NetworkStart()
         {
@@ -121,10 +143,6 @@ namespace MLAPI.Prototyping
             SetupVar(m_NetworkPosition, m_Transform.position, ref m_OldPosition);
             SetupVar(m_NetworkRotation, m_Transform.rotation, ref m_OldRotation);
             SetupVar(m_NetworkWorldScale, m_Transform.lossyScale, ref m_OldScale);
-
-            // m_OldPosition = m_Transform.position;
-            // m_OldRotation = m_Transform.rotation;
-            // m_OldScale = m_Transform.lossyScale;
 
             m_PositionChangedDelegate = GetOnValueChangedDelegate<Vector3>(current =>
             {
@@ -169,29 +187,8 @@ namespace MLAPI.Prototyping
             m_NetworkWorldScale.OnValueChanged -= m_ScaleChangedDelegate;
         }
 
-        private bool CanUpdateTransform()
-        {
-            return (IsClient && m_Authority == Authority.Client && IsOwner) || (IsServer && m_Authority == Authority.Server) || m_Authority == Authority.Shared;
-        }
-
-        private NetworkVariable<T>.OnValueChangedDelegate GetOnValueChangedDelegate<T>(Action<T> assignCurrent)
-        {
-            return (old, current) =>
-            {
-                if (m_Authority == Authority.Client && IsClient && IsOwner)
-                {
-                    // this should only happen for my own value changes.
-                    // todo this shouldn't happen anymore with new tick system (tick written will be higher than tick read, so netvar wouldn't change in that case
-                    return;
-                }
-
-                assignCurrent.Invoke(current);
-            };
-        }
-
         private void FixedUpdate()
         {
-            // if (NetworkManager == null || (!NetworkManager.IsServer && !NetworkManager.IsClient))
             if (!m_NetworkStarted)
             {
                 return;

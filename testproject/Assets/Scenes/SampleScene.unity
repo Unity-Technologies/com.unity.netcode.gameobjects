@@ -1802,16 +1802,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 963826002}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: eab53a020970f4cbb9ddfe3792b069be, type: 3}
+  m_Script: {fileID: 11500000, guid: e96cb6065543e43c4a752faaa1468eb1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_NetworkObject: {fileID: 0}
-  NetworkBehaviourIdCache: 0
-  NetworkStartInvoked: 0
-  InternalNetworkStartInvoked: 0
-  m_VarInit: 0
   m_Authority: 0
-  FixedSendsPerSecond: 20
+  FixedSendsPerSecond: 30
   InterpolatePosition: 1
   SnapDistance: 10
   InterpolateServer: 1
@@ -1819,29 +1814,6 @@ MonoBehaviour:
   MinDegrees: 1.5
   MinSize: 0.15
   Channel: 10
-  m_Transform: {fileID: 0}
-  m_NetworkPosition:
-    <LocalTick>k__BackingField: 0
-    <RemoteTick>k__BackingField: 0
-    m_NetworkBehaviour: {fileID: 0}
-    m_InternalValue: {x: 0, y: 0, z: 0}
-    m_IsDirty: 0
-  m_NetworkRotation:
-    <LocalTick>k__BackingField: 0
-    <RemoteTick>k__BackingField: 0
-    m_NetworkBehaviour: {fileID: 0}
-    m_InternalValue: {x: 0, y: 0, z: 0, w: 0}
-    m_IsDirty: 0
-  m_NetworkWorldScale:
-    <LocalTick>k__BackingField: 0
-    <RemoteTick>k__BackingField: 0
-    m_NetworkBehaviour: {fileID: 0}
-    m_InternalValue: {x: 0, y: 0, z: 0}
-    m_IsDirty: 0
-  m_OldPosition: {x: 0, y: 0, z: 0}
-  m_OldRotation: {x: 0, y: 0, z: 0, w: 0}
-  m_OldScale: {x: 0, y: 0, z: 0}
-  m_NetworkStarted: 0
 --- !u!114 &963826006
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2783,16 +2755,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 1475593089}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: eab53a020970f4cbb9ddfe3792b069be, type: 3}
+  m_Script: {fileID: 11500000, guid: e96cb6065543e43c4a752faaa1468eb1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_NetworkObject: {fileID: 0}
-  NetworkBehaviourIdCache: 0
-  NetworkStartInvoked: 0
-  InternalNetworkStartInvoked: 0
-  m_VarInit: 0
   m_Authority: 0
-  FixedSendsPerSecond: 20
+  FixedSendsPerSecond: 30
   InterpolatePosition: 1
   SnapDistance: 10
   InterpolateServer: 1
@@ -2800,29 +2767,6 @@ MonoBehaviour:
   MinDegrees: 1.5
   MinSize: 0.15
   Channel: 10
-  m_Transform: {fileID: 0}
-  m_NetworkPosition:
-    <LocalTick>k__BackingField: 0
-    <RemoteTick>k__BackingField: 0
-    m_NetworkBehaviour: {fileID: 0}
-    m_InternalValue: {x: 0, y: 0, z: 0}
-    m_IsDirty: 0
-  m_NetworkRotation:
-    <LocalTick>k__BackingField: 0
-    <RemoteTick>k__BackingField: 0
-    m_NetworkBehaviour: {fileID: 0}
-    m_InternalValue: {x: 0, y: 0, z: 0, w: 0}
-    m_IsDirty: 0
-  m_NetworkWorldScale:
-    <LocalTick>k__BackingField: 0
-    <RemoteTick>k__BackingField: 0
-    m_NetworkBehaviour: {fileID: 0}
-    m_InternalValue: {x: 0, y: 0, z: 0}
-    m_IsDirty: 0
-  m_OldPosition: {x: 0, y: 0, z: 0}
-  m_OldRotation: {x: 0, y: 0, z: 0, w: 0}
-  m_OldScale: {x: 0, y: 0, z: 0}
-  m_NetworkStarted: 0
 --- !u!224 &1536251758 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 6633621479308595792, guid: d725b5588e1b956458798319e6541d84,
