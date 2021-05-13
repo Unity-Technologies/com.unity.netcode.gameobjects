@@ -45,7 +45,7 @@ namespace MLAPI.RuntimeTests
             var elapsedTime = endTime - startTime;
 
             var elapsedTicksExpected = (int)(elapsedTime / m_TickInterval);
-            Assert.Less(Math.Abs(elapsedTicksExpected - elapsedTicks), 2); // +/- 1 is OK            
+            Assert.Less(Math.Abs(elapsedTicksExpected - elapsedTicks), 2); // +/- 1 is OK
         }
     }
 }
