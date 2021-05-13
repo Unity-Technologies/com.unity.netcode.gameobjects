@@ -2,6 +2,7 @@ using System;
 using MLAPI.NetworkVariable;
 using MLAPI.Transports;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace MLAPI.Prototyping
 {
@@ -25,7 +26,7 @@ namespace MLAPI.Prototyping
         /// The base amount of sends per seconds to use when range is disabled
         /// </summary>
         [Range(0, 120)]
-        public float FixedSendsPerSecond = 30f; // todo have a global config for this? As a user, I wouldn't want to have to update my 1k objects if I realize it's not high enough late in the project
+        public float FixedSendsPerSecond = 30f;
 
         /// <summary>
         /// TODO once we have per var interpolation
@@ -98,67 +99,15 @@ namespace MLAPI.Prototyping
         private NetworkVariableVector3 m_NetworkPosition = new NetworkVariableVector3();
         private NetworkVariableQuaternion m_NetworkRotation = new NetworkVariableQuaternion();
         private NetworkVariableVector3 m_NetworkWorldScale = new NetworkVariableVector3();
-        // private NetworkTransform m_NetworkParent; // TODO handle this here? Needs to reparent NetworkObject, since current protocol uses NetworkObject+NetworkBehaviour+NetworkVariable hierarchy
+        // private NetworkTransform m_NetworkParent; // TODO handle this here?
 
         private Vector3 m_OldPosition;
         private Quaternion m_OldRotation;
         private Vector3 m_OldScale;
 
-        private NetworkTransformHandler m_Handler;
         private NetworkVariable<Vector3>.OnValueChangedDelegate m_PositionChangedDelegate;
         private NetworkVariable<Quaternion>.OnValueChangedDelegate m_RotationChangedDelegate;
         private NetworkVariable<Vector3>.OnValueChangedDelegate m_ScaleChangedDelegate;
-
-        private abstract class NetworkTransformHandler
-        {
-            protected NetworkTransformV2 m_NetworkTransform;
-            public abstract void NetworkStart();
-            public abstract void FixedUpdate();
-
-            public NetworkTransformHandler(NetworkTransformV2 networkTransform)
-            {
-                m_NetworkTransform = networkTransform;
-            }
-        }
-
-        private class ClientNetworkTransformHandler : NetworkTransformHandler
-        {
-            public ClientNetworkTransformHandler(NetworkTransformV2 networkTransform) : base(networkTransform) { }
-
-            public override void NetworkStart()
-            {
-            }
-
-            public override void FixedUpdate()
-            {
-
-            }
-        }
-
-        private class ServerNetworkTransformHandler : NetworkTransformHandler
-        {
-            public ServerNetworkTransformHandler(NetworkTransformV2 networkTransform) : base(networkTransform) { }
-
-            public override void NetworkStart()
-            {
-                if (m_NetworkTransform.m_Authority == Authority.Client)
-                {
-                    m_NetworkTransform.m_NetworkPosition.Settings.WritePermission = NetworkVariablePermission.OwnerOnly;
-                    m_NetworkTransform.m_NetworkRotation.Settings.WritePermission = NetworkVariablePermission.OwnerOnly;
-                    m_NetworkTransform.m_NetworkWorldScale.Settings.WritePermission = NetworkVariablePermission.OwnerOnly;
-                }
-                else if (m_NetworkTransform.m_Authority == Authority.Shared)
-                {
-                    m_NetworkTransform.m_NetworkPosition.Settings.WritePermission = NetworkVariablePermission.Everyone;
-                    m_NetworkTransform.m_NetworkRotation.Settings.WritePermission = NetworkVariablePermission.Everyone;
-                    m_NetworkTransform.m_NetworkWorldScale.Settings.WritePermission = NetworkVariablePermission.Everyone;
-                }
-            }
-
-            public override void FixedUpdate()
-            {
-            }
-        }
 
         private void SetWorldScale (Vector3 globalScale)
         {
@@ -185,7 +134,6 @@ namespace MLAPI.Prototyping
                 {
                     v.Value = initialValue;
                 }
-
                 oldVal = initialValue;
             }
 
@@ -216,15 +164,21 @@ namespace MLAPI.Prototyping
             });
             m_NetworkWorldScale.OnValueChanged += m_ScaleChangedDelegate;
 
-            if (!NetworkManager.Singleton.IsServer)
+            if (IsServer)
             {
-                m_Handler = new ClientNetworkTransformHandler(this);
+                if (m_Authority == Authority.Client)
+                {
+                    m_NetworkPosition.Settings.WritePermission = NetworkVariablePermission.OwnerOnly;
+                    m_NetworkRotation.Settings.WritePermission = NetworkVariablePermission.OwnerOnly;
+                    m_NetworkWorldScale.Settings.WritePermission = NetworkVariablePermission.OwnerOnly;
+                }
+                else if (m_Authority == Authority.Shared)
+                {
+                    m_NetworkPosition.Settings.WritePermission = NetworkVariablePermission.Everyone;
+                    m_NetworkRotation.Settings.WritePermission = NetworkVariablePermission.Everyone;
+                    m_NetworkWorldScale.Settings.WritePermission = NetworkVariablePermission.Everyone;
+                }
             }
-            else
-            {
-                m_Handler = new ServerNetworkTransformHandler(this);
-            }
-            m_Handler.NetworkStart();
         }
 
         public void OnDestroy()
@@ -243,8 +197,6 @@ namespace MLAPI.Prototyping
         {
             return (old, current) =>
             {
-                var isClientOnly = !IsServer;
-                // if (m_Authority == Authority.Client && isClientOnly && IsOwner)
                 if (m_Authority == Authority.Client && IsClient && IsOwner)
                 {
                     // this should only happen for my own value changes.
@@ -280,8 +232,6 @@ namespace MLAPI.Prototyping
                 m_OldRotation = m_Transform.rotation;
                 m_OldScale = m_Transform.lossyScale;
             }
-
-            m_Handler?.FixedUpdate();
         }
 
         /// <summary>
