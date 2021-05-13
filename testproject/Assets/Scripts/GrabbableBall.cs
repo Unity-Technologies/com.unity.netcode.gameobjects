@@ -11,6 +11,7 @@ public class GrabbableBall : NetworkBehaviour
     private Material m_Material;
 
     private NetworkVariable<bool> m_IsGrabbed = new NetworkVariable<bool>();
+    private Transform m_CachedParent = null;
 
     private void Awake()
     {
@@ -67,11 +68,6 @@ public class GrabbableBall : NetworkBehaviour
                 }
             }
         }
-
-        if (IsOwner && m_IsGrabbed.Value && localPlayerObject != null)
-        {
-            transform.position = localPlayerObject.transform.position + Vector3.up;
-        }
     }
 
     [ServerRpc(RequireOwnership = false)]
@@ -85,11 +81,9 @@ public class GrabbableBall : NetworkBehaviour
             {
                 NetworkObject.ChangeOwnership(senderClientId);
 
-                transform.position = senderPlayerObject.transform.position + Vector3.up;
-                m_Rigidbody.velocity = Vector3.zero;
-                m_Rigidbody.rotation = Quaternion.identity;
-
                 m_IsGrabbed.Value = true;
+
+                UpdateParentClientRpc(NetworkObject.OwnerClientId, false);
             }
         }
     }
@@ -102,6 +96,28 @@ public class GrabbableBall : NetworkBehaviour
             NetworkObject.RemoveOwnership();
 
             m_IsGrabbed.Value = false;
+
+            UpdateParentClientRpc(NetworkObject.OwnerClientId, true);
         }
+    }
+
+    [ClientRpc]
+    private void UpdateParentClientRpc(ulong ownerClientId, bool isFree)
+    {
+        var playerObject = NetworkManager.SpawnManager.GetPlayerNetworkObject(ownerClientId);
+
+        if (isFree || playerObject == null)
+        {
+            transform.parent = m_CachedParent;
+        }
+        else
+        {
+            m_CachedParent = transform.parent;
+            transform.parent = playerObject.transform;
+            transform.localPosition = Vector3.up;
+        }
+
+        m_Rigidbody.velocity = Vector3.zero;
+        m_Rigidbody.rotation = Quaternion.identity;
     }
 }
