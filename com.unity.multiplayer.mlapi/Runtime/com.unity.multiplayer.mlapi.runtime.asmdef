@@ -1,7 +1,10 @@
 {
     "name": "Unity.Multiplayer.MLAPI.Runtime",
     "rootNamespace": "MLAPI",
-    "references": [],
+    "references": [
+        "GUID:3450dc9e228065a499e6e09dee931704",
+        "GUID:b1cd7326e664a434ab35daa802773c7f"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": true,

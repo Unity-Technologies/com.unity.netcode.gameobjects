@@ -35,6 +35,13 @@ namespace MLAPI.Messaging
         // Used to mark longer lengths. Works because we can't have zero-sized messages
         private const byte k_LongLenMarker = 0;
 
+        private readonly NetworkManager m_NetworkManager;
+
+        public RpcBatcher(NetworkManager networkManager)
+        {
+            m_NetworkManager = networkManager;
+        }
+
         private void PushLength(int length, ref PooledNetworkWriter writer)
         {
             // If length is single byte we write it
@@ -145,6 +152,7 @@ namespace MLAPI.Messaging
                 m_SendDict[clientId].Writer.WriteBytes(queueItem.MessageData.Array, queueItem.MessageData.Count, queueItem.MessageData.Offset);
 
                 ProfilerStatManager.BytesSent.Record(queueItem.MessageData.Count);
+                m_NetworkManager.NetworkMetrics.TrackBytesSent(queueItem.MessageData.Count);
                 ProfilerStatManager.RpcsSent.Record();
                 PerformanceDataManager.Increment(ProfilerConstants.ByteSent, queueItem.MessageData.Count);
                 PerformanceDataManager.Increment(ProfilerConstants.RpcSent);

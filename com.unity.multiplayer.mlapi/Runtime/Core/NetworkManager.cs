@@ -18,6 +18,7 @@ using MLAPI.Spawning;
 using MLAPI.Exceptions;
 using MLAPI.Transports.Tasks;
 using MLAPI.Messaging.Buffering;
+using MLAPI.Metrics;
 using Unity.Profiling;
 
 namespace MLAPI
@@ -206,6 +207,8 @@ namespace MLAPI
         /// </summary>
         public string ConnectedHostname { get; private set; }
 
+        public NetworkMetrics NetworkMetrics { get; } = new NetworkMetrics();
+
         internal static event Action OnSingletonReady;
 
 #if UNITY_EDITOR
@@ -323,6 +326,8 @@ namespace MLAPI
             BufferManager = new BufferManager(this);
 
             SceneManager = new NetworkSceneManager(this);
+
+            m_RpcBatcher = new RpcBatcher(this);
 
             if (MessageHandler == null)
             {
@@ -1003,6 +1008,7 @@ namespace MLAPI
         {
             PerformanceDataManager.Increment(ProfilerConstants.ByteReceived, payload.Count);
             ProfilerStatManager.BytesRcvd.Record(payload.Count);
+            NetworkMetrics.TrackBytesReceived(payload.Count);
 
             switch (networkEvent)
             {
@@ -1092,7 +1098,7 @@ namespace MLAPI
         }
 
         private readonly NetworkBuffer m_InputBufferWrapper = new NetworkBuffer(new byte[0]);
-        private readonly RpcBatcher m_RpcBatcher = new RpcBatcher();
+        private RpcBatcher m_RpcBatcher;
 
         internal void HandleIncomingData(ulong clientId, NetworkChannel networkChannel, ArraySegment<byte> data, float receiveTime, bool allowBuffer)
         {
@@ -1447,6 +1453,7 @@ namespace MLAPI
                     ConnectedClientsList.RemoveAt(i);
                     PerformanceDataManager.Increment(ProfilerConstants.Connections, -1);
                     ProfilerStatManager.Connections.Record(-1);
+                    NetworkMetrics.TrackConnectionCount(-1);
                 }
             }
 
@@ -1516,6 +1523,7 @@ namespace MLAPI
                         ConnectedClientsList.RemoveAt(i);
                         PerformanceDataManager.Increment(ProfilerConstants.Connections, -1);
                         ProfilerStatManager.Connections.Record(-1);
+                        NetworkMetrics.TrackConnectionCount(-1);
                         break;
                     }
                 }
@@ -1563,6 +1571,7 @@ namespace MLAPI
 
                 PerformanceDataManager.Increment(ProfilerConstants.Connections);
                 ProfilerStatManager.Connections.Record();
+                NetworkMetrics.TrackConnectionCount(1);
 
                 // This packet is unreliable, but if it gets through it should provide a much better sync than the potentially huge approval message.
                 SyncTime();

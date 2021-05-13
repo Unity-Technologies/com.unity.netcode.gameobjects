@@ -32,6 +32,7 @@ namespace MLAPI.Messaging
 
                 m_NetworkManager.NetworkConfig.NetworkTransport.Send(clientId, new ArraySegment<byte>(buffer.GetBuffer(), 0, (int)buffer.Length), networkChannel);
                 ProfilerStatManager.BytesSent.Record((int)buffer.Length);
+                m_NetworkManager.NetworkMetrics.TrackBytesSent(buffer.Length);
                 PerformanceDataManager.Increment(ProfilerConstants.ByteSent, (int)buffer.Length);
 
 #if !UNITY_2020_2_OR_NEWER
@@ -59,6 +60,7 @@ namespace MLAPI.Messaging
 
                     m_NetworkManager.NetworkConfig.NetworkTransport.Send(m_NetworkManager.ConnectedClientsList[i].ClientId, new ArraySegment<byte>(buffer.GetBuffer(), 0, (int)buffer.Length), networkChannel);
                     ProfilerStatManager.BytesSent.Record((int)buffer.Length);
+                    m_NetworkManager.NetworkMetrics.TrackBytesSent(buffer.Length);
                     PerformanceDataManager.Increment(ProfilerConstants.ByteSent, (int)buffer.Length);
                 }
 
@@ -93,6 +95,7 @@ namespace MLAPI.Messaging
 
                     m_NetworkManager.NetworkConfig.NetworkTransport.Send(clientIds[i], new ArraySegment<byte>(buffer.GetBuffer(), 0, (int)buffer.Length), networkChannel);
                     ProfilerStatManager.BytesSent.Record((int)buffer.Length);
+                    m_NetworkManager.NetworkMetrics.TrackBytesSent(buffer.Length);
                     PerformanceDataManager.Increment(ProfilerConstants.ByteSent, (int)buffer.Length);
                 }
 
@@ -122,6 +125,7 @@ namespace MLAPI.Messaging
 
                     m_NetworkManager.NetworkConfig.NetworkTransport.Send(m_NetworkManager.ConnectedClientsList[i].ClientId, new ArraySegment<byte>(buffer.GetBuffer(), 0, (int)buffer.Length), networkChannel);
                     ProfilerStatManager.BytesSent.Record((int)buffer.Length);
+                    m_NetworkManager.NetworkMetrics.TrackBytesSent(buffer.Length);
                     PerformanceDataManager.Increment(ProfilerConstants.ByteSent, (int)buffer.Length);
                 }
 

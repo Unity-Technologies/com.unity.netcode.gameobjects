@@ -766,6 +766,7 @@ namespace MLAPI
                     networkVariableList[i].ReadDelta(stream, networkManager.IsServer, localTick, remoteTick);
                     PerformanceDataManager.Increment(ProfilerConstants.NetworkVarDeltas);
 
+                    
                     ProfilerStatManager.NetworkVarsRcvd.Record();
 
                     if (networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)

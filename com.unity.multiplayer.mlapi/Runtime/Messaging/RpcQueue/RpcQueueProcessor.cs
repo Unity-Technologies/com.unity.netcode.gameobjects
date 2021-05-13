@@ -20,7 +20,7 @@ namespace MLAPI.Messaging
 #endif
 
         // Batcher object used to manage the RPC batching on the send side
-        private readonly RpcBatcher m_RpcBatcher = new RpcBatcher();
+        private readonly RpcBatcher m_RpcBatcher;
         private const int k_BatchThreshold = 512;
 
         //NSS-TODO: Need to determine how we want to handle all other MLAPI send types
@@ -133,6 +133,7 @@ namespace MLAPI.Messaging
 
                                 PerformanceDataManager.Increment(ProfilerConstants.RpcSent, queueItem.ClientNetworkIds.Length);
                                 ProfilerStatManager.RpcsSent.Record(queueItem.ClientNetworkIds.Length);
+                                m_NetworkManager.NetworkMetrics.TrackRpcSent();
                                 break;
                             }
 
@@ -248,6 +249,7 @@ namespace MLAPI.Messaging
 
                         PerformanceDataManager.Increment(ProfilerConstants.ByteSent, (int)queueItem.StreamSize);
                         PerformanceDataManager.Increment(ProfilerConstants.RpcSent);
+                        m_NetworkManager.NetworkMetrics.TrackBytesSent(queueItem.StreamSize);
                         ProfilerStatManager.BytesSent.Record((int)queueItem.StreamSize);
                         ProfilerStatManager.RpcsSent.Record();
                         break;
@@ -261,6 +263,7 @@ namespace MLAPI.Messaging
                             //For each packet sent, we want to record how much data we have sent
                             PerformanceDataManager.Increment(ProfilerConstants.ByteSent, (int)queueItem.StreamSize);
                             ProfilerStatManager.BytesSent.Record((int)queueItem.StreamSize);
+                            m_NetworkManager.NetworkMetrics.TrackBytesSent(queueItem.StreamSize);
                         }
 
                         //For each client we send to, we want to record how many RPCs we have sent
@@ -276,6 +279,7 @@ namespace MLAPI.Messaging
         {
             m_RpcQueueContainer = rpcQueueContainer;
             m_NetworkManager = networkManager;
+            m_RpcBatcher = new RpcBatcher(networkManager);
         }
     }
 }

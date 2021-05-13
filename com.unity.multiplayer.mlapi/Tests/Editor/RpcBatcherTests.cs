@@ -5,6 +5,7 @@ using MLAPI.Messaging;
 using MLAPI.Serialization;
 using MLAPI.Transports;
 using NUnit.Framework;
+using UnityEngine;
 
 namespace MLAPI.EditorTests
 {
@@ -16,7 +17,10 @@ namespace MLAPI.EditorTests
             const int k_BatchThreshold = 256;
             const int k_QueueItemCount = 128;
 
-            var sendBatcher = new RpcBatcher();
+            var gameObject = new GameObject("NetworkManager");
+            var networkManager = gameObject.AddComponent<NetworkManager>();
+            
+            var sendBatcher = new RpcBatcher(networkManager);
             var sendStreamQueue = new Queue<NetworkBuffer>();
             for (int i = 0; i < k_QueueItemCount; ++i)
             {
@@ -48,7 +52,7 @@ namespace MLAPI.EditorTests
                     sendStreamQueue.Enqueue(queueStream);
                 });
 
-            var recvBatcher = new RpcBatcher();
+            var recvBatcher = new RpcBatcher(networkManager);
             var recvItemCounter = 0;
             foreach (var recvStream in sendStreamQueue)
             {
@@ -74,7 +78,10 @@ namespace MLAPI.EditorTests
             const int k_BatchThreshold = 0;
             const int k_QueueItemCount = 128;
 
-            var sendBatcher = new RpcBatcher();
+            var gameObject = new GameObject("NetworkManager");
+            var networkManager = gameObject.AddComponent<NetworkManager>();
+            
+            var sendBatcher = new RpcBatcher(networkManager);
             var sendStreamQueue = new Queue<NetworkBuffer>();
             for (int i = 0; i < k_QueueItemCount; ++i)
             {
@@ -106,7 +113,7 @@ namespace MLAPI.EditorTests
                     sendStreamQueue.Enqueue(queueStream);
                 });
 
-            var recvBatcher = new RpcBatcher();
+            var recvBatcher = new RpcBatcher(networkManager);
             var recvItemCounter = 0;
             foreach (var recvStream in sendStreamQueue)
             {
