@@ -20,6 +20,7 @@ namespace MLAPI
         public ulong NetworkObjectId; // the NetworkObjectId of the owning GameObject
         public ushort BehaviourIndex; // the index of the behaviour in this GameObject
         public ushort VariableIndex; // the index of the variable in this NetworkBehaviour
+        public ushort TickWritten; // the network tick at which this variable was set
     }
 
     // Index for a NetworkVariable in our table of variables
@@ -27,7 +28,6 @@ namespace MLAPI
     internal struct Entry
     {
         public VariableKey Key;
-        public ushort TickWritten; // the network tick at which this variable was set
         public ushort Position; // the offset in our Buffer
         public ushort Length; // the length of the data in Buffer
         public bool Fresh; // indicates entries that were just received
@@ -77,8 +77,9 @@ namespace MLAPI
             {
                 if (Entries[i].Key.NetworkObjectId == key.NetworkObjectId &&
                     Entries[i].Key.BehaviourIndex == key.BehaviourIndex &&
-                    Entries[i].Key.VariableIndex == key.VariableIndex/* &&
-                    Entries[i].Key.TickWritten == key.TickWritten*/)
+                    Entries[i].Key.VariableIndex == key.VariableIndex &&
+                    // TODO: TEMPORARY
+                    Entries[i].Key.TickWritten % 4 == key.TickWritten % 4)
                 {
                     return i;
                 }
@@ -91,15 +92,12 @@ namespace MLAPI
         /// Adds an entry in the table for a new key
         /// </summary>
         // todo: change the params to take a Key instead
-        public int AddEntry(ulong networkObjectId, int behaviourIndex, int variableIndex)
+        public int AddEntry(VariableKey k)
         {
             var pos = LastEntry++;
             var entry = Entries[pos];
 
-            entry.Key.NetworkObjectId = networkObjectId;
-            entry.Key.BehaviourIndex = (ushort)behaviourIndex;
-            entry.Key.VariableIndex = (ushort)variableIndex;
-            entry.TickWritten = 0;
+            entry.Key = k;
             entry.Position = 0;
             entry.Length = 0;
             entry.Fresh = false;
@@ -118,7 +116,7 @@ namespace MLAPI
             writer.WriteUInt64(entry.Key.NetworkObjectId);
             writer.WriteUInt16(entry.Key.BehaviourIndex);
             writer.WriteUInt16(entry.Key.VariableIndex);
-            writer.WriteUInt16(entry.TickWritten);
+            writer.WriteUInt16(entry.Key.TickWritten);
             writer.WriteUInt16(entry.Position);
             writer.WriteUInt16(entry.Length);
         }
@@ -134,7 +132,7 @@ namespace MLAPI
             entry.Key.NetworkObjectId = reader.ReadUInt64();
             entry.Key.BehaviourIndex = reader.ReadUInt16();
             entry.Key.VariableIndex = reader.ReadUInt16();
-            entry.TickWritten = reader.ReadUInt16();
+            entry.Key.TickWritten = reader.ReadUInt16();
             entry.Position = reader.ReadUInt16();
             entry.Length = reader.ReadUInt16();
             entry.Fresh = false;
@@ -174,7 +172,7 @@ namespace MLAPI
 
             for (var i = 0; i < LastEntry; i++)
             {
-                if (Entries[i].Fresh && Entries[i].TickWritten > 0)
+                if (Entries[i].Fresh && Entries[i].Key.TickWritten > 0)
                 {
                     var nv = FindNetworkVar(Entries[i].Key);
 
@@ -182,7 +180,7 @@ namespace MLAPI
 
                     // todo --M1--
                     // Review whether tick still belong in netvar or in the snapshot table.
-                    nv.ReadDelta(Stream, m_NetworkManager.IsServer, m_NetworkManager.NetworkTickSystem.GetTick(), Entries[i].TickWritten);
+                    nv.ReadDelta(Stream, m_NetworkManager.IsServer, m_NetworkManager.NetworkTickSystem.GetTick(), Entries[i].Key.TickWritten);
                 }
 
                 Entries[i].Fresh = false;
@@ -207,8 +205,7 @@ namespace MLAPI
                 int pos = Find(entry.Key);
                 if (pos == Entry.NotFound)
                 {
-                    pos = AddEntry(entry.Key.NetworkObjectId, entry.Key.BehaviourIndex,
-                        entry.Key.VariableIndex);
+                    pos = AddEntry(entry.Key);
                 }
 
                 // if we need to allocate more memory (the variable grew in size)
@@ -289,12 +286,12 @@ namespace MLAPI
                         SendSnapshot(m_NetworkManager.ServerClientId);
                     }
 
-                    DebugDisplayStore(m_Snapshot, "Entries");
+                    /*DebugDisplayStore(m_Snapshot, "Entries");
 
                     foreach(var item in m_ClientReceivedSnapshot)
                     {
                         DebugDisplayStore(item.Value, "Received Entries " + item.Key);
-                    }
+                    }*/
                 }
             }
         }
@@ -371,11 +368,12 @@ namespace MLAPI
             k.NetworkObjectId = networkObjectId;
             k.BehaviourIndex = (ushort)behaviourIndex;
             k.VariableIndex = (ushort)variableIndex;
+            k.TickWritten = m_NetworkManager.NetworkTickSystem.GetTick();
 
             int pos = m_Snapshot.Find(k);
             if (pos == Entry.NotFound)
             {
-                pos = m_Snapshot.AddEntry(networkObjectId, behaviourIndex, variableIndex);
+                pos = m_Snapshot.AddEntry(k);
             }
 
             // write var into buffer, possibly adjusting entry's position and length
@@ -388,7 +386,7 @@ namespace MLAPI
                     m_Snapshot.AllocateEntry(ref m_Snapshot.Entries[pos], varBuffer.Length);
                 }
 
-                m_Snapshot.Entries[pos].TickWritten = m_NetworkManager.NetworkTickSystem.GetTick();
+//                m_Snapshot.Entries[pos].Key.TickWritten = m_NetworkManager.NetworkTickSystem.GetTick();
                 // Copy the serialized NetworkVariable into our buffer
                 Buffer.BlockCopy(varBuffer.GetBuffer(), 0, m_Snapshot.Buffer, m_Snapshot.Entries[pos].Position, (int)varBuffer.Length);
             }
@@ -454,7 +452,7 @@ namespace MLAPI
             for (int i = 0; i < block.LastEntry; i++)
             {
                 table += string.Format("NetworkVariable {0}:{1}:{2} written {5}, range [{3}, {4}] ", block.Entries[i].Key.NetworkObjectId, block.Entries[i].Key.BehaviourIndex,
-                    block.Entries[i].Key.VariableIndex, block.Entries[i].Position, block.Entries[i].Position + block.Entries[i].Length, block.Entries[i].TickWritten);
+                    block.Entries[i].Key.VariableIndex, block.Entries[i].Position, block.Entries[i].Position + block.Entries[i].Length, block.Entries[i].Key.TickWritten);
 
                 for (int j = 0; j < block.Entries[i].Length && j < 4; j++)
                 {
