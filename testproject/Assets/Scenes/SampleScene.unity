@@ -451,11 +451,18 @@ MonoBehaviour:
   m_GameObject: {fileID: 402668297}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: eab53a020970f4cbb9ddfe3792b069be, type: 3}
+  m_Script: {fileID: 11500000, guid: e96cb6065543e43c4a752faaa1468eb1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   m_Authority: 0
-  FixedSendsPerSecond: 20
+  FixedSendsPerSecond: 30
+  InterpolatePosition: 1
+  SnapDistance: 10
+  InterpolateServer: 1
+  MinMeters: 0.15
+  MinDegrees: 1.5
+  MinSize: 0.15
+  Channel: 10
 --- !u!1 &403665142
 GameObject:
   m_ObjectHideFlags: 0
@@ -1492,7 +1499,7 @@ Transform:
   m_LocalScale: {x: 0.42366, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 11
+  m_RootOrder: 10
   m_LocalEulerAnglesHint: {x: 0, y: 90, z: 0}
 --- !u!114 &963826004
 MonoBehaviour:
@@ -1518,8 +1525,43 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: eab53a020970f4cbb9ddfe3792b069be, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  m_NetworkObject: {fileID: 0}
+  NetworkBehaviourIdCache: 0
+  NetworkStartInvoked: 0
+  InternalNetworkStartInvoked: 0
+  m_VarInit: 0
   m_Authority: 0
   FixedSendsPerSecond: 20
+  InterpolatePosition: 1
+  SnapDistance: 10
+  InterpolateServer: 1
+  MinMeters: 0.15
+  MinDegrees: 1.5
+  MinSize: 0.15
+  Channel: 10
+  m_Transform: {fileID: 0}
+  m_NetworkPosition:
+    <LocalTick>k__BackingField: 0
+    <RemoteTick>k__BackingField: 0
+    m_NetworkBehaviour: {fileID: 0}
+    m_InternalValue: {x: 0, y: 0, z: 0}
+    m_IsDirty: 0
+  m_NetworkRotation:
+    <LocalTick>k__BackingField: 0
+    <RemoteTick>k__BackingField: 0
+    m_NetworkBehaviour: {fileID: 0}
+    m_InternalValue: {x: 0, y: 0, z: 0, w: 0}
+    m_IsDirty: 0
+  m_NetworkWorldScale:
+    <LocalTick>k__BackingField: 0
+    <RemoteTick>k__BackingField: 0
+    m_NetworkBehaviour: {fileID: 0}
+    m_InternalValue: {x: 0, y: 0, z: 0}
+    m_IsDirty: 0
+  m_OldPosition: {x: 0, y: 0, z: 0}
+  m_OldRotation: {x: 0, y: 0, z: 0, w: 0}
+  m_OldScale: {x: 0, y: 0, z: 0}
+  m_NetworkStarted: 0
 --- !u!114 &963826006
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1788,7 +1830,7 @@ Transform:
   m_Children:
   - {fileID: 1475593094}
   m_Father: {fileID: 0}
-  m_RootOrder: 10
+  m_RootOrder: 9
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1397037315
 GameObject:
@@ -1835,11 +1877,18 @@ MonoBehaviour:
   m_GameObject: {fileID: 1397037315}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: eab53a020970f4cbb9ddfe3792b069be, type: 3}
+  m_Script: {fileID: 11500000, guid: e96cb6065543e43c4a752faaa1468eb1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   m_Authority: 2
   FixedSendsPerSecond: 30
+  InterpolatePosition: 1
+  SnapDistance: 10
+  InterpolateServer: 1
+  MinMeters: 0.15
+  MinDegrees: 1.5
+  MinSize: 0.15
+  Channel: 10
 --- !u!114 &1397037319
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2045,198 +2094,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1398767341}
   m_Mesh: {fileID: 10209, guid: 0000000000000000e000000000000000, type: 0}
---- !u!1 &1408896952
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1408896960}
-  - component: {fileID: 1408896959}
-  - component: {fileID: 1408896958}
-  - component: {fileID: 1408896957}
-  - component: {fileID: 1408896956}
-  - component: {fileID: 1408896955}
-  - component: {fileID: 1408896954}
-  - component: {fileID: 1408896953}
-  m_Layer: 0
-  m_Name: GrabbableBallOldTransform
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1408896953
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1408896952}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 06b508cdcc0ba48ceaaf392863dcf743, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  GrabDistance: 5
---- !u!114 &1408896954
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1408896952}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e96cb6065543e43c4a752faaa1468eb1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  FixedSendsPerSecond: 20
-  AssumeSyncedSends: 1
-  InterpolatePosition: 1
-  SnapDistance: 10
-  InterpolateServer: 0
-  MinMeters: 0.15
-  MinDegrees: 1.5
-  ExtrapolatePosition: 0
-  MaxSendsToExtrapolate: 5
-  Channel: 
-  EnableRange: 0
-  EnableNonProvokedResendChecks: 0
-  DistanceSendrate:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 20
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    - serializedVersion: 3
-      time: 500
-      value: 20
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
---- !u!114 &1408896955
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1408896952}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 1232493931
-  AlwaysReplicateAsRoot: 0
-  DontDestroyWithOwner: 0
---- !u!54 &1408896956
-Rigidbody:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1408896952}
-  serializedVersion: 2
-  m_Mass: 1
-  m_Drag: 0
-  m_AngularDrag: 0.05
-  m_UseGravity: 1
-  m_IsKinematic: 0
-  m_Interpolate: 0
-  m_Constraints: 0
-  m_CollisionDetection: 0
---- !u!135 &1408896957
-SphereCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1408896952}
-  m_Material: {fileID: 0}
-  m_IsTrigger: 0
-  m_Enabled: 1
-  serializedVersion: 2
-  m_Radius: 0.5
-  m_Center: {x: 0, y: 0, z: 0}
---- !u!23 &1408896958
-MeshRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1408896952}
-  m_Enabled: 1
-  m_CastShadows: 1
-  m_ReceiveShadows: 1
-  m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
-  m_MotionVectors: 1
-  m_LightProbeUsage: 1
-  m_ReflectionProbeUsage: 1
-  m_RayTracingMode: 2
-  m_RayTraceProcedural: 0
-  m_RenderingLayerMask: 1
-  m_RendererPriority: 0
-  m_Materials:
-  - {fileID: 10303, guid: 0000000000000000f000000000000000, type: 0}
-  m_StaticBatchInfo:
-    firstSubMesh: 0
-    subMeshCount: 0
-  m_StaticBatchRoot: {fileID: 0}
-  m_ProbeAnchor: {fileID: 0}
-  m_LightProbeVolumeOverride: {fileID: 0}
-  m_ScaleInLightmap: 1
-  m_ReceiveGI: 1
-  m_PreserveUVs: 0
-  m_IgnoreNormalsForChartDetection: 0
-  m_ImportantGI: 0
-  m_StitchLightmapSeams: 1
-  m_SelectedEditorRenderState: 3
-  m_MinimumChartSize: 4
-  m_AutoUVMaxDistance: 0.5
-  m_AutoUVMaxAngle: 89
-  m_LightmapParameters: {fileID: 0}
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
-  m_SortingOrder: 0
-  m_AdditionalVertexStreams: {fileID: 0}
---- !u!33 &1408896959
-MeshFilter:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1408896952}
-  m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
---- !u!4 &1408896960
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1408896952}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -11.81, y: 0.5, z: 11.04}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_RootOrder: 9
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1463459130
 GameObject:
   m_ObjectHideFlags: 0
@@ -2569,8 +2426,43 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: eab53a020970f4cbb9ddfe3792b069be, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  m_NetworkObject: {fileID: 0}
+  NetworkBehaviourIdCache: 0
+  NetworkStartInvoked: 0
+  InternalNetworkStartInvoked: 0
+  m_VarInit: 0
   m_Authority: 0
   FixedSendsPerSecond: 20
+  InterpolatePosition: 1
+  SnapDistance: 10
+  InterpolateServer: 1
+  MinMeters: 0.15
+  MinDegrees: 1.5
+  MinSize: 0.15
+  Channel: 10
+  m_Transform: {fileID: 0}
+  m_NetworkPosition:
+    <LocalTick>k__BackingField: 0
+    <RemoteTick>k__BackingField: 0
+    m_NetworkBehaviour: {fileID: 0}
+    m_InternalValue: {x: 0, y: 0, z: 0}
+    m_IsDirty: 0
+  m_NetworkRotation:
+    <LocalTick>k__BackingField: 0
+    <RemoteTick>k__BackingField: 0
+    m_NetworkBehaviour: {fileID: 0}
+    m_InternalValue: {x: 0, y: 0, z: 0, w: 0}
+    m_IsDirty: 0
+  m_NetworkWorldScale:
+    <LocalTick>k__BackingField: 0
+    <RemoteTick>k__BackingField: 0
+    m_NetworkBehaviour: {fileID: 0}
+    m_InternalValue: {x: 0, y: 0, z: 0}
+    m_IsDirty: 0
+  m_OldPosition: {x: 0, y: 0, z: 0}
+  m_OldRotation: {x: 0, y: 0, z: 0, w: 0}
+  m_OldScale: {x: 0, y: 0, z: 0}
+  m_NetworkStarted: 0
 --- !u!224 &1536251758 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 6633621479308595792, guid: d725b5588e1b956458798319e6541d84,
