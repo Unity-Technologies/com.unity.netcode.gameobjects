@@ -32,16 +32,16 @@ namespace MLAPI.Prototyping
         /// TODO once we have per var interpolation
         /// Enable interpolation
         /// </summary>
-        [Tooltip("This requires AssumeSyncedSends to be true")]
         // ReSharper disable once NotAccessedField.Global
+        [Tooltip("This requires AssumeSyncedSends to be true")]
         public bool InterpolatePosition = true;
 
         /// <summary>
         /// TODO once we have per var interpolation
         /// The distance before snaping to the position
         /// </summary>
-        [Tooltip("The transform will snap if the distance is greater than this distance")]
         // ReSharper disable once NotAccessedField.Global
+        [Tooltip("The transform will snap if the distance is greater than this distance")]
         public float SnapDistance = 10f;
 
         /// <summary>
@@ -109,11 +109,11 @@ namespace MLAPI.Prototyping
         private NetworkVariable<Quaternion>.OnValueChangedDelegate m_RotationChangedDelegate;
         private NetworkVariable<Vector3>.OnValueChangedDelegate m_ScaleChangedDelegate;
 
-        private void SetWorldScale (Vector3 globalScale)
+        private void SetWorldScale(Vector3 globalScale)
         {
             m_Transform.localScale = Vector3.one;
             var lossyScale = m_Transform.lossyScale;
-            m_Transform.localScale = new Vector3 (globalScale.x/lossyScale.x, globalScale.y/lossyScale.y, globalScale.z/lossyScale.z);
+            m_Transform.localScale = new Vector3(globalScale.x / lossyScale.x, globalScale.y / lossyScale.y, globalScale.z / lossyScale.z);
         }
 
         private void Awake()

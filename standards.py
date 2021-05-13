@@ -1,3 +1,4 @@
+
 #!/usr/bin/env python3
 
 import os
@@ -7,6 +8,12 @@ import glob
 import argparse
 import datetime
 
+"""
+For Mac users run:
+>brew install dotnet
+To install dotnet-format, run:
+>dotnet tool install --global dotnet-format 
+"""
 
 parser = argparse.ArgumentParser()
 
