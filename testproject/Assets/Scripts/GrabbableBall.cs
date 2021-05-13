@@ -88,9 +88,6 @@ public class GrabbableBall : NetworkBehaviour
                 transform.position = senderPlayerObject.transform.position + Vector3.up;
                 m_Rigidbody.velocity = Vector3.zero;
                 m_Rigidbody.rotation = Quaternion.identity;
-                // transform.parent = senderPlayerObject.transform;
-                // transform.localPosition = Vector3.up*4;
-                // transform.localScale = Vector3.one;
 
                 m_IsGrabbed.Value = true;
             }
@@ -103,8 +100,6 @@ public class GrabbableBall : NetworkBehaviour
         if (m_IsGrabbed.Value)
         {
             NetworkObject.RemoveOwnership();
-            // transform.parent = null;
-            // transform.localScale = Vector3.one;
             m_IsGrabbed.Value = false;
         }
     }
