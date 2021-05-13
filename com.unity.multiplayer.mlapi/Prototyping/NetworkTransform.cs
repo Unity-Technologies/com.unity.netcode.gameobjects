@@ -51,7 +51,9 @@ namespace MLAPI.Prototyping
         public bool InterpolateServer = true;
 
         /// <summary>
-        /// TODO once we have this per var setting
+        /// TODO once we have this per var setting. The value check could be more on the network variable itself. If a server increases
+        ///      a Netvar int by +0.05, the netvar would actually not transmit that info and would wait for the value to be even more different.
+        ///      The setting in the NetworkTransform would be to just apply it to our netvars when available
         /// The min meters to move before a send is sent
         /// </summary>
         // ReSharper disable once NotAccessedField.Global
@@ -91,14 +93,53 @@ namespace MLAPI.Prototyping
         private NetworkVariable<Quaternion>.OnValueChangedDelegate m_RotationChangedDelegate;
         private NetworkVariable<Vector3>.OnValueChangedDelegate m_ScaleChangedDelegate;
 
-        private bool m_NetworkStarted;
-
         // todo really not happy with that one, hopefully we can have a cleaner solution with reparenting.
         private void SetWorldScale(Vector3 globalScale)
         {
             m_Transform.localScale = Vector3.one;
             var lossyScale = m_Transform.lossyScale;
             m_Transform.localScale = new Vector3(globalScale.x / lossyScale.x, globalScale.y / lossyScale.y, globalScale.z / lossyScale.z);
+        }
+
+        private bool CanUpdateTransform()
+        {
+            return (IsClient && authority == Authority.Client && IsOwner) || (IsServer && authority == Authority.Server) || authority == Authority.Shared;
+        }
+
+        private void Awake()
+        {
+            m_Transform = transform;
+        }
+
+        public override void NetworkStart()
+        {
+            void SetupVar<T>(NetworkVariable<T> v, T initialValue, ref T oldVal)
+            {
+                v.Settings.SendTickrate = FixedSendsPerSecond;
+                v.Settings.SendNetworkChannel = Channel;
+                if (CanUpdateTransform())
+                {
+                    v.Value = initialValue;
+                }
+                oldVal = initialValue;
+            }
+
+            SetupVar(m_NetworkPosition, m_Transform.position, ref m_OldPosition);
+            SetupVar(m_NetworkRotation, m_Transform.rotation, ref m_OldRotation);
+            SetupVar(m_NetworkWorldScale, m_Transform.lossyScale, ref m_OldScale);
+
+            if (authority == Authority.Client)
+            {
+                m_NetworkPosition.Settings.WritePermission = NetworkVariablePermission.OwnerOnly;
+                m_NetworkRotation.Settings.WritePermission = NetworkVariablePermission.OwnerOnly;
+                m_NetworkWorldScale.Settings.WritePermission = NetworkVariablePermission.OwnerOnly;
+            }
+            else if (authority == Authority.Shared)
+            {
+                m_NetworkPosition.Settings.WritePermission = NetworkVariablePermission.Everyone;
+                m_NetworkRotation.Settings.WritePermission = NetworkVariablePermission.Everyone;
+                m_NetworkWorldScale.Settings.WritePermission = NetworkVariablePermission.Everyone;
+            }
         }
 
         private NetworkVariable<T>.OnValueChangedDelegate GetOnValueChangedDelegate<T>(Action<T> assignCurrent)
@@ -116,34 +157,8 @@ namespace MLAPI.Prototyping
             };
         }
 
-        private bool CanUpdateTransform()
+        private void Start()
         {
-            return (IsClient && authority == Authority.Client && IsOwner) || (IsServer && authority == Authority.Server) || authority == Authority.Shared;
-        }
-
-        private void Awake()
-        {
-            m_Transform = transform;
-        }
-
-        public override void NetworkStart()
-        {
-            m_NetworkStarted = true;
-            void SetupVar<T>(NetworkVariable<T> v, T initialValue, ref T oldVal)
-            {
-                v.Settings.SendTickrate = FixedSendsPerSecond;
-                v.Settings.SendNetworkChannel = Channel;
-                if (CanUpdateTransform())
-                {
-                    v.Value = initialValue;
-                }
-                oldVal = initialValue;
-            }
-
-            SetupVar(m_NetworkPosition, m_Transform.position, ref m_OldPosition);
-            SetupVar(m_NetworkRotation, m_Transform.rotation, ref m_OldRotation);
-            SetupVar(m_NetworkWorldScale, m_Transform.lossyScale, ref m_OldScale);
-
             m_PositionChangedDelegate = GetOnValueChangedDelegate<Vector3>(current =>
             {
                 transform.position = current;
@@ -162,22 +177,6 @@ namespace MLAPI.Prototyping
                 m_OldScale = current;
             });
             m_NetworkWorldScale.OnValueChanged += m_ScaleChangedDelegate;
-
-            if (IsServer)
-            {
-                if (authority == Authority.Client)
-                {
-                    m_NetworkPosition.Settings.WritePermission = NetworkVariablePermission.OwnerOnly;
-                    m_NetworkRotation.Settings.WritePermission = NetworkVariablePermission.OwnerOnly;
-                    m_NetworkWorldScale.Settings.WritePermission = NetworkVariablePermission.OwnerOnly;
-                }
-                else if (authority == Authority.Shared)
-                {
-                    m_NetworkPosition.Settings.WritePermission = NetworkVariablePermission.Everyone;
-                    m_NetworkRotation.Settings.WritePermission = NetworkVariablePermission.Everyone;
-                    m_NetworkWorldScale.Settings.WritePermission = NetworkVariablePermission.Everyone;
-                }
-            }
         }
 
         public void OnDestroy()
@@ -189,7 +188,7 @@ namespace MLAPI.Prototyping
 
         private void FixedUpdate()
         {
-            if (!m_NetworkStarted)
+            if (!NetworkObject.IsSpawned)
             {
                 return;
             }
