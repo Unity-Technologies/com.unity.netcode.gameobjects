@@ -248,14 +248,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   authority: 0
-  FixedSendsPerSecond: 20
+  FixedSendsPerSecond: 30
   InterpolatePosition: 1
   SnapDistance: 10
   InterpolateServer: 1
   MinMeters: 0.15
   MinDegrees: 1.5
   MinSize: 0.15
-  Channel: 0
+  Channel: 10
 --- !u!114 &7023392397975834761
 MonoBehaviour:
   m_ObjectHideFlags: 0

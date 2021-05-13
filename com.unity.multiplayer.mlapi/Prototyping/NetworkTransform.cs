@@ -2,6 +2,7 @@ using System;
 using MLAPI.NetworkVariable;
 using MLAPI.Transports;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace MLAPI.Prototyping
 {
@@ -11,6 +12,11 @@ namespace MLAPI.Prototyping
     [AddComponentMenu("MLAPI/NetworkTransform")]
     public class NetworkTransform : NetworkBehaviour
     {
+        /// <summary>
+        /// Server authority only allows the server to update this transform
+        /// Client authority only allows the client owner to update this transform
+        /// Shared authority allows everyone to update this transform
+        /// </summary>
         public enum Authority
         {
             Server = 0, // default
@@ -18,13 +24,17 @@ namespace MLAPI.Prototyping
             Shared
         }
 
+        /// <summary>
+        /// TODO this will need refactoring
+        /// Specifies who can update this transform
+        /// </summary>
         [SerializeField, Tooltip("Defines who can update this transform.")]
-        public Authority authority; // todo Luke mentioned an incoming system to manage this at the NetworkBehaviour level, lets sync on this
+        public Authority authority = Authority.Server; // todo Luke mentioned an incoming system to manage this at the NetworkBehaviour level, lets sync on this
 
         /// <summary>
         /// The base amount of sends per seconds to use when range is disabled
         /// </summary>
-        [Range(0, 120)]
+        [SerializeField, Range(0, 120), Tooltip("The base amount of sends per seconds to use when range is disabled")]
         public float FixedSendsPerSecond = 30f;
 
         /// <summary>
@@ -32,7 +42,8 @@ namespace MLAPI.Prototyping
         /// Enable interpolation
         /// </summary>
         // ReSharper disable once NotAccessedField.Global
-        [Tooltip("This requires AssumeSyncedSends to be true")]
+        [FormerlySerializedAs("m_InterpolatePosition")]
+        [SerializeField, Tooltip("This requires AssumeSyncedSends to be true")]
         public bool InterpolatePosition = true;
 
         /// <summary>
@@ -40,7 +51,7 @@ namespace MLAPI.Prototyping
         /// The distance before snaping to the position
         /// </summary>
         // ReSharper disable once NotAccessedField.Global
-        [Tooltip("The transform will snap if the distance is greater than this distance")]
+        [SerializeField, Tooltip("The transform will snap if the distance is greater than this distance")]
         public float SnapDistance = 10f;
 
         /// <summary>
@@ -48,6 +59,7 @@ namespace MLAPI.Prototyping
         /// Should the server interpolate
         /// </summary>
         // ReSharper disable once NotAccessedField.Global
+        [SerializeField]
         public bool InterpolateServer = true;
 
         /// <summary>
@@ -57,26 +69,29 @@ namespace MLAPI.Prototyping
         /// The min meters to move before a send is sent
         /// </summary>
         // ReSharper disable once NotAccessedField.Global
+        [SerializeField, Tooltip("The min meters to move before a send is sent")]
         public float MinMeters = 0.15f;
 
         /// <summary>
         /// TODO once we have this per var setting
-        /// The min degrees to rotate before a send it sent
+        /// The min degrees to rotate before a send is sent
         /// </summary>
         // ReSharper disable once NotAccessedField.Global
+        [SerializeField, Tooltip("The min degrees to rotate before a send is sent")]
         public float MinDegrees = 1.5f;
 
         /// <summary>
         /// TODO once we have this per var setting
-        /// The min meters to scale before a send it sent
+        /// The min meters to scale before a send is sent
         /// </summary>
         // ReSharper disable once NotAccessedField.Global
+        [SerializeField, Tooltip("The min meters to scale before a send is sent")]
         public float MinSize = 0.15f;
 
         /// <summary>
         /// The channel to send the data on
         /// </summary>
-        [Tooltip("The channel to send the data on.")]
+        [SerializeField, Tooltip("The channel to send the data on.")]
         public NetworkChannel Channel = NetworkChannel.NetworkVariable;
 
         private Transform m_Transform;
