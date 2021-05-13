@@ -100,6 +100,7 @@ public class GrabbableBall : NetworkBehaviour
         if (m_IsGrabbed.Value)
         {
             NetworkObject.RemoveOwnership();
+
             m_IsGrabbed.Value = false;
         }
     }
