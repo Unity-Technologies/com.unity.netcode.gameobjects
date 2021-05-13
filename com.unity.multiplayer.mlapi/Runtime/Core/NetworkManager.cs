@@ -54,8 +54,21 @@ namespace MLAPI
 
         internal RpcQueueContainer RpcQueueContainer { get; private set; }
         internal NetworkTickSystem NetworkTickSystem { get; private set; }
+
         internal SnapshotSystem SnapshotSystem { get; private set; }
-        public NetworkPrefabHandler PrefabHandler { get; private set; }
+        
+        private NetworkPrefabHandler m_PrefabHandler;
+        public NetworkPrefabHandler PrefabHandler
+        {
+            get
+            {
+                if(m_PrefabHandler == null)
+                {
+                    m_PrefabHandler = new NetworkPrefabHandler();
+                }
+                return m_PrefabHandler;
+            }            
+        }
 
         /// <summary>
         /// A synchronized time, represents the time in seconds since the server application started. Is replicated across all clients
@@ -718,11 +731,6 @@ namespace MLAPI
             Singleton = this;
 
             OnSingletonReady?.Invoke();
-        }
-
-        private void Awake()
-        {
-            PrefabHandler = new NetworkPrefabHandler();
         }
 
         private void OnEnable()
