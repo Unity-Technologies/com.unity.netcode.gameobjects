@@ -78,23 +78,6 @@ namespace MLAPI.Prototyping
         [Tooltip("The channel to send the data on.")]
         public NetworkChannel Channel = NetworkChannel.NetworkVariable;
 
-        // // commenting this out since we already have authority validation. Since client driven net var changes
-        // // are authoritative, there's no use validating the net var change server side.
-        // // Leaving this here for review, but this should disappear in upcoming revision. TODO
-        // /// <summary>
-        // /// The delegate used to check if a move is valid
-        // /// </summary>
-        // /// <param name="clientId">The client id the move is being validated for</param>
-        // /// <param name="oldPos">The previous position</param>
-        // /// <param name="newPos">The new requested position</param>
-        // /// <returns>Returns Whether or not the move is valid</returns>
-        // public delegate bool ValueChangeValidationDelegate<T>(ulong clientId, T oldValue, T newValue);
-        //
-        // /// <summary>
-        // /// If set, moves will only be accepted if the custom delegate returns true
-        // /// </summary>
-        // public ValueChangeValidationDelegate<Vector3> IsMoveValidDelegate = null;
-
         private Transform m_Transform;
         private NetworkVariableVector3 m_NetworkPosition = new NetworkVariableVector3();
         private NetworkVariableQuaternion m_NetworkRotation = new NetworkVariableQuaternion();
