@@ -1,12 +1,15 @@
 using System;
 using MLAPI.NetworkVariable;
+using MLAPI.Transports;
 using UnityEngine;
 
 namespace MLAPI.Prototyping
 {
     /// <summary>
+    /// A prototype component for syncing transforms
     /// TODO remove the V2 after review
     /// </summary>
+    [AddComponentMenu("MLAPI/NetworkTransform")]
     public class NetworkTransformV2 : NetworkBehaviour
     {
         public enum Authority
@@ -17,11 +20,82 @@ namespace MLAPI.Prototyping
         }
         [SerializeField, Tooltip("Defines who can update this transform.")]
         private Authority m_Authority; // todo Luke mentioned an incoming system to manage this at the NetworkBehaviour level, lets sync on this
+
+        /// <summary>
+        /// The base amount of sends per seconds to use when range is disabled
+        /// </summary>
         [Range(0, 120)]
         public float FixedSendsPerSecond = 30f; // todo have a global config for this? As a user, I wouldn't want to have to update my 1k objects if I realize it's not high enough late in the project
 
+        /// <summary>
+        /// TODO once we have per var interpolation
+        /// Enable interpolation
+        /// </summary>
+        [Tooltip("This requires AssumeSyncedSends to be true")]
+        // ReSharper disable once NotAccessedField.Global
+        public bool InterpolatePosition = true;
+
+        /// <summary>
+        /// TODO once we have per var interpolation
+        /// The distance before snaping to the position
+        /// </summary>
+        [Tooltip("The transform will snap if the distance is greater than this distance")]
+        // ReSharper disable once NotAccessedField.Global
+        public float SnapDistance = 10f;
+
+        /// <summary>
+        /// TODO once we have per var interpolation
+        /// Should the server interpolate
+        /// </summary>
+        // ReSharper disable once NotAccessedField.Global
+        public bool InterpolateServer = true;
+
+        /// <summary>
+        /// TODO once we have this per var setting
+        /// The min meters to move before a send is sent
+        /// </summary>
+        // ReSharper disable once NotAccessedField.Global
+        public float MinMeters = 0.15f;
+
+        /// <summary>
+        /// TODO once we have this per var setting
+        /// The min degrees to rotate before a send it sent
+        /// </summary>
+        // ReSharper disable once NotAccessedField.Global
+        public float MinDegrees = 1.5f;
+
+        /// <summary>
+        /// TODO once we have this per var setting
+        /// The min meters to scale before a send it sent
+        /// </summary>
+        // ReSharper disable once NotAccessedField.Global
+        public float MinSize = 0.15f;
+
+        /// <summary>
+        /// The channel to send the data on
+        /// </summary>
+        [Tooltip("The channel to send the data on.")]
+        public NetworkChannel Channel = NetworkChannel.NetworkVariable;
+
+        // // commenting this out since we already have authority validation. Since client driven net var changes
+        // // are authoritative, there's no use validating the net var change server side.
+        // // Leaving this here for review, but this should disappear in upcoming revision. TODO
+        // /// <summary>
+        // /// The delegate used to check if a move is valid
+        // /// </summary>
+        // /// <param name="clientId">The client id the move is being validated for</param>
+        // /// <param name="oldPos">The previous position</param>
+        // /// <param name="newPos">The new requested position</param>
+        // /// <returns>Returns Whether or not the move is valid</returns>
+        // public delegate bool ValueChangeValidationDelegate<T>(ulong clientId, T oldValue, T newValue);
+        //
+        // /// <summary>
+        // /// If set, moves will only be accepted if the custom delegate returns true
+        // /// </summary>
+        // public ValueChangeValidationDelegate<Vector3> IsMoveValidDelegate = null;
+
         private Transform m_Transform;
-        private NetworkVariableVector3 m_NetworkPosition = new NetworkVariableVector3(); // TODO use netvar interpolation when available
+        private NetworkVariableVector3 m_NetworkPosition = new NetworkVariableVector3();
         private NetworkVariableQuaternion m_NetworkRotation = new NetworkVariableQuaternion();
         private NetworkVariableVector3 m_NetworkWorldScale = new NetworkVariableVector3();
         // private NetworkTransform m_NetworkParent; // TODO handle this here? Needs to reparent NetworkObject, since current protocol uses NetworkObject+NetworkBehaviour+NetworkVariable hierarchy
@@ -98,14 +172,15 @@ namespace MLAPI.Prototyping
             m_Transform = transform;
         }
 
-        private bool networkStarted;
+        private bool m_NetworkStarted;
 
         public override void NetworkStart()
         {
-            networkStarted = true;
+            m_NetworkStarted = true;
             void SetupVar<T>(NetworkVariable<T> v, T initialValue, ref T oldVal)
             {
                 v.Settings.SendTickrate = FixedSendsPerSecond;
+                v.Settings.SendNetworkChannel = Channel;
                 if (CanUpdateTransform())
                 {
                     v.Value = initialValue;
@@ -122,19 +197,19 @@ namespace MLAPI.Prototyping
             // m_OldRotation = m_Transform.rotation;
             // m_OldScale = m_Transform.lossyScale;
 
-            m_PositionChangedDelegate = GetOnValueChanged<Vector3>(current =>
+            m_PositionChangedDelegate = GetOnValueChangedDelegate<Vector3>(current =>
             {
                 transform.position = current;
                 m_OldPosition = current;
             });
             m_NetworkPosition.OnValueChanged += m_PositionChangedDelegate;
-            m_RotationChangedDelegate = GetOnValueChanged<Quaternion>(current =>
+            m_RotationChangedDelegate = GetOnValueChangedDelegate<Quaternion>(current =>
             {
                 transform.rotation = current;
                 m_OldRotation = current;
             });
             m_NetworkRotation.OnValueChanged += m_RotationChangedDelegate;
-            m_ScaleChangedDelegate = GetOnValueChanged<Vector3>(current =>
+            m_ScaleChangedDelegate = GetOnValueChangedDelegate<Vector3>(current =>
             {
                 SetWorldScale(current);
                 m_OldScale = current;
@@ -164,7 +239,7 @@ namespace MLAPI.Prototyping
             return (IsClient && m_Authority == Authority.Client && IsOwner) || (IsServer && m_Authority == Authority.Server) || m_Authority == Authority.Shared;
         }
 
-        private NetworkVariable<T>.OnValueChangedDelegate GetOnValueChanged<T>(Action<T> assignCurrent)
+        private NetworkVariable<T>.OnValueChangedDelegate GetOnValueChangedDelegate<T>(Action<T> assignCurrent)
         {
             return (old, current) =>
             {
@@ -184,7 +259,7 @@ namespace MLAPI.Prototyping
         private void FixedUpdate()
         {
             // if (NetworkManager == null || (!NetworkManager.IsServer && !NetworkManager.IsClient))
-            if (!networkStarted)
+            if (!m_NetworkStarted)
             {
                 return;
             }
