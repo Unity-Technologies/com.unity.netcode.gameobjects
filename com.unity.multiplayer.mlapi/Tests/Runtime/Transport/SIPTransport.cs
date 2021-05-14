@@ -44,7 +44,7 @@ public class SIPTransport : NetworkTransport
         {
             Type = NetworkEvent.Disconnect,
             Channel = NetworkChannel.Internal,
-            ConnectionId = m_LocalConnection != null ? m_LocalConnection.ConnectionId : 0,
+            ConnectionId = m_LocalConnection != null ? m_LocalConnection.ConnectionId : ServerClientId,
             Data = new ArraySegment<byte>()
         });
 
