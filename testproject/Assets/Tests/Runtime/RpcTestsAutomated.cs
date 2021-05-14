@@ -27,7 +27,6 @@ namespace TestProject.RuntimeTests
 
         /// <summary>
         /// Same test with Batched RPC turned off
-        /// 1 Host and 3 Clients
         /// </summary>
         /// <returns></returns>
         [UnityTest]
