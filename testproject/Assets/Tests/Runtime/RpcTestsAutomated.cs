@@ -11,17 +11,49 @@ using Debug = UnityEngine.Debug;
 namespace TestProject.RuntimeTests
 {
     public class RPCTestsAutomated
-    {       
+    {
         private bool m_TimedOut;
-        
+
+        /// <summary>
+        /// Default Mode (Batched RPCs Enabled)
+        /// 1 Host and 9 Clients
+        /// </summary>
+        /// <returns></returns>
         [UnityTest]
         public IEnumerator ManualRpcTestsAutomated()
+        {
+            return AutomatedRpcTestsHandler(9);
+        }
+
+        /// <summary>
+        /// Same test with Batched RPC turned off
+        /// 1 Host and 3 Clients
+        /// </summary>
+        /// <returns></returns>
+        [UnityTest]
+        public IEnumerator ManualRpcTestsAutomatedNoBatching()
+        {
+            return AutomatedRpcTestsHandler(3, false);
+        }
+
+
+        /// <summary>
+        /// This just helps to simplify any further tests that can leverage from
+        /// the RpcQueueManualTests' wide array of RPC testing under different
+        /// conditions.  
+        /// Currently this allows for the adjustment of client count and whether
+        /// RPC Batching is enabled or not.
+        /// </summary>
+        /// <param name="numClients"></param>
+        /// <param name="useBatching"></param>
+        /// <returns></returns>
+        private IEnumerator AutomatedRpcTestsHandler(int numClients, bool useBatching = true)
         {
             // Set RpcQueueManualTests into unit testing mode
             RpcQueueManualTests.UnitTesting = true;
 
-            // Create 1 Host and 9 clients (10 clients and 1 server)
-            Assert.True(MultiInstanceHelpers.Create(9, out NetworkManager server, out NetworkManager[] clients));
+            // Create Host and (numClients) clients 
+            Assert.True(MultiInstanceHelpers.Create(numClients, out NetworkManager server, out NetworkManager[] clients));
 
             // Create a default player GameObject to use
             var playerPrefab = new GameObject("Player");
@@ -36,10 +68,11 @@ namespace TestProject.RuntimeTests
             // Set the player prefab
             server.NetworkConfig.PlayerPrefab = playerPrefab;
 
+
             // Set all of the client's player prefab
             for (int i = 0; i < clients.Length; i++)
             {
-                clients[i].NetworkConfig.PlayerPrefab = playerPrefab;
+                clients[i].NetworkConfig.PlayerPrefab = playerPrefab;                
             }
 
             // Start the instances
@@ -47,6 +80,14 @@ namespace TestProject.RuntimeTests
             {
                 Debug.LogError("Failed to start instances");
                 Assert.Fail("Failed to start instances");
+            }
+
+            // Set the Rpc Batch sending mode
+            server.RpcQueueContainer.EnableBatchedRpcs(useBatching);
+
+            for (int i = 0; i < clients.Length; i++)
+            {                
+                clients[i].RpcQueueContainer.EnableBatchedRpcs(useBatching);
             }
 
             // [Client-Side] Wait for a connection to the server 
@@ -79,7 +120,7 @@ namespace TestProject.RuntimeTests
             // [Client-Side] Set the (unit) testing mode for each client
             foreach (var rpcClientSideTest in clientRpcQueueManualTestInstsances)
             {
-                rpcClientSideTest.SetTestingMode(true,1);
+                rpcClientSideTest.SetTestingMode(true, 1);
             }
 
             // [Host-Side] Begin testing on the host
@@ -87,7 +128,7 @@ namespace TestProject.RuntimeTests
 
             // [Client-Side] Begin testing on each client
             foreach (var rpcClientSideTest in clientRpcQueueManualTestInstsances)
-            {                
+            {
                 rpcClientSideTest.BeginTest();
             }
 
@@ -109,7 +150,7 @@ namespace TestProject.RuntimeTests
             // Log the output for visual confirmation (Acceptance Test for this test) that all Rpc test types (tracked by counters) executed multiple times
             Debug.Log("Final Host-Server Status Info:");
             Debug.Log(serverRpcTests.GetCurrentServerStatusInfo());
-            
+
             foreach (var rpcClientSideTest in clientRpcQueueManualTestInstsances)
             {
                 Debug.Log($"Final Client {rpcClientSideTest.NetworkManager.LocalClientId} Status Info:");
