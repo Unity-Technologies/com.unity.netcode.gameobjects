@@ -1,5 +1,12 @@
 {
   "dependencies": {
+    "com.tayx.graphy": {
+      "version": "https://github.com/Tayx94/graphy.git",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "008ca2e1b64201e26ee41800d54bcec61991fc75"
+    },
     "com.unity.burst": {
       "version": "1.4.1",
       "depth": 2,
