@@ -183,8 +183,24 @@ namespace MLAPI
         /// </summary>
         public bool DontDestroyWithOwner;
 
-        // [HideInInspector]
-// FIX NEXT        public ReplicationGroupTypes ReplicationGroupType;
+        public InterestSettings interestSettings;
+        public InterestSettings InterestSettings
+        {
+            get
+            {
+                InterestSettings ans = null;
+                if (interestSettings)
+                {
+                    ans = interestSettings;
+                }
+                else if (NetworkManager.interestSettings)
+                {
+                    ans = NetworkManager.interestSettings;
+                }
+
+                return ans;
+            }
+        }
 
         internal readonly HashSet<ulong> Observers = new HashSet<ulong>();
 
@@ -201,6 +217,7 @@ namespace MLAPI
 
             return Observers.GetEnumerator();
         }
+
 
         /// <summary>
         /// Whether or not this object is visible to a specific client

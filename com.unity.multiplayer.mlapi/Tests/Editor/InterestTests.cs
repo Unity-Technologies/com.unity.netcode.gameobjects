@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Data.Common;
+using Microsoft.Win32;
 using UnityEngine;
 using NUnit.Framework;
 using MLAPI.Connection;
@@ -9,6 +10,11 @@ using MLAPI.Interest;
 // hrm, should we be doing NetworkObject or Object?
 namespace MLAPI.EditorTests
 {
+
+    public class TestInterestSettings : InterestSettings
+    {
+        public int someSetting;
+    }
 
     public class InterestTests
     {
@@ -308,6 +314,29 @@ namespace MLAPI.EditorTests
             nm.InterestManager.QueryFor(nc, results);
             hits = results.Count;
             Assert.True(hits == (objectsBeforeAdd));
+        }
+
+        [Test]
+        public void TestInterestSettings()
+        {
+            var nm = SetUpNetworkingManager();
+            TestInterestSettings rootSettings = new TestInterestSettings();
+            rootSettings.someSetting = 1;
+            nm.interestSettings = rootSettings;
+
+            TestInterestSettings objSettings = new TestInterestSettings();
+            objSettings.someSetting = 2;
+            var object1 = MakeObjectHelper(new Vector3(0.0f, 0.0f, 0.0f), null);
+            object1.interestSettings = objSettings;
+
+            // no override settings, should receive from NetworkManager
+            var object2 = MakeObjectHelper(new Vector3(0.0f, 0.0f, 0.0f), null);
+
+            TestInterestSettings checkObj1 = (TestInterestSettings)object1.InterestSettings;
+            TestInterestSettings checkObj2 = (TestInterestSettings)object2.InterestSettings;
+
+            Assert.True(checkObj1.someSetting == 2);
+            Assert.True(checkObj2.someSetting == 1);
         }
     }
 }
