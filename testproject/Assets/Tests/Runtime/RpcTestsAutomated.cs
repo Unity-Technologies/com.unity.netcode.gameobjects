@@ -16,7 +16,6 @@ namespace TestProject.RuntimeTests
 
         /// <summary>
         /// Default Mode (Batched RPCs Enabled)
-        /// 1 Host and 9 Clients
         /// </summary>
         /// <returns></returns>
         [UnityTest]
