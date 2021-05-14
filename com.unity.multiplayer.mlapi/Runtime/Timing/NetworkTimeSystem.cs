@@ -33,6 +33,8 @@ namespace MLAPI.Timing
         /// </summary>
         public int TickRate => m_TickRate;
 
+        public INetworkTimeProvider NetworkTimeProvider => m_NetworkTimeProvider;
+
         /// <summary>
         /// Delegate for invoking an event whenever a network tick passes
         /// </summary>
@@ -76,7 +78,7 @@ namespace MLAPI.Timing
             }
             else
             {
-                m_NetworkTimeProvider = new ClientNetworkTimeProvider(this, tickRate);
+                m_NetworkTimeProvider = new ClientNetworkTimeProvider(networkStats, tickRate);
             }
 
             m_PredictedTime = new NetworkTime(tickRate);
@@ -111,7 +113,7 @@ namespace MLAPI.Timing
                 m_ServerTime = new NetworkTime(TickRate, i - predictedToServerDifference);
 
                 OnNetworkTick?.Invoke(m_PredictedTime);
-                OnNetworkTickInternal.Invoke(m_ServerTime);
+                OnNetworkTickInternal?.Invoke(m_ServerTime);
             }
 
             // Set exposed time to values from tick system
