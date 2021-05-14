@@ -65,7 +65,7 @@ public class SIPTransport : NetworkTransport
                 s_Server.Transport.m_Clients.Remove(m_LocalConnection.ConnectionId);
             }
 
-            if(m_LocalConnection.ConnectionId == 0)
+            if (m_LocalConnection.ConnectionId == 0)
             {
                 s_Server = null;
             }
