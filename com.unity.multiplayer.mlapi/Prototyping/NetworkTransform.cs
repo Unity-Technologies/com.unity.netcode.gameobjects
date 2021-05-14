@@ -17,6 +17,11 @@ namespace MLAPI.Prototyping
             public Vector3? LastMissedPosition;
             public Quaternion? LastMissedRotation;
         }
+        
+        /// <summary>
+        /// Sync the server position of the object
+        /// </summary>
+        public bool SyncServer = false;
 
         /// <summary>
         /// The base amount of sends per seconds to use when range is disabled
@@ -153,7 +158,7 @@ namespace MLAPI.Prototyping
 
         private void Update()
         {
-            if (IsOwner)
+            if (IsOwner || (IsServer && SyncServer))
             {
                 if (NetworkManager.Singleton.NetworkTime - m_LastSendTime >= (1f / FixedSendsPerSecond) && (Vector3.Distance(transform.position, m_LastSentPos) > MinMeters || Quaternion.Angle(transform.rotation, m_LastSentRot) > MinDegrees))
                 {
