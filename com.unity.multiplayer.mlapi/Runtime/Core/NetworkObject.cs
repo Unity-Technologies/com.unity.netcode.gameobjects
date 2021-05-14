@@ -183,10 +183,30 @@ namespace MLAPI
         /// </summary>
         public bool DontDestroyWithOwner;
 
+
         /// <summary>
         /// Whether or not to enable automatic NetworkObject parent synchronization.
         /// </summary>
         public bool AutoObjectParentSync = true;
+
+        public InterestSettings interestSettings;
+        public InterestSettings InterestSettings
+        {
+            get
+            {
+                InterestSettings ans = null;
+                if (interestSettings)
+                {
+                    ans = interestSettings;
+                }
+                else if (NetworkManager.interestSettings)
+                {
+                    ans = NetworkManager.interestSettings;
+                }
+
+                return ans;
+            }
+        }
 
         internal readonly HashSet<ulong> Observers = new HashSet<ulong>();
 
@@ -203,6 +223,7 @@ namespace MLAPI
 
             return Observers.GetEnumerator();
         }
+
 
         /// <summary>
         /// Whether or not this object is visible to a specific client
