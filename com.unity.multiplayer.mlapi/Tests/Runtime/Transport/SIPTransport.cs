@@ -127,7 +127,7 @@ public class SIPTransport : NetworkTransport
             });
         }
         
-        if(m_LocalConnection != null && m_LocalConnection.ConnectionId == 0)
+        if (m_LocalConnection != null && m_LocalConnection.ConnectionId == 0)
         {
             s_Server = null;
         }
