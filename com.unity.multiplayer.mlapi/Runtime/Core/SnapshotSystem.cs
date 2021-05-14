@@ -177,18 +177,15 @@ namespace MLAPI
         /// <param name="clientId">The client index to send to</param>
         private void SendSnapshot(ulong clientId)
         {
-            if (m_NetworkManager != null && m_NetworkManager.MessageSender != null)
+            // Send the entry index and the buffer where the variables are serialized
+            using (var buffer = PooledNetworkBuffer.Get())
             {
-                // Send the entry index and the buffer where the variables are serialized
-                using (var buffer = PooledNetworkBuffer.Get())
-                {
-                    WriteIndex(buffer);
-                    WriteBuffer(buffer);
+                WriteIndex(buffer);
+                WriteBuffer(buffer);
 
-                    m_NetworkManager.MessageSender.Send(clientId, NetworkConstants.SNAPSHOT_DATA,
-                        NetworkChannel.SnapshotExchange, buffer);
-                    buffer.Dispose();
-                }
+                m_NetworkManager.MessageSender.Send(clientId, NetworkConstants.SNAPSHOT_DATA,
+                    NetworkChannel.SnapshotExchange, buffer);
+                buffer.Dispose();
             }
         }
 
