@@ -10,12 +10,12 @@ namespace MLAPI.Interest
     [Serializable]
     public class RadiusInterestStorage : BasicInterestStorage
     {
-        public float radius = 0.0f;
+        public float Radius = 0.0f;
         public override void Query(in NetworkClient client, HashSet<NetworkObject> results)
         {
             foreach (var obj in ManagedObjects)
             {
-                if (Vector3.Distance(obj.transform.position, client.PlayerObject.transform.position) < radius)
+                if (Vector3.Distance(obj.transform.position, client.PlayerObject.transform.position) < Radius)
                 {
                     results.Add(obj.GetComponent<NetworkObject>());
                 }

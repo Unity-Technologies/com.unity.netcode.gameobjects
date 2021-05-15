@@ -1,6 +1,4 @@
 using System.Collections.Generic;
-using System.Data.Common;
-using Microsoft.Win32;
 using UnityEngine;
 using NUnit.Framework;
 using MLAPI.Connection;
@@ -13,7 +11,7 @@ namespace MLAPI.EditorTests
 
     public class TestInterestSettings : InterestSettings
     {
-        public int someSetting;
+        public int SomeSetting;
     }
 
     public class InterestTests
@@ -22,13 +20,13 @@ namespace MLAPI.EditorTests
         {
             public DelegateTester()
             {
-                OnSpawn = delegate(in NetworkObject o)
+                OnSpawn = delegate
                 {
-                    SpawnCalled++;
+                   SpawnCalled++;
                 };
-                OnDespawn = delegate(in NetworkObject o)
+                OnDespawn = delegate
                 {
-                    DespawnCalled++;
+                   DespawnCalled++;
                 };
             }
 
@@ -40,8 +38,8 @@ namespace MLAPI.EditorTests
         {
             public OddsEvensStorage()
             {
-                m_Odds = ScriptableObject.CreateInstance<BasicInterestStorage>();
-                m_Evens = ScriptableObject.CreateInstance<BasicInterestStorage>();
+                m_Odds = CreateInstance<BasicInterestStorage>();
+                m_Evens = CreateInstance<BasicInterestStorage>();
             }
 
             public override void Query(in NetworkClient client, HashSet<NetworkObject> results)
@@ -88,17 +86,17 @@ namespace MLAPI.EditorTests
                 }
             }
 
-            public BasicInterestStorage m_Odds;
-            public BasicInterestStorage m_Evens;
+            private readonly BasicInterestStorage m_Odds;
+            private readonly BasicInterestStorage m_Evens;
         }
 
         private NetworkObject MakeObjectHelper(Vector3 coords, InterestNode comn)
         {
-            GameObject o = new GameObject();
-            NetworkObject no = (NetworkObject)o.AddComponent(typeof(NetworkObject));
+            var o = new GameObject();
+            var no = (NetworkObject)o.AddComponent(typeof(NetworkObject));
             if (comn != null)
             {
-                no.interestNodes.Add(comn);
+                no.InterestNodes.Add(comn);
                 no.transform.position = coords;
             }
 
@@ -107,8 +105,8 @@ namespace MLAPI.EditorTests
 
         private NetworkManager SetUpNetworkingManager()
         {
-            GameObject o = new GameObject();
-            NetworkManager nm = (NetworkManager)o.AddComponent(typeof(NetworkManager));
+            var o = new GameObject();
+            var nm = (NetworkManager)o.AddComponent(typeof(NetworkManager));
             nm.NetworkConfig = new NetworkConfig();
             nm.SetSingleton();
             var transport = o.AddComponent<DummyTransport>();
@@ -126,8 +124,8 @@ namespace MLAPI.EditorTests
             var delegateNode = ScriptableObject.CreateInstance<DelegateTester>();
             var someOtherNode = ScriptableObject.CreateInstance<InterestNodeStatic>();
 
-            HashSet<NetworkObject> results = new HashSet<NetworkObject>();
-            NetworkClient nc = new NetworkClient()
+            var results = new HashSet<NetworkObject>();
+            var nc = new NetworkClient()
             {
                 ClientId = 1,
             };
@@ -135,7 +133,7 @@ namespace MLAPI.EditorTests
             var delegateYes = MakeObjectHelper(new Vector3(0.0f, 0.0f, 0.0f), delegateNode);
             nm.SpawnManager.SpawnNetworkObjectLocally(delegateYes);
 
-            var delegateNo= MakeObjectHelper(new Vector3(0.0f, 0.0f, 0.0f), someOtherNode);
+            var delegateNo = MakeObjectHelper(new Vector3(0.0f, 0.0f, 0.0f), someOtherNode);
             nm.SpawnManager.SpawnNetworkObjectLocally(delegateNo);
             Assert.True(delegateNode.SpawnCalled == 1);
 
@@ -153,17 +151,17 @@ namespace MLAPI.EditorTests
             var oddsEvensNode = ScriptableObject.CreateInstance<InterestNode>();
             oddsEvensNode.InterestObjectStorage = new OddsEvensStorage();
 
-            HashSet<NetworkObject> results = new HashSet<NetworkObject>();
-            NetworkClient nc = new NetworkClient()
+            var results = new HashSet<NetworkObject>();
+            var nc = new NetworkClient()
             {
                 ClientId = 1,
             };
             nm.InterestManager.QueryFor(nc, results);
-            int objectsBeforeAdd = results.Count;
+            var objectsBeforeAdd = results.Count;
 
-            int numNodes = 4;
-            NetworkObject[] nodes = new NetworkObject[4];
-            for (int i = 0; i < numNodes; i++)
+            var numNodes = 4;
+            var nodes = new NetworkObject[4];
+            for (var i = 0; i < numNodes; i++)
             {
                 nodes[i] = MakeObjectHelper(new Vector3(0.0f, 0.0f, 0.0f), oddsEvensNode);
                 nodes[i].NetworkObjectId = (ulong)(i + 100);
@@ -183,9 +181,9 @@ namespace MLAPI.EditorTests
             Assert.True(results.Count - objectsBeforeAdd == numNodes / 2);
 
             // now re-number the nodes
-            for (int i = 0; i < numNodes; i++)
+            for (var i = 0; i < numNodes; i++)
             {
-                nodes[i].NetworkObjectId = (ulong) (2*i + 101); // 101, 103, 105, 107
+                nodes[i].NetworkObjectId = (ulong)(2 * i + 101); // 101, 103, 105, 107
             }
 
             results.Clear();
@@ -199,7 +197,7 @@ namespace MLAPI.EditorTests
             Assert.True(results.Count - objectsBeforeAdd == numNodes / 2); // should be unchanged
 
             // now update the nodes
-            for (int i = 0; i < numNodes; i++)
+            for (var i = 0; i < numNodes; i++)
             {
                 nodes[i].UpdateInterest();
             }
@@ -222,13 +220,13 @@ namespace MLAPI.EditorTests
             var nm = SetUpNetworkingManager();
 
             var naiveRadiusNode = ScriptableObject.CreateInstance<InterestNode>();
-            var ris = new RadiusInterestStorage();
-            ris.radius = 1.5f;
+            var ris = ScriptableObject.CreateInstance<RadiusInterestStorage>();
+            ris.Radius = 1.5f;
             naiveRadiusNode.InterestObjectStorage = ris;
             var staticNode = ScriptableObject.CreateInstance<InterestNodeStatic>();
 
-            HashSet<NetworkObject> results = new HashSet<NetworkObject>();
-            NetworkClient nc = new NetworkClient()
+            var results = new HashSet<NetworkObject>();
+            var nc = new NetworkClient()
             {
                 ClientId = 1,
             };
@@ -248,12 +246,12 @@ namespace MLAPI.EditorTests
             var always = MakeObjectHelper(new Vector3(99.0f, 99.0f, 99.0f), staticNode);
             nm.SpawnManager.SpawnNetworkObjectLocally(always);
 
-            nc.PlayerObject = MakeObjectHelper(new Vector3(0.0f,0.0f,0.0f), null);
+            nc.PlayerObject = MakeObjectHelper(new Vector3(0.0f, 0.0f, 0.0f), null);
             nm.SpawnManager.SpawnNetworkObjectLocally(nc.PlayerObject);
 
             results.Clear();
             nm.InterestManager.QueryFor(nc, results);
-            int hits = results.Count - objectsBeforeAdd;
+            var hits = results.Count - objectsBeforeAdd;
             Assert.True(results.Contains(ok1));
             Assert.True(results.Contains(ok2));
             Assert.True(results.Contains(nc.PlayerObject));
@@ -279,14 +277,14 @@ namespace MLAPI.EditorTests
         {
             var nm = SetUpNetworkingManager();
 
-            HashSet<NetworkObject> results = new HashSet<NetworkObject>();
-            NetworkClient nc = new NetworkClient()
+            var results = new HashSet<NetworkObject>();
+            var nc = new NetworkClient()
             {
                 ClientId = 1,
             };
 
             nm.InterestManager.QueryFor(nc, results);
-            int objectsBeforeAdd = results.Count;
+            var objectsBeforeAdd = results.Count;
 
             var object1 = MakeObjectHelper(new Vector3(2.0f, 0.0f, 0.0f), null);
             nm.SpawnManager.SpawnNetworkObjectLocally(object1);
@@ -294,13 +292,12 @@ namespace MLAPI.EditorTests
             var object2 = MakeObjectHelper(new Vector3(2.0f, 0.0f, 0.0f), null);
             nm.SpawnManager.SpawnNetworkObjectLocally(object2);
 
-            nc.PlayerObject = MakeObjectHelper(new Vector3(0.0f,0.0f,0.0f), null);
+            nc.PlayerObject = MakeObjectHelper(new Vector3(0.0f, 0.0f, 0.0f), null);
             nm.SpawnManager.SpawnNetworkObjectLocally(nc.PlayerObject);
 
             results.Clear();
             nm.InterestManager.QueryFor(nc, results);
-            int hits = results.Count;
-            Debug.Log("I got: " + hits);
+            var hits = results.Count;
             Assert.True(hits == (3 + objectsBeforeAdd));
             Assert.True(results.Contains(object1));
             Assert.True(results.Contains(object2));
@@ -320,23 +317,23 @@ namespace MLAPI.EditorTests
         public void TestInterestSettings()
         {
             var nm = SetUpNetworkingManager();
-            TestInterestSettings rootSettings = new TestInterestSettings();
-            rootSettings.someSetting = 1;
-            nm.interestSettings = rootSettings;
+            var rootSettings = ScriptableObject.CreateInstance<TestInterestSettings>();
+            rootSettings.SomeSetting = 1;
+            nm.InterestSettings = rootSettings;
 
-            TestInterestSettings objSettings = new TestInterestSettings();
-            objSettings.someSetting = 2;
+            var objSettings = ScriptableObject.CreateInstance<TestInterestSettings>();
+            objSettings.SomeSetting = 2;
             var object1 = MakeObjectHelper(new Vector3(0.0f, 0.0f, 0.0f), null);
-            object1.interestSettings = objSettings;
+            object1.InterestSettings = objSettings;
 
             // no override settings, should receive from NetworkManager
             var object2 = MakeObjectHelper(new Vector3(0.0f, 0.0f, 0.0f), null);
 
-            TestInterestSettings checkObj1 = (TestInterestSettings)object1.InterestSettings;
-            TestInterestSettings checkObj2 = (TestInterestSettings)object2.InterestSettings;
+            var checkObj1 = (TestInterestSettings)object1.InterestSettings;
+            var checkObj2 = (TestInterestSettings)object2.InterestSettings;
 
-            Assert.True(checkObj1.someSetting == 2);
-            Assert.True(checkObj2.someSetting == 1);
+            Assert.True(checkObj1.SomeSetting == 2);
+            Assert.True(checkObj2.SomeSetting == 1);
         }
     }
 }

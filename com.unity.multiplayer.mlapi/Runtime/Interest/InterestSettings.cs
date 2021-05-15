@@ -11,7 +11,6 @@ namespace MLAPI.Interest
     // - adjust how prioritization occurs
     public class InterestSettings : ScriptableObject
     {
-        public int distanceScaleFactor;
-        public int timeStarvationScaleFactor;
+        // TBD - add default interest settings here
     }
 }

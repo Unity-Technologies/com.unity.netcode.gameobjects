@@ -7,7 +7,7 @@ using UnityEngine.Serialization;
 
 namespace MLAPI.Interest
 {
-    public abstract class InterestObjectStorage :ScriptableObject
+    public abstract class InterestObjectStorage : ScriptableObject
     {
         public abstract void Query(in NetworkClient client, HashSet<NetworkObject> results);
         public abstract void AddObject(NetworkObject obj);
@@ -26,8 +26,9 @@ namespace MLAPI.Interest
 
         public SpawnDelegate OnSpawn;
         public SpawnDelegate OnDespawn;
-        public InterestSettings ReplcationSettings;
 
+        // ??? wait a second...
+        public InterestSettings InterestSettings;
         public InterestObjectStorage InterestObjectStorage;
 
         public void AddObject(NetworkObject obj)

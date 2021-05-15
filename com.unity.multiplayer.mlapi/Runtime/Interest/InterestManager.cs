@@ -1,25 +1,9 @@
-// Although this is (currently) inside the MLAPI package, it is intentionally
-//  totally decoupled from MLAPI with the intention of allowing it to live
-//  in its own package
-
-using System;
 using System.Collections.Generic;
-using System.Net.Sockets;
 using MLAPI.Connection;
-using UnityEditor;
 using UnityEngine;
-using UnityEngine.Assertions;
-using UnityEngine.UIElements;
-
-// every single node has 1 routing group (?)
-//  so why not require each node to specify its routing 'thing' at init time
-//  and guarantee uniqueness?
-//  and this is also where the parent ReplicationGraph owner goes in
-//  so long as we don't let you change this after setup (I think)
 
 namespace MLAPI.Interest
 {
-
     public class InterestManager
     {
         private readonly InterestNodeStatic m_DefaultInterestNode;
@@ -52,43 +36,40 @@ namespace MLAPI.Interest
             m_ChildNodes.Add(newNode);
         }
 
-        public void HandleUpdate(NetworkObject newObject)
+        public void HandleUpdate(NetworkObject updatedObject)
         {
-            // add myself to whatever client object nodes I am in
-            var coms = newObject.interestNodes;
-
-            // if an object has no mapping node, add it to the default one.  That is,
-            //  if you don't opt into the system you always show in the results
-            foreach (var com in coms)
+            // allow all the Interest Nodes I am mapped to to have a chance
+            //  to update themselves
+            foreach (var com in updatedObject.InterestNodes)
             {
                 if (com != null)
                 {
-                    com.UpdateObject(newObject);
+                    com.UpdateObject(updatedObject);
                 }
             }
         }
 
         public void HandleSpawn(NetworkObject newObject)
         {
-            // add myself to whatever client object nodes I am in
-            var coms = newObject.interestNodes;
+            var coms = newObject.InterestNodes;
 
-            // if an object has no mapping node, add it to the default one.  That is,
-            //  if you don't opt into the system you always show in the results
+            // if an object has no Interest Nodes, add it to the default one.  That is,
+            //  if you don't opt into the system behavior is the same as before the
+            //  Interest system was added
             if (coms.Count == 0)
             {
                 m_DefaultInterestNode.InterestObjectStorage.AddObject(newObject);
             }
+            // else add myself to whatever Interest Nodes I am associated with
             else
             {
                 foreach (var com in coms)
                 {
-                    if (com != null)
+                    if (!(com is null))
                     {
                         AddNode(com);
                         com.AddObject(newObject);
 
-                        // hrm, which goes first?
                         if (com.OnSpawn != null)
                         {
                             com.OnSpawn(newObject);
@@ -100,7 +81,7 @@ namespace MLAPI.Interest
 
         public void HandleDespawn(NetworkObject oldObject)
         {
-            var coms = oldObject.interestNodes;
+            var coms = oldObject.InterestNodes;
 
 
             // if an object has no mapping node, add it to the default one.  That is,

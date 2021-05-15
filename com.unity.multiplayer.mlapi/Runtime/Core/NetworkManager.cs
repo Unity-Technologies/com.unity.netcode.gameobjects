@@ -57,18 +57,18 @@ namespace MLAPI
         internal NetworkTickSystem NetworkTickSystem { get; private set; }
 
         internal SnapshotSystem SnapshotSystem { get; private set; }
-        
+
         private NetworkPrefabHandler m_PrefabHandler;
         public NetworkPrefabHandler PrefabHandler
         {
             get
             {
-                if(m_PrefabHandler == null)
+                if (m_PrefabHandler == null)
                 {
                     m_PrefabHandler = new NetworkPrefabHandler();
                 }
                 return m_PrefabHandler;
-            }            
+            }
         }
 
         /// <summary>
@@ -224,7 +224,7 @@ namespace MLAPI
         internal static event Action OnSingletonReady;
 
         // the interest settings objects receive unless they have a pre-prefab override
-        public InterestSettings interestSettings;
+        public InterestSettings InterestSettings;
 
         private InterestManager m_InterestManager;
         public InterestManager InterestManager

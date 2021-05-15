@@ -23,7 +23,7 @@ namespace MLAPI
 
     public sealed class NetworkObject : MonoBehaviour
     {
-        public List<InterestNode> interestNodes = new List<InterestNode>();
+        public List<InterestNode> InterestNodes = new List<InterestNode>();
 
         [HideInInspector]
         [SerializeField]
@@ -183,23 +183,24 @@ namespace MLAPI
         /// </summary>
         public bool DontDestroyWithOwner;
 
-        public InterestSettings interestSettings;
-        public InterestSettings InterestSettings
+        public InterestSettings InterestSettingsOverride; // ??
+        public InterestSettings InterestSettings // ??
         {
             get
             {
                 InterestSettings ans = null;
-                if (interestSettings)
+                if (InterestSettingsOverride)
                 {
-                    ans = interestSettings;
+                    ans = InterestSettingsOverride;
                 }
-                else if (NetworkManager.interestSettings)
+                else if (NetworkManager.InterestSettings)
                 {
-                    ans = NetworkManager.interestSettings;
+                    ans = NetworkManager.InterestSettings;
                 }
 
                 return ans;
             }
+            set => InterestSettingsOverride = value;
         }
 
         internal readonly HashSet<ulong> Observers = new HashSet<ulong>();
@@ -722,7 +723,7 @@ namespace MLAPI
                 // If our current buffer position is greater than our positionBeforeNetworkVariableData then we wrote NetworkVariable data
                 // Part 1: This will include the total NetworkVariable data size, if there was NetworkVariable data written, to the stream
                 // in order to be able to skip past this entry on the deserialization side in the event this NetworkObject fails to be
-                // constructed (See Part 2 below in the DeserializeSceneObject method) 
+                // constructed (See Part 2 below in the DeserializeSceneObject method)
                 if (buffer.Position > positionBeforeNetworkVariableData)
                 {
                     // Store our current stream buffer position
@@ -825,7 +826,7 @@ namespace MLAPI
 
         public void UpdateInterest()
         {
-            foreach (var com in interestNodes)
+            foreach (var com in InterestNodes)
             {
                 com?.UpdateObject(this);
             }
