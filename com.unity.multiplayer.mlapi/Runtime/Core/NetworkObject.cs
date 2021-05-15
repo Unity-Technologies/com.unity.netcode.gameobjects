@@ -183,14 +183,13 @@ namespace MLAPI
         /// </summary>
         public bool DontDestroyWithOwner;
 
-
         /// <summary>
         /// Whether or not to enable automatic NetworkObject parent synchronization.
         /// </summary>
         public bool AutoObjectParentSync = true;
 
-        public InterestSettings InterestSettingsOverride; // ??
-        public InterestSettings InterestSettings // ??
+        public InterestSettings InterestSettingsOverride;
+        public InterestSettings InterestSettings
         {
             get
             {
@@ -1086,6 +1085,8 @@ namespace MLAPI
             return networkObject;
         }
 
+        // Trigger the Interest system to do an update sweep on any Interest nodes
+        //  I am associated with
         public void UpdateInterest()
         {
             foreach (var com in InterestNodes)

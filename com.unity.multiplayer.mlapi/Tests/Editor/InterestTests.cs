@@ -5,10 +5,8 @@ using MLAPI.Connection;
 using MLAPI.Configuration;
 using MLAPI.Interest;
 
-// hrm, should we be doing NetworkObject or Object?
 namespace MLAPI.EditorTests
 {
-
     public class TestInterestSettings : InterestSettings
     {
         public int SomeSetting;
