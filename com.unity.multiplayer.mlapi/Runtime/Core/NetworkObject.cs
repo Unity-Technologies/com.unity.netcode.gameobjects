@@ -183,8 +183,8 @@ namespace MLAPI
         /// </summary>
         public bool DontDestroyWithOwner;
 
-        public InterestSettings InterestSettingsOverride; // ??
-        public InterestSettings InterestSettings // ??
+        public InterestSettings InterestSettingsOverride;
+        public InterestSettings InterestSettings
         {
             get
             {
@@ -824,6 +824,8 @@ namespace MLAPI
             return networkObject;
         }
 
+        // Trigger the Interest system to do an update sweep on any Interest nodes
+        //  I am associated with
         public void UpdateInterest()
         {
             foreach (var com in InterestNodes)

@@ -15,7 +15,7 @@ namespace MLAPI.Interest
         {
             foreach (var obj in ManagedObjects)
             {
-                if (Vector3.Distance(obj.transform.position, client.PlayerObject.transform.position) < Radius)
+                if (Vector3.Distance(obj.transform.position, client.PlayerObject.transform.position) <= Radius)
                 {
                     results.Add(obj.GetComponent<NetworkObject>());
                 }
