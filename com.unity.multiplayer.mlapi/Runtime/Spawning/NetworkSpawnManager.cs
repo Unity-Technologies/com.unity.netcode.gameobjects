@@ -547,7 +547,7 @@ namespace MLAPI.Spawning
 
         internal void CleanDiffedSceneObjects()
         {
-            // Clean up the diffed scene objects. I.E scene objects that have been destroyed
+            // Clean up any in-scene objects that had been destroyed
             if (PendingSoftSyncObjects.Count > 0)
             {
                 var networkObjectsToDestroy = new List<NetworkObject>();
