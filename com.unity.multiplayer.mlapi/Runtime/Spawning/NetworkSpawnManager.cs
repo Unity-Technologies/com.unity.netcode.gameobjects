@@ -561,6 +561,9 @@ namespace MLAPI.Spawning
                 {
                     UnityEngine.Object.Destroy(networkObjectsToDestroy[i].gameObject);
                 }
+
+                // Make sure to clear this once done destroying all remaining NetworkObjects
+                PendingSoftSyncObjects.Clear();
             }
         }
 
