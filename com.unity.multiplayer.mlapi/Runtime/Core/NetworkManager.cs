@@ -227,7 +227,7 @@ namespace MLAPI
         internal static event Action OnSingletonReady;
 
         // the interest settings objects receive unless they have a pre-prefab override
-        public InterestSettings interestSettings;
+        public InterestSettings InterestSettings;
 
         private InterestManager m_InterestManager;
         public InterestManager InterestManager

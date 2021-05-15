@@ -23,7 +23,7 @@ namespace MLAPI
 
     public sealed class NetworkObject : MonoBehaviour
     {
-        public List<InterestNode> interestNodes = new List<InterestNode>();
+        public List<InterestNode> InterestNodes = new List<InterestNode>();
 
         [HideInInspector]
         [SerializeField]
@@ -189,23 +189,24 @@ namespace MLAPI
         /// </summary>
         public bool AutoObjectParentSync = true;
 
-        public InterestSettings interestSettings;
-        public InterestSettings InterestSettings
+        public InterestSettings InterestSettingsOverride; // ??
+        public InterestSettings InterestSettings // ??
         {
             get
             {
                 InterestSettings ans = null;
-                if (interestSettings)
+                if (InterestSettingsOverride)
                 {
-                    ans = interestSettings;
+                    ans = InterestSettingsOverride;
                 }
-                else if (NetworkManager.interestSettings)
+                else if (NetworkManager.InterestSettings)
                 {
-                    ans = NetworkManager.interestSettings;
+                    ans = NetworkManager.InterestSettings;
                 }
 
                 return ans;
             }
+            set => InterestSettingsOverride = value;
         }
 
         internal readonly HashSet<ulong> Observers = new HashSet<ulong>();
@@ -1087,7 +1088,7 @@ namespace MLAPI
 
         public void UpdateInterest()
         {
-            foreach (var com in interestNodes)
+            foreach (var com in InterestNodes)
             {
                 com?.UpdateObject(this);
             }

@@ -274,8 +274,7 @@ namespace MLAPI.Spawning
             {
                 networkId = GetNetworkObjectId();
             }
-            SpawnNetworkObjectLocally(networkObject, (ulong)networkId, false,
-                false, null, null, false,  0, false, true);
+            SpawnNetworkObjectLocally(networkObject, (ulong)networkId, false, false, null, null, false, 0, false, true);
         }
 
         // Ran on both server and client
