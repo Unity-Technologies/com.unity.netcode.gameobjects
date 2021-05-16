@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace MLAPI.Profiling
@@ -11,8 +11,9 @@ namespace MLAPI.Profiling
         internal static void BeginNewTick()
         {
             s_TickId = Math.Max(s_TickId, 0);
+            s_TickId++;
             s_ProfilerData.Reset();
-            s_ProfilerData.TickId = s_TickId++;
+            s_ProfilerData.TickId = s_TickId;
         }
 
         internal static void Increment(string fieldName, int count = 1)

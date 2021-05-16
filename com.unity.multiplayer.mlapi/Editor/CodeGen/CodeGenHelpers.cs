@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using MLAPI.Hashing;
 using MLAPI.Messaging;
 using MLAPI.Serialization;
 using Mono.Cecil;
@@ -51,14 +52,17 @@ namespace MLAPI.Editor.CodeGen
             }
         }
 
-        public static bool IsSubclassOf(this TypeDefinition typeDefinition, string ClassTypeFullName)
+        public static bool IsSubclassOf(this TypeDefinition typeDefinition, string classTypeFullName)
         {
-            if (!typeDefinition.IsClass) return false;
+            if (!typeDefinition.IsClass)
+            {
+                return false;
+            }
 
             var baseTypeRef = typeDefinition.BaseType;
             while (baseTypeRef != null)
             {
-                if (baseTypeRef.FullName == ClassTypeFullName)
+                if (baseTypeRef.FullName == classTypeFullName)
                 {
                     return true;
                 }
@@ -76,15 +80,18 @@ namespace MLAPI.Editor.CodeGen
             return false;
         }
 
-        public static bool HasInterface(this TypeReference typeReference, string InterfaceTypeFullName)
+        public static bool HasInterface(this TypeReference typeReference, string interfaceTypeFullName)
         {
-            if (typeReference.IsArray) return false;
+            if (typeReference.IsArray)
+            {
+                return false;
+            }
 
             try
             {
                 var typeDef = typeReference.Resolve();
                 var typeFaces = typeDef.Interfaces;
-                return typeFaces.Any(iface => iface.InterfaceType.FullName == InterfaceTypeFullName);
+                return typeFaces.Any(iface => iface.InterfaceType.FullName == interfaceTypeFullName);
             }
             catch
             {
@@ -97,45 +104,139 @@ namespace MLAPI.Editor.CodeGen
             var typeSystem = typeReference.Module.TypeSystem;
 
             // C# primitives
-            if (typeReference == typeSystem.Boolean) return true;
-            if (typeReference == typeSystem.Char) return true;
-            if (typeReference == typeSystem.SByte) return true;
-            if (typeReference == typeSystem.Byte) return true;
-            if (typeReference == typeSystem.Int16) return true;
-            if (typeReference == typeSystem.UInt16) return true;
-            if (typeReference == typeSystem.Int32) return true;
-            if (typeReference == typeSystem.UInt32) return true;
-            if (typeReference == typeSystem.Int64) return true;
-            if (typeReference == typeSystem.UInt64) return true;
-            if (typeReference == typeSystem.Single) return true;
-            if (typeReference == typeSystem.Double) return true;
-            if (typeReference == typeSystem.String) return true;
+            if (typeReference == typeSystem.Boolean)
+            {
+                return true;
+            }
+
+            if (typeReference == typeSystem.Char)
+            {
+                return true;
+            }
+
+            if (typeReference == typeSystem.SByte)
+            {
+                return true;
+            }
+
+            if (typeReference == typeSystem.Byte)
+            {
+                return true;
+            }
+
+            if (typeReference == typeSystem.Int16)
+            {
+                return true;
+            }
+
+            if (typeReference == typeSystem.UInt16)
+            {
+                return true;
+            }
+
+            if (typeReference == typeSystem.Int32)
+            {
+                return true;
+            }
+
+            if (typeReference == typeSystem.UInt32)
+            {
+                return true;
+            }
+
+            if (typeReference == typeSystem.Int64)
+            {
+                return true;
+            }
+
+            if (typeReference == typeSystem.UInt64)
+            {
+                return true;
+            }
+
+            if (typeReference == typeSystem.Single)
+            {
+                return true;
+            }
+
+            if (typeReference == typeSystem.Double)
+            {
+                return true;
+            }
+
+            if (typeReference == typeSystem.String)
+            {
+                return true;
+            }
 
             // Unity primitives
-            if (typeReference.FullName == UnityColor_FullName) return true;
-            if (typeReference.FullName == UnityColor32_FullName) return true;
-            if (typeReference.FullName == UnityVector2_FullName) return true;
-            if (typeReference.FullName == UnityVector3_FullName) return true;
-            if (typeReference.FullName == UnityVector4_FullName) return true;
-            if (typeReference.FullName == UnityQuaternion_FullName) return true;
-            if (typeReference.FullName == UnityRay_FullName) return true;
-            if (typeReference.FullName == UnityRay2D_FullName) return true;
+            if (typeReference.FullName == UnityColor_FullName)
+            {
+                return true;
+            }
+
+            if (typeReference.FullName == UnityColor32_FullName)
+            {
+                return true;
+            }
+
+            if (typeReference.FullName == UnityVector2_FullName)
+            {
+                return true;
+            }
+
+            if (typeReference.FullName == UnityVector3_FullName)
+            {
+                return true;
+            }
+
+            if (typeReference.FullName == UnityVector4_FullName)
+            {
+                return true;
+            }
+
+            if (typeReference.FullName == UnityQuaternion_FullName)
+            {
+                return true;
+            }
+
+            if (typeReference.FullName == UnityRay_FullName)
+            {
+                return true;
+            }
+
+            if (typeReference.FullName == UnityRay2D_FullName)
+            {
+                return true;
+            }
 
             // Enum
-            if (typeReference.GetEnumAsInt() != null) return true;
+            if (typeReference.GetEnumAsInt() != null)
+            {
+                return true;
+            }
 
             // INetworkSerializable
-            if (typeReference.HasInterface(INetworkSerializable_FullName)) return true;
+            if (typeReference.HasInterface(INetworkSerializable_FullName))
+            {
+                return true;
+            }
 
             // Static array
-            if (typeReference.IsArray) return typeReference.GetElementType().IsSerializable();
+            if (typeReference.IsArray)
+            {
+                return typeReference.GetElementType().IsSerializable();
+            }
 
             return false;
         }
 
         public static TypeReference GetEnumAsInt(this TypeReference typeReference)
         {
-            if (typeReference.IsArray) return null;
+            if (typeReference.IsArray)
+            {
+                return null;
+            }
 
             try
             {

@@ -1,7 +1,7 @@
 #if UNITY_2020_2_OR_NEWER
+using UnityEngine;
 using Unity.Profiling;
 #endif
-using UnityEngine;
 
 namespace MLAPI.Profiling
 {
@@ -83,7 +83,13 @@ namespace MLAPI.Profiling
         private static void RegisterMLAPIPerformanceEvent()
         {
             InitializeCounters();
-            NetworkManager.OnPerformanceDataEvent += OnPerformanceTickData;
+            ProfilerNotifier.OnPerformanceDataEvent += OnPerformanceTickData;
+            ProfilerNotifier.OnNoTickDataEvent += OnNoTickData;
+        }
+
+        private static void OnNoTickData()
+        {
+            Debug.LogWarning("There was a profiler event that was not captured in a tick");
         }
 
         private static void InitializeCounters()

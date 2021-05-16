@@ -1,0 +1,54 @@
+{% metadata_file .yamato/project.metafile %}
+---
+
+# Validation job for package {{ package.name }}, only using the first entry in the
+# platform and editor meta data
+# Validation only occurs in editmode.
+
+{% for project in projects -%}
+{% for package in project.packages -%}
+validate_{{ package.name }}_{{ test_platforms.first.name }}_{{ test_editors.first }}:
+  name : Validate Package {{ package.name }} - {{ test_editors.first }} on {{ test_platforms.first.name }}
+  agent:
+    type: {{ test_platforms.first.type }}
+    image: {{ test_platforms.first.image }}
+    flavor: {{ test_platforms.first.flavor}}
+  commands:
+    - npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
+    - {% if platform.name == "centos" %}DISPLAY=:0 {% endif %}upm-ci project test -u {{ test_editors.first }} --type vetting-tests --project-path {{ project.path }} --package-filter {{ package.name }} --platform editmode
+  artifacts:
+    logs:
+      paths:
+        - "upm-ci~/test-results/**/*"
+  dependencies:
+    - .yamato/project-pack.yml#pack_{{ project.name }}
+{% endfor -%}
+{% endfor -%}
+
+# For every platform and editor version, run its project tests without
+# running package tests too since they are handled on their respective
+# jobs
+{% for project in projects -%}
+{% for editor in test_editors -%}
+{% for platform in test_platforms -%}
+test_{{ project.name }}_{{ editor }}_{{ platform.name }}:
+  name : {{ project.name }} project tests - {{ editor }} on {{ platform.name }}
+  agent:
+    type: {{ platform.type }}
+    image: {{ platform.image }}
+    flavor: {{ platform.flavor}}
+  commands:
+    - npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
+    - {% if platform.name == "centos" %}DISPLAY=:0 {% endif %}upm-ci project test -u {{ editor }} --project-path {{ project.path }} --type project-tests
+  artifacts:
+    logs:
+      paths:
+        - "upm-ci~/test-results/**/*"
+  dependencies:
+    - .yamato/project-pack.yml#pack_{{ project.name }}
+
+{% endfor -%}
+{% endfor -%}
+{% endfor -%}
+
+

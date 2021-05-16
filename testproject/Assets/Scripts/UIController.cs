@@ -3,29 +3,29 @@ using MLAPI;
 
 public class UIController : MonoBehaviour
 {
-    public NetworkManager network;
-    public GameObject buttonsUI;
+    public NetworkManager NetworkManager;
+    public GameObject ButtonsRoot;
 
-    public void CreateServer()
+    public void StartServer()
     {
-        network.StartServer();
+        NetworkManager.StartServer();
         HideButtons();
     }
 
-    public void CreateHost()
+    public void StartHost()
     {
-        network.StartHost();
+        NetworkManager.StartHost();
         HideButtons();
     }
 
-    public void JoinGame()
+    public void StartClient()
     {
-        network.StartClient();
+        NetworkManager.StartClient();
         HideButtons();
     }
 
     private void HideButtons()
     {
-        buttonsUI.SetActive(false);
+        ButtonsRoot.SetActive(false);
     }
 }

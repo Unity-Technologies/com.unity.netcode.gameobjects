@@ -1,4 +1,4 @@
-﻿using Mono.Cecil;
+using Mono.Cecil;
 
 namespace MLAPI.Editor.CodeGen
 {
