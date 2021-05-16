@@ -19,7 +19,7 @@ namespace MLAPI.Prototyping
         }
         
         /// <summary>
-        /// Sync the server position of the object
+        /// Sync the server position of the object instead of the owner
         /// </summary>
         public bool SyncServer = false;
 
@@ -158,7 +158,7 @@ namespace MLAPI.Prototyping
 
         private void Update()
         {
-            if (IsOwner || (IsServer && SyncServer))
+            if ((IsOwner && !SyncServer) || (IsServer && SyncServer))
             {
                 if (NetworkManager.Singleton.NetworkTime - m_LastSendTime >= (1f / FixedSendsPerSecond) && (Vector3.Distance(transform.position, m_LastSentPos) > MinMeters || Quaternion.Angle(transform.rotation, m_LastSentRot) > MinDegrees))
                 {
@@ -168,8 +168,13 @@ namespace MLAPI.Prototyping
 
                     if (IsServer)
                     {
-                        ApplyTransformClientRpc(transform.position, transform.rotation.eulerAngles,
-                            new ClientRpcParams { Send = new ClientRpcSendParams { TargetClientIds = NetworkManager.Singleton.ConnectedClientsList.Where(c => c.ClientId != OwnerClientId).Select(c => c.ClientId).ToArray() } });
+                        if (SyncServer)
+                        {
+                            ApplyTransformClientRpc(transform.position, transform.rotation.eulerAngles);
+                        }
+                        else
+                            ApplyTransformClientRpc(transform.position, transform.rotation.eulerAngles, new ClientRpcParams { Send = new ClientRpcSendParams { TargetClientIds = NetworkManager.Singleton.ConnectedClientsList.Where(c => c.ClientId != OwnerClientId).Select(c => c.ClientId).ToArray() } });
+
                     }
                     else
                     {
