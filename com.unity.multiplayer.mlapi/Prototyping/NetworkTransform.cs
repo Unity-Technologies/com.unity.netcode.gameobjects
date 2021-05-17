@@ -38,7 +38,7 @@ namespace MLAPI.Prototyping
         public float FixedSendsPerSecond = 30f;
 
         /// <summary>
-        /// TODO once we have per var interpolation
+        /// TODO MTT-766 once we have per var interpolation
         /// Enable interpolation
         /// </summary>
         // ReSharper disable once NotAccessedField.Global
@@ -47,7 +47,7 @@ namespace MLAPI.Prototyping
         public bool InterpolatePosition = true;
 
         /// <summary>
-        /// TODO once we have per var interpolation
+        /// TODO MTT-766 once we have per var interpolation
         /// The distance before snaping to the position
         /// </summary>
         // ReSharper disable once NotAccessedField.Global
@@ -55,7 +55,7 @@ namespace MLAPI.Prototyping
         public float SnapDistance = 10f;
 
         /// <summary>
-        /// TODO once we have per var interpolation
+        /// TODO MTT-766 once we have per var interpolation
         /// Should the server interpolate
         /// </summary>
         // ReSharper disable once NotAccessedField.Global
@@ -63,7 +63,7 @@ namespace MLAPI.Prototyping
         public bool InterpolateServer = true;
 
         /// <summary>
-        /// TODO once we have this per var setting. The value check could be more on the network variable itself. If a server increases
+        /// TODO MTT-767 once we have this per var setting. The value check could be more on the network variable itself. If a server increases
         ///      a Netvar int by +0.05, the netvar would actually not transmit that info and would wait for the value to be even more different.
         ///      The setting in the NetworkTransform would be to just apply it to our netvars when available
         /// The min meters to move before a send is sent
@@ -73,7 +73,7 @@ namespace MLAPI.Prototyping
         public float MinMeters = 0.15f;
 
         /// <summary>
-        /// TODO once we have this per var setting
+        /// TODO MTT-767 once we have this per var setting
         /// The min degrees to rotate before a send is sent
         /// </summary>
         // ReSharper disable once NotAccessedField.Global
@@ -81,7 +81,7 @@ namespace MLAPI.Prototyping
         public float MinDegrees = 1.5f;
 
         /// <summary>
-        /// TODO once we have this per var setting
+        /// TODO MTT-767 once we have this per var setting
         /// The min meters to scale before a send is sent
         /// </summary>
         // ReSharper disable once NotAccessedField.Global
@@ -164,7 +164,7 @@ namespace MLAPI.Prototyping
                 if (authority == Authority.Client && IsClient && IsOwner)
                 {
                     // this should only happen for my own value changes.
-                    // todo this shouldn't happen anymore with new tick system (tick written will be higher than tick read, so netvar wouldn't change in that case
+                    // todo MTT-768 this shouldn't happen anymore with new tick system (tick written will be higher than tick read, so netvar wouldn't change in that case
                     return;
                 }
 
@@ -174,6 +174,10 @@ namespace MLAPI.Prototyping
 
         private void Start()
         {
+            // Register on value changed delegate. We can't simply check the position every fixed update because of shared authority
+            // Shared authority involves writing locally but applying changes when they come from the server. You can't both read from
+            // your NetworkPosition and write to it in the same FixedUpdate, you need both separate.
+            // There's no conflict resolution here. If two clients try to update the same value at the same time, they'll both think they are right
             m_PositionChangedDelegate = GetOnValueChangedDelegate<Vector3>(current =>
             {
                 transform.position = current;
@@ -234,8 +238,7 @@ namespace MLAPI.Prototyping
         /// <param name="newScale"></param>
         public void Teleport(Vector3 newPosition, Quaternion newRotation, Vector3 newScale)
         {
-            // TODO
-            throw new NotImplementedException();
+            throw new NotImplementedException(); // TODO MTT-769
         }
     }
 }
