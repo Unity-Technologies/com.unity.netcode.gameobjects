@@ -270,7 +270,7 @@ namespace MLAPI.Prototyping
         [ServerRpc]
         private void SubmitTransformServerRpc(Vector3 position, Vector3 eulerAngles, ServerRpcParams rpcParams = default)
         {
-            if (!enabled)
+            if (!enabled || SyncServer)
             {
                 return;
             }

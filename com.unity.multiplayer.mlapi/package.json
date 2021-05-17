@@ -1,7 +1,7 @@
 {
     "name": "com.unity.multiplayer.mlapi",
     "displayName": "MLAPI Networking Library",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "unity": "2020.3",
     "unityRelease": "0f1",
     "description": "This the Core Unity Mid-level API that provides core SDK for multiplayer games within unity",
