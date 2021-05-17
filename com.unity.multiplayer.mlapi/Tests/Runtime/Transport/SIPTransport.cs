@@ -220,23 +220,46 @@ public class SIPTransport : NetworkTransport
 
     public override void Send(ulong clientId, ArraySegment<byte> data, NetworkChannel channel)
     {
-        // Create copy since MLAPI wants the byte array back straight after the method call.
-        // Hard on GC.
-        byte[] copy = new byte[data.Count];
-        Buffer.BlockCopy(data.Array, data.Offset, copy, 0, data.Count);
-
-        m_Clients[clientId].IncomingBuffer.Enqueue(new Event
+        if (m_LocalConnection != null)
         {
-            Type = NetworkEvent.Data,
-            ConnectionId = m_LocalConnection.ConnectionId,
-            Data = new ArraySegment<byte>(copy),
-            Channel = channel
-        });
+            // Create copy since MLAPI wants the byte array back straight after the method call.
+            // Hard on GC.
+            byte[] copy = new byte[data.Count];
+            Buffer.BlockCopy(data.Array, data.Offset, copy, 0, data.Count);
+
+            m_Clients[clientId].IncomingBuffer.Enqueue(new Event
+            {
+                Type = NetworkEvent.Data,
+                ConnectionId = m_LocalConnection.ConnectionId,
+                Data = new ArraySegment<byte>(copy),
+                Channel = channel
+            });
+        }
     }
 
     public override NetworkEvent PollEvent(out ulong clientId, out NetworkChannel channel, out ArraySegment<byte> payload, out float receiveTime)
     {
-        if (m_LocalConnection.IncomingBuffer.Count == 0)
+        if (m_LocalConnection != null)
+        {
+            if (m_LocalConnection.IncomingBuffer.Count == 0)
+            {
+                clientId = 0;
+                channel = NetworkChannel.Internal;
+                payload = new ArraySegment<byte>();
+                receiveTime = 0;
+                return NetworkEvent.Nothing;
+            }
+
+            var peerEvent = m_LocalConnection.IncomingBuffer.Dequeue();
+
+            clientId = peerEvent.ConnectionId;
+            channel = peerEvent.Channel;
+            payload = peerEvent.Data;
+            receiveTime = 0;
+
+            return peerEvent.Type;
+        }
+        else
         {
             clientId = 0;
             channel = NetworkChannel.Internal;
@@ -244,14 +267,5 @@ public class SIPTransport : NetworkTransport
             receiveTime = 0;
             return NetworkEvent.Nothing;
         }
-
-        var peerEvent = m_LocalConnection.IncomingBuffer.Dequeue();
-
-        clientId = peerEvent.ConnectionId;
-        channel = peerEvent.Channel;
-        payload = peerEvent.Data;
-        receiveTime = 0;
-
-        return peerEvent.Type;
     }
 }

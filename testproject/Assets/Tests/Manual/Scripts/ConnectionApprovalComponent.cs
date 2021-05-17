@@ -23,7 +23,10 @@ namespace TestProject.ManualTests
         [SerializeField]
         private Toggle m_PlayerPrefabOverride;
 
-
+        public void SetApprovalToken(string token)
+        {
+            m_ApprovalToken = token;
+        }
 
         private void Start()
         {
