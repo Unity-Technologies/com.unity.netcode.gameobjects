@@ -47,7 +47,7 @@ namespace MLAPI
         private const int k_BufferSize = 20000;
 
         public byte[] Buffer = new byte[k_BufferSize];
-        public int FreeMemoryPosition = 0;
+        internal IndexAllocator m_Allocator = new IndexAllocator(20000);
 
         public Entry[] Entries = new Entry[k_MaxVariables];
         public int LastEntry = 0;
@@ -91,7 +91,6 @@ namespace MLAPI
         /// <summary>
         /// Adds an entry in the table for a new key
         /// </summary>
-        // todo: change the params to take a Key instead
         public int AddEntry(VariableKey k)
         {
             var pos = LastEntry++;
@@ -145,16 +144,17 @@ namespace MLAPI
         /// </summary>
         /// <param name="entry">The entry to allocate for</param>
         /// <param name="size">The need size in bytes</param>
-        public void AllocateEntry(ref Entry entry, long size)
+        public void AllocateEntry(ref Entry entry, int index, int size)
         {
             // todo --M1--
             // this will change once we start reusing the snapshot buffer memory
             // todo: deal with free space
             // todo: deal with full buffer
 
-            entry.Position = (ushort)FreeMemoryPosition;
+            int pos;
+            m_Allocator.Allocate(index, size, out pos);
+            entry.Position = (ushort)pos;
             entry.Length = (ushort)size;
-            FreeMemoryPosition += (int)size;
         }
 
         /// <summary>
@@ -211,7 +211,7 @@ namespace MLAPI
                 // if we need to allocate more memory (the variable grew in size)
                 if (Entries[pos].Length < entry.Length)
                 {
-                    AllocateEntry(ref entry, entry.Length);
+                    AllocateEntry(ref entry, pos, entry.Length);
                 }
 
                 Entries[pos] = entry;
@@ -286,6 +286,7 @@ namespace MLAPI
                         SendSnapshot(m_NetworkManager.ServerClientId);
                     }
 
+                    m_Snapshot.m_Allocator.DebugDisplay();
                     /*DebugDisplayStore(m_Snapshot, "Entries");
 
                     foreach(var item in m_ClientReceivedSnapshot)
@@ -347,13 +348,13 @@ namespace MLAPI
         {
             using (var writer = PooledNetworkWriter.Get(buffer))
             {
-                writer.WriteUInt16((ushort)m_Snapshot.FreeMemoryPosition);
+                writer.WriteUInt16((ushort)m_Snapshot.m_Allocator.Range);
             }
 
             // todo --M1--
             // // this sends the whole buffer
             // we'll need to build a per-client list
-            buffer.Write(m_Snapshot.Buffer, 0, m_Snapshot.FreeMemoryPosition);
+            buffer.Write(m_Snapshot.Buffer, 0, m_Snapshot.m_Allocator.Range);
         }
 
         // todo: consider using a Key, instead of 3 ints, if it can be exposed
@@ -383,7 +384,7 @@ namespace MLAPI
                 if (varBuffer.Length > m_Snapshot.Entries[pos].Length)
                 {
                     // allocate this Entry's buffer
-                    m_Snapshot.AllocateEntry(ref m_Snapshot.Entries[pos], varBuffer.Length);
+                    m_Snapshot.AllocateEntry(ref m_Snapshot.Entries[pos], pos, (int)varBuffer.Length);
                 }
 
 //                m_Snapshot.Entries[pos].Key.TickWritten = m_NetworkManager.NetworkTickSystem.GetTick();
