@@ -473,7 +473,7 @@ namespace MLAPI
                     {
                         s_TouchedThisClient.Clear();
                         var client = networkManager.ConnectedClientsList[i];
-                        NetworkManager.Singleton.InterestManager.QueryFor(client, s_TouchedThisClient);
+                        networkManager.InterestManager.QueryFor(client, s_TouchedThisClient);
 
                         foreach (var sobj in s_TouchedThisClient)
                         {
