@@ -1,47 +1,50 @@
 using MLAPI;
 using UnityEngine;
 
-/// <summary>
-/// Used to simulate a player moving around
-/// </summary>
-public class PlayerMovementManager : MonoBehaviour
+namespace TestProject.ManualTests
 {
-    public int MoveSpeed = 10;
-
-    private NetworkObject m_NetworkedObject;
-
-    private RandomMovement m_RandomMovement;
-
-
-    // Start is called before the first frame update
-    private void Start()
+    /// <summary>
+    /// Used to simulate a player moving around
+    /// </summary>
+    public class PlayerMovementManager : MonoBehaviour
     {
-        m_NetworkedObject = GetComponent<NetworkObject>();
-        m_RandomMovement = GetComponent<RandomMovement>();
-    }
+        public int MoveSpeed = 10;
 
-    private void Update()
-    {
-        if (m_NetworkedObject.IsOwner && Input.GetKeyDown(KeyCode.Space))
+        private NetworkObject m_NetworkedObject;
+
+        private RandomMovement m_RandomMovement;
+
+
+        // Start is called before the first frame update
+        private void Start()
         {
-            if (m_RandomMovement)
+            m_NetworkedObject = GetComponent<NetworkObject>();
+            m_RandomMovement = GetComponent<RandomMovement>();
+        }
+
+        private void Update()
+        {
+            if (m_NetworkedObject.IsOwner && Input.GetKeyDown(KeyCode.Space))
             {
-                m_RandomMovement.enabled = !m_RandomMovement.enabled;
+                if (m_RandomMovement)
+                {
+                    m_RandomMovement.enabled = !m_RandomMovement.enabled;
+                }
             }
         }
-    }
 
-    private void FixedUpdate()
-    {
-        if (m_NetworkedObject && m_NetworkedObject.NetworkManager && m_NetworkedObject.NetworkManager.IsListening)
+        private void FixedUpdate()
         {
-            if (!m_NetworkedObject.IsOwner)
+            if (m_NetworkedObject && m_NetworkedObject.NetworkManager && m_NetworkedObject.NetworkManager.IsListening)
             {
-                return;
-            }
-            else if (m_RandomMovement.enabled)
-            {
-                m_RandomMovement.Move(MoveSpeed);
+                if (!m_NetworkedObject.IsOwner)
+                {
+                    return;
+                }
+                else if (m_RandomMovement.enabled)
+                {
+                    m_RandomMovement.Move(MoveSpeed);
+                }
             }
         }
     }

@@ -1,45 +1,47 @@
 using UnityEngine;
-using Random = UnityEngine.Random;
 
-/// <summary>
-/// Used with GenericObjects to randomly move them around
-/// </summary>
-public class RandomMovement : MonoBehaviour, IPlayerMovement
-{    
-    private Vector3 m_Direction;
-    private Rigidbody m_Rigidbody;
-
-    public void Start()
+namespace TestProject.ManualTests
+{
+    /// <summary>
+    /// Used with GenericObjects to randomly move them around
+    /// </summary>
+    public class RandomMovement : MonoBehaviour, IPlayerMovement
     {
-        m_Rigidbody = GetComponent<Rigidbody>();
-        ChangeDirection(true, true);
-    }
+        private Vector3 m_Direction;
+        private Rigidbody m_Rigidbody;
 
-    public void Move(int speed)
-    {
-        m_Rigidbody.MovePosition(transform.position + m_Direction * (speed * Time.fixedDeltaTime));
-    }
-
-    private void OnCollisionStay(Collision collision)
-    {
-        if (collision.gameObject.CompareTag("Floor") || collision.gameObject.CompareTag("GenericObject"))
+        public void Start()
         {
-            return;
+            m_Rigidbody = GetComponent<Rigidbody>();
+            ChangeDirection(true, true);
         }
-        Vector3 collisionPoint = collision.collider.ClosestPoint(transform.position);
-        bool moveRight = collisionPoint.x < transform.position.x;
-        bool moveDown = collisionPoint.z > transform.position.z;
-        ChangeDirection(moveRight, moveDown);
-    }
 
-    private void ChangeDirection(bool moveRight, bool moveDown)
-    {
-        float ang = Random.Range(0, 2 * Mathf.PI);
+        public void Move(int speed)
+        {
+            m_Rigidbody.MovePosition(transform.position + m_Direction * (speed * Time.fixedDeltaTime));
+        }
 
-        m_Direction.x = Mathf.Cos(ang);
-        m_Direction.y = 0.0f;
-        ang = Random.Range(0, 2 * Mathf.PI);
-        m_Direction.z = Mathf.Sin(ang);
-        m_Direction.Normalize();
+        private void OnCollisionStay(Collision collision)
+        {
+            if (collision.gameObject.CompareTag("Floor") || collision.gameObject.CompareTag("GenericObject"))
+            {
+                return;
+            }
+            Vector3 collisionPoint = collision.collider.ClosestPoint(transform.position);
+            bool moveRight = collisionPoint.x < transform.position.x;
+            bool moveDown = collisionPoint.z > transform.position.z;
+            ChangeDirection(moveRight, moveDown);
+        }
+
+        private void ChangeDirection(bool moveRight, bool moveDown)
+        {
+            float ang = Random.Range(0, 2 * Mathf.PI);
+
+            m_Direction.x = Mathf.Cos(ang);
+            m_Direction.y = 0.0f;
+            ang = Random.Range(0, 2 * Mathf.PI);
+            m_Direction.z = Mathf.Sin(ang);
+            m_Direction.Normalize();
+        }
     }
 }
