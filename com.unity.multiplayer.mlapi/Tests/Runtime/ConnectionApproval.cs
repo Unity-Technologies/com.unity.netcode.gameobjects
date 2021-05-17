@@ -19,7 +19,7 @@ namespace MLAPI.RuntimeTests
         public void Setup()
         {
             // Create, instantiate, and host
-            Assert.IsTrue(NetworkManagerHelper.StartNetworkManager(out _,NetworkManagerHelper.NetworkManagerOperatingMode.None));
+            Assert.IsTrue(NetworkManagerHelper.StartNetworkManager(out _, NetworkManagerHelper.NetworkManagerOperatingMode.None));
             m_ValidationToken = Guid.NewGuid();
         }
 
@@ -35,10 +35,10 @@ namespace MLAPI.RuntimeTests
 
             var timeOut = Time.realtimeSinceStartup + 3.0f;
             var timedOut = false;
-            while(!m_IsValidated)
+            while (!m_IsValidated)
             {
                 yield return new WaitForSeconds(0.01f);
-                if(timeOut < Time.realtimeSinceStartup)
+                if (timeOut < Time.realtimeSinceStartup)
                 {
                     timedOut = true;
                 }
@@ -46,13 +46,13 @@ namespace MLAPI.RuntimeTests
 
             //Make sure we didn't time out
             Assert.False(timedOut);
-            Assert.True(m_IsValidated);            
+            Assert.True(m_IsValidated);
         }
 
         private void NetworkManagerObject_ConnectionApprovalCallback(byte[] connectionData, ulong clientId, NetworkManager.ConnectionApprovedDelegate callback)
         {
             var stringGuid = Encoding.UTF8.GetString(connectionData);
-            if(m_ValidationToken.ToString() == stringGuid)
+            if (m_ValidationToken.ToString() == stringGuid)
             {
                 m_IsValidated = true;
             }
