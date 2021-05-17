@@ -29,7 +29,7 @@ namespace MLAPI.Prototyping
         /// Specifies who can update this transform
         /// </summary>
         [SerializeField, Tooltip("Defines who can update this transform.")]
-        public Authority authority = Authority.Server; // todo Luke mentioned an incoming system to manage this at the NetworkBehaviour level, lets sync on this
+        public Authority TransformAuthority = Authority.Server; // todo Luke mentioned an incoming system to manage this at the NetworkBehaviour level, lets sync on this
 
         /// <summary>
         /// The base amount of sends per seconds to use when range is disabled
@@ -118,7 +118,7 @@ namespace MLAPI.Prototyping
 
         private bool CanUpdateTransform()
         {
-            return (IsClient && authority == Authority.Client && IsOwner) || (IsServer && authority == Authority.Server) || authority == Authority.Shared;
+            return (IsClient && TransformAuthority == Authority.Client && IsOwner) || (IsServer && TransformAuthority == Authority.Server) || TransformAuthority == Authority.Shared;
         }
 
         private void Awake()
@@ -143,13 +143,13 @@ namespace MLAPI.Prototyping
             SetupVar(m_NetworkRotation, m_Transform.rotation, ref m_OldRotation);
             SetupVar(m_NetworkWorldScale, m_Transform.lossyScale, ref m_OldScale);
 
-            if (authority == Authority.Client)
+            if (TransformAuthority == Authority.Client)
             {
                 m_NetworkPosition.Settings.WritePermission = NetworkVariablePermission.OwnerOnly;
                 m_NetworkRotation.Settings.WritePermission = NetworkVariablePermission.OwnerOnly;
                 m_NetworkWorldScale.Settings.WritePermission = NetworkVariablePermission.OwnerOnly;
             }
-            else if (authority == Authority.Shared)
+            else if (TransformAuthority == Authority.Shared)
             {
                 m_NetworkPosition.Settings.WritePermission = NetworkVariablePermission.Everyone;
                 m_NetworkRotation.Settings.WritePermission = NetworkVariablePermission.Everyone;
@@ -161,7 +161,7 @@ namespace MLAPI.Prototyping
         {
             return (old, current) =>
             {
-                if (authority == Authority.Client && IsClient && IsOwner)
+                if (TransformAuthority == Authority.Client && IsClient && IsOwner)
                 {
                     // this should only happen for my own value changes.
                     // todo MTT-768 this shouldn't happen anymore with new tick system (tick written will be higher than tick read, so netvar wouldn't change in that case
