@@ -85,7 +85,9 @@ namespace TestProject.RuntimeTests
 
             // [Client-Side] Get all of the RpcQueueManualTests instances relative to each client
             var clientsAdjustedList = new List<NetworkManager>();
+            var clientsToClean = new List<NetworkManager>();
             var markedForFailure = 0;
+
             foreach (var client in clients)
             {
                 client.NetworkConfig.PlayerPrefab = playerPrefab;
@@ -94,12 +96,14 @@ namespace TestProject.RuntimeTests
                 {
                     client.NetworkConfig.ConnectionData = Encoding.ASCII.GetBytes("ThisIsTheWrongPassword");
                     markedForFailure++;
+                    clientsToClean.Add(client);
                 }
                 else
                 {
                     client.NetworkConfig.ConnectionData = Encoding.ASCII.GetBytes(m_ConnectionToken);
                     clientsAdjustedList.Add(client);
                 }
+                
             }
 
             // Start the instances
@@ -129,6 +133,12 @@ namespace TestProject.RuntimeTests
                     Assert.IsNotNull(networkClient.PlayerObject);
                     Assert.AreEqual(networkClient.PlayerObject.GlobalObjectIdHash, m_PrefabOverrideGlobalObjectIdHash);
                 }
+            }
+
+            // Attempt to get ubuntu to pass on this test
+            foreach(var client in clientsToClean)
+            {
+                client.StopClient();
             }
 
             // Shutdown and clean up both of our NetworkManager instances
