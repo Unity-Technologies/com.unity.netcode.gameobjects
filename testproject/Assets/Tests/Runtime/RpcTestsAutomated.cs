@@ -136,19 +136,25 @@ namespace TestProject.RuntimeTests
 
             m_MaxFrames = Time.frameCount + 1000;
             // Use frame counts
-            int startFrame = Time.frameCount;
+            var startFrame = Time.frameCount;
+            var doubleCheckTime = Time.realtimeSinceStartup + 10.0f; //Double check that we aren't just running really fast frames?
+
+            m_TimedOut = false;
             while (!serverRpcTests.IsFinishedWithTest())
             {
                 if (Time.frameCount > m_MaxFrames)
                 {
-                    m_TimedOut = true;
-                    break;
+                    if (doubleCheckTime < Time.realtimeSinceStartup)
+                    {
+                        m_TimedOut = true;
+                        break;
+                    }
                 }
                 // We can still use frame count as our time out metric
                 // but still use WaitForSeconds to reduce processing overhead.
-                yield return new WaitForSeconds(0.1f);
-                //int nextFrameId = Time.frameCount + 1;
-                //yield return new WaitUntil(() => Time.frameCount >= nextFrameId);
+
+                var nextFrameId = Time.frameCount + 1;
+                yield return new WaitUntil(() => Time.frameCount >= nextFrameId);
             }
 
             Debug.Log($"Frames taken to complete: {Time.frameCount - startFrame}");
