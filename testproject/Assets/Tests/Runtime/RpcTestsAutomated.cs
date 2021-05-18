@@ -134,7 +134,7 @@ namespace TestProject.RuntimeTests
                 rpcClientSideTest.BeginTest();
             }
 
-            m_MaxFrames = Time.frameCount + 500;
+            m_MaxFrames = Time.frameCount + 1000;
             // Use frame counts
             int startFrame = Time.frameCount;
             while (!serverRpcTests.IsFinishedWithTest())
