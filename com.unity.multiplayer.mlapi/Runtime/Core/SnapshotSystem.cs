@@ -54,15 +54,19 @@ namespace MLAPI
         public MemoryStream Stream;
 
         private NetworkManager m_NetworkManager;
+        private bool m_tickIndex;
 
         /// <summary>
         /// Constructor
         /// Allocated a MemoryStream to be reused for this Snapshot
         /// </summary>
-        public Snapshot(NetworkManager networkManager)
+        /// <param name="networkManager">The NetworkManaher this Snapshot uses. Needed upon receive to set Variables</param>
+        /// <param name="tickIndex">Whether this Snapshot uses the tick as an index</param>
+        public Snapshot(NetworkManager networkManager, bool tickIndex)
         {
             Stream = new MemoryStream(Buffer, 0, k_BufferSize);
             m_NetworkManager = networkManager;
+            m_tickIndex = tickIndex;
         }
 
         // todo --M1--
@@ -78,8 +82,7 @@ namespace MLAPI
                 if (Entries[i].Key.NetworkObjectId == key.NetworkObjectId &&
                     Entries[i].Key.BehaviourIndex == key.BehaviourIndex &&
                     Entries[i].Key.VariableIndex == key.VariableIndex &&
-                    // TODO: TEMPORARY
-                    Entries[i].Key.TickWritten % 4 == key.TickWritten % 4)
+                    (!m_tickIndex || (Entries[i].Key.TickWritten == key.TickWritten)))
                 {
                     return i;
                 }
@@ -152,7 +155,19 @@ namespace MLAPI
             // todo: deal with full buffer
 
             int pos;
-            m_Allocator.Allocate(index, size, out pos);
+
+            if (entry.Length > 0)
+            {
+                m_Allocator.Deallocate(index);
+            }
+
+            bool ret = m_Allocator.Allocate(index, size, out pos);
+
+            if (!ret)
+            {
+                //todo: error handling
+            }
+
             entry.Position = (ushort)pos;
             entry.Length = (ushort)size;
         }
@@ -241,7 +256,7 @@ namespace MLAPI
     public class SnapshotSystem : INetworkUpdateSystem, IDisposable
     {
         private NetworkManager m_NetworkManager = NetworkManager.Singleton;
-        private Snapshot m_Snapshot = new Snapshot(NetworkManager.Singleton);
+        private Snapshot m_Snapshot = new Snapshot(NetworkManager.Singleton, false);
         private Dictionary<ulong, Snapshot> m_ClientReceivedSnapshot = new Dictionary<ulong, Snapshot>();
 
         private ushort m_CurrentTick = 0;
@@ -286,7 +301,7 @@ namespace MLAPI
                         SendSnapshot(m_NetworkManager.ServerClientId);
                     }
 
-                    m_Snapshot.m_Allocator.DebugDisplay();
+                    //m_Snapshot.m_Allocator.DebugDisplay();
                     /*DebugDisplayStore(m_Snapshot, "Entries");
 
                     foreach(var item in m_ClientReceivedSnapshot)
@@ -409,7 +424,7 @@ namespace MLAPI
 
                 if (!m_ClientReceivedSnapshot.ContainsKey(clientId))
                 {
-                    m_ClientReceivedSnapshot[clientId] = new Snapshot(m_NetworkManager);
+                    m_ClientReceivedSnapshot[clientId] = new Snapshot(m_NetworkManager, false);
                 }
                 var snapshot = m_ClientReceivedSnapshot[clientId];
                 snapshot.ReadIndex(reader);

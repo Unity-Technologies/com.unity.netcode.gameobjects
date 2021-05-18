@@ -57,6 +57,9 @@ namespace MLAPI
                 return false;
             }
 
+            // todo: this is the slowest part
+            // improvement 1: list of free blocks (minor)
+            // improvement 2: heap of free blocks
             for (int i = 0; i < k_MaxSlot; i++)
             {
                 if (m_Slots[i].free && m_Slots[i].length >= size)
