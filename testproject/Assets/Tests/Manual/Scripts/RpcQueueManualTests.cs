@@ -9,7 +9,7 @@ namespace TestProject.ManualTests
     /// <summary>
     /// This class is used to verify that the RPC Queue allows for the
     /// sending of ClientRpcs to specific clients.  It has several "direct"
-    /// methods of sending as is defined in the ENUM ClientRpcDirectTestingModes:
+    /// methods of sending as is defined in the enum ClientRpcDirectTestingModes:
     ///     Single: This will send to a single client at a time
     ///     Striped: This will send to alternating client pairs at a time
     ///     Unified: This sends to all clients at the same time
@@ -18,21 +18,13 @@ namespace TestProject.ManualTests
     /// During direct testing mode the following is also tested:
     ///     all clients are updating the server with a continually growing counter
     ///     the server is updating all clients with a global counter
-    /// During all tests the following additional RPC Tests are performed:
+    /// During all tests the following additional Rpc Tests are performed:
     ///     Send client to server no parameters and then multiple parameters
     ///     Send server to client no parameters and then multiple parameters
     /// </summary>
     public class RpcQueueManualTests : NetworkBehaviour
     {
-        public static bool UnitTesting;
-
         private const float k_ProgressBarDivisor = 1.0f / 200.0f;
-        [SerializeField]
-        private bool m_RunInTestMode;
-
-        [SerializeField]
-        [Range(1, 10)]
-        private int m_IterationsToRun;
 
         [SerializeField]
         private Text m_CounterTextObject;
@@ -43,23 +35,13 @@ namespace TestProject.ManualTests
         [SerializeField]
         private GameObject m_ConnectionModeButtonParent;
 
-        [SerializeField]
-        private NetworkManager m_ManualTestNetworkManager;
-
         private Dictionary<ulong, int> m_ClientSpecificCounters = new Dictionary<ulong, int>();
         private List<ulong> m_ClientIds = new List<ulong>();
         private List<ulong> m_ClientIndices = new List<ulong>();
 
-
-        private bool m_BeginTest;
-        private bool m_HasBeenInitialized;
-        private bool m_ContinueToRun;
         private bool m_ConnectionEventOccurred;
         private bool m_MultiParameterCanSend;
 
-
-        private int m_MaxGlobalDirectCounter;
-        private int m_TotalIterations;
         private int m_MultiParameterIntValue;
         private int m_MultiParameterValuesCount;
         private int m_MultiParameterNoneCount;
@@ -75,7 +57,6 @@ namespace TestProject.ManualTests
         private long m_MultiParameterLongValue;
         private ulong m_LocalClientId;
 
-        private float m_MesageSendDelay;
         private float m_MultiParameterFloatValue;
         private float m_GlobalCounterDelay;
         private float m_DirectGlobalCounterDelay;
@@ -106,79 +87,9 @@ namespace TestProject.ManualTests
         private ClientRpcParams m_ClientRpcParams;
         private ClientRpcParams m_ClientRpcParamsMultiParameter;
 
-        private ServerRpcParams m_MultiParameterTargets;
-
-
-        public void DisableManualNetworkManager()
-        {
-            if (m_ManualTestNetworkManager)
-            {
-                m_ManualTestNetworkManager.gameObject.SetActive(false);
-            }
-        }
-
-        public bool IsFinishedWithTest()
-        {
-            if (m_RunInTestMode)
-            {
-                return !m_ContinueToRun;
-            }
-            return false;
-        }
-
-        public void BeginTest()
-        {
-            m_BeginTest = true;
-        }
-
-        public void SetTestingMode(bool enabled, int iterationCount)
-        {
-            m_RunInTestMode = enabled;
-            m_IterationsToRun = Mathf.Clamp(iterationCount, 1, 10);
-        }
-
-        public string GetCurrentServerStatusInfo()
-        {
-            return m_ServerUpdateInfo;
-        }
-
-        public string GetCurrentClientStatusInfo()
-        {
-            return m_ClientUpdateInfo;
-        }
 
         private void Start()
         {
-            m_ContinueToRun = true;
-            if (!UnitTesting)
-            {
-                m_BeginTest = true;
-                Initialize();
-                m_MaxGlobalDirectCounter = 100;
-                m_MesageSendDelay = 0.20f;
-            }
-            else
-            {
-                m_ClientRpcParams.Send.TargetClientIds = new ulong[] { 0 };
-                m_ClientRpcParamsMultiParameter.Send.TargetClientIds = new ulong[] { 0 };
-                //For unit tests we will only send 10 per update stage
-                m_MaxGlobalDirectCounter = 10;
-                m_BeginTest = false;
-                m_MesageSendDelay = 0.01f;
-
-                var gameObject = GameObject.Find("NetworkManager");
-                if (gameObject != null)
-                {
-                    gameObject.SetActive(false);
-                    Destroy(gameObject);
-                    Debug.Log($"Found scene {nameof(NetworkManager)}, disabled it, and destroyed it.");
-                }
-            }
-        }
-
-        private void Initialize()
-        {
-            m_TotalIterations = 0;
             //Start at a smaller resolution until connection mode is selected.
             Screen.SetResolution(320, 320, FullScreenMode.Windowed);
             if (m_CounterTextObject)
@@ -195,7 +106,6 @@ namespace TestProject.ManualTests
                     connectionModeScript.OnNotifyConnectionEventServer += OnNotifyConnectionEventServer;
                 }
             }
-
         }
 
         private void OnNotifyConnectionEventServer()
@@ -244,18 +154,14 @@ namespace TestProject.ManualTests
         }
 
         /// <summary>
-        /// Handles common and NetworkManager mode specific initializations
+        /// Handles common and NetworkManager mode specifc initializations
         /// </summary>
         private void InitializeNetworkManager()
         {
             m_ClientRpcParams.Send.TargetClientIds = new ulong[] { 0 };
             m_ClientRpcParamsMultiParameter.Send.TargetClientIds = new ulong[] { 0 };
-
             m_ClientRpcDirectTestingMode = ClientRpcDirectTestingModes.Single;
-            if (m_ConnectionModeButtonParent)
-            {
-                m_ConnectionModeButtonParent.SetActive(false);
-            }
+            m_ConnectionModeButtonParent.SetActive(false);
             m_MultiParameterCanSend = true;
 
             m_GlobalDirectScale = 2;
@@ -270,9 +176,9 @@ namespace TestProject.ManualTests
             {
                 case NetworkManagerMode.Client:
                     {
-                        if (!m_ConnectionEventOccurred && !UnitTesting)
+                        if (!m_ConnectionEventOccurred)
                         {
-                            NetworkManager.StartClient();
+                            NetworkManager.Singleton.StartClient();
                         }
                         m_ServerRpcParams.Send.UpdateStage = NetworkUpdateStage.Update;
                         Screen.SetResolution(800, 80, FullScreenMode.Windowed);
@@ -280,9 +186,9 @@ namespace TestProject.ManualTests
                     }
                 case NetworkManagerMode.Host:
                     {
-                        if (!m_ConnectionEventOccurred && !UnitTesting)
+                        if (!m_ConnectionEventOccurred)
                         {
-                            NetworkManager.StartHost();
+                            NetworkManager.Singleton.StartHost();
                         }
                         m_ClientRpcParams.Send.UpdateStage = NetworkUpdateStage.PreUpdate;
                         Screen.SetResolution(800, 480, FullScreenMode.Windowed);
@@ -290,9 +196,9 @@ namespace TestProject.ManualTests
                     }
                 case NetworkManagerMode.Server:
                     {
-                        if (!m_ConnectionEventOccurred && !UnitTesting)
+                        if (!m_ConnectionEventOccurred)
                         {
-                            NetworkManager.StartServer();
+                            NetworkManager.Singleton.StartServer();
                         }
                         m_ClientProgressBar.enabled = false;
                         m_ClientRpcParams.Send.UpdateStage = NetworkUpdateStage.PostLateUpdate;
@@ -302,7 +208,6 @@ namespace TestProject.ManualTests
             }
 
             m_RpcPerSecondTimer = Time.realtimeSinceStartup;
-            m_HasBeenInitialized = true;
         }
 
         /// <summary>
@@ -312,12 +217,12 @@ namespace TestProject.ManualTests
         {
             if (IsServer)
             {
-                NetworkManager.OnClientConnectedCallback += OnClientConnectedCallback;
-                NetworkManager.OnClientDisconnectCallback += OnClientDisconnectCallback;
+                NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnectedCallback;
+                NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnectCallback;
                 if (IsHost)
                 {
-                    m_ClientSpecificCounters.Add(NetworkManager.LocalClientId, 0);
-                    m_ClientIds.Add(NetworkManager.LocalClientId);
+                    m_ClientSpecificCounters.Add(NetworkManager.Singleton.LocalClientId, 0);
+                    m_ClientIds.Add(NetworkManager.Singleton.LocalClientId);
                 }
             }
         }
@@ -329,8 +234,8 @@ namespace TestProject.ManualTests
         {
             if (IsServer)
             {
-                NetworkManager.OnClientConnectedCallback -= OnClientConnectedCallback;
-                NetworkManager.OnClientDisconnectCallback -= OnClientDisconnectCallback;
+                NetworkManager.Singleton.OnClientConnectedCallback -= OnClientConnectedCallback;
+                NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnectCallback;
             }
         }
 
@@ -359,7 +264,7 @@ namespace TestProject.ManualTests
             if (IsServer)
             {
                 //Exclude the server local id if only a server
-                if (!IsHost && clientId == NetworkManager.LocalClientId)
+                if (!IsHost && clientId == NetworkManager.Singleton.LocalClientId)
                 {
                     return;
                 }
@@ -379,101 +284,80 @@ namespace TestProject.ManualTests
         /// </summary>
         private void Update()
         {
-            if (NetworkManager != null && NetworkManager.IsListening && ((IsServer && NetworkManager.ConnectedClientsList.Count > 1) || IsClient) && m_ContinueToRun && m_BeginTest)
+            if (NetworkManager.Singleton && NetworkManager.Singleton.IsListening)
             {
-                if (UnitTesting && !m_HasBeenInitialized)
+                if (IsServer)
                 {
-                    if (IsClient)
+                    if (m_ClientSpecificCounters.Count > 0)
                     {
-                        OnCreateClient();
-                    }
-                    else
-                    {
-                        OnCreateHost();
-                    }
-                    return;
-                }
-
-                if (m_RunInTestMode && m_IterationsToRun <= m_TotalIterations)
-                {
-                    m_ContinueToRun = false;
-                }
-                else
-                {
-                    if (IsServer)
-                    {
-                        if (m_ClientSpecificCounters.Count > 0)
+                        if (m_GlobalCounterDelay < Time.realtimeSinceStartup)
                         {
-                            if (m_GlobalCounterDelay < Time.realtimeSinceStartup)
-                            {
-                                m_GlobalCounterDelay = Time.realtimeSinceStartup + 0.200f;
-                                m_GlobalCounter++;
-                                OnSendGlobalCounterClientRpc(m_GlobalCounter);
-                                m_RpcMessagesSent++;
-                            }
-
-                            if (m_DirectGlobalCounterDelay < Time.realtimeSinceStartup)
-                            {
-                                switch (m_ClientRpcDirectTestingMode)
-                                {
-                                    case ClientRpcDirectTestingModes.Single:
-                                        {
-                                            SingleDirectUpdate();
-                                            break;
-                                        }
-                                    case ClientRpcDirectTestingModes.Striped:
-                                        {
-                                            StripedDirectUpdate();
-                                            break;
-                                        }
-                                    case ClientRpcDirectTestingModes.Unified:
-                                        {
-                                            UnifiedDirectUpdate();
-                                            break;
-                                        }
-                                }
-                                m_RpcMessagesSent++;
-                                m_DirectGlobalCounterDelay = Time.realtimeSinceStartup + m_GlobalDirectFrequency;
-                            }
-                        }
-                    }
-
-                    //Hosts and Clients execute this
-                    if (IsHost || IsClient)
-                    {
-                        if (m_LocalCounterDelay < Time.realtimeSinceStartup)
-                        {
-                            m_LocalCounterDelay = Time.realtimeSinceStartup + m_MesageSendDelay + 0.01f;
-                            m_LocalClientCounter++;
-
-                            OnSendCounterServerRpc(m_LocalClientCounter, NetworkManager.LocalClientId, m_ServerRpcParams);
+                            m_GlobalCounterDelay = Time.realtimeSinceStartup + 0.200f;
+                            m_GlobalCounter++;
+                            OnSendGlobalCounterClientRpc(m_GlobalCounter);
                             m_RpcMessagesSent++;
                         }
-                        else if (m_LocalMultiDelay < Time.realtimeSinceStartup)
+
+                        if (m_DirectGlobalCounterDelay < Time.realtimeSinceStartup)
                         {
-                            m_LocalMultiDelay = Time.realtimeSinceStartup + m_MesageSendDelay + 0.015f;
-                            if (m_MultiParameterCanSend)
+                            switch (m_ClientRpcDirectTestingMode)
                             {
-                                m_MultiParameterCanSend = false;
-                                //Multi Parameters
-                                OnSendMultiParametersServerRpc(m_MultiParameterIntValue, m_MultiParameterFloatValue, m_MultiParameterLongValue, m_ServerRpcParams);
-                                m_RpcMessagesSent++;
+                                case ClientRpcDirectTestingModes.Single:
+                                    {
+                                        SingleDirectUpdate();
+                                        break;
+                                    }
+                                case ClientRpcDirectTestingModes.Striped:
+                                    {
+                                        StripedDirectUpdate();
+                                        break;
+                                    }
+                                case ClientRpcDirectTestingModes.Unified:
+                                    {
+                                        UnifiedDirectUpdate();
+                                        break;
+                                    }
                             }
-                            else
-                            {
-                                m_MultiParameterCanSend = true;
-                                OnSendNoParametersServerRpc(m_ServerRpcParams);
-                                m_RpcMessagesSent++;
-                            }
+                            m_RpcMessagesSent++;
+                            m_DirectGlobalCounterDelay = Time.realtimeSinceStartup + m_GlobalDirectFrequency;
                         }
                     }
+                }
 
-                    if (Time.realtimeSinceStartup - m_RpcPerSecondTimer > 1.0f)
+                //Hosts and Clients execute this
+                if (IsHost || IsClient)
+                {
+                    if (m_LocalCounterDelay < Time.realtimeSinceStartup)
                     {
-                        m_RpcPerSecondTimer = Time.realtimeSinceStartup;
-                        m_RpcPerSecond = m_RpcMessagesSent;
-                        m_RpcMessagesSent = 0;
+                        m_LocalCounterDelay = Time.realtimeSinceStartup + 0.25f;
+                        m_LocalClientCounter++;
+                        OnSendCounterServerRpc(m_LocalClientCounter, m_ServerRpcParams);
+                        m_RpcMessagesSent++;
                     }
+                    else if (m_LocalMultiDelay < Time.realtimeSinceStartup)
+                    {
+                        m_LocalMultiDelay = Time.realtimeSinceStartup + 0.325f;
+                        if (m_MultiParameterCanSend)
+                        {
+                            m_MultiParameterCanSend = false;
+                            //Multi Parameters
+                            OnSendMultiParametersServerRpc(m_MultiParameterIntValue, m_MultiParameterFloatValue, m_MultiParameterLongValue, m_ServerRpcParams);
+                            m_RpcMessagesSent++;
+                        }
+                        else
+                        {
+                            m_MultiParameterCanSend = true;
+                            OnSendNoParametersServerRpc(m_ServerRpcParams);
+                            m_RpcMessagesSent++;
+                        }
+                    }
+                }
+
+                if (Time.realtimeSinceStartup - m_RpcPerSecondTimer > 1.0f)
+                {
+                    m_RpcPerSecondTimer = Time.realtimeSinceStartup;
+                    m_RpcPerSecond = m_RpcMessagesSent;
+                    m_RpcMessagesSent = 0;
                 }
             }
         }
@@ -504,10 +388,6 @@ namespace TestProject.ManualTests
                 case ClientRpcDirectTestingModes.Unified:
                     {
                         m_ClientRpcDirectTestingMode = ClientRpcDirectTestingModes.Single;
-                        if (m_RunInTestMode)
-                        {
-                            m_TotalIterations++;
-                        }
                         break;
                     }
             }
@@ -519,7 +399,7 @@ namespace TestProject.ManualTests
         /// </summary>
         private void SingleDirectUpdate()
         {
-            if (m_GlobalDirectCounter == m_MaxGlobalDirectCounter)
+            if (m_GlobalDirectCounter == 100)
             {
                 m_GlobalDirectCurrentClientIdIndex++;
                 if (m_GlobalDirectCurrentClientIdIndex >= m_ClientIds.Count)
@@ -538,10 +418,9 @@ namespace TestProject.ManualTests
 
             m_ClientRpcParams.Send.TargetClientIds = m_ClientIndices.ToArray();
 
-            m_GlobalDirectCounter = Mathf.Clamp(m_GlobalDirectCounter += m_GlobalDirectScale, 0, m_MaxGlobalDirectCounter);
+            m_GlobalDirectCounter = Mathf.Clamp(m_GlobalDirectCounter += m_GlobalDirectScale, 0, 100);
 
             OnSendDirectCounterClientRpc(m_GlobalDirectCounter, m_ClientRpcParams);
-            m_ServerDirectTotalRpcCount++;
         }
 
         /// <summary>
@@ -550,7 +429,7 @@ namespace TestProject.ManualTests
         /// </summary>
         private void StripedDirectUpdate()
         {
-            if (m_GlobalDirectCounter == m_MaxGlobalDirectCounter)
+            if (m_GlobalDirectCounter == 100)
             {
                 m_GlobalDirectCurrentClientIdIndex++;
                 if (m_GlobalDirectCurrentClientIdIndex >= m_ClientIds.Count)
@@ -571,10 +450,9 @@ namespace TestProject.ManualTests
             }
 
             m_ClientRpcParams.Send.TargetClientIds = m_ClientIndices.ToArray();
-            m_GlobalDirectCounter = Mathf.Clamp(m_GlobalDirectCounter += m_GlobalDirectScale, 0, m_MaxGlobalDirectCounter);
+            m_GlobalDirectCounter = Mathf.Clamp(m_GlobalDirectCounter += m_GlobalDirectScale, 0, 100);
 
             OnSendDirectCounterClientRpc(m_GlobalDirectCounter, m_ClientRpcParams);
-            m_ServerDirectTotalRpcCount += m_ClientIndices.Count;
         }
 
         /// <summary>
@@ -583,16 +461,16 @@ namespace TestProject.ManualTests
         /// </summary>
         private void UnifiedDirectUpdate()
         {
-            if (m_GlobalDirectCounter == m_MaxGlobalDirectCounter)
+            if (m_GlobalDirectCounter == 100)
             {
                 SelectNextDirectUpdateMethod();
                 return;
             }
 
             m_ClientRpcParams.Send.TargetClientIds = m_ClientIds.ToArray();
-            m_GlobalDirectCounter = Mathf.Clamp(m_GlobalDirectCounter += m_GlobalDirectScale, 0, m_MaxGlobalDirectCounter);
+            m_GlobalDirectCounter = Mathf.Clamp(m_GlobalDirectCounter += m_GlobalDirectScale, 0, 100);
+
             OnSendDirectCounterClientRpc(m_GlobalDirectCounter, m_ClientRpcParams);
-            m_ServerDirectTotalRpcCount += m_ClientIds.Count;
         }
 
         /// <summary>
@@ -602,19 +480,16 @@ namespace TestProject.ManualTests
         /// <param name="counter">the client side counter</param>
         /// <param name="parameters"></param>
         [ServerRpc(RequireOwnership = false)]
-        private void OnSendCounterServerRpc(int counter, ulong clientId, ServerRpcParams parameters = default)
+        private void OnSendCounterServerRpc(int counter, ServerRpcParams parameters = default)
         {
             //This is just for debug purposes so I can trap for "non-local" clients
-            if (m_ClientSpecificCounters.ContainsKey(parameters.Receive.SenderClientId))
+            if (IsHost && parameters.Receive.SenderClientId == 0)
             {
-                if(m_ClientSpecificCounters[parameters.Receive.SenderClientId] < counter)
-                {
-                    m_ClientSpecificCounters[parameters.Receive.SenderClientId] = counter;
-                }
-                else
-                {
-                    Debug.LogWarning($"Client counter was sent {counter} value but it already was at a value of {m_ClientSpecificCounters[parameters.Receive.SenderClientId]}");
-                }
+                m_ClientSpecificCounters[parameters.Receive.SenderClientId] = counter;
+            }
+            else if (m_ClientSpecificCounters.ContainsKey(parameters.Receive.SenderClientId))
+            {
+                m_ClientSpecificCounters[parameters.Receive.SenderClientId] = counter;
             }
         }
 
@@ -640,7 +515,7 @@ namespace TestProject.ManualTests
         private void OnSendMultiParametersServerRpc(int count, float floatValue, long longValue, ServerRpcParams parameters = default)
         {
             m_ClientRpcParamsMultiParameter.Send.TargetClientIds[0] = parameters.Receive.SenderClientId;
-            m_ClientRpcParamsMultiParameter.Send.UpdateStage = NetworkUpdateStage.EarlyUpdate;            
+            m_ClientRpcParamsMultiParameter.Send.UpdateStage = NetworkUpdateStage.EarlyUpdate;
             OnSendMultiParametersClientRpc(count, floatValue, longValue, m_ClientRpcParamsMultiParameter);
         }
 
@@ -658,7 +533,7 @@ namespace TestProject.ManualTests
 
         /// <summary>
         /// [Tests] Server to Client
-        /// Sends multiple parameters to the client
+        /// Sends multiple parameters to the server
         /// </summary>
         /// <param name="parameters"></param>
         [ClientRpc]
@@ -703,7 +578,6 @@ namespace TestProject.ManualTests
         private void OnSendDirectCounterClientRpc(int counter, ClientRpcParams parameters = default)
         {
             m_GlobalDirectCounter = counter;
-            m_ClientDirectTotalRpcCount++;
         }
 
         /// <summary>
@@ -711,84 +585,72 @@ namespace TestProject.ManualTests
         /// </summary>
         private void OnGUI()
         {
-            if (IsServer && !IsHost || (IsHost && !UnitTesting))
+            if (m_CounterTextObject)
             {
-                UpdateServerInfo();
-            }
-            else if (IsHost && UnitTesting)
-            {
-                UpdateServerInfo();
-                UpdateClientInfo();
-            }
-            else
-            {
-                UpdateClientInfo();
+                if (IsServer)
+                {
+                    UpdateServerInfo();
+                }
+                else
+                {
+                    UpdateClientInfo();
+                }
             }
         }
-
-        private string m_ClientUpdateInfo;
-        private int m_ClientDirectTotalRpcCount;
 
         /// <summary>
         /// Update the client text info and progress bar
         /// </summary>
         private void UpdateClientInfo()
         {
-            if (m_LocalClientId == 0 && NetworkManager && NetworkManager.IsListening)
+            if (m_LocalClientId == 0 && NetworkManager.Singleton && NetworkManager.Singleton.IsListening)
             {
-                m_LocalClientId = NetworkManager.LocalClientId;
+                m_LocalClientId = NetworkManager.Singleton.LocalClientId;
             }
-            m_ClientUpdateInfo = $"Client-ID [{m_LocalClientId}]  Broadcast Rpcs Received:  {m_GlobalCounter - m_GlobalCounterOffset}  |  Direct Rpcs Received: {(UnitTesting ? m_ClientDirectTotalRpcCount : m_GlobalDirectCounter)} \n";
-            m_ClientUpdateInfo += $"{nameof(m_MultiParameterValuesCount)} : {m_MultiParameterValuesCount}  |  {nameof(m_MultiParameterNoneCount)} : {m_MultiParameterNoneCount}";
 
-            if (!UnitTesting)
+            m_CounterTextObject.text = $"Client-ID [{m_LocalClientId}]  Broadcast Rpcs Received:  {m_GlobalCounter - m_GlobalCounterOffset}  |  Direct Rpcs Received: {m_GlobalDirectCounter} \n";
+            m_CounterTextObject.text += $"{nameof(m_MultiParameterValuesCount)} : {m_MultiParameterValuesCount}  |  {nameof(m_MultiParameterNoneCount)} : {m_MultiParameterNoneCount}";
+
+            if (m_ClientProgressBar)
             {
-                m_CounterTextObject.text = m_ClientUpdateInfo;
-                if (m_ClientProgressBar)
-                {
-                    m_ClientProgressBar.fillAmount = Mathf.Clamp((2.0f * (float)m_GlobalDirectCounter) * k_ProgressBarDivisor, 0.01f, 1.0f);
-                }
+                m_ClientProgressBar.fillAmount = Mathf.Clamp((2.0f * (float)m_GlobalDirectCounter) * k_ProgressBarDivisor, 0.01f, 1.0f);
             }
         }
 
-        private string m_ServerUpdateInfo;
-        private int m_ServerDirectTotalRpcCount;
         /// <summary>
         /// Updates the server text info and host progress bar
         /// </summary>
         private void UpdateServerInfo()
         {
-            m_ServerUpdateInfo = string.Empty;
+            string updatedCounters = string.Empty;
             foreach (var entry in m_ClientSpecificCounters)
             {
-                if (entry.Key == NetworkManager.LocalClientId && IsHost)
+                if (entry.Key == 0 && IsHost)
                 {
-                    m_ServerUpdateInfo += $"Client-ID [{entry.Key}]  Client to Server Rpcs Received: {entry.Value}  |  Broadcast Rpcs Sent:{m_GlobalCounter} -- Direct Rpcs Sent:{(UnitTesting ? m_ServerDirectTotalRpcCount : m_GlobalDirectCounter)}\n";
-                    m_ServerUpdateInfo += $"{nameof(m_MultiParameterValuesCount)} : {m_MultiParameterValuesCount}  |  {nameof(m_MultiParameterNoneCount)} : {m_MultiParameterNoneCount}\n";
-                    m_ServerUpdateInfo += $"{nameof(m_RpcPerSecond)} : {m_RpcPerSecond}\n ";
+                    updatedCounters += $"Client-ID [{entry.Key}]  Client to Server Rpcs Received: {entry.Value}  |  Broadcast Rpcs Sent:{m_GlobalCounter} -- Direct Rpcs Sent:{m_GlobalDirectCounter}\n";
+                    updatedCounters += $"{nameof(m_MultiParameterValuesCount)} : {m_MultiParameterValuesCount}  |  {nameof(m_MultiParameterNoneCount)} : {m_MultiParameterNoneCount}\n";
+                    updatedCounters += $"{nameof(m_RpcPerSecond)} : {m_RpcPerSecond}\n ";
                 }
                 else
                 {
-                    m_ServerUpdateInfo += $"Client-ID [{entry.Key}]  Client to Server Rpcs Received: {entry.Value}\n";
+                    updatedCounters += $"Client-ID [{entry.Key}]  Client to Server Rpcs Received: {entry.Value}\n";
                 }
             }
 
-            m_ServerUpdateInfo += $"{nameof(m_ClientRpcDirectTestingMode)} : {m_ClientRpcDirectTestingMode}";
+            updatedCounters += $"{nameof(m_ClientRpcDirectTestingMode)} : {m_ClientRpcDirectTestingMode}";
 
-            if (!UnitTesting)
+            if (IsHost)
             {
-                if (IsHost)
+                if (m_GlobalDirectCurrentClientIdIndex < m_ClientIds.Count)
                 {
-                    if (m_GlobalDirectCurrentClientIdIndex < m_ClientIds.Count)
+                    if (m_ClientProgressBar && m_ClientIndices.Contains(NetworkManager.Singleton.LocalClientId))
                     {
-                        if (m_ClientProgressBar && m_ClientIndices.Contains(NetworkManager.LocalClientId))
-                        {
-                            m_ClientProgressBar.fillAmount = Mathf.Clamp((2.0f * (float)m_GlobalDirectCounter) * k_ProgressBarDivisor, 0.01f, 1.0f);
-                        }
+                        m_ClientProgressBar.fillAmount = Mathf.Clamp((2.0f * (float)m_GlobalDirectCounter) * k_ProgressBarDivisor, 0.01f, 1.0f);
                     }
                 }
-                m_CounterTextObject.text = m_ServerUpdateInfo;
             }
+
+            m_CounterTextObject.text = updatedCounters;
         }
     }
 }
