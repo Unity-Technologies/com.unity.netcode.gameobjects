@@ -85,6 +85,11 @@ namespace MLAPI.RuntimeTests
             {
                 Object.Destroy(networkManager.gameObject);
             }
+
+            if (s_CoroutineRunner != null)
+            {
+                Object.Destroy(s_CoroutineRunner);
+            }
         }
 
         /// <summary>

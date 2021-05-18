@@ -16,6 +16,8 @@ namespace TestProject.RuntimeTests
 
         private int m_MaxFrames;
 
+        private GameObject m_PlayerPrefab;
+
         /// <summary>
         /// Default Mode (Batched RPCs Enabled)
         /// </summary>
@@ -49,8 +51,6 @@ namespace TestProject.RuntimeTests
         /// <returns></returns>
         private IEnumerator AutomatedRpcTestsHandler(int numClients, bool useBatching = true)
         {
-            m_MaxFrames = Time.frameCount + 500;
-
             // Set RpcQueueManualTests into unit testing mode
             RpcQueueManualTests.UnitTesting = true;
 
@@ -58,23 +58,23 @@ namespace TestProject.RuntimeTests
             Assert.True(MultiInstanceHelpers.Create(numClients, out NetworkManager server, out NetworkManager[] clients));
 
             // Create a default player GameObject to use
-            var playerPrefab = new GameObject("Player");
-            var networkObject = playerPrefab.AddComponent<NetworkObject>();
+            m_PlayerPrefab = new GameObject("Player");
+            var networkObject = m_PlayerPrefab.AddComponent<NetworkObject>();
 
             // Add our RpcQueueManualTests component
-            playerPrefab.AddComponent<RpcQueueManualTests>();
+            m_PlayerPrefab.AddComponent<RpcQueueManualTests>();
 
             // Make it a prefab
             MultiInstanceHelpers.MakeNetworkedObjectTestPrefab(networkObject);
 
             // Set the player prefab
-            server.NetworkConfig.PlayerPrefab = playerPrefab;
+            server.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
 
 
             // Set all of the client's player prefab
             for (int i = 0; i < clients.Length; i++)
             {
-                clients[i].NetworkConfig.PlayerPrefab = playerPrefab;
+                clients[i].NetworkConfig.PlayerPrefab = m_PlayerPrefab;
             }
 
             // Start the instances
@@ -93,10 +93,10 @@ namespace TestProject.RuntimeTests
             }
 
             // [Client-Side] Wait for a connection to the server 
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(clients));
+            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(clients, null, 256));
 
             // [Host-Side] Check to make sure all clients are connected
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnectedToServer(server, clients.Length + 1));
+            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnectedToServer(server, clients.Length + 1, null, 256));
 
             // [Host-Side] Get the Host owned instance of the RpcQueueManualTests
             var serverClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
@@ -134,17 +134,21 @@ namespace TestProject.RuntimeTests
                 rpcClientSideTest.BeginTest();
             }
 
+            m_MaxFrames = Time.frameCount + 1000;
             // Use frame counts
             int startFrame = Time.frameCount;
             while (!serverRpcTests.IsFinishedWithTest())
             {
-                if (Time.frameCount - startFrame > m_MaxFrames)
+                if (Time.frameCount > m_MaxFrames)
                 {
                     m_TimedOut = true;
                     break;
                 }
-                int nextFrameId = Time.frameCount + 1;
-                yield return new WaitUntil(() => Time.frameCount >= nextFrameId);
+                // We can still use frame count as our time out metric
+                // but still use WaitForSeconds to reduce processing overhead.
+                yield return new WaitForSeconds(0.1f);
+                //int nextFrameId = Time.frameCount + 1;
+                //yield return new WaitUntil(() => Time.frameCount >= nextFrameId);
             }
 
             Debug.Log($"Frames taken to complete: {Time.frameCount - startFrame}");
@@ -166,6 +170,11 @@ namespace TestProject.RuntimeTests
         [TearDown]
         public void TearDown()
         {
+            if (m_PlayerPrefab != null)
+            {
+                Object.Destroy(m_PlayerPrefab);
+                m_PlayerPrefab = null;
+            }
             // Shutdown and clean up both of our NetworkManager instances
             MultiInstanceHelpers.Destroy();
         }
