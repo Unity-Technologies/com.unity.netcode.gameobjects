@@ -56,18 +56,18 @@ namespace MLAPI
         internal NetworkTickSystem NetworkTickSystem { get; private set; }
 
         internal SnapshotSystem SnapshotSystem { get; private set; }
-        
+
         private NetworkPrefabHandler m_PrefabHandler;
         public NetworkPrefabHandler PrefabHandler
         {
             get
             {
-                if(m_PrefabHandler == null)
+                if (m_PrefabHandler == null)
                 {
                     m_PrefabHandler = new NetworkPrefabHandler();
                 }
                 return m_PrefabHandler;
-            }            
+            }
         }
 
         /// <summary>
