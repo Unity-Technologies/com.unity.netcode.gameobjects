@@ -44,24 +44,35 @@ public class SIPTransport : NetworkTransport
         {
             Type = NetworkEvent.Disconnect,
             Channel = NetworkChannel.Internal,
-            ConnectionId = m_LocalConnection.ConnectionId,
+            ConnectionId = m_LocalConnection != null ? m_LocalConnection.ConnectionId : ServerClientId,
             Data = new ArraySegment<byte>()
         });
 
-        // Inject local disconnect
-        m_LocalConnection.IncomingBuffer.Enqueue(new Event
+        if (m_LocalConnection != null)
         {
-            Type = NetworkEvent.Disconnect,
-            Channel = NetworkChannel.Internal,
-            ConnectionId = m_LocalConnection.ConnectionId,
-            Data = new ArraySegment<byte>()
-        });
+            // Inject local disconnect
+            m_LocalConnection.IncomingBuffer.Enqueue(new Event
+            {
+                Type = NetworkEvent.Disconnect,
+                Channel = NetworkChannel.Internal,
+                ConnectionId = m_LocalConnection.ConnectionId,
+                Data = new ArraySegment<byte>()
+            });
 
-        // Remove the connection
-        s_Server.Transport.m_Clients.Remove(m_LocalConnection.ConnectionId);
+            if (s_Server != null && m_LocalConnection != null)
+            {
+                // Remove the connection
+                s_Server.Transport.m_Clients.Remove(m_LocalConnection.ConnectionId);
+            }
 
-        // Remove the local connection
-        m_LocalConnection = null;
+            if (m_LocalConnection.ConnectionId == ServerClientId)
+            {
+                s_Server = null;
+            }
+
+            // Remove the local connection
+            m_LocalConnection = null;
+        }
     }
 
     // Called by server
@@ -115,6 +126,12 @@ public class SIPTransport : NetworkTransport
                 Data = new ArraySegment<byte>()
             });
         }
+        
+        if (m_LocalConnection != null && m_LocalConnection.ConnectionId == ServerClientId)
+        {
+            s_Server = null;
+        }
+        
 
         // TODO: Cleanup
     }
