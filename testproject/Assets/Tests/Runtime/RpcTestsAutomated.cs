@@ -49,7 +49,7 @@ namespace TestProject.RuntimeTests
         /// <returns></returns>
         private IEnumerator AutomatedRpcTestsHandler(int numClients, bool useBatching = true)
         {
-            m_MaxFrames = Time.frameCount + 500;
+            
 
             // Set RpcQueueManualTests into unit testing mode
             RpcQueueManualTests.UnitTesting = true;
@@ -134,11 +134,12 @@ namespace TestProject.RuntimeTests
                 rpcClientSideTest.BeginTest();
             }
 
+            m_MaxFrames = Time.frameCount + 500;
             // Use frame counts
             int startFrame = Time.frameCount;
             while (!serverRpcTests.IsFinishedWithTest())
             {
-                if (Time.frameCount - startFrame > m_MaxFrames)
+                if (Time.frameCount > m_MaxFrames)
                 {
                     m_TimedOut = true;
                     break;
