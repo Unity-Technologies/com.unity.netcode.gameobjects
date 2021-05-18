@@ -1,11 +1,12 @@
 using NUnit.Framework;
+using UnityEngine;
 
 namespace MLAPI.EditorTests
 {
     public class FixedAllocatorTest
     {
         [Test]
-        public void TestAllocator()
+        public void SimpleTest()
         {
             int pos;
 
@@ -31,19 +32,78 @@ namespace MLAPI.EditorTests
             allocator.DebugDisplay();
             Assert.IsTrue(allocator.Verify());
 
+            // deallocate 0
             Assert.IsTrue(allocator.Deallocate(0));
             allocator.DebugDisplay();
             Assert.IsTrue(allocator.Verify());
 
+            // deallocate 1
             allocator.Deallocate(1);
             allocator.DebugDisplay();
             Assert.IsTrue(allocator.Verify());
 
+            // deallocate 2
             allocator.Deallocate(2);
             allocator.DebugDisplay();
             Assert.IsTrue(allocator.Verify());
 
-            Assert.IsTrue(true);
+            // allocate 50 bytes
+            Assert.IsTrue(allocator.Allocate(0, 50, out pos));
+            allocator.DebugDisplay();
+            Assert.IsTrue(allocator.Verify());
+
+            // allocate another 50 bytes
+            Assert.IsTrue(allocator.Allocate(1, 50, out pos));
+            allocator.DebugDisplay();
+            Assert.IsTrue(allocator.Verify());
+
+            // allocate a third 50 bytes
+            Assert.IsTrue(allocator.Allocate(2, 50, out pos));
+            allocator.DebugDisplay();
+            Assert.IsTrue(allocator.Verify());
+
+            // deallocate 1, a block in the middle this time
+            allocator.Deallocate(1);
+            allocator.DebugDisplay();
+            Assert.IsTrue(allocator.Verify());
+
+            // allocate a smaller one in its place
+            allocator.Allocate(1, 25, out pos);
+            allocator.DebugDisplay();
+            Assert.IsTrue(allocator.Verify());
         }
+
+        [Test]
+        public void ReuseTest()
+        {
+            int count = 100;
+            bool[] used = new bool[count];
+            int[] pos = new int[count];
+            int bufferSize = 20000;
+            int iterations = 10000;
+
+            IndexAllocator allocator = new IndexAllocator(20000);
+
+            for (int i = 0; i < iterations; i++)
+            {
+                int index = Random.Range(0, count);
+                if (used[index])
+                {
+                    Assert.IsTrue(allocator.Deallocate(index));
+                    used[index] = false;
+                }
+                else
+                {
+                    int position;
+                    int length = 10 * Random.Range(1, 10);
+                    Assert.IsTrue(allocator.Allocate(index, length, out position));
+                    pos[index] = position;
+                    used[index] = true;
+                }
+                Assert.IsTrue(allocator.Verify());
+            }
+            allocator.DebugDisplay();
+        }
+
     }
 }
