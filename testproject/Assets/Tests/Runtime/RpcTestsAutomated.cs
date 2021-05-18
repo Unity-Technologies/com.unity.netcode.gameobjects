@@ -131,7 +131,7 @@ namespace TestProject.RuntimeTests
             }
 
             // Wait for the all of the tests to finish
-            var timeOut = Time.realtimeSinceStartup + 5;
+            var timeOut = Time.realtimeSinceStartup + 15;
             while (!serverRpcTests.IsFinishedWithTest())
             {
                 yield return new WaitForSeconds(0.01f);
@@ -154,7 +154,11 @@ namespace TestProject.RuntimeTests
                 Debug.Log($"Final Client {rpcClientSideTest.NetworkManager.LocalClientId} Status Info:");
                 Debug.Log(rpcClientSideTest.GetCurrentClientStatusInfo());
             }
+        }
 
+        [TearDown]
+        public void TearDown()
+        {
             // Shutdown and clean up both of our NetworkManager instances
             MultiInstanceHelpers.ShutdownAndClean();
         }
