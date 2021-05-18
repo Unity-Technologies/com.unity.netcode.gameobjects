@@ -106,8 +106,6 @@ namespace TestProject.ManualTests
         private ClientRpcParams m_ClientRpcParams;
         private ClientRpcParams m_ClientRpcParamsMultiParameter;
 
-        private ServerRpcParams m_MultiParameterTargets;
-
 
         public void DisableManualNetworkManager()
         {
@@ -161,8 +159,8 @@ namespace TestProject.ManualTests
             {
                 m_ClientRpcParams.Send.TargetClientIds = new ulong[] { 0 };
                 m_ClientRpcParamsMultiParameter.Send.TargetClientIds = new ulong[] { 0 };
-                //For unit tests we will only send 10 per update stage
-                m_MaxGlobalDirectCounter = 10;
+                //For unit tests we will only send 2 per update stage
+                m_MaxGlobalDirectCounter = 2;
                 m_BeginTest = false;
                 m_MesageSendDelay = 0.01f;
 
@@ -258,8 +256,16 @@ namespace TestProject.ManualTests
             }
             m_MultiParameterCanSend = true;
 
-            m_GlobalDirectScale = 2;
-            m_GlobalDirectFrequency = 1.0f / (100.0f / (float)m_GlobalDirectScale);
+            if (!UnitTesting)
+            {
+                m_GlobalDirectScale = 2;
+                m_GlobalDirectFrequency = 1.0f / (100.0f / (float)m_GlobalDirectScale);
+            }
+            else
+            {
+                m_GlobalDirectScale = 1;
+                m_GlobalDirectFrequency = 0.01f;
+            }
 
             if (m_CounterTextObject)
             {
@@ -273,9 +279,10 @@ namespace TestProject.ManualTests
                         if (!m_ConnectionEventOccurred && !UnitTesting)
                         {
                             NetworkManager.StartClient();
+                            Screen.SetResolution(800, 80, FullScreenMode.Windowed);
                         }
                         m_ServerRpcParams.Send.UpdateStage = NetworkUpdateStage.Update;
-                        Screen.SetResolution(800, 80, FullScreenMode.Windowed);
+
                         break;
                     }
                 case NetworkManagerMode.Host:
@@ -283,9 +290,10 @@ namespace TestProject.ManualTests
                         if (!m_ConnectionEventOccurred && !UnitTesting)
                         {
                             NetworkManager.StartHost();
+                            Screen.SetResolution(800, 480, FullScreenMode.Windowed);
                         }
                         m_ClientRpcParams.Send.UpdateStage = NetworkUpdateStage.PreUpdate;
-                        Screen.SetResolution(800, 480, FullScreenMode.Windowed);
+
                         break;
                     }
                 case NetworkManagerMode.Server:
@@ -293,10 +301,12 @@ namespace TestProject.ManualTests
                         if (!m_ConnectionEventOccurred && !UnitTesting)
                         {
                             NetworkManager.StartServer();
+                            Screen.SetResolution(800, 480, FullScreenMode.Windowed);
+                            m_ClientProgressBar.enabled = false;
                         }
-                        m_ClientProgressBar.enabled = false;
+
                         m_ClientRpcParams.Send.UpdateStage = NetworkUpdateStage.PostLateUpdate;
-                        Screen.SetResolution(800, 480, FullScreenMode.Windowed);
+
                         break;
                     }
             }
@@ -406,7 +416,14 @@ namespace TestProject.ManualTests
                         {
                             if (m_GlobalCounterDelay < Time.realtimeSinceStartup)
                             {
-                                m_GlobalCounterDelay = Time.realtimeSinceStartup + 0.200f;
+                                if (!UnitTesting)
+                                {
+                                    m_GlobalCounterDelay = Time.realtimeSinceStartup + 0.2f;
+                                }
+                                else
+                                {
+                                    m_GlobalCounterDelay = Time.realtimeSinceStartup + 0.06f;
+                                }
                                 m_GlobalCounter++;
                                 OnSendGlobalCounterClientRpc(m_GlobalCounter);
                                 m_RpcMessagesSent++;
@@ -443,7 +460,7 @@ namespace TestProject.ManualTests
                     {
                         if (m_LocalCounterDelay < Time.realtimeSinceStartup)
                         {
-                            m_LocalCounterDelay = Time.realtimeSinceStartup + m_MesageSendDelay + 0.01f;
+                            m_LocalCounterDelay = Time.realtimeSinceStartup + m_MesageSendDelay + 0.02f;
                             m_LocalClientCounter++;
 
                             OnSendCounterServerRpc(m_LocalClientCounter, NetworkManager.LocalClientId, m_ServerRpcParams);
@@ -451,7 +468,7 @@ namespace TestProject.ManualTests
                         }
                         else if (m_LocalMultiDelay < Time.realtimeSinceStartup)
                         {
-                            m_LocalMultiDelay = Time.realtimeSinceStartup + m_MesageSendDelay + 0.015f;
+                            m_LocalMultiDelay = Time.realtimeSinceStartup + m_MesageSendDelay + 0.03f;
                             if (m_MultiParameterCanSend)
                             {
                                 m_MultiParameterCanSend = false;
@@ -607,7 +624,7 @@ namespace TestProject.ManualTests
             //This is just for debug purposes so I can trap for "non-local" clients
             if (m_ClientSpecificCounters.ContainsKey(parameters.Receive.SenderClientId))
             {
-                if(m_ClientSpecificCounters[parameters.Receive.SenderClientId] < counter)
+                if (m_ClientSpecificCounters[parameters.Receive.SenderClientId] < counter)
                 {
                     m_ClientSpecificCounters[parameters.Receive.SenderClientId] = counter;
                 }
@@ -640,7 +657,7 @@ namespace TestProject.ManualTests
         private void OnSendMultiParametersServerRpc(int count, float floatValue, long longValue, ServerRpcParams parameters = default)
         {
             m_ClientRpcParamsMultiParameter.Send.TargetClientIds[0] = parameters.Receive.SenderClientId;
-            m_ClientRpcParamsMultiParameter.Send.UpdateStage = NetworkUpdateStage.EarlyUpdate;            
+            m_ClientRpcParamsMultiParameter.Send.UpdateStage = NetworkUpdateStage.EarlyUpdate;
             OnSendMultiParametersClientRpc(count, floatValue, longValue, m_ClientRpcParamsMultiParameter);
         }
 

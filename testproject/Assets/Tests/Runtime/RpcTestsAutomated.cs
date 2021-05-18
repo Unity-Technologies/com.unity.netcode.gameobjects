@@ -14,6 +14,8 @@ namespace TestProject.RuntimeTests
     {
         private bool m_TimedOut;
 
+        private int m_MaxFrames;
+
         /// <summary>
         /// Default Mode (Batched RPCs Enabled)
         /// </summary>
@@ -47,6 +49,8 @@ namespace TestProject.RuntimeTests
         /// <returns></returns>
         private IEnumerator AutomatedRpcTestsHandler(int numClients, bool useBatching = true)
         {
+            m_MaxFrames = Time.frameCount + 500;
+
             // Set RpcQueueManualTests into unit testing mode
             RpcQueueManualTests.UnitTesting = true;
 
@@ -70,7 +74,7 @@ namespace TestProject.RuntimeTests
             // Set all of the client's player prefab
             for (int i = 0; i < clients.Length; i++)
             {
-                clients[i].NetworkConfig.PlayerPrefab = playerPrefab;                
+                clients[i].NetworkConfig.PlayerPrefab = playerPrefab;
             }
 
             // Start the instances
@@ -84,7 +88,7 @@ namespace TestProject.RuntimeTests
             server.RpcQueueContainer.EnableBatchedRpcs(useBatching);
 
             for (int i = 0; i < clients.Length; i++)
-            {                
+            {
                 clients[i].RpcQueueContainer.EnableBatchedRpcs(useBatching);
             }
 
@@ -130,17 +134,20 @@ namespace TestProject.RuntimeTests
                 rpcClientSideTest.BeginTest();
             }
 
-            // Wait for the all of the tests to finish
-            var timeOut = Time.realtimeSinceStartup + 15;
+            // Use frame counts
+            int startFrame = Time.frameCount;
             while (!serverRpcTests.IsFinishedWithTest())
             {
-                yield return new WaitForSeconds(0.01f);
-                if (timeOut < Time.realtimeSinceStartup)
+                if (Time.frameCount - startFrame > m_MaxFrames)
                 {
                     m_TimedOut = true;
                     break;
                 }
+                int nextFrameId = Time.frameCount + 1;
+                yield return new WaitUntil(() => Time.frameCount >= nextFrameId);
             }
+
+            Debug.Log($"Frames taken to complete: {Time.frameCount - startFrame}");
 
             // Verify we didn't time out (i.e. all tests ran and finished)
             Assert.IsFalse(m_TimedOut);
@@ -159,7 +166,7 @@ namespace TestProject.RuntimeTests
         [TearDown]
         public void TearDown()
         {
-            // Shutdown and clean up MultiInstanceHelpers
+            // Shutdown and clean up both of our NetworkManager instances
             MultiInstanceHelpers.Destroy();
         }
     }
