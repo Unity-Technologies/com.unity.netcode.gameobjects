@@ -17,6 +17,9 @@ namespace TestProject.RuntimeTests
         private uint m_FailedConnections;
         private uint m_PrefabOverrideGlobalObjectIdHash;
 
+        private GameObject m_PlayerPrefab;
+        private GameObject m_PlayerPrefabOverride;
+
         /// <summary>
         /// Tests connection approval and connection approval failure
         /// </summary>
@@ -57,8 +60,8 @@ namespace TestProject.RuntimeTests
             Assert.True(MultiInstanceHelpers.Create(numClients, out NetworkManager server, out NetworkManager[] clients));
 
             // Create a default player GameObject to use
-            var playerPrefab = new GameObject("Player");
-            var networkObject = playerPrefab.AddComponent<NetworkObject>();
+            m_PlayerPrefab = new GameObject("Player");
+            var networkObject = m_PlayerPrefab.AddComponent<NetworkObject>();
 
             // Make it a prefab
             MultiInstanceHelpers.MakeNetworkedObjectTestPrefab(networkObject);
@@ -67,8 +70,8 @@ namespace TestProject.RuntimeTests
             if (prefabOverride)
             {
                 // Create a default player GameObject to use
-                var playerPrefabOverride = new GameObject("PlayerPrefabOverride");
-                var networkObjectOverride = playerPrefab.AddComponent<NetworkObject>();
+                m_PlayerPrefabOverride = new GameObject("PlayerPrefabOverride");
+                var networkObjectOverride = m_PlayerPrefabOverride.AddComponent<NetworkObject>();
                 MultiInstanceHelpers.MakeNetworkedObjectTestPrefab(networkObjectOverride);
                 m_PrefabOverrideGlobalObjectIdHash = networkObjectOverride.GlobalObjectIdHash;
             }
@@ -78,7 +81,7 @@ namespace TestProject.RuntimeTests
             }
 
             // [Host-Side] Set the player prefab
-            server.NetworkConfig.PlayerPrefab = playerPrefab;
+            server.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
             server.NetworkConfig.ConnectionApproval = true;
             server.ConnectionApprovalCallback += ConnectionApprovalCallback;
             server.NetworkConfig.ConnectionData = Encoding.ASCII.GetBytes(m_ConnectionToken);
@@ -90,7 +93,7 @@ namespace TestProject.RuntimeTests
 
             foreach (var client in clients)
             {
-                client.NetworkConfig.PlayerPrefab = playerPrefab;
+                client.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
                 client.NetworkConfig.ConnectionApproval = true;
                 if (markedForFailure < failureTestCount)
                 {
@@ -135,7 +138,6 @@ namespace TestProject.RuntimeTests
                 }
             }
 
-            // Attempt to get ubuntu to pass on this test
             foreach(var client in clientsToClean)
             {
                 client.StopClient();
