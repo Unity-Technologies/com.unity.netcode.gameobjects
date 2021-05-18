@@ -33,12 +33,7 @@ namespace MLAPI.EditorTests
             var gameObject = new GameObject(nameof(AccessNetworkObjectTest));
             var networkBehaviour = gameObject.AddComponent<EmptyNetworkBehaviour>();
 
-            // TODO: Do we really want to throw here?
-            // Future API change: return null
-            Assert.Throws<NullReferenceException>(() =>
-            {
-                var x = networkBehaviour.NetworkObject;
-            });
+            Assert.That(networkBehaviour.NetworkObject, Is.Null);
 
             var networkObject = gameObject.AddComponent<NetworkObject>();
 
@@ -46,12 +41,7 @@ namespace MLAPI.EditorTests
 
             Object.DestroyImmediate(networkObject);
 
-            // TODO: Do we really want to throw here?
-            // Future API change: return null
-            Assert.Throws<NullReferenceException>(() =>
-            {
-                var x = networkBehaviour.NetworkObject;
-            });
+            Assert.That(networkBehaviour.NetworkObject, Is.Null);
 
             // Cleanup
             Object.DestroyImmediate(gameObject);
