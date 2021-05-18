@@ -159,8 +159,8 @@ namespace TestProject.RuntimeTests
         [TearDown]
         public void TearDown()
         {
-            // Shutdown and clean up both of our NetworkManager instances
-            MultiInstanceHelpers.ShutdownAndClean();
+            // Shutdown and clean up MultiInstanceHelpers
+            MultiInstanceHelpers.Destroy();
         }
     }
 }
