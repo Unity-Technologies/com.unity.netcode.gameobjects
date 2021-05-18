@@ -300,9 +300,9 @@ namespace MLAPI
                     m_NetworkObject = GetComponentInParent<NetworkObject>();
                 }
 
-                if (m_NetworkObject == null)
+                if (m_NetworkObject == null && NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                 {
-                    throw new NullReferenceException($"Could not get {nameof(NetworkObject)} for the {nameof(NetworkBehaviour)}. Are you missing a {nameof(NetworkObject)} component?");
+                    NetworkLog.LogWarning($"Could not get {nameof(NetworkObject)} for the {nameof(NetworkBehaviour)}. Are you missing a {nameof(NetworkObject)} component?");
                 }
 
                 return m_NetworkObject;
@@ -312,18 +312,7 @@ namespace MLAPI
         /// <summary>
         /// Gets whether or not this NetworkBehaviour instance has a NetworkObject owner.
         /// </summary>
-        public bool HasNetworkObject
-        {
-            get
-            {
-                if (m_NetworkObject == null)
-                {
-                    m_NetworkObject = GetComponentInParent<NetworkObject>();
-                }
-
-                return m_NetworkObject != null;
-            }
-        }
+        public bool HasNetworkObject => NetworkObject != null;
 
         private NetworkObject m_NetworkObject = null;
 
