@@ -69,7 +69,7 @@ namespace MLAPI.RuntimeTests
         }
 
 
-        public static void ShutdownAndClean()
+        public static void Destroy()
         {
             // Shutdown the server which forces clients to disconnect
             foreach (var networkManager in NetworkManagerInstances)

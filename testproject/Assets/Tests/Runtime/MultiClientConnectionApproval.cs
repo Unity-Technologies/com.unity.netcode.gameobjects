@@ -141,8 +141,6 @@ namespace TestProject.RuntimeTests
                 client.StopClient();
             }
 
-            // Shutdown and clean up both of our NetworkManager instances
-            MultiInstanceHelpers.ShutdownAndClean();
         }
 
         /// <summary>
@@ -173,6 +171,13 @@ namespace TestProject.RuntimeTests
             {
                 callback.Invoke(true, m_PrefabOverrideGlobalObjectIdHash, isApproved, null, null);
             }
+        }
+
+        [TearDown]
+        public void TearDown()
+        {
+            // Shutdown and clean up both of our NetworkManager instances
+            MultiInstanceHelpers.Destroy();
         }
     }
 }
