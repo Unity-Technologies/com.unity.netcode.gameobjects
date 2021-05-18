@@ -114,7 +114,7 @@ public class GrabbableBall : NetworkBehaviour
         {
             m_CachedParent = transform.parent;
             transform.parent = playerObject.transform;
-            transform.localPosition = Vector3.up;
+            transform.localPosition = Vector3.up * (1 / playerObject.transform.localScale.y);
         }
 
         m_Rigidbody.velocity = Vector3.zero;
