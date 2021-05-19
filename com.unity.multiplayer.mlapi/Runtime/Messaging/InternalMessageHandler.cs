@@ -111,7 +111,7 @@ namespace MLAPI.Messaging
 
                 // Here we cannot use the NetworkTimeSerializer because we need an absolute value first
                 int tick = reader.ReadInt32Packed();
-                NetworkManager.networkTimeSystem.InitializeClient(tick);
+                NetworkManager.NetworkTimeSystem.InitializeClient(tick);
                 //NetworkManager.UpdateNetworkTime(clientId, netTime, receiveTime, true);
 
                 NetworkManager.ConnectedClients.Add(NetworkManager.LocalClientId, new NetworkClient { ClientId = NetworkManager.LocalClientId });

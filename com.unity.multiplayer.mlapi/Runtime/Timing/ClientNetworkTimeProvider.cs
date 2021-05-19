@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace MLAPI.Timing
@@ -7,7 +5,6 @@ namespace MLAPI.Timing
     public class ClientNetworkTimeProvider : INetworkTimeProvider
     {
         private const float k_HardResetThreshold = 200f / 1000f; // 200ms
-        private const float k_CorrectionTolerance = 20f / 1000f; // 20ms
         private const float k_AdjustmentRatio = 0.01f;
 
         private const float k_StartRtt = 150f / 1000f; // 150ms
@@ -67,16 +64,8 @@ namespace MLAPI.Timing
             }
 
             // Adjust predicted time scale
-            if (Mathf.Abs(targetPredictedTime - predictedTime.FixedTime) > k_CorrectionTolerance)
-            {
-                PredictedTimeScale += targetPredictedTime > predictedTime.FixedTime ? k_AdjustmentRatio : -k_AdjustmentRatio;
-            }
-
-            // Adjust server time scale
-            if (Mathf.Abs(targetServerTime - serverTime.FixedTime) > k_CorrectionTolerance)
-            {
-                ServerTimeScale += targetServerTime > serverTime.FixedTime ? k_AdjustmentRatio : -k_AdjustmentRatio;
-            }
+            PredictedTimeScale += targetPredictedTime > predictedTime.FixedTime ? k_AdjustmentRatio : -k_AdjustmentRatio;
+            ServerTimeScale += targetServerTime > serverTime.FixedTime ? k_AdjustmentRatio : -k_AdjustmentRatio;
 
             return false;
         }
