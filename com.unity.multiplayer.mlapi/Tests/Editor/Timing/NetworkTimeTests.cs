@@ -32,11 +32,11 @@ namespace MLAPI.EditorTests.Timing
             Assert.IsTrue(Mathf.Approximately(d, timeD.Time));
             Assert.IsTrue(Mathf.Approximately(e, timeE.Time));
 
-            Assert.IsTrue(timeA.TickDuration >= 0);
-            Assert.IsTrue(timeB.TickDuration >= 0);
-            Assert.IsTrue(timeC.TickDuration >= 0);
-            Assert.IsTrue(timeD.TickDuration >= 0);
-            Assert.IsTrue(timeE.TickDuration >= 0);
+            Assert.IsTrue(timeA.tickDurationOffset >= 0);
+            Assert.IsTrue(timeB.tickDurationOffset >= 0);
+            Assert.IsTrue(timeC.tickDurationOffset >= 0);
+            Assert.IsTrue(timeD.tickDurationOffset >= 0);
+            Assert.IsTrue(timeE.tickDurationOffset >= 0);
         }
 
         [Test]
@@ -200,18 +200,14 @@ namespace MLAPI.EditorTests.Timing
             NetworkTime startTime2 = new NetworkTime(tickRate, start2);
             NetworkTime dif = startTime2 - startTime;
 
-            int i = 1;
             foreach (var step in steps)
             {
                 startTime += step;
                 startTime2 += step;
                 Assert.IsTrue(Mathf.Approximately( startTime.Time, (startTime2 - dif).Time));
-                i++;
             }
 
             Assert.IsTrue(Approximately( startTime.Time, (startTime2 - dif).Time, maxAcceptableTotalOffset));
-
-            //Debug.Log((startTime.Time - (startTime2 - dif).Time).ToString("n10"));
         }
 
         private static bool Approximately(float a, float b, float epsilon)

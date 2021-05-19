@@ -43,6 +43,11 @@ namespace MLAPI
             Client = 2
         }
 
+        // todo: transitional. For the next release, only Snapshot should remain
+        // The booleans allow iterative development and testing in the meantime
+        static private bool s_UseClassicDelta = true;
+        static private bool s_UseSnapshot = false;
+
 #pragma warning disable 414
 #pragma warning disable IDE1006 // disable naming rule violation check
         [NonSerialized]
@@ -308,9 +313,9 @@ namespace MLAPI
                     m_NetworkObject = GetComponentInParent<NetworkObject>();
                 }
 
-                if (m_NetworkObject == null)
+                if (m_NetworkObject == null && NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                 {
-                    throw new NullReferenceException($"Could not get {nameof(NetworkObject)} for the {nameof(NetworkBehaviour)}. Are you missing a {nameof(NetworkObject)} component?");
+                    NetworkLog.LogWarning($"Could not get {nameof(NetworkObject)} for the {nameof(NetworkBehaviour)}. Are you missing a {nameof(NetworkObject)} component?");
                 }
 
                 return m_NetworkObject;
@@ -320,18 +325,7 @@ namespace MLAPI
         /// <summary>
         /// Gets whether or not this NetworkBehaviour instance has a NetworkObject owner.
         /// </summary>
-        public bool HasNetworkObject
-        {
-            get
-            {
-                if (m_NetworkObject == null)
-                {
-                    m_NetworkObject = GetComponentInParent<NetworkObject>();
-                }
-
-                return m_NetworkObject != null;
-            }
-        }
+        public bool HasNetworkObject => NetworkObject != null;
 
         private NetworkObject m_NetworkObject = null;
 
@@ -344,6 +338,11 @@ namespace MLAPI
         /// Gets NetworkId for this NetworkBehaviour from the owner NetworkObject
         /// </summary>
         public ushort NetworkBehaviourId => NetworkObject.GetNetworkBehaviourOrderIndex(this);
+
+        /// <summary>
+        /// Internally caches the Id of this behaviour in a NetworkObject. Makes look-up faster
+        /// </summary>
+        internal ushort NetworkBehaviourIdCache = 0;
 
         /// <summary>
         /// Returns a the NetworkBehaviour with a given BehaviourId for the current NetworkObject
@@ -596,99 +595,114 @@ namespace MLAPI
             }
 
             PreNetworkVariableWrite();
-            NetworkVariableUpdate(clientId);
+            NetworkVariableUpdate(clientId, NetworkBehaviourId);
         }
 
         private readonly List<int> m_NetworkVariableIndexesToReset = new List<int>();
         private readonly HashSet<int> m_NetworkVariableIndexesToResetSet = new HashSet<int>();
 
-        private void NetworkVariableUpdate(ulong clientId)
+        private void NetworkVariableUpdate(ulong clientId, int behaviourIndex)
         {
             if (!CouldHaveDirtyNetworkVariables())
             {
                 return;
             }
 
-            for (int j = 0; j < m_ChannelMappedNetworkVariableIndexes.Count; j++)
+            if (s_UseSnapshot)
             {
-                using (var buffer = PooledNetworkBuffer.Get())
+                for (int k = 0; k < NetworkVariableFields.Count; k++)
                 {
-                    using (var writer = PooledNetworkWriter.Get(buffer))
+                    NetworkManager.SnapshotSystem.Store(NetworkObjectId, behaviourIndex, k, NetworkVariableFields[k]);
+                }
+            }
+
+            if (s_UseClassicDelta)
+            {
+                for (int j = 0; j < m_ChannelMappedNetworkVariableIndexes.Count; j++)
+                {
+                    using (var buffer = PooledNetworkBuffer.Get())
                     {
-                        writer.WriteUInt64Packed(NetworkObjectId);
-                        writer.WriteUInt16Packed(NetworkObject.GetNetworkBehaviourOrderIndex(this));
-
-                        bool writtenAny = false;
-                        for (int k = 0; k < NetworkVariableFields.Count; k++)
+                        using (var writer = PooledNetworkWriter.Get(buffer))
                         {
-                            if (!m_ChannelMappedNetworkVariableIndexes[j].Contains(k))
+                            writer.WriteUInt64Packed(NetworkObjectId);
+                            writer.WriteUInt16Packed(NetworkObject.GetNetworkBehaviourOrderIndex(this));
+
+                            bool writtenAny = false;
+                            for (int k = 0; k < NetworkVariableFields.Count; k++)
                             {
-                                // This var does not belong to the currently iterating channel group.
-                                if (NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
+                                if (!m_ChannelMappedNetworkVariableIndexes[j].Contains(k))
                                 {
-                                    writer.WriteUInt16Packed(0);
-                                }
-                                else
-                                {
-                                    writer.WriteBool(false);
-                                }
-
-                                continue;
-                            }
-
-                            bool isDirty = NetworkVariableFields[k].IsDirty(); // cache this here. You never know what operations users will do in the dirty methods
-
-                            //   if I'm dirty AND a client, write (server always has all permissions)
-                            //   if I'm dirty AND the server AND the client can read me, send.
-                            bool shouldWrite = isDirty && (!IsServer || NetworkVariableFields[k].CanClientRead(clientId));
-
-                            if (NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
-                            {
-                                if (!shouldWrite)
-                                {
-                                    writer.WriteUInt16Packed(0);
-                                }
-                            }
-                            else
-                            {
-                                writer.WriteBool(shouldWrite);
-                            }
-
-                            if (shouldWrite)
-                            {
-                                writtenAny = true;
-
-                                // write the network tick at which this NetworkVariable was modified
-                                // TODO serialization of tick can use less bandwidth by using a byte/ushort sliding tick window
-                                writer.WriteInt32Packed(NetworkVariableFields[k].LastModifiedTick);
-
-                                if (NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
-                                {
-                                    using (var varBuffer = PooledNetworkBuffer.Get())
+                                    // This var does not belong to the currently iterating channel group.
+                                    if (NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                                     {
-                                        NetworkVariableFields[k].WriteDelta(varBuffer);
-                                        varBuffer.PadBuffer();
+                                        writer.WriteUInt16Packed(0);
+                                    }
+                                    else
+                                    {
+                                        writer.WriteBool(false);
+                                    }
 
-                                        writer.WriteUInt16Packed((ushort)varBuffer.Length);
-                                        buffer.CopyFrom(varBuffer);
+                                    continue;
+                                }
+
+                                bool isDirty =
+                                    NetworkVariableFields[k]
+                                        .IsDirty(); // cache this here. You never know what operations users will do in the dirty methods
+
+                                //   if I'm dirty AND a client, write (server always has all permissions)
+                                //   if I'm dirty AND the server AND the client can read me, send.
+                                bool shouldWrite = isDirty &&
+                                                   (!IsServer || NetworkVariableFields[k].CanClientRead(clientId));
+
+                                if (NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
+                                {
+                                    if (!shouldWrite)
+                                    {
+                                        writer.WriteUInt16Packed(0);
                                     }
                                 }
                                 else
                                 {
-                                    NetworkVariableFields[k].WriteDelta(buffer);
+                                    writer.WriteBool(shouldWrite);
                                 }
 
-                                if (!m_NetworkVariableIndexesToResetSet.Contains(k))
+                                if (shouldWrite)
                                 {
-                                    m_NetworkVariableIndexesToResetSet.Add(k);
-                                    m_NetworkVariableIndexesToReset.Add(k);
+                                    writtenAny = true;
+
+                                // write the network tick at which this NetworkVariable was modified
+                                // TODO this should get delta compressed once we move to delta snapshots
+                                writer.WriteInt32Packed(NetworkVariableFields[k].LastModifiedTick);
+
+                                    if (NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
+                                    {
+                                        using (var varBuffer = PooledNetworkBuffer.Get())
+                                        {
+                                            NetworkVariableFields[k].WriteDelta(varBuffer);
+                                            varBuffer.PadBuffer();
+
+                                            writer.WriteUInt16Packed((ushort)varBuffer.Length);
+                                            buffer.CopyFrom(varBuffer);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        NetworkVariableFields[k].WriteDelta(buffer);
+                                    }
+
+                                    if (!m_NetworkVariableIndexesToResetSet.Contains(k))
+                                    {
+                                        m_NetworkVariableIndexesToResetSet.Add(k);
+                                        m_NetworkVariableIndexesToReset.Add(k);
+                                    }
                                 }
                             }
-                        }
 
-                        if (writtenAny)
-                        {
-                            NetworkManager.MessageSender.Send(clientId, NetworkConstants.NETWORK_VARIABLE_DELTA, m_ChannelsForNetworkVariableGroups[j], buffer);
+                            if (writtenAny)
+                            {
+                                NetworkManager.MessageSender.Send(clientId, NetworkConstants.NETWORK_VARIABLE_DELTA,
+                                    m_ChannelsForNetworkVariableGroups[j], buffer);
+                            }
                         }
                     }
                 }
@@ -1009,6 +1023,9 @@ namespace MLAPI
         /// </summary>
         /// <param name="networkId"></param>
         /// <returns></returns>
-        protected NetworkObject GetNetworkObject(ulong networkId) => NetworkManager.SpawnManager.SpawnedObjects.ContainsKey(networkId) ? NetworkManager.SpawnManager.SpawnedObjects[networkId] : null;
+        protected NetworkObject GetNetworkObject(ulong networkId)
+        {
+            return NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(networkId, out NetworkObject networkObject) ? networkObject : null;
+        }
     }
 }

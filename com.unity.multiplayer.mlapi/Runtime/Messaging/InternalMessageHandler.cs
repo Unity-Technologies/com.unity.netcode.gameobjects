@@ -109,10 +109,8 @@ namespace MLAPI.Messaging
 
                 bool sceneSwitch = NetworkManager.NetworkConfig.EnableSceneManagement && NetworkManager.SceneManager.HasSceneMismatch(sceneIndex);
 
-                // Here we cannot use the NetworkTimeSerializer because we need an absolute value first
                 int tick = reader.ReadInt32Packed();
-                NetworkManager.networkTimeSystem.InitializeClient(tick);
-                //NetworkManager.UpdateNetworkTime(clientId, netTime, receiveTime, true);
+                NetworkManager.NetworkTimeSystem.InitializeClient(tick);
 
                 NetworkManager.ConnectedClients.Add(NetworkManager.LocalClientId, new NetworkClient { ClientId = NetworkManager.LocalClientId });
 
@@ -361,9 +359,9 @@ namespace MLAPI.Messaging
                 ulong networkObjectId = reader.ReadUInt64Packed();
                 ushort networkBehaviourIndex = reader.ReadUInt16Packed();
 
-                if (NetworkManager.SpawnManager.SpawnedObjects.ContainsKey(networkObjectId))
+                if (NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(networkObjectId, out NetworkObject networkObject))
                 {
-                    NetworkBehaviour instance = NetworkManager.SpawnManager.SpawnedObjects[networkObjectId].GetNetworkBehaviourAtOrderIndex(networkBehaviourIndex);
+                    NetworkBehaviour instance = networkObject.GetNetworkBehaviourAtOrderIndex(networkBehaviourIndex);
 
                     if (instance == null)
                     {
@@ -419,9 +417,9 @@ namespace MLAPI.Messaging
                 ulong networkObjectId = reader.ReadUInt64Packed();
                 ushort networkBehaviourIndex = reader.ReadUInt16Packed();
 
-                if (NetworkManager.SpawnManager.SpawnedObjects.ContainsKey(networkObjectId))
+                if (NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(networkObjectId, out NetworkObject networkObject))
                 {
-                    var networkBehaviour = NetworkManager.SpawnManager.SpawnedObjects[networkObjectId].GetNetworkBehaviourAtOrderIndex(networkBehaviourIndex);
+                    var networkBehaviour = networkObject.GetNetworkBehaviourAtOrderIndex(networkBehaviourIndex);
 
                     if (networkBehaviour == null)
                     {
@@ -558,6 +556,11 @@ namespace MLAPI.Messaging
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleNetworkLog.End();
 #endif
+        }
+
+        internal static void HandleSnapshot(ulong clientId, Stream messageStream)
+        {
+            NetworkManager.Singleton.SnapshotSystem.ReadSnapshot(messageStream);
         }
 
         public void HandleAllClientsSwitchSceneCompleted(ulong clientId, Stream stream)

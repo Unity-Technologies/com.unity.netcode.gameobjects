@@ -1,11 +1,13 @@
 using System;
-using MLAPI.Configuration;
-using MLAPI.Transports;
 using UnityEngine;
 
 namespace MLAPI.Timing
 {
-    public class NetworkTimeSystem: INetworkStats
+    /// <summary>
+    /// <see cref="NetworkTimeSystem"/> is a standalone system which can be used to run a network time simmulation.
+    /// The network time system maintains both a predicted and a server time and also invokes events for each fixed tick which passes.
+    /// </summary>
+    public class NetworkTimeSystem : INetworkStats
     {
         private INetworkTimeProvider m_NetworkTimeProvider;
         private int m_TickRate;
@@ -34,6 +36,11 @@ namespace MLAPI.Timing
         public int TickRate => m_TickRate;
 
         /// <summary>
+        /// The time provider used
+        /// </summary>
+        public INetworkTimeProvider NetworkTimeProvider => m_NetworkTimeProvider;
+
+        /// <summary>
         /// Delegate for invoking an event whenever a network tick passes
         /// </summary>
         /// <param name="time">The predicted time for the tick.</param>
@@ -42,15 +49,15 @@ namespace MLAPI.Timing
         /// <summary>
         /// Gets invoked before every network tick.
         /// </summary>
-        public event NetworkTickDelegate OnNetworkTick = null;
+        public event NetworkTickDelegate NetworkTick = null;
 
         /// <summary>
         /// Gets invoked during every network tick. Used by internal components like <see cref="NetworkManager"/>
         /// </summary>
-        internal event NetworkTickDelegate OnNetworkTickInternal = null;
+        internal event NetworkTickDelegate NetworkTickInternal = null;
 
         /// <summary>
-        /// Creates a new instance of the <see cref="NetworkTimeSystem"/>.
+        /// Creates a new instance of the <see cref="NetworkTimeSystem"/> class.
         /// </summary>
         /// <param name="tickRate">The tickrate.</param>
         /// <param name="isServer">true if the system will be used for a server or host.</param>
@@ -61,11 +68,18 @@ namespace MLAPI.Timing
             Init(tickRate, isServer, this);
         }
 
+        /// <summary>
+        /// Creates a new instance of the <see cref="NetworkTimeSystem"/> class.
+        /// </summary>
+        /// <param name="tickRate">The tickrate.</param>
+        /// <param name="isServer">true if the system will be used for a server or host.</param>
+        /// <param name="networkStats">The network stats source for RTT and other network information used to drive the time system.</param>
         public NetworkTimeSystem(int tickRate, bool isServer, INetworkStats networkStats)
         {
             Init(tickRate, isServer, networkStats);
         }
 
+        // This should just be a constructor but isn't because of c# limited constructor overriding support.
         private void Init(int tickRate, bool isServer, INetworkStats networkStats)
         {
             m_TickRate = tickRate;
@@ -76,7 +90,7 @@ namespace MLAPI.Timing
             }
             else
             {
-                m_NetworkTimeProvider = new ClientNetworkTimeProvider(this, tickRate);
+                m_NetworkTimeProvider = new ClientNetworkTimeProvider(networkStats, tickRate);
             }
 
             m_PredictedTime = new NetworkTime(tickRate);
@@ -104,14 +118,14 @@ namespace MLAPI.Timing
             for (int i = previousPredictedTick + 1; i <= currentPredictedTick; i++)
             {
                 // TODO this is temporary code to just make this run somehow will be removed once we have snapshot ack
-                LastReceivedServerSnapshotTick = new NetworkTime(TickRate, LastReceivedServerSnapshotTick.Tick + 1);
+                m_LastReceivedServerSnapshotTick = new NetworkTime(TickRate, m_LastReceivedServerSnapshotTick.Tick + 1);
 
                 // set exposed time values to correct fixed values
                 m_PredictedTime = new NetworkTime(TickRate, i);
                 m_ServerTime = new NetworkTime(TickRate, i - predictedToServerDifference);
 
-                OnNetworkTick?.Invoke(m_PredictedTime);
-                OnNetworkTickInternal.Invoke(m_ServerTime);
+                NetworkTick?.Invoke(m_PredictedTime);
+                NetworkTickInternal?.Invoke(m_ServerTime);
             }
 
             // Set exposed time to values from tick system
@@ -125,7 +139,7 @@ namespace MLAPI.Timing
         /// <param name="serverTick">The server tick at initialization time</param>
         public void InitializeClient(int serverTick)
         {
-            LastReceivedServerSnapshotTick = new NetworkTime(TickRate, serverTick);
+            m_LastReceivedServerSnapshotTick = new NetworkTime(TickRate, serverTick);
 
             m_ServerTime = new NetworkTime(TickRate, serverTick);
 
@@ -135,30 +149,30 @@ namespace MLAPI.Timing
             m_NetworkTimeProvider.InitializeClient(ref m_PredictedTime, ref m_ServerTime);
         }
 
+        // TODO this is temporary until we have a better way to measure RTT. Most likely a separate stats class will be used to track this.
 
         #region NetworkStats
-        // TODO this is temporary until we have a better way to measure RTT. Most likely a separate stats class will be used to track this.
 
         private NetworkManager m_NetworkManager;
 
-        /// <summary>
-        /// Gets the tick of the last server snapshot which has been received.
-        /// </summary>
-        internal NetworkTime LastReceivedServerSnapshotTick { get; private set; }
+        private NetworkTime m_LastReceivedServerSnapshotTick;
 
-        public float GetRtt()
+        /// <inheritdoc/>
+        public float Rtt
         {
-            if (m_NetworkManager.IsServer)
+            get
             {
-                return 0f;
+                if (m_NetworkManager.IsServer)
+                {
+                    return 0f;
+                }
+
+                return m_NetworkManager.NetworkConfig.NetworkTransport.GetCurrentRtt(m_NetworkManager.ServerClientId) / 1000f;
             }
-            return m_NetworkManager.NetworkConfig.NetworkTransport.GetCurrentRtt(m_NetworkManager.ServerClientId) / 1000f;
         }
 
-        public NetworkTime GetLastReceivedSnapshotTick()
-        {
-            return LastReceivedServerSnapshotTick;
-        }
+        /// <inheritdoc/>
+        public NetworkTime LastReceivedSnapshotTick => m_LastReceivedServerSnapshotTick;
 
         #endregion
     }

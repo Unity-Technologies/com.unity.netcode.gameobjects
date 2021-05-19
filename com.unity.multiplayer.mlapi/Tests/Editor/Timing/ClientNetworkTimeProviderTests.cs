@@ -10,7 +10,7 @@ namespace MLAPI.EditorTests.Timing
     /// </summary>
     public class ClientNetworkTimeProviderTests
     {
-        private const float k_AcceptableRttOffset = 0.03f; // 30ms offset is fine
+        private const float k_AcceptableRttOffset = 0.04f; // 40ms offset is fine
 
         [Test]
         public void InitializeClientTest()

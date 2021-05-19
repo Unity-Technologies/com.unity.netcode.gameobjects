@@ -6,6 +6,9 @@ using Random = System.Random;
 
 namespace MLAPI.EditorTests.Timing
 {
+    /// <summary>
+    /// Helper functions for timing related tests. Allows to get a set of time steps and simulate time advancing without the need of a full playmode test.
+    /// </summary>
     public static class TimingTestHelper
     {
         public static List<float> GetRandomTimeSteps(float totalDuration, float min, float max, int seed)
@@ -62,16 +65,6 @@ namespace MLAPI.EditorTests.Timing
         public float Rtt { get; set; }
 
         public NetworkTime LastReceivedSnapshotTick { get; set; }
-
-        public float GetRtt()
-        {
-            return Rtt;
-        }
-
-        public NetworkTime GetLastReceivedSnapshotTick()
-        {
-            return LastReceivedSnapshotTick.ToFixedTime();
-        }
     }
 
 }

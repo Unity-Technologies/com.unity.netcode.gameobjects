@@ -9,7 +9,6 @@ namespace MLAPI.Timing
     /// </summary>
     public class ServerNetworkTimeProvider : INetworkTimeProvider
     {
-
         /// <inheritdoc/>
         public bool AdvanceTime(ref NetworkTime predictedTime, ref NetworkTime serverTime, float deltaTime)
         {
@@ -24,5 +23,4 @@ namespace MLAPI.Timing
             throw new InvalidOperationException($"{nameof(InitializeClient)} should never be called for server only {nameof(INetworkTimeProvider)}: {nameof(ServerNetworkTimeProvider)}");
         }
     }
-
 }

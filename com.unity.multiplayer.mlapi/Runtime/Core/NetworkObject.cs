@@ -594,10 +594,24 @@ namespace MLAPI
 
         internal ushort GetNetworkBehaviourOrderIndex(NetworkBehaviour instance)
         {
+            // read the cached index, and verify it first
+            if (instance.NetworkBehaviourIdCache < ChildNetworkBehaviours.Count)
+            {
+                if (ChildNetworkBehaviours[instance.NetworkBehaviourIdCache] == instance)
+                {
+                    return instance.NetworkBehaviourIdCache;
+                }
+
+                // invalid cached id reset
+                instance.NetworkBehaviourIdCache = default;
+            }
+
             for (ushort i = 0; i < ChildNetworkBehaviours.Count; i++)
             {
                 if (ChildNetworkBehaviours[i] == instance)
                 {
+                    // cache the id, for next query
+                    instance.NetworkBehaviourIdCache = i;
                     return i;
                 }
             }
@@ -621,7 +635,7 @@ namespace MLAPI
         }
 
         /// <summary>
-        /// Used to serialize a NetworkObjects during scene syncrhonization that occurs
+        /// Used to serialize a NetworkObjects during scene synchronization that occurs
         /// upon a client being approved or a scene transition.
         /// </summary>
         /// <param name="writer">writer into the outbound stream</param>
@@ -698,8 +712,8 @@ namespace MLAPI
 
                 // If our current buffer position is greater than our positionBeforeNetworkVariableData then we wrote NetworkVariable data
                 // Part 1: This will include the total NetworkVariable data size, if there was NetworkVariable data written, to the stream
-                // in order to be able to skip past this entry on the de-serialization side in the event this NetworkObject fails to be
-                // constructed (See Part 2 below in the DeserializeSceneObject method)
+                // in order to be able to skip past this entry on the deserialization side in the event this NetworkObject fails to be
+                // constructed (See Part 2 below in the DeserializeSceneObject method) 
                 if (buffer.Position > positionBeforeNetworkVariableData)
                 {
                     // Store our current stream buffer position
@@ -721,7 +735,7 @@ namespace MLAPI
         }
 
         /// <summary>
-        /// Ueed to deserialize a serialized scene object which occurs
+        /// Used to deserialize a serialized scene object which occurs
         /// when the client is approved or during a scene transition
         /// </summary>
         /// <param name="objectStream">inbound stream</param>
@@ -754,7 +768,7 @@ namespace MLAPI
                 rotation = Quaternion.Euler(reader.ReadSinglePacked(), reader.ReadSinglePacked(), reader.ReadSinglePacked());
             }
 
-            //Attemp to create a local NetworkObject
+            //Attempt to create a local NetworkObject
             var networkObject = networkManager.SpawnManager.CreateLocalNetworkObject(isSceneObject, prefabHash, ownerClientId, parentNetworkId, position, rotation);
 
             // Determine if this NetworkObject has NetworkVariable data to read

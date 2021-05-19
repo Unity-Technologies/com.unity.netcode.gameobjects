@@ -106,7 +106,7 @@ namespace MLAPI.Prototyping
             m_TrackedParamFlags = 0;
         }
 
-        private void FixedUpdate() // TODO this should use NetworkFixedUpdate
+        private void FixedUpdate()
         {
             if (!IsOwner)
             {

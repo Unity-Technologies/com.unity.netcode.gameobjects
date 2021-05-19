@@ -54,17 +54,28 @@ namespace MLAPI
 #endif
 
         internal RpcQueueContainer RpcQueueContainer { get; private set; }
-        internal NetworkTimeSystem networkTimeSystem { get; private set; }
-        public NetworkPrefabHandler PrefabHandler { get; private set; }
 
-        /// <summary>
-        /// A synchronized time, represents the time in seconds since the server application started. Is replicated across all clients
-        /// </summary>
-        private float NetworkTime => Time.unscaledTime + m_CurrentNetworkTimeOffset;
+        internal SnapshotSystem SnapshotSystem { get; private set; }
 
-        public NetworkTime PredictedTime => networkTimeSystem?.PredictedTime ?? new NetworkTime() ;
+        private NetworkPrefabHandler m_PrefabHandler;
+        
+        public NetworkPrefabHandler PrefabHandler
+        {
+            get
+            {
+                if (m_PrefabHandler == null)
+                {
+                    m_PrefabHandler = new NetworkPrefabHandler();
+                }
+                return m_PrefabHandler;
+            }
+        }
 
-        public NetworkTime ServerTime  => networkTimeSystem?.ServerTime ?? new NetworkTime() ;
+        public NetworkTimeSystem NetworkTimeSystem { get; private set; }
+
+        public NetworkTime PredictedTime => NetworkTimeSystem?.PredictedTime ?? new NetworkTime();
+
+        public NetworkTime ServerTime  => NetworkTimeSystem?.ServerTime ?? new NetworkTime();
 
         //private float m_NetworkTimeOffset;
         private float m_CurrentNetworkTimeOffset;
@@ -344,15 +355,24 @@ namespace MLAPI
                 return;
             }
 
-            // This 'if' should never enter
-            if (networkTimeSystem != null)
+            //This 'if' should never enter
+            if (SnapshotSystem != null)
             {
-                networkTimeSystem.OnNetworkTickInternal -= NetworkTick;
-                networkTimeSystem = null;
+                SnapshotSystem.Dispose();
+                SnapshotSystem = null;
             }
 
-            networkTimeSystem = new NetworkTimeSystem(NetworkConfig.TickRate, server, this);
-            networkTimeSystem.OnNetworkTickInternal += NetworkTick;
+            SnapshotSystem = new SnapshotSystem();
+
+            //This 'if' should never enter
+            if (NetworkTimeSystem != null)
+            {
+                NetworkTimeSystem.NetworkTickInternal -= OnNetworkTick;
+                NetworkTimeSystem = null;
+            }
+
+            NetworkTimeSystem = new NetworkTimeSystem(NetworkConfig.TickRate, server, this);
+            NetworkTimeSystem.NetworkTickInternal += OnNetworkTick;
 
 
             // This should never happen, but in the event that it does there should be (at a minimum) a unity error logged.
@@ -401,8 +421,6 @@ namespace MLAPI
                         NetworkLog.LogWarning($"{nameof(NetworkPrefab)} cannot be null ({nameof(NetworkPrefab)} at index: {i})");
                     }
 
-                    // Provide the name of the prefab with issues so the user can more easily find the prefab and fix it
-                    UnityEngine.Debug.LogWarning($"{nameof(NetworkPrefab)} (\"{NetworkConfig.NetworkPrefabs[i].Prefab.name}\") will be removed and ignored.");
                     removeEmptyPrefabs.Add(i);
 
                     continue;
@@ -716,11 +734,6 @@ namespace MLAPI
             OnSingletonReady?.Invoke();
         }
 
-        private void Awake()
-        {
-            PrefabHandler = new NetworkPrefabHandler();
-        }
-
         private void OnEnable()
         {
             if (DontDestroy)
@@ -766,6 +779,12 @@ namespace MLAPI
                 RpcQueueContainer = null;
             }
 
+            if (SnapshotSystem != null)
+            {
+                SnapshotSystem.Dispose();
+                SnapshotSystem = null;
+            }
+
 #if !UNITY_2020_2_OR_NEWER
             NetworkProfiler.Stop();
 #endif
@@ -807,10 +826,10 @@ namespace MLAPI
                 CustomMessagingManager = null;
             }
 
-            if (networkTimeSystem != null)
+            if (NetworkTimeSystem != null)
             {
-                networkTimeSystem.OnNetworkTickInternal -= NetworkTick;
-                networkTimeSystem = null;
+                NetworkTimeSystem.NetworkTickInternal -= OnNetworkTick;
+                NetworkTimeSystem = null;
             }
 
             //The Transport is set during Init time, thus it is possible for the Transport to be null
@@ -881,7 +900,7 @@ namespace MLAPI
         {
             if (IsListening)
             {
-                networkTimeSystem.AdvanceNetworkTime(Time.deltaTime);
+                NetworkTimeSystem.AdvanceNetworkTime(Time.deltaTime);
             }
         }
 
@@ -891,7 +910,7 @@ namespace MLAPI
         /// - call NetworkFixedUpdate on all NetworkBehaviours in prediction/client authority mode
         /// - create a snapshot from resulting state
         /// </summary>
-        private void NetworkTick(NetworkTime predictedTime)
+        private void OnNetworkTick(NetworkTime predictedTime)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_EventTick.Begin();
@@ -939,10 +958,10 @@ namespace MLAPI
 
         private IEnumerator ApprovalTimeout(ulong clientId)
         {
-            float timeStarted = NetworkTime;
+            NetworkTime timeStarted = PredictedTime;
 
             //We yield every frame incase a pending client disconnects and someone else gets its connection id
-            while (NetworkTime - timeStarted < NetworkConfig.ClientConnectionBufferTimeout && PendingClients.ContainsKey(clientId))
+            while ((PredictedTime - timeStarted).Time < NetworkConfig.ClientConnectionBufferTimeout && PendingClients.ContainsKey(clientId))
             {
                 yield return null;
             }
@@ -1108,7 +1127,7 @@ namespace MLAPI
                 }
 
                 // Client tried to send a network message that was not the connection request before he was accepted.
-                if (PendingClients.ContainsKey(clientId) && (PendingClients[clientId].ConnectionState == PendingClient.State.PendingApproval || (PendingClients[clientId].ConnectionState == PendingClient.State.PendingConnection && messageType != NetworkConstants.CONNECTION_REQUEST)))
+                if (PendingClients.TryGetValue(clientId, out PendingClient client) && (client.ConnectionState == PendingClient.State.PendingApproval || client.ConnectionState == PendingClient.State.PendingConnection && messageType != NetworkConstants.CONNECTION_REQUEST))
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                     {
@@ -1120,6 +1139,9 @@ namespace MLAPI
 
                 switch (messageType)
                 {
+                    case NetworkConstants.SNAPSHOT_DATA:
+                        InternalMessageHandler.HandleSnapshot(clientId, messageStream);
+                        break;
                     case NetworkConstants.CONNECTION_REQUEST:
                         if (IsServer)
                         {
@@ -1389,15 +1411,8 @@ namespace MLAPI
                 throw new NotServerException("Only server can disconnect remote clients. Use StopClient instead.");
             }
 
-            if (ConnectedClients.ContainsKey(clientId))
-            {
-                ConnectedClients.Remove(clientId);
-            }
-
-            if (PendingClients.ContainsKey(clientId))
-            {
-                PendingClients.Remove(clientId);
-            }
+            ConnectedClients.Remove(clientId);
+            PendingClients.Remove(clientId);
 
             for (int i = ConnectedClientsList.Count - 1; i > -1; i--)
             {
@@ -1414,16 +1429,14 @@ namespace MLAPI
 
         internal void OnClientDisconnectFromServer(ulong clientId)
         {
-            if (PendingClients.ContainsKey(clientId))
-            {
-                PendingClients.Remove(clientId);
-            }
+            PendingClients.Remove(clientId);
 
-            if (ConnectedClients.ContainsKey(clientId))
+            if (ConnectedClients.TryGetValue(clientId, out NetworkClient networkClient))
             {
                 if (IsServer)
                 {
-                    if (ConnectedClients[clientId].PlayerObject != null)
+                    var playerObject = networkClient.PlayerObject;
+                    if (playerObject != null)
                     {
                         if (PrefabHandler.ContainsHandler(ConnectedClients[clientId].PlayerObject.GlobalObjectIdHash))
                         {
@@ -1432,17 +1445,17 @@ namespace MLAPI
                         }
                         else
                         {
-                            Destroy(ConnectedClients[clientId].PlayerObject.gameObject);
+                            Destroy(playerObject.gameObject);
                         }
                     }
 
-                    for (int i = 0; i < ConnectedClients[clientId].OwnedObjects.Count; i++)
+                    for (int i = 0; i < networkClient.OwnedObjects.Count; i++)
                     {
-                        if (ConnectedClients[clientId].OwnedObjects[i] != null)
+                        var ownedObject = networkClient.OwnedObjects[i];
+                        if (ownedObject != null)
                         {
-                            if (!ConnectedClients[clientId].OwnedObjects[i].DontDestroyWithOwner)
+                            if (!ownedObject.DontDestroyWithOwner)
                             {
-
                                 if (PrefabHandler.ContainsHandler(ConnectedClients[clientId].OwnedObjects[i].GlobalObjectIdHash))
                                 {
                                     PrefabHandler.HandleNetworkPrefabDestroy(ConnectedClients[clientId].OwnedObjects[i]);
@@ -1450,12 +1463,12 @@ namespace MLAPI
                                 }
                                 else
                                 {
-                                    Destroy(ConnectedClients[clientId].OwnedObjects[i].gameObject);
+                                    Destroy(ownedObject.gameObject);
                                 }
                             }
                             else
                             {
-                                ConnectedClients[clientId].OwnedObjects[i].RemoveOwnership();
+                                ownedObject.RemoveOwnership();
                             }
                         }
                     }
@@ -1490,10 +1503,7 @@ namespace MLAPI
             if (approved)
             {
                 // Inform new client it got approved
-                if (PendingClients.ContainsKey(ownerClientId))
-                {
-                    PendingClients.Remove(ownerClientId);
-                }
+                PendingClients.Remove(ownerClientId);
 
                 var client = new NetworkClient { ClientId = ownerClientId, };
                 ConnectedClients.Add(ownerClientId, client);
@@ -1535,7 +1545,7 @@ namespace MLAPI
                             writer.WriteByteArray(NetworkSceneManager.CurrentSceneSwitchProgressGuid.ToByteArray());
                         }
 
-                        writer.WriteInt32Packed(networkTimeSystem.PredictedTime.Tick);
+                        writer.WriteInt32Packed(NetworkTimeSystem.PredictedTime.Tick);
                         writer.WriteUInt32Packed((uint)m_ObservedObjects.Count);
 
                         for (int i = 0; i < m_ObservedObjects.Count; i++)
@@ -1608,11 +1618,7 @@ namespace MLAPI
             }
             else
             {
-                if (PendingClients.ContainsKey(ownerClientId))
-                {
-                    PendingClients.Remove(ownerClientId);
-                }
-
+                PendingClients.Remove(ownerClientId);
                 NetworkConfig.NetworkTransport.DisconnectRemoteClient(ownerClientId);
             }
         }

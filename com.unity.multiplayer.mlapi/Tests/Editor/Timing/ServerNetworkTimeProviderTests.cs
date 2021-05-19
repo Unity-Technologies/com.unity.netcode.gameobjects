@@ -32,6 +32,9 @@ namespace MLAPI.EditorTests.Timing
 
         }
 
+        /// <summary>
+        /// <see cref="ServerNetworkTimeProvider"/> should throw when trying to use it on a client. This is not supported.
+        /// </summary>
         [Test]
         public void InitializeClientFail()
         {

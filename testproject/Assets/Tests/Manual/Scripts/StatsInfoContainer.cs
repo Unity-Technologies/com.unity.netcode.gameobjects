@@ -1,27 +1,29 @@
 using System.Collections.Generic;
 using MLAPI.Serialization;
 
-/// <summary>
-/// StatsInfoContainer
-/// Used to transfer server statistics to a requesting client
-/// </summary>
-public struct StatsInfoContainer : INetworkSerializable
+namespace TestProject.ManualTests
 {
-    public List<float> StatValues;
-
-    public void NetworkSerialize(NetworkSerializer serializer)
+    /// <summary>
+    /// StatsInfoContainer
+    /// Used to transfer server statistics to a requesting client
+    /// </summary>
+    public struct StatsInfoContainer : INetworkSerializable
     {
-        if (serializer.IsReading)
+        public List<float> StatValues;
+
+        public void NetworkSerialize(NetworkSerializer serializer)
         {
-            float[] statValuesArray = null;
-            serializer.Serialize(ref statValuesArray);
-            StatValues = new List<float>(statValuesArray);
-        }
-        else
-        {
-            float[] statValuesArray = StatValues?.ToArray() ?? new float[0];
-            serializer.Serialize(ref statValuesArray);
+            if (serializer.IsReading)
+            {
+                float[] statValuesArray = null;
+                serializer.Serialize(ref statValuesArray);
+                StatValues = new List<float>(statValuesArray);
+            }
+            else
+            {
+                float[] statValuesArray = StatValues?.ToArray() ?? new float[0];
+                serializer.Serialize(ref statValuesArray);
+            }
         }
     }
 }
-
