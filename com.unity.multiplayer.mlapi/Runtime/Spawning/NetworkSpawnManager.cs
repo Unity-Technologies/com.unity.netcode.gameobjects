@@ -68,11 +68,15 @@ namespace MLAPI.Spawning
         }
 
         /// <summary>
-        /// Returns the player object with a given clientId or null if one does not exist
+        /// Returns the player object with a given clientId or null if one does not exist. This is only valid server side.
         /// </summary>
         /// <returns>The player object with a given clientId or null if one does not exist</returns>
         public NetworkObject GetPlayerNetworkObject(ulong clientId)
         {
+            if (!NetworkManager.Singleton.IsServer && NetworkManager.Singleton.LocalClientId != clientId)
+            {
+                throw new NotServerException("Only the server can find player objects from other clients.");
+            }
             if (NetworkManager.ConnectedClients.TryGetValue(clientId, out NetworkClient networkClient))
             {
                 return networkClient.PlayerObject;
