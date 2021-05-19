@@ -57,11 +57,6 @@ namespace MLAPI
         public NetworkTimeSystem NetworkTimeSystem { get; private set; }
         public NetworkPrefabHandler PrefabHandler { get; private set; }
 
-        /// <summary>
-        /// A synchronized time, represents the time in seconds since the server application started. Is replicated across all clients
-        /// </summary>
-        private float NetworkTime => Time.unscaledTime + m_CurrentNetworkTimeOffset;
-
         public NetworkTime PredictedTime => NetworkTimeSystem?.PredictedTime ?? new NetworkTime();
 
         public NetworkTime ServerTime  => NetworkTimeSystem?.ServerTime ?? new NetworkTime();
@@ -939,10 +934,10 @@ namespace MLAPI
 
         private IEnumerator ApprovalTimeout(ulong clientId)
         {
-            float timeStarted = NetworkTime;
+            NetworkTime timeStarted = PredictedTime;
 
             //We yield every frame incase a pending client disconnects and someone else gets its connection id
-            while (NetworkTime - timeStarted < NetworkConfig.ClientConnectionBufferTimeout && PendingClients.ContainsKey(clientId))
+            while ((PredictedTime - timeStarted).Time < NetworkConfig.ClientConnectionBufferTimeout && PendingClients.ContainsKey(clientId))
             {
                 yield return null;
             }
