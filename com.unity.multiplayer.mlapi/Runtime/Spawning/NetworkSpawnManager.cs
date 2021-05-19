@@ -73,7 +73,7 @@ namespace MLAPI.Spawning
         /// <returns>The player object with a given clientId or null if one does not exist</returns>
         public NetworkObject GetPlayerNetworkObject(ulong clientId)
         {
-            if (!NetworkManager.Singleton.IsServer && NetworkManager.Singleton.LocalClientId != clientId)
+            if (!NetworkManager.IsServer && NetworkManager.LocalClientId != clientId)
             {
                 throw new NotServerException("Only the server can find player objects from other clients.");
             }
@@ -488,12 +488,12 @@ namespace MLAPI.Spawning
                     // within the NetworkSceneManager.SwitchScene method.
                     SpawnedObjectsList.Remove(sobj);
                     if (NetworkManager.PrefabHandler != null && NetworkManager.PrefabHandler.ContainsHandler(sobj))
-                    {                        
+                    {
                         NetworkManager.PrefabHandler.HandleNetworkPrefabDestroy(sobj);
                         OnDestroyObject(sobj.NetworkObjectId, false);
                     }
                     else
-                    {                        
+                    {
                         UnityEngine.Object.Destroy(sobj.gameObject);
                     }
                 }

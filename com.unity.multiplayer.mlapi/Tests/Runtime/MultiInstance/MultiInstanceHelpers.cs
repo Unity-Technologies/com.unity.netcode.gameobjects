@@ -174,9 +174,10 @@ namespace MLAPI.RuntimeTests
         /// Waits on the server side for 1 client to be connected
         /// </summary>
         /// <param name="server">The server</param>
+        /// <param name="nbClients">Nb clients to wait for</param>
         /// <param name="result">The result. If null, it will automatically assert</param>
         /// <param name="maxFrames">The max frames to wait for</param>
-        public static IEnumerator WaitForClientConnectedToServer(NetworkManager server, CoroutineResultWrapper<bool> result = null, int maxFrames = 64)
+        public static IEnumerator WaitForClientConnectedToServer(NetworkManager server, int nbClients = 1, CoroutineResultWrapper<bool> result = null, int maxFrames = 64)
         {
             if (!server.IsServer)
             {
@@ -185,13 +186,13 @@ namespace MLAPI.RuntimeTests
 
             int startFrame = Time.frameCount;
 
-            while (Time.frameCount - startFrame <= maxFrames && server.ConnectedClients.Count != (server.IsHost ? 2 : 1))
+            while (Time.frameCount - startFrame <= maxFrames && server.ConnectedClients.Count != (server.IsHost ? nbClients + 1 : nbClients))
             {
                 int nextFrameId = Time.frameCount + 1;
                 yield return new WaitUntil(() => Time.frameCount >= nextFrameId);
             }
 
-            bool res = server.ConnectedClients.Count == (server.IsHost ? 2 : 1);
+            bool res = server.ConnectedClients.Count == (server.IsHost ? nbClients + 1 : nbClients);
 
             if (result != null)
             {
