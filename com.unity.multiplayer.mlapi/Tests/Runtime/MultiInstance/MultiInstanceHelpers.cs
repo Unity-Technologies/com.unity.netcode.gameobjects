@@ -179,29 +179,7 @@ namespace MLAPI.RuntimeTests
         /// <param name="maxFrames">The max frames to wait for</param>
         public static IEnumerator WaitForClientConnected(NetworkManager client, CoroutineResultWrapper<bool> result = null, int maxFrames = 64)
         {
-            if (client.IsServer)
-            {
-                throw new InvalidOperationException("Cannot wait for connected as server");
-            }
-
-            var startFrame = Time.frameCount;
-
-            while (Time.frameCount - startFrame <= maxFrames && !client.IsConnectedClient)
-            {
-                var nextFrameNumber = Time.frameCount + 1;
-                yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
-            }
-
-            var res = client.IsConnectedClient;
-
-            if (result != null)
-            {
-                result.Result = res;
-            }
-            else
-            {
-                Assert.True(res, "Client never connected");
-            }
+            yield return WaitForClientsConnected(new NetworkManager[] { client }, result, maxFrames);
         }
 
         /// <summary>
@@ -221,7 +199,6 @@ namespace MLAPI.RuntimeTests
                     throw new InvalidOperationException("Cannot wait for connected as server");
                 }
             }
-
 
             var startFrame = Time.frameCount;
             var allConnected = true;
@@ -265,29 +242,7 @@ namespace MLAPI.RuntimeTests
         /// <param name="maxFrames">The max frames to wait for</param>
         public static IEnumerator WaitForClientConnectedToServer(NetworkManager server, CoroutineResultWrapper<bool> result = null, int maxFrames = 64)
         {
-            if (!server.IsServer)
-            {
-                throw new InvalidOperationException("Cannot wait for connected as client");
-            }
-
-            var startFrame = Time.frameCount;
-
-            while (Time.frameCount - startFrame <= maxFrames && server.ConnectedClients.Count != (server.IsHost ? 2 : 1))
-            {
-                var nextFrameNumber = Time.frameCount + 1;
-                yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
-            }
-
-            var res = server.ConnectedClients.Count == (server.IsHost ? 2 : 1);
-
-            if (result != null)
-            {
-                result.Result = res;
-            }
-            else
-            {
-                Assert.True(res, "A Client never connected to server");
-            }
+            yield return WaitForClientsConnectedToServer(server, 1, result, maxFrames);
         }
 
         /// <summary>
@@ -296,7 +251,7 @@ namespace MLAPI.RuntimeTests
         /// <param name="server">The server</param>
         /// <param name="result">The result. If null, it will automatically assert</param>
         /// <param name="maxFrames">The max frames to wait for</param>
-        public static IEnumerator WaitForClientsConnectedToServer(NetworkManager server, int clientCount, CoroutineResultWrapper<bool> result = null, int maxFrames = 64)
+        public static IEnumerator WaitForClientsConnectedToServer(NetworkManager server, int clientCount = 1, CoroutineResultWrapper<bool> result = null, int maxFrames = 64)
         {
             if (!server.IsServer)
             {
