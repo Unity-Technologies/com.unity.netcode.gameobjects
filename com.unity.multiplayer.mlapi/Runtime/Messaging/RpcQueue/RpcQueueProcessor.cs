@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Unity.Profiling;
 using MLAPI.Configuration;
 using MLAPI.Profiling;
+using MLAPI.Logging;
 
 namespace MLAPI.Messaging
 {
@@ -60,7 +61,17 @@ namespace MLAPI.Messaging
 
                         if (!isTesting)
                         {
-                            m_NetworkManager.InvokeRpc(currentQueueItem);
+                            try
+                            {
+                                m_NetworkManager.InvokeRpc(currentQueueItem);
+                            }
+                            catch
+                            {
+                                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                                {
+                                    NetworkLog.LogWarning($"A {currentQueueItem.QueueItemType} threw an exception and skipped its execution, please check Unity logs for more information.");
+                                }
+                            }
                         }
 
                         ProfilerStatManager.RpcsQueueProc.Record();
