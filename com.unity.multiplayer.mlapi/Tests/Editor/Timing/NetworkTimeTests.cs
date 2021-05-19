@@ -200,18 +200,14 @@ namespace MLAPI.EditorTests.Timing
             NetworkTime startTime2 = new NetworkTime(tickRate, start2);
             NetworkTime dif = startTime2 - startTime;
 
-            int i = 1;
             foreach (var step in steps)
             {
                 startTime += step;
                 startTime2 += step;
                 Assert.IsTrue(Mathf.Approximately( startTime.Time, (startTime2 - dif).Time));
-                i++;
             }
 
             Assert.IsTrue(Approximately( startTime.Time, (startTime2 - dif).Time, maxAcceptableTotalOffset));
-
-            //Debug.Log((startTime.Time - (startTime2 - dif).Time).ToString("n10"));
         }
 
         private static bool Approximately(float a, float b, float epsilon)

@@ -6,6 +6,10 @@ using UnityEngine.TestTools;
 
 namespace MLAPI.RuntimeTests.Timing
 {
+
+    /// <summary>
+    /// Runtime tests to test the network time system with the Unity player loop.
+    /// </summary>
     public class NetworkTimeSystemTests
     {
         [SetUp]
@@ -15,12 +19,35 @@ namespace MLAPI.RuntimeTests.Timing
             Assert.IsTrue(NetworkManagerHelper.StartNetworkManager(out _));
         }
 
+        /// <summary>
+        /// Tests whether time is accessible and has correct values inside Update/FixedUpdate.
+        /// </summary>
+        /// <returns></returns>
         [UnityTest]
         public IEnumerator PlayerLoopTimeTest()
         {
             var test = new MonoBehaviourTest<PlayerLoopTimeTestComponent>();
 
             yield return test;
+        }
+
+        /// <summary>
+        /// Tests whether the time system invokes the correct amount of ticks over a period of time.
+        /// Note we cannot test against Time.Time directly because of floating point precision. Our time is more precise leading to different results.
+        /// </summary>
+        /// <returns></returns>
+        [UnityTest]
+        public IEnumerator CorrectAmountTicksTest()
+        {
+            var timeSystem = NetworkManager.Singleton.NetworkTimeSystem;
+            var delta = timeSystem.PredictedTime.FixedDeltaTime;
+
+            while (timeSystem.PredictedTime.Time < 3f)
+            {
+                yield return null;
+                Assert.AreEqual(Mathf.FloorToInt(timeSystem.PredictedTime.Time / delta), NetworkManager.Singleton.PredictedTime.Tick );
+                Assert.AreEqual(Mathf.FloorToInt(timeSystem.ServerTime.Time / delta), NetworkManager.Singleton.ServerTime.Tick );
+            }
         }
 
         [TearDown]
