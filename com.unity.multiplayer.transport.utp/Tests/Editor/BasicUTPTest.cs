@@ -15,7 +15,7 @@ namespace MLAPI.UTP.RuntimeTests
             var o = new GameObject();
             var utpTransport = (UTPTransport)o.AddComponent(typeof(UTPTransport));
             utpTransport.Init();
-            
+
             Assert.True(utpTransport.ServerClientId == 0);
 
             utpTransport.Shutdown();
