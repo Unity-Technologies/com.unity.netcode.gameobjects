@@ -24,17 +24,17 @@ namespace MLAPI.Timing
         public float tickDurationOffset => m_TickDurationOffset;
 
         /// <summary>
-        /// The current time. This is a non fixed time value and similar to <see cref="Time.Time"/>
+        /// Gets the current time. This is a non fixed time value and similar to <see cref="Time.time"/>
         /// </summary>
         public float Time => m_Tick * m_TickInterval + m_TickDurationOffset;
 
         /// <summary>
-        /// The current fixed network time. This is the time value of the last network tick. Similar to <see cref="Time.FixedTime"/>
+        /// Gets he current fixed network time. This is the time value of the last network tick. Similar to <see cref="Time.fixedTime"/>
         /// </summary>
         public float FixedTime => m_Tick * m_TickInterval;
 
         /// <summary>
-        ///
+        /// Gets the fixed delta time. This value is based on the <see cref="TickRate"/> and stays constant. Similar to <see cref="Time.fixedDeltaTime"/> There is no equivalent to <see cref="Time.deltaTime"/>
         /// </summary>
         public float FixedDeltaTime => m_TickInterval;
 
