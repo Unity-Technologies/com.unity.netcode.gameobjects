@@ -86,7 +86,9 @@ namespace MLAPI.RuntimeTests
                 Object.Destroy(networkManager.gameObject);
             }
 
-            if(s_CoroutineRunner != null)
+            NetworkManagerInstances.Clear();
+
+            if (s_CoroutineRunner != null)
             {
                 Object.Destroy(s_CoroutineRunner);
             }
@@ -241,7 +243,7 @@ namespace MLAPI.RuntimeTests
             {
                 foreach (var client in clients)
                 {
-                    Assert.True(client.IsConnectedClient, $"Client {client.LocalClientId} never connected");
+                    Assert.True(client.IsConnectedClient, $"Client {client.SpawnManager.GetLocalPlayerObject().NetworkObjectId} never connected");
                 }
             }
         }

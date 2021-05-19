@@ -50,7 +50,7 @@ namespace TestProject.RuntimeTests
         /// <param name="useBatching"></param>
         /// <returns></returns>
         private IEnumerator AutomatedRpcTestsHandler(int numClients, bool useBatching = true)
-        {            
+        {
             // Set RpcQueueManualTests into unit testing mode
             RpcQueueManualTests.UnitTesting = true;
 
@@ -93,10 +93,10 @@ namespace TestProject.RuntimeTests
             }
 
             // [Client-Side] Wait for a connection to the server 
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(clients,null, 256));
+            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(clients, null, 256));
 
             // [Host-Side] Check to make sure all clients are connected
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnectedToServer(server, clients.Length + 1,null, 256));
+            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnectedToServer(server, clients.Length + 1, null, 256));
 
             // [Host-Side] Get the Host owned instance of the RpcQueueManualTests
             var serverClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
@@ -152,7 +152,7 @@ namespace TestProject.RuntimeTests
                 }
                 // We can still use frame count as our time out metric
                 // but still use WaitForSeconds to reduce processing overhead.
-                
+
                 var nextFrameId = Time.frameCount + 1;
                 yield return new WaitUntil(() => Time.frameCount >= nextFrameId);
             }
@@ -176,7 +176,7 @@ namespace TestProject.RuntimeTests
         [TearDown]
         public void TearDown()
         {
-            if(m_PlayerPrefab != null)
+            if (m_PlayerPrefab != null)
             {
                 Object.Destroy(m_PlayerPrefab);
                 m_PlayerPrefab = null;

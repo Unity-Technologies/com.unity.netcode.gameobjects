@@ -28,7 +28,7 @@ namespace TestProject.RuntimeTests
         public IEnumerator ConnectionApproval()
         {
             m_ConnectionToken = "ThisIsTheRightPassword";
-            return ConnectionApprovalHandler(6,0);
+            return ConnectionApprovalHandler(3,0);
         }
 
         /// <summary>
@@ -39,7 +39,7 @@ namespace TestProject.RuntimeTests
         public IEnumerator ConnectionApprovalPrefabOverride()
         {
             m_ConnectionToken = "PrefabOverrideCorrectPassword";
-            return ConnectionApprovalHandler(4, 0);
+            return ConnectionApprovalHandler(2, 0, true);
         }
 
 
@@ -56,6 +56,7 @@ namespace TestProject.RuntimeTests
             m_FailedConnections = 0;
             Assert.IsTrue(numClients >= failureTestCount);
 
+            MultiInstanceHelpers.Destroy();
             // Create Host and (numClients) clients 
             Assert.True(MultiInstanceHelpers.Create(numClients, out NetworkManager server, out NetworkManager[] clients));
 
