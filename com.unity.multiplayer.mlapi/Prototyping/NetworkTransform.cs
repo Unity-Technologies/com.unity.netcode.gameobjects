@@ -287,7 +287,7 @@ namespace MLAPI.Prototyping
                 m_CurrentScale != m_OldScale
             )
             {
-                Debug.LogError($"Trying to update transform's position for object { gameObject.name } with ID {NetworkObjectId} when you're not allowed, please validate your NetworkTransform's authority settings", gameObject);
+                Debug.LogError($"Trying to update transform's position for object {gameObject.name} with ID {NetworkObjectId} when you're not allowed, please validate your {nameof(NetworkTransform)}'s authority settings", gameObject);
                 m_CurrentPosition = m_NetworkPosition.Value;
                 m_CurrentRotation = m_NetworkRotation.Value;
                 m_CurrentScale = m_NetworkWorldScale.Value;
