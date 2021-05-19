@@ -550,16 +550,9 @@ namespace MLAPI.Spawning
             // Clean up any in-scene objects that had been destroyed
             if (PendingSoftSyncObjects.Count > 0)
             {
-                var networkObjectsToDestroy = new List<NetworkObject>();
-
                 foreach (var pair in PendingSoftSyncObjects)
                 {
-                    networkObjectsToDestroy.Add(pair.Value);
-                }
-
-                for (int i = 0; i < networkObjectsToDestroy.Count; i++)
-                {
-                    UnityEngine.Object.Destroy(networkObjectsToDestroy[i].gameObject);
+                    UnityEngine.Object.Destroy(pair.Value.gameObject);
                 }
 
                 // Make sure to clear this once done destroying all remaining NetworkObjects
