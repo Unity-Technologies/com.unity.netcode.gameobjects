@@ -21,7 +21,7 @@ namespace MLAPI.RuntimeTests
         /// </summary>
         [Test]
         public void NetworkConfigInvalidNetworkPrefabTest()
-        {  
+        {
             var testPrefabObjectName = "NetworkPrefabHandlerTestObject";
             Guid baseObjectID = NetworkManagerHelper.AddGameNetworkObject(testPrefabObjectName);
             NetworkObject baseObject = NetworkManagerHelper.InstantiatedNetworkObjects[baseObjectID];
@@ -37,7 +37,7 @@ namespace MLAPI.RuntimeTests
 
             //Add a valid prefab
             NetworkManagerHelper.NetworkManagerObject.NetworkConfig.NetworkPrefabs.Add(validNetworkPrefab);
-            var exceptionOccurred = false; 
+            var exceptionOccurred = false;
             try
             {
                 NetworkManagerHelper.NetworkManagerObject.StartHost();
@@ -144,7 +144,7 @@ namespace MLAPI.RuntimeTests
         public void Setup()
         {
             //Create, instantiate, and host
-            NetworkManagerHelper.StartNetworkManager(out _,NetworkManagerHelper.NetworkManagerOperatingMode.None);
+            NetworkManagerHelper.StartNetworkManager(out _, NetworkManagerHelper.NetworkManagerOperatingMode.None);
         }
 
         [TearDown]
