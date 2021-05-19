@@ -28,7 +28,7 @@ namespace TestProject.RuntimeTests
         public IEnumerator ConnectionApproval()
         {
             m_ConnectionToken = "ThisIsTheRightPassword";
-            return ConnectionApprovalHandler(3,0);
+            return ConnectionApprovalHandler(3,1);
         }
 
         /// <summary>
@@ -39,7 +39,7 @@ namespace TestProject.RuntimeTests
         public IEnumerator ConnectionApprovalPrefabOverride()
         {
             m_ConnectionToken = "PrefabOverrideCorrectPassword";
-            return ConnectionApprovalHandler(2, 0, true);
+            return ConnectionApprovalHandler(3, 1, true);
         }
 
 
