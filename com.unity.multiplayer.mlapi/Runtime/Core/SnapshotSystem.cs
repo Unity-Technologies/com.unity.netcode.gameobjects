@@ -302,12 +302,12 @@ namespace MLAPI
                     }
 
                     //m_Snapshot.m_Allocator.DebugDisplay();
-                    /*DebugDisplayStore(m_Snapshot, "Entries");
+                    DebugDisplayStore(m_Snapshot, "Entries");
 
                     foreach(var item in m_ClientReceivedSnapshot)
                     {
                         DebugDisplayStore(item.Value, "Received Entries " + item.Key);
-                    }*/
+                    }
                 }
             }
         }
