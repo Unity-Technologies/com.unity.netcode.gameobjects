@@ -94,11 +94,73 @@ namespace MLAPI.Prototyping
         [SerializeField, Tooltip("The channel to send the data on.")]
         public NetworkChannel Channel = NetworkChannel.NetworkVariable;
 
-        private Transform m_Transform;
+        /// <summary>
+        /// Sets whether this transform should sync local or world properties. This is important to set since reparenting this transform
+        /// could have issues if using world position (depending on who gets synced first: the parent or the child)
+        /// </summary>
+        [SerializeField, Tooltip("Sets whether this transform should sync local or world properties. This should be set if reparenting.")]
+        private NetworkVariableBool m_UseLocal = new NetworkVariableBool();
+
+        public bool UseLocal
+        {
+            get => m_UseLocal.Value;
+            set => m_UseLocal.Value = value;
+        }
+
         private NetworkVariableVector3 m_NetworkPosition = new NetworkVariableVector3();
         private NetworkVariableQuaternion m_NetworkRotation = new NetworkVariableQuaternion();
         private NetworkVariableVector3 m_NetworkWorldScale = new NetworkVariableVector3();
         // private NetworkTransform m_NetworkParent; // TODO handle this here?
+
+        private Transform m_Transform;
+
+        private Vector3 m_CurrentPosition
+        {
+            get { return m_UseLocal.Value ? m_Transform.localPosition : m_Transform.position; }
+            set
+            {
+                if (m_UseLocal.Value)
+                {
+                    m_Transform.localPosition = value;
+                }
+                else
+                {
+                    m_Transform.position = value;
+                }
+            }
+        }
+
+        private Quaternion m_CurrentRotation
+        {
+            get { return m_UseLocal.Value ? m_Transform.localRotation : m_Transform.rotation; }
+            set
+            {
+                if (m_UseLocal.Value)
+                {
+                    m_Transform.localRotation = value;
+                }
+                else
+                {
+                    m_Transform.rotation = value;
+                }
+            }
+        }
+
+        private Vector3 m_CurrentScale
+        {
+            get { return m_UseLocal.Value ? m_Transform.localScale : m_Transform.lossyScale; }
+            set
+            {
+                if (m_UseLocal.Value)
+                {
+                    m_Transform.localScale = value;
+                }
+                else
+                {
+                    SetWorldScale(value);
+                }
+            }
+        }
 
         private Vector3 m_OldPosition;
         private Quaternion m_OldRotation;
@@ -139,21 +201,23 @@ namespace MLAPI.Prototyping
                 oldVal = initialValue;
             }
 
-            SetupVar(m_NetworkPosition, m_Transform.position, ref m_OldPosition);
-            SetupVar(m_NetworkRotation, m_Transform.rotation, ref m_OldRotation);
-            SetupVar(m_NetworkWorldScale, m_Transform.lossyScale, ref m_OldScale);
+            SetupVar(m_NetworkPosition, m_CurrentPosition, ref m_OldPosition);
+            SetupVar(m_NetworkRotation, m_CurrentRotation, ref m_OldRotation);
+            SetupVar(m_NetworkWorldScale, m_CurrentScale, ref m_OldScale);
 
             if (TransformAuthority == Authority.Client)
             {
                 m_NetworkPosition.Settings.WritePermission = NetworkVariablePermission.OwnerOnly;
                 m_NetworkRotation.Settings.WritePermission = NetworkVariablePermission.OwnerOnly;
                 m_NetworkWorldScale.Settings.WritePermission = NetworkVariablePermission.OwnerOnly;
+                m_UseLocal.Settings.WritePermission = NetworkVariablePermission.OwnerOnly;
             }
             else if (TransformAuthority == Authority.Shared)
             {
                 m_NetworkPosition.Settings.WritePermission = NetworkVariablePermission.Everyone;
                 m_NetworkRotation.Settings.WritePermission = NetworkVariablePermission.Everyone;
                 m_NetworkWorldScale.Settings.WritePermission = NetworkVariablePermission.Everyone;
+                m_UseLocal.Settings.WritePermission = NetworkVariablePermission.Everyone;
             }
         }
 
@@ -180,19 +244,19 @@ namespace MLAPI.Prototyping
             // There's no conflict resolution here. If two clients try to update the same value at the same time, they'll both think they are right
             m_PositionChangedDelegate = GetOnValueChangedDelegate<Vector3>(current =>
             {
-                transform.position = current;
+                m_CurrentPosition = current;
                 m_OldPosition = current;
             });
             m_NetworkPosition.OnValueChanged += m_PositionChangedDelegate;
             m_RotationChangedDelegate = GetOnValueChangedDelegate<Quaternion>(current =>
             {
-                transform.rotation = current;
+                m_CurrentRotation = current;
                 m_OldRotation = current;
             });
             m_NetworkRotation.OnValueChanged += m_RotationChangedDelegate;
             m_ScaleChangedDelegate = GetOnValueChangedDelegate<Vector3>(current =>
             {
-                SetWorldScale(current);
+                m_CurrentScale = current;
                 m_OldScale = current;
             });
             m_NetworkWorldScale.OnValueChanged += m_ScaleChangedDelegate;
@@ -214,19 +278,23 @@ namespace MLAPI.Prototyping
 
             if (CanUpdateTransform())
             {
-                m_NetworkPosition.Value = m_Transform.position;
-                m_NetworkRotation.Value = m_Transform.rotation;
-                m_NetworkWorldScale.Value = m_Transform.lossyScale;
+                m_NetworkPosition.Value = m_CurrentPosition;
+                m_NetworkRotation.Value = m_CurrentRotation;
+                m_NetworkWorldScale.Value = m_CurrentScale;
             }
-            else if (m_Transform.position != m_OldPosition ||
-                m_Transform.rotation != m_OldRotation ||
-                m_Transform.lossyScale != m_OldScale
+            else if (m_CurrentPosition != m_OldPosition ||
+                m_CurrentRotation != m_OldRotation ||
+                m_CurrentScale != m_OldScale
             )
             {
                 Debug.LogError($"Trying to update transform's position for object { gameObject.name } with ID {NetworkObjectId} when you're not allowed, please validate your NetworkTransform's authority settings", gameObject);
-                m_OldPosition = m_Transform.position;
-                m_OldRotation = m_Transform.rotation;
-                m_OldScale = m_Transform.lossyScale;
+                m_CurrentPosition = m_NetworkPosition.Value;
+                m_CurrentRotation = m_NetworkRotation.Value;
+                m_CurrentScale = m_NetworkWorldScale.Value;
+
+                m_OldPosition = m_CurrentPosition;
+                m_OldRotation = m_CurrentRotation;
+                m_OldScale = m_CurrentScale;
             }
         }
 

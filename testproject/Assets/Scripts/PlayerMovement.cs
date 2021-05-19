@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using MLAPI;
 using UnityEngine;
 
@@ -8,6 +9,8 @@ public class PlayerMovement : NetworkBehaviour
     [SerializeField]
     private float m_RotSpeed = 5.0f;
     private Rigidbody m_Rigidbody;
+
+    public static Dictionary<ulong, PlayerMovement> Players = new Dictionary<ulong, PlayerMovement>();
 
     private void Start()
     {
@@ -27,6 +30,12 @@ public class PlayerMovement : NetworkBehaviour
             // updates being sent up
             m_Rigidbody.isKinematic = !IsLocalPlayer;
         }
+    }
+
+    public override void NetworkStart()
+    {
+        base.NetworkStart();
+        Players[OwnerClientId] = this; // todo should really have a NetworkStop for unregistering this...
     }
 
     private void FixedUpdate()
