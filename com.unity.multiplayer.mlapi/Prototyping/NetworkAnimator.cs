@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Linq;
 using System.Collections.Generic;
 using MLAPI.Messaging;
@@ -14,98 +15,228 @@ namespace MLAPI.Prototyping
     {
         private struct AnimParams : INetworkSerializable
         {
-            public Dictionary<int, (AnimatorControllerParameterType Type, object Boxed)> Parameters;
+            public Dictionary<int, int> IntParameters;
+            public Dictionary<int, float> FloatParameters;
+            public Dictionary<int, bool> BoolParameters;
+            public HashSet<int> TriggerParameters;
 
+            public KeyValuePair<int, AnimatorControllerParameterType>[] Parameters;
+            
+            public AnimParams(AnimatorControllerParameter[] parameters)
+            {
+                Parameters = new KeyValuePair<int, AnimatorControllerParameterType>[parameters.Length];
+
+                int intCount = 0;
+                int floatCount = 0;
+                int boolCount = 0;
+                
+                for (var i = 0; i < parameters.Length; i++)
+                {
+                    var parameter = parameters[i];
+                    Parameters[i] = new KeyValuePair<int, AnimatorControllerParameterType>(parameter.nameHash, parameter.type);
+
+                    switch (parameter.type)
+                    {
+                        case AnimatorControllerParameterType.Float:
+                            ++floatCount;
+                            break;
+                        case AnimatorControllerParameterType.Int:
+                            ++intCount;
+                            break;
+                        case AnimatorControllerParameterType.Bool:
+                            ++boolCount;
+                            break;
+                    }
+                }
+
+                IntParameters = new Dictionary<int, int>(intCount);
+                FloatParameters = new Dictionary<int, float>(floatCount);
+                BoolParameters = new Dictionary<int, bool>(boolCount);
+                TriggerParameters = new HashSet<int>();
+            }
+
+            public bool SetInt(int key, int value)
+            {
+                if (IntParameters.TryGetValue(key, out var existingValue) && existingValue==value)
+                {
+                    return false;
+                }
+
+                IntParameters[key] = value;
+                return true;
+            }
+            
+            public bool SetBool(int key, bool value)
+            {
+                if (BoolParameters.TryGetValue(key, out var existingValue) && existingValue==value)
+                {
+                    return false;
+                }
+
+                BoolParameters[key] = value;
+                return true;
+            }
+            
+            public bool SetFloat(int key, float value)
+            {
+                if (FloatParameters.TryGetValue(key, out var existingValue) && Mathf.Abs(existingValue - value) < Mathf.Epsilon)
+                {
+                    return false;
+                }
+
+                FloatParameters[key] = value;
+                return true;
+            }
+
+            public bool SetTrigger(int key)
+            {
+                return TriggerParameters.Add(key);
+            }
+
+            public void Clear()
+            {
+                IntParameters.Clear();
+                FloatParameters.Clear();
+                BoolParameters.Clear();
+                TriggerParameters.Clear();
+            }
+            
             public void NetworkSerialize(NetworkSerializer serializer)
             {
-                int paramCount = serializer.IsReading ? 0 : Parameters.Count;
-                serializer.Serialize(ref paramCount);
-
-                var paramArray = serializer.IsReading ? new KeyValuePair<int, (AnimatorControllerParameterType Type, object Boxed)>[paramCount] : Parameters.ToArray();
-                for (int paramIndex = 0; paramIndex < paramCount; paramIndex++)
+                //int parameters
                 {
-                    int paramId = serializer.IsReading ? 0 : paramArray[paramIndex].Key;
-                    serializer.Serialize(ref paramId);
-
-                    byte paramType = serializer.IsReading ? (byte)0 : (byte)paramArray[paramIndex].Value.Type;
-                    serializer.Serialize(ref paramType);
-
-                    object paramBoxed = null;
-                    switch (paramType)
+                    int paramCount = serializer.IsReading ? 0 : IntParameters.Count;
+                    serializer.Serialize(ref paramCount);
+                
+                    var paramArray = serializer.IsReading ? new KeyValuePair<int, int>[paramCount] : IntParameters.ToArray();
+                    
+                    for (int paramIndex = 0; paramIndex < paramCount; paramIndex++)
                     {
-                        case (byte)AnimatorControllerParameterType.Float:
-                            float paramFloat = serializer.IsReading ? 0 : (float)paramArray[paramIndex].Value.Boxed;
-                            serializer.Serialize(ref paramFloat);
-                            paramBoxed = paramFloat;
-                            break;
-                        case (byte)AnimatorControllerParameterType.Int:
-                            int paramInt = serializer.IsReading ? 0 : (int)paramArray[paramIndex].Value.Boxed;
-                            serializer.Serialize(ref paramInt);
-                            paramBoxed = paramInt;
-                            break;
-                        case (byte)AnimatorControllerParameterType.Bool:
-                            bool paramBool = serializer.IsReading ? false : (bool)paramArray[paramIndex].Value.Boxed;
-                            serializer.Serialize(ref paramBool);
-                            paramBoxed = paramBool;
-                            break;
+                        var paramId = serializer.IsReading ? 0 : paramArray[paramIndex].Key;
+                        serializer.Serialize(ref paramId);
+                        
+                        var paramInt = serializer.IsReading ? 0 : paramArray[paramIndex].Value;
+                        serializer.Serialize(ref paramInt);
+                
+                        if (serializer.IsReading)
+                        {
+                            paramArray[paramIndex] = new KeyValuePair<int,int>(paramId, paramInt);
+                        }
+                    }
+                
+                    if (serializer.IsReading)
+                    {
+                        IntParameters = paramArray.ToDictionary(pair => pair.Key, pair => pair.Value);
+                    }
+                }
+
+                //float parameters
+                {
+                    int paramCount = serializer.IsReading ? 0 : FloatParameters.Count;
+                    serializer.Serialize(ref paramCount);
+
+                    var paramArray = serializer.IsReading ? new KeyValuePair<int, float>[paramCount] : FloatParameters.ToArray();
+                    for (int paramIndex = 0; paramIndex < paramCount; paramIndex++)
+                    {
+                        var paramId = serializer.IsReading ? 0 : paramArray[paramIndex].Key;
+                        serializer.Serialize(ref paramId);
+                        
+                        var paramFloat = serializer.IsReading ? 0 : paramArray[paramIndex].Value;
+                        serializer.Serialize(ref paramFloat);
+
+                        if (serializer.IsReading)
+                        {
+                            paramArray[paramIndex] = new KeyValuePair<int,float>(paramId, paramFloat);
+                        }
                     }
 
                     if (serializer.IsReading)
                     {
-                        paramArray[paramIndex] = new KeyValuePair<int, (AnimatorControllerParameterType, object)>(paramId, ((AnimatorControllerParameterType)paramType, paramBoxed));
+                        FloatParameters = paramArray.ToDictionary(pair => pair.Key, pair => pair.Value);
                     }
                 }
-
-                if (serializer.IsReading)
+                
+                //bool parameters
                 {
-                    Parameters = paramArray.ToDictionary(pair => pair.Key, pair => pair.Value);
+                    int paramCount = serializer.IsReading ? 0 : BoolParameters.Count;
+                    serializer.Serialize(ref paramCount);
+
+                    var paramArray = serializer.IsReading ? new KeyValuePair<int, bool>[paramCount] : BoolParameters.ToArray();
+                    for (int paramIndex = 0; paramIndex < paramCount; paramIndex++)
+                    {
+                        var paramId = serializer.IsReading ? 0 : paramArray[paramIndex].Key;
+                        serializer.Serialize(ref paramId);
+                        
+                        var paramBool = serializer.IsReading ? false : paramArray[paramIndex].Value;
+                        serializer.Serialize(ref paramBool);
+
+                        if (serializer.IsReading)
+                        {
+                            paramArray[paramIndex] = new KeyValuePair<int,bool>(paramId, paramBool);
+                        }
+                    }
+
+                    if (serializer.IsReading)
+                    {
+                        BoolParameters = paramArray.ToDictionary(pair => pair.Key, pair => pair.Value);
+                    }
+                }
+                
+                //trigger parameters
+                {
+                    int paramCount = serializer.IsReading ? 0 : TriggerParameters.Count;
+                    serializer.Serialize(ref paramCount);
+
+                    var paramArray = serializer.IsReading ? new int[paramCount] : TriggerParameters.ToArray();
+                    for (int i = 0; i < paramCount; i++)
+                    {
+                        var paramId = serializer.IsReading ? 0 : paramArray[i];
+                        serializer.Serialize(ref paramId);
+
+                        if (serializer.IsReading)
+                        {
+                            paramArray[i] = paramId;
+                        }
+                    }
+
+                    if (serializer.IsReading)
+                    {
+                        TriggerParameters = new HashSet<int>(paramArray);
+                    }
                 }
             }
         }
+        
+        private struct LayerState : INetworkSerializable
+        {
+            public int StateHash;
+            public float NormalizedStateTime;
+            public float LayerWeight;
+            public void NetworkSerialize(NetworkSerializer serializer)
+            {
+                serializer.Serialize(ref StateHash);
+                serializer.Serialize(ref NormalizedStateTime);
+                serializer.Serialize(ref LayerWeight);
+            }
+        }
+
+        private LayerState[] m_LayersToStates;
+        private AnimParams m_AnimParams;
 
         public float SendRate = 0.1f;
+        private float m_NextSendTime = 0.0f;
 
         [SerializeField]
         private Animator m_Animator;
 
         public Animator Animator => m_Animator;
 
-        [HideInInspector]
-        [SerializeField]
-        private uint m_TrackedParamFlags = 0;
-
-        public void SetParamTracking(int paramIndex, bool isTracking)
+        private void Awake()
         {
-            if (paramIndex >= 32)
-            {
-                return;
-            }
-
-            if (isTracking)
-            {
-                m_TrackedParamFlags |= (uint)(1 << paramIndex);
-            }
-            else
-            {
-                m_TrackedParamFlags &= (uint)~(1 << paramIndex);
-            }
+            m_AnimParams = new AnimParams(Animator.parameters);
+            m_LayersToStates = new LayerState[Animator.layerCount];
         }
-
-        public bool GetParamTracking(int paramIndex)
-        {
-            if (paramIndex >= 32)
-            {
-                return false;
-            }
-
-            return (m_TrackedParamFlags & (uint)(1 << paramIndex)) != 0;
-        }
-
-        public void ResetTrackedParams()
-        {
-            m_TrackedParamFlags = 0;
-        }
-
+        
         private void FixedUpdate()
         {
             if (!IsOwner)
@@ -113,19 +244,13 @@ namespace MLAPI.Prototyping
                 return;
             }
 
-            if (CheckSendRate())
+            if (CheckSendRate() || CheckStateChange())
             {
-                SendTrackedParams();
-            }
-
-            if (CheckStateChange(out int animStateHash, out float animStateTime))
-            {
-                SendAllParamsAndState(animStateHash, animStateTime);
+                SendAllParamsAndState();
+                m_AnimParams.TriggerParameters.Clear();
             }
         }
-
-        private float m_NextSendTime = 0.0f;
-
+        
         private bool CheckSendRate()
         {
             var networkTime = NetworkManager.NetworkTime;
@@ -138,85 +263,81 @@ namespace MLAPI.Prototyping
             return false;
         }
 
-        private int m_LastAnimStateHash = 0;
-
-        private bool CheckStateChange(out int outAnimStateHash, out float outAnimStateTime)
+        private bool CheckStateChange()
         {
-            var animStateInfo = Animator.GetCurrentAnimatorStateInfo(0);
-            var animStateHash = animStateInfo.fullPathHash;
-            var animStateTime = animStateInfo.normalizedTime;
-            if (animStateHash != m_LastAnimStateHash)
+            bool changed = false;
+            
+            for (int i = 0; i < Animator.layerCount; i++)
             {
-                m_LastAnimStateHash = animStateHash;
+                var animStateInfo = Animator.GetCurrentAnimatorStateInfo(i);
+                
+                var animStateHash = animStateInfo.fullPathHash;
 
-                outAnimStateHash = animStateHash;
-                outAnimStateTime = animStateTime;
-                return true;
+                if (m_LayersToStates[i].StateHash != animStateHash)
+                {
+                    m_LayersToStates[i] = new LayerState
+                    {
+                        StateHash = animStateHash,
+                        NormalizedStateTime = animStateInfo.normalizedTime,
+                        LayerWeight = Animator.GetLayerWeight(i)
+                    };
+                    changed = true;
+                }
             }
 
-            outAnimStateHash = 0;
-            outAnimStateTime = 0;
-            return false;
-        }
-
-        private AnimParams GetAnimParams(bool trackedOnly = false)
-        {
-            var animParams = new AnimParams();
-            animParams.Parameters = new Dictionary<int, (AnimatorControllerParameterType, object)>(32);
-            for (int paramIndex = 0; paramIndex < 32 && paramIndex < Animator.parameters.Length; paramIndex++)
+            foreach (var animParam in m_AnimParams.Parameters)
             {
-                if (trackedOnly && !GetParamTracking(paramIndex))
-                {
-                    continue;
-                }
-
-                var animParam = Animator.parameters[paramIndex];
-                var animParamHash = animParam.nameHash;
-                var animParamType = animParam.type;
-
-                object animParamBoxed = null;
+                var animParamHash = animParam.Key;
+                var animParamType = animParam.Value;
+                
                 switch (animParamType)
                 {
                     case AnimatorControllerParameterType.Float:
-                        animParamBoxed = Animator.GetFloat(animParamHash);
+                        changed = changed || m_AnimParams.SetFloat(animParamHash, Animator.GetFloat(animParamHash));
                         break;
                     case AnimatorControllerParameterType.Int:
-                        animParamBoxed = Animator.GetInteger(animParamHash);
+                        changed = changed || m_AnimParams.SetInt(animParamHash, Animator.GetInteger(animParamHash));
                         break;
                     case AnimatorControllerParameterType.Bool:
-                        animParamBoxed = Animator.GetBool(animParamHash);
+                        changed = changed || m_AnimParams.SetBool(animParamHash, Animator.GetBool(animParamHash));
+                        break;
+                    case AnimatorControllerParameterType.Trigger:
+                        if (Animator.GetBool(animParamHash))
+                        {
+                            changed = changed || m_AnimParams.SetTrigger(animParamHash);
+                        }
                         break;
                 }
-
-                animParams.Parameters.Add(animParamHash, (animParamType, animParamBoxed));
             }
-
-            return animParams;
+            
+            return changed;
         }
 
         private void SetAnimParams(AnimParams animParams)
         {
-            foreach (var animParam in animParams.Parameters)
+            foreach (var intParameter in animParams.IntParameters)
             {
-                switch (animParam.Value.Type)
-                {
-                    case AnimatorControllerParameterType.Float:
-                        Animator.SetFloat(animParam.Key, (float)animParam.Value.Boxed);
-                        break;
-                    case AnimatorControllerParameterType.Int:
-                        Animator.SetInteger(animParam.Key, (int)animParam.Value.Boxed);
-                        break;
-                    case AnimatorControllerParameterType.Bool:
-                        Animator.SetBool(animParam.Key, (bool)animParam.Value.Boxed);
-                        break;
-                }
+                Animator.SetInteger(intParameter.Key, intParameter.Value);
+            }
+
+            foreach (var floatParameter in animParams.FloatParameters)
+            {
+                Animator.SetFloat(floatParameter.Key, floatParameter.Value);
+            }
+
+            foreach (var boolParameter in animParams.BoolParameters)
+            {
+                Animator.SetBool(boolParameter.Key, boolParameter.Value);
+            }
+
+            foreach (var triggerParameter in animParams.TriggerParameters)
+            {
+                Animator.SetTrigger(triggerParameter);
             }
         }
 
-        private void SendTrackedParams()
+        private void SendAllParamsAndState()
         {
-            var animParams = GetAnimParams( /* trackedOnly = */ true);
-
             if (IsServer)
             {
                 var clientRpcParams = new ClientRpcParams
@@ -229,50 +350,24 @@ namespace MLAPI.Prototyping
                             .ToArray()
                     }
                 };
-                UpdateTrackedParamsClientRpc(animParams, clientRpcParams);
+                SendParamsAndLayerStatesClientRpc(m_AnimParams, m_LayersToStates, clientRpcParams);
             }
             else
             {
-                UpdateTrackedParamsServerRpc(animParams);
+                SendParamsAndLayerStatesServerRpc(m_AnimParams, m_LayersToStates);
             }
         }
-
-        private void SendAllParamsAndState(int animStateHash, float animStateTime)
-        {
-            var animParams = GetAnimParams();
-
-            if (IsServer)
-            {
-                var clientRpcParams = new ClientRpcParams
-                {
-                    Send = new ClientRpcSendParams
-                    {
-                        TargetClientIds = NetworkManager.ConnectedClientsList
-                            .Where(c => c.ClientId != NetworkManager.ServerClientId)
-                            .Select(c => c.ClientId)
-                            .ToArray()
-                    }
-                };
-                UpdateAnimStateClientRpc(animStateHash, animStateTime, clientRpcParams);
-                UpdateTrackedParamsClientRpc(animParams, clientRpcParams);
-            }
-            else
-            {
-                UpdateAnimStateServerRpc(animStateHash, animStateTime);
-                UpdateTrackedParamsServerRpc(animParams);
-            }
-        }
-
+        
         [ServerRpc]
-        private void UpdateTrackedParamsServerRpc(AnimParams animParams, ServerRpcParams serverRpcParams = default)
+        private void SendParamsAndLayerStatesServerRpc(AnimParams animParams, LayerState[] layerStates, ServerRpcParams serverRpcParams = default)
         {
             if (IsOwner)
             {
                 return;
             }
 
-            SetAnimParams(animParams);
-
+            SetStateAndAnimParams(animParams, layerStates);
+            
             var clientRpcParams = new ClientRpcParams
             {
                 Send = new ClientRpcSendParams
@@ -283,52 +378,36 @@ namespace MLAPI.Prototyping
                         .ToArray()
                 }
             };
-            UpdateTrackedParamsClientRpc(animParams, clientRpcParams);
+            
+            SendParamsAndLayerStatesClientRpc(animParams, layerStates, clientRpcParams);
         }
 
         [ClientRpc]
-        private void UpdateTrackedParamsClientRpc(AnimParams animParams, ClientRpcParams clientRpcParams = default)
+        private void SendParamsAndLayerStatesClientRpc(AnimParams animParams, LayerState[] layerStates,ClientRpcParams clientRpcParams = default)
         {
-            if (IsOwner)
+            if (IsOwner || IsHost)
             {
                 return;
+            }
+
+            SetStateAndAnimParams(animParams, layerStates);
+        }
+
+        private void SetStateAndAnimParams(AnimParams animParams, LayerState[] layerStates)
+        {
+            for (var layerIndex = 0; layerIndex < layerStates.Length; layerIndex++)
+            {
+                var layerState = layerStates[layerIndex];
+                
+                Animator.SetLayerWeight(layerIndex, layerState.LayerWeight);
+                
+                if (Animator.GetCurrentAnimatorStateInfo(layerIndex).fullPathHash != layerState.StateHash)
+                {  
+                    Animator.Play(layerState.StateHash, layerIndex, layerState.NormalizedStateTime);
+                }
             }
 
             SetAnimParams(animParams);
-        }
-
-        [ServerRpc]
-        private void UpdateAnimStateServerRpc(int animStateHash, float animStateTime, ServerRpcParams serverRpcParams = default)
-        {
-            if (IsOwner)
-            {
-                return;
-            }
-
-            Animator.Play(animStateHash, 0, animStateTime);
-
-            var clientRpcParams = new ClientRpcParams
-            {
-                Send = new ClientRpcSendParams
-                {
-                    TargetClientIds = NetworkManager.ConnectedClientsList
-                        .Where(c => c.ClientId != serverRpcParams.Receive.SenderClientId)
-                        .Select(c => c.ClientId)
-                        .ToArray()
-                }
-            };
-            UpdateAnimStateClientRpc(animStateHash, animStateTime, clientRpcParams);
-        }
-
-        [ClientRpc]
-        private void UpdateAnimStateClientRpc(int animStateHash, float animStateTime, ClientRpcParams clientRpcParams = default)
-        {
-            if (IsOwner)
-            {
-                return;
-            }
-
-            Animator.Play(animStateHash, 0, animStateTime);
         }
     }
 }
