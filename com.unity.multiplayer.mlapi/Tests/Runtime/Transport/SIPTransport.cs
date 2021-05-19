@@ -39,15 +39,6 @@ public class SIPTransport : NetworkTransport
 
     public override void DisconnectLocalClient()
     {
-        // Inject disconnect on server
-        s_Server.IncomingBuffer.Enqueue(new Event
-        {
-            Type = NetworkEvent.Disconnect,
-            Channel = NetworkChannel.Internal,
-            ConnectionId = m_LocalConnection != null ? m_LocalConnection.ConnectionId : ServerClientId,
-            Data = new ArraySegment<byte>()
-        });
-
         if (m_LocalConnection != null)
         {
             // Inject local disconnect
@@ -78,29 +69,32 @@ public class SIPTransport : NetworkTransport
     // Called by server
     public override void DisconnectRemoteClient(ulong clientId)
     {
-        // Inject disconnect into remote
-        m_Clients[clientId].IncomingBuffer.Enqueue(new Event
+        if (m_Clients.ContainsKey(clientId))
         {
-            Type = NetworkEvent.Disconnect,
-            Channel = NetworkChannel.Internal,
-            ConnectionId = clientId,
-            Data = new ArraySegment<byte>()
-        });
+            // Inject disconnect into remote
+            m_Clients[clientId].IncomingBuffer.Enqueue(new Event
+            {
+                Type = NetworkEvent.Disconnect,
+                Channel = NetworkChannel.Internal,
+                ConnectionId = clientId,
+                Data = new ArraySegment<byte>()
+            });
 
-        // Inject local disconnect
-        m_LocalConnection.IncomingBuffer.Enqueue(new Event
-        {
-            Type = NetworkEvent.Disconnect,
-            Channel = NetworkChannel.Internal,
-            ConnectionId = clientId,
-            Data = new ArraySegment<byte>()
-        });
+            // Inject local disconnect
+            m_LocalConnection.IncomingBuffer.Enqueue(new Event
+            {
+                Type = NetworkEvent.Disconnect,
+                Channel = NetworkChannel.Internal,
+                ConnectionId = clientId,
+                Data = new ArraySegment<byte>()
+            });
 
-        // Remove the local connection on remote
-        m_Clients[clientId].Transport.m_LocalConnection = null;
+            // Remove the local connection on remote
+            m_Clients[clientId].Transport.m_LocalConnection = null;
 
-        // Remove connection on server
-        m_Clients.Remove(clientId);
+            // Remove connection on server
+            m_Clients.Remove(clientId);
+        }
     }
 
     public override ulong GetCurrentRtt(ulong clientId)
