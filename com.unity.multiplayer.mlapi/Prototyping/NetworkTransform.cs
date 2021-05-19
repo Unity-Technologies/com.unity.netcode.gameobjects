@@ -1,7 +1,8 @@
-using System.Linq;
-using System.Collections.Generic;
+using System;
+using MLAPI.NetworkVariable;
+using MLAPI.Transports;
 using UnityEngine;
-using MLAPI.Messaging;
+using UnityEngine.Serialization;
 
 namespace MLAPI.Prototyping
 {
@@ -11,364 +12,301 @@ namespace MLAPI.Prototyping
     [AddComponentMenu("MLAPI/NetworkTransform")]
     public class NetworkTransform : NetworkBehaviour
     {
-        internal class ClientSendInfo
+        /// <summary>
+        /// Server authority only allows the server to update this transform
+        /// Client authority only allows the client owner to update this transform
+        /// Shared authority allows everyone to update this transform
+        /// </summary>
+        public enum Authority
         {
-            public float LastSent;
-            public Vector3? LastMissedPosition;
-            public Quaternion? LastMissedRotation;
+            Server = 0, // default
+            Client,
+            Shared
         }
+
+        /// <summary>
+        /// TODO this will need refactoring
+        /// Specifies who can update this transform
+        /// </summary>
+        [SerializeField, Tooltip("Defines who can update this transform.")]
+        public Authority TransformAuthority = Authority.Server; // todo Luke mentioned an incoming system to manage this at the NetworkBehaviour level, lets sync on this
 
         /// <summary>
         /// The base amount of sends per seconds to use when range is disabled
         /// </summary>
-        [Range(0, 120)]
-        public float FixedSendsPerSecond = 20f;
+        [SerializeField, Range(0, 120), Tooltip("The base amount of sends per seconds to use when range is disabled")]
+        public float FixedSendsPerSecond = 30f;
 
         /// <summary>
-        /// Is the sends per second assumed to be the same across all instances
-        /// </summary>
-        [Tooltip("This assumes that the SendsPerSecond is synced across clients")]
-        public bool AssumeSyncedSends = true;
-
-        /// <summary>
+        /// TODO MTT-766 once we have per var interpolation
         /// Enable interpolation
         /// </summary>
-        [Tooltip("This requires AssumeSyncedSends to be true")]
+        // ReSharper disable once NotAccessedField.Global
+        [FormerlySerializedAs("m_InterpolatePosition")]
+        [SerializeField, Tooltip("This requires AssumeSyncedSends to be true")]
         public bool InterpolatePosition = true;
 
         /// <summary>
+        /// TODO MTT-766 once we have per var interpolation
         /// The distance before snaping to the position
         /// </summary>
-        [Tooltip("The transform will snap if the distance is greater than this distance")]
+        // ReSharper disable once NotAccessedField.Global
+        [SerializeField, Tooltip("The transform will snap if the distance is greater than this distance")]
         public float SnapDistance = 10f;
 
         /// <summary>
+        /// TODO MTT-766 once we have per var interpolation
         /// Should the server interpolate
         /// </summary>
+        // ReSharper disable once NotAccessedField.Global
+        [SerializeField]
         public bool InterpolateServer = true;
 
         /// <summary>
+        /// TODO MTT-767 once we have this per var setting. The value check could be more on the network variable itself. If a server increases
+        ///      a Netvar int by +0.05, the netvar would actually not transmit that info and would wait for the value to be even more different.
+        ///      The setting in the NetworkTransform would be to just apply it to our netvars when available
         /// The min meters to move before a send is sent
         /// </summary>
+        // ReSharper disable once NotAccessedField.Global
+        [SerializeField, Tooltip("The min meters to move before a send is sent")]
         public float MinMeters = 0.15f;
 
         /// <summary>
-        /// The min degrees to rotate before a send it sent
+        /// TODO MTT-767 once we have this per var setting
+        /// The min degrees to rotate before a send is sent
         /// </summary>
+        // ReSharper disable once NotAccessedField.Global
+        [SerializeField, Tooltip("The min degrees to rotate before a send is sent")]
         public float MinDegrees = 1.5f;
 
         /// <summary>
-        /// Enables extrapolation
+        /// TODO MTT-767 once we have this per var setting
+        /// The min meters to scale before a send is sent
         /// </summary>
-        public bool ExtrapolatePosition = false;
-
-        /// <summary>
-        /// The maximum amount of expected send rates to extrapolate over when awaiting new packets.
-        /// A higher value will result in continued extrapolation after an object has stopped moving
-        /// </summary>
-        public float MaxSendsToExtrapolate = 5;
+        // ReSharper disable once NotAccessedField.Global
+        [SerializeField, Tooltip("The min meters to scale before a send is sent")]
+        public float MinSize = 0.15f;
 
         /// <summary>
         /// The channel to send the data on
         /// </summary>
-        [Tooltip("The channel to send the data on. Uses the default channel if left unspecified")]
-        public string Channel = null;
-
-        private float m_LerpTime;
-        private Vector3 m_LerpStartPos;
-        private Quaternion m_LerpStartRot;
-        private Vector3 m_LerpEndPos;
-        private Quaternion m_LerpEndRot;
-
-        private float m_LastSendTime;
-        private Vector3 m_LastSentPos;
-        private Quaternion m_LastSentRot;
-
-        private float m_LastReceiveTime;
+        [SerializeField, Tooltip("The channel to send the data on.")]
+        public NetworkChannel Channel = NetworkChannel.NetworkVariable;
 
         /// <summary>
-        /// Enables range based send rate
+        /// Sets whether this transform should sync local or world properties. This is important to set since reparenting this transform
+        /// could have issues if using world position (depending on who gets synced first: the parent or the child)
         /// </summary>
-        public bool EnableRange;
+        [SerializeField, Tooltip("Sets whether this transform should sync local or world properties. This should be set if reparenting.")]
+        private NetworkVariableBool m_UseLocal = new NetworkVariableBool();
 
-        /// <summary>
-        /// Checks for missed sends without provocation. Provocation being a client inside it's normal SendRate
-        /// </summary>
-        public bool EnableNonProvokedResendChecks;
-
-        /// <summary>
-        /// The curve to use to calculate the send rate
-        /// </summary>
-        public AnimationCurve DistanceSendrate = AnimationCurve.Constant(0, 500, 20);
-
-        private readonly Dictionary<ulong, ClientSendInfo> m_ClientSendInfo = new Dictionary<ulong, ClientSendInfo>();
-
-        /// <summary>
-        /// The delegate used to check if a move is valid
-        /// </summary>
-        /// <param name="clientId">The client id the move is being validated for</param>
-        /// <param name="oldPos">The previous position</param>
-        /// <param name="newPos">The new requested position</param>
-        /// <returns>Returns Whether or not the move is valid</returns>
-        public delegate bool MoveValidationDelegate(ulong clientId, Vector3 oldPos, Vector3 newPos);
-
-        /// <summary>
-        /// If set, moves will only be accepted if the custom delegate returns true
-        /// </summary>
-        public MoveValidationDelegate IsMoveValidDelegate = null;
-
-        private void OnValidate()
+        public bool UseLocal
         {
-            if (!AssumeSyncedSends && InterpolatePosition)
-            {
-                InterpolatePosition = false;
-            }
+            get => m_UseLocal.Value;
+            set => m_UseLocal.Value = value;
+        }
 
-            if (InterpolateServer && !InterpolatePosition)
-            {
-                InterpolateServer = false;
-            }
+        private NetworkVariableVector3 m_NetworkPosition = new NetworkVariableVector3();
+        private NetworkVariableQuaternion m_NetworkRotation = new NetworkVariableQuaternion();
+        private NetworkVariableVector3 m_NetworkWorldScale = new NetworkVariableVector3();
+        // private NetworkTransform m_NetworkParent; // TODO handle this here?
 
-            if (MinDegrees < 0)
-            {
-                MinDegrees = 0;
-            }
+        private Transform m_Transform;
 
-            if (MinMeters < 0)
+        private Vector3 m_CurrentPosition
+        {
+            get { return m_UseLocal.Value ? m_Transform.localPosition : m_Transform.position; }
+            set
             {
-                MinMeters = 0;
-            }
-
-            if (EnableNonProvokedResendChecks && !EnableRange)
-            {
-                EnableNonProvokedResendChecks = false;
+                if (m_UseLocal.Value)
+                {
+                    m_Transform.localPosition = value;
+                }
+                else
+                {
+                    m_Transform.position = value;
+                }
             }
         }
 
-        private float GetTimeForLerp(Vector3 pos1, Vector3 pos2)
+        private Quaternion m_CurrentRotation
         {
-            return 1f / DistanceSendrate.Evaluate(Vector3.Distance(pos1, pos2));
+            get { return m_UseLocal.Value ? m_Transform.localRotation : m_Transform.rotation; }
+            set
+            {
+                if (m_UseLocal.Value)
+                {
+                    m_Transform.localRotation = value;
+                }
+                else
+                {
+                    m_Transform.rotation = value;
+                }
+            }
         }
 
-        /// <summary>
-        /// Registers message handlers
-        /// </summary>
+        private Vector3 m_CurrentScale
+        {
+            get { return m_UseLocal.Value ? m_Transform.localScale : m_Transform.lossyScale; }
+            set
+            {
+                if (m_UseLocal.Value)
+                {
+                    m_Transform.localScale = value;
+                }
+                else
+                {
+                    SetWorldScale(value);
+                }
+            }
+        }
+
+        private Vector3 m_OldPosition;
+        private Quaternion m_OldRotation;
+        private Vector3 m_OldScale;
+
+        private NetworkVariable<Vector3>.OnValueChangedDelegate m_PositionChangedDelegate;
+        private NetworkVariable<Quaternion>.OnValueChangedDelegate m_RotationChangedDelegate;
+        private NetworkVariable<Vector3>.OnValueChangedDelegate m_ScaleChangedDelegate;
+
+        // todo really not happy with that one, hopefully we can have a cleaner solution with reparenting.
+        private void SetWorldScale(Vector3 globalScale)
+        {
+            m_Transform.localScale = Vector3.one;
+            var lossyScale = m_Transform.lossyScale;
+            m_Transform.localScale = new Vector3(globalScale.x / lossyScale.x, globalScale.y / lossyScale.y, globalScale.z / lossyScale.z);
+        }
+
+        private bool CanUpdateTransform()
+        {
+            return (IsClient && TransformAuthority == Authority.Client && IsOwner) || (IsServer && TransformAuthority == Authority.Server) || TransformAuthority == Authority.Shared;
+        }
+
+        private void Awake()
+        {
+            m_Transform = transform;
+        }
+
         public override void NetworkStart()
         {
-            m_LastSentRot = transform.rotation;
-            m_LastSentPos = transform.position;
-
-            m_LerpStartPos = transform.position;
-            m_LerpStartRot = transform.rotation;
-
-            m_LerpEndPos = transform.position;
-            m_LerpEndRot = transform.rotation;
-        }
-
-        private void Update()
-        {
-            if (IsOwner)
+            void SetupVar<T>(NetworkVariable<T> v, T initialValue, ref T oldVal)
             {
-                if (NetworkManager.NetworkTime - m_LastSendTime >= (1f / FixedSendsPerSecond) && (Vector3.Distance(transform.position, m_LastSentPos) > MinMeters || Quaternion.Angle(transform.rotation, m_LastSentRot) > MinDegrees))
+                v.Settings.SendTickrate = FixedSendsPerSecond;
+                v.Settings.SendNetworkChannel = Channel;
+                if (CanUpdateTransform())
                 {
-                    m_LastSendTime = NetworkManager.NetworkTime;
-                    m_LastSentPos = transform.position;
-                    m_LastSentRot = transform.rotation;
-
-                    if (IsServer)
-                    {
-                        ApplyTransformClientRpc(transform.position, transform.rotation.eulerAngles,
-                            new ClientRpcParams { Send = new ClientRpcSendParams { TargetClientIds = NetworkManager.ConnectedClientsList.Where(c => c.ClientId != OwnerClientId).Select(c => c.ClientId).ToArray() } });
-                    }
-                    else
-                    {
-                        SubmitTransformServerRpc(transform.position, transform.rotation.eulerAngles);
-                    }
+                    v.Value = initialValue;
                 }
+                oldVal = initialValue;
             }
-            else
+
+            SetupVar(m_NetworkPosition, m_CurrentPosition, ref m_OldPosition);
+            SetupVar(m_NetworkRotation, m_CurrentRotation, ref m_OldRotation);
+            SetupVar(m_NetworkWorldScale, m_CurrentScale, ref m_OldScale);
+
+            if (TransformAuthority == Authority.Client)
             {
-                //If we are server and interpolation is turned on for server OR we are not server and interpolation is turned on
-                if ((IsServer && InterpolateServer && InterpolatePosition) || (!IsServer && InterpolatePosition))
+                m_NetworkPosition.Settings.WritePermission = NetworkVariablePermission.OwnerOnly;
+                m_NetworkRotation.Settings.WritePermission = NetworkVariablePermission.OwnerOnly;
+                m_NetworkWorldScale.Settings.WritePermission = NetworkVariablePermission.OwnerOnly;
+                m_UseLocal.Settings.WritePermission = NetworkVariablePermission.OwnerOnly;
+            }
+            else if (TransformAuthority == Authority.Shared)
+            {
+                m_NetworkPosition.Settings.WritePermission = NetworkVariablePermission.Everyone;
+                m_NetworkRotation.Settings.WritePermission = NetworkVariablePermission.Everyone;
+                m_NetworkWorldScale.Settings.WritePermission = NetworkVariablePermission.Everyone;
+                m_UseLocal.Settings.WritePermission = NetworkVariablePermission.Everyone;
+            }
+        }
+
+        private NetworkVariable<T>.OnValueChangedDelegate GetOnValueChangedDelegate<T>(Action<T> assignCurrent)
+        {
+            return (old, current) =>
+            {
+                if (TransformAuthority == Authority.Client && IsClient && IsOwner)
                 {
-                    if (Vector3.Distance(transform.position, m_LerpEndPos) > SnapDistance)
-                    {
-                        //Snap, set T to 1 (100% of the lerp)
-                        m_LerpTime = 1f;
-                    }
-
-                    float sendDelay = (IsServer || !EnableRange || !AssumeSyncedSends || NetworkManager.ConnectedClients[NetworkManager.LocalClientId].PlayerObject == null) ? (1f / FixedSendsPerSecond) : GetTimeForLerp(transform.position, NetworkManager.ConnectedClients[NetworkManager.LocalClientId].PlayerObject.transform.position);
-                    m_LerpTime += Time.unscaledDeltaTime / sendDelay;
-
-                    if (ExtrapolatePosition && Time.unscaledTime - m_LastReceiveTime < sendDelay * MaxSendsToExtrapolate)
-                    {
-                        transform.position = Vector3.LerpUnclamped(m_LerpStartPos, m_LerpEndPos, m_LerpTime);
-                    }
-                    else
-                    {
-                        transform.position = Vector3.Lerp(m_LerpStartPos, m_LerpEndPos, m_LerpTime);
-                    }
-
-                    if (ExtrapolatePosition && Time.unscaledTime - m_LastReceiveTime < sendDelay * MaxSendsToExtrapolate)
-                    {
-                        transform.rotation = Quaternion.SlerpUnclamped(m_LerpStartRot, m_LerpEndRot, m_LerpTime);
-                    }
-                    else
-                    {
-                        transform.rotation = Quaternion.Slerp(m_LerpStartRot, m_LerpEndRot, m_LerpTime);
-                    }
+                    // this should only happen for my own value changes.
+                    // todo MTT-768 this shouldn't happen anymore with new tick system (tick written will be higher than tick read, so netvar wouldn't change in that case
+                    return;
                 }
-            }
 
-            if (IsServer && EnableRange && EnableNonProvokedResendChecks)
-            {
-                CheckForMissedSends();
-            }
+                assignCurrent.Invoke(current);
+            };
         }
 
-        [ClientRpc]
-        private void ApplyTransformClientRpc(Vector3 position, Vector3 eulerAngles, ClientRpcParams rpcParams = default)
+        private void Start()
         {
-            if (enabled)
+            // Register on value changed delegate. We can't simply check the position every fixed update because of shared authority
+            // Shared authority involves writing locally but applying changes when they come from the server. You can't both read from
+            // your NetworkPosition and write to it in the same FixedUpdate, you need both separate.
+            // There's no conflict resolution here. If two clients try to update the same value at the same time, they'll both think they are right
+            m_PositionChangedDelegate = GetOnValueChangedDelegate<Vector3>(current =>
             {
-                ApplyTransformInternal(position, Quaternion.Euler(eulerAngles));
-            }
+                m_CurrentPosition = current;
+                m_OldPosition = current;
+            });
+            m_NetworkPosition.OnValueChanged += m_PositionChangedDelegate;
+            m_RotationChangedDelegate = GetOnValueChangedDelegate<Quaternion>(current =>
+            {
+                m_CurrentRotation = current;
+                m_OldRotation = current;
+            });
+            m_NetworkRotation.OnValueChanged += m_RotationChangedDelegate;
+            m_ScaleChangedDelegate = GetOnValueChangedDelegate<Vector3>(current =>
+            {
+                m_CurrentScale = current;
+                m_OldScale = current;
+            });
+            m_NetworkWorldScale.OnValueChanged += m_ScaleChangedDelegate;
         }
 
-        private void ApplyTransformInternal(Vector3 position, Quaternion rotation)
+        public void OnDestroy()
         {
-            if (!enabled)
+            m_NetworkPosition.OnValueChanged -= m_PositionChangedDelegate;
+            m_NetworkRotation.OnValueChanged -= m_RotationChangedDelegate;
+            m_NetworkWorldScale.OnValueChanged -= m_ScaleChangedDelegate;
+        }
+
+        private void FixedUpdate()
+        {
+            if (!NetworkObject.IsSpawned)
             {
                 return;
             }
 
-            if (InterpolatePosition && (!IsServer || InterpolateServer))
+            if (CanUpdateTransform())
             {
-                m_LastReceiveTime = Time.unscaledTime;
-                m_LerpStartPos = transform.position;
-                m_LerpStartRot = transform.rotation;
-                m_LerpEndPos = position;
-                m_LerpEndRot = rotation;
-                m_LerpTime = 0;
+                m_NetworkPosition.Value = m_CurrentPosition;
+                m_NetworkRotation.Value = m_CurrentRotation;
+                m_NetworkWorldScale.Value = m_CurrentScale;
             }
-            else
+            else if (m_CurrentPosition != m_OldPosition ||
+                m_CurrentRotation != m_OldRotation ||
+                m_CurrentScale != m_OldScale
+            )
             {
-                transform.position = position;
-                transform.rotation = rotation;
-            }
-        }
+                Debug.LogError($"Trying to update transform's position for object {gameObject.name} with ID {NetworkObjectId} when you're not allowed, please validate your {nameof(NetworkTransform)}'s authority settings", gameObject);
+                m_CurrentPosition = m_NetworkPosition.Value;
+                m_CurrentRotation = m_NetworkRotation.Value;
+                m_CurrentScale = m_NetworkWorldScale.Value;
 
-        [ServerRpc]
-        private void SubmitTransformServerRpc(Vector3 position, Vector3 eulerAngles, ServerRpcParams rpcParams = default)
-        {
-            if (!enabled)
-            {
-                return;
-            }
-
-            if (IsMoveValidDelegate != null && !IsMoveValidDelegate(rpcParams.Receive.SenderClientId, m_LerpEndPos, position))
-            {
-                //Invalid move!
-                //TODO: Add rubber band (just a message telling them to go back)
-                return;
-            }
-
-            if (!IsClient)
-            {
-                // Dedicated server
-                ApplyTransformInternal(position, Quaternion.Euler(eulerAngles));
-            }
-
-            if (EnableRange)
-            {
-                for (int i = 0; i < NetworkManager.ConnectedClientsList.Count; i++)
-                {
-                    if (!m_ClientSendInfo.TryGetValue(NetworkManager.ConnectedClientsList[i].ClientId, out ClientSendInfo info))
-                    {
-                        info = new ClientSendInfo() { LastMissedPosition = null, LastMissedRotation = null, LastSent = 0 };
-                        m_ClientSendInfo.Add(NetworkManager.Singleton.ConnectedClientsList[i].ClientId, info);
-                    }
-
-                    Vector3? receiverPosition = NetworkManager.Singleton.ConnectedClientsList[i].PlayerObject == null ? null : new Vector3?(NetworkManager.Singleton.ConnectedClientsList[i].PlayerObject.transform.position);
-                    Vector3? senderPosition = NetworkManager.Singleton.ConnectedClients[OwnerClientId].PlayerObject == null ? null : new Vector3?(NetworkManager.Singleton.ConnectedClients[OwnerClientId].PlayerObject.transform.position);
-
-                    if ((receiverPosition == null || senderPosition == null && NetworkManager.NetworkTime - info.LastSent >= (1f / FixedSendsPerSecond)) || NetworkManager.NetworkTime - info.LastSent >= GetTimeForLerp(receiverPosition.Value, senderPosition.Value))
-                    {
-                        info.LastSent = NetworkManager.NetworkTime;
-                        info.LastMissedPosition = null;
-                        info.LastMissedRotation = null;
-
-                        ApplyTransformClientRpc(position, eulerAngles,
-                            new ClientRpcParams { Send = new ClientRpcSendParams { TargetClientIds = new[] { NetworkManager.ConnectedClientsList[i].ClientId } } });
-                    }
-                    else
-                    {
-                        info.LastMissedPosition = position;
-                        info.LastMissedRotation = Quaternion.Euler(eulerAngles);
-                    }
-                }
-            }
-            else
-            {
-                ApplyTransformClientRpc(position, eulerAngles,
-                    new ClientRpcParams { Send = new ClientRpcSendParams { TargetClientIds = NetworkManager.ConnectedClientsList.Where(c => c.ClientId != OwnerClientId).Select(c => c.ClientId).ToArray() } });
-            }
-        }
-
-        private void CheckForMissedSends()
-        {
-            for (int i = 0; i < NetworkManager.ConnectedClientsList.Count; i++)
-            {
-                if (!m_ClientSendInfo.ContainsKey(NetworkManager.ConnectedClientsList[i].ClientId))
-                {
-                    m_ClientSendInfo.Add(NetworkManager.ConnectedClientsList[i].ClientId, new ClientSendInfo()
-                    {
-                        LastMissedPosition = null,
-                        LastMissedRotation = null,
-                        LastSent = 0
-                    });
-                }
-
-                ClientSendInfo info = m_ClientSendInfo[NetworkManager.ConnectedClientsList[i].ClientId];
-                Vector3? receiverPosition = NetworkManager.ConnectedClientsList[i].PlayerObject == null ? null : new Vector3?(NetworkManager.ConnectedClientsList[i].PlayerObject.transform.position);
-                Vector3? senderPosition = NetworkManager.ConnectedClients[OwnerClientId].PlayerObject == null ? null : new Vector3?(NetworkManager.ConnectedClients[OwnerClientId].PlayerObject.transform.position);
-
-                if ((receiverPosition == null || senderPosition == null && NetworkManager.NetworkTime - info.LastSent >= (1f / FixedSendsPerSecond)) || NetworkManager.NetworkTime - info.LastSent >= GetTimeForLerp(receiverPosition.Value, senderPosition.Value))
-                {
-                    /* why is this??? ->*/
-                    Vector3? pos = NetworkManager.ConnectedClients[OwnerClientId].PlayerObject == null ? null : new Vector3?(NetworkManager.ConnectedClients[OwnerClientId].PlayerObject.transform.position);
-                    /* why is this??? ->*/
-                    Vector3? rot = NetworkManager.ConnectedClients[OwnerClientId].PlayerObject == null ? null : new Vector3?(NetworkManager.ConnectedClients[OwnerClientId].PlayerObject.transform.rotation.eulerAngles);
-
-                    if (info.LastMissedPosition != null && info.LastMissedRotation != null)
-                    {
-                        info.LastSent = NetworkManager.NetworkTime;
-
-                        ApplyTransformClientRpc(info.LastMissedPosition.Value, info.LastMissedRotation.Value.eulerAngles,
-                            new ClientRpcParams { Send = new ClientRpcSendParams { TargetClientIds = new[] { NetworkManager.ConnectedClientsList[i].ClientId } } });
-
-                        info.LastMissedPosition = null;
-                        info.LastMissedRotation = null;
-                    }
-                }
+                m_OldPosition = m_CurrentPosition;
+                m_OldRotation = m_CurrentRotation;
+                m_OldScale = m_CurrentScale;
             }
         }
 
         /// <summary>
-        /// Teleports the transform to the given position and rotation
+        /// Teleports the transform to the given values without interpolating
         /// </summary>
-        /// <param name="position">The position to teleport to</param>
-        /// <param name="rotation">The rotation to teleport to</param>
-        public void Teleport(Vector3 position, Quaternion rotation)
+        /// <param name="newPosition"></param>
+        /// <param name="newRotation"></param>
+        /// <param name="newScale"></param>
+        public void Teleport(Vector3 newPosition, Quaternion newRotation, Vector3 newScale)
         {
-            if (InterpolateServer && IsServer || IsClient)
-            {
-                m_LerpStartPos = position;
-                m_LerpStartRot = rotation;
-                m_LerpEndPos = position;
-                m_LerpEndRot = rotation;
-                m_LerpTime = 0;
-            }
+            throw new NotImplementedException(); // TODO MTT-769
         }
     }
 }

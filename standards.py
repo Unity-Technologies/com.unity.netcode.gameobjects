@@ -18,7 +18,7 @@ parser.add_argument("--yamato", action="store_true")
 
 parser.add_argument("--tool-path", default="dotnet-format")
 parser.add_argument("--project-path", default="testproject")
-parser.add_argument("--project-glob", default="Unity.Multiplayer.MLAPI*.csproj")
+parser.add_argument("--project-glob", default="Unity.Multiplayer*.csproj")
 
 if len(sys.argv) == 1:
     parser.print_help(sys.stderr)
