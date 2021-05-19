@@ -347,12 +347,12 @@ namespace MLAPI
             // This 'if' should never enter
             if (NetworkTimeSystem != null)
             {
-                NetworkTimeSystem.OnNetworkTickInternal -= NetworkTick;
+                NetworkTimeSystem.NetworkTickInternal -= OnNetworkTick;
                 NetworkTimeSystem = null;
             }
 
             NetworkTimeSystem = new NetworkTimeSystem(NetworkConfig.TickRate, server, this);
-            NetworkTimeSystem.OnNetworkTickInternal += NetworkTick;
+            NetworkTimeSystem.NetworkTickInternal += OnNetworkTick;
 
 
             // This should never happen, but in the event that it does there should be (at a minimum) a unity error logged.
@@ -809,7 +809,7 @@ namespace MLAPI
 
             if (NetworkTimeSystem != null)
             {
-                NetworkTimeSystem.OnNetworkTickInternal -= NetworkTick;
+                NetworkTimeSystem.NetworkTickInternal -= OnNetworkTick;
                 NetworkTimeSystem = null;
             }
 
@@ -891,7 +891,7 @@ namespace MLAPI
         /// - call NetworkFixedUpdate on all NetworkBehaviours in prediction/client authority mode
         /// - create a snapshot from resulting state
         /// </summary>
-        private void NetworkTick(NetworkTime predictedTime)
+        private void OnNetworkTick(NetworkTime predictedTime)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_EventTick.Begin();
