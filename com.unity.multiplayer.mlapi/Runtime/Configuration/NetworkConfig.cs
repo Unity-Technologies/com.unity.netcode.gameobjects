@@ -67,18 +67,6 @@ namespace MLAPI.Configuration
         public int TickRate = 60;
 
         /// <summary>
-        /// TODO
-        /// </summary>
-        [Tooltip("TODO")]
-        public float ClientBufferTime = 50;
-
-        /// <summary>
-        /// TODO
-        /// </summary>
-        [Tooltip("TODO")]
-        public float ServerBufferTime = 50;
-
-        /// <summary>
         /// The amount of seconds to wait for handshake to complete before timing out a client
         /// </summary>
         [Tooltip("The amount of seconds to wait for the handshake to complete before the client times out")]
