@@ -96,7 +96,7 @@ namespace MLAPI.SceneManagement
 
         internal void SetCurrentSceneIndex()
         {
-            if (!SceneNameToIndex.ContainsKey(SceneManager.GetActiveScene().name))
+            if (!SceneNameToIndex.TryGetValue(SceneManager.GetActiveScene().name, out CurrentSceneIndex))
             {
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                 {
@@ -106,7 +106,6 @@ namespace MLAPI.SceneManagement
                 return;
             }
 
-            CurrentSceneIndex = SceneNameToIndex[SceneManager.GetActiveScene().name];
             CurrentActiveSceneIndex = CurrentSceneIndex;
         }
 
@@ -134,12 +133,13 @@ namespace MLAPI.SceneManagement
         /// Switches to a scene with a given name. Can only be called from Server
         /// </summary>
         /// <param name="sceneName">The name of the scene to switch to</param>
-        public SceneSwitchProgress SwitchScene(string sceneName)
+        /// <param name="loadSceneMode">The mode to load the scene (Additive vs Single)</param>
+        /// <returns>SceneSwitchProgress</returns>
+        public SceneSwitchProgress SwitchScene(string sceneName, LoadSceneMode loadSceneMode = LoadSceneMode.Single)
         {
             if (!m_NetworkManager.IsServer)
             {
                 throw new NotServerException("Only server can start a scene switch");
-
             }
 
             if (!m_NetworkManager.NetworkConfig.EnableSceneManagement)
@@ -200,7 +200,7 @@ namespace MLAPI.SceneManagement
             IsSpawnedObjectsPendingInDontDestroyOnLoad = true;
 
             // Switch scene
-            AsyncOperation sceneLoad = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Single);
+            AsyncOperation sceneLoad = SceneManager.LoadSceneAsync(sceneName, loadSceneMode);
 
             s_NextSceneName = sceneName;
 
@@ -214,7 +214,7 @@ namespace MLAPI.SceneManagement
         // Called on client
         internal void OnSceneSwitch(uint sceneIndex, Guid switchSceneGuid, Stream objectStream)
         {
-            if (!SceneIndexToString.ContainsKey(sceneIndex) || !RegisteredSceneNames.Contains(SceneIndexToString[sceneIndex]))
+            if (!SceneIndexToString.TryGetValue(sceneIndex, out string sceneName) || !RegisteredSceneNames.Contains(sceneName))
             {
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                 {
@@ -231,8 +231,6 @@ namespace MLAPI.SceneManagement
 
             IsSpawnedObjectsPendingInDontDestroyOnLoad = true;
 
-            string sceneName = SceneIndexToString[sceneIndex];
-
             var sceneLoad = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Single);
 
             s_NextSceneName = sceneName;
@@ -243,7 +241,7 @@ namespace MLAPI.SceneManagement
 
         internal void OnFirstSceneSwitchSync(uint sceneIndex, Guid switchSceneGuid)
         {
-            if (!SceneIndexToString.ContainsKey(sceneIndex) || !RegisteredSceneNames.Contains(SceneIndexToString[sceneIndex]))
+            if (!SceneIndexToString.TryGetValue(sceneIndex, out string sceneName) || !RegisteredSceneNames.Contains(sceneName))
             {
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                 {
@@ -253,13 +251,12 @@ namespace MLAPI.SceneManagement
                 return;
             }
 
-            if (SceneManager.GetActiveScene().name == SceneIndexToString[sceneIndex])
+            if (SceneManager.GetActiveScene().name == sceneName)
             {
                 return; //This scene is already loaded. This usually happends at first load
             }
 
             s_LastScene = SceneManager.GetActiveScene();
-            string sceneName = SceneIndexToString[sceneIndex];
             s_NextSceneName = sceneName;
             CurrentActiveSceneIndex = SceneNameToIndex[sceneName];
 
@@ -404,12 +401,10 @@ namespace MLAPI.SceneManagement
                 return;
             }
 
-            if (!SceneSwitchProgresses.ContainsKey(switchSceneGuid))
+            if (SceneSwitchProgresses.TryGetValue(switchSceneGuid, out SceneSwitchProgress progress))
             {
-                return;
+                SceneSwitchProgresses[switchSceneGuid].AddClientAsDone(clientId);
             }
-
-            SceneSwitchProgresses[switchSceneGuid].AddClientAsDone(clientId);
         }
 
 

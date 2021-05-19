@@ -2,10 +2,11 @@ using System;
 using System.Collections.Generic;
 using MLAPI.Timing;
 using UnityEngine;
+using MLAPI;
 using MLAPI.NetworkVariable;
 using MLAPI.NetworkVariable.Collections;
 
-namespace MLAPI
+namespace TestProject.ManualTests
 {
     /// <summary>
     /// A prototype component for syncing transforms

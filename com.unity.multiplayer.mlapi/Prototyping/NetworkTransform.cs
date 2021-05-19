@@ -283,19 +283,14 @@ namespace MLAPI.Prototyping
             {
                 for (int i = 0; i < NetworkManager.ConnectedClientsList.Count; i++)
                 {
-                    if (!m_ClientSendInfo.ContainsKey(NetworkManager.ConnectedClientsList[i].ClientId))
+                    if (!m_ClientSendInfo.TryGetValue(NetworkManager.ConnectedClientsList[i].ClientId, out ClientSendInfo info))
                     {
-                        m_ClientSendInfo.Add(NetworkManager.ConnectedClientsList[i].ClientId, new ClientSendInfo()
-                        {
-                            LastMissedPosition = null,
-                            LastMissedRotation = null,
-                            LastSent = 0
-                        });
+                        info = new ClientSendInfo() { LastMissedPosition = null, LastMissedRotation = null, LastSent = 0 };
+                        m_ClientSendInfo.Add(NetworkManager.Singleton.ConnectedClientsList[i].ClientId, info);
                     }
 
-                    ClientSendInfo info = m_ClientSendInfo[NetworkManager.ConnectedClientsList[i].ClientId];
-                    Vector3? receiverPosition = NetworkManager.ConnectedClientsList[i].PlayerObject == null ? null : new Vector3?(NetworkManager.ConnectedClientsList[i].PlayerObject.transform.position);
-                    Vector3? senderPosition = NetworkManager.ConnectedClients[OwnerClientId].PlayerObject == null ? null : new Vector3?(NetworkManager.ConnectedClients[OwnerClientId].PlayerObject.transform.position);
+                    Vector3? receiverPosition = NetworkManager.Singleton.ConnectedClientsList[i].PlayerObject == null ? null : new Vector3?(NetworkManager.Singleton.ConnectedClientsList[i].PlayerObject.transform.position);
+                    Vector3? senderPosition = NetworkManager.Singleton.ConnectedClients[OwnerClientId].PlayerObject == null ? null : new Vector3?(NetworkManager.Singleton.ConnectedClients[OwnerClientId].PlayerObject.transform.position);
 
                     if ((receiverPosition == null || senderPosition == null && NetworkManager.PredictedTime.Time - info.LastSent >= (1f / FixedSendsPerSecond)) || NetworkManager.PredictedTime.Time - info.LastSent >= GetTimeForLerp(receiverPosition.Value, senderPosition.Value))
                     {
