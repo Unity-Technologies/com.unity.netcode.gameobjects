@@ -32,11 +32,11 @@ namespace MLAPI.EditorTests.Timing
             Assert.IsTrue(Mathf.Approximately(d, timeD.Time));
             Assert.IsTrue(Mathf.Approximately(e, timeE.Time));
 
-            Assert.IsTrue(timeA.TickDuration >= 0);
-            Assert.IsTrue(timeB.TickDuration >= 0);
-            Assert.IsTrue(timeC.TickDuration >= 0);
-            Assert.IsTrue(timeD.TickDuration >= 0);
-            Assert.IsTrue(timeE.TickDuration >= 0);
+            Assert.IsTrue(timeA.tickDurationOffset >= 0);
+            Assert.IsTrue(timeB.tickDurationOffset >= 0);
+            Assert.IsTrue(timeC.tickDurationOffset >= 0);
+            Assert.IsTrue(timeD.tickDurationOffset >= 0);
+            Assert.IsTrue(timeE.tickDurationOffset >= 0);
         }
 
         [Test]
