@@ -76,7 +76,7 @@ public class GrabbableBall : NetworkBehaviour
         if (!m_IsGrabbed.Value)
         {
             var senderClientId = serverRpcParams.Receive.SenderClientId;
-            var senderPlayerObject = NetworkManager.SpawnManager.GetPlayerNetworkObject(senderClientId);
+            var senderPlayerObject = PlayerMovement.Players[senderClientId].NetworkObject;
             if (senderPlayerObject != null)
             {
                 NetworkObject.ChangeOwnership(senderClientId);
@@ -104,7 +104,7 @@ public class GrabbableBall : NetworkBehaviour
     [ClientRpc]
     private void UpdateParentClientRpc(ulong ownerClientId, bool isFree)
     {
-        var playerObject = NetworkManager.SpawnManager.GetPlayerNetworkObject(ownerClientId);
+        var playerObject = PlayerMovement.Players[ownerClientId].NetworkObject;
 
         if (isFree || playerObject == null)
         {
@@ -114,7 +114,7 @@ public class GrabbableBall : NetworkBehaviour
         {
             m_CachedParent = transform.parent;
             transform.parent = playerObject.transform;
-            transform.localPosition = Vector3.up;
+            transform.localPosition = Vector3.up * (1 / playerObject.transform.localScale.y);
         }
 
         m_Rigidbody.velocity = Vector3.zero;
