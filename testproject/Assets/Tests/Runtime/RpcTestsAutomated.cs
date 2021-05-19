@@ -51,6 +51,16 @@ namespace TestProject.RuntimeTests
         /// <returns></returns>
         private IEnumerator AutomatedRpcTestsHandler(int numClients, bool useBatching = true)
         {
+
+            Debug.Log($"Application.targetFrameRate = {Application.targetFrameRate}");
+            if (Application.targetFrameRate > 60)
+            {
+                Application.targetFrameRate = 60;
+            }
+
+            var startFrameCount = Time.frameCount;
+            var startTime = Time.realtimeSinceStartup;
+
             // Set RpcQueueManualTests into unit testing mode
             RpcQueueManualTests.UnitTesting = true;
 
@@ -171,6 +181,9 @@ namespace TestProject.RuntimeTests
                 Debug.Log($"Final Client {rpcClientSideTest.NetworkManager.LocalClientId} Status Info:");
                 Debug.Log(rpcClientSideTest.GetCurrentClientStatusInfo());
             }
+
+            Debug.Log($"Application.targetFrameRate = {Application.targetFrameRate}.");
+            Debug.Log($"Total frames updated = {Time.frameCount - startFrameCount} within {Time.realtimeSinceStartup - startTime} seconds.");
         }
 
         [TearDown]

@@ -52,6 +52,15 @@ namespace TestProject.RuntimeTests
         /// <returns></returns>
         private IEnumerator ConnectionApprovalHandler(int numClients, int failureTestCount = 1, bool prefabOverride = false)
         {
+            Debug.Log($"Application.targetFrameRate = {Application.targetFrameRate}");
+            if (Application.targetFrameRate > 60)
+            {
+                Application.targetFrameRate = 60;
+            }
+
+            var startFrameCount = Time.frameCount;
+            var startTime = Time.realtimeSinceStartup;
+
             m_SuccessfulConnections = 0;
             m_FailedConnections = 0;
             Assert.IsTrue(numClients >= failureTestCount);
@@ -145,6 +154,9 @@ namespace TestProject.RuntimeTests
 
             server.ConnectionApprovalCallback -= ConnectionApprovalCallback;
             server.StopHost();
+
+            Debug.Log($"Application.targetFrameRate = {Application.targetFrameRate}.");
+            Debug.Log($"Total frames updated = {Time.frameCount - startFrameCount} within {Time.realtimeSinceStartup - startTime} seconds.");
         }
 
         /// <summary>
