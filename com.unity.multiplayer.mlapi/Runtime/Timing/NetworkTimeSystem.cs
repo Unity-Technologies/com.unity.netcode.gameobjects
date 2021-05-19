@@ -137,9 +137,8 @@ namespace MLAPI.Timing
             m_NetworkTimeProvider.InitializeClient(ref m_PredictedTime, ref m_ServerTime);
         }
 
-
-        #region NetworkStats
         // TODO this is temporary until we have a better way to measure RTT. Most likely a separate stats class will be used to track this.
+        #region NetworkStats
 
         private NetworkManager m_NetworkManager;
 
