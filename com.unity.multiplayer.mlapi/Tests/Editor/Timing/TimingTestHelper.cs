@@ -65,16 +65,6 @@ namespace MLAPI.EditorTests.Timing
         public float Rtt { get; set; }
 
         public NetworkTime LastReceivedSnapshotTick { get; set; }
-
-        public float GetRtt()
-        {
-            return Rtt;
-        }
-
-        public NetworkTime GetLastReceivedSnapshotTick()
-        {
-            return LastReceivedSnapshotTick.ToFixedTime();
-        }
     }
 
 }

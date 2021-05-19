@@ -34,9 +34,9 @@ namespace MLAPI.Timing
 
             // time scale adjustment based on whether we are behind / ahead of the server in terms of inputs
             // This implementation uses RTT to calculate that without server input which is not ideal. In the future we might want to add a field to the protocol which allows the server to send the exact input buffers size to the client.
-            float lastReceivedSnapshotTime = m_NetworkStats.GetLastReceivedSnapshotTick().Time;
+            float lastReceivedSnapshotTime = m_NetworkStats.LastReceivedSnapshotTick.Time;
             float targetServerTime = lastReceivedSnapshotTime - TargetClientBufferTime;
-            float targetPredictedTime = lastReceivedSnapshotTime + m_NetworkStats.GetRtt() + TargetServerBufferTime;
+            float targetPredictedTime = lastReceivedSnapshotTime + m_NetworkStats.Rtt + TargetServerBufferTime;
 
             // Reset timescale. Will be recalculated based on new values.
             bool reset = false;

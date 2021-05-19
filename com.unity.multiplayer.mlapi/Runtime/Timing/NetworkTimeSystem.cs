@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace MLAPI.Timing
 {
-    public class NetworkTimeSystem: INetworkStats
+    public class NetworkTimeSystem : INetworkStats
     {
         private INetworkTimeProvider m_NetworkTimeProvider;
         private int m_TickRate;
@@ -138,6 +138,7 @@ namespace MLAPI.Timing
         }
 
         // TODO this is temporary until we have a better way to measure RTT. Most likely a separate stats class will be used to track this.
+
         #region NetworkStats
 
         private NetworkManager m_NetworkManager;
@@ -147,19 +148,22 @@ namespace MLAPI.Timing
         /// </summary>
         internal NetworkTime LastReceivedServerSnapshotTick { get; private set; }
 
-        public float GetRtt()
+        /// <inheritdoc/>
+        public float Rtt
         {
-            if (m_NetworkManager.IsServer)
+            get
             {
-                return 0f;
+                if (m_NetworkManager.IsServer)
+                {
+                    return 0f;
+                }
+
+                return m_NetworkManager.NetworkConfig.NetworkTransport.GetCurrentRtt(m_NetworkManager.ServerClientId) / 1000f;
             }
-            return m_NetworkManager.NetworkConfig.NetworkTransport.GetCurrentRtt(m_NetworkManager.ServerClientId) / 1000f;
         }
 
-        public NetworkTime GetLastReceivedSnapshotTick()
-        {
-            return LastReceivedServerSnapshotTick;
-        }
+        /// <inheritdoc/>
+        public NetworkTime LastReceivedSnapshotTick => LastReceivedServerSnapshotTick;
 
         #endregion
     }
