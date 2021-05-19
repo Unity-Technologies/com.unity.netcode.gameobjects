@@ -630,7 +630,7 @@ namespace MLAPI
                                 writtenAny = true;
 
                                 // write the network tick at which this NetworkVariable was modified
-                                // TODO serialization of tick can use less bandwidth by using a byte/ushort sliding tick window
+                                // TODO this should get delta compressed once we move to delta snapshots
                                 writer.WriteInt32Packed(NetworkVariableFields[k].LastModifiedTick);
 
                                 if (NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
