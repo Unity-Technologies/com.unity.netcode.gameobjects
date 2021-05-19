@@ -4,6 +4,7 @@ using Unity.Profiling;
 using MLAPI.Configuration;
 using MLAPI.Profiling;
 using MLAPI.Logging;
+using UnityEngine;
 
 namespace MLAPI.Messaging
 {
@@ -65,8 +66,10 @@ namespace MLAPI.Messaging
                             {
                                 m_NetworkManager.InvokeRpc(currentQueueItem);
                             }
-                            catch
+                            catch (Exception ex)
                             {
+                                Debug.LogException(ex);
+
                                 if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                                 {
                                     NetworkLog.LogWarning($"A {currentQueueItem.QueueItemType} threw an exception while executing! Please check Unity logs for more information.");
