@@ -53,9 +53,9 @@ namespace TestProject.RuntimeTests
         private IEnumerator ConnectionApprovalHandler(int numClients, int failureTestCount = 1, bool prefabOverride = false)
         {
             Debug.Log($"Application.targetFrameRate = {Application.targetFrameRate}");
-            if (Application.targetFrameRate > 60)
+            if (Application.targetFrameRate == -1 || Application.targetFrameRate > 120)
             {
-                Application.targetFrameRate = 60;
+                Application.targetFrameRate = 120;
             }
 
             var startFrameCount = Time.frameCount;
