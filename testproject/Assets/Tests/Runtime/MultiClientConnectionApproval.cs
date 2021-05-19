@@ -55,8 +55,7 @@ namespace TestProject.RuntimeTests
             m_SuccessfulConnections = 0;
             m_FailedConnections = 0;
             Assert.IsTrue(numClients >= failureTestCount);
-
-            MultiInstanceHelpers.Destroy();
+            
             // Create Host and (numClients) clients 
             Assert.True(MultiInstanceHelpers.Create(numClients, out NetworkManager server, out NetworkManager[] clients));
 
@@ -118,10 +117,10 @@ namespace TestProject.RuntimeTests
             }
 
             // [Client-Side] Wait for a connection to the server 
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(clientsAdjustedList.ToArray()));
+            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(clientsAdjustedList.ToArray(), null, 512));
 
             // [Host-Side] Check to make sure all clients are connected
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnectedToServer(server, clientsAdjustedList.Count + 1));
+            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnectedToServer(server, clientsAdjustedList.Count + 1, null, 512));
 
             // Validate the number of failed connections is the same as expected
             Assert.IsTrue(m_FailedConnections == failureTestCount);
@@ -139,11 +138,13 @@ namespace TestProject.RuntimeTests
                 }
             }
 
-            foreach(var client in clientsToClean)
+            foreach (var client in clients)
             {
                 client.StopClient();
             }
 
+            server.ConnectionApprovalCallback -= ConnectionApprovalCallback;
+            server.StopHost();
         }
 
         /// <summary>
