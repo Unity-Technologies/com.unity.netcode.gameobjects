@@ -54,7 +54,7 @@ namespace MLAPI
 #endif
 
         internal RpcQueueContainer RpcQueueContainer { get; private set; }
-        internal NetworkTimeSystem networkTimeSystem { get; private set; }
+        public NetworkTimeSystem NetworkTimeSystem { get; private set; }
         public NetworkPrefabHandler PrefabHandler { get; private set; }
 
         /// <summary>
@@ -62,9 +62,9 @@ namespace MLAPI
         /// </summary>
         private float NetworkTime => Time.unscaledTime + m_CurrentNetworkTimeOffset;
 
-        public NetworkTime PredictedTime => networkTimeSystem?.PredictedTime ?? new NetworkTime() ;
+        public NetworkTime PredictedTime => NetworkTimeSystem?.PredictedTime ?? new NetworkTime();
 
-        public NetworkTime ServerTime  => networkTimeSystem?.ServerTime ?? new NetworkTime() ;
+        public NetworkTime ServerTime  => NetworkTimeSystem?.ServerTime ?? new NetworkTime();
 
         //private float m_NetworkTimeOffset;
         private float m_CurrentNetworkTimeOffset;
@@ -345,14 +345,14 @@ namespace MLAPI
             }
 
             // This 'if' should never enter
-            if (networkTimeSystem != null)
+            if (NetworkTimeSystem != null)
             {
-                networkTimeSystem.OnNetworkTickInternal -= NetworkTick;
-                networkTimeSystem = null;
+                NetworkTimeSystem.OnNetworkTickInternal -= NetworkTick;
+                NetworkTimeSystem = null;
             }
 
-            networkTimeSystem = new NetworkTimeSystem(NetworkConfig.TickRate, server, this);
-            networkTimeSystem.OnNetworkTickInternal += NetworkTick;
+            NetworkTimeSystem = new NetworkTimeSystem(NetworkConfig.TickRate, server, this);
+            NetworkTimeSystem.OnNetworkTickInternal += NetworkTick;
 
 
             // This should never happen, but in the event that it does there should be (at a minimum) a unity error logged.
@@ -807,10 +807,10 @@ namespace MLAPI
                 CustomMessagingManager = null;
             }
 
-            if (networkTimeSystem != null)
+            if (NetworkTimeSystem != null)
             {
-                networkTimeSystem.OnNetworkTickInternal -= NetworkTick;
-                networkTimeSystem = null;
+                NetworkTimeSystem.OnNetworkTickInternal -= NetworkTick;
+                NetworkTimeSystem = null;
             }
 
             //The Transport is set during Init time, thus it is possible for the Transport to be null
@@ -881,7 +881,7 @@ namespace MLAPI
         {
             if (IsListening)
             {
-                networkTimeSystem.AdvanceNetworkTime(Time.deltaTime);
+                NetworkTimeSystem.AdvanceNetworkTime(Time.deltaTime);
             }
         }
 
@@ -1535,7 +1535,7 @@ namespace MLAPI
                             writer.WriteByteArray(NetworkSceneManager.CurrentSceneSwitchProgressGuid.ToByteArray());
                         }
 
-                        writer.WriteInt32Packed(networkTimeSystem.PredictedTime.Tick);
+                        writer.WriteInt32Packed(NetworkTimeSystem.PredictedTime.Tick);
                         writer.WriteUInt32Packed((uint)m_ObservedObjects.Count);
 
                         for (int i = 0; i < m_ObservedObjects.Count; i++)
