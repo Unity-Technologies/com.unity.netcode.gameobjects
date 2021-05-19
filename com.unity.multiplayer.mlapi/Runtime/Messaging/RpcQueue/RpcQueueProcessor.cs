@@ -69,7 +69,7 @@ namespace MLAPI.Messaging
                             {
                                 if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                                 {
-                                    NetworkLog.LogWarning($"A {currentQueueItem.QueueItemType} threw an exception and skipped its execution, please check Unity logs for more information.");
+                                    NetworkLog.LogWarning($"A {currentQueueItem.QueueItemType} threw an exception while executing! Please check Unity logs for more information.");
                                 }
                             }
                         }
