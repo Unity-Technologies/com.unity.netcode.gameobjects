@@ -4,51 +4,66 @@ using Unity.Multiplayer.NetStats.Metrics;
 
 namespace MLAPI.Metrics
 {
-    public class NetworkMetrics
+    public interface INetworkMetrics
     {
-#if true
-        private IMetricDispatcher m_Dispatcher;
+        void TrackNamedMessageSent(string messageName, ulong bytesCount);
 
-        private Counter m_NbConnections = new Counter("Connections") { ShouldResetOnDispatch = false };
-        private Counter m_BytesReceived = new Counter("Bytes Received");
-        private Counter m_BytesSent = new Counter("Bytes Sent");
-        private EventMetric<RpcEvent> m_RpcEvent = new EventMetric<RpcEvent>("RPC Event Sent");
-        
-#endif
-        
-        public NetworkMetrics()
+        void TrackNamedMessageReceived(string messageName, ulong bytesCount);
+    }
+
+    public class NullNetworkMetrics : INetworkMetrics
+    {
+        public void TrackNamedMessageSent(string messageName, ulong bytesCount)
         {
+        }
+
+        public void TrackNamedMessageReceived(string messageName, ulong bytesCount)
+        {
+        }
+    }
+    
+#if true
+    public class NetworkMetrics : INetworkMetrics
+    {
+        private readonly IMetricDispatcher m_Dispatcher;
+        private readonly NetworkManager m_NetworkManager;
+
+        private EventMetric<NamedMessageEvent> m_NamedMessageSentEvent = new EventMetric<NamedMessageEvent>("Named Message Sent");
+        private EventMetric<NamedMessageEvent> m_NamedMessageReceivedEvent = new EventMetric<NamedMessageEvent>("Named Message Received");
+
+        public NetworkMetrics(NetworkManager networkManager)
+        {
+            m_NetworkManager = networkManager;
             m_Dispatcher = new MetricDispatcherBuilder()
-                .WithCounters(m_NbConnections, m_BytesReceived, m_BytesSent)
-                .WithGauges()
-                .WithMetricEvents()
+                .WithMetricEvents(m_NamedMessageSentEvent, m_NamedMessageReceivedEvent)
                 .Build();
         }
 
-        public void TrackRpcSent()
+        public void TrackNamedMessageSent(string messageName, ulong bytesCount)
         {
-                m_RpcEvent.Mark(new RpcEvent());
+            m_NamedMessageSentEvent.Mark(new NamedMessageEvent
+            {
+                Name = messageName,
+                BytesCount = bytesCount,
+                Connection = new ConnectionInfo
+                {
+                    Id = m_NetworkManager.LocalClientId,
+                }
+            });
         }
 
-        public void TrackConnectionCount(long amount)
+        public void TrackNamedMessageReceived(string messageName, ulong bytesCount)
         {
-#if true
-            m_NbConnections.Increment(amount);
-#endif
-        }
-
-        public void TrackBytesReceived(long amount)
-        {
-#if true
-            m_BytesReceived.Increment(amount);
-#endif
-        }
-
-        public void TrackBytesSent(long amount)
-        {
-#if true
-            m_BytesSent.Increment(amount);
-#endif
+            m_NamedMessageReceivedEvent.Mark(new NamedMessageEvent
+            {
+                Name = messageName,
+                BytesCount = bytesCount,
+                Connection = new ConnectionInfo
+                {
+                    Id = m_NetworkManager.LocalClientId,
+                }
+            });
         }
     }
+#endif
 }

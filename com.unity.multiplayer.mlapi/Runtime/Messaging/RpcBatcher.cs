@@ -152,7 +152,6 @@ namespace MLAPI.Messaging
                 m_SendDict[clientId].Writer.WriteBytes(queueItem.MessageData.Array, queueItem.MessageData.Count, queueItem.MessageData.Offset);
 
                 ProfilerStatManager.BytesSent.Record(queueItem.MessageData.Count);
-                m_NetworkManager.NetworkMetrics.TrackBytesSent(queueItem.MessageData.Count);
                 ProfilerStatManager.RpcsSent.Record();
                 PerformanceDataManager.Increment(ProfilerConstants.ByteSent, queueItem.MessageData.Count);
                 PerformanceDataManager.Increment(ProfilerConstants.RpcSent);
