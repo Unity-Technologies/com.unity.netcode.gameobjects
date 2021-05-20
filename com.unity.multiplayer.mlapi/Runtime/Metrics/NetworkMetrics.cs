@@ -1,6 +1,7 @@
 ﻿using Unity.Multiplayer.NetStats.Data;
 using Unity.Multiplayer.NetStats.Dispatch;
 using Unity.Multiplayer.NetStats.Metrics;
+using Unity.Multiplayer.NetworkProfiler;
 
 namespace MLAPI.Metrics
 {
@@ -9,6 +10,8 @@ namespace MLAPI.Metrics
         void TrackNamedMessageSent(string messageName, ulong bytesCount);
 
         void TrackNamedMessageReceived(string messageName, ulong bytesCount);
+
+        void DispatchFrame();
     }
 
     public class NullNetworkMetrics : INetworkMetrics
@@ -18,6 +21,10 @@ namespace MLAPI.Metrics
         }
 
         public void TrackNamedMessageReceived(string messageName, ulong bytesCount)
+        {
+        }
+
+        public void DispatchFrame()
         {
         }
     }
@@ -37,6 +44,8 @@ namespace MLAPI.Metrics
             m_Dispatcher = new MetricDispatcherBuilder()
                 .WithMetricEvents(m_NamedMessageSentEvent, m_NamedMessageReceivedEvent)
                 .Build();
+            
+            m_Dispatcher.RegisterObserver(MLAPIObserver.Observer);
         }
 
         public void TrackNamedMessageSent(string messageName, ulong bytesCount)
@@ -63,6 +72,21 @@ namespace MLAPI.Metrics
                     Id = m_NetworkManager.LocalClientId,
                 }
             });
+        }
+
+        public void DispatchFrame()
+        {
+            m_Dispatcher.Dispatch();
+        }
+    }
+
+    public class MLAPIObserver
+    {
+        public static IMetricObserver Observer { get; }
+
+        static MLAPIObserver()
+        {
+            Observer = new NetStatObserver();
         }
     }
 #endif

@@ -207,7 +207,7 @@ namespace MLAPI
         /// </summary>
         public string ConnectedHostname { get; private set; }
 
-        public NetworkMetrics NetworkMetrics { get; private set; }
+        public INetworkMetrics NetworkMetrics { get; private set; }
 
         internal static event Action OnSingletonReady;
 
@@ -1704,6 +1704,12 @@ namespace MLAPI
         private void ProfilerBeginTick()
         {
             ProfilerNotifier.ProfilerBeginTick();
+            NetworkMetrics.DispatchFrame();
+
+            if (UnityEngine.Random.Range(1, 10) == 9)
+            {
+                NetworkMetrics.TrackNamedMessageSent(Guid.NewGuid().ToString(), 10);
+            }
         }
 
         private void NotifyProfilerListeners()
