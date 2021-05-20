@@ -10,7 +10,7 @@ namespace MLAPI.EditorTests
         {
             int pos;
 
-            IndexAllocator allocator = new IndexAllocator(20000, 200);
+            var allocator = new IndexAllocator(20000, 200);
             allocator.DebugDisplay();
 
             // allocate 20 bytes
@@ -82,7 +82,7 @@ namespace MLAPI.EditorTests
             int bufferSize = 20000;
             int iterations = 10000;
 
-            IndexAllocator allocator = new IndexAllocator(20000, 200);
+            var allocator = new IndexAllocator(20000, 200);
 
             for (int i = 0; i < iterations; i++)
             {

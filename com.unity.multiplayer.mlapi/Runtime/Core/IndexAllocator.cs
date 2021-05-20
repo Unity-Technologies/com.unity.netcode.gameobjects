@@ -55,14 +55,16 @@ namespace MLAPI
 
         public int Range
         {
-            get {
+            get
+            {
                 // when the whole buffer is free, m_LastUsed points to an empty slot
                 if (m_Slots[m_LastUsed].free)
                 {
                     return 0;
                 }
                 // otherwise return the end of the last slot used
-                return m_Slots[m_LastUsed].pos + m_Slots[m_LastUsed].length; }
+                return m_Slots[m_LastUsed].pos + m_Slots[m_LastUsed].length;
+            }
         }
 
         internal bool Allocate(int index, int size, out int pos)

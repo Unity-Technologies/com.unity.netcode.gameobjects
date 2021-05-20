@@ -310,13 +310,14 @@ namespace MLAPI
                     }
 
                     //m_Snapshot.m_Allocator.DebugDisplay();
-/*                    DebugDisplayStore(m_Snapshot, "Entries");
+                    /*
+                    DebugDisplayStore(m_Snapshot, "Entries");
 
                     foreach(var item in m_ClientReceivedSnapshot)
                     {
                         DebugDisplayStore(item.Value, "Received Entries " + item.Key);
                     }
-*/
+                    */
                     // todo: --M1b--
                     // for now we clear our send snapshot because we don't have per-client partial sends
                     m_Snapshot.Clear();
@@ -414,7 +415,6 @@ namespace MLAPI
                     m_Snapshot.AllocateEntry(ref m_Snapshot.Entries[pos], pos, (int)varBuffer.Length);
                 }
 
-//                m_Snapshot.Entries[pos].Key.TickWritten = m_NetworkManager.NetworkTickSystem.GetTick();
                 // Copy the serialized NetworkVariable into our buffer
                 Buffer.BlockCopy(varBuffer.GetBuffer(), 0, m_Snapshot.Buffer, m_Snapshot.Entries[pos].Position, (int)varBuffer.Length);
             }
