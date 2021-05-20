@@ -123,6 +123,8 @@ namespace MLAPI.Prototyping
             m_LayerStates = new NetworkList<LayerState>();
         }
 
+        private bool invalidated = false;
+
         private void OnEnable()
         {
             m_IntParameters.OnDictionaryChanged += OnIntParametersChanged;
@@ -186,6 +188,62 @@ namespace MLAPI.Prototyping
                 WriteAnimatorParametersToNetVars();
             }
         }
+
+        private void Update()
+        {
+            if (invalidated)
+            {
+                for (int i = 0; i < m_LayerStates.Count; i++)
+                {
+                    var layerState = m_LayerStates[i];
+                    
+                    Animator.SetLayerWeight(layerState.LayerIndex, layerState.LayerWeight);
+                    var stateInfo = Animator.GetCurrentAnimatorStateInfo(layerState.LayerIndex);
+                
+                    if (stateInfo.fullPathHash == layerState.StateHash)
+                    {
+                        float delta = layerState.NormalizedStateTime - stateInfo.normalizedTime;
+                        if (delta >= AnimationCatchupDelay)
+                        {
+                            Animator.Play(layerState.StateHash, layerState.LayerIndex, layerState.NormalizedStateTime);
+                        }
+                    }
+                    else
+                    {
+                        Animator.Play(layerState.StateHash, layerState.LayerIndex, layerState.NormalizedStateTime);
+                    }
+                }
+                
+                foreach (var animParam in Parameters)
+                {
+                    var animParamHash = animParam.Key;
+                    var animParamType = animParam.Value;
+                
+                    switch (animParamType)
+                    {
+                        case AnimatorControllerParameterType.Float:
+                            Animator.SetFloat(animParamHash, m_FloatParameters[animParamHash]);
+                            break;
+                        case AnimatorControllerParameterType.Int:
+                            
+                            Animator.SetInteger(animParamHash, m_IntParameters[animParamHash]);
+                            break;
+                        case AnimatorControllerParameterType.Bool:
+                            Animator.SetBool(animParamHash, m_BoolParameters[animParamHash]);
+                            break;
+                    }
+                }
+
+                foreach (var trigger in ActivatedTriggers)
+                {
+                    Animator.SetTrigger(trigger);
+                }
+                
+                ActivatedTriggers.Clear();
+                
+                invalidated = false;
+            }
+        }
         
         private void WriteAnimatorStateToNetVars()
         {
@@ -240,6 +298,8 @@ namespace MLAPI.Prototyping
                 // todo MTT-768 this shouldn't happen anymore with new tick system (tick written will be higher than tick read, so netvar wouldn't change in that case
                 return;
             }
+            invalidated = true;
+            return;
 
             if (changeevent.Type == NetworkDictionaryEvent<int, int>.EventType.Add ||
                 changeevent.Type == NetworkDictionaryEvent<int, int>.EventType.Value)
@@ -256,7 +316,9 @@ namespace MLAPI.Prototyping
                 // todo MTT-768 this shouldn't happen anymore with new tick system (tick written will be higher than tick read, so netvar wouldn't change in that case
                 return;
             }
-
+            invalidated = true;
+            return;
+            
             if (changeevent.Type == NetworkDictionaryEvent<int, float>.EventType.Add ||
                 changeevent.Type == NetworkDictionaryEvent<int, float>.EventType.Value)
             {
@@ -272,6 +334,8 @@ namespace MLAPI.Prototyping
                 // todo MTT-768 this shouldn't happen anymore with new tick system (tick written will be higher than tick read, so netvar wouldn't change in that case
                 return;
             }
+            invalidated = true;
+            return;
 
             if (changeevent.Type == NetworkDictionaryEvent<int, bool>.EventType.Add ||
                 changeevent.Type == NetworkDictionaryEvent<int, bool>.EventType.Value)
@@ -288,6 +352,8 @@ namespace MLAPI.Prototyping
                 // todo MTT-768 this shouldn't happen anymore with new tick system (tick written will be higher than tick read, so netvar wouldn't change in that case
                 return;
             }
+            invalidated = true;
+            return;
 
             if (changeevent.Type == NetworkListEvent<LayerState>.EventType.Add ||
                 changeevent.Type == NetworkListEvent<LayerState>.EventType.Value)
@@ -334,6 +400,8 @@ namespace MLAPI.Prototyping
             }
         }
 
+        private HashSet<int> ActivatedTriggers = new HashSet<int>();
+        
         [ClientRpc(Delivery = RpcDelivery.Reliable)]
         private void TriggersActivatedClientRpc(int activatedTriggerParameters, ClientRpcParams clientRpcParams = default)
         {
@@ -341,7 +409,13 @@ namespace MLAPI.Prototyping
             {
                 return;
             }
-            Animator.SetTrigger(activatedTriggerParameters);
+
+            if (ActivatedTriggers.Add(activatedTriggerParameters))
+            {
+                invalidated = true;
+            }
+            
+           // Animator.SetTrigger(activatedTriggerParameters);
         }
 
         [ServerRpc(Delivery = RpcDelivery.Reliable)]
@@ -352,7 +426,11 @@ namespace MLAPI.Prototyping
                 return;
             }
             
-            Animator.SetTrigger(activatedTriggerParameters);
+            if (ActivatedTriggers.Add(activatedTriggerParameters))
+            {
+                invalidated = true;
+            }
+            //Animator.SetTrigger(activatedTriggerParameters);
             
             var clientRpcParams = new ClientRpcParams
             {

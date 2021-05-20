@@ -25,6 +25,7 @@ public class UnityNetChanController : NetworkBehaviour
             }  
             if(Input.GetKeyDown(KeyCode.Space))
             {
+                Debug.Log($"Input: jump {Time.frameCount}");
                 m_Animator.SetTrigger("Jump");
             }  
         }
