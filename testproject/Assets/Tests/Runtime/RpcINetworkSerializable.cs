@@ -18,6 +18,7 @@ namespace TestProject.RuntimeTests
         private int m_OriginalTargetFrameRate;
 
         private UserSerializableClass m_UserSerializableClass;
+        private List<UserSerializableClass> m_UserSerializableClassArray;
 
         private bool m_FinishedTest;
 
@@ -135,6 +136,123 @@ namespace TestProject.RuntimeTests
             m_FinishedTest = true;
         }
 
+
+        /// <summary>
+        /// Tests that INetworkSerializable can be used through RPCs by a user
+        /// </summary>
+        /// <returns></returns>
+        [UnityTest]
+        public IEnumerator NetworkSerializableArrayTest()
+        {
+            m_FinishedTest = false;
+            var numClients = 1;
+            var startTime = Time.realtimeSinceStartup;
+
+            // Create Host and (numClients) clients 
+            Assert.True(MultiInstanceHelpers.Create(numClients, out NetworkManager server, out NetworkManager[] clients));
+
+            // Create a default player GameObject to use
+            m_PlayerPrefab = new GameObject("Player");
+            var networkObject = m_PlayerPrefab.AddComponent<NetworkObject>();
+            m_PlayerPrefab.AddComponent<TestCustomTypesArrayComponent>();
+
+            // Make it a prefab
+            MultiInstanceHelpers.MakeNetworkedObjectTestPrefab(networkObject);
+
+            // [Host-Side] Set the player prefab
+            server.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
+
+            foreach (var client in clients)
+            {
+                client.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
+            }
+
+            // Start the instances
+            if (!MultiInstanceHelpers.Start(true, server, clients))
+            {
+                Debug.LogError("Failed to start instances");
+                Assert.Fail("Failed to start instances");
+            }
+
+            // [Client-Side] Wait for a connection to the server 
+            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(clients, null, 512));
+
+            // [Host-Side] Check to make sure all clients are connected
+            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnectedToServer(server, clients.Length + 1, null, 512));
+
+            // [Host-Side] Get the host-server side Player's NetworkObject so we can grab that instance of the TestSerializationComponent
+            var serverClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
+            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == clients[0].LocalClientId), server, serverClientPlayerResult));
+            var serverSideNetworkBehaviourClass = serverClientPlayerResult.Result.gameObject.GetComponent<TestCustomTypesArrayComponent>();
+            serverSideNetworkBehaviourClass.OnSerializableClassesUpdatedServerRpc = OnServerReceivedUserSerializableClassesUpdated;
+
+            // [Client-Side] Get the client side Player's NetworkObject so we can grab that instance of the TestSerializationComponent
+            var clientClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
+            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == clients[0].LocalClientId), clients[0], clientClientPlayerResult));
+            var clientSideNetworkBehaviourClass = clientClientPlayerResult.Result.gameObject.GetComponent<TestCustomTypesArrayComponent>();
+            clientSideNetworkBehaviourClass.OnSerializableClassesUpdatedClientRpc = OnClientReceivedUserSerializableClassesUpdated;
+
+            m_UserSerializableClassArray = new List<UserSerializableClass>();
+
+            // Create an array of userSerializableClass instances 
+            for (int i = 0; i < 32; i++)
+            {
+                var userSerializableClass = new UserSerializableClass();
+                userSerializableClass.MyByteListValues.Add(128);
+                userSerializableClass.MyintValue = i;                   //Used for testing order of the array
+                m_UserSerializableClassArray.Add(userSerializableClass);
+            }
+
+            clientSideNetworkBehaviourClass.ClientStartTest(m_UserSerializableClassArray.ToArray());
+
+            // Wait until the test has finished or we time out
+            var timeOutPeriod = Time.realtimeSinceStartup + 5;
+            var timedOut = false;
+            while (!m_FinishedTest)
+            {
+                if (Time.realtimeSinceStartup > timeOutPeriod)
+                {
+                    timedOut = true;
+                    break;
+                }
+
+                yield return new WaitForSeconds(0.1f);
+            }
+
+            // Verify the test passed
+            Assert.False(timedOut);
+
+            // End of test
+            clients[0].StopClient();
+            server.StopHost();
+
+        }
+
+        private void OnClientReceivedUserSerializableClassesUpdated(UserSerializableClass[] userSerializableClass)
+        {
+            var indexCount = 0;
+            // Check the order of the array
+            foreach (var customTypeEntry in userSerializableClass)
+            {
+                Assert.AreEqual(customTypeEntry.MyintValue, indexCount);
+                Assert.AreEqual(customTypeEntry.MyByteListValues[0], 128);
+                indexCount++;
+            }
+            m_FinishedTest = true;
+        }
+
+        private void OnServerReceivedUserSerializableClassesUpdated(UserSerializableClass[] userSerializableClass)
+        {
+            var indexCount = 0;
+            // Check the order of the array
+            foreach (var customTypeEntry in userSerializableClass)
+            {
+                Assert.AreEqual(customTypeEntry.MyintValue, indexCount);
+                Assert.AreEqual(customTypeEntry.MyByteListValues[0], 128);
+                indexCount++;
+            }
+        }
+        
         [TearDown]
         public void TearDown()
         {
@@ -199,6 +317,50 @@ namespace TestProject.RuntimeTests
             if (OnSerializableClassUpdated != null)
             {
                 OnSerializableClassUpdated.Invoke(userSerializableClass);
+            }
+        }
+    }
+
+    public class TestCustomTypesArrayComponent : NetworkBehaviour
+    {
+        public delegate void OnSerializableClassesUpdatedDelgateHandler(UserSerializableClass[] userSerializableClasses);
+
+        public OnSerializableClassesUpdatedDelgateHandler OnSerializableClassesUpdatedServerRpc;
+        public OnSerializableClassesUpdatedDelgateHandler OnSerializableClassesUpdatedClientRpc;
+
+        /// <summary>
+        /// Starts the unit test and passes the UserSerializableClass from the client to the server
+        /// </summary>
+        /// <param name="userSerializableClass"></param>
+        public void ClientStartTest(UserSerializableClass[] userSerializableClasses)
+        {
+            SendServerSerializedDataServerRpc(userSerializableClasses);
+        }
+
+        /// <summary>
+        /// Server receives the UserSerializableClass, modifies it, and sends it back
+        /// </summary>
+        /// <param name="userSerializableClass"></param>
+        [ServerRpc(RequireOwnership = false)]
+        private void SendServerSerializedDataServerRpc(UserSerializableClass[] userSerializableClasses)
+        {
+            if(OnSerializableClassesUpdatedServerRpc != null)
+            {
+                OnSerializableClassesUpdatedServerRpc.Invoke(userSerializableClasses);
+            }
+            SendClientSerializedDataClientRpc(userSerializableClasses);
+        }
+
+        /// <summary>
+        /// Client receives the UserSerializableClass and then invokes the OnSerializableClassUpdated (if set)
+        /// </summary>
+        /// <param name="userSerializableClass"></param>
+        [ClientRpc]
+        private void SendClientSerializedDataClientRpc(UserSerializableClass[] userSerializableClasses)
+        {
+            if (OnSerializableClassesUpdatedClientRpc != null)
+            {
+                OnSerializableClassesUpdatedClientRpc.Invoke(userSerializableClasses);
             }
         }
     }
