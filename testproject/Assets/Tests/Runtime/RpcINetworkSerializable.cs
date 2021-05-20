@@ -12,8 +12,7 @@ using Debug = UnityEngine.Debug;
 namespace TestProject.RuntimeTests
 {
     public class RpcINetworkSerializable
-    {       
-
+    {
         private GameObject m_PlayerPrefab;
 
         private int m_OriginalTargetFrameRate;
@@ -45,7 +44,6 @@ namespace TestProject.RuntimeTests
         {
             m_FinishedTest = false;
             var numClients = 1;
-
             var startTime = Time.realtimeSinceStartup;
 
             // Create Host and (numClients) clients 
@@ -54,8 +52,7 @@ namespace TestProject.RuntimeTests
             // Create a default player GameObject to use
             m_PlayerPrefab = new GameObject("Player");
             var networkObject = m_PlayerPrefab.AddComponent<NetworkObject>();
-            m_PlayerPrefab.AddComponent<TestSerializationComponent>(); 
-
+            m_PlayerPrefab.AddComponent<TestSerializationComponent>();
 
             // Make it a prefab
             MultiInstanceHelpers.MakeNetworkedObjectTestPrefab(networkObject);
@@ -98,9 +95,9 @@ namespace TestProject.RuntimeTests
             // Wait until the test has finished or we time out
             var timeOutPeriod = Time.realtimeSinceStartup + 5;
             var timedOut = false;
-            while(!m_FinishedTest)
+            while (!m_FinishedTest)
             {
-                if(Time.realtimeSinceStartup > timeOutPeriod)
+                if (Time.realtimeSinceStartup > timeOutPeriod)
                 {
                     timedOut = true;
                     break;
@@ -114,7 +111,7 @@ namespace TestProject.RuntimeTests
             Assert.IsNotNull(m_UserSerializableClass);
             Assert.AreEqual(m_UserSerializableClass.MyintValue, userSerializableClass.MyintValue + 1);
             Assert.AreEqual(m_UserSerializableClass.MyulongValue, userSerializableClass.MyulongValue + 1);
-            Assert.AreEqual(m_UserSerializableClass.MyByteListValues.Count,2);
+            Assert.AreEqual(m_UserSerializableClass.MyByteListValues.Count, 2);
             Assert.AreEqual(m_UserSerializableClass.MyByteListValues[0], 64);
             Assert.AreEqual(m_UserSerializableClass.MyByteListValues[1], 128);
 
@@ -153,11 +150,19 @@ namespace TestProject.RuntimeTests
 
         public OnSerializableClassUpdatedDelgateHandler OnSerializableClassUpdated;
 
+        /// <summary>
+        /// Starts the unit test and passes the UserSerializableClass from the client to the server
+        /// </summary>
+        /// <param name="userSerializableClass"></param>
         public void ClientStartTest(UserSerializableClass userSerializableClass)
         {
             SendServerSerializedDataServerRpc(userSerializableClass);
         }
 
+        /// <summary>
+        /// Server receives the UserSerializableClass, modifies it, and sends it back
+        /// </summary>
+        /// <param name="userSerializableClass"></param>
         [ServerRpc(RequireOwnership = false)]
         private void SendServerSerializedDataServerRpc(UserSerializableClass userSerializableClass)
         {
@@ -167,6 +172,10 @@ namespace TestProject.RuntimeTests
             SendClientSerializedDataClientRpc(userSerializableClass);
         }
 
+        /// <summary>
+        /// Client receives the UserSerializableClass and then invokes the OnSerializableClassUpdated (if set)
+        /// </summary>
+        /// <param name="userSerializableClass"></param>
         [ClientRpc]
         private void SendClientSerializedDataClientRpc(UserSerializableClass userSerializableClass)
         {
@@ -177,6 +186,9 @@ namespace TestProject.RuntimeTests
         }
     }
 
+    /// <summary>
+    /// The test version of a custom user-defined class that implements INetworkSerializable 
+    /// </summary>
     public class UserSerializableClass : INetworkSerializable
     {
         public int MyintValue;
