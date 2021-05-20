@@ -43,11 +43,11 @@ namespace MLAPI
     internal class Snapshot
     {
         // todo --M1-- functionality to grow these will be needed in a later milestone
-        private const int k_MaxVariables = 64;
-        private const int k_BufferSize = 20000;
+        private const int k_MaxVariables = 600;
+        private const int k_BufferSize = 10000;
 
         public byte[] Buffer = new byte[k_BufferSize];
-        internal IndexAllocator m_Allocator = new IndexAllocator(20000);
+        internal IndexAllocator m_Allocator;
 
         public Entry[] Entries = new Entry[k_MaxVariables];
         public int LastEntry = 0;
@@ -65,8 +65,16 @@ namespace MLAPI
         public Snapshot(NetworkManager networkManager, bool tickIndex)
         {
             Stream = new MemoryStream(Buffer, 0, k_BufferSize);
+            // we ask for twice as many slots because there could end up being one free spot between each pair of slot used
+            m_Allocator = new IndexAllocator(k_BufferSize, k_MaxVariables * 2);
             m_NetworkManager = networkManager;
             m_tickIndex = tickIndex;
+        }
+
+        public void Clear()
+        {
+            LastEntry = 0;
+            m_Allocator.Reset();
         }
 
         // todo --M1--
@@ -302,12 +310,16 @@ namespace MLAPI
                     }
 
                     //m_Snapshot.m_Allocator.DebugDisplay();
-                    DebugDisplayStore(m_Snapshot, "Entries");
+/*                    DebugDisplayStore(m_Snapshot, "Entries");
 
                     foreach(var item in m_ClientReceivedSnapshot)
                     {
                         DebugDisplayStore(item.Value, "Received Entries " + item.Key);
                     }
+*/
+                    // todo: --M1b--
+                    // for now we clear our send snapshot because we don't have per-client partial sends
+                    m_Snapshot.Clear();
                 }
             }
         }

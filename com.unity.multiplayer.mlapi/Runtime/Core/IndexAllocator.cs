@@ -13,18 +13,21 @@ namespace MLAPI
 
     internal class IndexAllocator
     {
-        private const int k_MaxSlot = 128;
+        private int m_MaxSlot;
         private const int k_NotSet = -1;
         private readonly int m_BufferSize;
 
         private int m_LastUsed = 0;
 
-        private IndexAllocatorEntry[] m_Slots = new IndexAllocatorEntry[k_MaxSlot];
-        private int[] m_IndexToSlot = new int[k_MaxSlot];
+        private IndexAllocatorEntry[] m_Slots;
+        private int[] m_IndexToSlot;
 
-        internal IndexAllocator(int bufferSize)
+        internal IndexAllocator(int bufferSize, int maxSlot)
         {
+            m_MaxSlot = maxSlot;
             m_BufferSize = bufferSize;
+            m_Slots = new IndexAllocatorEntry[m_MaxSlot];
+            m_IndexToSlot = new int[m_MaxSlot];
             Reset();
         }
 
@@ -32,7 +35,7 @@ namespace MLAPI
         {
             // todo: could be made faster, for example by having a last index
             // and not needing valid stuff past it
-            for (int i = 0; i < k_MaxSlot; i++)
+            for (int i = 0; i < m_MaxSlot; i++)
             {
                 m_Slots[i].free = true;
                 m_Slots[i].next = i + 1;
@@ -46,7 +49,7 @@ namespace MLAPI
             m_Slots[0].pos = 0;
             m_Slots[0].length = m_BufferSize;
             m_Slots[0].prev = k_NotSet;
-            m_Slots[k_MaxSlot - 1].next = k_NotSet;
+            m_Slots[m_MaxSlot - 1].next = k_NotSet;
         }
 
 
@@ -73,7 +76,7 @@ namespace MLAPI
             // todo: this is the slowest part
             // improvement 1: list of free blocks (minor)
             // improvement 2: heap of free blocks
-            for (int i = 0; i < k_MaxSlot; i++)
+            for (int i = 0; i < m_MaxSlot; i++)
             {
                 if (m_Slots[i].free && m_Slots[i].length >= size)
                 {
@@ -116,11 +119,11 @@ namespace MLAPI
         // Returns the slot that was picked
         private int MoveSlotAfter(int slot)
         {
-            int ret = m_Slots[k_MaxSlot - 1].prev;
+            int ret = m_Slots[m_MaxSlot - 1].prev;
             int p0 = m_Slots[ret].prev;
 
-            m_Slots[p0].next = k_MaxSlot - 1;
-            m_Slots[k_MaxSlot - 1].prev = p0;
+            m_Slots[p0].next = m_MaxSlot - 1;
+            m_Slots[m_MaxSlot - 1].prev = p0;
 
             int p1 = m_Slots[slot].next;
             m_Slots[slot].next = ret;
@@ -150,12 +153,12 @@ namespace MLAPI
                 m_Slots[next].prev = prev;
             }
 
-            int p0 = m_Slots[k_MaxSlot - 1].prev;
+            int p0 = m_Slots[m_MaxSlot - 1].prev;
 
             m_Slots[p0].next = slot;
-            m_Slots[slot].next = k_MaxSlot - 1;
+            m_Slots[slot].next = m_MaxSlot - 1;
 
-            m_Slots[k_MaxSlot - 1].prev = slot;
+            m_Slots[m_MaxSlot - 1].prev = slot;
             m_Slots[slot].prev = p0;
 
             m_Slots[slot].pos = m_BufferSize;
@@ -281,7 +284,7 @@ namespace MLAPI
 
             } while (pos != k_NotSet);
 
-            if (count != k_MaxSlot)
+            if (count != m_MaxSlot)
             {
                 // some slots were lost
                 return false;
@@ -305,7 +308,7 @@ namespace MLAPI
         {
             string logMessage = "IndexAllocator structure\n";
 
-            bool[] seen = new bool[k_MaxSlot];
+            bool[] seen = new bool[m_MaxSlot];
 
 
             int pos = 0;
