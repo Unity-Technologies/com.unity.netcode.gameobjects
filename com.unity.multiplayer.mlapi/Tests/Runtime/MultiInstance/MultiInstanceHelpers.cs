@@ -69,7 +69,7 @@ namespace MLAPI.RuntimeTests
         }
 
         /// <summary>
-        /// ***Should always be invoked when finished with a single unit test***
+        /// Should always be invoked when finished with a single unit test
         /// (i.e. during TearDown)
         /// </summary>
         public static void Destroy()
@@ -202,9 +202,9 @@ namespace MLAPI.RuntimeTests
                 }
             }
 
-            var startFrame = Time.frameCount;
+            var startFrameNumber = Time.frameCount;
             var allConnected = true;
-            while (Time.frameCount - startFrame <= maxFrames)
+            while (Time.frameCount - startFrameNumber <= maxFrames)
             {
                 allConnected = true;
                 foreach (var client in clients)
@@ -260,9 +260,9 @@ namespace MLAPI.RuntimeTests
                 throw new InvalidOperationException("Cannot wait for connected as client");
             }
 
-            var startFrame = Time.frameCount;
+            var startFrameNumber = Time.frameCount;
 
-            while (Time.frameCount - startFrame <= maxFrames && server.ConnectedClients.Count != clientCount)
+            while (Time.frameCount - startFrameNumber <= maxFrames && server.ConnectedClients.Count != clientCount)
             {
                 var nextFrameNumber = Time.frameCount + 1;
                 yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
@@ -295,9 +295,9 @@ namespace MLAPI.RuntimeTests
                 throw new ArgumentNullException("Result cannot be null");
             }
 
-            var startFrame = Time.frameCount;
+            var startFrameNumber = Time.frameCount;
 
-            while (Time.frameCount - startFrame <= maxFrames && representation.SpawnManager.SpawnedObjects.All(x => x.Value.NetworkObjectId != networkObjectId))
+            while (Time.frameCount - startFrameNumber <= maxFrames && representation.SpawnManager.SpawnedObjects.All(x => x.Value.NetworkObjectId != networkObjectId))
             {
                 var nextFrameNumber = Time.frameCount + 1;
                 yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
@@ -360,9 +360,9 @@ namespace MLAPI.RuntimeTests
                 throw new ArgumentNullException("Predicate cannot be null");
             }
 
-            var startFrame = Time.frameCount;
+            var startFrameNumber = Time.frameCount;
 
-            while (Time.frameCount - startFrame <= maxFrames && !predicate())
+            while (Time.frameCount - startFrameNumber <= maxFrames && !predicate())
             {
                 var nextFrameNumber = Time.frameCount + 1;
                 yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);

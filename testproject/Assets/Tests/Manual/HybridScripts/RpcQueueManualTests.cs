@@ -131,7 +131,6 @@ namespace TestProject.ManualTests
 
         public void SetTestingMode(bool enabled, int iterationCount)
         {
-            //Assure this is set... 
             m_ContinueToRun = true;
             m_RunInTestMode = enabled;
             m_IterationsToRun = Mathf.Clamp(iterationCount, 1, 10);
