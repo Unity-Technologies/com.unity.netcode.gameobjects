@@ -197,8 +197,7 @@ namespace TestProject.RuntimeTests
             // Create an array of userSerializableClass instances 
             for (int i = 0; i < 32; i++)
             {
-                var userSerializableClass = new UserSerializableClass();
-                userSerializableClass.MyByteListValues.Add(128);
+                var userSerializableClass = new UserSerializableClass();                
                 userSerializableClass.MyintValue = i;                   //Used for testing order of the array
                 m_UserSerializableClassArray.Add(userSerializableClass);
             }
@@ -228,31 +227,30 @@ namespace TestProject.RuntimeTests
 
         }
 
-        private void OnClientReceivedUserSerializableClassesUpdated(UserSerializableClass[] userSerializableClass)
+        // Verifies the array maintained its order
+        private void ValidateUserSerializableClasses(UserSerializableClass[] userSerializableClass)
         {
             var indexCount = 0;
             // Check the order of the array
             foreach (var customTypeEntry in userSerializableClass)
             {
                 Assert.AreEqual(customTypeEntry.MyintValue, indexCount);
-                Assert.AreEqual(customTypeEntry.MyByteListValues[0], 128);
                 indexCount++;
             }
+        }
+
+        private void OnClientReceivedUserSerializableClassesUpdated(UserSerializableClass[] userSerializableClass)
+        {
+            ValidateUserSerializableClasses(userSerializableClass);
             m_FinishedTest = true;
         }
 
         private void OnServerReceivedUserSerializableClassesUpdated(UserSerializableClass[] userSerializableClass)
         {
-            var indexCount = 0;
-            // Check the order of the array
-            foreach (var customTypeEntry in userSerializableClass)
-            {
-                Assert.AreEqual(customTypeEntry.MyintValue, indexCount);
-                Assert.AreEqual(customTypeEntry.MyByteListValues[0], 128);
-                indexCount++;
-            }
+            ValidateUserSerializableClasses(userSerializableClass);
         }
-        
+
+
         [TearDown]
         public void TearDown()
         {
@@ -329,7 +327,7 @@ namespace TestProject.RuntimeTests
         public OnSerializableClassesUpdatedDelgateHandler OnSerializableClassesUpdatedClientRpc;
 
         /// <summary>
-        /// Starts the unit test and passes the UserSerializableClass from the client to the server
+        /// Starts the unit test and passes the userSerializableClasses array from the client to the server
         /// </summary>
         /// <param name="userSerializableClass"></param>
         public void ClientStartTest(UserSerializableClass[] userSerializableClasses)
@@ -338,7 +336,7 @@ namespace TestProject.RuntimeTests
         }
 
         /// <summary>
-        /// Server receives the UserSerializableClass, modifies it, and sends it back
+        /// Server receives the UserSerializableClasses array, invokes the callback that checks the order, and then passes it back to the client
         /// </summary>
         /// <param name="userSerializableClass"></param>
         [ServerRpc(RequireOwnership = false)]
@@ -352,7 +350,7 @@ namespace TestProject.RuntimeTests
         }
 
         /// <summary>
-        /// Client receives the UserSerializableClass and then invokes the OnSerializableClassUpdated (if set)
+        /// Client receives the UserSerializableClasses array and invokes the callback for verification and signaling the test is complete.
         /// </summary>
         /// <param name="userSerializableClass"></param>
         [ClientRpc]
