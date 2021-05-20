@@ -89,6 +89,8 @@ namespace MLAPI.RuntimeTests
                 Object.Destroy(networkManager.gameObject);
             }
 
+            NetworkManagerInstances.Clear();
+
             // Destroy the temporary GameObject used to run co-routines
             if (s_CoroutineRunner != null)
             {
