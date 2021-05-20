@@ -86,7 +86,11 @@ namespace TestProject.RuntimeTests
 
 
             var userSerializableClass = new UserSerializableClass();
-            userSerializableClass.MyByteListValues.Add(64);
+            for(int i = 0; i < 32; i++)
+            {
+                userSerializableClass.MyByteListValues.Add((byte)i);
+            }
+
             userSerializableClass.MyintValue = 1;
             userSerializableClass.MyulongValue = 100;
 
@@ -111,9 +115,13 @@ namespace TestProject.RuntimeTests
             Assert.IsNotNull(m_UserSerializableClass);
             Assert.AreEqual(m_UserSerializableClass.MyintValue, userSerializableClass.MyintValue + 1);
             Assert.AreEqual(m_UserSerializableClass.MyulongValue, userSerializableClass.MyulongValue + 1);
-            Assert.AreEqual(m_UserSerializableClass.MyByteListValues.Count, 2);
-            Assert.AreEqual(m_UserSerializableClass.MyByteListValues[0], 64);
-            Assert.AreEqual(m_UserSerializableClass.MyByteListValues[1], 128);
+            Assert.AreEqual(m_UserSerializableClass.MyByteListValues.Count, 64);
+
+            // Validate the list is being sent in order on both sides.
+            for (int i = 0; i < 32; i++)
+            {
+                Assert.AreEqual(m_UserSerializableClass.MyByteListValues[i], i);
+            }
 
             // End of test
             clients[0].StopClient();
@@ -168,7 +176,16 @@ namespace TestProject.RuntimeTests
         {
             userSerializableClass.MyintValue++;
             userSerializableClass.MyulongValue++;
-            userSerializableClass.MyByteListValues.Add(128);
+
+            for (int i = 0; i < 32; i++)
+            {
+                Assert.AreEqual(userSerializableClass.MyByteListValues[i], i);
+            }
+
+            for (int i = 32; i < 64; i++)
+            {
+                userSerializableClass.MyByteListValues.Add((byte)i);
+            }
             SendClientSerializedDataClientRpc(userSerializableClass);
         }
 
