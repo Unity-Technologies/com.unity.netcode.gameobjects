@@ -177,7 +177,7 @@ MonoBehaviour:
     RegisteredScenes:
     - NetworkAnimatorEnhancement
     AllowRuntimeSceneChanges: 0
-    PlayerPrefab: {fileID: 442217489085244684, guid: a60237e6cfaef2441a4cdafdb556a75b,
+    PlayerPrefab: {fileID: 1186683784083975934, guid: 3d15e7e597e1ac447bbc094e317e6780,
       type: 3}
     NetworkPrefabs:
     - Override: 0
@@ -185,6 +185,18 @@ MonoBehaviour:
         type: 3}
       SourcePrefabToOverride: {fileID: 442217489085244684, guid: 5eca8a21314fe4278ba2571c289a9773,
         type: 3}
+      SourceHashToOverride: 0
+      OverridingTargetPrefab: {fileID: 0}
+    - Override: 0
+      Prefab: {fileID: 442217489085244684, guid: fc14d85021a6b4146a1cfef13d7a3ad7,
+        type: 3}
+      SourcePrefabToOverride: {fileID: 0}
+      SourceHashToOverride: 0
+      OverridingTargetPrefab: {fileID: 0}
+    - Override: 0
+      Prefab: {fileID: 1186683784083975934, guid: 3d15e7e597e1ac447bbc094e317e6780,
+        type: 3}
+      SourcePrefabToOverride: {fileID: 0}
       SourceHashToOverride: 0
       OverridingTargetPrefab: {fileID: 0}
     ReceiveTickrate: 64

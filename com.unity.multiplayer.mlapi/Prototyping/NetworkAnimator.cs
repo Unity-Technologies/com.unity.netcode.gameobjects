@@ -239,6 +239,11 @@ namespace MLAPI.Prototyping
         
         private void FixedUpdate()
         {
+            if (!NetworkObject.IsSpawned)
+            {
+                return;
+            }
+            
             if (!IsOwner)
             {
                 return;
@@ -304,12 +309,17 @@ namespace MLAPI.Prototyping
                     case AnimatorControllerParameterType.Trigger:
                         if (Animator.GetBool(animParamHash))
                         {
+                            Debug.Log($"rpc jump {Time.frameCount}");
                             changed = changed || m_AnimParams.SetTrigger(animParamHash);
                         }
                         break;
                 }
             }
-            
+
+            if (changed)
+            {
+                Debug.Log($"RPC update: {Time.frameCount}");
+            }
             return changed;
         }
 

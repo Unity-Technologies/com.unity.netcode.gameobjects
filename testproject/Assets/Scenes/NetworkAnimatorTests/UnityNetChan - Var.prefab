@@ -2228,10 +2228,10 @@ GameObject:
   - component: {fileID: 7860105962092261004}
   - component: {fileID: -5415634171721841539}
   - component: {fileID: 442217489094760330}
-  - component: {fileID: -8653921750116617309}
   - component: {fileID: -1880662623096729273}
+  - component: {fileID: 3111497331680745989}
   m_Layer: 0
-  m_Name: UnityNetChan
+  m_Name: UnityNetChan - Var
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2265,7 +2265,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 3312080959
+  GlobalObjectIdHash: 951099334
   AlwaysReplicateAsRoot: 0
   DontDestroyWithOwner: 0
 --- !u!114 &-5415634171721841539
@@ -2299,23 +2299,6 @@ Animator:
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorControllerStateOnDisable: 0
---- !u!114 &-8653921750116617309
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 442217489085244684}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e8d0727d5ae3244e3b569694d3912374, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  FixedSendsPerSecond: 30
-  Channel: 10
-  AnimationCatchupDelay: 0.1
-  m_Animator: {fileID: 442217489094760330}
-  m_AnimatorAuthority: 1
 --- !u!114 &-1880662623096729273
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2328,6 +2311,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b322be05414199349ae9d1aea28228a7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &3111497331680745989
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 442217489085244684}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fdac70f2db3441bb905af106a039d06f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  FixedSendsPerSecond: 30
+  Channel: 10
+  AnimationCatchupDelay: 0.2
+  m_Animator: {fileID: 442217489094760330}
+  m_AnimatorAuthority: 1
 --- !u!1 &442217489085244686
 GameObject:
   m_ObjectHideFlags: 0
