@@ -17,7 +17,7 @@ namespace MLAPI
         private const int k_NotSet = -1;
         private readonly int m_BufferSize;
 
-        private int FreeMemoryPosition = 0;
+        private int m_LastUsed = 0;
 
         private IndexAllocatorEntry[] m_Slots = new IndexAllocatorEntry[k_MaxSlot];
         private int[] m_IndexToSlot = new int[k_MaxSlot];
@@ -25,7 +25,13 @@ namespace MLAPI
         internal IndexAllocator(int bufferSize)
         {
             m_BufferSize = bufferSize;
+            Reset();
+        }
 
+        internal void Reset()
+        {
+            // todo: could be made faster, for example by having a last index
+            // and not needing valid stuff past it
             for (int i = 0; i < k_MaxSlot; i++)
             {
                 m_Slots[i].free = true;
@@ -46,14 +52,21 @@ namespace MLAPI
 
         public int Range
         {
-            get { return FreeMemoryPosition; }
+            get {
+                // when the whole buffer is free, m_LastUsed points to an empty slot
+                if (m_Slots[m_LastUsed].free)
+                {
+                    return 0;
+                }
+                // otherwise return the end of the last slot used
+                return m_Slots[m_LastUsed].pos + m_Slots[m_LastUsed].length; }
         }
 
         internal bool Allocate(int index, int size, out int pos)
         {
+            pos = 0;
             if (m_IndexToSlot[index] != k_NotSet)
             {
-                pos = 0;
                 return false;
             }
 
@@ -84,12 +97,17 @@ namespace MLAPI
                     m_Slots[i].free = false;
                     m_Slots[i].length = size;
 
+                    pos = m_Slots[i].pos;
+
+                    // if we allocate past the current range, we are the last slot
+                    if (m_Slots[i].pos + m_Slots[i].length > Range)
+                    {
+                        m_LastUsed = i;
+                    }
+
                     break;
                 }
             }
-
-            pos = FreeMemoryPosition;
-            FreeMemoryPosition += (int) size;
 
             return true;
         }
@@ -168,6 +186,12 @@ namespace MLAPI
                 m_Slots[prev].length += m_Slots[slot].length;
                 m_Slots[slot].length = 0;
 
+                // if the slot we're merging was the last one, the last one is now the one we merged with
+                if (slot == m_LastUsed)
+                {
+                    m_LastUsed = prev;
+                }
+
                 // todo: verify what this does on full or nearly full cases
                 MoveSlotToEnd(slot);
                 slot = prev;
@@ -183,6 +207,17 @@ namespace MLAPI
                 MoveSlotToEnd(next);
             }
 
+            // if we just deallocate the last one, we need to move last back
+            if (slot == m_LastUsed)
+            {
+                m_LastUsed = m_Slots[m_LastUsed].prev;
+                // if there's nothing allocated anymore, use 0
+                if (m_LastUsed == k_NotSet)
+                {
+                    m_LastUsed = 0;
+                }
+            }
+
             // mark the index as available
             m_IndexToSlot[index] = k_NotSet;
 
@@ -194,6 +229,7 @@ namespace MLAPI
             int pos = k_NotSet;
             int count = 0;
             int total = 0;
+            int endPos = 0;
 
             do
             {
@@ -235,6 +271,11 @@ namespace MLAPI
                     return false;
                 }
 
+                if (!m_Slots[pos].free)
+                {
+                    endPos = m_Slots[pos].pos + m_Slots[pos].length;
+                }
+
                 total += m_Slots[pos].length;
                 count++;
 
@@ -248,6 +289,12 @@ namespace MLAPI
 
             if (total != m_BufferSize)
             {
+                return false;
+            }
+
+            if (endPos != Range)
+            {
+                Debug.Log(string.Format("{0} range versue {1} end position", Range, endPos));
                 return false;
             }
 
