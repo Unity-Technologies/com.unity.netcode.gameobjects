@@ -50,7 +50,7 @@ namespace MLAPI.RuntimeTests
              */
 
             // Create playerPrefab
-            GameObject playerPrefab = new GameObject("Player");
+            var playerPrefab = new GameObject("Player");
             NetworkObject networkObject = playerPrefab.AddComponent<NetworkObject>();
             playerPrefab.AddComponent<RPCTestNetworkBehaviour>();
 

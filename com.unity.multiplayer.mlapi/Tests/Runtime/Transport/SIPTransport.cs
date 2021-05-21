@@ -120,12 +120,12 @@ public class SIPTransport : NetworkTransport
                 Data = new ArraySegment<byte>()
             });
         }
-        
+
         if (m_LocalConnection != null && m_LocalConnection.ConnectionId == ServerClientId)
         {
             s_Server = null;
         }
-        
+
 
         // TODO: Cleanup
     }
