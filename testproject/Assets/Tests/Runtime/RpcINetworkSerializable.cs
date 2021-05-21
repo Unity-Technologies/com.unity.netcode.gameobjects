@@ -22,6 +22,8 @@ namespace TestProject.RuntimeTests
 
         private bool m_FinishedTest;
 
+        private bool m_IsSendingNull;
+
         [SetUp]
         public void SetUp()
         {
@@ -149,6 +151,40 @@ namespace TestProject.RuntimeTests
         [UnityTest]
         public IEnumerator NetworkSerializableArrayTest()
         {
+            return NetworkSerializableArrayTestHandler(32);
+        }
+
+        /// <summary>
+        /// Tests that an array of the same type of class that implements the
+        /// INetworkSerializable interface can send an empty array
+        /// </summary>
+        /// <returns></returns>
+        [UnityTest]
+        public IEnumerator NetworkSerializableEmptyArrayTest()
+        {
+            return NetworkSerializableArrayTestHandler(0);
+        }
+
+        /// <summary>
+        /// Tests that an array of the same type of class that implements the
+        /// INetworkSerializable interface can send a null value for the array
+        /// </summary>
+        /// <returns></returns>
+        [UnityTest]
+        public IEnumerator NetworkSerializableNULLArrayTest()
+        {
+            return NetworkSerializableArrayTestHandler(0,true);
+        }
+
+        /// <summary>
+        /// Handles the various tests for INetworkSerializable arrays
+        /// </summary>
+        /// <param name="arraySize">how many elements</param>
+        /// <param name="sendNullArray">force to send a null as the array value</param>
+        /// <returns></returns>
+        public IEnumerator NetworkSerializableArrayTestHandler(int arraySize, bool sendNullArray = false)
+        {
+            m_IsSendingNull = sendNullArray;
             m_FinishedTest = false;
             var numClients = 1;
             var startTime = Time.realtimeSinceStartup;
@@ -199,16 +235,23 @@ namespace TestProject.RuntimeTests
 
             m_UserSerializableClassArray = new List<UserSerializableClass>();
 
-            // Create an array of userSerializableClass instances 
-            for (int i = 0; i < 32; i++)
+            if (!m_IsSendingNull)
             {
-                var userSerializableClass = new UserSerializableClass();
-                //Used for testing order of the array
-                userSerializableClass.MyintValue = i;  
-                m_UserSerializableClassArray.Add(userSerializableClass);
-            }
+                // Create an array of userSerializableClass instances 
+                for (int i = 0; i < 32; i++)
+                {
+                    var userSerializableClass = new UserSerializableClass();
+                    //Used for testing order of the array
+                    userSerializableClass.MyintValue = i;
+                    m_UserSerializableClassArray.Add(userSerializableClass);
+                }
 
-            clientSideNetworkBehaviourClass.ClientStartTest(m_UserSerializableClassArray.ToArray());
+                clientSideNetworkBehaviourClass.ClientStartTest(m_UserSerializableClassArray.ToArray());
+            }
+            else
+            {
+                clientSideNetworkBehaviourClass.ClientStartTest(null);
+            }
 
             // Wait until the test has finished or we time out
             var timeOutPeriod = Time.realtimeSinceStartup + 5;
@@ -240,12 +283,19 @@ namespace TestProject.RuntimeTests
         /// <param name="userSerializableClass"></param>
         private void ValidateUserSerializableClasses(UserSerializableClass[] userSerializableClass)
         {
-            var indexCount = 0;
-            // Check the order of the array
-            foreach (var customTypeEntry in userSerializableClass)
+            if (m_IsSendingNull)
             {
-                Assert.AreEqual(customTypeEntry.MyintValue, indexCount);
-                indexCount++;
+                Assert.IsNull(userSerializableClass);
+            }
+            else
+            {
+                var indexCount = 0;
+                // Check the order of the array
+                foreach (var customTypeEntry in userSerializableClass)
+                {
+                    Assert.AreEqual(customTypeEntry.MyintValue, indexCount);
+                    indexCount++;
+                }
             }
         }
 
