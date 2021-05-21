@@ -9,17 +9,26 @@ using static MLAPI.Prototyping.NetworkTransform;
 
 namespace MLAPI.RuntimeTests
 {
+    [TestFixture(true)]
+    [TestFixture(false)]
     public class NetworkTransformTests : BaseMultiInstanceTest
     {
         private NetworkObject m_ClientSideClientPlayer;
         private NetworkObject m_ServerSideClientPlayer;
+
+        private bool m_TestWithHost;
+
+        public NetworkTransformTests(bool testWithHost)
+        {
+            m_TestWithHost = testWithHost;
+        }
 
         [UnitySetUp]
         public new IEnumerator Setup()
         {
             base.Setup();
 
-            yield return StartSomeClientAndServer(nbClients: 1, updatePlayerPrefab: playerPrefab =>
+            yield return StartSomeClientAndServer(useHost: m_TestWithHost, nbClients: 1, updatePlayerPrefab: playerPrefab =>
             {
                 var networkTransform = playerPrefab.AddComponent<NetworkTransform>();
             });

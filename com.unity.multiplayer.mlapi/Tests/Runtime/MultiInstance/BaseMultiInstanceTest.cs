@@ -43,7 +43,7 @@ namespace MLAPI.RuntimeTests
         /// <param name="nbClients"></param>
         /// <param name="updatePlayerPrefab">Update the prefab with whatever is needed before players spawn</param>
         /// <returns></returns>
-        public IEnumerator StartSomeClientAndServer(int nbClients, Action<GameObject> updatePlayerPrefab)
+        public IEnumerator StartSomeClientAndServer(bool useHost, int nbClients, Action<GameObject> updatePlayerPrefab)
         {
             // Create multiple NetworkManager instances
             if (!MultiInstanceHelpers.Create(nbClients, out NetworkManager server, out NetworkManager[] clients))
@@ -73,7 +73,7 @@ namespace MLAPI.RuntimeTests
             }
 
             // Start the instances
-            if (!MultiInstanceHelpers.Start(true, server, clients))
+            if (!MultiInstanceHelpers.Start(useHost, server, clients))
             {
                 Debug.LogError("Failed to start instances");
                 Assert.Fail("Failed to start instances");
@@ -86,7 +86,7 @@ namespace MLAPI.RuntimeTests
             }
 
             // Wait for connection on server side
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnectedToServer(server, clientCount: nbClients+1));
+            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnectedToServer(server, clientCount: useHost ? nbClients+1 : nbClients));
         }
     }
 }
