@@ -289,6 +289,11 @@ namespace MLAPI
 
         public void NetworkUpdate(NetworkUpdateStage updateStage)
         {
+            if (!NetworkManager.UseSnapshot)
+            {
+                return;
+            }
+
             if (updateStage == NetworkUpdateStage.EarlyUpdate)
             {
                 var tick = m_NetworkManager.NetworkTickSystem.GetTick();
@@ -304,7 +309,7 @@ namespace MLAPI
                             SendSnapshot(clientId);
                         }
                     }
-                    else
+                    else if (m_NetworkManager.IsConnectedClient)
                     {
                         SendSnapshot(m_NetworkManager.ServerClientId);
                     }
