@@ -87,7 +87,7 @@ namespace TestProject.RuntimeTests
 
 
             var userSerializableClass = new UserSerializableClass();
-            for(int i = 0; i < 32; i++)
+            for (int i = 0; i < 32; i++)
             {
                 userSerializableClass.MyByteListValues.Add((byte)i);
             }
@@ -130,15 +130,20 @@ namespace TestProject.RuntimeTests
 
         }
 
+        /// <summary>
+        /// Delegate handler invoked towards the end of the when the NetworkSerializableTest
+        /// </summary>
+        /// <param name="userSerializableClass"></param>
         private void OnClientReceivedUserSerializableClassUpdated(UserSerializableClass userSerializableClass)
         {
             m_UserSerializableClass = userSerializableClass;
             m_FinishedTest = true;
         }
 
-
         /// <summary>
-        /// Tests that INetworkSerializable can be used through RPCs by a user
+        /// Tests that an array of the same type of class that implements the
+        /// INetworkSerializable interface will be received in the same order
+        /// that it was sent.
         /// </summary>
         /// <returns></returns>
         [UnityTest]
@@ -197,7 +202,7 @@ namespace TestProject.RuntimeTests
             // Create an array of userSerializableClass instances 
             for (int i = 0; i < 32; i++)
             {
-                var userSerializableClass = new UserSerializableClass();                
+                var userSerializableClass = new UserSerializableClass();
                 userSerializableClass.MyintValue = i;                   //Used for testing order of the array
                 m_UserSerializableClassArray.Add(userSerializableClass);
             }
@@ -227,7 +232,11 @@ namespace TestProject.RuntimeTests
 
         }
 
-        // Verifies the array maintained its order
+        /// <summary>
+        /// Verifies that the UserSerializableClass array is in the same order
+        /// that it was sent.
+        /// </summary>
+        /// <param name="userSerializableClass"></param>
         private void ValidateUserSerializableClasses(UserSerializableClass[] userSerializableClass)
         {
             var indexCount = 0;
@@ -239,17 +248,26 @@ namespace TestProject.RuntimeTests
             }
         }
 
+        /// <summary>
+        /// Delegate handler invoked when the server sends the client
+        /// the UserSerializableClass array during the NetworkSerializableArrayTest
+        /// </summary>
+        /// <param name="userSerializableClass"></param>
         private void OnClientReceivedUserSerializableClassesUpdated(UserSerializableClass[] userSerializableClass)
         {
             ValidateUserSerializableClasses(userSerializableClass);
             m_FinishedTest = true;
         }
 
+        /// <summary>
+        /// Delegate handler invoked when the client sends the server
+        /// the UserSerializableClass array during the NetworkSerializableArrayTest
+        /// </summary>
+        /// <param name="userSerializableClass"></param>
         private void OnServerReceivedUserSerializableClassesUpdated(UserSerializableClass[] userSerializableClass)
         {
             ValidateUserSerializableClasses(userSerializableClass);
         }
-
 
         [TearDown]
         public void TearDown()
@@ -268,6 +286,10 @@ namespace TestProject.RuntimeTests
         }
     }
 
+    /// <summary>
+    /// Component used with NetworkSerializableTest that houses the
+    /// client and server RPC calls.
+    /// </summary>
     public class TestSerializationComponent : NetworkBehaviour
     {
         public delegate void OnSerializableClassUpdatedDelgateHandler(UserSerializableClass userSerializableClass);
@@ -319,6 +341,12 @@ namespace TestProject.RuntimeTests
         }
     }
 
+    /// <summary>
+    /// Component used with NetworkSerializableArrayTest that
+    /// houses the client and server RPC calls that pass an
+    /// array of UserSerializableClass between the client and
+    /// the server.
+    /// </summary>
     public class TestCustomTypesArrayComponent : NetworkBehaviour
     {
         public delegate void OnSerializableClassesUpdatedDelgateHandler(UserSerializableClass[] userSerializableClasses);
@@ -327,7 +355,8 @@ namespace TestProject.RuntimeTests
         public OnSerializableClassesUpdatedDelgateHandler OnSerializableClassesUpdatedClientRpc;
 
         /// <summary>
-        /// Starts the unit test and passes the userSerializableClasses array from the client to the server
+        /// Starts the unit test and passes the userSerializableClasses array
+        /// from the client to the server
         /// </summary>
         /// <param name="userSerializableClass"></param>
         public void ClientStartTest(UserSerializableClass[] userSerializableClasses)
@@ -336,13 +365,14 @@ namespace TestProject.RuntimeTests
         }
 
         /// <summary>
-        /// Server receives the UserSerializableClasses array, invokes the callback that checks the order, and then passes it back to the client
+        /// Server receives the UserSerializableClasses array, invokes the callback
+        /// that checks the order, and then passes it back to the client
         /// </summary>
         /// <param name="userSerializableClass"></param>
         [ServerRpc(RequireOwnership = false)]
         private void SendServerSerializedDataServerRpc(UserSerializableClass[] userSerializableClasses)
         {
-            if(OnSerializableClassesUpdatedServerRpc != null)
+            if (OnSerializableClassesUpdatedServerRpc != null)
             {
                 OnSerializableClassesUpdatedServerRpc.Invoke(userSerializableClasses);
             }
@@ -350,7 +380,8 @@ namespace TestProject.RuntimeTests
         }
 
         /// <summary>
-        /// Client receives the UserSerializableClasses array and invokes the callback for verification and signaling the test is complete.
+        /// Client receives the UserSerializableClasses array and invokes the callback
+        /// for verification and signaling the test is complete.
         /// </summary>
         /// <param name="userSerializableClass"></param>
         [ClientRpc]
