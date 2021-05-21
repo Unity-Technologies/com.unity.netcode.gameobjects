@@ -203,7 +203,8 @@ namespace TestProject.RuntimeTests
             for (int i = 0; i < 32; i++)
             {
                 var userSerializableClass = new UserSerializableClass();
-                userSerializableClass.MyintValue = i;                   //Used for testing order of the array
+                //Used for testing order of the array
+                userSerializableClass.MyintValue = i;  
                 m_UserSerializableClassArray.Add(userSerializableClass);
             }
 
