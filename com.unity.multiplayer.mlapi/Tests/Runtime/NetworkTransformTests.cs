@@ -1,98 +1,118 @@
-// using System;
-// using System.Collections;
-// using MLAPI.Prototyping;
-// using NUnit.Framework;
-// using UnityEngine;
-// using UnityEngine.TestTools;
-//
-// namespace MLAPI.RuntimeTests
-// {
-//     public class NetworkTransformTests
-//     {
-//         private NetworkObject m_Player;
-//         private NetworkObject m_PlayerGhost;
-//
-//         [UnitySetUp]
-//         public IEnumerator Setup()
-//         {
-//             LogAssert.ignoreFailingMessages = true;
-//
-//             // Create multiple NetworkManager instances
-//             if (!MultiInstanceHelpers.Create(1, out NetworkManager server, out NetworkManager[] clients))
-//             {
-//                 Debug.LogError("Failed to create instances");
-//                 Assert.Fail("Failed to create instances");
-//             }
-//
-//             // Create playerPrefab
-//             GameObject playerPrefab = new GameObject("Player");
-//             NetworkObject networkObject = playerPrefab.AddComponent<NetworkObject>();
-//             var networkTransform = playerPrefab.AddComponent<NetworkTransform>();
-//             networkTransform.authority = NetworkTransform.Authority.Client;
-//
-//             // Make it a prefab
-//             MultiInstanceHelpers.MakeNetworkedObjectTestPrefab(networkObject);
-//
-//             // Set the player prefab
-//             server.NetworkConfig.PlayerPrefab = playerPrefab;
-//
-//             for (int i = 0; i < clients.Length; i++)
-//             {
-//                 clients[i].NetworkConfig.PlayerPrefab = playerPrefab;
-//             }
-//
-//             // Start the instances
-//             if (!MultiInstanceHelpers.Start(true, server, clients))
-//             {
-//                 Debug.LogError("Failed to start instances");
-//                 Assert.Fail("Failed to start instances");
-//             }
-//
-//             // Wait for connection on client side
-//             yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientConnected(clients[0]));
-//
-//             // Wait for connection on server side
-//             yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientConnectedToServer(server));
-//
-//             // This is the *SERVER VERSION* of the *CLIENT PLAYER*
-//             var serverClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
-//             yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == clients[0].LocalClientId), server, serverClientPlayerResult));
-//
-//             // This is the *CLIENT VERSION* of the *CLIENT PLAYER*
-//             var clientClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
-//             yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == clients[0].LocalClientId), clients[0], clientClientPlayerResult));
-//
-//             m_PlayerGhost = serverClientPlayerResult.Result;
-//             m_Player = clientClientPlayerResult.Result;
-//         }
-//
-//         [UnityTest()]
-//         public IEnumerator TestMove()
-//         {
-//             Debug.Log("Testing position");
-//             var playerTransform = m_Player.transform;
-//             playerTransform.position = new Vector3(10, 0, 0);
-//             Assert.AreEqual(0f, m_PlayerGhost.transform.position.x, "wrong initial value"); // sanity check
-//             yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForCondition(() => m_PlayerGhost.transform.position.x != 0 ));
-//             Assert.AreEqual(10, m_PlayerGhost.transform.position.x, "wrong position on ghost");
-//             Debug.Log("Testing rotation");
-//
-//             playerTransform.rotation = Quaternion.Euler(90, 0, 0);
-//             Assert.AreEqual(90, playerTransform.rotation.eulerAngles.x); // sanity check
-//             Assert.AreEqual(0f, m_PlayerGhost.transform.rotation.x, "wrong initial value"); // sanity check
-//             yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForCondition(() => m_PlayerGhost.transform.rotation.eulerAngles.x != 0 ));
-//             Assert.True(Math.Abs(90 - m_PlayerGhost.transform.rotation.eulerAngles.x) < 0.05f, $"wrong rotation on ghost, expected 90, got {m_PlayerGhost.transform.rotation.eulerAngles.x}");
-//             Debug.Log("Testing scale");
-//
-//             playerTransform.localScale = new Vector3(2, 2, 2);
-//             Assert.AreEqual(1f, m_PlayerGhost.transform.lossyScale.x, "wrong initial value"); // sanity check
-//             yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForCondition(() => m_PlayerGhost.transform.lossyScale.x > 1f ));
-//             Assert.AreEqual(2, m_PlayerGhost.transform.lossyScale.x, "wrong scale on ghost");
-//
-//             // todo reparent and test
-//             // todo add tests for authority
-//             // todo test all public API
-//
-//         }
-//     }
-// }
+using System;
+using System.Collections;
+using System.Text.RegularExpressions;
+using MLAPI.Prototyping;
+using NUnit.Framework;
+using UnityEngine;
+using UnityEngine.TestTools;
+
+namespace MLAPI.RuntimeTests
+{
+    public class NetworkTransformTests : BaseMultiInstanceTest
+    {
+        private NetworkObject m_ClientSideClientPlayer;
+        private NetworkObject m_ServerSideClientPlayer;
+
+        [UnitySetUp]
+        public new IEnumerator Setup()
+        {
+            base.Setup();
+
+            yield return StartSomeClientAndServer(nbClients: 1, updatePlayerPrefab: playerPrefab =>
+            {
+                var networkTransform = playerPrefab.AddComponent<NetworkTransform>();
+            });
+
+            // This is the *SERVER VERSION* of the *CLIENT PLAYER*
+            var serverClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
+            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), m_ServerNetworkManager, serverClientPlayerResult));
+
+            // This is the *CLIENT VERSION* of the *CLIENT PLAYER*
+            var clientClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
+            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), m_ClientNetworkManagers[0], clientClientPlayerResult));
+
+            m_ServerSideClientPlayer = serverClientPlayerResult.Result;
+            m_ClientSideClientPlayer = clientClientPlayerResult.Result;
+        }
+
+        [UnityTest]
+        [TestCase(true, ExpectedResult = null)]
+        [TestCase(false, ExpectedResult = null)]
+        public IEnumerator TestClientAuthoritativeTransformChangeOneAtATime(bool useLocal)
+        {
+            var clientNetworkTransform = m_ClientSideClientPlayer.GetComponent<NetworkTransform>();
+            clientNetworkTransform.UseLocal = useLocal;
+            clientNetworkTransform.SetAuthority(NetworkTransform.Authority.Client);
+
+            var serverNetworkTransform = m_ServerSideClientPlayer.GetComponent<NetworkTransform>();
+            serverNetworkTransform.UseLocal = useLocal;
+            serverNetworkTransform.SetAuthority(NetworkTransform.Authority.Client);
+
+            // test position
+            var playerTransform = m_ClientSideClientPlayer.transform;
+            playerTransform.position = new Vector3(10, 20, 30);
+            Assert.AreEqual(Vector3.zero, m_ServerSideClientPlayer.transform.position, "server side pos should be zero at first"); // sanity check
+            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForCondition(() => m_ServerSideClientPlayer.transform.position.x != 0 ));
+
+            Assert.AreEqual(new Vector3(10, 20, 30), m_ServerSideClientPlayer.transform.position, "wrong position on ghost");
+
+            // test rotation
+            playerTransform.rotation = Quaternion.Euler(45, 40, 35);
+            Assert.AreEqual(Quaternion.identity, m_ServerSideClientPlayer.transform.rotation, "wrong initial value for rotation"); // sanity check
+            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForCondition(() => m_ServerSideClientPlayer.transform.rotation.eulerAngles.x != 0 ));
+
+            Assert.LessOrEqual(Math.Abs(45 - m_ServerSideClientPlayer.transform.rotation.eulerAngles.x), 0.05f, $"wrong rotation on ghost on x, got {m_ServerSideClientPlayer.transform.rotation.eulerAngles.x}");
+            Assert.LessOrEqual(Math.Abs(40 - m_ServerSideClientPlayer.transform.rotation.eulerAngles.y), 0.05f, $"wrong rotation on ghost on y, got {m_ServerSideClientPlayer.transform.rotation.eulerAngles.y}");
+            Assert.LessOrEqual(Math.Abs(35 - m_ServerSideClientPlayer.transform.rotation.eulerAngles.z), 0.05f, $"wrong rotation on ghost on z, got {m_ServerSideClientPlayer.transform.rotation.eulerAngles.z}");
+
+            // test scale
+            UnityEngine.Assertions.Assert.AreApproximatelyEqual(1f, m_ServerSideClientPlayer.transform.lossyScale.x, "wrong initial value for scale"); // sanity check
+            UnityEngine.Assertions.Assert.AreApproximatelyEqual(1f, m_ServerSideClientPlayer.transform.lossyScale.y, "wrong initial value for scale"); // sanity check
+            UnityEngine.Assertions.Assert.AreApproximatelyEqual(1f, m_ServerSideClientPlayer.transform.lossyScale.z, "wrong initial value for scale"); // sanity check
+            playerTransform.localScale = new Vector3(2, 3, 4);
+            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForCondition(() => m_ServerSideClientPlayer.transform.lossyScale.x > 1f ));
+
+            UnityEngine.Assertions.Assert.AreApproximatelyEqual(2f, m_ServerSideClientPlayer.transform.lossyScale.x, "wrong scale on ghost"); // sanity check
+            UnityEngine.Assertions.Assert.AreApproximatelyEqual(3f, m_ServerSideClientPlayer.transform.lossyScale.y, "wrong scale on ghost"); // sanity check
+            UnityEngine.Assertions.Assert.AreApproximatelyEqual(4f, m_ServerSideClientPlayer.transform.lossyScale.z, "wrong scale on ghost"); // sanity check
+
+            // test can't change transform with wrong authority
+            // todo reparent and test
+            // todo add tests for authority
+            // todo test all public API
+            // test pos and rot change at once
+            // test with server vs with host
+        }
+
+        [UnityTest]
+        public IEnumerator TestCantChangeClientAuthority()
+        {
+            // test server can't change client authoritative transform
+            var clientNetworkTransform = m_ClientSideClientPlayer.GetComponent<NetworkTransform>();
+            clientNetworkTransform.TransformAuthority = NetworkTransform.Authority.Client;
+
+            var serverNetworkTransform = m_ServerSideClientPlayer.GetComponent<NetworkTransform>();
+            serverNetworkTransform.TransformAuthority = NetworkTransform.Authority.Client;
+            Assert.AreEqual(Vector3.zero, serverNetworkTransform.transform.position, "server side pos should be zero at first"); // sanity check
+            serverNetworkTransform.transform.position = new Vector3(4, 5, 6);
+
+            yield return new WaitForSeconds(0); // wait one frame
+
+            LogAssert.Expect(LogType.Error, new Regex(".*authority.*"));
+
+        }
+
+        // [UnityTest]
+        // public IEnumerator TestServerAuthority()
+        // {
+        //
+        // }
+
+        [UnityTearDown]
+        public override IEnumerator Teardown()
+        {
+            yield return base.Teardown();
+            UnityEngine.Object.Destroy(m_PlayerPrefab);
+        }
+    }
+}

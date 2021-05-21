@@ -107,6 +107,31 @@ namespace MLAPI.Prototyping
             set => m_UseLocal.Value = value;
         }
 
+        public void SetAuthority(Authority newAuthority)
+        {
+            TransformAuthority = newAuthority;
+            UpdateVarPermissions();
+            // todo this should be synced with the other side. let's wait for a more final solution before adding more code here
+        }
+
+        private void UpdateVarPermissions()
+        {
+            if (TransformAuthority == Authority.Client)
+            {
+                m_NetworkPosition.Settings.WritePermission = NetworkVariablePermission.OwnerOnly;
+                m_NetworkRotation.Settings.WritePermission = NetworkVariablePermission.OwnerOnly;
+                m_NetworkWorldScale.Settings.WritePermission = NetworkVariablePermission.OwnerOnly;
+                m_UseLocal.Settings.WritePermission = NetworkVariablePermission.OwnerOnly;
+            }
+            else if (TransformAuthority == Authority.Shared)
+            {
+                m_NetworkPosition.Settings.WritePermission = NetworkVariablePermission.Everyone;
+                m_NetworkRotation.Settings.WritePermission = NetworkVariablePermission.Everyone;
+                m_NetworkWorldScale.Settings.WritePermission = NetworkVariablePermission.Everyone;
+                m_UseLocal.Settings.WritePermission = NetworkVariablePermission.Everyone;
+            }
+        }
+
         private NetworkVariableVector3 m_NetworkPosition = new NetworkVariableVector3();
         private NetworkVariableQuaternion m_NetworkRotation = new NetworkVariableQuaternion();
         private NetworkVariableVector3 m_NetworkWorldScale = new NetworkVariableVector3();
@@ -205,20 +230,7 @@ namespace MLAPI.Prototyping
             SetupVar(m_NetworkRotation, m_CurrentRotation, ref m_OldRotation);
             SetupVar(m_NetworkWorldScale, m_CurrentScale, ref m_OldScale);
 
-            if (TransformAuthority == Authority.Client)
-            {
-                m_NetworkPosition.Settings.WritePermission = NetworkVariablePermission.OwnerOnly;
-                m_NetworkRotation.Settings.WritePermission = NetworkVariablePermission.OwnerOnly;
-                m_NetworkWorldScale.Settings.WritePermission = NetworkVariablePermission.OwnerOnly;
-                m_UseLocal.Settings.WritePermission = NetworkVariablePermission.OwnerOnly;
-            }
-            else if (TransformAuthority == Authority.Shared)
-            {
-                m_NetworkPosition.Settings.WritePermission = NetworkVariablePermission.Everyone;
-                m_NetworkRotation.Settings.WritePermission = NetworkVariablePermission.Everyone;
-                m_NetworkWorldScale.Settings.WritePermission = NetworkVariablePermission.Everyone;
-                m_UseLocal.Settings.WritePermission = NetworkVariablePermission.Everyone;
-            }
+            UpdateVarPermissions();
         }
 
         private NetworkVariable<T>.OnValueChangedDelegate GetOnValueChangedDelegate<T>(Action<T> assignCurrent)
