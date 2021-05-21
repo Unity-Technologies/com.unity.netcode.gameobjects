@@ -116,19 +116,28 @@ namespace MLAPI.Prototyping
 
         private void UpdateVarPermissions()
         {
-            if (TransformAuthority == Authority.Client)
+            switch (TransformAuthority)
             {
-                m_NetworkPosition.Settings.WritePermission = NetworkVariablePermission.OwnerOnly;
-                m_NetworkRotation.Settings.WritePermission = NetworkVariablePermission.OwnerOnly;
-                m_NetworkWorldScale.Settings.WritePermission = NetworkVariablePermission.OwnerOnly;
-                m_UseLocal.Settings.WritePermission = NetworkVariablePermission.OwnerOnly;
-            }
-            else if (TransformAuthority == Authority.Shared)
-            {
-                m_NetworkPosition.Settings.WritePermission = NetworkVariablePermission.Everyone;
-                m_NetworkRotation.Settings.WritePermission = NetworkVariablePermission.Everyone;
-                m_NetworkWorldScale.Settings.WritePermission = NetworkVariablePermission.Everyone;
-                m_UseLocal.Settings.WritePermission = NetworkVariablePermission.Everyone;
+                case Authority.Client:
+                    m_NetworkPosition.Settings.WritePermission = NetworkVariablePermission.OwnerOnly;
+                    m_NetworkRotation.Settings.WritePermission = NetworkVariablePermission.OwnerOnly;
+                    m_NetworkWorldScale.Settings.WritePermission = NetworkVariablePermission.OwnerOnly;
+                    m_UseLocal.Settings.WritePermission = NetworkVariablePermission.OwnerOnly;
+                    break;
+                case Authority.Shared:
+                    m_NetworkPosition.Settings.WritePermission = NetworkVariablePermission.Everyone;
+                    m_NetworkRotation.Settings.WritePermission = NetworkVariablePermission.Everyone;
+                    m_NetworkWorldScale.Settings.WritePermission = NetworkVariablePermission.Everyone;
+                    m_UseLocal.Settings.WritePermission = NetworkVariablePermission.Everyone;
+                    break;
+                case Authority.Server:
+                    m_NetworkPosition.Settings.WritePermission = NetworkVariablePermission.ServerOnly;
+                    m_NetworkRotation.Settings.WritePermission = NetworkVariablePermission.ServerOnly;
+                    m_NetworkWorldScale.Settings.WritePermission = NetworkVariablePermission.ServerOnly;
+                    m_UseLocal.Settings.WritePermission = NetworkVariablePermission.ServerOnly;
+                    break;
+                default:
+                    throw new NotImplementedException($"{TransformAuthority} is not handled");
             }
         }
 

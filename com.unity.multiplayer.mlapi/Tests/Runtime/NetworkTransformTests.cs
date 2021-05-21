@@ -85,28 +85,26 @@ namespace MLAPI.RuntimeTests
         }
 
         [UnityTest]
-        public IEnumerator TestCantChangeClientAuthority()
+        [TestCase(NetworkTransform.Authority.Client, ExpectedResult = null)]
+        [TestCase(NetworkTransform.Authority.Server, ExpectedResult = null)]
+        public IEnumerator TestCantChangeTransformFromOtherSideAuthority(NetworkTransform.Authority authorityToTest)
         {
             // test server can't change client authoritative transform
-            var clientNetworkTransform = m_ClientSideClientPlayer.GetComponent<NetworkTransform>();
-            clientNetworkTransform.TransformAuthority = NetworkTransform.Authority.Client;
 
-            var serverNetworkTransform = m_ServerSideClientPlayer.GetComponent<NetworkTransform>();
-            serverNetworkTransform.TransformAuthority = NetworkTransform.Authority.Client;
-            Assert.AreEqual(Vector3.zero, serverNetworkTransform.transform.position, "server side pos should be zero at first"); // sanity check
-            serverNetworkTransform.transform.position = new Vector3(4, 5, 6);
+            var networkTransform = (authorityToTest == NetworkTransform.Authority.Client ? m_ClientSideClientPlayer : m_ServerSideClientPlayer).GetComponent<NetworkTransform>();
+            networkTransform.SetAuthority(authorityToTest);
 
-            yield return new WaitForSeconds(0); // wait one frame
+            var otherSideNetworkTransform = (authorityToTest == NetworkTransform.Authority.Client ? m_ServerSideClientPlayer : m_ClientSideClientPlayer).GetComponent<NetworkTransform>();
+            otherSideNetworkTransform.SetAuthority(authorityToTest);
+
+            Assert.AreEqual(Vector3.zero, otherSideNetworkTransform.transform.position, "other side pos should be zero at first"); // sanity check
+            otherSideNetworkTransform.transform.position = new Vector3(4, 5, 6);
+
+            yield return new WaitForFixedUpdate(); // wait one frame
 
             LogAssert.Expect(LogType.Error, new Regex(".*authority.*"));
-
+            Assert.AreEqual(Vector3.zero, otherSideNetworkTransform.transform.position, "got authority error, but other side still moved!");
         }
-
-        // [UnityTest]
-        // public IEnumerator TestServerAuthority()
-        // {
-        //
-        // }
 
         [UnityTearDown]
         public override IEnumerator Teardown()
