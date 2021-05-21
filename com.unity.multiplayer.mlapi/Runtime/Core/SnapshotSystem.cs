@@ -29,7 +29,7 @@ namespace MLAPI
     {
         public VariableKey Key;
         public ushort Position; // the offset in our Buffer
-        public ushort Length; // the length of the data in Buffer
+        public ushort Length; // the Length of the data in Buffer
         public bool Fresh; // indicates entries that were just received
 
         public const int NotFound = -1;
@@ -47,14 +47,14 @@ namespace MLAPI
         private const int k_BufferSize = 10000;
 
         public byte[] Buffer = new byte[k_BufferSize];
-        internal IndexAllocator m_Allocator;
+        internal IndexAllocator Allocator;
 
         public Entry[] Entries = new Entry[k_MaxVariables];
         public int LastEntry = 0;
         public MemoryStream Stream;
 
         private NetworkManager m_NetworkManager;
-        private bool m_tickIndex;
+        private bool m_TickIndex;
 
         /// <summary>
         /// Constructor
@@ -66,15 +66,15 @@ namespace MLAPI
         {
             Stream = new MemoryStream(Buffer, 0, k_BufferSize);
             // we ask for twice as many slots because there could end up being one free spot between each pair of slot used
-            m_Allocator = new IndexAllocator(k_BufferSize, k_MaxVariables * 2);
+            Allocator = new IndexAllocator(k_BufferSize, k_MaxVariables * 2);
             m_NetworkManager = networkManager;
-            m_tickIndex = tickIndex;
+            m_TickIndex = tickIndex;
         }
 
         public void Clear()
         {
             LastEntry = 0;
-            m_Allocator.Reset();
+            Allocator.Reset();
         }
 
         // todo --M1--
@@ -90,7 +90,7 @@ namespace MLAPI
                 if (Entries[i].Key.NetworkObjectId == key.NetworkObjectId &&
                     Entries[i].Key.BehaviourIndex == key.BehaviourIndex &&
                     Entries[i].Key.VariableIndex == key.VariableIndex &&
-                    (!m_tickIndex || (Entries[i].Key.TickWritten == key.TickWritten)))
+                    (!m_TickIndex || (Entries[i].Key.TickWritten == key.TickWritten)))
                 {
                     return i;
                 }
@@ -166,10 +166,10 @@ namespace MLAPI
 
             if (entry.Length > 0)
             {
-                m_Allocator.Deallocate(index);
+                Allocator.Deallocate(index);
             }
 
-            bool ret = m_Allocator.Allocate(index, size, out pos);
+            bool ret = Allocator.Allocate(index, size, out pos);
 
             if (!ret)
             {
@@ -314,7 +314,7 @@ namespace MLAPI
                         SendSnapshot(m_NetworkManager.ServerClientId);
                     }
 
-                    //m_Snapshot.m_Allocator.DebugDisplay();
+                    //m_Snapshot.Allocator.DebugDisplay();
                     /*
                     DebugDisplayStore(m_Snapshot, "Entries");
 
@@ -380,13 +380,13 @@ namespace MLAPI
         {
             using (var writer = PooledNetworkWriter.Get(buffer))
             {
-                writer.WriteUInt16((ushort)m_Snapshot.m_Allocator.Range);
+                writer.WriteUInt16((ushort)m_Snapshot.Allocator.Range);
             }
 
             // todo --M1--
             // // this sends the whole buffer
             // we'll need to build a per-client list
-            buffer.Write(m_Snapshot.Buffer, 0, m_Snapshot.m_Allocator.Range);
+            buffer.Write(m_Snapshot.Buffer, 0, m_Snapshot.Allocator.Range);
         }
 
         // todo: consider using a Key, instead of 3 ints, if it can be exposed
@@ -409,7 +409,7 @@ namespace MLAPI
                 pos = m_Snapshot.AddEntry(k);
             }
 
-            // write var into buffer, possibly adjusting entry's position and length
+            // write var into buffer, possibly adjusting entry's position and Length
             using (var varBuffer = PooledNetworkBuffer.Get())
             {
                 networkVariable.WriteDelta(varBuffer);
