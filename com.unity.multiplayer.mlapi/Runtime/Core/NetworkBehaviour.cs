@@ -42,11 +42,6 @@ namespace MLAPI
             Client = 2
         }
 
-        // todo: transitional. For the next release, only Snapshot should remain
-        // The booleans allow iterative development and testing in the meantime
-        static private bool s_UseClassicDelta = true;
-        static private bool s_UseSnapshot = false;
-
 #pragma warning disable 414
 #pragma warning disable IDE1006 // disable naming rule violation check
         [NonSerialized]
@@ -593,7 +588,7 @@ namespace MLAPI
                 return;
             }
 
-            if (s_UseSnapshot)
+            if (NetworkManager.UseSnapshot)
             {
                 for (int k = 0; k < NetworkVariableFields.Count; k++)
                 {
@@ -601,7 +596,7 @@ namespace MLAPI
                 }
             }
 
-            if (s_UseClassicDelta)
+            if (NetworkManager.UseClassicDelta)
             {
                 for (int j = 0; j < m_ChannelMappedNetworkVariableIndexes.Count; j++)
                 {
