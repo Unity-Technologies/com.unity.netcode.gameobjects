@@ -244,7 +244,7 @@ namespace MLAPI.RuntimeTests
         /// <param name="maxFrames">The max frames to wait for</param>
         public static IEnumerator WaitForClientConnectedToServer(NetworkManager server, CoroutineResultWrapper<bool> result = null, int maxFrames = 64)
         {
-            yield return WaitForClientsConnectedToServer(server, 1, result, maxFrames);
+            yield return WaitForClientsConnectedToServer(server, server.IsHost ? 2 : 1, result, maxFrames);
         }
 
         /// <summary>
