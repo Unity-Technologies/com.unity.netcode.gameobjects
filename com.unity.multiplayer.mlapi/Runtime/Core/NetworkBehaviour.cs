@@ -654,10 +654,6 @@ namespace MLAPI
                                 {
                                     writtenAny = true;
 
-                                    // write the network tick at which this NetworkVariable was modified remotely
-                                    // this will allow lag-compensation
-                                    writer.WriteUInt16Packed(NetworkVariableFields[k].RemoteTick);
-
                                     if (NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                                     {
                                         using (var varBuffer = PooledNetworkBuffer.Get())
@@ -711,9 +707,6 @@ namespace MLAPI
         {
             using (var reader = PooledNetworkReader.Get(stream))
             {
-                // read the remote network tick at which this variable was written.
-                ushort remoteTick = reader.ReadUInt16Packed();
-
                 for (int i = 0; i < networkVariableList.Count; i++)
                 {
                     ushort varSize = 0;
@@ -772,7 +765,7 @@ namespace MLAPI
 
                     long readStartPos = stream.Position;
 
-                    networkVariableList[i].ReadDelta(stream, networkManager.IsServer, localTick, remoteTick);
+                    networkVariableList[i].ReadDelta(stream, networkManager.IsServer);
                     PerformanceDataManager.Increment(ProfilerConstants.NetworkVarDeltas);
 
                     ProfilerStatManager.NetworkVarsRcvd.Record();
@@ -859,7 +852,7 @@ namespace MLAPI
 
                     long readStartPos = stream.Position;
 
-                    networkVariableList[i].ReadField(stream, NetworkTickSystem.NoTick, NetworkTickSystem.NoTick);
+                    networkVariableList[i].ReadField(stream);
                     PerformanceDataManager.Increment(ProfilerConstants.NetworkVarUpdates);
 
                     ProfilerStatManager.NetworkVarsRcvd.Record();
@@ -974,7 +967,7 @@ namespace MLAPI
 
                     long readStartPos = stream.Position;
 
-                    networkVariableList[j].ReadField(stream, NetworkTickSystem.NoTick, NetworkTickSystem.NoTick);
+                    networkVariableList[j].ReadField(stream);
 
                     if (networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                     {
