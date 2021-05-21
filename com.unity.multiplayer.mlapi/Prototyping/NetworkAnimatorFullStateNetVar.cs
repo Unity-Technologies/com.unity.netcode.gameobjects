@@ -6,15 +6,14 @@ using MLAPI.NetworkVariable;
 using MLAPI.Serialization;
 using MLAPI.Transports;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace MLAPI.Prototyping
 {
     /// <summary>
     /// A prototype component for syncing animations
     /// </summary>
-    [AddComponentMenu("MLAPI/NetworkAnimator")]
-    public class NetworkAnimator : NetworkBehaviour
+    [AddComponentMenu("MLAPI/NetworkAnimatorFullStateNetVar")]
+    public class NetworkAnimatorFullStateNetVar : NetworkBehaviour
     {
         private struct AnimParams : INetworkSerializable
         {
@@ -22,11 +21,14 @@ namespace MLAPI.Prototyping
             public Dictionary<int, float> FloatParameters;
             public Dictionary<int, bool> BoolParameters;
             public HashSet<int> TriggerParameters;
-
+            public LayerState[] LayerStates;
+            
             public KeyValuePair<int, AnimatorControllerParameterType>[] Parameters;
             
-            public AnimParams(AnimatorControllerParameter[] parameters)
+            public AnimParams(Animator animator)
             {
+                var parameters = animator.parameters;
+                
                 Parameters = new KeyValuePair<int, AnimatorControllerParameterType>[parameters.Length];
 
                 int intCount = 0;
@@ -56,6 +58,8 @@ namespace MLAPI.Prototyping
                 FloatParameters = new Dictionary<int, float>(floatCount);
                 BoolParameters = new Dictionary<int, bool>(boolCount);
                 TriggerParameters = new HashSet<int>();
+
+                LayerStates = new LayerState[animator.layerCount];
             }
 
             public bool SetInt(int key, int value)
@@ -199,20 +203,42 @@ namespace MLAPI.Prototyping
                         TriggerParameters = new HashSet<int>(paramArray);
                     }
                 }
+                
+                //layer states
+                {
+                    int layerCount = serializer.IsReading ? 0 : LayerStates.Length;
+                    serializer.Serialize(ref layerCount);
+
+                    for (int paramIndex = 0; paramIndex < layerCount; paramIndex++)
+                    {
+                        var stateHash = serializer.IsReading ? 0 : LayerStates[paramIndex].StateHash;
+                        serializer.Serialize(ref stateHash);
+                        
+                        var layerWeight = serializer.IsReading ? 0 : LayerStates[paramIndex].LayerWeight;
+                        serializer.Serialize(ref layerWeight);
+
+                        var normalizedStateTime = serializer.IsReading ? 0 : LayerStates[paramIndex].NormalizedStateTime;
+                        serializer.Serialize(ref normalizedStateTime);
+
+
+                        if (serializer.IsReading)
+                        {
+                            LayerStates[paramIndex] = new LayerState()
+                            {
+                                LayerWeight = layerWeight, StateHash = stateHash,
+                                NormalizedStateTime = normalizedStateTime
+                            };
+                        }
+                    }
+                }
             }
         }
         
-        private struct LayerState : INetworkSerializable
+        private struct LayerState
         {
             public int StateHash;
             public float NormalizedStateTime;
             public float LayerWeight;
-            public void NetworkSerialize(NetworkSerializer serializer)
-            {
-                serializer.Serialize(ref StateHash);
-                serializer.Serialize(ref NormalizedStateTime);
-                serializer.Serialize(ref LayerWeight);
-            }
         }
 
         /// <summary>
@@ -233,76 +259,77 @@ namespace MLAPI.Prototyping
         /// </summary>
         [Tooltip("Defines who can update this transform.")]
         public Authority AnimatorAuthority = Authority.Client; // todo Luke mentioned an incoming system to manage this at the NetworkBehaviour level, lets sync on this
-        
-        private LayerState[] m_LayersToStates;
-        private AnimParams m_AnimParams;
 
-        public float SendRate = 0.1f;
-        private float m_NextSendTime = 0.0f;
-        private bool m_ServerRequestsAnimationResync = false;
+        private NetworkVariable<AnimParams> m_AnimParams = new NetworkVariable<AnimParams>();
+        
         [SerializeField]
         private Animator m_Animator;
 
         public Animator Animator => m_Animator;
+        
+        /// <summary>
+        /// The base amount of sends per seconds to use when range is disabled
+        /// </summary>
+        [Range(0, 120), Tooltip("The base amount of sends per seconds to use when range is disabled")]
+        public float FixedSendsPerSecond = 30f;
+          
 
-        private void Awake()
+        /// <summary>
+        /// The channel to send the data on
+        /// </summary>
+        [Tooltip("The channel to send the data on.")]
+        public NetworkChannel Channel = NetworkChannel.NetworkVariable;
+        
+        private bool IsAuthorityOverAnimator => (IsClient && AnimatorAuthority == Authority.Client && IsOwner) || (IsServer && AnimatorAuthority == Authority.Server) || AnimatorAuthority == Authority.Shared;
+
+
+        public override void NetworkStart()
         {
-            m_AnimParams = new AnimParams(Animator.parameters);
-            m_LayersToStates = new LayerState[Animator.layerCount];
+            m_AnimParams.Settings.SendTickrate = FixedSendsPerSecond;
+            m_AnimParams.Settings.SendNetworkChannel = Channel;
+            
+            if (IsAuthorityOverAnimator)
+            {
+                m_AnimParams.Value = new AnimParams(Animator);
+            }
+
+            if (AnimatorAuthority == Authority.Client)
+            {
+                m_AnimParams.Settings.WritePermission = NetworkVariablePermission.OwnerOnly;
+            }
+            else if (AnimatorAuthority == Authority.Shared)
+            {
+                m_AnimParams.Settings.WritePermission = NetworkVariablePermission.Everyone;
+            }
         }
+
 
         private void OnEnable()
         {
-            if (IsServer)
-            {
-                NetworkManager.OnClientConnectedCallback += ServerOnClientConnectedCallback;
-            }
+            // Register on value changed delegate. We can't simply check the position every fixed update because of shared authority
+            // Shared authority involves writing locally but applying changes when they come from the server. You can't both read from
+            // your NetworkPosition and write to it in the same FixedUpdate, you need both separate.
+            // There's no conflict resolution here. If two clients try to update the same value at the same time, they'll both think they are right
+            m_AnimParams.OnValueChanged += AnimParamsChanged;
         }
 
-        private void OnDisable()
+        public void OnDisable()
         {
-            if (IsServer)
-            {
-                NetworkManager.OnClientConnectedCallback -= ServerOnClientConnectedCallback;
-            }
+            m_AnimParams.OnValueChanged -= AnimParamsChanged;
         }
 
-        private void ServerOnClientConnectedCallback(ulong clientId)
+        private void AnimParamsChanged(AnimParams previousvalue, AnimParams newvalue)
         {
-            if (IsAuthorityOverAnimator)
+            if (AnimatorAuthority == Authority.Client && IsClient && IsOwner)
             {
-                m_ServerRequestsAnimationResync = true;
-            }
-            
-            var clientRpcParams = new ClientRpcParams
-            {
-                Send = new ClientRpcSendParams
-                {
-                    TargetClientIds = NetworkManager.ConnectedClientsList
-                        .Where(c => c.ClientId != NetworkManager.ServerClientId)
-                        .Select(c => c.ClientId)
-                        .ToArray()
-                }
-            };
-                
-            RequestResyncClientRpc(clientRpcParams);
-        }
-
-
-        [ClientRpc]
-        private void RequestResyncClientRpc(ClientRpcParams clientRpcParams = default)
-        {
-            if (!IsAuthorityOverAnimator)
-            {
+                // this should only happen for my own value changes.
+                // todo MTT-768 this shouldn't happen anymore with new tick system (tick written will be higher than tick read, so netvar wouldn't change in that case
                 return;
             }
-
-            m_ServerRequestsAnimationResync = true;
+            
+            SetAnimParams(newvalue);
         }
-
-
-        private bool IsAuthorityOverAnimator => (IsClient && AnimatorAuthority == Authority.Client && IsOwner) || (IsServer && AnimatorAuthority == Authority.Server) || AnimatorAuthority == Authority.Shared;
-
+        
         private void FixedUpdate()
         {
             if (!NetworkObject.IsSpawned)
@@ -312,46 +339,30 @@ namespace MLAPI.Prototyping
 
             if (IsAuthorityOverAnimator)
             {
-                bool shouldSendBasedOnTime = CheckSendRate();
-                bool shouldSendBasedOnChanges = CheckStateChange();
-                if (m_ServerRequestsAnimationResync || shouldSendBasedOnTime || shouldSendBasedOnChanges)
+                if (CheckStateChange())
                 {
-                    SendAllParamsAndState();
-                    m_AnimParams.TriggerParameters.Clear();
-                    m_ServerRequestsAnimationResync = false;
+                    m_AnimParams.Value.TriggerParameters.Clear();
                 }
             }
         }
         
-        private bool CheckSendRate()
-        {
-            var networkTime = NetworkManager.NetworkTime;
-            if (SendRate != 0 && m_NextSendTime < networkTime)
-            {
-                m_NextSendTime = networkTime + SendRate;
-                return true;
-            }
-
-            return false;
-        }
-
         private bool CheckStateChange()
         {
             bool changed = false;
             
-            for (int i = 0; i < m_AnimParams.Parameters.Length; i++)
+            for (int i = 0; i < m_AnimParams.Value.LayerStates.Length; i++)
             {
                 var animStateInfo = Animator.GetCurrentAnimatorStateInfo(i);
 
-                bool didStateChange = m_LayersToStates[i].StateHash != animStateInfo.fullPathHash;
-                bool enoughDelta = !didStateChange && (animStateInfo.normalizedTime - m_LayersToStates[i].NormalizedStateTime) >= 0.15f;
+                bool didStateChange = m_AnimParams.Value.LayerStates[i].StateHash != animStateInfo.fullPathHash;
+                bool enoughDelta = !didStateChange && (animStateInfo.normalizedTime - m_AnimParams.Value.LayerStates[i].NormalizedStateTime) >= 0.15f;
 
                 float newLayerWeight = Animator.GetLayerWeight(i);
-                bool layerWeightChanged = Mathf.Abs(m_LayersToStates[i].LayerWeight - newLayerWeight) > Mathf.Epsilon;
+                bool layerWeightChanged = Mathf.Abs(m_AnimParams.Value.LayerStates[i].LayerWeight - newLayerWeight) > Mathf.Epsilon;
                 
                 if (didStateChange || enoughDelta || layerWeightChanged)
                 {
-                    m_LayersToStates[i] = new LayerState
+                    m_AnimParams.Value.LayerStates[i] = new LayerState
                     {
                         StateHash = animStateInfo.fullPathHash,
                         NormalizedStateTime = animStateInfo.normalizedTime,
@@ -361,7 +372,7 @@ namespace MLAPI.Prototyping
                 }
             }
 
-            foreach (var animParam in m_AnimParams.Parameters)
+            foreach (var animParam in m_AnimParams.Value.Parameters)
             {
                 var animParamHash = animParam.Key;
                 var animParamType = animParam.Value;
@@ -369,18 +380,18 @@ namespace MLAPI.Prototyping
                 switch (animParamType)
                 {
                     case AnimatorControllerParameterType.Float:
-                        changed = changed || m_AnimParams.SetFloat(animParamHash, Animator.GetFloat(animParamHash));
+                        changed = changed || m_AnimParams.Value.SetFloat(animParamHash, Animator.GetFloat(animParamHash));
                         break;
                     case AnimatorControllerParameterType.Int:
-                        changed = changed || m_AnimParams.SetInt(animParamHash, Animator.GetInteger(animParamHash));
+                        changed = changed || m_AnimParams.Value.SetInt(animParamHash, Animator.GetInteger(animParamHash));
                         break;
                     case AnimatorControllerParameterType.Bool:
-                        changed = changed || m_AnimParams.SetBool(animParamHash, Animator.GetBool(animParamHash));
+                        changed = changed || m_AnimParams.Value.SetBool(animParamHash, Animator.GetBool(animParamHash));
                         break;
                     case AnimatorControllerParameterType.Trigger:
                         if (Animator.GetBool(animParamHash))
                         {
-                            changed = changed || m_AnimParams.SetTrigger(animParamHash);
+                            changed = changed || m_AnimParams.Value.SetTrigger(animParamHash);
                         }
                         break;
                 }
@@ -410,73 +421,10 @@ namespace MLAPI.Prototyping
             {
                 Animator.SetTrigger(triggerParameter);
             }
-        }
-
-        private void SendAllParamsAndState()
-        {
-            if (IsServer)
-            {
-                var clientRpcParams = new ClientRpcParams
-                {
-                    Send = new ClientRpcSendParams
-                    {
-                        TargetClientIds = NetworkManager.ConnectedClientsList
-                            .Where(c => c.ClientId != NetworkManager.ServerClientId)
-                            .Select(c => c.ClientId)
-                            .ToArray()
-                    }
-                };
-                
-                SendParamsAndLayerStatesClientRpc(m_AnimParams, m_LayersToStates, clientRpcParams);
-            }
-            else
-            {
-                SendParamsAndLayerStatesServerRpc(m_AnimParams, m_LayersToStates);
-            }
-        }
-        
-        [ServerRpc]
-        private void SendParamsAndLayerStatesServerRpc(AnimParams animParams, LayerState[] layerStates, ServerRpcParams serverRpcParams = default)
-        {
-            if (IsOwner)
-            {
-                return;
-            }
-
-            SetLayerStates(layerStates);
-            SetAnimParams(animParams);
             
-            var clientRpcParams = new ClientRpcParams
+            for (var layerIndex = 0; layerIndex < animParams.LayerStates.Length; layerIndex++)
             {
-                Send = new ClientRpcSendParams
-                {
-                    TargetClientIds = NetworkManager.ConnectedClientsList
-                        .Where(c => c.ClientId != serverRpcParams.Receive.SenderClientId)
-                        .Select(c => c.ClientId)
-                        .ToArray()
-                }
-            };
-            
-            SendParamsAndLayerStatesClientRpc(animParams, layerStates, clientRpcParams);
-        }
-
-        [ClientRpc]
-        private void SendParamsAndLayerStatesClientRpc(AnimParams animParams, LayerState[] layerStates,ClientRpcParams clientRpcParams = default)
-        {
-            if (IsOwner || IsHost)
-            {
-                return;
-            }
-
-            SetLayerStates(layerStates);
-            SetAnimParams(animParams);
-        }
-
-        private void SetLayerStates(LayerState[] layerStates)
-        {
-            for (var layerIndex = 0; layerIndex < layerStates.Length; layerIndex++)
-            {
-                var layerState = layerStates[layerIndex];
+                var layerState = animParams.LayerStates[layerIndex];
                 
                 Animator.SetLayerWeight(layerIndex, layerState.LayerWeight);
 
