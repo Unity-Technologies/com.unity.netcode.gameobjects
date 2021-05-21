@@ -4,21 +4,19 @@ namespace MLAPI
 {
     internal struct IndexAllocatorEntry
     {
-        public int pos;
-        public int length;
-        public bool free;
-        public int next;
-        public int prev;
+        internal int pos;
+        internal int length;
+        internal bool free;
+        internal int next;
+        internal int prev;
     }
 
     internal class IndexAllocator
     {
-        private int m_MaxSlot;
         private const int k_NotSet = -1;
+        private readonly int m_MaxSlot;
         private readonly int m_BufferSize;
-
-        private int m_LastUsed = 0;
-
+        private int m_LastSlot = 0;
         private IndexAllocatorEntry[] m_Slots;
         private int[] m_IndexToSlot;
 
@@ -53,17 +51,17 @@ namespace MLAPI
         }
 
 
-        public int Range
+        internal int Range
         {
             get
             {
-                // when the whole buffer is free, m_LastUsed points to an empty slot
-                if (m_Slots[m_LastUsed].free)
+                // when the whole buffer is free, m_LastSlot points to an empty slot
+                if (m_Slots[m_LastSlot].free)
                 {
                     return 0;
                 }
                 // otherwise return the end of the last slot used
-                return m_Slots[m_LastUsed].pos + m_Slots[m_LastUsed].length;
+                return m_Slots[m_LastSlot].pos + m_Slots[m_LastSlot].length;
             }
         }
 
@@ -107,12 +105,75 @@ namespace MLAPI
                     // if we allocate past the current range, we are the last slot
                     if (m_Slots[i].pos + m_Slots[i].length > Range)
                     {
-                        m_LastUsed = i;
+                        m_LastSlot = i;
                     }
 
                     break;
                 }
             }
+
+            return true;
+        }
+
+        internal bool Deallocate(int index)
+        {
+            int slot = m_IndexToSlot[index];
+
+            if (slot == k_NotSet)
+            {
+                return false;
+            }
+
+            if (m_Slots[slot].free)
+            {
+                return false;
+            }
+
+            m_Slots[slot].free = true;
+
+            int prev = m_Slots[slot].prev;
+            int next = m_Slots[slot].next;
+
+            // if previous slot was free, merge and grow
+            if (prev != k_NotSet && m_Slots[prev].free)
+            {
+                m_Slots[prev].length += m_Slots[slot].length;
+                m_Slots[slot].length = 0;
+
+                // if the slot we're merging was the last one, the last one is now the one we merged with
+                if (slot == m_LastSlot)
+                {
+                    m_LastSlot = prev;
+                }
+
+                // todo: verify what this does on full or nearly full cases
+                MoveSlotToEnd(slot);
+                slot = prev;
+            }
+
+            next = m_Slots[slot].next;
+
+            // merge with next slot if it is free
+            if (next != k_NotSet && m_Slots[next].free)
+            {
+                m_Slots[slot].length += m_Slots[next].length;
+                m_Slots[next].length = 0;
+                MoveSlotToEnd(next);
+            }
+
+            // if we just deallocate the last one, we need to move last back
+            if (slot == m_LastSlot)
+            {
+                m_LastSlot = m_Slots[m_LastSlot].prev;
+                // if there's nothing allocated anymore, use 0
+                if (m_LastSlot == k_NotSet)
+                {
+                    m_LastSlot = 0;
+                }
+            }
+
+            // mark the index as available
+            m_IndexToSlot[index] = k_NotSet;
 
             return true;
         }
@@ -164,69 +225,6 @@ namespace MLAPI
             m_Slots[slot].prev = p0;
 
             m_Slots[slot].pos = m_BufferSize;
-        }
-
-        internal bool Deallocate(int index)
-        {
-            int slot = m_IndexToSlot[index];
-
-            if (slot == k_NotSet)
-            {
-                return false;
-            }
-
-            if (m_Slots[slot].free)
-            {
-                return false;
-            }
-
-            m_Slots[slot].free = true;
-
-            int prev = m_Slots[slot].prev;
-            int next = m_Slots[slot].next;
-
-            // if previous slot was free, merge and grow
-            if (prev != k_NotSet && m_Slots[prev].free)
-            {
-                m_Slots[prev].length += m_Slots[slot].length;
-                m_Slots[slot].length = 0;
-
-                // if the slot we're merging was the last one, the last one is now the one we merged with
-                if (slot == m_LastUsed)
-                {
-                    m_LastUsed = prev;
-                }
-
-                // todo: verify what this does on full or nearly full cases
-                MoveSlotToEnd(slot);
-                slot = prev;
-            }
-
-            next = m_Slots[slot].next;
-
-            // merge with next slot if it is free
-            if (next != k_NotSet && m_Slots[next].free)
-            {
-                m_Slots[slot].length += m_Slots[next].length;
-                m_Slots[next].length = 0;
-                MoveSlotToEnd(next);
-            }
-
-            // if we just deallocate the last one, we need to move last back
-            if (slot == m_LastUsed)
-            {
-                m_LastUsed = m_Slots[m_LastUsed].prev;
-                // if there's nothing allocated anymore, use 0
-                if (m_LastUsed == k_NotSet)
-                {
-                    m_LastUsed = 0;
-                }
-            }
-
-            // mark the index as available
-            m_IndexToSlot[index] = k_NotSet;
-
-            return true;
         }
 
         internal bool Verify()
