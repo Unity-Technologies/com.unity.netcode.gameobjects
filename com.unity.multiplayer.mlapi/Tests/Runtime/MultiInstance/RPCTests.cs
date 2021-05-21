@@ -74,7 +74,7 @@ namespace MLAPI.RuntimeTests
 
 
             // Wait for connection on client side
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientConnected(clients[0]));
+            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(clients));
 
             // Wait for connection on server side
             yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientConnectedToServer(server));
