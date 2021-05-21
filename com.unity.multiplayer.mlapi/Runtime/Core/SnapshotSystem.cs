@@ -352,7 +352,6 @@ namespace MLAPI
 
                 m_NetworkManager.MessageSender.Send(clientId, NetworkConstants.SNAPSHOT_DATA,
                     NetworkChannel.SnapshotExchange, buffer);
-                buffer.Dispose();
             }
         }
 
