@@ -4,6 +4,7 @@ using MLAPI.Exceptions;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
+using Object = System.Object;
 
 namespace MLAPI.RuntimeTests
 {
@@ -12,11 +13,24 @@ namespace MLAPI.RuntimeTests
         private NetworkManager m_ServerNetworkManager;
         private NetworkManager[] m_ClientNetworkManagers;
         private GameObject m_PlayerPrefab;
+        private int m_OriginalTargetFrameRate;
+
+        private ulong serverSideClientId => m_ServerNetworkManager.ServerClientId;
+        private ulong clientSideClientId => m_ClientNetworkManagers[0].LocalClientId;
+        private ulong otherClientSideClientId => m_ClientNetworkManagers[1].LocalClientId;
 
         [UnitySetUp]
         public IEnumerator Setup()
         {
-            LogAssert.ignoreFailingMessages = true;
+            // Just always track the current target frame rate (will be re-applied upon TearDown)
+            m_OriginalTargetFrameRate = Application.targetFrameRate;
+
+            // Since we use frame count as a metric, we need to assure it runs at a "common update rate"
+            // between platforms (i.e. Ubuntu seems to run at much higher FPS when set to -1)
+            if (Application.targetFrameRate < 0 || Application.targetFrameRate > 120)
+            {
+                Application.targetFrameRate = 120;
+            }
 
             // Create multiple NetworkManager instances
             if (!MultiInstanceHelpers.Create(2, out NetworkManager server, out NetworkManager[] clients))
@@ -57,22 +71,23 @@ namespace MLAPI.RuntimeTests
             }
 
             // Wait for connection on server side
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientConnectedToServer(server, nbClients:2));
+            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnectedToServer(server, clientCount: 3));
         }
 
-        [UnityTest]
-        public IEnumerator TestClientCanOnlySeeItselfInClientList()
+        [Test]
+        public void TestServerCanAccessItsOwnPlayer()
         {
-            var serverSideClientId = m_ServerNetworkManager.ServerClientId;
-            var clientSideClientId = m_ClientNetworkManagers[0].LocalClientId;
-            var otherClientSideClientId = m_ClientNetworkManagers[1].LocalClientId;
-
-            // test 1 server can access its own player
+            // server can access its own player
             var serverSideServerPlayerObject = m_ServerNetworkManager.SpawnManager.GetPlayerNetworkObject(serverSideClientId);
             Assert.NotNull(serverSideServerPlayerObject);
             Assert.AreEqual(serverSideClientId, serverSideServerPlayerObject.OwnerClientId);
+        }
 
-            // test 2 server can access other players
+        [Test]
+        public void TestServerCanAccessOtherPlayers()
+        {
+
+            // server can access other players
             var serverSideClientPlayerObject = m_ServerNetworkManager.SpawnManager.GetPlayerNetworkObject(clientSideClientId);
             Assert.NotNull(serverSideClientPlayerObject);
             Assert.AreEqual(clientSideClientId, serverSideClientPlayerObject.OwnerClientId);
@@ -80,41 +95,69 @@ namespace MLAPI.RuntimeTests
             var serverSideOtherClientPlayerObject = m_ServerNetworkManager.SpawnManager.GetPlayerNetworkObject(otherClientSideClientId);
             Assert.NotNull(serverSideOtherClientPlayerObject);
             Assert.AreEqual(otherClientSideClientId, serverSideOtherClientPlayerObject.OwnerClientId);
+        }
 
-            // test 3 client can't access server player
+        [Test]
+        public void TestClientCantAccessServerPlayer()
+        {
+            // client can't access server player
             Assert.Throws<NotServerException>(() =>
             {
                 m_ClientNetworkManagers[0].SpawnManager.GetPlayerNetworkObject(serverSideClientId);
             });
+        }
 
-            // test 4 client can access own player
+        [Test]
+        public void TestClientCanAccessOwnPlayer()
+        {
+            // client can access own player
             var clientSideClientPlayerObject = m_ClientNetworkManagers[0].SpawnManager.GetPlayerNetworkObject(clientSideClientId);
             Assert.NotNull(clientSideClientPlayerObject);
             Assert.AreEqual(clientSideClientId, clientSideClientPlayerObject.OwnerClientId);
+        }
 
-            // test 5 client can't access other player
+        [Test]
+        public void TestClientCantAccessOtherPlayer()
+        {
+            // client can't access other player
             Assert.Throws<NotServerException>(() =>
             {
                 m_ClientNetworkManagers[0].SpawnManager.GetPlayerNetworkObject(otherClientSideClientId);
             });
+        }
 
-            // test 6 server gets null value if invalid id
+        [Test]
+        public void TestServerGetsNullValueIfInvalidId()
+        {
+            // server gets null value if invalid id
             var nullPlayer = m_ServerNetworkManager.SpawnManager.GetPlayerNetworkObject(9999);
             Assert.Null(nullPlayer);
+        }
 
+        [Test]
+        public void TestServerCanUseGetLocalPlayerObject()
+        {
             // test server can use GetLocalPlayerObject
-            serverSideServerPlayerObject = m_ServerNetworkManager.SpawnManager.GetLocalPlayerObject();
+            var serverSideServerPlayerObject = m_ServerNetworkManager.SpawnManager.GetLocalPlayerObject();
             Assert.NotNull(serverSideServerPlayerObject);
             Assert.AreEqual(serverSideClientId, serverSideServerPlayerObject.OwnerClientId);
+        }
 
+        [Test]
+        public void TestClientCanUseGetLocalPlayerObject()
+        {
             // test client can use GetLocalPlayerObject
-            clientSideClientPlayerObject = m_ClientNetworkManagers[0].SpawnManager.GetLocalPlayerObject();
+            var clientSideClientPlayerObject = m_ClientNetworkManagers[0].SpawnManager.GetLocalPlayerObject();
             Assert.NotNull(clientSideClientPlayerObject);
             Assert.AreEqual(clientSideClientId, clientSideClientPlayerObject.OwnerClientId);
+        }
 
+        [UnityTest]
+        public IEnumerator TestConnectAndDisconnect()
+        {
             // test when client connects, player object is now available
             // Create multiple NetworkManager instances
-            if (!MultiInstanceHelpers.Create(1, out NetworkManager server, out NetworkManager[] clients))
+            if (!MultiInstanceHelpers.CreateNewClients(1, out NetworkManager[] clients))
             {
                 Debug.LogError("Failed to create instances");
                 Assert.Fail("Failed to create instances");
@@ -124,7 +167,7 @@ namespace MLAPI.RuntimeTests
             newClientNetworkManager.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
             newClientNetworkManager.StartClient();
             yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientConnected(newClientNetworkManager));
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientConnectedToServer(m_ServerNetworkManager, nbClients:3)); // todo use wait for specific client
+            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForCondition(() => m_ServerNetworkManager.ConnectedClients.ContainsKey(newClientNetworkManager.LocalClientId)));
             var newClientLocalClientId = newClientNetworkManager.LocalClientId;
             var newPlayerObject = newClientNetworkManager.SpawnManager.GetLocalPlayerObject();
             Assert.NotNull(newPlayerObject);
@@ -134,11 +177,23 @@ namespace MLAPI.RuntimeTests
             Assert.AreEqual(newClientLocalClientId, serverSideNewClientPlayer.OwnerClientId);
 
             // test when client disconnects, player object no longer available.
-            newClientNetworkManager.StopClient();
             var nbConnectedClients = m_ServerNetworkManager.ConnectedClients.Count;
+            MultiInstanceHelpers.StopOneClient(newClientNetworkManager);
             yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForCondition(() => m_ServerNetworkManager.ConnectedClients.Count == nbConnectedClients - 1));
             serverSideNewClientPlayer = m_ServerNetworkManager.SpawnManager.GetPlayerNetworkObject(newClientLocalClientId);
             Assert.Null(serverSideNewClientPlayer);
+        }
+
+        [UnityTearDown]
+        public IEnumerator Teardown()
+        {
+            // Shutdown and clean up both of our NetworkManager instances
+            MultiInstanceHelpers.Destroy();
+            UnityEngine.Object.Destroy(m_PlayerPrefab);
+
+            // Set the application's target frame rate back to its original value
+            Application.targetFrameRate = m_OriginalTargetFrameRate;
+            yield return new WaitForSeconds(0); // wait for next frame so everything is destroyed
         }
     }
 }
