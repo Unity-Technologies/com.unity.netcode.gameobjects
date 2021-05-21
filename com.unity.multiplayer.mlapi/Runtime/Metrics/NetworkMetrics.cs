@@ -1,5 +1,4 @@
-﻿using Unity.Multiplayer.NetStats.Data;
-using Unity.Multiplayer.NetStats.Dispatch;
+﻿using Unity.Multiplayer.NetStats.Dispatch;
 using Unity.Multiplayer.NetStats.Metrics;
 using Unity.Multiplayer.NetworkProfiler;
 
