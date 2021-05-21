@@ -29,13 +29,14 @@ public class SIPTransport : NetworkTransport
         public Queue<Event> IncomingBuffer = new Queue<Event>();
     }
 
-    private readonly Dictionary<ulong, Peer> m_Clients = new Dictionary<ulong, Peer>();
+    private readonly Dictionary<ulong, Peer> m_Peers = new Dictionary<ulong, Peer>();
     private ulong m_ClientsCounter = 1;
 
     private static Peer s_Server;
     private Peer m_LocalConnection;
 
     public override ulong ServerClientId => 0;
+    public ulong LocalClientId;
 
     public override void DisconnectLocalClient()
     {
@@ -53,12 +54,12 @@ public class SIPTransport : NetworkTransport
             if (s_Server != null && m_LocalConnection != null)
             {
                 // Remove the connection
-                s_Server.Transport.m_Clients.Remove(m_LocalConnection.ConnectionId);
+                s_Server.Transport.m_Peers.Remove(m_LocalConnection.ConnectionId);
             }
 
             if (m_LocalConnection.ConnectionId == ServerClientId)
             {
-                s_Server = null;
+                StopServer();
             }
 
             // Remove the local connection
@@ -69,10 +70,10 @@ public class SIPTransport : NetworkTransport
     // Called by server
     public override void DisconnectRemoteClient(ulong clientId)
     {
-        if (m_Clients.ContainsKey(clientId))
+        if (m_Peers.ContainsKey(clientId))
         {
             // Inject disconnect into remote
-            m_Clients[clientId].IncomingBuffer.Enqueue(new Event
+            m_Peers[clientId].IncomingBuffer.Enqueue(new Event
             {
                 Type = NetworkEvent.Disconnect,
                 Channel = NetworkChannel.Internal,
@@ -90,10 +91,10 @@ public class SIPTransport : NetworkTransport
             });
 
             // Remove the local connection on remote
-            m_Clients[clientId].Transport.m_LocalConnection = null;
+            m_Peers[clientId].Transport.m_LocalConnection = null;
 
             // Remove connection on server
-            m_Clients.Remove(clientId);
+            m_Peers.Remove(clientId);
         }
     }
 
@@ -107,23 +108,29 @@ public class SIPTransport : NetworkTransport
     {
     }
 
+    private void StopServer()
+    {
+        s_Server = null;
+        m_Peers.Remove(ServerClientId);
+    }
+
     public override void Shutdown()
     {
         // Inject disconnects to all the remotes
-        foreach (KeyValuePair<ulong, Peer> pair in m_Clients)
+        foreach (KeyValuePair<ulong, Peer> onePeer in m_Peers)
         {
-            pair.Value.IncomingBuffer.Enqueue(new Event
+            onePeer.Value.IncomingBuffer.Enqueue(new Event
             {
                 Type = NetworkEvent.Disconnect,
                 Channel = NetworkChannel.Internal,
-                ConnectionId = pair.Key,
+                ConnectionId = LocalClientId,
                 Data = new ArraySegment<byte>()
             });
         }
 
         if (m_LocalConnection != null && m_LocalConnection.ConnectionId == ServerClientId)
         {
-            s_Server = null;
+            StopServer();
         }
 
 
@@ -148,6 +155,7 @@ public class SIPTransport : NetworkTransport
 
         // Generate an Id for the server that represents this client
         ulong serverConnectionId = ++s_Server.Transport.m_ClientsCounter;
+        LocalClientId = serverConnectionId;
 
         // Create local connection
         m_LocalConnection = new Peer()
@@ -158,10 +166,10 @@ public class SIPTransport : NetworkTransport
         };
 
         // Add the server as a local connection
-        m_Clients.Add(ServerClientId, s_Server);
+        m_Peers.Add(ServerClientId, s_Server);
 
         // Add local connection as a connection on the server
-        s_Server.Transport.m_Clients.Add(serverConnectionId, m_LocalConnection);
+        s_Server.Transport.m_Peers.Add(serverConnectionId, m_LocalConnection);
 
         // Sends a connect message to the server
         s_Server.Transport.m_LocalConnection.IncomingBuffer.Enqueue(new Event()
@@ -209,6 +217,8 @@ public class SIPTransport : NetworkTransport
         // Set the local connection as the server
         s_Server = m_LocalConnection;
 
+        m_Peers.Add(ServerClientId, s_Server);
+
         return SocketTask.Done.AsTasks();
     }
 
@@ -221,7 +231,12 @@ public class SIPTransport : NetworkTransport
             byte[] copy = new byte[data.Count];
             Buffer.BlockCopy(data.Array, data.Offset, copy, 0, data.Count);
 
-            m_Clients[clientId].IncomingBuffer.Enqueue(new Event
+            if (!m_Peers.ContainsKey(clientId))
+            {
+                throw new KeyNotFoundException($"peer id {clientId} not in peer list");
+            }
+
+            m_Peers[clientId].IncomingBuffer.Enqueue(new Event
             {
                 Type = NetworkEvent.Data,
                 ConnectionId = m_LocalConnection.ConnectionId,

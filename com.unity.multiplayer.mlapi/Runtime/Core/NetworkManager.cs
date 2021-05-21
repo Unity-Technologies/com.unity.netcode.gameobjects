@@ -52,6 +52,11 @@ namespace MLAPI
         private static ProfilerMarker s_InvokeRpc = new ProfilerMarker($"{nameof(NetworkManager)}.{nameof(InvokeRpc)}");
 #endif
 
+        // todo: transitional. For the next release, only Snapshot should remain
+        // The booleans allow iterative development and testing in the meantime
+        static internal bool UseClassicDelta = true;
+        static internal bool UseSnapshot = false;
+
         internal RpcQueueContainer RpcQueueContainer { get; private set; }
         internal NetworkTickSystem NetworkTickSystem { get; private set; }
 
@@ -593,6 +598,12 @@ namespace MLAPI
 
             var disconnectedIds = new HashSet<ulong>();
             //Don't know if I have to disconnect the clients. I'm assuming the NetworkTransport does all the cleaning on shtudown. But this way the clients get a disconnect message from server (so long it does't get lost)
+
+            // make sure all RPCs are flushed before transport disconnect clients
+            if (RpcQueueContainer != null)
+            {
+                RpcQueueContainer.ProcessAndFlushRpcQueue(queueType: RpcQueueContainer.RpcQueueProcessingTypes.Send, NetworkUpdateStage.PostLateUpdate); // flushing messages in case transport's disconnect
+            }
 
             foreach (KeyValuePair<ulong, NetworkClient> pair in ConnectedClients)
             {
