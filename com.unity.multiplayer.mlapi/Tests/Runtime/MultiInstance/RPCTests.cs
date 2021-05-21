@@ -128,7 +128,10 @@ namespace MLAPI.RuntimeTests
 
             Assert.True(hasReceivedServerRPC, "ServerRPC was not received");
             Assert.True(hasReceivedClientRPCLocally, "ClientRPC was not locally received on the server");
-            Assert.True(hasReceivedClientRPCRemotely, "ClientRPC was not remotely received on hte client");
+            Assert.True(hasReceivedClientRPCRemotely, "ClientRPC was not remotely received on the client");
+
+            // Cleanup
+            MultiInstanceHelpers.Destroy();
         }
     }
 }
