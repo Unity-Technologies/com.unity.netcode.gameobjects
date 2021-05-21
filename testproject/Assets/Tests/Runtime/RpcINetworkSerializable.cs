@@ -23,6 +23,7 @@ namespace TestProject.RuntimeTests
         private bool m_FinishedTest;
 
         private bool m_IsSendingNull;
+        private bool m_IsArrayEmpty;
 
         [SetUp]
         public void SetUp()
@@ -186,6 +187,13 @@ namespace TestProject.RuntimeTests
         {
             m_IsSendingNull = sendNullArray;
             m_FinishedTest = false;
+            m_IsArrayEmpty = false;
+
+            if (arraySize == 0)
+            {
+                m_IsArrayEmpty = true;
+            }
+
             var numClients = 1;
             var startTime = Time.realtimeSinceStartup;
 
@@ -238,7 +246,7 @@ namespace TestProject.RuntimeTests
             if (!m_IsSendingNull)
             {
                 // Create an array of userSerializableClass instances 
-                for (int i = 0; i < 32; i++)
+                for (int i = 0; i < arraySize; i++)
                 {
                     var userSerializableClass = new UserSerializableClass();
                     //Used for testing order of the array
@@ -286,6 +294,10 @@ namespace TestProject.RuntimeTests
             if (m_IsSendingNull)
             {
                 Assert.IsNull(userSerializableClass);
+            }
+            else if (m_IsArrayEmpty)
+            {
+                Assert.AreEqual(userSerializableClass.Length,0);
             }
             else
             {
