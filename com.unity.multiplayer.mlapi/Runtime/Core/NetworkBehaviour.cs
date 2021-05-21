@@ -607,10 +607,6 @@ namespace MLAPI
                             writer.WriteUInt64Packed(NetworkObjectId);
                             writer.WriteUInt16Packed(NetworkObject.GetNetworkBehaviourOrderIndex(this));
 
-                            // Write the current tick frame
-                            // todo: this is currently done per channel, per tick. The snapshot system might improve on this
-                            writer.WriteUInt16Packed(CurrentTick);
-
                             bool writtenAny = false;
                             for (int k = 0; k < NetworkVariableFields.Count; k++)
                             {
@@ -758,10 +754,6 @@ namespace MLAPI
 
                         return;
                     }
-
-                    // read the local network tick at which this variable was written.
-                    // if this var was updated from our machine, this local tick will be locally valid
-                    ushort localTick = reader.ReadUInt16Packed();
 
                     long readStartPos = stream.Position;
 
