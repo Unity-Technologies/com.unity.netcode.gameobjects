@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using MLAPI.Messaging.Buffering;
 using Unity.Profiling;
@@ -146,11 +146,6 @@ namespace MLAPI.Messaging
 
         public void RpcReceiveQueueItem(ulong clientId, Stream stream, float receiveTime, RpcQueueContainer.QueueItemType queueItemType)
         {
-            if (NetworkManager.IsServer && clientId == NetworkManager.ServerClientId)
-            {
-                return;
-            }
-            
             switch (queueItemType)
             {
                 case RpcQueueContainer.QueueItemType.ServerRpc:

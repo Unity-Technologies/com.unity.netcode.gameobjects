@@ -1704,17 +1704,12 @@ namespace MLAPI
         private void ProfilerBeginTick()
         {
             ProfilerNotifier.ProfilerBeginTick();
-            NetworkMetrics.DispatchFrame();
-
-            if (UnityEngine.Random.Range(1, 10) == 9)
-            {
-                NetworkMetrics.TrackNamedMessageSent(Guid.NewGuid().ToString(), 10);
-            }
         }
 
         private void NotifyProfilerListeners()
         {
             ProfilerNotifier.NotifyProfilerListeners();
+            NetworkMetrics.DispatchFrame();
         }
 
         public ITransportProfilerData Transport

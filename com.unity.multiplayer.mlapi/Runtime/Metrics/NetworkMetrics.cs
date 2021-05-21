@@ -50,28 +50,12 @@ namespace MLAPI.Metrics
 
         public void TrackNamedMessageSent(string messageName, ulong bytesCount)
         {
-            m_NamedMessageSentEvent.Mark(new NamedMessageEvent
-            {
-                Name = messageName,
-                BytesCount = bytesCount,
-                Connection = new ConnectionInfo
-                {
-                    Id = m_NetworkManager.LocalClientId,
-                }
-            });
+            m_NamedMessageSentEvent.Mark(new NamedMessageEvent(new ConnectionInfo(m_NetworkManager.LocalClientId), messageName, bytesCount));
         }
 
         public void TrackNamedMessageReceived(string messageName, ulong bytesCount)
         {
-            m_NamedMessageReceivedEvent.Mark(new NamedMessageEvent
-            {
-                Name = messageName,
-                BytesCount = bytesCount,
-                Connection = new ConnectionInfo
-                {
-                    Id = m_NetworkManager.LocalClientId,
-                }
-            });
+            m_NamedMessageReceivedEvent.Mark(new NamedMessageEvent(new ConnectionInfo(m_NetworkManager.LocalClientId), messageName, bytesCount));
         }
 
         public void DispatchFrame()
