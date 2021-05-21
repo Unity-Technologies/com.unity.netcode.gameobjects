@@ -1,11 +1,11 @@
 {
     "name": "TestProject.RuntimeTests",
     "references": [
-        "Unity.Multiplayer.MLAPI.Runtime"
+        "Unity.Multiplayer.MLAPI.Runtime",
+        "Unity.Multiplayer.MLAPI.RuntimeTests",
+        "TestProject.ManualTests"
     ],
     "optionalUnityReferences": [
         "TestAssemblies"
-    ],
-    "includePlatforms": [],
-    "excludePlatforms": []
+    ]
 }

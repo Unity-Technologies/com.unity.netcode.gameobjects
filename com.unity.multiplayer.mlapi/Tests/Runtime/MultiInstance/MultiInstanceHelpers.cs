@@ -6,14 +6,18 @@ using MLAPI.Configuration;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using Object = UnityEngine.Object;
 
 namespace MLAPI.RuntimeTests
 {
     /// <summary>
     /// Provides helpers for running multi instance tests.
     /// </summary>
-    internal static class MultiInstanceHelpers
+    public static class MultiInstanceHelpers
     {
+
+        public static List<NetworkManager> NetworkManagerInstances = new List<NetworkManager>();
+
         /// <summary>
         /// Creates NetworkingManagers and configures them for use in a multi instance setting.
         /// </summary>
@@ -28,11 +32,10 @@ namespace MLAPI.RuntimeTests
             {
                 // Create gameObject
                 var go = new GameObject("NetworkManager - Client - " + i);
-
                 // Create networkManager component
                 clients[i] = go.AddComponent<NetworkManager>();
 
-                // Set config
+                // Set the NetworkConfig
                 clients[i].NetworkConfig = new NetworkConfig()
                 {
                     // Set the current scene to prevent unexpected log messages which would trigger a failure
@@ -42,14 +45,17 @@ namespace MLAPI.RuntimeTests
                 };
             }
 
+            NetworkManagerInstances = new List<NetworkManager>(clients);
+
             {
                 // Create gameObject
                 var go = new GameObject("NetworkManager - Server");
 
                 // Create networkManager component
                 server = go.AddComponent<NetworkManager>();
+                NetworkManagerInstances.Insert(0, server);
 
-                // Set config
+                // Set the NetworkConfig
                 server.NetworkConfig = new NetworkConfig()
                 {
                     // Set the current scene to prevent unexpected log messages which would trigger a failure
@@ -60,6 +66,36 @@ namespace MLAPI.RuntimeTests
             }
 
             return true;
+        }
+
+        /// <summary>
+        /// Should always be invoked when finished with a single unit test
+        /// (i.e. during TearDown)
+        /// </summary>
+        public static void Destroy()
+        {
+            // Shutdown the server which forces clients to disconnect
+            foreach (var networkManager in NetworkManagerInstances)
+            {
+                if (networkManager.IsServer)
+                {
+                    networkManager.StopHost();
+                }
+            }
+
+            // Destroy the network manager instances
+            foreach (var networkManager in NetworkManagerInstances)
+            {
+                Object.Destroy(networkManager.gameObject);
+            }
+
+            NetworkManagerInstances.Clear();
+
+            // Destroy the temporary GameObject used to run co-routines
+            if (s_CoroutineRunner != null)
+            {
+                Object.Destroy(s_CoroutineRunner);
+            }
         }
 
         /// <summary>
@@ -145,28 +181,58 @@ namespace MLAPI.RuntimeTests
         /// <param name="maxFrames">The max frames to wait for</param>
         public static IEnumerator WaitForClientConnected(NetworkManager client, CoroutineResultWrapper<bool> result = null, int maxFrames = 64)
         {
-            if (client.IsServer)
+            yield return WaitForClientsConnected(new NetworkManager[] { client }, result, maxFrames);
+        }
+
+        /// <summary>
+        /// Similar to WaitForClientConnected, this waits for multiple clients to be connected.
+        /// </summary>
+        /// <param name="clients">The clients to be connected</param>
+        /// <param name="result">The result. If null, it will automatically assert<</param>
+        /// <param name="maxFrames">The max frames to wait for</param>
+        /// <returns></returns>
+        public static IEnumerator WaitForClientsConnected(NetworkManager[] clients, CoroutineResultWrapper<bool> result = null, int maxFrames = 64)
+        {
+            // Make sure none are the host client
+            foreach (var client in clients)
             {
-                throw new InvalidOperationException("Cannot wait for connected as server");
+                if (client.IsServer)
+                {
+                    throw new InvalidOperationException("Cannot wait for connected as server");
+                }
             }
 
-            int startFrame = Time.frameCount;
-
-            while (Time.frameCount - startFrame <= maxFrames && !client.IsConnectedClient)
+            var startFrameNumber = Time.frameCount;
+            var allConnected = true;
+            while (Time.frameCount - startFrameNumber <= maxFrames)
             {
-                int nextFrameId = Time.frameCount + 1;
-                yield return new WaitUntil(() => Time.frameCount >= nextFrameId);
+                allConnected = true;
+                foreach (var client in clients)
+                {
+                    if (!client.IsConnectedClient)
+                    {
+                        allConnected = false;
+                        break;
+                    }
+                }
+                if (allConnected)
+                {
+                    break;
+                }
+                var nextFrameNumber = Time.frameCount + 1;
+                yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
             }
-
-            bool res = client.IsConnectedClient;
 
             if (result != null)
             {
-                result.Result = res;
+                result.Result = allConnected;
             }
             else
             {
-                Assert.True(res, "Client never connected");
+                foreach (var client in clients)
+                {
+                    Assert.True(client.IsConnectedClient, $"Client {client.LocalClientId} never connected");
+                }
             }
         }
 
@@ -178,20 +244,31 @@ namespace MLAPI.RuntimeTests
         /// <param name="maxFrames">The max frames to wait for</param>
         public static IEnumerator WaitForClientConnectedToServer(NetworkManager server, CoroutineResultWrapper<bool> result = null, int maxFrames = 64)
         {
+            yield return WaitForClientsConnectedToServer(server, 1, result, maxFrames);
+        }
+
+        /// <summary>
+        /// Waits on the server side for 1 client to be connected
+        /// </summary>
+        /// <param name="server">The server</param>
+        /// <param name="result">The result. If null, it will automatically assert</param>
+        /// <param name="maxFrames">The max frames to wait for</param>
+        public static IEnumerator WaitForClientsConnectedToServer(NetworkManager server, int clientCount = 1, CoroutineResultWrapper<bool> result = null, int maxFrames = 64)
+        {
             if (!server.IsServer)
             {
                 throw new InvalidOperationException("Cannot wait for connected as client");
             }
 
-            int startFrame = Time.frameCount;
+            var startFrameNumber = Time.frameCount;
 
-            while (Time.frameCount - startFrame <= maxFrames && server.ConnectedClients.Count != (server.IsHost ? 2 : 1))
+            while (Time.frameCount - startFrameNumber <= maxFrames && server.ConnectedClients.Count != clientCount)
             {
-                int nextFrameId = Time.frameCount + 1;
-                yield return new WaitUntil(() => Time.frameCount >= nextFrameId);
+                var nextFrameNumber = Time.frameCount + 1;
+                yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
             }
 
-            bool res = server.ConnectedClients.Count == (server.IsHost ? 2 : 1);
+            var res = server.ConnectedClients.Count == clientCount;
 
             if (result != null)
             {
@@ -199,7 +276,7 @@ namespace MLAPI.RuntimeTests
             }
             else
             {
-                Assert.True(res, "Client never connected to server");
+                Assert.True(res, "A client never connected to server");
             }
         }
 
@@ -218,12 +295,12 @@ namespace MLAPI.RuntimeTests
                 throw new ArgumentNullException("Result cannot be null");
             }
 
-            int startFrame = Time.frameCount;
+            var startFrameNumber = Time.frameCount;
 
-            while (Time.frameCount - startFrame <= maxFrames && representation.SpawnManager.SpawnedObjects.All(x => x.Value.NetworkObjectId != networkObjectId))
+            while (Time.frameCount - startFrameNumber <= maxFrames && representation.SpawnManager.SpawnedObjects.All(x => x.Value.NetworkObjectId != networkObjectId))
             {
-                int nextFrameId = Time.frameCount + 1;
-                yield return new WaitUntil(() => Time.frameCount >= nextFrameId);
+                var nextFrameNumber = Time.frameCount + 1;
+                yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
             }
 
             result.Result = representation.SpawnManager.SpawnedObjects.First(x => x.Value.NetworkObjectId == networkObjectId).Value;
@@ -254,12 +331,12 @@ namespace MLAPI.RuntimeTests
                 throw new ArgumentNullException("Predicate cannot be null");
             }
 
-            int startFrame = Time.frameCount;
+            var startFrame = Time.frameCount;
 
             while (Time.frameCount - startFrame <= maxFrames && !representation.SpawnManager.SpawnedObjects.Any(x => predicate(x.Value)))
             {
-                int nextFrameId = Time.frameCount + 1;
-                yield return new WaitUntil(() => Time.frameCount >= nextFrameId);
+                var nextFrameNumber = Time.frameCount + 1;
+                yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
             }
 
             result.Result = representation.SpawnManager.SpawnedObjects.FirstOrDefault(x => predicate(x.Value)).Value;
@@ -283,15 +360,15 @@ namespace MLAPI.RuntimeTests
                 throw new ArgumentNullException("Predicate cannot be null");
             }
 
-            int startFrame = Time.frameCount;
+            var startFrameNumber = Time.frameCount;
 
-            while (Time.frameCount - startFrame <= maxFrames && !predicate())
+            while (Time.frameCount - startFrameNumber <= maxFrames && !predicate())
             {
-                int nextFrameId = Time.frameCount + 1;
-                yield return new WaitUntil(() => Time.frameCount >= nextFrameId);
+                var nextFrameNumber = Time.frameCount + 1;
+                yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
             }
 
-            bool res = predicate();
+            var res = predicate();
 
             if (result != null)
             {

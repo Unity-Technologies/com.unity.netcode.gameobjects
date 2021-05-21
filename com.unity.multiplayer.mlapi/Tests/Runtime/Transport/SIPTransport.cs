@@ -39,57 +39,62 @@ public class SIPTransport : NetworkTransport
 
     public override void DisconnectLocalClient()
     {
-        // Inject disconnect on server
-        s_Server.IncomingBuffer.Enqueue(new Event
+        if (m_LocalConnection != null)
         {
-            Type = NetworkEvent.Disconnect,
-            Channel = NetworkChannel.Internal,
-            ConnectionId = m_LocalConnection.ConnectionId,
-            Data = new ArraySegment<byte>()
-        });
+            // Inject local disconnect
+            m_LocalConnection.IncomingBuffer.Enqueue(new Event
+            {
+                Type = NetworkEvent.Disconnect,
+                Channel = NetworkChannel.Internal,
+                ConnectionId = m_LocalConnection.ConnectionId,
+                Data = new ArraySegment<byte>()
+            });
 
-        // Inject local disconnect
-        m_LocalConnection.IncomingBuffer.Enqueue(new Event
-        {
-            Type = NetworkEvent.Disconnect,
-            Channel = NetworkChannel.Internal,
-            ConnectionId = m_LocalConnection.ConnectionId,
-            Data = new ArraySegment<byte>()
-        });
+            if (s_Server != null && m_LocalConnection != null)
+            {
+                // Remove the connection
+                s_Server.Transport.m_Clients.Remove(m_LocalConnection.ConnectionId);
+            }
 
-        // Remove the connection
-        s_Server.Transport.m_Clients.Remove(m_LocalConnection.ConnectionId);
+            if (m_LocalConnection.ConnectionId == ServerClientId)
+            {
+                s_Server = null;
+            }
 
-        // Remove the local connection
-        m_LocalConnection = null;
+            // Remove the local connection
+            m_LocalConnection = null;
+        }
     }
 
     // Called by server
     public override void DisconnectRemoteClient(ulong clientId)
     {
-        // Inject disconnect into remote
-        m_Clients[clientId].IncomingBuffer.Enqueue(new Event
+        if (m_Clients.ContainsKey(clientId))
         {
-            Type = NetworkEvent.Disconnect,
-            Channel = NetworkChannel.Internal,
-            ConnectionId = clientId,
-            Data = new ArraySegment<byte>()
-        });
+            // Inject disconnect into remote
+            m_Clients[clientId].IncomingBuffer.Enqueue(new Event
+            {
+                Type = NetworkEvent.Disconnect,
+                Channel = NetworkChannel.Internal,
+                ConnectionId = clientId,
+                Data = new ArraySegment<byte>()
+            });
 
-        // Inject local disconnect
-        m_LocalConnection.IncomingBuffer.Enqueue(new Event
-        {
-            Type = NetworkEvent.Disconnect,
-            Channel = NetworkChannel.Internal,
-            ConnectionId = clientId,
-            Data = new ArraySegment<byte>()
-        });
+            // Inject local disconnect
+            m_LocalConnection.IncomingBuffer.Enqueue(new Event
+            {
+                Type = NetworkEvent.Disconnect,
+                Channel = NetworkChannel.Internal,
+                ConnectionId = clientId,
+                Data = new ArraySegment<byte>()
+            });
 
-        // Remove the local connection on remote
-        m_Clients[clientId].Transport.m_LocalConnection = null;
+            // Remove the local connection on remote
+            m_Clients[clientId].Transport.m_LocalConnection = null;
 
-        // Remove connection on server
-        m_Clients.Remove(clientId);
+            // Remove connection on server
+            m_Clients.Remove(clientId);
+        }
     }
 
     public override ulong GetCurrentRtt(ulong clientId)
@@ -115,6 +120,12 @@ public class SIPTransport : NetworkTransport
                 Data = new ArraySegment<byte>()
             });
         }
+        
+        if (m_LocalConnection != null && m_LocalConnection.ConnectionId == ServerClientId)
+        {
+            s_Server = null;
+        }
+        
 
         // TODO: Cleanup
     }
@@ -203,23 +214,46 @@ public class SIPTransport : NetworkTransport
 
     public override void Send(ulong clientId, ArraySegment<byte> data, NetworkChannel channel)
     {
-        // Create copy since MLAPI wants the byte array back straight after the method call.
-        // Hard on GC.
-        byte[] copy = new byte[data.Count];
-        Buffer.BlockCopy(data.Array, data.Offset, copy, 0, data.Count);
-
-        m_Clients[clientId].IncomingBuffer.Enqueue(new Event
+        if (m_LocalConnection != null)
         {
-            Type = NetworkEvent.Data,
-            ConnectionId = m_LocalConnection.ConnectionId,
-            Data = new ArraySegment<byte>(copy),
-            Channel = channel
-        });
+            // Create copy since MLAPI wants the byte array back straight after the method call.
+            // Hard on GC.
+            byte[] copy = new byte[data.Count];
+            Buffer.BlockCopy(data.Array, data.Offset, copy, 0, data.Count);
+
+            m_Clients[clientId].IncomingBuffer.Enqueue(new Event
+            {
+                Type = NetworkEvent.Data,
+                ConnectionId = m_LocalConnection.ConnectionId,
+                Data = new ArraySegment<byte>(copy),
+                Channel = channel
+            });
+        }
     }
 
     public override NetworkEvent PollEvent(out ulong clientId, out NetworkChannel channel, out ArraySegment<byte> payload, out float receiveTime)
     {
-        if (m_LocalConnection.IncomingBuffer.Count == 0)
+        if (m_LocalConnection != null)
+        {
+            if (m_LocalConnection.IncomingBuffer.Count == 0)
+            {
+                clientId = 0;
+                channel = NetworkChannel.Internal;
+                payload = new ArraySegment<byte>();
+                receiveTime = 0;
+                return NetworkEvent.Nothing;
+            }
+
+            var peerEvent = m_LocalConnection.IncomingBuffer.Dequeue();
+
+            clientId = peerEvent.ConnectionId;
+            channel = peerEvent.Channel;
+            payload = peerEvent.Data;
+            receiveTime = 0;
+
+            return peerEvent.Type;
+        }
+        else
         {
             clientId = 0;
             channel = NetworkChannel.Internal;
@@ -227,14 +261,5 @@ public class SIPTransport : NetworkTransport
             receiveTime = 0;
             return NetworkEvent.Nothing;
         }
-
-        var peerEvent = m_LocalConnection.IncomingBuffer.Dequeue();
-
-        clientId = peerEvent.ConnectionId;
-        channel = peerEvent.Channel;
-        payload = peerEvent.Data;
-        receiveTime = 0;
-
-        return peerEvent.Type;
     }
 }

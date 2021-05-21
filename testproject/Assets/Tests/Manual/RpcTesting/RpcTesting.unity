@@ -758,7 +758,7 @@ GameObject:
   - component: {fileID: 1207168974}
   - component: {fileID: 1207168973}
   m_Layer: 5
-  m_Name: ClientRpcTestsCanvas
+  m_Name: RpcTestsCanvas
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -875,9 +875,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 47f41f8e19d061b49866be44887f53ee, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  m_RunInTestMode: 1
+  m_IterationsToRun: 5
   m_CounterTextObject: {fileID: 1859881229}
   m_ClientProgressBar: {fileID: 521221618}
   m_ConnectionModeButtonParent: {fileID: 1705962118}
+  m_ManualTestNetworkManager: {fileID: 0}
 --- !u!1 &1544159781
 GameObject:
   m_ObjectHideFlags: 0

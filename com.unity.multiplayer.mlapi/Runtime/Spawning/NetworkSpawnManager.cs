@@ -484,12 +484,12 @@ namespace MLAPI.Spawning
                     // within the NetworkSceneManager.SwitchScene method.
                     SpawnedObjectsList.Remove(sobj);
                     if (NetworkManager.PrefabHandler != null && NetworkManager.PrefabHandler.ContainsHandler(sobj))
-                    {                        
+                    {
                         NetworkManager.PrefabHandler.HandleNetworkPrefabDestroy(sobj);
                         OnDestroyObject(sobj.NetworkObjectId, false);
                     }
                     else
-                    {                        
+                    {
                         UnityEngine.Object.Destroy(sobj.gameObject);
                     }
                 }
@@ -547,20 +547,16 @@ namespace MLAPI.Spawning
 
         internal void CleanDiffedSceneObjects()
         {
-            // Clean up the diffed scene objects. I.E scene objects that have been destroyed
+            // Clean up any in-scene objects that had been destroyed
             if (PendingSoftSyncObjects.Count > 0)
             {
-                var networkObjectsToDestroy = new List<NetworkObject>();
-
                 foreach (var pair in PendingSoftSyncObjects)
                 {
-                    networkObjectsToDestroy.Add(pair.Value);
+                    UnityEngine.Object.Destroy(pair.Value.gameObject);
                 }
 
-                for (int i = 0; i < networkObjectsToDestroy.Count; i++)
-                {
-                    UnityEngine.Object.Destroy(networkObjectsToDestroy[i].gameObject);
-                }
+                // Make sure to clear this once done destroying all remaining NetworkObjects
+                PendingSoftSyncObjects.Clear();
             }
         }
 
