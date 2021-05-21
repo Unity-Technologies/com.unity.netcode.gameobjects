@@ -26,26 +26,9 @@ namespace MLAPI.RuntimeTests
         /// <param name="clients">The clients NetworkManagers</param>
         public static bool Create(int clientCount, out NetworkManager server, out NetworkManager[] clients)
         {
-            clients = new NetworkManager[clientCount];
+            NetworkManagerInstances = new List<NetworkManager>();
 
-            for (int i = 0; i < clientCount; i++)
-            {
-                // Create gameObject
-                var go = new GameObject("NetworkManager - Client - " + i);
-                // Create networkManager component
-                clients[i] = go.AddComponent<NetworkManager>();
-
-                // Set the NetworkConfig
-                clients[i].NetworkConfig = new NetworkConfig()
-                {
-                    // Set the current scene to prevent unexpected log messages which would trigger a failure
-                    RegisteredScenes = new List<string>() { SceneManager.GetActiveScene().name },
-                    // Set transport
-                    NetworkTransport = go.AddComponent<SIPTransport>()
-                };
-            }
-
-            NetworkManagerInstances = new List<NetworkManager>(clients);
+            CreateNewClients(clientCount, out clients);
 
             {
                 // Create gameObject
@@ -66,6 +49,48 @@ namespace MLAPI.RuntimeTests
             }
 
             return true;
+        }
+
+        /// <summary>
+        /// Used to add a client to the already existing list of clients
+        /// </summary>
+        /// <param name="clientCount">The amount of clients</param>
+        /// <param name="clients"></param>
+        /// <returns></returns>
+        public static bool CreateNewClients(int clientCount, out NetworkManager[] clients)
+        {
+            clients = new NetworkManager[clientCount];
+
+            for (int i = 0; i < clientCount; i++)
+            {
+                // Create gameObject
+                var go = new GameObject("NetworkManager - Client - " + i);
+                // Create networkManager component
+                clients[i] = go.AddComponent<NetworkManager>();
+
+                // Set the NetworkConfig
+                clients[i].NetworkConfig = new NetworkConfig()
+                {
+                    // Set the current scene to prevent unexpected log messages which would trigger a failure
+                    RegisteredScenes = new List<string>() { SceneManager.GetActiveScene().name },
+                    // Set transport
+                    NetworkTransport = go.AddComponent<SIPTransport>()
+                };
+            }
+
+            NetworkManagerInstances.AddRange(clients);
+            return true;
+        }
+
+        /// <summary>
+        /// Stops one single client and makes sure to cleanup any static variables in this helper
+        /// </summary>
+        /// <param name="clientToStop"></param>
+        public static void StopOneClient(NetworkManager clientToStop)
+        {
+            clientToStop.StopClient();
+            Object.Destroy(clientToStop.gameObject);
+            NetworkManagerInstances.Remove(clientToStop);
         }
 
         /// <summary>
@@ -112,7 +137,7 @@ namespace MLAPI.RuntimeTests
             }
             else
             {
-                server.StartClient();
+                server.StartServer();
             }
 
             for (int i = 0; i < clients.Length; i++)
