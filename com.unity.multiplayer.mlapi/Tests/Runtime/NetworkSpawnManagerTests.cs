@@ -86,7 +86,6 @@ namespace MLAPI.RuntimeTests
         [Test]
         public void TestServerCanAccessOtherPlayers()
         {
-
             // server can access other players
             var serverSideClientPlayerObject = m_ServerNetworkManager.SpawnManager.GetPlayerNetworkObject(clientSideClientId);
             Assert.NotNull(serverSideClientPlayerObject);
@@ -156,22 +155,25 @@ namespace MLAPI.RuntimeTests
         public IEnumerator TestConnectAndDisconnect()
         {
             // test when client connects, player object is now available
-            // Create multiple NetworkManager instances
+
+            // connect new client
             if (!MultiInstanceHelpers.CreateNewClients(1, out NetworkManager[] clients))
             {
                 Debug.LogError("Failed to create instances");
                 Assert.Fail("Failed to create instances");
             }
-
             var newClientNetworkManager = clients[0];
             newClientNetworkManager.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
             newClientNetworkManager.StartClient();
             yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientConnected(newClientNetworkManager));
             yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForCondition(() => m_ServerNetworkManager.ConnectedClients.ContainsKey(newClientNetworkManager.LocalClientId)));
             var newClientLocalClientId = newClientNetworkManager.LocalClientId;
+
+            // test new client can get that itself locally
             var newPlayerObject = newClientNetworkManager.SpawnManager.GetLocalPlayerObject();
             Assert.NotNull(newPlayerObject);
             Assert.AreEqual(newClientLocalClientId, newPlayerObject.OwnerClientId);
+            // test server can get that new client locally
             var serverSideNewClientPlayer = m_ServerNetworkManager.SpawnManager.GetPlayerNetworkObject(newClientLocalClientId);
             Assert.NotNull(serverSideNewClientPlayer);
             Assert.AreEqual(newClientLocalClientId, serverSideNewClientPlayer.OwnerClientId);
@@ -193,7 +195,7 @@ namespace MLAPI.RuntimeTests
 
             // Set the application's target frame rate back to its original value
             Application.targetFrameRate = m_OriginalTargetFrameRate;
-            yield return new WaitForSeconds(0); // wait for next frame so everything is destroyed
+            yield return new WaitForSeconds(0); // wait for next frame so everything is destroyed, so following tests can execute from clean environment
         }
     }
 }

@@ -282,7 +282,7 @@ namespace MLAPI.RuntimeTests
         {
             if (!server.IsServer)
             {
-                throw new InvalidOperationException("Cannot wait for connected as  client");
+                throw new InvalidOperationException("Cannot wait for connected as client");
             }
 
             var startFrameNumber = Time.frameCount;
