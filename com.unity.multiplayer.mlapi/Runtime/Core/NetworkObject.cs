@@ -504,6 +504,66 @@ namespace MLAPI
             }
         }
 
+        private bool m_IsReparented;
+        private ulong? m_LatestParent;
+        private Transform m_CachedParent;
+
+        private void OnTransformParentChanged()
+        {
+            if (!IsSpawned)
+            {
+                print("is not spawned");
+                return;
+            }
+
+            var newParent = transform.parent;
+
+            if (newParent == m_CachedParent)
+            {
+                print("new parent == cached parent");
+                return;
+            }
+
+            m_CachedParent = newParent;
+
+            if (newParent == null)
+            {
+                m_IsReparented = true;
+                m_LatestParent = null;
+
+                print("moved to the root");
+                return;
+            }
+
+            var parentObject = newParent.GetComponent<NetworkObject>();
+            if (parentObject != null && parentObject.IsSpawned)
+            {
+                m_IsReparented = true;
+                m_LatestParent = parentObject.NetworkObjectId;
+
+                print($"moved under {newParent.name}:{m_LatestParent}");
+                return;
+            }
+
+            print("moved under a non-root, non-networkobject parent, moving to the root");
+
+            m_IsReparented = true;
+            m_LatestParent = null;
+            m_CachedParent = null;
+
+            // move to the root
+            transform.parent = null;
+        }
+
+        internal void ResetNetworkParenting()
+        {
+            m_IsReparented = false;
+            m_LatestParent = null;
+            m_CachedParent = null;
+
+            print($"{nameof(ResetNetworkParenting)} ({name})");
+        }
+
         internal void ResetNetworkStartInvoked()
         {
             if (ChildNetworkBehaviours != null)
@@ -698,7 +758,7 @@ namespace MLAPI
                 // If our current buffer position is greater than our positionBeforeNetworkVariableData then we wrote NetworkVariable data
                 // Part 1: This will include the total NetworkVariable data size, if there was NetworkVariable data written, to the stream
                 // in order to be able to skip past this entry on the deserialization side in the event this NetworkObject fails to be
-                // constructed (See Part 2 below in the DeserializeSceneObject method) 
+                // constructed (See Part 2 below in the DeserializeSceneObject method)
                 if (buffer.Position > positionBeforeNetworkVariableData)
                 {
                     // Store our current stream buffer position

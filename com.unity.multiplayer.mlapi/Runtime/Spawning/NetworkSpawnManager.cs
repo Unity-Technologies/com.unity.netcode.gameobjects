@@ -332,6 +332,8 @@ namespace MLAPI.Spawning
                 }
             }
 
+            networkObject.ResetNetworkParenting();
+
             networkObject.ResetNetworkStartInvoked();
 
             if (readPayload)
