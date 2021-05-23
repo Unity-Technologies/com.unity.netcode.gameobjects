@@ -2,7 +2,6 @@ using System;
 using MLAPI.NetworkVariable;
 using MLAPI.Transports;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace MLAPI.Prototyping
 {
@@ -41,8 +40,6 @@ namespace MLAPI.Prototyping
         /// TODO MTT-766 once we have per var interpolation
         /// Enable interpolation
         /// </summary>
-        // ReSharper disable once NotAccessedField.Global
-        [FormerlySerializedAs("m_InterpolatePosition")]
         [SerializeField, Tooltip("This requires AssumeSyncedSends to be true")]
         public bool InterpolatePosition = true;
 
@@ -50,7 +47,6 @@ namespace MLAPI.Prototyping
         /// TODO MTT-766 once we have per var interpolation
         /// The distance before snaping to the position
         /// </summary>
-        // ReSharper disable once NotAccessedField.Global
         [SerializeField, Tooltip("The transform will snap if the distance is greater than this distance")]
         public float SnapDistance = 10f;
 
@@ -58,7 +54,6 @@ namespace MLAPI.Prototyping
         /// TODO MTT-766 once we have per var interpolation
         /// Should the server interpolate
         /// </summary>
-        // ReSharper disable once NotAccessedField.Global
         [SerializeField]
         public bool InterpolateServer = true;
 
@@ -68,7 +63,6 @@ namespace MLAPI.Prototyping
         ///      The setting in the NetworkTransform would be to just apply it to our netvars when available
         /// The min meters to move before a send is sent
         /// </summary>
-        // ReSharper disable once NotAccessedField.Global
         [SerializeField, Tooltip("The min meters to move before a send is sent")]
         public float MinMeters = 0.15f;
 
@@ -76,7 +70,6 @@ namespace MLAPI.Prototyping
         /// TODO MTT-767 once we have this per var setting
         /// The min degrees to rotate before a send is sent
         /// </summary>
-        // ReSharper disable once NotAccessedField.Global
         [SerializeField, Tooltip("The min degrees to rotate before a send is sent")]
         public float MinDegrees = 1.5f;
 
@@ -84,7 +77,6 @@ namespace MLAPI.Prototyping
         /// TODO MTT-767 once we have this per var setting
         /// The min meters to scale before a send is sent
         /// </summary>
-        // ReSharper disable once NotAccessedField.Global
         [SerializeField, Tooltip("The min meters to scale before a send is sent")]
         public float MinSize = 0.15f;
 
