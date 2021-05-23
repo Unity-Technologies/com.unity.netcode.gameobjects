@@ -170,7 +170,7 @@ namespace MLAPI.Prototyping
             m_Transform.localScale = new Vector3(globalScale.x / lossyScale.x, globalScale.y / lossyScale.y, globalScale.z / lossyScale.z);
         }
 
-        private bool CanUpdateTransform()
+        public bool CanUpdateTransform()
         {
             return (IsClient && TransformAuthority == Authority.Client && IsOwner) || (IsServer && TransformAuthority == Authority.Server) || TransformAuthority == Authority.Shared;
         }

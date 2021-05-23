@@ -591,7 +591,7 @@ namespace MLAPI
             return (isReparented, latestParent);
         }
 
-        internal void DebugNetworkParenting()
+        public void DebugNetworkParenting()
         {
             print($"{nameof(NetworkObject)} ({name}) -> isReparented:{m_IsReparented} --- latestParent:{m_LatestParent}");
         }
