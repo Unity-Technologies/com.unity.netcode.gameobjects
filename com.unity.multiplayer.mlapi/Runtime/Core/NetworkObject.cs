@@ -516,43 +516,49 @@ namespace MLAPI
                 return;
             }
 
-            var newParent = transform.parent;
-
-            if (newParent == m_CachedParent)
+            var parentTransform = transform.parent;
+            if (parentTransform != null)
             {
-                print("new parent == cached parent");
-                return;
+                var parentObject = transform.parent.GetComponent<NetworkObject>();
+                if (parentObject != null)
+                {
+                    m_LatestParent = parentObject.NetworkObjectId;
+                }
+                else
+                {
+                    Debug.LogError("parent is not a network-object, moving to the root!");
+                    m_LatestParent = null;
+                }
             }
-
-            m_CachedParent = newParent;
-
-            if (newParent == null)
+            else
             {
-                m_IsReparented = true;
                 m_LatestParent = null;
-
-                print("moved to the root");
-                return;
             }
 
-            var parentObject = newParent.GetComponent<NetworkObject>();
-            if (parentObject != null && parentObject.IsSpawned)
             {
-                m_IsReparented = true;
-                m_LatestParent = parentObject.NetworkObjectId;
+                // todo: send internal message, handle on the other side
+                using (var buffer = PooledNetworkBuffer.Get())
+                {
+                    using (var writer = PooledNetworkWriter.Get(buffer))
+                    {
+                        writer.WriteUInt64Packed(NetworkObjectId);
+                        WriteNetworkParenting(writer, m_IsReparented, m_LatestParent);
+                    }
 
-                print($"moved under {newParent.name}:{m_LatestParent}");
-                return;
+                    // todo: send to everyone
+                    for (int i = 0; i < NetworkManager.ConnectedClientsList.Count; i++)
+                    {
+                        var targetClientId = NetworkManager.ConnectedClientsList[i].ClientId;
+                        if (Observers.Contains(targetClientId))
+                        {
+                            NetworkManager.MessageSender.Send(targetClientId, NetworkConstants.PARENT_SYNC, NetworkChannel.Internal, buffer);
+                        }
+                    }
+                }
             }
-
-            print("moved under a non-root, non-networkobject parent, moving to the root");
 
             m_IsReparented = true;
-            m_LatestParent = null;
-            m_CachedParent = null;
-
-            // move to the root
-            transform.parent = null;
+            ApplyNetworkParenting();
         }
 
         internal static void WriteNetworkParenting(NetworkWriter writer, bool isReparented, ulong? latestParent)
@@ -612,11 +618,6 @@ namespace MLAPI
                 return true;
             }
 
-            if (transform.parent == m_CachedParent)
-            {
-                return true;
-            }
-
             if (m_LatestParent == null || !m_LatestParent.HasValue)
             {
                 Debug.Log($"{nameof(ApplyNetworkParenting)} reparented {name}:{NetworkObjectId} under the root");
@@ -627,14 +628,20 @@ namespace MLAPI
 
             if (!NetworkManager.SpawnManager.SpawnedObjects.ContainsKey(m_LatestParent.Value))
             {
-                OrphanChildren.Add(this);
+                if (OrphanChildren.Add(this))
+                {
+                    Debug.Log($"{name} is orphan");
+                }
                 return false;
             }
 
             var parentObject = NetworkManager.SpawnManager.SpawnedObjects[m_LatestParent.Value];
 
             m_CachedParent = parentObject.transform;
-            transform.parent = parentObject.transform;
+            if (transform.parent != m_CachedParent)
+            {
+                transform.parent = m_CachedParent;
+            }
 
             Debug.Log($"{nameof(ApplyNetworkParenting)} reparented {name}:{NetworkObjectId} under {parentObject.name}:{parentObject.NetworkObjectId}");
 
@@ -944,8 +951,6 @@ namespace MLAPI
 
             // Spawn the NetworkObject
             networkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, networkId, isSceneObject, isPlayerObject, ownerClientId, objectStream, false, 0, true, false);
-
-            Debug.Log($"[{nameof(DeserializeSceneObject)}] {nameof(NetworkObject)} ({networkObject.name}) -> isReparented:{isReparented} --- latestParent:{latestParent}");
 
             var bufferQueue = networkManager.BufferManager.ConsumeBuffersForNetworkId(networkId);
 

@@ -4,7 +4,6 @@ using MLAPI.Connection;
 using MLAPI.Logging;
 using MLAPI.SceneManagement;
 using MLAPI.Serialization.Pooled;
-using MLAPI.Spawning;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.SceneManagement;

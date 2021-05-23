@@ -1342,6 +1342,25 @@ namespace MLAPI
 
                             break;
                         }
+                    case NetworkConstants.PARENT_SYNC:
+                        {
+                            if (IsClient)
+                            {
+                                using (var reader = PooledNetworkReader.Get(messageStream))
+                                {
+                                    var networkObjectId = reader.ReadUInt64Packed();
+                                    var (isReparented, latestParent) = NetworkObject.ReadNetworkParenting(reader);
+                                    if (SpawnManager.SpawnedObjects.ContainsKey(networkObjectId))
+                                    {
+                                        var networkObject = SpawnManager.SpawnedObjects[networkObjectId];
+                                        networkObject.SetNetworkParenting(isReparented, latestParent);
+                                        networkObject.ApplyNetworkParenting();
+                                    }
+                                }
+                            }
+
+                            break;
+                        }
                     default:
                         if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
                         {
