@@ -598,11 +598,63 @@ namespace MLAPI
             m_LatestParent = latestParent;
         }
 
-        internal void ResetNetworkParenting()
+        internal static HashSet<NetworkObject> OrphanChildren = new HashSet<NetworkObject>();
+
+        internal bool ApplyNetworkParenting()
         {
-            m_IsReparented = false;
-            m_LatestParent = null;
-            m_CachedParent = null;
+            if (!IsSpawned)
+            {
+                return false;
+            }
+
+            if (!m_IsReparented)
+            {
+                return true;
+            }
+
+            if (transform.parent == m_CachedParent)
+            {
+                return true;
+            }
+
+            if (m_LatestParent == null || !m_LatestParent.HasValue)
+            {
+                Debug.Log($"{nameof(ApplyNetworkParenting)} reparented {name}:{NetworkObjectId} under the root");
+                m_CachedParent = null;
+                transform.parent = null;
+                return true;
+            }
+
+            if (!NetworkManager.SpawnManager.SpawnedObjects.ContainsKey(m_LatestParent.Value))
+            {
+                OrphanChildren.Add(this);
+                return false;
+            }
+
+            var parentObject = NetworkManager.SpawnManager.SpawnedObjects[m_LatestParent.Value];
+
+            m_CachedParent = parentObject.transform;
+            transform.parent = parentObject.transform;
+
+            Debug.Log($"{nameof(ApplyNetworkParenting)} reparented {name}:{NetworkObjectId} under {parentObject.name}:{parentObject.NetworkObjectId}");
+
+            return true;
+        }
+
+        internal static void CheckOrphanChildren()
+        {
+            var itemsToRemove = new List<NetworkObject>();
+            foreach (var networkObject in OrphanChildren)
+            {
+                if (networkObject.ApplyNetworkParenting())
+                {
+                    itemsToRemove.Add(networkObject);
+                }
+            }
+            foreach (var networkObject in itemsToRemove)
+            {
+                OrphanChildren.Remove(networkObject);
+            }
         }
 
         internal void ResetNetworkStartInvoked()
@@ -864,6 +916,8 @@ namespace MLAPI
             //Attempt to create a local NetworkObject
             var networkObject = networkManager.SpawnManager.CreateLocalNetworkObject(isSceneObject, prefabHash, ownerClientId, parentNetworkId, position, rotation, isReparented);
 
+            networkObject.SetNetworkParenting(isReparented, latestParent);
+
             // Determine if this NetworkObject has NetworkVariable data to read
             var networkVariableDataIsIncluded = reader.ReadBool();
 
@@ -891,7 +945,6 @@ namespace MLAPI
             // Spawn the NetworkObject
             networkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, networkId, isSceneObject, isPlayerObject, ownerClientId, objectStream, false, 0, true, false);
 
-            networkObject.SetNetworkParenting(isReparented, latestParent);
             Debug.Log($"[{nameof(DeserializeSceneObject)}] {nameof(NetworkObject)} ({networkObject.name}) -> isReparented:{isReparented} --- latestParent:{latestParent}");
 
             var bufferQueue = networkManager.BufferManager.ConsumeBuffersForNetworkId(networkId);

@@ -333,7 +333,8 @@ namespace MLAPI.Spawning
                 }
             }
 
-            networkObject.ResetNetworkParenting();
+            networkObject.ApplyNetworkParenting();
+            NetworkObject.CheckOrphanChildren();
 
             networkObject.ResetNetworkStartInvoked();
 

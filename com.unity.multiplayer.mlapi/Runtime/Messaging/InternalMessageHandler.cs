@@ -205,9 +205,8 @@ namespace MLAPI.Messaging
                 var payLoadLength = hasPayload ? reader.ReadInt32Packed() : 0;
 
                 var networkObject = NetworkManager.SpawnManager.CreateLocalNetworkObject(softSync, prefabHash, ownerClientId, parentNetworkId, pos, rot, isReparented);
-                NetworkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, networkId, softSync, isPlayerObject, ownerClientId, stream, hasPayload, payLoadLength, true, false);
                 networkObject.SetNetworkParenting(isReparented, latestParent);
-                Debug.Log($"[{nameof(HandleAddObject)}] {nameof(NetworkObject)} ({networkObject.name}) -> isReparented:{isReparented} --- latestParent:{latestParent}");
+                NetworkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, networkId, softSync, isPlayerObject, ownerClientId, stream, hasPayload, payLoadLength, true, false);
 
                 Queue<BufferManager.BufferedMessage> bufferQueue = NetworkManager.BufferManager.ConsumeBuffersForNetworkId(networkId);
 
