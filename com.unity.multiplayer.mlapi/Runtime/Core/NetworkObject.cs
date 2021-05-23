@@ -555,13 +555,54 @@ namespace MLAPI
             transform.parent = null;
         }
 
+        internal static void WriteNetworkParenting(NetworkWriter writer, bool isReparented, ulong? latestParent)
+        {
+            writer.WriteBool(isReparented);
+            if (isReparented)
+            {
+                var isLatestParentSet = latestParent != null && latestParent.HasValue;
+                writer.WriteBool(isLatestParentSet);
+                if (isLatestParentSet)
+                {
+                    writer.WriteUInt64Packed(latestParent.Value);
+                }
+            }
+        }
+
+        internal static (bool IsReparented, ulong? LatestParent) ReadNetworkParenting(NetworkReader reader)
+        {
+            ulong? latestParent = null;
+            bool isReparented = reader.ReadBool();
+            if (isReparented)
+            {
+                var isLatestParentSet = reader.ReadBool();
+                if (isLatestParentSet)
+                {
+                    latestParent = reader.ReadUInt64Packed();
+                }
+            }
+
+            return (isReparented, latestParent);
+        }
+
+        internal void DebugNetworkParenting()
+        {
+            print($"{nameof(NetworkObject)} ({name}) -> isReparented:{m_IsReparented} --- latestParent:{m_LatestParent}");
+        }
+
+        internal (bool IsReparented, ulong? LatestParent) GetNetworkParenting() => (m_IsReparented, m_LatestParent);
+
+        internal void SetNetworkParenting(bool isReparented, ulong? latestParent)
+        {
+            m_IsReparented = isReparented;
+            m_LatestParent = latestParent;
+        }
+
         internal void ResetNetworkParenting()
         {
             m_IsReparented = false;
             m_LatestParent = null;
             m_CachedParent = null;
-
-            print($"{nameof(ResetNetworkParenting)} ({name})");
         }
 
         internal void ResetNetworkStartInvoked()
@@ -738,6 +779,11 @@ namespace MLAPI
                 writer.WriteBool(false);
             }
 
+            {
+                var (isReparented, latestParent) = GetNetworkParenting();
+                WriteNetworkParenting(writer, isReparented, latestParent);
+            }
+
             // Write whether we are including network variable data
             writer.WriteBool(NetworkManager.NetworkConfig.EnableNetworkVariable);
 
@@ -813,8 +859,10 @@ namespace MLAPI
                 rotation = Quaternion.Euler(reader.ReadSinglePacked(), reader.ReadSinglePacked(), reader.ReadSinglePacked());
             }
 
+            var (isReparented, latestParent) = ReadNetworkParenting(reader);
+
             //Attempt to create a local NetworkObject
-            var networkObject = networkManager.SpawnManager.CreateLocalNetworkObject(isSceneObject, prefabHash, ownerClientId, parentNetworkId, position, rotation);
+            var networkObject = networkManager.SpawnManager.CreateLocalNetworkObject(isSceneObject, prefabHash, ownerClientId, parentNetworkId, position, rotation, isReparented);
 
             // Determine if this NetworkObject has NetworkVariable data to read
             var networkVariableDataIsIncluded = reader.ReadBool();
@@ -842,6 +890,9 @@ namespace MLAPI
 
             // Spawn the NetworkObject
             networkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, networkId, isSceneObject, isPlayerObject, ownerClientId, objectStream, false, 0, true, false);
+
+            networkObject.SetNetworkParenting(isReparented, latestParent);
+            Debug.Log($"[{nameof(DeserializeSceneObject)}] {nameof(NetworkObject)} ({networkObject.name}) -> isReparented:{isReparented} --- latestParent:{latestParent}");
 
             var bufferQueue = networkManager.BufferManager.ConsumeBuffersForNetworkId(networkId);
 

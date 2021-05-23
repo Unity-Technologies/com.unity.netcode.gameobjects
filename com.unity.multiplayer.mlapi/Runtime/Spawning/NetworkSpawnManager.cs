@@ -8,6 +8,7 @@ using MLAPI.Exceptions;
 using MLAPI.Logging;
 using MLAPI.Messaging;
 using MLAPI.SceneManagement;
+using MLAPI.Serialization;
 using MLAPI.Serialization.Pooled;
 using MLAPI.Transports;
 using UnityEngine;
@@ -157,11 +158,11 @@ namespace MLAPI.Spawning
         /// <summary>
         /// Should only run on the client
         /// </summary>
-        internal NetworkObject CreateLocalNetworkObject(bool softCreate, uint prefabHash, ulong ownerClientId, ulong? parentNetworkId, Vector3? position, Quaternion? rotation)
+        internal NetworkObject CreateLocalNetworkObject(bool softCreate, uint prefabHash, ulong ownerClientId, ulong? parentNetworkId, Vector3? position, Quaternion? rotation, bool isReparented = false)
         {
             NetworkObject parentNetworkObject = null;
 
-            if (parentNetworkId != null)
+            if (parentNetworkId != null && !isReparented)
             {
                 if (SpawnedObjects.TryGetValue(parentNetworkId.Value, out NetworkObject networkObject))
                 {
@@ -379,7 +380,7 @@ namespace MLAPI.Spawning
             rpcQueueContainer.AddToInternalMLAPISendQueue(queueItem);
         }
 
-        internal void WriteSpawnCallForObject(Serialization.NetworkBuffer buffer, ulong clientId, NetworkObject networkObject, Stream payload)
+        internal void WriteSpawnCallForObject(NetworkBuffer buffer, ulong clientId, NetworkObject networkObject, Stream payload)
         {
             using (var writer = PooledNetworkWriter.Get(buffer))
             {
@@ -421,6 +422,11 @@ namespace MLAPI.Spawning
                 else
                 {
                     writer.WriteBool(false);
+                }
+
+                {
+                    var (isReparented, latestParent) = networkObject.GetNetworkParenting();
+                    NetworkObject.WriteNetworkParenting(writer, isReparented, latestParent);
                 }
 
                 writer.WriteBool(payload != null);
