@@ -18,24 +18,15 @@ namespace MLAPI
 
         private void Update()
         {
-            if (Input.GetKeyDown(KeyCode.G))
-            {
-                foreach (var networkObject in NetworkManager.Singleton.SpawnManager.SpawnedObjectsList)
-                {
-                    networkObject.DebugNetworkParenting();
-                }
-            }
             if (Input.GetKeyDown(KeyCode.T))
             {
                 if (SourceToMove.transform.parent == transform)
                 {
-                    print("moved source to the root");
                     SourceToMove.transform.parent = null;
                     SourceToMove.transform.position = m_CachedPosition;
                 }
                 else
                 {
-                    print("moved source under the target");
                     m_CachedPosition = SourceToMove.transform.position;
                     SourceToMove.transform.parent = transform;
                     SourceToMove.transform.localPosition = Vector3.zero;

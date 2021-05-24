@@ -542,7 +542,7 @@ namespace MLAPI
             if (!IsSpawned)
             {
                 transform.parent = m_CachedParent;
-                Debug.LogException(new SpawnStateException($"A {nameof(NetworkObject)} can only be reparented after being spawned"));
+                Debug.LogException(new SpawnStateException($"{nameof(NetworkObject)} can only be reparented after being spawned"));
                 return;
             }
 
@@ -556,7 +556,11 @@ namespace MLAPI
                 }
                 else
                 {
-                    Debug.LogError("parent is not a network-object, moving to the root!");
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
+                    {
+                        NetworkLog.LogError($"Invalid parenting, {nameof(NetworkObject)} moved under a non-{nameof(NetworkObject)} parent, will fix and move to the scene root");
+                    }
+
                     m_LatestParent = null;
                 }
             }
@@ -565,24 +569,20 @@ namespace MLAPI
                 m_LatestParent = null;
             }
 
+            using (var buffer = PooledNetworkBuffer.Get())
             {
-                // todo: send internal message, handle on the other side
-                using (var buffer = PooledNetworkBuffer.Get())
+                using (var writer = PooledNetworkWriter.Get(buffer))
                 {
-                    using (var writer = PooledNetworkWriter.Get(buffer))
-                    {
-                        writer.WriteUInt64Packed(NetworkObjectId);
-                        WriteNetworkParenting(writer, m_IsReparented, m_LatestParent);
-                    }
+                    writer.WriteUInt64Packed(NetworkObjectId);
+                    WriteNetworkParenting(writer, m_IsReparented, m_LatestParent);
+                }
 
-                    // todo: send to everyone
-                    for (int i = 0; i < NetworkManager.ConnectedClientsList.Count; i++)
+                for (int i = 0; i < NetworkManager.ConnectedClientsList.Count; i++)
+                {
+                    var targetClientId = NetworkManager.ConnectedClientsList[i].ClientId;
+                    if (Observers.Contains(targetClientId))
                     {
-                        var targetClientId = NetworkManager.ConnectedClientsList[i].ClientId;
-                        if (Observers.Contains(targetClientId))
-                        {
-                            NetworkManager.MessageSender.Send(targetClientId, NetworkConstants.PARENT_SYNC, NetworkChannel.Internal, buffer);
-                        }
+                        NetworkManager.MessageSender.Send(targetClientId, NetworkConstants.PARENT_SYNC, NetworkChannel.Internal, buffer);
                     }
                 }
             }
@@ -621,11 +621,6 @@ namespace MLAPI
             return (isReparented, latestParent);
         }
 
-        public void DebugNetworkParenting()
-        {
-            print($"{nameof(NetworkObject)} ({name}) -> isReparented:{m_IsReparented} --- latestParent:{m_LatestParent}");
-        }
-
         internal (bool IsReparented, ulong? LatestParent) GetNetworkParenting() => (m_IsReparented, m_LatestParent);
 
         internal void SetNetworkParenting(bool isReparented, ulong? latestParent)
@@ -650,7 +645,6 @@ namespace MLAPI
 
             if (m_LatestParent == null || !m_LatestParent.HasValue)
             {
-                Debug.Log($"{nameof(ApplyNetworkParenting)} reparented {name}:{NetworkObjectId} under the root");
                 m_CachedParent = null;
                 transform.parent = null;
                 return true;
@@ -660,7 +654,10 @@ namespace MLAPI
             {
                 if (OrphanChildren.Add(this))
                 {
-                    Debug.Log($"{name} is orphan");
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                    {
+                        NetworkLog.LogWarning($"{nameof(NetworkObject)} ({name}) cannot find its parent, added to {nameof(OrphanChildren)} set");
+                    }
                 }
                 return false;
             }
@@ -670,22 +667,20 @@ namespace MLAPI
             m_CachedParent = parentObject.transform;
             transform.parent = parentObject.transform;
 
-            Debug.Log($"{nameof(ApplyNetworkParenting)} reparented {name}:{NetworkObjectId} under {parentObject.name}:{parentObject.NetworkObjectId}");
-
             return true;
         }
 
         internal static void CheckOrphanChildren()
         {
-            var itemsToRemove = new List<NetworkObject>();
-            foreach (var networkObject in OrphanChildren)
+            var objectsToRemove = new List<NetworkObject>();
+            foreach (var orphanObject in OrphanChildren)
             {
-                if (networkObject.ApplyNetworkParenting())
+                if (orphanObject.ApplyNetworkParenting())
                 {
-                    itemsToRemove.Add(networkObject);
+                    objectsToRemove.Add(orphanObject);
                 }
             }
-            foreach (var networkObject in itemsToRemove)
+            foreach (var networkObject in objectsToRemove)
             {
                 OrphanChildren.Remove(networkObject);
             }
