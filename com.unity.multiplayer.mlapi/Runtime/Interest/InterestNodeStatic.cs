@@ -7,7 +7,6 @@ namespace MLAPI.Interest
         public void OnEnable()
         {
             InterestObjectStorage = CreateInstance<BasicInterestStorage>();
-            InterestSettings = CreateInstance<InterestSettings>();
         }
     }
 }

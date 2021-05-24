@@ -40,40 +40,31 @@ namespace MLAPI.Interest
         {
             // allow all the Interest Nodes I am mapped to to have a chance
             //  to update themselves
-            foreach (var com in updatedObject.InterestNodes)
-            {
-                if (com != null)
-                {
-                    com.UpdateObject(updatedObject);
-                }
-            }
+            updatedObject.InterestNode.UpdateObject(updatedObject);
         }
 
         public void HandleSpawn(NetworkObject newObject)
         {
-            var coms = newObject.InterestNodes;
+            var com = newObject.InterestNode;
 
             // if an object has no Interest Nodes, add it to the default one.  That is,
             //  if you don't opt into the system behavior is the same as before the
             //  Interest system was added
-            if (coms.Count == 0)
+            if (com == null)
             {
                 m_DefaultInterestNode.InterestObjectStorage.AddObject(newObject);
             }
             // else add myself to whatever Interest Nodes I am associated with
             else
             {
-                foreach (var com in coms)
+                if (!(com is null))
                 {
-                    if (!(com is null))
-                    {
-                        AddNode(com);
-                        com.AddObject(newObject);
+                    AddNode(com);
+                    com.AddObject(newObject);
 
-                        if (com.OnSpawn != null)
-                        {
-                            com.OnSpawn(newObject);
-                        }
+                    if (com.OnSpawn != null)
+                    {
+                        com.OnSpawn(newObject);
                     }
                 }
             }
@@ -81,26 +72,21 @@ namespace MLAPI.Interest
 
         public void HandleDespawn(NetworkObject oldObject)
         {
-            var coms = oldObject.InterestNodes;
-
+            var com = oldObject.InterestNode;
 
             // if an object has no mapping node, add it to the default one.  That is,
             //  if you don't opt into the system you always show in the results
-            if (coms.Count == 0)
+            if (com == null)
             {
                 m_DefaultInterestNode.InterestObjectStorage.RemoveObject(oldObject);
             }
             else
             {
-                foreach (var com in coms)
-                {
-                    com.RemoveObject(oldObject);
+                com?.RemoveObject(oldObject);
 
-                    // hrm, which goes first?
-                    if (com.OnDespawn != null)
-                    {
-                        com.OnDespawn(oldObject);
-                    }
+                if (com?.OnDespawn != null)
+                {
+                    com?.OnDespawn(oldObject);
                 }
             }
         }

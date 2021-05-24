@@ -27,7 +27,6 @@ namespace MLAPI.Interest
         public SpawnDelegate OnSpawn;
         public SpawnDelegate OnDespawn;
 
-        public InterestSettings InterestSettings;
         public InterestObjectStorage InterestObjectStorage;
 
         public void AddObject(NetworkObject obj)

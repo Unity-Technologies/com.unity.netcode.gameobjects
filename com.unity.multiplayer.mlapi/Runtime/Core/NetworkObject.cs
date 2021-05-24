@@ -23,7 +23,7 @@ namespace MLAPI
 
     public sealed class NetworkObject : MonoBehaviour
     {
-        public List<InterestNode> InterestNodes = new List<InterestNode>();
+        public InterestNode InterestNode;
 
         [HideInInspector]
         [SerializeField]
@@ -193,17 +193,17 @@ namespace MLAPI
         {
             get
             {
-                InterestSettings ans = null;
+                InterestSettings result = null;
                 if (InterestSettingsOverride)
                 {
-                    ans = InterestSettingsOverride;
+                    result = InterestSettingsOverride;
                 }
                 else if (NetworkManager.InterestSettings)
                 {
-                    ans = NetworkManager.InterestSettings;
+                    result = NetworkManager.InterestSettings;
                 }
 
-                return ans;
+                return result;
             }
             set => InterestSettingsOverride = value;
         }
@@ -1089,10 +1089,7 @@ namespace MLAPI
         //  I am associated with
         public void UpdateInterest()
         {
-            foreach (var com in InterestNodes)
-            {
-                com?.UpdateObject(this);
-            }
+            InterestNode?.UpdateObject(this);
         }
     }
 }

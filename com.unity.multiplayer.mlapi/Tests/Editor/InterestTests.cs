@@ -88,13 +88,20 @@ namespace MLAPI.EditorTests
             private readonly BasicInterestStorage m_Evens;
         }
 
-        private NetworkObject MakeObjectHelper(Vector3 coords, InterestNode comn)
+        private NetworkObject MakeGameObjectHelper()
         {
             var o = new GameObject();
             var no = (NetworkObject)o.AddComponent(typeof(NetworkObject));
+            return no;
+        }
+
+        private NetworkObject MakeGameInterestObjectHelper(Vector3 coords, InterestNode comn)
+        {
+            var o = new GameObject();
+            var no = MakeGameObjectHelper();
             if (comn != null)
             {
-                no.InterestNodes.Add(comn);
+                no.InterestNode = comn;
                 no.transform.position = coords;
             }
 
@@ -128,10 +135,10 @@ namespace MLAPI.EditorTests
                 ClientId = 1,
             };
 
-            var delegateYes = MakeObjectHelper(new Vector3(0.0f, 0.0f, 0.0f), delegateNode);
+            var delegateYes = MakeGameInterestObjectHelper(new Vector3(0.0f, 0.0f, 0.0f), delegateNode);
             nm.SpawnManager.SpawnNetworkObjectLocally(delegateYes);
 
-            var delegateNo = MakeObjectHelper(new Vector3(0.0f, 0.0f, 0.0f), someOtherNode);
+            var delegateNo = MakeGameInterestObjectHelper(new Vector3(0.0f, 0.0f, 0.0f), someOtherNode);
             nm.SpawnManager.SpawnNetworkObjectLocally(delegateNo);
             Assert.True(delegateNode.SpawnCalled == 1);
 
@@ -161,12 +168,12 @@ namespace MLAPI.EditorTests
             var nodes = new NetworkObject[4];
             for (var i = 0; i < numNodes; i++)
             {
-                nodes[i] = MakeObjectHelper(new Vector3(0.0f, 0.0f, 0.0f), oddsEvensNode);
+                nodes[i] = MakeGameInterestObjectHelper(new Vector3(0.0f, 0.0f, 0.0f), oddsEvensNode);
                 nodes[i].NetworkObjectId = (ulong)(i + 100);
                 nm.SpawnManager.SpawnNetworkObjectLocally(nodes[i]);
             }
 
-            nc.PlayerObject = MakeObjectHelper(new Vector3(0.0f, 0.0f, 0.0f), null);
+            nc.PlayerObject = MakeGameInterestObjectHelper(new Vector3(0.0f, 0.0f, 0.0f), null);
 
             results.Clear();
             nc.PlayerObject.NetworkObjectId = 100;
@@ -232,19 +239,19 @@ namespace MLAPI.EditorTests
             nm.InterestManager.QueryFor(nc, results);
             int objectsBeforeAdd = results.Count;
 
-            var ok1 = MakeObjectHelper(new Vector3(0.5f, 0.0f, 0.0f), naiveRadiusNode);
+            var ok1 = MakeGameInterestObjectHelper(new Vector3(0.5f, 0.0f, 0.0f), naiveRadiusNode);
             nm.SpawnManager.SpawnNetworkObjectLocally(ok1);
 
-            var ok2 = MakeObjectHelper(new Vector3(1.0f, 0.0f, 0.0f), naiveRadiusNode);
+            var ok2 = MakeGameInterestObjectHelper(new Vector3(1.0f, 0.0f, 0.0f), naiveRadiusNode);
             nm.SpawnManager.SpawnNetworkObjectLocally(ok2);
 
-            var tooFar = MakeObjectHelper(new Vector3(3.0f, 0.0f, 0.0f), naiveRadiusNode);
+            var tooFar = MakeGameInterestObjectHelper(new Vector3(3.0f, 0.0f, 0.0f), naiveRadiusNode);
             nm.SpawnManager.SpawnNetworkObjectLocally(tooFar);
 
-            var always = MakeObjectHelper(new Vector3(99.0f, 99.0f, 99.0f), staticNode);
+            var always = MakeGameInterestObjectHelper(new Vector3(99.0f, 99.0f, 99.0f), staticNode);
             nm.SpawnManager.SpawnNetworkObjectLocally(always);
 
-            nc.PlayerObject = MakeObjectHelper(new Vector3(0.0f, 0.0f, 0.0f), null);
+            nc.PlayerObject = MakeGameInterestObjectHelper(new Vector3(0.0f, 0.0f, 0.0f), null);
             nm.SpawnManager.SpawnNetworkObjectLocally(nc.PlayerObject);
 
             results.Clear();
@@ -284,13 +291,13 @@ namespace MLAPI.EditorTests
             nm.InterestManager.QueryFor(nc, results);
             var objectsBeforeAdd = results.Count;
 
-            var object1 = MakeObjectHelper(new Vector3(2.0f, 0.0f, 0.0f), null);
+            var object1 = MakeGameInterestObjectHelper(new Vector3(2.0f, 0.0f, 0.0f), null);
             nm.SpawnManager.SpawnNetworkObjectLocally(object1);
 
-            var object2 = MakeObjectHelper(new Vector3(2.0f, 0.0f, 0.0f), null);
+            var object2 = MakeGameInterestObjectHelper(new Vector3(2.0f, 0.0f, 0.0f), null);
             nm.SpawnManager.SpawnNetworkObjectLocally(object2);
 
-            nc.PlayerObject = MakeObjectHelper(new Vector3(0.0f, 0.0f, 0.0f), null);
+            nc.PlayerObject = MakeGameInterestObjectHelper(new Vector3(0.0f, 0.0f, 0.0f), null);
             nm.SpawnManager.SpawnNetworkObjectLocally(nc.PlayerObject);
 
             results.Clear();
@@ -321,11 +328,11 @@ namespace MLAPI.EditorTests
 
             var objSettings = ScriptableObject.CreateInstance<TestInterestSettings>();
             objSettings.SomeSetting = 2;
-            var object1 = MakeObjectHelper(new Vector3(0.0f, 0.0f, 0.0f), null);
+            var object1 = MakeGameInterestObjectHelper(new Vector3(0.0f, 0.0f, 0.0f), null);
             object1.InterestSettings = objSettings;
 
             // no override settings, should receive from NetworkManager
-            var object2 = MakeObjectHelper(new Vector3(0.0f, 0.0f, 0.0f), null);
+            var object2 = MakeGameInterestObjectHelper(new Vector3(0.0f, 0.0f, 0.0f), null);
 
             var checkObj1 = (TestInterestSettings)object1.InterestSettings;
             var checkObj2 = (TestInterestSettings)object2.InterestSettings;
