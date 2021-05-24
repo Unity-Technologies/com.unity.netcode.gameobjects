@@ -508,11 +508,36 @@ namespace MLAPI
         private ulong? m_LatestParent;
         private Transform m_CachedParent;
 
+        internal void SetCachedParent(Transform parentTransform)
+        {
+            m_CachedParent = parentTransform;
+        }
+
         private void OnTransformParentChanged()
         {
+            if (transform.parent == m_CachedParent)
+            {
+                return;
+            }
+
+            if (NetworkManager == null || !NetworkManager.IsListening)
+            {
+                transform.parent = m_CachedParent;
+                Debug.LogException(new NotListeningException($"{nameof(NetworkManager)} is not listening, start a server or host before reparenting"));
+                return;
+            }
+
+            if (!NetworkManager.IsServer)
+            {
+                transform.parent = m_CachedParent;
+                Debug.LogException(new NotServerException($"Only the server can reparent {nameof(NetworkObject)}s"));
+                return;
+            }
+
             if (!IsSpawned)
             {
-                print("is not spawned");
+                transform.parent = m_CachedParent;
+                Debug.LogException(new SpawnStateException($"A {nameof(NetworkObject)} can only be reparented after being spawned"));
                 return;
             }
 
@@ -638,10 +663,7 @@ namespace MLAPI
             var parentObject = NetworkManager.SpawnManager.SpawnedObjects[m_LatestParent.Value];
 
             m_CachedParent = parentObject.transform;
-            if (transform.parent != m_CachedParent)
-            {
-                transform.parent = m_CachedParent;
-            }
+            transform.parent = parentObject.transform;
 
             Debug.Log($"{nameof(ApplyNetworkParenting)} reparented {name}:{NetworkObjectId} under {parentObject.name}:{parentObject.NetworkObjectId}");
 

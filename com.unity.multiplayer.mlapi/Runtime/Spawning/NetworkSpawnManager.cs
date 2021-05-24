@@ -333,6 +333,7 @@ namespace MLAPI.Spawning
                 }
             }
 
+            networkObject.SetCachedParent(networkObject.transform.parent);
             networkObject.ApplyNetworkParenting();
             NetworkObject.CheckOrphanChildren();
 
