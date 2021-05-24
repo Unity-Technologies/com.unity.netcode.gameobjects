@@ -19,7 +19,7 @@ namespace MLAPI.Timing
         public bool AdvanceTime(ref NetworkTime predictedTime, ref NetworkTime serverTime, float deltaTime);
 
         /// <summary>
-        /// Called once on clients only to initialize time. This function needs to set <see cref="predictedTime"/> to a value which is atleast expected RTT ahead of server time.
+        /// Called once on clients only to initialize time. This function needs to set <see cref="predictedTime"/> to a value which is at least expected RTT ahead of server time.
         /// </summary>
         /// <param name="predictedTime">The predicted time to initialize. In value is serverTime.</param>
         /// <param name="serverTime">the server time to initialize. In value is a time matching the tick of the initial received approval packet.</param>
