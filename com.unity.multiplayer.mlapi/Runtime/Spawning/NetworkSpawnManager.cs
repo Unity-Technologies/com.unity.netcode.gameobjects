@@ -68,11 +68,15 @@ namespace MLAPI.Spawning
         }
 
         /// <summary>
-        /// Returns the player object with a given clientId or null if one does not exist
+        /// Returns the player object with a given clientId or null if one does not exist. This is only valid server side.
         /// </summary>
         /// <returns>The player object with a given clientId or null if one does not exist</returns>
         public NetworkObject GetPlayerNetworkObject(ulong clientId)
         {
+            if (!NetworkManager.IsServer && NetworkManager.LocalClientId != clientId)
+            {
+                throw new NotServerException("Only the server can find player objects from other clients.");
+            }
             if (NetworkManager.ConnectedClients.TryGetValue(clientId, out NetworkClient networkClient))
             {
                 return networkClient.PlayerObject;
@@ -547,20 +551,16 @@ namespace MLAPI.Spawning
 
         internal void CleanDiffedSceneObjects()
         {
-            // Clean up the diffed scene objects. I.E scene objects that have been destroyed
+            // Clean up any in-scene objects that had been destroyed
             if (PendingSoftSyncObjects.Count > 0)
             {
-                var networkObjectsToDestroy = new List<NetworkObject>();
-
                 foreach (var pair in PendingSoftSyncObjects)
                 {
-                    networkObjectsToDestroy.Add(pair.Value);
+                    UnityEngine.Object.Destroy(pair.Value.gameObject);
                 }
 
-                for (int i = 0; i < networkObjectsToDestroy.Count; i++)
-                {
-                    UnityEngine.Object.Destroy(networkObjectsToDestroy[i].gameObject);
-                }
+                // Make sure to clear this once done destroying all remaining NetworkObjects
+                PendingSoftSyncObjects.Clear();
             }
         }
 
