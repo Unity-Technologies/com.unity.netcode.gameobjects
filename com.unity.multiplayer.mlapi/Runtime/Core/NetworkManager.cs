@@ -58,7 +58,7 @@ namespace MLAPI
         internal SnapshotSystem SnapshotSystem { get; private set; }
 
         private NetworkPrefabHandler m_PrefabHandler;
-        
+
         public NetworkPrefabHandler PrefabHandler
         {
             get
@@ -368,10 +368,11 @@ namespace MLAPI
             if (NetworkTimeSystem != null)
             {
                 NetworkTimeSystem.NetworkTickInternal -= OnNetworkTick;
+                NetworkTimeSystem.Dispose();
                 NetworkTimeSystem = null;
             }
 
-            NetworkTimeSystem = new NetworkTimeSystem(NetworkConfig.TickRate, server, this);
+            NetworkTimeSystem = new NetworkTimeSystem(NetworkConfig.TickRate, server, this, NetworkUpdateStage.PreUpdate);
             NetworkTimeSystem.NetworkTickInternal += OnNetworkTick;
 
 
@@ -829,6 +830,7 @@ namespace MLAPI
             if (NetworkTimeSystem != null)
             {
                 NetworkTimeSystem.NetworkTickInternal -= OnNetworkTick;
+                NetworkTimeSystem.Dispose();
                 NetworkTimeSystem = null;
             }
 
@@ -843,9 +845,6 @@ namespace MLAPI
             {
                 case NetworkUpdateStage.EarlyUpdate:
                     OnNetworkEarlyUpdate();
-                    break;
-                case NetworkUpdateStage.PreUpdate:
-                    OnNetworkPreUpdate();
                     break;
             }
         }
@@ -896,14 +895,6 @@ namespace MLAPI
             }
         }
 
-        private void OnNetworkPreUpdate()
-        {
-            if (IsListening)
-            {
-                NetworkTimeSystem.AdvanceNetworkTime(Time.deltaTime);
-            }
-        }
-
         /// <summary>
         /// This function runs once whenever the predicted tick is incremented and is responsible for the following (in order):
         /// - collect commands/inputs and send them to the server (TBD)
@@ -918,7 +909,6 @@ namespace MLAPI
 #if UNITY_EDITOR && !UNITY_2020_2_OR_NEWER
             NetworkProfiler.StartTick(TickType.Event);
 #endif
-
 
             if (NetworkConfig.EnableNetworkVariable)
             {

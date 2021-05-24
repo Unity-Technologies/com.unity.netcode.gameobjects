@@ -4,13 +4,16 @@ using UnityEngine;
 namespace MLAPI.Timing
 {
     /// <summary>
-    /// <see cref="NetworkTimeSystem"/> is a standalone system which can be used to run a network time simmulation.
+    /// <see cref="NetworkTimeSystem"/> is a standalone system which can be used to run a network time simulation.
     /// The network time system maintains both a predicted and a server time and also invokes events for each fixed tick which passes.
     /// </summary>
-    public class NetworkTimeSystem : INetworkStats
+    public class NetworkTimeSystem : INetworkUpdateSystem, INetworkStats, IDisposable
     {
         private INetworkTimeProvider m_NetworkTimeProvider;
         private int m_TickRate;
+
+        // when null the time system will not tick automatically in any update stage and must be manually advanced.
+        private NetworkUpdateStage? m_UpdateStage;
 
         private NetworkTime m_PredictedTime;
         private NetworkTime m_ServerTime;
@@ -62,10 +65,10 @@ namespace MLAPI.Timing
         /// <param name="tickRate">The tickrate.</param>
         /// <param name="isServer">true if the system will be used for a server or host.</param>
         /// <param name="networkManager">The networkManager to extract the RTT from. Will be removed in the future to reduce dependencies.</param>
-        internal NetworkTimeSystem(int tickRate, bool isServer, NetworkManager networkManager)
+        internal NetworkTimeSystem(int tickRate, bool isServer, NetworkManager networkManager, NetworkUpdateStage? networkUpdateStage = null)
         {
             m_NetworkManager = networkManager;
-            Init(tickRate, isServer, this);
+            Init(tickRate, isServer, this, networkUpdateStage);
         }
 
         /// <summary>
@@ -74,14 +77,20 @@ namespace MLAPI.Timing
         /// <param name="tickRate">The tickrate.</param>
         /// <param name="isServer">true if the system will be used for a server or host.</param>
         /// <param name="networkStats">The network stats source for RTT and other network information used to drive the time system.</param>
-        public NetworkTimeSystem(int tickRate, bool isServer, INetworkStats networkStats)
+        public NetworkTimeSystem(int tickRate, bool isServer, INetworkStats networkStats, NetworkUpdateStage? networkUpdateStage = null)
         {
-            Init(tickRate, isServer, networkStats);
+            Init(tickRate, isServer, networkStats, networkUpdateStage);
         }
 
         // This should just be a constructor but isn't because of c# limited constructor overriding support.
-        private void Init(int tickRate, bool isServer, INetworkStats networkStats)
+        private void Init(int tickRate, bool isServer, INetworkStats networkStats, NetworkUpdateStage? networkUpdateStage)
         {
+            m_UpdateStage = networkUpdateStage;
+            if (networkUpdateStage.HasValue)
+            {
+                this.RegisterNetworkUpdate(networkUpdateStage.Value);
+            }
+
             m_TickRate = tickRate;
 
             if (isServer)
@@ -150,7 +159,6 @@ namespace MLAPI.Timing
         }
 
         // TODO this is temporary until we have a better way to measure RTT. Most likely a separate stats class will be used to track this.
-
         #region NetworkStats
 
         private NetworkManager m_NetworkManager;
@@ -175,5 +183,21 @@ namespace MLAPI.Timing
         public NetworkTime LastReceivedSnapshotTick => m_LastReceivedServerSnapshotTick;
 
         #endregion
+
+        public void NetworkUpdate(NetworkUpdateStage updateStage)
+        {
+            if (updateStage == m_UpdateStage)
+            {
+                AdvanceNetworkTime(Time.deltaTime);
+            }
+        }
+
+        public void Dispose()
+        {
+            if (m_UpdateStage.HasValue)
+            {
+                this.UnregisterNetworkUpdate(m_UpdateStage.Value);
+            }
+        }
     }
 }
