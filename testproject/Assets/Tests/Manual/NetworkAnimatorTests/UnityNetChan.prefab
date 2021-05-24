@@ -2228,8 +2228,8 @@ GameObject:
   - component: {fileID: 7860105962092261004}
   - component: {fileID: -5415634171721841539}
   - component: {fileID: 442217489094760330}
-  - component: {fileID: -8653921750116617309}
   - component: {fileID: -1880662623096729273}
+  - component: {fileID: 4703065005383390599}
   m_Layer: 0
   m_Name: UnityNetChan
   m_TagString: Untagged
@@ -2299,20 +2299,6 @@ Animator:
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorControllerStateOnDisable: 0
---- !u!114 &-8653921750116617309
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 442217489085244684}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e8d0727d5ae3244e3b569694d3912374, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  SendRate: 0.1
-  m_Animator: {fileID: 442217489094760330}
 --- !u!114 &-1880662623096729273
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2325,6 +2311,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b322be05414199349ae9d1aea28228a7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &4703065005383390599
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 442217489085244684}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 583831aab41d22842bd94461ab84fdaa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  AnimatorAuthority: 1
+  m_Animator: {fileID: 442217489094760330}
+  FixedSendsPerSecond: 30
+  Channel: 10
 --- !u!1 &442217489085244686
 GameObject:
   m_ObjectHideFlags: 0

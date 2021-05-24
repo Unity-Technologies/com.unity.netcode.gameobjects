@@ -339,7 +339,7 @@ namespace MLAPI.Prototyping
         {
             bool changed = false;
             
-            for (int i = 0; i < m_AnimParams.Parameters.Length; i++)
+            for (int i = 0; i < m_LayersToStates.Length; i++)
             {
                 var animStateInfo = Animator.GetCurrentAnimatorStateInfo(i);
 
