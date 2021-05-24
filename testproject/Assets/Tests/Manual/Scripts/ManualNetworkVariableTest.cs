@@ -112,6 +112,7 @@ namespace TestProject.ManualTests
                //
                //  I'm assuming This test will be superseded by the snapshot variable sync
                //
+
 //                if (m_TestVar.LocalTick != NetworkTickSystem.NoTick)
 //                {
 //                    int delta = m_TestVar.LocalTick - m_TestVar.RemoteTick;
