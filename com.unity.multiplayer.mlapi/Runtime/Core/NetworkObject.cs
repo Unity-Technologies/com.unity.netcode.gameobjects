@@ -209,6 +209,11 @@ namespace MLAPI
             return Observers.Contains(clientId);
         }
 
+        private void Awake()
+        {
+            SetCachedParent(transform.parent);
+        }
+
         /// <summary>
         /// Shows a previously hidden object to a client
         /// </summary>
