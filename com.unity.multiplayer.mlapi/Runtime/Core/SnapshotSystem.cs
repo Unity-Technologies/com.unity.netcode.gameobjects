@@ -459,7 +459,7 @@ namespace MLAPI
             using (var reader = PooledNetworkReader.Get(snapshotStream))
             {
                 var ackTick = reader.ReadUInt16();
-                Debug.Log(string.Format("Receive ack {0} from client {1}", ackTick, clientId));
+                //Debug.Log(string.Format("Receive ack {0} from client {1}", ackTick, clientId));
             }
         }
 
