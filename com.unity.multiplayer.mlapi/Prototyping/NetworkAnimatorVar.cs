@@ -48,7 +48,7 @@ namespace MLAPI.Prototyping
         public NetworkChannel Channel = NetworkChannel.NetworkVariable;
         
         
-        private NetworkVariable<AnimatorStateSnapshot> m_AnimatorState = new NetworkVariable<AnimatorStateSnapshot>();
+        private NetworkVariable<AnimatorSnapshot> m_AnimatorState = new NetworkVariable<AnimatorSnapshot>();
         private KeyValuePair<int, AnimatorControllerParameterType>[] m_CachedAnimatorParameters;
         private Dictionary<int, bool> m_BoolParameters;
         private Dictionary<int, float> m_FloatParameters;
@@ -74,9 +74,9 @@ namespace MLAPI.Prototyping
 
                 if (didParametersChange || didAnyLayerStateChange)
                 {
-                    var newAnimatorState = m_AnimatorState.Value;
+                    var newAnimatorState = new AnimatorSnapshot(m_AnimatorState.Value);
                     
-                    for (int i = 0; i < Animator.layerCount; i++)
+                    for (int i = 0; i < m_AnimatorState.Value.LayerCount; i++)
                     {
                         var animStateInfo = Animator.GetCurrentAnimatorStateInfo(i);
                         
@@ -98,38 +98,6 @@ namespace MLAPI.Prototyping
 
         private void OnEnable()
         {
-            var parameters = m_Animator.parameters;
-            m_CachedAnimatorParameters = new KeyValuePair<int, AnimatorControllerParameterType>[parameters.Length];
-
-            int intCount = 0;
-            int floatCount = 0;
-            int boolCount = 0;
-
-            for (var i = 0; i < parameters.Length; i++)
-            {
-                var parameter = parameters[i];
-                m_CachedAnimatorParameters[i] =
-                    new KeyValuePair<int, AnimatorControllerParameterType>(parameter.nameHash, parameter.type);
-
-                switch (parameter.type)
-                {
-                    case AnimatorControllerParameterType.Float:
-                        ++floatCount;
-                        break;
-                    case AnimatorControllerParameterType.Int:
-                        ++intCount;
-                        break;
-                    case AnimatorControllerParameterType.Bool:
-                        ++boolCount;
-                        break;
-                }
-            }
-
-            m_IntParameters = new Dictionary<int, int>(intCount);
-            m_FloatParameters = new Dictionary<int, float>(floatCount);
-            m_BoolParameters = new Dictionary<int, bool>(boolCount);
-            m_TriggerParameters = new HashSet<int>();
-
             m_AnimatorState.OnValueChanged += AnimParamsChanged;
         }
 
@@ -184,7 +152,38 @@ namespace MLAPI.Prototyping
 
             if (IsAuthorityOverAnimator)
             {
-                m_AnimatorState.Value = new AnimatorStateSnapshot(m_Animator);
+                m_AnimatorState.Value = new AnimatorSnapshot(m_Animator.layerCount);
+                
+                var parameters = m_Animator.parameters;
+                m_CachedAnimatorParameters = new KeyValuePair<int, AnimatorControllerParameterType>[parameters.Length];
+
+                int intCount = 0;
+                int floatCount = 0;
+                int boolCount = 0;
+
+                for (var i = 0; i < parameters.Length; i++)
+                {
+                    var parameter = parameters[i];
+                    m_CachedAnimatorParameters[i] = new KeyValuePair<int, AnimatorControllerParameterType>(parameter.nameHash, parameter.type);
+
+                    switch (parameter.type)
+                    {
+                        case AnimatorControllerParameterType.Float:
+                            ++floatCount;
+                            break;
+                        case AnimatorControllerParameterType.Int:
+                            ++intCount;
+                            break;
+                        case AnimatorControllerParameterType.Bool:
+                            ++boolCount;
+                            break;
+                    }
+                }
+
+                m_IntParameters = new Dictionary<int, int>(intCount);
+                m_FloatParameters = new Dictionary<int, float>(floatCount);
+                m_BoolParameters = new Dictionary<int, bool>(boolCount);
+                m_TriggerParameters = new HashSet<int>();
             }
 
             if (AnimatorAuthority == Authority.Client)
@@ -195,18 +194,6 @@ namespace MLAPI.Prototyping
             {
                 m_AnimatorState.Settings.WritePermission = NetworkVariablePermission.Everyone;
             }
-        }
-
-        private void AnimParamsChanged(AnimatorStateSnapshot previousvalue, AnimatorStateSnapshot newvalue)
-        {
-            if (AnimatorAuthority == Authority.Client && IsClient && IsOwner)
-            {
-                // this should only happen for my own value changes.
-                // todo MTT-768 this shouldn't happen anymore with new tick system (tick written will be higher than tick read, so netvar wouldn't change in that case
-                return;
-            }
-
-            SetAnimParams(newvalue);
         }
 
         private bool PollAnimatorParameters()
@@ -261,11 +248,27 @@ namespace MLAPI.Prototyping
             return false;
         }
 
-        private void SetAnimParams(AnimatorStateSnapshot animatorStateSnapshot)
+        private void AnimParamsChanged(AnimatorSnapshot previousvalue, AnimatorSnapshot newvalue)
         {
-            for (var layerIndex = 0; layerIndex < animatorStateSnapshot.LayerCount; layerIndex++)
+            if (IsAuthorityOverAnimator)
             {
-                var layerState = animatorStateSnapshot[layerIndex];
+                return;
+            }
+            
+            ApplyAnimatorSnapshot(newvalue);
+        }
+        
+        private void ApplyAnimatorSnapshot(AnimatorSnapshot animatorSnapshot)
+        {
+            if (animatorSnapshot == null)
+            {
+                Debug.LogWarning(animatorSnapshot, this);
+                return;
+            }
+            
+            for (var layerIndex = 0; layerIndex < animatorSnapshot.LayerCount; layerIndex++)
+            {
+                var layerState = animatorSnapshot[layerIndex];
 
                 m_Animator.SetLayerWeight(layerIndex, layerState.LayerWeight);
 
@@ -281,7 +284,7 @@ namespace MLAPI.Prototyping
             }
         }
 
-        private struct AnimatorStateSnapshot : INetworkSerializable
+        private class AnimatorSnapshot : INetworkSerializable
         {
             public LayerState this[int i]
             {
@@ -290,12 +293,26 @@ namespace MLAPI.Prototyping
             }
 
             public int LayerCount => m_States.Length;
-            
-            private LayerState[] m_States;
 
-            public AnimatorStateSnapshot(Animator animator)
+            private LayerState[] m_States;
+            
+            public AnimatorSnapshot()
             {
-                m_States = new LayerState[animator.layerCount];
+                m_States = new LayerState[0];
+            }
+            
+            public AnimatorSnapshot(int layerCount)
+            {
+                m_States = new LayerState[layerCount];
+            }
+
+            /// <summary>
+            /// This constructor allows a snapshot to reuse the reference to m_States array from the parameter snapshot
+            /// </summary>
+            /// <param name="snapshot"></param>
+            public AnimatorSnapshot(AnimatorSnapshot snapshot)
+            {
+                m_States = snapshot.m_States;
             }
 
             public void NetworkSerialize(NetworkSerializer serializer)
@@ -303,6 +320,11 @@ namespace MLAPI.Prototyping
                 int layerCount = serializer.IsReading ? 0 : m_States.Length;
                 serializer.Serialize(ref layerCount);
 
+                if (serializer.IsReading && m_States.Length != layerCount)
+                {
+                    m_States = new LayerState[layerCount];
+                }
+                
                 for (int paramIndex = 0; paramIndex < layerCount; paramIndex++)
                 {
                     var stateHash = serializer.IsReading ? 0 : m_States[paramIndex].StateHash;

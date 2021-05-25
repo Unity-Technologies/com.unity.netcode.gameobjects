@@ -2226,10 +2226,10 @@ GameObject:
   m_Component:
   - component: {fileID: 442217489085217068}
   - component: {fileID: 7860105962092261004}
-  - component: {fileID: -5415634171721841539}
   - component: {fileID: 442217489094760330}
   - component: {fileID: -1880662623096729273}
-  - component: {fileID: 4703065005383390599}
+  - component: {fileID: -2389071856153289442}
+  - component: {fileID: -8872332184638620354}
   m_Layer: 0
   m_Name: UnityNetChan
   m_TagString: Untagged
@@ -2268,18 +2268,6 @@ MonoBehaviour:
   GlobalObjectIdHash: 951099334
   AlwaysReplicateAsRoot: 0
   DontDestroyWithOwner: 0
---- !u!114 &-5415634171721841539
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 442217489085244684}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9548116c10df1486ea12b7329b77c5cf, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!95 &442217489094760330
 Animator:
   serializedVersion: 3
@@ -2311,7 +2299,30 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b322be05414199349ae9d1aea28228a7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &4703065005383390599
+--- !u!114 &-2389071856153289442
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 442217489085244684}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e96cb6065543e43c4a752faaa1468eb1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  TransformAuthority: 0
+  FixedSendsPerSecond: 30
+  InterpolatePosition: 1
+  SnapDistance: 10
+  InterpolateServer: 1
+  MinMeters: 0.15
+  MinDegrees: 1.5
+  MinSize: 0.15
+  Channel: 10
+  m_UseLocal:
+    m_InternalValue: 0
+--- !u!114 &-8872332184638620354
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
