@@ -43,8 +43,8 @@ namespace MLAPI
     internal class Snapshot
     {
         // todo --M1-- functionality to grow these will be needed in a later milestone
-        private const int k_MaxVariables = 600;
-        private const int k_BufferSize = 10000;
+        private const int k_MaxVariables = 2000;
+        private const int k_BufferSize = 30000;
 
         public byte[] Buffer = new byte[k_BufferSize];
         internal IndexAllocator Allocator;
@@ -443,6 +443,10 @@ namespace MLAPI
                     m_ClientReceivedSnapshot[clientId] = new Snapshot(m_NetworkManager, false);
                 }
                 var snapshot = m_ClientReceivedSnapshot[clientId];
+
+                // todo --M1b-- temporary, clear before receive.
+                snapshot.Clear();
+
                 snapshot.ReadIndex(reader);
                 snapshot.ReadBuffer(reader, snapshotStream);
             }
