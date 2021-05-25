@@ -318,11 +318,11 @@ namespace MLAPI
         }
 #endif
 
-        private void Init(bool server)
+        private void Initialize(bool server)
         {
             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
             {
-                NetworkLog.LogInfo(nameof(Init));
+                NetworkLog.LogInfo(nameof(Initialize));
             }
 
             LocalClientId = 0;
@@ -333,6 +333,7 @@ namespace MLAPI
             PendingClients.Clear();
             ConnectedClients.Clear();
             ConnectedClientsList.Clear();
+            NetworkObject.OrphanChildren.Clear();
 
             // Create spawn manager instance
             SpawnManager = new NetworkSpawnManager(this);
@@ -540,7 +541,7 @@ namespace MLAPI
                 }
             }
 
-            Init(true);
+            Initialize(true);
 
             var socketTasks = NetworkConfig.NetworkTransport.StartServer();
 
@@ -575,7 +576,7 @@ namespace MLAPI
                 return SocketTask.Fault.AsTasks();
             }
 
-            Init(false);
+            Initialize(false);
 
             var socketTasks = NetworkConfig.NetworkTransport.StartClient();
 
@@ -701,7 +702,7 @@ namespace MLAPI
                 }
             }
 
-            Init(true);
+            Initialize(true);
 
             var socketTasks = NetworkConfig.NetworkTransport.StartServer();
 
