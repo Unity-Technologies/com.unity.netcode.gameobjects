@@ -203,7 +203,7 @@ namespace MLAPI
 
                     // todo --M1--
                     // Review whether tick still belong in netvar or in the snapshot table.
-                    nv.ReadDelta(Stream, m_NetworkManager.IsServer, m_NetworkManager.NetworkTickSystem.GetTick(), Entries[i].Key.TickWritten);
+                    nv.ReadDelta(Stream, m_NetworkManager.IsServer);
                 }
 
                 Entries[i].Fresh = false;

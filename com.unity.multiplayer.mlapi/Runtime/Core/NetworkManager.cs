@@ -599,6 +599,12 @@ namespace MLAPI
             var disconnectedIds = new HashSet<ulong>();
             //Don't know if I have to disconnect the clients. I'm assuming the NetworkTransport does all the cleaning on shtudown. But this way the clients get a disconnect message from server (so long it does't get lost)
 
+            // make sure all RPCs are flushed before transport disconnect clients
+            if (RpcQueueContainer != null)
+            {
+                RpcQueueContainer.ProcessAndFlushRpcQueue(queueType: RpcQueueContainer.RpcQueueProcessingTypes.Send, NetworkUpdateStage.PostLateUpdate); // flushing messages in case transport's disconnect
+            }
+
             foreach (KeyValuePair<ulong, NetworkClient> pair in ConnectedClients)
             {
                 if (!disconnectedIds.Contains(pair.Key))
