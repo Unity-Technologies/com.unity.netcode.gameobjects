@@ -411,7 +411,7 @@ namespace MLAPI
         {
             if (!NetworkManager.IsListening)
             {
-                throw new NotListeningException($"{nameof(NetworkManager)} isn't listening, start a server or host before spawning objects.");
+                throw new NotListeningException($"{nameof(NetworkManager)} is not listening, start a server or host before spawning objects");
             }
 
             if (!NetworkManager.IsServer)
