@@ -945,7 +945,7 @@ namespace MLAPI
             //Attempt to create a local NetworkObject
             var networkObject = networkManager.SpawnManager.CreateLocalNetworkObject(isSceneObject, prefabHash, ownerClientId, parentNetworkId, position, rotation, isReparented);
 
-            networkObject.SetNetworkParenting(isReparented, latestParent);
+            networkObject?.SetNetworkParenting(isReparented, latestParent);
 
             // Determine if this NetworkObject has NetworkVariable data to read
             var networkVariableDataIsIncluded = reader.ReadBool();
