@@ -34,6 +34,9 @@ namespace MLAPI.RuntimeTests
         [UnityTest]
         public IEnumerator TestRPCs()
         {
+            int targetFrameRate = Application.targetFrameRate;
+            Application.targetFrameRate = 120;
+
             // Create multiple NetworkManager instances
             if (!MultiInstanceHelpers.Create(1, out NetworkManager server, out NetworkManager[] clients))
             {
@@ -129,6 +132,8 @@ namespace MLAPI.RuntimeTests
             Assert.True(hasReceivedServerRPC, "ServerRPC was not received");
             Assert.True(hasReceivedClientRPCLocally, "ClientRPC was not locally received on the server");
             Assert.True(hasReceivedClientRPCRemotely, "ClientRPC was not remotely received on the client");
+
+            Application.targetFrameRate = targetFrameRate;
 
             // Cleanup
             MultiInstanceHelpers.Destroy();
