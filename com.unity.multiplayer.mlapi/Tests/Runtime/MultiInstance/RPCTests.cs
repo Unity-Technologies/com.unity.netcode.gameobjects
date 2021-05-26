@@ -34,6 +34,7 @@ namespace MLAPI.RuntimeTests
         [UnityTest]
         public IEnumerator TestRPCs()
         {
+            // Set target frameRate to work around ubuntu timings
             int targetFrameRate = Application.targetFrameRate;
             Application.targetFrameRate = 120;
 
@@ -133,6 +134,7 @@ namespace MLAPI.RuntimeTests
             Assert.True(hasReceivedClientRPCLocally, "ClientRPC was not locally received on the server");
             Assert.True(hasReceivedClientRPCRemotely, "ClientRPC was not remotely received on the client");
 
+            // Release frame rate
             Application.targetFrameRate = targetFrameRate;
 
             // Cleanup
