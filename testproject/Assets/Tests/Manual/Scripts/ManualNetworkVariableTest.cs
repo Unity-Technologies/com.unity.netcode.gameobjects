@@ -106,34 +106,41 @@ namespace TestProject.ManualTests
             {
                 // compute the delta in tick between client and server,
                 // as seen from the client, when it receives a value not from itself
-                if (m_TestVar.LocalTick != NetworkTickSystem.NoTick)
-                {
-                    int delta = m_TestVar.LocalTick - m_TestVar.RemoteTick;
-                    m_Count++;
 
-                    if (!m_Valid)
-                    {
-                        m_Valid = true;
-                        m_MinDelta = delta;
-                        m_MaxDelta = delta;
-                        m_LastRemoteTick = m_TestVar.RemoteTick;
-                    }
-                    else
-                    {
-                        m_MinDelta = Math.Min(delta, m_MinDelta);
-                        m_MaxDelta = Math.Max(delta, m_MaxDelta);
+               // MSW: This test relies on the LocalTick variable which was otherwise dormant
+               //  and remove from MLAPI.  
+               //
+               //  I'm assuming This test will be superseded by the snapshot variable sync
+               //
 
-                        // tick should not go backward until wrap around (which should be a long time)
-                        if (m_TestVar.RemoteTick == m_LastRemoteTick)
-                        {
-                            m_Problems += "Same remote tick receive twice\n";
-                        }
-                        else if (m_TestVar.RemoteTick < m_LastRemoteTick)
-                        {
-                            m_Problems += "Ticks went backward\n";
-                        }
-                    }
-                }
+//                if (m_TestVar.LocalTick != NetworkTickSystem.NoTick)
+//                {
+//                    int delta = m_TestVar.LocalTick - m_TestVar.RemoteTick;
+//                    m_Count++;
+//
+//                    if (!m_Valid)
+//                    {
+//                        m_Valid = true;
+//                        m_MinDelta = delta;
+//                        m_MaxDelta = delta;
+//                        m_LastRemoteTick = m_TestVar.RemoteTick;
+//                    }
+//                    else
+//                    {
+//                        m_MinDelta = Math.Min(delta, m_MinDelta);
+//                        m_MaxDelta = Math.Max(delta, m_MaxDelta);
+//
+//                        // tick should not go backward until wrap around (which should be a long time)
+//                        if (m_TestVar.RemoteTick == m_LastRemoteTick)
+//                        {
+//                            m_Problems += "Same remote tick receive twice\n";
+//                        }
+//                        else if (m_TestVar.RemoteTick < m_LastRemoteTick)
+//                        {
+//                            m_Problems += "Ticks went backward\n";
+//                        }
+//                    }
+//                }
             }
 
             if (m_Count == k_EndIterations)
