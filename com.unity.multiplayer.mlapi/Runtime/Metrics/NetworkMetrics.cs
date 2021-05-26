@@ -1,6 +1,7 @@
 ﻿using Unity.Multiplayer.NetStats.Dispatch;
 using Unity.Multiplayer.NetStats.Metrics;
 using Unity.Multiplayer.NetworkProfiler;
+using Unity.Multiplayer.NetworkProfiler.Models;
 
 namespace MLAPI.Metrics
 {
