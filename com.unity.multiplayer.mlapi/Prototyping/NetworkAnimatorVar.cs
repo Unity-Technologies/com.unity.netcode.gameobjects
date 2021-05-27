@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using MLAPI.NetworkVariable;
 using MLAPI.Serialization;
 using MLAPI.Transports;
@@ -15,13 +16,11 @@ namespace MLAPI.Prototyping
         /// <summary>
         /// Server authority only allows the server to update this animator
         /// Client authority only allows the client owner to update this animator
-        /// Shared authority allows everyone to update this animator
         /// </summary>
         public enum Authority
         {
             Server = 0,
-            Client,
-            Shared
+            Owner,
         }
 
         public Animator Animator => m_Animator;
@@ -31,7 +30,7 @@ namespace MLAPI.Prototyping
         /// Specifies who can update this animator
         /// </summary>
         [Tooltip("Defines who can update this transform.")]
-        public Authority AnimatorAuthority = Authority.Client;
+        public Authority AnimatorAuthority = Authority.Owner;
         
         [SerializeField] private Animator m_Animator;
 
@@ -47,18 +46,18 @@ namespace MLAPI.Prototyping
         [Tooltip("The channel to send the data on.")]
         public NetworkChannel Channel = NetworkChannel.NetworkVariable;
         
-        
         private NetworkVariable<AnimatorSnapshot> m_AnimatorState = new NetworkVariable<AnimatorSnapshot>();
         private KeyValuePair<int, AnimatorControllerParameterType>[] m_CachedAnimatorParameters;
         private Dictionary<int, bool> m_BoolParameters;
         private Dictionary<int, float> m_FloatParameters;
         private Dictionary<int, int> m_IntParameters;
         private HashSet<int> m_TriggerParameters;
+        public int LayerCount => m_States.Length;
 
+        private LayerState[] m_States;
 
-        private bool IsAuthorityOverAnimator => (IsClient && AnimatorAuthority == Authority.Client && IsOwner) ||
-                                                (IsServer && AnimatorAuthority == Authority.Server) ||
-                                                AnimatorAuthority == Authority.Shared;
+        private bool IsAuthorityOverAnimator => (IsClient && AnimatorAuthority == Authority.Owner && IsOwner) ||
+                                                (IsServer && AnimatorAuthority == Authority.Server);
 
         private void FixedUpdate()
         {
@@ -74,13 +73,11 @@ namespace MLAPI.Prototyping
 
                 if (didParametersChange || didAnyLayerStateChange)
                 {
-                    var newAnimatorState = new AnimatorSnapshot(m_AnimatorState.Value);
-                    
-                    for (int i = 0; i < m_AnimatorState.Value.LayerCount; i++)
+                    for (int i = 0; i < LayerCount; i++)
                     {
                         var animStateInfo = Animator.GetCurrentAnimatorStateInfo(i);
                         
-                        newAnimatorState[i] = new LayerState
+                        m_States[i] = new LayerState
                         {
                             StateHash = animStateInfo.fullPathHash,
                             NormalizedStateTime = animStateInfo.normalizedTime,
@@ -88,13 +85,12 @@ namespace MLAPI.Prototyping
                         };
                     }
 
-                    m_AnimatorState.Value = newAnimatorState;
-
+                    m_AnimatorState.Value =  new AnimatorSnapshot(m_BoolParameters, m_FloatParameters, m_IntParameters, m_TriggerParameters, m_States);
+    
                     m_TriggerParameters.Clear();
                 }
             }
         }
-
 
         private void OnEnable()
         {
@@ -106,7 +102,7 @@ namespace MLAPI.Prototyping
             m_AnimatorState.OnValueChanged -= AnimParamsChanged;
         }
 
-        public bool SetInt(int key, int value)
+        private bool SetInt(int key, int value)
         {
             if (m_IntParameters.TryGetValue(key, out var existingValue) && existingValue == value)
             {
@@ -117,7 +113,7 @@ namespace MLAPI.Prototyping
             return true;
         }
 
-        public bool SetBool(int key, bool value)
+        private bool SetBool(int key, bool value)
         {
             if (m_BoolParameters.TryGetValue(key, out var existingValue) && existingValue == value)
             {
@@ -128,7 +124,7 @@ namespace MLAPI.Prototyping
             return true;
         }
 
-        public bool SetFloat(int key, float value)
+        private bool SetFloat(int key, float value)
         {
             if (m_FloatParameters.TryGetValue(key, out var existingValue) &&
                 Mathf.Abs(existingValue - value) < Mathf.Epsilon)
@@ -140,20 +136,26 @@ namespace MLAPI.Prototyping
             return true;
         }
 
-        public bool SetTrigger(int key)
+        private bool SetTrigger(int key)
         {
             return m_TriggerParameters.Add(key);
         }
 
         public override void NetworkStart()
         {
+            if (AnimatorAuthority == Authority.Owner)
+            {
+                m_AnimatorState.Settings.WritePermission = NetworkVariablePermission.OwnerOnly;
+            }else if (AnimatorAuthority == Authority.Server)
+            {
+                m_AnimatorState.Settings.WritePermission = NetworkVariablePermission.ServerOnly;
+            }
+            
             m_AnimatorState.Settings.SendTickrate = FixedSendsPerSecond;
             m_AnimatorState.Settings.SendNetworkChannel = Channel;
 
             if (IsAuthorityOverAnimator)
             {
-                m_AnimatorState.Value = new AnimatorSnapshot(m_Animator.layerCount);
-                
                 var parameters = m_Animator.parameters;
                 m_CachedAnimatorParameters = new KeyValuePair<int, AnimatorControllerParameterType>[parameters.Length];
 
@@ -184,15 +186,25 @@ namespace MLAPI.Prototyping
                 m_FloatParameters = new Dictionary<int, float>(floatCount);
                 m_BoolParameters = new Dictionary<int, bool>(boolCount);
                 m_TriggerParameters = new HashSet<int>();
-            }
+                m_States = new LayerState[Animator.layerCount];
+                
+                PollAnimatorParameters();
 
-            if (AnimatorAuthority == Authority.Client)
-            {
-                m_AnimatorState.Settings.WritePermission = NetworkVariablePermission.OwnerOnly;
-            }
-            else if (AnimatorAuthority == Authority.Shared)
-            {
-                m_AnimatorState.Settings.WritePermission = NetworkVariablePermission.Everyone;
+                for (int i = 0; i < LayerCount; i++)
+                {
+                    var animStateInfo = Animator.GetCurrentAnimatorStateInfo(i);
+                    
+                    m_States[i] = new LayerState
+                    {
+                        StateHash = animStateInfo.fullPathHash,
+                        NormalizedStateTime = animStateInfo.normalizedTime,
+                        LayerWeight = Animator.GetLayerWeight(i)
+                    };
+                }
+
+                m_AnimatorState.Value = new AnimatorSnapshot(m_BoolParameters, m_FloatParameters, m_IntParameters, m_TriggerParameters, m_States);
+
+                m_TriggerParameters.Clear();
             }
         }
 
@@ -221,7 +233,6 @@ namespace MLAPI.Prototyping
                         {
                             changed = changed || SetTrigger(animParamHash);
                         }
-
                         break;
                 }
             }
@@ -231,13 +242,13 @@ namespace MLAPI.Prototyping
 
         private bool CheckStatesChange()
         {
-            for (int i = 0; i < m_AnimatorState.Value.LayerCount; i++)
+            for (int i = 0; i < LayerCount; i++)
             {
                 var animStateInfo = m_Animator.GetCurrentAnimatorStateInfo(i);
 
-                bool didStateChange = m_AnimatorState.Value[i].StateHash != animStateInfo.fullPathHash;
-                bool enoughDelta = !didStateChange && (animStateInfo.normalizedTime - m_AnimatorState.Value[i].NormalizedStateTime) >= 0.15f;
-                bool layerWeightChanged = Mathf.Abs(m_AnimatorState.Value[i].LayerWeight - m_Animator.GetLayerWeight(i)) > Mathf.Epsilon;
+                bool didStateChange = m_States[i].StateHash != animStateInfo.fullPathHash;
+                bool enoughDelta = !didStateChange && (animStateInfo.normalizedTime - m_States[i].NormalizedStateTime) >= 0.15f;
+                bool layerWeightChanged = Mathf.Abs(m_States[i].LayerWeight - m_Animator.GetLayerWeight(i)) > Mathf.Epsilon;
 
                 if (didStateChange || enoughDelta || layerWeightChanged)
                 {
@@ -250,33 +261,47 @@ namespace MLAPI.Prototyping
 
         private void AnimParamsChanged(AnimatorSnapshot previousvalue, AnimatorSnapshot newvalue)
         {
-            if (IsAuthorityOverAnimator)
+            if (IsAuthorityOverAnimator || newvalue == null)
             {
                 return;
             }
             
             ApplyAnimatorSnapshot(newvalue);
         }
-        
+
         private void ApplyAnimatorSnapshot(AnimatorSnapshot animatorSnapshot)
         {
-            if (animatorSnapshot == null)
+            foreach (var intParameter in animatorSnapshot.IntParameters)
             {
-                Debug.LogWarning(animatorSnapshot, this);
-                return;
+                Animator.SetInteger(intParameter.Key, intParameter.Value);
+            }
+
+            foreach (var floatParameter in animatorSnapshot.FloatParameters)
+            {
+                Animator.SetFloat(floatParameter.Key, floatParameter.Value);
+            }
+
+            foreach (var boolParameter in animatorSnapshot.BoolParameters)
+            {
+                Animator.SetBool(boolParameter.Key, boolParameter.Value);
+            }
+
+            foreach (var triggerParameter in animatorSnapshot.TriggerParameters)
+            {
+                Animator.SetTrigger(triggerParameter);
             }
             
-            for (var layerIndex = 0; layerIndex < animatorSnapshot.LayerCount; layerIndex++)
+            for (var layerIndex = 0; layerIndex < animatorSnapshot.States.Length; layerIndex++)
             {
-                var layerState = animatorSnapshot[layerIndex];
+                var layerState = animatorSnapshot.States[layerIndex];
 
                 m_Animator.SetLayerWeight(layerIndex, layerState.LayerWeight);
 
                 var currentAnimatorState = m_Animator.GetCurrentAnimatorStateInfo(layerIndex);
 
-                bool forceAnimationCatchup = Mathf.Abs(currentAnimatorState.normalizedTime - currentAnimatorState.normalizedTime) > 0.15f;
                 bool stateChanged = currentAnimatorState.fullPathHash != layerState.StateHash;
-                
+                bool forceAnimationCatchup = !stateChanged && Mathf.Abs(currentAnimatorState.normalizedTime - currentAnimatorState.normalizedTime) >= 0.15f;
+
                 if (stateChanged || forceAnimationCatchup)
                 {
                     m_Animator.Play(layerState.StateHash, layerIndex, layerState.NormalizedStateTime);
@@ -286,63 +311,163 @@ namespace MLAPI.Prototyping
 
         private class AnimatorSnapshot : INetworkSerializable
         {
-            public LayerState this[int i]
-            {
-                get => m_States[i];
-                set => m_States[i] = value;
-            }
-
-            public int LayerCount => m_States.Length;
-
-            private LayerState[] m_States;
+            public Dictionary<int, bool> BoolParameters;
+            public Dictionary<int, float> FloatParameters;
+            public Dictionary<int, int> IntParameters;
+            public HashSet<int> TriggerParameters;
+            public LayerState[] States;
             
             public AnimatorSnapshot()
             {
-                m_States = new LayerState[0];
+                BoolParameters = new Dictionary<int, bool>(0);
+                FloatParameters = new Dictionary<int, float>(0);
+                IntParameters = new Dictionary<int, int>(0);
+                TriggerParameters = new HashSet<int>();
+                States = new LayerState[0];
             }
             
-            public AnimatorSnapshot(int layerCount)
+            public AnimatorSnapshot(Dictionary<int, bool> boolParameters, Dictionary<int, float> floatParameters, Dictionary<int, int> intParameters, HashSet<int> triggerParameters, LayerState[] states)
             {
-                m_States = new LayerState[layerCount];
-            }
-
-            /// <summary>
-            /// This constructor allows a snapshot to reuse the reference to m_States array from the parameter snapshot
-            /// </summary>
-            /// <param name="snapshot"></param>
-            public AnimatorSnapshot(AnimatorSnapshot snapshot)
-            {
-                m_States = snapshot.m_States;
+                BoolParameters = boolParameters;
+                FloatParameters = floatParameters;
+                IntParameters = intParameters;
+                TriggerParameters = triggerParameters;
+                States = states;
             }
 
             public void NetworkSerialize(NetworkSerializer serializer)
             {
-                int layerCount = serializer.IsReading ? 0 : m_States.Length;
-                serializer.Serialize(ref layerCount);
-
-                if (serializer.IsReading && m_States.Length != layerCount)
+                //int parameters
                 {
-                    m_States = new LayerState[layerCount];
-                }
+                    int paramCount = serializer.IsReading ? 0 : IntParameters.Count;
+                    serializer.Serialize(ref paramCount);
                 
-                for (int paramIndex = 0; paramIndex < layerCount; paramIndex++)
+                    var paramArray = serializer.IsReading ? new KeyValuePair<int, int>[paramCount] : IntParameters.ToArray();
+                    
+                    for (int paramIndex = 0; paramIndex < paramCount; paramIndex++)
+                    {
+                        var paramId = serializer.IsReading ? 0 : paramArray[paramIndex].Key;
+                        serializer.Serialize(ref paramId);
+                        
+                        var paramInt = serializer.IsReading ? 0 : paramArray[paramIndex].Value;
+                        serializer.Serialize(ref paramInt);
+                
+                        if (serializer.IsReading)
+                        {
+                            paramArray[paramIndex] = new KeyValuePair<int,int>(paramId, paramInt);
+                        }
+                    }
+                
+                    if (serializer.IsReading)
+                    {
+                        IntParameters = paramArray.ToDictionary(pair => pair.Key, pair => pair.Value);
+                    }
+                }
+
+                //float parameters
                 {
-                    var stateHash = serializer.IsReading ? 0 : m_States[paramIndex].StateHash;
-                    serializer.Serialize(ref stateHash);
+                    int paramCount = serializer.IsReading ? 0 : FloatParameters.Count;
+                    serializer.Serialize(ref paramCount);
 
-                    var layerWeight = serializer.IsReading ? 0 : m_States[paramIndex].LayerWeight;
-                    serializer.Serialize(ref layerWeight);
+                    var paramArray = serializer.IsReading ? new KeyValuePair<int, float>[paramCount] : FloatParameters.ToArray();
+                    for (int paramIndex = 0; paramIndex < paramCount; paramIndex++)
+                    {
+                        var paramId = serializer.IsReading ? 0 : paramArray[paramIndex].Key;
+                        serializer.Serialize(ref paramId);
+                        
+                        var paramFloat = serializer.IsReading ? 0 : paramArray[paramIndex].Value;
+                        serializer.Serialize(ref paramFloat);
 
-                    var normalizedStateTime = serializer.IsReading ? 0 : m_States[paramIndex].NormalizedStateTime;
-                    serializer.Serialize(ref normalizedStateTime);
+                        if (serializer.IsReading)
+                        {
+                            paramArray[paramIndex] = new KeyValuePair<int,float>(paramId, paramFloat);
+                        }
+                    }
 
                     if (serializer.IsReading)
                     {
-                        m_States[paramIndex] = new LayerState()
+                        FloatParameters = paramArray.ToDictionary(pair => pair.Key, pair => pair.Value);
+                    }
+                }
+                
+                //bool parameters
+                {
+                    int paramCount = serializer.IsReading ? 0 : BoolParameters.Count;
+                    serializer.Serialize(ref paramCount);
+
+                    var paramArray = serializer.IsReading ? new KeyValuePair<int, bool>[paramCount] : BoolParameters.ToArray();
+                    for (int paramIndex = 0; paramIndex < paramCount; paramIndex++)
+                    {
+                        var paramId = serializer.IsReading ? 0 : paramArray[paramIndex].Key;
+                        serializer.Serialize(ref paramId);
+                        
+                        var paramBool = serializer.IsReading ? false : paramArray[paramIndex].Value;
+                        serializer.Serialize(ref paramBool);
+
+                        if (serializer.IsReading)
                         {
-                            LayerWeight = layerWeight, StateHash = stateHash,
-                            NormalizedStateTime = normalizedStateTime
-                        };
+                            paramArray[paramIndex] = new KeyValuePair<int,bool>(paramId, paramBool);
+                        }
+                    }
+
+                    if (serializer.IsReading)
+                    {
+                        BoolParameters = paramArray.ToDictionary(pair => pair.Key, pair => pair.Value);
+                    }
+                }
+                
+                //trigger parameters
+                {
+                    int paramCount = serializer.IsReading ? 0 : TriggerParameters.Count;
+                    serializer.Serialize(ref paramCount);
+
+                    var paramArray = serializer.IsReading ? new int[paramCount] : TriggerParameters.ToArray();
+                    for (int i = 0; i < paramCount; i++)
+                    {
+                        var paramId = serializer.IsReading ? 0 : paramArray[i];
+                        serializer.Serialize(ref paramId);
+
+                        if (serializer.IsReading)
+                        {
+                            paramArray[i] = paramId;
+                        }
+                    }
+
+                    if (serializer.IsReading)
+                    {
+                        TriggerParameters = new HashSet<int>(paramArray);
+                    }
+                }
+                
+                //layer state
+                {
+                    int layerCount = serializer.IsReading ? 0 : States.Length;
+                    serializer.Serialize(ref layerCount);
+
+                    if (serializer.IsReading && States.Length != layerCount)
+                    {
+                        States = new LayerState[layerCount];
+                    }
+
+                    for (int paramIndex = 0; paramIndex < layerCount; paramIndex++)
+                    {
+                        var stateHash = serializer.IsReading ? 0 : States[paramIndex].StateHash;
+                        serializer.Serialize(ref stateHash);
+
+                        var layerWeight = serializer.IsReading ? 0 : States[paramIndex].LayerWeight;
+                        serializer.Serialize(ref layerWeight);
+
+                        var normalizedStateTime = serializer.IsReading ? 0 : States[paramIndex].NormalizedStateTime;
+                        serializer.Serialize(ref normalizedStateTime);
+
+                        if (serializer.IsReading)
+                        {
+                            States[paramIndex] = new LayerState()
+                            {
+                                LayerWeight = layerWeight, StateHash = stateHash,
+                                NormalizedStateTime = normalizedStateTime
+                            };
+                        }
                     }
                 }
             }

@@ -2229,7 +2229,7 @@ GameObject:
   - component: {fileID: 442217489094760330}
   - component: {fileID: -1880662623096729273}
   - component: {fileID: -2389071856153289442}
-  - component: {fileID: -8872332184638620354}
+  - component: {fileID: 3903461099475432399}
   m_Layer: 0
   m_Name: UnityNetChan
   m_TagString: Untagged
@@ -2280,7 +2280,7 @@ Animator:
   m_Avatar: {fileID: 9000000, guid: 8f0565f23a2b58541a475bd3c1393052, type: 3}
   m_Controller: {fileID: 9100000, guid: 42313f6a56a1d4343a8645dff90d0b6b, type: 2}
   m_CullingMode: 1
-  m_UpdateMode: 0
+  m_UpdateMode: 1
   m_ApplyRootMotion: 1
   m_LinearVelocityBlending: 0
   m_WarningMessage: 
@@ -2322,7 +2322,7 @@ MonoBehaviour:
   Channel: 10
   m_UseLocal:
     m_InternalValue: 0
---- !u!114 &-8872332184638620354
+--- !u!114 &3903461099475432399
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -2331,13 +2331,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 442217489085244684}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 583831aab41d22842bd94461ab84fdaa, type: 3}
+  m_Script: {fileID: 11500000, guid: e8d0727d5ae3244e3b569694d3912374, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   AnimatorAuthority: 1
+  m_SendRate: 0.1
   m_Animator: {fileID: 442217489094760330}
-  FixedSendsPerSecond: 30
-  Channel: 10
 --- !u!1 &442217489085244686
 GameObject:
   m_ObjectHideFlags: 0
