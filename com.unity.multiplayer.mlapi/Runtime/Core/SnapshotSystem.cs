@@ -201,6 +201,8 @@ namespace MLAPI
 
                     Stream.Seek(Entries[i].Position, SeekOrigin.Begin);
 
+                    // todo: consider refactoring out in its own function to accomodate
+                    // other ways to (de)serialize
                     // todo --M1--
                     // Review whether tick still belong in netvar or in the snapshot table.
                     nv.ReadDelta(Stream, m_NetworkManager.IsServer);
@@ -409,20 +411,26 @@ namespace MLAPI
                 pos = m_Snapshot.AddEntry(k);
             }
 
+            WriteVariableToSnapshot(m_Snapshot, networkVariable, pos);
+        }
+
+        private void WriteVariableToSnapshot(Snapshot snapshot, INetworkVariable networkVariable, int index)
+        {
             // write var into buffer, possibly adjusting entry's position and Length
             using (var varBuffer = PooledNetworkBuffer.Get())
             {
                 networkVariable.WriteDelta(varBuffer);
-                if (varBuffer.Length > m_Snapshot.Entries[pos].Length)
+                if (varBuffer.Length > snapshot.Entries[index].Length)
                 {
                     // allocate this Entry's buffer
-                    m_Snapshot.AllocateEntry(ref m_Snapshot.Entries[pos], pos, (int)varBuffer.Length);
+                    snapshot.AllocateEntry(ref snapshot.Entries[index], index, (int)varBuffer.Length);
                 }
 
                 // Copy the serialized NetworkVariable into our buffer
-                Buffer.BlockCopy(varBuffer.GetBuffer(), 0, m_Snapshot.Buffer, m_Snapshot.Entries[pos].Position, (int)varBuffer.Length);
+                Buffer.BlockCopy(varBuffer.GetBuffer(), 0, snapshot.Buffer, snapshot.Entries[index].Position, (int)varBuffer.Length);
             }
         }
+
 
         /// <summary>
         /// Entry point when a Snapshot is received
