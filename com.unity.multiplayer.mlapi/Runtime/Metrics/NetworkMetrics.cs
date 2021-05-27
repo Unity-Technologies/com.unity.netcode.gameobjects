@@ -32,7 +32,6 @@ namespace MLAPI.Metrics
 #if true
     public class NetworkMetrics : INetworkMetrics
     {
-        private readonly IMetricDispatcher m_Dispatcher;
         private readonly NetworkManager m_NetworkManager;
 
         private EventMetric<NamedMessageEvent> m_NamedMessageSentEvent = new EventMetric<NamedMessageEvent>("Named Message Sent");
@@ -41,12 +40,14 @@ namespace MLAPI.Metrics
         public NetworkMetrics(NetworkManager networkManager)
         {
             m_NetworkManager = networkManager;
-            m_Dispatcher = new MetricDispatcherBuilder()
+            Dispatcher = new MetricDispatcherBuilder()
                 .WithMetricEvents(m_NamedMessageSentEvent, m_NamedMessageReceivedEvent)
                 .Build();
             
-            m_Dispatcher.RegisterObserver(MLAPIObserver.Observer);
+            Dispatcher.RegisterObserver(MLAPIObserver.Observer);
         }
+
+        internal IMetricDispatcher Dispatcher { get; }
 
         public void TrackNamedMessageSent(string messageName, ulong bytesCount)
         {
@@ -60,7 +61,7 @@ namespace MLAPI.Metrics
 
         public void DispatchFrame()
         {
-            m_Dispatcher.Dispatch();
+            Dispatcher.Dispatch();
         }
     }
 
