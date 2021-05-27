@@ -513,6 +513,14 @@ namespace MLAPI
         private ulong? m_LatestParent;
         private Transform m_CachedParent;
 
+        internal void InvokeBehaviourOnNetworkObjectParentChanged(NetworkObject parentNetworkObject)
+        {
+            for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
+            {
+                ChildNetworkBehaviours[i].OnNetworkObjectParentChanged(parentNetworkObject);
+            }
+        }
+
         internal void SetCachedParent(Transform parentTransform)
         {
             m_CachedParent = parentTransform;
@@ -647,6 +655,9 @@ namespace MLAPI
             {
                 m_CachedParent = null;
                 transform.parent = null;
+
+                InvokeBehaviourOnNetworkObjectParentChanged(null);
+
                 return true;
             }
 
@@ -666,6 +677,8 @@ namespace MLAPI
 
             m_CachedParent = parentObject.transform;
             transform.parent = parentObject.transform;
+
+            InvokeBehaviourOnNetworkObjectParentChanged(parentObject);
 
             return true;
         }
