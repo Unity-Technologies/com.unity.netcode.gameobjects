@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using MLAPI.Metrics;
@@ -36,7 +37,6 @@ namespace MLAPI.RuntimeTests.Metrics
         public IEnumerator NetworkMetrics_WhenNamedMessageSent_TracksNamedMessageSentMetric()
         {
             var messageName = Guid.NewGuid().ToString();
-            var connectionId = 0UL;
 
             m_NetworkMetrics.Dispatcher.RegisterObserver(new TestObserver(collection =>
             {
@@ -45,10 +45,30 @@ namespace MLAPI.RuntimeTests.Metrics
 
                 var namedMessageSent = namedMessageSentMetric.Values.First();
                 Assert.AreEqual(messageName, namedMessageSent.Name);
-                Assert.AreEqual(connectionId, namedMessageSent.Connection.Id);
+                Assert.AreEqual(m_NetworkManager.LocalClientId, namedMessageSent.Connection.Id);
             }));
 
-            m_NetworkManager.CustomMessagingManager.SendNamedMessage(messageName, connectionId, Stream.Null);
+            m_NetworkManager.CustomMessagingManager.SendNamedMessage(messageName, 100, Stream.Null);
+
+            yield return WaitForMetricsDispatch();
+        }
+
+        [UnityTest]
+        public IEnumerator NetworkMetrics_WhenNamedMessageSentToMultipleClients_TracksNamedMessageSentMetric()
+        {
+            var messageName = Guid.NewGuid().ToString();
+
+            m_NetworkMetrics.Dispatcher.RegisterObserver(new TestObserver(collection =>
+            {
+                var namedMessageSentMetric = AssertSingleMetricEventOfType<NamedMessageEvent>(collection, MetricNames.NamedMessageSent);
+                Assert.AreEqual(1, namedMessageSentMetric.Values.Count);
+
+                var namedMessageSent = namedMessageSentMetric.Values.First();
+                Assert.AreEqual(messageName, namedMessageSent.Name);
+                Assert.AreEqual(m_NetworkManager.LocalClientId, namedMessageSent.Connection.Id);
+            }));
+
+            m_NetworkManager.CustomMessagingManager.SendNamedMessage(messageName, new List<ulong> { 100, 200, 300 }, Stream.Null);
 
             yield return WaitForMetricsDispatch();
         }
