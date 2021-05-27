@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using Unity.Profiling;
 using MLAPI.Configuration;
 using MLAPI.Profiling;
+using MLAPI.Logging;
+using UnityEngine;
 
 namespace MLAPI.Messaging
 {
@@ -29,6 +31,8 @@ namespace MLAPI.Messaging
 
         //The RpcQueueContainer that is associated with this RpcQueueProcessor
         private RpcQueueContainer m_RpcQueueContainer;
+
+        private readonly NetworkManager m_NetworkManager;
 
         /// <summary>
         /// ProcessReceiveQueue
@@ -58,7 +62,19 @@ namespace MLAPI.Messaging
 
                         if (!isTesting)
                         {
-                            NetworkManager.Singleton.InvokeRpc(currentQueueItem);
+                            try
+                            {
+                                m_NetworkManager.InvokeRpc(currentQueueItem);
+                            }
+                            catch (Exception ex)
+                            {
+                                Debug.LogException(ex);
+
+                                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                                {
+                                    NetworkLog.LogWarning($"A {currentQueueItem.QueueItemType} threw an exception while executing! Please check Unity logs for more information.");
+                                }
+                            }
                         }
 
                         ProfilerStatManager.RpcsQueueProc.Record();
@@ -126,7 +142,7 @@ namespace MLAPI.Messaging
                             {
                                 foreach (ulong clientId in queueItem.ClientNetworkIds)
                                 {
-                                    InternalMessageSender.Send(clientId, NetworkConstants.ADD_OBJECT, queueItem.NetworkChannel, poolStream);
+                                    m_NetworkManager.MessageSender.Send(clientId, NetworkConstants.ADD_OBJECT, queueItem.NetworkChannel, poolStream);
                                 }
 
                                 PerformanceDataManager.Increment(ProfilerConstants.RpcSent, queueItem.ClientNetworkIds.Length);
@@ -144,7 +160,7 @@ namespace MLAPI.Messaging
                             {
                                 foreach (ulong clientId in queueItem.ClientNetworkIds)
                                 {
-                                    InternalMessageSender.Send(clientId, NetworkConstants.DESTROY_OBJECT, queueItem.NetworkChannel, poolStream);
+                                    m_NetworkManager.MessageSender.Send(clientId, NetworkConstants.DESTROY_OBJECT, queueItem.NetworkChannel, poolStream);
                                 }
 
                                 PerformanceDataManager.Increment(ProfilerConstants.RpcSent, queueItem.ClientNetworkIds.Length);
@@ -270,9 +286,10 @@ namespace MLAPI.Messaging
             }
         }
 
-        internal RpcQueueProcessor(RpcQueueContainer rpcQueueContainer)
+        internal RpcQueueProcessor(RpcQueueContainer rpcQueueContainer, NetworkManager networkManager)
         {
             m_RpcQueueContainer = rpcQueueContainer;
+            m_NetworkManager = networkManager;
         }
     }
 }

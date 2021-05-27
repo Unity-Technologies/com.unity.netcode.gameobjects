@@ -24,14 +24,18 @@ namespace MLAPI.Messaging.Buffering
             internal float BufferTime;
         }
 
+        private NetworkManager m_NetworkManager { get; }
+
+        internal BufferManager(NetworkManager networkManager)
+        {
+            m_NetworkManager = networkManager;
+        }
+
         internal Queue<BufferedMessage> ConsumeBuffersForNetworkId(ulong networkId)
         {
-            if (m_BufferQueues.ContainsKey(networkId))
+            if (m_BufferQueues.TryGetValue(networkId, out Queue<BufferedMessage> message))
             {
-                Queue<BufferedMessage> message = m_BufferQueues[networkId];
-
                 m_BufferQueues.Remove(networkId);
-
                 return message;
             }
             else
@@ -77,7 +81,7 @@ namespace MLAPI.Messaging.Buffering
 #endif
             foreach (var pair in m_BufferQueues)
             {
-                while (pair.Value.Count > 0 && Time.realtimeSinceStartup - pair.Value.Peek().BufferTime >= NetworkManager.Singleton.NetworkConfig.MessageBufferTimeout)
+                while (pair.Value.Count > 0 && Time.realtimeSinceStartup - pair.Value.Peek().BufferTime >= m_NetworkManager.NetworkConfig.MessageBufferTimeout)
                 {
                     BufferedMessage message = pair.Value.Dequeue();
 

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -11,10 +11,11 @@ namespace Assets.Scripts.Transport
 {
     public static class Utilities
     {
-        unsafe static byte[] SerializeUnmanagedArray<T>(NativeArray<T> value) where T : unmanaged
+        private static unsafe byte[] SerializeUnmanagedArray<T>(NativeArray<T> value) where T : unmanaged
         {
             var bytes = new byte[UnsafeUtility.SizeOf<T>() * value.Length + sizeof(int)];
-            fixed (byte* ptr = bytes) {
+            fixed (byte* ptr = bytes)
+            {
                 var buf = new UnsafeAppendBuffer(ptr, bytes.Length);
                 buf.Add(value);
             }
@@ -22,9 +23,10 @@ namespace Assets.Scripts.Transport
             return bytes;
         }
 
-        unsafe static NativeArray<T> DeserializeUnmanagedArray<T>(byte[] buffer, Allocator allocator = Allocator.Temp) where T : unmanaged
+        private static unsafe NativeArray<T> DeserializeUnmanagedArray<T>(byte[] buffer, Allocator allocator = Allocator.Temp) where T : unmanaged
         {
-            fixed (byte* ptr = buffer) {
+            fixed (byte* ptr = buffer)
+            {
                 var buf = new UnsafeAppendBuffer.Reader(ptr, buffer.Length);
                 buf.ReadNext<T>(out var array, allocator);
                 return array;
@@ -34,7 +36,8 @@ namespace Assets.Scripts.Transport
         public unsafe static byte[] SerializeUnmanaged<T>(ref T value) where T : unmanaged
         {
             var bytes = new byte[UnsafeUtility.SizeOf<T>()];
-            fixed (byte* ptr = bytes) {
+            fixed (byte* ptr = bytes)
+            {
                 UnsafeUtility.CopyStructureToPtr(ref value, ptr);
             }
 
@@ -43,7 +46,8 @@ namespace Assets.Scripts.Transport
 
         public unsafe static T DeserializeUnmanaged<T>(byte[] buffer) where T : unmanaged
         {
-            fixed (byte* ptr = buffer) {
+            fixed (byte* ptr = buffer)
+            {
                 UnsafeUtility.CopyPtrToStructure<T>(ptr, out var value);
                 return value;
             }

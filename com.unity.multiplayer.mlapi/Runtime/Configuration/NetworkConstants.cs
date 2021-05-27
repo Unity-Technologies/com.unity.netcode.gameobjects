@@ -18,10 +18,12 @@ namespace MLAPI.Configuration
         internal const byte TIME_SYNC = 11;
         internal const byte NETWORK_VARIABLE_DELTA = 12;
         internal const byte NETWORK_VARIABLE_UPDATE = 13;
+        internal const byte ALL_CLIENTS_LOADED_SCENE = 14;
         internal const byte UNNAMED_MESSAGE = 20;
         internal const byte DESTROY_OBJECTS = 21;
         internal const byte NAMED_MESSAGE = 22;
         internal const byte SERVER_LOG = 23;
+        internal const byte SNAPSHOT_DATA = 25;
         internal const byte SERVER_RPC = 30;
         internal const byte CLIENT_RPC = 31;
         internal const byte INVALID = 32;
@@ -42,7 +44,7 @@ namespace MLAPI.Configuration
             "TIME_SYNC",
             "NETWORK_VARIABLE_DELTA",
             "NETWORK_VARIABLE_UPDATE",
-            "",
+            "ALL_CLIENTS_SWITCH_SCENE_COMPLETED",
             "",
             "", // 16
             "",
@@ -53,7 +55,7 @@ namespace MLAPI.Configuration
             "NAMED_MESSAGE",
             "SERVER_LOG",
             "",
-            "",
+            "SNAPSHOT_DATA",
             "",
             "",
             "",

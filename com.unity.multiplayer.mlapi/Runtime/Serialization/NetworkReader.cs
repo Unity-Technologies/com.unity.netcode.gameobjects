@@ -243,9 +243,9 @@ namespace MLAPI.Serialization
             {
                 ulong networkObjectId = ReadUInt64Packed();
 
-                if (NetworkManager.Singleton.SpawnManager.SpawnedObjects.ContainsKey(networkObjectId))
+                if (NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(networkObjectId, out NetworkObject networkObject))
                 {
-                    return NetworkManager.Singleton.SpawnManager.SpawnedObjects[networkObjectId].gameObject;
+                    return networkObject.gameObject;
                 }
 
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
@@ -260,9 +260,9 @@ namespace MLAPI.Serialization
             {
                 ulong networkObjectId = ReadUInt64Packed();
 
-                if (NetworkManager.Singleton.SpawnManager.SpawnedObjects.ContainsKey(networkObjectId))
+                if (NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(networkObjectId, out NetworkObject networkObject))
                 {
-                    return NetworkManager.Singleton.SpawnManager.SpawnedObjects[networkObjectId];
+                    return networkObject;
                 }
 
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
@@ -277,9 +277,9 @@ namespace MLAPI.Serialization
             {
                 ulong networkObjectId = ReadUInt64Packed();
                 ushort behaviourId = ReadUInt16Packed();
-                if (NetworkManager.Singleton.SpawnManager.SpawnedObjects.ContainsKey(networkObjectId))
+                if (NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(networkObjectId, out NetworkObject networkObject))
                 {
-                    return NetworkManager.Singleton.SpawnManager.SpawnedObjects[networkObjectId].GetNetworkBehaviourAtOrderIndex(behaviourId);
+                    return networkObject.GetNetworkBehaviourAtOrderIndex(behaviourId);
                 }
 
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
@@ -429,7 +429,7 @@ namespace MLAPI.Serialization
                 read |= (uint)ReadByte() << (i << 3);
             }
 
-            return (((float)read / ((0x100 * bytes) - 1)) * (minValue + maxValue)) - minValue;
+            return ((float)read / ((0x100 * bytes) - 1) * (maxValue - minValue)) + minValue;
         }
 
         /// <summary>
@@ -452,7 +452,7 @@ namespace MLAPI.Serialization
                 read |= (ulong)ReadByte() << (i << 3);
             }
 
-            return (((double)read / ((0x100 * bytes) - 1)) * (minValue + maxValue)) - minValue;
+            return ((double)read / ((0x100 * bytes) - 1) * (maxValue - minValue)) + minValue;
         }
 
         /// <summary>
