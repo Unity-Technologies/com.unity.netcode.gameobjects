@@ -17,7 +17,6 @@ using MLAPI.Serialization.Pooled;
 using MLAPI.Spawning;
 using MLAPI.Transports;
 using Unity.Profiling;
-using Debug = UnityEngine.Debug;
 
 namespace MLAPI
 {
