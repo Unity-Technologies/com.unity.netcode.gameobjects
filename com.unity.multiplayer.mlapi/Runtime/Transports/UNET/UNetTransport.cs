@@ -163,7 +163,7 @@ namespace MLAPI.Transports.UNET
             }
         }
 
-
+        #if !UNITY_WEBGL
         public void SendQueued(ulong clientId)
         {
             if (ProfilerEnabled)
@@ -175,6 +175,7 @@ namespace MLAPI.Transports.UNET
 
             RelayTransport.SendQueuedMessages(hostId, connectionId, out byte error);
         }
+        #endif
 
         public override NetworkEvent PollEvent(out ulong clientId, out NetworkChannel networkChannel, out ArraySegment<byte> payload, out float receiveTime)
         {
