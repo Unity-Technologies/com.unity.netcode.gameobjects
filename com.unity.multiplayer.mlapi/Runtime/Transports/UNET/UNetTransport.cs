@@ -163,7 +163,7 @@ namespace MLAPI.Transports.UNET
             }
         }
 
-        #if !UNITY_WEBGL
+#if !UNITY_WEBGL
         public void SendQueued(ulong clientId)
         {
             if (ProfilerEnabled)
@@ -175,14 +175,14 @@ namespace MLAPI.Transports.UNET
 
             RelayTransport.SendQueuedMessages(hostId, connectionId, out byte error);
         }
-        #endif
+#endif
 
         public override NetworkEvent PollEvent(out ulong clientId, out NetworkChannel networkChannel, out ArraySegment<byte> payload, out float receiveTime)
         {
             var eventType = RelayTransport.Receive(out int hostId, out int connectionId, out int channelId, m_MessageBuffer, m_MessageBuffer.Length, out int receivedSize, out byte error);
 
             clientId = GetMLAPIClientId((byte)hostId, (ushort)connectionId, false);
-            receiveTime = UnityEngine.Time.realtimeSinceStartup;
+            receiveTime = Time.realtimeSinceStartup;
 
             var networkError = (NetworkError)error;
             if (networkError == NetworkError.MessageToLong)

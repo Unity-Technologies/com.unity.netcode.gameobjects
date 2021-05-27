@@ -315,7 +315,7 @@ namespace MLAPI.Transports.UNET
             return UnityEngine.Networking.NetworkTransport.Send(hostId, s_RelayConnectionId, channelId, buffer, size, out error);
         }
 
-        #if !UNITY_WEBGL
+#if !UNITY_WEBGL
         public static bool QueueMessageForSending(int hostId, int connectionId, int channelId, byte[] buffer, int size, out byte error)
         {
             if (!Enabled)
@@ -351,8 +351,8 @@ namespace MLAPI.Transports.UNET
 
             return UnityEngine.Networking.NetworkTransport.SendQueuedMessages(hostId, s_RelayConnectionId, out error);
         }
-        #endif
-        
+#endif
+
         public static NetworkEventType ReceiveFromHost(int hostId, out int connectionId, out int channelId, byte[] buffer, int bufferSize, out int receivedSize, out byte error)
         {
             if (!Enabled)
