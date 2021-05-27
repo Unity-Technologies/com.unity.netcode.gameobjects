@@ -204,7 +204,7 @@ namespace MLAPI.NetworkVariable
         /// <inheritdoc />
         public void WriteField(Stream stream)
         {
-           using (var writer = PooledNetworkWriter.Get(stream))
+            using (var writer = PooledNetworkWriter.Get(stream))
             {
                 writer.WriteObjectPacked(m_InternalValue); //BOX
             }
