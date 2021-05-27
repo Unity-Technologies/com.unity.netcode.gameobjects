@@ -83,8 +83,6 @@ namespace MLAPI.Messaging
 
                 NetworkManager.ConnectedClients.Add(NetworkManager.LocalClientId, new NetworkClient { ClientId = NetworkManager.LocalClientId });
 
-                m_NetworkManager.NetworkMetrics.TrackConnection(NetworkManager.LocalClientId);
-
                 void DelayedSpawnAction(Stream continuationStream)
                 {
                     using (var continuationReader = PooledNetworkReader.Get(continuationStream))

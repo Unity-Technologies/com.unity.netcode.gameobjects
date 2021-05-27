@@ -9,7 +9,6 @@ namespace MLAPI.Metrics
 {
     public interface INetworkMetrics
     {
-        void TrackConnection(ulong networkClientId);
         void TrackNetworkObject(NetworkObject networkObject);
 
         void TrackNamedMessageSent(string messageName, ulong bytesCount);
@@ -21,10 +20,6 @@ namespace MLAPI.Metrics
 
     public class NullNetworkMetrics : INetworkMetrics
     {
-        public void TrackConnection(ulong networkClientId)
-        {
-        }
-
         public void TrackNetworkObject(NetworkObject networkObject)
         {
         }
@@ -51,8 +46,9 @@ namespace MLAPI.Metrics
         private EventMetric<NamedMessageEvent> m_NamedMessageSentEvent = new EventMetric<NamedMessageEvent>("Named Message Sent");
         private EventMetric<NamedMessageEvent> m_NamedMessageReceivedEvent = new EventMetric<NamedMessageEvent>("Named Message Received");
 
-        private Dictionary<ulong, ConnectionInfo> m_ConnectionInfos = new Dictionary<ulong, ConnectionInfo>();
         private Dictionary<ulong, NetworkObjectIdentifier> m_NetworkGameObjects = new Dictionary<ulong, NetworkObjectIdentifier>();
+
+        private ConnectionInfo m_LocalConnectionInfo;
 
         public NetworkMetrics(NetworkManager networkManager)
         {
@@ -62,14 +58,7 @@ namespace MLAPI.Metrics
                 .Build();
 
             m_Dispatcher.RegisterObserver(MLAPIObserver.Observer);
-        }
-
-        public void TrackConnection(ulong networkClientId)
-        {
-            if (!m_ConnectionInfos.ContainsKey(networkClientId))
-            {
-                m_ConnectionInfos[networkClientId] = new ConnectionInfo(networkClientId);
-            }
+            m_LocalConnectionInfo = new ConnectionInfo(m_NetworkManager.LocalClientId);
         }
 
         public void TrackNetworkObject(NetworkObject networkObject)
@@ -82,12 +71,12 @@ namespace MLAPI.Metrics
 
         public void TrackNamedMessageSent(string messageName, ulong bytesCount)
         {
-            m_NamedMessageSentEvent.Mark(new NamedMessageEvent(new ConnectionInfo(m_NetworkManager.LocalClientId), messageName, bytesCount));
+            m_NamedMessageSentEvent.Mark(new NamedMessageEvent(m_LocalConnectionInfo, messageName, bytesCount));
         }
 
         public void TrackNamedMessageReceived(string messageName, ulong bytesCount)
         {
-            m_NamedMessageReceivedEvent.Mark(new NamedMessageEvent(new ConnectionInfo(m_NetworkManager.LocalClientId), messageName, bytesCount));
+            m_NamedMessageReceivedEvent.Mark(new NamedMessageEvent(m_LocalConnectionInfo, messageName, bytesCount));
         }
 
         public void DispatchFrame()
