@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using MLAPI.Messaging;
 using MLAPI.Messaging.Buffering;
@@ -41,7 +41,7 @@ namespace MLAPI.EditorTests
         public void HandleNamedMessage(ulong clientId, Stream stream) => VerifyCalled(nameof(HandleNamedMessage));
 
         public void HandleNetworkLog(ulong clientId, Stream stream) => VerifyCalled(nameof(HandleNetworkLog));
-        
+
         public void HandleAllClientsSwitchSceneCompleted(ulong clientId, Stream stream) => VerifyCalled(nameof(HandleAllClientsSwitchSceneCompleted));
 
         private void VerifyCalled(string method)
@@ -49,4 +49,5 @@ namespace MLAPI.EditorTests
             Debug.Log(method);
         }
     }
+
 }

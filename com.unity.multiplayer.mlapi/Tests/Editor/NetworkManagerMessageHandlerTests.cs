@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using MLAPI.Configuration;
+using MLAPI.Editor;
 using MLAPI.Internal;
 using MLAPI.Serialization;
 using MLAPI.Transports;
@@ -296,6 +297,7 @@ namespace MLAPI.EditorTests
     }
 
     // Should probably have one of these for more files? In the future we could use the SIPTransport?
+    [DontShowInTransportDropdown]
     internal class DummyTransport : NetworkTransport
     {
         public override ulong ServerClientId { get; } = 0;
