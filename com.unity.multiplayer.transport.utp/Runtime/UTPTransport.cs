@@ -4,16 +4,19 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Unity.Networking.Transport;
 using Unity.Networking.Transport.Relay;
+#if ENABLE_RELAY_SERVICE
 using Unity.Services.Relay;
 using Unity.Services.Relay.Allocations;
+using Unity.Services.Relay.Models;
+using Unity.Services.Core;
+#endif
+
 using MLAPI.Transports.Tasks;
 using UnityEngine;
 
 using UTPNetworkEvent = Unity.Networking.Transport.NetworkEvent;
 using Unity.Collections.LowLevel.Unsafe;
-using Unity.Services.Relay.Models;
 using System.Linq;
-using Unity.Services.Core;
 
 namespace MLAPI.Transports
 {
@@ -37,7 +40,7 @@ namespace MLAPI.Transports
         [SerializeField] private string m_ServerAddress = "127.0.0.1";
         [SerializeField] private ushort m_ServerPort = 7777;
         [SerializeField] private int m_RelayMaxPlayers = 10;
-        [SerializeField] private string m_RelayServer = "https://relay-allocations-test.cloud.unity3d.com";
+        [SerializeField] private string m_RelayServer = "https://relay-allocations-stg.cloud.unity3d.com";
 
         private State m_State = State.Disconnected;
         private NetworkDriver m_Driver;
@@ -72,6 +75,10 @@ namespace MLAPI.Transports
 
             if (m_ProtocolType == ProtocolType.RelayUnityTransport)
             {
+#if !ENABLE_RELAY_SERVICE
+                Debug.LogError("You must have Relay SDK installed via the UDash in order to use the relay transport");
+                yield return null;
+#else
                 var joinTask = RelayService.AllocationsApiClient.JoinRelayAsync(new JoinRelayRequest(new JoinRequest(m_RelayJoinCode)));
 
                 while(!joinTask.IsCompleted)
@@ -113,6 +120,7 @@ namespace MLAPI.Transports
                 relayServerData.ComputeNewNonce();
 
                 m_NetworkParameters.Add(new RelayNetworkParameter{ ServerData = relayServerData });
+#endif
             }
             else
             {
@@ -189,8 +197,13 @@ namespace MLAPI.Transports
             task.IsDone = true;
         }
 
+
         private IEnumerator StartRelayServer(SocketTask task)
         {
+#if !ENABLE_RELAY_SERVICE
+            Debug.LogError("You must have Relay SDK installed via the UDash in order to use the relay transport");
+            yield return null;
+#else
             var allocationTask = RelayService.AllocationsApiClient.CreateAllocationAsync(new CreateAllocationRequest(new AllocationRequest(m_RelayMaxPlayers)));
 
             while(!allocationTask.IsCompleted)
@@ -246,6 +259,7 @@ namespace MLAPI.Transports
             m_NetworkParameters.Add(new RelayNetworkParameter{ ServerData = relayServerData });
             
             yield return ServerBindAndListen(task, NetworkEndPoint.AnyIpv4);
+#endif
         }
 
         private bool ProcessEvent()
@@ -367,11 +381,12 @@ namespace MLAPI.Transports
 
             m_NetworkParameters = new List<INetworkParameter>();
             m_MessageBuffer = new byte[m_MessageBufferSize];
-
+#if ENABLE_RELAY_SERVICE
             if (m_ProtocolType == ProtocolType.RelayUnityTransport) {
                 Unity.Services.Relay.Configuration.BasePath = m_RelayServer;
                 UnityServices.Initialize();
             }
+#endif
         }
 
         public override NetworkEvent PollEvent(out ulong clientId, out NetworkChannel networkChannel, out ArraySegment<byte> payload, out float receiveTime)

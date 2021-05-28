@@ -17,6 +17,12 @@
     "precompiledReferences": [],
     "autoReferenced": true,
     "defineConstraints": [],
-    "versionDefines": [],
+    "versionDefines": [
+        {
+            "name": "com.unity.services.relay",
+            "expression": "0.0.1-preview.3",
+            "define": "ENABLE_RELAY_SERVICE"
+        }
+    ],
     "noEngineReferences": false
 }
