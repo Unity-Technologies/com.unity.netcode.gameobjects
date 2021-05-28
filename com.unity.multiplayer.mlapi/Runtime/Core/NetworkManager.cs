@@ -61,6 +61,7 @@ namespace MLAPI
         internal NetworkTickSystem NetworkTickSystem { get; private set; }
 
         internal SnapshotSystem SnapshotSystem { get; private set; }
+        internal NetworkBehaviourUpdater BehaviourUpdater { get; private set; }
 
         private NetworkPrefabHandler m_PrefabHandler;
         public NetworkPrefabHandler PrefabHandler
@@ -128,7 +129,7 @@ namespace MLAPI
         public ulong ServerClientId => NetworkConfig.NetworkTransport?.ServerClientId ?? throw new NullReferenceException($"The transport in the active {nameof(NetworkConfig)} is null");
 
         /// <summary>
-        /// The clientId the server calls the local client by, only valid for clients
+        /// Returns ServerClientId if IsServer or LocalClientId if IsClient
         /// </summary>
         public ulong LocalClientId
         {
@@ -342,6 +343,8 @@ namespace MLAPI
             BufferManager = new BufferManager(this);
 
             SceneManager = new NetworkSceneManager(this);
+
+            BehaviourUpdater = new NetworkBehaviourUpdater();
 
             if (MessageHandler == null)
             {
@@ -842,6 +845,11 @@ namespace MLAPI
                 CustomMessagingManager = null;
             }
 
+            if (BehaviourUpdater != null)
+            {
+                BehaviourUpdater = null;
+            }
+
             //The Transport is set during Init time, thus it is possible for the Transport to be null
             NetworkConfig?.NetworkTransport?.Shutdown();
         }
@@ -929,7 +937,7 @@ namespace MLAPI
                     if (NetworkConfig.EnableNetworkVariable)
                     {
                         // Do NetworkVariable updates
-                        NetworkBehaviour.NetworkBehaviourUpdate(this);
+                        BehaviourUpdater.NetworkBehaviourUpdate(this);
                     }
 
                     if (!IsServer && NetworkConfig.EnableMessageBuffering)

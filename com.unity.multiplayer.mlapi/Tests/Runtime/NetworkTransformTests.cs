@@ -20,7 +20,7 @@ namespace MLAPI.RuntimeTests
 
         public NetworkTransformTests(bool testWithHost)
         {
-            m_TestWithHost = testWithHost;
+            m_TestWithHost = testWithHost; // from test fixture
         }
 
         [UnitySetUp]
@@ -50,48 +50,74 @@ namespace MLAPI.RuntimeTests
         [TestCase(true, Authority.Server, ExpectedResult = null)]
         [TestCase(false, Authority.Client, ExpectedResult = null)]
         [TestCase(false, Authority.Server, ExpectedResult = null)]
-        public IEnumerator TestClientAuthoritativeTransformChangeOneAtATime(bool useLocal, Authority authorityToTest)
+        public IEnumerator TestAuthoritativeTransformChangeOneAtATime(bool testLocalTransform, Authority authorityToTest)
         {
+            var waitResult = new MultiInstanceHelpers.CoroutineResultWrapper<bool>();
+
             var networkTransform = (authorityToTest == Authority.Client ? m_ClientSideClientPlayer : m_ServerSideClientPlayer).GetComponent<NetworkTransform>();
-            networkTransform.UseLocal = useLocal;
             networkTransform.SetAuthority(authorityToTest);
 
             var otherSideNetworkTransform = (authorityToTest == Authority.Client ? m_ServerSideClientPlayer : m_ClientSideClientPlayer).GetComponent<NetworkTransform>();
-            otherSideNetworkTransform.UseLocal = useLocal;
             otherSideNetworkTransform.SetAuthority(authorityToTest);
+
+            bool HasAuthority(NetworkTransform transform)
+            {
+                return transform.NetworkObject.NetworkManager.IsServer && transform.TransformAuthority == Authority.Server ||
+                    transform.NetworkObject.NetworkManager.IsClient && transform.TransformAuthority == Authority.Client;
+            }
+
+            if (HasAuthority(networkTransform))
+            {
+                networkTransform.UseLocal = testLocalTransform;
+            }
+
+            if (HasAuthority(otherSideNetworkTransform))
+            {
+                otherSideNetworkTransform.UseLocal = testLocalTransform;
+            }
+
+            float approximation = 0.05f;
 
             // test position
             var playerTransform = networkTransform.transform;
             playerTransform.position = new Vector3(10, 20, 30);
             Assert.AreEqual(Vector3.zero, otherSideNetworkTransform.transform.position, "server side pos should be zero at first"); // sanity check
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForCondition(() => otherSideNetworkTransform.transform.position.x != 0 ));
-
-            Assert.AreEqual(new Vector3(10, 20, 30), otherSideNetworkTransform.transform.position, "wrong position on ghost");
+            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForCondition(() => otherSideNetworkTransform.transform.position.x > approximation, waitResult, maxFrames: 30));
+            if (!waitResult.Result)
+            {
+                throw new Exception("timeout while waiting for position change");
+            }
+            Assert.True(new Vector3(10, 20, 30) == otherSideNetworkTransform.transform.position, $"wrong position on ghost, {otherSideNetworkTransform.transform.position}"); // Vector3 already does float approximation with ==
 
             // test rotation
-            playerTransform.rotation = Quaternion.Euler(45, 40, 35);
+            playerTransform.rotation = Quaternion.Euler(45, 40, 35); // using euler angles instead of quaternions directly to really see issues users might encounter
             Assert.AreEqual(Quaternion.identity, otherSideNetworkTransform.transform.rotation, "wrong initial value for rotation"); // sanity check
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForCondition(() => otherSideNetworkTransform.transform.rotation.eulerAngles.x != 0 ));
-
-            Assert.LessOrEqual(Math.Abs(45 - otherSideNetworkTransform.transform.rotation.eulerAngles.x), 0.05f, $"wrong rotation on ghost on x, got {otherSideNetworkTransform.transform.rotation.eulerAngles.x}");
-            Assert.LessOrEqual(Math.Abs(40 - otherSideNetworkTransform.transform.rotation.eulerAngles.y), 0.05f, $"wrong rotation on ghost on y, got {otherSideNetworkTransform.transform.rotation.eulerAngles.y}");
-            Assert.LessOrEqual(Math.Abs(35 - otherSideNetworkTransform.transform.rotation.eulerAngles.z), 0.05f, $"wrong rotation on ghost on z, got {otherSideNetworkTransform.transform.rotation.eulerAngles.z}");
+            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForCondition(() => otherSideNetworkTransform.transform.rotation.eulerAngles.x > approximation, waitResult, maxFrames: 30));
+            if (!waitResult.Result)
+            {
+                throw new Exception("timeout while waiting for position change");
+            }
+            // approximation needed here since eulerAngles isn't super precise.
+            Assert.LessOrEqual(Math.Abs(45 - otherSideNetworkTransform.transform.rotation.eulerAngles.x), approximation, $"wrong rotation on ghost on x, got {otherSideNetworkTransform.transform.rotation.eulerAngles.x}");
+            Assert.LessOrEqual(Math.Abs(40 - otherSideNetworkTransform.transform.rotation.eulerAngles.y), approximation, $"wrong rotation on ghost on y, got {otherSideNetworkTransform.transform.rotation.eulerAngles.y}");
+            Assert.LessOrEqual(Math.Abs(35 - otherSideNetworkTransform.transform.rotation.eulerAngles.z), approximation, $"wrong rotation on ghost on z, got {otherSideNetworkTransform.transform.rotation.eulerAngles.z}");
 
             // test scale
             UnityEngine.Assertions.Assert.AreApproximatelyEqual(1f, otherSideNetworkTransform.transform.lossyScale.x, "wrong initial value for scale"); // sanity check
             UnityEngine.Assertions.Assert.AreApproximatelyEqual(1f, otherSideNetworkTransform.transform.lossyScale.y, "wrong initial value for scale"); // sanity check
             UnityEngine.Assertions.Assert.AreApproximatelyEqual(1f, otherSideNetworkTransform.transform.lossyScale.z, "wrong initial value for scale"); // sanity check
             playerTransform.localScale = new Vector3(2, 3, 4);
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForCondition(() => otherSideNetworkTransform.transform.lossyScale.x > 1f ));
-
+            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForCondition(() => otherSideNetworkTransform.transform.lossyScale.x > 1f + approximation, waitResult, maxFrames: 30));
+            if (!waitResult.Result)
+            {
+                throw new Exception("timeout while waiting for position change");
+            }
             UnityEngine.Assertions.Assert.AreApproximatelyEqual(2f, otherSideNetworkTransform.transform.lossyScale.x, "wrong scale on ghost"); // sanity check
             UnityEngine.Assertions.Assert.AreApproximatelyEqual(3f, otherSideNetworkTransform.transform.lossyScale.y, "wrong scale on ghost"); // sanity check
             UnityEngine.Assertions.Assert.AreApproximatelyEqual(4f, otherSideNetworkTransform.transform.lossyScale.z, "wrong scale on ghost"); // sanity check
 
             // todo reparent and test
             // todo test all public API
-            // test pos and rot change at once
-            // test with server vs with host
         }
 
         [UnityTest]
@@ -100,7 +126,6 @@ namespace MLAPI.RuntimeTests
         public IEnumerator TestCantChangeTransformFromOtherSideAuthority(Authority authorityToTest)
         {
             // test server can't change client authoritative transform
-
             var networkTransform = (authorityToTest == Authority.Client ? m_ClientSideClientPlayer : m_ServerSideClientPlayer).GetComponent<NetworkTransform>();
             networkTransform.SetAuthority(authorityToTest);
 
