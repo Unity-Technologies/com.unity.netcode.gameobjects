@@ -364,7 +364,7 @@ namespace MLAPI
         /// <summary>
         /// Gets called when the <see cref="NetworkObject"/> gets de-spawned. Is called both on the server and clients.
         /// </summary>
-        public virtual void OnNetworkDespawn() {}
+        public virtual void OnNetworkDespawn() { }
 
         internal void InternalOnNetworkSpawn()
         {
