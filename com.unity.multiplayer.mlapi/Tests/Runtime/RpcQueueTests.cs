@@ -28,14 +28,14 @@ namespace MLAPI.RuntimeTests
         /// ** This does not include any of the MLAPI to Transport code **
         /// </summary>
         /// <returns>IEnumerator</returns>
-        [UnityTest,Order(1)]
+        [UnityTest, Order(1)]
         public IEnumerator UpdateStagesInvocation()
         {
             Guid updateStagesTestId = NetworkManagerHelper.AddGameNetworkObject("UpdateStagesTest");
             var rpcPipelineTestComponent = NetworkManagerHelper.AddComponentToObject<NetworkUpdateStagesComponent>(updateStagesTestId);
-      
+
             NetworkManagerHelper.SpawnNetworkObject(updateStagesTestId);
-            
+
             var testsAreComplete = rpcPipelineTestComponent.IsTestComplete();
             var exceededMaximumStageIterations = rpcPipelineTestComponent.ExceededMaxIterations();
 
@@ -62,7 +62,7 @@ namespace MLAPI.RuntimeTests
             Assert.IsTrue(testsAreComplete && testsAreValidated);
 
             // Disable this so it isn't running any longer.
-            rpcPipelineTestComponent.gameObject.SetActive(false);            
+            rpcPipelineTestComponent.gameObject.SetActive(false);
         }
 
         /// <summary>
@@ -75,9 +75,9 @@ namespace MLAPI.RuntimeTests
             Guid gameObjectId = NetworkManagerHelper.AddGameNetworkObject("GrowingBufferObject");
 
             var growingRpcBufferSizeComponent = NetworkManagerHelper.AddComponentToObject<BufferDataValidationComponent>(gameObjectId);
-            
+
             NetworkManagerHelper.SpawnNetworkObject(gameObjectId);
-            
+
             // Start Testing
             growingRpcBufferSizeComponent.EnableTesting = true;
 
@@ -106,7 +106,7 @@ namespace MLAPI.RuntimeTests
         /// </summary>
         [Test, Order(3)]
         public void RpcQueueContainerClass()
-        {            
+        {
             // Create a testing rpcQueueContainer that doesn't get added to the network update loop so we don't try to send or process during the test
             var rpcQueueContainer = new RpcQueueContainer(NetworkManagerHelper.NetworkManagerObject, 0, true);
 

@@ -34,7 +34,7 @@ namespace MLAPI.RuntimeTests
         private NetworkVariableULong m_NetworkVariableULong;
         private NetworkVariableUInt m_NetworkVariableUInt;
         private NetworkVariableUShort m_NetworkVariableUShort;
-        
+
 
         public NetworkVariableHelper<bool> Bool_Var;
         public NetworkVariableHelper<byte> Byte_Var;
@@ -55,7 +55,7 @@ namespace MLAPI.RuntimeTests
         public NetworkVariableHelper<ulong> Ulong_Var;
         public NetworkVariableHelper<uint> Uint_Var;
         public NetworkVariableHelper<ushort> Ushort_Var;
-        
+
 
         public bool EnableTesting;
         private bool m_Initialized;
@@ -87,7 +87,7 @@ namespace MLAPI.RuntimeTests
             m_NetworkVariableULong = new NetworkVariableULong();
             m_NetworkVariableUInt = new NetworkVariableUInt();
             m_NetworkVariableUShort = new NetworkVariableUShort();
-            
+
 
             // NetworkVariable Value Type Constructor Test Coverage
             m_NetworkVariableBool = new NetworkVariableBool(true);
@@ -109,7 +109,7 @@ namespace MLAPI.RuntimeTests
             m_NetworkVariableULong = new NetworkVariableULong(1);
             m_NetworkVariableUInt = new NetworkVariableUInt(1);
             m_NetworkVariableUShort = new NetworkVariableUShort(1);
-            
+
 
             // NetworkVariable NetworkVariableSettings Constructor Test Coverage
             var settings = new NetworkVariableSettings();
@@ -134,7 +134,7 @@ namespace MLAPI.RuntimeTests
             m_NetworkVariableULong = new NetworkVariableULong(settings);
             m_NetworkVariableUInt = new NetworkVariableUInt(settings);
             m_NetworkVariableUShort = new NetworkVariableUShort(settings);
-            
+
 
 
             // NetworkVariable Value Type and NetworkVariableSettings Constructor Test Coverage
@@ -157,7 +157,7 @@ namespace MLAPI.RuntimeTests
             m_NetworkVariableULong = new NetworkVariableULong(settings, 1);
             m_NetworkVariableUInt = new NetworkVariableUInt(settings, 1);
             m_NetworkVariableUShort = new NetworkVariableUShort(settings, 1);
-            
+
 
 
             // Use this nifty class: NetworkVariableHelper
@@ -181,7 +181,7 @@ namespace MLAPI.RuntimeTests
             Ulong_Var = new NetworkVariableHelper<ulong>(m_NetworkVariableULong);
             Uint_Var = new NetworkVariableHelper<uint>(m_NetworkVariableUInt);
             Ushort_Var = new NetworkVariableHelper<ushort>(m_NetworkVariableUShort);
-            
+
         }
 
         /// <summary>
@@ -250,7 +250,7 @@ namespace MLAPI.RuntimeTests
                             m_NetworkVariableULong.Value = ulong.MaxValue;
                             m_NetworkVariableUInt.Value = uint.MaxValue;
                             m_NetworkVariableUShort.Value = ushort.MaxValue;
-                            
+
                             //Set the timeout (i.e. how long we will wait for all NetworkVariables to have registered their changes)
                             m_WaitForChangesTimeout = Time.realtimeSinceStartup + 0.50f;
                             m_ChangesAppliedToNetworkVariables = true;

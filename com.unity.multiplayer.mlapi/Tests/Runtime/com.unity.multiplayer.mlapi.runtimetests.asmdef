@@ -3,10 +3,12 @@
     "rootNamespace": "",
     "references": [
         "Unity.Multiplayer.MLAPI.Runtime",
-        "UnityEngine.TestRunner",
-        "UnityEditor.TestRunner",
         "Unity.Multiplayer.NetworkProfiler.Runtime",
-        "Unity.Multiplayer.NetStats"
+        "Unity.Multiplayer.NetStats",
+        "Unity.Multiplayer.MLAPI.Editor"
+    ],
+    "optionalUnityReferences": [
+        "TestAssemblies"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
