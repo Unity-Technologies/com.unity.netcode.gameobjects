@@ -283,13 +283,13 @@ namespace MLAPI.MultiprocessRuntimeTests
         }
 
         [AttributeUsage(AttributeTargets.Method)]
-        public class MultiprocessTestRegisteredAttribute : Attribute { }
+        public class MultiprocessContextBasedTestAttribute : Attribute { }
 
-        [UnityTest, MultiprocessTestRegistered]
+        [UnityTest, MultiprocessContextBasedTest]
         [TestCase(false, ExpectedResult = null)]
         public IEnumerator Sam(bool isRegistering)
         {
-            StartTest(); // todo this could be moved in a pre-test method associated with the tag?
+            ExecuteInContext.StartTest(); // todo this could be moved in a pre-test method associated with the tag?
 
             // TODO convert other tests to this format
             // todo move execute context out of here (in test coordinator?)
@@ -299,7 +299,7 @@ namespace MLAPI.MultiprocessRuntimeTests
                 int count = BitConverter.ToInt32(args, 0);
                 Debug.Log($"something server side, count is {count}");
             }, isRegistering: isRegistering, paramToPass: BitConverter.GetBytes(1));
-            yield return new WaitForSeconds(0); // wait a frame for results
+
             yield return new ExecuteInContext(ExecutionType.Client, (byte[] args) =>
             {
                 int count = BitConverter.ToInt32(args, 0);
@@ -321,7 +321,6 @@ namespace MLAPI.MultiprocessRuntimeTests
                 }
                 Assert.Greater(count, 0);
             }, isRegistering: isRegistering);
-            yield return new WaitForSeconds(0);
         }
 
         [OneTimeSetUp]

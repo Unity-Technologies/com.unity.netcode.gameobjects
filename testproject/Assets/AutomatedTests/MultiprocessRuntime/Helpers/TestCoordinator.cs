@@ -120,7 +120,7 @@ internal class TestCoordinator : NetworkBehaviour
 
         // registering magically all method bits
         var registeredMethods = typeof(TestCoordinator).Assembly.GetTypes().SelectMany(t => t.GetMethods())
-            .Where(m => m.GetCustomAttributes(typeof(NetworkVariablePerformanceTests.MultiprocessTestRegisteredAttribute), true).Length > 0)
+            .Where(m => m.GetCustomAttributes(typeof(NetworkVariablePerformanceTests.MultiprocessContextBasedTestAttribute), true).Length > 0)
             .ToArray();
         foreach (var method in registeredMethods)
         {
