@@ -307,7 +307,7 @@ namespace MLAPI.MultiprocessRuntimeTests
                 TestCoordinator.Instance.WriteTestResultsServerRpc(12345);
                 TestCoordinator.Instance.ClientDoneServerRpc();
 #if UNITY_EDITOR
-                Assert.Fail("Should not be here!!");
+                Assert.Fail("Should not be here!! This should only execute on client!!");
 #endif
             }, isRegistering: isRegistering, paramToPass: BitConverter.GetBytes(1));
 
