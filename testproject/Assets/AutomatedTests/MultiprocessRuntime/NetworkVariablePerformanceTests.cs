@@ -2,21 +2,17 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Reflection;
-using System.Runtime.CompilerServices;
-using System.Threading;
 using MLAPI.Messaging;
 using MLAPI.NetworkVariable;
 using MLAPI.Spawning;
 using NUnit.Framework;
 using Unity.PerformanceTesting;
 using UnityEngine;
-using UnityEngine.Android;
 using UnityEngine.Pool;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
-using UnityEngine.UIElements;
+using static MLAPI.MultiprocessRuntimeTests.NetworkVariablePerformanceTests.ExecuteInContext;
 using Debug = UnityEngine.Debug;
 using Random = System.Random;
 
@@ -166,7 +162,13 @@ namespace MLAPI.MultiprocessRuntimeTests
 
         public class ExecuteInContext : CustomYieldInstruction
         {
-            private bool m_IsServerAction;
+            public enum ExecutionType
+            {
+                Server,
+                Client
+            }
+
+            private ExecutionType m_ActionContextType;
             private Action<byte[]> m_Todo;
             public static Dictionary<string, Action<byte[]>> allActions = new Dictionary<string, Action<byte[]>>();
             // private static int s_ActionID;
@@ -196,12 +198,12 @@ namespace MLAPI.MultiprocessRuntimeTests
                 return method.DeclaringType.FullName + method.Name + allParameters;
             }
 
-            private bool ShouldExecuteLocally => (m_IsServerAction && m_NetworkManager.IsServer) || (!m_IsServerAction && !m_NetworkManager.IsServer);
+            private bool ShouldExecuteLocally => (m_ActionContextType == ExecutionType.Server && m_NetworkManager.IsServer) || (m_ActionContextType == ExecutionType.Client && !m_NetworkManager.IsServer);
 
-            public ExecuteInContext(bool isServerAction, Action<byte[]> todo, bool isRegistering, byte[] paramToPass = default, NetworkManager networkManager = null)
+            public ExecuteInContext(ExecutionType actionType, Action<byte[]> todo, bool isRegistering, byte[] paramToPass = default, NetworkManager networkManager = null)
             {
                 m_IsRegistering = isRegistering;
-                m_IsServerAction = isServerAction;
+                m_ActionContextType = actionType;
                 m_Todo = todo;
                 if (networkManager == null)
                 {
@@ -287,17 +289,19 @@ namespace MLAPI.MultiprocessRuntimeTests
         [TestCase(false, ExpectedResult = null)]
         public IEnumerator Sam(bool isRegistering)
         {
-            ExecuteInContext.StartTest();
+            StartTest(); // todo this could be moved in a pre-test method associated with the tag?
 
-            yield return new ExecuteInContext(isServerAction: true, (byte[] args) =>
+            // TODO convert other tests to this format
+            // todo move execute context out of here (in test coordinator?)
+
+            yield return new ExecuteInContext(ExecutionType.Server, (byte[] args) =>
             {
                 int count = BitConverter.ToInt32(args, 0);
                 Debug.Log($"something server side, count is {count}");
             }, isRegistering: isRegistering, paramToPass: BitConverter.GetBytes(1));
             yield return new WaitForSeconds(0); // wait a frame for results
-            yield return new ExecuteInContext(isServerAction: false, (byte[] args) =>
+            yield return new ExecuteInContext(ExecutionType.Client, (byte[] args) =>
             {
-
                 int count = BitConverter.ToInt32(args, 0);
                 Debug.Log($"something client side, count is {count}");
                 TestCoordinator.Instance.WriteTestResultsServerRpc(12345);
@@ -307,7 +311,7 @@ namespace MLAPI.MultiprocessRuntimeTests
 #endif
             }, isRegistering: isRegistering, paramToPass: BitConverter.GetBytes(1));
 
-            yield return new ExecuteInContext(isServerAction: true, (byte[] args) =>
+            yield return new ExecuteInContext(ExecutionType.Server, (byte[] args) =>
             {
                 int count = 0;
                 foreach (var res in TestCoordinator.ConsumeCurrentResult())
