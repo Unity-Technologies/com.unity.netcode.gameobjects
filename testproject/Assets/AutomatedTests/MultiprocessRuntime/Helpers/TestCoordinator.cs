@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -8,6 +9,7 @@ using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using MLAPI;
 using MLAPI.Messaging;
+using MLAPI.MultiprocessRuntimeTests;
 using MLAPI.NetworkVariable;
 using MLAPI.NetworkVariable.Collections;
 using UnityEditor;
@@ -115,6 +117,18 @@ internal class TestCoordinator : NetworkBehaviour
 
         m_ErrorMessages.OnListChanged += OnErrorMessageChanged;
         NetworkManager.OnClientDisconnectCallback += OnClientDisconnectCallback;
+
+        // registering magically all method bits
+        var registeredMethods = typeof(TestCoordinator).Assembly.GetTypes().SelectMany(t => t.GetMethods())
+            .Where(m => m.GetCustomAttributes(typeof(NetworkVariablePerformanceTests.MultiprocessTestRegisteredAttribute), true).Length > 0)
+            .ToArray();
+        foreach (var method in registeredMethods)
+        {
+            var type = method.ReflectedType;
+            var instance = Activator.CreateInstance(type);
+            var result = (IEnumerator)method.Invoke(instance, new[] { (object)true });
+            while (result.MoveNext()) { }
+        }
     }
 
     public void OnDestroy()
@@ -290,6 +304,19 @@ internal class TestCoordinator : NetworkBehaviour
     {
         var methodInfoString = GetMethodInfo(methodInfo);
         TriggerInternalClientRpc(methodInfoString, null, new ClientRpcParams { Send = new ClientRpcSendParams { TargetClientIds = AllClientIdExceptMine.ToArray() } });
+    }
+
+    [ClientRpc]
+    public void TriggerActionIDClientRpc(string actionID, byte[] args, ClientRpcParams clientRpcParams = default)
+    {
+        Debug.Log($"received RPC from server, client side triggering action ID {actionID}");
+        NetworkVariablePerformanceTests.ExecuteInContext.allActions[actionID].Invoke(args);
+    }
+    [ServerRpc]
+    public void TriggerActionIDServerRpc(string actionID, byte[] args, ServerRpcParams serverRpcParams = default)
+    {
+        Debug.Log($"received RPC from client, server side triggering action ID {actionID}");
+        NetworkVariablePerformanceTests.ExecuteInContext.allActions[actionID].Invoke(args);
     }
 
     [ClientRpc]

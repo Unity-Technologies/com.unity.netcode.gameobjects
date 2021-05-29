@@ -1,6 +1,10 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using MLAPI.Messaging;
 using MLAPI.NetworkVariable;
@@ -13,6 +17,7 @@ using UnityEngine.Pool;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using UnityEngine.UIElements;
+using Debug = UnityEngine.Debug;
 using Random = System.Random;
 
 namespace MLAPI.MultiprocessRuntimeTests
@@ -26,6 +31,11 @@ namespace MLAPI.MultiprocessRuntimeTests
         private static int s_TargetCount = 0;
         private List<NetworkObject> m_SpawnedObjects = new List<NetworkObject>();
         private static ObjectPool<GameObject> s_ObjectPool;
+
+        public NetworkVariablePerformanceTests()
+        {
+
+        }
 
 
         public class OneNetVar : NetworkBehaviour
@@ -141,94 +151,6 @@ namespace MLAPI.MultiprocessRuntimeTests
             }
         }
 
-
-
-        [UnityTest, Order(1), Performance]
-        public IEnumerator TestSpawn1()
-        {
-            // todo be able to run server code in a player and have client code execute from the editor
-            yield return TestSpawningManyObjects(1);
-        }
-
-        [UnityTest, Order(2), Performance]
-        public IEnumerator TestSpawn10()
-        {
-            yield return TestSpawningManyObjects(10);
-        }
-
-        [UnityTest, Order(3), Performance]
-        public IEnumerator TestSpawn100()
-        {
-            yield return TestSpawningManyObjects(100);
-        }
-
-        [UnityTest, Order(4), Performance]
-        public IEnumerator TestSpawn800()
-        {
-            yield return TestSpawningManyObjects(800);
-        }
-
-        [UnityTest, Order(5), Performance]
-        public IEnumerator TestSpawn850()
-        {
-            yield return TestSpawningManyObjects(850);
-        }
-
-        [UnityTest, Order(6), Performance]
-        public IEnumerator TestSpawn900()
-        {
-            yield return TestSpawningManyObjects(900);
-        }
-
-        [UnityTest, Order(7), Performance]
-        public IEnumerator TestSpawn1000()
-        {
-            yield return TestSpawningManyObjects(1000);
-        }
-
-        [UnityTest, Order(7), Performance]
-        public IEnumerator TestSpawn2500()
-        {
-            yield return TestSpawningManyObjects(2500);
-        }
-
-        [UnityTest, Order(8), Performance]
-        public IEnumerator TestSpawn5000()
-        {
-            yield return TestSpawningManyObjects(5000);
-        }
-
-        [UnityTest, Order(9), Performance]
-        public IEnumerator TestSpawn10000()
-        {
-            yield return TestSpawningManyObjects(10000); // to run these higher scale tests, we need NetworkManager's max
-                                                         // receive events per tick to be set at a high enough value
-                                                         // We also need UNET's MaxSentMessageQueueSize to be set higher
-        }
-        [UnityTest, Order(10), Performance]
-        public IEnumerator TestSpawn15000()
-        {
-            yield return TestSpawningManyObjects(15000);
-        }
-
-        [UnityTest, Order(11), Performance]
-        public IEnumerator TestSpawn1000_2()
-        {
-            yield return TestSpawningManyObjects(1000);
-        }
-
-        [UnityTest, Order(12), Performance]
-        public IEnumerator TestSpawn800_2()
-        {
-            yield return TestSpawningManyObjects(800);
-        }
-
-        [UnityTest, Order(13), Performance]
-        public IEnumerator TestSpawn400_2()
-        {
-            yield return TestSpawningManyObjects(400);
-        }
-
         private static void OnSceneLoadedInitSetupSuite(Scene scene, LoadSceneMode loadSceneMode)
         {
             var prefabToSpawn = PrefabReference.Instance.referencedPrefab;
@@ -241,6 +163,163 @@ namespace MLAPI.MultiprocessRuntimeTests
             );
         }
 
+
+        public class ExecuteInContext : CustomYieldInstruction
+        {
+            private bool m_IsServerAction;
+            private Action<byte[]> m_Todo;
+            public static Dictionary<string, Action<byte[]>> allActions = new Dictionary<string, Action<byte[]>>();
+            // private static int s_ActionID;
+            private static Dictionary<string, int> s_MethodIDCounter = new Dictionary<string, int>();
+            // private int m_CurrentActionID;
+            private NetworkManager m_NetworkManager;
+            private bool m_IsRegistering;
+            private List<Func<bool>> m_WaitForClientCheck = new List<Func<bool>>();
+
+            // assumes this is called from same callsite as ExecuteInContext
+            public static void StartTest()
+            {
+                var callerMethod = new StackFrame(1).GetMethod();
+                var methodHash = GetMethodIdentifier(callerMethod);
+                s_MethodIDCounter[methodHash] = 0;
+            }
+
+            public static string GetMethodIdentifier(MethodBase method)
+            {
+                // return method.GetHashCode();// + method.ReflectedType.GetHashCode();
+                string allParameters = "";
+                foreach (var param in method.GetParameters())
+                {
+                    allParameters += param.Name;
+                }
+
+                return method.DeclaringType.FullName + method.Name + allParameters;
+            }
+
+            private bool ShouldExecuteLocally => (m_IsServerAction && m_NetworkManager.IsServer) || (!m_IsServerAction && !m_NetworkManager.IsServer);
+
+            public ExecuteInContext(bool isServerAction, Action<byte[]> todo, bool isRegistering, byte[] paramToPass = default, NetworkManager networkManager = null)
+            {
+                m_IsRegistering = isRegistering;
+                m_IsServerAction = isServerAction;
+                m_Todo = todo;
+                if (networkManager == null)
+                {
+                    networkManager = NetworkManager.Singleton;
+                }
+
+                m_NetworkManager = networkManager;
+
+
+                var callerMethod = new StackFrame(1).GetMethod();
+                var methodId = GetMethodIdentifier(callerMethod);
+                if (!s_MethodIDCounter.ContainsKey(methodId))
+                {
+                    s_MethodIDCounter[methodId] = 0;
+                }
+
+                string currentActionID = methodId + s_MethodIDCounter[methodId]++;
+
+                if (isRegistering)
+                {
+                    Debug.Log($"registering action with id {currentActionID}");
+                    allActions[currentActionID] = m_Todo;
+                }
+                else
+                {
+                    if (ShouldExecuteLocally)
+                    {
+                        m_Todo.Invoke(paramToPass);
+                    }
+                    else
+                    {
+                        if (networkManager.IsServer)
+                        {
+                            TestCoordinator.Instance.TriggerActionIDClientRpc(currentActionID, paramToPass,
+                                clientRpcParams: new ClientRpcParams()
+                                {
+                                    Send = new ClientRpcSendParams() {TargetClientIds = TestCoordinator.AllClientIdExceptMine.ToArray()}
+                                });
+                            foreach (var clientId in TestCoordinator.AllClientIdExceptMine)
+                            {
+                                m_WaitForClientCheck.Add(TestCoordinator.ConsumeClientIsDone(clientId));
+                            }
+                        }
+                        else
+                        {
+                            TestCoordinator.Instance.TriggerActionIDServerRpc(currentActionID, paramToPass);
+                        }
+                    }
+                }
+            }
+
+            public override bool keepWaiting
+            {
+                get
+                {
+                    if (m_IsRegistering || ShouldExecuteLocally || m_WaitForClientCheck == null)
+                    {
+                        return false;
+                    }
+
+                    for (int i = m_WaitForClientCheck.Count-1; i >= 0; i--)
+                    {
+                        var waiter = m_WaitForClientCheck[i];
+                        var receivedResponse = waiter.Invoke();
+                        if (receivedResponse)
+                        {
+                            m_WaitForClientCheck.RemoveAt(i);
+                        }
+                        else
+                        {
+                            return true;
+                        }
+                    }
+                    return false;
+                }
+            }
+        }
+
+        [AttributeUsage(AttributeTargets.Method)]
+        public class MultiprocessTestRegisteredAttribute : Attribute { }
+
+        [UnityTest, MultiprocessTestRegistered]
+        [TestCase(false, ExpectedResult = null)]
+        public IEnumerator Sam(bool isRegistering)
+        {
+            ExecuteInContext.StartTest();
+
+            yield return new ExecuteInContext(isServerAction: true, (byte[] args) =>
+            {
+                int count = BitConverter.ToInt32(args, 0);
+                Debug.Log($"something server side, count is {count}");
+            }, isRegistering: isRegistering, paramToPass: BitConverter.GetBytes(1));
+            yield return new WaitForSeconds(0); // wait a frame for results
+            yield return new ExecuteInContext(isServerAction: false, (byte[] args) =>
+            {
+
+                int count = BitConverter.ToInt32(args, 0);
+                Debug.Log($"something client side, count is {count}");
+                TestCoordinator.Instance.WriteTestResultsServerRpc(12345);
+                TestCoordinator.Instance.ClientDoneServerRpc();
+#if UNITY_EDITOR
+                Assert.Fail("Should not be here!!");
+#endif
+            }, isRegistering: isRegistering, paramToPass: BitConverter.GetBytes(1));
+
+            yield return new ExecuteInContext(isServerAction: true, (byte[] args) =>
+            {
+                int count = 0;
+                foreach (var res in TestCoordinator.ConsumeCurrentResult())
+                {
+                    count++;
+                    Assert.AreEqual(12345, res.result);
+                }
+                Assert.Greater(count, 0);
+            }, isRegistering: isRegistering);
+            yield return new WaitForSeconds(0);
+        }
+
         [OneTimeSetUp]
         public override void SetupSuite()
         {
@@ -248,7 +327,22 @@ namespace MLAPI.MultiprocessRuntimeTests
             SceneManager.sceneLoaded += OnSceneLoadedInitSetupSuite;
         }
 
-        private IEnumerator TestSpawningManyObjects(int nbObjects)
+        [UnityTest, Performance]
+        [TestCase(1, ExpectedResult = null)]
+        [TestCase(10, ExpectedResult = null)]
+        [TestCase(100, ExpectedResult = null)]
+        [TestCase(800, ExpectedResult = null)]
+        [TestCase(850, ExpectedResult = null)]
+        [TestCase(900, ExpectedResult = null)]
+        [TestCase(1000, ExpectedResult = null)]
+        [TestCase(2500, ExpectedResult = null)]
+        [TestCase(5000, ExpectedResult = null)]
+        [TestCase(10000, ExpectedResult = null)]
+        [TestCase(15000, ExpectedResult = null)]
+        [TestCase(1000, ExpectedResult = null)]
+        [TestCase(800, ExpectedResult = null)]
+        [TestCase(400, ExpectedResult = null)]
+        public IEnumerator TestSpawningManyObjects(int nbObjects)
         {
             Assert.LessOrEqual(nbObjects, k_MaxObjectstoSpawn); // sanity check
 
