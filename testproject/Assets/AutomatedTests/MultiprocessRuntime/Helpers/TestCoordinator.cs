@@ -259,9 +259,9 @@ internal class TestCoordinator : NetworkBehaviour
         };
     }
 
-    private Dictionary<ulong, bool> m_ClientIsDone = new Dictionary<ulong, bool>();
+    private Dictionary<ulong, bool> m_ClientIsFinished = new Dictionary<ulong, bool>();
 
-    public static Func<bool> ConsumeClientIsDone(ulong clientId, bool useTimeoutException=true)
+    public static Func<bool> ConsumeClientIsFinished(ulong clientId, bool useTimeoutException=true)
     {
         var startWaitTime = Time.time;
         return () =>
@@ -270,7 +270,7 @@ internal class TestCoordinator : NetworkBehaviour
             {
                 if (useTimeoutException)
                 {
-                    throw new Exception($"timeout while waiting for client done, didn't get results for {Time.time - startWaitTime} seconds");
+                    throw new Exception($"timeout while waiting for client finished, didn't get results for {Time.time - startWaitTime} seconds");
                 }
                 else
                 {
@@ -278,9 +278,9 @@ internal class TestCoordinator : NetworkBehaviour
                 }
             }
 
-            if (Instance.m_ClientIsDone.ContainsKey(clientId) && Instance.m_ClientIsDone[clientId])
+            if (Instance.m_ClientIsFinished.ContainsKey(clientId) && Instance.m_ClientIsFinished[clientId])
             {
-                Instance.m_ClientIsDone[clientId] = false; // consume
+                Instance.m_ClientIsFinished[clientId] = false; // consume
                 return true;
             }
             return false;
@@ -288,10 +288,10 @@ internal class TestCoordinator : NetworkBehaviour
     }
 
     [ServerRpc(RequireOwnership = false)]
-    public void ClientDoneServerRpc(ServerRpcParams p = default)
+    public void ClientFinishedServerRpc(ServerRpcParams p = default)
     {
         // signal from clients to the server to say the client is done with it's task
-        m_ClientIsDone[p.Receive.SenderClientId] = true;
+        m_ClientIsFinished[p.Receive.SenderClientId] = true;
     }
 
     public void TriggerRpc(Action<byte[]> methodInfo, params byte[] args)

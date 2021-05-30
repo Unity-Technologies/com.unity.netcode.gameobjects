@@ -106,7 +106,7 @@ namespace MLAPI.MultiprocessRuntimeTests
                 }
 
                 NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate += UpdateClientForTest1;
-                TestCoordinator.Instance.ClientDoneServerRpc();
+                TestCoordinator.Instance.ClientFinishedServerRpc();
             }
 
             private static void UpdateClientForTest1(float deltaTime)
@@ -142,7 +142,7 @@ namespace MLAPI.MultiprocessRuntimeTests
                 if (count == 0)
                 {
                     NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate -= WaitForAllOneNetVarToDespawn;
-                    TestCoordinator.Instance.ClientDoneServerRpc();
+                    TestCoordinator.Instance.ClientFinishedServerRpc();
                 }
             }
         }
@@ -162,21 +162,22 @@ namespace MLAPI.MultiprocessRuntimeTests
 
         public class ExecuteInContext : CustomYieldInstruction
         {
-            public enum ExecutionType
+            public enum ExecutionContext
             {
                 Server,
-                Client
+                Clients
             }
 
-            private ExecutionType m_ActionContextType;
+            private ExecutionContext m_ActionContextContext;
             private Action<byte[]> m_Todo;
-            public static Dictionary<string, Action<byte[]>> allActions = new Dictionary<string, Action<byte[]>>();
+            public static Dictionary<string, ExecuteInContext> allActions = new Dictionary<string, ExecuteInContext>();
             // private static int s_ActionID;
             private static Dictionary<string, int> s_MethodIDCounter = new Dictionary<string, int>();
             // private int m_CurrentActionID;
             private NetworkManager m_NetworkManager;
             private bool m_IsRegistering;
             private List<Func<bool>> m_WaitForClientCheck = new List<Func<bool>>();
+            private bool m_FinishOnInvoke;
 
             // assumes this is called from same callsite as ExecuteInContext
             public static void StartTest()
@@ -198,19 +199,30 @@ namespace MLAPI.MultiprocessRuntimeTests
                 return method.DeclaringType.FullName + method.Name + allParameters;
             }
 
-            private bool ShouldExecuteLocally => (m_ActionContextType == ExecutionType.Server && m_NetworkManager.IsServer) || (m_ActionContextType == ExecutionType.Client && !m_NetworkManager.IsServer);
+            private bool ShouldExecuteLocally => (m_ActionContextContext == ExecutionContext.Server && m_NetworkManager.IsServer) || (m_ActionContextContext == ExecutionContext.Clients && !m_NetworkManager.IsServer);
 
-            public ExecuteInContext(ExecutionType actionType, Action<byte[]> todo, bool isRegistering, byte[] paramToPass = default, NetworkManager networkManager = null)
+            /// <summary>
+            /// Executes an action with the specified context. This allows writing tests all in the same sequential flow,
+            /// making it more readable. This allows not having to jump between static client methods and test method
+            /// </summary>
+            /// <param name="actionContext">context to use. for example, should execute client side? server side?</param>
+            /// <param name="todo">action to execute</param>
+            /// <param name="isRegistering">is it currently registering this action. This should be passed by the test method on process startup</param>
+            /// <param name="paramToPass">parameters to pass to action</param>
+            /// <param name="networkManager"></param>
+            /// <param name="finishOnInvoke"> waits multiple frames before allowing the execution to continue. This means ClientFinishedServerRpc must be called manually</param>
+            public ExecuteInContext(ExecutionContext actionContext, Action<byte[]> todo, bool isRegistering, byte[] paramToPass = default, NetworkManager networkManager = null, bool finishOnInvoke = true)
             {
                 m_IsRegistering = isRegistering;
-                m_ActionContextType = actionType;
+                m_ActionContextContext = actionContext;
                 m_Todo = todo;
+                m_FinishOnInvoke = finishOnInvoke;
                 if (networkManager == null)
                 {
                     networkManager = NetworkManager.Singleton;
                 }
 
-                m_NetworkManager = networkManager;
+                m_NetworkManager = networkManager; // todo test using this for in-process tests too?
 
 
                 var callerMethod = new StackFrame(1).GetMethod();
@@ -225,7 +237,7 @@ namespace MLAPI.MultiprocessRuntimeTests
                 if (isRegistering)
                 {
                     Debug.Log($"registering action with id {currentActionID}");
-                    allActions[currentActionID] = m_Todo;
+                    allActions[currentActionID] = this;
                 }
                 else
                 {
@@ -244,13 +256,29 @@ namespace MLAPI.MultiprocessRuntimeTests
                                 });
                             foreach (var clientId in TestCoordinator.AllClientIdExceptMine)
                             {
-                                m_WaitForClientCheck.Add(TestCoordinator.ConsumeClientIsDone(clientId));
+                                m_WaitForClientCheck.Add(TestCoordinator.ConsumeClientIsFinished(clientId));
                             }
                         }
                         else
                         {
                             TestCoordinator.Instance.TriggerActionIDServerRpc(currentActionID, paramToPass);
                         }
+                    }
+                }
+            }
+
+            public void Invoke(byte[] args)
+            {
+                m_Todo.Invoke(args);
+                if (m_FinishOnInvoke)
+                {
+                    if (!m_NetworkManager.IsServer)
+                    {
+                        TestCoordinator.Instance.ClientFinishedServerRpc();
+                    }
+                    else
+                    {
+                        throw new NotImplementedException("todo implement");
                     }
                 }
             }
@@ -287,37 +315,66 @@ namespace MLAPI.MultiprocessRuntimeTests
 
         [UnityTest, MultiprocessContextBasedTest]
         [TestCase(false, ExpectedResult = null)]
-        public IEnumerator Sam(bool isRegistering)
+        public IEnumerator Sam(bool isRegistering) // todo put isRegistering as static var? This way no need to pollute our tests with it
         {
             ExecuteInContext.StartTest(); // todo this could be moved in a pre-test method associated with the tag?
 
             // TODO convert other tests to this format
-            // todo move execute context out of here (in test coordinator?)
+            // todo move ExecuteInContext out of here (in test coordinator?)
 
-            yield return new ExecuteInContext(ExecutionType.Server, (byte[] args) =>
+            yield return new ExecuteInContext(ExecutionContext.Server, (byte[] args) =>
             {
                 int count = BitConverter.ToInt32(args, 0);
                 Debug.Log($"something server side, count is {count}");
             }, isRegistering: isRegistering, paramToPass: BitConverter.GetBytes(1));
 
-            yield return new ExecuteInContext(ExecutionType.Client, (byte[] args) =>
+            yield return new ExecuteInContext(ExecutionContext.Clients, (byte[] args) =>
             {
                 int count = BitConverter.ToInt32(args, 0);
                 Debug.Log($"something client side, count is {count}");
                 TestCoordinator.Instance.WriteTestResultsServerRpc(12345);
-                TestCoordinator.Instance.ClientDoneServerRpc();
 #if UNITY_EDITOR
                 Assert.Fail("Should not be here!! This should only execute on client!!");
 #endif
             }, isRegistering: isRegistering, paramToPass: BitConverter.GetBytes(1));
 
-            yield return new ExecuteInContext(ExecutionType.Server, (byte[] args) =>
+            yield return new ExecuteInContext(ExecutionContext.Server, _ =>
             {
                 int count = 0;
                 foreach (var res in TestCoordinator.ConsumeCurrentResult())
                 {
                     count++;
                     Assert.AreEqual(12345, res.result);
+                }
+                Assert.Greater(count, 0);
+            }, isRegistering: isRegistering);
+
+            yield return new ExecuteInContext(ExecutionContext.Clients, _ =>
+            {
+                void update(float _)
+                {
+                    if (Time.time > 10)
+                    {
+                        NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate -= update;
+                        TestCoordinator.Instance.WriteTestResultsServerRpc(Time.time);
+
+                        TestCoordinator.Instance.ClientFinishedServerRpc(); // since finishOnInvoke is false, we need to do this manually
+                    }
+                    else
+                    {
+                        Debug.Log($"current time on client : {Time.time}");
+                    }
+                };
+                NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate += update;
+            }, isRegistering, finishOnInvoke: false); // waits multiple frames before allowing the next action to continue.
+
+            yield return new ExecuteInContext(ExecutionContext.Server, (byte[] args) =>
+            {
+                int count = 0;
+                foreach (var res in TestCoordinator.ConsumeCurrentResult())
+                {
+                    count++;
+                    Assert.GreaterOrEqual(res.result, 10);
                 }
                 Assert.Greater(count, 0);
             }, isRegistering: isRegistering);
@@ -354,7 +411,7 @@ namespace MLAPI.MultiprocessRuntimeTests
             foreach (var clientId in TestCoordinator.AllClientIdExceptMine)
             {
                 // wait for the clients to be ready
-                yield return new WaitUntil(TestCoordinator.ConsumeClientIsDone(clientId));
+                yield return new WaitUntil(TestCoordinator.ConsumeClientIsFinished(clientId));
             }
 
             // start test
@@ -420,7 +477,7 @@ namespace MLAPI.MultiprocessRuntimeTests
             // wait for the clients to be done with their teardown
             foreach (var clientId in TestCoordinator.AllClientIdExceptMine)
             {
-                yield return new WaitUntil(TestCoordinator.ConsumeClientIsDone(clientId, useTimeoutException:false));
+                yield return new WaitUntil(TestCoordinator.ConsumeClientIsFinished(clientId, useTimeoutException:false));
             }
         }
 

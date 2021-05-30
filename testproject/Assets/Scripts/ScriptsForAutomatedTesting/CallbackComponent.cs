@@ -11,8 +11,8 @@ using UnityEngine.Events;
 /// </summary>
 public class CallbackComponent : MonoBehaviour
 {
-    public UnityAction OnStart;
-    public UnityAction<float> OnUpdate;
+    public Action OnStart;
+    public Action<float> OnUpdate;
 
     // Start is called before the first frame update
     private void Start()
