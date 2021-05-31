@@ -14,7 +14,7 @@ namespace MLAPI
         public ushort CurrentTick { get; set; }
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-        private ProfilerMarker s_NetworkBehaviourUpdate = new ProfilerMarker($"{nameof(NetworkBehaviour)}.{nameof(NetworkBehaviourUpdate)}");
+        private ProfilerMarker m_NetworkBehaviourUpdate = new ProfilerMarker($"{nameof(NetworkBehaviour)}.{nameof(NetworkBehaviourUpdate)}");
 #endif
 
         internal void NetworkBehaviourUpdate(NetworkManager networkManager)
@@ -29,7 +29,7 @@ namespace MLAPI
             CurrentTick = tick;
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            s_NetworkBehaviourUpdate.Begin();
+            m_NetworkBehaviourUpdate.Begin();
 #endif
             try
             {
@@ -84,7 +84,7 @@ namespace MLAPI
             finally
             {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-                s_NetworkBehaviourUpdate.End();
+                m_NetworkBehaviourUpdate.End();
 #endif
             }
         }
