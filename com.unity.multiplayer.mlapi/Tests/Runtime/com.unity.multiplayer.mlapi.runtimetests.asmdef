@@ -5,6 +5,9 @@
         "Unity.Multiplayer.MLAPI.Editor",
         "Unity.Multiplayer.MLAPI.Prototyping"
     ],
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ],
     "includePlatforms": [],
     "excludePlatforms": []
 }
