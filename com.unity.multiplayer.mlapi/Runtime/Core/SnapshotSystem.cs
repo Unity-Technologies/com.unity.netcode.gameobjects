@@ -51,8 +51,8 @@ namespace MLAPI
 
         public Entry[] Entries = new Entry[k_MaxVariables];
         public int LastEntry = 0;
-        public MemoryStream Stream;
 
+        private MemoryStream m_BufferStream;
         private NetworkManager m_NetworkManager;
         private bool m_TickIndex;
 
@@ -64,7 +64,7 @@ namespace MLAPI
         /// <param name="tickIndex">Whether this Snapshot uses the tick as an index</param>
         public Snapshot(NetworkManager networkManager, bool tickIndex)
         {
-            Stream = new MemoryStream(Buffer, 0, k_BufferSize);
+            m_BufferStream = new MemoryStream(Buffer, 0, k_BufferSize);
             // we ask for twice as many slots because there could end up being one free spot between each pair of slot used
             Allocator = new IndexAllocator(k_BufferSize, k_MaxVariables * 2);
             m_NetworkManager = networkManager;
@@ -192,20 +192,23 @@ namespace MLAPI
             int snapshotSize = reader.ReadUInt16();
 
             snapshotStream.Read(Buffer, 0, snapshotSize);
+        }
 
+        internal void ProcessBuffer()
+        {
             for (var i = 0; i < LastEntry; i++)
             {
                 if (Entries[i].Fresh && Entries[i].Key.TickWritten > 0)
                 {
                     var nv = FindNetworkVar(Entries[i].Key);
 
-                    Stream.Seek(Entries[i].Position, SeekOrigin.Begin);
+                    m_BufferStream.Seek(Entries[i].Position, SeekOrigin.Begin);
 
                     // todo: consider refactoring out in its own function to accomodate
                     // other ways to (de)serialize
                     // todo --M1--
                     // Review whether tick still belong in netvar or in the snapshot table.
-                    nv.ReadDelta(Stream, m_NetworkManager.IsServer);
+                    nv.ReadDelta(m_BufferStream, m_NetworkManager.IsServer);
                 }
 
                 Entries[i].Fresh = false;
@@ -349,8 +352,8 @@ namespace MLAPI
                     writer.WriteUInt16(m_CurrentTick);
                 }
 
-                WriteIndex(buffer);
                 WriteBuffer(buffer);
+                WriteIndex(buffer);
 
                 m_NetworkManager.MessageSender.Send(clientId, NetworkConstants.SNAPSHOT_DATA,
                     NetworkChannel.SnapshotExchange, buffer);
@@ -455,8 +458,9 @@ namespace MLAPI
                 // todo --M1b-- temporary, clear before receive.
                 snapshot.Clear();
 
-                snapshot.ReadIndex(reader);
                 snapshot.ReadBuffer(reader, snapshotStream);
+                snapshot.ReadIndex(reader);
+                snapshot.ProcessBuffer();
             }
 
             SendAck(clientId, snapshotTick);
