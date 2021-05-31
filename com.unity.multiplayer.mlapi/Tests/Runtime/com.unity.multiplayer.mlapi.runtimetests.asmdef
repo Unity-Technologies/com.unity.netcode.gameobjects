@@ -1,24 +1,10 @@
 {
     "name": "Unity.Multiplayer.MLAPI.RuntimeTests",
-    "rootNamespace": "",
     "references": [
         "Unity.Multiplayer.MLAPI.Runtime",
         "Unity.Multiplayer.MLAPI.Editor",
-        "UnityEngine.TestRunner",
-        "UnityEditor.TestRunner",
         "Unity.Multiplayer.MLAPI.Prototyping"
     ],
     "includePlatforms": [],
-    "excludePlatforms": [],
-    "allowUnsafeCode": false,
-    "overrideReferences": true,
-    "precompiledReferences": [
-        "nunit.framework.dll"
-    ],
-    "autoReferenced": false,
-    "defineConstraints": [
-        "UNITY_INCLUDE_TESTS"
-    ],
-    "versionDefines": [],
-    "noEngineReferences": false
+    "excludePlatforms": []
 }
