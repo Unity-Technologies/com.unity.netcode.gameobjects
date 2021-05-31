@@ -112,9 +112,9 @@ namespace MLAPI.RuntimeTests
             {
                 throw new Exception("timeout while waiting for position change");
             }
-            UnityEngine.Assertions.Assert.AreApproximatelyEqual(2f, otherSideNetworkTransform.transform.lossyScale.x, "wrong scale on ghost"); // sanity check
-            UnityEngine.Assertions.Assert.AreApproximatelyEqual(3f, otherSideNetworkTransform.transform.lossyScale.y, "wrong scale on ghost"); // sanity check
-            UnityEngine.Assertions.Assert.AreApproximatelyEqual(4f, otherSideNetworkTransform.transform.lossyScale.z, "wrong scale on ghost"); // sanity check
+            UnityEngine.Assertions.Assert.AreApproximatelyEqual(2f, otherSideNetworkTransform.transform.lossyScale.x, "wrong scale on ghost");
+            UnityEngine.Assertions.Assert.AreApproximatelyEqual(3f, otherSideNetworkTransform.transform.lossyScale.y, "wrong scale on ghost");
+            UnityEngine.Assertions.Assert.AreApproximatelyEqual(4f, otherSideNetworkTransform.transform.lossyScale.z, "wrong scale on ghost");
 
             // todo reparent and test
             // todo test all public API
@@ -135,9 +135,9 @@ namespace MLAPI.RuntimeTests
             Assert.AreEqual(Vector3.zero, otherSideNetworkTransform.transform.position, "other side pos should be zero at first"); // sanity check
             otherSideNetworkTransform.transform.position = new Vector3(4, 5, 6);
 
-            yield return new WaitForFixedUpdate(); // wait one frame
+            yield return new WaitForFixedUpdate();
 
-            LogAssert.Expect(LogType.Error, new Regex(".*authority.*"));
+            LogAssert.Expect(LogType.Error, new Regex(".*[Aa]uthority.*"));
             Assert.AreEqual(Vector3.zero, otherSideNetworkTransform.transform.position, "got authority error, but other side still moved!");
         }
 

@@ -129,7 +129,7 @@ namespace MLAPI
         public ulong ServerClientId => NetworkConfig.NetworkTransport?.ServerClientId ?? throw new NullReferenceException($"The transport in the active {nameof(NetworkConfig)} is null");
 
         /// <summary>
-        /// Returns ServerClientId if IsServer or LocalClientId if IsClient
+        /// Returns ServerClientId if IsServer or LocalClientId if not
         /// </summary>
         public ulong LocalClientId
         {
