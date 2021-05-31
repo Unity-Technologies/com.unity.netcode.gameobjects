@@ -107,6 +107,10 @@ namespace MLAPI.Prototyping
             set => m_UseLocal.Value = value;
         }
 
+        /// <summary>
+        /// Updates the NetworkTransform's authority model at runtime.
+        /// </summary>
+        /// <param name="newAuthority"></param>
         public void SetAuthority(Authority newAuthority)
         {
             TransformAuthority = newAuthority;
