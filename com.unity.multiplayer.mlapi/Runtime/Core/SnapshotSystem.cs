@@ -46,7 +46,9 @@ namespace MLAPI
         private const int k_MaxVariables = 2000;
         private const int k_BufferSize = 30000;
 
-        public byte[] Buffer = new byte[k_BufferSize];
+        public byte[] Buffer = new byte[k_BufferSize]; // buffer holding a snapshot in memory
+        public byte[] RecvBuffer = new byte[k_BufferSize]; // buffer holding the received snapshot message
+
         internal IndexAllocator Allocator;
 
         public Entry[] Entries = new Entry[k_MaxVariables];
@@ -64,7 +66,7 @@ namespace MLAPI
         /// <param name="tickIndex">Whether this Snapshot uses the tick as an index</param>
         public Snapshot(NetworkManager networkManager, bool tickIndex)
         {
-            m_BufferStream = new MemoryStream(Buffer, 0, k_BufferSize);
+            m_BufferStream = new MemoryStream(RecvBuffer, 0, k_BufferSize);
             // we ask for twice as many slots because there could end up being one free spot between each pair of slot used
             Allocator = new IndexAllocator(k_BufferSize, k_MaxVariables * 2);
             m_NetworkManager = networkManager;
@@ -87,10 +89,10 @@ namespace MLAPI
         {
             for (int i = 0; i < LastEntry; i++)
             {
+                // todo: revisit how we store past ticks
                 if (Entries[i].Key.NetworkObjectId == key.NetworkObjectId &&
                     Entries[i].Key.BehaviourIndex == key.BehaviourIndex &&
-                    Entries[i].Key.VariableIndex == key.VariableIndex &&
-                    (!m_TickIndex || (Entries[i].Key.TickWritten == key.TickWritten)))
+                    Entries[i].Key.VariableIndex == key.VariableIndex)
                 {
                     return i;
                 }
@@ -191,7 +193,7 @@ namespace MLAPI
         {
             int snapshotSize = reader.ReadUInt16();
 
-            snapshotStream.Read(Buffer, 0, snapshotSize);
+            snapshotStream.Read(RecvBuffer, 0, snapshotSize);
         }
 
         internal void ProcessBuffer()
@@ -208,7 +210,8 @@ namespace MLAPI
                     // other ways to (de)serialize
                     // todo --M1--
                     // Review whether tick still belong in netvar or in the snapshot table.
-                    nv.ReadDelta(m_BufferStream, m_NetworkManager.IsServer);
+                    // Not using keepDirtyDelta anymore which is great. todo: remove and check for the overall effect on > 2 player
+                    nv.ReadDelta(m_BufferStream, false);
                 }
 
                 Entries[i].Fresh = false;
@@ -227,13 +230,15 @@ namespace MLAPI
 
             for (var i = 0; i < entries; i++)
             {
-                entry = ReadEntry(reader);
-                entry.Fresh = true;
+                bool added = false;
 
-                int pos = Find(entry.Key);
+                entry = ReadEntry(reader);
+
+                int pos = Find(entry.Key); // should return if there's anything more recent
                 if (pos == Entry.NotFound)
                 {
                     pos = AddEntry(entry.Key);
+                    added = true;
                 }
 
                 // if we need to allocate more memory (the variable grew in size)
@@ -242,7 +247,11 @@ namespace MLAPI
                     AllocateEntry(ref entry, pos, entry.Length);
                 }
 
-                Entries[pos] = entry;
+                if (added || entry.Key.TickWritten > Entries[pos].Key.TickWritten)
+                {
+                    entry.Fresh = true; // only mark it if we're the most recent tick in the snapshot after insert
+                    Entries[pos] = entry; // needs a copy from readbuffer into buffer
+                }
             }
         }
 
@@ -318,19 +327,6 @@ namespace MLAPI
                     {
                         SendSnapshot(m_NetworkManager.ServerClientId);
                     }
-
-                    //m_Snapshot.Allocator.DebugDisplay();
-                    /*
-                    DebugDisplayStore(m_Snapshot, "Entries");
-
-                    foreach(var item in m_ClientReceivedSnapshot)
-                    {
-                        DebugDisplayStore(item.Value, "Received Entries " + item.Key);
-                    }
-                    */
-                    // todo: --M1b--
-                    // for now we clear our send snapshot because we don't have per-client partial sends
-                    m_Snapshot.Clear();
                 }
             }
         }
@@ -414,6 +410,8 @@ namespace MLAPI
                 pos = m_Snapshot.AddEntry(k);
             }
 
+            m_Snapshot.Entries[pos].Key.TickWritten = k.TickWritten;
+
             WriteVariableToSnapshot(m_Snapshot, networkVariable, pos);
         }
 
@@ -449,18 +447,9 @@ namespace MLAPI
             {
                 snapshotTick = reader.ReadUInt16();
 
-                if (!m_ClientReceivedSnapshot.ContainsKey(clientId))
-                {
-                    m_ClientReceivedSnapshot[clientId] = new Snapshot(m_NetworkManager, false);
-                }
-                var snapshot = m_ClientReceivedSnapshot[clientId];
-
-                // todo --M1b-- temporary, clear before receive.
-                snapshot.Clear();
-
-                snapshot.ReadBuffer(reader, snapshotStream);
-                snapshot.ReadIndex(reader);
-                snapshot.ProcessBuffer();
+                m_Snapshot.ReadBuffer(reader, snapshotStream);
+                m_Snapshot.ReadIndex(reader);
+                m_Snapshot.ProcessBuffer();
             }
 
             SendAck(clientId, snapshotTick);
@@ -471,7 +460,6 @@ namespace MLAPI
             using (var reader = PooledNetworkReader.Get(snapshotStream))
             {
                 var ackTick = reader.ReadUInt16();
-                //Debug.Log(string.Format("Receive ack {0} from client {1}", ackTick, clientId));
             }
         }
 
