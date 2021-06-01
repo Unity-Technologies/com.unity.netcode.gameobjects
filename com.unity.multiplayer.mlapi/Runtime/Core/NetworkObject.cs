@@ -558,19 +558,17 @@ namespace MLAPI
             if (parentTransform != null)
             {
                 var parentObject = transform.parent.GetComponent<NetworkObject>();
-                if (parentObject != null)
+                if (parentObject == null)
                 {
-                    m_LatestParent = parentObject.NetworkObjectId;
-                }
-                else
-                {
+                    transform.parent = m_CachedParent;
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
                     {
-                        NetworkLog.LogError($"Invalid parenting, {nameof(NetworkObject)} moved under a non-{nameof(NetworkObject)} parent, will fix and move to the scene root");
+                        NetworkLog.LogError($"Invalid parenting, {nameof(NetworkObject)} moved under a non-{nameof(NetworkObject)} parent");
                     }
-
-                    m_LatestParent = null;
+                    return;
                 }
+
+                m_LatestParent = parentObject.NetworkObjectId;
             }
             else
             {
