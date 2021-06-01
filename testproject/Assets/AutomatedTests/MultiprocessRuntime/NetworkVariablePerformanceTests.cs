@@ -2,11 +2,13 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Reflection;
 using MLAPI.Messaging;
 using MLAPI.NetworkVariable;
 using MLAPI.Spawning;
 using NUnit.Framework;
+using NUnit.Framework.Interfaces;
 using Unity.PerformanceTesting;
 using UnityEngine;
 using UnityEngine.Pool;
@@ -180,23 +182,24 @@ namespace MLAPI.MultiprocessRuntimeTests
             private bool m_FinishOnInvoke;
 
             // assumes this is called from same callsite as ExecuteInContext
-            public static void StartTest()
+            public static void InitTest(MethodBase callerMethod)
             {
-                var callerMethod = new StackFrame(1).GetMethod();
-                var methodHash = GetMethodIdentifier(callerMethod);
-                s_MethodIDCounter[methodHash] = 0;
+                // var callerMethod = new StackFrame(1).GetMethod();
+                var methodIdentifier = GetMethodIdentifier(callerMethod);
+                s_MethodIDCounter[methodIdentifier] = 0;
             }
 
             public static string GetMethodIdentifier(MethodBase method)
             {
-                // return method.GetHashCode();// + method.ReflectedType.GetHashCode();
                 string allParameters = "";
                 foreach (var param in method.GetParameters())
                 {
                     allParameters += param.Name;
                 }
 
-                return method.DeclaringType.FullName + method.Name + allParameters;
+                var info = method.DeclaringType.FullName + method.Name + allParameters;
+                Debug.Log(info);
+                return info;
             }
 
             private bool ShouldExecuteLocally => (m_ActionContextContext == ExecutionContext.Server && m_NetworkManager.IsServer) || (m_ActionContextContext == ExecutionContext.Clients && !m_NetworkManager.IsServer);
@@ -211,9 +214,9 @@ namespace MLAPI.MultiprocessRuntimeTests
             /// <param name="paramToPass">parameters to pass to action</param>
             /// <param name="networkManager"></param>
             /// <param name="finishOnInvoke"> waits multiple frames before allowing the execution to continue. This means ClientFinishedServerRpc must be called manually</param>
-            public ExecuteInContext(ExecutionContext actionContext, Action<byte[]> todo, bool isRegistering, byte[] paramToPass = default, NetworkManager networkManager = null, bool finishOnInvoke = true)
+            public ExecuteInContext(ExecutionContext actionContext, Action<byte[]> todo, byte[] paramToPass = default, NetworkManager networkManager = null, bool finishOnInvoke = true)
             {
-                m_IsRegistering = isRegistering;
+                m_IsRegistering = TestCoordinator.Instance.isRegistering;
                 m_ActionContextContext = actionContext;
                 m_Todo = todo;
                 m_FinishOnInvoke = finishOnInvoke;
@@ -224,7 +227,6 @@ namespace MLAPI.MultiprocessRuntimeTests
 
                 m_NetworkManager = networkManager; // todo test using this for in-process tests too?
 
-
                 var callerMethod = new StackFrame(1).GetMethod();
                 var methodId = GetMethodIdentifier(callerMethod);
                 if (!s_MethodIDCounter.ContainsKey(methodId))
@@ -234,7 +236,7 @@ namespace MLAPI.MultiprocessRuntimeTests
 
                 string currentActionID = methodId + s_MethodIDCounter[methodId]++;
 
-                if (isRegistering)
+                if (m_IsRegistering)
                 {
                     Debug.Log($"registering action with id {currentActionID}");
                     allActions[currentActionID] = this;
@@ -310,15 +312,49 @@ namespace MLAPI.MultiprocessRuntimeTests
             }
         }
 
+
+        // public class MyOuterActionAttribute : NUnitAttribute, IOuterUnityTestAction
+        // {
+        //     public static int a = 0;
+        //     public IEnumerator BeforeTest(ITest test)
+        //     {
+        //         a = 1;
+        //         yield break;
+        //     }
+        //
+        //     public IEnumerator AfterTest(ITest test)
+        //     {
+        //         a = 0;
+        //         yield break;
+        //     }
+        // }
+        // [UnityTest, MyOuterActionAttribute]
+        // public IEnumerator MyTestInsidePlaymode()
+        // {
+        //     Assert.AreEqual(1, MyOuterActionAttribute.a);
+        //     yield return null;
+        // }
+
         [AttributeUsage(AttributeTargets.Method)]
-        public class MultiprocessContextBasedTestAttribute : Attribute { }
+        public class MultiprocessContextBasedTestAttribute : NUnitAttribute, IOuterUnityTestAction
+        {
+            public IEnumerator BeforeTest(ITest test)
+            {
+                yield return new WaitUntil(() => TestCoordinator.Instance != null && TestCoordinator.Instance.hasRegistered);
+                var method = test.Method.ReturnType.GetMethods(BindingFlags.Default).Where(m => m.Name == "MoveNext").First();
+                ExecuteInContext.InitTest(method);
+                // ExecuteInContext.InitTest(test.Method.MethodInfo);
+            }
+
+            public IEnumerator AfterTest(ITest test)
+            {
+                yield break;
+            }
+        }
 
         [UnityTest, MultiprocessContextBasedTest]
-        [TestCase(false, ExpectedResult = null)]
-        public IEnumerator Sam(bool isRegistering) // todo put isRegistering as static var? This way no need to pollute our tests with it
+        public IEnumerator TestExecuteInContext()
         {
-            ExecuteInContext.StartTest(); // todo this could be moved in a pre-test method associated with the tag?
-
             // TODO convert other tests to this format
             // todo move ExecuteInContext out of here (in test coordinator?)
 
@@ -326,7 +362,7 @@ namespace MLAPI.MultiprocessRuntimeTests
             {
                 int count = BitConverter.ToInt32(args, 0);
                 Debug.Log($"something server side, count is {count}");
-            }, isRegistering: isRegistering, paramToPass: BitConverter.GetBytes(1));
+            }, paramToPass: BitConverter.GetBytes(1));
 
             yield return new ExecuteInContext(ExecutionContext.Clients, (byte[] args) =>
             {
@@ -336,7 +372,7 @@ namespace MLAPI.MultiprocessRuntimeTests
 #if UNITY_EDITOR
                 Assert.Fail("Should not be here!! This should only execute on client!!");
 #endif
-            }, isRegistering: isRegistering, paramToPass: BitConverter.GetBytes(1));
+            }, paramToPass: BitConverter.GetBytes(1));
 
             yield return new ExecuteInContext(ExecutionContext.Server, _ =>
             {
@@ -347,13 +383,14 @@ namespace MLAPI.MultiprocessRuntimeTests
                     Assert.AreEqual(12345, res.result);
                 }
                 Assert.Greater(count, 0);
-            }, isRegistering: isRegistering);
+            });
 
+            int timeToWait = 4;
             yield return new ExecuteInContext(ExecutionContext.Clients, _ =>
             {
                 void update(float _)
                 {
-                    if (Time.time > 10)
+                    if (Time.time > timeToWait)
                     {
                         NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate -= update;
                         TestCoordinator.Instance.WriteTestResultsServerRpc(Time.time);
@@ -366,7 +403,7 @@ namespace MLAPI.MultiprocessRuntimeTests
                     }
                 };
                 NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate += update;
-            }, isRegistering, finishOnInvoke: false); // waits multiple frames before allowing the next action to continue.
+            }, finishOnInvoke: false); // waits multiple frames before allowing the next action to continue.
 
             yield return new ExecuteInContext(ExecutionContext.Server, (byte[] args) =>
             {
@@ -374,10 +411,10 @@ namespace MLAPI.MultiprocessRuntimeTests
                 foreach (var res in TestCoordinator.ConsumeCurrentResult())
                 {
                     count++;
-                    Assert.GreaterOrEqual(res.result, 10);
+                    Assert.GreaterOrEqual(res.result, timeToWait);
                 }
                 Assert.Greater(count, 0);
-            }, isRegistering: isRegistering);
+            });
         }
 
         [OneTimeSetUp]

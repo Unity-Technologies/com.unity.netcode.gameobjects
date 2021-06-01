@@ -5,6 +5,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using MLAPI;
@@ -12,9 +13,12 @@ using MLAPI.Messaging;
 using MLAPI.MultiprocessRuntimeTests;
 using MLAPI.NetworkVariable;
 using MLAPI.NetworkVariable.Collections;
+using NUnit.Framework.Interfaces;
+using NUnit.Framework.Internal;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.Serialization;
 using Debug = UnityEngine.Debug;
 
 [RequireComponent(typeof(NetworkObject))]
@@ -31,21 +35,8 @@ internal class TestCoordinator : NetworkBehaviour
     public const string isClientArg = "-isClient";
     public const string buildInfoFileName = "buildInfo.txt";
 
-//     public static string buildPath
-//     {
-//         get
-//         {
-// #if UNITY_EDITOR || UNITY_STANDALONE_OSX || UNITY_STANDALONE_WIN
-//              return Path.Combine(Path.GetDirectoryName(Application.streamingAssetsPath), "Builds/MultiprocessTestBuild");
-// // #elif UNITY_STANDALONE_OSX
-//             // return Path.Combine(Path.GetDirectoryName(Application.streamingAssetsPath), "");
-// // #elif UNITY_STANDALONE_WIN
-// //             return Path.Combine(Path.GetDirectoryName(Application.dataPath), "");
-// #else
-//             throw new NotImplementedException();
-// #endif
-//         }
-//     }
+    public bool isRegistering;
+    public bool hasRegistered;
 
     public static List<ulong> AllClientIdExceptMine
     {
@@ -71,10 +62,6 @@ internal class TestCoordinator : NetworkBehaviour
         WritePermission = NetworkVariablePermission.Everyone
     });
 
-    // [NonSerialized]
-    // public List<ulong> AllClientIdWithResults = new List<ulong>();
-    // public ulong CurrentClientIdWithResults { get; private set; }
-
     public static TestCoordinator Instance;
 
     private void Awake()
@@ -90,20 +77,34 @@ internal class TestCoordinator : NetworkBehaviour
         DontDestroyOnLoad(gameObject);
     }
 
-    // private IEnumerator WaitForClientConnected()
-    // {
-    //     float startTime = Time.time;
-    //     while (Time.time - startTime < maxWaitTimeout)
-    //     {
-    //         yield return new WaitForSeconds(1);
-    //         if (NetworkManager.Singleton.IsConnectedClient)
-    //         {
-    //             yield break;
-    //         }
-    //     }
-    //     // not connected anymore, quitting the player
-    //     Application.Quit();
-    // }
+    public class CustomTest : ITest
+    {
+        public TNode ToXml(bool recursive)
+        {
+            throw new NotImplementedException();
+        }
+
+        public TNode AddToXml(TNode parentNode, bool recursive)
+        {
+            throw new NotImplementedException();
+        }
+
+        public string Id { get; }
+        public string Name { get; }
+        public string FullName { get; }
+        public string ClassName { get; }
+        public string MethodName { get; }
+        public ITypeInfo TypeInfo { get; }
+        public IMethodInfo Method { get; set; }
+        public RunState RunState { get; }
+        public int TestCaseCount { get; }
+        public IPropertyBag Properties { get; }
+        public ITest Parent { get; }
+        public bool IsSuite { get; }
+        public bool HasChildren { get; }
+        public IList<ITest> Tests { get; }
+        public object Fixture { get; }
+    }
 
     public void Start()
     {
@@ -118,7 +119,8 @@ internal class TestCoordinator : NetworkBehaviour
         m_ErrorMessages.OnListChanged += OnErrorMessageChanged;
         NetworkManager.OnClientDisconnectCallback += OnClientDisconnectCallback;
 
-        // registering magically all method bits
+        // registering magically all method steps
+        isRegistering = true;
         var registeredMethods = typeof(TestCoordinator).Assembly.GetTypes().SelectMany(t => t.GetMethods())
             .Where(m => m.GetCustomAttributes(typeof(NetworkVariablePerformanceTests.MultiprocessContextBasedTestAttribute), true).Length > 0)
             .ToArray();
@@ -126,9 +128,13 @@ internal class TestCoordinator : NetworkBehaviour
         {
             var type = method.ReflectedType;
             var instance = Activator.CreateInstance(type);
-            var result = (IEnumerator)method.Invoke(instance, new[] { (object)true });
+
+            NetworkVariablePerformanceTests.ExecuteInContext.InitTest(method);
+            var result = (IEnumerator)method.Invoke(instance, null);
             while (result.MoveNext()) { }
         }
+        isRegistering = false;
+        hasRegistered = true;
     }
 
     public void OnDestroy()
