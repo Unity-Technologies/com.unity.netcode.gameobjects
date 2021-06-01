@@ -7,7 +7,7 @@ This is hotfix v0.1.1 for the initial experimental Unity MLAPI Package.
 
 ### Changes
 
-* Updated the package version to correctly document the published version for MLAPI.
+* Fixed issue with the Unity Registry package version missing some fixes from the v0.1.0 release.
 
 ## [0.1.0] - 2021-03-23
 
