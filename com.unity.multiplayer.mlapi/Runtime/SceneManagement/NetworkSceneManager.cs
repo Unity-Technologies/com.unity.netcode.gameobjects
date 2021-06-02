@@ -237,6 +237,8 @@ namespace MLAPI.SceneManagement
 
             sceneLoad.completed += asyncOp2 => OnSceneLoaded(switchSceneGuid, objectStream);
             OnSceneSwitchStarted?.Invoke(sceneLoad);
+
+            m_NetworkManager.NetworkMetrics.TrackSceneSwitchRequested(s_LastScene.name, s_NextSceneName);
         }
 
         internal void OnFirstSceneSwitchSync(uint sceneIndex, Guid switchSceneGuid)
@@ -347,6 +349,7 @@ namespace MLAPI.SceneManagement
                         }
 
                         m_NetworkManager.MessageSender.Send(m_NetworkManager.ConnectedClientsList[j].ClientId, NetworkConstants.SWITCH_SCENE, NetworkChannel.Internal, buffer);
+                        m_NetworkManager.NetworkMetrics.TrackSceneSwitchInitiated(s_LastScene.name, s_NextSceneName);
                     }
                 }
             }
@@ -384,6 +387,7 @@ namespace MLAPI.SceneManagement
                 writer.WriteByteArray(switchSceneGuid.ToByteArray());
                 m_NetworkManager.MessageSender.Send(m_NetworkManager.ServerClientId, NetworkConstants.CLIENT_SWITCH_SCENE_COMPLETED, NetworkChannel.Internal, buffer);
             }
+            m_NetworkManager.NetworkMetrics.TrackSceneSwitchCompleted(s_LastScene.name, s_NextSceneName);
 
             s_IsSwitching = false;
 
@@ -452,6 +456,7 @@ namespace MLAPI.SceneManagement
 
         internal void AllClientsReady(ulong[] clientIds, ulong[] timedOutClientIds)
         {
+            m_NetworkManager.NetworkMetrics.TrackSceneSwitchCompletedAllClients(s_LastScene.name, s_NextSceneName);
             OnNotifyClientAllClientsLoadedScene?.Invoke(clientIds, timedOutClientIds);
         }
     }
