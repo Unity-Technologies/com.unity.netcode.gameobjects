@@ -74,8 +74,6 @@ public class BuildAndRunMultiprocessTests : MonoBehaviour
     /// <returns></returns>
     public static bool Build()
     {
-
-
         // Save standalone build path to file
         var f = File.CreateText(Path.Combine(Application.streamingAssetsPath, TestCoordinator.buildInfoFileName));
         f.Write(buildPath);
@@ -101,9 +99,9 @@ public class BuildAndRunMultiprocessTests : MonoBehaviour
 #else
         throw new NotImplementedException("Building for this platform is not supported");
 #endif
-        var buildOptions = BuildOptions.Development;
+        var buildOptions = BuildOptions.None;
         buildOptions |= BuildOptions.IncludeTestAssemblies;
-        buildOptions |= BuildOptions.Development;
+        // buildOptions |= BuildOptions.Development;
         buildOptions |= BuildOptions.StrictMode;
         // buildOptions |= BuildOptions.ConnectToHost;
         // buildOptions |= BuildOptions.AllowDebugging; // enable this if you want to debug your players. Your players

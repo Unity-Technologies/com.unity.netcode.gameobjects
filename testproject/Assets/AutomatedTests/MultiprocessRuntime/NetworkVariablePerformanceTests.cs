@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using MLAPI.Messaging;
 using MLAPI.NetworkVariable;
 using MLAPI.Spawning;
@@ -11,7 +12,6 @@ using NUnit.Framework;
 using NUnit.Framework.Interfaces;
 using Unity.PerformanceTesting;
 using UnityEngine;
-using UnityEngine.Pool;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using static MLAPI.MultiprocessRuntimeTests.NetworkVariablePerformanceTests.ExecuteInContext;
@@ -28,7 +28,7 @@ namespace MLAPI.MultiprocessRuntimeTests
         // todo move all of this static stuff to a self contained object. Could have the concept of a "client side test executor"?
         private static int s_TargetCount = 0;
         private List<NetworkObject> m_SpawnedObjects = new List<NetworkObject>();
-        private static ObjectPool<GameObject> s_ObjectPool;
+        private static GameObjectPool s_ObjectPool;
 
         public NetworkVariablePerformanceTests()
         {
@@ -63,17 +63,13 @@ namespace MLAPI.MultiprocessRuntimeTests
             public class CustomPrefabSpawnForTest1 : INetworkPrefabInstanceHandler
             {
                 private GameObject m_PrefabToSpawn;
-                private IObjectPool<GameObject> m_ObjectPool;
+                private GameObjectPool m_ObjectPool;
 
                 public CustomPrefabSpawnForTest1(GameObject prefabToSpawn)
                 {
                     m_PrefabToSpawn = prefabToSpawn;
-                    m_ObjectPool = new ObjectPool<GameObject>(
-                        createFunc: () => GameObject.Instantiate(m_PrefabToSpawn),
-                        actionOnGet: objectToGet => objectToGet.SetActive(true),
-                        actionOnRelease: objectToRelease => objectToRelease.SetActive(false),
-                        defaultCapacity:k_MaxObjectstoSpawn
-                    );
+                    m_ObjectPool = new GameObjectPool();
+                    m_ObjectPool.Init(k_MaxObjectstoSpawn, m_PrefabToSpawn);
                 }
 
                 public NetworkObject HandleNetworkPrefabSpawn(ulong ownerClientId, Vector3 position, Quaternion rotation)
@@ -153,12 +149,8 @@ namespace MLAPI.MultiprocessRuntimeTests
         {
             var prefabToSpawn = PrefabReference.Instance.referencedPrefab;
 
-            s_ObjectPool = new ObjectPool<GameObject>(
-                createFunc: () => GameObject.Instantiate(prefabToSpawn),
-                actionOnGet: objectToGet => objectToGet.SetActive(true),
-                actionOnRelease: objectToRelease => objectToRelease.SetActive(false),
-                defaultCapacity:k_MaxObjectstoSpawn
-            );
+            s_ObjectPool = new GameObjectPool();
+            s_ObjectPool.Init(k_MaxObjectstoSpawn, prefabToSpawn);
         }
 
 
@@ -185,11 +177,11 @@ namespace MLAPI.MultiprocessRuntimeTests
             public static void InitTest(MethodBase callerMethod)
             {
                 // var callerMethod = new StackFrame(1).GetMethod();
-                var methodIdentifier = GetMethodIdentifier(callerMethod);
+                var methodIdentifier = GetMethodIdentifier(callerMethod, callerMethod.Name, callerMethod.DeclaringType.FullName);
                 s_MethodIDCounter[methodIdentifier] = 0;
             }
 
-            public static string GetMethodIdentifier(MethodBase method)
+            public static string GetMethodIdentifier(MethodBase method, string methodName, string callerTypeName)
             {
                 string allParameters = "";
                 foreach (var param in method.GetParameters())
@@ -197,8 +189,7 @@ namespace MLAPI.MultiprocessRuntimeTests
                     allParameters += param.Name;
                 }
 
-                var info = method.DeclaringType.FullName + method.Name + allParameters;
-                Debug.Log(info);
+                var info = callerTypeName + methodName + allParameters;
                 return info;
             }
 
@@ -214,7 +205,7 @@ namespace MLAPI.MultiprocessRuntimeTests
             /// <param name="paramToPass">parameters to pass to action</param>
             /// <param name="networkManager"></param>
             /// <param name="finishOnInvoke"> waits multiple frames before allowing the execution to continue. This means ClientFinishedServerRpc must be called manually</param>
-            public ExecuteInContext(ExecutionContext actionContext, Action<byte[]> todo, byte[] paramToPass = default, NetworkManager networkManager = null, bool finishOnInvoke = true)
+            public ExecuteInContext(ExecutionContext actionContext, Action<byte[]> todo, byte[] paramToPass = default, NetworkManager networkManager = null, bool finishOnInvoke = true, [CallerMemberName] string callerName = "")
             {
                 m_IsRegistering = TestCoordinator.Instance.isRegistering;
                 m_ActionContextContext = actionContext;
@@ -227,8 +218,9 @@ namespace MLAPI.MultiprocessRuntimeTests
 
                 m_NetworkManager = networkManager; // todo test using this for in-process tests too?
 
-                var callerMethod = new StackFrame(1).GetMethod();
-                var methodId = GetMethodIdentifier(callerMethod);
+                var callerMethod = new StackFrame(1).GetMethod(); // one skip frame for current method
+
+                var methodId = GetMethodIdentifier(callerMethod, callerName, callerMethod.DeclaringType.DeclaringType.FullName); // assumes called from IEnumerator MoveNext, which should be the case since we're a CustomYieldInstruction
                 if (!s_MethodIDCounter.ContainsKey(methodId))
                 {
                     s_MethodIDCounter[methodId] = 0;
@@ -341,9 +333,7 @@ namespace MLAPI.MultiprocessRuntimeTests
             public IEnumerator BeforeTest(ITest test)
             {
                 yield return new WaitUntil(() => TestCoordinator.Instance != null && TestCoordinator.Instance.hasRegistered);
-                var method = test.Method.ReturnType.GetMethods(BindingFlags.Default).Where(m => m.Name == "MoveNext").First();
-                ExecuteInContext.InitTest(method);
-                // ExecuteInContext.InitTest(test.Method.MethodInfo);
+                ExecuteInContext.InitTest(test.Method.MethodInfo);
             }
 
             public IEnumerator AfterTest(ITest test)
@@ -358,8 +348,10 @@ namespace MLAPI.MultiprocessRuntimeTests
             // TODO convert other tests to this format
             // todo move ExecuteInContext out of here (in test coordinator?)
 
+            int stepCountExecuted = 0;
             yield return new ExecuteInContext(ExecutionContext.Server, (byte[] args) =>
             {
+                stepCountExecuted++;
                 int count = BitConverter.ToInt32(args, 0);
                 Debug.Log($"something server side, count is {count}");
             }, paramToPass: BitConverter.GetBytes(1));
@@ -376,6 +368,7 @@ namespace MLAPI.MultiprocessRuntimeTests
 
             yield return new ExecuteInContext(ExecutionContext.Server, _ =>
             {
+                stepCountExecuted++;
                 int count = 0;
                 foreach (var res in TestCoordinator.ConsumeCurrentResult())
                 {
@@ -388,11 +381,11 @@ namespace MLAPI.MultiprocessRuntimeTests
             int timeToWait = 4;
             yield return new ExecuteInContext(ExecutionContext.Clients, _ =>
             {
-                void update(float _)
+                void Update(float _)
                 {
                     if (Time.time > timeToWait)
                     {
-                        NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate -= update;
+                        NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate -= Update;
                         TestCoordinator.Instance.WriteTestResultsServerRpc(Time.time);
 
                         TestCoordinator.Instance.ClientFinishedServerRpc(); // since finishOnInvoke is false, we need to do this manually
@@ -402,11 +395,12 @@ namespace MLAPI.MultiprocessRuntimeTests
                         Debug.Log($"current time on client : {Time.time}");
                     }
                 };
-                NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate += update;
+                NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate += Update;
             }, finishOnInvoke: false); // waits multiple frames before allowing the next action to continue.
 
             yield return new ExecuteInContext(ExecutionContext.Server, (byte[] args) =>
             {
+                stepCountExecuted++;
                 int count = 0;
                 foreach (var res in TestCoordinator.ConsumeCurrentResult())
                 {
@@ -415,6 +409,10 @@ namespace MLAPI.MultiprocessRuntimeTests
                 }
                 Assert.Greater(count, 0);
             });
+            if (!TestCoordinator.Instance.isRegistering)
+            {
+                Assert.AreEqual(3, stepCountExecuted);
+            }
         }
 
         [OneTimeSetUp]
@@ -436,9 +434,6 @@ namespace MLAPI.MultiprocessRuntimeTests
         [TestCase(5000, ExpectedResult = null)]
         [TestCase(10000, ExpectedResult = null)]
         [TestCase(15000, ExpectedResult = null)]
-        [TestCase(1000, ExpectedResult = null)]
-        [TestCase(800, ExpectedResult = null)]
-        [TestCase(400, ExpectedResult = null)]
         public IEnumerator TestSpawningManyObjects(int nbObjects)
         {
             Assert.LessOrEqual(nbObjects, k_MaxObjectstoSpawn); // sanity check
