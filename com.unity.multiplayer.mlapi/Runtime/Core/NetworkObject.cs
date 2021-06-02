@@ -178,6 +178,11 @@ namespace MLAPI
         /// </summary>
         public bool DontDestroyWithOwner;
 
+        /// <summary>
+        /// Whether or not to enable automatic NetworkObject parent synchronization.
+        /// </summary>
+        public bool AutoObjectParentSync = true;
+
         internal readonly HashSet<ulong> Observers = new HashSet<ulong>();
 
         /// <summary>
@@ -576,6 +581,11 @@ namespace MLAPI
 
         public bool TrySetParent(NetworkObject parent, bool worldPositionStays = true)
         {
+            if (!AutoObjectParentSync)
+            {
+                return false;
+            }
+
             if (NetworkManager == null || !NetworkManager.IsListening)
             {
                 return false;
@@ -607,6 +617,11 @@ namespace MLAPI
 
         private void OnTransformParentChanged()
         {
+            if (!AutoObjectParentSync)
+            {
+                return;
+            }
+
             if (transform.parent == m_CachedParent)
             {
                 return;
@@ -684,6 +699,11 @@ namespace MLAPI
 
         internal bool ApplyNetworkParenting()
         {
+            if (!AutoObjectParentSync)
+            {
+                return false;
+            }
+
             if (!IsSpawned)
             {
                 return false;
