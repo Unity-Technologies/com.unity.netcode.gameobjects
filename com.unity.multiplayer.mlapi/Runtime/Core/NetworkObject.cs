@@ -18,6 +18,7 @@ namespace MLAPI
     /// </summary>
     [AddComponentMenu("MLAPI/NetworkObject", -99)]
     [DisallowMultipleComponent]
+    [HelpURL("https://docs-multiplayer.unity3d.com/docs/develop/mlapi-api/MLAPI.NetworkObject/index.html")]
     public sealed class NetworkObject : MonoBehaviour
     {
         private void OnValidate()
