@@ -74,8 +74,6 @@ namespace MLAPI.RuntimeTests.Metrics
         [UnityTest]
         public IEnumerator NetworkMetrics_WhenUnnamedMessageSent_TracksNamedMessageSentMetric()
         {
-            var messageName = Guid.NewGuid().ToString();
-
             m_NetworkMetrics.Dispatcher.RegisterObserver(new TestObserver(collection =>
             {
                 var unnamedMessageSentMetric = AssertSingleMetricEventOfType<UnnamedMessageEvent>(collection, MetricNames.UnnamedMessageSent);
@@ -93,8 +91,6 @@ namespace MLAPI.RuntimeTests.Metrics
         [UnityTest]
         public IEnumerator NetworkMetrics_WhenUnnamedMessageSentToMultipleClients_TracksNamedMessageSentMetric()
         {
-            var messageName = Guid.NewGuid().ToString();
-
             m_NetworkMetrics.Dispatcher.RegisterObserver(new TestObserver(collection =>
             {
                 var unnamedMessageSentMetric = AssertSingleMetricEventOfType<UnnamedMessageEvent>(collection, MetricNames.UnnamedMessageSent);
