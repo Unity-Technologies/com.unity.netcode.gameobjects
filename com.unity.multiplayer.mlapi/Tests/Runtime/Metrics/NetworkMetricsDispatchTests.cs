@@ -78,11 +78,11 @@ namespace MLAPI.RuntimeTests.Metrics
 
             m_NetworkMetrics.Dispatcher.RegisterObserver(new TestObserver(collection =>
             {
-                var namedMessageSentMetric = AssertSingleMetricEventOfType<UnnamedMessageEvent>(collection, MetricNames.UnnamedMessageSent);
-                Assert.AreEqual(1, namedMessageSentMetric.Values.Count);
+                var unnamedMessageSentMetric = AssertSingleMetricEventOfType<UnnamedMessageEvent>(collection, MetricNames.UnnamedMessageSent);
+                Assert.AreEqual(1, unnamedMessageSentMetric.Values.Count);
 
-                var namedMessageSent = namedMessageSentMetric.Values.First();
-                Assert.AreEqual(m_NetworkManager.LocalClientId, namedMessageSent.Connection.Id);
+                var unnamedMessageSent = unnamedMessageSentMetric.Values.First();
+                Assert.AreEqual(m_NetworkManager.LocalClientId, unnamedMessageSent.Connection.Id);
             }));
 
             m_NetworkManager.CustomMessagingManager.SendUnnamedMessage(100, new NetworkBuffer());
@@ -97,11 +97,11 @@ namespace MLAPI.RuntimeTests.Metrics
 
             m_NetworkMetrics.Dispatcher.RegisterObserver(new TestObserver(collection =>
             {
-                var namedMessageSentMetric = AssertSingleMetricEventOfType<UnnamedMessageEvent>(collection, MetricNames.UnnamedMessageSent);
-                Assert.AreEqual(1, namedMessageSentMetric.Values.Count);
+                var unnamedMessageSentMetric = AssertSingleMetricEventOfType<UnnamedMessageEvent>(collection, MetricNames.UnnamedMessageSent);
+                Assert.AreEqual(1, unnamedMessageSentMetric.Values.Count);
 
-                var namedMessageSent = namedMessageSentMetric.Values.First();
-                Assert.AreEqual(m_NetworkManager.LocalClientId, namedMessageSent.Connection.Id);
+                var unnamedMessageSent = unnamedMessageSentMetric.Values.First();
+                Assert.AreEqual(m_NetworkManager.LocalClientId, unnamedMessageSent.Connection.Id);
             }));
 
             m_NetworkManager.CustomMessagingManager.SendUnnamedMessage(new List<ulong> { 100, 200, 300 }, new NetworkBuffer());
