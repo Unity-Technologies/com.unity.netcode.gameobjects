@@ -11,7 +11,7 @@ using UnityEditor.Build.Reporting;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
-using static TestCoordinator.ExecuteInContext;
+using static TestCoordinator.ExecuteStepInContext;
 
 
 namespace MLAPI.MultiprocessRuntimeTests
@@ -128,21 +128,21 @@ namespace MLAPI.MultiprocessRuntimeTests
             }
         }
 
-        [UnityTest, TestCoordinator.ExecuteInContext.MultiprocessContextBasedTestAttribute()]
+        [UnityTest, MultiprocessContextBasedTestAttribute()]
         public IEnumerator TestExecuteInContext()
         {
             // TODO convert other tests to this format
             // todo move ExecuteInContext out of here (in test coordinator?)
 
             int stepCountExecuted = 0;
-            yield return new TestCoordinator.ExecuteInContext(StepExecutionContext.Server, (byte[] args) =>
+            yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Server, (byte[] args) =>
             {
                 stepCountExecuted++;
                 int count = BitConverter.ToInt32(args, 0);
                 Debug.Log($"something server side, count is {count}");
             }, paramToPass: BitConverter.GetBytes(1));
 
-            yield return new TestCoordinator.ExecuteInContext(StepExecutionContext.Clients, (byte[] args) =>
+            yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Clients, (byte[] args) =>
             {
                 int count = BitConverter.ToInt32(args, 0);
                 Debug.Log($"something client side, count is {count}");
@@ -152,7 +152,7 @@ namespace MLAPI.MultiprocessRuntimeTests
 #endif
             }, paramToPass: BitConverter.GetBytes(1));
 
-            yield return new TestCoordinator.ExecuteInContext(StepExecutionContext.Server, _ =>
+            yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Server, _ =>
             {
                 stepCountExecuted++;
                 int count = 0;
@@ -165,7 +165,7 @@ namespace MLAPI.MultiprocessRuntimeTests
             });
 
             int timeToWait = 4;
-            yield return new TestCoordinator.ExecuteInContext(StepExecutionContext.Clients, _ =>
+            yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Clients, _ =>
             {
                 void Update(float _)
                 {
@@ -184,7 +184,7 @@ namespace MLAPI.MultiprocessRuntimeTests
                 NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate += Update;
             }, finishOnInvoke: false); // waits multiple frames before allowing the next action to continue.
 
-            yield return new TestCoordinator.ExecuteInContext(StepExecutionContext.Server, (byte[] args) =>
+            yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Server, (byte[] args) =>
             {
                 stepCountExecuted++;
                 int count = 0;

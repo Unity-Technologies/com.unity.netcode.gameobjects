@@ -116,14 +116,14 @@ internal class TestCoordinator : NetworkBehaviour
         // registering magically all method steps
         isRegistering = true;
         var registeredMethods = typeof(TestCoordinator).Assembly.GetTypes().SelectMany(t => t.GetMethods())
-            .Where(m => m.GetCustomAttributes(typeof(ExecuteInContext.MultiprocessContextBasedTestAttribute), true).Length > 0)
+            .Where(m => m.GetCustomAttributes(typeof(ExecuteStepInContext.MultiprocessContextBasedTestAttribute), true).Length > 0)
             .ToArray();
         foreach (var method in registeredMethods)
         {
             var type = method.ReflectedType;
             var instance = Activator.CreateInstance(type);
 
-            ExecuteInContext.InitTest(method);
+            ExecuteStepInContext.InitTest(method);
             var result = (IEnumerator)method.Invoke(instance, null);
             while (result.MoveNext()) { }
         }
@@ -316,14 +316,14 @@ internal class TestCoordinator : NetworkBehaviour
     public void TriggerActionIDClientRpc(string actionID, byte[] args, ClientRpcParams clientRpcParams = default)
     {
         Debug.Log($"received RPC from server, client side triggering action ID {actionID}");
-        ExecuteInContext.allActions[actionID].Invoke(args);
+        ExecuteStepInContext.allActions[actionID].Invoke(args);
     }
 
     [ServerRpc]
     public void TriggerActionIDServerRpc(string actionID, byte[] args, ServerRpcParams serverRpcParams = default)
     {
         Debug.Log($"received RPC from client, server side triggering action ID {actionID}");
-        ExecuteInContext.allActions[actionID].Invoke(args);
+        ExecuteStepInContext.allActions[actionID].Invoke(args);
     }
 
     [ClientRpc]
@@ -450,7 +450,7 @@ internal class TestCoordinator : NetworkBehaviour
 // #endif
     }
 
-    public class ExecuteInContext : CustomYieldInstruction
+    public class ExecuteStepInContext : CustomYieldInstruction
     {
         public enum StepExecutionContext
         {
@@ -467,7 +467,7 @@ internal class TestCoordinator : NetworkBehaviour
 
                 // var method = test.Method.MethodInfo.ReturnType.GetMethod(nameof(IEnumerator.MoveNext));
                 // ExecuteInContext.InitTest(method);
-                TestCoordinator.ExecuteInContext.InitTest(test.Method.MethodInfo);
+                TestCoordinator.ExecuteStepInContext.InitTest(test.Method.MethodInfo);
             }
 
             public IEnumerator AfterTest(ITest test)
@@ -478,7 +478,7 @@ internal class TestCoordinator : NetworkBehaviour
 
         private StepExecutionContext m_ActionContextContext;
         private Action<byte[]> m_Todo;
-        public static Dictionary<string, ExecuteInContext> allActions = new Dictionary<string, ExecuteInContext>();
+        public static Dictionary<string, ExecuteStepInContext> allActions = new Dictionary<string, ExecuteStepInContext>();
 
         // private static int s_ActionID;
         private static Dictionary<string, int> s_MethodIDCounter = new Dictionary<string, int>();
@@ -522,7 +522,7 @@ internal class TestCoordinator : NetworkBehaviour
         /// <param name="paramToPass">parameters to pass to action</param>
         /// <param name="networkManager"></param>
         /// <param name="finishOnInvoke"> waits multiple frames before allowing the execution to continue. This means ClientFinishedServerRpc must be called manually</param>
-        public ExecuteInContext(StepExecutionContext actionContext, Action<byte[]> todo, byte[] paramToPass = default, NetworkManager networkManager = null, bool finishOnInvoke = true, [CallerMemberName] string callerName = "")
+        public ExecuteStepInContext(StepExecutionContext actionContext, Action<byte[]> todo, byte[] paramToPass = default, NetworkManager networkManager = null, bool finishOnInvoke = true, [CallerMemberName] string callerName = "")
         {
             m_IsRegistering = TestCoordinator.Instance.isRegistering;
             m_ActionContextContext = actionContext;
