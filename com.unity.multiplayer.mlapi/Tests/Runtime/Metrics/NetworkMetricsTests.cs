@@ -123,10 +123,10 @@ namespace MLAPI.RuntimeTests.Metrics
 
         private IEventMetric<TEvent> AssertSingleMetricEventOfType<TEvent>(MetricCollection collection, string name)
         {
-            var namedMessageSentMetric = collection.Metrics.SingleOrDefault(x => x.Name == name);
-            Assert.NotNull(namedMessageSentMetric);
+            var metric = collection.Metrics.SingleOrDefault(x => x.Name == name);
+            Assert.NotNull(metric);
 
-            var typedMetric = namedMessageSentMetric as IEventMetric<TEvent>;
+            var typedMetric = metric as IEventMetric<TEvent>;
             Assert.NotNull(typedMetric);
             Assert.IsNotEmpty(typedMetric.Values);
 
