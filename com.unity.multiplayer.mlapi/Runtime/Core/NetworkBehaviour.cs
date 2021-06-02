@@ -17,6 +17,7 @@ using MLAPI.Serialization.Pooled;
 using MLAPI.Spawning;
 using MLAPI.Transports;
 using Unity.Profiling;
+using Debug = UnityEngine.Debug;
 
 namespace MLAPI
 {
@@ -444,6 +445,7 @@ namespace MLAPI
                     }
 
                     instance.SetNetworkBehaviour(this);
+                    instance.Name = sortedFields[i].Name;
                     NetworkVariableFields.Add(instance);
                 }
             }
@@ -671,6 +673,8 @@ namespace MLAPI
                                         m_NetworkVariableIndexesToResetSet.Add(k);
                                         m_NetworkVariableIndexesToReset.Add(k);
                                     }
+
+                                    NetworkManager.NetworkMetrics.TrackNetworkVariableDeltaSent(NetworkObjectId, name, NetworkVariableFields[k].Name, (ulong)buffer.Length);
                                 }
                             }
 
@@ -760,7 +764,7 @@ namespace MLAPI
                     networkVariableList[i].ReadDelta(stream, networkManager.IsServer);
                     PerformanceDataManager.Increment(ProfilerConstants.NetworkVarDeltas);
                     ProfilerStatManager.NetworkVarsRcvd.Record();
-                    networkManager.NetworkMetrics.TrackNetworkVariableDelta(logInstance.NetworkObjectId, networkVariableList[i].GetType().Name, (ulong)stream.Length);
+                    networkManager.NetworkMetrics.TrackNetworkVariableDeltaReceived(logInstance.NetworkObjectId, logInstance.name, networkVariableList[i].Name, (ulong)stream.Length);
 
                     if (networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                     {
@@ -847,7 +851,6 @@ namespace MLAPI
                     networkVariableList[i].ReadField(stream);
                     PerformanceDataManager.Increment(ProfilerConstants.NetworkVarUpdates);
                     ProfilerStatManager.NetworkVarsRcvd.Record();
-                    networkManager.NetworkMetrics.TrackNetworkVariableUpdate(logInstance.NetworkObjectId, networkVariableList[i].GetType().Name, (ulong)stream.Length);
 
                     if (networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                     {

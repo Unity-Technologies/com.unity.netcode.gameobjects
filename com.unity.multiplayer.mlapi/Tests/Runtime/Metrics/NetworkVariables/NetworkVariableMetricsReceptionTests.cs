@@ -1,8 +1,6 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Linq;
 using MLAPI.Metrics;
-using MLAPI.NetworkVariable;
 using NUnit.Framework;
 using Unity.Multiplayer.NetStats.Metrics;
 using Unity.Multiplayer.NetworkProfiler;
@@ -10,9 +8,9 @@ using Unity.Multiplayer.NetworkProfiler.Models;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace MLAPI.RuntimeTests.Metrics
+namespace MLAPI.RuntimeTests.Metrics.NetworkVariables
 {
-    public class NetworkVariableMetricsTests : MetricsTestBase
+    public class NetworkVariableMetricsReceptionTests : MetricsTestBase
     {
         NetworkManager m_Server;
         NetworkManager m_Client;
@@ -62,12 +60,12 @@ namespace MLAPI.RuntimeTests.Metrics
         }
 
         [UnityTest]
-        public IEnumerator NetworkMetrics_WhenNetworkVariableDeltaSent_TracksNetworkVariableDeltaMetric()
+        public IEnumerator NetworkMetrics_WhenNetworkVariableDeltaReceived_TracksNetworkVariableDeltaMetric()
         {
             var found = false;
             m_ClientMetrics.Dispatcher.RegisterObserver(new TestObserver(collection =>
             {
-                var networkVariableUpdateMetric = collection.Metrics.SingleOrDefault(x => x.Name == MetricNames.NetworkVariableDelta);
+                var networkVariableUpdateMetric = collection.Metrics.SingleOrDefault(x => x.Name == MetricNames.NetworkVariableDeltaReceived);
                 Assert.NotNull(networkVariableUpdateMetric);
 
                 var typedMetric = networkVariableUpdateMetric as IEventMetric<NetworkVariableEvent>;
@@ -78,10 +76,10 @@ namespace MLAPI.RuntimeTests.Metrics
                     Assert.AreEqual(2, typedMetric.Values.Count);
 
                     var first = typedMetric.Values.First();
-                    Assert.True(first.Name.Contains(nameof(NetworkVariableString)));
+                    Assert.AreEqual(nameof(NetworkVariableComponent.MyNetworkVariable), first.Name);
 
                     var last = typedMetric.Values.Last();
-                    Assert.True(last.Name.Contains(nameof(NetworkVariableString)));
+                    Assert.AreEqual(nameof(NetworkVariableComponent.MyNetworkVariable), last.Name);
 
                     found = true;
                 }
@@ -90,19 +88,6 @@ namespace MLAPI.RuntimeTests.Metrics
             yield return WaitForAFewFrames();
 
             Assert.True(found);
-        }
-
-        private class NetworkVariableComponent : NetworkBehaviour
-        {
-            public NetworkVariableString NetworkVariableString { get; } = new NetworkVariableString();
-
-            void Update()
-            {
-                if (IsServer)
-                {
-                    NetworkVariableString.Value = Guid.NewGuid().ToString();
-                }
-            }
         }
     }
 }
