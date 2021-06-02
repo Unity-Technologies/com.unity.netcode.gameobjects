@@ -509,10 +509,6 @@ namespace MLAPI
             }
         }
 
-        private bool m_IsReparented;
-        private ulong? m_LatestParent;
-        private Transform m_CachedParent;
-
         internal void InvokeBehaviourOnNetworkObjectParentChanged(NetworkObject parentNetworkObject)
         {
             for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
@@ -521,80 +517,13 @@ namespace MLAPI
             }
         }
 
+        private bool m_IsReparented;
+        private ulong? m_LatestParent;
+        private Transform m_CachedParent;
+
         internal void SetCachedParent(Transform parentTransform)
         {
             m_CachedParent = parentTransform;
-        }
-
-        private void OnTransformParentChanged()
-        {
-            if (transform.parent == m_CachedParent)
-            {
-                return;
-            }
-
-            if (NetworkManager == null || !NetworkManager.IsListening)
-            {
-                transform.parent = m_CachedParent;
-                Debug.LogException(new NotListeningException($"{nameof(NetworkManager)} is not listening, start a server or host before reparenting"));
-                return;
-            }
-
-            if (!NetworkManager.IsServer)
-            {
-                transform.parent = m_CachedParent;
-                Debug.LogException(new NotServerException($"Only the server can reparent {nameof(NetworkObject)}s"));
-                return;
-            }
-
-            if (!IsSpawned)
-            {
-                transform.parent = m_CachedParent;
-                Debug.LogException(new SpawnStateException($"{nameof(NetworkObject)} can only be reparented after being spawned"));
-                return;
-            }
-
-            var parentTransform = transform.parent;
-            if (parentTransform != null)
-            {
-                var parentObject = transform.parent.GetComponent<NetworkObject>();
-                if (parentObject == null)
-                {
-                    transform.parent = m_CachedParent;
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
-                    {
-                        NetworkLog.LogError($"Invalid parenting, {nameof(NetworkObject)} moved under a non-{nameof(NetworkObject)} parent");
-                    }
-                    return;
-                }
-
-                m_LatestParent = parentObject.NetworkObjectId;
-            }
-            else
-            {
-                m_LatestParent = null;
-            }
-
-            using (var buffer = PooledNetworkBuffer.Get())
-            {
-                using (var writer = PooledNetworkWriter.Get(buffer))
-                {
-                    writer.WriteUInt64Packed(NetworkObjectId);
-                    WriteNetworkParenting(writer, m_IsReparented, m_LatestParent);
-                }
-
-                for (int i = 0; i < NetworkManager.ConnectedClientsList.Count; i++)
-                {
-                    var targetClientId = NetworkManager.ConnectedClientsList[i].ClientId;
-                    if (Observers.Contains(targetClientId))
-                    {
-                        NetworkManager.MessageSender.Send(targetClientId, NetworkConstants.PARENT_SYNC, NetworkChannel.Internal, buffer);
-                    }
-                }
-            }
-
-            m_IsReparented = true;
-            ApplyNetworkParenting();
         }
 
         internal static void WriteNetworkParenting(NetworkWriter writer, bool isReparented, ulong? latestParent)
@@ -635,6 +564,122 @@ namespace MLAPI
             m_LatestParent = latestParent;
         }
 
+        public bool TrySetParent(Transform parent, bool worldPositionStays = true)
+        {
+            return TrySetParent(parent.GetComponent<NetworkObject>(), worldPositionStays);
+        }
+
+        public bool TrySetParent(GameObject parent, bool worldPositionStays = true)
+        {
+            return TrySetParent(parent.GetComponent<NetworkObject>(), worldPositionStays);
+        }
+
+        public bool TrySetParent(NetworkObject parent, bool worldPositionStays = true)
+        {
+            if (NetworkManager == null || !NetworkManager.IsListening)
+            {
+                return false;
+            }
+
+            if (!NetworkManager.IsServer)
+            {
+                return false;
+            }
+
+            if (!IsSpawned)
+            {
+                return false;
+            }
+
+            if (parent == null)
+            {
+                return false;
+            }
+
+            if (!parent.IsSpawned)
+            {
+                return false;
+            }
+
+            transform.SetParent(parent.transform, worldPositionStays);
+            return true;
+        }
+
+        private void OnTransformParentChanged()
+        {
+            if (transform.parent == m_CachedParent)
+            {
+                return;
+            }
+
+            if (NetworkManager == null || !NetworkManager.IsListening)
+            {
+                transform.parent = m_CachedParent;
+                Debug.LogException(new NotListeningException($"{nameof(NetworkManager)} is not listening, start a server or host before reparenting"));
+                return;
+            }
+
+            if (!NetworkManager.IsServer)
+            {
+                transform.parent = m_CachedParent;
+                Debug.LogException(new NotServerException($"Only the server can reparent {nameof(NetworkObject)}s"));
+                return;
+            }
+
+            if (!IsSpawned)
+            {
+                transform.parent = m_CachedParent;
+                Debug.LogException(new SpawnStateException($"{nameof(NetworkObject)} can only be reparented after being spawned"));
+                return;
+            }
+
+            var parentTransform = transform.parent;
+            if (parentTransform != null)
+            {
+                var parentObject = transform.parent.GetComponent<NetworkObject>();
+                if (parentObject == null)
+                {
+                    transform.parent = m_CachedParent;
+                    Debug.LogException(new InvalidParentException($"Invalid parenting, {nameof(NetworkObject)} moved under a non-{nameof(NetworkObject)} parent"));
+                    return;
+                }
+
+                if (!parentObject.IsSpawned)
+                {
+                    transform.parent = m_CachedParent;
+                    Debug.LogException(new SpawnStateException($"{nameof(NetworkObject)} can only be reparented under another spawned {nameof(NetworkObject)}"));
+                    return;
+                }
+
+                m_LatestParent = parentObject.NetworkObjectId;
+            }
+            else
+            {
+                m_LatestParent = null;
+            }
+
+            using (var buffer = PooledNetworkBuffer.Get())
+            {
+                using (var writer = PooledNetworkWriter.Get(buffer))
+                {
+                    writer.WriteUInt64Packed(NetworkObjectId);
+                    WriteNetworkParenting(writer, m_IsReparented, m_LatestParent);
+                }
+
+                for (int i = 0; i < NetworkManager.ConnectedClientsList.Count; i++)
+                {
+                    var targetClientId = NetworkManager.ConnectedClientsList[i].ClientId;
+                    if (Observers.Contains(targetClientId))
+                    {
+                        NetworkManager.MessageSender.Send(targetClientId, NetworkConstants.PARENT_SYNC, NetworkChannel.Internal, buffer);
+                    }
+                }
+            }
+
+            m_IsReparented = true;
+            ApplyNetworkParenting();
+        }
+
         internal static HashSet<NetworkObject> OrphanChildren = new HashSet<NetworkObject>();
 
         internal bool ApplyNetworkParenting()
@@ -655,7 +700,6 @@ namespace MLAPI
                 transform.parent = null;
 
                 InvokeBehaviourOnNetworkObjectParentChanged(null);
-
                 return true;
             }
 
@@ -677,7 +721,6 @@ namespace MLAPI
             transform.parent = parentObject.transform;
 
             InvokeBehaviourOnNetworkObjectParentChanged(parentObject);
-
             return true;
         }
 
