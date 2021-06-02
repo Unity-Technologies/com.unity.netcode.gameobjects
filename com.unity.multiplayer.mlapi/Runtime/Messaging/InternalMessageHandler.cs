@@ -17,7 +17,6 @@ namespace MLAPI.Messaging
 {
     internal class InternalMessageHandler : IInternalMessageHandler
     {
-
         public NetworkManager NetworkManager => m_NetworkManager;
         private NetworkManager m_NetworkManager;
 
