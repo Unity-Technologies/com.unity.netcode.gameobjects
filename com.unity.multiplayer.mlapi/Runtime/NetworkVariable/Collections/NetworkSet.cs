@@ -1,4 +1,5 @@
 #if !NET35
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -76,16 +77,32 @@ namespace MLAPI.NetworkVariable.Collections
         public void ResetDirty()
         {
             m_DirtyEvents.Clear();
-            LastSyncedTime = NetworkManager.Singleton.NetworkTime;
+            LastSyncedTime = m_NetworkBehaviour.NetworkManager.NetworkTime;
         }
 
         /// <inheritdoc />
         public bool IsDirty()
         {
-            if (m_DirtyEvents.Count == 0) return false;
-            if (Settings.SendTickrate == 0) return true;
-            if (Settings.SendTickrate < 0) return false;
-            if (NetworkManager.Singleton.NetworkTime - LastSyncedTime >= (1f / Settings.SendTickrate)) return true;
+            if (m_DirtyEvents.Count == 0)
+            {
+                return false;
+            }
+
+            if (Settings.SendTickrate == 0)
+            {
+                return true;
+            }
+
+            if (Settings.SendTickrate < 0)
+            {
+                return false;
+            }
+
+            if (m_NetworkBehaviour.NetworkManager.NetworkTime - LastSyncedTime >= (1f / Settings.SendTickrate))
+            {
+                return true;
+            }
+
             return false;
         }
 
@@ -107,10 +124,14 @@ namespace MLAPI.NetworkVariable.Collections
                 case NetworkVariablePermission.OwnerOnly:
                     return m_NetworkBehaviour.OwnerClientId == clientId;
                 case NetworkVariablePermission.Custom:
-                {
-                    if (Settings.WritePermissionCallback == null) return false;
-                    return Settings.WritePermissionCallback(clientId);
-                }
+                    {
+                        if (Settings.WritePermissionCallback == null)
+                        {
+                            return false;
+                        }
+
+                        return Settings.WritePermissionCallback(clientId);
+                    }
             }
 
             return true;
@@ -128,10 +149,14 @@ namespace MLAPI.NetworkVariable.Collections
                 case NetworkVariablePermission.OwnerOnly:
                     return m_NetworkBehaviour.OwnerClientId == clientId;
                 case NetworkVariablePermission.Custom:
-                {
-                    if (Settings.ReadPermissionCallback == null) return false;
-                    return Settings.ReadPermissionCallback(clientId);
-                }
+                    {
+                        if (Settings.ReadPermissionCallback == null)
+                        {
+                            return false;
+                        }
+
+                        return Settings.ReadPermissionCallback(clientId);
+                    }
             }
 
             return true;
@@ -150,19 +175,19 @@ namespace MLAPI.NetworkVariable.Collections
                     switch (m_DirtyEvents[i].Type)
                     {
                         case NetworkSetEvent<T>.EventType.Add:
-                        {
-                            writer.WriteObjectPacked(m_DirtyEvents[i].Value); //BOX
-                        }
+                            {
+                                writer.WriteObjectPacked(m_DirtyEvents[i].Value); //BOX
+                            }
                             break;
                         case NetworkSetEvent<T>.EventType.Remove:
-                        {
-                            writer.WriteObjectPacked(m_DirtyEvents[i].Value); //BOX
-                        }
+                            {
+                                writer.WriteObjectPacked(m_DirtyEvents[i].Value); //BOX
+                            }
                             break;
                         case NetworkSetEvent<T>.EventType.Clear:
-                        {
-                            //Nothing has to be written
-                        }
+                            {
+                                //Nothing has to be written
+                            }
                             break;
                     }
                 }
@@ -184,7 +209,7 @@ namespace MLAPI.NetworkVariable.Collections
         }
 
         /// <inheritdoc />
-        public void ReadField(Stream stream, ushort localTick, ushort remoteTick)
+        public void ReadField(Stream stream)
         {
             using (var reader = PooledNetworkReader.Get(stream))
             {
@@ -199,85 +224,85 @@ namespace MLAPI.NetworkVariable.Collections
         }
 
         /// <inheritdoc />
-        public void ReadDelta(Stream stream, bool keepDirtyDelta, ushort localTick, ushort remoteTick)
+        public void ReadDelta(Stream stream, bool keepDirtyDelta)
         {
             using (var reader = PooledNetworkReader.Get(stream))
             {
                 ushort deltaCount = reader.ReadUInt16Packed();
                 for (int i = 0; i < deltaCount; i++)
                 {
-                    NetworkSetEvent<T>.EventType eventType = (NetworkSetEvent<T>.EventType)reader.ReadBits(2);
+                    var eventType = (NetworkSetEvent<T>.EventType)reader.ReadBits(2);
                     switch (eventType)
                     {
                         case NetworkSetEvent<T>.EventType.Add:
-                        {
-                            T value = (T)reader.ReadObjectPacked(typeof(T)); //BOX
-                            m_Set.Add(value);
-
-                            if (OnSetChanged != null)
                             {
-                                OnSetChanged(new NetworkSetEvent<T>
-                                {
-                                    Type = eventType,
-                                    Value = value
-                                });
-                            }
+                                var value = (T)reader.ReadObjectPacked(typeof(T)); //BOX
+                                m_Set.Add(value);
 
-                            if (keepDirtyDelta)
-                            {
-                                m_DirtyEvents.Add(new NetworkSetEvent<T>()
+                                if (OnSetChanged != null)
                                 {
-                                    Type = eventType,
-                                    Value = value
-                                });
+                                    OnSetChanged(new NetworkSetEvent<T>
+                                    {
+                                        Type = eventType,
+                                        Value = value
+                                    });
+                                }
+
+                                if (keepDirtyDelta)
+                                {
+                                    m_DirtyEvents.Add(new NetworkSetEvent<T>()
+                                    {
+                                        Type = eventType,
+                                        Value = value
+                                    });
+                                }
                             }
-                        }
                             break;
                         case NetworkSetEvent<T>.EventType.Remove:
-                        {
-                            T value = (T)reader.ReadObjectPacked(typeof(T)); //BOX
-                            m_Set.Remove(value);
-
-                            if (OnSetChanged != null)
                             {
-                                OnSetChanged(new NetworkSetEvent<T>
-                                {
-                                    Type = eventType,
-                                    Value = value
-                                });
-                            }
+                                var value = (T)reader.ReadObjectPacked(typeof(T)); //BOX
+                                m_Set.Remove(value);
 
-                            if (keepDirtyDelta)
-                            {
-                                m_DirtyEvents.Add(new NetworkSetEvent<T>()
+                                if (OnSetChanged != null)
                                 {
-                                    Type = eventType,
-                                    Value = value
-                                });
+                                    OnSetChanged(new NetworkSetEvent<T>
+                                    {
+                                        Type = eventType,
+                                        Value = value
+                                    });
+                                }
+
+                                if (keepDirtyDelta)
+                                {
+                                    m_DirtyEvents.Add(new NetworkSetEvent<T>()
+                                    {
+                                        Type = eventType,
+                                        Value = value
+                                    });
+                                }
                             }
-                        }
                             break;
                         case NetworkSetEvent<T>.EventType.Clear:
-                        {
-                            //Read nothing
-                            m_Set.Clear();
-
-                            if (OnSetChanged != null)
                             {
-                                OnSetChanged(new NetworkSetEvent<T>
-                                {
-                                    Type = eventType,
-                                });
-                            }
+                                //Read nothing
+                                m_Set.Clear();
 
-                            if (keepDirtyDelta)
-                            {
-                                m_DirtyEvents.Add(new NetworkSetEvent<T>()
+                                if (OnSetChanged != null)
                                 {
-                                    Type = eventType
-                                });
+                                    OnSetChanged(new NetworkSetEvent<T>
+                                    {
+                                        Type = eventType,
+                                    });
+                                }
+
+                                if (keepDirtyDelta)
+                                {
+                                    m_DirtyEvents.Add(new NetworkSetEvent<T>()
+                                    {
+                                        Type = eventType
+                                    });
+                                }
                             }
-                        }
                             break;
                     }
                 }
@@ -305,17 +330,24 @@ namespace MLAPI.NetworkVariable.Collections
         /// <inheritdoc />
         void ICollection<T>.Add(T item)
         {
-            if (NetworkManager.Singleton.IsServer) m_Set.Add(item);
+            EnsureInitialized();
 
-            NetworkSetEvent<T> setEvent = new NetworkSetEvent<T>()
+            if (m_NetworkBehaviour.NetworkManager.IsServer)
+            {
+                m_Set.Add(item);
+            }
+
+            var setEvent = new NetworkSetEvent<T>()
             {
                 Type = NetworkSetEvent<T>.EventType.Add,
                 Value = item
             };
             m_DirtyEvents.Add(setEvent);
 
-            if (NetworkManager.Singleton.IsServer && OnSetChanged != null)
+            if (m_NetworkBehaviour.NetworkManager.IsServer && OnSetChanged != null)
+            {
                 OnSetChanged(setEvent);
+            }
         }
 
         /// <inheritdoc />
@@ -333,7 +365,7 @@ namespace MLAPI.NetworkVariable.Collections
         /// <inheritdoc />
         public void IntersectWith(IEnumerable<T> other)
         {
-            HashSet<T> otherSet = new HashSet<T>(other);
+            var otherSet = new HashSet<T>(other);
 
             foreach (T value in m_Set)
             {
@@ -383,6 +415,8 @@ namespace MLAPI.NetworkVariable.Collections
         /// <inheritdoc />
         public void SymmetricExceptWith(IEnumerable<T> other)
         {
+            EnsureInitialized();
+
             foreach (T value in other)
             {
                 if (m_Set.Contains(value))
@@ -391,17 +425,22 @@ namespace MLAPI.NetworkVariable.Collections
                 }
                 else
                 {
-                    if (NetworkManager.Singleton.IsServer) m_Set.Add(value);
+                    if (m_NetworkBehaviour.NetworkManager.IsServer)
+                    {
+                        m_Set.Add(value);
+                    }
 
-                    NetworkSetEvent<T> setEvent = new NetworkSetEvent<T>()
+                    var setEvent = new NetworkSetEvent<T>()
                     {
                         Type = NetworkSetEvent<T>.EventType.Add,
                         Value = value
                     };
                     m_DirtyEvents.Add(setEvent);
 
-                    if (NetworkManager.Singleton.IsServer && OnSetChanged != null)
+                    if (m_NetworkBehaviour.NetworkManager.IsServer && OnSetChanged != null)
+                    {
                         OnSetChanged(setEvent);
+                    }
                 }
             }
         }
@@ -409,21 +448,28 @@ namespace MLAPI.NetworkVariable.Collections
         /// <inheritdoc />
         public void UnionWith(IEnumerable<T> other)
         {
+            EnsureInitialized();
+
             foreach (T value in other)
             {
                 if (!m_Set.Contains(value))
                 {
-                    if (NetworkManager.Singleton.IsServer) m_Set.Add(value);
+                    if (m_NetworkBehaviour.NetworkManager.IsServer)
+                    {
+                        m_Set.Add(value);
+                    }
 
-                    NetworkSetEvent<T> setEvent = new NetworkSetEvent<T>()
+                    var setEvent = new NetworkSetEvent<T>()
                     {
                         Type = NetworkSetEvent<T>.EventType.Add,
                         Value = value
                     };
                     m_DirtyEvents.Add(setEvent);
 
-                    if (NetworkManager.Singleton.IsServer && OnSetChanged != null)
+                    if (m_NetworkBehaviour.NetworkManager.IsServer && OnSetChanged != null)
+                    {
                         OnSetChanged(setEvent);
+                    }
                 }
             }
         }
@@ -431,17 +477,24 @@ namespace MLAPI.NetworkVariable.Collections
         /// <inheritdoc />
         bool ISet<T>.Add(T item)
         {
-            if (NetworkManager.Singleton.IsServer) m_Set.Add(item);
+            EnsureInitialized();
 
-            NetworkSetEvent<T> setEvent = new NetworkSetEvent<T>()
+            if (m_NetworkBehaviour.NetworkManager.IsServer)
+            {
+                m_Set.Add(item);
+            }
+
+            var setEvent = new NetworkSetEvent<T>()
             {
                 Type = NetworkSetEvent<T>.EventType.Add,
                 Value = item
             };
             m_DirtyEvents.Add(setEvent);
 
-            if (NetworkManager.Singleton.IsServer && OnSetChanged != null)
+            if (m_NetworkBehaviour.NetworkManager.IsServer && OnSetChanged != null)
+            {
                 OnSetChanged(setEvent);
+            }
 
             return true;
         }
@@ -449,16 +502,23 @@ namespace MLAPI.NetworkVariable.Collections
         /// <inheritdoc />
         public void Clear()
         {
-            if (NetworkManager.Singleton.IsServer) m_Set.Clear();
+            EnsureInitialized();
 
-            NetworkSetEvent<T> setEvent = new NetworkSetEvent<T>()
+            if (m_NetworkBehaviour.NetworkManager.IsServer)
+            {
+                m_Set.Clear();
+            }
+
+            var setEvent = new NetworkSetEvent<T>()
             {
                 Type = NetworkSetEvent<T>.EventType.Clear
             };
             m_DirtyEvents.Add(setEvent);
 
-            if (NetworkManager.Singleton.IsServer && OnSetChanged != null)
+            if (m_NetworkBehaviour.NetworkManager.IsServer && OnSetChanged != null)
+            {
                 OnSetChanged(setEvent);
+            }
         }
 
         /// <inheritdoc />
@@ -476,17 +536,24 @@ namespace MLAPI.NetworkVariable.Collections
         /// <inheritdoc />
         public bool Remove(T item)
         {
-            if (NetworkManager.Singleton.IsServer) m_Set.Remove(item);
+            EnsureInitialized();
 
-            NetworkSetEvent<T> setEvent = new NetworkSetEvent<T>()
+            if (m_NetworkBehaviour.NetworkManager.IsServer)
+            {
+                m_Set.Remove(item);
+            }
+
+            var setEvent = new NetworkSetEvent<T>()
             {
                 Type = NetworkSetEvent<T>.EventType.Remove,
                 Value = item
             };
             m_DirtyEvents.Add(setEvent);
 
-            if (NetworkManager.Singleton.IsServer && OnSetChanged != null)
+            if (m_NetworkBehaviour.NetworkManager.IsServer && OnSetChanged != null)
+            {
                 OnSetChanged(setEvent);
+            }
 
             return true;
         }
@@ -503,6 +570,14 @@ namespace MLAPI.NetworkVariable.Collections
             {
                 // todo: implement proper network tick for NetworkSet
                 return NetworkTickSystem.NoTick;
+            }
+        }
+
+        private void EnsureInitialized()
+        {
+            if (m_NetworkBehaviour == null)
+            {
+                throw new InvalidOperationException("Cannot access " + nameof(NetworkSet<T>) + " before it's initialized");
             }
         }
     }

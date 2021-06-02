@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 using System.IO;
 using System;
@@ -18,14 +18,6 @@ namespace MLAPI.NetworkVariable
         /// </summary>
         public readonly NetworkVariableSettings Settings = new NetworkVariableSettings();
 
-        /// <summary>
-        /// The last time the variable was written to locally
-        /// </summary>
-        public ushort LocalTick { get; internal set; }
-        /// <summary>
-        /// The last time the variable was written to remotely. Uses the remote timescale
-        /// </summary>
-        public ushort RemoteTick { get; internal set; }
         /// <summary>
         /// Delegate type for value changed event
         /// </summary>
@@ -84,11 +76,10 @@ namespace MLAPI.NetworkVariable
             get => m_InternalValue;
             set
             {
-                if (EqualityComparer<T>.Default.Equals(m_InternalValue, value)) return;
-
-                // Setter is assumed to be called locally, by game code.
-                // When used by the host, it is its responsibility to set the RemoteTick
-                RemoteTick = NetworkTickSystem.NoTick;
+                if (EqualityComparer<T>.Default.Equals(m_InternalValue, value))
+                {
+                    return;
+                }
 
                 m_IsDirty = true;
                 T previousValue = m_InternalValue;
@@ -131,10 +122,14 @@ namespace MLAPI.NetworkVariable
                 case NetworkVariablePermission.OwnerOnly:
                     return m_NetworkBehaviour.OwnerClientId == clientId;
                 case NetworkVariablePermission.Custom:
-                {
-                    if (Settings.ReadPermissionCallback == null) return false;
-                    return Settings.ReadPermissionCallback(clientId);
-                }
+                    {
+                        if (Settings.ReadPermissionCallback == null)
+                        {
+                            return false;
+                        }
+
+                        return Settings.ReadPermissionCallback(clientId);
+                    }
             }
             return true;
         }
@@ -160,10 +155,14 @@ namespace MLAPI.NetworkVariable
                 case NetworkVariablePermission.OwnerOnly:
                     return m_NetworkBehaviour.OwnerClientId == clientId;
                 case NetworkVariablePermission.Custom:
-                {
-                    if (Settings.WritePermissionCallback == null) return false;
-                    return Settings.WritePermissionCallback(clientId);
-                }
+                    {
+                        if (Settings.WritePermissionCallback == null)
+                        {
+                            return false;
+                        }
+
+                        return Settings.WritePermissionCallback(clientId);
+                    }
             }
 
             return true;
@@ -174,19 +173,17 @@ namespace MLAPI.NetworkVariable
         /// </summary>
         /// <param name="stream">The stream to read the value from</param>
         /// <param name="keepDirtyDelta">Whether or not the container should keep the dirty delta, or mark the delta as consumed</param>
-        public void ReadDelta(Stream stream, bool keepDirtyDelta, ushort localTick, ushort remoteTick)
+        public void ReadDelta(Stream stream, bool keepDirtyDelta)
         {
-            // todo: This allows the host-returned value to be set back to an old value
-            // this will need to be adjusted to check if we're have a most recent value
-            LocalTick = localTick;
-            RemoteTick = remoteTick;
-
             using (var reader = PooledNetworkReader.Get(stream))
             {
                 T previousValue = m_InternalValue;
                 m_InternalValue = (T)reader.ReadObjectPacked(typeof(T));
 
-                if (keepDirtyDelta) m_IsDirty = true;
+                if (keepDirtyDelta)
+                {
+                    m_IsDirty = true;
+                }
 
                 OnValueChanged?.Invoke(previousValue, m_InternalValue);
             }
@@ -199,17 +196,15 @@ namespace MLAPI.NetworkVariable
         }
 
         /// <inheritdoc />
-        public void ReadField(Stream stream, ushort localTick, ushort remoteTick)
+        public void ReadField(Stream stream)
         {
-            ReadDelta(stream, false, localTick, remoteTick);
+            ReadDelta(stream, false);
         }
 
         /// <inheritdoc />
         public void WriteField(Stream stream)
         {
-            // Store the local tick at which this NetworkVariable was modified
-            LocalTick = NetworkBehaviour.CurrentTick;
-            using (var writer = PooledNetworkWriter.Get(stream))
+           using (var writer = PooledNetworkWriter.Get(stream))
             {
                 writer.WriteObjectPacked(m_InternalValue); //BOX
             }

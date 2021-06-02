@@ -6,6 +6,7 @@ using MLAPI.Exceptions;
 using MLAPI.Logging;
 using MLAPI.Profiling;
 using MLAPI.Transports.Tasks;
+using UnityEngine;
 using UnityEngine.Networking;
 
 namespace MLAPI.Transports.UNET
@@ -64,10 +65,24 @@ namespace MLAPI.Transports.UNET
         private SocketTask m_ConnectTask;
         public override ulong ServerClientId => GetMLAPIClientId(0, 0, true);
 
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            for (int i = 0; i < Channels.Count; i++)
+            {
+                // Set the channels to a incrementing value
+                Channels[i].Id = (byte)((byte)NetworkChannel.ChannelUnused + i);
+            }
+        }
+#endif
+
         protected void LateUpdate()
         {
             if (UnityEngine.Networking.NetworkTransport.IsStarted && MessageSendMode == SendMode.Queued)
             {
+#if UNITY_WEBGL
+                Debug.LogError("Cannot use queued sending mode for WebGL");
+#else
                 if (NetworkManager.Singleton.IsServer)
                 {
                     for (int i = 0; i < NetworkManager.Singleton.ConnectedClientsList.Count; i++)
@@ -79,6 +94,7 @@ namespace MLAPI.Transports.UNET
                 {
                     SendQueued(NetworkManager.Singleton.LocalClientId);
                 }
+#endif
             }
         }
 
@@ -93,9 +109,9 @@ namespace MLAPI.Transports.UNET
 
             int channelId = 0;
 
-            if (m_ChannelNameToId.ContainsKey(networkChannel))
+            if (m_ChannelNameToId.TryGetValue(networkChannel, out int value))
             {
-                channelId = m_ChannelNameToId[networkChannel];
+                channelId = value;
             }
             else
             {
@@ -135,7 +151,11 @@ namespace MLAPI.Transports.UNET
 
             if (MessageSendMode == SendMode.Queued)
             {
+#if UNITY_WEBGL
+                Debug.LogError("Cannot use queued sending mode for WebGL");
+#else
                 RelayTransport.QueueMessageForSending(hostId, connectionId, channelId, buffer, data.Count, out byte error);
+#endif
             }
             else
             {
@@ -143,7 +163,7 @@ namespace MLAPI.Transports.UNET
             }
         }
 
-
+#if !UNITY_WEBGL
         public void SendQueued(ulong clientId)
         {
             if (ProfilerEnabled)
@@ -155,13 +175,14 @@ namespace MLAPI.Transports.UNET
 
             RelayTransport.SendQueuedMessages(hostId, connectionId, out byte error);
         }
+#endif
 
         public override NetworkEvent PollEvent(out ulong clientId, out NetworkChannel networkChannel, out ArraySegment<byte> payload, out float receiveTime)
         {
             var eventType = RelayTransport.Receive(out int hostId, out int connectionId, out int channelId, m_MessageBuffer, m_MessageBuffer.Length, out int receivedSize, out byte error);
 
             clientId = GetMLAPIClientId((byte)hostId, (ushort)connectionId, false);
-            receiveTime = UnityEngine.Time.realtimeSinceStartup;
+            receiveTime = Time.realtimeSinceStartup;
 
             var networkError = (NetworkError)error;
             if (networkError == NetworkError.MessageToLong)
@@ -186,9 +207,9 @@ namespace MLAPI.Transports.UNET
                 payload = new ArraySegment<byte>(m_MessageBuffer, 0, receivedSize);
             }
 
-            if (m_ChannelIdToName.ContainsKey(channelId))
+            if (m_ChannelIdToName.TryGetValue(channelId, out NetworkChannel value))
             {
-                networkChannel = m_ChannelIdToName[channelId];
+                networkChannel = value;
             }
             else
             {
@@ -292,7 +313,10 @@ namespace MLAPI.Transports.UNET
                 }
                 else
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogError("Cannot create websocket host when using MLAPI relay");
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
+                    {
+                        NetworkLog.LogError("Cannot create websocket host when using MLAPI relay");
+                    }
                 }
             }
 
@@ -389,13 +413,13 @@ namespace MLAPI.Transports.UNET
             {
                 int channelId = AddUNETChannel(Channels[i].Type, connectionConfig);
 
-                if (m_ChannelNameToId.ContainsKey(Channels[i].Id))
+                if (m_ChannelNameToId.ContainsKey((NetworkChannel)Channels[i].Id))
                 {
                     throw new InvalidChannelException($"Channel {channelId} already exists");
                 }
 
-                m_ChannelIdToName.Add(channelId, Channels[i].Id);
-                m_ChannelNameToId.Add(Channels[i].Id, channelId);
+                m_ChannelIdToName.Add(channelId, (NetworkChannel)Channels[i].Id);
+                m_ChannelNameToId.Add((NetworkChannel)Channels[i].Id, channelId);
             }
 
             connectionConfig.MaxSentMessageQueueSize = (ushort)MaxSentMessageQueueSize;

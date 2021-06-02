@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.IO;
 using MLAPI.Profiling;
 using MLAPI.Serialization;
@@ -81,7 +81,10 @@ namespace UnityEditor
 
         private void StartRecording()
         {
-            if (NetworkProfiler.IsRunning) StopRecording();
+            if (NetworkProfiler.IsRunning)
+            {
+                StopRecording();
+            }
 
             if (NetworkProfiler.Ticks != null && NetworkProfiler.Ticks.Count >= 2)
             {
@@ -105,8 +108,14 @@ namespace UnityEditor
 
         private void ChangeRecordState()
         {
-            if (NetworkProfiler.IsRunning) StopRecording();
-            else StartRecording();
+            if (NetworkProfiler.IsRunning)
+            {
+                StopRecording();
+            }
+            else
+            {
+                StartRecording();
+            }
         }
 
         private TickEvent m_EventHover = null;
@@ -123,8 +132,15 @@ namespace UnityEditor
             EditorGUILayout.BeginVertical();
             EditorGUILayout.BeginHorizontal();
 
-            if (GUILayout.Button(recording ? "Stop" : "Capture")) ChangeRecordState();
-            if (GUILayout.Button("Clear")) ClearDrawing();
+            if (GUILayout.Button(recording ? "Stop" : "Capture"))
+            {
+                ChangeRecordState();
+            }
+
+            if (GUILayout.Button("Clear"))
+            {
+                ClearDrawing();
+            }
 
             EditorGUILayout.Space();
             EditorGUILayout.Space();
@@ -173,19 +189,33 @@ namespace UnityEditor
                 int min = (int)m_ShowMin;
                 int ticksInRange = max - min;
                 var ticks = new ProfilerTick[ticksInRange];
-                for (int i = min; i < max; i++) ticks[i - min] = m_CurrentTicks[i];
+                for (int i = min; i < max; i++)
+                {
+                    ticks[i - min] = m_CurrentTicks[i];
+                }
+
                 string path = EditorUtility.SaveFilePanel("Save NetworkProfiler data", "", "networkProfilerData", "");
-                if (!string.IsNullOrEmpty(path)) File.WriteAllBytes(path, new ProfilerContainer { Ticks = ticks }.ToBytes());
+                if (!string.IsNullOrEmpty(path))
+                {
+                    File.WriteAllBytes(path, new ProfilerContainer { Ticks = ticks }.ToBytes());
+                }
             }
 
             EditorGUILayout.EndHorizontal();
             float prevHis = m_CaptureCount;
             m_CaptureCount = EditorGUILayout.DelayedIntField("History count", m_CaptureCount);
-            if (m_CaptureCount <= 0) m_CaptureCount = 1;
+            if (m_CaptureCount <= 0)
+            {
+                m_CaptureCount = 1;
+            }
+
             m_UpdateDelay = EditorGUILayout.Slider("Refresh delay", m_UpdateDelay, 0.1f, 10f);
             EditorGUILayout.EndVertical();
 
-            if (prevHis != m_CaptureCount) StartRecording();
+            if (prevHis != m_CaptureCount)
+            {
+                StartRecording();
+            }
 
             //Cache
             if (NetworkProfiler.IsRunning)
@@ -224,8 +254,16 @@ namespace UnityEditor
             m_Curve = EditorGUILayout.CurveField(m_Curve);
             EditorGUILayout.MinMaxSlider(ref m_ShowMin, ref m_ShowMax, 0, m_CurrentTicks.Count);
             //Verify slider values
-            if (m_ShowMin < 0) m_ShowMin = 0;
-            if (m_ShowMax > m_CurrentTicks.Count) m_ShowMax = m_CurrentTicks.Count;
+            if (m_ShowMin < 0)
+            {
+                m_ShowMin = 0;
+            }
+
+            if (m_ShowMax > m_CurrentTicks.Count)
+            {
+                m_ShowMax = m_CurrentTicks.Count;
+            }
+
             if (m_ShowMin <= 0 && m_ShowMax <= 0)
             {
                 m_ShowMin = 0;
@@ -240,8 +278,15 @@ namespace UnityEditor
 
             for (int i = (int)m_ShowMin; i < (int)m_ShowMax; i++)
             {
-                if (m_CurrentTicks[i].Events.Count > 0) nonEmptyTicks++; //Count non empty ticks
-                if (m_CurrentTicks[i].Events.Count > largestTickCount) largestTickCount = m_CurrentTicks[i].Events.Count; //Get how many events the tick with most events has
+                if (m_CurrentTicks[i].Events.Count > 0)
+                {
+                    nonEmptyTicks++; //Count non empty ticks
+                }
+
+                if (m_CurrentTicks[i].Events.Count > largestTickCount)
+                {
+                    largestTickCount = m_CurrentTicks[i].Events.Count; //Get how many events the tick with most events has
+                }
             }
 
             int emptyTicks = totalTicks - nonEmptyTicks;
@@ -265,7 +310,11 @@ namespace UnityEditor
                 {
                     var dataRect = new Rect(currentX, 140f, propWidth * emptyStreak, position.height - 140f);
                     currentX += propWidth * emptyStreak;
-                    if (emptyStreak >= 2) EditorGUI.LabelField(new Rect(dataRect.x, dataRect.y, dataRect.width, dataRect.height), emptyStreak.ToString(), s_WrapStyle);
+                    if (emptyStreak >= 2)
+                    {
+                        EditorGUI.LabelField(new Rect(dataRect.x, dataRect.y, dataRect.width, dataRect.height), emptyStreak.ToString(), s_WrapStyle);
+                    }
+
                     emptyStreak = 0;
                 }
 
@@ -304,14 +353,26 @@ namespace UnityEditor
             {
                 m_HoverAlpha += deltaTime * 10f;
 
-                if (m_HoverAlpha > 1f) m_HoverAlpha = 1f;
-                else if (m_HoverAlpha < 0f) m_HoverAlpha = 0f;
+                if (m_HoverAlpha > 1f)
+                {
+                    m_HoverAlpha = 1f;
+                }
+                else if (m_HoverAlpha < 0f)
+                {
+                    m_HoverAlpha = 0f;
+                }
             }
             else
             {
                 m_HoverAlpha -= deltaTime * 10f;
-                if (m_HoverAlpha > 1f) m_HoverAlpha = 1f;
-                else if (m_HoverAlpha < 0f) m_HoverAlpha = 0f;
+                if (m_HoverAlpha > 1f)
+                {
+                    m_HoverAlpha = 1f;
+                }
+                else if (m_HoverAlpha < 0f)
+                {
+                    m_HoverAlpha = 0f;
+                }
             }
 
             //Draw hover thingy
@@ -353,7 +414,7 @@ namespace UnityEditor
         {
             Color textColor = style.normal.textColor;
             textColor.a = alpha;
-            GUIStyle newStyle = new GUIStyle(style);
+            var newStyle = new GUIStyle(style);
             newStyle.normal.textColor = textColor;
             return newStyle;
         }

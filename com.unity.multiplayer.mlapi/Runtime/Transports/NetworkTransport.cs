@@ -17,6 +17,8 @@ namespace MLAPI.Transports
         AnimationUpdate,
         NavAgentState,
         NavAgentCorrection,
+        NetworkVariable, //todo: this channel will be used for snapshotting and should then go from reliable to unreliable
+        SnapshotExchange,
         ChannelUnused, // <<-- must be present, and must be last
     };
 
@@ -85,7 +87,9 @@ namespace MLAPI.Transports
         /// <summary>
         /// The channels the MLAPI will use when sending internal messages.
         /// </summary>
+#pragma warning disable IDE1006 // disable naming rule violation check
         private readonly TransportChannel[] MLAPI_INTERNAL_CHANNELS =
+#pragma warning restore IDE1006 // restore naming rule violation check
         {
             new TransportChannel(NetworkChannel.Internal, NetworkDelivery.ReliableFragmentedSequenced),
             new TransportChannel(NetworkChannel.ReliableRpc, NetworkDelivery.ReliableSequenced),
@@ -97,6 +101,10 @@ namespace MLAPI.Transports
             new TransportChannel(NetworkChannel.AnimationUpdate, NetworkDelivery.ReliableSequenced),
             new TransportChannel(NetworkChannel.NavAgentState, NetworkDelivery.ReliableSequenced),
             new TransportChannel(NetworkChannel.NavAgentCorrection, NetworkDelivery.UnreliableSequenced),
+            // todo: Currently, fragmentation support needed to deal with oversize packets encounterable with current pre-snapshot code".
+            // todo: once we have snapshotting able to deal with missing frame, this should be unreliable
+            new TransportChannel(NetworkChannel.NetworkVariable, NetworkDelivery.ReliableFragmentedSequenced),
+            new TransportChannel(NetworkChannel.SnapshotExchange, NetworkDelivery.Unreliable),
         };
 
         /// <summary>

@@ -1,0 +1,69 @@
+{% metadata_file .yamato/project.metafile %}
+---
+develop_nightly_trigger:
+  name: Develop Branch Nightly Trigger
+  triggers:
+    recurring:
+      - branch: "develop"
+        frequency: 4 * * ?
+  dependencies:
+    - .yamato/_run-all.yml#run_all_tests
+{% for project in projects -%}
+    - .yamato/code-coverage.yml#code_coverage_win_{{ project.name }}
+{% endfor -%}
+    
+
+# Run all relevant tasks when a pull request targeting the develop
+# branch is created or updated. Currently only mlapi package tests are
+# enabled, since the others are missing test coverage and will fail CI.
+pull_request_trigger:
+  name: Pull Request Trigger on {{ test_editors.first }} (master, develop, & release branches)
+  dependencies:
+    - .yamato/project-standards.yml#standards_{{ projects.first.name }}
+{% for project in projects -%}
+{% for package in project.packages -%}
+    - .yamato/project-tests.yml#validate_{{ package.name }}_{{ test_platforms.first.name }}_{{ test_editors.first }}
+{% for platform in test_platforms -%}
+    - .yamato/package-tests.yml#test_{{ package.name }}_{{ test_editors.first }}_{{ platform.name }}
+    - .yamato/project-tests.yml#test_{{ project.name }}_{{ test_editors.first }}_{{ platform.name }}
+{% endfor -%}
+{% endfor -%}
+{% endfor -%}
+  triggers:
+    cancel_old_ci: true
+    pull_requests:
+    - targets:
+        only:
+          - "master"
+          - "develop"
+          - "/release\/.*/"
+          
+# Currently, we need to have a trigger to updated badges
+# Only package badges currently exist
+badges_test_trigger:
+  name: Badges Tests Trigger
+  agent:
+    type: Unity::VM
+    image: package-ci/ubuntu:stable
+    flavor: b1.small
+  commands:
+    - npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
+    - upm-ci package izon -t
+  artifacts:
+    logs:
+      paths:
+        - "upm-ci~/test-results/**/*"
+    packages:
+      paths:
+        - "upm-ci~/packages/**/*"
+  dependencies:
+{% for project in projects -%}
+{% for package in project.packages -%}
+    - .yamato/project-tests.yml#validate_{{ package.name }}_{{ test_platforms.first.name }}_{{ test_editors.first }}
+{% for editor in test_editors -%}
+{% for platform in test_platforms -%}
+    - .yamato/package-tests.yml#test_{{ package.name }}_{{ editor }}_{{ platform.name }}
+{% endfor -%}
+{% endfor -%}
+{% endfor -%}
+{% endfor -%}

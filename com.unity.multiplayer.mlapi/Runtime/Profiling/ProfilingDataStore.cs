@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 
 namespace MLAPI.Profiling
 {
@@ -13,7 +13,14 @@ namespace MLAPI.Profiling
 
         public void Increment(string fieldName, int count = 1)
         {
-            m_Dictionary[fieldName] = m_Dictionary.ContainsKey(fieldName) ? m_Dictionary[fieldName] + count : count;
+            if (m_Dictionary.TryGetValue(fieldName, out int value))
+            {
+                m_Dictionary[fieldName] = value + count;
+            }
+            else
+            {
+                m_Dictionary[fieldName] = count;
+            }
         }
 
         public bool HasData(string fieldName)
@@ -23,7 +30,7 @@ namespace MLAPI.Profiling
 
         public int GetData(string fieldName)
         {
-            return m_Dictionary.ContainsKey(fieldName) ? m_Dictionary[fieldName] : 0;
+            return m_Dictionary.TryGetValue(fieldName, out int value) ? value : 0;
         }
 
         public void Clear()

@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -77,7 +78,7 @@ namespace MLAPI.NetworkVariable.Collections
         public void ResetDirty()
         {
             m_DirtyEvents.Clear();
-            LastSyncedTime = NetworkManager.Singleton.NetworkTime;
+            LastSyncedTime = m_NetworkBehaviour.NetworkManager.NetworkTime;
         }
 
         /// <inheritdoc />
@@ -87,147 +88,147 @@ namespace MLAPI.NetworkVariable.Collections
         }
 
         /// <inheritdoc />
-        public void ReadDelta(Stream stream, bool keepDirtyDelta, ushort localTick, ushort remoteTick)
+        public void ReadDelta(Stream stream, bool keepDirtyDelta)
         {
             using (var reader = PooledNetworkReader.Get(stream))
             {
                 ushort deltaCount = reader.ReadUInt16Packed();
                 for (int i = 0; i < deltaCount; i++)
                 {
-                    NetworkDictionaryEvent<TKey, TValue>.EventType eventType = (NetworkDictionaryEvent<TKey, TValue>.EventType)reader.ReadBits(3);
+                    var eventType = (NetworkDictionaryEvent<TKey, TValue>.EventType)reader.ReadBits(3);
                     switch (eventType)
                     {
                         case NetworkDictionaryEvent<TKey, TValue>.EventType.Add:
-                        {
-                            TKey key = (TKey)reader.ReadObjectPacked(typeof(TKey));
-                            TValue value = (TValue)reader.ReadObjectPacked(typeof(TValue));
-                            m_Dictionary.Add(key, value);
-
-                            if (OnDictionaryChanged != null)
                             {
-                                OnDictionaryChanged(new NetworkDictionaryEvent<TKey, TValue>
-                                {
-                                    Type = eventType,
-                                    Key = key,
-                                    Value = value
-                                });
-                            }
+                                var key = (TKey)reader.ReadObjectPacked(typeof(TKey));
+                                var value = (TValue)reader.ReadObjectPacked(typeof(TValue));
+                                m_Dictionary.Add(key, value);
 
-                            if (keepDirtyDelta)
-                            {
-                                m_DirtyEvents.Add(new NetworkDictionaryEvent<TKey, TValue>()
+                                if (OnDictionaryChanged != null)
                                 {
-                                    Type = eventType,
-                                    Key = key,
-                                    Value = value
-                                });
+                                    OnDictionaryChanged(new NetworkDictionaryEvent<TKey, TValue>
+                                    {
+                                        Type = eventType,
+                                        Key = key,
+                                        Value = value
+                                    });
+                                }
+
+                                if (keepDirtyDelta)
+                                {
+                                    m_DirtyEvents.Add(new NetworkDictionaryEvent<TKey, TValue>()
+                                    {
+                                        Type = eventType,
+                                        Key = key,
+                                        Value = value
+                                    });
+                                }
                             }
-                        }
                             break;
                         case NetworkDictionaryEvent<TKey, TValue>.EventType.Remove:
-                        {
-                            TKey key = (TKey)reader.ReadObjectPacked(typeof(TKey));
-                            TValue value;
-                            m_Dictionary.TryGetValue(key, out value);
-                            m_Dictionary.Remove(key);
-
-                            if (OnDictionaryChanged != null)
                             {
-                                OnDictionaryChanged(new NetworkDictionaryEvent<TKey, TValue>
-                                {
-                                    Type = eventType,
-                                    Key = key,
-                                    Value = value
-                                });
-                            }
+                                var key = (TKey)reader.ReadObjectPacked(typeof(TKey));
+                                TValue value;
+                                m_Dictionary.TryGetValue(key, out value);
+                                m_Dictionary.Remove(key);
 
-                            if (keepDirtyDelta)
-                            {
-                                m_DirtyEvents.Add(new NetworkDictionaryEvent<TKey, TValue>()
+                                if (OnDictionaryChanged != null)
                                 {
-                                    Type = eventType,
-                                    Key = key,
-                                    Value = value
-                                });
+                                    OnDictionaryChanged(new NetworkDictionaryEvent<TKey, TValue>
+                                    {
+                                        Type = eventType,
+                                        Key = key,
+                                        Value = value
+                                    });
+                                }
+
+                                if (keepDirtyDelta)
+                                {
+                                    m_DirtyEvents.Add(new NetworkDictionaryEvent<TKey, TValue>()
+                                    {
+                                        Type = eventType,
+                                        Key = key,
+                                        Value = value
+                                    });
+                                }
                             }
-                        }
                             break;
                         case NetworkDictionaryEvent<TKey, TValue>.EventType.RemovePair:
-                        {
-                            TKey key = (TKey)reader.ReadObjectPacked(typeof(TKey));
-                            TValue value = (TValue)reader.ReadObjectPacked(typeof(TValue));
-                            m_Dictionary.Remove(new KeyValuePair<TKey, TValue>(key, value));
-
-                            if (OnDictionaryChanged != null)
                             {
-                                OnDictionaryChanged(new NetworkDictionaryEvent<TKey, TValue>
-                                {
-                                    Type = eventType,
-                                    Key = key,
-                                    Value = value
-                                });
-                            }
+                                var key = (TKey)reader.ReadObjectPacked(typeof(TKey));
+                                var value = (TValue)reader.ReadObjectPacked(typeof(TValue));
+                                m_Dictionary.Remove(new KeyValuePair<TKey, TValue>(key, value));
 
-                            if (keepDirtyDelta)
-                            {
-                                m_DirtyEvents.Add(new NetworkDictionaryEvent<TKey, TValue>()
+                                if (OnDictionaryChanged != null)
                                 {
-                                    Type = eventType,
-                                    Key = key,
-                                    Value = value
-                                });
+                                    OnDictionaryChanged(new NetworkDictionaryEvent<TKey, TValue>
+                                    {
+                                        Type = eventType,
+                                        Key = key,
+                                        Value = value
+                                    });
+                                }
+
+                                if (keepDirtyDelta)
+                                {
+                                    m_DirtyEvents.Add(new NetworkDictionaryEvent<TKey, TValue>()
+                                    {
+                                        Type = eventType,
+                                        Key = key,
+                                        Value = value
+                                    });
+                                }
                             }
-                        }
                             break;
                         case NetworkDictionaryEvent<TKey, TValue>.EventType.Clear:
-                        {
-                            //read nothing
-                            m_Dictionary.Clear();
-
-                            if (OnDictionaryChanged != null)
                             {
-                                OnDictionaryChanged(new NetworkDictionaryEvent<TKey, TValue>
-                                {
-                                    Type = eventType
-                                });
-                            }
+                                //read nothing
+                                m_Dictionary.Clear();
 
-                            if (keepDirtyDelta)
-                            {
-                                m_DirtyEvents.Add(new NetworkDictionaryEvent<TKey, TValue>
+                                if (OnDictionaryChanged != null)
                                 {
-                                    Type = eventType
-                                });
+                                    OnDictionaryChanged(new NetworkDictionaryEvent<TKey, TValue>
+                                    {
+                                        Type = eventType
+                                    });
+                                }
+
+                                if (keepDirtyDelta)
+                                {
+                                    m_DirtyEvents.Add(new NetworkDictionaryEvent<TKey, TValue>
+                                    {
+                                        Type = eventType
+                                    });
+                                }
                             }
-                        }
                             break;
                         case NetworkDictionaryEvent<TKey, TValue>.EventType.Value:
-                        {
-                            TKey key = (TKey)reader.ReadObjectPacked(typeof(TKey));
-                            TValue value = (TValue)reader.ReadObjectPacked(typeof(TValue));
-
-                            m_Dictionary[key] = value;
-
-                            if (OnDictionaryChanged != null)
                             {
-                                OnDictionaryChanged(new NetworkDictionaryEvent<TKey, TValue>
-                                {
-                                    Type = eventType,
-                                    Key = key,
-                                    Value = value
-                                });
-                            }
+                                var key = (TKey)reader.ReadObjectPacked(typeof(TKey));
+                                var value = (TValue)reader.ReadObjectPacked(typeof(TValue));
 
-                            if (keepDirtyDelta)
-                            {
-                                m_DirtyEvents.Add(new NetworkDictionaryEvent<TKey, TValue>()
+                                m_Dictionary[key] = value;
+
+                                if (OnDictionaryChanged != null)
                                 {
-                                    Type = eventType,
-                                    Key = key,
-                                    Value = value
-                                });
+                                    OnDictionaryChanged(new NetworkDictionaryEvent<TKey, TValue>
+                                    {
+                                        Type = eventType,
+                                        Key = key,
+                                        Value = value
+                                    });
+                                }
+
+                                if (keepDirtyDelta)
+                                {
+                                    m_DirtyEvents.Add(new NetworkDictionaryEvent<TKey, TValue>()
+                                    {
+                                        Type = eventType,
+                                        Key = key,
+                                        Value = value
+                                    });
+                                }
                             }
-                        }
                             break;
                     }
                 }
@@ -235,7 +236,7 @@ namespace MLAPI.NetworkVariable.Collections
         }
 
         /// <inheritdoc />
-        public void ReadField(Stream stream, ushort localTick, ushort remoteTick)
+        public void ReadField(Stream stream)
         {
             using (var reader = PooledNetworkReader.Get(stream))
             {
@@ -243,8 +244,8 @@ namespace MLAPI.NetworkVariable.Collections
                 ushort entryCount = reader.ReadUInt16Packed();
                 for (int i = 0; i < entryCount; i++)
                 {
-                    TKey key = (TKey)reader.ReadObjectPacked(typeof(TKey));
-                    TValue value = (TValue)reader.ReadObjectPacked(typeof(TValue));
+                    var key = (TKey)reader.ReadObjectPacked(typeof(TKey));
+                    var value = (TValue)reader.ReadObjectPacked(typeof(TValue));
                     m_Dictionary.Add(key, value);
                 }
             }
@@ -274,32 +275,32 @@ namespace MLAPI.NetworkVariable.Collections
                     switch (m_DirtyEvents[i].Type)
                     {
                         case NetworkDictionaryEvent<TKey, TValue>.EventType.Add:
-                        {
-                            writer.WriteObjectPacked(m_DirtyEvents[i].Key);
-                            writer.WriteObjectPacked(m_DirtyEvents[i].Value);
-                        }
+                            {
+                                writer.WriteObjectPacked(m_DirtyEvents[i].Key);
+                                writer.WriteObjectPacked(m_DirtyEvents[i].Value);
+                            }
                             break;
                         case NetworkDictionaryEvent<TKey, TValue>.EventType.Remove:
-                        {
-                            writer.WriteObjectPacked(m_DirtyEvents[i].Key);
-                        }
+                            {
+                                writer.WriteObjectPacked(m_DirtyEvents[i].Key);
+                            }
                             break;
                         case NetworkDictionaryEvent<TKey, TValue>.EventType.RemovePair:
-                        {
-                            writer.WriteObjectPacked(m_DirtyEvents[i].Key);
-                            writer.WriteObjectPacked(m_DirtyEvents[i].Value);
-                        }
+                            {
+                                writer.WriteObjectPacked(m_DirtyEvents[i].Key);
+                                writer.WriteObjectPacked(m_DirtyEvents[i].Value);
+                            }
                             break;
                         case NetworkDictionaryEvent<TKey, TValue>.EventType.Clear:
-                        {
-                            //write nothing
-                        }
+                            {
+                                //write nothing
+                            }
                             break;
                         case NetworkDictionaryEvent<TKey, TValue>.EventType.Value:
-                        {
-                            writer.WriteObjectPacked(m_DirtyEvents[i].Key);
-                            writer.WriteObjectPacked(m_DirtyEvents[i].Value);
-                        }
+                            {
+                                writer.WriteObjectPacked(m_DirtyEvents[i].Key);
+                                writer.WriteObjectPacked(m_DirtyEvents[i].Value);
+                            }
                             break;
                     }
                 }
@@ -332,10 +333,14 @@ namespace MLAPI.NetworkVariable.Collections
                 case NetworkVariablePermission.OwnerOnly:
                     return m_NetworkBehaviour.OwnerClientId == clientId;
                 case NetworkVariablePermission.Custom:
-                {
-                    if (Settings.WritePermissionCallback == null) return false;
-                    return Settings.WritePermissionCallback(clientId);
-                }
+                    {
+                        if (Settings.WritePermissionCallback == null)
+                        {
+                            return false;
+                        }
+
+                        return Settings.WritePermissionCallback(clientId);
+                    }
             }
 
             return true;
@@ -353,10 +358,14 @@ namespace MLAPI.NetworkVariable.Collections
                 case NetworkVariablePermission.OwnerOnly:
                     return m_NetworkBehaviour.OwnerClientId == clientId;
                 case NetworkVariablePermission.Custom:
-                {
-                    if (Settings.ReadPermissionCallback == null) return false;
-                    return Settings.ReadPermissionCallback(clientId);
-                }
+                    {
+                        if (Settings.ReadPermissionCallback == null)
+                        {
+                            return false;
+                        }
+
+                        return Settings.ReadPermissionCallback(clientId);
+                    }
             }
 
             return true;
@@ -365,10 +374,26 @@ namespace MLAPI.NetworkVariable.Collections
         /// <inheritdoc />
         public bool IsDirty()
         {
-            if (m_DirtyEvents.Count == 0) return false;
-            if (Settings.SendTickrate == 0) return true;
-            if (Settings.SendTickrate < 0) return false;
-            if (NetworkManager.Singleton.NetworkTime - LastSyncedTime >= (1f / Settings.SendTickrate)) return true;
+            if (m_DirtyEvents.Count == 0)
+            {
+                return false;
+            }
+
+            if (Settings.SendTickrate == 0)
+            {
+                return true;
+            }
+
+            if (Settings.SendTickrate < 0)
+            {
+                return false;
+            }
+
+            if (m_NetworkBehaviour.NetworkManager.NetworkTime - LastSyncedTime >= (1f / Settings.SendTickrate))
+            {
+                return true;
+            }
+
             return false;
         }
 
@@ -379,9 +404,14 @@ namespace MLAPI.NetworkVariable.Collections
             get => m_Dictionary[key];
             set
             {
-                if (NetworkManager.Singleton.IsServer) m_Dictionary[key] = value;
+                EnsureInitialized();
 
-                NetworkDictionaryEvent<TKey, TValue> dictionaryEvent = new NetworkDictionaryEvent<TKey, TValue>()
+                if (m_NetworkBehaviour.NetworkManager.IsServer)
+                {
+                    m_Dictionary[key] = value;
+                }
+
+                var dictionaryEvent = new NetworkDictionaryEvent<TKey, TValue>()
                 {
                     Type = NetworkDictionaryEvent<TKey, TValue>.EventType.Value,
                     Key = key,
@@ -407,9 +437,14 @@ namespace MLAPI.NetworkVariable.Collections
         /// <inheritdoc />
         public void Add(TKey key, TValue value)
         {
-            if (NetworkManager.Singleton.IsServer) m_Dictionary.Add(key, value);
+            EnsureInitialized();
 
-            NetworkDictionaryEvent<TKey, TValue> dictionaryEvent = new NetworkDictionaryEvent<TKey, TValue>()
+            if (m_NetworkBehaviour.NetworkManager.IsServer)
+            {
+                m_Dictionary.Add(key, value);
+            }
+
+            var dictionaryEvent = new NetworkDictionaryEvent<TKey, TValue>()
             {
                 Type = NetworkDictionaryEvent<TKey, TValue>.EventType.Add,
                 Key = key,
@@ -422,9 +457,14 @@ namespace MLAPI.NetworkVariable.Collections
         /// <inheritdoc />
         public void Add(KeyValuePair<TKey, TValue> item)
         {
-            if (NetworkManager.Singleton.IsServer) m_Dictionary.Add(item);
+            EnsureInitialized();
 
-            NetworkDictionaryEvent<TKey, TValue> dictionaryEvent = new NetworkDictionaryEvent<TKey, TValue>()
+            if (m_NetworkBehaviour.NetworkManager.IsServer)
+            {
+                m_Dictionary.Add(item);
+            }
+
+            var dictionaryEvent = new NetworkDictionaryEvent<TKey, TValue>()
             {
                 Type = NetworkDictionaryEvent<TKey, TValue>.EventType.Add,
                 Key = item.Key,
@@ -437,9 +477,14 @@ namespace MLAPI.NetworkVariable.Collections
         /// <inheritdoc />
         public void Clear()
         {
-            if (NetworkManager.Singleton.IsServer) m_Dictionary.Clear();
+            EnsureInitialized();
 
-            NetworkDictionaryEvent<TKey, TValue> dictionaryEvent = new NetworkDictionaryEvent<TKey, TValue>()
+            if (m_NetworkBehaviour.NetworkManager.IsServer)
+            {
+                m_Dictionary.Clear();
+            }
+
+            var dictionaryEvent = new NetworkDictionaryEvent<TKey, TValue>()
             {
                 Type = NetworkDictionaryEvent<TKey, TValue>.EventType.Clear
             };
@@ -474,13 +519,17 @@ namespace MLAPI.NetworkVariable.Collections
         /// <inheritdoc />
         public bool Remove(TKey key)
         {
-            if (NetworkManager.Singleton.IsServer)
+            EnsureInitialized();
+
+            if (m_NetworkBehaviour.NetworkManager.IsServer)
+            {
                 m_Dictionary.Remove(key);
+            }
 
             TValue value;
             m_Dictionary.TryGetValue(key, out value);
 
-            NetworkDictionaryEvent<TKey, TValue> dictionaryEvent = new NetworkDictionaryEvent<TKey, TValue>()
+            var dictionaryEvent = new NetworkDictionaryEvent<TKey, TValue>()
             {
                 Type = NetworkDictionaryEvent<TKey, TValue>.EventType.Remove,
                 Key = key,
@@ -496,9 +545,14 @@ namespace MLAPI.NetworkVariable.Collections
         /// <inheritdoc />
         public bool Remove(KeyValuePair<TKey, TValue> item)
         {
-            if (NetworkManager.Singleton.IsServer) m_Dictionary.Remove(item);
+            EnsureInitialized();
 
-            NetworkDictionaryEvent<TKey, TValue> dictionaryEvent = new NetworkDictionaryEvent<TKey, TValue>()
+            if (m_NetworkBehaviour.NetworkManager.IsServer)
+            {
+                m_Dictionary.Remove(item);
+            }
+
+            var dictionaryEvent = new NetworkDictionaryEvent<TKey, TValue>()
             {
                 Type = NetworkDictionaryEvent<TKey, TValue>.EventType.RemovePair,
                 Key = item.Key,
@@ -517,9 +571,9 @@ namespace MLAPI.NetworkVariable.Collections
 
         private void HandleAddDictionaryEvent(NetworkDictionaryEvent<TKey, TValue> dictionaryEvent)
         {
-            if (NetworkManager.Singleton.IsServer)
+            if (m_NetworkBehaviour.NetworkManager.IsServer)
             {
-                if (NetworkManager.Singleton.ConnectedClients.Count > 0)
+                if (m_NetworkBehaviour.NetworkManager.ConnectedClients.Count > 0)
                 {
                     m_DirtyEvents.Add(dictionaryEvent);
                 }
@@ -538,6 +592,14 @@ namespace MLAPI.NetworkVariable.Collections
             {
                 // todo: implement proper network tick for NetworkDictionary
                 return NetworkTickSystem.NoTick;
+            }
+        }
+
+        private void EnsureInitialized()
+        {
+            if (m_NetworkBehaviour == null)
+            {
+                throw new InvalidOperationException("Cannot access " + nameof(NetworkDictionary<TKey, TValue>) + " before it's initialized");
             }
         }
     }
