@@ -1,4 +1,4 @@
-﻿using Unity.Multiplayer.NetStats.Dispatch;
+using Unity.Multiplayer.NetStats.Dispatch;
 using Unity.Multiplayer.NetStats.Metrics;
 using Unity.Multiplayer.NetworkProfiler;
 using Unity.Multiplayer.NetworkProfiler.Models;
@@ -15,6 +15,10 @@ namespace MLAPI.Metrics
         void TrackSceneSwitchRequested(string lastSceneName, string nextSceneName); // internalMessageHandler
         void TrackSceneSwitchCompleted(string lastSceneName, string nextSceneName); // called from internalMessageHandler
         void TrackSceneSwitchCompletedAllClients(string lastSceneName, string nextSceneName); // called from internalMessageHandler
+
+        void TrackUnnamedMessageSent(ulong bytesCount);
+
+        void TrackUnnamedMessageReceived(ulong bytesCount);
 
         void DispatchFrame();
     }
@@ -45,6 +49,14 @@ namespace MLAPI.Metrics
         {
         }
 
+        public void TrackUnnamedMessageSent(ulong bytesCount)
+        {
+        }
+
+        public void TrackUnnamedMessageReceived(ulong bytesCount)
+        {
+        }
+
 
         public void DispatchFrame()
         {
@@ -54,11 +66,13 @@ namespace MLAPI.Metrics
 #if true
     public class NetworkMetrics : INetworkMetrics
     {
-        private readonly IMetricDispatcher m_Dispatcher;
-        private readonly NetworkManager m_NetworkManager;
+        readonly NetworkManager m_NetworkManager;
 
-        private EventMetric<NamedMessageEvent> m_NamedMessageSentEvent = new EventMetric<NamedMessageEvent>("Named Message Sent");
-        private EventMetric<NamedMessageEvent> m_NamedMessageReceivedEvent = new EventMetric<NamedMessageEvent>("Named Message Received");
+        readonly EventMetric<NamedMessageEvent> m_NamedMessageSentEvent = new EventMetric<NamedMessageEvent>(MetricNames.NamedMessageSent);
+        readonly EventMetric<NamedMessageEvent> m_NamedMessageReceivedEvent = new EventMetric<NamedMessageEvent>(MetricNames.NamedMessageReceived);
+
+        readonly EventMetric<UnnamedMessageEvent> m_UnnamedMessageSentEvent = new EventMetric<UnnamedMessageEvent>(MetricNames.UnnamedMessageSent);
+        readonly EventMetric<UnnamedMessageEvent> m_UnnamedMessageReceivedEvent = new EventMetric<UnnamedMessageEvent>(MetricNames.UnnamedMessageReceived);
 
         private EventMetric<SceneSwitchEvent> m_SceneSwitchInitiated = new EventMetric<SceneSwitchEvent>("Scene Switch Initiated");
         private EventMetric<SceneSwitchEvent> m_SceneSwitchRequested = new EventMetric<SceneSwitchEvent>("Scene Switch Requested");
@@ -68,12 +82,15 @@ namespace MLAPI.Metrics
         public NetworkMetrics(NetworkManager networkManager)
         {
             m_NetworkManager = networkManager;
-            m_Dispatcher = new MetricDispatcherBuilder()
+            Dispatcher = new MetricDispatcherBuilder()
                 .WithMetricEvents(m_NamedMessageSentEvent, m_NamedMessageReceivedEvent)
+                .WithMetricEvents(m_UnnamedMessageSentEvent, m_UnnamedMessageReceivedEvent)
                 .Build();
 
-            m_Dispatcher.RegisterObserver(MLAPIObserver.Observer);
+            Dispatcher.RegisterObserver(MLAPIObserver.Observer);
         }
+
+        internal IMetricDispatcher Dispatcher { get; }
 
         public void TrackNamedMessageSent(string messageName, ulong bytesCount)
         {
@@ -123,9 +140,19 @@ namespace MLAPI.Metrics
                 nextSceneName));
         }
 
+        public void TrackUnnamedMessageSent(ulong bytesCount)
+        {
+            m_UnnamedMessageSentEvent.Mark(new UnnamedMessageEvent(new ConnectionInfo(m_NetworkManager.LocalClientId), bytesCount));
+        }
+
+        public void TrackUnnamedMessageReceived(ulong bytesCount)
+        {
+            m_UnnamedMessageReceivedEvent.Mark(new UnnamedMessageEvent(new ConnectionInfo(m_NetworkManager.LocalClientId), bytesCount));
+        }
+
         public void DispatchFrame()
         {
-            m_Dispatcher.Dispatch();
+            Dispatcher.Dispatch();
         }
     }
 

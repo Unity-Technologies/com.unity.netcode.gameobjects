@@ -1,7 +1,10 @@
 {
     "name": "Unity.Multiplayer.MLAPI.RuntimeTests",
+    "rootNamespace": "",
     "references": [
         "Unity.Multiplayer.MLAPI.Runtime",
+        "Unity.Multiplayer.NetworkProfiler.Runtime",
+        "Unity.Multiplayer.NetStats",
         "Unity.Multiplayer.MLAPI.Editor"
     ],
     "optionalUnityReferences": [
