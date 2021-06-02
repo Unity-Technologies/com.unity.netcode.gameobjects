@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Linq;
 using System.Threading;
 using MLAPI;
 using NUnit.Framework;
@@ -10,6 +11,8 @@ using UnityEditor.Build.Reporting;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
+using static TestCoordinator.ExecuteInContext;
+
 
 namespace MLAPI.MultiprocessRuntimeTests
 {
@@ -24,11 +27,19 @@ namespace MLAPI.MultiprocessRuntimeTests
     {
         public const string mainSceneName = "MultiprocessTestingScene";
 
+        protected virtual bool m_IsPerformanceTest => true;
+
+        private bool ShouldIgnoreTests => m_IsPerformanceTest && !Environment.GetCommandLineArgs().Contains("-runTests");
+
         protected abstract int NbWorkers { get; }
 
         [OneTimeSetUp]
         public virtual void SetupSuite()
         {
+            if (ShouldIgnoreTests)
+            {
+                Assert.Ignore("Ignoring tests that shouldn't run from unity editor. Performance tests should be run from remote test execution on device");
+            }
             // todo cleanup comments
             // Build(TestCoordinator.buildPath);
 
@@ -68,32 +79,30 @@ namespace MLAPI.MultiprocessRuntimeTests
         [TearDown]
         public virtual void Teardown()
         {
-            TestCoordinator.Instance.TestRunTeardown();
+            if (!ShouldIgnoreTests)
+            {
+                TestCoordinator.Instance.TestRunTeardown();
+            }
         }
 
         [OneTimeTearDown]
         public virtual void TeardownSuite()
         {
-            // if (NetworkManager.Singleton.IsHost)
+            if (!ShouldIgnoreTests)
             {
                 SceneManager.sceneLoaded -= OnSceneLoaded;
                 Debug.Log("Teardown, closing remote clients and stopping host");
                 TestCoordinator.Instance.CloseRemoteClientRpc();
                 NetworkManager.Singleton.StopHost();
-                // SceneManager.UnloadSceneAsync(mainSceneName);
             }
-            // var startTime = Time.time;
-            // // wait to run next tests until this test is completely torn down
-            // while (Time.time - startTime < TestCoordinator.maxWaitTimeout && NetworkManager.Singleton.ConnectedClients.Count > 0)
-            // {
-            //     Thread.Sleep(10);
-            // }
         }
     }
 
     public class TestCoordinatorSmokeTests : BaseMultiprocessTests
     {
         protected override int NbWorkers { get; } = 1;
+
+        protected override bool m_IsPerformanceTest => false;
 
         public static void ExecuteSimpleCoordinatorTest()
         {
@@ -103,7 +112,7 @@ namespace MLAPI.MultiprocessRuntimeTests
         [UnityTest]
         public IEnumerator CheckTestCoordinator()
         {
-            //make sure the test coordinator works
+            // Sanity check for TestCoordinator
             // Call the method
             TestCoordinator.Instance.TriggerRpc(ExecuteSimpleCoordinatorTest);
 
@@ -116,6 +125,79 @@ namespace MLAPI.MultiprocessRuntimeTests
                     Debug.Log($"got results, asserting, result is {current.result} from key {current.clientId}");
                     Assert.Greater(current.result, 0f);
                 }
+            }
+        }
+
+        [UnityTest, TestCoordinator.ExecuteInContext.MultiprocessContextBasedTestAttribute()]
+        public IEnumerator TestExecuteInContext()
+        {
+            // TODO convert other tests to this format
+            // todo move ExecuteInContext out of here (in test coordinator?)
+
+            int stepCountExecuted = 0;
+            yield return new TestCoordinator.ExecuteInContext(StepExecutionContext.Server, (byte[] args) =>
+            {
+                stepCountExecuted++;
+                int count = BitConverter.ToInt32(args, 0);
+                Debug.Log($"something server side, count is {count}");
+            }, paramToPass: BitConverter.GetBytes(1));
+
+            yield return new TestCoordinator.ExecuteInContext(StepExecutionContext.Clients, (byte[] args) =>
+            {
+                int count = BitConverter.ToInt32(args, 0);
+                Debug.Log($"something client side, count is {count}");
+                TestCoordinator.Instance.WriteTestResultsServerRpc(12345);
+#if UNITY_EDITOR
+                Assert.Fail("Should not be here!! This should only execute on client!!");
+#endif
+            }, paramToPass: BitConverter.GetBytes(1));
+
+            yield return new TestCoordinator.ExecuteInContext(StepExecutionContext.Server, _ =>
+            {
+                stepCountExecuted++;
+                int count = 0;
+                foreach (var res in TestCoordinator.ConsumeCurrentResult())
+                {
+                    count++;
+                    Assert.AreEqual(12345, res.result);
+                }
+                Assert.Greater(count, 0);
+            });
+
+            int timeToWait = 4;
+            yield return new TestCoordinator.ExecuteInContext(StepExecutionContext.Clients, _ =>
+            {
+                void Update(float _)
+                {
+                    if (Time.time > timeToWait)
+                    {
+                        NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate -= Update;
+                        TestCoordinator.Instance.WriteTestResultsServerRpc(Time.time);
+
+                        TestCoordinator.Instance.ClientFinishedServerRpc(); // since finishOnInvoke is false, we need to do this manually
+                    }
+                    else
+                    {
+                        Debug.Log($"current time on client : {Time.time}");
+                    }
+                };
+                NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate += Update;
+            }, finishOnInvoke: false); // waits multiple frames before allowing the next action to continue.
+
+            yield return new TestCoordinator.ExecuteInContext(StepExecutionContext.Server, (byte[] args) =>
+            {
+                stepCountExecuted++;
+                int count = 0;
+                foreach (var res in TestCoordinator.ConsumeCurrentResult())
+                {
+                    count++;
+                    Assert.GreaterOrEqual(res.result, timeToWait);
+                }
+                Assert.Greater(count, 0);
+            });
+            if (!TestCoordinator.Instance.isRegistering)
+            {
+                Assert.AreEqual(3, stepCountExecuted);
             }
         }
     }

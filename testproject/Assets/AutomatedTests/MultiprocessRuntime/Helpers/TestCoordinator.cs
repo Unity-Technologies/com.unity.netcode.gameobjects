@@ -6,19 +6,15 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Security.Cryptography.X509Certificates;
-using System.Threading;
+using System.Runtime.CompilerServices;
 using MLAPI;
 using MLAPI.Messaging;
-using MLAPI.MultiprocessRuntimeTests;
 using MLAPI.NetworkVariable;
 using MLAPI.NetworkVariable.Collections;
+using NUnit.Framework;
 using NUnit.Framework.Interfaces;
-using NUnit.Framework.Internal;
-using UnityEditor;
 using UnityEngine;
-using UnityEngine.Events;
-using UnityEngine.Serialization;
+using UnityEngine.TestTools;
 using Debug = UnityEngine.Debug;
 
 [RequireComponent(typeof(NetworkObject))]
@@ -40,10 +36,7 @@ internal class TestCoordinator : NetworkBehaviour
 
     public static List<ulong> AllClientIdExceptMine
     {
-        get
-        {
-            return NetworkManager.Singleton.ConnectedClients.Keys.ToList().FindAll(client => client != NetworkManager.Singleton.LocalClientId);
-        }
+        get { return NetworkManager.Singleton.ConnectedClients.Keys.ToList().FindAll(client => client != NetworkManager.Singleton.LocalClientId); }
     }
 
     private bool m_ShouldShutdown;
@@ -113,6 +106,7 @@ internal class TestCoordinator : NetworkBehaviour
         {
             Debug.Log("starting MLAPI client");
             NetworkManager.Singleton.StartClient();
+
             // StartCoroutine(WaitForClientConnected()); // in case builds fail, can't have the old builds just stay idle. If they can't connect after a certain amount of time, disconnect
         }
 
@@ -122,17 +116,18 @@ internal class TestCoordinator : NetworkBehaviour
         // registering magically all method steps
         isRegistering = true;
         var registeredMethods = typeof(TestCoordinator).Assembly.GetTypes().SelectMany(t => t.GetMethods())
-            .Where(m => m.GetCustomAttributes(typeof(NetworkVariablePerformanceTests.MultiprocessContextBasedTestAttribute), true).Length > 0)
+            .Where(m => m.GetCustomAttributes(typeof(ExecuteInContext.MultiprocessContextBasedTestAttribute), true).Length > 0)
             .ToArray();
         foreach (var method in registeredMethods)
         {
             var type = method.ReflectedType;
             var instance = Activator.CreateInstance(type);
 
-            NetworkVariablePerformanceTests.ExecuteInContext.InitTest(method);
+            ExecuteInContext.InitTest(method);
             var result = (IEnumerator)method.Invoke(instance, null);
             while (result.MoveNext()) { }
         }
+
         isRegistering = false;
         hasRegistered = true;
     }
@@ -187,6 +182,7 @@ internal class TestCoordinator : NetworkBehaviour
     {
         return $"{method.Method.DeclaringType.FullName}{methodFullNameSplitChar}{method.Method.Name}";
     }
+
     public static string GetMethodInfo(Action method)
     {
         return $"{method.Method.DeclaringType.FullName}{methodFullNameSplitChar}{method.Method.Name}";
@@ -201,7 +197,9 @@ internal class TestCoordinator : NetworkBehaviour
         {
             m_TestResultsLocal[senderId] = new Queue<float>();
         }
+
         m_TestResultsLocal[senderId].Enqueue(result);
+
         // Instance.CurrentClientIdWithResults = receiveParams.SenderClientId;
     }
 
@@ -243,6 +241,7 @@ internal class TestCoordinator : NetworkBehaviour
                 {
                     throw new Exception($"timeout while waiting for results, didn't get results for {Time.time - startWaitTime} seconds");
                 }
+
                 return true;
             }
 
@@ -267,7 +266,7 @@ internal class TestCoordinator : NetworkBehaviour
 
     private Dictionary<ulong, bool> m_ClientIsFinished = new Dictionary<ulong, bool>();
 
-    public static Func<bool> ConsumeClientIsFinished(ulong clientId, bool useTimeoutException=true)
+    public static Func<bool> ConsumeClientIsFinished(ulong clientId, bool useTimeoutException = true)
     {
         var startWaitTime = Time.time;
         return () =>
@@ -289,6 +288,7 @@ internal class TestCoordinator : NetworkBehaviour
                 Instance.m_ClientIsFinished[clientId] = false; // consume
                 return true;
             }
+
             return false;
         };
     }
@@ -316,13 +316,14 @@ internal class TestCoordinator : NetworkBehaviour
     public void TriggerActionIDClientRpc(string actionID, byte[] args, ClientRpcParams clientRpcParams = default)
     {
         Debug.Log($"received RPC from server, client side triggering action ID {actionID}");
-        NetworkVariablePerformanceTests.ExecuteInContext.allActions[actionID].Invoke(args);
+        ExecuteInContext.allActions[actionID].Invoke(args);
     }
+
     [ServerRpc]
     public void TriggerActionIDServerRpc(string actionID, byte[] args, ServerRpcParams serverRpcParams = default)
     {
         Debug.Log($"received RPC from client, server side triggering action ID {actionID}");
-        NetworkVariablePerformanceTests.ExecuteInContext.allActions[actionID].Invoke(args);
+        ExecuteInContext.allActions[actionID].Invoke(args);
     }
 
     [ClientRpc]
@@ -358,6 +359,7 @@ internal class TestCoordinator : NetworkBehaviour
         catch (Exception e)
         {
             WriteError(e.Message);
+
             // throw e;
         }
     }
@@ -372,6 +374,7 @@ internal class TestCoordinator : NetworkBehaviour
     }
 
     private float m_TimeSinceLastConnected;
+
     public void Update()
     {
         if (NetworkManager.Singleton.IsConnectedClient)
@@ -390,6 +393,7 @@ internal class TestCoordinator : NetworkBehaviour
         // m_TestResults.Clear();
         m_TestResultsLocal.Clear();
         m_ErrorMessages.Clear();
+
         // AllClientIdWithResults.Clear();
         // CurrentClientIdWithResults = 0;
     }
@@ -440,8 +444,182 @@ internal class TestCoordinator : NetworkBehaviour
             Debug.LogError($"Error starting player, {buildInstructions}, {e.Message} {e.Data} {e.ErrorCode}");
             throw e;
         }
+
 // #else
 //         throw new NotImplementedException("worker node launching not supported");
 // #endif
     }
+
+    public class ExecuteInContext : CustomYieldInstruction
+    {
+        public enum StepExecutionContext
+        {
+            Server,
+            Clients
+        }
+
+        [AttributeUsage(AttributeTargets.Method)]
+        public class MultiprocessContextBasedTestAttribute : NUnitAttribute, IOuterUnityTestAction
+        {
+            public IEnumerator BeforeTest(ITest test)
+            {
+                yield return new WaitUntil(() => TestCoordinator.Instance != null && TestCoordinator.Instance.hasRegistered);
+
+                // var method = test.Method.MethodInfo.ReturnType.GetMethod(nameof(IEnumerator.MoveNext));
+                // ExecuteInContext.InitTest(method);
+                TestCoordinator.ExecuteInContext.InitTest(test.Method.MethodInfo);
+            }
+
+            public IEnumerator AfterTest(ITest test)
+            {
+                yield break;
+            }
+        }
+
+        private StepExecutionContext m_ActionContextContext;
+        private Action<byte[]> m_Todo;
+        public static Dictionary<string, ExecuteInContext> allActions = new Dictionary<string, ExecuteInContext>();
+
+        // private static int s_ActionID;
+        private static Dictionary<string, int> s_MethodIDCounter = new Dictionary<string, int>();
+
+        // private int m_CurrentActionID;
+        private NetworkManager m_NetworkManager;
+        private bool m_IsRegistering;
+        private List<Func<bool>> m_WaitForClientCheck = new List<Func<bool>>();
+        private bool m_FinishOnInvoke;
+
+        // assumes this is called from same callsite as ExecuteInContext
+        public static void InitTest(MethodBase callerMethod)
+        {
+            // var callerMethod = new StackFrame(1).GetMethod();
+            var methodIdentifier = GetMethodIdentifier(callerMethod, callerMethod.Name, callerMethod.DeclaringType.FullName);
+            s_MethodIDCounter[methodIdentifier] = 0;
+        }
+
+        public static string GetMethodIdentifier(MethodBase method, string methodName, string callerTypeName)
+        {
+            string allParameters = "";
+            foreach (var param in method.GetParameters())
+            {
+                allParameters += param.Name;
+            }
+
+            var info = callerTypeName + methodName + allParameters;
+            Debug.Log($"GetMethodIdentifier!!!! {info}");
+            return info;
+        }
+
+        private bool ShouldExecuteLocally => (m_ActionContextContext == StepExecutionContext.Server && m_NetworkManager.IsServer) || (m_ActionContextContext == StepExecutionContext.Clients && !m_NetworkManager.IsServer);
+
+        /// <summary>
+        /// Executes an action with the specified context. This allows writing tests all in the same sequential flow,
+        /// making it more readable. This allows not having to jump between static client methods and test method
+        /// </summary>
+        /// <param name="actionContext">context to use. for example, should execute client side? server side?</param>
+        /// <param name="todo">action to execute</param>
+        /// <param name="isRegistering">is it currently registering this action. This should be passed by the test method on process startup</param>
+        /// <param name="paramToPass">parameters to pass to action</param>
+        /// <param name="networkManager"></param>
+        /// <param name="finishOnInvoke"> waits multiple frames before allowing the execution to continue. This means ClientFinishedServerRpc must be called manually</param>
+        public ExecuteInContext(StepExecutionContext actionContext, Action<byte[]> todo, byte[] paramToPass = default, NetworkManager networkManager = null, bool finishOnInvoke = true, [CallerMemberName] string callerName = "")
+        {
+            m_IsRegistering = TestCoordinator.Instance.isRegistering;
+            m_ActionContextContext = actionContext;
+            m_Todo = todo;
+            m_FinishOnInvoke = finishOnInvoke;
+            if (networkManager == null)
+            {
+                networkManager = NetworkManager.Singleton;
+            }
+
+            m_NetworkManager = networkManager; // todo test using this for in-process tests too?
+
+            var callerMethod = new StackFrame(1).GetMethod(); // one skip frame for current method
+
+            var methodId = GetMethodIdentifier(callerMethod, callerName, callerMethod.DeclaringType.DeclaringType.FullName); // assumes called from IEnumerator MoveNext, which should be the case since we're a CustomYieldInstruction
+            if (!s_MethodIDCounter.ContainsKey(methodId))
+            {
+                s_MethodIDCounter[methodId] = 0;
+            }
+
+            string currentActionID = methodId + s_MethodIDCounter[methodId]++;
+
+            if (m_IsRegistering)
+            {
+                Debug.Log($"registering action with id {currentActionID}");
+                allActions[currentActionID] = this;
+            }
+            else
+            {
+                if (ShouldExecuteLocally)
+                {
+                    m_Todo.Invoke(paramToPass);
+                }
+                else
+                {
+                    if (networkManager.IsServer)
+                    {
+                        TestCoordinator.Instance.TriggerActionIDClientRpc(currentActionID, paramToPass,
+                            clientRpcParams: new ClientRpcParams()
+                            {
+                                Send = new ClientRpcSendParams() { TargetClientIds = TestCoordinator.AllClientIdExceptMine.ToArray() }
+                            });
+                        foreach (var clientId in TestCoordinator.AllClientIdExceptMine)
+                        {
+                            m_WaitForClientCheck.Add(TestCoordinator.ConsumeClientIsFinished(clientId));
+                        }
+                    }
+                    else
+                    {
+                        TestCoordinator.Instance.TriggerActionIDServerRpc(currentActionID, paramToPass);
+                    }
+                }
+            }
+        }
+
+        public void Invoke(byte[] args)
+        {
+            m_Todo.Invoke(args);
+            if (m_FinishOnInvoke)
+            {
+                if (!m_NetworkManager.IsServer)
+                {
+                    TestCoordinator.Instance.ClientFinishedServerRpc();
+                }
+                else
+                {
+                    throw new NotImplementedException("todo implement");
+                }
+            }
+        }
+
+        public override bool keepWaiting
+        {
+            get
+            {
+                if (m_IsRegistering || ShouldExecuteLocally || m_WaitForClientCheck == null)
+                {
+                    return false;
+                }
+
+                for (int i = m_WaitForClientCheck.Count - 1; i >= 0; i--)
+                {
+                    var waiter = m_WaitForClientCheck[i];
+                    var receivedResponse = waiter.Invoke();
+                    if (receivedResponse)
+                    {
+                        m_WaitForClientCheck.RemoveAt(i);
+                    }
+                    else
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+        }
+    }
+
 }
