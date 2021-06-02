@@ -1,11 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using MLAPI.Configuration;
 using MLAPI.Editor;
 using MLAPI.Internal;
-using MLAPI.Messaging;
-using MLAPI.Messaging.Buffering;
 using MLAPI.Serialization;
 using MLAPI.Transports;
 using MLAPI.Transports.Tasks;
@@ -50,7 +47,7 @@ namespace MLAPI.EditorTests
                 networkManager.RpcQueueContainer.EnableBatchedRpcs(false);
 
                 // Should cause log (server only)
-                LogAssert.Expect(LogType.Log, nameof(MessageHandlerReceivedMessageServerClient) + " " + nameof(DummyMessageHandler.HandleConnectionRequest));
+                LogAssert.Expect(LogType.Log, nameof(DummyMessageHandler.HandleConnectionRequest));
                 using (var messageStream = MessagePacker.WrapMessage(NetworkConstants.CONNECTION_REQUEST, inputBuffer))
                 {
                     networkManager.HandleIncomingData(0, NetworkChannel.Internal, new ArraySegment<byte>(messageStream.GetBuffer(), 0, (int)messageStream.Length), 0, true);
@@ -105,49 +102,49 @@ namespace MLAPI.EditorTests
                 }
 
                 // Should cause log (server and client)
-                LogAssert.Expect(LogType.Log, nameof(MessageHandlerReceivedMessageServerClient) + " " + nameof(DummyMessageHandler.HandleNetworkVariableDelta));
+                LogAssert.Expect(LogType.Log, nameof(DummyMessageHandler.HandleNetworkVariableDelta));
                 using (var messageStream = MessagePacker.WrapMessage(NetworkConstants.NETWORK_VARIABLE_DELTA, inputBuffer))
                 {
                     networkManager.HandleIncomingData(0, NetworkChannel.Internal, new ArraySegment<byte>(messageStream.GetBuffer(), 0, (int)messageStream.Length), 0, true);
                 }
 
                 // Should cause log (server and client)
-                LogAssert.Expect(LogType.Log, nameof(MessageHandlerReceivedMessageServerClient) + " " + nameof(DummyMessageHandler.HandleNetworkVariableUpdate));
+                LogAssert.Expect(LogType.Log, nameof(DummyMessageHandler.HandleNetworkVariableUpdate));
                 using (var messageStream = MessagePacker.WrapMessage(NetworkConstants.NETWORK_VARIABLE_UPDATE, inputBuffer))
                 {
                     networkManager.HandleIncomingData(0, NetworkChannel.Internal, new ArraySegment<byte>(messageStream.GetBuffer(), 0, (int)messageStream.Length), 0, true);
                 }
 
                 // Should cause log (server and client)
-                LogAssert.Expect(LogType.Log, nameof(MessageHandlerReceivedMessageServerClient) + " " + nameof(DummyMessageHandler.HandleUnnamedMessage));
+                LogAssert.Expect(LogType.Log, nameof(DummyMessageHandler.HandleUnnamedMessage));
                 using (var messageStream = MessagePacker.WrapMessage(NetworkConstants.UNNAMED_MESSAGE, inputBuffer))
                 {
                     networkManager.HandleIncomingData(0, NetworkChannel.Internal, new ArraySegment<byte>(messageStream.GetBuffer(), 0, (int)messageStream.Length), 0, true);
                 }
 
                 // Should cause log (server and client)
-                LogAssert.Expect(LogType.Log, nameof(MessageHandlerReceivedMessageServerClient) + " " + nameof(DummyMessageHandler.HandleNamedMessage));
+                LogAssert.Expect(LogType.Log, nameof(DummyMessageHandler.HandleNamedMessage));
                 using (var messageStream = MessagePacker.WrapMessage(NetworkConstants.NAMED_MESSAGE, inputBuffer))
                 {
                     networkManager.HandleIncomingData(0, NetworkChannel.Internal, new ArraySegment<byte>(messageStream.GetBuffer(), 0, (int)messageStream.Length), 0, true);
                 }
 
                 // Should cause log (server only)
-                LogAssert.Expect(LogType.Log, nameof(MessageHandlerReceivedMessageServerClient) + " " + nameof(DummyMessageHandler.HandleClientSwitchSceneCompleted));
+                LogAssert.Expect(LogType.Log, nameof(DummyMessageHandler.HandleClientSwitchSceneCompleted));
                 using (var messageStream = MessagePacker.WrapMessage(NetworkConstants.CLIENT_SWITCH_SCENE_COMPLETED, inputBuffer))
                 {
                     networkManager.HandleIncomingData(0, NetworkChannel.Internal, new ArraySegment<byte>(messageStream.GetBuffer(), 0, (int)messageStream.Length), 0, true);
                 }
 
                 // Should cause log (server only)
-                LogAssert.Expect(LogType.Log, nameof(MessageHandlerReceivedMessageServerClient) + " " + nameof(DummyMessageHandler.HandleNetworkLog));
+                LogAssert.Expect(LogType.Log, nameof(DummyMessageHandler.HandleNetworkLog));
                 using (var messageStream = MessagePacker.WrapMessage(NetworkConstants.SERVER_LOG, inputBuffer))
                 {
                     networkManager.HandleIncomingData(0, NetworkChannel.Internal, new ArraySegment<byte>(messageStream.GetBuffer(), 0, (int)messageStream.Length), 0, true);
                 }
 
                 // Should cause log (server only)
-                LogAssert.Expect(LogType.Log, nameof(MessageHandlerReceivedMessageServerClient) + " " + nameof(DummyMessageHandler.RpcReceiveQueueItem));
+                LogAssert.Expect(LogType.Log, nameof(DummyMessageHandler.RpcReceiveQueueItem));
                 using (var messageStream = MessagePacker.WrapMessage(NetworkConstants.SERVER_RPC, inputBuffer))
                 {
                     networkManager.HandleIncomingData(0, NetworkChannel.Internal, new ArraySegment<byte>(messageStream.GetBuffer(), 0, (int)messageStream.Length), 0, true);
@@ -179,84 +176,84 @@ namespace MLAPI.EditorTests
                 }
 
                 // Should cause log (client only)
-                LogAssert.Expect(LogType.Log, nameof(MessageHandlerReceivedMessageServerClient) + " " + nameof(DummyMessageHandler.HandleConnectionApproved));
+                LogAssert.Expect(LogType.Log, nameof(DummyMessageHandler.HandleConnectionApproved));
                 using (var messageStream = MessagePacker.WrapMessage(NetworkConstants.CONNECTION_APPROVED, inputBuffer))
                 {
                     networkManager.HandleIncomingData(0, NetworkChannel.Internal, new ArraySegment<byte>(messageStream.GetBuffer(), 0, (int)messageStream.Length), 0, true);
                 }
 
                 // Should cause log (client only)
-                LogAssert.Expect(LogType.Log, nameof(MessageHandlerReceivedMessageServerClient) + " " + nameof(DummyMessageHandler.HandleAddObject));
+                LogAssert.Expect(LogType.Log, nameof(DummyMessageHandler.HandleAddObject));
                 using (var messageStream = MessagePacker.WrapMessage(NetworkConstants.ADD_OBJECT, inputBuffer))
                 {
                     networkManager.HandleIncomingData(0, NetworkChannel.Internal, new ArraySegment<byte>(messageStream.GetBuffer(), 0, (int)messageStream.Length), 0, true);
                 }
 
                 // Should cause log (client only)
-                LogAssert.Expect(LogType.Log, nameof(MessageHandlerReceivedMessageServerClient) + " " + nameof(DummyMessageHandler.HandleDestroyObject));
+                LogAssert.Expect(LogType.Log, nameof(DummyMessageHandler.HandleDestroyObject));
                 using (var messageStream = MessagePacker.WrapMessage(NetworkConstants.DESTROY_OBJECT, inputBuffer))
                 {
                     networkManager.HandleIncomingData(0, NetworkChannel.Internal, new ArraySegment<byte>(messageStream.GetBuffer(), 0, (int)messageStream.Length), 0, true);
                 }
 
                 // Should cause log (client only)
-                LogAssert.Expect(LogType.Log, nameof(MessageHandlerReceivedMessageServerClient) + " " + nameof(DummyMessageHandler.HandleSwitchScene));
+                LogAssert.Expect(LogType.Log, nameof(DummyMessageHandler.HandleSwitchScene));
                 using (var messageStream = MessagePacker.WrapMessage(NetworkConstants.SWITCH_SCENE, inputBuffer))
                 {
                     networkManager.HandleIncomingData(0, NetworkChannel.Internal, new ArraySegment<byte>(messageStream.GetBuffer(), 0, (int)messageStream.Length), 0, true);
                 }
 
                 // Should cause log (client only)
-                LogAssert.Expect(LogType.Log, nameof(MessageHandlerReceivedMessageServerClient) + " " + nameof(DummyMessageHandler.HandleChangeOwner));
+                LogAssert.Expect(LogType.Log, nameof(DummyMessageHandler.HandleChangeOwner));
                 using (var messageStream = MessagePacker.WrapMessage(NetworkConstants.CHANGE_OWNER, inputBuffer))
                 {
                     networkManager.HandleIncomingData(0, NetworkChannel.Internal, new ArraySegment<byte>(messageStream.GetBuffer(), 0, (int)messageStream.Length), 0, true);
                 }
 
                 // Should cause log (client only)
-                LogAssert.Expect(LogType.Log, nameof(MessageHandlerReceivedMessageServerClient) + " " + nameof(DummyMessageHandler.HandleAddObjects));
+                LogAssert.Expect(LogType.Log, nameof(DummyMessageHandler.HandleAddObjects));
                 using (var messageStream = MessagePacker.WrapMessage(NetworkConstants.ADD_OBJECTS, inputBuffer))
                 {
                     networkManager.HandleIncomingData(0, NetworkChannel.Internal, new ArraySegment<byte>(messageStream.GetBuffer(), 0, (int)messageStream.Length), 0, true);
                 }
 
                 // Should cause log (client only)
-                LogAssert.Expect(LogType.Log, nameof(MessageHandlerReceivedMessageServerClient) + " " + nameof(DummyMessageHandler.HandleDestroyObjects));
+                LogAssert.Expect(LogType.Log, nameof(DummyMessageHandler.HandleDestroyObjects));
                 using (var messageStream = MessagePacker.WrapMessage(NetworkConstants.DESTROY_OBJECTS, inputBuffer))
                 {
                     networkManager.HandleIncomingData(0, NetworkChannel.Internal, new ArraySegment<byte>(messageStream.GetBuffer(), 0, (int)messageStream.Length), 0, true);
                 }
 
                 // Should cause log (client only)
-                LogAssert.Expect(LogType.Log, nameof(MessageHandlerReceivedMessageServerClient) + " " + nameof(DummyMessageHandler.HandleTimeSync));
+                LogAssert.Expect(LogType.Log, nameof(DummyMessageHandler.HandleTimeSync));
                 using (var messageStream = MessagePacker.WrapMessage(NetworkConstants.TIME_SYNC, inputBuffer))
                 {
                     networkManager.HandleIncomingData(0, NetworkChannel.Internal, new ArraySegment<byte>(messageStream.GetBuffer(), 0, (int)messageStream.Length), 0, true);
                 }
 
                 // Should cause log (server and client)
-                LogAssert.Expect(LogType.Log, nameof(MessageHandlerReceivedMessageServerClient) + " " + nameof(DummyMessageHandler.HandleNetworkVariableDelta));
+                LogAssert.Expect(LogType.Log, nameof(DummyMessageHandler.HandleNetworkVariableDelta));
                 using (var messageStream = MessagePacker.WrapMessage(NetworkConstants.NETWORK_VARIABLE_DELTA, inputBuffer))
                 {
                     networkManager.HandleIncomingData(0, NetworkChannel.Internal, new ArraySegment<byte>(messageStream.GetBuffer(), 0, (int)messageStream.Length), 0, true);
                 }
 
                 // Should cause log (server and client)
-                LogAssert.Expect(LogType.Log, nameof(MessageHandlerReceivedMessageServerClient) + " " + nameof(DummyMessageHandler.HandleNetworkVariableUpdate));
+                LogAssert.Expect(LogType.Log, nameof(DummyMessageHandler.HandleNetworkVariableUpdate));
                 using (var messageStream = MessagePacker.WrapMessage(NetworkConstants.NETWORK_VARIABLE_UPDATE, inputBuffer))
                 {
                     networkManager.HandleIncomingData(0, NetworkChannel.Internal, new ArraySegment<byte>(messageStream.GetBuffer(), 0, (int)messageStream.Length), 0, true);
                 }
 
                 // Should cause log (server and client)
-                LogAssert.Expect(LogType.Log, nameof(MessageHandlerReceivedMessageServerClient) + " " + nameof(DummyMessageHandler.HandleUnnamedMessage));
+                LogAssert.Expect(LogType.Log, nameof(DummyMessageHandler.HandleUnnamedMessage));
                 using (var messageStream = MessagePacker.WrapMessage(NetworkConstants.UNNAMED_MESSAGE, inputBuffer))
                 {
                     networkManager.HandleIncomingData(0, NetworkChannel.Internal, new ArraySegment<byte>(messageStream.GetBuffer(), 0, (int)messageStream.Length), 0, true);
                 }
 
                 // Should cause log (server and client)
-                LogAssert.Expect(LogType.Log, nameof(MessageHandlerReceivedMessageServerClient) + " " + nameof(DummyMessageHandler.HandleNamedMessage));
+                LogAssert.Expect(LogType.Log, nameof(DummyMessageHandler.HandleNamedMessage));
                 using (var messageStream = MessagePacker.WrapMessage(NetworkConstants.NAMED_MESSAGE, inputBuffer))
                 {
                     networkManager.HandleIncomingData(0, NetworkChannel.Internal, new ArraySegment<byte>(messageStream.GetBuffer(), 0, (int)messageStream.Length), 0, true);
@@ -281,7 +278,7 @@ namespace MLAPI.EditorTests
                 }
 
                 // Should cause log (client only)
-                LogAssert.Expect(LogType.Log, nameof(MessageHandlerReceivedMessageServerClient) + " " + nameof(DummyMessageHandler.RpcReceiveQueueItem));
+                LogAssert.Expect(LogType.Log, nameof(DummyMessageHandler.RpcReceiveQueueItem));
                 using (var messageStream = MessagePacker.WrapMessage(NetworkConstants.CLIENT_RPC, inputBuffer))
                 {
                     networkManager.HandleIncomingData(0, NetworkChannel.Internal, new ArraySegment<byte>(messageStream.GetBuffer(), 0, (int)messageStream.Length), 0, true);
@@ -296,50 +293,6 @@ namespace MLAPI.EditorTests
 
             // Cleanup
             Object.DestroyImmediate(gameObject);
-        }
-    }
-
-    internal class DummyMessageHandler : IInternalMessageHandler
-    {
-        public NetworkManager NetworkManager { get; }
-
-        public void HandleConnectionRequest(ulong clientId, Stream stream) => VerifyCalled(nameof(HandleConnectionRequest));
-
-        public void HandleConnectionApproved(ulong clientId, Stream stream, float receiveTime) => VerifyCalled(nameof(HandleConnectionApproved));
-
-        public void HandleAddObject(ulong clientId, Stream stream) => VerifyCalled(nameof(HandleAddObject));
-
-        public void HandleDestroyObject(ulong clientId, Stream stream) => VerifyCalled(nameof(HandleDestroyObject));
-
-        public void HandleSwitchScene(ulong clientId, Stream stream) => VerifyCalled(nameof(HandleSwitchScene));
-
-        public void HandleClientSwitchSceneCompleted(ulong clientId, Stream stream) => VerifyCalled(nameof(HandleClientSwitchSceneCompleted));
-
-        public void HandleChangeOwner(ulong clientId, Stream stream) => VerifyCalled(nameof(HandleChangeOwner));
-
-        public void HandleAddObjects(ulong clientId, Stream stream) => VerifyCalled(nameof(HandleAddObjects));
-
-        public void HandleDestroyObjects(ulong clientId, Stream stream) => VerifyCalled(nameof(HandleDestroyObjects));
-
-        public void HandleTimeSync(ulong clientId, Stream stream, float receiveTime) => VerifyCalled(nameof(HandleTimeSync));
-
-        public void HandleNetworkVariableDelta(ulong clientId, Stream stream, Action<ulong, PreBufferPreset> bufferCallback, PreBufferPreset bufferPreset) => VerifyCalled(nameof(HandleNetworkVariableDelta));
-
-        public void HandleNetworkVariableUpdate(ulong clientId, Stream stream, Action<ulong, PreBufferPreset> bufferCallback, PreBufferPreset bufferPreset) => VerifyCalled(nameof(HandleNetworkVariableUpdate));
-
-        public void RpcReceiveQueueItem(ulong clientId, Stream stream, float receiveTime, RpcQueueContainer.QueueItemType queueItemType) => VerifyCalled(nameof(RpcReceiveQueueItem));
-
-        public void HandleUnnamedMessage(ulong clientId, Stream stream) => VerifyCalled(nameof(HandleUnnamedMessage));
-
-        public void HandleNamedMessage(ulong clientId, Stream stream) => VerifyCalled(nameof(HandleNamedMessage));
-
-        public void HandleNetworkLog(ulong clientId, Stream stream) => VerifyCalled(nameof(HandleNetworkLog));
-
-        public void HandleAllClientsSwitchSceneCompleted(ulong clientId, Stream stream) => VerifyCalled(nameof(HandleAllClientsSwitchSceneCompleted));
-
-        private void VerifyCalled(string method)
-        {
-            Debug.Log(nameof(NetworkManagerMessageHandlerTests.MessageHandlerReceivedMessageServerClient) + " " + method);
         }
     }
 

@@ -345,8 +345,13 @@ namespace MLAPI
 
             if (MessageHandler == null)
             {
+                IInternalMessageHandler messageHandler = new InternalMessageHandler(this);
+
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+                messageHandler = new InternalMessageHandlerProfilingDecorator(messageHandler);
+#endif
                 // Only create this if it's not already set (like in test cases)
-                MessageHandler = new InternalMessageHandler(this);
+                MessageHandler = messageHandler;
             }
 
             MessageSender = new InternalMessageSender(this);
