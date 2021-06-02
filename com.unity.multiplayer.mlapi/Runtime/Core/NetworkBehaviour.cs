@@ -759,9 +759,8 @@ namespace MLAPI
 
                     networkVariableList[i].ReadDelta(stream, networkManager.IsServer);
                     PerformanceDataManager.Increment(ProfilerConstants.NetworkVarDeltas);
-
-                    
                     ProfilerStatManager.NetworkVarsRcvd.Record();
+                    networkManager.NetworkMetrics.TrackNetworkVariableDelta(logInstance.NetworkObjectId, networkVariableList[i].GetType().Name, (ulong)stream.Length);
 
                     if (networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                     {
@@ -847,8 +846,8 @@ namespace MLAPI
 
                     networkVariableList[i].ReadField(stream);
                     PerformanceDataManager.Increment(ProfilerConstants.NetworkVarUpdates);
-
                     ProfilerStatManager.NetworkVarsRcvd.Record();
+                    networkManager.NetworkMetrics.TrackNetworkVariableUpdate(logInstance.NetworkObjectId, networkVariableList[i].GetType().Name, (ulong)stream.Length);
 
                     if (networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                     {

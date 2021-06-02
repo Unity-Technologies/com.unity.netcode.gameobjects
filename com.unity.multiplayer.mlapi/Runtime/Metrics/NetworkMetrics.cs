@@ -1,7 +1,10 @@
+using System;
+using System.Linq.Expressions;
 using Unity.Multiplayer.NetStats.Dispatch;
 using Unity.Multiplayer.NetStats.Metrics;
 using Unity.Multiplayer.NetworkProfiler;
 using Unity.Multiplayer.NetworkProfiler.Models;
+using UnityEngine;
 
 namespace MLAPI.Metrics
 {
@@ -14,6 +17,10 @@ namespace MLAPI.Metrics
         void TrackUnnamedMessageSent(ulong bytesCount);
 
         void TrackUnnamedMessageReceived(ulong bytesCount);
+
+        void TrackNetworkVariableDelta(ulong networkObjectId, string info, ulong bytesCount);
+
+        void TrackNetworkVariableUpdate(ulong networkObjectId, string info, ulong bytesCount);
 
         void DispatchFrame();
     }
@@ -36,6 +43,14 @@ namespace MLAPI.Metrics
         {
         }
 
+        public void TrackNetworkVariableDelta(ulong networkObjectId, string info, ulong bytesCount)
+        {
+        }
+
+        public void TrackNetworkVariableUpdate(ulong networkObjectId, string info, ulong bytesCount)
+        {
+        }
+
         public void DispatchFrame()
         {
         }
@@ -52,12 +67,16 @@ namespace MLAPI.Metrics
         readonly EventMetric<UnnamedMessageEvent> m_UnnamedMessageSentEvent = new EventMetric<UnnamedMessageEvent>(MetricNames.UnnamedMessageSent);
         readonly EventMetric<UnnamedMessageEvent> m_UnnamedMessageReceivedEvent = new EventMetric<UnnamedMessageEvent>(MetricNames.UnnamedMessageReceived);
 
+        readonly EventMetric<NetworkVariableEvent> m_NetworkVariableDeltaEvent = new EventMetric<NetworkVariableEvent>(MetricNames.NetworkVariableDelta);
+        readonly EventMetric<NetworkVariableEvent> m_NetworkVariableUpdateEvent = new EventMetric<NetworkVariableEvent>(MetricNames.NetworkVariableUpdate);
+
         public NetworkMetrics(NetworkManager networkManager)
         {
             m_NetworkManager = networkManager;
             Dispatcher = new MetricDispatcherBuilder()
                 .WithMetricEvents(m_NamedMessageSentEvent, m_NamedMessageReceivedEvent)
                 .WithMetricEvents(m_UnnamedMessageSentEvent, m_UnnamedMessageReceivedEvent)
+                .WithMetricEvents(m_NetworkVariableDeltaEvent, m_NetworkVariableUpdateEvent)
                 .Build();
             
             Dispatcher.RegisterObserver(MLAPIObserver.Observer);
@@ -83,6 +102,16 @@ namespace MLAPI.Metrics
         public void TrackUnnamedMessageReceived(ulong bytesCount)
         {
             m_UnnamedMessageReceivedEvent.Mark(new UnnamedMessageEvent(new ConnectionInfo(m_NetworkManager.LocalClientId), bytesCount));
+        }
+
+        public void TrackNetworkVariableDelta(ulong networkObjectId, string info, ulong bytesCount)
+        {
+            m_NetworkVariableDeltaEvent.Mark(new NetworkVariableEvent(new ConnectionInfo(m_NetworkManager.LocalClientId), new NetworkObjectIdentifier("", networkObjectId), info, bytesCount));
+        }
+
+        public void TrackNetworkVariableUpdate(ulong networkObjectId, string info, ulong bytesCount)
+        {
+            m_NetworkVariableUpdateEvent.Mark(new NetworkVariableEvent(new ConnectionInfo(m_NetworkManager.LocalClientId), new NetworkObjectIdentifier("", networkObjectId), info, bytesCount));
         }
 
         public void DispatchFrame()
