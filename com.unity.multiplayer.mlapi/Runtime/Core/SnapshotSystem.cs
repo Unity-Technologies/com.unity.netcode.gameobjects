@@ -30,7 +30,6 @@ namespace MLAPI
         public VariableKey Key;
         public ushort Position; // the offset in our Buffer
         public ushort Length; // the Length of the data in Buffer
-        public bool Fresh; // indicates entries that were just received
 
         public const int NotFound = -1;
     }
@@ -46,7 +45,7 @@ namespace MLAPI
         private const int k_MaxVariables = 2000;
         private const int k_BufferSize = 30000;
 
-        public byte[] Buffer = new byte[k_BufferSize]; // buffer holding a snapshot in memory
+        public byte[] MainBuffer = new byte[k_BufferSize]; // buffer holding a snapshot in memory
         public byte[] RecvBuffer = new byte[k_BufferSize]; // buffer holding the received snapshot message
 
         internal IndexAllocator Allocator;
@@ -79,8 +78,6 @@ namespace MLAPI
             Allocator.Reset();
         }
 
-        // todo --M1--
-        // Find will change to be efficient in a future milestone
         /// <summary>
         /// Finds the position of a given NetworkVariable, given its key
         /// </summary>
@@ -112,7 +109,6 @@ namespace MLAPI
             entry.Key = k;
             entry.Position = 0;
             entry.Length = 0;
-            entry.Fresh = false;
             Entries[pos] = entry;
 
             return pos;
@@ -147,7 +143,6 @@ namespace MLAPI
             entry.Key.TickWritten = reader.ReadUInt16();
             entry.Position = reader.ReadUInt16();
             entry.Length = reader.ReadUInt16();
-            entry.Fresh = false;
 
             return entry;
         }
@@ -159,9 +154,6 @@ namespace MLAPI
         /// <param name="size">The need size in bytes</param>
         public void AllocateEntry(ref Entry entry, int index, int size)
         {
-            // todo --M1--
-            // this will change once we start reusing the snapshot buffer memory
-            // todo: deal with free space
             // todo: deal with full buffer
 
             int pos;
@@ -196,28 +188,6 @@ namespace MLAPI
             snapshotStream.Read(RecvBuffer, 0, snapshotSize);
         }
 
-        internal void ProcessBuffer()
-        {
-            for (var i = 0; i < LastEntry; i++)
-            {
-                if (Entries[i].Fresh && Entries[i].Key.TickWritten > 0)
-                {
-                    var nv = FindNetworkVar(Entries[i].Key);
-
-                    m_BufferStream.Seek(Entries[i].Position, SeekOrigin.Begin);
-
-                    // todo: consider refactoring out in its own function to accomodate
-                    // other ways to (de)serialize
-                    // todo --M1--
-                    // Review whether tick still belong in netvar or in the snapshot table.
-                    // Not using keepDirtyDelta anymore which is great. todo: remove and check for the overall effect on > 2 player
-                    nv.ReadDelta(m_BufferStream, false);
-                }
-
-                Entries[i].Fresh = false;
-            }
-        }
-
         /// <summary>
         /// Read the snapshot index from a buffer
         /// Stores the entry. Allocates memory if needed. The actual buffer will be read later
@@ -245,12 +215,24 @@ namespace MLAPI
                 if (Entries[pos].Length < entry.Length)
                 {
                     AllocateEntry(ref entry, pos, entry.Length);
+                    added = true;
                 }
 
                 if (added || entry.Key.TickWritten > Entries[pos].Key.TickWritten)
                 {
-                    entry.Fresh = true; // only mark it if we're the most recent tick in the snapshot after insert
-                    Entries[pos] = entry; // needs a copy from readbuffer into buffer
+                    Buffer.BlockCopy(RecvBuffer, entry.Position, MainBuffer, Entries[pos].Position, entry.Length);
+
+                    Entries[pos] = entry;
+
+
+                    // copy from readbuffer into buffer
+                    var nv = FindNetworkVar(Entries[pos].Key);
+                    m_BufferStream.Seek(Entries[pos].Position, SeekOrigin.Begin);
+                    // todo: consider refactoring out in its own function to accomodate
+                    // other ways to (de)serialize
+                    // Not using keepDirtyDelta anymore which is great. todo: remove and check for the overall effect on > 2 player
+                    nv.ReadDelta(m_BufferStream, false);
+
                 }
             }
         }
@@ -327,6 +309,13 @@ namespace MLAPI
                     {
                         SendSnapshot(m_NetworkManager.ServerClientId);
                     }
+
+
+
+                    if (tick % 30 == 0)
+                    {
+                        DebugDisplayStore(m_Snapshot, "Main snapshot");
+                    }
                 }
             }
         }
@@ -387,7 +376,7 @@ namespace MLAPI
             // todo --M1--
             // // this sends the whole buffer
             // we'll need to build a per-client list
-            buffer.Write(m_Snapshot.Buffer, 0, m_Snapshot.Allocator.Range);
+            buffer.Write(m_Snapshot.MainBuffer, 0, m_Snapshot.Allocator.Range);
         }
 
         // todo: consider using a Key, instead of 3 ints, if it can be exposed
@@ -428,7 +417,7 @@ namespace MLAPI
                 }
 
                 // Copy the serialized NetworkVariable into our buffer
-                Buffer.BlockCopy(varBuffer.GetBuffer(), 0, snapshot.Buffer, snapshot.Entries[index].Position, (int)varBuffer.Length);
+                Buffer.BlockCopy(varBuffer.GetBuffer(), 0, snapshot.MainBuffer, snapshot.Entries[index].Position, (int)varBuffer.Length);
             }
         }
 
@@ -449,7 +438,6 @@ namespace MLAPI
 
                 m_Snapshot.ReadBuffer(reader, snapshotStream);
                 m_Snapshot.ReadIndex(reader);
-                m_Snapshot.ProcessBuffer();
             }
 
             SendAck(clientId, snapshotTick);
@@ -492,7 +480,7 @@ namespace MLAPI
 
                 for (int j = 0; j < block.Entries[i].Length && j < 4; j++)
                 {
-                    table += block.Buffer[block.Entries[i].Position + j].ToString("X2") + " ";
+                    table += block.MainBuffer[block.Entries[i].Position + j].ToString("X2") + " ";
                 }
 
                 table += "\n";

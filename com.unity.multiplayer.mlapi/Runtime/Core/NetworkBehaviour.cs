@@ -592,7 +592,19 @@ namespace MLAPI
             {
                 for (int k = 0; k < NetworkVariableFields.Count; k++)
                 {
-                    NetworkManager.SnapshotSystem.Store(NetworkObjectId, behaviourIndex, k, NetworkVariableFields[k]);
+                    bool isDirty = NetworkVariableFields[k].IsDirty();
+
+                    if (isDirty)
+                    {
+                        NetworkManager.SnapshotSystem.Store(NetworkObjectId, behaviourIndex, k,
+                            NetworkVariableFields[k]);
+
+                        if (!m_NetworkVariableIndexesToResetSet.Contains(k))
+                        {
+                            m_NetworkVariableIndexesToResetSet.Add(k);
+                            m_NetworkVariableIndexesToReset.Add(k);
+                        }
+                    }
                 }
             }
 
