@@ -29,7 +29,7 @@ namespace MLAPI.MultiprocessRuntimeTests
 
         protected virtual bool m_IsPerformanceTest => true;
 
-        private bool ShouldIgnoreTests => m_IsPerformanceTest && !Environment.GetCommandLineArgs().Contains("-runTests");
+        private bool ShouldIgnoreTests => m_IsPerformanceTest && Application.isEditor;
 
         protected abstract int NbWorkers { get; }
 
@@ -38,7 +38,7 @@ namespace MLAPI.MultiprocessRuntimeTests
         {
             if (ShouldIgnoreTests)
             {
-                Assert.Ignore("Ignoring tests that shouldn't run from unity editor. Performance tests should be run from remote test execution on device");
+                Assert.Ignore("Ignoring tests that shouldn't run from unity editor. Performance tests should be run from remote test execution on device (this can be ran using the \"run selected tests (your platform) button\"");
             }
             // todo cleanup comments
             // Build(TestCoordinator.buildPath);
