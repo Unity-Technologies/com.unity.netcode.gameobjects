@@ -273,11 +273,44 @@ namespace MLAPI.SceneManagement
             s_IsSwitching = false;
         }
 
+
+        internal Dictionary<uint, NetworkObject> ScenePlacedObjects = new Dictionary<uint, NetworkObject>();
+
+        /// <summary>
+        /// Should be invoked on both the client and server side after:
+        /// -- A new scene has been loaded
+        /// -- Before any "DontDestroyOnLoad" NetworkObjects have been added back into the scene.
+        /// Added the ability to choose not to clear the scene placed objects for additive scene loading.
+        /// </summary>
+        internal void PopulateScenePlacedObjects(bool clearScenePlacedObjects = true)
+        {
+            if (clearScenePlacedObjects)
+            {
+                ScenePlacedObjects.Clear();
+            }
+
+            var networkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>();
+
+            // Just add every NetworkObject found that isn't already in the list
+            // If any "non-in-scene placed NetworkObjects" are added to this list it shouldn't matter
+            // The only thing that matters is making sure each NetworkObject is keyed off of their GlobalObjectIdHash            
+            foreach(var networkObjectInstance in networkObjects)
+            {
+                if (!ScenePlacedObjects.ContainsKey(networkObjectInstance.GlobalObjectIdHash))
+                {
+                    ScenePlacedObjects.Add(networkObjectInstance.GlobalObjectIdHash, networkObjectInstance);
+                }
+            }
+        }
+
         private void OnSceneLoaded(Guid switchSceneGuid, Stream objectStream)
         {
             CurrentActiveSceneIndex = SceneNameToIndex[s_NextSceneName];
             var nextScene = SceneManager.GetSceneByName(s_NextSceneName);
             SceneManager.SetActiveScene(nextScene);
+
+            //Get all NetworkObjects loaded by the scene
+            PopulateScenePlacedObjects();
 
             // Move all objects to the new scene
             MoveObjectsToScene(nextScene);
@@ -311,6 +344,11 @@ namespace MLAPI.SceneManagement
                         {
                             m_NetworkManager.SpawnManager.SpawnNetworkObjectLocally(networkObjects[i], m_NetworkManager.SpawnManager.GetNetworkObjectId(), true, false, null, null, false, 0, false, true);
                             newSceneObjects.Add(networkObjects[i]);
+
+                            if(!ScenePlacedObjects.ContainsKey(networkObjects[i].GlobalObjectIdHash))
+                            {
+                                Debug.LogWarning($"Missing Scene Object: {networkObjects[i].name} with GlobalObjectIdHash ({networkObjects[i].GlobalObjectIdHash})");
+                            }
                         }
                     }
                 }
@@ -366,7 +404,7 @@ namespace MLAPI.SceneManagement
         {
             var networkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>();
 
-            m_NetworkManager.SpawnManager.ClientCollectSoftSyncSceneObjectSweep(networkObjects);
+            //m_NetworkManager.SpawnManager.ClientCollectSoftSyncSceneObjectSweep(networkObjects);
 
             using (var reader = PooledNetworkReader.Get(objectStream))
             {
