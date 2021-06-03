@@ -299,10 +299,10 @@ namespace MLAPI.SceneManagement
             {
                 if (!ScenePlacedObjects.ContainsKey(networkObjectInstance.GlobalObjectIdHash))
                 {
-                    ScenePlacedObjects.Add(networkObjectInstance.GlobalObjectIdHash, networkObjectInstance);
-                    if(networkObjectInstance.IsSceneObject == null)
+                    // We check to make sure the NetworkManager instance is the same one to be "MultiInstanceHelpers" compatible
+                    if (networkObjectInstance.IsSceneObject == null && networkObjectInstance.NetworkManager == m_NetworkManager)
                     {
-                        networkObjectInstance.IsSceneObject = true;
+                        ScenePlacedObjects.Add(networkObjectInstance.GlobalObjectIdHash, networkObjectInstance);
                     }
                 }
             }
@@ -336,27 +336,10 @@ namespace MLAPI.SceneManagement
 
         private void OnSceneUnloadServer(Guid switchSceneGuid)
         {
-            // Justification: Rare alloc, could(should?) reuse
-            var newSceneObjects = new List<NetworkObject>();
+            // Register in-scene placed NetworkObjects with MLAPI
+            foreach (var keyValuePair in ScenePlacedObjects)
             {
-                var networkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>();
-
-                for (int i = 0; i < networkObjects.Length; i++)
-                {
-                    if (networkObjects[i].NetworkManager == m_NetworkManager)
-                    {
-                        if (networkObjects[i].IsSceneObject == null)
-                        {
-                            m_NetworkManager.SpawnManager.SpawnNetworkObjectLocally(networkObjects[i], m_NetworkManager.SpawnManager.GetNetworkObjectId(), true, false, null, null, false, 0, false, true);
-                            newSceneObjects.Add(networkObjects[i]);
-
-                            if(!ScenePlacedObjects.ContainsKey(networkObjects[i].GlobalObjectIdHash))
-                            {
-                                Debug.LogWarning($"Missing Scene Object: {networkObjects[i].name} with GlobalObjectIdHash ({networkObjects[i].GlobalObjectIdHash})");
-                            }
-                        }
-                    }
-                }
+                m_NetworkManager.SpawnManager.SpawnNetworkObjectLocally(keyValuePair.Value, m_NetworkManager.SpawnManager.GetNetworkObjectId(), true, false, null, null, false, 0, false, true);
             }
 
             for (int j = 0; j < m_NetworkManager.ConnectedClientsList.Count; j++)
@@ -370,9 +353,10 @@ namespace MLAPI.SceneManagement
                         writer.WriteByteArray(switchSceneGuid.ToByteArray());
 
                         uint sceneObjectsToSpawn = 0;
-                        for (int i = 0; i < newSceneObjects.Count; i++)
+                        
+                        foreach(var keyValuePair in ScenePlacedObjects)
                         {
-                            if (newSceneObjects[i].Observers.Contains(m_NetworkManager.ConnectedClientsList[j].ClientId))
+                            if (keyValuePair.Value.Observers.Contains(m_NetworkManager.ConnectedClientsList[j].ClientId))
                             {
                                 sceneObjectsToSpawn++;
                             }
@@ -380,15 +364,13 @@ namespace MLAPI.SceneManagement
 
                         // Write number of scene objects to spawn
                         writer.WriteUInt32Packed(sceneObjectsToSpawn);
-
-                        for (int i = 0; i < newSceneObjects.Count; i++)
+                        foreach (var keyValuePair in ScenePlacedObjects)
                         {
-                            if (newSceneObjects[i].Observers.Contains(m_NetworkManager.ConnectedClientsList[j].ClientId))
+                            if (keyValuePair.Value.Observers.Contains(m_NetworkManager.ConnectedClientsList[j].ClientId))
                             {
-                                newSceneObjects[i].SerializeSceneObject(writer, m_NetworkManager.ConnectedClientsList[j].ClientId);
+                                keyValuePair.Value.SerializeSceneObject(writer, m_NetworkManager.ConnectedClientsList[j].ClientId);
                             }
                         }
-
                         m_NetworkManager.MessageSender.Send(m_NetworkManager.ConnectedClientsList[j].ClientId, NetworkConstants.SWITCH_SCENE, NetworkChannel.Internal, buffer);
                     }
                 }
@@ -408,8 +390,6 @@ namespace MLAPI.SceneManagement
         private void OnSceneUnloadClient(Guid switchSceneGuid, Stream objectStream)
         {
             var networkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>();
-
-            //m_NetworkManager.SpawnManager.ClientCollectSoftSyncSceneObjectSweep(networkObjects);
 
             using (var reader = PooledNetworkReader.Get(objectStream))
             {
