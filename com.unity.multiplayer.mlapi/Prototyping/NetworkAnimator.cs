@@ -246,12 +246,12 @@ namespace MLAPI.Prototyping
         private Animator m_Animator;
         
         private AnimatorSnapshot m_AnimatorSnapshot;
-        private KeyValuePair<int, AnimatorControllerParameterType>[] m_CachedAnimatorParameters;
+        private List<(int, AnimatorControllerParameterType)> m_CachedAnimatorParameters;
         
         public override void NetworkStart()
         {
             var parameters = m_Animator.parameters;
-            m_CachedAnimatorParameters = new KeyValuePair<int, AnimatorControllerParameterType>[parameters.Length];
+            m_CachedAnimatorParameters = new List<(int, AnimatorControllerParameterType)>(parameters.Length);
 
             int intCount = 0;
             int floatCount = 0;
@@ -260,7 +260,14 @@ namespace MLAPI.Prototyping
             for (var i = 0; i < parameters.Length; i++)
             {
                 var parameter = parameters[i];
-                m_CachedAnimatorParameters[i] = new KeyValuePair<int, AnimatorControllerParameterType>(parameter.nameHash, parameter.type);
+                
+                if (m_Animator.IsParameterControlledByCurve(parameter.nameHash))
+                {
+                    //we are ignoring parameters that are controlled by animation curves - syncing the layer states indirectly syncs the values that are driven by the animation curves 
+                    continue;
+                }
+
+                m_CachedAnimatorParameters.Add((parameter.nameHash, parameter.type));
 
                 switch (parameter.type)
                 {
@@ -347,7 +354,7 @@ namespace MLAPI.Prototyping
             if (IsAuthorityOverAnimator)
             {
                 bool shouldSendBasedOnTime = CheckSendRate();
-                bool shouldSendBasedOnChanges = CheckStateChange();
+                bool shouldSendBasedOnChanges = PollStateChange();
                 if (m_ServerRequestsAnimationResync || shouldSendBasedOnTime || shouldSendBasedOnChanges)
                 {
                     SendAllParamsAndState();
@@ -369,7 +376,7 @@ namespace MLAPI.Prototyping
             return false;
         }
 
-        private bool CheckStateChange()
+        private bool PollStateChange()
         {
             bool changed = false;
             
@@ -397,8 +404,8 @@ namespace MLAPI.Prototyping
 
             foreach (var animParam in m_CachedAnimatorParameters)
             {
-                var animParamHash = animParam.Key;
-                var animParamType = animParam.Value;
+                var animParamHash = animParam.Item1;
+                var animParamType = animParam.Item2;
                 
                 switch (animParamType)
                 {
