@@ -1,7 +1,7 @@
 # Changelog
 This file documents all notable changes to this package. Additional documentation and release notes are available at [Multiplayer Documentation](https://docs-multiplayer.unity3d.com).
 
-## [0.2.0] 2021-06-03
+## [0.2.0] - 2021-06-03
 
 WIP version increment to pass package validation checks. Changelog & final version number TBD.
 
