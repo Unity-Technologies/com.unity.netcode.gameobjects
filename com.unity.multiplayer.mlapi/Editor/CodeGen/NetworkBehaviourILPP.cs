@@ -238,7 +238,6 @@ namespace MLAPI.Editor.CodeGen
                         m_NetworkManager_ntable_FieldRef = moduleDefinition.ImportReference(fieldInfo);
                         m_NetworkManager_ntable_Add_MethodRef = moduleDefinition.ImportReference(fieldInfo.FieldType.GetMethod("Add"));
                         break;
-                    //IF TOOLS
                     case k_NetworkManager_rpc_name_table:
                         m_NetworkManager_rpc_name_table_FieldRef = moduleDefinition.ImportReference(fieldInfo);
                         m_NetworkManager_rpc_name_table_Add_MethodRef = moduleDefinition.ImportReference(fieldInfo.FieldType.GetMethod("Add"));
@@ -587,10 +586,9 @@ namespace MLAPI.Editor.CodeGen
                     instructions.Add(processor.Create(OpCodes.Newobj, m_NetworkHandlerDelegateCtor_MethodRef));
                     instructions.Add(processor.Create(OpCodes.Call, m_NetworkManager_ntable_Add_MethodRef));
 
-                    //IF TOOLS
+                    // NetworkManager.__rpc_name_table.Add(HandlerHash, RpcNameMethod);
                     instructions.Add(processor.Create(OpCodes.Ldsfld, m_NetworkManager_rpc_name_table_FieldRef));
                     instructions.Add(processor.Create(OpCodes.Ldc_I4, unchecked((int)hash)));
-                    //Removing __nhandler from the name of the static handler
                     instructions.Add(processor.Create(OpCodes.Ldstr, method.Name.Substring(0, method.Name.Length-"__nhandler".Length)));
                     instructions.Add(processor.Create(OpCodes.Call, m_NetworkManager_rpc_name_table_Add_MethodRef));
                 }

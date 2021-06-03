@@ -89,11 +89,6 @@ namespace MLAPI.Editor.CodeGen
                 {
                     fieldDefinition.IsPublic = true;
                 }
-                //IF TOOLS
-                if (fieldDefinition.Name == nameof(NetworkManager.__rpc_name_table))
-                {
-                    fieldDefinition.IsPublic = true;
-                }
             }
         }
 
