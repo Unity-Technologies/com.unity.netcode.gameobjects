@@ -1,9 +1,11 @@
 using System;
 using System.Collections;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using MLAPI;
 using NUnit.Framework;
+using NUnit.Framework.Constraints;
 #if UNITY_EDITOR
 using UnityEditor;
 using UnityEditor.Build.Reporting;
@@ -12,7 +14,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using static TestCoordinator.ExecuteStepInContext;
-
+using Debug = UnityEngine.Debug;
 
 namespace MLAPI.MultiprocessRuntimeTests
 {
@@ -128,11 +130,58 @@ namespace MLAPI.MultiprocessRuntimeTests
             }
         }
 
-        [UnityTest, MultiprocessContextBasedTestAttribute()]
+        [UnityTest, MultiprocessContextBasedTest]
+        [TestCase(1, ExpectedResult = null)]
+        [TestCase(2, ExpectedResult = null)]
+        [TestCase(3, ExpectedResult = null)]
+        public IEnumerator TestWithParameters(int a)
+        {
+            InitSteps();
+
+            yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Server, bytes =>
+            {
+                Assert.Less(a, 4);
+                Assert.Greater(a, 0);
+            });
+            yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Clients, bytes =>
+            {
+                var clientA = BitConverter.ToInt32(bytes, 0);
+                Assert.True(!NetworkManager.Singleton.IsServer);
+                Assert.Less(clientA, 4);
+                Assert.Greater(clientA, 0);
+            }, paramToPass: BitConverter.GetBytes(a));
+        }
+
+        [UnityTest, MultiprocessContextBasedTest]
+        [TestCase(1, 2, ExpectedResult = null)]
+        [TestCase(2, 3, ExpectedResult = null)]
+        [TestCase(3, 4, ExpectedResult = null)]
+        public IEnumerator TestWithParameters(int a, int b)
+        {
+            InitSteps();
+
+            yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Server, bytes =>
+            {
+                Assert.Less(a, 4);
+                Assert.Greater(a, 0);
+                Assert.Less(b, 5);
+                Assert.Greater(b, 1);
+            });
+            yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Clients, bytes =>
+            {
+                var clientB = BitConverter.ToInt32(bytes, 0);
+                Assert.True(!NetworkManager.Singleton.IsServer);
+                Assert.Less(clientB, 5);
+                Assert.Greater(clientB, 1);
+            }, paramToPass: BitConverter.GetBytes(b));
+        }
+
+        [UnityTest, MultiprocessContextBasedTest]
         public IEnumerator TestExecuteInContext()
         {
             // TODO convert other tests to this format
             // todo move ExecuteInContext out of here (in test coordinator?)
+            InitSteps();
 
             int stepCountExecuted = 0;
             yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Server, (byte[] args) =>
@@ -182,7 +231,7 @@ namespace MLAPI.MultiprocessRuntimeTests
                     }
                 };
                 NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate += Update;
-            }, finishOnInvoke: false); // waits multiple frames before allowing the next action to continue.
+            }, spansMultipleUpdates: false); // waits multiple frames before allowing the next action to continue.
 
             yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Server, (byte[] args) =>
             {

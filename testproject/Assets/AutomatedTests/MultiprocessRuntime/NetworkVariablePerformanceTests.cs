@@ -10,6 +10,8 @@ using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using Debug = UnityEngine.Debug;
 using Random = System.Random;
+using static TestCoordinator.ExecuteStepInContext;
+
 
 namespace MLAPI.MultiprocessRuntimeTests
 {
@@ -51,92 +53,61 @@ namespace MLAPI.MultiprocessRuntimeTests
             }
         }
 
-        public static class NetworkVariablePerformanceTestsClient
+        public class CustomPrefabSpawnForTest1 : INetworkPrefabInstanceHandler
         {
-            public class CustomPrefabSpawnForTest1 : INetworkPrefabInstanceHandler
+            private GameObject m_PrefabToSpawn;
+            private GameObjectPool m_ObjectPool;
+
+            public CustomPrefabSpawnForTest1(GameObject prefabToSpawn)
             {
-                private GameObject m_PrefabToSpawn;
-                private GameObjectPool m_ObjectPool;
-
-                public CustomPrefabSpawnForTest1(GameObject prefabToSpawn)
-                {
-                    m_PrefabToSpawn = prefabToSpawn;
-                    m_ObjectPool = new GameObjectPool();
-                    m_ObjectPool.Init(k_MaxObjectstoSpawn, m_PrefabToSpawn);
-                }
-
-                public NetworkObject HandleNetworkPrefabSpawn(ulong ownerClientId, Vector3 position, Quaternion rotation)
-                {
-                    var networkObject = m_ObjectPool.Get().GetComponent<NetworkObject>();
-                    var r = new Random();
-                    networkObject.transform.position = new Vector3(r.Next(-10, 10), r.Next(-10, 10), r.Next(-10, 10));
-                    networkObject.transform.rotation = rotation;
-                    SetupSpawnedObject(networkObject.gameObject); // adds custom component on spawn
-                    return networkObject;
-                }
-
-                public void HandleNetworkPrefabDestroy(NetworkObject networkObject)
-                {
-                    networkObject.transform.position = Vector3.zero;
-                    networkObject.transform.rotation = Quaternion.identity;
-                    // TeardownSpawnedObject(networkObject.gameObject);
-                    m_ObjectPool.Release(networkObject.gameObject);
-
-                    // UnityEngine.Object.Destroy(networkObject.gameObject);
-                }
+                m_PrefabToSpawn = prefabToSpawn;
+                m_ObjectPool = new GameObjectPool();
+                m_ObjectPool.Init(k_MaxObjectstoSpawn, m_PrefabToSpawn);
             }
 
-            public static void SetupClientForTest1(byte[] args)
+            public NetworkObject HandleNetworkPrefabSpawn(ulong ownerClientId, Vector3 position, Quaternion rotation)
             {
-                s_TargetCount = BitConverter.ToInt32(args, 0);
-                var prefabToSpawn = PrefabReference.Instance.referencedPrefab;
-                var addedHandler = NetworkManager.Singleton.PrefabHandler.AddHandler(prefabToSpawn, new CustomPrefabSpawnForTest1(prefabToSpawn));
-                if (!addedHandler)
-                {
-                    throw new Exception("Couldn't add Handler!");
-                }
-
-                NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate += UpdateClientForTest1;
-                TestCoordinator.Instance.ClientFinishedServerRpc();
+                var networkObject = m_ObjectPool.Get().GetComponent<NetworkObject>();
+                var r = new Random();
+                networkObject.transform.position = new Vector3(r.Next(-10, 10), r.Next(-10, 10), r.Next(-10, 10));
+                networkObject.transform.rotation = rotation;
+                SetupSpawnedObject(networkObject.gameObject); // adds custom component on spawn
+                return networkObject;
             }
 
-            private static void UpdateClientForTest1(float deltaTime)
+            public void HandleNetworkPrefabDestroy(NetworkObject networkObject)
             {
-                var count = OneNetVar.nbInstances;
-                if (count > 0)
-                {
-                    TestCoordinator.Instance.WriteTestResultsServerRpc(count);
+                networkObject.transform.position = Vector3.zero;
+                networkObject.transform.rotation = Quaternion.identity;
+                // TeardownSpawnedObject(networkObject.gameObject);
+                m_ObjectPool.Release(networkObject.gameObject);
 
-                    // TestCoordinator.WriteResults(count);
-
-                    if (count >= s_TargetCount)
-                    {
-                        // we got what we want, don't update results any longer
-                        NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate -= UpdateClientForTest1;
-                    }
-                }
-            }
-
-            public static void TeardownClientForTest1()
-            {
-                var prefabToSpawn = PrefabReference.Instance.referencedPrefab;
-                NetworkManager.Singleton.PrefabHandler.RemoveHandler(prefabToSpawn);
-                s_TargetCount = 0;
-                NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate -= UpdateClientForTest1;
-                NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate += WaitForAllOneNetVarToDespawn;
-            }
-
-            private static void WaitForAllOneNetVarToDespawn(float deltaTime)
-            {
-                var count = OneNetVar.nbInstances;
-                Debug.Log($"waiting for despawn, count is {count} before client setting its done");
-                if (count == 0)
-                {
-                    NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate -= WaitForAllOneNetVarToDespawn;
-                    TestCoordinator.Instance.ClientFinishedServerRpc();
-                }
+                // UnityEngine.Object.Destroy(networkObject.gameObject);
             }
         }
+
+        // public static class NetworkVariablePerformanceTestsClient
+        // {
+
+
+            // public static void SetupClientForTest1(byte[] args)
+            // {
+            //     s_TargetCount = BitConverter.ToInt32(args, 0);
+            //     var prefabToSpawn = PrefabReference.Instance.referencedPrefab;
+            //     var addedHandler = NetworkManager.Singleton.PrefabHandler.AddHandler(prefabToSpawn, new CustomPrefabSpawnForTest1(prefabToSpawn));
+            //     if (!addedHandler)
+            //     {
+            //         throw new Exception("Couldn't add Handler!");
+            //     }
+            //
+            //     NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate += UpdateClientForTest1;
+            //     TestCoordinator.Instance.ClientFinishedServerRpc();
+            // }
+
+
+
+
+        // }
 
         private static void OnSceneLoadedInitSetupSuite(Scene scene, LoadSceneMode loadSceneMode)
         {
@@ -146,12 +117,6 @@ namespace MLAPI.MultiprocessRuntimeTests
             s_ObjectPool.Init(k_MaxObjectstoSpawn, prefabToSpawn);
         }
 
-
-
-
-
-
-
         [OneTimeSetUp]
         public override void SetupSuite()
         {
@@ -159,7 +124,7 @@ namespace MLAPI.MultiprocessRuntimeTests
             SceneManager.sceneLoaded += OnSceneLoadedInitSetupSuite;
         }
 
-        [UnityTest, Performance]
+        [UnityTest, Performance, MultiprocessContextBasedTest]
         [TestCase(1, ExpectedResult = null)]
         [TestCase(10, ExpectedResult = null)]
         [TestCase(100, ExpectedResult = null)]
@@ -173,81 +138,133 @@ namespace MLAPI.MultiprocessRuntimeTests
         [TestCase(15000, ExpectedResult = null)]
         public IEnumerator TestSpawningManyObjects(int nbObjects)
         {
-            Assert.LessOrEqual(nbObjects, k_MaxObjectstoSpawn); // sanity check
+            InitSteps();
 
-            // setup and wait for client to be ready
-            TestCoordinator.Instance.TriggerRpc(NetworkVariablePerformanceTestsClient.SetupClientForTest1, BitConverter.GetBytes(nbObjects));
-            foreach (var clientId in TestCoordinator.AllClientIdExceptMine)
+            yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Server, _ =>
             {
-                // wait for the clients to be ready
-                yield return new WaitUntil(TestCoordinator.ConsumeClientIsFinished(clientId));
-            }
+                Assert.LessOrEqual(nbObjects, k_MaxObjectstoSpawn); // sanity check
+            });
 
-            // start test
-            using (Measure.Scope($"Time Taken For Spawning {nbObjects} objects and getting report"))
+            yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Clients, _ =>
             {
-                // spawn prefabs for test
-
-                // todo test with multiple workers
-                for (int i = 0; i < nbObjects; i++)
+                // setup clients
+                void Update(float deltaTime)
                 {
-                    // var spawnedObject = GameObject.Instantiate(prefabToSpawn);
-                    var spawnedObject = s_ObjectPool.Get();
-                    var oneNetVar = SetupSpawnedObject(spawnedObject);
-                    oneNetVar.NetworkObject.Spawn(destroyWithScene: true);
-                    m_SpawnedObjects.Add(oneNetVar.NetworkObject);
-                }
-
-                // wait for spawn results coming from clients
-                for (int i = 0; i < NbWorkers; i++)
-                {
-                    float initialCount = float.NaN;
-                    var startTime = Time.time;
-                    var latestResult = float.NaN;
-                    var allocated = new SampleGroup($"NbSpawnedPerFrame", SampleUnit.Undefined);
-                    while (latestResult != nbObjects && Time.time - startTime < TestCoordinator.maxWaitTimeout)
+                    var count = OneNetVar.nbInstances;
+                    if (count > 0)
                     {
-                        // gather the object count over time to save it in the performance framework
-                        yield return new WaitUntil(TestCoordinator.ResultIsSet(useTimeoutException: false));
+                        TestCoordinator.Instance.WriteTestResultsServerRpc(count);
 
-                        foreach (var current in TestCoordinator.ConsumeCurrentResult())
+                        if (count >= s_TargetCount)
                         {
-                            latestResult = current.result;
-                            Debug.Log($"got results, asserting, result is {current.result} from key {current.clientId}");
-                            if (float.IsNaN(initialCount))
-                            {
-                                initialCount = current.result;
-                            }
-
-                            Measure.Custom(allocated, current.result);
+                            // we got what we want, don't update results any longer
+                            NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate -= Update;
                         }
                     }
-
-                    Assert.AreEqual(nbObjects, initialCount);
                 }
-            }
 
-            Debug.Log($"finished with test for {nbObjects} objects");
+                s_TargetCount = nbObjects;
+                var prefabToSpawn = PrefabReference.Instance.referencedPrefab;
+                var addedHandler = NetworkManager.Singleton.PrefabHandler.AddHandler(prefabToSpawn, new CustomPrefabSpawnForTest1(prefabToSpawn));
+                if (!addedHandler)
+                {
+                    throw new Exception("Couldn't add Handler!");
+                }
+
+                NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate += Update;
+            });
+
+            yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Server, _ =>
+            {
+
+                // start test
+                using (Measure.Scope($"Time Taken For Spawning {nbObjects} objects and getting report"))
+                {
+                    // spawn prefabs for test
+
+                    // todo test with multiple workers
+                    for (int i = 0; i < nbObjects; i++)
+                    {
+                        var spawnedObject = s_ObjectPool.Get();
+                        var oneNetVar = SetupSpawnedObject(spawnedObject);
+                        oneNetVar.NetworkObject.Spawn(destroyWithScene: true);
+                        m_SpawnedObjects.Add(oneNetVar.NetworkObject);
+                    }
+                }
+            }, additionalIsFinishedWaiter: () =>
+            {
+                // wait for spawn results coming from clients
+                int finishedCount = 0;
+                foreach (var clientIdWithResult in TestCoordinator.AllClientIdsWithResults)
+                {
+                    var latestResult = TestCoordinator.PeekLatestResult(clientIdWithResult);
+                    if (latestResult == nbObjects)
+                    {
+                        finishedCount++;
+                    }
+                }
+
+                return finishedCount == NbWorkers;
+            });
+            yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Server, bytes =>
+            {
+                // add measurements
+                var allocated = new SampleGroup($"NbSpawnedPerFrame", SampleUnit.Undefined);
+
+                List<(ulong, float)> wrongFirstResults = new List<(ulong, float)>();
+                foreach (var current in TestCoordinator.ConsumeCurrentResult())
+                {
+                    Debug.Log($"got results, asserting, result is {current.result} from key {current.clientId}");
+                    Measure.Custom(allocated, current.result);
+                    if (current.result != nbObjects)
+                    {
+                        wrongFirstResults.Add(current);
+                    }
+                }
+
+                if (wrongFirstResults.Count > 0)
+                {
+                    Assert.Fail($"Expected first spawn to be {nbObjects}, but instead got {wrongFirstResults[0].Item2} items for client {wrongFirstResults[0].Item1}");
+                }
+                Debug.Log($"finished with test for {nbObjects} objects");
+            });
+
         }
 
-        [UnityTearDown]
+        [UnityTearDown, MultiprocessContextBasedTest]
         public IEnumerator UnityTeardown()
         {
-            // Teardown();
-            TestCoordinator.Instance.TriggerRpc(NetworkVariablePerformanceTestsClient.TeardownClientForTest1);
-            foreach (var spawnedObject in m_SpawnedObjects)
-            {
-                spawnedObject.Despawn();
-                s_ObjectPool.Release(spawnedObject.gameObject);
-            }
+            InitSteps();
 
-            m_SpawnedObjects.Clear();
-
-            // wait for the clients to be done with their teardown
-            foreach (var clientId in TestCoordinator.AllClientIdExceptMine)
+            yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Server, bytes =>
             {
-                yield return new WaitUntil(TestCoordinator.ConsumeClientIsFinished(clientId, useTimeoutException:false));
-            }
+                foreach (var spawnedObject in m_SpawnedObjects)
+                {
+                    spawnedObject.Despawn();
+                    s_ObjectPool.Release(spawnedObject.gameObject);
+                }
+                m_SpawnedObjects.Clear();
+            });
+
+            yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Clients, bytes =>
+            {
+                var prefabToSpawn = PrefabReference.Instance.referencedPrefab;
+                NetworkManager.Singleton.PrefabHandler.RemoveHandler(prefabToSpawn);
+                s_TargetCount = 0;
+                NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate = null;
+
+                void WaitForAllOneNetVarToDespawn(float deltaTime)
+                {
+                    var count = OneNetVar.nbInstances;
+                    Debug.Log($"waiting for despawn, count is {count} before client setting its done");
+                    if (count == 0)
+                    {
+                        NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate -= WaitForAllOneNetVarToDespawn;
+                        TestCoordinator.Instance.ClientFinishedServerRpc();
+                    }
+                }
+                NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate += WaitForAllOneNetVarToDespawn;
+            }, spansMultipleUpdates: false);
         }
 
         [OneTimeTearDown]

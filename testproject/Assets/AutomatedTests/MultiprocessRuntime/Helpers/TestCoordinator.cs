@@ -120,11 +120,23 @@ internal class TestCoordinator : NetworkBehaviour
             .ToArray();
         foreach (var method in registeredMethods)
         {
-            var type = method.ReflectedType;
-            var instance = Activator.CreateInstance(type);
+            var instance = Activator.CreateInstance(method.ReflectedType);
 
-            ExecuteStepInContext.InitTest(method);
-            var result = (IEnumerator)method.Invoke(instance, null);
+            // ExecuteStepInContext.InitTest(method);
+            var parameters = method.GetParameters();
+            object[] parametersToPass = new object[parameters.Length];
+            for (int i = 0; i < parameters.Length; i++)
+            {
+
+                var paramType = parameters[i].GetType();
+                object defaultObj = null;
+                if(paramType.IsValueType)
+                {
+                    defaultObj = Activator.CreateInstance(paramType);
+                }
+                parametersToPass[i] = defaultObj;
+            }
+            var result = (IEnumerator)method.Invoke(instance, parametersToPass.ToArray());
             while (result.MoveNext()) { }
         }
 
@@ -229,6 +241,19 @@ internal class TestCoordinator : NetworkBehaviour
 
         // throw new NotImplementedException("Should not be here");
     }
+
+    public static float PeekLatestResult(ulong clientId)
+    {
+        // foreach (var kv in Instance.m_TestResultsLocal)
+        if (Instance.m_TestResultsLocal.ContainsKey(clientId) && Instance.m_TestResultsLocal[clientId].Count > 0)
+        {
+            return Instance.m_TestResultsLocal[clientId].Peek();
+        }
+
+        return float.NaN;
+    }
+
+    public static ulong[] AllClientIdsWithResults => Instance.m_TestResultsLocal.Keys.ToArray();
 
     public static Func<bool> ResultIsSet(bool useTimeoutException = true)
     {
@@ -456,8 +481,6 @@ internal class TestCoordinator : NetworkBehaviour
             public IEnumerator BeforeTest(ITest test)
             {
                 yield return new WaitUntil(() => Instance != null && Instance.hasRegistered);
-
-                InitTest(test.Method.MethodInfo);
             }
 
             public IEnumerator AfterTest(ITest test)
@@ -476,26 +499,24 @@ internal class TestCoordinator : NetworkBehaviour
         // private int m_CurrentActionID;
         private NetworkManager m_NetworkManager;
         private bool m_IsRegistering;
-        private List<Func<bool>> m_WaitForClientCheck = new List<Func<bool>>();
-        private bool m_FinishOnInvoke;
+        private List<Func<bool>> m_IsFinishedChecks = new List<Func<bool>>();
+        private bool m_SpansMultipleUpdates;
 
-        // assumes this is called from same callsite as ExecuteInContext
-        public static void InitTest(MethodBase callerMethod)
+        private float m_StartTime;
+        private bool isTimingOut => Time.time - m_StartTime > maxWaitTimeout;
+
+        // Assumes this is called from same callsite as ExecuteInContext (and assumes this is called from IEnumerator).
+        // This relies on the name to be unique for each generated IEnumerator state machines
+        public static void InitSteps()
         {
-            // var callerMethod = new StackFrame(1).GetMethod();
-            var methodIdentifier = GetMethodIdentifier(callerMethod, callerMethod.Name, callerMethod.DeclaringType.FullName);
+            var callerMethod = new StackFrame(1).GetMethod();
+            var methodIdentifier = GetMethodIdentifier(callerMethod.DeclaringType.FullName); // since this is called from IEnumerator, this should be a generated class
             s_MethodIDCounter[methodIdentifier] = 0;
         }
 
-        public static string GetMethodIdentifier(MethodBase method, string methodName, string callerTypeName)
+        public static string GetMethodIdentifier(string callerTypeName)
         {
-            string allParameters = "";
-            foreach (var param in method.GetParameters())
-            {
-                allParameters += param.Name;
-            }
-
-            var info = callerTypeName + methodName + allParameters;
+            var info = callerTypeName;
             Debug.Log($"GetMethodIdentifier!!!! {info}");
             return info;
         }
@@ -510,14 +531,19 @@ internal class TestCoordinator : NetworkBehaviour
         /// <param name="todo">action to execute</param>
         /// <param name="paramToPass">parameters to pass to action</param>
         /// <param name="networkManager"></param>
-        /// <param name="finishOnInvoke"> waits multiple frames before allowing the execution to continue. This means ClientFinishedServerRpc must be called manually</param>
+        /// <param name="spansMultipleUpdates"> waits multiple frames before allowing the execution to continue. This means ClientFinishedServerRpc must be called manually</param>
         /// <param name="callerName">Don't use this, this will be filled in automatically</param>
-        public ExecuteStepInContext(StepExecutionContext actionContext, Action<byte[]> todo, byte[] paramToPass = default, NetworkManager networkManager = null, bool finishOnInvoke = true, [CallerMemberName] string callerName = "")
+        public ExecuteStepInContext(StepExecutionContext actionContext, Action<byte[]> todo, byte[] paramToPass = default, NetworkManager networkManager = null, bool spansMultipleUpdates = true, Func<bool> additionalIsFinishedWaiter = null, [CallerMemberName] string callerName = "")
         {
+            m_StartTime = Time.time;
             m_IsRegistering = Instance.isRegistering;
             m_ActionContextContext = actionContext;
             m_Todo = todo;
-            m_FinishOnInvoke = finishOnInvoke;
+            m_SpansMultipleUpdates = spansMultipleUpdates;
+            if (additionalIsFinishedWaiter != null)
+            {
+                m_IsFinishedChecks.Add(additionalIsFinishedWaiter);
+            }
             if (networkManager == null)
             {
                 networkManager = NetworkManager.Singleton;
@@ -527,7 +553,7 @@ internal class TestCoordinator : NetworkBehaviour
 
             var callerMethod = new StackFrame(1).GetMethod(); // one skip frame for current method
 
-            var methodId = GetMethodIdentifier(callerMethod, callerName, callerMethod.DeclaringType.DeclaringType.FullName); // assumes called from IEnumerator MoveNext, which should be the case since we're a CustomYieldInstruction
+            var methodId = GetMethodIdentifier(callerMethod.DeclaringType.FullName); // assumes called from IEnumerator MoveNext, which should be the case since we're a CustomYieldInstruction
             if (!s_MethodIDCounter.ContainsKey(methodId))
             {
                 s_MethodIDCounter[methodId] = 0;
@@ -557,7 +583,7 @@ internal class TestCoordinator : NetworkBehaviour
                             });
                         foreach (var clientId in AllClientIdExceptMine)
                         {
-                            m_WaitForClientCheck.Add(ConsumeClientIsFinished(clientId));
+                            m_IsFinishedChecks.Add(ConsumeClientIsFinished(clientId));
                         }
                     }
                     else
@@ -571,7 +597,7 @@ internal class TestCoordinator : NetworkBehaviour
         public void Invoke(byte[] args)
         {
             m_Todo.Invoke(args);
-            if (m_FinishOnInvoke)
+            if (m_SpansMultipleUpdates)
             {
                 if (!m_NetworkManager.IsServer)
                 {
@@ -588,18 +614,22 @@ internal class TestCoordinator : NetworkBehaviour
         {
             get
             {
-                if (m_IsRegistering || ShouldExecuteLocally || m_WaitForClientCheck == null)
+                if (m_IsRegistering || ShouldExecuteLocally || m_IsFinishedChecks == null || isTimingOut)
                 {
+                    if (isTimingOut)
+                    {
+                        Debug.LogError("timeout");
+                    }
                     return false;
                 }
 
-                for (int i = m_WaitForClientCheck.Count - 1; i >= 0; i--)
+                for (int i = m_IsFinishedChecks.Count - 1; i >= 0; i--)
                 {
-                    var waiter = m_WaitForClientCheck[i];
+                    var waiter = m_IsFinishedChecks[i];
                     var receivedResponse = waiter.Invoke();
                     if (receivedResponse)
                     {
-                        m_WaitForClientCheck.RemoveAt(i);
+                        m_IsFinishedChecks.RemoveAt(i);
                     }
                     else
                     {
