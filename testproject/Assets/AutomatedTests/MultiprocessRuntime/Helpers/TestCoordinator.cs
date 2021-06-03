@@ -28,7 +28,7 @@ internal class TestCoordinator : NetworkBehaviour
     /// </summary>
     public const float maxWaitTimeout = 10;
     public const char methodFullNameSplitChar = '@';
-    public const string isClientArg = "-isClient";
+    public const string isWorkerArg = "-isWorker";
     public const string buildInfoFileName = "buildInfo.txt";
 
     public bool isRegistering;
@@ -101,7 +101,7 @@ internal class TestCoordinator : NetworkBehaviour
 
     public void Start()
     {
-        bool isClient = Environment.GetCommandLineArgs().Any(value => value == isClientArg);
+        bool isClient = Environment.GetCommandLineArgs().Any(value => value == isWorkerArg);
         if (isClient)
         {
             Debug.Log("starting MLAPI client");
@@ -400,8 +400,6 @@ internal class TestCoordinator : NetworkBehaviour
 
     public static void StartWorkerNode()
     {
-// #if UNITY_EDITOR
-
         var workerNode = new Process();
 
         //TODO this should be replaced eventually by proper orchestration
@@ -427,9 +425,7 @@ internal class TestCoordinator : NetworkBehaviour
         workerNode.StartInfo.UseShellExecute = false;
         workerNode.StartInfo.RedirectStandardError = true;
         workerNode.StartInfo.RedirectStandardOutput = true;
-        workerNode.StartInfo.Arguments = $"{isClientArg} -popupwindow -screen-width 100 -screen-height 100";
-
-        // workerNode.StartInfo.Arguments = $"-startAsServer";
+        workerNode.StartInfo.Arguments = $"{isWorkerArg} -popupwindow -screen-width 100 -screen-height 100";
         try
         {
             var newProcessStarted = workerNode.Start();
@@ -444,10 +440,6 @@ internal class TestCoordinator : NetworkBehaviour
             Debug.LogError($"Error starting player, {buildInstructions}, {e.Message} {e.Data} {e.ErrorCode}");
             throw e;
         }
-
-// #else
-//         throw new NotImplementedException("worker node launching not supported");
-// #endif
     }
 
     public class ExecuteStepInContext : CustomYieldInstruction
@@ -463,11 +455,9 @@ internal class TestCoordinator : NetworkBehaviour
         {
             public IEnumerator BeforeTest(ITest test)
             {
-                yield return new WaitUntil(() => TestCoordinator.Instance != null && TestCoordinator.Instance.hasRegistered);
+                yield return new WaitUntil(() => Instance != null && Instance.hasRegistered);
 
-                // var method = test.Method.MethodInfo.ReturnType.GetMethod(nameof(IEnumerator.MoveNext));
-                // ExecuteInContext.InitTest(method);
-                TestCoordinator.ExecuteStepInContext.InitTest(test.Method.MethodInfo);
+                InitTest(test.Method.MethodInfo);
             }
 
             public IEnumerator AfterTest(ITest test)
@@ -518,13 +508,13 @@ internal class TestCoordinator : NetworkBehaviour
         /// </summary>
         /// <param name="actionContext">context to use. for example, should execute client side? server side?</param>
         /// <param name="todo">action to execute</param>
-        /// <param name="isRegistering">is it currently registering this action. This should be passed by the test method on process startup</param>
         /// <param name="paramToPass">parameters to pass to action</param>
         /// <param name="networkManager"></param>
         /// <param name="finishOnInvoke"> waits multiple frames before allowing the execution to continue. This means ClientFinishedServerRpc must be called manually</param>
+        /// <param name="callerName">Don't use this, this will be filled in automatically</param>
         public ExecuteStepInContext(StepExecutionContext actionContext, Action<byte[]> todo, byte[] paramToPass = default, NetworkManager networkManager = null, bool finishOnInvoke = true, [CallerMemberName] string callerName = "")
         {
-            m_IsRegistering = TestCoordinator.Instance.isRegistering;
+            m_IsRegistering = Instance.isRegistering;
             m_ActionContextContext = actionContext;
             m_Todo = todo;
             m_FinishOnInvoke = finishOnInvoke;
@@ -560,19 +550,19 @@ internal class TestCoordinator : NetworkBehaviour
                 {
                     if (networkManager.IsServer)
                     {
-                        TestCoordinator.Instance.TriggerActionIDClientRpc(currentActionID, paramToPass,
+                        Instance.TriggerActionIDClientRpc(currentActionID, paramToPass,
                             clientRpcParams: new ClientRpcParams()
                             {
-                                Send = new ClientRpcSendParams() { TargetClientIds = TestCoordinator.AllClientIdExceptMine.ToArray() }
+                                Send = new ClientRpcSendParams() { TargetClientIds = AllClientIdExceptMine.ToArray() }
                             });
-                        foreach (var clientId in TestCoordinator.AllClientIdExceptMine)
+                        foreach (var clientId in AllClientIdExceptMine)
                         {
-                            m_WaitForClientCheck.Add(TestCoordinator.ConsumeClientIsFinished(clientId));
+                            m_WaitForClientCheck.Add(ConsumeClientIsFinished(clientId));
                         }
                     }
                     else
                     {
-                        TestCoordinator.Instance.TriggerActionIDServerRpc(currentActionID, paramToPass);
+                        Instance.TriggerActionIDServerRpc(currentActionID, paramToPass);
                     }
                 }
             }
@@ -585,7 +575,7 @@ internal class TestCoordinator : NetworkBehaviour
             {
                 if (!m_NetworkManager.IsServer)
                 {
-                    TestCoordinator.Instance.ClientFinishedServerRpc();
+                    Instance.ClientFinishedServerRpc();
                 }
                 else
                 {
