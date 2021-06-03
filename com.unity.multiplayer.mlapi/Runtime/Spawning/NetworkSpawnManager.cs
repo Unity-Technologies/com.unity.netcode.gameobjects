@@ -302,6 +302,8 @@ namespace MLAPI.Spawning
             SpawnedObjects.Add(networkObject.NetworkObjectId, networkObject);
             SpawnedObjectsList.Add(networkObject);
 
+            NetworkManager.Singleton.NetworkMetrics.TrackNetworkObject(networkObject);
+
             if (ownerClientId != null)
             {
                 if (NetworkManager.IsServer)
