@@ -19,7 +19,6 @@ namespace MLAPI.Profiling
         readonly ProfilerMarker m_HandleDestroyObjects = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleDestroyObjects)}");
         readonly ProfilerMarker m_HandleTimeSync = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleTimeSync)}");
         readonly ProfilerMarker m_HandleNetworkVariableDelta = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleNetworkVariableDelta)}");
-        readonly ProfilerMarker m_HandleNetworkVariableUpdate = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleNetworkVariableUpdate)}");
         readonly ProfilerMarker m_HandleUnnamedMessage = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleUnnamedMessage)}");
         readonly ProfilerMarker m_HandleNamedMessage = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleNamedMessage)}");
         readonly ProfilerMarker m_HandleNetworkLog = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleNetworkLog)}");
@@ -133,15 +132,6 @@ namespace MLAPI.Profiling
             m_MessageHandler.HandleNetworkVariableDelta(clientId, stream, bufferCallback, bufferPreset);
 
             m_HandleNetworkVariableDelta.End();
-        }
-
-        public void HandleNetworkVariableUpdate(ulong clientId, Stream stream, Action<ulong, PreBufferPreset> bufferCallback, PreBufferPreset bufferPreset)
-        {
-            m_HandleNetworkVariableUpdate.Begin();
-
-            m_MessageHandler.HandleNetworkVariableUpdate(clientId, stream, bufferCallback, bufferPreset);
-
-            m_HandleNetworkVariableUpdate.End();
         }
 
         public void RpcReceiveQueueItem(ulong clientId, Stream stream, float receiveTime, RpcQueueContainer.QueueItemType queueItemType)

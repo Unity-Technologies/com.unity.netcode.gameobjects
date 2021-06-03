@@ -324,58 +324,6 @@ namespace MLAPI.Messaging
             }
         }
 
-        public void HandleNetworkVariableUpdate(ulong clientId, Stream stream, Action<ulong, PreBufferPreset> bufferCallback, PreBufferPreset bufferPreset)
-        {
-            if (!NetworkManager.NetworkConfig.EnableNetworkVariable)
-            {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                {
-                    NetworkLog.LogWarning($"{nameof(NetworkConstants.NETWORK_VARIABLE_UPDATE)} update received but {nameof(NetworkConfig.EnableNetworkVariable)} is false");
-                }
-
-                return;
-            }
-
-            using (var reader = PooledNetworkReader.Get(stream))
-            {
-                ulong networkObjectId = reader.ReadUInt64Packed();
-                ushort networkBehaviourIndex = reader.ReadUInt16Packed();
-
-                if (NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(networkObjectId, out NetworkObject networkObject))
-                {
-                    var networkBehaviour = networkObject.GetNetworkBehaviourAtOrderIndex(networkBehaviourIndex);
-
-                    if (networkBehaviour == null)
-                    {
-                        if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                        {
-                            NetworkLog.LogWarning($"{nameof(NetworkConstants.NETWORK_VARIABLE_UPDATE)} message received for a non-existent behaviour. {nameof(networkObjectId)}: {networkObjectId}, {nameof(networkBehaviourIndex)}: {networkBehaviourIndex}");
-                        }
-                    }
-                    else
-                    {
-                        NetworkBehaviour.HandleNetworkVariableUpdate(networkBehaviour.NetworkVariableFields, stream, clientId, networkBehaviour, NetworkManager);
-                    }
-                }
-                else if (NetworkManager.IsServer || !NetworkManager.NetworkConfig.EnableMessageBuffering)
-                {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                    {
-                        NetworkLog.LogWarning($"{nameof(NetworkConstants.NETWORK_VARIABLE_UPDATE)} message received for a non-existent object with {nameof(networkObjectId)}: {networkObjectId}. This delta was lost.");
-                    }
-                }
-                else
-                {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                    {
-                        NetworkLog.LogWarning($"{nameof(NetworkConstants.NETWORK_VARIABLE_UPDATE)} message received for a non-existent object with {nameof(networkObjectId)}: {networkObjectId}. This delta will be buffered and might be recovered.");
-                    }
-
-                    bufferCallback(networkObjectId, bufferPreset);
-                }
-            }
-        }
-
         /// <summary>
         /// Converts the stream to a PerformanceQueueItem and adds it to the receive queue
         /// </summary>

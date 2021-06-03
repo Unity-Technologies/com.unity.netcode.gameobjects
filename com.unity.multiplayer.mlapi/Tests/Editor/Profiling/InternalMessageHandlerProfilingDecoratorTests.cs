@@ -105,14 +105,6 @@ namespace MLAPI.EditorTests.Profiling
         }
 
         [Test]
-        public void HandleNetworkVariableUpdateCallsUnderlyingHandler()
-        {
-            m_Decorator.HandleNetworkVariableUpdate(0, null, null, default);
-
-            LogAssert.Expect(LogType.Log, nameof(m_Decorator.HandleNetworkVariableUpdate));
-        }
-
-        [Test]
         public void HandleUnnamedMessageCallsUnderlyingHandler()
         {
             m_Decorator.HandleUnnamedMessage(0, null);
