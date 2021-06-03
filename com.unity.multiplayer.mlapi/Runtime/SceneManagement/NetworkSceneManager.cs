@@ -79,6 +79,7 @@ namespace MLAPI.SceneManagement
         internal readonly Dictionary<string, uint> SceneNameToIndex = new Dictionary<string, uint>();
         internal readonly Dictionary<uint, string> SceneIndexToString = new Dictionary<uint, string>();
         internal readonly Dictionary<Guid, SceneSwitchProgress> SceneSwitchProgresses = new Dictionary<Guid, SceneSwitchProgress>();
+        internal readonly Dictionary<uint, NetworkObject> ScenePlacedObjects = new Dictionary<uint, NetworkObject>();
 
         private static Scene s_LastScene;
         private static string s_NextSceneName;
@@ -274,7 +275,7 @@ namespace MLAPI.SceneManagement
         }
 
 
-        internal Dictionary<uint, NetworkObject> ScenePlacedObjects = new Dictionary<uint, NetworkObject>();
+        
 
         /// <summary>
         /// Should be invoked on both the client and server side after:
@@ -299,6 +300,10 @@ namespace MLAPI.SceneManagement
                 if (!ScenePlacedObjects.ContainsKey(networkObjectInstance.GlobalObjectIdHash))
                 {
                     ScenePlacedObjects.Add(networkObjectInstance.GlobalObjectIdHash, networkObjectInstance);
+                    if(networkObjectInstance.IsSceneObject == null)
+                    {
+                        networkObjectInstance.IsSceneObject = true;
+                    }
                 }
             }
         }

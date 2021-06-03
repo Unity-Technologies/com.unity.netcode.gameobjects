@@ -24,9 +24,6 @@ namespace MLAPI.Spawning
         /// </summary>
         public readonly Dictionary<ulong, NetworkObject> SpawnedObjects = new Dictionary<ulong, NetworkObject>();
 
-        // Pending SoftSync objects
-        internal readonly Dictionary<ulong, NetworkObject> PendingSoftSyncObjects = new Dictionary<ulong, NetworkObject>();
-
         /// <summary>
         /// A list of the spawned objects
         /// </summary>
