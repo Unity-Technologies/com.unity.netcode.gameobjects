@@ -17,7 +17,7 @@ See this guide to install Unity MLAPI, set up your project, and get started with
 
 This version of MLAPI is compatible with the following versions of the Unity Editor:
 
-* 2019.4 and later (recommended)
+* 2020.3 and later
 * Windows, Mac, Linux platforms are supported by MLAPI
 
 ## Document revision history
@@ -26,3 +26,4 @@ This version of MLAPI is compatible with the following versions of the Unity Edi
 |---|---|
 |March 10, 2021|Document created. Matches package version 0.1.0|
 |June 1, 2021| Updated and added links for additional content. Matches patch version 0.1.0 and hotfixes.|
+|June 3, 2021| Update document to acknowledge Unity min version change. Matches package version 0.2.0|
