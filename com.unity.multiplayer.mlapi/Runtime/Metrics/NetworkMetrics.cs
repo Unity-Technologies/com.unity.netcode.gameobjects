@@ -11,9 +11,11 @@ namespace MLAPI.Metrics
     {
         void TrackNetworkObject(NetworkObject networkObject);
 
-        void TrackNamedMessageSent(string messageName, ulong bytesCount);
+        void TrackNamedMessageSent(ulong clientId, string messageName, ulong bytesCount);
 
-        void TrackNamedMessageReceived(string messageName, ulong bytesCount);
+        void TrackNamedMessageSent(List<ulong> clientIds, string messageName, ulong bytesCount);
+
+        void TrackNamedMessageReceived(ulong clientId, string messageName, ulong bytesCount);
 
         void DispatchFrame();
     }
@@ -24,11 +26,15 @@ namespace MLAPI.Metrics
         {
         }
 
-        public void TrackNamedMessageSent(string messageName, ulong bytesCount)
+        public void TrackNamedMessageSent(ulong clientId, string messageName, ulong bytesCount)
         {
         }
 
-        public void TrackNamedMessageReceived(string messageName, ulong bytesCount)
+        public void TrackNamedMessageSent(List<ulong> clientIds, string messageName, ulong bytesCount)
+        {
+        }
+
+        public void TrackNamedMessageReceived(ulong clientId, string messageName, ulong bytesCount)
         {
         }
 
@@ -48,8 +54,6 @@ namespace MLAPI.Metrics
 
         private Dictionary<ulong, NetworkObjectIdentifier> m_NetworkGameObjects = new Dictionary<ulong, NetworkObjectIdentifier>();
 
-        private ConnectionInfo m_LocalConnectionInfo;
-
         public NetworkMetrics(NetworkManager networkManager)
         {
             m_NetworkManager = networkManager;
@@ -58,7 +62,6 @@ namespace MLAPI.Metrics
                 .Build();
 
             m_Dispatcher.RegisterObserver(MLAPIObserver.Observer);
-            m_LocalConnectionInfo = new ConnectionInfo(m_NetworkManager.LocalClientId);
         }
 
         public void TrackNetworkObject(NetworkObject networkObject)
@@ -69,14 +72,22 @@ namespace MLAPI.Metrics
             }
         }
 
-        public void TrackNamedMessageSent(string messageName, ulong bytesCount)
+        public void TrackNamedMessageSent(ulong clientId, string messageName, ulong bytesCount)
         {
-            m_NamedMessageSentEvent.Mark(new NamedMessageEvent(m_LocalConnectionInfo, messageName, bytesCount));
+            m_NamedMessageSentEvent.Mark(new NamedMessageEvent(new ConnectionInfo(clientId), messageName, bytesCount));
         }
 
-        public void TrackNamedMessageReceived(string messageName, ulong bytesCount)
+        public void TrackNamedMessageSent(List<ulong> clientIds, string messageName, ulong bytesCount)
         {
-            m_NamedMessageReceivedEvent.Mark(new NamedMessageEvent(m_LocalConnectionInfo, messageName, bytesCount));
+            foreach (var clientId in clientIds)
+            {
+                TrackNamedMessageSent(clientId, messageName, bytesCount);
+            }
+        }
+
+        public void TrackNamedMessageReceived(ulong clientId, string messageName, ulong bytesCount)
+        {
+            m_NamedMessageReceivedEvent.Mark(new NamedMessageEvent(new ConnectionInfo(clientId), messageName, bytesCount));
         }
 
         public void DispatchFrame()

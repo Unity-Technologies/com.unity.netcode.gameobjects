@@ -96,14 +96,14 @@ namespace MLAPI.Messaging
                 if (m_NamedMessageHandlers32.ContainsKey(hash))
                 {
                     m_NamedMessageHandlers32[hash](sender, stream);
-                    m_NetworkManager.NetworkMetrics.TrackNamedMessageReceived(m_MessageHandlerNameLookup32[hash], bytesCount);
+                    m_NetworkManager.NetworkMetrics.TrackNamedMessageReceived(sender, m_MessageHandlerNameLookup32[hash], bytesCount);
 
                 }
 
                 if (m_NamedMessageHandlers64.ContainsKey(hash))
                 {
                     m_NamedMessageHandlers64[hash](sender, stream);
-                    m_NetworkManager.NetworkMetrics.TrackNamedMessageReceived(m_MessageHandlerNameLookup64[hash], bytesCount);
+                    m_NetworkManager.NetworkMetrics.TrackNamedMessageReceived(sender, m_MessageHandlerNameLookup64[hash], bytesCount);
                 }
             }
             else
@@ -115,14 +115,14 @@ namespace MLAPI.Messaging
                         if (m_NamedMessageHandlers32.ContainsKey(hash))
                         {
                             m_NamedMessageHandlers32[hash](sender, stream);
-                            m_NetworkManager.NetworkMetrics.TrackNamedMessageReceived(m_MessageHandlerNameLookup32[hash], bytesCount);
+                            m_NetworkManager.NetworkMetrics.TrackNamedMessageReceived(sender, m_MessageHandlerNameLookup32[hash], bytesCount);
                         }
                         break;
                     case HashSize.VarIntEightBytes:
                         if (m_NamedMessageHandlers64.ContainsKey(hash))
                         {
                             m_NamedMessageHandlers64[hash](sender, stream);
-                            m_NetworkManager.NetworkMetrics.TrackNamedMessageReceived(m_MessageHandlerNameLookup64[hash], bytesCount);
+                            m_NetworkManager.NetworkMetrics.TrackNamedMessageReceived(sender, m_MessageHandlerNameLookup64[hash], bytesCount);
                         }
                         break;
                 }
@@ -191,8 +191,8 @@ namespace MLAPI.Messaging
 
                 m_NetworkManager.MessageSender.Send(clientId, NetworkConstants.NAMED_MESSAGE, networkChannel, messageBuffer);
                 PerformanceDataManager.Increment(ProfilerConstants.NamedMessageSent);
-                
-                m_NetworkManager.NetworkMetrics.TrackNamedMessageSent(name, (ulong)messageBuffer.Length);
+
+                m_NetworkManager.NetworkMetrics.TrackNamedMessageSent(clientId, name, (ulong)messageBuffer.Length);
             }
         }
 
@@ -236,7 +236,7 @@ namespace MLAPI.Messaging
                 m_NetworkManager.MessageSender.Send(NetworkConstants.NAMED_MESSAGE, networkChannel, clientIds, messageBuffer);
                 PerformanceDataManager.Increment(ProfilerConstants.NamedMessageSent);
 
-                m_NetworkManager.NetworkMetrics.TrackNamedMessageSent(name, (ulong)messageBuffer.Length);
+                m_NetworkManager.NetworkMetrics.TrackNamedMessageSent(clientIds, name, (ulong)messageBuffer.Length);
             }
         }
     }
