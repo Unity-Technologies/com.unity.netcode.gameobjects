@@ -349,10 +349,11 @@ namespace MLAPI.SceneManagement
                         }
 
                         m_NetworkManager.MessageSender.Send(m_NetworkManager.ConnectedClientsList[j].ClientId, NetworkConstants.SWITCH_SCENE, NetworkChannel.Internal, buffer);
-                        m_NetworkManager.NetworkMetrics.TrackSceneSwitchInitiated(s_LastScene.name, s_NextSceneName);
                     }
                 }
             }
+
+            m_NetworkManager.NetworkMetrics.TrackSceneSwitchInitiated(s_LastScene.name, s_NextSceneName);
 
             // Tell server that scene load is completed
             if (m_NetworkManager.IsHost)
@@ -387,6 +388,7 @@ namespace MLAPI.SceneManagement
                 writer.WriteByteArray(switchSceneGuid.ToByteArray());
                 m_NetworkManager.MessageSender.Send(m_NetworkManager.ServerClientId, NetworkConstants.CLIENT_SWITCH_SCENE_COMPLETED, NetworkChannel.Internal, buffer);
             }
+
             m_NetworkManager.NetworkMetrics.TrackSceneSwitchCompleted(s_LastScene.name, s_NextSceneName);
 
             s_IsSwitching = false;
