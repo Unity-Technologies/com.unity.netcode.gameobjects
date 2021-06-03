@@ -13,7 +13,7 @@ namespace MLAPI.Metrics
 
         void TrackNamedMessageSent(ulong clientId, string messageName, ulong bytesCount);
 
-        void TrackNamedMessageSent(List<ulong> clientIds, string messageName, ulong bytesCount);
+        void TrackNamedMessageSent(IReadOnlyCollection<ulong> clientIds, string messageName, ulong bytesCount);
 
         void TrackNamedMessageReceived(ulong clientId, string messageName, ulong bytesCount);
 
@@ -30,7 +30,7 @@ namespace MLAPI.Metrics
         {
         }
 
-        public void TrackNamedMessageSent(List<ulong> clientIds, string messageName, ulong bytesCount)
+        public void TrackNamedMessageSent(IReadOnlyCollection<ulong> clientIds, string messageName, ulong bytesCount)
         {
         }
 
@@ -77,7 +77,7 @@ namespace MLAPI.Metrics
             m_NamedMessageSentEvent.Mark(new NamedMessageEvent(new ConnectionInfo(clientId), messageName, bytesCount));
         }
 
-        public void TrackNamedMessageSent(List<ulong> clientIds, string messageName, ulong bytesCount)
+        public void TrackNamedMessageSent(IReadOnlyCollection<ulong> clientIds, string messageName, ulong bytesCount)
         {
             foreach (var clientId in clientIds)
             {
