@@ -586,7 +586,7 @@ namespace MLAPI.Editor.CodeGen
                     instructions.Add(processor.Create(OpCodes.Newobj, m_NetworkHandlerDelegateCtor_MethodRef));
                     instructions.Add(processor.Create(OpCodes.Call, m_NetworkManager_ntable_Add_MethodRef));
 
-                    // NetworkManager.__rpc_name_table.Add(HandlerHash, RpcNameMethod);
+                    // NetworkManager.__rpc_name_table.Add(HandlerHash, RpcMethodName);
                     instructions.Add(processor.Create(OpCodes.Ldsfld, m_NetworkManager_rpc_name_table_FieldRef));
                     instructions.Add(processor.Create(OpCodes.Ldc_I4, unchecked((int)hash)));
                     instructions.Add(processor.Create(OpCodes.Ldstr, method.Name.Substring(0, method.Name.Length-"__nhandler".Length)));
