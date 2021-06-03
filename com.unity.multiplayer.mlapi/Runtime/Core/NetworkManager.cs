@@ -1264,17 +1264,6 @@ namespace MLAPI
                             ReceiveTime = receiveTime
                         });
                         break;
-                    case NetworkConstants.NETWORK_VARIABLE_UPDATE:
-                        MessageHandler.HandleNetworkVariableUpdate(clientId, messageStream, BufferCallback, new PreBufferPreset()
-                        {
-                            AllowBuffer = allowBuffer,
-                            NetworkChannel = networkChannel,
-                            ClientId = clientId,
-                            Data = data,
-                            MessageType = messageType,
-                            ReceiveTime = receiveTime
-                        });
-                        break;
                     case NetworkConstants.UNNAMED_MESSAGE:
                         MessageHandler.HandleUnnamedMessage(clientId, messageStream);
                         break;

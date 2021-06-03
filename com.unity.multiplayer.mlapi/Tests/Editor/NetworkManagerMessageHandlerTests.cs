@@ -112,13 +112,6 @@ namespace MLAPI.EditorTests
                 }
 
                 // Should cause log (server and client)
-                LogAssert.Expect(LogType.Log, nameof(MessageHandlerReceivedMessageServerClient) + " " + nameof(DummyMessageHandler.HandleNetworkVariableUpdate));
-                using (var messageStream = MessagePacker.WrapMessage(NetworkConstants.NETWORK_VARIABLE_UPDATE, inputBuffer))
-                {
-                    networkManager.HandleIncomingData(0, NetworkChannel.Internal, new ArraySegment<byte>(messageStream.GetBuffer(), 0, (int)messageStream.Length), 0, true);
-                }
-
-                // Should cause log (server and client)
                 LogAssert.Expect(LogType.Log, nameof(MessageHandlerReceivedMessageServerClient) + " " + nameof(DummyMessageHandler.HandleUnnamedMessage));
                 using (var messageStream = MessagePacker.WrapMessage(NetworkConstants.UNNAMED_MESSAGE, inputBuffer))
                 {
@@ -237,13 +230,6 @@ namespace MLAPI.EditorTests
                 // Should cause log (server and client)
                 LogAssert.Expect(LogType.Log, nameof(MessageHandlerReceivedMessageServerClient) + " " + nameof(DummyMessageHandler.HandleNetworkVariableDelta));
                 using (var messageStream = MessagePacker.WrapMessage(NetworkConstants.NETWORK_VARIABLE_DELTA, inputBuffer))
-                {
-                    networkManager.HandleIncomingData(0, NetworkChannel.Internal, new ArraySegment<byte>(messageStream.GetBuffer(), 0, (int)messageStream.Length), 0, true);
-                }
-
-                // Should cause log (server and client)
-                LogAssert.Expect(LogType.Log, nameof(MessageHandlerReceivedMessageServerClient) + " " + nameof(DummyMessageHandler.HandleNetworkVariableUpdate));
-                using (var messageStream = MessagePacker.WrapMessage(NetworkConstants.NETWORK_VARIABLE_UPDATE, inputBuffer))
                 {
                     networkManager.HandleIncomingData(0, NetworkChannel.Internal, new ArraySegment<byte>(messageStream.GetBuffer(), 0, (int)messageStream.Length), 0, true);
                 }
