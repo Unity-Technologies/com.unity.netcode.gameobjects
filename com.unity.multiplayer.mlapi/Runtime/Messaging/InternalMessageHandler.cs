@@ -83,7 +83,6 @@ namespace MLAPI.Messaging
 
                 NetworkManager.ConnectedClients.Add(NetworkManager.LocalClientId, new NetworkClient { ClientId = NetworkManager.LocalClientId });
 
-
                 void DelayedSpawnAction(Stream continuationStream)
                 {
                     using (var continuationReader = PooledNetworkReader.Get(continuationStream))
@@ -408,7 +407,7 @@ namespace MLAPI.Messaging
         {
             PerformanceDataManager.Increment(ProfilerConstants.NamedMessageReceived);
             ProfilerStatManager.NamedMessage.Record();
-            
+
             using (var reader = PooledNetworkReader.Get(stream))
             {
                 ulong hash = reader.ReadUInt64Packed();
