@@ -18,7 +18,6 @@ namespace TestProject.ManualTests
         private Text m_ClientServerToggleText;
         private List<ulong> m_ClientsToUpdate = new List<ulong>();
 
-
         private bool m_IsServer;
 
         private void Start()
