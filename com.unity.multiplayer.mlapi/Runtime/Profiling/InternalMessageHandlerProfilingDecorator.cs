@@ -26,7 +26,7 @@ namespace MLAPI.Profiling
         private readonly ProfilerMarker m_RpcReceiveQueueItemClientRpc = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(RpcReceiveQueueItem)}.{nameof(RpcQueueContainer.QueueItemType.ClientRpc)}");
         private readonly ProfilerMarker m_HandleAllClientsSwitchSceneCompleted = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleAllClientsSwitchSceneCompleted)}");
         
-        readonly IInternalMessageHandler m_MessageHandler;
+        private readonly IInternalMessageHandler m_MessageHandler;
         
         internal InternalMessageHandlerProfilingDecorator(IInternalMessageHandler messageHandler)
         {
