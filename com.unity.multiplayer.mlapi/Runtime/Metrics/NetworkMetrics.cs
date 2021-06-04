@@ -16,9 +16,11 @@ namespace MLAPI.Metrics
 
         void TrackNamedMessageReceived(ulong senderClientId, string messageName, ulong bytesCount);
 
-        void TrackUnnamedMessageSent(ulong bytesCount);
+        void TrackUnnamedMessageSent(ulong receiverClientId, ulong bytesCount);
 
-        void TrackUnnamedMessageReceived(ulong bytesCount);
+        void TrackUnnamedMessageSent(IReadOnlyCollection<ulong> receiverClientIds, ulong bytesCount);
+
+        void TrackUnnamedMessageReceived(ulong senderClientId, ulong bytesCount);
 
         void DispatchFrame();
     }
@@ -41,11 +43,15 @@ namespace MLAPI.Metrics
         {
         }
 
-        public void TrackUnnamedMessageSent(ulong bytesCount)
+        public void TrackUnnamedMessageSent(ulong receiverClientId, ulong bytesCount)
         {
         }
 
-        public void TrackUnnamedMessageReceived(ulong bytesCount)
+        public void TrackUnnamedMessageSent(IReadOnlyCollection<ulong> receiverClientIds, ulong bytesCount)
+        {
+        }
+
+        public void TrackUnnamedMessageReceived(ulong senderClientId, ulong bytesCount)
         {
         }
 
@@ -106,14 +112,22 @@ namespace MLAPI.Metrics
             m_NamedMessageReceivedEvent.Mark(new NamedMessageEvent(new ConnectionInfo(senderClientId), messageName, bytesCount));
         }
 
-        public void TrackUnnamedMessageSent(ulong bytesCount)
+        public void TrackUnnamedMessageSent(ulong receiverClientId, ulong bytesCount)
         {
-            m_UnnamedMessageSentEvent.Mark(new UnnamedMessageEvent(new ConnectionInfo(m_NetworkManager.LocalClientId), bytesCount));
+            m_UnnamedMessageSentEvent.Mark(new UnnamedMessageEvent(new ConnectionInfo(receiverClientId), bytesCount));
         }
 
-        public void TrackUnnamedMessageReceived(ulong bytesCount)
+        public void TrackUnnamedMessageSent(IReadOnlyCollection<ulong> receiverClientIds, ulong bytesCount)
         {
-            m_UnnamedMessageReceivedEvent.Mark(new UnnamedMessageEvent(new ConnectionInfo(m_NetworkManager.LocalClientId), bytesCount));
+            foreach (var receiverClientId in receiverClientIds)
+            {
+                TrackUnnamedMessageSent(receiverClientId, bytesCount);
+            }
+        }
+
+        public void TrackUnnamedMessageReceived(ulong senderClientId, ulong bytesCount)
+        {
+            m_UnnamedMessageReceivedEvent.Mark(new UnnamedMessageEvent(new ConnectionInfo(senderClientId), bytesCount));
         }
 
         public void DispatchFrame()

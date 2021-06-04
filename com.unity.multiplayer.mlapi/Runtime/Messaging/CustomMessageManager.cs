@@ -44,7 +44,7 @@ namespace MLAPI.Messaging
             }
 
             OnUnnamedMessage?.Invoke(clientId, stream);
-            m_NetworkManager.NetworkMetrics.TrackUnnamedMessageReceived(bytesCount);
+            m_NetworkManager.NetworkMetrics.TrackUnnamedMessageReceived(clientId, bytesCount);
         }
 
         /// <summary>
@@ -67,7 +67,7 @@ namespace MLAPI.Messaging
 
             m_NetworkManager.MessageSender.Send(NetworkConstants.UNNAMED_MESSAGE, networkChannel, clientIds, buffer);
             PerformanceDataManager.Increment(ProfilerConstants.UnnamedMessageSent);
-            m_NetworkManager.NetworkMetrics.TrackUnnamedMessageSent((ulong)buffer.Length);
+            m_NetworkManager.NetworkMetrics.TrackUnnamedMessageSent(clientIds, (ulong)buffer.Length);
         }
 
         /// <summary>
@@ -80,7 +80,7 @@ namespace MLAPI.Messaging
         {
             m_NetworkManager.MessageSender.Send(clientId, NetworkConstants.UNNAMED_MESSAGE, networkChannel, buffer);
             PerformanceDataManager.Increment(ProfilerConstants.UnnamedMessageSent);
-            m_NetworkManager.NetworkMetrics.TrackUnnamedMessageSent((ulong)buffer.Length);
+            m_NetworkManager.NetworkMetrics.TrackUnnamedMessageSent(clientId, (ulong)buffer.Length);
         }
 
         /// <summary>

@@ -36,6 +36,7 @@ namespace MLAPI.RuntimeTests.Metrics
         {
             var messageName = Guid.NewGuid().ToString();
 
+            var clientId = 100UL;
             m_NetworkMetrics.Dispatcher.RegisterObserver(new TestObserver(collection =>
             {
                 var namedMessageSentMetric = AssertSingleMetricEventOfType<NamedMessageEvent>(collection, MetricNames.NamedMessageSent);
@@ -43,10 +44,10 @@ namespace MLAPI.RuntimeTests.Metrics
 
                 var namedMessageSent = namedMessageSentMetric.Values.First();
                 Assert.AreEqual(messageName, namedMessageSent.Name);
-                Assert.AreEqual(m_NetworkManager.LocalClientId, namedMessageSent.Connection.Id);
+                Assert.AreEqual(clientId, namedMessageSent.Connection.Id);
             }));
 
-            m_NetworkManager.CustomMessagingManager.SendNamedMessage(messageName, 100, Stream.Null);
+            m_NetworkManager.CustomMessagingManager.SendNamedMessage(messageName, clientId, Stream.Null);
 
             yield return WaitForMetricsDispatch();
         }
@@ -59,11 +60,13 @@ namespace MLAPI.RuntimeTests.Metrics
             m_NetworkMetrics.Dispatcher.RegisterObserver(new TestObserver(collection =>
             {
                 var namedMessageSentMetric = AssertSingleMetricEventOfType<NamedMessageEvent>(collection, MetricNames.NamedMessageSent);
-                Assert.AreEqual(1, namedMessageSentMetric.Values.Count);
+                Assert.AreEqual(3, namedMessageSentMetric.Values.Count);
+                Assert.True(namedMessageSentMetric.Values.All(x => x.Name == messageName));
 
-                var namedMessageSent = namedMessageSentMetric.Values.First();
-                Assert.AreEqual(messageName, namedMessageSent.Name);
-                Assert.AreEqual(m_NetworkManager.LocalClientId, namedMessageSent.Connection.Id);
+                var clientIds = namedMessageSentMetric.Values.Select(x => x.Connection.Id).ToList();
+                Assert.Contains(100UL, clientIds);
+                Assert.Contains(200UL, clientIds);
+                Assert.Contains(300UL, clientIds);
             }));
 
             m_NetworkManager.CustomMessagingManager.SendNamedMessage(messageName, new List<ulong> { 100, 200, 300 }, Stream.Null);
@@ -74,16 +77,17 @@ namespace MLAPI.RuntimeTests.Metrics
         [UnityTest]
         public IEnumerator NetworkMetrics_WhenUnnamedMessageSent_TracksNamedMessageSentMetric()
         {
+            var clientId = 100UL;
             m_NetworkMetrics.Dispatcher.RegisterObserver(new TestObserver(collection =>
             {
                 var unnamedMessageSentMetric = AssertSingleMetricEventOfType<UnnamedMessageEvent>(collection, MetricNames.UnnamedMessageSent);
                 Assert.AreEqual(1, unnamedMessageSentMetric.Values.Count);
 
                 var unnamedMessageSent = unnamedMessageSentMetric.Values.First();
-                Assert.AreEqual(m_NetworkManager.LocalClientId, unnamedMessageSent.Connection.Id);
+                Assert.AreEqual(clientId, unnamedMessageSent.Connection.Id);
             }));
 
-            m_NetworkManager.CustomMessagingManager.SendUnnamedMessage(100, new NetworkBuffer());
+            m_NetworkManager.CustomMessagingManager.SendUnnamedMessage(clientId, new NetworkBuffer());
 
             yield return WaitForMetricsDispatch();
         }
@@ -94,10 +98,12 @@ namespace MLAPI.RuntimeTests.Metrics
             m_NetworkMetrics.Dispatcher.RegisterObserver(new TestObserver(collection =>
             {
                 var unnamedMessageSentMetric = AssertSingleMetricEventOfType<UnnamedMessageEvent>(collection, MetricNames.UnnamedMessageSent);
-                Assert.AreEqual(1, unnamedMessageSentMetric.Values.Count);
+                Assert.AreEqual(3, unnamedMessageSentMetric.Values.Count);
 
-                var unnamedMessageSent = unnamedMessageSentMetric.Values.First();
-                Assert.AreEqual(m_NetworkManager.LocalClientId, unnamedMessageSent.Connection.Id);
+                var clientIds = unnamedMessageSentMetric.Values.Select(x => x.Connection.Id).ToList();
+                Assert.Contains(100UL, clientIds);
+                Assert.Contains(200UL, clientIds);
+                Assert.Contains(300UL, clientIds);
             }));
 
             m_NetworkManager.CustomMessagingManager.SendUnnamedMessage(new List<ulong> { 100, 200, 300 }, new NetworkBuffer());
