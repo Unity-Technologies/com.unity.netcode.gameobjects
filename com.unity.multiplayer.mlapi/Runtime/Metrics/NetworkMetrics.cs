@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using MLAPI.Connection;
 using Unity.Multiplayer.NetStats.Dispatch;
 using Unity.Multiplayer.NetStats.Metrics;
 using Unity.Multiplayer.NetworkProfiler;
@@ -11,11 +10,11 @@ namespace MLAPI.Metrics
     {
         void TrackNetworkObject(NetworkObject networkObject);
 
-        void TrackNamedMessageSent(ulong receiver, string messageName, ulong bytesCount);
+        void TrackNamedMessageSent(ulong receiverClientId, string messageName, ulong bytesCount);
 
-        void TrackNamedMessageSent(IReadOnlyCollection<ulong> receivers, string messageName, ulong bytesCount);
+        void TrackNamedMessageSent(IReadOnlyCollection<ulong> receiverClientIds, string messageName, ulong bytesCount);
 
-        void TrackNamedMessageReceived(ulong sender, string messageName, ulong bytesCount);
+        void TrackNamedMessageReceived(ulong senderClientId, string messageName, ulong bytesCount);
 
         void DispatchFrame();
     }
@@ -26,15 +25,15 @@ namespace MLAPI.Metrics
         {
         }
 
-        public void TrackNamedMessageSent(ulong receiver, string messageName, ulong bytesCount)
+        public void TrackNamedMessageSent(ulong receiverClientId, string messageName, ulong bytesCount)
         {
         }
 
-        public void TrackNamedMessageSent(IReadOnlyCollection<ulong> receivers, string messageName, ulong bytesCount)
+        public void TrackNamedMessageSent(IReadOnlyCollection<ulong> receiverClientIds, string messageName, ulong bytesCount)
         {
         }
 
-        public void TrackNamedMessageReceived(ulong sender, string messageName, ulong bytesCount)
+        public void TrackNamedMessageReceived(ulong senderClientId, string messageName, ulong bytesCount)
         {
         }
 
@@ -46,7 +45,6 @@ namespace MLAPI.Metrics
 #if true
     public class NetworkMetrics : INetworkMetrics
     {
-        private readonly IMetricDispatcher m_Dispatcher;
         private readonly NetworkManager m_NetworkManager;
 
         private EventMetric<NamedMessageEvent> m_NamedMessageSentEvent = new EventMetric<NamedMessageEvent>("Named Message Sent");
@@ -57,12 +55,14 @@ namespace MLAPI.Metrics
         public NetworkMetrics(NetworkManager networkManager)
         {
             m_NetworkManager = networkManager;
-            m_Dispatcher = new MetricDispatcherBuilder()
+            Dispatcher = new MetricDispatcherBuilder()
                 .WithMetricEvents(m_NamedMessageSentEvent, m_NamedMessageReceivedEvent)
                 .Build();
-
-            m_Dispatcher.RegisterObserver(MLAPIObserver.Observer);
+            
+            Dispatcher.RegisterObserver(MLAPIObserver.Observer);
         }
+
+        internal IMetricDispatcher Dispatcher { get; }
 
         public void TrackNetworkObject(NetworkObject networkObject)
         {
@@ -72,27 +72,27 @@ namespace MLAPI.Metrics
             }
         }
 
-        public void TrackNamedMessageSent(ulong receiver, string messageName, ulong bytesCount)
+        public void TrackNamedMessageSent(ulong receiverClientId, string messageName, ulong bytesCount)
         {
-            m_NamedMessageSentEvent.Mark(new NamedMessageEvent(new ConnectionInfo(receiver), messageName, bytesCount));
+            m_NamedMessageSentEvent.Mark(new NamedMessageEvent(new ConnectionInfo(receiverClientId), messageName, bytesCount));
         }
 
-        public void TrackNamedMessageSent(IReadOnlyCollection<ulong> receivers, string messageName, ulong bytesCount)
+        public void TrackNamedMessageSent(IReadOnlyCollection<ulong> receiverClientIds, string messageName, ulong bytesCount)
         {
-            foreach (var receiver in receivers)
+            foreach (var receiver in receiverClientIds)
             {
                 TrackNamedMessageSent(receiver, messageName, bytesCount);
             }
         }
 
-        public void TrackNamedMessageReceived(ulong sender, string messageName, ulong bytesCount)
+        public void TrackNamedMessageReceived(ulong senderClientId, string messageName, ulong bytesCount)
         {
-            m_NamedMessageReceivedEvent.Mark(new NamedMessageEvent(new ConnectionInfo(sender), messageName, bytesCount));
+            m_NamedMessageReceivedEvent.Mark(new NamedMessageEvent(new ConnectionInfo(senderClientId), messageName, bytesCount));
         }
 
         public void DispatchFrame()
         {
-            m_Dispatcher.Dispatch();
+            Dispatcher.Dispatch();
         }
     }
 
