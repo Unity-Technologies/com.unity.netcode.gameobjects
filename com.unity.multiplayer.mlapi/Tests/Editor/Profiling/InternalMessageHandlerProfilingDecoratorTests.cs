@@ -8,7 +8,7 @@ namespace MLAPI.EditorTests.Profiling
 {
     public class InternalMessageHandlerProfilingDecoratorTests
     {
-        InternalMessageHandlerProfilingDecorator m_Decorator;
+        private InternalMessageHandlerProfilingDecorator m_Decorator;
 
         [SetUp]
         public void Setup()
