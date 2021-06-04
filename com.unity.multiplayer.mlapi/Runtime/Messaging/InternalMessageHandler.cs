@@ -31,7 +31,6 @@ namespace MLAPI.Messaging
         private static ProfilerMarker s_HandleDestroyObjects = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleDestroyObjects)}");
         private static ProfilerMarker s_HandleTimeSync = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleTimeSync)}");
         private static ProfilerMarker s_HandleNetworkVariableDelta = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleNetworkVariableDelta)}");
-        private static ProfilerMarker s_HandleNetworkVariableUpdate = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleNetworkVariableUpdate)}");
         private static ProfilerMarker s_HandleUnnamedMessage = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleUnnamedMessage)}");
         private static ProfilerMarker s_HandleNamedMessage = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleNamedMessage)}");
         private static ProfilerMarker s_HandleNetworkLog = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleNetworkLog)}");
@@ -410,64 +409,6 @@ namespace MLAPI.Messaging
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleNetworkVariableDelta.End();
-#endif
-        }
-
-        public void HandleNetworkVariableUpdate(ulong clientId, Stream stream, Action<ulong, PreBufferPreset> bufferCallback, PreBufferPreset bufferPreset)
-        {
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            s_HandleNetworkVariableUpdate.Begin();
-#endif
-            if (!NetworkManager.NetworkConfig.EnableNetworkVariable)
-            {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                {
-                    NetworkLog.LogWarning($"{nameof(NetworkConstants.NETWORK_VARIABLE_UPDATE)} update received but {nameof(NetworkConfig.EnableNetworkVariable)} is false");
-                }
-
-                return;
-            }
-
-            using (var reader = PooledNetworkReader.Get(stream))
-            {
-                ulong networkObjectId = reader.ReadUInt64Packed();
-                ushort networkBehaviourIndex = reader.ReadUInt16Packed();
-
-                if (NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(networkObjectId, out NetworkObject networkObject))
-                {
-                    var networkBehaviour = networkObject.GetNetworkBehaviourAtOrderIndex(networkBehaviourIndex);
-
-                    if (networkBehaviour == null)
-                    {
-                        if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                        {
-                            NetworkLog.LogWarning($"{nameof(NetworkConstants.NETWORK_VARIABLE_UPDATE)} message received for a non-existent behaviour. {nameof(networkObjectId)}: {networkObjectId}, {nameof(networkBehaviourIndex)}: {networkBehaviourIndex}");
-                        }
-                    }
-                    else
-                    {
-                        NetworkBehaviour.HandleNetworkVariableUpdate(networkBehaviour.NetworkVariableFields, stream, clientId, networkBehaviour, NetworkManager);
-                    }
-                }
-                else if (NetworkManager.IsServer || !NetworkManager.NetworkConfig.EnableMessageBuffering)
-                {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                    {
-                        NetworkLog.LogWarning($"{nameof(NetworkConstants.NETWORK_VARIABLE_UPDATE)} message received for a non-existent object with {nameof(networkObjectId)}: {networkObjectId}. This delta was lost.");
-                    }
-                }
-                else
-                {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                    {
-                        NetworkLog.LogWarning($"{nameof(NetworkConstants.NETWORK_VARIABLE_UPDATE)} message received for a non-existent object with {nameof(networkObjectId)}: {networkObjectId}. This delta will be buffered and might be recovered.");
-                    }
-
-                    bufferCallback(networkObjectId, bufferPreset);
-                }
-            }
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            s_HandleNetworkVariableUpdate.End();
 #endif
         }
 
