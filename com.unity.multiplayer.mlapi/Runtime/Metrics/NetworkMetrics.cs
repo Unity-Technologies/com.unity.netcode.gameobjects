@@ -6,60 +6,6 @@ using Unity.Multiplayer.NetworkProfiler.Models;
 
 namespace MLAPI.Metrics
 {
-    public interface INetworkMetrics
-    {
-        void TrackNetworkObject(NetworkObject networkObject);
-
-        void TrackNamedMessageSent(ulong receiverClientId, string messageName, ulong bytesCount);
-
-        void TrackNamedMessageSent(IReadOnlyCollection<ulong> receiverClientIds, string messageName, ulong bytesCount);
-
-        void TrackNamedMessageReceived(ulong senderClientId, string messageName, ulong bytesCount);
-
-        void TrackUnnamedMessageSent(ulong receiverClientId, ulong bytesCount);
-
-        void TrackUnnamedMessageSent(IReadOnlyCollection<ulong> receiverClientIds, ulong bytesCount);
-
-        void TrackUnnamedMessageReceived(ulong senderClientId, ulong bytesCount);
-
-        void DispatchFrame();
-    }
-
-    public class NullNetworkMetrics : INetworkMetrics
-    {
-        public void TrackNetworkObject(NetworkObject networkObject)
-        {
-        }
-
-        public void TrackNamedMessageSent(ulong receiverClientId, string messageName, ulong bytesCount)
-        {
-        }
-
-        public void TrackNamedMessageSent(IReadOnlyCollection<ulong> receiverClientIds, string messageName, ulong bytesCount)
-        {
-        }
-
-        public void TrackNamedMessageReceived(ulong senderClientId, string messageName, ulong bytesCount)
-        {
-        }
-
-        public void TrackUnnamedMessageSent(ulong receiverClientId, ulong bytesCount)
-        {
-        }
-
-        public void TrackUnnamedMessageSent(IReadOnlyCollection<ulong> receiverClientIds, ulong bytesCount)
-        {
-        }
-
-        public void TrackUnnamedMessageReceived(ulong senderClientId, ulong bytesCount)
-        {
-        }
-
-        public void DispatchFrame()
-        {
-        }
-    }
-
 #if true
     public class NetworkMetrics : INetworkMetrics
     {
