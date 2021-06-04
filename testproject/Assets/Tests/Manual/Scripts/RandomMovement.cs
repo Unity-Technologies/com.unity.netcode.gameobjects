@@ -11,6 +11,7 @@ namespace TestProject.ManualTests
         private Vector3 m_Direction;
         private Rigidbody m_Rigidbody;
 
+
         public override void NetworkStart()
         {
             m_Rigidbody = GetComponent<Rigidbody>();
