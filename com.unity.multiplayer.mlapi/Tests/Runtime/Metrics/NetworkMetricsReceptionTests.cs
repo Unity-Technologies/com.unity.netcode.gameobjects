@@ -63,18 +63,18 @@ namespace MLAPI.RuntimeTests.Metrics
             var found = false;
             m_ClientMetrics.Dispatcher.RegisterObserver(new TestObserver(collection =>
             {
-                var namedMessageSentMetric = collection.Metrics.SingleOrDefault(x => x.Name == MetricNames.NamedMessageReceived);
-                Assert.NotNull(namedMessageSentMetric);
+                var namedMessageReceivedMetric = collection.Metrics.SingleOrDefault(x => x.Name == MetricNames.NamedMessageReceived);
+                Assert.NotNull(namedMessageReceivedMetric);
 
-                var typedMetric = namedMessageSentMetric as IEventMetric<NamedMessageEvent>;
+                var typedMetric = namedMessageReceivedMetric as IEventMetric<NamedMessageEvent>;
                 Assert.NotNull(typedMetric);
                 if (typedMetric.Values.Any()) // We always get the metric, but when it has values, something has been tracked
                 {
                     Assert.AreEqual(1, typedMetric.Values.Count);
 
-                    var namedMessageSent = typedMetric.Values.First();
-                    Assert.AreEqual(messageName, namedMessageSent.Name);
-                    Assert.AreEqual(m_Client.LocalClientId, namedMessageSent.Connection.Id);
+                    var namedMessageReceived = typedMetric.Values.First();
+                    Assert.AreEqual(messageName, namedMessageReceived.Name);
+                    Assert.AreEqual(m_Server.LocalClientId, namedMessageReceived.Connection.Id);
 
                     found = true;
                 }
@@ -93,17 +93,17 @@ namespace MLAPI.RuntimeTests.Metrics
             var found = false;
             m_ClientMetrics.Dispatcher.RegisterObserver(new TestObserver(collection =>
             {
-                var namedMessageSentMetric = collection.Metrics.SingleOrDefault(x => x.Name == MetricNames.UnnamedMessageReceived);
-                Assert.NotNull(namedMessageSentMetric);
+                var unnamedMessageReceivedMetric = collection.Metrics.SingleOrDefault(x => x.Name == MetricNames.UnnamedMessageReceived);
+                Assert.NotNull(unnamedMessageReceivedMetric);
 
-                var typedMetric = namedMessageSentMetric as IEventMetric<UnnamedMessageEvent>;
+                var typedMetric = unnamedMessageReceivedMetric as IEventMetric<UnnamedMessageEvent>;
                 Assert.NotNull(typedMetric);
                 if (typedMetric.Values.Any()) // We always get the metric, but when it has values, something has been tracked
                 {
                     Assert.AreEqual(1, typedMetric.Values.Count);
 
-                    var namedMessageSent = typedMetric.Values.First();
-                    Assert.AreEqual(m_Client.LocalClientId, namedMessageSent.Connection.Id);
+                    var unnamedMessageReceived = typedMetric.Values.First();
+                    Assert.AreEqual(m_Server.LocalClientId, unnamedMessageReceived.Connection.Id);
 
                     found = true;
                 }
