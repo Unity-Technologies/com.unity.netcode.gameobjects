@@ -343,11 +343,8 @@ namespace MLAPI
 
             SceneManager = new NetworkSceneManager(this);
 
-            if (MessageHandler == null)
-            {
-                // Only create this if it's not already set (like in test cases)
-                MessageHandler = new InternalMessageHandler(this);
-            }
+            // Only create this if it's not already set (like in test cases)
+            MessageHandler ??= CreateMessageHandler();
 
             MessageSender = new InternalMessageSender(this);
 
@@ -1689,6 +1686,17 @@ namespace MLAPI
                 PendingClients.Remove(ownerClientId);
                 NetworkConfig.NetworkTransport.DisconnectRemoteClient(ownerClientId);
             }
+        }
+
+        private IInternalMessageHandler CreateMessageHandler()
+        {
+            IInternalMessageHandler messageHandler = new InternalMessageHandler(this);
+
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            messageHandler = new InternalMessageHandlerProfilingDecorator(messageHandler);
+#endif
+
+            return messageHandler;
         }
 
         private void ProfilerBeginTick()
