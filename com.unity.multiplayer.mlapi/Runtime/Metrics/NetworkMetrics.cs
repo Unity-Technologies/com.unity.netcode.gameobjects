@@ -1,4 +1,5 @@
-﻿using Unity.Multiplayer.NetStats.Dispatch;
+﻿using System.Collections.Generic;
+using Unity.Multiplayer.NetStats.Dispatch;
 using Unity.Multiplayer.NetStats.Metrics;
 using Unity.Multiplayer.NetworkProfiler;
 using Unity.Multiplayer.NetworkProfiler.Models;
@@ -7,20 +8,32 @@ namespace MLAPI.Metrics
 {
     public interface INetworkMetrics
     {
-        void TrackNamedMessageSent(string messageName, ulong bytesCount);
+        void TrackNetworkObject(NetworkObject networkObject);
 
-        void TrackNamedMessageReceived(string messageName, ulong bytesCount);
+        void TrackNamedMessageSent(ulong receiver, string messageName, ulong bytesCount);
+
+        void TrackNamedMessageSent(IReadOnlyCollection<ulong> receivers, string messageName, ulong bytesCount);
+
+        void TrackNamedMessageReceived(ulong sender, string messageName, ulong bytesCount);
 
         void DispatchFrame();
     }
 
     public class NullNetworkMetrics : INetworkMetrics
     {
-        public void TrackNamedMessageSent(string messageName, ulong bytesCount)
+        public void TrackNetworkObject(NetworkObject networkObject)
         {
         }
 
-        public void TrackNamedMessageReceived(string messageName, ulong bytesCount)
+        public void TrackNamedMessageSent(ulong receiver, string messageName, ulong bytesCount)
+        {
+        }
+
+        public void TrackNamedMessageSent(IReadOnlyCollection<ulong> receivers, string messageName, ulong bytesCount)
+        {
+        }
+
+        public void TrackNamedMessageReceived(ulong sender, string messageName, ulong bytesCount)
         {
         }
 
@@ -28,7 +41,7 @@ namespace MLAPI.Metrics
         {
         }
     }
-    
+
 #if true
     public class NetworkMetrics : INetworkMetrics
     {
@@ -36,6 +49,8 @@ namespace MLAPI.Metrics
 
         private EventMetric<NamedMessageEvent> m_NamedMessageSentEvent = new EventMetric<NamedMessageEvent>("Named Message Sent");
         private EventMetric<NamedMessageEvent> m_NamedMessageReceivedEvent = new EventMetric<NamedMessageEvent>("Named Message Received");
+
+        private Dictionary<ulong, NetworkObjectIdentifier> m_NetworkGameObjects = new Dictionary<ulong, NetworkObjectIdentifier>();
 
         public NetworkMetrics(NetworkManager networkManager)
         {
@@ -49,14 +64,30 @@ namespace MLAPI.Metrics
 
         internal IMetricDispatcher Dispatcher { get; }
 
-        public void TrackNamedMessageSent(string messageName, ulong bytesCount)
+        public void TrackNetworkObject(NetworkObject networkObject)
         {
-            m_NamedMessageSentEvent.Mark(new NamedMessageEvent(new ConnectionInfo(m_NetworkManager.LocalClientId), messageName, bytesCount));
+            if (!m_NetworkGameObjects.ContainsKey(networkObject.NetworkObjectId))
+            {
+                m_NetworkGameObjects[networkObject.NetworkObjectId] = new NetworkObjectIdentifier(networkObject.name, networkObject.NetworkObjectId);
+            }
         }
 
-        public void TrackNamedMessageReceived(string messageName, ulong bytesCount)
+        public void TrackNamedMessageSent(ulong receiver, string messageName, ulong bytesCount)
         {
-            m_NamedMessageReceivedEvent.Mark(new NamedMessageEvent(new ConnectionInfo(m_NetworkManager.LocalClientId), messageName, bytesCount));
+            m_NamedMessageSentEvent.Mark(new NamedMessageEvent(new ConnectionInfo(receiver), messageName, bytesCount));
+        }
+
+        public void TrackNamedMessageSent(IReadOnlyCollection<ulong> receivers, string messageName, ulong bytesCount)
+        {
+            foreach (var receiver in receivers)
+            {
+                TrackNamedMessageSent(receiver, messageName, bytesCount);
+            }
+        }
+
+        public void TrackNamedMessageReceived(ulong sender, string messageName, ulong bytesCount)
+        {
+            m_NamedMessageReceivedEvent.Mark(new NamedMessageEvent(new ConnectionInfo(sender), messageName, bytesCount));
         }
 
         public void DispatchFrame()
