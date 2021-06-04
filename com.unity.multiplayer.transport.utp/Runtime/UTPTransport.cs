@@ -36,7 +36,7 @@ namespace MLAPI.Transports
         }
 
         [SerializeField] private ProtocolType m_ProtocolType;
-        [SerializeField] private int m_MessageBufferSize;
+        [SerializeField] private int m_MessageBufferSize = 1024;
         [SerializeField] private string m_ServerAddress = "127.0.0.1";
         [SerializeField] private ushort m_ServerPort = 7777;
         [SerializeField] private int m_RelayMaxPlayers = 10;
@@ -58,7 +58,7 @@ namespace MLAPI.Transports
         private void InitDriver()
         {
             if (m_NetworkParameters.Count > 0)
-                m_Driver = NetworkDriver.Create(m_NetworkParameters.ToArray());
+                m_Driver = new NetworkDriver(new BaselibNetworkInterface(), new RelayNetworkProtocol(), m_NetworkParameters.ToArray());
             else
                 m_Driver = NetworkDriver.Create();
         }
@@ -239,6 +239,7 @@ namespace MLAPI.Transports
             m_RelayJoinCode = joinCodeTask.Result.Result.Data.JoinCode;
 
             var serverEndpoint = NetworkEndPoint.Parse(allocation.RelayServer.IpV4, (ushort)allocation.RelayServer.Port);
+            // Debug.Log($"Relay Server endpoint: {allocation.RelayServer.IpV4}:{(ushort)allocation.RelayServer.Port}");
 #if RELAY_BIGENDIAN
             var allocationIdArray = allocation.AllocationId.ToByteArray();
             Array.Reverse(allocationIdArray, 0, 4);
@@ -307,6 +308,7 @@ namespace MLAPI.Transports
                             new ArraySegment<byte>(m_MessageBuffer, 0, size),
                             Time.realtimeSinceStartup
                         );
+                        // Debug.Log($"Receiving: {String.Join(", ", m_MessageBuffer.Take(size).Select(x => string.Format("{0:x}", x)))}");
                     }
                     return true;
             }
@@ -402,6 +404,7 @@ namespace MLAPI.Transports
         {
             var size = data.Count + 5;
 
+            // Debug.Log($"Sending: {String.Join(", ", data.Skip(data.Offset).Take(data.Count).Select(x => string.Format("{0:x}", x)))}");
             if (m_Driver.BeginSend(ParseClientId(clientId), out var writer, size) == 0)
             {
                 writer.WriteByte((byte)networkChannel);
