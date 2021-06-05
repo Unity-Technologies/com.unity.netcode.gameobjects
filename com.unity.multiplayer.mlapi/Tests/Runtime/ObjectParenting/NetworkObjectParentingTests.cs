@@ -208,7 +208,7 @@ namespace MLAPI.RuntimeTests
             m_Cube_NetObjs[0].parent = m_Pickup_Back_NetObjs[0];
             Assert.That(m_Cube_NetBhvs[0].ParentNetworkObject, Is.EqualTo(m_Pickup_Back_NetObjs[0].GetComponent<NetworkObject>()));
 
-            int nextFrameNumber = Time.frameCount + 2;
+            int nextFrameNumber = Time.frameCount + 8;
             yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
 
             // Client[n]: Set/Cube -> Set/Pickup/Back/Cube
@@ -223,7 +223,7 @@ namespace MLAPI.RuntimeTests
             m_Cube_NetObjs[0].parent = null;
             Assert.That(m_Cube_NetBhvs[0].ParentNetworkObject, Is.EqualTo(null));
 
-            nextFrameNumber = Time.frameCount + 2;
+            nextFrameNumber = Time.frameCount + 8;
             yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
 
             // Client[n]: Set/Pickup/Back -> Root/Cube
@@ -238,7 +238,7 @@ namespace MLAPI.RuntimeTests
             m_Cube_NetObjs[0].parent = m_Dude_RightArm_NetObjs[0];
             Assert.That(m_Cube_NetBhvs[0].ParentNetworkObject, Is.EqualTo(m_Dude_RightArm_NetObjs[0].GetComponent<NetworkObject>()));
 
-            nextFrameNumber = Time.frameCount + 2;
+            nextFrameNumber = Time.frameCount + 8;
             yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
 
             // Client[n]: Root/Cube -> Set/Dude/Arms/RightArm/Cube
@@ -270,7 +270,7 @@ namespace MLAPI.RuntimeTests
 
             Assert.That(!m_Cube_NetObjs[0].GetComponent<NetworkObject>().TrySetParent(Camera.main.transform));
 
-            int nextFrameNumber = Time.frameCount + 2;
+            int nextFrameNumber = Time.frameCount + 8;
             yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
 
             Assert.That(m_Cube_NetObjs[0].parent.GetInstanceID(), Is.EqualTo(serverCachedParent.GetInstanceID()));
@@ -292,7 +292,7 @@ namespace MLAPI.RuntimeTests
             Assert.That(m_Cube_NetObjs[0].GetComponent<NetworkObject>().TrySetParent(m_Dude_LeftArm_NetObjs[0]));
             Assert.That(m_Cube_NetBhvs[0].ParentNetworkObject, Is.EqualTo(m_Dude_LeftArm_NetObjs[0].GetComponent<NetworkObject>()));
 
-            nextFrameNumber = Time.frameCount + 2;
+            nextFrameNumber = Time.frameCount + 8;
             yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
 
             for (int setIndex = 0; setIndex < k_ClientInstanceCount; setIndex++)
