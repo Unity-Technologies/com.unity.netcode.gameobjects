@@ -54,6 +54,9 @@ namespace MLAPI.Configuration
         [Tooltip("The prefabs that can be spawned across the network")]
         internal List<NetworkPrefab> NetworkPrefabs = new List<NetworkPrefab>();
 
+        [SerializeField]
+        private NetworkScriptableObject sno; // todo use list for this
+
         /// <summary>
         /// This dictionary provides a quick way to check and see if a NetworkPrefab has a NetworkPrefab override.
         /// Generated at runtime and OnValidate

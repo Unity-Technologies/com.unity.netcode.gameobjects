@@ -105,6 +105,11 @@ namespace MLAPI.NetworkVariable.Collections
             return false;
         }
 
+        public void SetDirty()
+        {
+            throw new NotImplementedException();
+        }
+
         /// <inheritdoc />
         public NetworkChannel GetChannel()
         {

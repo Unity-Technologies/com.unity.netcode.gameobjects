@@ -557,6 +557,7 @@ namespace MLAPI
 
                 return m_ChildNetworkBehaviours;
             }
+            set => m_ChildNetworkBehaviours = value;
         }
 
         internal void WriteNetworkVariableData(Stream stream, ulong clientId)
@@ -698,7 +699,7 @@ namespace MLAPI
                 // If our current buffer position is greater than our positionBeforeNetworkVariableData then we wrote NetworkVariable data
                 // Part 1: This will include the total NetworkVariable data size, if there was NetworkVariable data written, to the stream
                 // in order to be able to skip past this entry on the deserialization side in the event this NetworkObject fails to be
-                // constructed (See Part 2 below in the DeserializeSceneObject method) 
+                // constructed (See Part 2 below in the DeserializeSceneObject method)
                 if (buffer.Position > positionBeforeNetworkVariableData)
                 {
                     // Store our current stream buffer position

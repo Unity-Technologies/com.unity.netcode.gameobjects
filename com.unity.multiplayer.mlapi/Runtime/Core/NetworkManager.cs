@@ -75,6 +75,9 @@ namespace MLAPI
             }
         }
 
+        [HideInInspector]
+        public NetworkScriptableObject sno;
+
         /// <summary>
         /// A synchronized time, represents the time in seconds since the server application started. Is replicated across all clients
         /// </summary>
@@ -336,6 +339,12 @@ namespace MLAPI
 
             // Create spawn manager instance
             SpawnManager = new NetworkSpawnManager(this);
+            // foreach (var networkScriptableObject in NetworkScriptableObjects)
+            // {
+            //     SpawnManager.SpawnedObjectsList.Add(networkScriptableObject.no);
+            // }
+            sno.Init();
+            SpawnManager.SpawnedObjectsList.Add(sno.no);
 
             CustomMessagingManager = new CustomMessagingManager(this);
 
@@ -412,6 +421,7 @@ namespace MLAPI
             // Always clear our prefab override links before building
             NetworkConfig.NetworkPrefabOverrideLinks.Clear();
 
+            NetworkConfig.NetworkPrefabOverrideLinks[sno.no.GlobalObjectIdHash] = sno.NetworkPrefab;
             // Build the NetworkPrefabOverrideLinks dictionary
             for (int i = 0; i < NetworkConfig.NetworkPrefabs.Count; i++)
             {
@@ -813,6 +823,11 @@ namespace MLAPI
 
             if (SpawnManager != null)
             {
+                // foreach (var networkScriptableObject in NetworkScriptableObjects)
+                // {
+                //     SpawnManager.SpawnedObjectsList.Remove(networkScriptableObject.no);
+                // }
+                SpawnManager.SpawnedObjectsList.Remove(sno.no);
                 SpawnManager.DestroyNonSceneObjects();
                 SpawnManager.ServerResetShudownStateForSceneObjects();
 

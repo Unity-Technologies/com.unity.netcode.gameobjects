@@ -98,6 +98,11 @@ namespace MLAPI.NetworkVariable
             m_IsDirty = isDirty;
         }
 
+        public void SetDirty()
+        {
+            SetDirty(true);
+        }
+
         /// <inheritdoc />
         public bool IsDirty()
         {

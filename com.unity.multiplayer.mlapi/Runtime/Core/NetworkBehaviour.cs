@@ -302,6 +302,7 @@ namespace MLAPI
 
                 return m_NetworkObject;
             }
+            internal set => m_NetworkObject = value;
         }
 
         /// <summary>
@@ -420,6 +421,11 @@ namespace MLAPI
 
         internal void InitializeVariables()
         {
+            InitializeVariables(GetType(), this, this);
+        }
+
+        internal void InitializeVariables(Type t, object instanceWithField, NetworkBehaviour behaviourInstance)
+        {
             if (m_VarInit)
             {
                 return;
@@ -427,7 +433,7 @@ namespace MLAPI
 
             m_VarInit = true;
 
-            FieldInfo[] sortedFields = GetFieldInfoForType(GetType());
+            FieldInfo[] sortedFields = GetFieldInfoForType(t);
 
             for (int i = 0; i < sortedFields.Length; i++)
             {
@@ -435,15 +441,15 @@ namespace MLAPI
 
                 if (fieldType.HasInterface(typeof(INetworkVariable)))
                 {
-                    var instance = (INetworkVariable)sortedFields[i].GetValue(this);
+                    var instance = (INetworkVariable)sortedFields[i].GetValue(instanceWithField);
 
                     if (instance == null)
                     {
                         instance = (INetworkVariable)Activator.CreateInstance(fieldType, true);
-                        sortedFields[i].SetValue(this, instance);
+                        sortedFields[i].SetValue(instanceWithField, instance);
                     }
 
-                    instance.SetNetworkBehaviour(this);
+                    instance.SetNetworkBehaviour(behaviourInstance);
                     NetworkVariableFields.Add(instance);
                 }
             }
@@ -879,7 +885,6 @@ namespace MLAPI
             }
         }
 
-
         internal static void WriteNetworkVariableData(List<INetworkVariable> networkVariableList, Stream stream, ulong clientId, NetworkManager networkManager)
         {
             if (networkVariableList.Count == 0)
@@ -988,6 +993,14 @@ namespace MLAPI
                         }
                     }
                 }
+            }
+        }
+
+        public void SetAllNetworkVariablesDirty()
+        {
+            for (int i = 0; i < NetworkVariableFields.Count; i++)
+            {
+                NetworkVariableFields[i].SetDirty();
             }
         }
 

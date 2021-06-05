@@ -81,6 +81,11 @@ namespace MLAPI.NetworkVariable.Collections
             LastSyncedTime = m_NetworkBehaviour.NetworkManager.NetworkTime;
         }
 
+        public void SetDirty()
+        {
+            throw new NotImplementedException();
+        }
+
         /// <inheritdoc />
         public NetworkChannel GetChannel()
         {

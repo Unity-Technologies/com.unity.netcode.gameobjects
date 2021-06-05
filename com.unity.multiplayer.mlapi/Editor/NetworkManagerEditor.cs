@@ -15,6 +15,7 @@ namespace MLAPI.Editor
         // Properties
         private SerializedProperty m_DontDestroyOnLoadProperty;
         private SerializedProperty m_RunInBackgroundProperty;
+        private SerializedProperty m_SNOProperty; // todo list
         private SerializedProperty m_LogLevelProperty;
 
         // NetworkConfig
@@ -94,6 +95,7 @@ namespace MLAPI.Editor
 
             // Base properties
             m_DontDestroyOnLoadProperty = serializedObject.FindProperty(nameof(NetworkManager.DontDestroy));
+            m_SNOProperty = serializedObject.FindProperty(nameof(NetworkManager.sno));
             m_RunInBackgroundProperty = serializedObject.FindProperty(nameof(NetworkManager.RunInBackground));
             m_LogLevelProperty = serializedObject.FindProperty(nameof(NetworkManager.LogLevel));
             m_NetworkConfigProperty = serializedObject.FindProperty(nameof(NetworkManager.NetworkConfig));
@@ -130,6 +132,7 @@ namespace MLAPI.Editor
         {
             // Base properties
             m_DontDestroyOnLoadProperty = serializedObject.FindProperty(nameof(NetworkManager.DontDestroy));
+            m_SNOProperty = serializedObject.FindProperty(nameof(NetworkManager.sno));
             m_RunInBackgroundProperty = serializedObject.FindProperty(nameof(NetworkManager.RunInBackground));
             m_LogLevelProperty = serializedObject.FindProperty(nameof(NetworkManager.LogLevel));
             m_NetworkConfigProperty = serializedObject.FindProperty(nameof(NetworkManager.NetworkConfig));
@@ -259,6 +262,7 @@ namespace MLAPI.Editor
             {
                 serializedObject.Update();
                 EditorGUILayout.PropertyField(m_DontDestroyOnLoadProperty);
+                EditorGUILayout.PropertyField(m_SNOProperty);
                 EditorGUILayout.PropertyField(m_RunInBackgroundProperty);
                 EditorGUILayout.PropertyField(m_LogLevelProperty);
                 EditorGUILayout.Space();

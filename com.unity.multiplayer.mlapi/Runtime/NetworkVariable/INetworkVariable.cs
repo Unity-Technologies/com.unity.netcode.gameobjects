@@ -25,6 +25,8 @@ namespace MLAPI.NetworkVariable
         /// <returns>Whether or not the container is dirty</returns>
         bool IsDirty();
 
+        void SetDirty();
+
         /// <summary>
         /// Gets Whether or not a specific client can write to the varaible
         /// </summary>
