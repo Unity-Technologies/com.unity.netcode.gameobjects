@@ -127,7 +127,6 @@ internal class TestCoordinator : NetworkBehaviour
             object[] parametersToPass = new object[parameters.Length];
             for (int i = 0; i < parameters.Length; i++)
             {
-
                 var paramType = parameters[i].GetType();
                 object defaultObj = null;
                 if(paramType.IsValueType)
@@ -499,7 +498,9 @@ internal class TestCoordinator : NetworkBehaviour
         // private int m_CurrentActionID;
         private NetworkManager m_NetworkManager;
         private bool m_IsRegistering;
-        private List<Func<bool>> m_IsFinishedChecks = new List<Func<bool>>();
+        private List<Func<bool>> m_RemoteIsFinishedChecks = new List<Func<bool>>();
+        private Func<bool> m_AdditionalIsFinishedWaiter;
+
         private bool m_SpansMultipleUpdates;
 
         private float m_StartTime;
@@ -533,7 +534,7 @@ internal class TestCoordinator : NetworkBehaviour
         /// <param name="networkManager"></param>
         /// <param name="spansMultipleUpdates"> waits multiple frames before allowing the execution to continue. This means ClientFinishedServerRpc must be called manually</param>
         /// <param name="callerName">Don't use this, this will be filled in automatically</param>
-        public ExecuteStepInContext(StepExecutionContext actionContext, Action<byte[]> todo, byte[] paramToPass = default, NetworkManager networkManager = null, bool spansMultipleUpdates = true, Func<bool> additionalIsFinishedWaiter = null, [CallerMemberName] string callerName = "")
+        public ExecuteStepInContext(StepExecutionContext actionContext, Action<byte[]> todo, byte[] paramToPass = default, NetworkManager networkManager = null, bool spansMultipleUpdates = false, Func<bool> additionalIsFinishedWaiter = null, [CallerMemberName] string callerName = "")
         {
             m_StartTime = Time.time;
             m_IsRegistering = Instance.isRegistering;
@@ -542,7 +543,8 @@ internal class TestCoordinator : NetworkBehaviour
             m_SpansMultipleUpdates = spansMultipleUpdates;
             if (additionalIsFinishedWaiter != null)
             {
-                m_IsFinishedChecks.Add(additionalIsFinishedWaiter);
+                m_AdditionalIsFinishedWaiter = additionalIsFinishedWaiter;
+                // m_IsFinishedChecks.Add(additionalIsFinishedWaiter);
             }
             if (networkManager == null)
             {
@@ -583,7 +585,7 @@ internal class TestCoordinator : NetworkBehaviour
                             });
                         foreach (var clientId in AllClientIdExceptMine)
                         {
-                            m_IsFinishedChecks.Add(ConsumeClientIsFinished(clientId));
+                            m_RemoteIsFinishedChecks.Add(ConsumeClientIsFinished(clientId));
                         }
                     }
                     else
@@ -597,7 +599,7 @@ internal class TestCoordinator : NetworkBehaviour
         public void Invoke(byte[] args)
         {
             m_Todo.Invoke(args);
-            if (m_SpansMultipleUpdates)
+            if (!m_SpansMultipleUpdates)
             {
                 if (!m_NetworkManager.IsServer)
                 {
@@ -614,7 +616,15 @@ internal class TestCoordinator : NetworkBehaviour
         {
             get
             {
-                if (m_IsRegistering || ShouldExecuteLocally || m_IsFinishedChecks == null || isTimingOut)
+                if (m_AdditionalIsFinishedWaiter != null)
+                {
+                    var isFinished = m_AdditionalIsFinishedWaiter.Invoke();
+                    if (!isFinished)
+                    {
+                        return true;
+                    }
+                }
+                if (m_IsRegistering || ShouldExecuteLocally || m_RemoteIsFinishedChecks == null || isTimingOut)
                 {
                     if (isTimingOut)
                     {
@@ -623,13 +633,13 @@ internal class TestCoordinator : NetworkBehaviour
                     return false;
                 }
 
-                for (int i = m_IsFinishedChecks.Count - 1; i >= 0; i--)
+                for (int i = m_RemoteIsFinishedChecks.Count - 1; i >= 0; i--)
                 {
-                    var waiter = m_IsFinishedChecks[i];
+                    var waiter = m_RemoteIsFinishedChecks[i];
                     var receivedResponse = waiter.Invoke();
                     if (receivedResponse)
                     {
-                        m_IsFinishedChecks.RemoveAt(i);
+                        m_RemoteIsFinishedChecks.RemoveAt(i);
                     }
                     else
                     {

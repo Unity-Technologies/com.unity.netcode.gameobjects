@@ -24,12 +24,12 @@ namespace MLAPI.MultiprocessRuntimeTests
         private static int s_TargetCount = 0;
         private List<NetworkObject> m_SpawnedObjects = new List<NetworkObject>();
         private static GameObjectPool s_ObjectPool;
+        protected override bool m_IsPerformanceTest => false;
 
         public NetworkVariablePerformanceTests()
         {
 
         }
-
 
         public class OneNetVar : NetworkBehaviour
         {
@@ -85,29 +85,6 @@ namespace MLAPI.MultiprocessRuntimeTests
                 // UnityEngine.Object.Destroy(networkObject.gameObject);
             }
         }
-
-        // public static class NetworkVariablePerformanceTestsClient
-        // {
-
-
-            // public static void SetupClientForTest1(byte[] args)
-            // {
-            //     s_TargetCount = BitConverter.ToInt32(args, 0);
-            //     var prefabToSpawn = PrefabReference.Instance.referencedPrefab;
-            //     var addedHandler = NetworkManager.Singleton.PrefabHandler.AddHandler(prefabToSpawn, new CustomPrefabSpawnForTest1(prefabToSpawn));
-            //     if (!addedHandler)
-            //     {
-            //         throw new Exception("Couldn't add Handler!");
-            //     }
-            //
-            //     NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate += UpdateClientForTest1;
-            //     TestCoordinator.Instance.ClientFinishedServerRpc();
-            // }
-
-
-
-
-        // }
 
         private static void OnSceneLoadedInitSetupSuite(Scene scene, LoadSceneMode loadSceneMode)
         {
@@ -195,6 +172,11 @@ namespace MLAPI.MultiprocessRuntimeTests
             {
                 // wait for spawn results coming from clients
                 int finishedCount = 0;
+                if (TestCoordinator.AllClientIdsWithResults.Length != NbWorkers)
+                {
+                    return false;
+                }
+
                 foreach (var clientIdWithResult in TestCoordinator.AllClientIdsWithResults)
                 {
                     var latestResult = TestCoordinator.PeekLatestResult(clientIdWithResult);
@@ -226,6 +208,7 @@ namespace MLAPI.MultiprocessRuntimeTests
                 {
                     Assert.Fail($"Expected first spawn to be {nbObjects}, but instead got {wrongFirstResults[0].Item2} items for client {wrongFirstResults[0].Item1}");
                 }
+
                 Debug.Log($"finished with test for {nbObjects} objects");
             });
 
@@ -264,7 +247,7 @@ namespace MLAPI.MultiprocessRuntimeTests
                     }
                 }
                 NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate += WaitForAllOneNetVarToDespawn;
-            }, spansMultipleUpdates: false);
+            }, spansMultipleUpdates: true);
         }
 
         [OneTimeTearDown]

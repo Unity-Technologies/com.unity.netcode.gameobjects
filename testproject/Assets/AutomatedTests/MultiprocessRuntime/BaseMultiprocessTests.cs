@@ -231,7 +231,7 @@ namespace MLAPI.MultiprocessRuntimeTests
                     }
                 };
                 NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate += Update;
-            }, spansMultipleUpdates: false); // waits multiple frames before allowing the next action to continue.
+            }, spansMultipleUpdates: true); // waits multiple frames before allowing the next action to continue.
 
             yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Server, (byte[] args) =>
             {
