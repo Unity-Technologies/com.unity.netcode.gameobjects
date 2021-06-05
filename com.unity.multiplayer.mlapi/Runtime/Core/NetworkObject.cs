@@ -64,7 +64,7 @@ namespace MLAPI
         /// <summary>
         /// Gets the NetworkManager that owns this NetworkObject instance
         /// </summary>
-        public NetworkManager NetworkManager => NetworkManagerOwner != null ? NetworkManagerOwner : NetworkManager.Singleton;
+        public NetworkManager NetworkManager => NetworkManagerOwner ?? NetworkManager.Singleton;
 
         /// <summary>
         /// The NetworkManager that owns this NetworkObject.
@@ -673,6 +673,9 @@ namespace MLAPI
                 m_LatestParent = null;
             }
 
+            m_IsReparented = true;
+            ApplyNetworkParenting();
+
             using (var buffer = PooledNetworkBuffer.Get())
             {
                 using (var writer = PooledNetworkWriter.Get(buffer))
@@ -690,9 +693,6 @@ namespace MLAPI
                     }
                 }
             }
-
-            m_IsReparented = true;
-            ApplyNetworkParenting();
         }
 
         internal static HashSet<NetworkObject> OrphanChildren = new HashSet<NetworkObject>();
