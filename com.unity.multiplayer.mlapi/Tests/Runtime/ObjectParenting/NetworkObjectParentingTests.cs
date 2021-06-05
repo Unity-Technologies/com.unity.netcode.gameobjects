@@ -25,6 +25,7 @@ namespace MLAPI.RuntimeTests
         private Transform[] m_Dude_LeftLeg_NetObjs;
         private Transform[] m_Dude_RightLeg_NetObjs;
         private Transform[] m_Cube_NetObjs;
+        private ReparentingCubeNetBhv[] m_Cube_NetBhvs;
         private Transform[] m_Pickup_NetObjs;
         private Transform[] m_Pickup_Back_NetObjs;
 
@@ -66,6 +67,7 @@ namespace MLAPI.RuntimeTests
             m_Dude_LeftLeg_NetObjs = new Transform[setCount];
             m_Dude_RightLeg_NetObjs = new Transform[setCount];
             m_Cube_NetObjs = new Transform[setCount];
+            m_Cube_NetBhvs = new ReparentingCubeNetBhv[setCount];
             m_Pickup_NetObjs = new Transform[setCount];
             m_Pickup_Back_NetObjs = new Transform[setCount];
 
@@ -139,7 +141,12 @@ namespace MLAPI.RuntimeTests
                 else if (childTransform0.name == "Cube (NetObj)")
                 {
                     m_Cube_NetObjs[setIndex] = childTransform0;
-                    m_Cube_NetObjs[setIndex].GetComponent<NetworkObject>().NetworkManagerOwner = networkManager;
+
+                    var networkObject = childTransform0.GetComponent<NetworkObject>();
+                    var networkBehaviour = childTransform0.GetComponent<ReparentingCubeNetBhv>();
+
+                    networkObject.NetworkManagerOwner = networkManager;
+                    m_Cube_NetBhvs[setIndex] = networkBehaviour;
                 }
                 else if (childTransform0.name == "Pickup (NetObj)")
                 {
@@ -168,6 +175,8 @@ namespace MLAPI.RuntimeTests
             Assert.That(m_Dude_LeftLeg_NetObjs[setIndex], Is.Not.Null);
             Assert.That(m_Dude_RightLeg_NetObjs[setIndex], Is.Not.Null);
             Assert.That(m_Cube_NetObjs[setIndex], Is.Not.Null);
+            Assert.That(m_Cube_NetBhvs[setIndex], Is.Not.Null);
+            Assert.That(m_Cube_NetBhvs[setIndex].ParentNetworkObject, Is.Null);
             Assert.That(m_Pickup_NetObjs[setIndex], Is.Not.Null);
             Assert.That(m_Pickup_Back_NetObjs[setIndex], Is.Not.Null);
 
@@ -196,6 +205,7 @@ namespace MLAPI.RuntimeTests
         {
             // Server: Set/Cube -> Set/Pickup/Back/Cube
             m_Cube_NetObjs[0].parent = m_Pickup_Back_NetObjs[0];
+            Assert.That(m_Cube_NetBhvs[0].ParentNetworkObject, Is.EqualTo(m_Pickup_Back_NetObjs[0].GetComponent<NetworkObject>()));
 
             int nextFrameNumber = Time.frameCount + 2;
             yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
@@ -204,11 +214,13 @@ namespace MLAPI.RuntimeTests
             for (int setIndex = 0; setIndex < k_ClientInstanceCount; setIndex++)
             {
                 Assert.That(m_Cube_NetObjs[setIndex + 1].parent, Is.EqualTo(m_Pickup_Back_NetObjs[setIndex + 1]));
+                Assert.That(m_Cube_NetBhvs[setIndex + 1].ParentNetworkObject, Is.EqualTo(m_Pickup_Back_NetObjs[setIndex + 1].GetComponent<NetworkObject>()));
             }
 
 
             // Server: Set/Pickup/Back -> Root/Cube
             m_Cube_NetObjs[0].parent = null;
+            Assert.That(m_Cube_NetBhvs[0].ParentNetworkObject, Is.EqualTo(null));
 
             nextFrameNumber = Time.frameCount + 2;
             yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
@@ -217,11 +229,13 @@ namespace MLAPI.RuntimeTests
             for (int setIndex = 0; setIndex < k_ClientInstanceCount; setIndex++)
             {
                 Assert.That(m_Cube_NetObjs[setIndex + 1].parent, Is.EqualTo(null));
+                Assert.That(m_Cube_NetBhvs[setIndex + 1].ParentNetworkObject, Is.EqualTo(null));
             }
 
 
             // Server: Root/Cube -> Set/Dude/Arms/RightArm/Cube
             m_Cube_NetObjs[0].parent = m_Dude_RightArm_NetObjs[0];
+            Assert.That(m_Cube_NetBhvs[0].ParentNetworkObject, Is.EqualTo(m_Dude_RightArm_NetObjs[0].GetComponent<NetworkObject>()));
 
             nextFrameNumber = Time.frameCount + 2;
             yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
@@ -230,6 +244,7 @@ namespace MLAPI.RuntimeTests
             for (int setIndex = 0; setIndex < k_ClientInstanceCount; setIndex++)
             {
                 Assert.That(m_Cube_NetObjs[setIndex + 1].parent, Is.EqualTo(m_Dude_RightArm_NetObjs[setIndex + 1]));
+                Assert.That(m_Cube_NetBhvs[setIndex + 1].ParentNetworkObject, Is.EqualTo(m_Dude_RightArm_NetObjs[setIndex + 1].GetComponent<NetworkObject>()));
             }
         }
 
@@ -258,6 +273,7 @@ namespace MLAPI.RuntimeTests
 
             // Try(Cube -> Set/Dude/Arms/LeftArm/Cube): true
             Assert.That(m_Cube_NetObjs[0].GetComponent<NetworkObject>().TrySetParent(m_Dude_LeftArm_NetObjs[0]));
+            Assert.That(m_Cube_NetBhvs[0].ParentNetworkObject, Is.EqualTo(m_Dude_LeftArm_NetObjs[0].GetComponent<NetworkObject>()));
 
             nextFrameNumber = Time.frameCount + 2;
             yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
@@ -265,6 +281,7 @@ namespace MLAPI.RuntimeTests
             for (int setIndex = 0; setIndex < k_ClientInstanceCount; setIndex++)
             {
                 Assert.That(m_Cube_NetObjs[setIndex + 1].parent, Is.EqualTo(m_Dude_LeftArm_NetObjs[setIndex + 1]));
+                Assert.That(m_Cube_NetBhvs[setIndex + 1].ParentNetworkObject, Is.EqualTo(m_Dude_LeftArm_NetObjs[setIndex + 1].GetComponent<NetworkObject>()));
             }
         }
     }
