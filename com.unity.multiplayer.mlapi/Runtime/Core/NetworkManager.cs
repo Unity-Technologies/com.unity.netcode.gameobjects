@@ -343,8 +343,11 @@ namespace MLAPI
             // {
             //     SpawnManager.SpawnedObjectsList.Add(networkScriptableObject.no);
             // }
-            sno.Init();
-            SpawnManager.SpawnedObjectsList.Add(sno.supportingNetworkObject);
+            if (sno != null)
+            {
+                sno.Init();
+                SpawnManager.SpawnedObjectsList.Add(sno.supportingNetworkObject);
+            }
 
             CustomMessagingManager = new CustomMessagingManager(this);
 
@@ -421,7 +424,10 @@ namespace MLAPI
             // Always clear our prefab override links before building
             NetworkConfig.NetworkPrefabOverrideLinks.Clear();
 
-            NetworkConfig.NetworkPrefabOverrideLinks[sno.supportingNetworkObject.GlobalObjectIdHash] = sno.NetworkPrefab;
+            if (sno != null)
+            {
+                NetworkConfig.NetworkPrefabOverrideLinks[sno.supportingNetworkObject.GlobalObjectIdHash] = sno.NetworkPrefab;
+            }
             // Build the NetworkPrefabOverrideLinks dictionary
             for (int i = 0; i < NetworkConfig.NetworkPrefabs.Count; i++)
             {
