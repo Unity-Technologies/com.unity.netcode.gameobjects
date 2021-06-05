@@ -215,7 +215,7 @@ namespace MLAPI.RuntimeTests
             m_Cube_NetObjs[0].parent = m_Pickup_Back_NetObjs[0];
             Assert.That(m_Cube_NetBhvs[0].ParentNetworkObject, Is.EqualTo(m_Pickup_Back_NetObjs[0].GetComponent<NetworkObject>()));
 
-            int nextFrameNumber = Time.frameCount + 8;
+            int nextFrameNumber = Time.frameCount + 2;
             yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
 
             // Client[n]: Set/Cube -> Set/Pickup/Back/Cube
@@ -230,7 +230,7 @@ namespace MLAPI.RuntimeTests
             m_Cube_NetObjs[0].parent = null;
             Assert.That(m_Cube_NetBhvs[0].ParentNetworkObject, Is.EqualTo(null));
 
-            nextFrameNumber = Time.frameCount + 8;
+            nextFrameNumber = Time.frameCount + 2;
             yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
 
             // Client[n]: Set/Pickup/Back -> Root/Cube
@@ -245,7 +245,7 @@ namespace MLAPI.RuntimeTests
             m_Cube_NetObjs[0].parent = m_Dude_RightArm_NetObjs[0];
             Assert.That(m_Cube_NetBhvs[0].ParentNetworkObject, Is.EqualTo(m_Dude_RightArm_NetObjs[0].GetComponent<NetworkObject>()));
 
-            nextFrameNumber = Time.frameCount + 8;
+            nextFrameNumber = Time.frameCount + 2;
             yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
 
             // Client[n]: Root/Cube -> Set/Dude/Arms/RightArm/Cube
@@ -259,14 +259,6 @@ namespace MLAPI.RuntimeTests
         [UnityTest]
         public IEnumerator SetParentTryAPI()
         {
-            var logBuilder = new StringBuilder($">>> A {nameof(PrintHierarchy)}\n");
-            var rootGameObjects = m_TestScene.GetRootGameObjects();
-            for (int objectIndex = 0; objectIndex < rootGameObjects.Length; objectIndex++)
-            {
-                PrintHierarchy(rootGameObjects[objectIndex].transform, logBuilder, 1);
-            }
-            Debug.Log(logBuilder.ToString());
-
             // Try(Cube -> MainCamera/Cube): false
             var serverCachedParent = m_Cube_NetObjs[0].parent;
             var clientCachedParents = new Transform[k_ClientInstanceCount];
@@ -277,70 +269,27 @@ namespace MLAPI.RuntimeTests
 
             Assert.That(!m_Cube_NetObjs[0].GetComponent<NetworkObject>().TrySetParent(Camera.main.transform));
 
-            int nextFrameNumber = Time.frameCount + 8;
+            int nextFrameNumber = Time.frameCount + 2;
             yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
 
-            Assert.That(m_Cube_NetObjs[0].parent.GetInstanceID(), Is.EqualTo(serverCachedParent.GetInstanceID()));
+            Assert.That(m_Cube_NetObjs[0].parent, Is.EqualTo(serverCachedParent));
             for (int setIndex = 0; setIndex < k_ClientInstanceCount; setIndex++)
             {
-                Assert.That(m_Cube_NetObjs[setIndex + 1].parent.GetInstanceID(), Is.EqualTo(clientCachedParents[setIndex].GetInstanceID()));
+                Assert.That(m_Cube_NetObjs[setIndex + 1].parent, Is.EqualTo(clientCachedParents[setIndex]));
             }
 
-
-            logBuilder = new StringBuilder($">>> B {nameof(PrintHierarchy)}\n");
-            rootGameObjects = m_TestScene.GetRootGameObjects();
-            for (int objectIndex = 0; objectIndex < rootGameObjects.Length; objectIndex++)
-            {
-                PrintHierarchy(rootGameObjects[objectIndex].transform, logBuilder, 1);
-            }
-            Debug.Log(logBuilder.ToString());
 
             // Try(Cube -> Set/Dude/Arms/LeftArm/Cube): true
             Assert.That(m_Cube_NetObjs[0].GetComponent<NetworkObject>().TrySetParent(m_Dude_LeftArm_NetObjs[0]));
             Assert.That(m_Cube_NetBhvs[0].ParentNetworkObject, Is.EqualTo(m_Dude_LeftArm_NetObjs[0].GetComponent<NetworkObject>()));
 
-            logBuilder = new StringBuilder($">>> C {nameof(PrintHierarchy)}\n");
-            rootGameObjects = m_TestScene.GetRootGameObjects();
-            for (int objectIndex = 0; objectIndex < rootGameObjects.Length; objectIndex++)
-            {
-                PrintHierarchy(rootGameObjects[objectIndex].transform, logBuilder, 1);
-            }
-            Debug.Log(logBuilder.ToString());
-
-            nextFrameNumber = Time.frameCount + 8;
+            nextFrameNumber = Time.frameCount + 2;
             yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
-
-            logBuilder = new StringBuilder($">>> D {nameof(PrintHierarchy)}\n");
-            rootGameObjects = m_TestScene.GetRootGameObjects();
-            for (int objectIndex = 0; objectIndex < rootGameObjects.Length; objectIndex++)
-            {
-                PrintHierarchy(rootGameObjects[objectIndex].transform, logBuilder, 1);
-            }
-            Debug.Log(logBuilder.ToString());
 
             for (int setIndex = 0; setIndex < k_ClientInstanceCount; setIndex++)
             {
-                Assert.That(m_Cube_NetObjs[setIndex + 1].parent.GetInstanceID(), Is.EqualTo(m_Dude_LeftArm_NetObjs[setIndex + 1].GetInstanceID()));
+                Assert.That(m_Cube_NetObjs[setIndex + 1].parent, Is.EqualTo(m_Dude_LeftArm_NetObjs[setIndex + 1]));
                 Assert.That(m_Cube_NetBhvs[setIndex + 1].ParentNetworkObject, Is.EqualTo(m_Dude_LeftArm_NetObjs[setIndex + 1].GetComponent<NetworkObject>()));
-            }
-
-            logBuilder = new StringBuilder($">>> E {nameof(PrintHierarchy)}\n");
-            rootGameObjects = m_TestScene.GetRootGameObjects();
-            for (int objectIndex = 0; objectIndex < rootGameObjects.Length; objectIndex++)
-            {
-                PrintHierarchy(rootGameObjects[objectIndex].transform, logBuilder, 1);
-            }
-            Debug.Log(logBuilder.ToString());
-        }
-
-        private void PrintHierarchy(Transform rootTransform, StringBuilder logBuilder, int indentLevel)
-        {
-            var networkObject = rootTransform.GetComponent<NetworkObject>();
-            logBuilder.Append($"{new string('\t', indentLevel)}{rootTransform.name} [{rootTransform.GetInstanceID()}]{(networkObject != null ? $" #{networkObject.NetworkObjectId}" : "")}\n");
-
-            foreach (Transform childTransform in rootTransform)
-            {
-                PrintHierarchy(childTransform, logBuilder, indentLevel + 1);
             }
         }
     }

@@ -1331,14 +1331,12 @@ namespace MLAPI
                         }
                     case NetworkConstants.PARENT_SYNC:
                         {
-                            UnityEngine.Debug.Log(">>> Receive PARENT_SYNC");
                             if (IsClient)
                             {
                                 using (var reader = PooledNetworkReader.Get(messageStream))
                                 {
                                     var networkObjectId = reader.ReadUInt64Packed();
                                     var (isReparented, latestParent) = NetworkObject.ReadNetworkParenting(reader);
-                                    UnityEngine.Debug.Log($">>> ReadNetworkParenting -> IsReparented:{isReparented} LatestParent:{latestParent}");
                                     if (SpawnManager.SpawnedObjects.ContainsKey(networkObjectId))
                                     {
                                         var networkObject = SpawnManager.SpawnedObjects[networkObjectId];

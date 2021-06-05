@@ -682,14 +682,11 @@ namespace MLAPI
                 {
                     writer.WriteUInt64Packed(NetworkObjectId);
                     WriteNetworkParenting(writer, m_IsReparented, m_LatestParent);
-                    Debug.Log($">>> WriteNetworkParenting -> IsReparented:{m_IsReparented} LatestParent:{m_LatestParent}");
                 }
 
-                Debug.Log($">>> SendTo {NetworkManager.ConnectedClientsList.Count} connections");
                 for (int i = 0; i < NetworkManager.ConnectedClientsList.Count; i++)
                 {
                     var targetClientId = NetworkManager.ConnectedClientsList[i].ClientId;
-                    Debug.Log($">>> Send PARENT_SYNC -> targetClientId:{targetClientId}");
                     if (Observers.Contains(targetClientId))
                     {
                         NetworkManager.MessageSender.Send(targetClientId, NetworkConstants.PARENT_SYNC, NetworkChannel.Internal, buffer);
@@ -704,26 +701,21 @@ namespace MLAPI
         {
             if (!AutoObjectParentSync)
             {
-                Debug.Log(">>> !AutoObjectParentSync");
                 return false;
             }
 
             if (!IsSpawned)
             {
-                Debug.Log(">>> !IsSpawned");
                 return false;
             }
 
             if (!m_IsReparented)
             {
-                Debug.Log(">>> !m_IsReparented");
                 return true;
             }
 
             if (m_LatestParent == null || !m_LatestParent.HasValue)
             {
-                Debug.Log(">>> m_LatestParent == null || !m_LatestParent.HasValue");
-
                 m_CachedParent = null;
                 transform.parent = null;
 
@@ -733,8 +725,6 @@ namespace MLAPI
 
             if (!NetworkManager.SpawnManager.SpawnedObjects.ContainsKey(m_LatestParent.Value))
             {
-                Debug.Log(">>> !NetworkManager.SpawnManager.SpawnedObjects.ContainsKey(m_LatestParent.Value)");
-
                 if (OrphanChildren.Add(this))
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
@@ -746,8 +736,6 @@ namespace MLAPI
             }
 
             var parentObject = NetworkManager.SpawnManager.SpawnedObjects[m_LatestParent.Value];
-
-            Debug.Log(">>> MOVED - REPARENTED");
 
             m_CachedParent = parentObject.transform;
             transform.parent = parentObject.transform;
