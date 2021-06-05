@@ -86,7 +86,7 @@ namespace MLAPI.RuntimeTests
             }
 
             // Start server and client NetworkManager instances
-            Assert.That(MultiInstanceHelpers.Start(false, m_ServerNetworkManager, m_ClientNetworkManagers));
+            Assert.That(MultiInstanceHelpers.Start(true, m_ServerNetworkManager, m_ClientNetworkManagers));
 
             // Wait for connection on client side
             yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(m_ClientNetworkManagers));
