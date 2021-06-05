@@ -1001,9 +1001,9 @@ namespace MLAPI
                 parentNetworkId = reader.ReadUInt32Packed();
             }
 
-            var isSceneObject = reader.ReadBool();
+            bool isSceneObject = reader.ReadBool();
 
-            var prefabHash = reader.ReadUInt32Packed();
+            uint globalObjectIdHash = reader.ReadUInt32Packed();
             Vector3? position = null;
             Quaternion? rotation = null;
 
@@ -1017,7 +1017,7 @@ namespace MLAPI
             var (isReparented, latestParent) = ReadNetworkParenting(reader);
 
             //Attempt to create a local NetworkObject
-            var networkObject = networkManager.SpawnManager.CreateLocalNetworkObject(isSceneObject, prefabHash, ownerClientId, parentNetworkId, position, rotation, isReparented);
+            var networkObject = networkManager.SpawnManager.CreateLocalNetworkObject(isSceneObject, globalObjectIdHash, ownerClientId, parentNetworkId, position, rotation, isReparented);
 
             networkObject?.SetNetworkParenting(isReparented, latestParent);
 
@@ -1035,7 +1035,7 @@ namespace MLAPI
                 if (networkObject == null)
                 {
                     // Log the error that the NetworkObject failed to construct
-                    Debug.LogError($"Failed to spawn {nameof(NetworkObject)} for Hash {prefabHash}.");
+                    Debug.LogError($"Failed to spawn {nameof(NetworkObject)} for Hash {globalObjectIdHash}.");
 
                     // If we failed to load this NetworkObject, then skip past the network variable data
                     objectStream.Position += networkVariableDataSize;

@@ -158,7 +158,7 @@ namespace MLAPI.Spawning
         /// <summary>
         /// Should only run on the client
         /// </summary>
-        internal NetworkObject CreateLocalNetworkObject(bool softCreate, uint prefabHash, ulong ownerClientId, ulong? parentNetworkId, Vector3? position, Quaternion? rotation, bool isReparented = false)
+        internal NetworkObject CreateLocalNetworkObject(bool isSceneObject, uint globalObjectIdHash, ulong ownerClientId, ulong? parentNetworkId, Vector3? position, Quaternion? rotation, bool isReparented = false)
         {
             NetworkObject parentNetworkObject = null;
 
@@ -177,13 +177,13 @@ namespace MLAPI.Spawning
                 }
             }
 
-            if (!NetworkManager.NetworkConfig.EnableSceneManagement || !softCreate)
+            if (!NetworkManager.NetworkConfig.EnableSceneManagement || !isSceneObject)
             {
                 // If the prefab hash has a registered INetworkPrefabInstanceHandler derived class
-                if (NetworkManager.PrefabHandler.ContainsHandler(prefabHash))
+                if (NetworkManager.PrefabHandler.ContainsHandler(globalObjectIdHash))
                 {
                     // Let the handler spawn the NetworkObject
-                    var networkObject = NetworkManager.PrefabHandler.HandleNetworkPrefabSpawn(prefabHash, ownerClientId, position.GetValueOrDefault(Vector3.zero), rotation.GetValueOrDefault(Quaternion.identity));
+                    var networkObject = NetworkManager.PrefabHandler.HandleNetworkPrefabSpawn(globalObjectIdHash, ownerClientId, position.GetValueOrDefault(Vector3.zero), rotation.GetValueOrDefault(Quaternion.identity));
 
                     if (parentNetworkObject != null)
                     {
@@ -201,17 +201,17 @@ namespace MLAPI.Spawning
                 {
                     // See if there is a valid registered NetworkPrefabOverrideLink associated with the provided prefabHash
                     GameObject networkPrefabReference = null;
-                    if (NetworkManager.NetworkConfig.NetworkPrefabOverrideLinks.ContainsKey(prefabHash))
+                    if (NetworkManager.NetworkConfig.NetworkPrefabOverrideLinks.ContainsKey(globalObjectIdHash))
                     {
-                        switch (NetworkManager.NetworkConfig.NetworkPrefabOverrideLinks[prefabHash].Override)
+                        switch (NetworkManager.NetworkConfig.NetworkPrefabOverrideLinks[globalObjectIdHash].Override)
                         {
                             default:
                             case NetworkPrefabOverride.None:
-                                networkPrefabReference = NetworkManager.NetworkConfig.NetworkPrefabOverrideLinks[prefabHash].Prefab;
+                                networkPrefabReference = NetworkManager.NetworkConfig.NetworkPrefabOverrideLinks[globalObjectIdHash].Prefab;
                                 break;
                             case NetworkPrefabOverride.Hash:
                             case NetworkPrefabOverride.Prefab:
-                                networkPrefabReference = NetworkManager.NetworkConfig.NetworkPrefabOverrideLinks[prefabHash].OverridingTargetPrefab;
+                                networkPrefabReference = NetworkManager.NetworkConfig.NetworkPrefabOverrideLinks[globalObjectIdHash].OverridingTargetPrefab;
                                 break;
                         }
                     }
@@ -221,7 +221,7 @@ namespace MLAPI.Spawning
                     {
                         if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
                         {
-                            NetworkLog.LogError($"Failed to create object locally. [{nameof(prefabHash)}={prefabHash}]. {nameof(NetworkPrefab)} could not be found. Is the prefab registered with {nameof(NetworkManager)}?");
+                            NetworkLog.LogError($"Failed to create object locally. [{nameof(globalObjectIdHash)}={globalObjectIdHash}]. {nameof(NetworkPrefab)} could not be found. Is the prefab registered with {nameof(NetworkManager)}?");
                         }
                         return null;
                     }
@@ -247,16 +247,16 @@ namespace MLAPI.Spawning
             else
             {
                 // SoftSync them by mapping
-                if (!PendingSoftSyncObjects.TryGetValue(prefabHash, out NetworkObject networkObject))
+                if (!PendingSoftSyncObjects.TryGetValue(globalObjectIdHash, out NetworkObject networkObject))
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
                     {
-                        NetworkLog.LogError($"{nameof(NetworkPrefab)} hash was not found! In-Scene placed {nameof(NetworkObject)} soft synchronization failure for Hash: {prefabHash}!");
+                        NetworkLog.LogError($"{nameof(NetworkPrefab)} hash was not found! In-Scene placed {nameof(NetworkObject)} soft synchronization failure for Hash: {globalObjectIdHash}!");
                     }
                     return null;
                 }
 
-                PendingSoftSyncObjects.Remove(prefabHash);
+                PendingSoftSyncObjects.Remove(globalObjectIdHash);
 
                 if (parentNetworkObject != null)
                 {
