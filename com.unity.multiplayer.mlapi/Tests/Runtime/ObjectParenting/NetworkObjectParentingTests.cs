@@ -328,7 +328,8 @@ namespace MLAPI.RuntimeTests
 
         private void PrintHierarchy(Transform rootTransform, StringBuilder logBuilder, int indentLevel)
         {
-            logBuilder.Append($"{new string('\t', indentLevel)}{rootTransform.name} [{rootTransform.GetInstanceID()}]\n");
+            var networkObject = rootTransform.GetComponent<NetworkObject>();
+            logBuilder.Append($"{new string('\t', indentLevel)}{rootTransform.name} [{rootTransform.GetInstanceID()}]{(networkObject != null ? $" #{networkObject.NetworkObjectId}" : "")}\n");
 
             foreach (Transform childTransform in rootTransform)
             {
