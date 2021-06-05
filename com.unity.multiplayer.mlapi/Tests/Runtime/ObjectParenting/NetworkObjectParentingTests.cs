@@ -44,7 +44,7 @@ namespace MLAPI.RuntimeTests
         [UnitySetUp]
         public IEnumerator Setup()
         {
-            Application.targetFrameRate = 120;
+            // Application.targetFrameRate = 120;
 
             SceneManager.sceneLoaded += OnSceneLoaded;
 
