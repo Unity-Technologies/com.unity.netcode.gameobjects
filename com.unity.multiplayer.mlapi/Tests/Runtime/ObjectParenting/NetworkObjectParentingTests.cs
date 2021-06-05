@@ -2,6 +2,7 @@ using System.Collections;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 using System.Text.RegularExpressions;
 using NUnit.Framework;
 using UnityEditor.PackageManager;
@@ -251,8 +252,13 @@ namespace MLAPI.RuntimeTests
         [UnityTest]
         public IEnumerator SetParentTryAPI()
         {
-            Debug.Log($">>> {nameof(PrintHierarchy)}");
-            m_TestScene.GetRootGameObjects().Select(g => g.transform).ToList().ForEach(t => PrintHierarchy(t));
+            var logBuilder = new StringBuilder($">>> {nameof(PrintHierarchy)}\n");
+            var rootGameObjects = m_TestScene.GetRootGameObjects();
+            for (int objectIndex = 0; objectIndex < rootGameObjects.Length; objectIndex++)
+            {
+                PrintHierarchy(rootGameObjects[objectIndex].transform, logBuilder, 1);
+            }
+            Debug.Log(logBuilder.ToString());
 
             // Try(Cube -> MainCamera/Cube): false
             var serverCachedParent = m_Cube_NetObjs[0].parent;
@@ -274,8 +280,13 @@ namespace MLAPI.RuntimeTests
             }
 
 
-            Debug.Log($">>> {nameof(PrintHierarchy)}");
-            m_TestScene.GetRootGameObjects().Select(g => g.transform).ToList().ForEach(t => PrintHierarchy(t));
+            logBuilder = new StringBuilder($">>> {nameof(PrintHierarchy)}\n");
+            rootGameObjects = m_TestScene.GetRootGameObjects();
+            for (int objectIndex = 0; objectIndex < rootGameObjects.Length; objectIndex++)
+            {
+                PrintHierarchy(rootGameObjects[objectIndex].transform, logBuilder, 1);
+            }
+            Debug.Log(logBuilder.ToString());
 
             // Try(Cube -> Set/Dude/Arms/LeftArm/Cube): true
             Assert.That(m_Cube_NetObjs[0].GetComponent<NetworkObject>().TrySetParent(m_Dude_LeftArm_NetObjs[0]));
@@ -291,16 +302,22 @@ namespace MLAPI.RuntimeTests
             }
 
 
-            Debug.Log($">>> {nameof(PrintHierarchy)}");
-            m_TestScene.GetRootGameObjects().Select(g => g.transform).ToList().ForEach(t => PrintHierarchy(t));
+            logBuilder = new StringBuilder($">>> {nameof(PrintHierarchy)}\n");
+            rootGameObjects = m_TestScene.GetRootGameObjects();
+            for (int objectIndex = 0; objectIndex < rootGameObjects.Length; objectIndex++)
+            {
+                PrintHierarchy(rootGameObjects[objectIndex].transform, logBuilder, 1);
+            }
+            Debug.Log(logBuilder.ToString());
         }
 
-        private void PrintHierarchy(Transform rootTransform, int indentLevel = 1)
+        private void PrintHierarchy(Transform rootTransform, StringBuilder logBuilder, int indentLevel)
         {
+            logBuilder.Append($"{new string('\t', indentLevel)}{rootTransform.name} [{rootTransform.GetInstanceID()}]\n");
+
             foreach (Transform childTransform in rootTransform)
             {
-                Debug.Log($"{new string('\t', indentLevel)}{childTransform.name} [{childTransform.GetInstanceID()}]");
-                PrintHierarchy(childTransform, indentLevel + 1);
+                PrintHierarchy(childTransform, logBuilder, indentLevel + 1);
             }
         }
     }
