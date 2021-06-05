@@ -213,7 +213,7 @@ namespace MLAPI.RuntimeTests
             // Client[n]: Set/Cube -> Set/Pickup/Back/Cube
             for (int setIndex = 0; setIndex < k_ClientInstanceCount; setIndex++)
             {
-                Assert.That(m_Cube_NetObjs[setIndex + 1].parent.GetInstanceID(), Is.EqualTo(m_Pickup_Back_NetObjs[setIndex + 1].GetInstanceID()));
+                Assert.That(m_Cube_NetObjs[setIndex + 1].parent, Is.EqualTo(m_Pickup_Back_NetObjs[setIndex + 1]));
                 Assert.That(m_Cube_NetBhvs[setIndex + 1].ParentNetworkObject, Is.EqualTo(m_Pickup_Back_NetObjs[setIndex + 1].GetComponent<NetworkObject>()));
             }
 
@@ -243,7 +243,7 @@ namespace MLAPI.RuntimeTests
             // Client[n]: Root/Cube -> Set/Dude/Arms/RightArm/Cube
             for (int setIndex = 0; setIndex < k_ClientInstanceCount; setIndex++)
             {
-                Assert.That(m_Cube_NetObjs[setIndex + 1].parent.GetInstanceID(), Is.EqualTo(m_Dude_RightArm_NetObjs[setIndex + 1].GetInstanceID()));
+                Assert.That(m_Cube_NetObjs[setIndex + 1].parent, Is.EqualTo(m_Dude_RightArm_NetObjs[setIndex + 1]));
                 Assert.That(m_Cube_NetBhvs[setIndex + 1].ParentNetworkObject, Is.EqualTo(m_Dude_RightArm_NetObjs[setIndex + 1].GetComponent<NetworkObject>()));
             }
         }
@@ -251,6 +251,9 @@ namespace MLAPI.RuntimeTests
         [UnityTest]
         public IEnumerator SetParentTryAPI()
         {
+            Debug.Log($">>> {nameof(PrintHierarchy)}");
+            m_TestScene.GetRootGameObjects().Select(g => g.transform).ToList().ForEach(t => PrintHierarchy(t));
+
             // Try(Cube -> MainCamera/Cube): false
             var serverCachedParent = m_Cube_NetObjs[0].parent;
             var clientCachedParents = new Transform[k_ClientInstanceCount];
@@ -271,6 +274,9 @@ namespace MLAPI.RuntimeTests
             }
 
 
+            Debug.Log($">>> {nameof(PrintHierarchy)}");
+            m_TestScene.GetRootGameObjects().Select(g => g.transform).ToList().ForEach(t => PrintHierarchy(t));
+
             // Try(Cube -> Set/Dude/Arms/LeftArm/Cube): true
             Assert.That(m_Cube_NetObjs[0].GetComponent<NetworkObject>().TrySetParent(m_Dude_LeftArm_NetObjs[0]));
             Assert.That(m_Cube_NetBhvs[0].ParentNetworkObject, Is.EqualTo(m_Dude_LeftArm_NetObjs[0].GetComponent<NetworkObject>()));
@@ -282,6 +288,19 @@ namespace MLAPI.RuntimeTests
             {
                 Assert.That(m_Cube_NetObjs[setIndex + 1].parent.GetInstanceID(), Is.EqualTo(m_Dude_LeftArm_NetObjs[setIndex + 1].GetInstanceID()));
                 Assert.That(m_Cube_NetBhvs[setIndex + 1].ParentNetworkObject, Is.EqualTo(m_Dude_LeftArm_NetObjs[setIndex + 1].GetComponent<NetworkObject>()));
+            }
+
+
+            Debug.Log($">>> {nameof(PrintHierarchy)}");
+            m_TestScene.GetRootGameObjects().Select(g => g.transform).ToList().ForEach(t => PrintHierarchy(t));
+        }
+
+        private void PrintHierarchy(Transform rootTransform, int indentLevel = 1)
+        {
+            foreach (Transform childTransform in rootTransform)
+            {
+                Debug.Log($"{new string('\t', indentLevel)}{childTransform.name} [{childTransform.GetInstanceID()}]");
+                PrintHierarchy(childTransform, indentLevel + 1);
             }
         }
     }
