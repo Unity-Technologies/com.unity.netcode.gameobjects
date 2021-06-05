@@ -252,7 +252,7 @@ namespace MLAPI.RuntimeTests
         [UnityTest]
         public IEnumerator SetParentTryAPI()
         {
-            var logBuilder = new StringBuilder($">>> {nameof(PrintHierarchy)}\n");
+            var logBuilder = new StringBuilder($">>> A {nameof(PrintHierarchy)}\n");
             var rootGameObjects = m_TestScene.GetRootGameObjects();
             for (int objectIndex = 0; objectIndex < rootGameObjects.Length; objectIndex++)
             {
@@ -280,7 +280,7 @@ namespace MLAPI.RuntimeTests
             }
 
 
-            logBuilder = new StringBuilder($">>> {nameof(PrintHierarchy)}\n");
+            logBuilder = new StringBuilder($">>> B {nameof(PrintHierarchy)}\n");
             rootGameObjects = m_TestScene.GetRootGameObjects();
             for (int objectIndex = 0; objectIndex < rootGameObjects.Length; objectIndex++)
             {
@@ -292,8 +292,24 @@ namespace MLAPI.RuntimeTests
             Assert.That(m_Cube_NetObjs[0].GetComponent<NetworkObject>().TrySetParent(m_Dude_LeftArm_NetObjs[0]));
             Assert.That(m_Cube_NetBhvs[0].ParentNetworkObject, Is.EqualTo(m_Dude_LeftArm_NetObjs[0].GetComponent<NetworkObject>()));
 
+            logBuilder = new StringBuilder($">>> C {nameof(PrintHierarchy)}\n");
+            rootGameObjects = m_TestScene.GetRootGameObjects();
+            for (int objectIndex = 0; objectIndex < rootGameObjects.Length; objectIndex++)
+            {
+                PrintHierarchy(rootGameObjects[objectIndex].transform, logBuilder, 1);
+            }
+            Debug.Log(logBuilder.ToString());
+
             nextFrameNumber = Time.frameCount + 8;
             yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
+
+            logBuilder = new StringBuilder($">>> D {nameof(PrintHierarchy)}\n");
+            rootGameObjects = m_TestScene.GetRootGameObjects();
+            for (int objectIndex = 0; objectIndex < rootGameObjects.Length; objectIndex++)
+            {
+                PrintHierarchy(rootGameObjects[objectIndex].transform, logBuilder, 1);
+            }
+            Debug.Log(logBuilder.ToString());
 
             for (int setIndex = 0; setIndex < k_ClientInstanceCount; setIndex++)
             {
@@ -301,8 +317,7 @@ namespace MLAPI.RuntimeTests
                 Assert.That(m_Cube_NetBhvs[setIndex + 1].ParentNetworkObject, Is.EqualTo(m_Dude_LeftArm_NetObjs[setIndex + 1].GetComponent<NetworkObject>()));
             }
 
-
-            logBuilder = new StringBuilder($">>> {nameof(PrintHierarchy)}\n");
+            logBuilder = new StringBuilder($">>> E {nameof(PrintHierarchy)}\n");
             rootGameObjects = m_TestScene.GetRootGameObjects();
             for (int objectIndex = 0; objectIndex < rootGameObjects.Length; objectIndex++)
             {
