@@ -481,7 +481,7 @@ namespace MLAPI.Spawning
 
             foreach (var sobj in spawnedObjects)
             {
-                if ((sobj.IsSceneObject != null && sobj.IsSceneObject == true) || sobj.DestroyWithScene)
+                if ((sobj.IsSceneObject != null && sobj.IsSceneObject == true && sobj.gameObject.scene.buildIndex != -1) || sobj.DestroyWithScene) // buildIndex == -1 means dont destroy on load. However, there's still an issue here. In TestProject, unityChan and the player still remain after a scene switch (I guess because they are spawned dynamically?)
                 {
                     // This **needs** to be here until we overhaul NetworkSceneManager due to dependencies
                     // that occur shortly after NetworkSceneManager invokes ServerDestroySpawnedSceneObjects

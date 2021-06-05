@@ -446,7 +446,10 @@ namespace MLAPI.SceneManagement
                     sobj.gameObject.transform.parent = null;
                 }
 
-                SceneManager.MoveGameObjectToScene(sobj.gameObject, scene);
+                if (sobj.DestroyWithScene) // todo find a better way to handle this. Issue we're trying to solve is objects with DontDestroyOnLoad endup destroyable when done with a scene switch
+                {
+                    SceneManager.MoveGameObjectToScene(sobj.gameObject, scene);
+                }
             }
         }
 

@@ -9,8 +9,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 03e2f376ffe9a4986808d34995f9f8a0, type: 3}
-  m_Name: CustomNetSO
+  m_Script: {fileID: 11500000, guid: 5696babb2ed514f35b597c323e216ed5, type: 3}
+  m_Name: switchScene
   m_EditorClassIdentifier: 
-  myText:
-    m_InternalValue: vcxx
+  value: 0
