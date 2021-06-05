@@ -213,7 +213,7 @@ namespace MLAPI.RuntimeTests
             // Client[n]: Set/Cube -> Set/Pickup/Back/Cube
             for (int setIndex = 0; setIndex < k_ClientInstanceCount; setIndex++)
             {
-                Assert.That(m_Cube_NetObjs[setIndex + 1].parent, Is.EqualTo(m_Pickup_Back_NetObjs[setIndex + 1]));
+                Assert.That(m_Cube_NetObjs[setIndex + 1].parent.GetInstanceID(), Is.EqualTo(m_Pickup_Back_NetObjs[setIndex + 1].GetInstanceID()));
                 Assert.That(m_Cube_NetBhvs[setIndex + 1].ParentNetworkObject, Is.EqualTo(m_Pickup_Back_NetObjs[setIndex + 1].GetComponent<NetworkObject>()));
             }
 
@@ -243,7 +243,7 @@ namespace MLAPI.RuntimeTests
             // Client[n]: Root/Cube -> Set/Dude/Arms/RightArm/Cube
             for (int setIndex = 0; setIndex < k_ClientInstanceCount; setIndex++)
             {
-                Assert.That(m_Cube_NetObjs[setIndex + 1].parent, Is.EqualTo(m_Dude_RightArm_NetObjs[setIndex + 1]));
+                Assert.That(m_Cube_NetObjs[setIndex + 1].parent.GetInstanceID(), Is.EqualTo(m_Dude_RightArm_NetObjs[setIndex + 1].GetInstanceID()));
                 Assert.That(m_Cube_NetBhvs[setIndex + 1].ParentNetworkObject, Is.EqualTo(m_Dude_RightArm_NetObjs[setIndex + 1].GetComponent<NetworkObject>()));
             }
         }
@@ -264,10 +264,10 @@ namespace MLAPI.RuntimeTests
             int nextFrameNumber = Time.frameCount + 2;
             yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
 
-            Assert.That(m_Cube_NetObjs[0].parent, Is.EqualTo(serverCachedParent));
+            Assert.That(m_Cube_NetObjs[0].parent.GetInstanceID(), Is.EqualTo(serverCachedParent.GetInstanceID()));
             for (int setIndex = 0; setIndex < k_ClientInstanceCount; setIndex++)
             {
-                Assert.That(m_Cube_NetObjs[setIndex + 1].parent, Is.EqualTo(clientCachedParents[setIndex]));
+                Assert.That(m_Cube_NetObjs[setIndex + 1].parent.GetInstanceID(), Is.EqualTo(clientCachedParents[setIndex].GetInstanceID()));
             }
 
 
@@ -280,7 +280,7 @@ namespace MLAPI.RuntimeTests
 
             for (int setIndex = 0; setIndex < k_ClientInstanceCount; setIndex++)
             {
-                Assert.That(m_Cube_NetObjs[setIndex + 1].parent, Is.EqualTo(m_Dude_LeftArm_NetObjs[setIndex + 1]));
+                Assert.That(m_Cube_NetObjs[setIndex + 1].parent.GetInstanceID(), Is.EqualTo(m_Dude_LeftArm_NetObjs[setIndex + 1].GetInstanceID()));
                 Assert.That(m_Cube_NetBhvs[setIndex + 1].ParentNetworkObject, Is.EqualTo(m_Dude_LeftArm_NetObjs[setIndex + 1].GetComponent<NetworkObject>()));
             }
         }
