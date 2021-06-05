@@ -30,6 +30,8 @@ namespace MLAPI.RuntimeTests
         private Transform[] m_Pickup_NetObjs;
         private Transform[] m_Pickup_Back_NetObjs;
 
+        private int m_InitTargetFrameRate;
+
         private Scene m_InitScene;
         private Scene m_TestScene;
 
@@ -44,7 +46,8 @@ namespace MLAPI.RuntimeTests
         [UnitySetUp]
         public IEnumerator Setup()
         {
-            // Application.targetFrameRate = 120;
+            m_InitTargetFrameRate = Application.targetFrameRate;
+            Application.targetFrameRate = 120;
 
             SceneManager.sceneLoaded += OnSceneLoaded;
 
@@ -192,6 +195,8 @@ namespace MLAPI.RuntimeTests
         [UnityTearDown]
         public IEnumerator Teardown()
         {
+            Application.targetFrameRate = m_InitTargetFrameRate;
+
             SceneManager.sceneLoaded -= OnSceneLoaded;
 
             MultiInstanceHelpers.Destroy();
