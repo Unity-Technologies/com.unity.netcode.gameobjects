@@ -1331,6 +1331,7 @@ namespace MLAPI
                         }
                     case NetworkConstants.PARENT_SYNC:
                         {
+                            UnityEngine.Debug.Log(">>> Receive PARENT_SYNC");
                             if (IsClient)
                             {
                                 using (var reader = PooledNetworkReader.Get(messageStream))

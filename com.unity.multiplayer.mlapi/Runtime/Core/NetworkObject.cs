@@ -685,9 +685,11 @@ namespace MLAPI
                     Debug.Log($">>> WriteNetworkParenting -> IsReparented:{m_IsReparented} LatestParent:{m_LatestParent}");
                 }
 
+                Debug.Log($">>> SendTo {NetworkManager.ConnectedClientsList.Count} connections");
                 for (int i = 0; i < NetworkManager.ConnectedClientsList.Count; i++)
                 {
                     var targetClientId = NetworkManager.ConnectedClientsList[i].ClientId;
+                    Debug.Log($">>> Send PARENT_SYNC -> targetClientId:{targetClientId}");
                     if (Observers.Contains(targetClientId))
                     {
                         NetworkManager.MessageSender.Send(targetClientId, NetworkConstants.PARENT_SYNC, NetworkChannel.Internal, buffer);
