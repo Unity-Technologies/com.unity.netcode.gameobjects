@@ -47,7 +47,7 @@ namespace MLAPI.RuntimeTests
         public IEnumerator Setup()
         {
             m_InitTargetFrameRate = Application.targetFrameRate;
-            Application.targetFrameRate = 120;
+            Application.targetFrameRate = 50;
 
             SceneManager.sceneLoaded += OnSceneLoaded;
 
