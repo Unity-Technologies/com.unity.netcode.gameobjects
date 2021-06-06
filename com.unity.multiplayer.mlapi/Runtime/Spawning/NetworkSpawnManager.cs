@@ -294,7 +294,12 @@ namespace MLAPI.Spawning
             networkObject.IsSceneObject = sceneObject;
             networkObject.NetworkObjectId = networkId;
 
-            networkObject.DestroyWithScene = sceneObject || destroyWithScene;
+            if (!networkObject.DestroyWithSceneIsSet || !sceneObject)
+            {
+                // DestroyWithScene is not already set, we can set it here
+                // this could happen if static scene objects set their DestroyWithScene settings before netcode is started
+                networkObject.DestroyWithScene = sceneObject || destroyWithScene;
+            }
 
             networkObject.OwnerClientIdInternal = ownerClientId;
             networkObject.IsPlayerObject = playerObject;
@@ -481,7 +486,7 @@ namespace MLAPI.Spawning
 
             foreach (var sobj in spawnedObjects)
             {
-                if ((sobj.IsSceneObject != null && sobj.IsSceneObject == true) || sobj.DestroyWithScene)
+                if (sobj.DestroyWithScene)
                 {
                     // This **needs** to be here until we overhaul NetworkSceneManager due to dependencies
                     // that occur shortly after NetworkSceneManager invokes ServerDestroySpawnedSceneObjects

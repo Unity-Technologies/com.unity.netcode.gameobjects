@@ -10,6 +10,7 @@ using MLAPI.Serialization.Pooled;
 using MLAPI.Transports;
 using MLAPI.Serialization;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace MLAPI
 {
@@ -148,7 +149,28 @@ namespace MLAPI
         /// <summary>
         /// Gets whether or not the object should be automatically removed when the scene is unloaded.
         /// </summary>
-        public bool DestroyWithScene { get; internal set; }
+        public bool DestroyWithScene
+        {
+            get => m_DestroyWithScene;
+            set
+            {
+                if (m_DestroyWithScene != value)
+                {
+                    if (!value)
+                    {
+                        DontDestroyOnLoad(gameObject);
+                    }
+                    else if (gameObject.scene.buildIndex == -1) // gameobject is in dontdestroyonload "scene"
+                    {
+                        SceneManager.MoveGameObjectToScene(gameObject, SceneManager.GetActiveScene()); // even when loading scenes additively, the first scene will remain the active scene
+                    }
+                }
+                m_DestroyWithScene = value;
+                DestroyWithSceneIsSet = true;
+            }
+        }
+        private bool m_DestroyWithScene;
+        public bool DestroyWithSceneIsSet;
 
         /// <summary>
         /// Delegate type for checking visibility
@@ -698,7 +720,7 @@ namespace MLAPI
                 // If our current buffer position is greater than our positionBeforeNetworkVariableData then we wrote NetworkVariable data
                 // Part 1: This will include the total NetworkVariable data size, if there was NetworkVariable data written, to the stream
                 // in order to be able to skip past this entry on the deserialization side in the event this NetworkObject fails to be
-                // constructed (See Part 2 below in the DeserializeSceneObject method) 
+                // constructed (See Part 2 below in the DeserializeSceneObject method)
                 if (buffer.Position > positionBeforeNetworkVariableData)
                 {
                     // Store our current stream buffer position

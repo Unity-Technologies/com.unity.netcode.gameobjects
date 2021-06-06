@@ -8,6 +8,8 @@ using UnityEngine.SceneManagement;
 
 namespace MLAPI.EditorTests
 {
+    // todo test dontdestroyonload static scene object (object already in scene that sets itself as dontdestroyonload
+    // todo test shuting down and restarting network manager while in same scene (check static scene objects if they are dontdestroyonload
     public class NetworkManagerSceneManagerTests
     {
         [Test]

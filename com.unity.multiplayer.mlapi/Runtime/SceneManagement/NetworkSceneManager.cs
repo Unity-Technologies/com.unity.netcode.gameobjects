@@ -446,7 +446,10 @@ namespace MLAPI.SceneManagement
                     sobj.gameObject.transform.parent = null;
                 }
 
-                SceneManager.MoveGameObjectToScene(sobj.gameObject, scene);
+                if (sobj.DestroyWithScene)
+                {
+                    SceneManager.MoveGameObjectToScene(sobj.gameObject, scene);
+                }
             }
         }
 
