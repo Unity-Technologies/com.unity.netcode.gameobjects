@@ -90,6 +90,10 @@ namespace MLAPI.NetworkVariable
 
         private bool m_IsDirty = false;
 
+        /// <summary>
+        /// Gets or sets the name of the network variable's instance
+        /// (MemberInfo) where it was declared.
+        /// </summary>
         public string Name { get; set; }
 
         /// <summary>
