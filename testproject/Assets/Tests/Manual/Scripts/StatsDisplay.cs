@@ -18,7 +18,6 @@ namespace TestProject.ManualTests
         private Text m_ClientServerToggleText;
         private List<ulong> m_ClientsToUpdate = new List<ulong>();
 
-
         private bool m_IsServer;
 
         private void Start()
@@ -70,6 +69,14 @@ namespace TestProject.ManualTests
                     networkObject.SpawnWithOwnership(clientId, null, true);
                 }
             }
+        }
+
+        /// <summary>
+        /// Remove our OnClientConnectedCallback registration when we are destroyed
+        /// </summary>
+        private void OnDestroy()
+        {
+            NetworkManager.OnClientConnectedCallback -= OnClientConnectedCallback;
         }
 
         /// <summary>
