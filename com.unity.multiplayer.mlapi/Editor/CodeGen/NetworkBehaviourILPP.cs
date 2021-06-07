@@ -532,7 +532,8 @@ namespace MLAPI.Editor.CodeGen
 
         private void ProcessNetworkBehaviour(TypeDefinition typeDefinition)
         {
-            var staticHandlers = new List<(uint Hash, MethodDefinition Method)>();
+            var staticHandlers = new List<(uint RpcHash, MethodDefinition RpcMethod)>();
+            var rpcsNameMapping = new List<(uint RpcHash, string RpcName)>();
             foreach (var methodDefinition in typeDefinition.Methods)
             {
                 var rpcAttribute = CheckAndGetRPCAttribute(methodDefinition);
@@ -549,6 +550,7 @@ namespace MLAPI.Editor.CodeGen
 
                 InjectWriteAndCallBlocks(methodDefinition, rpcAttribute, methodDefHash);
                 staticHandlers.Add((methodDefHash, GenerateStaticHandler(methodDefinition, rpcAttribute)));
+                rpcsNameMapping.Add((methodDefHash, methodDefinition.Name));
             }
 
             if (staticHandlers.Count > 0)
@@ -569,31 +571,32 @@ namespace MLAPI.Editor.CodeGen
 
                 var instructions = new List<Instruction>();
                 var processor = staticCtorMethodDef.Body.GetILProcessor();
-                foreach (var (hash, method) in staticHandlers)
+                foreach (var (rpcHash, rpcMethod) in staticHandlers)
                 {
-                    if (hash == 0 || method == null)
+                    if (rpcHash == 0 || rpcMethod == null)
                     {
                         continue;
                     }
 
-                    typeDefinition.Methods.Add(method);
+                    typeDefinition.Methods.Add(rpcMethod);
 
                     // NetworkManager.__ntable.Add(HandlerHash, HandlerMethod);
                     instructions.Add(processor.Create(OpCodes.Ldsfld, m_NetworkManager_ntable_FieldRef));
-                    instructions.Add(processor.Create(OpCodes.Ldc_I4, unchecked((int)hash)));
+                    instructions.Add(processor.Create(OpCodes.Ldc_I4, unchecked((int)rpcHash)));
                     instructions.Add(processor.Create(OpCodes.Ldnull));
-                    instructions.Add(processor.Create(OpCodes.Ldftn, method));
+                    instructions.Add(processor.Create(OpCodes.Ldftn, rpcMethod));
                     instructions.Add(processor.Create(OpCodes.Newobj, m_NetworkHandlerDelegateCtor_MethodRef));
                     instructions.Add(processor.Create(OpCodes.Call, m_NetworkManager_ntable_Add_MethodRef));
-
-                    // NetworkManager.__rpc_name_table.Add(HandlerHash, RpcMethodName);
-                    instructions.Add(processor.Create(OpCodes.Ldsfld, m_NetworkManager_rpc_name_table_FieldRef));
-                    instructions.Add(processor.Create(OpCodes.Ldc_I4, unchecked((int)hash)));
-                    instructions.Add(processor.Create(OpCodes.Ldstr, method.Name.Substring(0, method.Name.Length-"__nhandler".Length)));
-                    instructions.Add(processor.Create(OpCodes.Call, m_NetworkManager_rpc_name_table_Add_MethodRef));
                 }
 
-
+                foreach(var (rpcHash, rpcName) in rpcsNameMapping)
+                {
+                    // NetworkManager.__rpc_name_table.Add(HandlerHash, RpcMethodName);
+                    instructions.Add(processor.Create(OpCodes.Ldsfld, m_NetworkManager_rpc_name_table_FieldRef));
+                    instructions.Add(processor.Create(OpCodes.Ldc_I4, unchecked((int)rpcHash)));
+                    instructions.Add(processor.Create(OpCodes.Ldstr, rpcName));
+                    instructions.Add(processor.Create(OpCodes.Call, m_NetworkManager_rpc_name_table_Add_MethodRef));
+                }
 
                 instructions.Reverse();
                 instructions.ForEach(instruction => processor.Body.Instructions.Insert(0, instruction));
