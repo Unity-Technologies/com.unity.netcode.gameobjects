@@ -651,6 +651,7 @@ namespace MLAPI
                                 if (shouldWrite)
                                 {
                                     writtenAny = true;
+                                    var deltaBuffer = 0L;
 
                                     if (NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                                     {
@@ -661,6 +662,7 @@ namespace MLAPI
 
                                             writer.WriteUInt16Packed((ushort)varBuffer.Length);
                                             buffer.CopyFrom(varBuffer);
+                                            deltaBuffer = varBuffer.Length;
                                         }
                                     }
                                     else
@@ -674,7 +676,7 @@ namespace MLAPI
                                         m_NetworkVariableIndexesToReset.Add(k);
                                     }
 
-                                    NetworkManager.NetworkMetrics.TrackNetworkVariableDeltaSent(NetworkObjectId, name, NetworkVariableFields[k].Name, (ulong)buffer.Length);
+                                    NetworkManager.NetworkMetrics.TrackNetworkVariableDeltaSent(NetworkObjectId, name, NetworkVariableFields[k].Name, (ulong)deltaBuffer);
                                 }
                             }
 
