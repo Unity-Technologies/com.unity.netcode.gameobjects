@@ -90,6 +90,8 @@ namespace MLAPI.NetworkVariable
 
         private bool m_IsDirty = false;
 
+        public string Name { get; set; }
+
         /// <summary>
         /// Sets whether or not the variable needs to be delta synced
         /// </summary>
