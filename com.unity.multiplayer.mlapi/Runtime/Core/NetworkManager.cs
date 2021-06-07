@@ -1343,6 +1343,10 @@ namespace MLAPI
                                         networkObject.SetNetworkParenting(isReparented, latestParent);
                                         networkObject.ApplyNetworkParenting();
                                     }
+                                    else if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                                    {
+                                        NetworkLog.LogWarning($"Read {nameof(NetworkConstants.PARENT_SYNC)} for {nameof(NetworkObject)} #{networkObjectId} but could not find it in the {nameof(SpawnManager.SpawnedObjects)}");
+                                    }
                                 }
                             }
 

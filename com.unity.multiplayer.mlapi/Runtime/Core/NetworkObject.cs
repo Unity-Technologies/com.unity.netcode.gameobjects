@@ -522,9 +522,9 @@ namespace MLAPI
             }
         }
 
-        private bool m_IsReparented;
-        private ulong? m_LatestParent;
-        private Transform m_CachedParent;
+        private bool m_IsReparented; // Did initial parent (came from the scene hierarchy) change at runtime?
+        private ulong? m_LatestParent; // What is our last set parent NetworkObject's ID?
+        private Transform m_CachedParent; // What is our last set parent Transform reference?
 
         internal void SetCachedParent(Transform parentTransform)
         {
@@ -695,6 +695,14 @@ namespace MLAPI
             }
         }
 
+        // we're keeping this set called OrphanChildren which contains NetworkObjects
+        // because at the time we initialize/spawn NetworkObject locally, we might not have its parent replicated from the other side
+        //
+        // for instance, if we're spawning NetworkObject 5 and its parent is 10, what should happen if we do not have 10 yet?
+        // let's say 10 is on the way to be replicated in a few frames and we could fix that parent-child relationship later.
+        //
+        // if you couldn't find your parent, we put you into OrphanChildren set and everytime we spawn another NetworkObject locally due to replication,
+        // we call CheckOrphanChildren() method and quickly iterate over OrphanChildren set and see if we can reparent/adopt one.
         internal static HashSet<NetworkObject> OrphanChildren = new HashSet<NetworkObject>();
 
         internal bool ApplyNetworkParenting()
