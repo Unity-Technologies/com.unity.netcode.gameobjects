@@ -1,6 +1,7 @@
 #if UNITY_2020_2_OR_NEWER
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Unity.CompilationPipeline.Common.Diagnostics;
@@ -49,7 +50,7 @@ namespace MLAPI.Editor.CodeGen
                     switch (typeDefinition.Name)
                     {
                         case nameof(NetworkManager):
-                            ProcessNetworkManager(typeDefinition);
+                            ProcessNetworkManager(typeDefinition, compiledAssembly.Defines);
                             break;
                         case nameof(NetworkBehaviour):
                             ProcessNetworkBehaviour(typeDefinition);
@@ -81,7 +82,7 @@ namespace MLAPI.Editor.CodeGen
             return new ILPostProcessResult(new InMemoryAssembly(pe.ToArray(), pdb.ToArray()), m_Diagnostics);
         }
 
-        private void ProcessNetworkManager(TypeDefinition typeDefinition)
+        private void ProcessNetworkManager(TypeDefinition typeDefinition, string[] assemblyDefines)
         {
             foreach (var fieldDefinition in typeDefinition.Fields)
             {
@@ -90,9 +91,12 @@ namespace MLAPI.Editor.CodeGen
                     fieldDefinition.IsPublic = true;
                 }
 
-                if (fieldDefinition.Name == nameof(NetworkManager.__rpc_name_table))
+                if (assemblyDefines.Contains("UNITY_EDITOR") || assemblyDefines.Contains("DEVELOPMENT_BUILD"))
                 {
-                    fieldDefinition.IsPublic = true;
+                    if (fieldDefinition.Name == nameof(NetworkManager.__rpc_name_table))
+                    {
+                        fieldDefinition.IsPublic = true;
+                    }
                 }
             }
         }

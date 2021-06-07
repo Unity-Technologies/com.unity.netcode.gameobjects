@@ -30,6 +30,8 @@ namespace MLAPI.Editor.CodeGen
 
         private readonly List<DiagnosticMessage> m_Diagnostics = new List<DiagnosticMessage>();
 
+        private ICompiledAssembly m_CompiledAssembly = null;
+
         public override ILPostProcessResult Process(ICompiledAssembly compiledAssembly)
         {
             if (!WillProcess(compiledAssembly))
@@ -51,6 +53,7 @@ namespace MLAPI.Editor.CodeGen
             var mainModule = assemblyDefinition.MainModule;
             if (mainModule != null)
             {
+                m_CompiledAssembly = compiledAssembly;
                 if (ImportReferences(mainModule))
                 {
                     // process `NetworkBehaviour` types
@@ -533,7 +536,14 @@ namespace MLAPI.Editor.CodeGen
         private void ProcessNetworkBehaviour(TypeDefinition typeDefinition)
         {
             var staticHandlers = new List<(uint RpcHash, MethodDefinition RpcMethod)>();
-            var rpcsNameMapping = new List<(uint RpcHash, string RpcName)>();
+
+            bool isDebugOrInEditor = (m_CompiledAssembly.Defines.Contains("UNITY_EDITOR") || m_CompiledAssembly.Defines.Contains("DEVELOPMENT_BUILD"));
+            List<(uint RpcHash, string RpcName)> rpcsNameMapping = null;
+            if (isDebugOrInEditor)
+            {
+                rpcsNameMapping = new List<(uint RpcHash, string RpcName)>();
+            }
+
             foreach (var methodDefinition in typeDefinition.Methods)
             {
                 var rpcAttribute = CheckAndGetRPCAttribute(methodDefinition);
@@ -550,7 +560,10 @@ namespace MLAPI.Editor.CodeGen
 
                 InjectWriteAndCallBlocks(methodDefinition, rpcAttribute, methodDefHash);
                 staticHandlers.Add((methodDefHash, GenerateStaticHandler(methodDefinition, rpcAttribute)));
-                rpcsNameMapping.Add((methodDefHash, methodDefinition.Name));
+                if (isDebugOrInEditor)
+                {
+                    rpcsNameMapping.Add((methodDefHash, methodDefinition.Name));
+                }
             }
 
             if (staticHandlers.Count > 0)
@@ -589,14 +602,23 @@ namespace MLAPI.Editor.CodeGen
                     instructions.Add(processor.Create(OpCodes.Call, m_NetworkManager_ntable_Add_MethodRef));
                 }
 
-                foreach(var (rpcHash, rpcName) in rpcsNameMapping)
+                if (isDebugOrInEditor)
                 {
-                    // NetworkManager.__rpc_name_table.Add(HandlerHash, RpcMethodName);
-                    instructions.Add(processor.Create(OpCodes.Ldsfld, m_NetworkManager_rpc_name_table_FieldRef));
-                    instructions.Add(processor.Create(OpCodes.Ldc_I4, unchecked((int)rpcHash)));
-                    instructions.Add(processor.Create(OpCodes.Ldstr, rpcName));
-                    instructions.Add(processor.Create(OpCodes.Call, m_NetworkManager_rpc_name_table_Add_MethodRef));
+                    foreach (var (rpcHash, rpcName) in rpcsNameMapping)
+                    {
+                        if (rpcHash == 0)
+                        {
+                            continue;
+                        }
+
+                        // NetworkManager.__rpc_name_table.Add(HandlerHash, RpcMethodName);
+                        instructions.Add(processor.Create(OpCodes.Ldsfld, m_NetworkManager_rpc_name_table_FieldRef));
+                        instructions.Add(processor.Create(OpCodes.Ldc_I4, unchecked((int)rpcHash)));
+                        instructions.Add(processor.Create(OpCodes.Ldstr, rpcName));
+                        instructions.Add(processor.Create(OpCodes.Call, m_NetworkManager_rpc_name_table_Add_MethodRef));
+                    }
                 }
+
 
                 instructions.Reverse();
                 instructions.ForEach(instruction => processor.Body.Instructions.Insert(0, instruction));

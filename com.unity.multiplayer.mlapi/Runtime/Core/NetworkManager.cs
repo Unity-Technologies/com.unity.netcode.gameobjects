@@ -35,8 +35,16 @@ namespace MLAPI
 #if UNITY_2020_2_OR_NEWER
         // RuntimeAccessModifiersILPP will make this `public`
         internal static readonly Dictionary<uint, Action<NetworkBehaviour, NetworkSerializer, __RpcParams>> __ntable = new Dictionary<uint, Action<NetworkBehaviour, NetworkSerializer, __RpcParams>>();
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
         // RuntimeAccessModifiersILPP will make this `public`
         internal static readonly Dictionary<uint, string> __rpc_name_table = new Dictionary<uint, string>();
+#else
+        // RuntimeAccessModifiersILPP will make this `public`
+        // The existence of this dictionary with this name is required outside of Development Build or Editor for ILPP generation
+        // This will never be initialized or filled here
+        internal static readonly Dictionary<uint, string> __rpc_name_table = null;
+#endif
 #else
         [Obsolete("Please do not use, will no longer be exposed in the future versions (framework internal)")]
         public static readonly Dictionary<uint, Action<NetworkBehaviour, NetworkSerializer, __RpcParams>> __ntable = new Dictionary<uint, Action<NetworkBehaviour, NetworkSerializer, __RpcParams>>();
