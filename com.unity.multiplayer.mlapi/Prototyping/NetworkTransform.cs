@@ -213,6 +213,11 @@ namespace MLAPI.Prototyping
             }
         }
 
+        public override void OnNetworkObjectParentChanged(NetworkObject parentNetworkObject)
+        {
+            // TODO: handle parent NetworkObject change and potentially optimize pos/rot/scale replication?
+        }
+
         private NetworkVariable<T>.OnValueChangedDelegate GetOnValueChangedDelegate<T>(Action<T> assignCurrent)
         {
             return (old, current) =>
