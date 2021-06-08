@@ -17,6 +17,7 @@ using MLAPI.Serialization.Pooled;
 using MLAPI.Spawning;
 using MLAPI.Transports;
 using Unity.Profiling;
+using Debug = UnityEngine.Debug;
 
 namespace MLAPI
 {
@@ -444,6 +445,7 @@ namespace MLAPI
                     }
 
                     instance.SetNetworkBehaviour(this);
+                    instance.Name = sortedFields[i].Name;
                     NetworkVariableFields.Add(instance);
                 }
             }
@@ -649,6 +651,7 @@ namespace MLAPI
                                 if (shouldWrite)
                                 {
                                     writtenAny = true;
+                                    var deltaBuffer = 0L;
 
                                     if (NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                                     {
@@ -659,6 +662,7 @@ namespace MLAPI
 
                                             writer.WriteUInt16Packed((ushort)varBuffer.Length);
                                             buffer.CopyFrom(varBuffer);
+                                            deltaBuffer = varBuffer.Length;
                                         }
                                     }
                                     else
@@ -671,6 +675,8 @@ namespace MLAPI
                                         m_NetworkVariableIndexesToResetSet.Add(k);
                                         m_NetworkVariableIndexesToReset.Add(k);
                                     }
+
+                                    NetworkManager.NetworkMetrics.TrackNetworkVariableDeltaSent(clientId, NetworkObjectId, name, NetworkVariableFields[k].Name, (ulong)deltaBuffer);
                                 }
                             }
 
@@ -759,9 +765,8 @@ namespace MLAPI
 
                     networkVariableList[i].ReadDelta(stream, networkManager.IsServer);
                     PerformanceDataManager.Increment(ProfilerConstants.NetworkVarDeltas);
-
-                    
                     ProfilerStatManager.NetworkVarsRcvd.Record();
+                    networkManager.NetworkMetrics.TrackNetworkVariableDeltaReceived(clientId, logInstance.NetworkObjectId, logInstance.name, networkVariableList[i].Name, (ulong)stream.Length);
 
                     if (networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                     {
@@ -847,7 +852,6 @@ namespace MLAPI
 
                     networkVariableList[i].ReadField(stream);
                     PerformanceDataManager.Increment(ProfilerConstants.NetworkVarUpdates);
-
                     ProfilerStatManager.NetworkVarsRcvd.Record();
 
                     if (networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)

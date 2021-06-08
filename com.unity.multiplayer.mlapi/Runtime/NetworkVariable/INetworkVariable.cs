@@ -74,5 +74,6 @@ namespace MLAPI.NetworkVariable
         /// <param name="behaviour">The behaviour the container behaves to</param>
         void SetNetworkBehaviour(NetworkBehaviour behaviour);
 
+        string Name { get; set; }
     }
 }

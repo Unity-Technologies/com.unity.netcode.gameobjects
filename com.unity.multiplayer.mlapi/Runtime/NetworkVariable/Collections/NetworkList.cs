@@ -72,6 +72,8 @@ namespace MLAPI.NetworkVariable.Collections
             m_List = value;
         }
 
+        public string Name { get; set; }
+
         /// <inheritdoc />
         public void ResetDirty()
         {
