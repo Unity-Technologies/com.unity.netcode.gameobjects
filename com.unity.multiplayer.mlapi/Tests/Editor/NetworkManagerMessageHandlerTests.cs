@@ -109,13 +109,6 @@ namespace MLAPI.EditorTests
                 }
 
                 // Should cause log (server and client)
-                LogAssert.Expect(LogType.Log, nameof(DummyMessageHandler.HandleNetworkVariableUpdate));
-                using (var messageStream = MessagePacker.WrapMessage(NetworkConstants.NETWORK_VARIABLE_UPDATE, inputBuffer))
-                {
-                    networkManager.HandleIncomingData(0, NetworkChannel.Internal, new ArraySegment<byte>(messageStream.GetBuffer(), 0, (int)messageStream.Length), 0, true);
-                }
-
-                // Should cause log (server and client)
                 LogAssert.Expect(LogType.Log, nameof(DummyMessageHandler.HandleUnnamedMessage));
                 using (var messageStream = MessagePacker.WrapMessage(NetworkConstants.UNNAMED_MESSAGE, inputBuffer))
                 {
@@ -239,6 +232,7 @@ namespace MLAPI.EditorTests
                 }
 
                 // Should cause log (server and client)
+<<<<<<< HEAD
                 LogAssert.Expect(LogType.Log, nameof(DummyMessageHandler.HandleNetworkVariableUpdate));
                 using (var messageStream = MessagePacker.WrapMessage(NetworkConstants.NETWORK_VARIABLE_UPDATE, inputBuffer))
                 {
@@ -246,6 +240,8 @@ namespace MLAPI.EditorTests
                 }
 
                 // Should cause log (server and client)
+=======
+>>>>>>> origin/develop
                 LogAssert.Expect(LogType.Log, nameof(DummyMessageHandler.HandleUnnamedMessage));
                 using (var messageStream = MessagePacker.WrapMessage(NetworkConstants.UNNAMED_MESSAGE, inputBuffer))
                 {
