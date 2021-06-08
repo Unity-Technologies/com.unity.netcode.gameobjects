@@ -8,8 +8,8 @@ namespace MLAPI.RuntimeTests.Profiling
 {
     public sealed class NetworkVariableNameTests
     {
-        NetworkManager m_NetworkManager;
-        NetworkVariableNameComponent m_NetworkVariableNameComponent;
+        private NetworkManager m_NetworkManager;
+        private NetworkVariableNameComponent m_NetworkVariableNameComponent;
 
         [SetUp]
         public void SetUp()
