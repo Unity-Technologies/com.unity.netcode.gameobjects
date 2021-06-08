@@ -15,8 +15,9 @@ namespace MLAPI.RuntimeTests
     /// </summary>
     public static class MultiInstanceHelpers
     {
-
         public static List<NetworkManager> NetworkManagerInstances = new List<NetworkManager>();
+
+        private static int s_OriginalTargetFrameRate = -1;
 
         /// <summary>
         /// Creates NetworkingManagers and configures them for use in a multi instance setting.
@@ -24,7 +25,7 @@ namespace MLAPI.RuntimeTests
         /// <param name="clientCount">The amount of clients</param>
         /// <param name="server">The server NetworkManager</param>
         /// <param name="clients">The clients NetworkManagers</param>
-        public static bool Create(int clientCount, out NetworkManager server, out NetworkManager[] clients)
+        public static bool Create(int clientCount, out NetworkManager server, out NetworkManager[] clients, int targetFrameRate = 50)
         {
             NetworkManagerInstances = new List<NetworkManager>();
 
@@ -47,6 +48,9 @@ namespace MLAPI.RuntimeTests
                     NetworkTransport = go.AddComponent<SIPTransport>()
                 };
             }
+
+            s_OriginalTargetFrameRate = Application.targetFrameRate;
+            Application.targetFrameRate = targetFrameRate;
 
             return true;
         }
@@ -121,6 +125,8 @@ namespace MLAPI.RuntimeTests
             {
                 Object.Destroy(s_CoroutineRunner);
             }
+
+            Application.targetFrameRate = s_OriginalTargetFrameRate;
         }
 
         /// <summary>
