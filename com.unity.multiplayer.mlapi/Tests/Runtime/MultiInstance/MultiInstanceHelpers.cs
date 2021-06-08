@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Linq;
 using MLAPI.Configuration;
 using NUnit.Framework;
-using Unity.CodeEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using Object = UnityEngine.Object;
