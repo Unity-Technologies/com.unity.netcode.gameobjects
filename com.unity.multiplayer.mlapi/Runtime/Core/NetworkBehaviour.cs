@@ -444,7 +444,10 @@ namespace MLAPI
                     }
 
                     instance.SetNetworkBehaviour(this);
-                    instance.Name = sortedFields[i].Name;
+
+                    var instanceNameProperty = instance.GetType().GetProperty(nameof(INetworkVariable.Name));
+                    instanceNameProperty?.SetValue(instance, sortedFields[i].Name);
+
                     NetworkVariableFields.Add(instance);
                 }
             }
