@@ -6,6 +6,7 @@ using MLAPI.Transports;
 using MLAPI.Hashing;
 using MLAPI.Serialization;
 using MLAPI.Serialization.Pooled;
+using MLAPI.SceneManagement;
 
 namespace MLAPI.Configuration
 {
@@ -26,6 +27,9 @@ namespace MLAPI.Configuration
         /// </summary>
         [Tooltip("The NetworkTransport to use")]
         public NetworkTransport NetworkTransport = null;
+
+        [Tooltip("Scene registration object that defines the scenes to be used for this MLAPI project.")]
+        public SceneRegistration SceneRegistration;
 
         /// <summary>
         /// A list of SceneNames that can be used during networked games.

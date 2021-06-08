@@ -44,6 +44,7 @@ namespace MLAPI.Editor
         private SerializedProperty m_LoadSceneTimeOutProperty;
         private SerializedProperty m_EnableMessageBufferingProperty;
         private SerializedProperty m_MessageBufferTimeoutProperty;
+        private SerializedProperty m_SceneRegistrationProperty;
 
         private ReorderableList m_NetworkPrefabsList;
         private ReorderableList m_RegisteredScenesList;
@@ -157,6 +158,7 @@ namespace MLAPI.Editor
             m_LoadSceneTimeOutProperty = m_NetworkConfigProperty.FindPropertyRelative("LoadSceneTimeOut");
             m_EnableMessageBufferingProperty = m_NetworkConfigProperty.FindPropertyRelative("EnableMessageBuffering");
             m_MessageBufferTimeoutProperty = m_NetworkConfigProperty.FindPropertyRelative("MessageBufferTimeout");
+            m_SceneRegistrationProperty = m_NetworkConfigProperty.FindPropertyRelative("SceneRegistration");
         }
 
         private void OnEnable()
@@ -269,11 +271,15 @@ namespace MLAPI.Editor
                 m_NetworkPrefabsList.DoLayoutList();
                 EditorGUILayout.Space();
 
+
+
                 using (new EditorGUI.DisabledScope(!m_NetworkManager.NetworkConfig.EnableSceneManagement))
                 {
                     m_RegisteredScenesList.DoLayoutList();
                     EditorGUILayout.Space();
                 }
+
+
 
 
                 EditorGUILayout.LabelField("General", EditorStyles.boldLabel);
@@ -358,6 +364,7 @@ namespace MLAPI.Editor
                 EditorGUILayout.PropertyField(m_RpcHashSizeProperty);
 
                 EditorGUILayout.LabelField("Scene Management", EditorStyles.boldLabel);
+                EditorGUILayout.PropertyField(m_SceneRegistrationProperty);
                 EditorGUILayout.PropertyField(m_EnableSceneManagementProperty);
 
                 using (new EditorGUI.DisabledScope(!m_NetworkManager.NetworkConfig.EnableSceneManagement))
