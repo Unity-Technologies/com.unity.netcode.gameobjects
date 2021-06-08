@@ -29,11 +29,11 @@ namespace MLAPI.RuntimeTests
             yield return null;
 
             // instantiate
-            var instance = GameObject.Instantiate(gameObject);
+            var instance = Object.Instantiate(gameObject);
             yield return null;
 
             // destroy
-            GameObject.Destroy(instance);
+            Object.Destroy(instance);
             yield return null;
         }
 
@@ -177,7 +177,7 @@ namespace MLAPI.RuntimeTests
             }
 
             // destroy the server object
-            GameObject.Destroy(serverInstance.gameObject);
+            Object.Destroy(serverInstance.gameObject);
 
             // wait one frame for destroy to kick in
             yield return null;
