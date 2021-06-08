@@ -2,6 +2,7 @@
 using MLAPI.NetworkVariable;
 using MLAPI.NetworkVariable.Collections;
 using NUnit.Framework;
+using UnityEngine;
 
 namespace MLAPI.RuntimeTests.Profiling
 {
@@ -45,9 +46,5 @@ namespace MLAPI.RuntimeTests.Profiling
             
             public NetworkDictionary<ulong, ulong> NetworkVarDictionary { get; } = new NetworkDictionary<ulong, ulong>();
         }
-    }
-
-    public class NetworkMetrics
-    {
     }
 }
