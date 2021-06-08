@@ -30,7 +30,6 @@ namespace MLAPI.Editor.CodeGen
 
         private readonly List<DiagnosticMessage> m_Diagnostics = new List<DiagnosticMessage>();
 
-        private ICompiledAssembly m_CompiledAssembly = null;
 
         public override ILPostProcessResult Process(ICompiledAssembly compiledAssembly)
         {
@@ -53,14 +52,16 @@ namespace MLAPI.Editor.CodeGen
             var mainModule = assemblyDefinition.MainModule;
             if (mainModule != null)
             {
-                m_CompiledAssembly = compiledAssembly;
                 if (ImportReferences(mainModule))
                 {
                     // process `NetworkBehaviour` types
-                    mainModule.GetTypes()
+                    var networkBehaviours = mainModule.GetTypes()
                         .Where(t => t.IsSubclassOf(CodeGenHelpers.NetworkBehaviour_FullName))
-                        .ToList()
-                        .ForEach(ProcessNetworkBehaviour);
+                        .ToList();
+                    foreach (var networkBehaviour in networkBehaviours)
+                    {
+                        ProcessNetworkBehaviour(networkBehaviour, compiledAssembly.Defines);
+                    }
                 }
                 else
                 {
@@ -533,11 +534,11 @@ namespace MLAPI.Editor.CodeGen
             return true;
         }
 
-        private void ProcessNetworkBehaviour(TypeDefinition typeDefinition)
+        private void ProcessNetworkBehaviour(TypeDefinition typeDefinition, string[] assemblyDefines)
         {
             var staticHandlers = new List<(uint RpcHash, MethodDefinition RpcMethod)>();
 
-            bool isDebugOrInEditor = (m_CompiledAssembly.Defines.Contains("UNITY_EDITOR") || m_CompiledAssembly.Defines.Contains("DEVELOPMENT_BUILD"));
+            bool isDebugOrInEditor = (assemblyDefines.Contains("UNITY_EDITOR") || assemblyDefines.Contains("DEVELOPMENT_BUILD"));
             List<(uint RpcHash, string RpcName)> rpcsNameMapping = null;
             if (isDebugOrInEditor)
             {

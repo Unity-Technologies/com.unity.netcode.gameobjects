@@ -40,9 +40,10 @@ namespace MLAPI
         // RuntimeAccessModifiersILPP will make this `public`
         internal static readonly Dictionary<uint, string> __rpc_name_table = new Dictionary<uint, string>();
 #else
-        // RuntimeAccessModifiersILPP will make this `public`
-        // The existence of this dictionary with this name is required outside of Development Build or Editor for ILPP generation
-        // This will never be initialized or filled here
+        // RuntimeAccessModifiersILPP and NetworkBehaviourILPP requires a variable with this name to exist when outside of Debug build or Editor.
+        // If the name doesn't exist, generation and compilation errors occurs.
+        // For the sake of consistency, we are using the same type.
+        // Final note: this variable will not be used. Since it's never initialized, it will not be in the memory footprint.
         internal static readonly Dictionary<uint, string> __rpc_name_table = null;
 #endif
 #else
