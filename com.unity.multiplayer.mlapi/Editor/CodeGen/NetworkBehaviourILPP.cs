@@ -57,7 +57,7 @@ namespace MLAPI.Editor.CodeGen
                     mainModule.GetTypes()
                         .Where(t => t.IsSubclassOf(CodeGenHelpers.NetworkBehaviour_FullName))
                         .ToList()
-                        .ForEach(ProcessNetworkBehaviour);
+                        .ForEach(b => ProcessNetworkBehaviour(b, compiledAssembly.Defines));
                 }
                 else
                 {
@@ -95,6 +95,8 @@ namespace MLAPI.Editor.CodeGen
         private FieldReference m_NetworkManager_LogLevel_FieldRef;
         private FieldReference m_NetworkManager_ntable_FieldRef;
         private MethodReference m_NetworkManager_ntable_Add_MethodRef;
+        private FieldReference m_NetworkManager_rpc_name_table_FieldRef;
+        private MethodReference m_NetworkManager_rpc_name_table_Add_MethodRef;
         private TypeReference m_NetworkBehaviour_TypeRef;
         private MethodReference m_NetworkBehaviour_BeginSendServerRpc_MethodRef;
         private MethodReference m_NetworkBehaviour_EndSendServerRpc_MethodRef;
@@ -164,6 +166,7 @@ namespace MLAPI.Editor.CodeGen
         private const string k_NetworkManager_LogLevel = nameof(NetworkManager.LogLevel);
 #pragma warning disable 618
         private const string k_NetworkManager_ntable = nameof(NetworkManager.__ntable);
+        private const string k_NetworkManager_rpc_name_table = nameof(NetworkManager.__rpc_name_table);
 
         private const string k_NetworkBehaviour_BeginSendServerRpc = nameof(NetworkBehaviour.__beginSendServerRpc);
         private const string k_NetworkBehaviour_EndSendServerRpc = nameof(NetworkBehaviour.__endSendServerRpc);
@@ -234,6 +237,10 @@ namespace MLAPI.Editor.CodeGen
                     case k_NetworkManager_ntable:
                         m_NetworkManager_ntable_FieldRef = moduleDefinition.ImportReference(fieldInfo);
                         m_NetworkManager_ntable_Add_MethodRef = moduleDefinition.ImportReference(fieldInfo.FieldType.GetMethod("Add"));
+                        break;
+                    case k_NetworkManager_rpc_name_table:
+                        m_NetworkManager_rpc_name_table_FieldRef = moduleDefinition.ImportReference(fieldInfo);
+                        m_NetworkManager_rpc_name_table_Add_MethodRef = moduleDefinition.ImportReference(fieldInfo.FieldType.GetMethod("Add"));
                         break;
                 }
             }
@@ -523,9 +530,13 @@ namespace MLAPI.Editor.CodeGen
             return true;
         }
 
-        private void ProcessNetworkBehaviour(TypeDefinition typeDefinition)
+        private void ProcessNetworkBehaviour(TypeDefinition typeDefinition, string[] assemblyDefines)
         {
-            var staticHandlers = new List<(uint Hash, MethodDefinition Method)>();
+            var rpcHandlers = new List<(uint RpcHash, MethodDefinition RpcHandler)>();
+            var rpcNames = new List<(uint RpcHash, string RpcName)>();
+
+            bool isEditorOrDevelopment = assemblyDefines.Contains("UNITY_EDITOR") || assemblyDefines.Contains("DEVELOPMENT_BUILD");
+
             foreach (var methodDefinition in typeDefinition.Methods)
             {
                 var rpcAttribute = CheckAndGetRPCAttribute(methodDefinition);
@@ -541,10 +552,16 @@ namespace MLAPI.Editor.CodeGen
                 }
 
                 InjectWriteAndCallBlocks(methodDefinition, rpcAttribute, methodDefHash);
-                staticHandlers.Add((methodDefHash, GenerateStaticHandler(methodDefinition, rpcAttribute)));
+
+                rpcHandlers.Add((methodDefHash, GenerateStaticHandler(methodDefinition, rpcAttribute)));
+
+                if (isEditorOrDevelopment)
+                {
+                    rpcNames.Add((methodDefHash, methodDefinition.Name));
+                }
             }
 
-            if (staticHandlers.Count > 0)
+            if (rpcHandlers.Count > 0 || rpcNames.Count > 0)
             {
                 var staticCtorMethodDef = typeDefinition.GetStaticConstructor();
                 if (staticCtorMethodDef == null)
@@ -562,22 +579,27 @@ namespace MLAPI.Editor.CodeGen
 
                 var instructions = new List<Instruction>();
                 var processor = staticCtorMethodDef.Body.GetILProcessor();
-                foreach (var (hash, method) in staticHandlers)
+
+                foreach (var (rpcHash, rpcHandler) in rpcHandlers)
                 {
-                    if (hash == 0 || method == null)
-                    {
-                        continue;
-                    }
+                    typeDefinition.Methods.Add(rpcHandler);
 
-                    typeDefinition.Methods.Add(method);
-
-                    // NetworkManager.__ntable.Add(HandlerHash, HandlerMethod);
+                    // NetworkManager.__ntable.Add(RpcHash, HandleFunc);
                     instructions.Add(processor.Create(OpCodes.Ldsfld, m_NetworkManager_ntable_FieldRef));
-                    instructions.Add(processor.Create(OpCodes.Ldc_I4, unchecked((int)hash)));
+                    instructions.Add(processor.Create(OpCodes.Ldc_I4, unchecked((int)rpcHash)));
                     instructions.Add(processor.Create(OpCodes.Ldnull));
-                    instructions.Add(processor.Create(OpCodes.Ldftn, method));
+                    instructions.Add(processor.Create(OpCodes.Ldftn, rpcHandler));
                     instructions.Add(processor.Create(OpCodes.Newobj, m_NetworkHandlerDelegateCtor_MethodRef));
                     instructions.Add(processor.Create(OpCodes.Call, m_NetworkManager_ntable_Add_MethodRef));
+                }
+
+                foreach (var (rpcHash, rpcName) in rpcNames)
+                {
+                    // NetworkManager.__rpc_name_table.Add(RpcHash, RpcName);
+                    instructions.Add(processor.Create(OpCodes.Ldsfld, m_NetworkManager_rpc_name_table_FieldRef));
+                    instructions.Add(processor.Create(OpCodes.Ldc_I4, unchecked((int)rpcHash)));
+                    instructions.Add(processor.Create(OpCodes.Ldstr, rpcName));
+                    instructions.Add(processor.Create(OpCodes.Call, m_NetworkManager_rpc_name_table_Add_MethodRef));
                 }
 
                 instructions.Reverse();
