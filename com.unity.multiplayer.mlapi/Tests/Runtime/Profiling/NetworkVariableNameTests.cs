@@ -30,10 +30,10 @@ namespace MLAPI.RuntimeTests.Profiling
         [Test]
         public void EnsureNetworkVariableNameInitialization()
         {
-            Assert.True(m_NetworkVariableNameComponent.NetworkVarString.Name.Contains(nameof(NetworkVariableNameComponent.NetworkVarString)));
-            Assert.True(m_NetworkVariableNameComponent.NetworkVarSet.Name.Contains(nameof(NetworkVariableNameComponent.NetworkVarSet)));
-            Assert.True(m_NetworkVariableNameComponent.NetworkVarList.Name.Contains(nameof(NetworkVariableNameComponent.NetworkVarList)));
-            Assert.True(m_NetworkVariableNameComponent.NetworkVarDictionary.Name.Contains(nameof(NetworkVariableNameComponent.NetworkVarDictionary)));
+            StringAssert.Contains(nameof(NetworkVariableNameComponent.NetworkVarString), m_NetworkVariableNameComponent.NetworkVarString.Name);
+            StringAssert.Contains(nameof(NetworkVariableNameComponent.NetworkVarSet), m_NetworkVariableNameComponent.NetworkVarSet.Name);
+            StringAssert.Contains(nameof(NetworkVariableNameComponent.NetworkVarList), m_NetworkVariableNameComponent.NetworkVarList.Name);
+            StringAssert.Contains(nameof(NetworkVariableNameComponent.NetworkVarDictionary), m_NetworkVariableNameComponent.NetworkVarDictionary.Name);
         }
 
         private class NetworkVariableNameComponent : NetworkBehaviour
