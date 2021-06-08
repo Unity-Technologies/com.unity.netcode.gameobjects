@@ -15,11 +15,22 @@ namespace MLAPI.Interest
         public abstract void UpdateObject(NetworkObject obj);
     };
 
-    // maybe seal this class
+    public interface IInterestHandler
+    {
+        public void QueryFor(in NetworkClient client, HashSet<NetworkObject> results);
+        public void HandleSpawn(in NetworkObject obj);
+        public void HandleDespawn(in NetworkObject obj);
+    }
+
     [CreateAssetMenu(fileName = "InterestNode", menuName = "Interest/Nodes/InterestNode", order = 1)]
     [Serializable]
-    public class InterestNode : ScriptableObject
+    public class InterestNode : ScriptableObject, IInterestHandler
     {
+        public InterestNode()
+        {
+            ChildNodes = new List<InterestNode>();
+        }
+
         // set this delegate if you want a function called when
         //  object 'obj' is being spawned / de-spawned
         public delegate void SpawnDelegate(in NetworkObject obj);
@@ -33,18 +44,15 @@ namespace MLAPI.Interest
         {
             InterestObjectStorage?.AddObject(obj);
         }
+
         public void RemoveObject(NetworkObject obj)
         {
             InterestObjectStorage?.RemoveObject(obj);
         }
+
         public void UpdateObject(NetworkObject obj)
         {
             InterestObjectStorage?.UpdateObject(obj);
-        }
-
-        public InterestNode()
-        {
-            ChildNodes = new List<InterestNode>();
         }
 
         // externally-called object query function.
