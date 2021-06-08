@@ -15,16 +15,10 @@ namespace TestProject.ManualTests
         public override void NetworkStart()
         {
             m_Rigidbody = GetComponent<Rigidbody>();
-            if (NetworkObject != null)
+            if (NetworkObject != null && m_Rigidbody != null)
             {
-                if (!NetworkObject.IsOwner)
-                {
-                    if (m_Rigidbody != null)
-                    {
-                        m_Rigidbody.isKinematic = true;
-                    }
-                }
-                else
+                m_Rigidbody.isKinematic = !NetworkObject.IsOwner;
+                if (!m_Rigidbody.isKinematic)
                 {
                     ChangeDirection(true, true);
                 }
