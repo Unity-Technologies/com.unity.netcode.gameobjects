@@ -32,7 +32,7 @@ namespace MLAPI.RuntimeTests.Metrics
         }
 
         [UnityTest]
-        public IEnumerator NetworkMetrics_WhenNamedMessageSent_TracksNamedMessageSentMetric()
+        public IEnumerator TrackNamedMessageSentMetric()
         {
             var messageName = Guid.NewGuid().ToString();
 
@@ -53,7 +53,7 @@ namespace MLAPI.RuntimeTests.Metrics
         }
 
         [UnityTest]
-        public IEnumerator NetworkMetrics_WhenNamedMessageSentToMultipleClients_TracksNamedMessageSentMetric()
+        public IEnumerator TrackNamedMessageSentMetricToMultipleClients()
         {
             var messageName = Guid.NewGuid().ToString();
 
@@ -75,7 +75,7 @@ namespace MLAPI.RuntimeTests.Metrics
         }
 
         [UnityTest]
-        public IEnumerator NetworkMetrics_WhenUnnamedMessageSent_TracksNamedMessageSentMetric()
+        public IEnumerator TrackUnnamedMessageSentMetric()
         {
             var clientId = 100UL;
             m_NetworkMetrics.Dispatcher.RegisterObserver(new TestObserver(collection =>
@@ -93,7 +93,7 @@ namespace MLAPI.RuntimeTests.Metrics
         }
 
         [UnityTest]
-        public IEnumerator NetworkMetrics_WhenUnnamedMessageSentToMultipleClients_TracksNamedMessageSentMetric()
+        public IEnumerator TrackUnnamedMessageSentMetricToMultipleClients()
         {
             m_NetworkMetrics.Dispatcher.RegisterObserver(new TestObserver(collection =>
             {

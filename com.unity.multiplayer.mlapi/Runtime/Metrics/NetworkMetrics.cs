@@ -80,16 +80,16 @@ namespace MLAPI.Metrics
             m_UnnamedMessageReceivedEvent.Mark(new UnnamedMessageEvent(new ConnectionInfo(senderClientId), bytesCount));
         }
         
-        public void TrackNetworkVariableDeltaSent(ulong networkObjectId, string gameObjectName, string variableName, ulong bytesCount)
+        public void TrackNetworkVariableDeltaSent(ulong receiverClientId, ulong networkObjectId, string gameObjectName, string variableName, ulong bytesCount)
         {
             variableName = PrettyPrintVariableName(variableName);
-            m_NetworkVariableDeltaSentEvent.Mark(new NetworkVariableEvent(new ConnectionInfo(m_NetworkManager.LocalClientId), new NetworkObjectIdentifier(gameObjectName, networkObjectId), variableName, bytesCount));
+            m_NetworkVariableDeltaSentEvent.Mark(new NetworkVariableEvent(new ConnectionInfo(receiverClientId), new NetworkObjectIdentifier(gameObjectName, networkObjectId), variableName, bytesCount));
         }
 
-        public void TrackNetworkVariableDeltaReceived(ulong networkObjectId, string gameObjectName, string variableName, ulong bytesCount)
+        public void TrackNetworkVariableDeltaReceived(ulong senderClientId, ulong networkObjectId, string gameObjectName, string variableName, ulong bytesCount)
         {
             variableName = PrettyPrintVariableName(variableName);
-            m_NetworkVariableDeltaReceivedEvent.Mark(new NetworkVariableEvent(new ConnectionInfo(m_NetworkManager.LocalClientId), new NetworkObjectIdentifier(gameObjectName, networkObjectId), variableName, bytesCount));
+            m_NetworkVariableDeltaReceivedEvent.Mark(new NetworkVariableEvent(new ConnectionInfo(senderClientId), new NetworkObjectIdentifier(gameObjectName, networkObjectId), variableName, bytesCount));
         }
 
         public void DispatchFrame()

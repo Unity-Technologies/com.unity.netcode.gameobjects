@@ -18,9 +18,9 @@ namespace MLAPI.Metrics
 
         void TrackUnnamedMessageReceived(ulong senderClientId, ulong bytesCount);
 
-        void TrackNetworkVariableDeltaSent(ulong networkObjectId, string gameObjectName,string variableName, ulong bytesCount);
+        void TrackNetworkVariableDeltaSent(ulong receiverClientId, ulong networkObjectId, string gameObjectName,string variableName, ulong bytesCount);
 
-        void TrackNetworkVariableDeltaReceived(ulong networkObjectId, string gameObjectName,string variableName, ulong bytesCount);
+        void TrackNetworkVariableDeltaReceived(ulong senderClientId, ulong networkObjectId, string gameObjectName,string variableName, ulong bytesCount);
 
         void DispatchFrame();
     }

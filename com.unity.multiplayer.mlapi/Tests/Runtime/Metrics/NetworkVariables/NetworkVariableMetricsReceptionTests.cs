@@ -60,7 +60,7 @@ namespace MLAPI.RuntimeTests.Metrics.NetworkVariables
         }
 
         [UnityTest]
-        public IEnumerator NetworkMetrics_WhenNetworkVariableDeltaReceived_TracksNetworkVariableDeltaMetric()
+        public IEnumerator TrackNetworkVariableDeltaReceivedMetric()
         {
             var found = false;
             m_ClientMetrics.Dispatcher.RegisterObserver(new TestObserver(collection =>

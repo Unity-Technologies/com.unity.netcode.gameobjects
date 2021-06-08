@@ -51,7 +51,7 @@ namespace MLAPI.RuntimeTests.Metrics
         }
 
         [UnityTest]
-        public IEnumerator NetworkMetrics_WhenNamedMessageReceived_TracksNamedMessageReceivedMetric()
+        public IEnumerator TrackNamedMessageReceivedMetric()
         {
             var messageName = Guid.NewGuid().ToString();
             LogAssert.Expect(LogType.Log, $"Received from {m_Server.LocalClientId}");
@@ -88,7 +88,7 @@ namespace MLAPI.RuntimeTests.Metrics
         }
 
         [UnityTest]
-        public IEnumerator NetworkMetrics_WhenUnnamedMessageReceived_TracksUnnamedMessageReceivedMetric()
+        public IEnumerator TrackUnnamedMessageReceivedMetric()
         {
             var found = false;
             m_ClientMetrics.Dispatcher.RegisterObserver(new TestObserver(collection =>

@@ -32,7 +32,7 @@ namespace MLAPI.RuntimeTests.Metrics.NetworkVariables
         }
 
         [UnityTest]
-        public IEnumerator NetworkMetrics_WhenNetworkVariableDeltaSent_TracksNetworkVariableDeltaSentMetric()
+        public IEnumerator TrackNetworkVariableDeltaSentMetric()
         {
             var found = false;
             m_NetworkMetrics.Dispatcher.RegisterObserver(new TestObserver(collection =>
