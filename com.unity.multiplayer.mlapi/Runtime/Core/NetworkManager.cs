@@ -39,17 +39,17 @@ namespace MLAPI
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         // RuntimeAccessModifiersILPP will make this `public`
         internal static readonly Dictionary<uint, string> __rpc_name_table = new Dictionary<uint, string>();
-#else
+#else // !(UNITY_EDITOR || DEVELOPMENT_BUILD)
         // RuntimeAccessModifiersILPP and NetworkBehaviourILPP requires a variable with this name to exist when outside of Debug build or Editor.
         // If the name doesn't exist, generation and compilation errors occurs.
         // For the sake of consistency, we are using the same type.
         // Final note: this variable will not be used. Since it's never initialized, it will not be in the memory footprint.
         internal static readonly Dictionary<uint, string> __rpc_name_table = null;
-#endif
-#else
+#endif // UNITY_EDITOR || DEVELOPMENT_BUILD
+#else // !UNITY_2020_2_OR_NEWER
         [Obsolete("Please do not use, will no longer be exposed in the future versions (framework internal)")]
         public static readonly Dictionary<uint, Action<NetworkBehaviour, NetworkSerializer, __RpcParams>> __ntable = new Dictionary<uint, Action<NetworkBehaviour, NetworkSerializer, __RpcParams>>();
-#endif
+#endif // UNITY_2020_2_OR_NEWER
 #pragma warning restore IDE1006 // restore naming rule violation check
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
