@@ -609,7 +609,7 @@ namespace MLAPI.Spawning
             }
         }
 
-        internal void OnDestroyObject(ulong networkId, bool destroyGameObject)
+        internal void OnDestroyObject(ulong networkObjectId, bool destroyGameObject)
         {
             if (NetworkManager == null)
             {
@@ -617,10 +617,25 @@ namespace MLAPI.Spawning
             }
 
             //Removal of spawned object
-            if (!SpawnedObjects.TryGetValue(networkId, out NetworkObject sobj))
+            if (!SpawnedObjects.TryGetValue(networkObjectId, out NetworkObject sobj))
             {
-                Debug.LogWarning($"Trying to destroy object {networkId} but it doesn't seem to exist anymore!");
+                Debug.LogWarning($"Trying to destroy object {networkObjectId} but it doesn't seem to exist anymore!");
                 return;
+            }
+
+            // Move child NetworkObjects to the root when parent NetworkObject is destroyed
+            foreach (var networkObject in SpawnedObjectsList)
+            {
+                var (isReparented, latestParent) = networkObject.GetNetworkParenting();
+                if (isReparented && latestParent == networkObjectId)
+                {
+                    networkObject.gameObject.transform.parent = null;
+
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                    {
+                        NetworkLog.LogWarning($"{nameof(NetworkObject)} #{networkObject.NetworkObjectId} moved to the root because its parent {nameof(NetworkObject)} #{networkObjectId} is destroyed");
+                    }
+                }
             }
 
             if (!sobj.IsOwnedByServer && !sobj.IsPlayerObject && NetworkManager.Singleton.ConnectedClients.TryGetValue(sobj.OwnerClientId, out NetworkClient networkClient))
@@ -628,7 +643,7 @@ namespace MLAPI.Spawning
                 //Someone owns it.
                 for (int i = networkClient.OwnedObjects.Count - 1; i > -1; i--)
                 {
-                    if (networkClient.OwnedObjects[i].NetworkObjectId == networkId)
+                    if (networkClient.OwnedObjects[i].NetworkObjectId == networkObjectId)
                     {
                         networkClient.OwnedObjects.RemoveAt(i);
                     }
@@ -643,7 +658,7 @@ namespace MLAPI.Spawning
                 {
                     ReleasedNetworkObjectIds.Enqueue(new ReleasedNetworkId()
                     {
-                        NetworkId = networkId,
+                        NetworkId = networkObjectId,
                         ReleaseTime = Time.unscaledTime
                     });
                 }
@@ -659,13 +674,13 @@ namespace MLAPI.Spawning
                             var buffer = PooledNetworkBuffer.Get();
                             using (var writer = PooledNetworkWriter.Get(buffer))
                             {
-                                writer.WriteUInt64Packed(networkId);
+                                writer.WriteUInt64Packed(networkObjectId);
 
                                 var queueItem = new RpcFrameQueueItem
                                 {
                                     UpdateStage = NetworkUpdateStage.PostLateUpdate,
                                     QueueItemType = RpcQueueContainer.QueueItemType.DestroyObject,
-                                    NetworkId = networkId,
+                                    NetworkId = networkObjectId,
                                     NetworkBuffer = buffer,
                                     NetworkChannel = NetworkChannel.Internal,
                                     ClientNetworkIds = NetworkManager.ConnectedClientsList.Select(c => c.ClientId).ToArray()
@@ -685,7 +700,7 @@ namespace MLAPI.Spawning
                 if (NetworkManager.PrefabHandler.ContainsHandler(sobj))
                 {
                     NetworkManager.PrefabHandler.HandleNetworkPrefabDestroy(sobj);
-                    OnDestroyObject(networkId, false);
+                    OnDestroyObject(networkObjectId, false);
                 }
                 else
                 {
@@ -696,7 +711,7 @@ namespace MLAPI.Spawning
             // for some reason, we can get down here and SpawnedObjects for this
             //  networkId will no longer be here, even as we check this at the start
             //  of the function
-            if (SpawnedObjects.Remove(networkId))
+            if (SpawnedObjects.Remove(networkObjectId))
             {
                 SpawnedObjectsList.Remove(sobj);
             }
