@@ -50,7 +50,7 @@ namespace TestProject.RuntimeTests
             var numClients = 1;
             var startTime = Time.realtimeSinceStartup;
 
-            // Create Host and (numClients) clients 
+            // Create Host and (numClients) clients
             Assert.True(MultiInstanceHelpers.Create(numClients, out NetworkManager server, out NetworkManager[] clients));
 
             // Create a default player GameObject to use
@@ -72,11 +72,10 @@ namespace TestProject.RuntimeTests
             // Start the instances
             if (!MultiInstanceHelpers.Start(true, server, clients))
             {
-                Debug.LogError("Failed to start instances");
                 Assert.Fail("Failed to start instances");
             }
 
-            // [Client-Side] Wait for a connection to the server 
+            // [Client-Side] Wait for a connection to the server
             yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(clients, null, 512));
 
             // [Host-Side] Check to make sure all clients are connected
@@ -197,7 +196,7 @@ namespace TestProject.RuntimeTests
             var numClients = 1;
             var startTime = Time.realtimeSinceStartup;
 
-            // Create Host and (numClients) clients 
+            // Create Host and (numClients) clients
             Assert.True(MultiInstanceHelpers.Create(numClients, out NetworkManager server, out NetworkManager[] clients));
 
             // Create a default player GameObject to use
@@ -219,11 +218,10 @@ namespace TestProject.RuntimeTests
             // Start the instances
             if (!MultiInstanceHelpers.Start(true, server, clients))
             {
-                Debug.LogError("Failed to start instances");
                 Assert.Fail("Failed to start instances");
             }
 
-            // [Client-Side] Wait for a connection to the server 
+            // [Client-Side] Wait for a connection to the server
             yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(clients, null, 512));
 
             // [Host-Side] Check to make sure all clients are connected
@@ -245,7 +243,7 @@ namespace TestProject.RuntimeTests
 
             if (!m_IsSendingNull)
             {
-                // Create an array of userSerializableClass instances 
+                // Create an array of userSerializableClass instances
                 for (int i = 0; i < arraySize; i++)
                 {
                     var userSerializableClass = new UserSerializableClass();
@@ -458,7 +456,7 @@ namespace TestProject.RuntimeTests
     }
 
     /// <summary>
-    /// The test version of a custom user-defined class that implements INetworkSerializable 
+    /// The test version of a custom user-defined class that implements INetworkSerializable
     /// </summary>
     public class UserSerializableClass : INetworkSerializable
     {

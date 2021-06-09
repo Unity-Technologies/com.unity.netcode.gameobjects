@@ -57,7 +57,7 @@ namespace TestProject.RuntimeTests
         /// <summary>
         /// This just helps to simplify any further tests that can leverage from
         /// the RpcQueueManualTests' wide array of RPC testing under different
-        /// conditions.  
+        /// conditions.
         /// Currently this allows for the adjustment of client count and whether
         /// RPC Batching is enabled or not.
         /// </summary>
@@ -72,7 +72,7 @@ namespace TestProject.RuntimeTests
             // Set RpcQueueManualTests into unit testing mode
             RpcQueueManualTests.UnitTesting = true;
 
-            // Create Host and (numClients) clients 
+            // Create Host and (numClients) clients
             Assert.True(MultiInstanceHelpers.Create(numClients, out NetworkManager server, out NetworkManager[] clients));
 
             // Create a default player GameObject to use
@@ -98,7 +98,6 @@ namespace TestProject.RuntimeTests
             // Start the instances
             if (!MultiInstanceHelpers.Start(true, server, clients))
             {
-                Debug.LogError("Failed to start instances");
                 Assert.Fail("Failed to start instances");
             }
 
@@ -110,7 +109,7 @@ namespace TestProject.RuntimeTests
                 clients[i].RpcQueueContainer.EnableBatchedRpcs(useBatching);
             }
 
-            // [Client-Side] Wait for a connection to the server 
+            // [Client-Side] Wait for a connection to the server
             yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(clients, null, 512));
 
             // [Host-Side] Check to make sure all clients are connected

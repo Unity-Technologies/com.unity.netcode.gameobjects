@@ -60,7 +60,7 @@ namespace TestProject.RuntimeTests
 
 
         /// <summary>
-        /// Allows for several connection approval related configurations 
+        /// Allows for several connection approval related configurations
         /// </summary>
         /// <param name="numClients">total number of clients (excluding the host)</param>
         /// <param name="failureTestCount">how many clients are expected to fail</param>
@@ -80,8 +80,8 @@ namespace TestProject.RuntimeTests
             m_SuccessfulConnections = 0;
             m_FailedConnections = 0;
             Assert.IsTrue(numClients >= failureTestCount);
-            
-            // Create Host and (numClients) clients 
+
+            // Create Host and (numClients) clients
             Assert.True(MultiInstanceHelpers.Create(numClients, out NetworkManager server, out NetworkManager[] clients));
 
             // Create a default player GameObject to use
@@ -131,17 +131,16 @@ namespace TestProject.RuntimeTests
                     client.NetworkConfig.ConnectionData = Encoding.ASCII.GetBytes(m_ConnectionToken);
                     clientsAdjustedList.Add(client);
                 }
-                
+
             }
 
             // Start the instances
             if (!MultiInstanceHelpers.Start(true, server, clients))
             {
-                Debug.LogError("Failed to start instances");
                 Assert.Fail("Failed to start instances");
             }
 
-            // [Client-Side] Wait for a connection to the server 
+            // [Client-Side] Wait for a connection to the server
             yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(clientsAdjustedList.ToArray(), null, 512));
 
             // [Host-Side] Check to make sure all clients are connected
