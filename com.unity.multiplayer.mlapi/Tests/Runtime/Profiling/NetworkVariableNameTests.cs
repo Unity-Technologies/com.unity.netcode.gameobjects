@@ -27,12 +27,15 @@ namespace MLAPI.RuntimeTests.Profiling
         }
 
         [Test]
-        public void EnsureNetworkVariableNameInitialization()
+        public void VerifyNetworkVariableNameInitialization()
         {
+            // Properties have the following name format: "<PropertyName>k__BackingField"
             StringAssert.Contains(nameof(NetworkVariableNameComponent.NetworkVarString), m_NetworkVariableNameComponent.NetworkVarString.Name);
             StringAssert.Contains(nameof(NetworkVariableNameComponent.NetworkVarSet), m_NetworkVariableNameComponent.NetworkVarSet.Name);
-            StringAssert.Contains(nameof(NetworkVariableNameComponent.NetworkVarList), m_NetworkVariableNameComponent.NetworkVarList.Name);
-            StringAssert.Contains(nameof(NetworkVariableNameComponent.NetworkVarDictionary), m_NetworkVariableNameComponent.NetworkVarDictionary.Name);
+
+            // Fields have regular naming
+            Assert.AreEqual(nameof(NetworkVariableNameComponent.NetworkVarList), m_NetworkVariableNameComponent.NetworkVarList.Name);
+            Assert.AreEqual(nameof(NetworkVariableNameComponent.NetworkVarDictionary), m_NetworkVariableNameComponent.NetworkVarDictionary.Name);
         }
 
         private class NetworkVariableNameComponent : NetworkBehaviour
@@ -41,9 +44,9 @@ namespace MLAPI.RuntimeTests.Profiling
             
             public NetworkSet<ulong> NetworkVarSet { get; } = new NetworkSet<ulong>();
             
-            public NetworkList<ulong> NetworkVarList { get; } = new NetworkList<ulong>();
+            public NetworkList<ulong> NetworkVarList = new NetworkList<ulong>();
             
-            public NetworkDictionary<ulong, ulong> NetworkVarDictionary { get; } = new NetworkDictionary<ulong, ulong>();
+            public NetworkDictionary<ulong, ulong> NetworkVarDictionary = new NetworkDictionary<ulong, ulong>();
         }
     }
 }
