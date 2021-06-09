@@ -1443,6 +1443,11 @@ namespace MLAPI
                 }
 
                 __ntable[networkMethodId](networkBehaviour, new NetworkSerializer(queueItem.NetworkReader), rpcParams);
+
+                if (__rpc_name_table.ContainsKey(networkMethodId))
+                {
+                    NetworkMetrics.TrackRpcReceived(queueItem.NetworkId, networkObjectId, __rpc_name_table[networkMethodId], (ulong)queueItem.MessageData.Count);
+                }
             }
 #pragma warning restore 618
 

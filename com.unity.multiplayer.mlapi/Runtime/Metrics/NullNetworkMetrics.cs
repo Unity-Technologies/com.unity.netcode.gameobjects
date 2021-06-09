@@ -40,6 +40,14 @@ namespace MLAPI.Metrics
         {
         }
 
+        public void TrackRpcSent(ulong receiverClientId, ulong networkObjectId, string rpcName, ulong bytesCount)
+        {
+        }
+
+        public void TrackRpcReceived(ulong senderClientId, ulong networkObjectId, string rpcName, ulong bytesCount)
+        {
+        }
+
         public void DispatchFrame()
         {
         }

@@ -20,6 +20,9 @@ namespace MLAPI.Metrics
         readonly EventMetric<NetworkVariableEvent> m_NetworkVariableDeltaSentEvent = new EventMetric<NetworkVariableEvent>(MetricNames.NetworkVariableDeltaSent);
         readonly EventMetric<NetworkVariableEvent> m_NetworkVariableDeltaReceivedEvent = new EventMetric<NetworkVariableEvent>(MetricNames.NetworkVariableDeltaReceived);
 
+        readonly EventMetric<RpcEvent> m_RpcSentEvent = new EventMetric<RpcEvent>(MetricNames.RpcSent);
+        readonly EventMetric<RpcEvent> m_RpcReceivedEvent = new EventMetric<RpcEvent>(MetricNames.RpcReceived);
+
         private Dictionary<ulong, NetworkObjectIdentifier> m_NetworkGameObjects = new Dictionary<ulong, NetworkObjectIdentifier>();
 
         public NetworkMetrics(NetworkManager networkManager)
@@ -30,7 +33,7 @@ namespace MLAPI.Metrics
                 .WithMetricEvents(m_UnnamedMessageSentEvent, m_UnnamedMessageReceivedEvent)
                 .WithMetricEvents(m_NetworkVariableDeltaSentEvent, m_NetworkVariableDeltaReceivedEvent)
                 .Build();
-            
+
             Dispatcher.RegisterObserver(MLAPIObserver.Observer);
         }
 
@@ -79,7 +82,7 @@ namespace MLAPI.Metrics
         {
             m_UnnamedMessageReceivedEvent.Mark(new UnnamedMessageEvent(new ConnectionInfo(senderClientId), bytesCount));
         }
-        
+
         public void TrackNetworkVariableDeltaSent(ulong receiverClientId, ulong networkObjectId, string gameObjectName, string variableName, ulong bytesCount)
         {
             variableName = PrettyPrintVariableName(variableName);
@@ -90,6 +93,21 @@ namespace MLAPI.Metrics
         {
             variableName = PrettyPrintVariableName(variableName);
             m_NetworkVariableDeltaReceivedEvent.Mark(new NetworkVariableEvent(new ConnectionInfo(senderClientId), new NetworkObjectIdentifier(gameObjectName, networkObjectId), variableName, bytesCount));
+        }
+
+        public void TrackRpcSent(ulong receiverClientId, ulong networkObjectId, string rpcName, ulong bytesCount)
+        {
+
+        }
+
+        public void TrackRpcReceived(ulong senderClientId, ulong networkObjectId, string rpcName, ulong bytesCount)
+        {
+            if (!m_NetworkGameObjects.ContainsKey(networkObjectId))
+            {
+                m_NetworkGameObjects[networkObjectId] = new NetworkObjectIdentifier($"NetworkGameObject_{networkObjectId}", networkObjectId);
+            }
+
+            m_RpcReceivedEvent.Mark(new RpcEvent(new ConnectionInfo(senderClientId), m_NetworkGameObjects[networkObjectId], rpcName, bytesCount));
         }
 
         public void DispatchFrame()
