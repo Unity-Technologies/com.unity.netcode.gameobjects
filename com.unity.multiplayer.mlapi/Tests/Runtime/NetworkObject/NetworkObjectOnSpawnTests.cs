@@ -146,10 +146,8 @@ namespace MLAPI.RuntimeTests
             Assert.AreEqual(1, serverInstance.OnNetworkDespawnCalledCount);
 
             // wait long enough for player object to be despawned
-            for (int i = 0; i < 5; i++)
-            {
-                yield return null;
-            }
+            int nextFrameNumber = Time.frameCount + 2;
+            yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
 
             // check despawned on clients
             foreach (var clientInstance in clientInstances)
@@ -162,10 +160,9 @@ namespace MLAPI.RuntimeTests
             serverInstance.GetComponent<NetworkObject>().Spawn();
 
             // wait long enough for player object to be spawned
-            for (int i = 0; i < 5; i++)
-            {
-                yield return null;
-            }
+            nextFrameNumber = Time.frameCount + 2;
+            yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
+
 
             // check spawned again on server this is 2 becaue we are reusing the object which was already spawned once.
             Assert.AreEqual(2, serverInstance.OnNetworkSpawnCalledCount);
@@ -186,10 +183,8 @@ namespace MLAPI.RuntimeTests
             Assert.AreEqual(2, serverInstance.OnNetworkDespawnCalledCount);
 
             // wait long enough for player object to be despawned on client
-            for (int i = 0; i < 5; i++)
-            {
-                yield return null;
-            }
+            nextFrameNumber = Time.frameCount + 2;
+            yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
 
             // check despawned on clients
             foreach (var clientInstance in clientInstances)
