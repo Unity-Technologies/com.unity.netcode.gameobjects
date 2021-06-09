@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using MLAPI.Configuration;
+using MLAPI.Connection;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using NUnit.Framework;
@@ -107,6 +108,19 @@ namespace MLAPI.RuntimeTests
         }
 
         /// <summary>
+        /// Add a connected client to the connected client list in the network manager
+        /// Note this does *not* perform a full connection approval, meaning that player objects and observers
+        /// should be added separately/just go through the normal handle approval function
+        /// </summary>
+        /// <param name="clientId"></param>
+        public static void AddConnectedClient(ulong clientId)
+        {
+            var client = new NetworkClient { ClientId = clientId, };
+            NetworkManagerObject.ConnectedClients.Add(clientId, client);
+            NetworkManagerObject.ConnectedClientsList.Add(client);
+        }
+
+        /// <summary>
         /// Add a GameObject with a NetworkObject component
         /// </summary>
         /// <param name="nameOfGameObject">the name of the object</param>
@@ -191,7 +205,7 @@ namespace MLAPI.RuntimeTests
             if (CurrentNetworkManagerMode != NetworkManagerOperatingMode.None)
             {
                 // With some unit tests the Singleton can still be from a previous unit test
-                // depending upon the order of operations that occurred. 
+                // depending upon the order of operations that occurred.
                 if (NetworkManager.Singleton != NetworkManagerObject)
                 {
                     NetworkManagerObject.SetSingleton();

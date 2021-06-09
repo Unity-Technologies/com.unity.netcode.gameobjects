@@ -8,6 +8,7 @@ using MLAPI.Serialization;
 using NUnit.Framework;
 using Unity.Multiplayer.NetworkProfiler;
 using Unity.Multiplayer.NetworkProfiler.Models;
+using UnityEngine;
 using UnityEngine.TestTools;
 
 namespace MLAPI.RuntimeTests.Metrics.Messaging
@@ -69,7 +70,7 @@ namespace MLAPI.RuntimeTests.Metrics.Messaging
                 Assert.Contains(300UL, clientIds);
             }));
 
-            m_NetworkManager.CustomMessagingManager.SendNamedMessage(messageName, new List<ulong> { 100, 200, 300 }, Stream.Null);
+            m_NetworkManager.CustomMessagingManager.SendNamedMessage(messageName, new List<ulong> {100, 200, 300}, Stream.Null);
 
             yield return WaitForMetricsDispatch();
         }
@@ -106,7 +107,30 @@ namespace MLAPI.RuntimeTests.Metrics.Messaging
                 Assert.Contains(300UL, clientIds);
             }));
 
-            m_NetworkManager.CustomMessagingManager.SendUnnamedMessage(new List<ulong> { 100, 200, 300 }, new NetworkBuffer());
+            m_NetworkManager.CustomMessagingManager.SendUnnamedMessage(new List<ulong> {100, 200, 300}, new NetworkBuffer());
+
+            yield return WaitForMetricsDispatch();
+        }
+
+        [UnityTest]
+        public IEnumerator NetworkMetrics_WhenNetworkObjectSpawnSentToClient_TracksObjectSpawnSentMetric()
+        {
+            const string objectName = "TestNetworkObjectToSpawn";
+            const ulong clientId = 100;
+            var gameObjectId = NetworkManagerHelper.AddGameNetworkObject(objectName);
+            NetworkManagerHelper.InstantiatedNetworkObjects.TryGetValue(gameObjectId, out var networkObj);
+            NetworkManagerHelper.AddConnectedClient(clientId);
+
+            m_NetworkMetrics.Dispatcher.RegisterObserver(new TestObserver(collection =>
+            {
+                var objectSpawnedMetric = AssertSingleMetricEventOfType<ObjectSpawnedEvent>(collection, MetricNames.ObjectSpawned);
+                Assert.AreEqual(1, objectSpawnedMetric.Values.Count);
+                Assert.AreEqual(clientId, objectSpawnedMetric.Values.Select(x => x.Connection.Id).First());
+                Assert.AreEqual(objectName, objectSpawnedMetric.Values.Select(x => x.NetworkId.Name));
+                m_NetworkManager.SpawnManager.DespawnObject(networkObj);
+            }));
+            networkObj.Observers.Add(clientId);
+            networkObj.Spawn();
 
             yield return WaitForMetricsDispatch();
         }
