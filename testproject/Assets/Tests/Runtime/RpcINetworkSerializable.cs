@@ -15,8 +15,6 @@ namespace TestProject.RuntimeTests
     {
         private GameObject m_PlayerPrefab;
 
-        private int m_OriginalTargetFrameRate;
-
         private UserSerializableClass m_UserSerializableClass;
         private List<UserSerializableClass> m_UserSerializableClassArray;
 
@@ -24,20 +22,6 @@ namespace TestProject.RuntimeTests
 
         private bool m_IsSendingNull;
         private bool m_IsArrayEmpty;
-
-        [SetUp]
-        public void SetUp()
-        {
-            // Just always track the current target frame rate (will be re-applied upon TearDown)
-            m_OriginalTargetFrameRate = Application.targetFrameRate;
-
-            // Since we use frame count as a metric, we need to assure it runs at a "common update rate"
-            // between platforms (i.e. Ubuntu seems to run at much higher FPS when set to -1)
-            if (Application.targetFrameRate < 0 || Application.targetFrameRate > 120)
-            {
-                Application.targetFrameRate = 120;
-            }
-        }
 
         /// <summary>
         /// Tests that INetworkSerializable can be used through RPCs by a user
@@ -50,7 +34,7 @@ namespace TestProject.RuntimeTests
             var numClients = 1;
             var startTime = Time.realtimeSinceStartup;
 
-            // Create Host and (numClients) clients 
+            // Create Host and (numClients) clients
             Assert.True(MultiInstanceHelpers.Create(numClients, out NetworkManager server, out NetworkManager[] clients));
 
             // Create a default player GameObject to use
@@ -76,7 +60,7 @@ namespace TestProject.RuntimeTests
                 Assert.Fail("Failed to start instances");
             }
 
-            // [Client-Side] Wait for a connection to the server 
+            // [Client-Side] Wait for a connection to the server
             yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(clients, null, 512));
 
             // [Host-Side] Check to make sure all clients are connected
@@ -174,7 +158,7 @@ namespace TestProject.RuntimeTests
         [UnityTest]
         public IEnumerator NetworkSerializableNULLArrayTest()
         {
-            return NetworkSerializableArrayTestHandler(0,true);
+            return NetworkSerializableArrayTestHandler(0, true);
         }
 
         /// <summary>
@@ -197,7 +181,7 @@ namespace TestProject.RuntimeTests
             var numClients = 1;
             var startTime = Time.realtimeSinceStartup;
 
-            // Create Host and (numClients) clients 
+            // Create Host and (numClients) clients
             Assert.True(MultiInstanceHelpers.Create(numClients, out NetworkManager server, out NetworkManager[] clients));
 
             // Create a default player GameObject to use
@@ -223,7 +207,7 @@ namespace TestProject.RuntimeTests
                 Assert.Fail("Failed to start instances");
             }
 
-            // [Client-Side] Wait for a connection to the server 
+            // [Client-Side] Wait for a connection to the server
             yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(clients, null, 512));
 
             // [Host-Side] Check to make sure all clients are connected
@@ -245,7 +229,7 @@ namespace TestProject.RuntimeTests
 
             if (!m_IsSendingNull)
             {
-                // Create an array of userSerializableClass instances 
+                // Create an array of userSerializableClass instances
                 for (int i = 0; i < arraySize; i++)
                 {
                     var userSerializableClass = new UserSerializableClass();
@@ -297,7 +281,7 @@ namespace TestProject.RuntimeTests
             }
             else if (m_IsArrayEmpty)
             {
-                Assert.AreEqual(userSerializableClass.Length,0);
+                Assert.AreEqual(userSerializableClass.Length, 0);
             }
             else
             {
@@ -343,9 +327,6 @@ namespace TestProject.RuntimeTests
 
             // Shutdown and clean up both of our NetworkManager instances
             MultiInstanceHelpers.Destroy();
-
-            // Set the application's target frame rate back to its original value
-            Application.targetFrameRate = m_OriginalTargetFrameRate;
         }
     }
 
@@ -458,7 +439,7 @@ namespace TestProject.RuntimeTests
     }
 
     /// <summary>
-    /// The test version of a custom user-defined class that implements INetworkSerializable 
+    /// The test version of a custom user-defined class that implements INetworkSerializable
     /// </summary>
     public class UserSerializableClass : INetworkSerializable
     {
