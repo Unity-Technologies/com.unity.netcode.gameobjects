@@ -1,10 +1,7 @@
 using System;
 using System.Collections;
-using System.Diagnostics;
-using System.Linq;
 using MLAPI.Messaging;
 using NUnit.Framework;
-using UnityEditor;
 using UnityEngine;
 using UnityEngine.TestTools;
 using Debug = UnityEngine.Debug;
@@ -34,10 +31,6 @@ namespace MLAPI.RuntimeTests
         [UnityTest]
         public IEnumerator TestRPCs()
         {
-            // Set target frameRate to work around ubuntu timings
-            int targetFrameRate = Application.targetFrameRate;
-            Application.targetFrameRate = 120;
-
             // Create multiple NetworkManager instances
             if (!MultiInstanceHelpers.Create(1, out NetworkManager server, out NetworkManager[] clients))
             {
@@ -133,9 +126,6 @@ namespace MLAPI.RuntimeTests
             Assert.True(hasReceivedServerRPC, "ServerRPC was not received");
             Assert.True(hasReceivedClientRPCLocally, "ClientRPC was not locally received on the server");
             Assert.True(hasReceivedClientRPCRemotely, "ClientRPC was not remotely received on the client");
-
-            // Release frame rate
-            Application.targetFrameRate = targetFrameRate;
 
             // Cleanup
             MultiInstanceHelpers.Destroy();
