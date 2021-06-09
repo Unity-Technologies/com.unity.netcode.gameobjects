@@ -10,10 +10,10 @@ using Unity.Multiplayer.NetworkProfiler;
 using Unity.Multiplayer.NetworkProfiler.Models;
 using UnityEngine.TestTools;
 
-namespace MLAPI.RuntimeTests.Metrics
+namespace MLAPI.RuntimeTests.Metrics.Messaging
 {
 #if true
-    public class NetworkMetricsDispatchTests : MetricsTestBase
+    public class NetworkMetricsMessagingDispatchTests : MetricsTestBase
     {
         NetworkManager m_NetworkManager;
         NetworkMetrics m_NetworkMetrics;
