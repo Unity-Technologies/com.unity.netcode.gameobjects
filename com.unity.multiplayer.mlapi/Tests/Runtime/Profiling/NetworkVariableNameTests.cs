@@ -8,13 +8,12 @@ namespace MLAPI.RuntimeTests.Profiling
 {
     public sealed class NetworkVariableNameTests
     {
-        private NetworkManager m_NetworkManager;
         private NetworkVariableNameComponent m_NetworkVariableNameComponent;
 
         [SetUp]
         public void SetUp()
         {
-            NetworkManagerHelper.StartNetworkManager(out m_NetworkManager);
+            NetworkManagerHelper.StartNetworkManager(out _);
 
             var gameObjectId = NetworkManagerHelper.AddGameNetworkObject(Guid.NewGuid().ToString());
             m_NetworkVariableNameComponent= NetworkManagerHelper.AddComponentToObject<NetworkVariableNameComponent>(gameObjectId);
