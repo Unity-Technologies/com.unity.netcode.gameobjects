@@ -1,19 +1,28 @@
 using UnityEngine;
+using MLAPI;
 
 namespace TestProject.ManualTests
 {
     /// <summary>
     /// Used with GenericObjects to randomly move them around
     /// </summary>
-    public class RandomMovement : MonoBehaviour, IPlayerMovement
+    public class RandomMovement : NetworkBehaviour, IPlayerMovement
     {
         private Vector3 m_Direction;
         private Rigidbody m_Rigidbody;
 
-        public void Start()
+
+        public override void NetworkStart()
         {
             m_Rigidbody = GetComponent<Rigidbody>();
-            ChangeDirection(true, true);
+            if (NetworkObject != null && m_Rigidbody != null)
+            {
+                m_Rigidbody.isKinematic = !NetworkObject.IsOwner;
+                if (!m_Rigidbody.isKinematic)
+                {
+                    ChangeDirection(true, true);
+                }
+            }
         }
 
         public void Move(int speed)
