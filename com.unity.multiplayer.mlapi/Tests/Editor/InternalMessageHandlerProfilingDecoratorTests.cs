@@ -1,4 +1,5 @@
 ﻿using MLAPI.Messaging;
+using MLAPI.Profiling;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -101,14 +102,6 @@ namespace MLAPI.EditorTests
             m_Decorator.HandleNetworkVariableDelta(0, null, null, default);
 
             LogAssert.Expect(LogType.Log, nameof(m_Decorator.HandleNetworkVariableDelta));
-        }
-
-        [Test]
-        public void HandleNetworkVariableUpdateCallsUnderlyingHandler()
-        {
-            m_Decorator.HandleNetworkVariableUpdate(0, null, null, default);
-
-            LogAssert.Expect(LogType.Log, nameof(m_Decorator.HandleNetworkVariableUpdate));
         }
 
         [Test]
