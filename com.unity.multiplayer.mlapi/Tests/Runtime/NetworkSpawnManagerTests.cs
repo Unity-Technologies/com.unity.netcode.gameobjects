@@ -1,10 +1,8 @@
-using System;
 using System.Collections;
 using MLAPI.Exceptions;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
-using Object = System.Object;
 
 namespace MLAPI.RuntimeTests
 {
@@ -13,7 +11,6 @@ namespace MLAPI.RuntimeTests
         private NetworkManager m_ServerNetworkManager;
         private NetworkManager[] m_ClientNetworkManagers;
         private GameObject m_PlayerPrefab;
-        private int m_OriginalTargetFrameRate;
 
         private ulong serverSideClientId => m_ServerNetworkManager.ServerClientId;
         private ulong clientSideClientId => m_ClientNetworkManagers[0].LocalClientId;
@@ -22,16 +19,6 @@ namespace MLAPI.RuntimeTests
         [UnitySetUp]
         public IEnumerator Setup()
         {
-            // Just always track the current target frame rate (will be re-applied upon TearDown)
-            m_OriginalTargetFrameRate = Application.targetFrameRate;
-
-            // Since we use frame count as a metric, we need to assure it runs at a "common update rate"
-            // between platforms (i.e. Ubuntu seems to run at much higher FPS when set to -1)
-            if (Application.targetFrameRate < 0 || Application.targetFrameRate > 120)
-            {
-                Application.targetFrameRate = 120;
-            }
-
             // Create multiple NetworkManager instances
             if (!MultiInstanceHelpers.Create(2, out NetworkManager server, out NetworkManager[] clients))
             {
@@ -191,11 +178,11 @@ namespace MLAPI.RuntimeTests
         {
             // Shutdown and clean up both of our NetworkManager instances
             MultiInstanceHelpers.Destroy();
-            UnityEngine.Object.Destroy(m_PlayerPrefab);
+            Object.Destroy(m_PlayerPrefab);
 
-            // Set the application's target frame rate back to its original value
-            Application.targetFrameRate = m_OriginalTargetFrameRate;
-            yield return new WaitForSeconds(0); // wait for next frame so everything is destroyed, so following tests can execute from clean environment
+            // wait for next frame so everything is destroyed, so following tests can execute from clean environment
+            int nextFrameNumber = Time.frameCount + 1;
+            yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
         }
     }
 }
