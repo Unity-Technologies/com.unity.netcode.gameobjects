@@ -11,10 +11,10 @@ using Unity.Multiplayer.NetworkProfiler.Models;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace MLAPI.RuntimeTests.Metrics
+namespace MLAPI.RuntimeTests.Metrics.Messaging
 {
 #if true
-    public class NetworkMetricsReceptionTests : MetricsTestBase
+    public class NetworkMetricsMessagingReceptionTests : MetricsTestBase
     {
         NetworkManager m_Server;
         NetworkManager m_Client;
