@@ -25,7 +25,7 @@ namespace MLAPI.RuntimeTests
         /// <param name="clientCount">The amount of clients</param>
         /// <param name="server">The server NetworkManager</param>
         /// <param name="clients">The clients NetworkManagers</param>
-        public static bool Create(int clientCount, out NetworkManager server, out NetworkManager[] clients, int targetFrameRate = 50)
+        public static bool Create(int clientCount, out NetworkManager server, out NetworkManager[] clients, int targetFrameRate = 60)
         {
             NetworkManagerInstances = new List<NetworkManager>();
 
