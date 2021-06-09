@@ -9,7 +9,7 @@ using UnityEngine.TestTools;
 
 namespace MLAPI.RuntimeTests.Metrics.NetworkVariables
 {
-    public class NetworkVariableMetricsReceptionTests : MetricsTestBase
+    public class NetworkVariableMetricsReceptionTests
     {
         NetworkManager m_Server;
         NetworkManager m_Client;

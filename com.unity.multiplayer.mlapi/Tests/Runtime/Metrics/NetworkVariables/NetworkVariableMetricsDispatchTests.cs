@@ -8,7 +8,7 @@ using UnityEngine.TestTools;
 
 namespace MLAPI.RuntimeTests.Metrics.NetworkVariables
 {
-    public class NetworkVariableMetricsDispatchTests : MetricsTestBase
+    public class NetworkVariableMetricsDispatchTests
     {
         NetworkManager m_NetworkManager;
         NetworkMetrics m_NetworkMetrics;
