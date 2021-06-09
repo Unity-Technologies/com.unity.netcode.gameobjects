@@ -35,10 +35,21 @@ namespace MLAPI
 #if UNITY_2020_2_OR_NEWER
         // RuntimeAccessModifiersILPP will make this `public`
         internal static readonly Dictionary<uint, Action<NetworkBehaviour, NetworkSerializer, __RpcParams>> __ntable = new Dictionary<uint, Action<NetworkBehaviour, NetworkSerializer, __RpcParams>>();
-#else
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        // RuntimeAccessModifiersILPP will make this `public`
+        internal static readonly Dictionary<uint, string> __rpc_name_table = new Dictionary<uint, string>();
+#else // !(UNITY_EDITOR || DEVELOPMENT_BUILD)
+        // RuntimeAccessModifiersILPP and NetworkBehaviourILPP requires a variable with this name to exist when outside of Debug build or Editor.
+        // If the name doesn't exist, generation and compilation errors occurs.
+        // For the sake of consistency, we are using the same type.
+        // Final note: this variable will not be used. Since it's never initialized, it will not be in the memory footprint.
+        internal static readonly Dictionary<uint, string> __rpc_name_table = null;
+#endif // UNITY_EDITOR || DEVELOPMENT_BUILD
+#else // !UNITY_2020_2_OR_NEWER
         [Obsolete("Please do not use, will no longer be exposed in the future versions (framework internal)")]
         public static readonly Dictionary<uint, Action<NetworkBehaviour, NetworkSerializer, __RpcParams>> __ntable = new Dictionary<uint, Action<NetworkBehaviour, NetworkSerializer, __RpcParams>>();
-#endif
+#endif // UNITY_2020_2_OR_NEWER
 #pragma warning restore IDE1006 // restore naming rule violation check
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
@@ -343,11 +354,8 @@ namespace MLAPI
 
             SceneManager = new NetworkSceneManager(this);
 
-            if (MessageHandler == null)
-            {
-                // Only create this if it's not already set (like in test cases)
-                MessageHandler = new InternalMessageHandler(this);
-            }
+            // Only create this if it's not already set (like in test cases)
+            MessageHandler ??= CreateMessageHandler();
 
             MessageSender = new InternalMessageSender(this);
 
@@ -1693,6 +1701,17 @@ namespace MLAPI
                 PendingClients.Remove(ownerClientId);
                 NetworkConfig.NetworkTransport.DisconnectRemoteClient(ownerClientId);
             }
+        }
+
+        private IInternalMessageHandler CreateMessageHandler()
+        {
+            IInternalMessageHandler messageHandler = new InternalMessageHandler(this);
+
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            messageHandler = new InternalMessageHandlerProfilingDecorator(messageHandler);
+#endif
+
+            return messageHandler;
         }
 
         private void ProfilerBeginTick()

@@ -4,7 +4,6 @@ using MLAPI.Connection;
 using MLAPI.Logging;
 using MLAPI.SceneManagement;
 using MLAPI.Serialization.Pooled;
-using MLAPI.Spawning;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.SceneManagement;
@@ -13,32 +12,11 @@ using MLAPI.Configuration;
 using MLAPI.Messaging.Buffering;
 using MLAPI.Profiling;
 using MLAPI.Serialization;
-using Unity.Profiling;
 
 namespace MLAPI.Messaging
 {
     internal class InternalMessageHandler : IInternalMessageHandler
     {
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-        private static ProfilerMarker s_HandleConnectionRequest = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleConnectionRequest)}");
-        private static ProfilerMarker s_HandleConnectionApproved = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleConnectionApproved)}");
-        private static ProfilerMarker s_HandleAddObject = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleAddObject)}");
-        private static ProfilerMarker s_HandleDestroyObject = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleDestroyObject)}");
-        private static ProfilerMarker s_HandleSwitchScene = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleSwitchScene)}");
-        private static ProfilerMarker s_HandleClientSwitchSceneCompleted = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleClientSwitchSceneCompleted)}");
-        private static ProfilerMarker s_HandleChangeOwner = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleChangeOwner)}");
-        private static ProfilerMarker s_HandleAddObjects = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleAddObjects)}");
-        private static ProfilerMarker s_HandleDestroyObjects = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleDestroyObjects)}");
-        private static ProfilerMarker s_HandleTimeSync = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleTimeSync)}");
-        private static ProfilerMarker s_HandleNetworkVariableDelta = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleNetworkVariableDelta)}");
-        private static ProfilerMarker s_HandleUnnamedMessage = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleUnnamedMessage)}");
-        private static ProfilerMarker s_HandleNamedMessage = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleNamedMessage)}");
-        private static ProfilerMarker s_HandleNetworkLog = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleNetworkLog)}");
-        private static ProfilerMarker s_RpcReceiveQueueItemServerRpc = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(RpcReceiveQueueItem)}.{nameof(RpcQueueContainer.QueueItemType.ServerRpc)}");
-        private static ProfilerMarker s_RpcReceiveQueueItemClientRpc = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(RpcReceiveQueueItem)}.{nameof(RpcQueueContainer.QueueItemType.ClientRpc)}");
-        private static ProfilerMarker s_HandleAllClientsSwitchSceneCompleted = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleAllClientsSwitchSceneCompleted)}");
-#endif
-
         public NetworkManager NetworkManager => m_NetworkManager;
         private NetworkManager m_NetworkManager;
 
@@ -49,9 +27,6 @@ namespace MLAPI.Messaging
 
         public void HandleConnectionRequest(ulong clientId, Stream stream)
         {
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            s_HandleConnectionRequest.Begin();
-#endif
             if (NetworkManager.PendingClients.TryGetValue(clientId, out PendingClient client))
             {
                 // Set to pending approval to prevent future connection requests from being approved
@@ -84,16 +59,10 @@ namespace MLAPI.Messaging
                     NetworkManager.HandleApproval(clientId, NetworkManager.NetworkConfig.PlayerPrefab != null, null, true, null, null);
                 }
             }
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            s_HandleConnectionRequest.End();
-#endif
         }
 
         public void HandleConnectionApproved(ulong clientId, Stream stream, float receiveTime)
         {
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            s_HandleConnectionApproved.Begin();
-#endif
             using (var reader = PooledNetworkReader.Get(stream))
             {
                 NetworkManager.LocalClientId = reader.ReadUInt64Packed();
@@ -164,16 +133,10 @@ namespace MLAPI.Messaging
                     DelayedSpawnAction(stream);
                 }
             }
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            s_HandleConnectionApproved.End();
-#endif
         }
 
         public void HandleAddObject(ulong clientId, Stream stream)
         {
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            s_HandleAddObject.Begin();
-#endif
             using (var reader = PooledNetworkReader.Get(stream))
             {
                 var isPlayerObject = reader.ReadBool();
@@ -217,31 +180,19 @@ namespace MLAPI.Messaging
                     }
                 }
             }
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            s_HandleAddObject.End();
-#endif
         }
 
         public void HandleDestroyObject(ulong clientId, Stream stream)
         {
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            s_HandleDestroyObject.Begin();
-#endif
             using (var reader = PooledNetworkReader.Get(stream))
             {
                 ulong networkId = reader.ReadUInt64Packed();
                 NetworkManager.SpawnManager.OnDestroyObject(networkId, true);
             }
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            s_HandleDestroyObject.End();
-#endif
         }
 
         public void HandleSwitchScene(ulong clientId, Stream stream)
         {
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            s_HandleSwitchScene.Begin();
-#endif
             using (var reader = PooledNetworkReader.Get(stream))
             {
                 uint sceneIndex = reader.ReadUInt32Packed();
@@ -253,30 +204,18 @@ namespace MLAPI.Messaging
 
                 m_NetworkManager.SceneManager.OnSceneSwitch(sceneIndex, switchSceneGuid, objectBuffer);
             }
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            s_HandleSwitchScene.End();
-#endif
         }
 
         public void HandleClientSwitchSceneCompleted(ulong clientId, Stream stream)
         {
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            s_HandleClientSwitchSceneCompleted.Begin();
-#endif
             using (var reader = PooledNetworkReader.Get(stream))
             {
                 m_NetworkManager.SceneManager.OnClientSwitchSceneCompleted(clientId, new Guid(reader.ReadByteArray()));
             }
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            s_HandleClientSwitchSceneCompleted.End();
-#endif
         }
 
         public void HandleChangeOwner(ulong clientId, Stream stream)
         {
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            s_HandleChangeOwner.Begin();
-#endif
             using (var reader = PooledNetworkReader.Get(stream))
             {
                 ulong networkId = reader.ReadUInt64Packed();
@@ -296,16 +235,10 @@ namespace MLAPI.Messaging
 
                 NetworkManager.SpawnManager.SpawnedObjects[networkId].OwnerClientId = ownerClientId;
             }
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            s_HandleChangeOwner.End();
-#endif
         }
 
         public void HandleAddObjects(ulong clientId, Stream stream)
         {
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            s_HandleAddObjects.Begin();
-#endif
             using (var reader = PooledNetworkReader.Get(stream))
             {
                 ushort objectCount = reader.ReadUInt16Packed();
@@ -315,16 +248,10 @@ namespace MLAPI.Messaging
                     HandleAddObject(clientId, stream);
                 }
             }
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            s_HandleAddObjects.End();
-#endif
         }
 
         public void HandleDestroyObjects(ulong clientId, Stream stream)
         {
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            s_HandleDestroyObjects.Begin();
-#endif
             using (var reader = PooledNetworkReader.Get(stream))
             {
                 ushort objectCount = reader.ReadUInt16Packed();
@@ -334,31 +261,19 @@ namespace MLAPI.Messaging
                     HandleDestroyObject(clientId, stream);
                 }
             }
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            s_HandleDestroyObjects.End();
-#endif
         }
 
         public void HandleTimeSync(ulong clientId, Stream stream, float receiveTime)
         {
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            s_HandleTimeSync.Begin();
-#endif
             using (var reader = PooledNetworkReader.Get(stream))
             {
                 float netTime = reader.ReadSinglePacked();
                 NetworkManager.UpdateNetworkTime(clientId, netTime, receiveTime);
             }
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            s_HandleTimeSync.End();
-#endif
         }
 
         public void HandleNetworkVariableDelta(ulong clientId, Stream stream, Action<ulong, PreBufferPreset> bufferCallback, PreBufferPreset bufferPreset)
         {
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            s_HandleNetworkVariableDelta.Begin();
-#endif
             if (!NetworkManager.NetworkConfig.EnableNetworkVariable)
             {
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
@@ -407,9 +322,6 @@ namespace MLAPI.Messaging
                     bufferCallback(networkObjectId, bufferPreset);
                 }
             }
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            s_HandleNetworkVariableDelta.End();
-#endif
         }
 
         /// <summary>
@@ -428,70 +340,31 @@ namespace MLAPI.Messaging
             ProfilerStatManager.RpcsRcvd.Record();
             PerformanceDataManager.Increment(ProfilerConstants.RpcReceived);
 
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            switch (queueItemType)
-            {
-                case RpcQueueContainer.QueueItemType.ServerRpc:
-                    s_RpcReceiveQueueItemServerRpc.Begin();
-                    break;
-                case RpcQueueContainer.QueueItemType.ClientRpc:
-                    s_RpcReceiveQueueItemClientRpc.Begin();
-                    break;
-            }
-#endif
-
             var rpcQueueContainer = NetworkManager.RpcQueueContainer;
             rpcQueueContainer.AddQueueItemToInboundFrame(queueItemType, receiveTime, clientId, (NetworkBuffer)stream);
-
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            switch (queueItemType)
-            {
-                case RpcQueueContainer.QueueItemType.ServerRpc:
-                    s_RpcReceiveQueueItemServerRpc.End();
-                    break;
-                case RpcQueueContainer.QueueItemType.ClientRpc:
-                    s_RpcReceiveQueueItemClientRpc.End();
-                    break;
-            }
-#endif
         }
 
         public void HandleUnnamedMessage(ulong clientId, Stream stream)
         {
             PerformanceDataManager.Increment(ProfilerConstants.UnnamedMessageReceived);
             ProfilerStatManager.UnnamedMessage.Record();
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            s_HandleUnnamedMessage.Begin();
-#endif
             NetworkManager.CustomMessagingManager.InvokeUnnamedMessage(clientId, stream);
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            s_HandleUnnamedMessage.End();
-#endif
         }
 
         public void HandleNamedMessage(ulong clientId, Stream stream)
         {
             PerformanceDataManager.Increment(ProfilerConstants.NamedMessageReceived);
             ProfilerStatManager.NamedMessage.Record();
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            s_HandleNamedMessage.Begin();
-#endif
             using (var reader = PooledNetworkReader.Get(stream))
             {
                 ulong hash = reader.ReadUInt64Packed();
 
                 NetworkManager.CustomMessagingManager.InvokeNamedMessage(hash, clientId, stream);
             }
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            s_HandleNamedMessage.End();
-#endif
         }
 
         public void HandleNetworkLog(ulong clientId, Stream stream)
         {
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            s_HandleNetworkLog.Begin();
-#endif
             using (var reader = PooledNetworkReader.Get(stream))
             {
                 var logType = (NetworkLog.LogType)reader.ReadByte();
@@ -510,9 +383,6 @@ namespace MLAPI.Messaging
                         break;
                 }
             }
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            s_HandleNetworkLog.End();
-#endif
         }
 
         internal static void HandleSnapshot(ulong clientId, Stream messageStream)
@@ -527,18 +397,12 @@ namespace MLAPI.Messaging
 
         public void HandleAllClientsSwitchSceneCompleted(ulong clientId, Stream stream)
         {
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            s_HandleAllClientsSwitchSceneCompleted.Begin();
-#endif
             using (var reader = PooledNetworkReader.Get(stream))
             {
                 var clientIds = reader.ReadULongArray();
                 var timedOutClientIds = reader.ReadULongArray();
                 NetworkManager.SceneManager.AllClientsReady(clientIds, timedOutClientIds);
             }
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            s_HandleAllClientsSwitchSceneCompleted.End();
-#endif
         }
     }
 }
