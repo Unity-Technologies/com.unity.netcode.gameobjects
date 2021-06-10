@@ -1,5 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+using System.Collections;
 using System.Linq;
 using MLAPI.Metrics;
 using NUnit.Framework;
@@ -64,25 +63,23 @@ namespace MLAPI.RuntimeTests.Metrics.NetworkObjects
         [UnityTest]
         public IEnumerator TrackNetworkObjectSpawnSentMetric()
         {
-            const string objectName = "TestNetworkObjectToSpawn";
+            var objectName = "TestNetworkObjectToSpawn";
             var playerPrefab = new GameObject(objectName);
             var networkObject = playerPrefab.AddComponent<NetworkObject>();
             networkObject.NetworkManagerOwner = m_Server;
 
-            MultiInstanceHelpers.MakeNetworkedObjectTestPrefab(networkObject);
-            // NetworkManagerHelper.AddConnectedClient(m_Client.LocalClientId);
+            var waitForMetricEvent = new WaitForMetricValues<ObjectSpawnedEvent>(m_ServerMetrics.Dispatcher, MetricNames.ObjectSpawnedSent);
 
-            var waitForMetricEvent = new WaitForMetricValues<ObjectSpawnedEvent>(m_ServerMetrics.Dispatcher, MetricNames.ObjectSpawned);
-
-            // networkObj.Observers.Add(m_Client.LocalClientId);
             networkObject.Spawn();
 
             yield return waitForMetricEvent.WaitForAFewFrames();
 
-            var objectSpawnedSentMetricValues = waitForMetricEvent.Values;
+            var objectSpawnedSentMetricValues = waitForMetricEvent.EnsureMetricValuesHaveBeenFound();
             Assert.AreEqual(1, objectSpawnedSentMetricValues.Count);
-            Assert.AreEqual(m_Client.LocalClientId, objectSpawnedSentMetricValues.Select(x => x.Connection.Id).First());
-            Assert.AreEqual(objectName, objectSpawnedSentMetricValues.Select(x => x.NetworkId.Name));
+
+            var objectSpawned = objectSpawnedSentMetricValues.First();
+            Assert.AreEqual(m_Client.LocalClientId, objectSpawned.Connection.Id);
+            Assert.AreEqual(objectName, objectSpawned.NetworkId.Name);
         }
     }
 #endif
