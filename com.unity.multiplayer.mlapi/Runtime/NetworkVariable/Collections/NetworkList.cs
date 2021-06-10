@@ -74,7 +74,7 @@ namespace MLAPI.NetworkVariable.Collections
 
         /// <summary>
         /// Gets or sets the name of the network variable's instance
-        /// (MemberInfo) where it was declared.
+        /// (MembrInfo) where it was declared.
         /// </summary>
         public string Name { get; internal set; }
 
