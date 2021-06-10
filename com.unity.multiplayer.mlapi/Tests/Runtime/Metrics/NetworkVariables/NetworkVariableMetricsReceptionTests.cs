@@ -1,8 +1,7 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Linq;
 using MLAPI.Metrics;
 using NUnit.Framework;
-using Unity.Multiplayer.NetStats.Metrics;
 using Unity.Multiplayer.NetworkProfiler;
 using Unity.Multiplayer.NetworkProfiler.Models;
 using UnityEngine;
@@ -10,7 +9,7 @@ using UnityEngine.TestTools;
 
 namespace MLAPI.RuntimeTests.Metrics.NetworkVariables
 {
-    public class NetworkVariableMetricsReceptionTests : MetricsTestBase
+    public class NetworkVariableMetricsReceptionTests
     {
         NetworkManager m_Server;
         NetworkManager m_Client;
@@ -62,32 +61,18 @@ namespace MLAPI.RuntimeTests.Metrics.NetworkVariables
         [UnityTest]
         public IEnumerator TrackNetworkVariableDeltaReceivedMetric()
         {
-            var found = false;
-            m_ClientMetrics.Dispatcher.RegisterObserver(new TestObserver(collection =>
-            {
-                var networkVariableUpdateMetric = collection.Metrics.SingleOrDefault(x => x.Name == MetricNames.NetworkVariableDeltaReceived);
-                Assert.NotNull(networkVariableUpdateMetric);
+            var waitForMetricValues = new WaitForMetricValues<NetworkVariableEvent>(m_ClientMetrics.Dispatcher, MetricNames.NetworkVariableDeltaReceived);
 
-                var typedMetric = networkVariableUpdateMetric as IEventMetric<NetworkVariableEvent>;
-                Assert.NotNull(typedMetric);
-                if (typedMetric.Values.Any()) // We always get the metric, but when it has values, something has been tracked
-                {
-                    // We have an instance each of the player prefabs
-                    Assert.AreEqual(2, typedMetric.Values.Count);
+            yield return waitForMetricValues.WaitForAFewFrames();
 
-                    var first = typedMetric.Values.First();
-                    Assert.AreEqual(nameof(NetworkVariableComponent.MyNetworkVariable), first.Name);
+            var metricValues = waitForMetricValues.Values;
+            Assert.AreEqual(2, metricValues.Count); // We have an instance each of the player prefabs
 
-                    var last = typedMetric.Values.Last();
-                    Assert.AreEqual(nameof(NetworkVariableComponent.MyNetworkVariable), last.Name);
+            var first = metricValues.First();
+            Assert.AreEqual(nameof(NetworkVariableComponent.MyNetworkVariable), first.Name);
 
-                    found = true;
-                }
-            }));
-
-            yield return WaitForAFewFrames();
-
-            Assert.True(found);
+            var last = metricValues.Last();
+            Assert.AreEqual(nameof(NetworkVariableComponent.MyNetworkVariable), last.Name);
         }
     }
 }
