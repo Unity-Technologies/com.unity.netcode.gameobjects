@@ -65,7 +65,7 @@ namespace MLAPI.RuntimeTests.Metrics.NetworkVariables
 
             yield return waitForMetricValues.WaitForAFewFrames();
 
-            var metricValues = waitForMetricValues.Values;
+            var metricValues = waitForMetricValues.EnsureMetricValuesHaveBeenFound();
             Assert.AreEqual(2, metricValues.Count); // We have an instance each of the player prefabs
 
             var first = metricValues.First();

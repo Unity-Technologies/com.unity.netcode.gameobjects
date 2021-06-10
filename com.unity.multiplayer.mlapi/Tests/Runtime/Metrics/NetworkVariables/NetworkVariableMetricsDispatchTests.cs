@@ -37,7 +37,7 @@ namespace MLAPI.RuntimeTests.Metrics.NetworkVariables
 
             yield return waitForMetricValues.WaitForAFewFrames();
 
-            var metricValues = waitForMetricValues.Values;
+            var metricValues = waitForMetricValues.EnsureMetricValuesHaveBeenFound();
             Assert.AreEqual(1, metricValues.Count);
 
             var networkVariableDeltaSent = metricValues.First();

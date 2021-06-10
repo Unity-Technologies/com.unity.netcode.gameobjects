@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
@@ -12,6 +12,8 @@ namespace MLAPI.RuntimeTests.Metrics
     {
         private readonly string m_MetricName;
         private bool m_Found = false;
+        private uint m_NbFrames = 0;
+        private IReadOnlyCollection<TMetric> m_Values;
 
         public WaitForMetricValues(IMetricDispatcher dispatcher, string metricName)
         {
@@ -19,8 +21,6 @@ namespace MLAPI.RuntimeTests.Metrics
 
             dispatcher.RegisterObserver(this);
         }
-
-        public IReadOnlyCollection<TMetric> Values { get; private set; }
 
         public IEnumerator WaitForMetricsDispatch()
         {
@@ -30,6 +30,16 @@ namespace MLAPI.RuntimeTests.Metrics
         public IEnumerator WaitForAFewFrames()
         {
             yield return Wait(20);
+        }
+
+        public IReadOnlyCollection<TMetric> EnsureMetricValuesHaveBeenFound()
+        {
+            if (!m_Found)
+            {
+                Assert.Fail($"Found no matching values for metric of type '{typeof(TMetric).Name}', with name '{m_MetricName}' during '{m_NbFrames}' frames.");
+            }
+
+            return m_Values;
         }
 
         public void Observe(MetricCollection collection)
@@ -47,23 +57,17 @@ namespace MLAPI.RuntimeTests.Metrics
 
             if (typedMetric.Values.Any())
             {
-                Values = typedMetric.Values.ToList();
+                m_Values = typedMetric.Values.ToList();
                 m_Found = true;
             }
         }
 
         private IEnumerator Wait(uint maxNbFrames)
         {
-            var frame = 0U;
-            while (!m_Found && frame < maxNbFrames)
+            while (!m_Found && m_NbFrames < maxNbFrames)
             {
-                frame++;
+                m_NbFrames++;
                 yield return new WaitForEndOfFrame();
-            }
-
-            if (!m_Found)
-            {
-                Assert.Fail($"Found no matching values for metric of type '{typeof(TMetric).Name}', with name '{m_MetricName}' during '{maxNbFrames}' frames.");
             }
         }
     }

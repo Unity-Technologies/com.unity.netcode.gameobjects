@@ -5,7 +5,6 @@ using System.Linq;
 using MLAPI.Metrics;
 using MLAPI.Serialization;
 using NUnit.Framework;
-using Unity.Multiplayer.NetStats.Metrics;
 using Unity.Multiplayer.NetworkProfiler;
 using Unity.Multiplayer.NetworkProfiler.Models;
 using UnityEngine;
@@ -66,7 +65,7 @@ namespace MLAPI.RuntimeTests.Metrics.Messaging
 
             yield return waitForMetricValues.WaitForAFewFrames();
 
-            var namedMessageReceivedValues = waitForMetricValues.Values;
+            var namedMessageReceivedValues = waitForMetricValues.EnsureMetricValuesHaveBeenFound();
             Assert.AreEqual(1, namedMessageReceivedValues.Count);
 
             var namedMessageReceived = namedMessageReceivedValues.First();
@@ -83,7 +82,7 @@ namespace MLAPI.RuntimeTests.Metrics.Messaging
 
             yield return waitForMetricValues.WaitForAFewFrames();
 
-            var unnamedMessageReceivedValues = waitForMetricValues.Values;
+            var unnamedMessageReceivedValues = waitForMetricValues.EnsureMetricValuesHaveBeenFound();
             Assert.AreEqual(1, unnamedMessageReceivedValues.Count);
 
             var unnamedMessageReceived = unnamedMessageReceivedValues.First();
