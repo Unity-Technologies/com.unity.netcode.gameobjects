@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using Unity.Multiplayer.NetworkProfiler.Models;
+using System.Collections.Generic;
 
 namespace MLAPI.Metrics
 {
@@ -23,13 +22,15 @@ namespace MLAPI.Metrics
 
         void TrackNetworkVariableDeltaReceived(ulong senderClientId, ulong networkObjectId, string gameObjectName,string variableName, ulong bytesCount);
 
-        void TrackObjectSpawnSent(ulong receiverClientId, NetworkObjectIdentifier networkId, ulong bytesCount);
+        void TrackObjectSpawnSent(ulong receiverClientId, ulong networkObjectId, string gameObjectName, ulong bytesCount);
 
-        void TrackObjectSpawnReceived(ulong senderClientId, NetworkObjectIdentifier networkId, ulong bytesCount);
+        void TrackObjectSpawnReceived(ulong senderClientId, ulong networkObjectId, string gameObjectName, ulong bytesCount);
 
-        void TrackObjectDestroySent(ulong senderClientId, NetworkObjectIdentifier networkId, ulong bytesCount);
+        void TrackObjectDestroySent(ulong receiverClientId, ulong networkObjectId, string gameObjectName, ulong bytesCount);
 
-        void TrackObjectDestroyReceived(ulong senderClientId, NetworkObjectIdentifier networkId, ulong bytesCount);
+        void TrackObjectDestroySent(IReadOnlyCollection<ulong> receiverClientIds, ulong networkObjectId, string gameObjectName, ulong bytesCount);
+
+        void TrackObjectDestroyReceived(ulong senderClientId, ulong networkObjectId, string gameObjectName, ulong bytesCount);
 
         void DispatchFrame();
     }

@@ -64,8 +64,8 @@ namespace MLAPI.RuntimeTests.Metrics.NetworkObjects
         public IEnumerator TrackNetworkObjectSpawnSentMetric()
         {
             var objectName = "TestNetworkObjectToSpawn";
-            var playerPrefab = new GameObject(objectName);
-            var networkObject = playerPrefab.AddComponent<NetworkObject>();
+            var gameObject = new GameObject(objectName);
+            var networkObject = gameObject.AddComponent<NetworkObject>();
             networkObject.NetworkManagerOwner = m_Server;
 
             var waitForMetricEvent = new WaitForMetricValues<ObjectSpawnedEvent>(m_ServerMetrics.Dispatcher, MetricNames.ObjectSpawnedSent);
@@ -80,6 +80,29 @@ namespace MLAPI.RuntimeTests.Metrics.NetworkObjects
             var objectSpawned = objectSpawnedSentMetricValues.First();
             Assert.AreEqual(m_Client.LocalClientId, objectSpawned.Connection.Id);
             Assert.AreEqual(objectName, objectSpawned.NetworkId.Name);
+        }
+
+        [UnityTest]
+        public IEnumerator TrackNetworkObjectSpawnReceivedMetric()
+        {
+            var objectName = "TestNetworkObjectToSpawn";
+            var gameObject = new GameObject(objectName);
+            var networkObject = gameObject.AddComponent<NetworkObject>();
+            networkObject.NetworkManagerOwner = m_Server;
+
+            var waitForMetricEvent = new WaitForMetricValues<ObjectSpawnedEvent>(m_ClientMetrics.Dispatcher, MetricNames.ObjectSpawnedReceived);
+
+            networkObject.Spawn();
+
+            yield return waitForMetricEvent.WaitForAFewFrames();
+
+            var objectSpawnedReceivedMetricValues = waitForMetricEvent.EnsureMetricValuesHaveBeenFound();
+            Assert.AreEqual(1, objectSpawnedReceivedMetricValues.Count);
+
+            var objectSpawned = objectSpawnedReceivedMetricValues.First();
+            Assert.AreEqual(m_Server.LocalClientId, objectSpawned.Connection.Id);
+            Assert.AreEqual(networkObject.NetworkObjectId, objectSpawned.NetworkId.NetworkId);
+            Assert.AreEqual("Player(Clone)", objectSpawned.NetworkId.Name); // What?
         }
     }
 #endif

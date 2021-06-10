@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using Unity.Multiplayer.NetworkProfiler.Models;
 
 namespace MLAPI.Metrics
@@ -41,19 +41,23 @@ namespace MLAPI.Metrics
         {
         }
 
-        public void TrackObjectSpawnSent(ulong receiverClientId, NetworkObjectIdentifier networkId, ulong bytesCount)
+        public void TrackObjectSpawnSent(ulong receiverClientId, ulong networkObjectId, string gameObjectName, ulong bytesCount)
         {
         }
 
-        public void TrackObjectSpawnReceived(ulong senderClientId, NetworkObjectIdentifier networkId, ulong bytesCount)
+        public void TrackObjectSpawnReceived(ulong senderClientId, ulong networkObjectId, string gameObjectName, ulong bytesCount)
         {
         }
 
-        public void TrackObjectDestroySent(ulong senderClientId, NetworkObjectIdentifier networkId, ulong bytesCount)
+        public void TrackObjectDestroySent(ulong senderClientId, ulong networkObjectId, string gameObjectName, ulong bytesCount)
         {
         }
 
-        public void TrackObjectDestroyReceived(ulong senderClientId, NetworkObjectIdentifier networkId, ulong bytesCount)
+        public void TrackObjectDestroySent(IReadOnlyCollection<ulong> receiverClientIds, ulong networkObjectId, string gameObjectName, ulong bytesCount)
+        {
+        }
+
+        public void TrackObjectDestroyReceived(ulong senderClientId, ulong networkObjectId, string gameObjectName, ulong bytesCount)
         {
         }
 

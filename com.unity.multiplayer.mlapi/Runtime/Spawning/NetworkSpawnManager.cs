@@ -381,7 +381,7 @@ namespace MLAPI.Spawning
                 ClientNetworkIds = new[] {clientId}
             };
             rpcQueueContainer.AddToInternalMLAPISendQueue(queueItem);
-            NetworkManager.NetworkMetrics.TrackObjectSpawnSent(clientId, new NetworkObjectIdentifier(networkObject.name, networkObject.NetworkObjectId), (ulong) buffer.Length);
+            NetworkManager.NetworkMetrics.TrackObjectSpawnSent(clientId, networkObject.NetworkObjectId, networkObject.name, (ulong)buffer.Length);
         }
 
         internal void WriteSpawnCallForObject(Serialization.NetworkBuffer buffer, ulong clientId, NetworkObject networkObject, Stream payload)
@@ -658,6 +658,7 @@ namespace MLAPI.Spawning
                             {
                                 writer.WriteUInt64Packed(networkId);
 
+                                var clientIds = NetworkManager.ConnectedClientsList.Select(c => c.ClientId).ToArray();
                                 var queueItem = new RpcFrameQueueItem
                                 {
                                     UpdateStage = NetworkUpdateStage.PostLateUpdate,
@@ -665,16 +666,12 @@ namespace MLAPI.Spawning
                                     NetworkId = networkId,
                                     NetworkBuffer = buffer,
                                     NetworkChannel = NetworkChannel.Internal,
-                                    ClientNetworkIds = NetworkManager.ConnectedClientsList.Select(c => c.ClientId).ToArray()
+                                    ClientNetworkIds = clientIds,
                                 };
 
                                 rpcQueueContainer.AddToInternalMLAPISendQueue(queueItem);
-                                NetworkManager.ConnectedClientsList.ForEach(c =>
-                                    NetworkManager.NetworkMetrics.TrackObjectDestroySent(
-                                        c.ClientId,
-                                        new NetworkObjectIdentifier(sobj.name, networkId),
-                                        (ulong) buffer.Length)
-                                );
+
+                                NetworkManager.NetworkMetrics.TrackObjectDestroySent(clientIds, networkId, sobj.name, (ulong)buffer.Length);
                             }
                         }
                     }

@@ -378,7 +378,7 @@ namespace MLAPI
             if (NetworkMetrics == null)
             {
 #if true
-                NetworkMetrics = new NetworkMetrics(this);
+                NetworkMetrics = new NetworkMetrics();
 #else
                 NetworkMetrics = new NullNetworkMetrics();
 #endif
