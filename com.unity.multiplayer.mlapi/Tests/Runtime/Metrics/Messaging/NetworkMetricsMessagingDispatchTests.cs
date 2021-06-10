@@ -8,7 +8,6 @@ using MLAPI.Serialization;
 using NUnit.Framework;
 using Unity.Multiplayer.NetworkProfiler;
 using Unity.Multiplayer.NetworkProfiler.Models;
-using UnityEngine;
 using UnityEngine.TestTools;
 
 namespace MLAPI.RuntimeTests.Metrics.Messaging
@@ -38,12 +37,12 @@ namespace MLAPI.RuntimeTests.Metrics.Messaging
             var messageName = Guid.NewGuid().ToString();
             var clientId = 100UL;
 
-            var waitForMetricEvent = new WaitForMetricValues<NamedMessageEvent>(m_NetworkMetrics.Dispatcher, MetricNames.NamedMessageSent);
+            var waitForMetricValues = new WaitForMetricValues<NamedMessageEvent>(m_NetworkMetrics.Dispatcher, MetricNames.NamedMessageSent);
             m_NetworkManager.CustomMessagingManager.SendNamedMessage(messageName, clientId, Stream.Null);
 
-            yield return waitForMetricEvent.WaitForMetricsDispatch();
+            yield return waitForMetricValues.WaitForMetricsDispatch();
 
-            var namedMessageSentMetricValues = waitForMetricEvent.Values;
+            var namedMessageSentMetricValues = waitForMetricValues.EnsureMetricValuesHaveBeenFound();
             Assert.AreEqual(1, namedMessageSentMetricValues.Count);
 
             var namedMessageSent = namedMessageSentMetricValues.First();
@@ -55,13 +54,13 @@ namespace MLAPI.RuntimeTests.Metrics.Messaging
         public IEnumerator TrackNamedMessageSentMetricToMultipleClients()
         {
             var messageName = Guid.NewGuid().ToString();
-
-            var waitForMetricEvent = new WaitForMetricValues<NamedMessageEvent>(m_NetworkMetrics.Dispatcher, MetricNames.NamedMessageSent);
+            
+            var waitForMetricValues = new WaitForMetricValues<NamedMessageEvent>(m_NetworkMetrics.Dispatcher, MetricNames.NamedMessageSent);
             m_NetworkManager.CustomMessagingManager.SendNamedMessage(messageName, new List<ulong> { 100, 200, 300 }, Stream.Null);
 
-            yield return waitForMetricEvent.WaitForMetricsDispatch();
+            yield return waitForMetricValues.WaitForMetricsDispatch();
 
-            var namedMessageSentMetricValues = waitForMetricEvent.Values;
+            var namedMessageSentMetricValues = waitForMetricValues.EnsureMetricValuesHaveBeenFound();
             Assert.AreEqual(3, namedMessageSentMetricValues.Count);
             Assert.True(namedMessageSentMetricValues.All(x => x.Name == messageName));
 
@@ -75,13 +74,13 @@ namespace MLAPI.RuntimeTests.Metrics.Messaging
         public IEnumerator TrackUnnamedMessageSentMetric()
         {
             var clientId = 100UL;
-
-            var waitForMetricEvent = new WaitForMetricValues<UnnamedMessageEvent>(m_NetworkMetrics.Dispatcher, MetricNames.UnnamedMessageSent);
+            
+            var waitForMetricValues = new WaitForMetricValues<UnnamedMessageEvent>(m_NetworkMetrics.Dispatcher, MetricNames.UnnamedMessageSent);
             m_NetworkManager.CustomMessagingManager.SendUnnamedMessage(clientId, new NetworkBuffer());
 
-            yield return waitForMetricEvent.WaitForMetricsDispatch();
+            yield return waitForMetricValues.WaitForMetricsDispatch();
 
-            var unnamedMessageSentMetricValues = waitForMetricEvent.Values;
+            var unnamedMessageSentMetricValues = waitForMetricValues.EnsureMetricValuesHaveBeenFound();
             Assert.AreEqual(1, unnamedMessageSentMetricValues.Count);
 
             var unnamedMessageSent = unnamedMessageSentMetricValues.First();
@@ -91,12 +90,12 @@ namespace MLAPI.RuntimeTests.Metrics.Messaging
         [UnityTest]
         public IEnumerator TrackUnnamedMessageSentMetricToMultipleClients()
         {
-            var waitForMetricEvent = new WaitForMetricValues<UnnamedMessageEvent>(m_NetworkMetrics.Dispatcher, MetricNames.UnnamedMessageSent);
+            var waitForMetricValues = new WaitForMetricValues<UnnamedMessageEvent>(m_NetworkMetrics.Dispatcher, MetricNames.UnnamedMessageSent);
             m_NetworkManager.CustomMessagingManager.SendUnnamedMessage(new List<ulong> { 100, 200, 300 }, new NetworkBuffer());
 
-            yield return waitForMetricEvent.WaitForMetricsDispatch();
+            yield return waitForMetricValues.WaitForMetricsDispatch();
 
-            var unnamedMessageSentMetricValues = waitForMetricEvent.Values;
+            var unnamedMessageSentMetricValues = waitForMetricValues.EnsureMetricValuesHaveBeenFound();
             Assert.AreEqual(3, unnamedMessageSentMetricValues.Count);
 
             var clientIds = unnamedMessageSentMetricValues.Select(x => x.Connection.Id).ToList();
