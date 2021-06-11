@@ -1,12 +1,9 @@
-#if UNITY_2020_2_OR_NEWER
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Unity.CompilationPipeline.Common.Diagnostics;
 using Unity.CompilationPipeline.Common.ILPostProcessing;
-
 using ILPPInterface = Unity.CompilationPipeline.Common.ILPostProcessing.ILPostProcessor;
 
 namespace MLAPI.Editor.CodeGen
@@ -86,17 +83,14 @@ namespace MLAPI.Editor.CodeGen
         {
             foreach (var fieldDefinition in typeDefinition.Fields)
             {
-                if (fieldDefinition.Name == nameof(NetworkManager.__ntable))
+                if (fieldDefinition.Name == nameof(NetworkManager.__rpc_func_table))
                 {
                     fieldDefinition.IsPublic = true;
                 }
 
-                if (assemblyDefines.Contains("UNITY_EDITOR") || assemblyDefines.Contains("DEVELOPMENT_BUILD"))
+                if (fieldDefinition.Name == nameof(NetworkManager.__rpc_name_table))
                 {
-                    if (fieldDefinition.Name == nameof(NetworkManager.__rpc_name_table))
-                    {
-                        fieldDefinition.IsPublic = true;
-                    }
+                    fieldDefinition.IsPublic = true;
                 }
             }
         }
@@ -105,7 +99,7 @@ namespace MLAPI.Editor.CodeGen
         {
             foreach (var nestedType in typeDefinition.NestedTypes)
             {
-                if (nestedType.Name == nameof(NetworkBehaviour.__NExec))
+                if (nestedType.Name == nameof(NetworkBehaviour.__RpcExecStage))
                 {
                     nestedType.IsNestedFamily = true;
                 }
@@ -113,7 +107,7 @@ namespace MLAPI.Editor.CodeGen
 
             foreach (var fieldDefinition in typeDefinition.Fields)
             {
-                if (fieldDefinition.Name == nameof(NetworkBehaviour.__nexec))
+                if (fieldDefinition.Name == nameof(NetworkBehaviour.__rpc_exec_stage))
                 {
                     fieldDefinition.IsFamily = true;
                 }
@@ -134,4 +128,3 @@ namespace MLAPI.Editor.CodeGen
         }
     }
 }
-#endif
