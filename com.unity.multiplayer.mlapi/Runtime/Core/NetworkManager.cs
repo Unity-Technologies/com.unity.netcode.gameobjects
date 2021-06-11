@@ -30,12 +30,12 @@ namespace MLAPI
         // RuntimeAccessModifiersILPP will make this `public`
         internal static readonly Dictionary<uint, Action<NetworkBehaviour, NetworkSerializer, __RpcParams>> __rpc_func_table = new Dictionary<uint, Action<NetworkBehaviour, NetworkSerializer, __RpcParams>>();
 
-        // RuntimeAccessModifiersILPP will make this `public`
-        internal static readonly Dictionary<uint, string> __rpc_name_table =
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            new Dictionary<uint, string>();
+        // RuntimeAccessModifiersILPP will make this `public`
+        internal static readonly Dictionary<uint, string> __rpc_name_table = new Dictionary<uint, string>();
 #else // !(UNITY_EDITOR || DEVELOPMENT_BUILD)
-            null; // not needed on release builds
+        // RuntimeAccessModifiersILPP will make this `public`
+        internal static readonly Dictionary<uint, string> __rpc_name_table = null; // not needed on release builds
 #endif // UNITY_EDITOR || DEVELOPMENT_BUILD
 #pragma warning restore IDE1006 // restore naming rule violation check
 
