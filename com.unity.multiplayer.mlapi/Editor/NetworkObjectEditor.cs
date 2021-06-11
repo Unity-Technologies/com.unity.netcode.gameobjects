@@ -27,7 +27,7 @@ namespace MLAPI.Editor
         {
             Initialize();
 
-            if (!m_NetworkObject.IsSpawned && m_NetworkObject.NetworkManager != null && m_NetworkObject.NetworkManager.IsServer)
+            if (EditorApplication.isPlaying && !m_NetworkObject.IsSpawned && m_NetworkObject.NetworkManager != null && m_NetworkObject.NetworkManager.IsServer)
             {
                 EditorGUILayout.BeginHorizontal();
                 EditorGUILayout.LabelField(new GUIContent("Spawn", "Spawns the object across the network"));
@@ -39,7 +39,7 @@ namespace MLAPI.Editor
 
                 EditorGUILayout.EndHorizontal();
             }
-            else if (m_NetworkObject.IsSpawned)
+            else if (EditorApplication.isPlaying && m_NetworkObject.IsSpawned)
             {
                 var guiEnabled = GUI.enabled;
                 GUI.enabled = false;

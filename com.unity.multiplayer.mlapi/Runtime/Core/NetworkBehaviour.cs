@@ -1,7 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Diagnostics;
 using UnityEngine;
 using System.Reflection;
 using System.Linq;
@@ -14,7 +12,6 @@ using MLAPI.Profiling;
 using MLAPI.Reflection;
 using MLAPI.Serialization;
 using MLAPI.Serialization.Pooled;
-using MLAPI.Spawning;
 using MLAPI.Transports;
 using Unity.Profiling;
 
@@ -26,15 +23,8 @@ namespace MLAPI
     public abstract class NetworkBehaviour : MonoBehaviour
     {
 #pragma warning disable IDE1006 // disable naming rule violation check
-        [Browsable(false)]
-        [EditorBrowsable(EditorBrowsableState.Never)]
-#if UNITY_2020_2_OR_NEWER
         // RuntimeAccessModifiersILPP will make this `protected`
-        internal enum __NExec
-#else
-        [Obsolete("Please do not use, will no longer be exposed in the future versions (framework internal)")]
-        public enum __NExec
-#endif
+        internal enum __RpcExecStage
 #pragma warning restore IDE1006 // restore naming rule violation check
         {
             None = 0,
@@ -42,32 +32,17 @@ namespace MLAPI
             Client = 2
         }
 
-#pragma warning disable 414
+#pragma warning disable 414 // disable assigned but its value is never used
 #pragma warning disable IDE1006 // disable naming rule violation check
         [NonSerialized]
-        [Browsable(false)]
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-#if UNITY_2020_2_OR_NEWER
         // RuntimeAccessModifiersILPP will make this `protected`
-        internal __NExec __nexec = __NExec.None;
-#else
-        [Obsolete("Please do not use, will no longer be exposed in the future versions (framework internal)")]
-        public __NExec __nexec = __NExec.None;
-#endif
-#pragma warning restore 414
-#pragma warning restore IDE1006 // restore naming rule violation check
+        internal __RpcExecStage __rpc_exec_stage = __RpcExecStage.None;
+#pragma warning restore 414 // restore assigned but its value is never used
+#pragma warning restore IDE1006 // restore naming rule violation
 
 #pragma warning disable IDE1006 // disable naming rule violation check
-        [Browsable(false)]
-        [EditorBrowsable(EditorBrowsableState.Never)]
-#if UNITY_2020_2_OR_NEWER
         // RuntimeAccessModifiersILPP will make this `protected`
         internal NetworkSerializer __beginSendServerRpc(ServerRpcParams serverRpcParams, RpcDelivery rpcDelivery)
-#else
-        [Obsolete("Please do not use, will no longer be exposed in the future versions (framework internal)")]
-        public NetworkSerializer __beginSendServerRpc(ServerRpcParams serverRpcParams, RpcDelivery rpcDelivery)
-#endif
 #pragma warning restore IDE1006 // restore naming rule violation check
         {
             PooledNetworkWriter writer;
@@ -104,15 +79,8 @@ namespace MLAPI
         }
 
 #pragma warning disable IDE1006 // disable naming rule violation check
-        [Browsable(false)]
-        [EditorBrowsable(EditorBrowsableState.Never)]
-#if UNITY_2020_2_OR_NEWER
         // RuntimeAccessModifiersILPP will make this `protected`
         internal void __endSendServerRpc(NetworkSerializer serializer, ServerRpcParams serverRpcParams, RpcDelivery rpcDelivery)
-#else
-        [Obsolete("Please do not use, will no longer be exposed in the future versions (framework internal)")]
-        public void __endSendServerRpc(NetworkSerializer serializer, ServerRpcParams serverRpcParams, RpcDelivery rpcDelivery)
-#endif
 #pragma warning restore IDE1006 // restore naming rule violation check
         {
             if (serializer == null)
@@ -132,15 +100,8 @@ namespace MLAPI
         }
 
 #pragma warning disable IDE1006 // disable naming rule violation check
-        [Browsable(false)]
-        [EditorBrowsable(EditorBrowsableState.Never)]
-#if UNITY_2020_2_OR_NEWER
         // RuntimeAccessModifiersILPP will make this `protected`
         internal NetworkSerializer __beginSendClientRpc(ClientRpcParams clientRpcParams, RpcDelivery rpcDelivery)
-#else
-        [Obsolete("Please do not use, will no longer be exposed in the future versions (framework internal)")]
-        public NetworkSerializer __beginSendClientRpc(ClientRpcParams clientRpcParams, RpcDelivery rpcDelivery)
-#endif
 #pragma warning restore IDE1006 // restore naming rule violation check
         {
             PooledNetworkWriter writer;
@@ -209,15 +170,8 @@ namespace MLAPI
         }
 
 #pragma warning disable IDE1006 // disable naming rule violation check
-        [Browsable(false)]
-        [EditorBrowsable(EditorBrowsableState.Never)]
-#if UNITY_2020_2_OR_NEWER
         // RuntimeAccessModifiersILPP will make this `protected`
         internal void __endSendClientRpc(NetworkSerializer serializer, ClientRpcParams clientRpcParams, RpcDelivery rpcDelivery)
-#else
-        [Obsolete("Please do not use, will no longer be exposed in the future versions (framework internal)")]
-        public void __endSendClientRpc(NetworkSerializer serializer, ClientRpcParams clientRpcParams, RpcDelivery rpcDelivery)
-#endif
 #pragma warning restore IDE1006 // restore naming rule violation check
         {
             if (serializer == null)
