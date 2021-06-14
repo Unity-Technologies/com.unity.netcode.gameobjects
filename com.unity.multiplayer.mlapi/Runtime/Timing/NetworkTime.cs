@@ -1,5 +1,4 @@
-using System.Collections;
-using System.Collections.Generic;
+using System;
 using UnityEngine;
 using UnityEngine.Assertions;
 
@@ -12,36 +11,43 @@ namespace MLAPI.Timing
     /// </summary>
     public struct NetworkTime
     {
-        private int m_TickRate;
-        private float m_TickInterval;
+        private double m_Time;
 
-        private int m_Tick;
-        private float m_TickDurationOffset;
+        private int m_TickRate;
+        private double m_TickInterval;
+
+        private int m_CachedTick;
+        private double m_CachedTickOffset;
 
         /// <summary>
         /// Gets the amount of time which has passed since the last network tick.
         /// </summary>
-        public float tickDurationOffset => m_TickDurationOffset;
+        public double TickOffset => m_CachedTickOffset;
 
         /// <summary>
         /// Gets the current time. This is a non fixed time value and similar to <see cref="Time.time"/>
         /// </summary>
-        public float Time => m_Tick * m_TickInterval + m_TickDurationOffset;
+        public double Time => m_Time;
+
+        /// <summary>
+        /// Gets the current time as a float.
+        /// </summary>
+        public float TimeAsFloat => (float)m_Time;
 
         /// <summary>
         /// Gets he current fixed network time. This is the time value of the last network tick. Similar to <see cref="Time.fixedTime"/>
         /// </summary>
-        public float FixedTime => m_Tick * m_TickInterval;
+        public double FixedTime => m_CachedTick * m_TickInterval;
 
         /// <summary>
         /// Gets the fixed delta time. This value is based on the <see cref="TickRate"/> and stays constant. Similar to <see cref="Time.fixedDeltaTime"/> There is no equivalent to <see cref="Time.deltaTime"/>
         /// </summary>
-        public float FixedDeltaTime => m_TickInterval;
+        public float FixedDeltaTime => (float)m_TickInterval;
 
         /// <summary>
         /// Gets the amount of network ticks which have passed until reaching the current time value.
         /// </summary>
-        public int Tick => m_Tick;
+        public int Tick => m_CachedTick;
 
         /// <summary>
         /// Gets the tickrate of the system of this <see cref="NetworkTime"/>.
@@ -56,8 +62,9 @@ namespace MLAPI.Timing
         {
             m_TickRate = tickRate;
             m_TickInterval = 1f / m_TickRate; // potential floating point precision issue, could result in different interval on different machines
-            m_TickDurationOffset = 0;
-            m_Tick = 0;
+            m_CachedTickOffset = 0;
+            m_CachedTick = 0;
+            m_Time = 0;
         }
 
         /// <summary>
@@ -65,14 +72,12 @@ namespace MLAPI.Timing
         /// </summary>
         /// <param name="tickRate">The tickrate.</param>
         /// <param name="tick">The time will be created with a value where this many tick have already passed.</param>
-        /// <param name="tickDurationOffset">Can be used to create a <see cref="NetworkTime"/> with a non fixed time value by adding an offset to the given tick value.</param>
-        public NetworkTime(int tickRate, int tick, float tickDurationOffset = 0f)
+        /// <param name="tickOffset">Can be used to create a <see cref="NetworkTime"/> with a non fixed time value by adding an offset to the given tick value.</param>
+        public NetworkTime(int tickRate, int tick, double tickOffset = 0d)
             : this(tickRate)
         {
-            Assert.IsTrue(tickDurationOffset < 1f / tickRate);
-
-            m_Tick = tick;
-            m_TickDurationOffset = tickDurationOffset;
+            Assert.IsTrue(tickOffset < 1d / tickRate);
+            this += tick * m_TickInterval + tickOffset;
         }
 
         /// <summary>
@@ -80,16 +85,10 @@ namespace MLAPI.Timing
         /// </summary>
         /// <param name="tickRate">The tickrate.</param>
         /// <param name="time">The time value as a float.</param>
-        public NetworkTime(int tickRate, float time)
+        public NetworkTime(int tickRate, double time)
             : this(tickRate)
         {
             this += time;
-
-            // This is due to floating point precision issues.
-            if (m_TickDurationOffset < 0)
-            {
-                this += m_TickDurationOffset;
-            }
         }
 
 
@@ -99,55 +98,39 @@ namespace MLAPI.Timing
         /// <returns>A <see cref="NetworkTime"/> where Time is the FixedTime value of this instance.</returns>
         public NetworkTime ToFixedTime()
         {
-            return new NetworkTime(m_TickRate, m_Tick);
+            return new NetworkTime(m_TickRate, m_CachedTick);
+        }
+
+        private void UpdateCache()
+        {
+            double d = m_Time / m_TickInterval;
+            m_CachedTick = (int)d;
+            m_CachedTickOffset = ((d - Math.Truncate(d)) * m_TickInterval);
+
+            if (m_CachedTick < 0 && m_CachedTickOffset != 0d)
+            {
+                
+            }
         }
 
         public static NetworkTime operator -(NetworkTime a, NetworkTime b)
         {
-            Assert.AreEqual(a.TickRate, b.TickRate, $"NetworkTimes must have same TickRate to subtract.");
-
-            int tick = a.Tick - b.Tick;
-            float tickDuration = a.m_TickDurationOffset - b.m_TickDurationOffset;
-
-            if (tickDuration < 0)
-            {
-                tick--;
-                tickDuration += a.m_TickInterval;
-            }
-
-            return new NetworkTime(a.TickRate, tick, tickDuration);
+            return new NetworkTime(a.TickRate, a.Time - b.Time);
         }
 
         public static NetworkTime operator +(NetworkTime a, NetworkTime b)
         {
-            Assert.AreEqual(a.TickRate, b.TickRate, $"NetworkTimes must have same TickRate to add.");
-
-            int tick = a.Tick + b.Tick;
-            float tickDuration = a.m_TickDurationOffset + b.m_TickDurationOffset;
-
-            if (tickDuration >= a.m_TickInterval)
-            {
-                tick++;
-                tickDuration -= a.m_TickInterval;
-            }
-
-            return new NetworkTime(a.TickRate, tick, tickDuration);
+            return new NetworkTime(a.TickRate, a.Time + b.Time);
         }
 
-        public static NetworkTime operator +(NetworkTime a, float b)
+        public static NetworkTime operator +(NetworkTime a, double b)
         {
-            a.m_TickDurationOffset += b;
-
-            // This is quite imprecise for large floating point numbers but there is no easy workaround for this.
-            var deltaTicks = Mathf.FloorToInt(a.m_TickDurationOffset * a.m_TickRate);
-            a.m_TickDurationOffset -= deltaTicks * a.m_TickInterval;
-
-            a.m_Tick += deltaTicks;
-
+            a.m_Time += b;
+            a.UpdateCache();
             return a;
         }
 
-        public static NetworkTime operator -(NetworkTime a, float b)
+        public static NetworkTime operator -(NetworkTime a, double b)
         {
             return a + -b;
         }

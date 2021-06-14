@@ -14,11 +14,11 @@ namespace MLAPI.EditorTests.Timing
         [Test]
         public void NetworkTimeCreate()
         {
-            float a = 34f;
-            float b = 17.32f;
-            float c = -42.4f;
-            float d = -6f;
-            float e = int.MaxValue / 61f;
+            double a = 34d;
+            double b = 17.32d;
+            double c = -42.44d;
+            double d = -6d;
+            double e = int.MaxValue / 61d;
 
             NetworkTime timeA = new NetworkTime(60, a);
             NetworkTime timeB =  new NetworkTime(60, b);
@@ -26,17 +26,17 @@ namespace MLAPI.EditorTests.Timing
             NetworkTime timeD = new NetworkTime(60, d);
             NetworkTime timeE =  new NetworkTime(60, e);
 
-            Assert.IsTrue(Mathf.Approximately(a, timeA.Time));
-            Assert.IsTrue(Mathf.Approximately(b, timeB.Time));
-            Assert.IsTrue(Mathf.Approximately(c, timeC.Time));
-            Assert.IsTrue(Mathf.Approximately(d, timeD.Time));
-            Assert.IsTrue(Mathf.Approximately(e, timeE.Time));
+            Assert.IsTrue(Approximately(a, timeA.Time));
+            Assert.IsTrue(Approximately(b, timeB.Time));
+            Assert.IsTrue(Approximately(c, timeC.Time));
+            Assert.IsTrue(Approximately(d, timeD.Time));
+            Assert.IsTrue(Approximately(e, timeE.Time));
 
-            Assert.IsTrue(timeA.tickDurationOffset >= 0);
-            Assert.IsTrue(timeB.tickDurationOffset >= 0);
-            Assert.IsTrue(timeC.tickDurationOffset >= 0);
-            Assert.IsTrue(timeD.tickDurationOffset >= 0);
-            Assert.IsTrue(timeE.tickDurationOffset >= 0);
+            Assert.IsTrue(Approximately(timeA.TickOffset, 0));
+            Assert.IsTrue(Approximately(timeB.TickOffset, 0.2d / 60d));
+            Assert.IsTrue(Approximately(timeC.TickOffset, 0.4d / 60d));
+            Assert.IsTrue(Approximately(timeD.TickOffset, 0));
+            Assert.IsTrue(Approximately(timeE.TickOffset, 0));
         }
 
         [Test]
@@ -50,16 +50,16 @@ namespace MLAPI.EditorTests.Timing
         [Test]
         public void NetworkTimeAddFloatTest()
         {
-            float a = 34f;
-            float b = 17.32f;
-            float c = -42.4f;
-            float d = -6f;
-            float e = int.MaxValue / 61f;
+            double a = 34d;
+            double b = 17.32d;
+            double c = -42.4d;
+            double d = -6d;
+            double e = int.MaxValue / 61d;
 
-            float floatResultB = a + b;
-            float floatResultC = a + c;
-            float floatResultD = a + d;
-            float floatResultE = a + e;
+            double floatResultB = a + b;
+            double floatResultC = a + c;
+            double floatResultD = a + d;
+            double floatResultE = a + e;
 
             NetworkTime timeA = new NetworkTime(60, a);
             NetworkTime timeB = timeA + b;
@@ -67,25 +67,25 @@ namespace MLAPI.EditorTests.Timing
             NetworkTime timeD = timeA + d;
             NetworkTime timeE = timeA + e;
 
-            Assert.IsTrue(Mathf.Approximately(floatResultB, timeB.Time));
-            Assert.IsTrue(Mathf.Approximately(floatResultC, timeC.Time));
-            Assert.IsTrue(Mathf.Approximately(floatResultD, timeD.Time));
-            Assert.IsTrue(Mathf.Approximately(floatResultE, timeE.Time));
+            Assert.IsTrue(Approximately(floatResultB, timeB.Time));
+            Assert.IsTrue(Approximately(floatResultC, timeC.Time));
+            Assert.IsTrue(Approximately(floatResultD, timeD.Time));
+            Assert.IsTrue(Approximately(floatResultE, timeE.Time));
         }
 
         [Test]
         public void NetworkTimeSubFloatTest()
         {
-            float a = 34f;
-            float b = 17.32f;
-            float c = -42.4f;
-            float d = -6f;
-            float e = int.MaxValue / 61f;
+            double a = 34d;
+            double b = 17.32d;
+            double c = -42.4d;
+            double d = -6d;
+            double e = int.MaxValue / 61d;
 
-            float floatResultB = a - b;
-            float floatResultC = a - c;
-            float floatResultD = a - d;
-            float floatResultE = a - e;
+            double floatResultB = a - b;
+            double floatResultC = a - c;
+            double floatResultD = a - d;
+            double floatResultE = a - e;
 
             NetworkTime timeA = new NetworkTime(60, a);
             NetworkTime timeB = timeA - b;
@@ -93,26 +93,26 @@ namespace MLAPI.EditorTests.Timing
             NetworkTime timeD = timeA - d;
             NetworkTime timeE = timeA - e;
 
-            Assert.IsTrue(Mathf.Approximately(floatResultB, timeB.Time));
-            Assert.IsTrue(Mathf.Approximately(floatResultC, timeC.Time));
-            Assert.IsTrue(Mathf.Approximately(floatResultD, timeD.Time));
-            Assert.IsTrue(Mathf.Approximately(floatResultE, timeE.Time));
+            Assert.IsTrue(Approximately(floatResultB, timeB.Time));
+            Assert.IsTrue(Approximately(floatResultC, timeC.Time));
+            Assert.IsTrue(Approximately(floatResultD, timeD.Time));
+            Assert.IsTrue(Approximately(floatResultE, timeE.Time));
         }
 
 
         [Test]
         public void NetworkTimeAddNetworkTimeTest()
         {
-            float a = 34f;
-            float b = 17.32f;
-            float c = -42.4f;
-            float d = -6f;
-            float e = int.MaxValue / 61f;
+            double a = 34d;
+            double b = 17.32d;
+            double c = -42.4d;
+            double d = -6d;
+            double e = int.MaxValue / 61d;
 
-            float floatResultB = a + b;
-            float floatResultC = a + c;
-            float floatResultD = a + d;
-            float floatResultE = a + e;
+            double floatResultB = a + b;
+            double floatResultC = a + c;
+            double floatResultD = a + d;
+            double floatResultE = a + e;
 
             NetworkTime timeA = new NetworkTime(60, a);
             NetworkTime timeB = timeA + new NetworkTime(60, b);
@@ -120,25 +120,25 @@ namespace MLAPI.EditorTests.Timing
             NetworkTime timeD = timeA + new NetworkTime(60, d);
             NetworkTime timeE = timeA + new NetworkTime(60, e);
 
-            Assert.IsTrue(Mathf.Approximately(floatResultB, timeB.Time));
-            Assert.IsTrue(Mathf.Approximately(floatResultC, timeC.Time));
-            Assert.IsTrue(Mathf.Approximately(floatResultD, timeD.Time));
-            Assert.IsTrue(Mathf.Approximately(floatResultE, timeE.Time));
+            Assert.IsTrue(Approximately(floatResultB, timeB.Time));
+            Assert.IsTrue(Approximately(floatResultC, timeC.Time));
+            Assert.IsTrue(Approximately(floatResultD, timeD.Time));
+            Assert.IsTrue(Approximately(floatResultE, timeE.Time));
         }
 
         [Test]
         public void NetworkTimeSubNetworkTimeTest()
         {
-            float a = 34f;
-            float b = 17.32f;
-            float c = -42.4f;
-            float d = -6f;
-            float e = int.MaxValue / 61f;
+            double a = 34d;
+            double b = 17.32d;
+            double c = -42.4d;
+            double d = -6d;
+            double e = int.MaxValue / 61d;
 
-            float floatResultB = a - b;
-            float floatResultC = a - c;
-            float floatResultD = a - d;
-            float floatResultE = a - e;
+            double floatResultB = a - b;
+            double floatResultC = a - c;
+            double floatResultD = a - d;
+            double floatResultE = a - e;
 
             NetworkTime timeA = new NetworkTime(60, a);
             NetworkTime timeB = timeA - new NetworkTime(60, b);
@@ -146,10 +146,10 @@ namespace MLAPI.EditorTests.Timing
             NetworkTime timeD = timeA - new NetworkTime(60, d);
             NetworkTime timeE = timeA - new NetworkTime(60, e);
 
-            Assert.IsTrue(Mathf.Approximately(floatResultB, timeB.Time));
-            Assert.IsTrue(Mathf.Approximately(floatResultC, timeC.Time));
-            Assert.IsTrue(Mathf.Approximately(floatResultD, timeD.Time));
-            Assert.IsTrue(Mathf.Approximately(floatResultE, timeE.Time));
+            Assert.IsTrue(Approximately(floatResultB, timeB.Time));
+            Assert.IsTrue(Approximately(floatResultC, timeC.Time));
+            Assert.IsTrue(Approximately(floatResultD, timeD.Time));
+            Assert.IsTrue(Approximately(floatResultE, timeE.Time));
         }
 
         [Test]
@@ -204,13 +204,13 @@ namespace MLAPI.EditorTests.Timing
             {
                 startTime += step;
                 startTime2 += step;
-                Assert.IsTrue(Mathf.Approximately( startTime.Time, (startTime2 - dif).Time));
+                Assert.IsTrue(Approximately( startTime.Time, (startTime2 - dif).Time));
             }
 
             Assert.IsTrue(Approximately( startTime.Time, (startTime2 - dif).Time, maxAcceptableTotalOffset));
         }
 
-        private static bool Approximately(float a, float b, float epsilon)
+        private static bool Approximately(double a, double b, double epsilon = 0.000001d)
         {
             var dif = Math.Abs(a - b);
             return dif <= epsilon;

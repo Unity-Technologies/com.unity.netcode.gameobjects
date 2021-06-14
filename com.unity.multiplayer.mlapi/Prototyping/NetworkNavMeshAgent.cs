@@ -48,7 +48,7 @@ namespace MLAPI.Prototyping
         }
 
         private Vector3 m_LastDestination = Vector3.zero;
-        private float m_LastCorrectionTime = 0f;
+        private double m_LastCorrectionTime = 0d;
 
         private void Update()
         {

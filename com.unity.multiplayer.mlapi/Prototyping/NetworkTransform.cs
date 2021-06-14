@@ -13,7 +13,7 @@ namespace MLAPI.Prototyping
     {
         internal class ClientSendInfo
         {
-            public float LastSent;
+            public double LastSent;
             public Vector3? LastMissedPosition;
             public Quaternion? LastMissedRotation;
         }
@@ -80,7 +80,7 @@ namespace MLAPI.Prototyping
         private Vector3 m_LerpEndPos;
         private Quaternion m_LerpEndRot;
 
-        private float m_LastSendTime;
+        private double m_LastSendTime;
         private Vector3 m_LastSentPos;
         private Quaternion m_LastSentRot;
 

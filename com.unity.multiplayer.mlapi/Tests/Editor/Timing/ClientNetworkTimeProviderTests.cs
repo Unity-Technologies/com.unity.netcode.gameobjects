@@ -10,7 +10,7 @@ namespace MLAPI.EditorTests.Timing
     /// </summary>
     public class ClientNetworkTimeProviderTests
     {
-        private const float k_AcceptableRttOffset = 0.04f; // 40ms offset is fine
+        private const double k_AcceptableRttOffset = 0.04d; // 40ms offset is fine
 
         [Test]
         public void InitializeClientTest()
@@ -76,7 +76,7 @@ namespace MLAPI.EditorTests.Timing
 
             // difference between first and second offset should be minimal
             var dif = offsetToTarget - newOffsetToTarget;
-            Assert.IsTrue(Mathf.Abs(dif) < 0.01f); // less than 10ms
+            Assert.IsTrue(Math.Abs(dif) < 0.01d); // less than 10ms
 
         }
 
@@ -186,7 +186,7 @@ namespace MLAPI.EditorTests.Timing
                 networkStats.Rtt = rttSteps2[step]; // note; uses new rtt steps
 
                 // after hard reset time should stay close to rtt
-                Assert.IsTrue(Mathf.Abs((predictedTime - serverTime ).Time - networkStats.Rtt - clientNetworkTimeProvider.TargetServerBufferTime) < k_AcceptableRttOffset);
+                Assert.IsTrue(Math.Abs((predictedTime - serverTime ).Time - networkStats.Rtt - clientNetworkTimeProvider.TargetServerBufferTime) < k_AcceptableRttOffset);
             });
         }
 

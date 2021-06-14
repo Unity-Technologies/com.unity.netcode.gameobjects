@@ -10,7 +10,7 @@ namespace MLAPI.Timing
     public class ServerNetworkTimeProvider : INetworkTimeProvider
     {
         /// <inheritdoc/>
-        public bool AdvanceTime(ref NetworkTime predictedTime, ref NetworkTime serverTime, float deltaTime)
+        public bool AdvanceTime(ref NetworkTime predictedTime, ref NetworkTime serverTime, double deltaTime)
         {
             predictedTime += deltaTime;
             serverTime += deltaTime;

@@ -63,7 +63,7 @@ namespace MLAPI.Prototyping
             }
         }
 
-        public float SendRate = 0.1f;
+        public double SendRate = 0.1d;
 
         [SerializeField]
         private Animator m_Animator;
@@ -124,7 +124,7 @@ namespace MLAPI.Prototyping
             }
         }
 
-        private float m_NextSendTime = 0.0f;
+        private double m_NextSendTime = 0.0d;
 
         private bool CheckSendRate()
         {

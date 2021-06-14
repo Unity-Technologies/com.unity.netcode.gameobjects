@@ -25,7 +25,7 @@ namespace MLAPI.EditorTests.Timing
 
             TimingTestHelper.ApplySteps(serverTimeProvider, steps, ref predictedTime, ref serverTime, step =>
             {
-                Assert.IsTrue(Mathf.Approximately(serverTime.Time, predictedTime.Time));
+                Assert.IsTrue(Mathf.Approximately(serverTime.TimeAsFloat, predictedTime.TimeAsFloat));
             } );
 
             Assert.IsTrue(serverTime.Time > startTime.Time);

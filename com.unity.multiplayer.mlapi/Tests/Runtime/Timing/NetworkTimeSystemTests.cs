@@ -45,8 +45,8 @@ namespace MLAPI.RuntimeTests.Timing
             while (timeSystem.PredictedTime.Time < 3f)
             {
                 yield return null;
-                Assert.AreEqual(Mathf.FloorToInt(timeSystem.PredictedTime.Time / delta), NetworkManager.Singleton.PredictedTime.Tick );
-                Assert.AreEqual(Mathf.FloorToInt(timeSystem.ServerTime.Time / delta), NetworkManager.Singleton.ServerTime.Tick );
+                Assert.AreEqual(Mathf.FloorToInt((timeSystem.PredictedTime.TimeAsFloat / delta)), NetworkManager.Singleton.PredictedTime.Tick );
+                Assert.AreEqual(Mathf.FloorToInt((timeSystem.ServerTime.TimeAsFloat / delta)), NetworkManager.Singleton.ServerTime.Tick );
             }
         }
 

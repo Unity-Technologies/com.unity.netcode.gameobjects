@@ -16,7 +16,7 @@ namespace MLAPI.Timing
         /// <param name="serverTime">The server time to advance.</param>
         /// <param name="deltaTime">The delta time which passed.</param>
         /// <returns>false if advancing the the time succeeded; otherwise true if there was a hard correction.</returns>
-        public bool AdvanceTime(ref NetworkTime predictedTime, ref NetworkTime serverTime, float deltaTime);
+        public bool AdvanceTime(ref NetworkTime predictedTime, ref NetworkTime serverTime, double deltaTime);
 
         /// <summary>
         /// Called once on clients only to initialize time. This function needs to set <see cref="predictedTime"/> to a value which is at least expected RTT ahead of server time.
