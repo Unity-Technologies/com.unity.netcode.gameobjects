@@ -504,6 +504,7 @@ namespace MLAPI
                         s_Touched.UnionWith(spawnedObjs);
                         foreach (var sobj in spawnedObjs)
                         {
+                            // todo: check network hidden/shown state here and filter accordingly
                             // Sync just the variables for just the objects this client sees
                             for (int k = 0; k < sobj.ChildNetworkBehaviours.Count; k++)
                             {
