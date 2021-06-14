@@ -78,7 +78,7 @@ namespace MLAPI
 
         public NetworkTime LocalTime => NetworkTimeSystem?.LocalTime ?? new NetworkTime();
 
-        public NetworkTime ServerTime  => NetworkTimeSystem?.ServerTime ?? new NetworkTime();
+        public NetworkTime ServerTime => NetworkTimeSystem?.ServerTime ?? new NetworkTime();
 
         //private float m_NetworkTimeOffset;
         private float m_CurrentNetworkTimeOffset;
@@ -855,7 +855,7 @@ namespace MLAPI
             }
         }
 
-     //   private float m_LastEventTickTime;
+        //   private float m_LastEventTickTime;
         private float m_LastTimeSyncTime;
 
         private void OnNetworkEarlyUpdate()
@@ -866,7 +866,7 @@ namespace MLAPI
             if (IsListening)
             {
                 PerformanceDataManager.Increment(ProfilerConstants.ReceiveTickRate);
-                    ProfilerStatManager.RcvTickRate.Record();
+                ProfilerStatManager.RcvTickRate.Record();
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                 s_ReceiveTick.Begin();
@@ -896,7 +896,7 @@ namespace MLAPI
 #endif
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-                    s_ReceiveTick.End();
+                s_ReceiveTick.End();
 #endif
             }
         }

@@ -45,8 +45,8 @@ namespace MLAPI.RuntimeTests.Timing
             while (timeSystem.LocalTime.Time < 3f)
             {
                 yield return null;
-                Assert.AreEqual(Mathf.FloorToInt((timeSystem.LocalTime.TimeAsFloat / delta)), NetworkManager.Singleton.LocalTime.Tick );
-                Assert.AreEqual(Mathf.FloorToInt((timeSystem.ServerTime.TimeAsFloat / delta)), NetworkManager.Singleton.ServerTime.Tick );
+                Assert.AreEqual(Mathf.FloorToInt((timeSystem.LocalTime.TimeAsFloat / delta)), NetworkManager.Singleton.LocalTime.Tick);
+                Assert.AreEqual(Mathf.FloorToInt((timeSystem.ServerTime.TimeAsFloat / delta)), NetworkManager.Singleton.ServerTime.Tick);
             }
         }
 
@@ -94,7 +94,7 @@ namespace MLAPI.RuntimeTests.Timing
             Assert.True(m_ServerTimePreviousUpdate.Time < serverTime.Time);
 
             // time should be further then last fixed step in update
-            Assert.True(m_LocalTimePreviousFixedUpdate.FixedTime < localTime.Time );
+            Assert.True(m_LocalTimePreviousFixedUpdate.FixedTime < localTime.Time);
 
             // we should be in same or further tick then fixed update
             Assert.True(m_LocalTimePreviousFixedUpdate.Tick <= localTime.Tick);

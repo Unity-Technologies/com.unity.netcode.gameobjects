@@ -14,7 +14,7 @@ namespace MLAPI.EditorTests.Timing
         public static List<float> GetRandomTimeSteps(float totalDuration, float min, float max, int seed)
         {
             var random = new Random(seed);
-            List<float> steps = new List<float>();
+            var steps = new List<float>();
 
             while (totalDuration > 0f)
             {
@@ -60,7 +60,7 @@ namespace MLAPI.EditorTests.Timing
         }
     }
 
-    public class DummyNetworkStats: INetworkStats
+    public class DummyNetworkStats : INetworkStats
     {
         public float Rtt { get; set; }
 
