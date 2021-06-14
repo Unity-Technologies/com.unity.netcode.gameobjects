@@ -12,8 +12,6 @@ namespace MLAPI.RuntimeTests
     {
         private GameObject m_Prefab;
 
-        private int m_OriginalTargetFrameRate;
-
         /// <summary>
         /// Tests that instantiating a <see cref="NetworkObject"/> and destroying without spawning it
         /// does not run <see cref="NetworkBehaviour.OnNetworkSpawn"/> or <see cref="NetworkBehaviour.OnNetworkSpawn"/>.
@@ -47,20 +45,6 @@ namespace MLAPI.RuntimeTests
             public override void OnNetworkDespawn()
             {
                 Assert.Fail("Depawn should not be called on not spawned object");
-            }
-        }
-
-        [SetUp]
-        public void SetUp()
-        {
-            // Just always track the current target frame rate (will be re-applied upon TearDown)
-            m_OriginalTargetFrameRate = Application.targetFrameRate;
-
-            // Since we use frame count as a metric, we need to assure it runs at a "common update rate"
-            // between platforms (i.e. Ubuntu seems to run at much higher FPS when set to -1)
-            if (Application.targetFrameRate < 0 || Application.targetFrameRate > 120)
-            {
-                Application.targetFrameRate = 120;
             }
         }
 
@@ -216,12 +200,6 @@ namespace MLAPI.RuntimeTests
                 Object.Destroy(m_Prefab);
                 m_Prefab = null;
             }
-
-            // Shutdown and clean up both of our NetworkManager instances
-            MultiInstanceHelpers.Destroy();
-
-            // Set the application's target frame rate back to its original value
-            Application.targetFrameRate = m_OriginalTargetFrameRate;
         }
     }
 }
