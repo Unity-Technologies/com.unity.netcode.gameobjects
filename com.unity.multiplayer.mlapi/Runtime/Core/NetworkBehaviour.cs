@@ -1,7 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Diagnostics;
 using UnityEngine;
 using System.Reflection;
 using System.Linq;
@@ -15,7 +13,6 @@ using MLAPI.Profiling;
 using MLAPI.Reflection;
 using MLAPI.Serialization;
 using MLAPI.Serialization.Pooled;
-using MLAPI.Spawning;
 using MLAPI.Transports;
 using Unity.Profiling;
 
@@ -27,15 +24,8 @@ namespace MLAPI
     public abstract class NetworkBehaviour : MonoBehaviour
     {
 #pragma warning disable IDE1006 // disable naming rule violation check
-        [Browsable(false)]
-        [EditorBrowsable(EditorBrowsableState.Never)]
-#if UNITY_2020_2_OR_NEWER
         // RuntimeAccessModifiersILPP will make this `protected`
-        internal enum __NExec
-#else
-        [Obsolete("Please do not use, will no longer be exposed in the future versions (framework internal)")]
-        public enum __NExec
-#endif
+        internal enum __RpcExecStage
 #pragma warning restore IDE1006 // restore naming rule violation check
         {
             None = 0,
@@ -43,37 +33,17 @@ namespace MLAPI
             Client = 2
         }
 
-        // todo: transitional. For the next release, only Snapshot should remain
-        // The booleans allow iterative development and testing in the meantime
-        static private bool s_UseClassicDelta = true;
-        static private bool s_UseSnapshot = false;
-
-#pragma warning disable 414
+#pragma warning disable 414 // disable assigned but its value is never used
 #pragma warning disable IDE1006 // disable naming rule violation check
         [NonSerialized]
-        [Browsable(false)]
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-#if UNITY_2020_2_OR_NEWER
         // RuntimeAccessModifiersILPP will make this `protected`
-        internal __NExec __nexec = __NExec.None;
-#else
-        [Obsolete("Please do not use, will no longer be exposed in the future versions (framework internal)")]
-        public __NExec __nexec = __NExec.None;
-#endif
-#pragma warning restore 414
-#pragma warning restore IDE1006 // restore naming rule violation check
+        internal __RpcExecStage __rpc_exec_stage = __RpcExecStage.None;
+#pragma warning restore 414 // restore assigned but its value is never used
+#pragma warning restore IDE1006 // restore naming rule violation
 
 #pragma warning disable IDE1006 // disable naming rule violation check
-        [Browsable(false)]
-        [EditorBrowsable(EditorBrowsableState.Never)]
-#if UNITY_2020_2_OR_NEWER
         // RuntimeAccessModifiersILPP will make this `protected`
         internal NetworkSerializer __beginSendServerRpc(ServerRpcParams serverRpcParams, RpcDelivery rpcDelivery)
-#else
-        [Obsolete("Please do not use, will no longer be exposed in the future versions (framework internal)")]
-        public NetworkSerializer __beginSendServerRpc(ServerRpcParams serverRpcParams, RpcDelivery rpcDelivery)
-#endif
 #pragma warning restore IDE1006 // restore naming rule violation check
         {
             PooledNetworkWriter writer;
@@ -110,15 +80,8 @@ namespace MLAPI
         }
 
 #pragma warning disable IDE1006 // disable naming rule violation check
-        [Browsable(false)]
-        [EditorBrowsable(EditorBrowsableState.Never)]
-#if UNITY_2020_2_OR_NEWER
         // RuntimeAccessModifiersILPP will make this `protected`
         internal void __endSendServerRpc(NetworkSerializer serializer, ServerRpcParams serverRpcParams, RpcDelivery rpcDelivery)
-#else
-        [Obsolete("Please do not use, will no longer be exposed in the future versions (framework internal)")]
-        public void __endSendServerRpc(NetworkSerializer serializer, ServerRpcParams serverRpcParams, RpcDelivery rpcDelivery)
-#endif
 #pragma warning restore IDE1006 // restore naming rule violation check
         {
             if (serializer == null)
@@ -138,15 +101,8 @@ namespace MLAPI
         }
 
 #pragma warning disable IDE1006 // disable naming rule violation check
-        [Browsable(false)]
-        [EditorBrowsable(EditorBrowsableState.Never)]
-#if UNITY_2020_2_OR_NEWER
         // RuntimeAccessModifiersILPP will make this `protected`
         internal NetworkSerializer __beginSendClientRpc(ClientRpcParams clientRpcParams, RpcDelivery rpcDelivery)
-#else
-        [Obsolete("Please do not use, will no longer be exposed in the future versions (framework internal)")]
-        public NetworkSerializer __beginSendClientRpc(ClientRpcParams clientRpcParams, RpcDelivery rpcDelivery)
-#endif
 #pragma warning restore IDE1006 // restore naming rule violation check
         {
             PooledNetworkWriter writer;
@@ -215,15 +171,8 @@ namespace MLAPI
         }
 
 #pragma warning disable IDE1006 // disable naming rule violation check
-        [Browsable(false)]
-        [EditorBrowsable(EditorBrowsableState.Never)]
-#if UNITY_2020_2_OR_NEWER
         // RuntimeAccessModifiersILPP will make this `protected`
         internal void __endSendClientRpc(NetworkSerializer serializer, ClientRpcParams clientRpcParams, RpcDelivery rpcDelivery)
-#else
-        [Obsolete("Please do not use, will no longer be exposed in the future versions (framework internal)")]
-        public void __endSendClientRpc(NetworkSerializer serializer, ClientRpcParams clientRpcParams, RpcDelivery rpcDelivery)
-#endif
 #pragma warning restore IDE1006 // restore naming rule violation check
         {
             if (serializer == null)
@@ -347,26 +296,33 @@ namespace MLAPI
         /// </summary>
         public ulong OwnerClientId => NetworkObject.OwnerClientId;
 
-        internal bool NetworkStartInvoked = false;
-        internal bool InternalNetworkStartInvoked = false;
-
         /// <summary>
         /// Gets called when message handlers are ready to be registered and the network is setup
         /// </summary>
-        public virtual void NetworkStart() { }
+        public virtual void OnNetworkSpawn() { }
 
         /// <summary>
-        /// Gets called when message handlers are ready to be registered and the network is setup. Provides a Payload if it was provided
+        /// Gets called when the <see cref="NetworkObject"/> gets spawned, message handlers are ready to be registered and the network is setup. Provides a Payload if it was provided
         /// </summary>
         /// <param name="stream">The stream containing the spawn payload</param>
-        public virtual void NetworkStart(Stream stream)
+        public virtual void OnNetworkSpawn(Stream stream)
         {
-            NetworkStart();
+            OnNetworkSpawn();
         }
 
-        internal void InternalNetworkStart()
+        /// <summary>
+        /// Gets called when the <see cref="NetworkObject"/> gets de-spawned. Is called both on the server and clients.
+        /// </summary>
+        public virtual void OnNetworkDespawn() { }
+
+        internal void InternalOnNetworkSpawn()
         {
             InitializeVariables();
+        }
+
+        internal void InternalOnNetworkDespawn()
+        {
+
         }
 
         /// <summary>
@@ -444,6 +400,10 @@ namespace MLAPI
                     }
 
                     instance.SetNetworkBehaviour(this);
+
+                    var instanceNameProperty = fieldType.GetProperty(nameof(INetworkVariable.Name));
+                    instanceNameProperty?.SetValue(instance, sortedFields[i].Name);
+
                     NetworkVariableFields.Add(instance);
                 }
             }
@@ -579,7 +539,7 @@ namespace MLAPI
                 return;
             }
 
-            if (s_UseSnapshot)
+            if (NetworkManager.UseSnapshot)
             {
                 for (int k = 0; k < NetworkVariableFields.Count; k++)
                 {
@@ -587,7 +547,7 @@ namespace MLAPI
                 }
             }
 
-            if (s_UseClassicDelta)
+            if (NetworkManager.UseClassicDelta)
             {
                 for (int j = 0; j < m_ChannelMappedNetworkVariableIndexes.Count; j++)
                 {
@@ -640,10 +600,6 @@ namespace MLAPI
                                 if (shouldWrite)
                                 {
                                     writtenAny = true;
-
-                                // write the network tick at which this NetworkVariable was modified
-                                // TODO this should get delta compressed once we move to delta snapshots
-                                writer.WriteInt32Packed(NetworkVariableFields[k].LastModifiedTick);
 
                                     if (NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                                     {
@@ -750,12 +706,9 @@ namespace MLAPI
                         return;
                     }
 
-                    // read the predicted tick at which this variable was written.
-                    int remoteTick = reader.ReadInt32Packed();
-
                     long readStartPos = stream.Position;
 
-                    networkVariableList[i].ReadDelta(stream, networkManager.IsServer, remoteTick);
+                    networkVariableList[i].ReadDelta(stream, networkManager.IsServer);
                     PerformanceDataManager.Increment(ProfilerConstants.NetworkVarDeltas);
 
                     ProfilerStatManager.NetworkVarsRcvd.Record();
@@ -842,7 +795,7 @@ namespace MLAPI
 
                     long readStartPos = stream.Position;
 
-                    networkVariableList[i].ReadField(stream, NetworkTimeSystem.NoTick); // TODO broken this use the correct tick
+                    networkVariableList[i].ReadField(stream);
                     PerformanceDataManager.Increment(ProfilerConstants.NetworkVarUpdates);
 
                     ProfilerStatManager.NetworkVarsRcvd.Record();
@@ -957,7 +910,7 @@ namespace MLAPI
 
                     long readStartPos = stream.Position;
 
-                    networkVariableList[j].ReadField(stream, NetworkTimeSystem.NoTick); // TODO broken this should be server tick
+                    networkVariableList[j].ReadField(stream);
 
                     if (networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                     {

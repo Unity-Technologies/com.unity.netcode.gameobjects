@@ -148,6 +148,11 @@ namespace MLAPI
 
         public void NetworkUpdate(NetworkUpdateStage updateStage)
         {
+            if (!NetworkManager.UseSnapshot)
+            {
+                return;
+            }
+
             if (updateStage == NetworkUpdateStage.EarlyUpdate)
             {
                 if (m_NetworkManager.IsServer)
@@ -158,7 +163,7 @@ namespace MLAPI
                         SendSnapshot(clientId);
                     }
                 }
-                else
+                else if (m_NetworkManager.IsConnectedClient)
                 {
                     SendSnapshot(m_NetworkManager.ServerClientId);
                 }
@@ -312,7 +317,7 @@ namespace MLAPI
 
                     // todo --M1--
                     // Review whether tick still belong in netvar or in the snapshot table.
-                    nv.ReadDelta(m_ReceivedSnapshot.Stream, m_NetworkManager.IsServer, m_ReceivedSnapshot.Entries[i].TickWritten);
+                    nv.ReadDelta(m_ReceivedSnapshot.Stream, m_NetworkManager.IsServer);
                 }
 
                 m_ReceivedSnapshot.Entries[i].Fresh = false;

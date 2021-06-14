@@ -13,10 +13,6 @@ using Unity.CompilationPipeline.Common.Diagnostics;
 using Unity.CompilationPipeline.Common.ILPostProcessing;
 using UnityEngine;
 
-#if !UNITY_2019_4_OR_NEWER
-#error MLAPI requires Unity 2019.4 or newer
-#endif
-
 namespace MLAPI.Editor.CodeGen
 {
     internal static class CodeGenHelpers

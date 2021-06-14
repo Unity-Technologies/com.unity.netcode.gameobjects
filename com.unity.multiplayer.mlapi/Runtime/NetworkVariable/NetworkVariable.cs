@@ -19,9 +19,6 @@ namespace MLAPI.NetworkVariable
         /// </summary>
         public readonly NetworkVariableSettings Settings = new NetworkVariableSettings();
 
-        /// <inheritdoc />
-        public int LastModifiedTick { get; internal set; }
-
         /// <summary>
         /// Delegate type for value changed event
         /// </summary>
@@ -85,8 +82,6 @@ namespace MLAPI.NetworkVariable
                     return;
                 }
 
-                LastModifiedTick = NetworkManager.Singleton.PredictedTime.Tick;
-
                 m_IsDirty = true;
                 T previousValue = m_InternalValue;
                 m_InternalValue = value;
@@ -95,6 +90,12 @@ namespace MLAPI.NetworkVariable
         }
 
         private bool m_IsDirty = false;
+
+        /// <summary>
+        /// Gets or sets the name of the network variable's instance
+        /// (MemberInfo) where it was declared.
+        /// </summary>
+        public string Name { get; internal set; }
 
         /// <summary>
         /// Sets whether or not the variable needs to be delta synced
@@ -174,11 +175,13 @@ namespace MLAPI.NetworkVariable
             return true;
         }
 
-        public void ReadDelta(Stream stream, bool keepDirtyDelta, int remoteTick)
+        /// <summary>
+        /// Reads value from the reader and applies it
+        /// </summary>
+        /// <param name="stream">The stream to read the value from</param>
+        /// <param name="keepDirtyDelta">Whether or not the container should keep the dirty delta, or mark the delta as consumed</param>
+        public void ReadDelta(Stream stream, bool keepDirtyDelta)
         {
-            // TODO The change to the NetworkVariable should be ignored here if LastModified tick is newer then remote tick so that client authoritative writes work. But I'm afraid that this will break other stuff so I'm leaving it for now.
-            LastModifiedTick = remoteTick;
-
             using (var reader = PooledNetworkReader.Get(stream))
             {
                 T previousValue = m_InternalValue;
@@ -200,9 +203,9 @@ namespace MLAPI.NetworkVariable
         }
 
         /// <inheritdoc />
-        public void ReadField(Stream stream, int remoteTick)
+        public void ReadField(Stream stream)
         {
-            ReadDelta(stream, false, remoteTick);
+            ReadDelta(stream, false);
         }
 
         /// <inheritdoc />
