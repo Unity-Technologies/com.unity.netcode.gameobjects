@@ -191,7 +191,7 @@ namespace MLAPI.RuntimeTests
             if (CurrentNetworkManagerMode != NetworkManagerOperatingMode.None)
             {
                 // With some unit tests the Singleton can still be from a previous unit test
-                // depending upon the order of operations that occurred. 
+                // depending upon the order of operations that occurred.
                 if (NetworkManager.Singleton != NetworkManagerObject)
                 {
                     NetworkManagerObject.SetSingleton();
@@ -239,7 +239,7 @@ namespace MLAPI.RuntimeTests
             // clean up any game objects created with custom unit testing components
             foreach (var entry in InstantiatedGameObjects)
             {
-                UnityEngine.Object.Destroy(entry.Value);
+                UnityEngine.Object.DestroyImmediate(entry.Value);
             }
 
             InstantiatedGameObjects.Clear();
@@ -250,7 +250,7 @@ namespace MLAPI.RuntimeTests
                 Debug.Log($"{nameof(NetworkManager)} shutdown.");
 
                 StopNetworkManagerMode();
-                UnityEngine.Object.Destroy(NetworkManagerGameObject);
+                UnityEngine.Object.DestroyImmediate(NetworkManagerGameObject);
                 Debug.Log($"{nameof(NetworkManager)} destroyed.");
             }
             NetworkManagerGameObject = null;

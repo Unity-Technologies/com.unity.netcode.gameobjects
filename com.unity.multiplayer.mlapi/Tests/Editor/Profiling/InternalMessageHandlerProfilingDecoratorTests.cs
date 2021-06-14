@@ -89,14 +89,6 @@ namespace MLAPI.EditorTests.Profiling
         }
 
         [Test]
-        public void HandleTimeSyncCallsUnderlyingHandler()
-        {
-            m_Decorator.HandleTimeSync(0, null, 0.0f);
-
-            LogAssert.Expect(LogType.Log, nameof(m_Decorator.HandleTimeSync));
-        }
-
-        [Test]
         public void HandleNetworkVariableDeltaCallsUnderlyingHandler()
         {
             m_Decorator.HandleNetworkVariableDelta(0, null, null, default);

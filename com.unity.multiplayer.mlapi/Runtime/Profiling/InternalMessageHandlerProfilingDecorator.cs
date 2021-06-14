@@ -17,7 +17,6 @@ namespace MLAPI.Profiling
         private readonly ProfilerMarker m_HandleChangeOwner = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleChangeOwner)}");
         private readonly ProfilerMarker m_HandleAddObjects = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleAddObjects)}");
         private readonly ProfilerMarker m_HandleDestroyObjects = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleDestroyObjects)}");
-        private readonly ProfilerMarker m_HandleTimeSync = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleTimeSync)}");
         private readonly ProfilerMarker m_HandleNetworkVariableDelta = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleNetworkVariableDelta)}");
         private readonly ProfilerMarker m_HandleUnnamedMessage = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleUnnamedMessage)}");
         private readonly ProfilerMarker m_HandleNamedMessage = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleNamedMessage)}");
@@ -25,9 +24,9 @@ namespace MLAPI.Profiling
         private readonly ProfilerMarker m_RpcReceiveQueueItemServerRpc = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(RpcReceiveQueueItem)}.{nameof(RpcQueueContainer.QueueItemType.ServerRpc)}");
         private readonly ProfilerMarker m_RpcReceiveQueueItemClientRpc = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(RpcReceiveQueueItem)}.{nameof(RpcQueueContainer.QueueItemType.ClientRpc)}");
         private readonly ProfilerMarker m_HandleAllClientsSwitchSceneCompleted = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleAllClientsSwitchSceneCompleted)}");
-        
+
         private readonly IInternalMessageHandler m_MessageHandler;
-        
+
         internal InternalMessageHandlerProfilingDecorator(IInternalMessageHandler messageHandler)
         {
             m_MessageHandler = messageHandler;
@@ -114,15 +113,6 @@ namespace MLAPI.Profiling
             m_MessageHandler.HandleDestroyObjects(clientId, stream);
 
             m_HandleDestroyObjects.End();
-        }
-
-        public void HandleTimeSync(ulong clientId, Stream stream, float receiveTime)
-        {
-            m_HandleTimeSync.Begin();
-
-            m_MessageHandler.HandleTimeSync(clientId, stream, receiveTime);
-
-            m_HandleTimeSync.End();
         }
 
         public void HandleNetworkVariableDelta(ulong clientId, Stream stream, Action<ulong, PreBufferPreset> bufferCallback, PreBufferPreset bufferPreset)
