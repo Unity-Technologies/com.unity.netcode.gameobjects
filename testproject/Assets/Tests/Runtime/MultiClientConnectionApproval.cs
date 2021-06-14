@@ -20,22 +20,6 @@ namespace TestProject.RuntimeTests
         private GameObject m_PlayerPrefab;
         private GameObject m_PlayerPrefabOverride;
 
-        private int m_OriginalTargetFrameRate;
-
-        [SetUp]
-        public void SetUp()
-        {
-            // Just always track the current target frame rate (will be re-applied upon TearDown)
-            m_OriginalTargetFrameRate = Application.targetFrameRate;
-
-            // Since we use frame count as a metric, we need to assure it runs at a "common update rate"
-            // between platforms (i.e. Ubuntu seems to run at much higher FPS when set to -1)
-            if (Application.targetFrameRate < 0 || Application.targetFrameRate > 120)
-            {
-                Application.targetFrameRate = 120;
-            }
-        }
-
         /// <summary>
         /// Tests connection approval and connection approval failure
         /// </summary>
@@ -44,7 +28,7 @@ namespace TestProject.RuntimeTests
         public IEnumerator ConnectionApproval()
         {
             m_ConnectionToken = "ThisIsTheRightPassword";
-            return ConnectionApprovalHandler(3,1);
+            return ConnectionApprovalHandler(3, 1);
         }
 
         /// <summary>
@@ -68,12 +52,6 @@ namespace TestProject.RuntimeTests
         /// <returns></returns>
         private IEnumerator ConnectionApprovalHandler(int numClients, int failureTestCount = 1, bool prefabOverride = false)
         {
-            Debug.Log($"Application.targetFrameRate = {Application.targetFrameRate}");
-            if (Application.targetFrameRate == -1 || Application.targetFrameRate > 120)
-            {
-                Application.targetFrameRate = 120;
-            }
-
             var startFrameCount = Time.frameCount;
             var startTime = Time.realtimeSinceStartup;
 
@@ -155,7 +133,7 @@ namespace TestProject.RuntimeTests
             // If we are doing player prefab overrides, then check all of the players to make sure they spawned the appropriate NetworkObject
             if (prefabOverride)
             {
-                foreach(var networkClient in server.ConnectedClientsList)
+                foreach (var networkClient in server.ConnectedClientsList)
                 {
                     Assert.IsNotNull(networkClient.PlayerObject);
                     Assert.AreEqual(networkClient.PlayerObject.GlobalObjectIdHash, m_PrefabOverrideGlobalObjectIdHash);
@@ -170,7 +148,6 @@ namespace TestProject.RuntimeTests
             server.ConnectionApprovalCallback -= ConnectionApprovalCallback;
             server.StopHost();
 
-            Debug.Log($"Application.targetFrameRate = {Application.targetFrameRate}.");
             Debug.Log($"Total frames updated = {Time.frameCount - startFrameCount} within {Time.realtimeSinceStartup - startTime} seconds.");
         }
 
@@ -185,7 +162,7 @@ namespace TestProject.RuntimeTests
             string approvalToken = Encoding.ASCII.GetString(connectionData);
             var isApproved = approvalToken == m_ConnectionToken;
 
-            if(isApproved)
+            if (isApproved)
             {
                 m_SuccessfulConnections++;
             }
@@ -221,9 +198,6 @@ namespace TestProject.RuntimeTests
 
             // Shutdown and clean up both of our NetworkManager instances
             MultiInstanceHelpers.Destroy();
-
-            // Set the application's target frame rate back to its original value
-            Application.targetFrameRate = m_OriginalTargetFrameRate;
         }
     }
 }

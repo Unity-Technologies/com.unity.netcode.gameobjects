@@ -13,26 +13,8 @@ namespace TestProject.RuntimeTests
     public class RPCTestsAutomated
     {
         private bool m_TimedOut;
-
         private int m_MaxFrames;
-
         private GameObject m_PlayerPrefab;
-
-        private int m_OriginalTargetFrameRate;
-
-        [SetUp]
-        public void SetUp()
-        {
-            // Just always track the current target frame rate (will be re-applied upon TearDown)
-            m_OriginalTargetFrameRate = Application.targetFrameRate;
-
-            // Since we use frame count as a metric, we need to assure it runs at a "common update rate"
-            // between platforms (i.e. Ubuntu seems to run at much higher FPS when set to -1)
-            if (Application.targetFrameRate < 0 || Application.targetFrameRate > 120)
-            {
-                Application.targetFrameRate = 120;
-            }
-        }
 
         /// <summary>
         /// Default Mode (Batched RPCs Enabled)
@@ -196,11 +178,9 @@ namespace TestProject.RuntimeTests
                 Object.Destroy(m_PlayerPrefab);
                 m_PlayerPrefab = null;
             }
+
             // Shutdown and clean up both of our NetworkManager instances
             MultiInstanceHelpers.Destroy();
-
-            // Set the application's target frame rate back to its original value
-            Application.targetFrameRate = m_OriginalTargetFrameRate;
         }
     }
 }
