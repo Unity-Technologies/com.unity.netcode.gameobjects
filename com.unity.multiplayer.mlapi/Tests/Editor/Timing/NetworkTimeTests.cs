@@ -32,11 +32,17 @@ namespace MLAPI.EditorTests.Timing
             Assert.IsTrue(Approximately(d, timeD.Time));
             Assert.IsTrue(Approximately(e, timeE.Time));
 
+            Assert.IsTrue(Approximately(timeA.Tick * timeA.FixedDeltaTime + timeA.TickOffset, timeA.Time, 0.0001d));
+            Assert.IsTrue(Approximately(timeB.Tick * timeB.FixedDeltaTime + timeB.TickOffset, timeB.Time, 0.0001d));
+            Assert.IsTrue(Approximately(timeC.Tick * timeC.FixedDeltaTime + timeC.TickOffset, timeC.Time, 0.0001d));
+            Assert.IsTrue(Approximately(timeD.Tick * timeD.FixedDeltaTime + timeD.TickOffset, timeD.Time, 0.0001d));
+            Assert.IsTrue(Approximately(timeE.Tick * timeE.FixedDeltaTime + timeE.TickOffset, timeE.Time, 10d));
+
             Assert.IsTrue(Approximately(timeA.TickOffset, 0));
             Assert.IsTrue(Approximately(timeB.TickOffset, 0.2d / 60d));
-            Assert.IsTrue(Approximately(timeC.TickOffset, 0.4d / 60d));
+            Assert.IsTrue(Approximately(timeC.TickOffset, 1d / 60d - 0.4d / 60d));
             Assert.IsTrue(Approximately(timeD.TickOffset, 0));
-            Assert.IsTrue(Approximately(timeE.TickOffset, 0));
+            Assert.IsTrue(Approximately(timeE.TickOffset, 0.00082)); // Int.Max / 61 / (1/60) to get divisor then: Int.Max - divisor * 1 / 60
         }
 
         [Test]

@@ -107,9 +107,11 @@ namespace MLAPI.Timing
             m_CachedTick = (int)d;
             m_CachedTickOffset = ((d - Math.Truncate(d)) * m_TickInterval);
 
+            // This handles negative time, decreases tick by 1 and makes offset positive.
             if (m_CachedTick < 0 && m_CachedTickOffset != 0d)
             {
-                
+                m_CachedTick--;
+                m_CachedTickOffset = m_TickInterval + m_CachedTickOffset;
             }
         }
 
