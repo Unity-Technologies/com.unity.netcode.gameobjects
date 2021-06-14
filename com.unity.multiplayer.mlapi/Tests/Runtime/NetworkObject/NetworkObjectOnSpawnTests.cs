@@ -174,6 +174,9 @@ namespace MLAPI.RuntimeTests
             {
                 Assert.AreEqual(1, clientInstance.OnNetworkDespawnCalledCount);
             }
+
+            // Shutdown and clean up both of our NetworkManager instances
+            MultiInstanceHelpers.Destroy();
         }
 
         private class TrackOnSpawnFunctions : NetworkBehaviour
