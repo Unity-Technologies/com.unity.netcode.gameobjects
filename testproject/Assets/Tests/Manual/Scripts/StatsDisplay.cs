@@ -40,7 +40,7 @@ namespace TestProject.ManualTests
             }
         }
 
-        public override void NetworkStart()
+        public override void OnNetworkSpawn()
         {
             if (NetworkManager.IsServer)
             {

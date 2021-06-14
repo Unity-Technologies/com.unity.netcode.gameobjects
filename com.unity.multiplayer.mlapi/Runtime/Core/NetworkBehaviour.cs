@@ -295,9 +295,6 @@ namespace MLAPI
         /// </summary>
         public ulong OwnerClientId => NetworkObject.OwnerClientId;
 
-        internal bool NetworkStartInvoked = false;
-        internal bool InternalNetworkStartInvoked = false;
-
         /// <summary>
         /// Stores the network tick at the NetworkBehaviourUpdate time
         /// This allows sending NetworkVariables not more often than once per network tick, regardless of the update rate
@@ -307,20 +304,30 @@ namespace MLAPI
         /// <summary>
         /// Gets called when message handlers are ready to be registered and the network is setup
         /// </summary>
-        public virtual void NetworkStart() { }
+        public virtual void OnNetworkSpawn() { }
 
         /// <summary>
-        /// Gets called when message handlers are ready to be registered and the network is setup. Provides a Payload if it was provided
+        /// Gets called when the <see cref="NetworkObject"/> gets spawned, message handlers are ready to be registered and the network is setup. Provides a Payload if it was provided
         /// </summary>
         /// <param name="stream">The stream containing the spawn payload</param>
-        public virtual void NetworkStart(Stream stream)
+        public virtual void OnNetworkSpawn(Stream stream)
         {
-            NetworkStart();
+            OnNetworkSpawn();
         }
 
-        internal void InternalNetworkStart()
+        /// <summary>
+        /// Gets called when the <see cref="NetworkObject"/> gets de-spawned. Is called both on the server and clients.
+        /// </summary>
+        public virtual void OnNetworkDespawn() { }
+
+        internal void InternalOnNetworkSpawn()
         {
             InitializeVariables();
+        }
+
+        internal void InternalOnNetworkDespawn()
+        {
+
         }
 
         /// <summary>
