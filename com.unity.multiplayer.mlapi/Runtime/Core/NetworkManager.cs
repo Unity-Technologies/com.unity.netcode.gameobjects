@@ -261,7 +261,7 @@ namespace MLAPI
                 };
             }
 
-            // If the scene is dirty and the asset database is not updating then we update NetworkPrefab information
+            // If the scene is dirty and the asset database is not currently updating then we can update NetworkPrefab information
             if (activeScene.isDirty && !UnityEditor.EditorApplication.isUpdating)
             {
                 // During OnValidate we will always clear out NetworkPrefabOverrideLinks and rebuild it
