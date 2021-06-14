@@ -83,7 +83,7 @@ namespace MLAPI.NetworkVariable.Collections
         public void ResetDirty()
         {
             m_DirtyEvents.Clear();
-            LastSyncedTime = m_NetworkBehaviour.NetworkManager.PredictedTime;
+            LastSyncedTime = m_NetworkBehaviour.NetworkManager.LocalTime;
         }
 
         /// <inheritdoc />
@@ -104,7 +104,7 @@ namespace MLAPI.NetworkVariable.Collections
                 return false;
             }
 
-            if (m_NetworkBehaviour.NetworkManager.PredictedTime.FixedTime - LastSyncedTime.FixedTime >= (1f / Settings.SendTickrate))
+            if (m_NetworkBehaviour.NetworkManager.LocalTime.FixedTime - LastSyncedTime.FixedTime >= (1f / Settings.SendTickrate))
             {
                 return true;
             }

@@ -76,7 +76,7 @@ namespace MLAPI
 
         public NetworkTimeSystem NetworkTimeSystem { get; private set; }
 
-        public NetworkTime PredictedTime => NetworkTimeSystem?.PredictedTime ?? new NetworkTime();
+        public NetworkTime LocalTime => NetworkTimeSystem?.LocalTime ?? new NetworkTime();
 
         public NetworkTime ServerTime  => NetworkTimeSystem?.ServerTime ?? new NetworkTime();
 
@@ -902,12 +902,12 @@ namespace MLAPI
         }
 
         /// <summary>
-        /// This function runs once whenever the predicted tick is incremented and is responsible for the following (in order):
+        /// This function runs once whenever the local tick is incremented and is responsible for the following (in order):
         /// - collect commands/inputs and send them to the server (TBD)
         /// - call NetworkFixedUpdate on all NetworkBehaviours in prediction/client authority mode
         /// - create a snapshot from resulting state
         /// </summary>
-        private void OnNetworkTick(NetworkTime predictedTime)
+        private void OnNetworkTick(NetworkTime localTime)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_EventTick.Begin();
@@ -954,10 +954,10 @@ namespace MLAPI
 
         private IEnumerator ApprovalTimeout(ulong clientId)
         {
-            NetworkTime timeStarted = PredictedTime;
+            NetworkTime timeStarted = LocalTime;
 
             //We yield every frame incase a pending client disconnects and someone else gets its connection id
-            while ((PredictedTime - timeStarted).Time < NetworkConfig.ClientConnectionBufferTimeout && PendingClients.ContainsKey(clientId))
+            while ((LocalTime - timeStarted).Time < NetworkConfig.ClientConnectionBufferTimeout && PendingClients.ContainsKey(clientId))
             {
                 yield return null;
             }
@@ -1528,7 +1528,7 @@ namespace MLAPI
                             writer.WriteByteArray(NetworkSceneManager.CurrentSceneSwitchProgressGuid.ToByteArray());
                         }
 
-                        writer.WriteInt32Packed(NetworkTimeSystem.PredictedTime.Tick);
+                        writer.WriteInt32Packed(NetworkTimeSystem.LocalTime.Tick);
                         writer.WriteUInt32Packed((uint)m_ObservedObjects.Count);
 
                         for (int i = 0; i < m_ObservedObjects.Count; i++)

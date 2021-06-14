@@ -40,12 +40,12 @@ namespace MLAPI.RuntimeTests.Timing
         public IEnumerator CorrectAmountTicksTest()
         {
             var timeSystem = NetworkManager.Singleton.NetworkTimeSystem;
-            var delta = timeSystem.PredictedTime.FixedDeltaTime;
+            var delta = timeSystem.LocalTime.FixedDeltaTime;
 
-            while (timeSystem.PredictedTime.Time < 3f)
+            while (timeSystem.LocalTime.Time < 3f)
             {
                 yield return null;
-                Assert.AreEqual(Mathf.FloorToInt((timeSystem.PredictedTime.TimeAsFloat / delta)), NetworkManager.Singleton.PredictedTime.Tick );
+                Assert.AreEqual(Mathf.FloorToInt((timeSystem.LocalTime.TimeAsFloat / delta)), NetworkManager.Singleton.LocalTime.Tick );
                 Assert.AreEqual(Mathf.FloorToInt((timeSystem.ServerTime.TimeAsFloat / delta)), NetworkManager.Singleton.ServerTime.Tick );
             }
         }
@@ -61,21 +61,21 @@ namespace MLAPI.RuntimeTests.Timing
 
     public class PlayerLoopTimeTestComponent : MonoBehaviour, IMonoBehaviourTest
     {
-        public const int passes = 100;
+        public const int Passes = 100;
 
         private int m_UpdatePasses = 0;
 
         private int m_LastFixedUpdateTick = 0;
         private int m_TickOffset = -1;
 
-        private NetworkTime m_PredictedTimePreviousUpdate;
+        private NetworkTime m_LocalTimePreviousUpdate;
         private NetworkTime m_ServerTimePreviousUpdate;
-        private NetworkTime m_PredictedTimePreviousFixedUpdate;
+        private NetworkTime m_LocalTimePreviousFixedUpdate;
 
         public void Start()
         {
             // Run fixed update at same rate as network tick
-            Time.fixedDeltaTime = NetworkManager.Singleton.PredictedTime.FixedDeltaTime;
+            Time.fixedDeltaTime = NetworkManager.Singleton.LocalTime.FixedDeltaTime;
 
             // Uncap fixed time else we might skip fixed updates
             Time.maximumDeltaTime = float.MaxValue;
@@ -86,18 +86,18 @@ namespace MLAPI.RuntimeTests.Timing
             // This must run first else it wont run if there is an exception
             m_UpdatePasses++;
 
-            var predictedTime = NetworkManager.Singleton.PredictedTime;
+            var localTime = NetworkManager.Singleton.LocalTime;
             var serverTime = NetworkManager.Singleton.ServerTime;
 
             // time should have advanced on the host/server
-            Assert.True(m_PredictedTimePreviousUpdate.Time < predictedTime.Time);
+            Assert.True(m_LocalTimePreviousUpdate.Time < localTime.Time);
             Assert.True(m_ServerTimePreviousUpdate.Time < serverTime.Time);
 
             // time should be further then last fixed step in update
-            Assert.True(m_PredictedTimePreviousFixedUpdate.FixedTime < predictedTime.Time );
+            Assert.True(m_LocalTimePreviousFixedUpdate.FixedTime < localTime.Time );
 
             // we should be in same or further tick then fixed update
-            Assert.True(m_PredictedTimePreviousFixedUpdate.Tick <= predictedTime.Tick);
+            Assert.True(m_LocalTimePreviousFixedUpdate.Tick <= localTime.Tick);
 
             // fixed update should result in same amounts of tick as network time
             if (m_TickOffset == -1)
@@ -111,21 +111,21 @@ namespace MLAPI.RuntimeTests.Timing
             }
 
 
-            m_PredictedTimePreviousUpdate = predictedTime;
+            m_LocalTimePreviousUpdate = localTime;
         }
 
         public void FixedUpdate()
         {
-            var time = NetworkManager.Singleton.PredictedTime;
+            var time = NetworkManager.Singleton.LocalTime;
 
-            m_PredictedTimePreviousFixedUpdate = time;
+            m_LocalTimePreviousFixedUpdate = time;
 
             Assert.AreEqual(Time.fixedDeltaTime, time.FixedDeltaTime);
 
             m_LastFixedUpdateTick++;
         }
 
-        public bool IsTestFinished => m_UpdatePasses >= passes;
+        public bool IsTestFinished => m_UpdatePasses >= Passes;
     }
 
 }

@@ -62,7 +62,7 @@ namespace MLAPI.SceneManagement
         {
             m_NetworkManager = networkManager;
             m_TimeOutCoroutine = m_NetworkManager.StartCoroutine(m_NetworkManager.TimeOutSwitchSceneProgress(this));
-            TimeAtInitiation = networkManager.PredictedTime;
+            TimeAtInitiation = networkManager.LocalTime;
         }
 
         internal void AddClientAsDone(ulong clientId)

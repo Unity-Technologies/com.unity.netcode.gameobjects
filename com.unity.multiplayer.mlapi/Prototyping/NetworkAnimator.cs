@@ -128,7 +128,7 @@ namespace MLAPI.Prototyping
 
         private bool CheckSendRate()
         {
-            var networkTime = NetworkManager.PredictedTime.FixedTime;
+            var networkTime = NetworkManager.LocalTime.FixedTime;
             if (SendRate != 0 && m_NextSendTime < networkTime)
             {
                 m_NextSendTime = networkTime + SendRate;

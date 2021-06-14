@@ -5,7 +5,7 @@ namespace MLAPI.Timing
 {
     /// <summary>
     /// <see cref="NetworkTimeSystem"/> is a standalone system which can be used to run a network time simulation.
-    /// The network time system maintains both a predicted and a server time and also invokes events for each fixed tick which passes.
+    /// The network time system maintains both a local and a server time and also invokes events for each fixed tick which passes.
     /// </summary>
     public class NetworkTimeSystem : INetworkUpdateSystem, INetworkStats, IDisposable
     {
@@ -15,7 +15,7 @@ namespace MLAPI.Timing
         // when null the time system will not tick automatically in any update stage and must be manually advanced.
         private NetworkUpdateStage? m_UpdateStage;
 
-        private NetworkTime m_PredictedTime;
+        private NetworkTime m_LocalTime;
         private NetworkTime m_ServerTime;
 
         /// <summary>
@@ -24,9 +24,9 @@ namespace MLAPI.Timing
         public const int NoTick = int.MinValue;
 
         /// <summary>
-        /// The current predicted time. This is the time at which predicted or client authoritative objects move. This value is accurate when called in Update or NetworkFixedUpdate but does not work correctly for FixedUpdate.
+        /// The current local time. This is the time at which predicted or client authoritative objects move. This value is accurate when called in Update or NetworkFixedUpdate but does not work correctly for FixedUpdate.
         /// </summary>
-        public NetworkTime PredictedTime => m_PredictedTime;
+        public NetworkTime LocalTime => m_LocalTime;
 
         /// <summary>
         /// The current server time. This value is mostly used for internal purposes and to interpolate state received from the server. This value is accurate when called in Update or NetworkFixedUpdate but does not work correctly for FixedUpdate.
@@ -46,7 +46,7 @@ namespace MLAPI.Timing
         /// <summary>
         /// Delegate for invoking an event whenever a network tick passes
         /// </summary>
-        /// <param name="time">The predicted time for the tick.</param>
+        /// <param name="time">The local time for the tick.</param>
         public delegate void NetworkTickDelegate(NetworkTime time);
 
         /// <summary>
@@ -102,7 +102,7 @@ namespace MLAPI.Timing
                 m_NetworkTimeProvider = new ClientNetworkTimeProvider(networkStats, tickRate);
             }
 
-            m_PredictedTime = new NetworkTime(tickRate);
+            m_LocalTime = new NetworkTime(tickRate);
             m_ServerTime = new NetworkTime(tickRate);
         }
 
@@ -112,33 +112,33 @@ namespace MLAPI.Timing
         /// <param name="deltaTime">The delta time used to advance time. During normal use this is <see cref="Time.deltaTime"/>.</param>
         public void AdvanceNetworkTime(float deltaTime)
         {
-            // store old predicted tick to know how many fixed ticks passed
-            var previousPredictedTick = PredictedTime.Tick;
+            // store old local tick to know how many fixed ticks passed
+            var previousLocalTick = LocalTime.Tick;
 
-            m_NetworkTimeProvider.AdvanceTime(ref m_PredictedTime, ref m_ServerTime, deltaTime);
+            m_NetworkTimeProvider.AdvanceTime(ref m_LocalTime, ref m_ServerTime, deltaTime);
 
             // cache times here so that we can adjust them to temporary values while simulating ticks.
-            var cachePredictedTime = m_PredictedTime;
+            var cacheLocalTime = m_LocalTime;
             var cacheServerTime = m_ServerTime;
 
-            var currentPredictedTick = PredictedTime.Tick;
-            var predictedToServerDifference = currentPredictedTick - ServerTime.Tick;
+            var currentLocalTick = LocalTime.Tick;
+            var localToServerDifference = currentLocalTick - ServerTime.Tick;
 
-            for (int i = previousPredictedTick + 1; i <= currentPredictedTick; i++)
+            for (int i = previousLocalTick + 1; i <= currentLocalTick; i++)
             {
                 // TODO this is temporary code to just make this run somehow will be removed once we have snapshot ack
                 m_LastReceivedServerSnapshotTick = new NetworkTime(TickRate, m_LastReceivedServerSnapshotTick.Tick + 1);
 
                 // set exposed time values to correct fixed values
-                m_PredictedTime = new NetworkTime(TickRate, i);
-                m_ServerTime = new NetworkTime(TickRate, i - predictedToServerDifference);
+                m_LocalTime = new NetworkTime(TickRate, i);
+                m_ServerTime = new NetworkTime(TickRate, i - localToServerDifference);
 
-                NetworkTick?.Invoke(m_PredictedTime);
+                NetworkTick?.Invoke(m_LocalTime);
                 NetworkTickInternal?.Invoke(m_ServerTime);
             }
 
             // Set exposed time to values from tick system
-            m_PredictedTime = cachePredictedTime;
+            m_LocalTime = cacheLocalTime;
             m_ServerTime = cacheServerTime;
         }
 
@@ -153,9 +153,9 @@ namespace MLAPI.Timing
             m_ServerTime = new NetworkTime(TickRate, serverTick);
 
             // This should be overriden by the time provider but setting it in case it's not
-            m_PredictedTime = new NetworkTime(TickRate, serverTick);
+            m_LocalTime = new NetworkTime(TickRate, serverTick);
 
-            m_NetworkTimeProvider.InitializeClient(ref m_PredictedTime, ref m_ServerTime);
+            m_NetworkTimeProvider.InitializeClient(ref m_LocalTime, ref m_ServerTime);
         }
 
         // TODO this is temporary until we have a better way to measure RTT. Most likely a separate stats class will be used to track this.

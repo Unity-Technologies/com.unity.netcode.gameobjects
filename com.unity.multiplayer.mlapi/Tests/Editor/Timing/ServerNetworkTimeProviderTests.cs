@@ -11,21 +11,21 @@ namespace MLAPI.EditorTests.Timing
     {
 
         /// <summary>
-        /// On the server predicted time should always be equal to server time. This test ensures that this is the case.
+        /// On the server local time should always be equal to server time. This test ensures that this is the case.
         /// </summary>
         [Test]
-        public void PredictedTimeEqualServerTimeTest()
+        public void LocalTimeEqualServerTimeTest()
         {
             var steps = TimingTestHelper.GetRandomTimeSteps(100f, 0.01f, 0.1f, 42);
 
             var serverTimeProvider = new ServerNetworkTimeProvider();
             var serverTime = new NetworkTime(60, 30);
-            var predictedTime = serverTime;
+            var localTime = serverTime;
             var startTime = serverTime;
 
-            TimingTestHelper.ApplySteps(serverTimeProvider, steps, ref predictedTime, ref serverTime, step =>
+            TimingTestHelper.ApplySteps(serverTimeProvider, steps, ref localTime, ref serverTime, step =>
             {
-                Assert.IsTrue(Mathf.Approximately(serverTime.TimeAsFloat, predictedTime.TimeAsFloat));
+                Assert.IsTrue(Mathf.Approximately(serverTime.TimeAsFloat, localTime.TimeAsFloat));
             } );
 
             Assert.IsTrue(serverTime.Time > startTime.Time);
@@ -39,10 +39,10 @@ namespace MLAPI.EditorTests.Timing
         public void InitializeClientFail()
         {
             NetworkTime serverTime = default;
-            NetworkTime predictedTime = default;
+            NetworkTime localTime = default;
 
             var serverTimeProvider = new ServerNetworkTimeProvider();
-            Assert.Throws<InvalidOperationException>(() => { serverTimeProvider.InitializeClient(ref predictedTime, ref serverTime); });
+            Assert.Throws<InvalidOperationException>(() => { serverTimeProvider.InitializeClient(ref localTime, ref serverTime); });
         }
 
     }
