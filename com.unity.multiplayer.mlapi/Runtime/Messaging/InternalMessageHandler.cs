@@ -189,6 +189,8 @@ namespace MLAPI.Messaging
             using (var reader = PooledNetworkReader.Get(stream))
             {
                 ulong networkId = reader.ReadUInt64Packed();
+                // TODO: can't get both the client ID and the object name here
+                m_NetworkManager.NetworkMetrics.TrackObjectDestroyReceived(clientId, networkId, "", (ulong)stream.Length);
                 NetworkManager.SpawnManager.OnDestroyObject(networkId, true);
             }
         }

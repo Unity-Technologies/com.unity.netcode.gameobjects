@@ -10,7 +10,7 @@ using UnityEngine.TestTools;
 namespace MLAPI.RuntimeTests.Metrics.NetworkObjects
 {
 #if true
-    public class NetworkObjectMetricsDispatchTests
+    public class NetworkObjectMetricsTests
     {
         NetworkManager m_Server;
         NetworkManager m_Client;
@@ -102,7 +102,59 @@ namespace MLAPI.RuntimeTests.Metrics.NetworkObjects
             var objectSpawned = objectSpawnedReceivedMetricValues.First();
             Assert.AreEqual(m_Server.LocalClientId, objectSpawned.Connection.Id);
             Assert.AreEqual(networkObject.NetworkObjectId, objectSpawned.NetworkId.NetworkId);
+            // TODO: this should not be the name of the network object
             Assert.AreEqual("Player(Clone)", objectSpawned.NetworkId.Name); // What?
+        }
+
+        [UnityTest]
+        public IEnumerator TrackNetworkObjectDestroySentMetric()
+        {
+            var objectName = "TestNetworkObjectToDestroy";
+            var gameObject = new GameObject(objectName);
+            var networkObject = gameObject.AddComponent<NetworkObject>();
+            networkObject.NetworkManagerOwner = m_Server;
+            networkObject.Spawn();
+
+            var waitForMetricEvent = new WaitForMetricValues<ObjectDestroyedEvent>(m_ServerMetrics.Dispatcher, MetricNames.ObjectDestroyedSent);
+            // TODO: is there a better way of waiting here?
+            yield return waitForMetricEvent.WaitForAFewFrames();
+
+            m_Server.SpawnManager.OnDestroyObject(networkObject.NetworkObjectId, true);
+
+            yield return waitForMetricEvent.WaitForAFewFrames();
+
+            var objectDestroyedSentMetricValues = waitForMetricEvent.EnsureMetricValuesHaveBeenFound();
+            // As there's a client and server, this event is emitted twice.
+            Assert.AreEqual(2, objectDestroyedSentMetricValues.Count);
+
+            var objectDestroyed = objectDestroyedSentMetricValues.Last();
+            Assert.AreEqual(m_Client.LocalClientId, objectDestroyed.Connection.Id);
+            Assert.AreEqual(objectName, objectDestroyed.NetworkId.Name);
+        }
+
+        [UnityTest]
+        public IEnumerator TrackNetworkObjectDestroyReceivedMetric()
+        {
+            var objectName = "TestNetworkObjectToDestroy";
+            var gameObject = new GameObject(objectName);
+            var networkObject = gameObject.AddComponent<NetworkObject>();
+            networkObject.NetworkManagerOwner = m_Server;
+
+            networkObject.Spawn();
+            var waitForMetricEvent = new WaitForMetricValues<ObjectDestroyedEvent>(m_ClientMetrics.Dispatcher, MetricNames.ObjectDestroyedReceived);
+
+            yield return waitForMetricEvent.WaitForAFewFrames();
+
+            m_Server.SpawnManager.OnDestroyObject(networkObject.NetworkObjectId, true);
+            yield return waitForMetricEvent.Wait(60);
+
+            var objectDestroyedReceivedMetricValues = waitForMetricEvent.EnsureMetricValuesHaveBeenFound();
+            Assert.AreEqual(1, objectDestroyedReceivedMetricValues.Count);
+
+            var objectDestroyed = objectDestroyedReceivedMetricValues.First();
+            Assert.AreEqual(m_Server.LocalClientId, objectDestroyed.Connection.Id);
+            Assert.AreEqual(networkObject.NetworkObjectId, objectDestroyed.NetworkId.NetworkId);
+            // Assert.AreEqual(, objectDestroyed.NetworkId.Name); // What?
         }
     }
 #endif
