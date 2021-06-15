@@ -377,7 +377,7 @@ namespace MLAPI
 
             if (NetworkMetrics == null)
             {
-#if true
+#if MULTIPLAYER_TOOLS
                 NetworkMetrics = new NetworkMetrics(this);
 #else
                 NetworkMetrics = new NullNetworkMetrics();

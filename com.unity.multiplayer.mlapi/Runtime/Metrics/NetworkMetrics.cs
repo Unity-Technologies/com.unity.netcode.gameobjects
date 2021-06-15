@@ -6,7 +6,7 @@ using Unity.Multiplayer.NetworkProfiler.Models;
 
 namespace MLAPI.Metrics
 {
-#if true
+#if MULTIPLAYER_TOOLS
     public class NetworkMetrics : INetworkMetrics
     {
         private readonly NetworkManager m_NetworkManager;

@@ -12,7 +12,7 @@ using UnityEngine.TestTools;
 
 namespace MLAPI.RuntimeTests.Metrics.Messaging
 {
-#if true
+#if MULTIPLAYER_TOOLS
     public class NetworkMetricsMessagingDispatchTests
     {
         NetworkManager m_NetworkManager;
