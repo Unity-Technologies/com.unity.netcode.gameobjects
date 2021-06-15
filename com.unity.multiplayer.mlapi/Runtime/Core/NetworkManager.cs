@@ -261,6 +261,12 @@ namespace MLAPI
                 };
             }
 
+            // If the scene is not dirty or the asset database is currently updating then we can skip updating the NetworkPrefab information
+            if (!activeScene.isDirty || UnityEditor.EditorApplication.isUpdating)
+            {
+                return;
+            }
+
             // During OnValidate we will always clear out NetworkPrefabOverrideLinks and rebuild it
             NetworkConfig.NetworkPrefabOverrideLinks.Clear();
 
@@ -312,7 +318,7 @@ namespace MLAPI
                         }
                     }
                 }
-            }
+            }           
         }
 #endif
 
