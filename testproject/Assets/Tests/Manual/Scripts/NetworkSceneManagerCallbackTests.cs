@@ -11,7 +11,7 @@ namespace TestProject.ManualTests
             NetworkManager.StartHost();
         }
 
-        public override void NetworkStart()
+        public override void OnNetworkSpawn()
         {
             if (IsServer)
             {

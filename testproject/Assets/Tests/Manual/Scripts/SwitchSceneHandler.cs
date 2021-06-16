@@ -55,7 +55,7 @@ namespace TestProject.ManualTests
             yield return null;
         }
 
-        public override void NetworkStart()
+        public override void OnNetworkSpawn()
         {
             if (NetworkManager.Singleton && NetworkManager.Singleton.IsListening && NetworkManager.Singleton.IsServer)
             {
@@ -68,7 +68,7 @@ namespace TestProject.ManualTests
             {
                 m_SwitchSceneButtonObject.SetActive(false);
             }
-            base.NetworkStart();
+            base.OnNetworkSpawn();
         }
 
         private SceneSwitchProgress m_CurrentSceneSwitchProgress;
