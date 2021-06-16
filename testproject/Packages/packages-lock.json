@@ -139,7 +139,7 @@
       "url": "https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-candidates"
     },
     "com.unity.services.relay": {
-      "version": "0.0.1-preview.3",
+      "version": "0.0.1-preview.4",
       "depth": 0,
       "source": "registry",
       "dependencies": {
