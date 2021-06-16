@@ -18,6 +18,14 @@ namespace MLAPI.EditorTests
             allocator.DebugDisplay();
             Assert.IsTrue(allocator.Verify());
 
+            // can't ask for negative amount of memory
+            Assert.IsFalse(allocator.Allocate(1, -20, out pos));
+            Assert.IsTrue(allocator.Verify());
+
+            // can't ask for deallocation of negative index
+            Assert.IsFalse(allocator.Deallocate(-1));
+            Assert.IsTrue(allocator.Verify());
+
             // can't ask for the same index twice
             Assert.IsFalse(allocator.Allocate(0, 20, out pos));
             Assert.IsTrue(allocator.Verify());

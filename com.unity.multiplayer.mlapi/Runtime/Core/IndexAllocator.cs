@@ -85,6 +85,13 @@ namespace MLAPI
         internal bool Allocate(int index, int size, out int pos)
         {
             pos = 0;
+            // size must be positive, index must be within range
+            if (size < 0 || index < 0 || index >= m_MaxSlot)
+            {
+                return false;
+            }
+
+            // refuse allocation if the index is already in use
             if (m_IndexToSlot[index] != k_NotSet)
             {
                 return false;
@@ -141,6 +148,12 @@ namespace MLAPI
         /// </returns>
         internal bool Deallocate(int index)
         {
+            // size must be positive, index must be within range
+            if (index < 0 || index >= m_MaxSlot)
+            {
+                return false;
+            }
+
             int slot = m_IndexToSlot[index];
 
             if (slot == k_NotSet)
