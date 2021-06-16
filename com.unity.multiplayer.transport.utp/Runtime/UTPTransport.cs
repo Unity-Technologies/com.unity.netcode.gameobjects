@@ -385,7 +385,7 @@ namespace MLAPI.Transports
             m_MessageBuffer = new byte[m_MessageBufferSize];
 #if ENABLE_RELAY_SERVICE
             if (m_ProtocolType == ProtocolType.RelayUnityTransport) {
-                Unity.Services.Relay.Configuration.BasePath = m_RelayServer;
+                Unity.Services.Relay.RelayService.Configuration.BasePath = m_RelayServer;
                 UnityServices.Initialize();
             }
 #endif
