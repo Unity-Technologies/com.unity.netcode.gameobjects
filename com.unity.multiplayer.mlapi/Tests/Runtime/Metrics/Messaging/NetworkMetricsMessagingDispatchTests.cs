@@ -12,7 +12,6 @@ using UnityEngine.TestTools;
 
 namespace MLAPI.RuntimeTests.Metrics.Messaging
 {
-#if MULTIPLAYER_TOOLS
     public class NetworkMetricsMessagingDispatchTests
     {
         NetworkManager m_NetworkManager;
@@ -104,5 +103,4 @@ namespace MLAPI.RuntimeTests.Metrics.Messaging
             Assert.Contains(300UL, clientIds);
         }
     }
-#endif
 }

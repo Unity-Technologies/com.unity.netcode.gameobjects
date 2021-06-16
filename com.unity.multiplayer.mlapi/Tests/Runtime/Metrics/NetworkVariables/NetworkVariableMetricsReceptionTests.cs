@@ -9,7 +9,6 @@ using UnityEngine.TestTools;
 
 namespace MLAPI.RuntimeTests.Metrics.NetworkVariables
 {
-#if MULTIPLAYER_TOOLS
     public class NetworkVariableMetricsReceptionTests
     {
         NetworkManager m_Server;
@@ -76,5 +75,4 @@ namespace MLAPI.RuntimeTests.Metrics.NetworkVariables
             Assert.AreEqual(nameof(NetworkVariableComponent.MyNetworkVariable), last.Name);
         }
     }
-#endif
 }

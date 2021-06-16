@@ -8,7 +8,6 @@ using UnityEngine.TestTools;
 
 namespace MLAPI.RuntimeTests.Metrics.NetworkVariables
 {
-#if MULTIPLAYER_TOOLS
     public class NetworkVariableMetricsDispatchTests
     {
         NetworkManager m_NetworkManager;
@@ -46,5 +45,4 @@ namespace MLAPI.RuntimeTests.Metrics.NetworkVariables
             Assert.AreEqual(m_NetworkManager.LocalClientId, networkVariableDeltaSent.Connection.Id);
         }
     }
-#endif
 }
