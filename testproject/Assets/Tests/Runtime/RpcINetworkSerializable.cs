@@ -56,7 +56,6 @@ namespace TestProject.RuntimeTests
             // Start the instances
             if (!MultiInstanceHelpers.Start(true, server, clients))
             {
-                Debug.LogError("Failed to start instances");
                 Assert.Fail("Failed to start instances");
             }
 
@@ -203,7 +202,6 @@ namespace TestProject.RuntimeTests
             // Start the instances
             if (!MultiInstanceHelpers.Start(true, server, clients))
             {
-                Debug.LogError("Failed to start instances");
                 Assert.Fail("Failed to start instances");
             }
 

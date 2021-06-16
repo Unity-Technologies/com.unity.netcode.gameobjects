@@ -1,4 +1,4 @@
-#pragma warning disable 618
+#pragma warning disable 618 // disable is obsolete
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 using System;
 using System.Collections.Generic;
@@ -537,4 +537,4 @@ namespace MLAPI.Transports.UNET
     }
 }
 #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-#pragma warning restore 618
+#pragma warning restore 618 // restore is obsolete
