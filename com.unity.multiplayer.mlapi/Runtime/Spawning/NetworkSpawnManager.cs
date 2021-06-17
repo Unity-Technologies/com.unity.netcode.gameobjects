@@ -350,30 +350,66 @@ namespace MLAPI.Spawning
 
         internal void SendSpawnCallForObject(ulong clientId, NetworkObject networkObject, Stream payload)
         {
-            //Currently, if this is called and the clientId (destination) is the server's client Id, this case
-            //will be checked within the below Send function.  To avoid unwarranted allocation of a PooledNetworkBuffer
-            //placing this check here. [NSS]
-            if (NetworkManager.IsServer && clientId == NetworkManager.ServerClientId)
+            if (NetworkManager.UseSnapshotSpawn)
             {
-                return;
+                SnapshotSpawnCommand command;
+                command.NetworkObjectId = networkObject.NetworkObjectId;
+                command.OwnerClientId = networkObject.OwnerClientId;
+                command.IsPlayerObject = false;
+                command.IsSceneObject = false;
+                command.ParentNetworkId = null;
+                command.GlobalObjectIdHash = 0;
+                command.ObjectTransform = null;
+
+                NetworkManager.SnapshotSystem.Spawn(command);
+
+            }
+            if (NetworkManager.UseClassicSpawn)
+            {
+                //Currently, if this is called and the clientId (destination) is the server's client Id, this case
+                //will be checked within the below Send function.  To avoid unwarranted allocation of a PooledNetworkBuffer
+                //placing this check here. [NSS]
+                if (NetworkManager.IsServer && clientId == NetworkManager.ServerClientId)
+                {
+                    return;
+                }
+
+                var rpcQueueContainer = NetworkManager.RpcQueueContainer;
+
+                var buffer = PooledNetworkBuffer.Get();
+                WriteSpawnCallForObject(buffer, clientId, networkObject, payload);
+
+                var queueItem = new RpcFrameQueueItem
+                {
+                    UpdateStage = NetworkUpdateStage.Update,
+                    QueueItemType = RpcQueueContainer.QueueItemType.CreateObject,
+                    NetworkId = 0,
+                    NetworkBuffer = buffer,
+                    NetworkChannel = NetworkChannel.Internal,
+                    ClientNetworkIds = new[] {clientId}
+                };
+                rpcQueueContainer.AddToInternalMLAPISendQueue(queueItem);
+            }
+        }
+
+        internal ulong? GetSpawnParentId(NetworkObject networkObject)
+        {
+            NetworkObject parentNetworkObject = null;
+            ulong id = 0;
+
+            if (!networkObject.AlwaysReplicateAsRoot && networkObject.transform.parent != null)
+            {
+                parentNetworkObject = networkObject.transform.parent.GetComponent<NetworkObject>();
             }
 
-            var rpcQueueContainer = NetworkManager.RpcQueueContainer;
-
-            var buffer = PooledNetworkBuffer.Get();
-            WriteSpawnCallForObject(buffer, clientId, networkObject, payload);
-
-            var queueItem = new RpcFrameQueueItem
+            if (parentNetworkObject == null)
             {
-                UpdateStage = NetworkUpdateStage.Update,
-                QueueItemType = RpcQueueContainer.QueueItemType.CreateObject,
-                NetworkId = 0,
-                NetworkBuffer = buffer,
-                NetworkChannel = NetworkChannel.Internal,
-                ClientNetworkIds = new[] { clientId }
-            };
-            rpcQueueContainer.AddToInternalMLAPISendQueue(queueItem);
+                return null;
+            }
+
+            return parentNetworkObject.NetworkObjectId;
         }
+
 
         internal void WriteSpawnCallForObject(Serialization.NetworkBuffer buffer, ulong clientId, NetworkObject networkObject, Stream payload)
         {
@@ -383,21 +419,15 @@ namespace MLAPI.Spawning
                 writer.WriteUInt64Packed(networkObject.NetworkObjectId);
                 writer.WriteUInt64Packed(networkObject.OwnerClientId);
 
-                NetworkObject parentNetworkObject = null;
-
-                if (!networkObject.AlwaysReplicateAsRoot && networkObject.transform.parent != null)
-                {
-                    parentNetworkObject = networkObject.transform.parent.GetComponent<NetworkObject>();
-                }
-
-                if (parentNetworkObject == null)
+                var parent = GetSpawnParentId(networkObject);
+                if (parent == null)
                 {
                     writer.WriteBool(false);
                 }
                 else
                 {
                     writer.WriteBool(true);
-                    writer.WriteUInt64Packed(parentNetworkObject.NetworkObjectId);
+                    writer.WriteUInt64Packed(parent.Value);
                 }
 
                 writer.WriteBool(networkObject.IsSceneObject ?? true);

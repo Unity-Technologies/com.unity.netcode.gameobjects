@@ -52,8 +52,11 @@ namespace MLAPI
 
         // todo: transitional. For the next release, only Snapshot should remain
         // The booleans allow iterative development and testing in the meantime
-        internal static bool UseClassicDelta = true;
-        internal static bool UseSnapshot = false;
+        internal static bool UseClassicDelta = false;
+        internal static bool UseSnapshot = true;
+
+        internal static bool UseClassicSpawn = true;
+        internal static bool UseSnapshotSpawn = false;
 
         internal RpcQueueContainer RpcQueueContainer { get; private set; }
         internal NetworkTickSystem NetworkTickSystem { get; private set; }
@@ -318,7 +321,7 @@ namespace MLAPI
                         }
                     }
                 }
-            }           
+            }
         }
 #endif
 
