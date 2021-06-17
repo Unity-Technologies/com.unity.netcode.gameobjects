@@ -97,7 +97,20 @@ namespace MLAPI.Metrics
 
         public void TrackRpcSent(ulong receiverClientId, ulong networkObjectId, string rpcName, ulong bytesCount)
         {
+            if (!m_NetworkGameObjects.ContainsKey(networkObjectId))
+            {
+                m_NetworkGameObjects[networkObjectId] = new NetworkObjectIdentifier($"NetworkGameObject_{networkObjectId}", networkObjectId);
+            }
 
+            m_RpcSentEvent.Mark(new RpcEvent(new ConnectionInfo(receiverClientId), m_NetworkGameObjects[networkObjectId], rpcName, bytesCount));
+        }
+
+        public void TrackRpcSent(ulong[] receiverClientIds, ulong networkObjectId, string rpcName, ulong bytesCount)
+        {
+            foreach (var receiverClientId in receiverClientIds)
+            {
+                TrackRpcSent(receiverClientId, networkObjectId, rpcName, bytesCount);
+            }
         }
 
         public void TrackRpcReceived(ulong senderClientId, ulong networkObjectId, string rpcName, ulong bytesCount)

@@ -99,6 +99,11 @@ namespace MLAPI
             {
                 rpcQueueContainer.EndAddQueueItemToFrame(serializer.Writer, RpcQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
             }
+
+            if (NetworkManager.__rpc_name_table.ContainsKey(rpcMethodId))
+            {
+                NetworkManager.NetworkMetrics.TrackRpcSent(NetworkManager.ServerClientId, NetworkObjectId, NetworkManager.__rpc_name_table[rpcMethodId], (ulong)serializer.Writer.GetStream().Length);
+            }
         }
 
 #pragma warning disable IDE1006 // disable naming rule violation check
@@ -184,23 +189,29 @@ namespace MLAPI
 
             var rpcQueueContainer = NetworkManager.RpcQueueContainer;
 
+            ulong[] clientIds = clientRpcParams.Send.TargetClientIds ?? NetworkManager.ConnectedClientsList.Select(c => c.ClientId).ToArray();
+            if (clientRpcParams.Send.TargetClientIds != null && clientRpcParams.Send.TargetClientIds.Length == 0)
+            {
+                clientIds = NetworkManager.ConnectedClientsList.Select(c => c.ClientId).ToArray();
+            }
+
             if (IsHost)
             {
-                ulong[] clientIds = clientRpcParams.Send.TargetClientIds ?? NetworkManager.ConnectedClientsList.Select(c => c.ClientId).ToArray();
-                if (clientRpcParams.Send.TargetClientIds != null && clientRpcParams.Send.TargetClientIds.Length == 0)
-                {
-                    clientIds = NetworkManager.ConnectedClientsList.Select(c => c.ClientId).ToArray();
-                }
-
                 var containsServerClientId = clientIds.Contains(NetworkManager.ServerClientId);
                 if (containsServerClientId && clientIds.Length == 1)
                 {
                     rpcQueueContainer.EndAddQueueItemToFrame(serializer.Writer, RpcQueueHistoryFrame.QueueFrameType.Inbound, clientRpcParams.Send.UpdateStage);
-                    return;
                 }
             }
+            else
+            {
+                rpcQueueContainer.EndAddQueueItemToFrame(serializer.Writer, RpcQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
+            }
 
-            rpcQueueContainer.EndAddQueueItemToFrame(serializer.Writer, RpcQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
+            if (NetworkManager.__rpc_name_table.ContainsKey(rpcMethodId))
+            {
+                NetworkManager.NetworkMetrics.TrackRpcSent(clientIds, NetworkObjectId, NetworkManager.__rpc_name_table[rpcMethodId], (ulong)serializer.Writer.GetStream().Length);
+            }
         }
 
         /// <summary>
