@@ -1,15 +1,14 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Linq;
 using MLAPI.Metrics;
 using NUnit.Framework;
-using Unity.Multiplayer.NetStats.Metrics;
 using Unity.Multiplayer.NetworkProfiler;
 using Unity.Multiplayer.NetworkProfiler.Models;
 using UnityEngine.TestTools;
 
 namespace MLAPI.RuntimeTests.Metrics.NetworkVariables
 {
-    public class NetworkVariableMetricsDispatchTests : MetricsTestBase
+    public class NetworkVariableMetricsDispatchTests
     {
         NetworkManager m_NetworkManager;
         NetworkMetrics m_NetworkMetrics;
@@ -34,30 +33,16 @@ namespace MLAPI.RuntimeTests.Metrics.NetworkVariables
         [UnityTest]
         public IEnumerator TrackNetworkVariableDeltaSentMetric()
         {
-            var found = false;
-            m_NetworkMetrics.Dispatcher.RegisterObserver(new TestObserver(collection =>
-            {
-                var networkVariableUpdateMetric = collection.Metrics.SingleOrDefault(x => x.Name == MetricNames.NetworkVariableDeltaSent);
-                Assert.NotNull(networkVariableUpdateMetric);
+            var waitForMetricValues = new WaitForMetricValues<NetworkVariableEvent>(m_NetworkMetrics.Dispatcher, MetricNames.NetworkVariableDeltaSent);
 
-                var typedMetric = networkVariableUpdateMetric as IEventMetric<NetworkVariableEvent>;
-                Assert.NotNull(typedMetric);
-                
-                if (typedMetric.Values.Any() && !found)
-                {
-                    Assert.AreEqual(1, typedMetric.Values.Count);
+            yield return waitForMetricValues.WaitForAFewFrames();
 
-                    var networkVariableDeltaSent = typedMetric.Values.First();
-                    Assert.AreEqual(nameof(NetworkVariableComponent.MyNetworkVariable), networkVariableDeltaSent.Name);
-                    Assert.AreEqual(m_NetworkManager.LocalClientId, networkVariableDeltaSent.Connection.Id);
+            var metricValues = waitForMetricValues.EnsureMetricValuesHaveBeenFound();
+            Assert.AreEqual(1, metricValues.Count);
 
-                    found = true;
-                }
-            }));
-
-            yield return WaitForAFewFrames();
-
-            Assert.True(found);
+            var networkVariableDeltaSent = metricValues.First();
+            Assert.AreEqual(nameof(NetworkVariableComponent.MyNetworkVariable), networkVariableDeltaSent.Name);
+            Assert.AreEqual(m_NetworkManager.LocalClientId, networkVariableDeltaSent.Connection.Id);
         }
     }
 }

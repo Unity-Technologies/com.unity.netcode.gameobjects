@@ -5,7 +5,6 @@ using System.Linq;
 using MLAPI.Metrics;
 using MLAPI.Serialization;
 using NUnit.Framework;
-using Unity.Multiplayer.NetStats.Metrics;
 using Unity.Multiplayer.NetworkProfiler;
 using Unity.Multiplayer.NetworkProfiler.Models;
 using UnityEngine;
@@ -13,8 +12,7 @@ using UnityEngine.TestTools;
 
 namespace MLAPI.RuntimeTests.Metrics.Messaging
 {
-#if true
-    public class NetworkMetricsMessagingReceptionTests : MetricsTestBase
+    public class NetworkMetricsMessagingReceptionTests
     {
         NetworkManager m_Server;
         NetworkManager m_Client;
@@ -60,61 +58,34 @@ namespace MLAPI.RuntimeTests.Metrics.Messaging
                 Debug.Log($"Received from {sender}");
             });
 
-            var found = false;
-            m_ClientMetrics.Dispatcher.RegisterObserver(new TestObserver(collection =>
-            {
-                var namedMessageReceivedMetric = collection.Metrics.SingleOrDefault(x => x.Name == MetricNames.NamedMessageReceived);
-                Assert.NotNull(namedMessageReceivedMetric);
-
-                var typedMetric = namedMessageReceivedMetric as IEventMetric<NamedMessageEvent>;
-                Assert.NotNull(typedMetric);
-                if (typedMetric.Values.Any()) // We always get the metric, but when it has values, something has been tracked
-                {
-                    Assert.AreEqual(1, typedMetric.Values.Count);
-
-                    var namedMessageReceived = typedMetric.Values.First();
-                    Assert.AreEqual(messageName, namedMessageReceived.Name);
-                    Assert.AreEqual(m_Server.LocalClientId, namedMessageReceived.Connection.Id);
-
-                    found = true;
-                }
-            }));
+            var waitForMetricValues = new WaitForMetricValues<NamedMessageEvent>(m_ClientMetrics.Dispatcher, MetricNames.NamedMessageReceived);
 
             m_Server.CustomMessagingManager.SendNamedMessage(messageName, m_Client.LocalClientId, Stream.Null);
 
-            yield return WaitForAFewFrames(); // Client does not receive message synchronously
+            yield return waitForMetricValues.WaitForAFewFrames();
 
-            Assert.True(found);
+            var namedMessageReceivedValues = waitForMetricValues.EnsureMetricValuesHaveBeenFound();
+            Assert.AreEqual(1, namedMessageReceivedValues.Count);
+
+            var namedMessageReceived = namedMessageReceivedValues.First();
+            Assert.AreEqual(messageName, namedMessageReceived.Name);
+            Assert.AreEqual(m_Server.LocalClientId, namedMessageReceived.Connection.Id);
         }
 
         [UnityTest]
         public IEnumerator TrackUnnamedMessageReceivedMetric()
         {
-            var found = false;
-            m_ClientMetrics.Dispatcher.RegisterObserver(new TestObserver(collection =>
-            {
-                var unnamedMessageReceivedMetric = collection.Metrics.SingleOrDefault(x => x.Name == MetricNames.UnnamedMessageReceived);
-                Assert.NotNull(unnamedMessageReceivedMetric);
-
-                var typedMetric = unnamedMessageReceivedMetric as IEventMetric<UnnamedMessageEvent>;
-                Assert.NotNull(typedMetric);
-                if (typedMetric.Values.Any()) // We always get the metric, but when it has values, something has been tracked
-                {
-                    Assert.AreEqual(1, typedMetric.Values.Count);
-
-                    var unnamedMessageReceived = typedMetric.Values.First();
-                    Assert.AreEqual(m_Server.LocalClientId, unnamedMessageReceived.Connection.Id);
-
-                    found = true;
-                }
-            }));
+            var waitForMetricValues = new WaitForMetricValues<UnnamedMessageEvent>(m_ClientMetrics.Dispatcher, MetricNames.UnnamedMessageReceived);
 
             m_Server.CustomMessagingManager.SendUnnamedMessage(m_Client.LocalClientId, new NetworkBuffer());
 
-            yield return WaitForAFewFrames(); // Client does not receive message synchronously
+            yield return waitForMetricValues.WaitForAFewFrames();
 
-            Assert.True(found);
+            var unnamedMessageReceivedValues = waitForMetricValues.EnsureMetricValuesHaveBeenFound();
+            Assert.AreEqual(1, unnamedMessageReceivedValues.Count);
+
+            var unnamedMessageReceived = unnamedMessageReceivedValues.First();
+            Assert.AreEqual(m_Server.LocalClientId, unnamedMessageReceived.Connection.Id);
         }
     }
-#endif
 }

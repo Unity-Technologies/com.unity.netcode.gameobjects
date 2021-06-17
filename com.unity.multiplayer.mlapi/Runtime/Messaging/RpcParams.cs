@@ -1,5 +1,3 @@
-using System;
-
 namespace MLAPI.Messaging
 {
     public struct ServerRpcSendParams
@@ -37,13 +35,8 @@ namespace MLAPI.Messaging
     }
 
 #pragma warning disable IDE1006 // disable naming rule violation check
-#if UNITY_2020_2_OR_NEWER
     // RuntimeAccessModifiersILPP will make this `public`
     internal struct __RpcParams
-#else
-    [Obsolete("Please do not use, will no longer be exposed in the future versions (framework internal)")]
-    public struct __RpcParams
-#endif
 #pragma warning restore IDE1006 // restore naming rule violation check
     {
         public ServerRpcParams Server;

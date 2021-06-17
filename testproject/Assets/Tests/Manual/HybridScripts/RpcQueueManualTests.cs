@@ -319,7 +319,7 @@ namespace TestProject.ManualTests
         /// <summary>
         /// Invoked upon the attached NetworkObject component being initialized by MLAPI
         /// </summary>
-        public override void NetworkStart()
+        public override void OnNetworkSpawn()
         {
             if (IsServer)
             {
