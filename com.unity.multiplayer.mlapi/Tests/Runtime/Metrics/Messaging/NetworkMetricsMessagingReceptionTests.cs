@@ -12,7 +12,6 @@ using UnityEngine.TestTools;
 
 namespace MLAPI.RuntimeTests.Metrics.Messaging
 {
-#if true
     public class NetworkMetricsMessagingReceptionTests
     {
         NetworkManager m_Server;
@@ -89,5 +88,4 @@ namespace MLAPI.RuntimeTests.Metrics.Messaging
             Assert.AreEqual(m_Server.LocalClientId, unnamedMessageReceived.Connection.Id);
         }
     }
-#endif
 }
