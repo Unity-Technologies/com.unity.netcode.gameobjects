@@ -382,17 +382,20 @@ namespace MLAPI
             {
                 writer.WriteUInt16Packed((ushort)networkObjects.Count);
 
+                var networkObjectIdToName = new Dictionary<ulong, string>();
+
                 for (int i = 0; i < networkObjects.Count; i++)
                 {
                     // Send destroy call
                     networkObjects[i].Observers.Remove(clientId);
 
                     writer.WriteUInt64Packed(networkObjects[i].NetworkObjectId);
+                    networkObjectIdToName.Add(networkObjects[i].NetworkObjectId, networkObjects[i].name);
                 }
 
                 networkManager.MessageSender.Send(clientId, NetworkConstants.DESTROY_OBJECTS, NetworkChannel.Internal, buffer);
+                networkManager.NetworkMetrics.TrackMultipleObjectDestroySent(clientId, networkObjectIdToName, (ulong)buffer.Length);
             }
-                // TODO: add metric for destroy objects here
         }
 
         private void OnDestroy()
