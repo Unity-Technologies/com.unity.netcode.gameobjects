@@ -69,6 +69,40 @@ namespace MLAPI.Transports
                 m_Driver.Dispose();
         }
 
+        private static RelayAllocationId ConvertFromGUID(ref Guid allocationGuId)
+        {
+            unsafe
+            {
+                var allocationIdArray = allocationGuId.ToByteArray();
+                fixed (byte* ptr = allocationIdArray)
+                {
+                    return RelayAllocationId.FromBytePointer(ptr, allocationIdArray.Length);
+                }
+            }
+        }
+
+        private static RelayHMACKey ConvertFromHMAC(byte[] hmac)
+        {
+            unsafe
+            {
+                fixed (byte* ptr = hmac)
+                {
+                    return RelayHMACKey.FromBytePointer(ptr, RelayHMACKey.k_Length);
+                }
+            }
+        }
+
+        private static RelayConnectionData ConvertConnectionData(byte[] connectionData)
+        {
+            unsafe
+            {
+                fixed (byte* ptr = connectionData)
+                {
+                    return RelayConnectionData.FromBytePointer(ptr, RelayConnectionData.k_Length);
+                }
+            }
+        }
+
         private IEnumerator ClientBindAndConnect(SocketTask task)
         {
             var serverEndpoint = default(NetworkEndPoint);
@@ -95,18 +129,20 @@ namespace MLAPI.Transports
                 var allocation = joinTask.Result.Result.Data.Allocation;
 
                 serverEndpoint = NetworkEndPoint.Parse(allocation.RelayServer.IpV4, (ushort)allocation.RelayServer.Port);
-                var allocationId = RelayAllocationId.FromByteArray(allocation.AllocationIdBytes);
 
-                var connectionData = RelayConnectionData.FromByteArray(allocation.ConnectionData);
-                var hostConnectionData = RelayConnectionData.FromByteArray(allocation.HostConnectionData);
-                var key = RelayHMACKey.FromByteArray(allocation.Key);
+                var guid = allocation.AllocationId;
+                var allocationId = ConvertFromGUID(ref guid);
+
+                var connectionData = ConvertConnectionData(allocation.ConnectionData);
+                var hostConnectionData = ConvertConnectionData(allocation.HostConnectionData);
+                var key = ConvertFromHMAC(allocation.Key);
 
                 Debug.Log($"client: {allocation.ConnectionData[0]} {allocation.ConnectionData[1]}");
                 Debug.Log($"host: {allocation.HostConnectionData[0]} {allocation.HostConnectionData[1]}");
 
                 Debug.Log($"client: {allocation.AllocationId}");
 
-                var relayServerData = new RelayServerData(serverEndpoint, 0, allocationId, connectionData, hostConnectionData, key);
+                var relayServerData = new RelayServerData(ref serverEndpoint, 0, ref allocationId, ref connectionData, ref hostConnectionData, ref key);
                 relayServerData.ComputeNewNonce();
 
                 m_NetworkParameters.Add(new RelayNetworkParameter{ ServerData = relayServerData });
@@ -230,13 +266,14 @@ namespace MLAPI.Transports
 
             var serverEndpoint = NetworkEndPoint.Parse(allocation.RelayServer.IpV4, (ushort)allocation.RelayServer.Port);
             // Debug.Log($"Relay Server endpoint: {allocation.RelayServer.IpV4}:{(ushort)allocation.RelayServer.Port}");
-            var allocationId = RelayAllocationId.FromByteArray(allocation.AllocationIdBytes);
 
-            var connectionData = RelayConnectionData.FromByteArray(allocation.ConnectionData);
-            var key = RelayHMACKey.FromByteArray(allocation.Key);
+            var guid = allocation.AllocationId;
+            var allocationId = ConvertFromGUID(ref guid);
+            var connectionData = ConvertConnectionData(allocation.ConnectionData);
+            var key = ConvertFromHMAC(allocation.Key);
 
 
-            var relayServerData = new RelayServerData(serverEndpoint, 0, allocationId, connectionData, connectionData, key);
+            var relayServerData = new RelayServerData(ref serverEndpoint, 0, ref allocationId, ref connectionData, ref connectionData, ref key);
             relayServerData.ComputeNewNonce();
 
             m_NetworkParameters.Add(new RelayNetworkParameter{ ServerData = relayServerData });
