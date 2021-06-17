@@ -275,7 +275,7 @@ namespace MLAPI.SceneManagement
         }
 
 
-        
+
 
         /// <summary>
         /// Should be invoked on both the client and server side after:
@@ -295,7 +295,7 @@ namespace MLAPI.SceneManagement
             // Just add every NetworkObject found that isn't already in the list
             // If any "non-in-scene placed NetworkObjects" are added to this list it shouldn't matter
             // The only thing that matters is making sure each NetworkObject is keyed off of their GlobalObjectIdHash            
-            foreach(var networkObjectInstance in networkObjects)
+            foreach (var networkObjectInstance in networkObjects)
             {
                 if (!ScenePlacedObjects.ContainsKey(networkObjectInstance.GlobalObjectIdHash))
                 {
@@ -326,20 +326,23 @@ namespace MLAPI.SceneManagement
 
             if (m_NetworkManager.IsServer)
             {
-                OnSceneUnloadServer(switchSceneGuid);
+                OnServerLoadedScene(switchSceneGuid);
             }
             else
             {
-                OnSceneUnloadClient(switchSceneGuid, objectStream);
+                OnClientLoadedScene(switchSceneGuid, objectStream);
             }
         }
 
-        private void OnSceneUnloadServer(Guid switchSceneGuid)
+        private void OnServerLoadedScene(Guid switchSceneGuid)
         {
             // Register in-scene placed NetworkObjects with MLAPI
             foreach (var keyValuePair in ScenePlacedObjects)
             {
-                m_NetworkManager.SpawnManager.SpawnNetworkObjectLocally(keyValuePair.Value, m_NetworkManager.SpawnManager.GetNetworkObjectId(), true, false, null, null, false, 0, false, true);
+                if (!keyValuePair.Value.IsPlayerObject)
+                {
+                    m_NetworkManager.SpawnManager.SpawnNetworkObjectLocally(keyValuePair.Value, m_NetworkManager.SpawnManager.GetNetworkObjectId(), true, false, null, null, false, 0, false, true);
+                }
             }
 
             for (int j = 0; j < m_NetworkManager.ConnectedClientsList.Count; j++)
@@ -353,8 +356,8 @@ namespace MLAPI.SceneManagement
                         writer.WriteByteArray(switchSceneGuid.ToByteArray());
 
                         uint sceneObjectsToSpawn = 0;
-                        
-                        foreach(var keyValuePair in ScenePlacedObjects)
+
+                        foreach (var keyValuePair in ScenePlacedObjects)
                         {
                             if (keyValuePair.Value.Observers.Contains(m_NetworkManager.ConnectedClientsList[j].ClientId))
                             {
@@ -387,7 +390,7 @@ namespace MLAPI.SceneManagement
             OnSceneSwitched?.Invoke();
         }
 
-        private void OnSceneUnloadClient(Guid switchSceneGuid, Stream objectStream)
+        private void OnClientLoadedScene(Guid switchSceneGuid, Stream objectStream)
         {
             var networkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>();
 
