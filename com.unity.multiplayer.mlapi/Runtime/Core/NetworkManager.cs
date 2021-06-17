@@ -318,7 +318,7 @@ namespace MLAPI
                         }
                     }
                 }
-            }           
+            }
         }
 #endif
 
@@ -1360,7 +1360,6 @@ namespace MLAPI
         }
 
         /// <summary>
-        /// InvokeRPC
         /// Called when an inbound queued RPC is invoked
         /// </summary>
         /// <param name="queueItem">frame queue item to invoke</param>
@@ -1371,10 +1370,10 @@ namespace MLAPI
 #endif
             var networkObjectId = queueItem.NetworkReader.ReadUInt64Packed();
             var networkBehaviourId = queueItem.NetworkReader.ReadUInt16Packed();
+            var networkRpcMethodId = queueItem.NetworkReader.ReadUInt32Packed();
             var networkUpdateStage = queueItem.NetworkReader.ReadByteDirect();
-            var networkMethodId = queueItem.NetworkReader.ReadUInt32Packed();
 
-            if (__rpc_func_table.ContainsKey(networkMethodId))
+            if (__rpc_func_table.ContainsKey(networkRpcMethodId))
             {
                 if (!SpawnManager.SpawnedObjects.ContainsKey(networkObjectId))
                 {
@@ -1413,7 +1412,7 @@ namespace MLAPI
                         break;
                 }
 
-                __rpc_func_table[networkMethodId](networkBehaviour, new NetworkSerializer(queueItem.NetworkReader), rpcParams);
+                __rpc_func_table[networkRpcMethodId](networkBehaviour, new NetworkSerializer(queueItem.NetworkReader), rpcParams);
             }
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
