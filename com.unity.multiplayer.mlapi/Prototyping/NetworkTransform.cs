@@ -282,7 +282,10 @@ namespace MLAPI.Prototyping
                 m_NetworkRotation.Value = m_CurrentRotation;
                 m_NetworkWorldScale.Value = m_CurrentScale;
             }
-            else
+            else if (m_CurrentPosition != m_OldPosition ||
+                m_CurrentRotation != m_OldRotation ||
+                m_CurrentScale != m_OldScale
+            )
             {
                 Debug.LogError($"Trying to update transform's position for object {gameObject.name} with ID {NetworkObjectId} when you're not allowed, please validate your {nameof(NetworkTransform)}'s authority settings. It's also possible you have other systems updating your transform's position, such as a rigid body for example.", gameObject);
                 m_CurrentPosition = m_NetworkPosition.Value;
