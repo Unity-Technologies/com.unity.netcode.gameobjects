@@ -1,8 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Diagnostics;
 using UnityEngine;
 using MLAPI.Logging;
 using MLAPI.Configuration;
@@ -30,27 +28,16 @@ namespace MLAPI
     public class NetworkManager : MonoBehaviour, INetworkUpdateSystem, IProfilableTransportProvider
     {
 #pragma warning disable IDE1006 // disable naming rule violation check
-        [Browsable(false)]
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-#if UNITY_2020_2_OR_NEWER
         // RuntimeAccessModifiersILPP will make this `public`
-        internal static readonly Dictionary<uint, Action<NetworkBehaviour, NetworkSerializer, __RpcParams>> __ntable = new Dictionary<uint, Action<NetworkBehaviour, NetworkSerializer, __RpcParams>>();
+        internal static readonly Dictionary<uint, Action<NetworkBehaviour, NetworkSerializer, __RpcParams>> __rpc_func_table = new Dictionary<uint, Action<NetworkBehaviour, NetworkSerializer, __RpcParams>>();
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         // RuntimeAccessModifiersILPP will make this `public`
         internal static readonly Dictionary<uint, string> __rpc_name_table = new Dictionary<uint, string>();
 #else // !(UNITY_EDITOR || DEVELOPMENT_BUILD)
-        // RuntimeAccessModifiersILPP and NetworkBehaviourILPP requires a variable with this name to exist when outside of Debug build or Editor.
-        // If the name doesn't exist, generation and compilation errors occurs.
-        // For the sake of consistency, we are using the same type.
-        // Final note: this variable will not be used. Since it's never initialized, it will not be in the memory footprint.
-        internal static readonly Dictionary<uint, string> __rpc_name_table = null;
+        // RuntimeAccessModifiersILPP will make this `public`
+        internal static readonly Dictionary<uint, string> __rpc_name_table = null; // not needed on release builds
 #endif // UNITY_EDITOR || DEVELOPMENT_BUILD
-#else // !UNITY_2020_2_OR_NEWER
-        [Obsolete("Please do not use, will no longer be exposed in the future versions (framework internal)")]
-        public static readonly Dictionary<uint, Action<NetworkBehaviour, NetworkSerializer, __RpcParams>> __ntable = new Dictionary<uint, Action<NetworkBehaviour, NetworkSerializer, __RpcParams>>();
-#endif // UNITY_2020_2_OR_NEWER
 #pragma warning restore IDE1006 // restore naming rule violation check
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
@@ -66,8 +53,8 @@ namespace MLAPI
 
         // todo: transitional. For the next release, only Snapshot should remain
         // The booleans allow iterative development and testing in the meantime
-        static internal bool UseClassicDelta = true;
-        static internal bool UseSnapshot = false;
+        internal static bool UseClassicDelta = true;
+        internal static bool UseSnapshot = false;
 
         internal RpcQueueContainer RpcQueueContainer { get; private set; }
         internal NetworkTickSystem NetworkTickSystem { get; private set; }
@@ -277,6 +264,12 @@ namespace MLAPI
                 };
             }
 
+            // If the scene is not dirty or the asset database is currently updating then we can skip updating the NetworkPrefab information
+            if (!activeScene.isDirty || UnityEditor.EditorApplication.isUpdating)
+            {
+                return;
+            }
+
             // During OnValidate we will always clear out NetworkPrefabOverrideLinks and rebuild it
             NetworkConfig.NetworkPrefabOverrideLinks.Clear();
 
@@ -415,7 +408,7 @@ namespace MLAPI
             // This should never happen, but in the event that it does there should be (at a minimum) a unity error logged.
             if (RpcQueueContainer != null)
             {
-                UnityEngine.Debug.LogError("Init was invoked, but rpcQueueContainer was already initialized! (destroying previous instance)");
+                Debug.LogError("Init was invoked, but rpcQueueContainer was already initialized! (destroying previous instance)");
                 RpcQueueContainer.Dispose();
                 RpcQueueContainer = null;
             }
@@ -470,7 +463,7 @@ namespace MLAPI
                     }
 
                     // Provide the name of the prefab with issues so the user can more easily find the prefab and fix it
-                    UnityEngine.Debug.LogWarning($"{nameof(NetworkPrefab)} (\"{NetworkConfig.NetworkPrefabs[i].Prefab.name}\") will be removed and ignored.");
+                    Debug.LogWarning($"{nameof(NetworkPrefab)} (\"{NetworkConfig.NetworkPrefabs[i].Prefab.name}\") will be removed and ignored.");
                     removeEmptyPrefabs.Add(i);
 
                     continue;
@@ -498,7 +491,7 @@ namespace MLAPI
                 else
                 {
                     // This should never happen, but in the case it somehow does log an error and remove the duplicate entry
-                    UnityEngine.Debug.LogError($"{nameof(NetworkPrefab)} (\"{NetworkConfig.NetworkPrefabs[i].Prefab.name}\") has a duplicate {nameof(NetworkObject.GlobalObjectIdHash)} {networkObject.GlobalObjectIdHash} entry! Removing entry from list!");
+                    Debug.LogError($"{nameof(NetworkPrefab)} (\"{NetworkConfig.NetworkPrefabs[i].Prefab.name}\") has a duplicate {nameof(NetworkObject.GlobalObjectIdHash)} {networkObject.GlobalObjectIdHash} entry! Removing entry from list!");
                     removeEmptyPrefabs.Add(i);
                 }
             }
@@ -522,7 +515,7 @@ namespace MLAPI
                 else
                 {
                     // Provide the name of the prefab with issues so the user can more easily find the prefab and fix it
-                    UnityEngine.Debug.LogError($"{nameof(NetworkConfig.PlayerPrefab)} (\"{NetworkConfig.PlayerPrefab.name}\") has no NetworkObject assigned to it!.");
+                    Debug.LogError($"{nameof(NetworkConfig.PlayerPrefab)} (\"{NetworkConfig.PlayerPrefab.name}\") has no NetworkObject assigned to it!.");
                 }
             }
 
@@ -1388,11 +1381,9 @@ namespace MLAPI
         }
 
         /// <summary>
-        /// InvokeRPC
         /// Called when an inbound queued RPC is invoked
         /// </summary>
         /// <param name="queueItem">frame queue item to invoke</param>
-#pragma warning disable 618
         internal void InvokeRpc(RpcFrameQueueItem queueItem)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
@@ -1400,10 +1391,10 @@ namespace MLAPI
 #endif
             var networkObjectId = queueItem.NetworkReader.ReadUInt64Packed();
             var networkBehaviourId = queueItem.NetworkReader.ReadUInt16Packed();
+            var networkRpcMethodId = queueItem.NetworkReader.ReadUInt32Packed();
             var networkUpdateStage = queueItem.NetworkReader.ReadByteDirect();
-            var networkMethodId = queueItem.NetworkReader.ReadUInt32Packed();
 
-            if (__ntable.ContainsKey(networkMethodId))
+            if (__rpc_func_table.ContainsKey(networkRpcMethodId))
             {
                 if (!SpawnManager.SpawnedObjects.ContainsKey(networkObjectId))
                 {
@@ -1442,9 +1433,8 @@ namespace MLAPI
                         break;
                 }
 
-                __ntable[networkMethodId](networkBehaviour, new NetworkSerializer(queueItem.NetworkReader), rpcParams);
+                __rpc_func_table[networkRpcMethodId](networkBehaviour, new NetworkSerializer(queueItem.NetworkReader), rpcParams);
             }
-#pragma warning restore 618
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_InvokeRpc.End();
@@ -1518,7 +1508,7 @@ namespace MLAPI
                         if (PrefabHandler.ContainsHandler(ConnectedClients[clientId].PlayerObject.GlobalObjectIdHash))
                         {
                             PrefabHandler.HandleNetworkPrefabDestroy(ConnectedClients[clientId].PlayerObject);
-                            SpawnManager.OnDestroyObject(ConnectedClients[clientId].PlayerObject.NetworkObjectId, false);
+                            SpawnManager.OnDespawnObject(ConnectedClients[clientId].PlayerObject.NetworkObjectId, false);
                         }
                         else
                         {
@@ -1536,7 +1526,7 @@ namespace MLAPI
                                 if (PrefabHandler.ContainsHandler(ConnectedClients[clientId].OwnedObjects[i].GlobalObjectIdHash))
                                 {
                                     PrefabHandler.HandleNetworkPrefabDestroy(ConnectedClients[clientId].OwnedObjects[i]);
-                                    SpawnManager.OnDestroyObject(ConnectedClients[clientId].OwnedObjects[i].NetworkObjectId, false);
+                                    SpawnManager.OnDespawnObject(ConnectedClients[clientId].OwnedObjects[i].NetworkObjectId, false);
                                 }
                                 else
                                 {
