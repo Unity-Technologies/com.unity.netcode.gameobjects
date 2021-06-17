@@ -397,7 +397,7 @@ namespace MLAPI
         {
             if (NetworkManager != null && NetworkManager.SpawnManager != null && NetworkManager.SpawnManager.SpawnedObjects.ContainsKey(NetworkObjectId))
             {
-                NetworkManager.SpawnManager.OnDestroyObject(NetworkObjectId, false);
+                NetworkManager.SpawnManager.OnDespawnObject(NetworkObjectId, false);
             }
         }
 
@@ -504,33 +504,21 @@ namespace MLAPI
             }
         }
 
-        internal void ResetNetworkStartInvoked()
-        {
-            if (ChildNetworkBehaviours != null)
-            {
-                for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
-                {
-                    ChildNetworkBehaviours[i].NetworkStartInvoked = false;
-                }
-            }
-        }
-
         internal void InvokeBehaviourNetworkSpawn(Stream stream)
         {
             for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
             {
-                //We check if we are it's NetworkObject owner incase a NetworkObject exists as a child of our NetworkObject
-                if (!ChildNetworkBehaviours[i].NetworkStartInvoked)
-                {
-                    if (!ChildNetworkBehaviours[i].InternalNetworkStartInvoked)
-                    {
-                        ChildNetworkBehaviours[i].InternalNetworkStart();
-                        ChildNetworkBehaviours[i].InternalNetworkStartInvoked = true;
-                    }
+                ChildNetworkBehaviours[i].InternalOnNetworkSpawn();
+                ChildNetworkBehaviours[i].OnNetworkSpawn(stream);
+            }
+        }
 
-                    ChildNetworkBehaviours[i].NetworkStart(stream);
-                    ChildNetworkBehaviours[i].NetworkStartInvoked = true;
-                }
+        internal void InvokeBehaviourNetworkDespawn()
+        {
+            for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
+            {
+                ChildNetworkBehaviours[i].InternalOnNetworkDespawn();
+                ChildNetworkBehaviours[i].OnNetworkDespawn();
             }
         }
 
@@ -698,7 +686,7 @@ namespace MLAPI
                 // If our current buffer position is greater than our positionBeforeNetworkVariableData then we wrote NetworkVariable data
                 // Part 1: This will include the total NetworkVariable data size, if there was NetworkVariable data written, to the stream
                 // in order to be able to skip past this entry on the deserialization side in the event this NetworkObject fails to be
-                // constructed (See Part 2 below in the DeserializeSceneObject method) 
+                // constructed (See Part 2 below in the DeserializeSceneObject method)
                 if (buffer.Position > positionBeforeNetworkVariableData)
                 {
                     // Store our current stream buffer position

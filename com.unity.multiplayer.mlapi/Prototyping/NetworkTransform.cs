@@ -188,7 +188,7 @@ namespace MLAPI.Prototyping
             m_Transform = transform;
         }
 
-        public override void NetworkStart()
+        public override void OnNetworkSpawn()
         {
             void SetupVar<T>(NetworkVariable<T> v, T initialValue, ref T oldVal)
             {
@@ -284,24 +284,14 @@ namespace MLAPI.Prototyping
             }
             else
             {
-                var deltaPosition = Vector3.Distance(m_CurrentPosition, m_OldPosition);
-                if(deltaPosition >= MinMeters)
-                {
-                    Debug.LogError($"Trying to update transform's position for object {gameObject.name} with ID {NetworkObjectId} when you're not allowed, please validate your {nameof(NetworkTransform)}'s authority settings", gameObject);
-                    m_CurrentPosition = m_NetworkPosition.Value;
-                }
-                var deltaRotation = Vector3.Distance(m_CurrentRotation.eulerAngles, m_OldRotation.eulerAngles);
-                if (deltaRotation >= MinDegrees)
-                {
-                    Debug.LogError($"Trying to update transform's rotation for object {gameObject.name} with ID {NetworkObjectId} when you're not allowed, please validate your {nameof(NetworkTransform)}'s authority settings", gameObject);
-                    m_CurrentRotation = m_NetworkRotation.Value;
-                }
+                Debug.LogError($"Trying to update transform's position for object {gameObject.name} with ID {NetworkObjectId} when you're not allowed, please validate your {nameof(NetworkTransform)}'s authority settings. It's also possible you have other systems updating your transform's position, such as a rigid body for example.", gameObject);
+                m_CurrentPosition = m_NetworkPosition.Value;
+                m_CurrentRotation = m_NetworkRotation.Value;
+                m_CurrentScale = m_NetworkWorldScale.Value;
 
-                if (m_CurrentScale != m_OldScale)
-                {
-                    Debug.LogError($"Trying to update transform's scale for object {gameObject.name} with ID {NetworkObjectId} when you're not allowed, please validate your {nameof(NetworkTransform)}'s authority settings", gameObject);
-                    m_CurrentScale = m_NetworkWorldScale.Value;
-                }
+                m_OldPosition = m_CurrentPosition;
+                m_OldRotation = m_CurrentRotation;
+                m_OldScale = m_CurrentScale;
             }
         }
 
