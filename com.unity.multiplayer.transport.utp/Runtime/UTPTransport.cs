@@ -40,7 +40,7 @@ namespace MLAPI.Transports
         [SerializeField] private string m_ServerAddress = "127.0.0.1";
         [SerializeField] private ushort m_ServerPort = 7777;
         [SerializeField] private int m_RelayMaxPlayers = 10;
-        [SerializeField] private string m_RelayServer = "https://relay-allocations-stg.cloud.unity3d.com";
+        [SerializeField] private string m_RelayServer = "https://relay-allocations.cloud.unity3d.com";
 
         private State m_State = State.Disconnected;
         private NetworkDriver m_Driver;
@@ -95,20 +95,10 @@ namespace MLAPI.Transports
                 var allocation = joinTask.Result.Result.Data.Allocation;
 
                 serverEndpoint = NetworkEndPoint.Parse(allocation.RelayServer.IpV4, (ushort)allocation.RelayServer.Port);
-#if RELAY_BIGENDIAN
-                // TODO: endianess of Relay server does not match
-                var allocationIdArray = allocation.AllocationId.ToByteArray();
-                Array.Reverse(allocationIdArray, 0, 4);
-                Array.Reverse(allocationIdArray, 4, 2);
-                Array.Reverse(allocationIdArray, 6, 2);
-                var allocationId = RelayAllocationId.FromByteArray(allocationIdArray);
-#else
-                var allocationId = RelayAllocationId.FromByteArray(allocation.AllocationId.ToByteArray());
-#endif
-                
-                // TODO: workaround for receiving 271 bytes in connection data
-                var connectionData = RelayConnectionData.FromByteArray(allocation.ConnectionData.Take(255).ToArray());
-                var hostConnectionData = RelayConnectionData.FromByteArray(allocation.HostConnectionData.Take(255).ToArray());
+                var allocationId = RelayAllocationId.FromByteArray(allocation.AllocationIdBytes);
+
+                var connectionData = RelayConnectionData.FromByteArray(allocation.ConnectionData);
+                var hostConnectionData = RelayConnectionData.FromByteArray(allocation.HostConnectionData);
                 var key = RelayHMACKey.FromByteArray(allocation.Key);
 
                 Debug.Log($"client: {allocation.ConnectionData[0]} {allocation.ConnectionData[1]}");
@@ -240,17 +230,9 @@ namespace MLAPI.Transports
 
             var serverEndpoint = NetworkEndPoint.Parse(allocation.RelayServer.IpV4, (ushort)allocation.RelayServer.Port);
             // Debug.Log($"Relay Server endpoint: {allocation.RelayServer.IpV4}:{(ushort)allocation.RelayServer.Port}");
-#if RELAY_BIGENDIAN
-            var allocationIdArray = allocation.AllocationId.ToByteArray();
-            Array.Reverse(allocationIdArray, 0, 4);
-            Array.Reverse(allocationIdArray, 4, 2);
-            Array.Reverse(allocationIdArray, 6, 2);
-            var allocationId = RelayAllocationId.FromByteArray(allocationIdArray);
-#else
-            var allocationId = RelayAllocationId.FromByteArray(allocation.AllocationId.ToByteArray());
-#endif
-            // TODO: connectionData should be 255 bytes, but we are getting 16 extra bytes
-            var connectionData = RelayConnectionData.FromByteArray(allocation.ConnectionData.Take(255).ToArray());
+            var allocationId = RelayAllocationId.FromByteArray(allocation.AllocationIdBytes);
+
+            var connectionData = RelayConnectionData.FromByteArray(allocation.ConnectionData);
             var key = RelayHMACKey.FromByteArray(allocation.Key);
 
 
@@ -385,7 +367,7 @@ namespace MLAPI.Transports
             m_MessageBuffer = new byte[m_MessageBufferSize];
 #if ENABLE_RELAY_SERVICE
             if (m_ProtocolType == ProtocolType.RelayUnityTransport) {
-                Unity.Services.Relay.Configuration.BasePath = m_RelayServer;
+                Unity.Services.Relay.RelayService.Configuration.BasePath = m_RelayServer;
                 UnityServices.Initialize();
             }
 #endif

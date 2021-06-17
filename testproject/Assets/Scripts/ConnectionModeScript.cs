@@ -68,8 +68,8 @@ public class ConnectionModeScript : MonoBehaviour
             if (NetworkManager.Singleton.GetComponent<UTPTransport>().Protocol == UTPTransport.ProtocolType.RelayUnityTransport)
             {
                 m_JoinCodeInput.SetActive(true);
-                m_ConnectionModeButtons.SetActive(false || Authentication.IsSignedIn);
-                m_AuthenticationButtons.SetActive(NetworkManager.Singleton && !NetworkManager.Singleton.IsListening && !Authentication.IsSignedIn);
+                m_ConnectionModeButtons.SetActive(false || AuthenticationService.Instance.IsSignedIn);
+                m_AuthenticationButtons.SetActive(NetworkManager.Singleton && !NetworkManager.Singleton.IsListening && !AuthenticationService.Instance.IsSignedIn);
             }
             else
 #endif
@@ -128,10 +128,10 @@ public class ConnectionModeScript : MonoBehaviour
     {
 #if ENABLE_RELAY_SERVICE
         await UnityServices.Initialize();
-        await Authentication.SignInAnonymously();
-        Debug.Log($"Logging in with PlayerID {Authentication.PlayerId}");
+        await AuthenticationService.Instance.SignInAnonymouslyAsync();
+        Debug.Log($"Logging in with PlayerID {AuthenticationService.Instance.PlayerId}");
 
-        if (Authentication.IsSignedIn)
+        if (AuthenticationService.Instance.IsSignedIn)
         {
             m_ConnectionModeButtons.SetActive(true);
             m_AuthenticationButtons.SetActive(false);

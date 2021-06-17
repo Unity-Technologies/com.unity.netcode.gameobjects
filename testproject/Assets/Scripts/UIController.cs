@@ -54,10 +54,10 @@ public class UIController : MonoBehaviour
 #if ENABLE_RELAY_SERVICE
         await UnityServices.Initialize();
         Debug.Log("OnSignIn");
-        await Authentication.SignInAnonymously();
-        Debug.Log($"Logging in with PlayerID {Authentication.PlayerId}");
+        await AuthenticationService.Instance.SignInAnonymouslyAsync();
+        Debug.Log($"Logging in with PlayerID {AuthenticationService.Instance.PlayerId}");
 
-        if (Authentication.IsSignedIn) {
+        if (AuthenticationService.Instance.IsSignedIn) {
             ButtonsRoot.SetActive(true);
             JoinCode.SetActive(true);
             AuthButton.SetActive(false);

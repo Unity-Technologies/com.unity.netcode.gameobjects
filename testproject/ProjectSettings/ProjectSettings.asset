@@ -578,7 +578,7 @@ PlayerSettings:
   webGLThreadsSupport: 0
   webGLDecompressionFallback: 0
   scriptingDefineSymbols:
-    1: AUTHENTICATION_TESTING_STAGING_UAS;RELAY_BIGENDIAN
+    1: AUTHENTICATION_TESTING_STAGING_UAS;
   additionalCompilerArguments: {}
   platformArchitecture: {}
   scriptingBackend: {}
