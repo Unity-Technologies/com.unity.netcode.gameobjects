@@ -234,6 +234,7 @@ namespace MLAPI
             // Send spawn call
             Observers.Add(clientId);
 
+            // todo: trigger snapshot spawn
             NetworkManager.SpawnManager.SendSpawnCallForObject(clientId, this, payload);
         }
 
@@ -420,6 +421,22 @@ namespace MLAPI
             }
 
             NetworkManager.SpawnManager.SpawnNetworkObjectLocally(this, NetworkManager.SpawnManager.GetNetworkObjectId(), false, playerObject, ownerClientId, spawnPayload, spawnPayload != null, spawnPayload == null ? 0 : (int)spawnPayload.Length, false, destroyWithScene);
+
+
+            if (NetworkManager.UseSnapshotSpawn)
+            {
+                SnapshotSpawnCommand command;
+                command.NetworkObjectId = NetworkObjectId;
+                command.OwnerClientId = OwnerClientId;
+                command.IsPlayerObject = IsPlayerObject;
+                command.IsSceneObject = (IsSceneObject == null) || IsSceneObject.Value;
+                command.ParentNetworkId = NetworkManager.SpawnManager.GetSpawnParentId(this);
+                command.GlobalObjectIdHash = GlobalObjectIdHash;
+                // todo: check if (IncludeTransformWhenSpawning == null || IncludeTransformWhenSpawning(clientId)) for any clientId
+                command.ObjectTransform = transform;
+
+                NetworkManager.SnapshotSystem.Spawn(command);
+            }
 
             for (int i = 0; i < NetworkManager.ConnectedClientsList.Count; i++)
             {

@@ -350,20 +350,6 @@ namespace MLAPI.Spawning
 
         internal void SendSpawnCallForObject(ulong clientId, NetworkObject networkObject, Stream payload)
         {
-            if (NetworkManager.UseSnapshotSpawn)
-            {
-                SnapshotSpawnCommand command;
-                command.NetworkObjectId = networkObject.NetworkObjectId;
-                command.OwnerClientId = networkObject.OwnerClientId;
-                command.IsPlayerObject = false;
-                command.IsSceneObject = false;
-                command.ParentNetworkId = null;
-                command.GlobalObjectIdHash = 0;
-                command.ObjectTransform = null;
-
-                NetworkManager.SnapshotSystem.Spawn(command);
-
-            }
             if (NetworkManager.UseClassicSpawn)
             {
                 //Currently, if this is called and the clientId (destination) is the server's client Id, this case
