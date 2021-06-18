@@ -6,9 +6,9 @@ namespace MLAPI
     {
         internal int Pos; // Position where the memory of this slot is
         internal int Length; // Length of the memory allocated to this slot
-        internal bool Free;  // Whether this is a free slot
         internal int Next; // Next and Prev define the order of the slots in the buffer
         internal int Prev;
+        internal bool Free;  // Whether this is a free slot
     }
 
     internal class IndexAllocator
