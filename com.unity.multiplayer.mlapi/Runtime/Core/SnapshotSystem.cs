@@ -142,6 +142,9 @@ namespace MLAPI
         /// <param name="writer">The writer to write the entry to</param>
         internal void WriteEntry(NetworkWriter writer, in Entry entry)
         {
+            //todo: major refactor.
+            // use blittable types and copy variable in memory locally
+            // only serialize when put on the wire for network transfer
             writer.WriteUInt64(entry.Key.NetworkObjectId);
             writer.WriteUInt16(entry.Key.BehaviourIndex);
             writer.WriteUInt16(entry.Key.VariableIndex);
