@@ -102,9 +102,17 @@ namespace MLAPI.RuntimeTests
             // Shutdown the server which forces clients to disconnect
             foreach (var networkManager in NetworkManagerInstances)
             {
-                if (networkManager.IsServer)
+                if (networkManager.IsHost)
                 {
                     networkManager.StopHost();
+                }
+                else if (networkManager.IsServer)
+                {
+                    networkManager.StopServer();
+                }
+                else if (networkManager.IsClient)
+                {
+                    networkManager.StopClient();
                 }
             }
 

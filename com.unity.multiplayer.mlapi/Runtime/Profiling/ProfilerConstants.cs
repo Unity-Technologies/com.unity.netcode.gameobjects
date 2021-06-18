@@ -17,7 +17,7 @@ namespace MLAPI.Profiling
         public const string RpcReceived = nameof(RpcReceived);
         public const string RpcBatchesSent = nameof(RpcBatchesSent);
         public const string RpcBatchesReceived = nameof(RpcBatchesReceived);
-        public const string RpcQueueProcessed = nameof(RpcQueueProcessed);
+        public const string MessageQueueProcessed = nameof(MessageQueueProcessed);
         public const string RpcInQueueSize = nameof(RpcInQueueSize);
         public const string RpcOutQueueSize = nameof(RpcOutQueueSize);
     }

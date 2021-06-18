@@ -35,8 +35,9 @@ namespace MLAPI.Messaging
         private static ProfilerMarker s_HandleUnnamedMessage = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleUnnamedMessage)}");
         private static ProfilerMarker s_HandleNamedMessage = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleNamedMessage)}");
         private static ProfilerMarker s_HandleNetworkLog = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleNetworkLog)}");
-        private static ProfilerMarker s_RpcReceiveQueueItemServerRpc = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(RpcReceiveQueueItem)}.{nameof(RpcQueueContainer.QueueItemType.ServerRpc)}");
-        private static ProfilerMarker s_RpcReceiveQueueItemClientRpc = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(RpcReceiveQueueItem)}.{nameof(RpcQueueContainer.QueueItemType.ClientRpc)}");
+        private static ProfilerMarker s_MessageReceiveQueueItemServerRpc = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(MessageReceiveQueueItem)}.{nameof(MessageQueueContainer.MessageType.ServerRpc)}");
+        private static ProfilerMarker s_MessageReceiveQueueItemClientRpc = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(MessageReceiveQueueItem)}.{nameof(MessageQueueContainer.MessageType.ClientRpc)}");
+        private static ProfilerMarker s_MessageReceiveQueueItemInternalCommands = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(MessageReceiveQueueItem)}.InternalCommand");
         private static ProfilerMarker s_HandleAllClientsSwitchSceneCompleted = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleAllClientsSwitchSceneCompleted)}");
 #endif
 
@@ -177,7 +178,8 @@ namespace MLAPI.Messaging
 #endif
             using (var reader = PooledNetworkReader.Get(stream))
             {
-                var isPlayerObject = reader.ReadBool();
+                var isPlayerObjectI = reader.ReadByte();
+                bool isPlayerObject = isPlayerObjectI != 0;
                 var networkId = reader.ReadUInt64Packed();
                 var ownerClientId = reader.ReadUInt64Packed();
                 var hasParent = reader.ReadBool();
@@ -477,39 +479,80 @@ namespace MLAPI.Messaging
         /// <param name="clientId"></param>
         /// <param name="stream"></param>
         /// <param name="receiveTime"></param>
-        public void RpcReceiveQueueItem(ulong clientId, Stream stream, float receiveTime, RpcQueueContainer.QueueItemType queueItemType)
+        public void MessageReceiveQueueItem(ulong clientId, Stream stream, float receiveTime, MessageQueueContainer.MessageType messageType)
         {
             if (NetworkManager.IsServer && clientId == NetworkManager.ServerClientId)
             {
                 return;
             }
 
-            ProfilerStatManager.RpcsRcvd.Record();
+            if (stream == null)
+            {
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
+                {
+                    NetworkLog.LogError("Message unwrap could not be completed. Was the header corrupt?");
+                }
+
+                return;
+            }
+
+            if (messageType == MessageQueueContainer.MessageType.None)
+            {
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
+                {
+                    NetworkLog.LogError($"Message header contained an invalid type: {((int)messageType).ToString()}");
+                }
+
+                return;
+            }
+
+            if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+            {
+                NetworkLog.LogInfo($"Data Header: {nameof(messageType)}={((int)messageType).ToString()}");
+            }
+
+            if (NetworkManager.PendingClients.TryGetValue(clientId, out PendingClient client) && (client.ConnectionState == PendingClient.State.PendingApproval || client.ConnectionState == PendingClient.State.PendingConnection && messageType != MessageQueueContainer.MessageType.ConnectionRequest))
+            {
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                {
+                    NetworkLog.LogWarning($"Message received from {nameof(clientId)}={clientId.ToString()} before it has been accepted");
+                }
+
+                return;
+            }
+
+            ProfilerStatManager.MessagesRcvd.Record();
             PerformanceDataManager.Increment(ProfilerConstants.RpcReceived);
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            switch (queueItemType)
+            switch (messageType)
             {
-                case RpcQueueContainer.QueueItemType.ServerRpc:
-                    s_RpcReceiveQueueItemServerRpc.Begin();
+                case MessageQueueContainer.MessageType.ServerRpc:
+                    s_MessageReceiveQueueItemServerRpc.Begin();
                     break;
-                case RpcQueueContainer.QueueItemType.ClientRpc:
-                    s_RpcReceiveQueueItemClientRpc.Begin();
+                case MessageQueueContainer.MessageType.ClientRpc:
+                    s_MessageReceiveQueueItemClientRpc.Begin();
+                    break;
+                default:
+                    s_MessageReceiveQueueItemInternalCommands.Begin();
                     break;
             }
 #endif
 
-            var rpcQueueContainer = NetworkManager.RpcQueueContainer;
-            rpcQueueContainer.AddQueueItemToInboundFrame(queueItemType, receiveTime, clientId, (NetworkBuffer)stream);
+            var messageQueueContainer = NetworkManager.MessageQueueContainer;
+            messageQueueContainer.AddQueueItemToInboundFrame(messageType, receiveTime, clientId, (NetworkBuffer)stream);
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            switch (queueItemType)
+            switch (messageType)
             {
-                case RpcQueueContainer.QueueItemType.ServerRpc:
-                    s_RpcReceiveQueueItemServerRpc.End();
+                case MessageQueueContainer.MessageType.ServerRpc:
+                    s_MessageReceiveQueueItemServerRpc.End();
                     break;
-                case RpcQueueContainer.QueueItemType.ClientRpc:
-                    s_RpcReceiveQueueItemClientRpc.End();
+                case MessageQueueContainer.MessageType.ClientRpc:
+                    s_MessageReceiveQueueItemClientRpc.End();
+                    break;
+                default:
+                    s_MessageReceiveQueueItemInternalCommands.End();
                     break;
             }
 #endif

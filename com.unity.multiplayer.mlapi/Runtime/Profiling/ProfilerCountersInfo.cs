@@ -67,8 +67,8 @@ namespace MLAPI.Profiling
             new ProfilerCounterValue<int>(ProfilerCategory.Network, ProfilerConstants.RpcBatchesReceived,
                 ProfilerMarkerDataUnit.Count, ProfilerCounterOptions.FlushOnEndOfFrame | ProfilerCounterOptions.ResetToZeroOnFlush);
 
-        private static readonly ProfilerCounterValue<int> k_RPCQueueProcessedCounterValue =
-            new ProfilerCounterValue<int>(ProfilerCategory.Network, ProfilerConstants.RpcQueueProcessed,
+        private static readonly ProfilerCounterValue<int> k_MessageQueueProcessedCounterValue =
+            new ProfilerCounterValue<int>(ProfilerCategory.Network, ProfilerConstants.MessageQueueProcessed,
                 ProfilerMarkerDataUnit.Count, ProfilerCounterOptions.FlushOnEndOfFrame | ProfilerCounterOptions.ResetToZeroOnFlush);
 
         private static readonly ProfilerCounterValue<int> k_RPCsInQueueSizeCounterValue =
@@ -110,7 +110,7 @@ namespace MLAPI.Profiling
             k_RPCsReceivedCounterValue.Value = 0;
             k_RPCBatchesSentCounterValue.Value = 0;
             k_RPCBatchesReceivedCounterValue.Value = 0;
-            k_RPCQueueProcessedCounterValue.Value = 0;
+            k_MessageQueueProcessedCounterValue.Value = 0;
             k_RPCsInQueueSizeCounterValue.Value = 0;
             k_RPCsOutQueueSizeCounterValue.Value = 0;
         }
@@ -136,8 +136,8 @@ namespace MLAPI.Profiling
             UpdateIntCounter(tickData, k_RPCsReceivedCounterValue, ProfilerConstants.RpcReceived);
             UpdateIntCounter(tickData, k_RPCBatchesSentCounterValue, ProfilerConstants.RpcBatchesSent);
             UpdateIntCounter(tickData, k_RPCBatchesReceivedCounterValue, ProfilerConstants.RpcBatchesReceived);
-            UpdateIntCounter(tickData, k_RPCBatchesReceivedCounterValue, ProfilerConstants.RpcQueueProcessed);
-            UpdateIntCounter(tickData, k_RPCQueueProcessedCounterValue, ProfilerConstants.RpcInQueueSize);
+            UpdateIntCounter(tickData, k_RPCBatchesReceivedCounterValue, ProfilerConstants.MessageQueueProcessed);
+            UpdateIntCounter(tickData, k_MessageQueueProcessedCounterValue, ProfilerConstants.RpcInQueueSize);
             UpdateIntCounter(tickData, k_RPCsInQueueSizeCounterValue, ProfilerConstants.RpcOutQueueSize);
         }
 

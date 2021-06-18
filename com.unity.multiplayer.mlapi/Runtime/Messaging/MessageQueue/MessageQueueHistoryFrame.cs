@@ -1,13 +1,14 @@
 using System.Collections.Generic;
 using MLAPI.Serialization.Pooled;
 using MLAPI.Transports;
+using UnityEngine;
 
 namespace MLAPI.Messaging
 {
     /// <summary>
-    /// Used by the RpcQueueContainer to hold queued RPCs
+    /// Used by the MessageQueueContainer to hold queued RPCs
     /// </summary>
-    public class RpcQueueHistoryFrame
+    public class MessageQueueHistoryFrame
     {
         public enum QueueFrameType
         {
@@ -22,13 +23,13 @@ namespace MLAPI.Messaging
 
         public PooledNetworkBuffer QueueBuffer;
         public PooledNetworkWriter QueueWriter;
-        public RpcQueueHistoryFrame LoopbackHistoryFrame; //Temporary fix for Host mode loopback work around.
+        public MessageQueueHistoryFrame LoopbackHistoryFrame; //Temporary fix for Host mode loopback work around.
 
 
         public PooledNetworkReader QueueReader;
 
         private int m_QueueItemOffsetIndex;
-        private RpcFrameQueueItem m_CurrentQueueItem;
+        private MessageFrameItem m_CurrentItem;
         private readonly QueueFrameType m_QueueFrameType;
         private int m_MaximumClients;
         private long m_CurrentStreamSizeMark;
@@ -73,21 +74,21 @@ namespace MLAPI.Messaging
         /// Internal method to get the current Queue Item from the stream at its current position
         /// </summary>
         /// <returns>FrameQueueItem</returns>
-        private RpcFrameQueueItem GetCurrentQueueItem()
+        internal MessageFrameItem GetCurrentQueueItem()
         {
             //Write the packed version of the queueItem to our current queue history buffer
-            m_CurrentQueueItem.QueueItemType = (RpcQueueContainer.QueueItemType)QueueReader.ReadUInt16();
-            m_CurrentQueueItem.Timestamp = QueueReader.ReadSingle();
-            m_CurrentQueueItem.NetworkId = QueueReader.ReadUInt64();
+            m_CurrentItem.MessageType = (MessageQueueContainer.MessageType)QueueReader.ReadUInt16();
+            m_CurrentItem.Timestamp = QueueReader.ReadSingle();
+            m_CurrentItem.NetworkId = QueueReader.ReadUInt64();
 
             //Clear out any current value for the client ids
-            m_CurrentQueueItem.ClientNetworkIds = new ulong[0];
+            m_CurrentItem.ClientNetworkIds = new ulong[0];
 
             //If outbound, determine if any client ids needs to be added
             if (m_QueueFrameType == QueueFrameType.Outbound)
             {
                 //Outbound we care about both channel and clients
-                m_CurrentQueueItem.NetworkChannel = (NetworkChannel)QueueReader.ReadByteDirect();
+                m_CurrentItem.NetworkChannel = (NetworkChannel)QueueReader.ReadByteDirect();
                 int numClients = QueueReader.ReadInt32();
                 if (numClients > 0 && numClients < m_MaximumClients)
                 {
@@ -97,24 +98,17 @@ namespace MLAPI.Messaging
                         clientIdArray[i] = QueueReader.ReadUInt64();
                     }
 
-                    if (m_CurrentQueueItem.ClientNetworkIds == null)
-                    {
-                        m_CurrentQueueItem.ClientNetworkIds = clientIdArray;
-                    }
-                    else
-                    {
-                        m_CurrentQueueItem.ClientNetworkIds = clientIdArray;
-                    }
+                    m_CurrentItem.ClientNetworkIds = clientIdArray;
                 }
             }
 
-            m_CurrentQueueItem.UpdateStage = m_StreamUpdateStage;
+            m_CurrentItem.UpdateStage = m_StreamUpdateStage;
 
             //Get the stream size
-            m_CurrentQueueItem.StreamSize = QueueReader.ReadInt64();
+            m_CurrentItem.StreamSize = QueueReader.ReadInt64();
 
             //Sanity checking for boundaries
-            if (m_CurrentQueueItem.StreamSize < m_MaxStreamBounds && m_CurrentQueueItem.StreamSize > k_MinStreamBounds)
+            if (m_CurrentItem.StreamSize < m_MaxStreamBounds && m_CurrentItem.StreamSize > k_MinStreamBounds)
             {
                 //Inbound and Outbound message streams are handled differently
                 if (m_QueueFrameType == QueueFrameType.Inbound)
@@ -123,28 +117,28 @@ namespace MLAPI.Messaging
                     long position = QueueReader.ReadInt64();
 
                     //Always make sure we are positioned at the start of the stream before we write
-                    m_CurrentQueueItem.NetworkBuffer.Position = 0;
+                    m_CurrentItem.NetworkBuffer.Position = 0;
 
                     //Write the entire message to the m_CurrentQueueItem stream (1 stream is re-used for all incoming RPCs)
-                    m_CurrentQueueItem.NetworkWriter.ReadAndWrite(QueueReader, m_CurrentQueueItem.StreamSize);
+                    m_CurrentItem.NetworkWriter.ReadAndWrite(QueueReader, m_CurrentItem.StreamSize);
 
                     //Reset the position back to the offset so std rpc API can process the message properly
                     //(i.e. minus the already processed header)
-                    m_CurrentQueueItem.NetworkBuffer.Position = position;
+                    m_CurrentItem.NetworkBuffer.Position = position;
                 }
                 else
                 {
                     //Create a byte array segment for outbound sending
-                    m_CurrentQueueItem.MessageData = QueueReader.CreateArraySegment((int)m_CurrentQueueItem.StreamSize, (int)QueueBuffer.Position);
+                    m_CurrentItem.MessageData = QueueReader.CreateArraySegment((int)m_CurrentItem.StreamSize, (int)QueueBuffer.Position);
                 }
             }
             else
             {
-                UnityEngine.Debug.LogWarning($"{nameof(m_CurrentQueueItem)}.{nameof(RpcFrameQueueItem.StreamSize)} exceeds allowed size ({m_MaxStreamBounds} vs {m_CurrentQueueItem.StreamSize})! Exiting from the current RpcQueue enumeration loop!");
-                m_CurrentQueueItem.QueueItemType = RpcQueueContainer.QueueItemType.None;
+                UnityEngine.Debug.LogWarning($"{nameof(m_CurrentItem)}.{nameof(MessageFrameItem.StreamSize)} exceeds allowed size ({m_MaxStreamBounds} vs {m_CurrentItem.StreamSize})! Exiting from the current MessageQueue enumeration loop!");
+                m_CurrentItem.MessageType = MessageQueueContainer.MessageType.None;
             }
 
-            return m_CurrentQueueItem;
+            return m_CurrentItem;
         }
 
         /// <summary>
@@ -152,14 +146,14 @@ namespace MLAPI.Messaging
         /// If none are remaining, then it returns a queue item type of NONE
         /// </summary>
         /// <returns>FrameQueueItem</returns>
-        internal RpcFrameQueueItem GetNextQueueItem()
+        internal MessageFrameItem GetNextQueueItem()
         {
             QueueBuffer.Position = QueueItemOffsets[m_QueueItemOffsetIndex];
             m_QueueItemOffsetIndex++;
             if (m_QueueItemOffsetIndex >= QueueItemOffsets.Count)
             {
-                m_CurrentQueueItem.QueueItemType = RpcQueueContainer.QueueItemType.None;
-                return m_CurrentQueueItem;
+                m_CurrentItem.MessageType = MessageQueueContainer.MessageType.None;
+                return m_CurrentItem;
             }
 
             return GetCurrentQueueItem();
@@ -170,7 +164,7 @@ namespace MLAPI.Messaging
         /// This will reset the frame's stream indices and add a new stream and stream writer to the m_CurrentQueueItem instance.
         /// </summary>
         /// <returns>FrameQueueItem</returns>
-        internal RpcFrameQueueItem GetFirstQueueItem()
+        internal MessageFrameItem GetFirstQueueItem()
         {
             if (QueueBuffer.Position > 0)
             {
@@ -179,27 +173,27 @@ namespace MLAPI.Messaging
 
                 if (m_QueueFrameType == QueueFrameType.Inbound)
                 {
-                    if (m_CurrentQueueItem.NetworkBuffer == null)
+                    if (m_CurrentItem.NetworkBuffer == null)
                     {
-                        m_CurrentQueueItem.NetworkBuffer = PooledNetworkBuffer.Get();
+                        m_CurrentItem.NetworkBuffer = PooledNetworkBuffer.Get();
                     }
 
-                    if (m_CurrentQueueItem.NetworkWriter == null)
+                    if (m_CurrentItem.NetworkWriter == null)
                     {
-                        m_CurrentQueueItem.NetworkWriter = PooledNetworkWriter.Get(m_CurrentQueueItem.NetworkBuffer);
+                        m_CurrentItem.NetworkWriter = PooledNetworkWriter.Get(m_CurrentItem.NetworkBuffer);
                     }
 
-                    if (m_CurrentQueueItem.NetworkReader == null)
+                    if (m_CurrentItem.NetworkReader == null)
                     {
-                        m_CurrentQueueItem.NetworkReader = PooledNetworkReader.Get(m_CurrentQueueItem.NetworkBuffer);
+                        m_CurrentItem.NetworkReader = PooledNetworkReader.Get(m_CurrentItem.NetworkBuffer);
                     }
                 }
 
                 return GetCurrentQueueItem();
             }
 
-            m_CurrentQueueItem.QueueItemType = RpcQueueContainer.QueueItemType.None;
-            return m_CurrentQueueItem;
+            m_CurrentItem.MessageType = MessageQueueContainer.MessageType.None;
+            return m_CurrentItem;
         }
 
         /// <summary>
@@ -209,22 +203,22 @@ namespace MLAPI.Messaging
         /// </summary>
         public void CloseQueue()
         {
-            if (m_CurrentQueueItem.NetworkWriter != null)
+            if (m_CurrentItem.NetworkWriter != null)
             {
-                m_CurrentQueueItem.NetworkWriter.Dispose();
-                m_CurrentQueueItem.NetworkWriter = null;
+                m_CurrentItem.NetworkWriter.Dispose();
+                m_CurrentItem.NetworkWriter = null;
             }
 
-            if (m_CurrentQueueItem.NetworkReader != null)
+            if (m_CurrentItem.NetworkReader != null)
             {
-                m_CurrentQueueItem.NetworkReader.Dispose();
-                m_CurrentQueueItem.NetworkReader = null;
+                m_CurrentItem.NetworkReader.Dispose();
+                m_CurrentItem.NetworkReader = null;
             }
 
-            if (m_CurrentQueueItem.NetworkBuffer != null)
+            if (m_CurrentItem.NetworkBuffer != null)
             {
-                m_CurrentQueueItem.NetworkBuffer.Dispose();
-                m_CurrentQueueItem.NetworkBuffer = null;
+                m_CurrentItem.NetworkBuffer.Dispose();
+                m_CurrentItem.NetworkBuffer = null;
             }
         }
 
@@ -236,13 +230,13 @@ namespace MLAPI.Messaging
         /// <param name="updateStage">Network Update Stage this RpcQueueHistoryFrame is assigned to</param>
         /// <param name="maxClients">maximum number of clients</param>
         /// <param name="maxStreamBounds">maximum size of the message stream an RPC can have (defaults to 1MB)</param>
-        public RpcQueueHistoryFrame(QueueFrameType queueType, NetworkUpdateStage updateStage, int maxClients = 512, int maxStreamBounds = 1 << 20)
+        public MessageQueueHistoryFrame(QueueFrameType queueType, NetworkUpdateStage updateStage, int maxClients = 512, int maxStreamBounds = 1 << 20)
         {
             //The added 512 is the Queue History Frame header information, leaving room to grow
             m_MaxStreamBounds = maxStreamBounds + 512;
             m_MaximumClients = maxClients;
             m_QueueFrameType = queueType;
-            m_CurrentQueueItem = new RpcFrameQueueItem();
+            m_CurrentItem = new MessageFrameItem();
             m_StreamUpdateStage = updateStage;
         }
     }

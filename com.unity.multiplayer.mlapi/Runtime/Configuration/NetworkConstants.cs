@@ -5,7 +5,7 @@ namespace MLAPI.Configuration
     /// </summary>
     internal static class NetworkConstants
     {
-        internal const string PROTOCOL_VERSION = "13.0.0";
+        internal const string PROTOCOL_VERSION = "14.0.0";
 
         internal const byte CONNECTION_REQUEST = 3;
         internal const byte CONNECTION_APPROVED = 4;

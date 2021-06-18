@@ -47,7 +47,7 @@ namespace MLAPI.EditorTests
 
                 // Disable batching to make the RPCs come straight through
                 // This has to be done post start
-                networkManager.RpcQueueContainer.EnableBatchedRpcs(false);
+                networkManager.MessageQueueContainer.EnableBatchedRpcs(false);
 
                 // Should cause log (server only)
                 LogAssert.Expect(LogType.Log, nameof(MessageHandlerReceivedMessageServerClient) + " " + nameof(DummyMessageHandler.HandleConnectionRequest));
@@ -147,17 +147,12 @@ namespace MLAPI.EditorTests
                 }
 
                 // Should cause log (server only)
-                LogAssert.Expect(LogType.Log, nameof(MessageHandlerReceivedMessageServerClient) + " " + nameof(DummyMessageHandler.RpcReceiveQueueItem));
-                using (var messageStream = MessagePacker.WrapMessage(NetworkConstants.SERVER_RPC, inputBuffer))
-                {
-                    networkManager.HandleIncomingData(0, NetworkChannel.Internal, new ArraySegment<byte>(messageStream.GetBuffer(), 0, (int)messageStream.Length), 0, true);
-                }
+                LogAssert.Expect(LogType.Log, nameof(MessageHandlerReceivedMessageServerClient) + " " + nameof(DummyMessageHandler.MessageReceiveQueueItem));
+                networkManager.HandleIncomingData(0, NetworkChannel.Internal, new ArraySegment<byte>(inputBuffer.GetBuffer(), 0, (int)inputBuffer.Length), 0, true);
 
-                // Should not cause log (client only)
-                using (var messageStream = MessagePacker.WrapMessage(NetworkConstants.CLIENT_RPC, inputBuffer))
-                {
-                    networkManager.HandleIncomingData(0, NetworkChannel.Internal, new ArraySegment<byte>(messageStream.GetBuffer(), 0, (int)messageStream.Length), 0, true);
-                }
+                    // Should not cause log (client only)
+                networkManager.HandleIncomingData(0, NetworkChannel.Internal, new ArraySegment<byte>(inputBuffer.GetBuffer(), 0, (int)inputBuffer.Length), 0, true);
+
 
                 // Stop server to trigger full shutdown
                 networkManager.StopServer();
@@ -170,7 +165,7 @@ namespace MLAPI.EditorTests
 
                 // Disable batching to make the RPCs come straight through
                 // This has to be done post start (and post restart since the queue container is reset)
-                networkManager.RpcQueueContainer.EnableBatchedRpcs(false);
+                networkManager.MessageQueueContainer.EnableBatchedRpcs(false);
 
                 // Should not cause log (server only)
                 using (var messageStream = MessagePacker.WrapMessage(NetworkConstants.CONNECTION_REQUEST, inputBuffer))
@@ -275,19 +270,13 @@ namespace MLAPI.EditorTests
                 }
 
                 // Should not cause log (server only)
-                using (var messageStream = MessagePacker.WrapMessage(NetworkConstants.SERVER_RPC, inputBuffer))
-                {
-                    networkManager.HandleIncomingData(0, NetworkChannel.Internal, new ArraySegment<byte>(messageStream.GetBuffer(), 0, (int)messageStream.Length), 0, true);
-                }
+                networkManager.HandleIncomingData(0, NetworkChannel.Internal, new ArraySegment<byte>(inputBuffer.GetBuffer(), 0, (int)inputBuffer.Length), 0, true);
 
-                // Should cause log (client only)
-                LogAssert.Expect(LogType.Log, nameof(MessageHandlerReceivedMessageServerClient) + " " + nameof(DummyMessageHandler.RpcReceiveQueueItem));
-                using (var messageStream = MessagePacker.WrapMessage(NetworkConstants.CLIENT_RPC, inputBuffer))
-                {
-                    networkManager.HandleIncomingData(0, NetworkChannel.Internal, new ArraySegment<byte>(messageStream.GetBuffer(), 0, (int)messageStream.Length), 0, true);
-                }
+                    // Should cause log (client only)
+                LogAssert.Expect(LogType.Log, nameof(MessageHandlerReceivedMessageServerClient) + " " + nameof(DummyMessageHandler.MessageReceiveQueueItem));
+                networkManager.HandleIncomingData(0, NetworkChannel.Internal, new ArraySegment<byte>(inputBuffer.GetBuffer(), 0, (int)inputBuffer.Length), 0, true);
 
-                // Full cleanup
+                    // Full cleanup
                 networkManager.StopClient();
             }
 
@@ -327,7 +316,7 @@ namespace MLAPI.EditorTests
 
         public void HandleNetworkVariableUpdate(ulong clientId, Stream stream, Action<ulong, PreBufferPreset> bufferCallback, PreBufferPreset bufferPreset) => VerifyCalled(nameof(HandleNetworkVariableUpdate));
 
-        public void RpcReceiveQueueItem(ulong clientId, Stream stream, float receiveTime, RpcQueueContainer.QueueItemType queueItemType) => VerifyCalled(nameof(RpcReceiveQueueItem));
+        public void MessageReceiveQueueItem(ulong clientId, Stream stream, float receiveTime, MessageQueueContainer.MessageType messageType) => VerifyCalled(nameof(MessageReceiveQueueItem));
 
         public void HandleUnnamedMessage(ulong clientId, Stream stream) => VerifyCalled(nameof(HandleUnnamedMessage));
 
