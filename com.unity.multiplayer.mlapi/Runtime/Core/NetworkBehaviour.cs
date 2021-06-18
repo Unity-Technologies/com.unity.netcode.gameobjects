@@ -342,6 +342,11 @@ namespace MLAPI
         /// </summary>
         public virtual void OnLostOwnership() { }
 
+        /// <summary>
+        /// Gets called when the parent NetworkObject of this NetworkBehaviour's NetworkObject has changed
+        /// </summary>
+        public virtual void OnNetworkObjectParentChanged(NetworkObject parentNetworkObject) { }
+
         private bool m_VarInit = false;
 
         private readonly List<HashSet<int>> m_ChannelMappedNetworkVariableIndexes = new List<HashSet<int>>();
