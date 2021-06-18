@@ -121,13 +121,6 @@ namespace MLAPI.EditorTests
         }
 
         [Test]
-        public void IAmSomeTest()
-        {
-            Debug.Log("breakpoint");
-            //        Assert.Fail();
-        }
-
-        [Test]
         // Start is called before the first frame update
         public void AOIDelegateTests()
         {
