@@ -10,7 +10,7 @@ using Debug = UnityEngine.Debug;
 
 namespace TestProject.RuntimeTests
 {
-    public class RPCTestsAutomated
+    public class RpcTestsAutomated
     {
         private bool m_TimedOut;
         private int m_MaxFrames;
@@ -80,7 +80,6 @@ namespace TestProject.RuntimeTests
             // Start the instances
             if (!MultiInstanceHelpers.Start(true, server, clients))
             {
-                Debug.LogError("Failed to start instances");
                 Assert.Fail("Failed to start instances");
             }
 

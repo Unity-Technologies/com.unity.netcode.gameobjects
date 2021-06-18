@@ -42,7 +42,7 @@ namespace MLAPI
 
 #pragma warning disable IDE1006 // disable naming rule violation check
         // RuntimeAccessModifiersILPP will make this `protected`
-        internal NetworkSerializer __beginSendServerRpc(ServerRpcParams serverRpcParams, RpcDelivery rpcDelivery)
+        internal NetworkSerializer __beginSendServerRpc(uint rpcMethodId, ServerRpcParams serverRpcParams, RpcDelivery rpcDelivery)
 #pragma warning restore IDE1006 // restore naming rule violation check
         {
             PooledNetworkWriter writer;
@@ -73,6 +73,7 @@ namespace MLAPI
 
             writer.WriteUInt64Packed(NetworkObjectId); // NetworkObjectId
             writer.WriteUInt16Packed(NetworkBehaviourId); // NetworkBehaviourId
+            writer.WriteUInt32Packed(rpcMethodId); // NetworkRpcMethodId
             writer.WriteByte((byte)serverRpcParams.Send.UpdateStage); // NetworkUpdateStage
 
             return writer.Serializer;
@@ -80,7 +81,7 @@ namespace MLAPI
 
 #pragma warning disable IDE1006 // disable naming rule violation check
         // RuntimeAccessModifiersILPP will make this `protected`
-        internal void __endSendServerRpc(NetworkSerializer serializer, ServerRpcParams serverRpcParams, RpcDelivery rpcDelivery)
+        internal void __endSendServerRpc(NetworkSerializer serializer, uint rpcMethodId, ServerRpcParams serverRpcParams, RpcDelivery rpcDelivery)
 #pragma warning restore IDE1006 // restore naming rule violation check
         {
             if (serializer == null)
@@ -101,7 +102,7 @@ namespace MLAPI
 
 #pragma warning disable IDE1006 // disable naming rule violation check
         // RuntimeAccessModifiersILPP will make this `protected`
-        internal NetworkSerializer __beginSendClientRpc(ClientRpcParams clientRpcParams, RpcDelivery rpcDelivery)
+        internal NetworkSerializer __beginSendClientRpc(uint rpcMethodId, ClientRpcParams clientRpcParams, RpcDelivery rpcDelivery)
 #pragma warning restore IDE1006 // restore naming rule violation check
         {
             PooledNetworkWriter writer;
@@ -164,6 +165,7 @@ namespace MLAPI
 
             writer.WriteUInt64Packed(NetworkObjectId); // NetworkObjectId
             writer.WriteUInt16Packed(NetworkBehaviourId); // NetworkBehaviourId
+            writer.WriteUInt32Packed(rpcMethodId); // NetworkRpcMethodId
             writer.WriteByte((byte)clientRpcParams.Send.UpdateStage); // NetworkUpdateStage
 
             return writer.Serializer;
@@ -171,7 +173,7 @@ namespace MLAPI
 
 #pragma warning disable IDE1006 // disable naming rule violation check
         // RuntimeAccessModifiersILPP will make this `protected`
-        internal void __endSendClientRpc(NetworkSerializer serializer, ClientRpcParams clientRpcParams, RpcDelivery rpcDelivery)
+        internal void __endSendClientRpc(NetworkSerializer serializer, uint rpcMethodId, ClientRpcParams clientRpcParams, RpcDelivery rpcDelivery)
 #pragma warning restore IDE1006 // restore naming rule violation check
         {
             if (serializer == null)
@@ -295,9 +297,6 @@ namespace MLAPI
         /// </summary>
         public ulong OwnerClientId => NetworkObject.OwnerClientId;
 
-        internal bool NetworkStartInvoked = false;
-        internal bool InternalNetworkStartInvoked = false;
-
         /// <summary>
         /// Stores the network tick at the NetworkBehaviourUpdate time
         /// This allows sending NetworkVariables not more often than once per network tick, regardless of the update rate
@@ -307,20 +306,30 @@ namespace MLAPI
         /// <summary>
         /// Gets called when message handlers are ready to be registered and the network is setup
         /// </summary>
-        public virtual void NetworkStart() { }
+        public virtual void OnNetworkSpawn() { }
 
         /// <summary>
-        /// Gets called when message handlers are ready to be registered and the network is setup. Provides a Payload if it was provided
+        /// Gets called when the <see cref="NetworkObject"/> gets spawned, message handlers are ready to be registered and the network is setup. Provides a Payload if it was provided
         /// </summary>
         /// <param name="stream">The stream containing the spawn payload</param>
-        public virtual void NetworkStart(Stream stream)
+        public virtual void OnNetworkSpawn(Stream stream)
         {
-            NetworkStart();
+            OnNetworkSpawn();
         }
 
-        internal void InternalNetworkStart()
+        /// <summary>
+        /// Gets called when the <see cref="NetworkObject"/> gets de-spawned. Is called both on the server and clients.
+        /// </summary>
+        public virtual void OnNetworkDespawn() { }
+
+        internal void InternalOnNetworkSpawn()
         {
             InitializeVariables();
+        }
+
+        internal void InternalOnNetworkDespawn()
+        {
+
         }
 
         /// <summary>

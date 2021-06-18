@@ -12,7 +12,7 @@ namespace TestProject.ManualTests
         private Rigidbody m_Rigidbody;
 
 
-        public override void NetworkStart()
+        public override void OnNetworkSpawn()
         {
             m_Rigidbody = GetComponent<Rigidbody>();
             if (NetworkObject != null && m_Rigidbody != null)

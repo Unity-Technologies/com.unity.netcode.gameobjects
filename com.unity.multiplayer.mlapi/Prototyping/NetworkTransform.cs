@@ -180,7 +180,7 @@ namespace MLAPI.Prototyping
             m_Transform = transform;
         }
 
-        public override void NetworkStart()
+        public override void OnNetworkSpawn()
         {
             void SetupVar<T>(NetworkVariable<T> v, T initialValue, ref T oldVal)
             {

@@ -261,6 +261,12 @@ namespace MLAPI
                 };
             }
 
+            // If the scene is not dirty or the asset database is currently updating then we can skip updating the NetworkPrefab information
+            if (!activeScene.isDirty || UnityEditor.EditorApplication.isUpdating)
+            {
+                return;
+            }
+
             // During OnValidate we will always clear out NetworkPrefabOverrideLinks and rebuild it
             NetworkConfig.NetworkPrefabOverrideLinks.Clear();
 
@@ -1374,7 +1380,6 @@ namespace MLAPI
         }
 
         /// <summary>
-        /// InvokeRPC
         /// Called when an inbound queued RPC is invoked
         /// </summary>
         /// <param name="queueItem">frame queue item to invoke</param>
@@ -1385,10 +1390,10 @@ namespace MLAPI
 #endif
             var networkObjectId = queueItem.NetworkReader.ReadUInt64Packed();
             var networkBehaviourId = queueItem.NetworkReader.ReadUInt16Packed();
+            var networkRpcMethodId = queueItem.NetworkReader.ReadUInt32Packed();
             var networkUpdateStage = queueItem.NetworkReader.ReadByteDirect();
-            var networkMethodId = queueItem.NetworkReader.ReadUInt32Packed();
 
-            if (__rpc_func_table.ContainsKey(networkMethodId))
+            if (__rpc_func_table.ContainsKey(networkRpcMethodId))
             {
                 if (!SpawnManager.SpawnedObjects.ContainsKey(networkObjectId))
                 {
@@ -1427,7 +1432,7 @@ namespace MLAPI
                         break;
                 }
 
-                __rpc_func_table[networkMethodId](networkBehaviour, new NetworkSerializer(queueItem.NetworkReader), rpcParams);
+                __rpc_func_table[networkRpcMethodId](networkBehaviour, new NetworkSerializer(queueItem.NetworkReader), rpcParams);
             }
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
@@ -1502,7 +1507,7 @@ namespace MLAPI
                         if (PrefabHandler.ContainsHandler(ConnectedClients[clientId].PlayerObject.GlobalObjectIdHash))
                         {
                             PrefabHandler.HandleNetworkPrefabDestroy(ConnectedClients[clientId].PlayerObject);
-                            SpawnManager.OnDestroyObject(ConnectedClients[clientId].PlayerObject.NetworkObjectId, false);
+                            SpawnManager.OnDespawnObject(ConnectedClients[clientId].PlayerObject.NetworkObjectId, false);
                         }
                         else
                         {
@@ -1520,7 +1525,7 @@ namespace MLAPI
                                 if (PrefabHandler.ContainsHandler(ConnectedClients[clientId].OwnedObjects[i].GlobalObjectIdHash))
                                 {
                                     PrefabHandler.HandleNetworkPrefabDestroy(ConnectedClients[clientId].OwnedObjects[i]);
-                                    SpawnManager.OnDestroyObject(ConnectedClients[clientId].OwnedObjects[i].NetworkObjectId, false);
+                                    SpawnManager.OnDespawnObject(ConnectedClients[clientId].OwnedObjects[i].NetworkObjectId, false);
                                 }
                                 else
                                 {

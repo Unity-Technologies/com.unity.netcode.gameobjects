@@ -522,32 +522,32 @@ namespace MLAPI.Editor.CodeGen
 
         private void ProcessNetworkBehaviour(TypeDefinition typeDefinition, string[] assemblyDefines)
         {
-            var rpcHandlers = new List<(uint RpcHash, MethodDefinition RpcHandler)>();
-            var rpcNames = new List<(uint RpcHash, string RpcName)>();
+            var rpcHandlers = new List<(uint RpcMethodId, MethodDefinition RpcHandler)>();
+            var rpcNames = new List<(uint RpcMethodId, string RpcMethodName)>();
 
             bool isEditorOrDevelopment = assemblyDefines.Contains("UNITY_EDITOR") || assemblyDefines.Contains("DEVELOPMENT_BUILD");
 
             foreach (var methodDefinition in typeDefinition.Methods)
             {
-                var rpcAttribute = CheckAndGetRPCAttribute(methodDefinition);
+                var rpcAttribute = CheckAndGetRpcAttribute(methodDefinition);
                 if (rpcAttribute == null)
                 {
                     continue;
                 }
 
-                var methodDefHash = methodDefinition.Hash();
-                if (methodDefHash == 0)
+                var rpcMethodId = methodDefinition.Hash();
+                if (rpcMethodId == 0)
                 {
                     continue;
                 }
 
-                InjectWriteAndCallBlocks(methodDefinition, rpcAttribute, methodDefHash);
+                InjectWriteAndCallBlocks(methodDefinition, rpcAttribute, rpcMethodId);
 
-                rpcHandlers.Add((methodDefHash, GenerateStaticHandler(methodDefinition, rpcAttribute)));
+                rpcHandlers.Add((rpcMethodId, GenerateStaticHandler(methodDefinition, rpcAttribute)));
 
                 if (isEditorOrDevelopment)
                 {
-                    rpcNames.Add((methodDefHash, methodDefinition.Name));
+                    rpcNames.Add((rpcMethodId, methodDefinition.Name));
                 }
             }
 
@@ -570,25 +570,25 @@ namespace MLAPI.Editor.CodeGen
                 var instructions = new List<Instruction>();
                 var processor = staticCtorMethodDef.Body.GetILProcessor();
 
-                foreach (var (rpcHash, rpcHandler) in rpcHandlers)
+                foreach (var (rpcMethodId, rpcHandler) in rpcHandlers)
                 {
                     typeDefinition.Methods.Add(rpcHandler);
 
-                    // NetworkManager.__rpc_func_table.Add(RpcHash, HandleFunc);
+                    // NetworkManager.__rpc_func_table.Add(RpcMethodId, HandleFunc);
                     instructions.Add(processor.Create(OpCodes.Ldsfld, m_NetworkManager_rpc_func_table_FieldRef));
-                    instructions.Add(processor.Create(OpCodes.Ldc_I4, unchecked((int)rpcHash)));
+                    instructions.Add(processor.Create(OpCodes.Ldc_I4, unchecked((int)rpcMethodId)));
                     instructions.Add(processor.Create(OpCodes.Ldnull));
                     instructions.Add(processor.Create(OpCodes.Ldftn, rpcHandler));
                     instructions.Add(processor.Create(OpCodes.Newobj, m_NetworkHandlerDelegateCtor_MethodRef));
                     instructions.Add(processor.Create(OpCodes.Call, m_NetworkManager_rpc_func_table_Add_MethodRef));
                 }
 
-                foreach (var (rpcHash, rpcName) in rpcNames)
+                foreach (var (rpcMethodId, rpcMethodName) in rpcNames)
                 {
-                    // NetworkManager.__rpc_name_table.Add(RpcHash, RpcName);
+                    // NetworkManager.__rpc_name_table.Add(RpcMethodId, RpcMethodName);
                     instructions.Add(processor.Create(OpCodes.Ldsfld, m_NetworkManager_rpc_name_table_FieldRef));
-                    instructions.Add(processor.Create(OpCodes.Ldc_I4, unchecked((int)rpcHash)));
-                    instructions.Add(processor.Create(OpCodes.Ldstr, rpcName));
+                    instructions.Add(processor.Create(OpCodes.Ldc_I4, unchecked((int)rpcMethodId)));
+                    instructions.Add(processor.Create(OpCodes.Ldstr, rpcMethodName));
                     instructions.Add(processor.Create(OpCodes.Call, m_NetworkManager_rpc_name_table_Add_MethodRef));
                 }
 
@@ -597,7 +597,7 @@ namespace MLAPI.Editor.CodeGen
             }
         }
 
-        private CustomAttribute CheckAndGetRPCAttribute(MethodDefinition methodDefinition)
+        private CustomAttribute CheckAndGetRpcAttribute(MethodDefinition methodDefinition)
         {
             CustomAttribute rpcAttribute = null;
             bool isServerRpc = false;
@@ -693,7 +693,7 @@ namespace MLAPI.Editor.CodeGen
             return rpcAttribute;
         }
 
-        private void InjectWriteAndCallBlocks(MethodDefinition methodDefinition, CustomAttribute rpcAttribute, uint methodDefHash)
+        private void InjectWriteAndCallBlocks(MethodDefinition methodDefinition, CustomAttribute rpcAttribute, uint rpcMethodId)
         {
             var typeSystem = methodDefinition.Module.TypeSystem;
             var instructions = new List<Instruction>();
@@ -727,15 +727,11 @@ namespace MLAPI.Editor.CodeGen
             // NetworkSerializer serializer;
             methodDefinition.Body.Variables.Add(new VariableDefinition(m_NetworkSerializer_TypeRef));
             int serializerLocIdx = methodDefinition.Body.Variables.Count - 1;
-            // uint methodHash;
-            methodDefinition.Body.Variables.Add(new VariableDefinition(typeSystem.UInt32));
-            int methodHashLocIdx = methodDefinition.Body.Variables.Count - 1;
             // XXXRpcParams
             if (!hasRpcParams)
             {
                 methodDefinition.Body.Variables.Add(new VariableDefinition(isServerRpc ? m_ServerRpcParams_TypeRef : m_ClientRpcParams_TypeRef));
             }
-
             int rpcParamsIdx = !hasRpcParams ? methodDefinition.Body.Variables.Count - 1 : -1;
 
             {
@@ -784,8 +780,8 @@ namespace MLAPI.Editor.CodeGen
 
                 instructions.Add(beginInstr);
 
-                // var serializer = BeginSendServerRpc(serverRpcParams, rpcDelivery) -> ServerRpc
-                // var serializer = BeginSendClientRpc(clientRpcParams, rpcDelivery) -> ClientRpc
+                // var serializer = BeginSendServerRpc(rpcMethodId, serverRpcParams, rpcDelivery) -> ServerRpc
+                // var serializer = BeginSendClientRpc(rpcMethodId, clientRpcParams, rpcDelivery) -> ClientRpc
                 if (isServerRpc)
                 {
                     // ServerRpc
@@ -826,8 +822,11 @@ namespace MLAPI.Editor.CodeGen
                         instructions.Add(roLastInstr);
                     }
 
-                    // var serializer = BeginSendServerRpc(serverRpcParams, rpcDelivery);
+                    // var serializer = BeginSendServerRpc(rpcMethodId, serverRpcParams, rpcDelivery);
                     instructions.Add(processor.Create(OpCodes.Ldarg_0));
+
+                    // rpcMethodId
+                    instructions.Add(processor.Create(OpCodes.Ldc_I4, unchecked((int)rpcMethodId)));
 
                     // rpcParams
                     instructions.Add(hasRpcParams ? processor.Create(OpCodes.Ldarg, paramCount) : processor.Create(OpCodes.Ldloc, rpcParamsIdx));
@@ -842,8 +841,11 @@ namespace MLAPI.Editor.CodeGen
                 else
                 {
                     // ClientRpc
-                    // var serializer = BeginSendClientRpc(clientRpcParams, rpcDelivery);
+                    // var serializer = BeginSendClientRpc(rpcMethodId, clientRpcParams, rpcDelivery);
                     instructions.Add(processor.Create(OpCodes.Ldarg_0));
+
+                    // rpcMethodId
+                    instructions.Add(processor.Create(OpCodes.Ldc_I4, unchecked((int)rpcMethodId)));
 
                     // rpcParams
                     instructions.Add(hasRpcParams ? processor.Create(OpCodes.Ldarg, paramCount) : processor.Create(OpCodes.Ldloc, rpcParamsIdx));
@@ -859,14 +861,6 @@ namespace MLAPI.Editor.CodeGen
                 // if (serializer != null)
                 instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                 instructions.Add(processor.Create(OpCodes.Brfalse, endInstr));
-
-                // methodHash = methodDefHash
-                instructions.Add(processor.Create(OpCodes.Ldc_I4, unchecked((int)methodDefHash)));
-                instructions.Add(processor.Create(OpCodes.Stloc, methodHashLocIdx));
-                // serializer.Serialize(ref methodHash); // NetworkMethodId
-                instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
-                instructions.Add(processor.Create(OpCodes.Ldloca, methodHashLocIdx));
-                instructions.Add(processor.Create(OpCodes.Callvirt, m_NetworkSerializer_SerializeUint_MethodRef));
 
                 // write method parameters into stream
                 for (int paramIndex = 0; paramIndex < paramCount; ++paramIndex)
@@ -1645,16 +1639,19 @@ namespace MLAPI.Editor.CodeGen
 
                 instructions.Add(endInstr);
 
-                // EndSendServerRpc(serializer, serverRpcParams, rpcDelivery) -> ServerRpc
-                // EndSendClientRpc(serializer, clientRpcParams, rpcDelivery) -> ClientRpc
+                // EndSendServerRpc(serializer, rpcMethodId, serverRpcParams, rpcDelivery) -> ServerRpc
+                // EndSendClientRpc(serializer, rpcMethodId, clientRpcParams, rpcDelivery) -> ClientRpc
                 if (isServerRpc)
                 {
                     // ServerRpc
-                    // EndSendServerRpc(serializer, serverRpcParams, rpcDelivery);
+                    // EndSendServerRpc(serializer, rpcMethodId, serverRpcParams, rpcDelivery);
                     instructions.Add(processor.Create(OpCodes.Ldarg_0));
 
                     // serializer
                     instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+
+                    // rpcMethodId
+                    instructions.Add(processor.Create(OpCodes.Ldc_I4, unchecked((int)rpcMethodId)));
 
                     if (hasRpcParams)
                     {
@@ -1676,11 +1673,14 @@ namespace MLAPI.Editor.CodeGen
                 else
                 {
                     // ClientRpc
-                    // EndSendClientRpc(serializer, clientRpcParams, rpcDelivery);
+                    // EndSendClientRpc(serializer, rpcMethodId, clientRpcParams, rpcDelivery);
                     instructions.Add(processor.Create(OpCodes.Ldarg_0));
 
                     // serializer
                     instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+
+                    // rpcMethodId
+                    instructions.Add(processor.Create(OpCodes.Ldc_I4, unchecked((int)rpcMethodId)));
 
                     if (hasRpcParams)
                     {

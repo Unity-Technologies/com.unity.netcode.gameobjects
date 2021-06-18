@@ -407,7 +407,7 @@ namespace MLAPI
         {
             if (NetworkManager != null && NetworkManager.SpawnManager != null && NetworkManager.SpawnManager.SpawnedObjects.ContainsKey(NetworkObjectId))
             {
-                NetworkManager.SpawnManager.OnDestroyObject(NetworkObjectId, false);
+                NetworkManager.SpawnManager.OnDespawnObject(NetworkObjectId, false);
             }
         }
 
@@ -768,33 +768,21 @@ namespace MLAPI
             }
         }
 
-        internal void ResetNetworkStartInvoked()
-        {
-            if (ChildNetworkBehaviours != null)
-            {
-                for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
-                {
-                    ChildNetworkBehaviours[i].NetworkStartInvoked = false;
-                }
-            }
-        }
-
         internal void InvokeBehaviourNetworkSpawn(Stream stream)
         {
             for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
             {
-                //We check if we are it's NetworkObject owner incase a NetworkObject exists as a child of our NetworkObject
-                if (!ChildNetworkBehaviours[i].NetworkStartInvoked)
-                {
-                    if (!ChildNetworkBehaviours[i].InternalNetworkStartInvoked)
-                    {
-                        ChildNetworkBehaviours[i].InternalNetworkStart();
-                        ChildNetworkBehaviours[i].InternalNetworkStartInvoked = true;
-                    }
+                ChildNetworkBehaviours[i].InternalOnNetworkSpawn();
+                ChildNetworkBehaviours[i].OnNetworkSpawn(stream);
+            }
+        }
 
-                    ChildNetworkBehaviours[i].NetworkStart(stream);
-                    ChildNetworkBehaviours[i].NetworkStartInvoked = true;
-                }
+        internal void InvokeBehaviourNetworkDespawn()
+        {
+            for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
+            {
+                ChildNetworkBehaviours[i].InternalOnNetworkDespawn();
+                ChildNetworkBehaviours[i].OnNetworkDespawn();
             }
         }
 
