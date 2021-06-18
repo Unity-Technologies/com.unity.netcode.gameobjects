@@ -704,7 +704,7 @@ namespace MLAPI.Spawning
                 }
             }
 
-            var gobj = sobj.gameObject;
+            var gobj = networkObject.gameObject;
             NetworkObject no = gobj.GetComponent<NetworkObject>();
             NetworkManager.InterestManager.HandleDespawn(no);
 
