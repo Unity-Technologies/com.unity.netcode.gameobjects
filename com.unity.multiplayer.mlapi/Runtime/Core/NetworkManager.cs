@@ -263,6 +263,12 @@ namespace MLAPI
                 };
             }
 
+            // If the scene is not dirty or the asset database is currently updating then we can skip updating the NetworkPrefab information
+            if (!activeScene.isDirty || UnityEditor.EditorApplication.isUpdating)
+            {
+                return;
+            }
+
             // During OnValidate we will always clear out NetworkPrefabOverrideLinks and rebuild it
             NetworkConfig.NetworkPrefabOverrideLinks.Clear();
 
@@ -318,11 +324,11 @@ namespace MLAPI
         }
 #endif
 
-        private void Init(bool server)
+        private void Initialize(bool server)
         {
             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
             {
-                NetworkLog.LogInfo(nameof(Init));
+                NetworkLog.LogInfo(nameof(Initialize));
             }
 
             LocalClientId = 0;
@@ -330,6 +336,7 @@ namespace MLAPI
             PendingClients.Clear();
             ConnectedClients.Clear();
             ConnectedClientsList.Clear();
+            NetworkObject.OrphanChildren.Clear();
 
             // Create spawn manager instance
             SpawnManager = new NetworkSpawnManager(this);
@@ -537,7 +544,7 @@ namespace MLAPI
                 }
             }
 
-            Init(true);
+            Initialize(true);
 
             var socketTasks = NetworkConfig.NetworkTransport.StartServer();
 
@@ -572,7 +579,7 @@ namespace MLAPI
                 return SocketTask.Fault.AsTasks();
             }
 
-            Init(false);
+            Initialize(false);
 
             var socketTasks = NetworkConfig.NetworkTransport.StartClient();
 
@@ -698,7 +705,7 @@ namespace MLAPI
                 }
             }
 
-            Init(true);
+            Initialize(true);
 
             var socketTasks = NetworkConfig.NetworkTransport.StartServer();
 
@@ -1272,6 +1279,29 @@ namespace MLAPI
 
                             break;
                         }
+                    case NetworkConstants.PARENT_SYNC:
+                        {
+                            if (IsClient)
+                            {
+                                using (var reader = PooledNetworkReader.Get(messageStream))
+                                {
+                                    var networkObjectId = reader.ReadUInt64Packed();
+                                    var (isReparented, latestParent) = NetworkObject.ReadNetworkParenting(reader);
+                                    if (SpawnManager.SpawnedObjects.ContainsKey(networkObjectId))
+                                    {
+                                        var networkObject = SpawnManager.SpawnedObjects[networkObjectId];
+                                        networkObject.SetNetworkParenting(isReparented, latestParent);
+                                        networkObject.ApplyNetworkParenting();
+                                    }
+                                    else if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+                                    {
+                                        NetworkLog.LogWarning($"Read {nameof(NetworkConstants.PARENT_SYNC)} for {nameof(NetworkObject)} #{networkObjectId} but could not find it in the {nameof(SpawnManager.SpawnedObjects)}");
+                                    }
+                                }
+                            }
+
+                            break;
+                        }
                     default:
                         if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
                         {
@@ -1296,7 +1326,6 @@ namespace MLAPI
         }
 
         /// <summary>
-        /// InvokeRPC
         /// Called when an inbound queued RPC is invoked
         /// </summary>
         /// <param name="queueItem">frame queue item to invoke</param>
@@ -1307,10 +1336,10 @@ namespace MLAPI
 #endif
             var networkObjectId = queueItem.NetworkReader.ReadUInt64Packed();
             var networkBehaviourId = queueItem.NetworkReader.ReadUInt16Packed();
+            var networkRpcMethodId = queueItem.NetworkReader.ReadUInt32Packed();
             var networkUpdateStage = queueItem.NetworkReader.ReadByteDirect();
-            var networkMethodId = queueItem.NetworkReader.ReadUInt32Packed();
 
-            if (__rpc_func_table.ContainsKey(networkMethodId))
+            if (__rpc_func_table.ContainsKey(networkRpcMethodId))
             {
                 if (!SpawnManager.SpawnedObjects.ContainsKey(networkObjectId))
                 {
@@ -1349,7 +1378,7 @@ namespace MLAPI
                         break;
                 }
 
-                __rpc_func_table[networkMethodId](networkBehaviour, new NetworkSerializer(queueItem.NetworkReader), rpcParams);
+                __rpc_func_table[networkRpcMethodId](networkBehaviour, new NetworkSerializer(queueItem.NetworkReader), rpcParams);
             }
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR

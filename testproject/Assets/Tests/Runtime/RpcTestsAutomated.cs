@@ -10,7 +10,7 @@ using Debug = UnityEngine.Debug;
 
 namespace TestProject.RuntimeTests
 {
-    public class RPCTestsAutomated
+    public class RpcTestsAutomated
     {
         private bool m_TimedOut;
         private int m_MaxFrames;
