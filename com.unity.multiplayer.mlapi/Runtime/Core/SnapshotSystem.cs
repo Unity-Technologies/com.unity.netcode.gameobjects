@@ -208,7 +208,6 @@ namespace MLAPI
         internal void ReadBuffer(NetworkReader reader, Stream snapshotStream)
         {
             int snapshotSize = reader.ReadUInt16();
-
             snapshotStream.Read(RecvBuffer, 0, snapshotSize);
         }
 
@@ -248,15 +247,16 @@ namespace MLAPI
 
                     Entries[pos] = entry;
 
-
                     // copy from readbuffer into buffer
-                    var nv = FindNetworkVar(Entries[pos].Key);
-                    m_BufferStream.Seek(Entries[pos].Position, SeekOrigin.Begin);
-                    // todo: consider refactoring out in its own function to accomodate
-                    // other ways to (de)serialize
-                    // Not using keepDirtyDelta anymore which is great. todo: remove and check for the overall effect on > 2 player
-                    nv.ReadDelta(m_BufferStream, false);
-
+                    var networkVariable = FindNetworkVar(Entries[pos].Key);
+                    if (networkVariable != null)
+                    {
+                        m_BufferStream.Seek(Entries[pos].Position, SeekOrigin.Begin);
+                        // todo: consider refactoring out in its own function to accomodate
+                        // other ways to (de)serialize
+                        // Not using keepDirtyDelta anymore which is great. todo: remove and check for the overall effect on > 2 player
+                        networkVariable.ReadDelta(m_BufferStream, false);
+                    }
                 }
             }
         }
