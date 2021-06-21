@@ -104,6 +104,9 @@ namespace MLAPI.Messaging
                             NetworkObject.DeserializeSceneObject(continuationStream as NetworkBuffer, continuationReader, m_NetworkManager);
                         }
 
+                        // Should "hide" any bug from a unit test that does not clean up all of its runtime generated NetworkObjects
+                        NetworkManager.SceneManager.CleanDiffedSceneObjectsHideUnitTestBugs();
+
                         NetworkManager.IsConnectedClient = true;
                         NetworkManager.InvokeOnClientConnectedCallback(NetworkManager.LocalClientId);
                     }
