@@ -59,6 +59,7 @@ namespace MLAPI
         internal NetworkTickSystem NetworkTickSystem { get; private set; }
 
         internal SnapshotSystem SnapshotSystem { get; private set; }
+        internal NetworkBehaviourUpdater BehaviourUpdater { get; private set; }
 
         private NetworkPrefabHandler m_PrefabHandler;
         public NetworkPrefabHandler PrefabHandler
@@ -347,6 +348,8 @@ namespace MLAPI
             BufferManager = new BufferManager(this);
 
             SceneManager = new NetworkSceneManager(this);
+
+            BehaviourUpdater = new NetworkBehaviourUpdater();
 
             // Only create this if it's not already set (like in test cases)
             MessageHandler ??= CreateMessageHandler();
@@ -844,6 +847,11 @@ namespace MLAPI
                 CustomMessagingManager = null;
             }
 
+            if (BehaviourUpdater != null)
+            {
+                BehaviourUpdater = null;
+            }
+
             //The Transport is set during Init time, thus it is possible for the Transport to be null
             NetworkConfig?.NetworkTransport?.Shutdown();
         }
@@ -931,7 +939,7 @@ namespace MLAPI
                     if (NetworkConfig.EnableNetworkVariable)
                     {
                         // Do NetworkVariable updates
-                        NetworkBehaviour.NetworkBehaviourUpdate(this);
+                        BehaviourUpdater.NetworkBehaviourUpdate(this);
                     }
 
                     if (!IsServer && NetworkConfig.EnableMessageBuffering)
