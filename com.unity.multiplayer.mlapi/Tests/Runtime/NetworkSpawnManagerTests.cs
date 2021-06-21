@@ -12,7 +12,7 @@ namespace MLAPI.RuntimeTests
         private ulong clientSideClientId => m_ClientNetworkManagers[0].LocalClientId;
         private ulong otherClientSideClientId => m_ClientNetworkManagers[1].LocalClientId;
 
-        public override int NbClients => 2;
+        protected override int NbClients => 2;
 
         [Test]
         public void TestServerCanAccessItsOwnPlayer()

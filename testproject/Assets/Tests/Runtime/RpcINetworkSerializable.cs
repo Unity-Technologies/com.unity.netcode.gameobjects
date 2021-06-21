@@ -22,7 +22,7 @@ namespace TestProject.RuntimeTests
         private bool m_IsSendingNull;
         private bool m_IsArrayEmpty;
 
-        public override int NbClients => 1;
+        protected override int NbClients => 1;
 
         [UnitySetUp]
         public override IEnumerator Setup()

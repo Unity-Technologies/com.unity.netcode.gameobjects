@@ -9,14 +9,11 @@ namespace MLAPI.RuntimeTests
 {
     public abstract class BaseMultiInstanceTest
     {
-        private int m_OriginalTargetFrameRate;
-
         protected GameObject m_PlayerPrefab;
-
         protected NetworkManager m_ServerNetworkManager;
         protected NetworkManager[] m_ClientNetworkManagers;
 
-        public abstract int NbClients { get; }
+        protected abstract int NbClients { get; }
 
         [UnitySetUp]
         public virtual IEnumerator Setup()

@@ -28,7 +28,7 @@ namespace MLAPI.RuntimeTests
             }
         }
 
-        public override int NbClients => 1;
+        protected override int NbClients => 1;
 
         [UnitySetUp]
         public override IEnumerator Setup()

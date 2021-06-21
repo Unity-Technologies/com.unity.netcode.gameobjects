@@ -10,7 +10,7 @@ namespace MLAPI.RuntimeTests
 {
     public class NetworkObjectOnSpawnTests : BaseMultiInstanceTest
     {
-        public override int NbClients => 2;
+        protected override int NbClients => 2;
 
 
         /// <summary>
