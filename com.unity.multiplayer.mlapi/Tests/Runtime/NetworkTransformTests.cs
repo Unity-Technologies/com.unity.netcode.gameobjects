@@ -23,10 +23,12 @@ namespace MLAPI.RuntimeTests
             m_TestWithHost = testWithHost; // from test fixture
         }
 
+        protected override int NbClients => 1;
+
         [UnitySetUp]
-        public IEnumerator Setup()
+        public override IEnumerator Setup()
         {
-            yield return StartSomeClientsAndServer(useHost: m_TestWithHost, nbClients: 1, updatePlayerPrefab: playerPrefab =>
+            yield return StartSomeClientsAndServerWithPlayers(useHost: m_TestWithHost, nbClients: NbClients, updatePlayerPrefab: playerPrefab =>
             {
                 var networkTransform = playerPrefab.AddComponent<NetworkTransform>();
             });
