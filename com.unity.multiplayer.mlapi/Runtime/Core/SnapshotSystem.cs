@@ -200,15 +200,18 @@ namespace MLAPI
             {
                 if (Entries[i].Fresh && Entries[i].Key.TickWritten > 0)
                 {
-                    var nv = FindNetworkVar(Entries[i].Key);
+                    var networkVariable = FindNetworkVar(Entries[i].Key);
 
-                    Stream.Seek(Entries[i].Position, SeekOrigin.Begin);
+                    if (networkVariable != null)
+                    {
+                        Stream.Seek(Entries[i].Position, SeekOrigin.Begin);
 
-                    // todo: consider refactoring out in its own function to accomodate
-                    // other ways to (de)serialize
-                    // todo --M1--
-                    // Review whether tick still belong in netvar or in the snapshot table.
-                    nv.ReadDelta(Stream, m_NetworkManager.IsServer);
+                        // todo: consider refactoring out in its own function to accomodate
+                        // other ways to (de)serialize
+                        // todo --M1--
+                        // Review whether tick still belong in netvar or in the snapshot table.
+                        networkVariable.ReadDelta(Stream, m_NetworkManager.IsServer);
+                    }
                 }
 
                 Entries[i].Fresh = false;
