@@ -14,26 +14,11 @@ namespace MLAPI.RuntimeTests
         protected NetworkManager m_ServerNetworkManager;
         protected NetworkManager[] m_ClientNetworkManagers;
 
-        public virtual void Setup()
-        {
-            // Just always track the current target frame rate (will be re-applied upon TearDown)
-            m_OriginalTargetFrameRate = Application.targetFrameRate;
-
-            // Since we use frame count as a metric, we need to assure it runs at a "common update rate"
-            // between platforms (i.e. Ubuntu seems to run at much higher FPS when set to -1)
-            if (Application.targetFrameRate < 0 || Application.targetFrameRate > 120)
-            {
-                Application.targetFrameRate = 120;
-            }
-        }
-
         public virtual IEnumerator Teardown()
         {
             // Shutdown and clean up both of our NetworkManager instances
             MultiInstanceHelpers.Destroy();
 
-            // Set the application's target frame rate back to its original value
-            Application.targetFrameRate = m_OriginalTargetFrameRate;
             yield return new WaitForSeconds(0); // wait for next frame so everything is destroyed, so following tests can execute from clean environment
         }
 
@@ -43,7 +28,7 @@ namespace MLAPI.RuntimeTests
         /// <param name="nbClients"></param>
         /// <param name="updatePlayerPrefab">Update the prefab with whatever is needed before players spawn</param>
         /// <returns></returns>
-        public IEnumerator StartSomeClientAndServer(bool useHost, int nbClients, Action<GameObject> updatePlayerPrefab)
+        public IEnumerator StartSomeClientsAndServer(bool useHost, int nbClients, Action<GameObject> updatePlayerPrefab)
         {
             // Create multiple NetworkManager instances
             if (!MultiInstanceHelpers.Create(nbClients, out NetworkManager server, out NetworkManager[] clients))

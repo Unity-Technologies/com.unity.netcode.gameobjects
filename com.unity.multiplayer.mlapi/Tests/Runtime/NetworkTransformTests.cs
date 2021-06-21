@@ -24,11 +24,9 @@ namespace MLAPI.RuntimeTests
         }
 
         [UnitySetUp]
-        public new IEnumerator Setup()
+        public IEnumerator Setup()
         {
-            base.Setup();
-
-            yield return StartSomeClientAndServer(useHost: m_TestWithHost, nbClients: 1, updatePlayerPrefab: playerPrefab =>
+            yield return StartSomeClientsAndServer(useHost: m_TestWithHost, nbClients: 1, updatePlayerPrefab: playerPrefab =>
             {
                 var networkTransform = playerPrefab.AddComponent<NetworkTransform>();
             });

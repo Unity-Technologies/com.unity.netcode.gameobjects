@@ -111,37 +111,35 @@ namespace MLAPI.Prototyping
             // todo this should be synced with the other side. let's wait for a more final solution before adding more code here
         }
 
-        private void UpdateVarPermissions()
+        private void UpdateOneVarPermission<T>(NetworkVariable<T> varToUpdate)
         {
             switch (TransformAuthority)
             {
                 case Authority.Client:
-                    m_NetworkPosition.Settings.WritePermission = NetworkVariablePermission.OwnerOnly;
-                    m_NetworkRotation.Settings.WritePermission = NetworkVariablePermission.OwnerOnly;
-                    m_NetworkWorldScale.Settings.WritePermission = NetworkVariablePermission.OwnerOnly;
-                    m_UseLocal.Settings.WritePermission = NetworkVariablePermission.OwnerOnly;
+                    varToUpdate.Settings.WritePermission = NetworkVariablePermission.OwnerOnly;
                     break;
                 case Authority.Shared:
-                    m_NetworkPosition.Settings.WritePermission = NetworkVariablePermission.Everyone;
-                    m_NetworkRotation.Settings.WritePermission = NetworkVariablePermission.Everyone;
-                    m_NetworkWorldScale.Settings.WritePermission = NetworkVariablePermission.Everyone;
-                    m_UseLocal.Settings.WritePermission = NetworkVariablePermission.Everyone;
+                    varToUpdate.Settings.WritePermission = NetworkVariablePermission.Everyone;
                     break;
                 case Authority.Server:
                     m_NetworkPosition.Settings.WritePermission = NetworkVariablePermission.ServerOnly;
-                    m_NetworkRotation.Settings.WritePermission = NetworkVariablePermission.ServerOnly;
-                    m_NetworkWorldScale.Settings.WritePermission = NetworkVariablePermission.ServerOnly;
-                    m_UseLocal.Settings.WritePermission = NetworkVariablePermission.ServerOnly;
                     break;
                 default:
                     throw new NotImplementedException($"{TransformAuthority} is not handled");
             }
         }
 
+        private void UpdateVarPermissions()
+        {
+            UpdateOneVarPermission(m_NetworkPosition);
+            UpdateOneVarPermission(m_NetworkRotation);
+            UpdateOneVarPermission(m_NetworkWorldScale);
+            UpdateOneVarPermission(m_UseLocal);
+        }
+
         private NetworkVariableVector3 m_NetworkPosition = new NetworkVariableVector3();
         private NetworkVariableQuaternion m_NetworkRotation = new NetworkVariableQuaternion();
         private NetworkVariableVector3 m_NetworkWorldScale = new NetworkVariableVector3();
-        // private NetworkTransform m_NetworkParent; // TODO handle this here?
 
         private Transform m_Transform;
 
