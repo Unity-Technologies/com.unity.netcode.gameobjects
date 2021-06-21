@@ -2,6 +2,8 @@ using System;
 using System.Collections;
 using NUnit.Framework;
 using UnityEngine;
+using UnityEngine.TestTools;
+using Object = UnityEngine.Object;
 
 namespace MLAPI.RuntimeTests
 {
@@ -14,12 +16,35 @@ namespace MLAPI.RuntimeTests
         protected NetworkManager m_ServerNetworkManager;
         protected NetworkManager[] m_ClientNetworkManagers;
 
+        public abstract int NbClients { get; }
+
+        [UnitySetUp]
+        public virtual IEnumerator Setup()
+        {
+            yield return StartSomeClientsAndServerWithPlayers(true, NbClients, _ => { });
+        }
+
+        [UnityTearDown]
         public virtual IEnumerator Teardown()
         {
             // Shutdown and clean up both of our NetworkManager instances
-            MultiInstanceHelpers.Destroy();
+            try
+            {
+                MultiInstanceHelpers.Destroy();
+            }
+            catch (Exception e) { throw e; }
+            finally
+            {
+                if (m_PlayerPrefab != null)
+                {
+                    Object.Destroy(m_PlayerPrefab);
+                    m_PlayerPrefab = null;
+                }
+            }
 
-            yield return new WaitForSeconds(0); // wait for next frame so everything is destroyed, so following tests can execute from clean environment
+            // wait for next frame so everything is destroyed, so following tests can execute from clean environment
+            int nextFrameNumber = Time.frameCount + 1;
+            yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
         }
 
         /// <summary>
@@ -28,7 +53,7 @@ namespace MLAPI.RuntimeTests
         /// <param name="nbClients"></param>
         /// <param name="updatePlayerPrefab">Update the prefab with whatever is needed before players spawn</param>
         /// <returns></returns>
-        public IEnumerator StartSomeClientsAndServer(bool useHost, int nbClients, Action<GameObject> updatePlayerPrefab)
+        public IEnumerator StartSomeClientsAndServerWithPlayers(bool useHost, int nbClients, Action<GameObject> updatePlayerPrefab)
         {
             // Create multiple NetworkManager instances
             if (!MultiInstanceHelpers.Create(nbClients, out NetworkManager server, out NetworkManager[] clients))
@@ -44,6 +69,13 @@ namespace MLAPI.RuntimeTests
             m_PlayerPrefab = new GameObject("Player");
             NetworkObject networkObject = m_PlayerPrefab.AddComponent<NetworkObject>();
 
+            /*
+             * Normally we would only allow player prefabs to be set to a prefab. Not runtime created objects.
+             * In order to prevent having a Resource folder full of a TON of prefabs that we have to maintain,
+             * MultiInstanceHelper has a helper function that lets you mark a runtime created object to be
+             * treated as a prefab by the MLAPI. That's how we can get away with creating the player prefab
+             * at runtime without it being treated as a SceneObject or causing other conflicts with the MLAPI.
+             */
             // Make it a prefab
             MultiInstanceHelpers.MakeNetworkedObjectTestPrefab(networkObject);
 
@@ -65,10 +97,7 @@ namespace MLAPI.RuntimeTests
             }
 
             // Wait for connection on client side
-            for (int i = 0; i < clients.Length; i++)
-            {
-                yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientConnected(clients[i]));
-            }
+            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(clients));
 
             // Wait for connection on server side
             yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnectedToServer(server, clientCount: useHost ? nbClients + 1 : nbClients));
