@@ -95,26 +95,6 @@ namespace MLAPI.SceneManagement
             m_NetworkManager = networkManager;
         }
 
-
-        /// <summary>
-        /// Temporary method to prove out this was hiding other potential unit test bugs
-        /// </summary>
-        internal void CleanDiffedSceneObjectsHideUnitTestBugs()
-        {
-            // Clean up any in-scene objects that had been destroyed
-            if (ScenePlacedObjects.Count > 0)
-            {
-                foreach (var pair in ScenePlacedObjects)
-                {
-                    UnityEngine.Object.Destroy(pair.Value.gameObject);
-                }
-
-                // Make sure to clear this once done destroying all remaining NetworkObjects
-                ScenePlacedObjects.Clear();
-            }
-        }
-
-
         internal void SetCurrentSceneIndex()
         {
             if (!SceneNameToIndex.TryGetValue(SceneManager.GetActiveScene().name, out CurrentSceneIndex))
