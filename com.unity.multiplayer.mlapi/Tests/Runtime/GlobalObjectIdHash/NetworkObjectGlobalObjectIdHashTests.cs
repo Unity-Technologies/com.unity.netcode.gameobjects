@@ -32,6 +32,7 @@ namespace MLAPI.RuntimeTests
             var scenePath = Path.Combine(packagePath, $"Tests/Runtime/GlobalObjectIdHash/{nameof(NetworkObjectGlobalObjectIdHashTests)}.unity");
 
             yield return EditorSceneManager.LoadSceneAsyncInPlayMode(scenePath, new LoadSceneParameters(LoadSceneMode.Additive));
+            Assert.That(m_TestScene.isLoaded, Is.True);
         }
 
         [UnityTearDown]
@@ -48,8 +49,6 @@ namespace MLAPI.RuntimeTests
         [Test]
         public void VerifyUniquenessOfNetworkObjects()
         {
-            Assert.That(m_TestScene.isLoaded, Is.True);
-
             var hashSet = new HashSet<uint>();
             foreach (var rootObject in m_TestScene.GetRootGameObjects())
             {

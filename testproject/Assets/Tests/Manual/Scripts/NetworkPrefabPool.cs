@@ -21,7 +21,7 @@ namespace TestProject.ManualTests
         [Tooltip("When enabled, this will utilize the NetworkPrefabHandler to register a custom INetworkPrefabInstanceHandler")]
         public bool EnableHandler;
 
-        [Tooltip("When enabled, this will register register a custom INetworkPrefabInstanceHandler using a NetworkObject reference")]
+        [Tooltip("When enabled, this will register a custom INetworkPrefabInstanceHandler using a NetworkObject reference")]
         public bool RegisterUsingNetworkObject;
 
         [Tooltip("What is going to be spawned on the server side from the pool.")]
@@ -158,7 +158,7 @@ namespace TestProject.ManualTests
         /// <summary>
         /// Override NetworkBehaviour.NetworkStart
         /// </summary>
-        public override void NetworkStart()
+        public override void OnNetworkSpawn()
         {
             InitializeObjectPool();
             if (IsServer)
@@ -167,6 +167,9 @@ namespace TestProject.ManualTests
                 {
                     m_DelaySpawning = Time.realtimeSinceStartup + InitialSpawnDelay;
                     StartSpawningBoxes();
+
+                    //Make sure our slider reflects the current spawn rate
+                    UpdateSpawnsPerSecond();
                 }
             }
         }
@@ -233,7 +236,6 @@ namespace TestProject.ManualTests
         /// </summary>
         private void StartSpawningBoxes()
         {
-
             if (NetworkManager.IsHost && SpawnSlider != null)
             {
                 SpawnSlider.gameObject.SetActive(true);
@@ -246,7 +248,7 @@ namespace TestProject.ManualTests
         }
 
         /// <summary>
-        /// Checks to detemrine if we need to update our spawns per second calculations
+        /// Checks to determine if we need to update our spawns per second calculations
         /// </summary>
         public void UpdateSpawnsPerSecond()
         {
@@ -254,6 +256,18 @@ namespace TestProject.ManualTests
             {
                 SpawnsPerSecond = (int)SpawnSlider.value;
                 SpawnSliderValueText.text = SpawnsPerSecond.ToString();
+
+                // Handle case where the initial value is set to zero and so coroutine needs to be started
+                if(SpawnsPerSecond > 0 && !m_IsSpawningObjects)
+                {
+                    StartSpawningBoxes();
+                }
+                else //Handle case where spawning coroutine is running but we set our spawn rate to zero
+                if (SpawnsPerSecond == 0 && m_IsSpawningObjects)
+                {
+                    m_IsSpawningObjects = false;
+                    StopCoroutine(SpawnObjects());
+                }
             }
         }
 
