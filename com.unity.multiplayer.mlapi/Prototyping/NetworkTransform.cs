@@ -97,6 +97,7 @@ namespace MLAPI.Prototyping
         /// <summary>
         /// Sets whether this transform should sync local or world properties. This is important to set since reparenting this transform
         /// could have issues if using world position (depending on who gets synced first: the parent or the child)
+        /// Having a child always at position 0,0,0 for example will have less possibilities of desync than when using world positions
         /// </summary>
         [SerializeField, Tooltip("Sets whether this transform should sync local or world properties. This should be set if reparenting.")]
         private NetworkVariableBool m_UseLocal = new NetworkVariableBool();

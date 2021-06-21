@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace MLAPI.RuntimeTests
 {
-    public class BaseMultiInstanceTest
+    public abstract class BaseMultiInstanceTest
     {
         private int m_OriginalTargetFrameRate;
 
