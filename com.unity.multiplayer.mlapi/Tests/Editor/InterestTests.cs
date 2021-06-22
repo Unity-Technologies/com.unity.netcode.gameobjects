@@ -101,7 +101,7 @@ namespace MLAPI.EditorTests
             var no = MakeGameObjectHelper();
             if (comn != null)
             {
-                no.InterestNode = comn;
+                no.InterestNodes.Add(comn);
                 no.transform.position = coords;
             }
 

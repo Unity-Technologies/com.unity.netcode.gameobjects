@@ -23,7 +23,7 @@ namespace MLAPI
 
     public sealed class NetworkObject : MonoBehaviour
     {
-        public InterestNode InterestNode;
+        public List<InterestNode> InterestNodes = new List<InterestNode>();
 
         [HideInInspector]
         [SerializeField]
@@ -1089,7 +1089,10 @@ namespace MLAPI
         //  I am associated with
         public void UpdateInterest()
         {
-            InterestNode?.UpdateObject(this);
+            foreach (var node in InterestNodes)
+            {
+                node?.UpdateObject(this);
+            }
         }
     }
 }

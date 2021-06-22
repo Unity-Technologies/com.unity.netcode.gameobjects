@@ -4,6 +4,7 @@ using UnityEngine;
 
 namespace MLAPI.Interest
 {
+   // interest *system* instead of interest node ?
     public class InterestManager : IInterestHandler
     {
         private readonly InterestNodeStatic m_DefaultInterestNode;
@@ -28,20 +29,26 @@ namespace MLAPI.Interest
 
         public void HandleSpawn(in NetworkObject newObject)
         {
-            var node = newObject.InterestNode;
+            var nodes = newObject.InterestNodes;
 
-            // if an object has no Interest Nodes, add it to the default one.  That is,
-            //  if you don't opt into the system behavior is the same as before the
-            //  Interest system was added
-            if (node == null)
+            // If this new object has no associated Interest Nodes, then we put it in the
+            //  default node, which all clients will then get.
+            //
+            // That is, if you don't opt into the system behavior is the same as before
+            //  the Interest system was added
+            if (nodes.Count == 0)
             {
                 m_DefaultInterestNode.InterestObjectStorage.AddObject(newObject);
             }
             // else add myself to whatever Interest Nodes I am associated with
             else
             {
-                if (!(node is null))
+                foreach (var node in nodes)
                 {
+                    if (node == null)
+                    {
+                        continue;
+                    }
                     m_ChildNodes.Add(node);
                     node.AddObject(newObject);
 
@@ -55,21 +62,28 @@ namespace MLAPI.Interest
 
         public void HandleDespawn(in NetworkObject oldObject)
         {
-            var node = oldObject.InterestNode;
+            var nodes = oldObject.InterestNodes;
 
             // if the node never had an InterestNode, then it was using the default
             //  interest node
-            if (node == null)
+            if (nodes.Count == 0)
             {
                 m_DefaultInterestNode.InterestObjectStorage.RemoveObject(oldObject);
             }
             else
             {
-                node.RemoveObject(oldObject);
-
-                if (node.OnDespawn != null)
+                foreach (var node in nodes)
                 {
-                    node.OnDespawn(oldObject);
+                    if (node == null)
+                    {
+                        continue;
+                    }
+                    node.RemoveObject(oldObject);
+
+                    if (node.OnDespawn != null)
+                    {
+                        node.OnDespawn(oldObject);
+                    }
                 }
             }
         }
