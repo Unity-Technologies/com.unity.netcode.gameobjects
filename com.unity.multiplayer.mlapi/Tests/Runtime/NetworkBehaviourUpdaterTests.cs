@@ -97,7 +97,7 @@ namespace MLAPI.RuntimeTests
                 int nbBehaviours = 0;
                 foreach (var networkBehaviour in spawnedObject.GetComponents<NetworkBehaviour>())
                 {
-                    serverNetVarsToUpdate.AddRange(((INetVarInfo)networkBehaviour).allNetVars);
+                    serverNetVarsToUpdate.AddRange(((INetVarInfo)networkBehaviour).AllNetVars);
                     nbBehaviours++;
                 }
                 Assert.That(nbBehaviours, Is.EqualTo((firstNetworkBehaviour == null ? 0 : 1) + (secondNetworkBehaviour == null ? 0 : 1)));
@@ -168,24 +168,24 @@ namespace MLAPI.RuntimeTests
 
     public interface INetVarInfo
     {
-        public List<NetworkVariableInt> allNetVars { get; }
+        public List<NetworkVariableInt> AllNetVars { get; }
     }
 
     public class ZeroNetVar : NetworkBehaviour, INetVarInfo
     {
-        public List<NetworkVariableInt> allNetVars => new List<NetworkVariableInt>(); // Needed to be independant from NetworkBehaviour's list of fields. This way, if that changes, we can still do this validation in this test
+        public List<NetworkVariableInt> AllNetVars => new List<NetworkVariableInt>(); // Needed to be independant from NetworkBehaviour's list of fields. This way, if that changes, we can still do this validation in this test
     }
 
     public class OneNetVar : NetworkBehaviour, INetVarInfo
     {
         private NetworkVariableInt m_SomeValue = new NetworkVariableInt();
-        public List<NetworkVariableInt> allNetVars => new List<NetworkVariableInt>() { m_SomeValue };
+        public List<NetworkVariableInt> AllNetVars => new List<NetworkVariableInt>() { m_SomeValue };
     }
 
     public class TwoNetVar : NetworkBehaviour, INetVarInfo
     {
         private NetworkVariableInt m_SomeValue = new NetworkVariableInt();
         private NetworkVariableInt m_SomeOtherValue = new NetworkVariableInt();
-        public List<NetworkVariableInt> allNetVars => new List<NetworkVariableInt>() { m_SomeValue, m_SomeOtherValue };
+        public List<NetworkVariableInt> AllNetVars => new List<NetworkVariableInt>() { m_SomeValue, m_SomeOtherValue };
     }
 }
