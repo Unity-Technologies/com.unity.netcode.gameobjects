@@ -208,9 +208,9 @@ namespace MLAPI
                 rpcQueueContainer.EndAddQueueItemToFrame(serializer.Writer, RpcQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
             }
 
-            if (NetworkManager.__rpc_name_table.ContainsKey(rpcMethodId))
+            if (NetworkManager.__rpc_name_table.TryGetValue(rpcMethodId, out var rpcMethodName))
             {
-                NetworkManager.NetworkMetrics.TrackRpcSent(clientIds, NetworkObjectId, NetworkManager.__rpc_name_table[rpcMethodId], (ulong)serializer.Writer.GetStream().Length);
+                NetworkManager.NetworkMetrics.TrackRpcSent(clientIds, NetworkObjectId, rpcMethodName, (ulong)serializer.Writer.GetStream().Length);
             }
         }
 

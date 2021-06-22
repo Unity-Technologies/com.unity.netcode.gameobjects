@@ -1435,9 +1435,9 @@ namespace MLAPI
 
                 __rpc_func_table[networkRpcMethodId](networkBehaviour, new NetworkSerializer(queueItem.NetworkReader), rpcParams);
 
-                if (__rpc_name_table.ContainsKey(networkRpcMethodId))
+                if (__rpc_name_table.TryGetValue(networkRpcMethodId, out var rpcMethodName))
                 {
-                    NetworkMetrics.TrackRpcReceived(queueItem.NetworkId, networkObjectId, __rpc_name_table[networkRpcMethodId], (ulong)queueItem.MessageData.Count);
+                    NetworkMetrics.TrackRpcReceived(queueItem.NetworkId, networkObjectId, rpcMethodName, (ulong)queueItem.MessageData.Count);
                 }
             }
 
