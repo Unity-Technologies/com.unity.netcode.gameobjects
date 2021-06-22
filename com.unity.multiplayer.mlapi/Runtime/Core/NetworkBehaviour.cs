@@ -1,7 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Diagnostics;
 using UnityEngine;
 using System.Reflection;
 using System.Linq;
@@ -14,7 +12,6 @@ using MLAPI.Profiling;
 using MLAPI.Reflection;
 using MLAPI.Serialization;
 using MLAPI.Serialization.Pooled;
-using MLAPI.Spawning;
 using MLAPI.Transports;
 using Unity.Profiling;
 
@@ -26,15 +23,8 @@ namespace MLAPI
     public abstract class NetworkBehaviour : MonoBehaviour
     {
 #pragma warning disable IDE1006 // disable naming rule violation check
-        [Browsable(false)]
-        [EditorBrowsable(EditorBrowsableState.Never)]
-#if UNITY_2020_2_OR_NEWER
         // RuntimeAccessModifiersILPP will make this `protected`
-        internal enum __NExec
-#else
-        [Obsolete("Please do not use, will no longer be exposed in the future versions (framework internal)")]
-        public enum __NExec
-#endif
+        internal enum __RpcExecStage
 #pragma warning restore IDE1006 // restore naming rule violation check
         {
             None = 0,
@@ -42,32 +32,17 @@ namespace MLAPI
             Client = 2
         }
 
-#pragma warning disable 414
+#pragma warning disable 414 // disable assigned but its value is never used
 #pragma warning disable IDE1006 // disable naming rule violation check
         [NonSerialized]
-        [Browsable(false)]
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-#if UNITY_2020_2_OR_NEWER
         // RuntimeAccessModifiersILPP will make this `protected`
-        internal __NExec __nexec = __NExec.None;
-#else
-        [Obsolete("Please do not use, will no longer be exposed in the future versions (framework internal)")]
-        public __NExec __nexec = __NExec.None;
-#endif
-#pragma warning restore 414
-#pragma warning restore IDE1006 // restore naming rule violation check
+        internal __RpcExecStage __rpc_exec_stage = __RpcExecStage.None;
+#pragma warning restore 414 // restore assigned but its value is never used
+#pragma warning restore IDE1006 // restore naming rule violation
 
 #pragma warning disable IDE1006 // disable naming rule violation check
-        [Browsable(false)]
-        [EditorBrowsable(EditorBrowsableState.Never)]
-#if UNITY_2020_2_OR_NEWER
         // RuntimeAccessModifiersILPP will make this `protected`
-        internal NetworkSerializer __beginSendServerRpc(ServerRpcParams serverRpcParams, RpcDelivery rpcDelivery)
-#else
-        [Obsolete("Please do not use, will no longer be exposed in the future versions (framework internal)")]
-        public NetworkSerializer __beginSendServerRpc(ServerRpcParams serverRpcParams, RpcDelivery rpcDelivery)
-#endif
+        internal NetworkSerializer __beginSendServerRpc(uint rpcMethodId, ServerRpcParams serverRpcParams, RpcDelivery rpcDelivery)
 #pragma warning restore IDE1006 // restore naming rule violation check
         {
             PooledNetworkWriter writer;
@@ -98,21 +73,15 @@ namespace MLAPI
 
             writer.WriteUInt64Packed(NetworkObjectId); // NetworkObjectId
             writer.WriteUInt16Packed(NetworkBehaviourId); // NetworkBehaviourId
+            writer.WriteUInt32Packed(rpcMethodId); // NetworkRpcMethodId
             writer.WriteByte((byte)serverRpcParams.Send.UpdateStage); // NetworkUpdateStage
 
             return writer.Serializer;
         }
 
 #pragma warning disable IDE1006 // disable naming rule violation check
-        [Browsable(false)]
-        [EditorBrowsable(EditorBrowsableState.Never)]
-#if UNITY_2020_2_OR_NEWER
         // RuntimeAccessModifiersILPP will make this `protected`
-        internal void __endSendServerRpc(NetworkSerializer serializer, ServerRpcParams serverRpcParams, RpcDelivery rpcDelivery)
-#else
-        [Obsolete("Please do not use, will no longer be exposed in the future versions (framework internal)")]
-        public void __endSendServerRpc(NetworkSerializer serializer, ServerRpcParams serverRpcParams, RpcDelivery rpcDelivery)
-#endif
+        internal void __endSendServerRpc(NetworkSerializer serializer, uint rpcMethodId, ServerRpcParams serverRpcParams, RpcDelivery rpcDelivery)
 #pragma warning restore IDE1006 // restore naming rule violation check
         {
             if (serializer == null)
@@ -132,15 +101,8 @@ namespace MLAPI
         }
 
 #pragma warning disable IDE1006 // disable naming rule violation check
-        [Browsable(false)]
-        [EditorBrowsable(EditorBrowsableState.Never)]
-#if UNITY_2020_2_OR_NEWER
         // RuntimeAccessModifiersILPP will make this `protected`
-        internal NetworkSerializer __beginSendClientRpc(ClientRpcParams clientRpcParams, RpcDelivery rpcDelivery)
-#else
-        [Obsolete("Please do not use, will no longer be exposed in the future versions (framework internal)")]
-        public NetworkSerializer __beginSendClientRpc(ClientRpcParams clientRpcParams, RpcDelivery rpcDelivery)
-#endif
+        internal NetworkSerializer __beginSendClientRpc(uint rpcMethodId, ClientRpcParams clientRpcParams, RpcDelivery rpcDelivery)
 #pragma warning restore IDE1006 // restore naming rule violation check
         {
             PooledNetworkWriter writer;
@@ -203,21 +165,15 @@ namespace MLAPI
 
             writer.WriteUInt64Packed(NetworkObjectId); // NetworkObjectId
             writer.WriteUInt16Packed(NetworkBehaviourId); // NetworkBehaviourId
+            writer.WriteUInt32Packed(rpcMethodId); // NetworkRpcMethodId
             writer.WriteByte((byte)clientRpcParams.Send.UpdateStage); // NetworkUpdateStage
 
             return writer.Serializer;
         }
 
 #pragma warning disable IDE1006 // disable naming rule violation check
-        [Browsable(false)]
-        [EditorBrowsable(EditorBrowsableState.Never)]
-#if UNITY_2020_2_OR_NEWER
         // RuntimeAccessModifiersILPP will make this `protected`
-        internal void __endSendClientRpc(NetworkSerializer serializer, ClientRpcParams clientRpcParams, RpcDelivery rpcDelivery)
-#else
-        [Obsolete("Please do not use, will no longer be exposed in the future versions (framework internal)")]
-        public void __endSendClientRpc(NetworkSerializer serializer, ClientRpcParams clientRpcParams, RpcDelivery rpcDelivery)
-#endif
+        internal void __endSendClientRpc(NetworkSerializer serializer, uint rpcMethodId, ClientRpcParams clientRpcParams, RpcDelivery rpcDelivery)
 #pragma warning restore IDE1006 // restore naming rule violation check
         {
             if (serializer == null)
@@ -295,9 +251,9 @@ namespace MLAPI
                     m_NetworkObject = GetComponentInParent<NetworkObject>();
                 }
 
-                if (m_NetworkObject == null)
+                if (m_NetworkObject == null && NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                 {
-                    throw new NullReferenceException($"Could not get {nameof(NetworkObject)} for the {nameof(NetworkBehaviour)}. Are you missing a {nameof(NetworkObject)} component?");
+                    NetworkLog.LogWarning($"Could not get {nameof(NetworkObject)} for the {nameof(NetworkBehaviour)}. Are you missing a {nameof(NetworkObject)} component?");
                 }
 
                 return m_NetworkObject;
@@ -307,18 +263,7 @@ namespace MLAPI
         /// <summary>
         /// Gets whether or not this NetworkBehaviour instance has a NetworkObject owner.
         /// </summary>
-        public bool HasNetworkObject
-        {
-            get
-            {
-                if (m_NetworkObject == null)
-                {
-                    m_NetworkObject = GetComponentInParent<NetworkObject>();
-                }
-
-                return m_NetworkObject != null;
-            }
-        }
+        public bool HasNetworkObject => NetworkObject != null;
 
         private NetworkObject m_NetworkObject = null;
 
@@ -331,6 +276,11 @@ namespace MLAPI
         /// Gets NetworkId for this NetworkBehaviour from the owner NetworkObject
         /// </summary>
         public ushort NetworkBehaviourId => NetworkObject.GetNetworkBehaviourOrderIndex(this);
+
+        /// <summary>
+        /// Internally caches the Id of this behaviour in a NetworkObject. Makes look-up faster
+        /// </summary>
+        internal ushort NetworkBehaviourIdCache = 0;
 
         /// <summary>
         /// Returns a the NetworkBehaviour with a given BehaviourId for the current NetworkObject
@@ -347,9 +297,6 @@ namespace MLAPI
         /// </summary>
         public ulong OwnerClientId => NetworkObject.OwnerClientId;
 
-        internal bool NetworkStartInvoked = false;
-        internal bool InternalNetworkStartInvoked = false;
-
         /// <summary>
         /// Stores the network tick at the NetworkBehaviourUpdate time
         /// This allows sending NetworkVariables not more often than once per network tick, regardless of the update rate
@@ -359,20 +306,30 @@ namespace MLAPI
         /// <summary>
         /// Gets called when message handlers are ready to be registered and the network is setup
         /// </summary>
-        public virtual void NetworkStart() { }
+        public virtual void OnNetworkSpawn() { }
 
         /// <summary>
-        /// Gets called when message handlers are ready to be registered and the network is setup. Provides a Payload if it was provided
+        /// Gets called when the <see cref="NetworkObject"/> gets spawned, message handlers are ready to be registered and the network is setup. Provides a Payload if it was provided
         /// </summary>
         /// <param name="stream">The stream containing the spawn payload</param>
-        public virtual void NetworkStart(Stream stream)
+        public virtual void OnNetworkSpawn(Stream stream)
         {
-            NetworkStart();
+            OnNetworkSpawn();
         }
 
-        internal void InternalNetworkStart()
+        /// <summary>
+        /// Gets called when the <see cref="NetworkObject"/> gets de-spawned. Is called both on the server and clients.
+        /// </summary>
+        public virtual void OnNetworkDespawn() { }
+
+        internal void InternalOnNetworkSpawn()
         {
             InitializeVariables();
+        }
+
+        internal void InternalOnNetworkDespawn()
+        {
+
         }
 
         /// <summary>
@@ -384,6 +341,11 @@ namespace MLAPI
         /// Gets called when we loose ownership of this object
         /// </summary>
         public virtual void OnLostOwnership() { }
+
+        /// <summary>
+        /// Gets called when the parent NetworkObject of this NetworkBehaviour's NetworkObject has changed
+        /// </summary>
+        public virtual void OnNetworkObjectParentChanged(NetworkObject parentNetworkObject) { }
 
         private bool m_VarInit = false;
 
@@ -450,6 +412,10 @@ namespace MLAPI
                     }
 
                     instance.SetNetworkBehaviour(this);
+
+                    var instanceNameProperty = fieldType.GetProperty(nameof(INetworkVariable.Name));
+                    instanceNameProperty?.SetValue(instance, sortedFields[i].Name);
+
                     NetworkVariableFields.Add(instance);
                 }
             }
@@ -581,103 +547,110 @@ namespace MLAPI
             }
 
             PreNetworkVariableWrite();
-            NetworkVariableUpdate(clientId);
+            NetworkVariableUpdate(clientId, NetworkBehaviourId);
         }
 
         private readonly List<int> m_NetworkVariableIndexesToReset = new List<int>();
         private readonly HashSet<int> m_NetworkVariableIndexesToResetSet = new HashSet<int>();
 
-        private void NetworkVariableUpdate(ulong clientId)
+        private void NetworkVariableUpdate(ulong clientId, int behaviourIndex)
         {
             if (!CouldHaveDirtyNetworkVariables())
             {
                 return;
             }
 
-            for (int j = 0; j < m_ChannelMappedNetworkVariableIndexes.Count; j++)
+            if (NetworkManager.UseSnapshot)
             {
-                using (var buffer = PooledNetworkBuffer.Get())
+                for (int k = 0; k < NetworkVariableFields.Count; k++)
                 {
-                    using (var writer = PooledNetworkWriter.Get(buffer))
+                    NetworkManager.SnapshotSystem.Store(NetworkObjectId, behaviourIndex, k, NetworkVariableFields[k]);
+                }
+            }
+
+            if (NetworkManager.UseClassicDelta)
+            {
+                for (int j = 0; j < m_ChannelMappedNetworkVariableIndexes.Count; j++)
+                {
+                    using (var buffer = PooledNetworkBuffer.Get())
                     {
-                        writer.WriteUInt64Packed(NetworkObjectId);
-                        writer.WriteUInt16Packed(NetworkObject.GetNetworkBehaviourOrderIndex(this));
-
-                        // Write the current tick frame
-                        // todo: this is currently done per channel, per tick. The snapshot system might improve on this
-                        writer.WriteUInt16Packed(CurrentTick);
-
-                        bool writtenAny = false;
-                        for (int k = 0; k < NetworkVariableFields.Count; k++)
+                        using (var writer = PooledNetworkWriter.Get(buffer))
                         {
-                            if (!m_ChannelMappedNetworkVariableIndexes[j].Contains(k))
+                            writer.WriteUInt64Packed(NetworkObjectId);
+                            writer.WriteUInt16Packed(NetworkObject.GetNetworkBehaviourOrderIndex(this));
+
+                            bool writtenAny = false;
+                            for (int k = 0; k < NetworkVariableFields.Count; k++)
                             {
-                                // This var does not belong to the currently iterating channel group.
-                                if (NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
+                                if (!m_ChannelMappedNetworkVariableIndexes[j].Contains(k))
                                 {
-                                    writer.WriteUInt16Packed(0);
-                                }
-                                else
-                                {
-                                    writer.WriteBool(false);
-                                }
-
-                                continue;
-                            }
-
-                            bool isDirty = NetworkVariableFields[k].IsDirty(); // cache this here. You never know what operations users will do in the dirty methods
-
-                            //   if I'm dirty AND a client, write (server always has all permissions)
-                            //   if I'm dirty AND the server AND the client can read me, send.
-                            bool shouldWrite = isDirty && (!IsServer || NetworkVariableFields[k].CanClientRead(clientId));
-
-                            if (NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
-                            {
-                                if (!shouldWrite)
-                                {
-                                    writer.WriteUInt16Packed(0);
-                                }
-                            }
-                            else
-                            {
-                                writer.WriteBool(shouldWrite);
-                            }
-
-                            if (shouldWrite)
-                            {
-                                writtenAny = true;
-
-                                // write the network tick at which this NetworkVariable was modified remotely
-                                // this will allow lag-compensation
-                                writer.WriteUInt16Packed(NetworkVariableFields[k].RemoteTick);
-
-                                if (NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
-                                {
-                                    using (var varBuffer = PooledNetworkBuffer.Get())
+                                    // This var does not belong to the currently iterating channel group.
+                                    if (NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                                     {
-                                        NetworkVariableFields[k].WriteDelta(varBuffer);
-                                        varBuffer.PadBuffer();
+                                        writer.WriteUInt16Packed(0);
+                                    }
+                                    else
+                                    {
+                                        writer.WriteBool(false);
+                                    }
 
-                                        writer.WriteUInt16Packed((ushort)varBuffer.Length);
-                                        buffer.CopyFrom(varBuffer);
+                                    continue;
+                                }
+
+                                bool isDirty =
+                                    NetworkVariableFields[k]
+                                        .IsDirty(); // cache this here. You never know what operations users will do in the dirty methods
+
+                                //   if I'm dirty AND a client, write (server always has all permissions)
+                                //   if I'm dirty AND the server AND the client can read me, send.
+                                bool shouldWrite = isDirty &&
+                                                   (!IsServer || NetworkVariableFields[k].CanClientRead(clientId));
+
+                                if (NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
+                                {
+                                    if (!shouldWrite)
+                                    {
+                                        writer.WriteUInt16Packed(0);
                                     }
                                 }
                                 else
                                 {
-                                    NetworkVariableFields[k].WriteDelta(buffer);
+                                    writer.WriteBool(shouldWrite);
                                 }
 
-                                if (!m_NetworkVariableIndexesToResetSet.Contains(k))
+                                if (shouldWrite)
                                 {
-                                    m_NetworkVariableIndexesToResetSet.Add(k);
-                                    m_NetworkVariableIndexesToReset.Add(k);
+                                    writtenAny = true;
+
+                                    if (NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
+                                    {
+                                        using (var varBuffer = PooledNetworkBuffer.Get())
+                                        {
+                                            NetworkVariableFields[k].WriteDelta(varBuffer);
+                                            varBuffer.PadBuffer();
+
+                                            writer.WriteUInt16Packed((ushort)varBuffer.Length);
+                                            buffer.CopyFrom(varBuffer);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        NetworkVariableFields[k].WriteDelta(buffer);
+                                    }
+
+                                    if (!m_NetworkVariableIndexesToResetSet.Contains(k))
+                                    {
+                                        m_NetworkVariableIndexesToResetSet.Add(k);
+                                        m_NetworkVariableIndexesToReset.Add(k);
+                                    }
                                 }
                             }
-                        }
 
-                        if (writtenAny)
-                        {
-                            NetworkManager.MessageSender.Send(clientId, NetworkConstants.NETWORK_VARIABLE_DELTA, m_ChannelsForNetworkVariableGroups[j], buffer);
+                            if (writtenAny)
+                            {
+                                NetworkManager.MessageSender.Send(clientId, NetworkConstants.NETWORK_VARIABLE_DELTA,
+                                    m_ChannelsForNetworkVariableGroups[j], buffer);
+                            }
                         }
                     }
                 }
@@ -702,9 +675,6 @@ namespace MLAPI
         {
             using (var reader = PooledNetworkReader.Get(stream))
             {
-                // read the remote network tick at which this variable was written.
-                ushort remoteTick = reader.ReadUInt16Packed();
-
                 for (int i = 0; i < networkVariableList.Count; i++)
                 {
                     ushort varSize = 0;
@@ -757,13 +727,9 @@ namespace MLAPI
                         return;
                     }
 
-                    // read the local network tick at which this variable was written.
-                    // if this var was updated from our machine, this local tick will be locally valid
-                    ushort localTick = reader.ReadUInt16Packed();
-
                     long readStartPos = stream.Position;
 
-                    networkVariableList[i].ReadDelta(stream, networkManager.IsServer, localTick, remoteTick);
+                    networkVariableList[i].ReadDelta(stream, networkManager.IsServer);
                     PerformanceDataManager.Increment(ProfilerConstants.NetworkVarDeltas);
 
                     ProfilerStatManager.NetworkVarsRcvd.Record();
@@ -850,7 +816,7 @@ namespace MLAPI
 
                     long readStartPos = stream.Position;
 
-                    networkVariableList[i].ReadField(stream, NetworkTickSystem.NoTick, NetworkTickSystem.NoTick);
+                    networkVariableList[i].ReadField(stream);
                     PerformanceDataManager.Increment(ProfilerConstants.NetworkVarUpdates);
 
                     ProfilerStatManager.NetworkVarsRcvd.Record();
@@ -965,7 +931,7 @@ namespace MLAPI
 
                     long readStartPos = stream.Position;
 
-                    networkVariableList[j].ReadField(stream, NetworkTickSystem.NoTick, NetworkTickSystem.NoTick);
+                    networkVariableList[j].ReadField(stream);
 
                     if (networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                     {
@@ -1002,6 +968,9 @@ namespace MLAPI
         /// </summary>
         /// <param name="networkId"></param>
         /// <returns></returns>
-        protected NetworkObject GetNetworkObject(ulong networkId) => NetworkManager.SpawnManager.SpawnedObjects.ContainsKey(networkId) ? NetworkManager.SpawnManager.SpawnedObjects[networkId] : null;
+        protected NetworkObject GetNetworkObject(ulong networkId)
+        {
+            return NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(networkId, out NetworkObject networkObject) ? networkObject : null;
+        }
     }
 }

@@ -1,8 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Diagnostics;
 using UnityEngine;
 using MLAPI.Logging;
 using MLAPI.Configuration;
@@ -29,16 +27,16 @@ namespace MLAPI
     public class NetworkManager : MonoBehaviour, INetworkUpdateSystem, IProfilableTransportProvider
     {
 #pragma warning disable IDE1006 // disable naming rule violation check
-        [Browsable(false)]
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-#if UNITY_2020_2_OR_NEWER
         // RuntimeAccessModifiersILPP will make this `public`
-        internal static readonly Dictionary<uint, Action<NetworkBehaviour, NetworkSerializer, __RpcParams>> __ntable = new Dictionary<uint, Action<NetworkBehaviour, NetworkSerializer, __RpcParams>>();
-#else
-        [Obsolete("Please do not use, will no longer be exposed in the future versions (framework internal)")]
-        public static readonly Dictionary<uint, Action<NetworkBehaviour, NetworkSerializer, __RpcParams>> __ntable = new Dictionary<uint, Action<NetworkBehaviour, NetworkSerializer, __RpcParams>>();
-#endif
+        internal static readonly Dictionary<uint, Action<NetworkBehaviour, NetworkSerializer, __RpcParams>> __rpc_func_table = new Dictionary<uint, Action<NetworkBehaviour, NetworkSerializer, __RpcParams>>();
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        // RuntimeAccessModifiersILPP will make this `public`
+        internal static readonly Dictionary<uint, string> __rpc_name_table = new Dictionary<uint, string>();
+#else // !(UNITY_EDITOR || DEVELOPMENT_BUILD)
+        // RuntimeAccessModifiersILPP will make this `public`
+        internal static readonly Dictionary<uint, string> __rpc_name_table = null; // not needed on release builds
+#endif // UNITY_EDITOR || DEVELOPMENT_BUILD
 #pragma warning restore IDE1006 // restore naming rule violation check
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
@@ -52,9 +50,28 @@ namespace MLAPI
         private static ProfilerMarker s_InvokeRpc = new ProfilerMarker($"{nameof(NetworkManager)}.{nameof(InvokeRpc)}");
 #endif
 
+        // todo: transitional. For the next release, only Snapshot should remain
+        // The booleans allow iterative development and testing in the meantime
+        internal static bool UseClassicDelta = true;
+        internal static bool UseSnapshot = false;
+
         internal RpcQueueContainer RpcQueueContainer { get; private set; }
         internal NetworkTickSystem NetworkTickSystem { get; private set; }
-        public NetworkPrefabHandler PrefabHandler { get; private set; }
+
+        internal SnapshotSystem SnapshotSystem { get; private set; }
+
+        private NetworkPrefabHandler m_PrefabHandler;
+        public NetworkPrefabHandler PrefabHandler
+        {
+            get
+            {
+                if (m_PrefabHandler == null)
+                {
+                    m_PrefabHandler = new NetworkPrefabHandler();
+                }
+                return m_PrefabHandler;
+            }
+        }
 
         /// <summary>
         /// A synchronized time, represents the time in seconds since the server application started. Is replicated across all clients
@@ -244,6 +261,12 @@ namespace MLAPI
                 };
             }
 
+            // If the scene is not dirty or the asset database is currently updating then we can skip updating the NetworkPrefab information
+            if (!activeScene.isDirty || UnityEditor.EditorApplication.isUpdating)
+            {
+                return;
+            }
+
             // During OnValidate we will always clear out NetworkPrefabOverrideLinks and rebuild it
             NetworkConfig.NetworkPrefabOverrideLinks.Clear();
 
@@ -299,11 +322,11 @@ namespace MLAPI
         }
 #endif
 
-        private void Init(bool server)
+        private void Initialize(bool server)
         {
             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
             {
-                NetworkLog.LogInfo(nameof(Init));
+                NetworkLog.LogInfo(nameof(Initialize));
             }
 
             LocalClientId = 0;
@@ -314,6 +337,7 @@ namespace MLAPI
             PendingClients.Clear();
             ConnectedClients.Clear();
             ConnectedClientsList.Clear();
+            NetworkObject.OrphanChildren.Clear();
 
             // Create spawn manager instance
             SpawnManager = new NetworkSpawnManager(this);
@@ -324,11 +348,8 @@ namespace MLAPI
 
             SceneManager = new NetworkSceneManager(this);
 
-            if (MessageHandler == null)
-            {
-                // Only create this if it's not already set (like in test cases)
-                MessageHandler = new InternalMessageHandler(this);
-            }
+            // Only create this if it's not already set (like in test cases)
+            MessageHandler ??= CreateMessageHandler();
 
             MessageSender = new InternalMessageSender(this);
 
@@ -342,7 +363,16 @@ namespace MLAPI
                 return;
             }
 
-            // This 'if' should never enter
+            //This 'if' should never enter
+            if (SnapshotSystem != null)
+            {
+                SnapshotSystem.Dispose();
+                SnapshotSystem = null;
+            }
+
+            SnapshotSystem = new SnapshotSystem();
+
+            //This 'if' should never enter
             if (NetworkTickSystem != null)
             {
                 NetworkTickSystem.Dispose();
@@ -354,7 +384,7 @@ namespace MLAPI
             // This should never happen, but in the event that it does there should be (at a minimum) a unity error logged.
             if (RpcQueueContainer != null)
             {
-                UnityEngine.Debug.LogError("Init was invoked, but rpcQueueContainer was already initialized! (destroying previous instance)");
+                Debug.LogError("Init was invoked, but rpcQueueContainer was already initialized! (destroying previous instance)");
                 RpcQueueContainer.Dispose();
                 RpcQueueContainer = null;
             }
@@ -397,8 +427,6 @@ namespace MLAPI
                         NetworkLog.LogWarning($"{nameof(NetworkPrefab)} cannot be null ({nameof(NetworkPrefab)} at index: {i})");
                     }
 
-                    // Provide the name of the prefab with issues so the user can more easily find the prefab and fix it
-                    UnityEngine.Debug.LogWarning($"{nameof(NetworkPrefab)} (\"{NetworkConfig.NetworkPrefabs[i].Prefab.name}\") will be removed and ignored.");
                     removeEmptyPrefabs.Add(i);
 
                     continue;
@@ -411,7 +439,7 @@ namespace MLAPI
                     }
 
                     // Provide the name of the prefab with issues so the user can more easily find the prefab and fix it
-                    UnityEngine.Debug.LogWarning($"{nameof(NetworkPrefab)} (\"{NetworkConfig.NetworkPrefabs[i].Prefab.name}\") will be removed and ignored.");
+                    Debug.LogWarning($"{nameof(NetworkPrefab)} (\"{NetworkConfig.NetworkPrefabs[i].Prefab.name}\") will be removed and ignored.");
                     removeEmptyPrefabs.Add(i);
 
                     continue;
@@ -439,7 +467,7 @@ namespace MLAPI
                 else
                 {
                     // This should never happen, but in the case it somehow does log an error and remove the duplicate entry
-                    UnityEngine.Debug.LogError($"{nameof(NetworkPrefab)} (\"{NetworkConfig.NetworkPrefabs[i].Prefab.name}\") has a duplicate {nameof(NetworkObject.GlobalObjectIdHash)} {networkObject.GlobalObjectIdHash} entry! Removing entry from list!");
+                    Debug.LogError($"{nameof(NetworkPrefab)} (\"{NetworkConfig.NetworkPrefabs[i].Prefab.name}\") has a duplicate {nameof(NetworkObject.GlobalObjectIdHash)} {networkObject.GlobalObjectIdHash} entry! Removing entry from list!");
                     removeEmptyPrefabs.Add(i);
                 }
             }
@@ -463,7 +491,7 @@ namespace MLAPI
                 else
                 {
                     // Provide the name of the prefab with issues so the user can more easily find the prefab and fix it
-                    UnityEngine.Debug.LogError($"{nameof(NetworkConfig.PlayerPrefab)} (\"{NetworkConfig.PlayerPrefab.name}\") has no NetworkObject assigned to it!.");
+                    Debug.LogError($"{nameof(NetworkConfig.PlayerPrefab)} (\"{NetworkConfig.PlayerPrefab.name}\") has no NetworkObject assigned to it!.");
                 }
             }
 
@@ -514,7 +542,7 @@ namespace MLAPI
                 }
             }
 
-            Init(true);
+            Initialize(true);
 
             var socketTasks = NetworkConfig.NetworkTransport.StartServer();
 
@@ -549,7 +577,7 @@ namespace MLAPI
                 return SocketTask.Fault.AsTasks();
             }
 
-            Init(false);
+            Initialize(false);
 
             var socketTasks = NetworkConfig.NetworkTransport.StartClient();
 
@@ -572,6 +600,12 @@ namespace MLAPI
 
             var disconnectedIds = new HashSet<ulong>();
             //Don't know if I have to disconnect the clients. I'm assuming the NetworkTransport does all the cleaning on shtudown. But this way the clients get a disconnect message from server (so long it does't get lost)
+
+            // make sure all RPCs are flushed before transport disconnect clients
+            if (RpcQueueContainer != null)
+            {
+                RpcQueueContainer.ProcessAndFlushRpcQueue(queueType: RpcQueueContainer.RpcQueueProcessingTypes.Send, NetworkUpdateStage.PostLateUpdate); // flushing messages in case transport's disconnect
+            }
 
             foreach (KeyValuePair<ulong, NetworkClient> pair in ConnectedClients)
             {
@@ -669,7 +703,7 @@ namespace MLAPI
                 }
             }
 
-            Init(true);
+            Initialize(true);
 
             var socketTasks = NetworkConfig.NetworkTransport.StartServer();
 
@@ -710,11 +744,6 @@ namespace MLAPI
             Singleton = this;
 
             OnSingletonReady?.Invoke();
-        }
-
-        private void Awake()
-        {
-            PrefabHandler = new NetworkPrefabHandler();
         }
 
         private void OnEnable()
@@ -760,6 +789,12 @@ namespace MLAPI
             {
                 RpcQueueContainer.Dispose();
                 RpcQueueContainer = null;
+            }
+
+            if (SnapshotSystem != null)
+            {
+                SnapshotSystem.Dispose();
+                SnapshotSystem = null;
             }
 
             if (NetworkTickSystem != null)
@@ -1142,7 +1177,7 @@ namespace MLAPI
                 }
 
                 // Client tried to send a network message that was not the connection request before he was accepted.
-                if (PendingClients.ContainsKey(clientId) && (PendingClients[clientId].ConnectionState == PendingClient.State.PendingApproval || (PendingClients[clientId].ConnectionState == PendingClient.State.PendingConnection && messageType != NetworkConstants.CONNECTION_REQUEST)))
+                if (PendingClients.TryGetValue(clientId, out PendingClient client) && (client.ConnectionState == PendingClient.State.PendingApproval || client.ConnectionState == PendingClient.State.PendingConnection && messageType != NetworkConstants.CONNECTION_REQUEST))
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                     {
@@ -1154,6 +1189,9 @@ namespace MLAPI
 
                 switch (messageType)
                 {
+                    case NetworkConstants.SNAPSHOT_DATA:
+                        InternalMessageHandler.HandleSnapshot(clientId, messageStream);
+                        break;
                     case NetworkConstants.CONNECTION_REQUEST:
                         if (IsServer)
                         {
@@ -1228,17 +1266,6 @@ namespace MLAPI
                             ReceiveTime = receiveTime
                         });
                         break;
-                    case NetworkConstants.NETWORK_VARIABLE_UPDATE:
-                        MessageHandler.HandleNetworkVariableUpdate(clientId, messageStream, BufferCallback, new PreBufferPreset()
-                        {
-                            AllowBuffer = allowBuffer,
-                            NetworkChannel = networkChannel,
-                            ClientId = clientId,
-                            Data = data,
-                            MessageType = messageType,
-                            ReceiveTime = receiveTime
-                        });
-                        break;
                     case NetworkConstants.UNNAMED_MESSAGE:
                         MessageHandler.HandleUnnamedMessage(clientId, messageStream);
                         break;
@@ -1253,6 +1280,13 @@ namespace MLAPI
                         else if (!NetworkConfig.EnableSceneManagement)
                         {
                             NetworkLog.LogWarning($"Server received {nameof(NetworkConstants.CLIENT_SWITCH_SCENE_COMPLETED)} from client id {clientId}");
+                        }
+
+                        break;
+                    case NetworkConstants.ALL_CLIENTS_LOADED_SCENE:
+                        if (IsClient)
+                        {
+                            MessageHandler.HandleAllClientsSwitchSceneCompleted(clientId, messageStream);
                         }
 
                         break;
@@ -1299,6 +1333,29 @@ namespace MLAPI
 
                             break;
                         }
+                    case NetworkConstants.PARENT_SYNC:
+                        {
+                            if (IsClient)
+                            {
+                                using (var reader = PooledNetworkReader.Get(messageStream))
+                                {
+                                    var networkObjectId = reader.ReadUInt64Packed();
+                                    var (isReparented, latestParent) = NetworkObject.ReadNetworkParenting(reader);
+                                    if (SpawnManager.SpawnedObjects.ContainsKey(networkObjectId))
+                                    {
+                                        var networkObject = SpawnManager.SpawnedObjects[networkObjectId];
+                                        networkObject.SetNetworkParenting(isReparented, latestParent);
+                                        networkObject.ApplyNetworkParenting();
+                                    }
+                                    else if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+                                    {
+                                        NetworkLog.LogWarning($"Read {nameof(NetworkConstants.PARENT_SYNC)} for {nameof(NetworkObject)} #{networkObjectId} but could not find it in the {nameof(SpawnManager.SpawnedObjects)}");
+                                    }
+                                }
+                            }
+
+                            break;
+                        }
                     default:
                         if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
                         {
@@ -1323,11 +1380,9 @@ namespace MLAPI
         }
 
         /// <summary>
-        /// InvokeRPC
         /// Called when an inbound queued RPC is invoked
         /// </summary>
         /// <param name="queueItem">frame queue item to invoke</param>
-#pragma warning disable 618
         internal void InvokeRpc(RpcFrameQueueItem queueItem)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
@@ -1335,10 +1390,10 @@ namespace MLAPI
 #endif
             var networkObjectId = queueItem.NetworkReader.ReadUInt64Packed();
             var networkBehaviourId = queueItem.NetworkReader.ReadUInt16Packed();
+            var networkRpcMethodId = queueItem.NetworkReader.ReadUInt32Packed();
             var networkUpdateStage = queueItem.NetworkReader.ReadByteDirect();
-            var networkMethodId = queueItem.NetworkReader.ReadUInt32Packed();
 
-            if (__ntable.ContainsKey(networkMethodId))
+            if (__rpc_func_table.ContainsKey(networkRpcMethodId))
             {
                 if (!SpawnManager.SpawnedObjects.ContainsKey(networkObjectId))
                 {
@@ -1377,9 +1432,8 @@ namespace MLAPI
                         break;
                 }
 
-                __ntable[networkMethodId](networkBehaviour, new NetworkSerializer(queueItem.NetworkReader), rpcParams);
+                __rpc_func_table[networkRpcMethodId](networkBehaviour, new NetworkSerializer(queueItem.NetworkReader), rpcParams);
             }
-#pragma warning restore 618
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_InvokeRpc.End();
@@ -1423,15 +1477,8 @@ namespace MLAPI
                 throw new NotServerException("Only server can disconnect remote clients. Use StopClient instead.");
             }
 
-            if (ConnectedClients.ContainsKey(clientId))
-            {
-                ConnectedClients.Remove(clientId);
-            }
-
-            if (PendingClients.ContainsKey(clientId))
-            {
-                PendingClients.Remove(clientId);
-            }
+            ConnectedClients.Remove(clientId);
+            PendingClients.Remove(clientId);
 
             for (int i = ConnectedClientsList.Count - 1; i > -1; i--)
             {
@@ -1448,48 +1495,46 @@ namespace MLAPI
 
         internal void OnClientDisconnectFromServer(ulong clientId)
         {
-            if (PendingClients.ContainsKey(clientId))
-            {
-                PendingClients.Remove(clientId);
-            }
+            PendingClients.Remove(clientId);
 
-            if (ConnectedClients.ContainsKey(clientId))
+            if (ConnectedClients.TryGetValue(clientId, out NetworkClient networkClient))
             {
                 if (IsServer)
                 {
-                    if (ConnectedClients[clientId].PlayerObject != null)
+                    var playerObject = networkClient.PlayerObject;
+                    if (playerObject != null)
                     {
                         if (PrefabHandler.ContainsHandler(ConnectedClients[clientId].PlayerObject.GlobalObjectIdHash))
                         {
                             PrefabHandler.HandleNetworkPrefabDestroy(ConnectedClients[clientId].PlayerObject);
-                            SpawnManager.OnDestroyObject(ConnectedClients[clientId].PlayerObject.NetworkObjectId, false);
+                            SpawnManager.OnDespawnObject(ConnectedClients[clientId].PlayerObject.NetworkObjectId, false);
                         }
                         else
                         {
-                            Destroy(ConnectedClients[clientId].PlayerObject.gameObject);
+                            Destroy(playerObject.gameObject);
                         }
                     }
 
-                    for (int i = 0; i < ConnectedClients[clientId].OwnedObjects.Count; i++)
+                    for (int i = 0; i < networkClient.OwnedObjects.Count; i++)
                     {
-                        if (ConnectedClients[clientId].OwnedObjects[i] != null)
+                        var ownedObject = networkClient.OwnedObjects[i];
+                        if (ownedObject != null)
                         {
-                            if (!ConnectedClients[clientId].OwnedObjects[i].DontDestroyWithOwner)
+                            if (!ownedObject.DontDestroyWithOwner)
                             {
-
                                 if (PrefabHandler.ContainsHandler(ConnectedClients[clientId].OwnedObjects[i].GlobalObjectIdHash))
                                 {
                                     PrefabHandler.HandleNetworkPrefabDestroy(ConnectedClients[clientId].OwnedObjects[i]);
-                                    SpawnManager.OnDestroyObject(ConnectedClients[clientId].OwnedObjects[i].NetworkObjectId, false);
+                                    SpawnManager.OnDespawnObject(ConnectedClients[clientId].OwnedObjects[i].NetworkObjectId, false);
                                 }
                                 else
                                 {
-                                    Destroy(ConnectedClients[clientId].OwnedObjects[i].gameObject);
+                                    Destroy(ownedObject.gameObject);
                                 }
                             }
                             else
                             {
-                                ConnectedClients[clientId].OwnedObjects[i].RemoveOwnership();
+                                ownedObject.RemoveOwnership();
                             }
                         }
                     }
@@ -1545,10 +1590,7 @@ namespace MLAPI
             if (approved)
             {
                 // Inform new client it got approved
-                if (PendingClients.ContainsKey(ownerClientId))
-                {
-                    PendingClients.Remove(ownerClientId);
-                }
+                PendingClients.Remove(ownerClientId);
 
                 var client = new NetworkClient { ClientId = ownerClientId, };
                 ConnectedClients.Add(ownerClientId, client);
@@ -1666,13 +1708,20 @@ namespace MLAPI
             }
             else
             {
-                if (PendingClients.ContainsKey(ownerClientId))
-                {
-                    PendingClients.Remove(ownerClientId);
-                }
-
+                PendingClients.Remove(ownerClientId);
                 NetworkConfig.NetworkTransport.DisconnectRemoteClient(ownerClientId);
             }
+        }
+
+        private IInternalMessageHandler CreateMessageHandler()
+        {
+            IInternalMessageHandler messageHandler = new InternalMessageHandler(this);
+
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            messageHandler = new InternalMessageHandlerProfilingDecorator(messageHandler);
+#endif
+
+            return messageHandler;
         }
 
         private void ProfilerBeginTick()

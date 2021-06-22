@@ -9,6 +9,12 @@ namespace MLAPI.NetworkVariable
     public interface INetworkVariable
     {
         /// <summary>
+        /// Gets or sets the name of the network variable's instance
+        /// (MemberInfo) where it was declared.
+        /// </summary>
+        string Name { get; }
+
+        /// <summary>
         /// Returns the name of the channel to be used for syncing
         /// </summary>
         /// <returns>The name of the channel to be used for syncing</returns>
@@ -57,7 +63,7 @@ namespace MLAPI.NetworkVariable
         /// <param name="stream">The stream to read the state from</param>
         /// <param name="localTick">The local network tick at which this var was written, on the machine it was written </param>
         /// <param name="remoteTick">The remote network tick at which this var was sent by the host </param>
-        void ReadField(Stream stream, ushort localTick, ushort remoteTick);
+        void ReadField(Stream stream);
 
         /// <summary>
         /// Reads delta from the reader and applies them to the internal value
@@ -66,17 +72,12 @@ namespace MLAPI.NetworkVariable
         /// <param name="keepDirtyDelta">Whether or not the delta should be kept as dirty or consumed</param>
         /// <param name="localTick">The local network tick at which this var was written, on the machine it was written </param>
         /// <param name="remoteTick">The remote network tick at which this var was sent by the host </param>
-        void ReadDelta(Stream stream, bool keepDirtyDelta, ushort localTick, ushort remoteTick);
+        void ReadDelta(Stream stream, bool keepDirtyDelta);
 
         /// <summary>
         /// Sets NetworkBehaviour the container belongs to.
         /// </summary>
         /// <param name="behaviour">The behaviour the container behaves to</param>
         void SetNetworkBehaviour(NetworkBehaviour behaviour);
-
-        /// <summary>
-        /// Accessor for the RemoteTick stored in the networkVariable, list, set or dictionary
-        /// </summary>
-        ushort RemoteTick { get; }
     }
 }

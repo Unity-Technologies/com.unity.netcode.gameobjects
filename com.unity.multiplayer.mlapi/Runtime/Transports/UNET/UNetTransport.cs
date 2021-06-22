@@ -1,4 +1,4 @@
-#pragma warning disable 618
+#pragma warning disable 618 // disable is obsolete
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 using System;
 using System.Collections.Generic;
@@ -6,6 +6,7 @@ using MLAPI.Exceptions;
 using MLAPI.Logging;
 using MLAPI.Profiling;
 using MLAPI.Transports.Tasks;
+using UnityEngine;
 using UnityEngine.Networking;
 
 namespace MLAPI.Transports.UNET
@@ -79,6 +80,9 @@ namespace MLAPI.Transports.UNET
         {
             if (UnityEngine.Networking.NetworkTransport.IsStarted && MessageSendMode == SendMode.Queued)
             {
+#if UNITY_WEBGL
+                Debug.LogError("Cannot use queued sending mode for WebGL");
+#else
                 if (NetworkManager.Singleton.IsServer)
                 {
                     for (int i = 0; i < NetworkManager.Singleton.ConnectedClientsList.Count; i++)
@@ -90,6 +94,7 @@ namespace MLAPI.Transports.UNET
                 {
                     SendQueued(NetworkManager.Singleton.LocalClientId);
                 }
+#endif
             }
         }
 
@@ -104,9 +109,9 @@ namespace MLAPI.Transports.UNET
 
             int channelId = 0;
 
-            if (m_ChannelNameToId.ContainsKey(networkChannel))
+            if (m_ChannelNameToId.TryGetValue(networkChannel, out int value))
             {
-                channelId = m_ChannelNameToId[networkChannel];
+                channelId = value;
             }
             else
             {
@@ -146,7 +151,11 @@ namespace MLAPI.Transports.UNET
 
             if (MessageSendMode == SendMode.Queued)
             {
+#if UNITY_WEBGL
+                Debug.LogError("Cannot use queued sending mode for WebGL");
+#else
                 RelayTransport.QueueMessageForSending(hostId, connectionId, channelId, buffer, data.Count, out byte error);
+#endif
             }
             else
             {
@@ -154,7 +163,7 @@ namespace MLAPI.Transports.UNET
             }
         }
 
-
+#if !UNITY_WEBGL
         public void SendQueued(ulong clientId)
         {
             if (ProfilerEnabled)
@@ -166,13 +175,14 @@ namespace MLAPI.Transports.UNET
 
             RelayTransport.SendQueuedMessages(hostId, connectionId, out byte error);
         }
+#endif
 
         public override NetworkEvent PollEvent(out ulong clientId, out NetworkChannel networkChannel, out ArraySegment<byte> payload, out float receiveTime)
         {
             var eventType = RelayTransport.Receive(out int hostId, out int connectionId, out int channelId, m_MessageBuffer, m_MessageBuffer.Length, out int receivedSize, out byte error);
 
             clientId = GetMLAPIClientId((byte)hostId, (ushort)connectionId, false);
-            receiveTime = UnityEngine.Time.realtimeSinceStartup;
+            receiveTime = Time.realtimeSinceStartup;
 
             var networkError = (NetworkError)error;
             if (networkError == NetworkError.MessageToLong)
@@ -197,9 +207,9 @@ namespace MLAPI.Transports.UNET
                 payload = new ArraySegment<byte>(m_MessageBuffer, 0, receivedSize);
             }
 
-            if (m_ChannelIdToName.ContainsKey(channelId))
+            if (m_ChannelIdToName.TryGetValue(channelId, out NetworkChannel value))
             {
-                networkChannel = m_ChannelIdToName[channelId];
+                networkChannel = value;
             }
             else
             {
@@ -486,4 +496,4 @@ namespace MLAPI.Transports.UNET
     }
 }
 #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-#pragma warning restore 618
+#pragma warning restore 618 // restore is obsolete

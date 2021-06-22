@@ -18,7 +18,7 @@ parser.add_argument("--yamato", action="store_true")
 
 parser.add_argument("--tool-path", default="dotnet-format")
 parser.add_argument("--project-path", default="testproject")
-parser.add_argument("--project-glob", default="Unity.Multiplayer.MLAPI*.csproj")
+parser.add_argument("--project-glob", default="Unity.Multiplayer*.csproj")
 
 if len(sys.argv) == 1:
     parser.print_help(sys.stderr)
@@ -102,10 +102,10 @@ if args.check:
     any_error = False
     for project_file in glob_files:
         print(f"check: project -> {project_file}")
-        any_error = 0 != os.system(f"{args.tool_path} {project_file} --fix-whitespace --fix-style error --check")
+        any_error = 0 != os.system(f"{args.tool_path} {project_file} --fix-whitespace --fix-style error --check") or any_error
 
     if any_error:
-        exit(f"check: failed")
+        exit("check: failed")
 
     print("check: succeeded")
 
@@ -116,10 +116,10 @@ if args.fix:
     any_error = False
     for project_file in glob_files:
         print(f"fix: project -> {project_file}")
-        any_error = 0 != os.system(f"{args.tool_path} {project_file} --fix-whitespace --fix-style error")
+        any_error = 0 != os.system(f"{args.tool_path} {project_file} --fix-whitespace --fix-style error") or any_error
 
     if any_error:
-        exit(f"fix: failed")
+        exit("fix: failed")
 
     print("fix: succeeded")
 

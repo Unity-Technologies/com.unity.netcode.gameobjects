@@ -94,7 +94,7 @@ namespace UnityEditor
             object val = networkVariable.Value;
             string name = m_NetworkVariableNames[index];
 
-            var behaviour = (NetworkBehaviour) target;
+            var behaviour = (NetworkBehaviour)target;
 
             if (behaviour.NetworkManager != null && behaviour.NetworkManager.IsListening)
             {
@@ -174,9 +174,12 @@ namespace UnityEditor
             EditorGUI.BeginChangeCheck();
             serializedObject.Update();
 
-            for (int i = 0; i < m_NetworkVariableNames.Count; i++)
+            if (EditorApplication.isPlaying)
             {
-                RenderNetworkVariable(i);
+                for (int i = 0; i < m_NetworkVariableNames.Count; i++)
+                {
+                    RenderNetworkVariable(i);
+                }
             }
 
             var property = serializedObject.GetIterator();

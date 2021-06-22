@@ -37,19 +37,23 @@ internal struct ClientUpdateJob : IJob
 
     unsafe public void Execute()
     {
-        if (!Connection[0].IsCreated) {
+        if (!Connection[0].IsCreated)
+        {
             return;
         }
 
         DataStreamReader streamReader;
         NetworkEvent.Type cmd;
 
-        while ((cmd = Connection[0].PopEvent(Driver, out streamReader)) != NetworkEvent.Type.Empty) {
-            if (cmd == NetworkEvent.Type.Connect) {
+        while ((cmd = Connection[0].PopEvent(Driver, out streamReader)) != NetworkEvent.Type.Empty)
+        {
+            if (cmd == NetworkEvent.Type.Connect)
+            {
                 var d = new RawNetworkMessage() { Length = 0, Type = (uint)MLAPINetworkEvent.Connect, Id = Connection[0].InternalId };
                 PacketData.Enqueue(d);
             }
-            else if (cmd == NetworkEvent.Type.Data) {
+            else if (cmd == NetworkEvent.Type.Data)
+            {
                 byte channelId = streamReader.ReadByte();
                 int messageSize = streamReader.ReadInt();
 
@@ -58,17 +62,18 @@ internal struct ClientUpdateJob : IJob
 
                 var d = new RawNetworkMessage()
                 {
-                        Length = messageSize,
-                        Type = (uint)MLAPINetworkEvent.Data,
-                        Id = Connection[0].InternalId,
-                        ChannelId = channelId
+                    Length = messageSize,
+                    Type = (uint)MLAPINetworkEvent.Data,
+                    Id = Connection[0].InternalId,
+                    ChannelId = channelId
                 };
 
                 UnsafeUtility.MemCpy(d.Data, temp.GetUnsafePtr(), d.Length);
 
                 PacketData.Enqueue(d);
             }
-            else if (cmd == NetworkEvent.Type.Disconnect) {
+            else if (cmd == NetworkEvent.Type.Disconnect)
+            {
                 Connection[0] = default;
             }
         }
@@ -90,9 +95,10 @@ internal struct ServerUpdateJob : IJobParallelForDefer
         var temp = new NativeArray<byte>(messageSize, Allocator.Temp);
         streamReader.ReadBytes(temp);
 
-      //  Debug.Log($"Server: Got a message {channelId} {messageSize} ");
+        //  Debug.Log($"Server: Got a message {channelId} {messageSize} ");
 
-        var d = new RawNetworkMessage() {
+        var d = new RawNetworkMessage()
+        {
             Length = messageSize,
             Type = (uint)MLAPINetworkEvent.Data,
             Id = index,
@@ -109,15 +115,19 @@ internal struct ServerUpdateJob : IJobParallelForDefer
         Assert.IsTrue(Connections[index].IsCreated);
 
         NetworkEvent.Type command;
-        while ((command = Driver.PopEventForConnection(Connections[index], out streamReader)) != NetworkEvent.Type.Empty) {
-            if (command == NetworkEvent.Type.Data) {
+        while ((command = Driver.PopEventForConnection(Connections[index], out streamReader)) != NetworkEvent.Type.Empty)
+        {
+            if (command == NetworkEvent.Type.Data)
+            {
                 QueueMessage(ref streamReader, index);
             }
-            else if (command == NetworkEvent.Type.Connect) {
+            else if (command == NetworkEvent.Type.Connect)
+            {
                 var d = new RawNetworkMessage() { Length = 0, Type = (uint)MLAPINetworkEvent.Connect, Id = index };
                 PacketData.Enqueue(d);
             }
-            else if (command == NetworkEvent.Type.Disconnect) {
+            else if (command == NetworkEvent.Type.Disconnect)
+            {
                 var d = new RawNetworkMessage() { Length = 0, Type = (uint)MLAPINetworkEvent.Disconnect, Id = index };
                 PacketData.Enqueue(d);
                 Connections[index] = default;
@@ -136,15 +146,18 @@ internal struct ServerUpdateConnectionsJob : IJob
     public void Execute()
     {
         // Clean up connections
-        for (int i = 0; i < Connections.Length; i++) {
-            if (!Connections[i].IsCreated) {
+        for (int i = 0; i < Connections.Length; i++)
+        {
+            if (!Connections[i].IsCreated)
+            {
                 Connections.RemoveAtSwapBack(i);
                 --i;
             }
         }
         // Accept new connections
         NetworkConnection c;
-        while ((c = Driver.Accept()) != default(NetworkConnection)) {
+        while ((c = Driver.Accept()) != default(NetworkConnection))
+        {
             Connections.Add(c);
             var d = new RawNetworkMessage() { Length = 0, Type = (uint)MLAPINetworkEvent.Connect, Id = c.InternalId };
             PacketData.Enqueue(d);
@@ -193,14 +206,19 @@ public class UTPTransport : NetworkTransport
         GetUTPConnectionDetails(clientId, out uint peerId);
         var con = GetConnection(peerId);
         if (con != default)
+        {
             Driver.Disconnect(con);
+        }
     }
 
     private NetworkConnection GetConnection(uint id)
     {
-        foreach (var item in Connections) {
+        foreach (var item in Connections)
+        {
             if (item.InternalId == id)
+            {
                 return item;
+            }
         }
 
         return default;
@@ -224,14 +242,19 @@ public class UTPTransport : NetworkTransport
     [BurstCompile]
     public void SendToClient(NativeArray<byte> packet, ulong clientId, int index)
     {
-        for (int i = 0; i < Connections.Length; i++) {
+        for (int i = 0; i < Connections.Length; i++)
+        {
             if (Connections[i].InternalId != (int)clientId)
+            {
                 continue;
+            }
 
             var writer = Driver.BeginSend(m_NetworkPipelines[index], Connections[i]);
 
             if (!writer.IsCreated)
+            {
                 continue;
+            }
 
             writer.WriteBytes(packet);
 
@@ -249,7 +272,8 @@ public class UTPTransport : NetworkTransport
         writer.WriteByte((byte)networkChannel);
         writer.WriteInt(data.Count);
 
-        fixed (byte* dataArrayPtr = data.Array) {
+        fixed (byte* dataArrayPtr = data.Array)
+        {
             writer.WriteBytes(dataArrayPtr, data.Count);
         }
 
@@ -270,52 +294,62 @@ public class UTPTransport : NetworkTransport
 
     private void Update()
     {
-        if (m_IsServer || m_IsClient) {
+        if (m_IsServer || m_IsClient)
+        {
             RawNetworkMessage message;
-            while (PacketData.TryDequeue(out message)) {
+            while (PacketData.TryDequeue(out message))
+            {
                 var data = m_PacketProcessBuffer.Slice(0, message.Length);
-                unsafe {
+                unsafe
+                {
                     UnsafeUtility.MemClear(data.GetUnsafePtr(), message.Length);
                     UnsafeUtility.MemCpy(data.GetUnsafePtr(), message.Data, message.Length);
                 }
                 var clientId = GetMLAPIClientId((uint)message.Id, false);
 
-                switch ((MLAPINetworkEvent)message.Type) {
+                switch ((MLAPINetworkEvent)message.Type)
+                {
                     case MLAPINetworkEvent.Data:
                         int size = message.Length;
                         byte[] arr = new byte[size];
-                        unsafe {
+                        unsafe
+                        {
                             Marshal.Copy((IntPtr)message.Data, arr, 0, size);
                             var payload = new ArraySegment<byte>(arr);
                             InvokeOnTransportEvent((MLAPINetworkEvent)message.Type, clientId, (NetworkChannel)message.ChannelId, payload, Time.realtimeSinceStartup);
                         }
 
-                    break;
-                    case MLAPINetworkEvent.Connect: {
-                        InvokeOnTransportEvent((MLAPINetworkEvent)message.Type, clientId, NetworkChannel.ChannelUnused, new ArraySegment<byte>(), Time.realtimeSinceStartup);
-                    }
-                    break;
+                        break;
+                    case MLAPINetworkEvent.Connect:
+                        {
+                            InvokeOnTransportEvent((MLAPINetworkEvent)message.Type, clientId, NetworkChannel.ChannelUnused, new ArraySegment<byte>(), Time.realtimeSinceStartup);
+                        }
+                        break;
                     case MLAPINetworkEvent.Disconnect:
                         InvokeOnTransportEvent((MLAPINetworkEvent)message.Type, clientId, NetworkChannel.ChannelUnused, new ArraySegment<byte>(), Time.realtimeSinceStartup);
-                    break;
+                        break;
                     case MLAPINetworkEvent.Nothing:
                         InvokeOnTransportEvent((MLAPINetworkEvent)message.Type, clientId, NetworkChannel.ChannelUnused, new ArraySegment<byte>(), Time.realtimeSinceStartup);
-                    break;
+                        break;
                 }
             }
 
 
-            if (m_JobHandle.IsCompleted) {
+            if (m_JobHandle.IsCompleted)
+            {
 
-                if (m_IsServer) {
-                    var connectionJob = new ServerUpdateConnectionsJob {
+                if (m_IsServer)
+                {
+                    var connectionJob = new ServerUpdateConnectionsJob
+                    {
                         Driver = Driver,
                         Connections = Connections,
                         PacketData = PacketData.AsParallelWriter()
 
                     };
 
-                    var serverUpdateJob = new ServerUpdateJob {
+                    var serverUpdateJob = new ServerUpdateJob
+                    {
                         Driver = Driver.ToConcurrent(),
                         Connections = Connections.AsDeferredJobArray(),
                         PacketData = PacketData.AsParallelWriter()
@@ -326,8 +360,10 @@ public class UTPTransport : NetworkTransport
                     m_JobHandle = serverUpdateJob.Schedule(Connections, 1, m_JobHandle);
                 }
 
-                if (m_IsClient) {
-                    var job = new ClientUpdateJob {
+                if (m_IsClient)
+                {
+                    var job = new ClientUpdateJob
+                    {
                         Driver = Driver,
                         Connection = Connections,
                         PacketData = PacketData
@@ -346,9 +382,14 @@ public class UTPTransport : NetworkTransport
         m_JobHandle.Complete();
 
         if (PacketData.IsCreated)
+        {
             PacketData.Dispose();
+        }
+
         if (Connections.IsCreated)
+        {
             Connections.Dispose();
+        }
 
         Driver.Dispose();
         m_PacketProcessBuffer.Dispose();
@@ -368,13 +409,14 @@ public class UTPTransport : NetworkTransport
 
     public int MLAPIChannelToPipeline(UTPDelivery type)
     {
-        switch (type) {
+        switch (type)
+        {
             case UTPDelivery.UnreliableSequenced:
-            return 2;
+                return 2;
             case UTPDelivery.ReliableSequenced:
-            return 1;
+                return 1;
             case UTPDelivery.Unreliable:
-            return 0;
+                return 0;
         }
 
         return 0;
@@ -382,20 +424,24 @@ public class UTPTransport : NetworkTransport
 
     public ulong GetMLAPIClientId(uint peerId, bool isServer)
     {
-        if (isServer) {
+        if (isServer)
+        {
             return 0;
         }
-        else {
+        else
+        {
             return peerId + 1;
         }
     }
 
     public void GetUTPConnectionDetails(ulong clientId, out uint peerId)
     {
-        if (clientId == 0) {
+        if (clientId == 0)
+        {
             peerId = (uint)ServerClientId;
         }
-        else {
+        else
+        {
             peerId = (uint)clientId - 1;
         }
     }
@@ -408,10 +454,12 @@ public class UTPTransport : NetworkTransport
 
         Debug.Log("StartServer");
 
-        if (Driver.Bind(endpoint) != 0) {
+        if (Driver.Bind(endpoint) != 0)
+        {
             Debug.LogError("Failed to bind to port " + Port);
         }
-        else {
+        else
+        {
             Driver.Listen();
         }
 

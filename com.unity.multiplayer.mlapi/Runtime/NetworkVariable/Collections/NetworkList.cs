@@ -72,6 +72,12 @@ namespace MLAPI.NetworkVariable.Collections
             m_List = value;
         }
 
+        /// <summary>
+        /// Gets or sets the name of the network variable's instance
+        /// (MemberInfo) where it was declared.
+        /// </summary>
+        public string Name { get; internal set; }
+
         /// <inheritdoc />
         public void ResetDirty()
         {
@@ -223,7 +229,7 @@ namespace MLAPI.NetworkVariable.Collections
         }
 
         /// <inheritdoc />
-        public void ReadField(Stream stream, ushort localTick, ushort remoteTick)
+        public void ReadField(Stream stream)
         {
             using (var reader = PooledNetworkReader.Get(stream))
             {
@@ -237,7 +243,7 @@ namespace MLAPI.NetworkVariable.Collections
         }
 
         /// <inheritdoc />
-        public void ReadDelta(Stream stream, bool keepDirtyDelta, ushort localTick, ushort remoteTick)
+        public void ReadDelta(Stream stream, bool keepDirtyDelta)
         {
             using (var reader = PooledNetworkReader.Get(stream))
             {

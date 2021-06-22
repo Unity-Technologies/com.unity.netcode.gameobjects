@@ -1,4 +1,4 @@
-#pragma warning disable 618
+#pragma warning disable 618 // disable is obsolete
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 using System;
 using System.Collections.Generic;
@@ -315,6 +315,7 @@ namespace MLAPI.Transports.UNET
             return UnityEngine.Networking.NetworkTransport.Send(hostId, s_RelayConnectionId, channelId, buffer, size, out error);
         }
 
+#if !UNITY_WEBGL
         public static bool QueueMessageForSending(int hostId, int connectionId, int channelId, byte[] buffer, int size, out byte error)
         {
             if (!Enabled)
@@ -350,6 +351,7 @@ namespace MLAPI.Transports.UNET
 
             return UnityEngine.Networking.NetworkTransport.SendQueuedMessages(hostId, s_RelayConnectionId, out error);
         }
+#endif
 
         public static NetworkEventType ReceiveFromHost(int hostId, out int connectionId, out int channelId, byte[] buffer, int bufferSize, out int receivedSize, out byte error)
         {
@@ -535,4 +537,4 @@ namespace MLAPI.Transports.UNET
     }
 }
 #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-#pragma warning restore 618
+#pragma warning restore 618 // restore is obsolete

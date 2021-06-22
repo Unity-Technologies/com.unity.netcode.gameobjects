@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System;
 using System.IO;
+using System.Linq;
 using MLAPI.Configuration;
 using MLAPI.Exceptions;
 using MLAPI.Logging;
@@ -30,6 +31,24 @@ namespace MLAPI.SceneManagement
         public delegate void SceneSwitchStartedDelegate(AsyncOperation operation);
 
         /// <summary>
+        /// Delegate for when a client has reported to the server that it has completed scene transition
+        /// <see cref='OnNotifyServerClientLoadedScene'/>
+        /// </summary>
+        public delegate void NotifyServerClientLoadedSceneDelegate(SceneSwitchProgress progress, ulong clientId);
+
+        /// <summary>
+        /// Delegate for when all clients have reported to the server that they have completed scene transition or timed out
+        /// <see cref='OnNotifyServerAllClientsLoadedScene'/>
+        /// </summary>
+        public delegate void NotifyServerAllClientsLoadedSceneDelegate(SceneSwitchProgress progress, bool timedOut);
+
+        /// <summary>
+        /// Delegate for when the clients get notified by the server that all clients have completed their scene transitions.
+        /// <see cref='OnNotifyClientAllClientsLoadedScene'/>
+        /// </summary>
+        public delegate void NotifyClientAllClientsLoadedSceneDelegate(ulong[] clientIds, ulong[] timedOutClientIds);
+
+        /// <summary>
         /// Event that is invoked when the scene is switched
         /// </summary>
         public event SceneSwitchedDelegate OnSceneSwitched;
@@ -38,6 +57,23 @@ namespace MLAPI.SceneManagement
         /// Event that is invoked when a local scene switch has started
         /// </summary>
         public event SceneSwitchStartedDelegate OnSceneSwitchStarted;
+
+        /// <summary>
+        /// Event that is invoked on the server when a client completes scene transition
+        /// </summary>
+        public event NotifyServerClientLoadedSceneDelegate OnNotifyServerClientLoadedScene;
+
+        /// <summary>
+        /// Event that is invoked on the server when all clients have reported that they have completed scene transition
+        /// </summary>
+        public event NotifyServerAllClientsLoadedSceneDelegate OnNotifyServerAllClientsLoadedScene;
+
+        /// <summary>
+        /// Event that is invoked on the clients after all clients have successfully completed scene transition or timed out.
+        /// <remarks>This event happens after <see cref="OnNotifyServerAllClientsLoadedScene"/> fires on the server and the <see cref="NetworkConstants.ALL_CLIENTS_LOADED_SCENE"/> message is sent to the clients.
+        /// It relies on MessageSender, which doesn't send events from the server to itself (which is the case for a Host client).</remarks>
+        /// </summary>
+        public event NotifyClientAllClientsLoadedSceneDelegate OnNotifyClientAllClientsLoadedScene;
 
         internal readonly HashSet<string> RegisteredSceneNames = new HashSet<string>();
         internal readonly Dictionary<string, uint> SceneNameToIndex = new Dictionary<string, uint>();
@@ -60,7 +96,7 @@ namespace MLAPI.SceneManagement
 
         internal void SetCurrentSceneIndex()
         {
-            if (!SceneNameToIndex.ContainsKey(SceneManager.GetActiveScene().name))
+            if (!SceneNameToIndex.TryGetValue(SceneManager.GetActiveScene().name, out CurrentSceneIndex))
             {
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                 {
@@ -70,7 +106,6 @@ namespace MLAPI.SceneManagement
                 return;
             }
 
-            CurrentSceneIndex = SceneNameToIndex[SceneManager.GetActiveScene().name];
             CurrentActiveSceneIndex = CurrentSceneIndex;
         }
 
@@ -98,12 +133,13 @@ namespace MLAPI.SceneManagement
         /// Switches to a scene with a given name. Can only be called from Server
         /// </summary>
         /// <param name="sceneName">The name of the scene to switch to</param>
-        public SceneSwitchProgress SwitchScene(string sceneName)
+        /// <param name="loadSceneMode">The mode to load the scene (Additive vs Single)</param>
+        /// <returns>SceneSwitchProgress</returns>
+        public SceneSwitchProgress SwitchScene(string sceneName, LoadSceneMode loadSceneMode = LoadSceneMode.Single)
         {
             if (!m_NetworkManager.IsServer)
             {
                 throw new NotServerException("Only server can start a scene switch");
-
             }
 
             if (!m_NetworkManager.NetworkConfig.EnableSceneManagement)
@@ -140,13 +176,31 @@ namespace MLAPI.SceneManagement
             SceneSwitchProgresses.Add(switchSceneProgress.Guid, switchSceneProgress);
             CurrentSceneSwitchProgressGuid = switchSceneProgress.Guid;
 
+            switchSceneProgress.OnClientLoadedScene += clientId => { OnNotifyServerClientLoadedScene?.Invoke(switchSceneProgress, clientId); };
+            switchSceneProgress.OnComplete += timedOut =>
+            {
+                OnNotifyServerAllClientsLoadedScene?.Invoke(switchSceneProgress, timedOut);
+
+                using (var buffer = PooledNetworkBuffer.Get())
+                using (var writer = PooledNetworkWriter.Get(buffer))
+                {
+                    var doneClientIds = switchSceneProgress.DoneClients.ToArray();
+                    var timedOutClientIds = m_NetworkManager.ConnectedClients.Keys.Except(doneClientIds).ToArray();
+
+                    writer.WriteULongArray(doneClientIds, doneClientIds.Length);
+                    writer.WriteULongArray(timedOutClientIds, timedOutClientIds.Length);
+
+                    m_NetworkManager.MessageSender.Send(NetworkManager.Singleton.ServerClientId, NetworkConstants.ALL_CLIENTS_LOADED_SCENE, NetworkChannel.Internal, buffer);
+                }
+            };
+
             // Move ALL NetworkObjects to the temp scene
             MoveObjectsToDontDestroyOnLoad();
 
             IsSpawnedObjectsPendingInDontDestroyOnLoad = true;
 
             // Switch scene
-            AsyncOperation sceneLoad = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Single);
+            AsyncOperation sceneLoad = SceneManager.LoadSceneAsync(sceneName, loadSceneMode);
 
             s_NextSceneName = sceneName;
 
@@ -160,7 +214,7 @@ namespace MLAPI.SceneManagement
         // Called on client
         internal void OnSceneSwitch(uint sceneIndex, Guid switchSceneGuid, Stream objectStream)
         {
-            if (!SceneIndexToString.ContainsKey(sceneIndex) || !RegisteredSceneNames.Contains(SceneIndexToString[sceneIndex]))
+            if (!SceneIndexToString.TryGetValue(sceneIndex, out string sceneName) || !RegisteredSceneNames.Contains(sceneName))
             {
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                 {
@@ -177,8 +231,6 @@ namespace MLAPI.SceneManagement
 
             IsSpawnedObjectsPendingInDontDestroyOnLoad = true;
 
-            string sceneName = SceneIndexToString[sceneIndex];
-
             var sceneLoad = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Single);
 
             s_NextSceneName = sceneName;
@@ -189,7 +241,7 @@ namespace MLAPI.SceneManagement
 
         internal void OnFirstSceneSwitchSync(uint sceneIndex, Guid switchSceneGuid)
         {
-            if (!SceneIndexToString.ContainsKey(sceneIndex) || !RegisteredSceneNames.Contains(SceneIndexToString[sceneIndex]))
+            if (!SceneIndexToString.TryGetValue(sceneIndex, out string sceneName) || !RegisteredSceneNames.Contains(sceneName))
             {
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                 {
@@ -199,13 +251,12 @@ namespace MLAPI.SceneManagement
                 return;
             }
 
-            if (SceneManager.GetActiveScene().name == SceneIndexToString[sceneIndex])
+            if (SceneManager.GetActiveScene().name == sceneName)
             {
                 return; //This scene is already loaded. This usually happends at first load
             }
 
             s_LastScene = SceneManager.GetActiveScene();
-            string sceneName = SceneIndexToString[sceneIndex];
             s_NextSceneName = sceneName;
             CurrentActiveSceneIndex = SceneNameToIndex[sceneName];
 
@@ -350,12 +401,10 @@ namespace MLAPI.SceneManagement
                 return;
             }
 
-            if (!SceneSwitchProgresses.ContainsKey(switchSceneGuid))
+            if (SceneSwitchProgresses.TryGetValue(switchSceneGuid, out SceneSwitchProgress progress))
             {
-                return;
+                SceneSwitchProgresses[switchSceneGuid].AddClientAsDone(clientId);
             }
-
-            SceneSwitchProgresses[switchSceneGuid].AddClientAsDone(clientId);
         }
 
 
@@ -399,6 +448,11 @@ namespace MLAPI.SceneManagement
 
                 SceneManager.MoveGameObjectToScene(sobj.gameObject, scene);
             }
+        }
+
+        internal void AllClientsReady(ulong[] clientIds, ulong[] timedOutClientIds)
+        {
+            OnNotifyClientAllClientsLoadedScene?.Invoke(clientIds, timedOutClientIds);
         }
     }
 }
