@@ -2,7 +2,7 @@
   "dependencies": {
     "com.unity.burst": {
       "version": "1.5.2",
-      "depth": 3,
+      "depth": 2,
       "source": "registry",
       "dependencies": {
         "com.unity.mathematics": "1.2.1"
@@ -17,11 +17,12 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.collections": {
-      "version": "1.0.0-pre.1",
-      "depth": 2,
+      "version": "1.0.0-pre.2",
+      "depth": 1,
       "source": "registry",
       "dependencies": {
-        "com.unity.burst": "1.5.2"
+        "com.unity.burst": "1.5.2",
+        "com.unity.test-framework": "1.1.22"
       },
       "url": "https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-candidates"
     },
@@ -67,7 +68,7 @@
     },
     "com.unity.mathematics": {
       "version": "1.2.1",
-      "depth": 2,
+      "depth": 1,
       "source": "registry",
       "dependencies": {},
       "url": "https://packages.unity.com"
@@ -184,15 +185,15 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.transport": {
-      "version": "0.8.0-preview.5",
-      "depth": 1,
-      "source": "registry",
+      "version": "ssh://git@github.cds.internal.unity3d.com/unity/com.unity.transport.git#remove_transport_protocol",
+      "depth": 0,
+      "source": "git",
       "dependencies": {
-        "com.unity.collections": "1.0.0-pre.1",
+        "com.unity.collections": "1.0.0-pre.2",
         "com.unity.burst": "1.5.1",
         "com.unity.mathematics": "1.2.1"
       },
-      "url": "https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-candidates"
+      "hash": "22d0dd58dcef7a500a0b9af8549cab81a366aa82"
     },
     "com.unity.ugui": {
       "version": "1.0.0",

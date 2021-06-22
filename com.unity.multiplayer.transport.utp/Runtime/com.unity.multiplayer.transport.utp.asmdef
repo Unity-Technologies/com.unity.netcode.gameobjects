@@ -8,7 +8,8 @@
         "Unity.Multiplayer.MLAPI.Runtime",
         "Unity.Networking.Transport",
         "Unity.Services.Relay",
-        "Unity.Services.Core"
+        "Unity.Services.Core",
+        "Unity.Mathematics"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
