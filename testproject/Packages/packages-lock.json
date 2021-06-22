@@ -147,7 +147,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.timeline": {
-      "version": "1.5.4",
+      "version": "1.5.2",
       "depth": 0,
       "source": "registry",
       "dependencies": {
