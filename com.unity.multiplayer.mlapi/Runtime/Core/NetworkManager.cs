@@ -59,6 +59,8 @@ namespace MLAPI
         internal RpcQueueContainer RpcQueueContainer { get; private set; }
         internal NetworkTickSystem NetworkTickSystem { get; private set; }
 
+        internal InterestManager InterestManager { get; private set; }
+
         internal SnapshotSystem SnapshotSystem { get; private set; }
 
         private NetworkPrefabHandler m_PrefabHandler;
@@ -229,19 +231,6 @@ namespace MLAPI
         // the interest settings objects receive unless they have a pre-prefab override
         public InterestSettings InterestSettings;
 
-        private InterestManager m_InterestManager;
-        public InterestManager InterestManager
-        {
-            get
-            {
-                if (m_InterestManager == null)
-                {
-                    m_InterestManager = new InterestManager();
-                }
-
-                return m_InterestManager;
-            }
-        }
 
 #if UNITY_EDITOR
         private void OnValidate()
@@ -365,6 +354,8 @@ namespace MLAPI
             BufferManager = new BufferManager(this);
 
             SceneManager = new NetworkSceneManager(this);
+
+            InterestManager = new InterestManager();
 
             // Only create this if it's not already set (like in test cases)
             MessageHandler ??= CreateMessageHandler();
@@ -819,6 +810,12 @@ namespace MLAPI
             {
                 NetworkTickSystem.Dispose();
                 NetworkTickSystem = null;
+            }
+
+            if (InterestManager != null)
+            {
+                InterestManager.Dispose();
+                InterestManager = null;
             }
 
 #if !UNITY_2020_2_OR_NEWER

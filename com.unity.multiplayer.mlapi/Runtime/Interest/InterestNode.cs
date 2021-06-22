@@ -28,7 +28,7 @@ namespace MLAPI.Interest
     {
         public InterestNode()
         {
-            ChildNodes = new List<InterestNode>();
+            m_ChildNodes = new HashSet<InterestNode>();
         }
 
         // set this delegate if you want a function called when
@@ -61,7 +61,7 @@ namespace MLAPI.Interest
         {
             InterestObjectStorage?.Query(client, results);
 
-            foreach (var c in ChildNodes)
+            foreach (var c in m_ChildNodes)
             {
                 c.QueryFor(client, results);
             }
@@ -77,7 +77,7 @@ namespace MLAPI.Interest
                 OnSpawn(in obj);
             }
 
-            foreach (var c in ChildNodes)
+            foreach (var c in m_ChildNodes)
             {
                 c.HandleSpawn(in obj);
             }
@@ -90,7 +90,7 @@ namespace MLAPI.Interest
                 OnDespawn(in obj);
             }
 
-            foreach (var c in ChildNodes)
+            foreach (var c in m_ChildNodes)
             {
                 c.HandleDespawn(in obj);
             }
@@ -99,13 +99,13 @@ namespace MLAPI.Interest
         // Add a new child node.  Currently, there is no way to remove a node
         public void AddNode(InterestNode newNode)
         {
-            if (ChildNodes.Contains(newNode))
+            if (m_ChildNodes.Contains(newNode))
             {
                 return;
             }
-            ChildNodes.Add(newNode);
+            m_ChildNodes.Add(newNode);
         }
 
-        public List<InterestNode> ChildNodes;
+        private HashSet<InterestNode> m_ChildNodes;
     }
 }

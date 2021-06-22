@@ -74,6 +74,10 @@ namespace MLAPI.Interest
             }
         }
 
+        public void Dispose()
+        {
+        }
+
         private HashSet<InterestNode> m_ChildNodes;
     }
 }
