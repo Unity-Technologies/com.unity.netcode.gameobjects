@@ -45,9 +45,7 @@ namespace MLAPI.RuntimeTests
         /// <returns></returns>
         [UnityTest]
         public IEnumerator BehaviourUpdaterAllTests([Values(0, 1, 2)] int nbClients, [Values] bool useHost, [Values(0, 1, 2)] int nbSpawnedObjects,
-            [ValueSource(nameof(s_TypesToTest)) ] Type firstNetworkBehaviour, [ValueSource(nameof(s_TypesToTest)) ] Type secondNetworkBehaviour, [ValueSource(nameof(s_TypesToTest)) ] Type thirdNetworkBehaviour)
-        // public IEnumerator BehaviourUpdaterAllTests([Values(0)] int nbClients, [Values(false)] bool useHost, [Values(2)] int nbSpawnedObjects,
-        // [Values(typeof(OneNetVar)) ] Type firstNetworkBehaviour, [Values(typeof(OneNetVar)) ] Type secondNetworkBehaviour, [Values(typeof(OneNetVar)) ] Type thirdNetworkBehaviour)
+            [ValueSource(nameof(s_TypesToTest))] Type firstNetworkBehaviour, [ValueSource(nameof(s_TypesToTest))] Type secondNetworkBehaviour)
         {
             // Create multiple NetworkManager instances
             if (!MultiInstanceHelpers.Create(nbClients, out NetworkManager server, out NetworkManager[] clients))
@@ -67,31 +65,20 @@ namespace MLAPI.RuntimeTests
                 if (type != null)
                 {
                     var info = prefab.AddComponent(type) as INetVarInfo;
-                    // return info.allNetVars;
                 }
-                // return new List<NetworkVariableInt>();
             }
-            // var prefabsToSpawn = new List<GameObject>();
 
-            // for (int i = 0; i < nbSpawnedObjects; i++)
-            // {
-                var prefabToSpawn = new GameObject();
-                var networkObjectPrefab = prefabToSpawn.AddComponent<NetworkObject>();
-                AddNetworkBehaviour(firstNetworkBehaviour, prefabToSpawn);
-                AddNetworkBehaviour(secondNetworkBehaviour, prefabToSpawn);
-                AddNetworkBehaviour(thirdNetworkBehaviour, prefabToSpawn);
-                MultiInstanceHelpers.MakeNetworkedObjectTestPrefab(networkObjectPrefab);
-                m_ServerNetworkManager.NetworkConfig.NetworkPrefabs.Add(new Configuration.NetworkPrefab() { Prefab = prefabToSpawn });
-                foreach (var clientNetworkManager in m_ClientNetworkManagers)
-                {
-                    clientNetworkManager.NetworkConfig.NetworkPrefabs.Add(new Configuration.NetworkPrefab() { Prefab = prefabToSpawn });
-                }
-                // networkObjectPrefab.NetworkManagerOwner = m_ServerNetworkManager;
-                // prefabsToSpawn.Add(prefabToSpawn);
-            // }
+            var prefabToSpawn = new GameObject();
+            var networkObjectPrefab = prefabToSpawn.AddComponent<NetworkObject>();
+            AddNetworkBehaviour(firstNetworkBehaviour, prefabToSpawn);
+            AddNetworkBehaviour(secondNetworkBehaviour, prefabToSpawn);
+            MultiInstanceHelpers.MakeNetworkedObjectTestPrefab(networkObjectPrefab);
+            m_ServerNetworkManager.NetworkConfig.NetworkPrefabs.Add(new Configuration.NetworkPrefab() { Prefab = prefabToSpawn });
+            foreach (var clientNetworkManager in m_ClientNetworkManagers)
+            {
+                clientNetworkManager.NetworkConfig.NetworkPrefabs.Add(new Configuration.NetworkPrefab() { Prefab = prefabToSpawn });
+            }
 
-            // Tests with a varying number of network behaviours, each with a varying number of network variables
-            // yield return StartSomeClientsAndServerWithPlayers(useHost: useHost, nbClients: nbClients, playerPrefab => { }, hasPlayer: false);
             // Start the instances
             if (!MultiInstanceHelpers.Start(useHost, server, clients))
             {
@@ -107,16 +94,19 @@ namespace MLAPI.RuntimeTests
 
             var serverNetVarsToUpdate = new List<NetworkVariableInt>();
             for (int i = 0; i < nbSpawnedObjects; i++)
-            // foreach (var prefab in prefabsToSpawn)
             {
                 var spawnedObject = Object.Instantiate(prefabToSpawn);
                 var networkSpawnedObject = spawnedObject.GetComponent<NetworkObject>();
                 networkSpawnedObject.NetworkManagerOwner = m_ServerNetworkManager;
                 networkSpawnedObject.Spawn();
+                int nbBehaviours = 0;
                 foreach (var networkBehaviour in spawnedObject.GetComponents<NetworkBehaviour>())
                 {
                     serverNetVarsToUpdate.AddRange(((INetVarInfo)networkBehaviour).allNetVars);
+                    nbBehaviours++;
                 }
+
+                Assert.That(nbBehaviours, Is.EqualTo((firstNetworkBehaviour == null ? 0 : 1) + (secondNetworkBehaviour == null ? 0 : 1)));
             }
 
             var serverNetVarCount = serverNetVarsToUpdate.Count;
@@ -136,9 +126,9 @@ namespace MLAPI.RuntimeTests
                 Assert.That(netVar.IsDirty, Is.True);
             }
 
-            // reset to zero so we can call NetworkBehaviourUpdate here, else need to do a wait for update
+            // reset to zero so we can call NetworkBehaviourUpdate here, else since it's called during previous wait, we can never call it
+            // manually (as it would be calling it twice per frame)
             m_ServerNetworkManager.BehaviourUpdater.CurrentTick = 0;
-
             m_ServerNetworkManager.BehaviourUpdater.NetworkBehaviourUpdate(m_ServerNetworkManager);
 
             foreach (var netVar in serverNetVarsToUpdate)
@@ -174,7 +164,6 @@ namespace MLAPI.RuntimeTests
                 Assert.That(nbVarsCheckedClientSide, Is.EqualTo(m_ClientNetworkManagers.Length > 0 ? serverNetVarCount : 0));
             }
 
-
             if (serverNetVarCount > 0 && nbClients > 0) // check for nb clients, this is a useless test if not clients, netvars remain dirty always
             {
                 m_ServerNetworkManager.BehaviourUpdater.NetworkBehaviourUpdate(m_ServerNetworkManager);
@@ -182,8 +171,6 @@ namespace MLAPI.RuntimeTests
                 m_ServerNetworkManager.BehaviourUpdater.NetworkBehaviourUpdate(m_ServerNetworkManager);
                 Assert.That(serverNetVarsToUpdate[0].IsDirty, Is.True); // check that network behaviour updater can only be called once per frame
             }
-
-
         }
     }
 
