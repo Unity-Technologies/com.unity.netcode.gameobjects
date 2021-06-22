@@ -19,7 +19,8 @@ namespace MLAPI.SceneManagement
 
 #if UNITY_EDITOR
         [SerializeField]
-        private List<SceneAsset> m_AdditiveScenes;
+        private List<AdditiveSceneEntry> m_AdditiveScenes;
+
         private void OnValidate()
         {
             if (m_AdditiveSceneNames == null)
@@ -35,11 +36,37 @@ namespace MLAPI.SceneManagement
             {
                 if (includedScene != null)
                 {
-                    m_AdditiveSceneNames.Add(includedScene.name);
+                    if (includedScene.Scene != null)
+                    {
+                        m_AdditiveSceneNames.Add(includedScene.Scene.name);
+                    }
                 }
             }
+
+            ValidateBuildSettingsScenes();
         }
+        internal void ValidateBuildSettingsScenes()
+        {
+            foreach (var includedScene in m_AdditiveScenes)
+            {
+                if (includedScene != null)
+                {
+                    SceneRegistration.AddOrRemoveSceneAsset(includedScene.Scene, includedScene.AutoIncludeInBuild);
+                }
+            }
+
+            foreach(var additveSceneGroup in AdditiveSceneGroups)
+            {
+                additveSceneGroup.ValidateBuildSettingsScenes();
+            }
+        }
+
 #endif
+
+        [Tooltip("When set to true, this will automatically register all of the additive scenes with the build settings scenes in build list.  If false, then the scene(s) have to be manually added or will not be included in the build.")]
+        [SerializeField]
+        private bool m_AutoIncludeInBuild = true;       //Default to true
+
 
         protected virtual List<string> OnGetAdditiveScenes()
         {
@@ -51,7 +78,7 @@ namespace MLAPI.SceneManagement
             return OnGetAdditiveScenes();
         }
 
-        public void GenerateScenesHashString()
+        public string GetAllScenesForHash()
         {
             var scenesHashBase = string.Empty;
             foreach (var sceneEntry in OnGetAdditiveScenes())
@@ -66,6 +93,15 @@ namespace MLAPI.SceneManagement
 
             return scenesHashBase;
         }
+    }
+
+    [Serializable]
+    public class AdditiveSceneEntry
+    {
+        public SceneAsset Scene;
+
+        [Tooltip("When set to true, this will automatically register all of the additive scenes with the build settings scenes in build list.  If false, then the scene(s) have to be manually added or will not be included in the build.")]
+        public bool AutoIncludeInBuild = true;       //Default to true
     }
 
 
