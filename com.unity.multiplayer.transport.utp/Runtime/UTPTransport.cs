@@ -69,14 +69,13 @@ namespace MLAPI.Transports
                 m_Driver.Dispose();
         }
 
-        private static RelayAllocationId ConvertFromGUID(ref Guid allocationGuId)
+        private static RelayAllocationId ConvertFromAllocationIdBytes(byte[] allocationIdBytes)
         {
             unsafe
             {
-                var allocationIdArray = allocationGuId.ToByteArray();
-                fixed (byte* ptr = allocationIdArray)
+                fixed (byte* ptr = allocationIdBytes)
                 {
-                    return RelayAllocationId.FromBytePointer(ptr, allocationIdArray.Length);
+                    return RelayAllocationId.FromBytePointer(ptr, allocationIdBytes.Length);
                 }
             }
         }
@@ -130,8 +129,7 @@ namespace MLAPI.Transports
 
                 serverEndpoint = NetworkEndPoint.Parse(allocation.RelayServer.IpV4, (ushort)allocation.RelayServer.Port);
 
-                var guid = allocation.AllocationId;
-                var allocationId = ConvertFromGUID(ref guid);
+                var allocationId = ConvertFromAllocationIdBytes(allocation.AllocationIdBytes);
 
                 var connectionData = ConvertConnectionData(allocation.ConnectionData);
                 var hostConnectionData = ConvertConnectionData(allocation.HostConnectionData);
@@ -267,8 +265,7 @@ namespace MLAPI.Transports
             var serverEndpoint = NetworkEndPoint.Parse(allocation.RelayServer.IpV4, (ushort)allocation.RelayServer.Port);
             // Debug.Log($"Relay Server endpoint: {allocation.RelayServer.IpV4}:{(ushort)allocation.RelayServer.Port}");
 
-            var guid = allocation.AllocationId;
-            var allocationId = ConvertFromGUID(ref guid);
+            var allocationId = ConvertFromAllocationIdBytes(allocation.AllocationIdBytes);
             var connectionData = ConvertConnectionData(allocation.ConnectionData);
             var key = ConvertFromHMAC(allocation.Key);
 
