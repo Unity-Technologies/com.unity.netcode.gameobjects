@@ -27,7 +27,7 @@ namespace MLAPI.Interest
             }
         }
 
-        public void HandleSpawn(in NetworkObject newObject)
+        public void AddObject(in NetworkObject newObject)
         {
             var nodes = newObject.InterestNodes;
 
@@ -51,16 +51,11 @@ namespace MLAPI.Interest
                     }
                     m_ChildNodes.Add(node);
                     node.AddObject(newObject);
-
-                    if (node.OnSpawn != null)
-                    {
-                        node.OnSpawn(newObject);
-                    }
                 }
             }
         }
 
-        public void HandleDespawn(in NetworkObject oldObject)
+        public void RemoveObject(in NetworkObject oldObject)
         {
             var nodes = oldObject.InterestNodes;
 
@@ -79,11 +74,6 @@ namespace MLAPI.Interest
                         continue;
                     }
                     node.RemoveObject(oldObject);
-
-                    if (node.OnDespawn != null)
-                    {
-                        node.OnDespawn(oldObject);
-                    }
                 }
             }
         }

@@ -14,24 +14,6 @@ namespace MLAPI.EditorTests
 
     public class InterestTests
     {
-        public class DelegateTester : InterestNode
-        {
-            public DelegateTester()
-            {
-                OnSpawn = delegate
-                {
-                   SpawnCalled++;
-                };
-                OnDespawn = delegate
-                {
-                   DespawnCalled++;
-                };
-            }
-
-            public int SpawnCalled = 0;
-            public int DespawnCalled = 0;
-        }
-
         public class OddsEvensStorage : InterestObjectStorage
         {
             public OddsEvensStorage()
@@ -122,34 +104,7 @@ namespace MLAPI.EditorTests
 
         [Test]
         // Start is called before the first frame update
-        public void AOIDelegateTests()
-        {
-            var nm = SetUpNetworkingManager();
-
-            var delegateNode = ScriptableObject.CreateInstance<DelegateTester>();
-            var someOtherNode = ScriptableObject.CreateInstance<InterestNodeStatic>();
-
-            var results = new HashSet<NetworkObject>();
-            var nc = new NetworkClient()
-            {
-                ClientId = 1,
-            };
-
-            var delegateYes = MakeGameInterestObjectHelper(new Vector3(0.0f, 0.0f, 0.0f), delegateNode);
-            nm.SpawnManager.SpawnNetworkObjectLocally(delegateYes);
-
-            var delegateNo = MakeGameInterestObjectHelper(new Vector3(0.0f, 0.0f, 0.0f), someOtherNode);
-            nm.SpawnManager.SpawnNetworkObjectLocally(delegateNo);
-            Assert.True(delegateNode.SpawnCalled == 1);
-
-            nm.SpawnManager.DespawnObject(delegateYes);
-            nm.SpawnManager.DespawnObject(delegateNo);
-            Assert.True(delegateNode.DespawnCalled == 1);
-        }
-
-        [Test]
-        // Start is called before the first frame update
-        public void AOICustomStorageTests()
+        public void InterestCustomStorageTests()
         {
             var nm = SetUpNetworkingManager();
 

@@ -18,8 +18,8 @@ namespace MLAPI.Interest
     public interface IInterestHandler
     {
         public void QueryFor(in NetworkClient client, HashSet<NetworkObject> results);
-        public void HandleSpawn(in NetworkObject obj);
-        public void HandleDespawn(in NetworkObject obj);
+        public void AddObject(in NetworkObject obj);
+        public void RemoveObject(in NetworkObject obj);
     }
 
     [CreateAssetMenu(fileName = "InterestNode", menuName = "Interest/Nodes/InterestNode", order = 1)]
@@ -31,26 +31,19 @@ namespace MLAPI.Interest
             m_ChildNodes = new HashSet<InterestNode>();
         }
 
-        // set this delegate if you want a function called when
-        //  object 'obj' is being spawned / de-spawned
-        public delegate void SpawnDelegate(in NetworkObject obj);
-
-        public SpawnDelegate OnSpawn;
-        public SpawnDelegate OnDespawn;
-
         public InterestObjectStorage InterestObjectStorage;
 
-        public void AddObject(NetworkObject obj)
+        public void AddObject(in NetworkObject obj)
         {
             InterestObjectStorage?.AddObject(obj);
         }
 
-        public void RemoveObject(NetworkObject obj)
+        public void RemoveObject(in NetworkObject obj)
         {
             InterestObjectStorage?.RemoveObject(obj);
         }
 
-        public void UpdateObject(NetworkObject obj)
+        public void UpdateObject(in NetworkObject obj)
         {
             InterestObjectStorage?.UpdateObject(obj);
         }
@@ -64,35 +57,6 @@ namespace MLAPI.Interest
             foreach (var c in m_ChildNodes)
             {
                 c.QueryFor(client, results);
-            }
-        }
-
-        // Called when a given object is about to be (de)spawned.  The OnDespawn
-        //  delegate gives each node a chance to do its own handling (e.g. removing
-        //  the object from a cache)
-        public void HandleSpawn(in NetworkObject obj)
-        {
-            if (OnSpawn.Target != null)
-            {
-                OnSpawn(in obj);
-            }
-
-            foreach (var c in m_ChildNodes)
-            {
-                c.HandleSpawn(in obj);
-            }
-        }
-
-        public void HandleDespawn(in NetworkObject obj)
-        {
-            if (OnDespawn.Target != null)
-            {
-                OnDespawn(in obj);
-            }
-
-            foreach (var c in m_ChildNodes)
-            {
-                c.HandleDespawn(in obj);
             }
         }
 
