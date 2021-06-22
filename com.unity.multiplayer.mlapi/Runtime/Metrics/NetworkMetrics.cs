@@ -25,6 +25,9 @@ namespace MLAPI.Metrics
 
         private Dictionary<ulong, NetworkObjectIdentifier> m_NetworkGameObjects = new Dictionary<ulong, NetworkObjectIdentifier>();
 
+        public EventMetric<RpcEvent> RpcSentEvents => m_RpcSentEvent;
+        public EventMetric<RpcEvent> RpcReceivedEvents => m_RpcReceivedEvent;
+
         public NetworkMetrics(NetworkManager networkManager)
         {
             m_NetworkManager = networkManager;
@@ -32,6 +35,7 @@ namespace MLAPI.Metrics
                 .WithMetricEvents(m_NamedMessageSentEvent, m_NamedMessageReceivedEvent)
                 .WithMetricEvents(m_UnnamedMessageSentEvent, m_UnnamedMessageReceivedEvent)
                 .WithMetricEvents(m_NetworkVariableDeltaSentEvent, m_NetworkVariableDeltaReceivedEvent)
+                .WithMetricEvents(m_RpcSentEvent, m_RpcReceivedEvent)
                 .Build();
 
             Dispatcher.RegisterObserver(MLAPIObserver.Observer);
