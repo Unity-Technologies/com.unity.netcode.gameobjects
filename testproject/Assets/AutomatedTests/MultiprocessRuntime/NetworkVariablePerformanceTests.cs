@@ -24,12 +24,7 @@ namespace MLAPI.MultiprocessRuntimeTests
         private static int s_TargetCount = 0;
         private List<NetworkObject> m_SpawnedObjects = new List<NetworkObject>();
         private static GameObjectPool s_ObjectPool;
-        protected override bool m_IsPerformanceTest => false;
-
-        public NetworkVariablePerformanceTests()
-        {
-
-        }
+        protected override bool m_IsPerformanceTest => false; // for debug, todo remove me
 
         public class OneNetVar : NetworkBehaviour
         {

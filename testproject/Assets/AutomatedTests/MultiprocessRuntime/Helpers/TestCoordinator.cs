@@ -441,7 +441,7 @@ internal class TestCoordinator : NetworkBehaviour
             throw new NotImplementedException("StartWorkerNode: Current platform not supported");
 #endif
         }
-        catch (FileNotFoundException e)
+        catch (FileNotFoundException)
         {
             throw new Exception($"Couldn't find build info file. {buildInstructions}");
         }
