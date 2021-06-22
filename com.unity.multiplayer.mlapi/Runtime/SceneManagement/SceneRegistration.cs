@@ -19,7 +19,6 @@ namespace MLAPI.SceneManagement
 
         static private Dictionary<string, EditorBuildSettingsScene> s_BuildSettingsSceneLookUpTable = new Dictionary<string, EditorBuildSettingsScene>();
 
-
         public static string GetSceneNameFromPath(string scenePath)
         {
             var begin = scenePath.LastIndexOf("/", StringComparison.Ordinal) + 1;
@@ -72,13 +71,32 @@ namespace MLAPI.SceneManagement
             }
         }
 
+        [SerializeField]
+        [HideInInspector]
+        private bool m_AssignedToNetworkManager;
+
+        internal bool IncludeInBuildSettings()
+        {
+            return m_AssignedToNetworkManager;
+        }
 
         private void OnValidate()
         {
-            foreach(var sceneRegistrationEntry in m_SceneRegistrations)
+            ValidateBuildSettingsScenes();
+        }
+
+        internal void ValidateBuildSettingsScenes()
+        {
+            foreach (var sceneRegistrationEntry in m_SceneRegistrations)
             {
+                sceneRegistrationEntry.AssignSceneRegistrationParent(this);
                 sceneRegistrationEntry.ValidateBuildSettingsScenes();
             }
+        }
+
+        internal void SetAssignedToNetworkManager(bool isAssigned)
+        {
+            m_AssignedToNetworkManager = isAssigned;
         }
 #endif
         public string GetAllScenesForHash()

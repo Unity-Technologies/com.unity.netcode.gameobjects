@@ -226,6 +226,9 @@ namespace MLAPI
         internal static event Action OnSingletonReady;
 
 #if UNITY_EDITOR
+
+        // Only used in the editor to handle removing scenes marked to auto populate the build settings
+        private SceneRegistration m_SceneRegistration;
         private void OnValidate()
         {
             if (NetworkConfig == null)
@@ -239,6 +242,21 @@ namespace MLAPI
                 {
                     NetworkLog.LogWarning($"{nameof(NetworkManager)} cannot be a {nameof(NetworkObject)}.");
                 }
+            }
+
+            // Trap for when the SceneRegistration is set or deleted to determine if the scenes associated with the SceneRegistration
+            // should be included in the build settings.
+            if(NetworkConfig.SceneRegistration != null)
+            {
+                m_SceneRegistration = NetworkConfig.SceneRegistration;
+                NetworkConfig.SceneRegistration.SetAssignedToNetworkManager(true);
+                NetworkConfig.SceneRegistration.ValidateBuildSettingsScenes();
+            }
+            else if (m_SceneRegistration != null)
+            {
+                m_SceneRegistration.SetAssignedToNetworkManager(false);
+                m_SceneRegistration.ValidateBuildSettingsScenes();
+                m_SceneRegistration = null;
             }
 
             var activeScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();

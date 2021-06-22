@@ -21,6 +21,8 @@ namespace MLAPI.SceneManagement
         [SerializeField]
         private List<AdditiveSceneEntry> m_AdditiveScenes;
 
+        private List<SceneRegistrationEntry> m_SceneRegistrationEntryParents;
+
         private void OnValidate()
         {
             if (m_AdditiveSceneNames == null)
@@ -42,22 +44,40 @@ namespace MLAPI.SceneManagement
                     }
                 }
             }
-
-            ValidateBuildSettingsScenes();
         }
-        internal void ValidateBuildSettingsScenes()
+        internal void ValidateBuildSettingsScenes(SceneRegistrationEntry sceneRegistrationEntry)
         {
+            if(!m_SceneRegistrationEntryParents.Contains(sceneRegistrationEntry))
+            {
+                m_SceneRegistrationEntryParents.Add(sceneRegistrationEntry);
+            }
+
+            var includeInBuildSettings = false;
+            foreach(var sceneRegistrationEntryItem in m_SceneRegistrationEntryParents)
+            {
+                // We only need one SceneRegistrationEntry to respond with true in order to include additive scenes or groups
+                if (sceneRegistrationEntryItem.ShouldIncludeInBuildSettings())
+                {                    
+                    includeInBuildSettings = true;
+                    break;
+                }
+            }
+
             foreach (var includedScene in m_AdditiveScenes)
             {
                 if (includedScene != null)
                 {
-                    SceneRegistration.AddOrRemoveSceneAsset(includedScene.Scene, includedScene.AutoIncludeInBuild);
+                    // Only filter out the referenced AdditiveSceneEntries if we shouldn't include this specific AdditiveSceneGroup's reference scene assets
+                    // Note: Other AdditiveSceneGroups could have other associated SceneRegistrationEntries that might qualify it to be added to the build settings
+                    // so we only apply this to the current AddtiveSceneGroup's referenced AdditiveSceneEntries
+                    SceneRegistration.AddOrRemoveSceneAsset(includedScene.Scene, includeInBuildSettings && includedScene.AutoIncludeInBuild);
                 }
             }
 
+            // Now validate the build settings includsion for any reference additive scene groups
             foreach(var additveSceneGroup in AdditiveSceneGroups)
             {
-                additveSceneGroup.ValidateBuildSettingsScenes();
+                additveSceneGroup.ValidateBuildSettingsScenes(sceneRegistrationEntry);
             }
         }
 

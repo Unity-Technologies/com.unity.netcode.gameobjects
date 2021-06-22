@@ -17,6 +17,22 @@ namespace MLAPI.SceneManagement
         [SerializeField]
         private SceneAsset m_PrimaryScene;
 
+        [SerializeField]
+        private SceneRegistration m_SceneRegistrationParent;
+
+        [Tooltip("When set to true, this will automatically register the primary scene with the build settings scenes in build list.  If false, then the scene has to be manually added or will not be included in the build.")]
+        [SerializeField]
+        private bool m_AutoIncludeInBuild = true;       //Default to true
+
+        internal bool ShouldIncludeInBuildSettings()
+        {
+            if(m_SceneRegistrationParent != null && m_SceneRegistrationParent.IncludeInBuildSettings() && m_AutoIncludeInBuild)
+            {
+                return true;
+            }
+            return false;
+        }
+
         private void OnValidate()
         {
             if (m_PrimaryScene != null)
@@ -25,23 +41,24 @@ namespace MLAPI.SceneManagement
             }
         }
 
+        internal void AssignSceneRegistrationParent(SceneRegistration sceneRegistration)
+        {
+            m_SceneRegistrationParent = sceneRegistration;
+        }
+
         internal void ValidateBuildSettingsScenes()
         {
             if(m_PrimaryScene != null)
             {
-                SceneRegistration.AddOrRemoveSceneAsset(m_PrimaryScene, m_AutoIncludeInBuild);
+                SceneRegistration.AddOrRemoveSceneAsset(m_PrimaryScene, ShouldIncludeInBuildSettings());
             }
 
             if(m_AddtiveSceneGroup != null)
             {
-                m_AddtiveSceneGroup.ValidateBuildSettingsScenes();
+                m_AddtiveSceneGroup.ValidateBuildSettingsScenes(this);
             }
         }
 #endif
-
-        [Tooltip("When set to true, this will automatically register the primary scene with the build settings scenes in build list.  If false, then the scene has to be manually added or will not be included in the build.")]
-        [SerializeField]
-        private bool m_AutoIncludeInBuild = true;       //Default to true
 
         [SerializeField]
         [HideInInspector]
