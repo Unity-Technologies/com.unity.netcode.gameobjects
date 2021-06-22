@@ -101,5 +101,43 @@ namespace MLAPI.RuntimeTests.Metrics.RPC
             Assert.AreEqual(m_Client.LocalClientId, serverMetric.Connection.Id);
             Assert.AreEqual("MyServerRpc", serverMetric.Name);
         }
+
+        [UnityTest]
+        public IEnumerator TrackClientRpcMetrics()
+        {
+            var waitForServerMetricsValues = new WaitForMetricValues<RpcEvent>(m_ServerMetrics.Dispatcher, MetricNames.RpcReceived);
+
+            var serverClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
+            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_Client.LocalClientId), m_Server, serverClientPlayerResult));
+
+            var clientClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
+            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_Client.LocalClientId), m_Client, clientClientPlayerResult));
+
+            bool hasReceivedClientRpcOnServer = false;
+            bool hasReceivedClientRpcRemotely = false;
+            serverClientPlayerResult.Result.GetComponent<RpcTestComponent>().OnClientRpcAction += () =>
+            {
+                hasReceivedClientRpcOnServer = true;
+            };
+            clientClientPlayerResult.Result.GetComponent<RpcTestComponent>().OnClientRpcAction += () =>
+            {
+                Debug.Log("ClientRpc received on client object");
+                hasReceivedClientRpcRemotely = true;
+            };
+
+            serverClientPlayerResult.Result.GetComponent<RpcTestComponent>().MyClientRpc();
+
+            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForCondition(() => hasReceivedClientRpcOnServer && hasReceivedClientRpcRemotely));
+
+            // Server Check
+            yield return waitForServerMetricsValues.WaitForAFewFrames();
+
+            var serverMetricSentValues = waitForServerMetricsValues.EnsureMetricValuesHaveBeenFound();
+            Assert.AreEqual(1, serverMetricSentValues.Count);
+
+            var serverMetric = serverMetricSentValues.First();
+            Assert.AreEqual(m_Client.LocalClientId, serverMetric.Connection.Id);
+            Assert.AreEqual("MyClientRpc", serverMetric.Name);
+        }
     }
 }
