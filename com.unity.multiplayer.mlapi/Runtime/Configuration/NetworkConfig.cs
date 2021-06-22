@@ -297,9 +297,14 @@ namespace MLAPI.Configuration
 
                 if (EnableSceneManagement && !AllowRuntimeSceneChanges)
                 {
-                    for (int i = 0; i < RegisteredScenes.Count; i++)
+                    //for (int i = 0; i < RegisteredScenes.Count; i++)
+                    //{
+                    //    writer.WriteString(RegisteredScenes[i]);
+                    //}
+
+                    if(SceneRegistration != null)
                     {
-                        writer.WriteString(RegisteredScenes[i]);
+                        writer.WriteString(SceneRegistration.GetAllScenesForHash());
                     }
                 }
 

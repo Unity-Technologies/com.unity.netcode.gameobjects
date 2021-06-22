@@ -34,11 +34,23 @@ namespace MLAPI.SceneManagement
         {
             return m_PrimarySceneName;
         }
+
+        public string GetAllScenesForHash()
+        {
+            var scenesHashBase = m_PrimarySceneName;
+            if(m_AddtiveSceneGroup != null)
+            {
+                scenesHashBase += m_AddtiveSceneGroup.GetAllScenesForHash();
+            }
+            return scenesHashBase;
+        }
     }
 
     public interface ISceneRegistrationEntry
     {
         string GetPrimaryScene();
+
+        string GetAllScenesForHash();
     }
 
 }

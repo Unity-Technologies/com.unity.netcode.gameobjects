@@ -20,5 +20,15 @@ namespace MLAPI.SceneManagement
  
         }
 #endif
+        public string GetAllScenesForHash()
+        {
+            var scenesHashBase = string.Empty;
+            foreach(var sceneRegistrationEntry in m_SceneRegistrations)
+            {
+                scenesHashBase += sceneRegistrationEntry.GetAllScenesForHash();
+            }
+            return scenesHashBase;
+        }
+
     }
 }

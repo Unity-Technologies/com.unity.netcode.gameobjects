@@ -38,7 +38,6 @@ namespace MLAPI.SceneManagement
                     m_AdditiveSceneNames.Add(includedScene.name);
                 }
             }
-
         }
 #endif
 
@@ -51,12 +50,30 @@ namespace MLAPI.SceneManagement
         {
             return OnGetAdditiveScenes();
         }
+
+        public void GenerateScenesHashString()
+        {
+            var scenesHashBase = string.Empty;
+            foreach (var sceneEntry in OnGetAdditiveScenes())
+            {
+                scenesHashBase += sceneEntry;
+            }
+
+            foreach (var additiveSceneGroup in AdditiveSceneGroups)
+            {
+                scenesHashBase += additiveSceneGroup.GetAllScenesForHash();
+            }
+
+            return scenesHashBase;
+        }
     }
 
 
     public interface IAdditiveSceneGroup
     {
         List<string> GetAdditiveScenes();
+
+        string GetAllScenesForHash();
     }
 
 }
