@@ -1,10 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using MLAPI.NetworkVariable;
-using MLAPI.RuntimeTests;
-using MLAPI.SceneManagement;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -53,13 +50,12 @@ namespace MLAPI.RuntimeTests
                 Debug.LogError("Failed to create instances");
                 Assert.Fail("Failed to create instances");
             }
-
             m_ClientNetworkManagers = clients;
             m_ServerNetworkManager = server;
-
             Assert.That(m_ClientNetworkManagers.Length, Is.EqualTo(nbClients));
             Assert.That(m_ServerNetworkManager, Is.Not.Null);
 
+            // setup prefab to spawn
             void AddNetworkBehaviour(Type type, GameObject prefab)
             {
                 if (type != null)
@@ -67,7 +63,6 @@ namespace MLAPI.RuntimeTests
                     var info = prefab.AddComponent(type) as INetVarInfo;
                 }
             }
-
             var prefabToSpawn = new GameObject();
             var networkObjectPrefab = prefabToSpawn.AddComponent<NetworkObject>();
             AddNetworkBehaviour(firstNetworkBehaviour, prefabToSpawn);
@@ -85,13 +80,13 @@ namespace MLAPI.RuntimeTests
                 Debug.LogError("Failed to start instances");
                 Assert.Fail("Failed to start instances");
             }
-
             // Wait for connection on client side
             yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(clients));
 
             // Wait for connection on server side
             yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnectedToServer(server, clientCount: useHost ? nbClients + 1 : nbClients));
 
+            // gathering netvars to test on
             var serverNetVarsToUpdate = new List<NetworkVariableInt>();
             for (int i = 0; i < nbSpawnedObjects; i++)
             {
@@ -105,42 +100,39 @@ namespace MLAPI.RuntimeTests
                     serverNetVarsToUpdate.AddRange(((INetVarInfo)networkBehaviour).allNetVars);
                     nbBehaviours++;
                 }
-
                 Assert.That(nbBehaviours, Is.EqualTo((firstNetworkBehaviour == null ? 0 : 1) + (secondNetworkBehaviour == null ? 0 : 1)));
             }
-
             var serverNetVarCount = serverNetVarsToUpdate.Count;
 
-            yield return new WaitForSeconds(0); // wait a frame
+            yield return new WaitForSeconds(0); // wait a frame to make sure spawn is done
 
             foreach (var netVar in serverNetVarsToUpdate)
             {
                 Assert.That(netVar.Value, Is.EqualTo(0)); // sanity check
             }
 
+            // test updating all netvars
             int updatedValue = 1;
-
             foreach (var netVar in serverNetVarsToUpdate)
             {
                 netVar.Value = updatedValue;
                 Assert.That(netVar.IsDirty, Is.True);
             }
 
-            // reset to zero so we can call NetworkBehaviourUpdate here, else since it's called during previous wait, we can never call it
+            // reset CurrentTick to zero so we can call NetworkBehaviourUpdate here, else since it's called during previous wait, we can never call it
             // manually (as it would be calling it twice per frame)
             m_ServerNetworkManager.BehaviourUpdater.CurrentTick = 0;
             m_ServerNetworkManager.BehaviourUpdater.NetworkBehaviourUpdate(m_ServerNetworkManager);
 
+            // make sure we're not dirty anymore and that clients will receive that new value
             foreach (var netVar in serverNetVarsToUpdate)
             {
                 // if we don't have connected clients, netvars remain dirty
                 Assert.That(netVar.IsDirty, nbClients > 0 || useHost ? Is.Not.True : Is.True);
             }
-
             foreach (var client in m_ClientNetworkManagers)
             {
                 var nbVarsCheckedClientSide = 0;
-
                 var countSpawnObjectResult = new MultiInstanceHelpers.CoroutineResultWrapper<bool>();
                 yield return MultiInstanceHelpers.WaitForCondition(() => client.SpawnManager.SpawnedObjects.Count == nbSpawnedObjects, countSpawnObjectResult);
                 Assert.That(countSpawnObjectResult.Result, Is.True);
@@ -181,7 +173,7 @@ namespace MLAPI.RuntimeTests
 
     public class ZeroNetVar : NetworkBehaviour, INetVarInfo
     {
-        public List<NetworkVariableInt> allNetVars => new List<NetworkVariableInt>();
+        public List<NetworkVariableInt> allNetVars => new List<NetworkVariableInt>(); // Needed to be independant from NetworkBehaviour's list of fields. This way, if that changes, we can still do this validation in this test
     }
 
     public class OneNetVar : NetworkBehaviour, INetVarInfo
