@@ -30,7 +30,7 @@ namespace MLAPI.Interest
             //  the Interest system was added
             if (nodes.Count == 0)
             {
-                m_DefaultInterestNode.InterestObjectStorage.AddObject(obj);
+                m_DefaultInterestNode.AddObject(obj);
             }
             // else add myself to whatever Interest Nodes I am associated with
             else
@@ -60,7 +60,7 @@ namespace MLAPI.Interest
             //  interest node
             if (nodes.Count == 0)
             {
-                m_DefaultInterestNode.InterestObjectStorage.RemoveObject(oldObject);
+                m_DefaultInterestNode.RemoveObject(oldObject);
             }
             else
             {

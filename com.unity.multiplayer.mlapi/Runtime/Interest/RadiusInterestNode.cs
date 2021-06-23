@@ -6,9 +6,9 @@ using UnityEngine;
 
 namespace MLAPI.Interest
 {
-    [CreateAssetMenu(fileName = "RadiusStorage", menuName = "Interest/Storage/Radius", order = 1)]
+    [CreateAssetMenu(fileName = "RadiusInterestNode", menuName = "Interest/Nodes/Radius", order = 1)]
     [Serializable]
-    public class RadiusInterestStorage : BasicInterestStorage
+    public class RadiusInterestNode : InterestNodeStatic
     {
         public float Radius = 0.0f;
         public override void QueryFor(in NetworkClient client, HashSet<NetworkObject> results)

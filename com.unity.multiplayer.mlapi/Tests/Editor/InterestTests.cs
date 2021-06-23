@@ -14,32 +14,12 @@ namespace MLAPI.EditorTests
 
     public class InterestTests
     {
-        public class OddsEvensStorage : InterestObjectStorage
+        public class OddsEvensNode : InterestNode
         {
-            public OddsEvensStorage()
+            public void OnEnable()
             {
-                m_Odds = CreateInstance<BasicInterestStorage>();
-                m_Evens = CreateInstance<BasicInterestStorage>();
-            }
-
-            public override void QueryFor(in NetworkClient client, HashSet<NetworkObject> results)
-            {
-                // if a client with an odd NetworkObjectID queries, we return objects with odd NetworkObjectIDs
-                if (client.PlayerObject.NetworkObjectId % 2 == 0)
-                {
-                    m_Evens.QueryFor(client, results);
-                }
-                else
-                {
-                    m_Odds.QueryFor(client, results);
-                }
-            }
-
-            public override void UpdateObject(in NetworkObject obj)
-            {
-                m_Odds.RemoveObject(obj);
-                m_Evens.RemoveObject(obj);
-                AddObject(obj);
+                m_Odds = ScriptableObject.CreateInstance<InterestNodeStatic>();
+                m_Evens = ScriptableObject.CreateInstance<InterestNodeStatic>();
             }
 
             public override void AddObject(in NetworkObject obj)
@@ -66,8 +46,28 @@ namespace MLAPI.EditorTests
                 }
             }
 
-            private readonly BasicInterestStorage m_Odds;
-            private readonly BasicInterestStorage m_Evens;
+            public override void QueryFor(in NetworkClient client, HashSet<NetworkObject> results)
+            {
+                // if a client with an odd NetworkObjectID queries, we return objects with odd NetworkObjectIDs
+                if (client.PlayerObject.NetworkObjectId % 2 == 0)
+                {
+                    m_Evens.QueryFor(client, results);
+                }
+                else
+                {
+                    m_Odds.QueryFor(client, results);
+                }
+            }
+
+            public override void UpdateObject(in NetworkObject obj)
+            {
+                m_Odds.RemoveObject(obj);
+                m_Evens.RemoveObject(obj);
+                AddObject(obj);
+            }
+
+            private InterestNodeStatic m_Odds;
+            private InterestNodeStatic m_Evens;
         }
 
         private NetworkObject MakeGameObjectHelper()
@@ -108,8 +108,7 @@ namespace MLAPI.EditorTests
         {
             var nm = SetUpNetworkingManager();
 
-            var oddsEvensNode = ScriptableObject.CreateInstance<InterestNode>();
-            oddsEvensNode.InterestObjectStorage = new OddsEvensStorage();
+            var oddsEvensNode = ScriptableObject.CreateInstance<OddsEvensNode>();
 
             var results = new HashSet<NetworkObject>();
             var nc = new NetworkClient()
@@ -179,10 +178,10 @@ namespace MLAPI.EditorTests
         {
             var nm = SetUpNetworkingManager();
 
-            var naiveRadiusNode = ScriptableObject.CreateInstance<InterestNode>();
-            var ris = ScriptableObject.CreateInstance<RadiusInterestStorage>();
-            ris.Radius = 1.5f;
-            naiveRadiusNode.InterestObjectStorage = ris;
+            var naiveRadiusNode = ScriptableObject.CreateInstance<RadiusInterestNode>();
+//            var ris = ScriptableObject.CreateInstance<RadiusInterestStorage>();
+            naiveRadiusNode.Radius = 1.5f;
+//            naiveRadiusNode.InterestNode = ris;
             var staticNode = ScriptableObject.CreateInstance<InterestNodeStatic>();
 
             var results = new HashSet<NetworkObject>();
