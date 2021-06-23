@@ -26,31 +26,16 @@ namespace MLAPI.Interest
     [Serializable]
     public class InterestNode : ScriptableObject, IInterestHandler
     {
-        public InterestNode()
-        {
-            m_ChildNodes = new HashSet<InterestNode>();
-        }
-
         public InterestObjectStorage InterestObjectStorage;
 
         public virtual void AddObject(in NetworkObject obj)
         {
             InterestObjectStorage?.AddObject(obj);
-
-            foreach (var c in m_ChildNodes)
-            {
-                c.AddObject(obj);
-            }
         }
 
         public virtual void RemoveObject(in NetworkObject obj)
         {
             InterestObjectStorage?.RemoveObject(obj);
-
-            foreach (var c in m_ChildNodes)
-            {
-                c.RemoveObject(obj);
-            }
         }
 
         // externally-called object query function.
@@ -58,24 +43,11 @@ namespace MLAPI.Interest
         public virtual void QueryFor(in NetworkClient client, HashSet<NetworkObject> results)
         {
             InterestObjectStorage?.QueryFor(client, results);
-
-            foreach (var c in m_ChildNodes)
-            {
-                c.QueryFor(client, results);
-            }
         }
 
         public void UpdateObject(in NetworkObject obj)
         {
             InterestObjectStorage?.UpdateObject(obj);
         }
-
-        // Add a new child node.  Currently, there is no way to remove a node
-        public void AddNode(InterestNode newNode)
-        {
-            m_ChildNodes.Add(newNode);
-        }
-
-        protected HashSet<InterestNode> m_ChildNodes;
     }
 }
