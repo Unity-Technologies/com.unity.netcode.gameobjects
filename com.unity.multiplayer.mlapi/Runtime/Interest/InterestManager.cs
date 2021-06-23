@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace MLAPI.Interest
 {
-   // interest *system* instead of interest node ?
+    // interest *system* instead of interest node ?
     public class InterestManager : IInterestHandler
     {
         private readonly InterestNodeStatic m_DefaultInterestNode;
@@ -19,17 +19,9 @@ namespace MLAPI.Interest
             m_ChildNodes.Add(m_DefaultInterestNode);
         }
 
-        public void QueryFor(in NetworkClient client, HashSet<NetworkObject> results)
+        public void AddObject(in NetworkObject obj)
         {
-            foreach (var c in m_ChildNodes)
-            {
-                c.QueryFor(client, results);
-            }
-        }
-
-        public void AddObject(in NetworkObject newObject)
-        {
-            var nodes = newObject.InterestNodes;
+            var nodes = obj.InterestNodes;
 
             // If this new object has no associated Interest Nodes, then we put it in the
             //  default node, which all clients will then get.
@@ -38,19 +30,24 @@ namespace MLAPI.Interest
             //  the Interest system was added
             if (nodes.Count == 0)
             {
-                m_DefaultInterestNode.InterestObjectStorage.AddObject(newObject);
+                m_DefaultInterestNode.InterestObjectStorage.AddObject(obj);
             }
             // else add myself to whatever Interest Nodes I am associated with
             else
             {
+            // I am walking through each of the interest nodes that this object has
+            //  I should probably optimize for this later vs. doing this for every add!
                 foreach (var node in nodes)
                 {
-                    if (node == null)
+            // cover the case with an empty list entry
+                    if (node != null)
                     {
-                        continue;
+            // the Interest Manager lazily adds nodes to itself when it sees
+            //  new nodes that associate with the objects being added
+                       m_ChildNodes.Add(node);
+            // tell this node to add this object to itself
+                       node.AddObject(obj);
                     }
-                    m_ChildNodes.Add(node);
-                    node.AddObject(newObject);
                 }
             }
         }
@@ -75,6 +72,14 @@ namespace MLAPI.Interest
                     }
                     node.RemoveObject(oldObject);
                 }
+            }
+        }
+
+        public void QueryFor(in NetworkClient client, HashSet<NetworkObject> results)
+        {
+            foreach (var c in m_ChildNodes)
+            {
+                c.QueryFor(client, results);
             }
         }
 

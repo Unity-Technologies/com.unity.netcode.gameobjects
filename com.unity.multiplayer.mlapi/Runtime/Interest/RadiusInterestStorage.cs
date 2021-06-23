@@ -11,7 +11,7 @@ namespace MLAPI.Interest
     public class RadiusInterestStorage : BasicInterestStorage
     {
         public float Radius = 0.0f;
-        public override void Query(in NetworkClient client, HashSet<NetworkObject> results)
+        public override void QueryFor(in NetworkClient client, HashSet<NetworkObject> results)
         {
             foreach (var obj in ManagedObjects)
             {

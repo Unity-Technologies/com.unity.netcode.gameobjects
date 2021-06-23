@@ -22,27 +22,27 @@ namespace MLAPI.EditorTests
                 m_Evens = CreateInstance<BasicInterestStorage>();
             }
 
-            public override void Query(in NetworkClient client, HashSet<NetworkObject> results)
+            public override void QueryFor(in NetworkClient client, HashSet<NetworkObject> results)
             {
                 // if a client with an odd NetworkObjectID queries, we return objects with odd NetworkObjectIDs
                 if (client.PlayerObject.NetworkObjectId % 2 == 0)
                 {
-                    m_Evens.Query(client, results);
+                    m_Evens.QueryFor(client, results);
                 }
                 else
                 {
-                    m_Odds.Query(client, results);
+                    m_Odds.QueryFor(client, results);
                 }
             }
 
-            public override void UpdateObject(NetworkObject obj)
+            public override void UpdateObject(in NetworkObject obj)
             {
                 m_Odds.RemoveObject(obj);
                 m_Evens.RemoveObject(obj);
                 AddObject(obj);
             }
 
-            public override void AddObject(NetworkObject obj)
+            public override void AddObject(in NetworkObject obj)
             {
                 if (obj.NetworkObjectId % 2 == 0)
                 {
@@ -54,7 +54,7 @@ namespace MLAPI.EditorTests
                 }
             }
 
-            public override void RemoveObject(NetworkObject obj)
+            public override void RemoveObject(in NetworkObject obj)
             {
                 if (obj.NetworkObjectId % 2 == 0)
                 {

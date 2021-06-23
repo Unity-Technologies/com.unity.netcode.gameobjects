@@ -12,22 +12,22 @@ namespace MLAPI.Interest
         // these are the objects under my purview
         public HashSet<NetworkObject> ManagedObjects;
 
-        public override void AddObject(NetworkObject obj)
+        public override void AddObject(in NetworkObject obj)
         {
             ManagedObjects.Add(obj);
         }
 
-        public override void RemoveObject(NetworkObject obj)
+        public override void RemoveObject(in NetworkObject obj)
         {
             ManagedObjects.Remove(obj);
         }
 
-        public override void Query(in NetworkClient client, HashSet<NetworkObject> results)
+        public override void QueryFor(in NetworkClient client, HashSet<NetworkObject> results)
         {
             results.UnionWith(ManagedObjects);
         }
 
-        public override void UpdateObject(NetworkObject obj)
+        public override void UpdateObject(in NetworkObject obj)
         {
         }
 
