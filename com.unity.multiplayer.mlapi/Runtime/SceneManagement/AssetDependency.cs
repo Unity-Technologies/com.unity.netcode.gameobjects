@@ -1,6 +1,4 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
 
 using UnityEngine;
 #if UNITY_EDITOR
@@ -10,6 +8,18 @@ using System.Collections.Specialized;
 
 namespace MLAPI.SceneManagement
 {
+    /// <summary>
+    /// This class is designed primarily as an editor based helper class
+    /// that will shed itself of all editor specific properties during runtime
+    /// but will allow other classes to derive from it in order to maintain a
+    /// list of asset dependencies.  Dependencies are ordered in a top down fashion
+    /// such that any parents that depend upon any child-relative AssetDependency
+    /// will notify the child-relative AssetDependency that it "depends upon" this asset
+    /// Notes:
+    /// ExecuteInEditMode attribute is required in order to assure the ObservableCollection
+    /// CollectionChanged event is registered so changes in dependencies can be more easily
+    /// managed.
+    /// </summary>
     [ExecuteInEditMode]
     [Serializable]
     public class AssetDependency : ScriptableObject, IAssetDependency
@@ -19,6 +29,10 @@ namespace MLAPI.SceneManagement
         [SerializeField]
         protected ObservableCollection<IAssetDependency> m_Dependencies = new ObservableCollection<IAssetDependency>();
 
+        /// <summary>
+        /// Parent assets can use this to notify any child assets that it "depends" upon this asset
+        /// </summary>
+        /// <param name="assetDependency"></param>
         public void AddDependency(IAssetDependency assetDependency)
         {
             if(!m_Dependencies.Contains(assetDependency))
@@ -26,6 +40,11 @@ namespace MLAPI.SceneManagement
                 m_Dependencies.Add(assetDependency);
             }
         }
+
+        /// <summary>
+        /// Parent assets can use this to notify any child assets that it no longer "depends" upon this asset
+        /// </summary>
+        /// <param name="assetDependency"></param>
         public void RemoveDependency(IAssetDependency assetDependency)
         {
             if (m_Dependencies.Contains(assetDependency))
@@ -34,12 +53,21 @@ namespace MLAPI.SceneManagement
             }
         }
 
-
+        /// <summary>
+        /// Child derived classes can override this method to recieve notifications of a 
+        /// dependency addition 
+        /// </summary>
+        /// <param name="dependencyAdded"></param>
         protected virtual void OnDependecyAdded(IAssetDependency dependencyAdded)
         {
 
         }
 
+        /// <summary>
+        /// Child derived classes can override this method to recieve notifications of a 
+        /// dependency removal 
+        /// </summary>
+        /// <param name="dependencyRemoved"></param>
         protected virtual void OnDependecyRemoved(IAssetDependency dependencyRemoved)
         {
 

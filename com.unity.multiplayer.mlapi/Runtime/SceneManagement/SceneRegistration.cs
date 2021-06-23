@@ -16,7 +16,6 @@ namespace MLAPI.SceneManagement
         [SerializeField]
         private List<SceneRegistrationEntry> m_SceneRegistrations;
 
-
 #if UNITY_EDITOR
         // Since Unity does not support observable collections there are two ways to approach this:
         // 1.) Make a duplicate list that adjusts itself during OnValidate
@@ -45,10 +44,6 @@ namespace MLAPI.SceneManagement
                 if(!s_BuildSettingsSceneLookUpTable.ContainsKey(sceneName))
                 {
                     s_BuildSettingsSceneLookUpTable.Add(sceneName, editorBuildSettingsScene);
-                }
-                else
-                {
-                    //Error
                 }
             }
         }
@@ -120,6 +115,10 @@ namespace MLAPI.SceneManagement
             ValidateBuildSettingsScenes();
         }
 
+        /// <summary>
+        /// Called to determine if there needs to be any adjustments to the build settings
+        /// scenes in build list.
+        /// </summary>
         internal void ValidateBuildSettingsScenes()
         {
             //Cycle through all scenes registered and validate the build settings scenes list
@@ -135,10 +134,12 @@ namespace MLAPI.SceneManagement
             }
         }
 
-
-        // This will always return true which signifies any dependency that is contained 
-        // within this branch of potential dependencies should be considered when checking
-        // to see if it should be added to the build settings
+        /// <summary>
+        /// This will always return true which signifies any dependency that is contained
+        /// within this branch of potential dependencies should be considered when checking
+        /// to see if it should be added to the build settings
+        /// </summary>
+        /// <returns></returns>
         protected override bool OnIsRootAssetDependency()
         {
             return true;

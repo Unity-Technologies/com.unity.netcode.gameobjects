@@ -141,6 +141,10 @@ namespace MLAPI.SceneManagement
         }
     }
 
+    /// <summary>
+    /// A container class to hold the editor specific assets and
+    /// the scene name that it is pointing to for runtime
+    /// </summary>
     [Serializable]
     public class AdditiveSceneEntry
     {
@@ -148,11 +152,10 @@ namespace MLAPI.SceneManagement
         public SceneAsset Scene;
 
         [Tooltip("When set to true, this will automatically register all of the additive scenes with the build settings scenes in build list.  If false, then the scene(s) have to be manually added or will not be included in the build.")]
-        public bool AutoIncludeInBuild = true;       //Default to true
+        public bool AutoIncludeInBuild;
 #endif
         [HideInInspector]
         public string SceneEntryName;
-
     }
 
 

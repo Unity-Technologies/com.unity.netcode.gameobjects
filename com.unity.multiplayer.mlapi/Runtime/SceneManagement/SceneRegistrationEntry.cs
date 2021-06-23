@@ -43,7 +43,9 @@ namespace MLAPI.SceneManagement
         }
 
         /// <summary>
-        /// 
+        /// For scene management related usage, currently this only needs to invoke the
+        /// ValidateBuildSettingsScenes method.
+        /// Note: more complex logic could be added here to provide additional clean up
         /// </summary>
         /// <param name="dependencyRemoved"></param>
         protected override void OnDependecyRemoved(IAssetDependency dependencyRemoved)
@@ -52,7 +54,10 @@ namespace MLAPI.SceneManagement
         }
 
         /// <summary>
-        /// 
+        /// For scene management related usage, currently this only needs to invoke the
+        /// ValidateBuildSettingsScenes method.
+        /// Note: more complex logic could be added here to provide additional dependency
+        /// registration related actions.
         /// </summary>
         /// <param name="dependencyAdded"></param>
         protected override void OnDependecyAdded(IAssetDependency dependencyAdded)
