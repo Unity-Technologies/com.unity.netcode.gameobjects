@@ -1008,6 +1008,8 @@ MonoBehaviour:
   NetworkConfig:
     ProtocolVersion: 0
     NetworkTransport: {fileID: 1024114719}
+    SceneRegistration: {fileID: 11400000, guid: 73f6dc1861e493e4196cab8466ea0d80,
+      type: 2}
     RegisteredScenes:
     - SceneTransitioningTest
     - SecondSceneToLoad
@@ -1155,6 +1157,7 @@ MonoBehaviour:
   GlobalObjectIdHash: 2782806529
   AlwaysReplicateAsRoot: 0
   DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
 --- !u!1 &1332123091
 GameObject:
   m_ObjectHideFlags: 0
@@ -2553,6 +2556,7 @@ MonoBehaviour:
   GlobalObjectIdHash: 2267100048
   AlwaysReplicateAsRoot: 0
   DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
 --- !u!1001 &2848221156282925290
 PrefabInstance:
   m_ObjectHideFlags: 0

@@ -246,15 +246,15 @@ namespace MLAPI
 
             // Trap for when the SceneRegistration is set or deleted to determine if the scenes associated with the SceneRegistration
             // should be included in the build settings.
-            if(NetworkConfig.SceneRegistration != null)
+            if(NetworkConfig.SceneRegistration != null && !NetworkConfig.SceneRegistration.AssignedToNetworkManager)
             {
                 m_SceneRegistration = NetworkConfig.SceneRegistration;
-                NetworkConfig.SceneRegistration.SetAssignedToNetworkManager(true);
+                NetworkConfig.SceneRegistration.AssignedToNetworkManager = true;
                 NetworkConfig.SceneRegistration.ValidateBuildSettingsScenes();
             }
-            else if (m_SceneRegistration != null)
+            else if (m_SceneRegistration != null && m_SceneRegistration.AssignedToNetworkManager)
             {
-                m_SceneRegistration.SetAssignedToNetworkManager(false);
+                m_SceneRegistration.AssignedToNetworkManager = false;
                 m_SceneRegistration.ValidateBuildSettingsScenes();
                 m_SceneRegistration = null;
             }

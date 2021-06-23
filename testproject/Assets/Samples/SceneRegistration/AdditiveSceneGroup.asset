@@ -9,8 +9,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 180fe42d996da264ab3d32e3fc9033ca, type: 3}
-  m_Name: MySceneRegistration
+  m_Script: {fileID: 11500000, guid: b9f97901b434bd84bb2a433719183485, type: 3}
+  m_Name: AdditiveSceneGroup
   m_EditorClassIdentifier: 
-  m_SceneRegistrations:
-  - {fileID: 11400000, guid: eaed0b3453e8bb84dae5cb34ce54a851, type: 2}
+  m_AdditiveSceneGroups: []
+  m_KnownAdditiveSceneGroups: []
+  m_AdditiveScenes: []

@@ -1,24 +1,26 @@
 using System;
-using System.Collections.Generic;
 using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
-using UnityEditor.SceneManagement;
 #endif
 
 namespace MLAPI.SceneManagement
 {
     [CreateAssetMenu(fileName = "SceneRegistrationEntry", menuName = "MLAPI/SceneManagement/SceneRegistrationEntry")]
     [Serializable]
-    public class SceneRegistrationEntry : ScriptableObject, ISceneRegistrationEntry
+    public class SceneRegistrationEntry : AssetDependency, ISceneRegistrationEntry
     {
-
 #if UNITY_EDITOR
+        [HideInInspector]
+        [SerializeField]
+        private SceneAsset m_PreviousPrimaryScene;
+
+        [HideInInspector]
+        [SerializeField]
+        private AddtiveSceneGroup m_PreviousAddtiveSceneGroup;
+
         [SerializeField]
         private SceneAsset m_PrimaryScene;
-
-        [SerializeField]
-        private SceneRegistration m_SceneRegistrationParent;
 
         [Tooltip("When set to true, this will automatically register the primary scene with the build settings scenes in build list.  If false, then the scene has to be manually added or will not be included in the build.")]
         [SerializeField]
@@ -26,36 +28,76 @@ namespace MLAPI.SceneManagement
 
         internal bool ShouldIncludeInBuildSettings()
         {
-            if(m_SceneRegistrationParent != null && m_SceneRegistrationParent.IncludeInBuildSettings() && m_AutoIncludeInBuild)
-            {
-                return true;
-            }
-            return false;
+            var belongsToRoot = BelongsToRootAssetBranch();
+            return (belongsToRoot && m_AutoIncludeInBuild);
+        }
+
+        protected override bool OnShouldAssetBeIncluded()
+        {
+            return m_AutoIncludeInBuild;
         }
 
         private void OnValidate()
         {
-            if (m_PrimaryScene != null)
-            {
-                m_PrimarySceneName = m_PrimaryScene.name;
-            }
+            ValidateBuildSettingsScenes();
         }
 
-        internal void AssignSceneRegistrationParent(SceneRegistration sceneRegistration)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="dependencyRemoved"></param>
+        protected override void OnDependecyRemoved(IAssetDependency dependencyRemoved)
         {
-            m_SceneRegistrationParent = sceneRegistration;
+            ValidateBuildSettingsScenes();
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="dependencyAdded"></param>
+        protected override void OnDependecyAdded(IAssetDependency dependencyAdded)
+        {
+            ValidateBuildSettingsScenes();
         }
 
         internal void ValidateBuildSettingsScenes()
         {
-            if(m_PrimaryScene != null)
+            if (m_PrimaryScene != m_PreviousPrimaryScene)
             {
+                // If we had a different scene, then remove it from the build settings
+                if (m_PreviousPrimaryScene != null)
+                {
+                    SceneRegistration.AddOrRemoveSceneAsset(m_PreviousPrimaryScene, false);
+                }
+            }
+
+            // If the newly assigned scene is not null
+            if (m_PrimaryScene != null)
+            {
+                // As long as we should include this scnee registration entry, then add it to the build settings list of scenes to be included
                 SceneRegistration.AddOrRemoveSceneAsset(m_PrimaryScene, ShouldIncludeInBuildSettings());
             }
 
-            if(m_AddtiveSceneGroup != null)
+            m_PreviousPrimaryScene = m_PrimaryScene;
+
+            if (m_PrimaryScene != null)
             {
-                m_AddtiveSceneGroup.ValidateBuildSettingsScenes(this);
+                m_PrimarySceneName = m_PrimaryScene.name;
+            }
+
+            if (m_AddtiveSceneGroup != null)
+            {
+                m_AddtiveSceneGroup.AddDependency(this);
+                m_AddtiveSceneGroup.ValidateBuildSettingsScenes();
+            }
+            if(m_PreviousAddtiveSceneGroup != m_AddtiveSceneGroup)
+            {
+                if(m_PreviousAddtiveSceneGroup != null)
+                {
+                    m_PreviousAddtiveSceneGroup.RemoveDependency(this);
+                    m_PreviousAddtiveSceneGroup.ValidateBuildSettingsScenes();
+                }
+                m_PreviousAddtiveSceneGroup = m_AddtiveSceneGroup;
             }
         }
 #endif

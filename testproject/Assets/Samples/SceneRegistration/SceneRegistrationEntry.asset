@@ -10,9 +10,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9c4b50146588e074881aa52f9648adf9, type: 3}
-  m_Name: MySceneRegistrationEntry
+  m_Name: SceneRegistrationEntry
   m_EditorClassIdentifier: 
-  m_PrimarySceneName: EnableDisableSceneNetworkObject
-  m_AddtiveSceneGroup: {fileID: 11400000, guid: f3d7105e5ceb0914ea4769284cc7147c,
-    type: 2}
-  m_PrimaryScene: {fileID: 102900000, guid: 619b9eba5892d5a4e9dd1d6cafb0059a, type: 3}
+  m_PreviousPrimaryScene: {fileID: 102900000, guid: 68615f585c69ff246add2c8ee92f9944,
+    type: 3}
+  m_PrimaryScene: {fileID: 102900000, guid: 68615f585c69ff246add2c8ee92f9944, type: 3}
+  m_AutoIncludeInBuild: 1
+  SceneIdentifier: 0
+  m_PrimarySceneName: AnotherScene2
+  m_AddtiveSceneGroup: {fileID: 0}

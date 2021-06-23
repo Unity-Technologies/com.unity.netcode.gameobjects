@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
+
 using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -10,12 +11,20 @@ namespace MLAPI.SceneManagement
 {
     [CreateAssetMenu(fileName = "SceneRegistration", menuName = "MLAPI/SceneManagement/SceneRegistration")]
     [Serializable]
-    public class SceneRegistration : ScriptableObject
+    public class SceneRegistration : AssetDependency
     {
         [SerializeField]
         private List<SceneRegistrationEntry> m_SceneRegistrations;
 
+
 #if UNITY_EDITOR
+        // Since Unity does not support observable collections there are two ways to approach this:
+        // 1.) Make a duplicate list that adjusts itself during OnValidate
+        // 2.) Make a customizable property editor that can handle the serialization process (which you will end up with two lists in the end anyway)
+        // For this pass, I opted for solution #1
+        [HideInInspector]
+        [SerializeField]
+        private List<SceneRegistrationEntry> m_KnownSceneRegistrations;
 
         static private Dictionary<string, EditorBuildSettingsScene> s_BuildSettingsSceneLookUpTable = new Dictionary<string, EditorBuildSettingsScene>();
 
@@ -73,30 +82,66 @@ namespace MLAPI.SceneManagement
 
         [SerializeField]
         [HideInInspector]
-        private bool m_AssignedToNetworkManager;
+        internal bool AssignedToNetworkManager;
 
-        internal bool IncludeInBuildSettings()
+        internal void SetAssignedToNetworkManager(bool isAssigned)
         {
-            return m_AssignedToNetworkManager;
+            AssignedToNetworkManager = isAssigned;
+        }
+
+        protected override bool OnShouldAssetBeIncluded()
+        {
+            return AssignedToNetworkManager;
         }
 
         private void OnValidate()
         {
+            foreach (var entry in m_SceneRegistrations)
+            {
+                if (entry != null)
+                {
+                    entry.AddDependency(this);
+                }
+            }
+
+            foreach (var entry in m_KnownSceneRegistrations)
+            {
+                if (entry != null)
+                {
+                    if (!m_SceneRegistrations.Contains(entry))
+                    {
+                        entry.RemoveDependency(this);
+                    }
+                }
+            }
+
+            m_KnownSceneRegistrations.Clear();
+            m_KnownSceneRegistrations.AddRange(m_SceneRegistrations);            
             ValidateBuildSettingsScenes();
         }
 
         internal void ValidateBuildSettingsScenes()
         {
-            foreach (var sceneRegistrationEntry in m_SceneRegistrations)
+            //Cycle through all scenes registered and validate the build settings scenes list
+            if (m_SceneRegistrations != null)
             {
-                sceneRegistrationEntry.AssignSceneRegistrationParent(this);
-                sceneRegistrationEntry.ValidateBuildSettingsScenes();
+                foreach (var sceneRegistrationEntry in m_SceneRegistrations)
+                {
+                    if (sceneRegistrationEntry != null)
+                    {
+                        sceneRegistrationEntry.ValidateBuildSettingsScenes();
+                    }
+                }
             }
         }
 
-        internal void SetAssignedToNetworkManager(bool isAssigned)
+
+        // This will always return true which signifies any dependency that is contained 
+        // within this branch of potential dependencies should be considered when checking
+        // to see if it should be added to the build settings
+        protected override bool OnIsRootAssetDependency()
         {
-            m_AssignedToNetworkManager = isAssigned;
+            return true;
         }
 #endif
         public string GetAllScenesForHash()
@@ -109,4 +154,6 @@ namespace MLAPI.SceneManagement
             return scenesHashBase;
         }
     }
+
+
 }

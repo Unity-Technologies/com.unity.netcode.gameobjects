@@ -9,91 +9,117 @@ namespace MLAPI.SceneManagement
 {
     [CreateAssetMenu(fileName = "AdditiveSceneGroup", menuName = "MLAPI/SceneManagement/AdditiveSceneGroup")]
     [Serializable]
-    public class AddtiveSceneGroup : ScriptableObject, IAdditiveSceneGroup
+    public class AddtiveSceneGroup : AssetDependency, IAdditiveSceneGroup
     {
-        public List<AddtiveSceneGroup> AdditiveSceneGroups;
+        [SerializeField]
+        private List<AddtiveSceneGroup> m_AdditiveSceneGroups;
 
+        // Since Unity does not support observable collections there are two ways to approach this:
+        // 1.) Make a duplicate list that adjusts itself during OnValidate
+        // 2.) Make a customizable property editor that can handle the serialization process (which you will end up with two lists in the end anyway)
+        // For this pass, I opted for solution #1
         [HideInInspector]
         [SerializeField]
-        private List<string> m_AdditiveSceneNames;
+        private List<AddtiveSceneGroup> m_KnownAdditiveSceneGroups = new List<AddtiveSceneGroup>();
 
-#if UNITY_EDITOR
         [SerializeField]
         private List<AdditiveSceneEntry> m_AdditiveScenes;
 
-        private List<SceneRegistrationEntry> m_SceneRegistrationEntryParents;
+#if UNITY_EDITOR
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="dependencyRemoved"></param>
+        protected override void OnDependecyRemoved(IAssetDependency dependencyRemoved)
+        {
+            ValidateBuildSettingsScenes();
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="dependencyAdded"></param>
+        protected override void OnDependecyAdded(IAssetDependency dependencyAdded)
+        {
+            ValidateBuildSettingsScenes();
+        }
+
 
         private void OnValidate()
         {
-            if (m_AdditiveSceneNames == null)
-            {
-                m_AdditiveSceneNames = new List<string>();
-            }
-            else
-            {
-                m_AdditiveSceneNames.Clear();
-            }
-
+            // Assure our included additive scene entries' names are all valid
+            // If not, then assign the proper scene name to the AdditiveSceneEntry.SceneEntryName
             foreach (var includedScene in m_AdditiveScenes)
             {
                 if (includedScene != null)
                 {
-                    if (includedScene.Scene != null)
+                    if (includedScene.Scene != null && includedScene.Scene.name != includedScene.SceneEntryName)
                     {
-                        m_AdditiveSceneNames.Add(includedScene.Scene.name);
+                        includedScene.SceneEntryName = includedScene.Scene.name;
                     }
                 }
             }
-        }
-        internal void ValidateBuildSettingsScenes(SceneRegistrationEntry sceneRegistrationEntry)
-        {
-            if(!m_SceneRegistrationEntryParents.Contains(sceneRegistrationEntry))
-            {
-                m_SceneRegistrationEntryParents.Add(sceneRegistrationEntry);
-            }
 
-            var includeInBuildSettings = false;
-            foreach(var sceneRegistrationEntryItem in m_SceneRegistrationEntryParents)
+            foreach (var entry in m_AdditiveSceneGroups)
             {
-                // We only need one SceneRegistrationEntry to respond with true in order to include additive scenes or groups
-                if (sceneRegistrationEntryItem.ShouldIncludeInBuildSettings())
-                {                    
-                    includeInBuildSettings = true;
-                    break;
+                if (entry != null)
+                {
+                    entry.AddDependency(this);
                 }
             }
 
+            foreach (var entry in m_KnownAdditiveSceneGroups)
+            {
+                if (entry != null)
+                {
+                    if (!m_AdditiveSceneGroups.Contains(entry))
+                    {
+                        entry.RemoveDependency(this);
+                    }
+                }
+            }
+
+            m_KnownAdditiveSceneGroups.Clear();
+            m_KnownAdditiveSceneGroups.AddRange(m_AdditiveSceneGroups);
+            ValidateBuildSettingsScenes();
+        }
+
+
+        internal void ValidateBuildSettingsScenes()
+        {
+            var shouldInclude = ShouldAssetBeIncluded();
+            var partOfRootBranch = BelongsToRootAssetBranch();
+
             foreach (var includedScene in m_AdditiveScenes)
             {
-                if (includedScene != null)
+                if (includedScene != null && includedScene.Scene != null)
                 {
                     // Only filter out the referenced AdditiveSceneEntries if we shouldn't include this specific AdditiveSceneGroup's reference scene assets
                     // Note: Other AdditiveSceneGroups could have other associated SceneRegistrationEntries that might qualify it to be added to the build settings
                     // so we only apply this to the current AddtiveSceneGroup's referenced AdditiveSceneEntries
-                    SceneRegistration.AddOrRemoveSceneAsset(includedScene.Scene, includeInBuildSettings && includedScene.AutoIncludeInBuild);
+                    SceneRegistration.AddOrRemoveSceneAsset(includedScene.Scene, shouldInclude && partOfRootBranch && includedScene.AutoIncludeInBuild);
                 }
             }
 
             // Now validate the build settings includsion for any reference additive scene groups
-            foreach(var additveSceneGroup in AdditiveSceneGroups)
+            foreach(var additveSceneGroup in m_AdditiveSceneGroups)
             {
-                additveSceneGroup.ValidateBuildSettingsScenes(sceneRegistrationEntry);
+                if (additveSceneGroup != null)
+                {
+                    additveSceneGroup.ValidateBuildSettingsScenes();
+                }
             }
         }
 
 #endif
 
-        [Tooltip("When set to true, this will automatically register all of the additive scenes with the build settings scenes in build list.  If false, then the scene(s) have to be manually added or will not be included in the build.")]
-        [SerializeField]
-        private bool m_AutoIncludeInBuild = true;       //Default to true
-
-
-        protected virtual List<string> OnGetAdditiveScenes()
+        protected virtual List<AdditiveSceneEntry> OnGetAdditiveScenes()
         {
-            return m_AdditiveSceneNames;
+            return m_AdditiveScenes;
         }
 
-        public List<string> GetAdditiveScenes()
+        public List<AdditiveSceneEntry> GetAdditiveScenes()
         {
             return OnGetAdditiveScenes();
         }
@@ -106,7 +132,7 @@ namespace MLAPI.SceneManagement
                 scenesHashBase += sceneEntry;
             }
 
-            foreach (var additiveSceneGroup in AdditiveSceneGroups)
+            foreach (var additiveSceneGroup in m_AdditiveSceneGroups)
             {
                 scenesHashBase += additiveSceneGroup.GetAllScenesForHash();
             }
@@ -118,16 +144,21 @@ namespace MLAPI.SceneManagement
     [Serializable]
     public class AdditiveSceneEntry
     {
+#if UNITY_EDITOR
         public SceneAsset Scene;
 
         [Tooltip("When set to true, this will automatically register all of the additive scenes with the build settings scenes in build list.  If false, then the scene(s) have to be manually added or will not be included in the build.")]
         public bool AutoIncludeInBuild = true;       //Default to true
+#endif
+        [HideInInspector]
+        public string SceneEntryName;
+
     }
 
 
     public interface IAdditiveSceneGroup
     {
-        List<string> GetAdditiveScenes();
+        List<AdditiveSceneEntry> GetAdditiveScenes();
 
         string GetAllScenesForHash();
     }
