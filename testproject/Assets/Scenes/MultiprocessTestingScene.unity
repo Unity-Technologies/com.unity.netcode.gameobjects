@@ -259,7 +259,6 @@ MeshRenderer:
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -438,7 +437,6 @@ MeshRenderer:
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -534,7 +532,6 @@ MeshRenderer:
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -732,6 +729,7 @@ MonoBehaviour:
   GlobalObjectIdHash: 2217825759
   AlwaysReplicateAsRoot: 0
   DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
 --- !u!4 &1274245425
 Transform:
   m_ObjectHideFlags: 0
@@ -758,6 +756,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ef1240e0784f84eadb77fe822e2e03c7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  isRegistering: 0
+  hasRegistered: 0
 --- !u!1 &1674777071
 GameObject:
   m_ObjectHideFlags: 0
@@ -801,9 +801,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b84c2d8dfe509a34fb59e2b81f8e1319, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  MessageBufferSize: 5120
+  MessageBufferSize: 10000
   MaxConnections: 100
-  MaxSentMessageQueueSize: 1024
+  MaxSentMessageQueueSize: 50000
   ConnectAddress: 127.0.0.1
   ConnectPort: 7777
   ServerListenPort: 7777

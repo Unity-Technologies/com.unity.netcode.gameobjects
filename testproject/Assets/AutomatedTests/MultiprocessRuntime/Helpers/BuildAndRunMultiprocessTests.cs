@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using MLAPI;
 using MLAPI.MultiprocessRuntimeTests;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -101,9 +102,8 @@ public class BuildAndRunMultiprocessTests : MonoBehaviour
 #endif
         var buildOptions = BuildOptions.None;
         buildOptions |= BuildOptions.IncludeTestAssemblies;
-        // buildOptions |= BuildOptions.Development;
         buildOptions |= BuildOptions.StrictMode;
-        // buildOptions |= BuildOptions.ConnectToHost;
+        // buildOptions |= BuildOptions.Development;
         // buildOptions |= BuildOptions.AllowDebugging; // enable this if you want to debug your players. Your players
         // will have more connection permission popups when launching though
 

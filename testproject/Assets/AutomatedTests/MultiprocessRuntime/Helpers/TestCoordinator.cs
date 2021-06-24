@@ -47,7 +47,7 @@ internal class TestCoordinator : NetworkBehaviour
     //     ReadPermission = NetworkVariablePermission.Everyone
     // }); // todo this is starting to look like the wrong way to sync results. If we have multiple results arriving one after the other, there's a risk they'll overwrite one another
 
-    private Dictionary<ulong, Queue<float>> m_TestResultsLocal = new Dictionary<ulong, Queue<float>>();
+    private Dictionary<ulong, List<float>> m_TestResultsLocal = new Dictionary<ulong, List<float>>();
 
     private NetworkList<string> m_ErrorMessages = new NetworkList<string>(new NetworkVariableSettings
     {
@@ -68,35 +68,6 @@ internal class TestCoordinator : NetworkBehaviour
 
         Instance = this;
         DontDestroyOnLoad(gameObject);
-    }
-
-    public class CustomTest : ITest
-    {
-        public TNode ToXml(bool recursive)
-        {
-            throw new NotImplementedException();
-        }
-
-        public TNode AddToXml(TNode parentNode, bool recursive)
-        {
-            throw new NotImplementedException();
-        }
-
-        public string Id { get; }
-        public string Name { get; }
-        public string FullName { get; }
-        public string ClassName { get; }
-        public string MethodName { get; }
-        public ITypeInfo TypeInfo { get; }
-        public IMethodInfo Method { get; set; }
-        public RunState RunState { get; }
-        public int TestCaseCount { get; }
-        public IPropertyBag Properties { get; }
-        public ITest Parent { get; }
-        public bool IsSuite { get; }
-        public bool HasChildren { get; }
-        public IList<ITest> Tests { get; }
-        public object Fixture { get; }
     }
 
     public void Start()
@@ -206,10 +177,10 @@ internal class TestCoordinator : NetworkBehaviour
         var senderId = receiveParams.Receive.SenderClientId;
         if (!m_TestResultsLocal.ContainsKey(senderId))
         {
-            m_TestResultsLocal[senderId] = new Queue<float>();
+            m_TestResultsLocal[senderId] = new List<float>();
         }
 
-        m_TestResultsLocal[senderId].Enqueue(result);
+        m_TestResultsLocal[senderId].Add(result);
 
         // Instance.CurrentClientIdWithResults = receiveParams.SenderClientId;
     }
@@ -233,7 +204,8 @@ internal class TestCoordinator : NetworkBehaviour
         {
             while (kv.Value.Count > 0)
             {
-                var toReturn = (kv.Key, kv.Value.Dequeue());
+                var toReturn = (kv.Key, kv.Value[0]);
+                kv.Value.RemoveAt(0);
                 yield return toReturn;
             }
         }
@@ -246,7 +218,7 @@ internal class TestCoordinator : NetworkBehaviour
         // foreach (var kv in Instance.m_TestResultsLocal)
         if (Instance.m_TestResultsLocal.ContainsKey(clientId) && Instance.m_TestResultsLocal[clientId].Count > 0)
         {
-            return Instance.m_TestResultsLocal[clientId].Peek();
+            return Instance.m_TestResultsLocal[clientId].Last();
         }
 
         return float.NaN;
@@ -408,6 +380,7 @@ internal class TestCoordinator : NetworkBehaviour
         else if (Time.time - m_TimeSinceLastConnected > maxWaitTimeout || m_ShouldShutdown)
         {
             // Make sure we don't have zombie processes
+            Debug.Log($"quitting application, shouldShutdown set to {m_ShouldShutdown}");
             Application.Quit();
         }
     }
@@ -488,7 +461,7 @@ internal class TestCoordinator : NetworkBehaviour
             }
         }
 
-        private StepExecutionContext m_ActionContextContext;
+        private StepExecutionContext m_ActionContext;
         private Action<byte[]> m_Todo;
         public static Dictionary<string, ExecuteStepInContext> allActions = new Dictionary<string, ExecuteStepInContext>();
 
@@ -501,6 +474,8 @@ internal class TestCoordinator : NetworkBehaviour
         private List<Func<bool>> m_RemoteIsFinishedChecks = new List<Func<bool>>();
         private Func<bool> m_AdditionalIsFinishedWaiter;
 
+        private string m_CurrentActionID;
+
         private bool m_SpansMultipleUpdates;
 
         private float m_StartTime;
@@ -508,7 +483,7 @@ internal class TestCoordinator : NetworkBehaviour
 
         // Assumes this is called from same callsite as ExecuteInContext (and assumes this is called from IEnumerator).
         // This relies on the name to be unique for each generated IEnumerator state machines
-        public static void InitSteps()
+        public static void InitContextSteps()
         {
             var callerMethod = new StackFrame(1).GetMethod();
             var methodIdentifier = GetMethodIdentifier(callerMethod.DeclaringType.FullName); // since this is called from IEnumerator, this should be a generated class
@@ -522,7 +497,7 @@ internal class TestCoordinator : NetworkBehaviour
             return info;
         }
 
-        private bool ShouldExecuteLocally => (m_ActionContextContext == StepExecutionContext.Server && m_NetworkManager.IsServer) || (m_ActionContextContext == StepExecutionContext.Clients && !m_NetworkManager.IsServer);
+        private bool ShouldExecuteLocally => (m_ActionContext == StepExecutionContext.Server && m_NetworkManager.IsServer) || (m_ActionContext == StepExecutionContext.Clients && !m_NetworkManager.IsServer);
 
         /// <summary>
         /// Executes an action with the specified context. This allows writing tests all in the same sequential flow,
@@ -538,7 +513,7 @@ internal class TestCoordinator : NetworkBehaviour
         {
             m_StartTime = Time.time;
             m_IsRegistering = Instance.isRegistering;
-            m_ActionContextContext = actionContext;
+            m_ActionContext = actionContext;
             m_Todo = todo;
             m_SpansMultipleUpdates = spansMultipleUpdates;
             if (additionalIsFinishedWaiter != null)
@@ -561,7 +536,8 @@ internal class TestCoordinator : NetworkBehaviour
                 s_MethodIDCounter[methodId] = 0;
             }
 
-            string currentActionID = methodId + s_MethodIDCounter[methodId]++;
+            string currentActionID = $"{methodId}-{s_MethodIDCounter[methodId]++}";
+            m_CurrentActionID = currentActionID;
 
             if (m_IsRegistering)
             {
@@ -616,6 +592,11 @@ internal class TestCoordinator : NetworkBehaviour
         {
             get
             {
+                if (isTimingOut)
+                {
+                    Assert.Fail($"timeout for Context Step with action ID {m_CurrentActionID}");
+                    return false;
+                }
                 if (m_AdditionalIsFinishedWaiter != null)
                 {
                     var isFinished = m_AdditionalIsFinishedWaiter.Invoke();
@@ -624,12 +605,9 @@ internal class TestCoordinator : NetworkBehaviour
                         return true;
                     }
                 }
-                if (m_IsRegistering || ShouldExecuteLocally || m_RemoteIsFinishedChecks == null || isTimingOut)
+                if (m_IsRegistering || ShouldExecuteLocally || m_RemoteIsFinishedChecks == null)
                 {
-                    if (isTimingOut)
-                    {
-                        Debug.LogError("timeout");
-                    }
+
                     return false;
                 }
 

@@ -136,7 +136,7 @@ namespace MLAPI.MultiprocessRuntimeTests
         [TestCase(3, ExpectedResult = null)]
         public IEnumerator TestWithParameters(int a)
         {
-            InitSteps();
+            InitContextSteps();
 
             yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Server, bytes =>
             {
@@ -158,7 +158,7 @@ namespace MLAPI.MultiprocessRuntimeTests
         [TestCase(3, 4, ExpectedResult = null)]
         public IEnumerator TestWithParameters(int a, int b)
         {
-            InitSteps();
+            InitContextSteps();
 
             yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Server, bytes =>
             {
@@ -181,7 +181,7 @@ namespace MLAPI.MultiprocessRuntimeTests
         {
             // TODO convert other tests to this format
             // todo move ExecuteInContext out of here (in test coordinator?)
-            InitSteps();
+            InitContextSteps();
 
             int stepCountExecuted = 0;
             yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Server, (byte[] args) =>

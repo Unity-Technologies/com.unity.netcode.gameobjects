@@ -1,9 +1,11 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
 using MLAPI.NetworkVariable;
 using MLAPI.Spawning;
 using NUnit.Framework;
+using NUnit.Framework.Internal;
 using Unity.PerformanceTesting;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -20,8 +22,6 @@ namespace MLAPI.MultiprocessRuntimeTests
     {
         protected override int NbWorkers { get; } = 1;
         private const int k_MaxObjectstoSpawn = 100000;
-        // todo move all of this static stuff to a self contained object. Could have the concept of a "client side test executor"?
-        private static int s_TargetCount = 0;
         private List<NetworkObject> m_SpawnedObjects = new List<NetworkObject>();
         private static GameObjectPool s_ObjectPool;
         protected override bool m_IsPerformanceTest => false; // for debug, todo remove me
@@ -44,7 +44,7 @@ namespace MLAPI.MultiprocessRuntimeTests
 
             private void Update()
             {
-                Debug.Log($"nb one net var instance!!!!! {nbInstances}");
+                // Debug.Log($"nb one net var instance!!!!! {nbInstances}");
             }
         }
 
@@ -110,32 +110,18 @@ namespace MLAPI.MultiprocessRuntimeTests
         [TestCase(15000, ExpectedResult = null)]
         public IEnumerator TestSpawningManyObjects(int nbObjects)
         {
-            InitSteps();
+            InitContextSteps();
 
             yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Server, _ =>
             {
                 Assert.LessOrEqual(nbObjects, k_MaxObjectstoSpawn); // sanity check
             });
 
-            yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Clients, _ =>
+            yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Clients, paramToPass: BitConverter.GetBytes(nbObjects), todo: nbObjectsBytes =>
             {
                 // setup clients
-                void Update(float deltaTime)
-                {
-                    var count = OneNetVar.nbInstances;
-                    if (count > 0)
-                    {
-                        TestCoordinator.Instance.WriteTestResultsServerRpc(count);
 
-                        if (count >= s_TargetCount)
-                        {
-                            // we got what we want, don't update results any longer
-                            NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate -= Update;
-                        }
-                    }
-                }
-
-                s_TargetCount = nbObjects;
+                var targetCount = BitConverter.ToInt32(nbObjectsBytes, 0);
                 var prefabToSpawn = PrefabReference.Instance.referencedPrefab;
                 var addedHandler = NetworkManager.Singleton.PrefabHandler.AddHandler(prefabToSpawn, new CustomPrefabSpawnForTest1(prefabToSpawn));
                 if (!addedHandler)
@@ -143,12 +129,26 @@ namespace MLAPI.MultiprocessRuntimeTests
                     throw new Exception("Couldn't add Handler!");
                 }
 
+                void Update(float deltaTime)
+                {
+                    var count = OneNetVar.nbInstances;
+                    Debug.Log($"count is {count}");
+                    if (count > 0)
+                    {
+                        TestCoordinator.Instance.WriteTestResultsServerRpc(count);
+
+                        if (count >= targetCount)
+                        {
+                            // we got what we want, don't update results any longer
+                            NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate -= Update;
+                        }
+                    }
+                }
                 NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate += Update;
             });
 
             yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Server, _ =>
             {
-
                 // start test
                 using (Measure.Scope($"Time Taken For Spawning {nbObjects} objects and getting report"))
                 {
@@ -188,31 +188,27 @@ namespace MLAPI.MultiprocessRuntimeTests
                 // add measurements
                 var allocated = new SampleGroup($"NbSpawnedPerFrame", SampleUnit.Undefined);
 
-                List<(ulong, float)> wrongFirstResults = new List<(ulong, float)>();
-                foreach (var current in TestCoordinator.ConsumeCurrentResult())
+                foreach (var clientId in TestCoordinator.AllClientIdsWithResults)
                 {
-                    Debug.Log($"got results, asserting, result is {current.result} from key {current.clientId}");
-                    Measure.Custom(allocated, current.result);
-                    if (current.result != nbObjects)
-                    {
-                        wrongFirstResults.Add(current);
-                    }
+                    var lastResult = TestCoordinator.PeekLatestResult(clientId);
+                    Assert.That(lastResult, Is.EqualTo(nbObjects));
                 }
 
-                if (wrongFirstResults.Count > 0)
+                Assert.That(TestCoordinator.AllClientIdsWithResults.Length, Is.EqualTo(NbWorkers));
+                foreach (var current in TestCoordinator.ConsumeCurrentResult())
                 {
-                    Assert.Fail($"Expected first spawn to be {nbObjects}, but instead got {wrongFirstResults[0].Item2} items for client {wrongFirstResults[0].Item1}");
+                    Debug.Log($"got result {current.result} from key {current.clientId}");
+                    Measure.Custom(allocated, current.result);
                 }
 
                 Debug.Log($"finished with test for {nbObjects} objects");
             });
-
         }
 
         [UnityTearDown, MultiprocessContextBasedTest]
         public IEnumerator UnityTeardown()
         {
-            InitSteps();
+            InitContextSteps();
 
             yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Server, bytes =>
             {
@@ -228,7 +224,6 @@ namespace MLAPI.MultiprocessRuntimeTests
             {
                 var prefabToSpawn = PrefabReference.Instance.referencedPrefab;
                 NetworkManager.Singleton.PrefabHandler.RemoveHandler(prefabToSpawn);
-                s_TargetCount = 0;
                 NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate = null;
 
                 void WaitForAllOneNetVarToDespawn(float deltaTime)
