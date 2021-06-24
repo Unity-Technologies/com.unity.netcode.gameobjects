@@ -304,7 +304,7 @@ namespace MLAPI.Configuration
 
                     if(SceneRegistration != null)
                     {
-                        writer.WriteString(SceneRegistration.GetAllScenesForHash());
+                        SceneRegistration.WriteHashSynchValues(writer);                        
                     }
                 }
 

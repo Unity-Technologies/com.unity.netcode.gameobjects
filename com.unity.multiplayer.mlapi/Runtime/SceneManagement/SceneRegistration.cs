@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using MLAPI.Serialization;
 
 using UnityEngine;
 #if UNITY_EDITOR
@@ -16,6 +17,10 @@ namespace MLAPI.SceneManagement
     {
         [SerializeField]
         private List<SceneRegistrationEntry> m_SceneRegistrations;
+
+        [HideInInspector]
+        [SerializeField]
+        private string m_NetworkManagerScene;
 
 #if UNITY_EDITOR
         // Since Unity does not support observable collections there are two ways to approach this:
@@ -84,14 +89,6 @@ namespace MLAPI.SceneManagement
         [SerializeField]
         internal SceneAsset NetworkManagerScene;
 
-        
-
-        internal static void OnGuiHandler(Rect position, SerializedProperty property, GUIContent label)
-        {
-
-        }
-
-
         internal void AssignNetworkManagerScene(bool isAssigned = true)
         {
             AssignedToNetworkManager = isAssigned;
@@ -99,10 +96,17 @@ namespace MLAPI.SceneManagement
             {
                 var currentScene = SceneManager.GetActiveScene();
                 NetworkManagerScene = AssetDatabase.LoadAssetAtPath<SceneAsset>(currentScene.path);
+                if(NetworkManagerScene != null)
+                {
+                    m_NetworkManagerScene = NetworkManagerScene.name;
+                    AddOrRemoveSceneAsset(NetworkManagerScene, true);
+                }                 
             }
             else
             {
+                AddOrRemoveSceneAsset(NetworkManagerScene, false);
                 NetworkManagerScene = null;
+                m_NetworkManagerScene = string.Empty;
             }
             ValidateBuildSettingsScenes();
         }
@@ -171,14 +175,17 @@ namespace MLAPI.SceneManagement
             return OnShouldAssetBeIncluded();
         }
 #endif
-        public string GetAllScenesForHash()
+        protected override void OnWriteHashSynchValues(NetworkWriter writer)
         {
-            var scenesHashBase = string.Empty;
+            if(m_NetworkManagerScene != null && m_NetworkManagerScene != string.Empty)
+            {
+                writer.WriteString(m_NetworkManagerScene);
+            }
+
             foreach(var sceneRegistrationEntry in m_SceneRegistrations)
             {
-                scenesHashBase += sceneRegistrationEntry.GetAllScenesForHash();
-            }
-            return scenesHashBase;
+                sceneRegistrationEntry.WriteHashSynchValues(writer);
+            }            
         }
     }
 

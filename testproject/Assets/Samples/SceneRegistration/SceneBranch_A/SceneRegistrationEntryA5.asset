@@ -10,15 +10,15 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9c4b50146588e074881aa52f9648adf9, type: 3}
-  m_Name: SceneRegistrationEntryA
+  m_Name: SceneRegistrationEntryA5
   m_EditorClassIdentifier: 
-  m_PreviousPrimaryScene: {fileID: 102900000, guid: 77297684364241b4381ec1f650426e17,
+  m_PreviousPrimaryScene: {fileID: 102900000, guid: 931469794d88a874998f1d5edd265522,
     type: 3}
   m_PreviousAddtiveSceneGroup: {fileID: 11400000, guid: 836cd2be89c079a438eb7550fe4a3f09,
     type: 2}
-  m_PrimaryScene: {fileID: 102900000, guid: 77297684364241b4381ec1f650426e17, type: 3}
+  m_PrimaryScene: {fileID: 102900000, guid: 931469794d88a874998f1d5edd265522, type: 3}
   m_AutoIncludeInBuild: 1
   SceneIdentifier: 0
-  m_PrimarySceneName: AnotherScene1
+  m_PrimarySceneName: RpcTesting
   m_AddtiveSceneGroup: {fileID: 11400000, guid: 836cd2be89c079a438eb7550fe4a3f09,
     type: 2}

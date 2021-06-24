@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9c4b50146588e074881aa52f9648adf9, type: 3}
+  m_Name: SceneRegistrationEntryA2
+  m_EditorClassIdentifier: 
+  m_PreviousPrimaryScene: {fileID: 102900000, guid: 79c2bf7d6b7a06a42a94982aaf1904d8,
+    type: 3}
+  m_PreviousAddtiveSceneGroup: {fileID: 11400000, guid: 836cd2be89c079a438eb7550fe4a3f09,
+    type: 2}
+  m_PrimaryScene: {fileID: 102900000, guid: 79c2bf7d6b7a06a42a94982aaf1904d8, type: 3}
+  m_AutoIncludeInBuild: 1
+  SceneIdentifier: 0
+  m_PrimarySceneName: SecondSceneToLoad
+  m_AddtiveSceneGroup: {fileID: 11400000, guid: 836cd2be89c079a438eb7550fe4a3f09,
+    type: 2}

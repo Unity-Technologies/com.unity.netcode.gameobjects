@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using MLAPI.Serialization;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -95,9 +96,9 @@ namespace MLAPI.SceneManagement
                 m_AddtiveSceneGroup.AddDependency(this);
                 m_AddtiveSceneGroup.ValidateBuildSettingsScenes();
             }
-            if(m_PreviousAddtiveSceneGroup != m_AddtiveSceneGroup)
+            if (m_PreviousAddtiveSceneGroup != m_AddtiveSceneGroup)
             {
-                if(m_PreviousAddtiveSceneGroup != null)
+                if (m_PreviousAddtiveSceneGroup != null)
                 {
                     m_PreviousAddtiveSceneGroup.RemoveDependency(this);
                     m_PreviousAddtiveSceneGroup.ValidateBuildSettingsScenes();
@@ -124,22 +125,23 @@ namespace MLAPI.SceneManagement
             return m_PrimarySceneName;
         }
 
-        public string GetAllScenesForHash()
+        protected override void OnWriteHashSynchValues(NetworkWriter writer)
         {
-            var scenesHashBase = m_PrimarySceneName;
-            if(m_AddtiveSceneGroup != null)
+            if (m_PrimarySceneName != null || m_PrimarySceneName != string.Empty)
             {
-                scenesHashBase += m_AddtiveSceneGroup.GetAllScenesForHash();
+                writer.WriteString(m_PrimarySceneName);
             }
-            return scenesHashBase;
+
+            if (m_AddtiveSceneGroup != null)
+            {
+                m_AddtiveSceneGroup.WriteHashSynchValues(writer);
+            }
         }
     }
 
     public interface ISceneRegistrationEntry
     {
         string GetPrimaryScene();
-
-        string GetAllScenesForHash();
     }
 
 }

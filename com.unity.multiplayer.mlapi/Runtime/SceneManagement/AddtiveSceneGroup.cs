@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using MLAPI.Serialization;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -44,7 +45,6 @@ namespace MLAPI.SceneManagement
         {
             ValidateBuildSettingsScenes();
         }
-
 
         private void OnValidate()
         {
@@ -124,20 +124,23 @@ namespace MLAPI.SceneManagement
             return OnGetAdditiveScenes();
         }
 
-        public string GetAllScenesForHash()
+        protected override void OnWriteHashSynchValues(NetworkWriter writer)
         {
-            var scenesHashBase = string.Empty;
             foreach (var sceneEntry in OnGetAdditiveScenes())
             {
-                scenesHashBase += sceneEntry;
+                if (sceneEntry != null)
+                {
+                    writer.WriteString(sceneEntry.SceneEntryName);
+                }
             }
 
             foreach (var additiveSceneGroup in m_AdditiveSceneGroups)
             {
-                scenesHashBase += additiveSceneGroup.GetAllScenesForHash();
+                if (additiveSceneGroup != null)
+                {
+                    additiveSceneGroup.WriteHashSynchValues(writer);
+                }
             }
-
-            return scenesHashBase;
         }
     }
 
@@ -162,8 +165,6 @@ namespace MLAPI.SceneManagement
     public interface IAdditiveSceneGroup
     {
         List<AdditiveSceneEntry> GetAdditiveScenes();
-
-        string GetAllScenesForHash();
     }
 
 }

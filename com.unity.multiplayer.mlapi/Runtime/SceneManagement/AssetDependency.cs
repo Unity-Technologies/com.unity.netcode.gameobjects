@@ -1,23 +1,22 @@
 using System;
-
 using UnityEngine;
 #if UNITY_EDITOR
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 #endif
+using MLAPI.Serialization;
+
 
 namespace MLAPI.SceneManagement
 {
     /// <summary>
-    /// This class is designed primarily as an editor based helper class
-    /// that will shed itself of all editor specific properties during runtime
-    /// but will allow other classes to derive from it in order to maintain a
-    /// list of asset dependencies.  Dependencies are ordered in a top down fashion
-    /// such that any parents that depend upon any child-relative AssetDependency
-    /// will notify the child-relative AssetDependency that it "depends upon" this asset
+    /// This class is designed primarily as an editor based helper class that will shed itself of all editor specific
+    /// properties during runtime but will allow other classes to derive from it in order to maintain a list of asset
+    /// dependencies.  Dependencies are ordered in a top down fashion such that any parents that depend upon any
+    /// child-relative AssetDependency will notify the child-relative AssetDependency that it "depends upon" this asset.
     /// Notes:
-    /// ExecuteInEditMode attribute is required in order to assure the ObservableCollection
-    /// CollectionChanged event is registered so changes in dependencies can be more easily
+    /// ExecuteInEditMode attribute is required in order to assure the ObservableCollection CollectionChanged event is 
+    /// registered so changes in dependencies can be more easily
     /// managed.
     /// </summary>
     [ExecuteInEditMode]
@@ -176,6 +175,17 @@ namespace MLAPI.SceneManagement
         }
 
 #endif
+
+        protected virtual void OnWriteHashSynchValues(NetworkWriter writer)
+        {
+
+        }
+
+        public void WriteHashSynchValues(NetworkWriter writer)
+        {
+            OnWriteHashSynchValues(writer);
+        }
+
         private void Awake()
         {
 #if UNITY_EDITOR
@@ -186,6 +196,8 @@ namespace MLAPI.SceneManagement
 
     public interface IAssetDependency
     {
+        void WriteHashSynchValues(NetworkWriter writer);
+
 #if UNITY_EDITOR
         void AddDependency(IAssetDependency assetDependency);
         void RemoveDependency(IAssetDependency assetDependency);

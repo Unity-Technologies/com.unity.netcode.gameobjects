@@ -17,6 +17,6 @@ MonoBehaviour:
   m_KnownAdditiveSceneGroups:
   - {fileID: 0}
   m_AdditiveScenes:
-  - Scene: {fileID: 102900000, guid: c86e224bb10fd984f98618c5afe3f4a1, type: 3}
+  - Scene: {fileID: 102900000, guid: 619b9eba5892d5a4e9dd1d6cafb0059a, type: 3}
     AutoIncludeInBuild: 1
-    SceneEntryName: AnotherScene3
+    SceneEntryName: EnableDisableSceneNetworkObject
