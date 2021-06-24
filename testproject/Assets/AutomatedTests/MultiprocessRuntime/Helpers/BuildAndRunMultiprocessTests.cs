@@ -26,13 +26,14 @@ public class BuildAndRunMultiprocessTests : MonoBehaviour
         var shouldContinue = Build(); // todo try using     yield return new EnterPlayMode(); from edit mode tests so we can
         if (shouldContinue)
         {
-            Execute();
+            Execute(); // todo this is broken?
         }
         else
         {
             throw new Exception("Build failed to create!!");
         }
     }
+
     [MenuItem("MLAPI Tests/No Build - Execute multiprocess tests %t")]
     public static void ExecuteNoBuild()
     {
@@ -50,6 +51,33 @@ public class BuildAndRunMultiprocessTests : MonoBehaviour
     }
 
 
+    [MenuItem("MLAPI Tests/Delete Performance Build")]
+    public static void DeleteBuild()
+    {
+#if UNITY_EDITOR_OSX
+        var toDelete = buildPath + ".app";
+        if (Directory.Exists(toDelete))
+        {
+            Directory.Delete(toDelete, recursive: true);
+        }
+        else
+        {
+            Debug.Log($"directory {toDelete} doesn't exists");
+        }
+#elif UNITY_EDITOR_WIN
+        var exePath = Path.Combine(buildPath, $"{PlayerSettings.productName}.exe");
+        if (File.Exists(exePath))
+        {
+            File.Delete(exePath);
+        }
+        else
+        {
+            Debug.Log($"exe {exePath} doesn't exists");
+        }
+#else
+        throw new NotImplementedException();
+#endif
+    }
 
     /// <summary>
     /// To run these from the command line, call
@@ -82,20 +110,11 @@ public class BuildAndRunMultiprocessTests : MonoBehaviour
 
         // var buildPath = Application.streamingAssetsPath;
         // deleting so we don't endup testing on outdated builds
+        DeleteBuild();
 #if UNITY_EDITOR_OSX
-        if (Directory.Exists(buildPath))
-        {
-            Directory.Delete(buildPath, recursive: true);
-        }
         var buildTarget = BuildTarget.StandaloneOSX;
-
 #elif UNITY_EDITOR_WIN
         // todo test on windows
-        var exePath = Path.Combine(buildPath, $"{PlayerSettings.productName}.exe");
-        if (File.Exists(exePath))
-        {
-            File.Delete(exePath);
-        }
         var buildTarget = BuildTarget.StandaloneWindows;
 #else
         throw new NotImplementedException("Building for this platform is not supported");

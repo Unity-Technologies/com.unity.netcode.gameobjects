@@ -97,18 +97,7 @@ namespace MLAPI.MultiprocessRuntimeTests
         }
 
         [UnityTest, Performance, MultiprocessContextBasedTest]
-        [TestCase(1, ExpectedResult = null)]
-        [TestCase(10, ExpectedResult = null)]
-        [TestCase(100, ExpectedResult = null)]
-        [TestCase(800, ExpectedResult = null)]
-        [TestCase(850, ExpectedResult = null)]
-        [TestCase(900, ExpectedResult = null)]
-        [TestCase(1000, ExpectedResult = null)]
-        [TestCase(2500, ExpectedResult = null)]
-        [TestCase(5000, ExpectedResult = null)]
-        [TestCase(10000, ExpectedResult = null)]
-        [TestCase(15000, ExpectedResult = null)]
-        public IEnumerator TestSpawningManyObjects(int nbObjects)
+        public IEnumerator TestSpawningManyObjects([Values(1, 1000, 10000)] int nbObjects)
         {
             InitContextSteps();
 

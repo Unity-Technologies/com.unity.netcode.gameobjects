@@ -6,7 +6,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using MLAPI;
 using MLAPI.Messaging;
 using MLAPI.NetworkVariable;
@@ -117,7 +116,7 @@ internal class TestCoordinator : NetworkBehaviour
     public void OnDestroy()
     {
         m_ErrorMessages.OnListChanged -= OnErrorMessageChanged;
-        if (NetworkManager != null)
+        if (NetworkObject != null && NetworkManager != null)
         {
             NetworkManager.OnClientDisconnectCallback -= OnClientDisconnectCallback;
         }
@@ -493,7 +492,6 @@ internal class TestCoordinator : NetworkBehaviour
         public static string GetMethodIdentifier(string callerTypeName)
         {
             var info = callerTypeName;
-            Debug.Log($"GetMethodIdentifier!!!! {info}");
             return info;
         }
 
@@ -508,8 +506,7 @@ internal class TestCoordinator : NetworkBehaviour
         /// <param name="paramToPass">parameters to pass to action</param>
         /// <param name="networkManager"></param>
         /// <param name="spansMultipleUpdates"> waits multiple frames before allowing the execution to continue. This means ClientFinishedServerRpc must be called manually</param>
-        /// <param name="callerName">Don't use this, this will be filled in automatically</param>
-        public ExecuteStepInContext(StepExecutionContext actionContext, Action<byte[]> todo, byte[] paramToPass = default, NetworkManager networkManager = null, bool spansMultipleUpdates = false, Func<bool> additionalIsFinishedWaiter = null, [CallerMemberName] string callerName = "")
+        public ExecuteStepInContext(StepExecutionContext actionContext, Action<byte[]> todo, byte[] paramToPass = default, NetworkManager networkManager = null, bool spansMultipleUpdates = false, Func<bool> additionalIsFinishedWaiter = null)
         {
             m_StartTime = Time.time;
             m_IsRegistering = Instance.isRegistering;

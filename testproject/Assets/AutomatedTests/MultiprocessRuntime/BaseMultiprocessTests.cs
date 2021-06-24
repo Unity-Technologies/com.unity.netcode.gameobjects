@@ -1,15 +1,6 @@
 using System;
 using System.Collections;
-using System.Diagnostics;
-using System.Linq;
-using System.Threading;
-using MLAPI;
 using NUnit.Framework;
-using NUnit.Framework.Constraints;
-#if UNITY_EDITOR
-using UnityEditor;
-using UnityEditor.Build.Reporting;
-#endif
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
@@ -42,8 +33,6 @@ namespace MLAPI.MultiprocessRuntimeTests
             {
                 Assert.Ignore("Ignoring tests that shouldn't run from unity editor. Performance tests should be run from remote test execution on device (this can be ran using the \"run selected tests (your platform) button\"");
             }
-            // todo cleanup comments
-            // Build(TestCoordinator.buildPath);
 
             SceneManager.LoadScene(mainSceneName, LoadSceneMode.Single);
             SceneManager.sceneLoaded += OnSceneLoaded;
@@ -131,10 +120,7 @@ namespace MLAPI.MultiprocessRuntimeTests
         }
 
         [UnityTest, MultiprocessContextBasedTest]
-        [TestCase(1, ExpectedResult = null)]
-        [TestCase(2, ExpectedResult = null)]
-        [TestCase(3, ExpectedResult = null)]
-        public IEnumerator TestWithParameters(int a)
+        public IEnumerator TestWithParameters([Values(1, 2, 3)]int a)
         {
             InitContextSteps();
 
@@ -174,6 +160,39 @@ namespace MLAPI.MultiprocessRuntimeTests
                 Assert.Less(clientB, 5);
                 Assert.Greater(clientB, 1);
             }, paramToPass: BitConverter.GetBytes(b));
+        }
+
+        [UnityTest, MultiprocessContextBasedTest]
+        public IEnumerator ContextTestWithAdditionalWait()
+        {
+            InitContextSteps();
+
+            int maxValue = 10;
+            yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Clients, _ =>
+            {
+                int count = 0;
+                void Update(float _)
+                {
+                    TestCoordinator.Instance.WriteTestResultsServerRpc(count++);
+                    if (count > maxValue)
+                    {
+                        NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate -= Update;
+                    }
+                }
+                NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate += Update;
+            }, additionalIsFinishedWaiter: () =>
+            {
+                return TestCoordinator.PeekLatestResult(TestCoordinator.AllClientIdExceptMine[0]) == maxValue;
+            });
+            yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Server, _ =>
+            {
+                var current = 0;
+                foreach (var res in TestCoordinator.ConsumeCurrentResult())
+                {
+                    Assert.That(res.result, Is.EqualTo(current++));
+                }
+                Assert.That(current - 1, Is.EqualTo(maxValue));
+            });
         }
 
         [UnityTest, MultiprocessContextBasedTest]
