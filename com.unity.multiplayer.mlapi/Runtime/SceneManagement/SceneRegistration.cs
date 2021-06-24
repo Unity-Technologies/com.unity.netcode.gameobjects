@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
+using UnityEngine.SceneManagement;
 #endif
 
 namespace MLAPI.SceneManagement
@@ -41,7 +42,7 @@ namespace MLAPI.SceneManagement
             {
                 var sceneName = GetSceneNameFromPath(editorBuildSettingsScene.path);
 
-                if(!s_BuildSettingsSceneLookUpTable.ContainsKey(sceneName))
+                if (!s_BuildSettingsSceneLookUpTable.ContainsKey(sceneName))
                 {
                     s_BuildSettingsSceneLookUpTable.Add(sceneName, editorBuildSettingsScene);
                 }
@@ -50,15 +51,15 @@ namespace MLAPI.SceneManagement
 
         internal static void AddOrRemoveSceneAsset(SceneAsset scene, bool addScene)
         {
-            if(s_BuildSettingsSceneLookUpTable.Count != EditorBuildSettings.scenes.Length)
+            if (s_BuildSettingsSceneLookUpTable.Count != EditorBuildSettings.scenes.Length)
             {
                 BuildLookupTableFromEditorBuildSettings();
             }
 
-            if(addScene)
+            if (addScene)
             {
                 // If the scene does not exist in our local list, then add it and update the build settings
-                if(!s_BuildSettingsSceneLookUpTable.ContainsKey(scene.name))
+                if (!s_BuildSettingsSceneLookUpTable.ContainsKey(scene.name))
                 {
                     s_BuildSettingsSceneLookUpTable.Add(scene.name, new EditorBuildSettingsScene(AssetDatabase.GetAssetPath(scene), true));
                     EditorBuildSettings.scenes = s_BuildSettingsSceneLookUpTable.Values.ToArray();
@@ -79,10 +80,33 @@ namespace MLAPI.SceneManagement
         [HideInInspector]
         internal bool AssignedToNetworkManager;
 
-        internal void SetAssignedToNetworkManager(bool isAssigned)
+        [SceneReadOnlyProperty]
+        [SerializeField]
+        internal SceneAsset NetworkManagerScene;
+
+        
+
+        internal static void OnGuiHandler(Rect position, SerializedProperty property, GUIContent label)
+        {
+
+        }
+
+
+        internal void AssignNetworkManagerScene(bool isAssigned = true)
         {
             AssignedToNetworkManager = isAssigned;
+            if (isAssigned)
+            {
+                var currentScene = SceneManager.GetActiveScene();
+                NetworkManagerScene = AssetDatabase.LoadAssetAtPath<SceneAsset>(currentScene.path);
+            }
+            else
+            {
+                NetworkManagerScene = null;
+            }
+            ValidateBuildSettingsScenes();
         }
+
 
         protected override bool OnShouldAssetBeIncluded()
         {

@@ -10,10 +10,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b9f97901b434bd84bb2a433719183485, type: 3}
-  m_Name: AdditiveSceneGroup 1
+  m_Name: AdditiveSceneGroupA_2
   m_EditorClassIdentifier: 
-  m_AdditiveSceneGroups: []
-  m_KnownAdditiveSceneGroups: []
+  m_AdditiveSceneGroups:
+  - {fileID: 11400000, guid: 18cfeab1fd0509e46b827b44b4cf48fb, type: 2}
+  m_KnownAdditiveSceneGroups:
+  - {fileID: 11400000, guid: 18cfeab1fd0509e46b827b44b4cf48fb, type: 2}
   m_AdditiveScenes:
   - Scene: {fileID: 102900000, guid: 68615f585c69ff246add2c8ee92f9944, type: 3}
     AutoIncludeInBuild: 1

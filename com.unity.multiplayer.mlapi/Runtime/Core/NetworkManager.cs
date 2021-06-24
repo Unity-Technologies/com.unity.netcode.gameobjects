@@ -226,9 +226,10 @@ namespace MLAPI
         internal static event Action OnSingletonReady;
 
 #if UNITY_EDITOR
+        // Only used in the editor to handle removing scenes marked to auto populate the build settings
+        // Needs to be serialized to keep the state of the NetworkManager instance and the SceneRegistration entry
         [HideInInspector]
         [SerializeField]
-        // Only used in the editor to handle removing scenes marked to auto populate the build settings
         private SceneRegistration m_SceneRegistration;
         private void OnValidate()
         {
@@ -245,18 +246,18 @@ namespace MLAPI
                 }
             }
 
-            // Trap for when the SceneRegistration is set or deleted to determine if the scenes associated with the SceneRegistration
+
+            // Detect when SceneRegistration is assigned or deleted to determine if the scenes associated with the SceneRegistration
             // should be included in the build settings.
             if(NetworkConfig.SceneRegistration != null && !NetworkConfig.SceneRegistration.AssignedToNetworkManager)
             {
                 m_SceneRegistration = NetworkConfig.SceneRegistration;
-                NetworkConfig.SceneRegistration.AssignedToNetworkManager = true;
-                NetworkConfig.SceneRegistration.ValidateBuildSettingsScenes();
+                NetworkConfig.SceneRegistration.AssignNetworkManagerScene();                
+                
             }
-            else if (m_SceneRegistration != null && m_SceneRegistration.AssignedToNetworkManager)
+            else if (m_SceneRegistration != null && NetworkConfig.SceneRegistration != m_SceneRegistration && m_SceneRegistration.AssignedToNetworkManager)
             {
-                m_SceneRegistration.AssignedToNetworkManager = false;
-                m_SceneRegistration.ValidateBuildSettingsScenes();
+                m_SceneRegistration.AssignNetworkManagerScene(false);
                 m_SceneRegistration = null;
             }
 

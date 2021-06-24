@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 180fe42d996da264ab3d32e3fc9033ca, type: 3}
+  m_Name: SceneRegistration1
+  m_EditorClassIdentifier: 
+  m_SceneRegistrations:
+  - {fileID: 11400000, guid: 133689a675e9849438b94f75e1e479b3, type: 2}
+  - {fileID: 11400000, guid: 868c31ba31be71c43801cecb19b3631c, type: 2}
+  m_KnownSceneRegistrations:
+  - {fileID: 11400000, guid: 133689a675e9849438b94f75e1e479b3, type: 2}
+  - {fileID: 11400000, guid: 868c31ba31be71c43801cecb19b3631c, type: 2}
+  AssignedToNetworkManager: 1
