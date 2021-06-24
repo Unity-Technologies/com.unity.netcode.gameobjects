@@ -30,8 +30,18 @@ public class BuildAndRunMultiprocessTests : MonoBehaviour
         }
     }
 
+    [MenuItem("MLAPI Tests/Build Test Player in debug mode")]
+    public static void BuildDebug()
+    {
+        var success = Build(true);
+        if (!success)
+        {
+            throw new Exception("Build failed!");
+        }
+    }
 
-    [MenuItem("MLAPI Tests/Delete Performance Build")]
+
+    [MenuItem("MLAPI Tests/Delete Test Build")]
     public static void DeleteBuild()
     {
 #if UNITY_EDITOR_OSX
@@ -64,7 +74,7 @@ public class BuildAndRunMultiprocessTests : MonoBehaviour
     /// reporting. We only want to main node to do that, worker nodes should be dumb
     /// </summary>
     /// <returns></returns>
-    public static bool Build()
+    public static bool Build(bool isDebug=false)
     {
         // Save standalone build path to file
         var f = File.CreateText(Path.Combine(Application.streamingAssetsPath, TestCoordinator.buildInfoFileName));
@@ -85,9 +95,12 @@ public class BuildAndRunMultiprocessTests : MonoBehaviour
         var buildOptions = BuildOptions.None;
         buildOptions |= BuildOptions.IncludeTestAssemblies;
         buildOptions |= BuildOptions.StrictMode;
-        // buildOptions |= BuildOptions.Development;
-        // buildOptions |= BuildOptions.AllowDebugging; // enable this if you want to debug your players. Your players
-        // will have more connection permission popups when launching though
+        if (isDebug)
+        {
+            buildOptions |= BuildOptions.Development;
+            buildOptions |= BuildOptions.AllowDebugging; // enable this if you want to debug your players. Your players
+            // will have more connection permission popups when launching though
+        }
 
         buildOptions &= ~BuildOptions.AutoRunPlayer;
         var buildReport = BuildPipeline.BuildPlayer(

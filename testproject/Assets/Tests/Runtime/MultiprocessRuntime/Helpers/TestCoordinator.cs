@@ -372,19 +372,19 @@ internal class TestCoordinator : NetworkBehaviour
 
     public void Update()
     {
-        if (NetworkManager.Singleton.IsConnectedClient)
+        if ((IsServer && NetworkManager.Singleton.IsListening) || (IsClient && NetworkManager.Singleton.IsConnectedClient))
         {
             m_TimeSinceLastConnected = Time.time;
         }
         else if (Time.time - m_TimeSinceLastConnected > maxWaitTimeout || m_ShouldShutdown)
         {
             // Make sure we don't have zombie processes
-            Debug.Log($"quitting application, shouldShutdown set to {m_ShouldShutdown}, is connected {NetworkManager.Singleton.IsConnectedClient}");
+            Debug.Log($"quitting application, shouldShutdown set to {m_ShouldShutdown}, is listening {NetworkManager.Singleton.IsListening}, is connected client {NetworkManager.Singleton.IsConnectedClient}");
             if (!m_ShouldShutdown)
             {
-                Assert.Fail("something wrong happened, got disconnected");
+                Application.Quit();
+                Assert.Fail($"something wrong happened, was not connected for {Time.time - m_TimeSinceLastConnected} seconds");
             }
-            Application.Quit();
         }
     }
 
