@@ -615,7 +615,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 593a2fe42fa9d37498c96f9a383b6521, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  DontDestroy: 1
+  DontDestroy: 0
   RunInBackground: 1
   LogLevel: 0
   NetworkConfig:

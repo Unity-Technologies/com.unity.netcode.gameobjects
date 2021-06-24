@@ -90,9 +90,9 @@ namespace MLAPI.MultiprocessRuntimeTests
         }
 
         [OneTimeSetUp]
-        public override void SetupSuite()
+        public override void SetupTestFixture()
         {
-            base.SetupSuite();
+            base.SetupTestFixture();
             SceneManager.sceneLoaded += OnSceneLoadedInitSetupSuite;
         }
 

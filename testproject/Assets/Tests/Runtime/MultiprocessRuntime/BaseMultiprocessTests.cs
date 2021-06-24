@@ -26,7 +26,7 @@ namespace MLAPI.MultiprocessRuntimeTests
         protected abstract int NbWorkers { get; }
 
         [OneTimeSetUp]
-        public virtual void SetupSuite()
+        public virtual void SetupTestFixture()
         {
             if (ShouldIgnoreTests)
             {
@@ -48,6 +48,7 @@ namespace MLAPI.MultiprocessRuntimeTests
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
             Debug.Log("starting MLAPI host");
+            SceneManager.sceneLoaded -= OnSceneLoaded;
             NetworkManager.Singleton.StartHost();
         }
 
@@ -80,7 +81,6 @@ namespace MLAPI.MultiprocessRuntimeTests
         {
             if (!ShouldIgnoreTests)
             {
-                SceneManager.sceneLoaded -= OnSceneLoaded;
                 Debug.Log("Teardown, closing remote clients and stopping host");
                 TestCoordinator.Instance.CloseRemoteClientRpc();
                 NetworkManager.Singleton.StopHost();

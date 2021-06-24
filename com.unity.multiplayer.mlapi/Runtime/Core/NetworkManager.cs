@@ -1173,7 +1173,7 @@ namespace MLAPI
 
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
                 {
-                    NetworkLog.LogInfo($"Data Header: {nameof(messageType)}={NetworkConstants.MESSAGE_NAMES[messageType]}(int={messageType})");
+                    NetworkLog.LogInfo($"Handling incoming Data Header: {nameof(messageType)}={NetworkConstants.MESSAGE_NAMES[messageType]}(int={messageType})");
                 }
 
                 // Client tried to send a network message that was not the connection request before he was accepted.
