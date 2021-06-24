@@ -135,14 +135,16 @@ namespace MLAPI.SceneManagement
         }
 
         /// <summary>
-        /// This will always return true which signifies any dependency that is contained
-        /// within this branch of potential dependencies should be considered when checking
-        /// to see if it should be added to the build settings
+        /// This is the root deciding factor for all checks to determine if assets referenced
+        /// within this specific branch of scene asset references should be included.
+        /// Note: if there are other SceneRegistration instances assigned to other NetworkManagers
+        /// then all or some (depending upon what is included in the other SceneRegistration branches)
+        /// will still be included.
         /// </summary>
         /// <returns></returns>
         protected override bool OnIsRootAssetDependency()
         {
-            return true;
+            return OnShouldAssetBeIncluded();
         }
 #endif
         public string GetAllScenesForHash()

@@ -226,7 +226,8 @@ namespace MLAPI
         internal static event Action OnSingletonReady;
 
 #if UNITY_EDITOR
-
+        [HideInInspector]
+        [SerializeField]
         // Only used in the editor to handle removing scenes marked to auto populate the build settings
         private SceneRegistration m_SceneRegistration;
         private void OnValidate()
