@@ -5,7 +5,7 @@ using UnityEngine;
 namespace MLAPI.Interest
 {
     // interest *system* instead of interest node ?
-    public class InterestManager : IInterestHandler
+    public class InterestManager
     {
         private readonly InterestNodeStatic m_DefaultInterestNode;
 

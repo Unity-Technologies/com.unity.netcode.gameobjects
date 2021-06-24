@@ -7,13 +7,6 @@ using UnityEngine.Serialization;
 
 namespace MLAPI.Interest
 {
-    public interface IInterestHandler
-    {
-        public void AddObject(in NetworkObject obj);
-        public void RemoveObject(in NetworkObject obj);
-        public void QueryFor(in NetworkClient client, HashSet<NetworkObject> results);
-    }
-
     public abstract class InterestNode : ScriptableObject
     {
         public abstract void QueryFor(in NetworkClient client, HashSet<NetworkObject> results);
@@ -21,6 +14,4 @@ namespace MLAPI.Interest
         public abstract void RemoveObject(in NetworkObject obj);
         public abstract void UpdateObject(in NetworkObject obj);
     };
-
-
 }
