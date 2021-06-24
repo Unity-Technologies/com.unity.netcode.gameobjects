@@ -20,26 +20,6 @@ public class BuildAndRunMultiprocessTests : MonoBehaviour
     public static string buildPath => Path.Combine(Path.GetDirectoryName(Application.dataPath), "Builds/MultiprocessTestBuild");
 
 #if UNITY_EDITOR
-    [MenuItem(BuildAndExecuteMenuName)]
-    public static void BuildAndExecute()
-    {
-        var shouldContinue = Build(); // todo try using     yield return new EnterPlayMode(); from edit mode tests so we can
-        if (shouldContinue)
-        {
-            Execute(); // todo this is broken?
-        }
-        else
-        {
-            throw new Exception("Build failed to create!!");
-        }
-    }
-
-    [MenuItem("MLAPI Tests/No Build - Execute multiprocess tests %t")]
-    public static void ExecuteNoBuild()
-    {
-        Execute();
-    }
-
     [MenuItem("MLAPI Tests/Build Test Player #t")]
     public static void BuildNoExecute()
     {
@@ -80,23 +60,6 @@ public class BuildAndRunMultiprocessTests : MonoBehaviour
     }
 
     /// <summary>
-    /// To run these from the command line, call
-    /// runMultiplayerTests.sh
-    ///
-    /// </summary>
-    /// <exception cref="Exception"></exception>
-    public static void Execute()
-    {
-        // create builds from the test itself
-        StartMainTestNodeInEditor();
-        // todo this doesn't work from the command line. if -executeMethod is used, EditorApplication doesn't update
-        // however, calling from the commandline -runTests with platform playmode does work. Will need to figure out
-        // what's the difference between the two and how to get EditorApplication to run outside of -runTests
-        // right now, can just run both executeMethod (which will launch the players) and -runTests one after the other to
-        // get a successful test.
-    }
-
-    /// <summary>
     /// Needs a separate build than the standalone test builds since we don't want the player to try to connect to the editor to do test
     /// reporting. We only want to main node to do that, worker nodes should be dumb
     /// </summary>
@@ -134,24 +97,6 @@ public class BuildAndRunMultiprocessTests : MonoBehaviour
             buildOptions);
 
         return buildReport.summary.result == BuildResult.Succeeded;
-    }
-
-    private static void StartMainTestNodeInEditor()
-    {
-        var testRunnerApi = ScriptableObject.CreateInstance<TestRunnerApi>();
-
-        testRunnerApi.Execute(new ExecutionSettings()
-            {
-                filters = new Filter[]
-                {
-                    new Filter()
-                    {
-                        categoryNames = new [] {MultiprocessTests.multiprocessCategoryName},
-                        testMode = TestMode.PlayMode
-                    },
-                },
-            }
-        );
     }
 #endif
 
