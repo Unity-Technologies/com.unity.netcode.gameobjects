@@ -379,7 +379,11 @@ internal class TestCoordinator : NetworkBehaviour
         else if (Time.time - m_TimeSinceLastConnected > maxWaitTimeout || m_ShouldShutdown)
         {
             // Make sure we don't have zombie processes
-            Debug.Log($"quitting application, shouldShutdown set to {m_ShouldShutdown}");
+            Debug.Log($"quitting application, shouldShutdown set to {m_ShouldShutdown}, is connected {NetworkManager.Singleton.IsConnectedClient}");
+            if (!m_ShouldShutdown)
+            {
+                Assert.Fail("something wrong happened, got disconnected");
+            }
             Application.Quit();
         }
     }

@@ -15,7 +15,7 @@ using UnityEngine;
 /// </summary>
 public class BuildAndRunMultiprocessTests : MonoBehaviour
 {
-
+    // todo make sure my asmdef changes haven't removed any usual tests, that all previous tests are there
     public const string BuildAndExecuteMenuName = "MLAPI Tests/Build - Execute multiprocess tests #%t";
     public static string buildPath => Path.Combine(Path.GetDirectoryName(Application.dataPath), "Builds/MultiprocessTestBuild");
 
