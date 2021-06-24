@@ -108,25 +108,7 @@ namespace MLAPI.Prototyping
 
         private Vector3 m_CurrentPosition
         {
-            get
-            {
-                if (m_Transform == null)
-                {
-                    m_Transform = transform;
-                }
-                return m_UseLocal.Value ? m_Transform.localPosition : m_Transform.position;
-            }
-            set
-            {
-                if (m_UseLocal.Value)
-                {
-                    m_Transform.localPosition = value;
-                }
-                else
-                {
-                    m_Transform.position = value;
-                }
-            }
+            get { return m_UseLocal.Value ? m_Transform.localPosition : m_Transform.position; }
         }
 
         private Quaternion m_CurrentRotation
