@@ -56,7 +56,7 @@ namespace MLAPI.MultiprocessRuntimeTests
 
             public NetworkObject HandleNetworkPrefabSpawn(ulong ownerClientId, Vector3 position, Quaternion rotation)
             {
-                var networkObject = m_ObjectPool.Get().GetComponent<NetworkObject>();
+                var networkObject = m_ObjectPool.Get().GetComponent<NetworkObject>(); // todo this is expensive
                 var r = new Random();
                 Transform netTransform = networkObject.transform;
                 netTransform.position = new Vector3(r.Next(-10, 10), r.Next(-10, 10), r.Next(-10, 10));
@@ -117,7 +117,6 @@ namespace MLAPI.MultiprocessRuntimeTests
                 void Update(float deltaTime)
                 {
                     var count = OneNetVar.nbInstances;
-                    Debug.Log($"count is {count}");
                     if (count > 0)
                     {
                         TestCoordinator.Instance.WriteTestResultsServerRpc(count);
@@ -178,10 +177,10 @@ namespace MLAPI.MultiprocessRuntimeTests
                 }
 
                 Assert.That(TestCoordinator.AllClientIdsWithResults.Length, Is.EqualTo(NbWorkers));
-                foreach (var current in TestCoordinator.ConsumeCurrentResult())
+                foreach (var (clientId, result) in TestCoordinator.ConsumeCurrentResult())
                 {
-                    Debug.Log($"got result {current.result} from key {current.clientId}");
-                    Measure.Custom(allocated, current.result);
+                    Debug.Log($"got result {result} from key {clientId}");
+                    Measure.Custom(allocated, result);
                 }
 
                 Debug.Log($"finished with test for {nbObjects} objects");
@@ -209,17 +208,16 @@ namespace MLAPI.MultiprocessRuntimeTests
                 NetworkManager.Singleton.PrefabHandler.RemoveHandler(prefabToSpawn);
                 NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate = null;
 
-                void WaitForAllOneNetVarToDespawn(float deltaTime)
+                void UpdateWaitForAllOneNetVarToDespawn(float deltaTime)
                 {
                     var count = OneNetVar.nbInstances;
-                    Debug.Log($"waiting for despawn, count is {count} before client setting its done");
                     if (count == 0)
                     {
-                        NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate -= WaitForAllOneNetVarToDespawn;
+                        NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate -= UpdateWaitForAllOneNetVarToDespawn;
                         TestCoordinator.Instance.ClientFinishedServerRpc();
                     }
                 }
-                NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate += WaitForAllOneNetVarToDespawn;
+                NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate += UpdateWaitForAllOneNetVarToDespawn;
             }, waitMultipleUpdates: true);
         }
 
@@ -233,14 +231,9 @@ namespace MLAPI.MultiprocessRuntimeTests
         private static OneNetVar SetupSpawnedObject(GameObject spawnedObject)
         {
             spawnedObject.name = "ReplicatedObjectTest1";
-            var oneNetVar = spawnedObject.AddComponent<OneNetVar>();
+            var oneNetVar = spawnedObject.AddComponent<OneNetVar>(); // todo this is expensive
             oneNetVar.Init();
             return oneNetVar;
         }
-
-        // private static void TeardownSpawnedObject(GameObject spawnedObject)
-        // {
-        //     GameObject.Destroy(spawnedObject.GetComponent<OneNetVar>());
-        // }
     }
 }

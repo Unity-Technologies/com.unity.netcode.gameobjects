@@ -68,8 +68,7 @@ namespace MLAPI.MultiprocessRuntimeTests
         {
             InitContextSteps();
 
-            var exceptionMessageToTest = "This is an exception for TestCoordinator that's expected";
-
+            const string exceptionMessageToTest = "This is an exception for TestCoordinator that's expected";
             yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Clients, _ =>
             {
                 throw new Exception(exceptionMessageToTest);
@@ -82,7 +81,7 @@ namespace MLAPI.MultiprocessRuntimeTests
                 }
             });
 
-            var exceptionUpdateMessageToTest = "This is an exception for update loop client side that's expected";
+            const string exceptionUpdateMessageToTest = "This is an exception for update loop client side that's expected";
             yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Clients, _ =>
             {
                 void Update(float __)
@@ -107,7 +106,7 @@ namespace MLAPI.MultiprocessRuntimeTests
         {
             InitContextSteps();
 
-            int maxValue = 10;
+            const int maxValue = 10;
             yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Clients, _ =>
             {
                 int count = 0;
@@ -187,7 +186,7 @@ namespace MLAPI.MultiprocessRuntimeTests
                 Assert.That(resultCountFromWorkers, Is.EqualTo(NbWorkers));
             });
 
-            int timeToWait = 4;
+            const int timeToWait = 4;
             yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Clients, _ =>
             {
                 void Update(float __)
@@ -198,10 +197,6 @@ namespace MLAPI.MultiprocessRuntimeTests
                         TestCoordinator.Instance.WriteTestResultsServerRpc(Time.time);
 
                         TestCoordinator.Instance.ClientFinishedServerRpc(); // since finishOnInvoke is false, we need to do this manually
-                    }
-                    else
-                    {
-                        Debug.Log($"current time on client : {Time.time}");
                     }
                 }
 

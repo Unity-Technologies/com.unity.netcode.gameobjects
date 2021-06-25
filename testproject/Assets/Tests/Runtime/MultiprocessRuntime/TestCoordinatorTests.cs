@@ -43,9 +43,9 @@ namespace MLAPI.MultiprocessRuntimeTests
             {
                 yield return new WaitUntil(TestCoordinator.ResultIsSet());
 
-                var current = TestCoordinator.ConsumeCurrentResult().Take(1).Single();
-                Debug.Log($"got results, asserting, result is {current.result} from key {current.clientId}");
-                Assert.Greater(current.result, 0f);
+                var (clientId, result) = TestCoordinator.ConsumeCurrentResult().Take(1).Single();
+                Debug.Log($"got results, asserting, result is {result} from key {clientId}");
+                Assert.Greater(result, 0f);
                 nbResults++;
             }
             Assert.That(nbResults, Is.EqualTo(NbWorkers));
@@ -61,9 +61,9 @@ namespace MLAPI.MultiprocessRuntimeTests
             {
                 yield return new WaitUntil(TestCoordinator.ResultIsSet());
 
-                var current = TestCoordinator.ConsumeCurrentResult().Take(1).Single();
-                Debug.Log($"got results, asserting, result is {current.result} from key {current.clientId}");
-                Assert.That(current.result, Is.EqualTo(99));
+                var (clientId, result) = TestCoordinator.ConsumeCurrentResult().Take(1).Single();
+                Debug.Log($"got results, asserting, result is {result} from key {clientId}");
+                Assert.That(result, Is.EqualTo(99));
                 nbResults++;
             }
             Assert.That(nbResults, Is.EqualTo(NbWorkers));

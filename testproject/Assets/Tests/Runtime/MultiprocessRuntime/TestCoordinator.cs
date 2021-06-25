@@ -1,12 +1,12 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Reflection;
 using MLAPI;
+using MLAPI.Configuration;
+using MLAPI.Logging;
 using MLAPI.Messaging;
 using NUnit.Framework;
 using NUnit.Framework.Interfaces;
@@ -165,7 +165,6 @@ public class TestCoordinator : NetworkBehaviour
     [ServerRpc(RequireOwnership = false)]
     public void WriteTestResultsServerRpc(float result, ServerRpcParams receiveParams = default)
     {
-        Debug.Log($"received test results {result}");
         var senderId = receiveParams.Receive.SenderClientId;
         if (!m_TestResultsLocal.ContainsKey(senderId))
         {
@@ -314,18 +313,18 @@ public class TestCoordinator : NetworkBehaviour
         {
             Debug.Log($"received client RPC for method {methodInfoString}");
             var split = methodInfoString.Split(k_MethodFullNameSplitChar);
-            (string classToExecute, string staticMethodToExecute) info = (split[0], split[1]);
+            var (classToExecute, staticMethodToExecute) = (split[0], split[1]);
 
-            var foundType = Type.GetType(info.classToExecute);
+            var foundType = Type.GetType(classToExecute);
             if (foundType == null)
             {
-                throw new Exception($"couldn't find {info.classToExecute}");
+                throw new Exception($"couldn't find {classToExecute}");
             }
 
-            var foundMethod = foundType.GetMethod(info.staticMethodToExecute, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
+            var foundMethod = foundType.GetMethod(staticMethodToExecute, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
             if (foundMethod == null)
             {
-                throw new Exception($"couldn't find method {info.staticMethodToExecute}");
+                throw new Exception($"couldn't find method {staticMethodToExecute}");
             }
 
             foundMethod.Invoke(null, args != null ? new object[] { args } : null);
@@ -408,7 +407,7 @@ public class TestCoordinator : NetworkBehaviour
             s_MethodIDCounter[methodIdentifier] = 0;
         }
 
-        public static string GetMethodIdentifier(string callerTypeName)
+        private static string GetMethodIdentifier(string callerTypeName)
         {
             var info = callerTypeName;
             return info;
@@ -474,9 +473,9 @@ public class TestCoordinator : NetworkBehaviour
                     if (networkManager.IsServer)
                     {
                         Instance.TriggerActionIDClientRpc(currentActionID, paramToPass,
-                            clientRpcParams: new ClientRpcParams()
+                            clientRpcParams: new ClientRpcParams
                             {
-                                Send = new ClientRpcSendParams() { TargetClientIds = AllClientIdExceptMine.ToArray() }
+                                Send = new ClientRpcSendParams { TargetClientIds = AllClientIdExceptMine.ToArray() }
                             });
                         foreach (var clientId in AllClientIdExceptMine)
                         {
