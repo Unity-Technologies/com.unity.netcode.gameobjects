@@ -12,13 +12,14 @@ using UnityEngine;
 /// </summary>
 public class BuildMultiprocessTestPlayer : MonoBehaviour
 {
-    public const string BuildAndExecuteMenuName = "MLAPI Tests/Build - Execute multiprocess tests #%t";
+    public const string multiprocessBaseMenuName = "MLAPI Multiprocess Test";
+    public const string BuildAndExecuteMenuName = multiprocessBaseMenuName + "/Build - Execute multiprocess tests #%t";
     public static string buildPath => Path.Combine(Path.GetDirectoryName(Application.dataPath), "Builds/MultiprocessTestBuild");
     public const string mainSceneName = "MultiprocessTestingScene";
 
 
 #if UNITY_EDITOR
-    [MenuItem("MLAPI Tests/Build Test Player #t")]
+    [MenuItem(multiprocessBaseMenuName+"/Build Test Player #t")]
     public static void BuildNoExecute()
     {
         var success = Build();
@@ -28,7 +29,7 @@ public class BuildMultiprocessTestPlayer : MonoBehaviour
         }
     }
 
-    [MenuItem("MLAPI Tests/Build Test Player in debug mode")]
+    [MenuItem(multiprocessBaseMenuName+"/Build Test Player in debug mode")]
     public static void BuildDebug()
     {
         var success = Build(true);
@@ -38,7 +39,7 @@ public class BuildMultiprocessTestPlayer : MonoBehaviour
         }
     }
 
-    [MenuItem("MLAPI Tests/Delete Test Build")]
+    [MenuItem(multiprocessBaseMenuName+"/Delete Test Build")]
     public static void DeleteBuild()
     {
         switch (Application.platform)
