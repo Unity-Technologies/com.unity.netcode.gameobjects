@@ -4,14 +4,13 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
-using Debug = UnityEngine.Debug;
 
 namespace MLAPI.MultiprocessRuntimeTests
 {
     public class MultiprocessTestsAttribute : CategoryAttribute
     {
         public const string multiprocessCategoryName = "Multiprocess";
-        public MultiprocessTestsAttribute(params string[] nodesRequired) : base(multiprocessCategoryName){}
+        public MultiprocessTestsAttribute() : base(multiprocessCategoryName){}
     }
 
     [MultiprocessTests]
@@ -38,13 +37,13 @@ namespace MLAPI.MultiprocessRuntimeTests
             Debug.Log("starting processes");
             for (int i = 0; i < NbWorkers; i++)
             {
-                TestCoordinator.StartWorkerNode(); // will automatically start as clients
+                MultiprocessOrchestration.StartWorkerNode(); // will automatically start as clients
             }
 
             Debug.Log("processes started");
         }
 
-        private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+        private static void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
             Debug.Log("starting MLAPI host");
             SceneManager.sceneLoaded -= OnSceneLoaded;
@@ -55,10 +54,12 @@ namespace MLAPI.MultiprocessRuntimeTests
         public virtual IEnumerator Setup()
         {
             yield return new WaitUntil(() => NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer);
+
             var startTime = Time.time;
             while (NetworkManager.Singleton.ConnectedClients.Count <= NbWorkers)
             {
                 yield return new WaitForSeconds(0.2f);
+
                 if (Time.time - startTime > TestCoordinator.maxWaitTimeout)
                 {
                     throw new Exception($"waiting too long to see clients to connect, got {NetworkManager.Singleton.ConnectedClients.Count - 1} clients, but was expecting {NbWorkers}, failing");

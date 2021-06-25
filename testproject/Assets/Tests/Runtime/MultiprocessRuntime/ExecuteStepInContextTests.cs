@@ -85,7 +85,7 @@ namespace MLAPI.MultiprocessRuntimeTests
             var exceptionUpdateMessageToTest = "This is an exception for update loop client side that's expected";
             yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Clients, _ =>
             {
-                void Update(float _)
+                void Update(float __)
                 {
                     NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate -= Update;
                     throw new Exception(exceptionUpdateMessageToTest);
@@ -112,7 +112,7 @@ namespace MLAPI.MultiprocessRuntimeTests
             {
                 int count = 0;
 
-                void Update(float _)
+                void Update(float __)
                 {
                     TestCoordinator.Instance.WriteTestResultsServerRpc(count++);
                     if (count > maxValue)
@@ -155,7 +155,7 @@ namespace MLAPI.MultiprocessRuntimeTests
             InitContextSteps();
 
             int stepCountExecuted = 0;
-            yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Server, (byte[] args) =>
+            yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Server, args =>
             {
                 stepCountExecuted++;
                 int count = BitConverter.ToInt32(args, 0);
@@ -163,7 +163,7 @@ namespace MLAPI.MultiprocessRuntimeTests
                 Assert.That(count, Is.EqualTo(1));
             }, paramToPass: BitConverter.GetBytes(1));
 
-            yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Clients, (byte[] args) =>
+            yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Clients, args =>
             {
                 int count = BitConverter.ToInt32(args, 0);
                 Debug.Log($"something client side, count is {count}");
@@ -190,7 +190,7 @@ namespace MLAPI.MultiprocessRuntimeTests
             int timeToWait = 4;
             yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Clients, _ =>
             {
-                void Update(float _)
+                void Update(float __)
                 {
                     if (Time.time > timeToWait)
                     {
@@ -208,7 +208,7 @@ namespace MLAPI.MultiprocessRuntimeTests
                 NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate += Update;
             }, waitMultipleUpdates: true); // waits multiple frames before allowing the next action to continue.
 
-            yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Server, (byte[] args) =>
+            yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Server, args =>
             {
                 stepCountExecuted++;
                 int count = 0;
@@ -220,6 +220,7 @@ namespace MLAPI.MultiprocessRuntimeTests
 
                 Assert.Greater(count, 0);
             });
+
             if (!TestCoordinator.Instance.isRegistering)
             {
                 Assert.AreEqual(3, stepCountExecuted);

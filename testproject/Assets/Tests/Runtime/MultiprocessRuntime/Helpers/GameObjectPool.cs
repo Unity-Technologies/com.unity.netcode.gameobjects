@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace MLAPI.MultiprocessRuntimeTests
 {
@@ -10,19 +11,17 @@ namespace MLAPI.MultiprocessRuntimeTests
     /// </summary>
     public class GameObjectPool
     {
-        private GameObject m_PrefabToSpawn;
         private List<GameObject> m_GameObjectPool;
         private Stack<int> m_FreeIndexes;
         private Dictionary<GameObject, int> m_ReverseLookup = new Dictionary<GameObject, int>();
 
         public void Init(int originalCount, GameObject prefabToSpawn)
         {
-            m_PrefabToSpawn = prefabToSpawn;
             m_GameObjectPool = new List<GameObject>(originalCount);
             m_FreeIndexes = new Stack<int>(originalCount);
             for (int i = 0; i < originalCount; i++)
             {
-                var go = GameObject.Instantiate(prefabToSpawn);
+                var go = Object.Instantiate(prefabToSpawn);
                 go.SetActive(false);
                 m_GameObjectPool.Add(go);
                 m_FreeIndexes.Push(i);

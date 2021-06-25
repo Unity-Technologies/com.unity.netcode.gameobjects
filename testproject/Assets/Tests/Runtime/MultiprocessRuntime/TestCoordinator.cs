@@ -24,9 +24,7 @@ public class TestCoordinator : NetworkBehaviour
     /// There's not per-test communication to run these tests, only to get the results per test as they are running
     /// </summary>
     public const float maxWaitTimeout = 10;
-    public const char methodFullNameSplitChar = '@';
-    public const string isWorkerArg = "-isWorker";
-
+    private const char k_MethodFullNameSplitChar = '@';
     public bool isRegistering;
     public bool hasRegistered;
 
@@ -55,7 +53,7 @@ public class TestCoordinator : NetworkBehaviour
 
     public void Start()
     {
-        bool isClient = Environment.GetCommandLineArgs().Any(value => value == isWorkerArg);
+        bool isClient = Environment.GetCommandLineArgs().Any(value => value == MultiprocessOrchestration.isWorkerArg);
         if (isClient)
         {
             Debug.Log("starting MLAPI client");
@@ -109,6 +107,33 @@ public class TestCoordinator : NetworkBehaviour
         hasRegistered = true;
     }
 
+    public void Update()
+    {
+        if ((IsServer && NetworkManager.Singleton.IsListening) || (IsClient && NetworkManager.Singleton.IsConnectedClient))
+        {
+            m_TimeSinceLastConnected = Time.time;
+        }
+        else if (Time.time - m_TimeSinceLastConnected > maxWaitTimeout || m_ShouldShutdown)
+        {
+            // Make sure we don't have zombie processes
+            Debug.Log($"quitting application, shouldShutdown set to {m_ShouldShutdown}, is listening {NetworkManager.Singleton.IsListening}, is connected client {NetworkManager.Singleton.IsConnectedClient}");
+            if (!m_ShouldShutdown)
+            {
+#if UNITY_EDITOR
+                UnityEditor.EditorApplication.isPlaying = false;
+#else
+                Application.Quit();
+#endif
+                Assert.Fail($"something wrong happened, was not connected for {Time.time - m_TimeSinceLastConnected} seconds");
+            }
+        }
+    }
+
+    public void TestRunTeardown()
+    {
+        m_TestResultsLocal.Clear();
+    }
+
     public void OnDestroy()
     {
         if (NetworkObject != null && NetworkManager != null)
@@ -117,7 +142,7 @@ public class TestCoordinator : NetworkBehaviour
         }
     }
 
-    private void OnClientDisconnectCallback(ulong clientId)
+    private static void OnClientDisconnectCallback(ulong clientId)
     {
         if (clientId == NetworkManager.Singleton.ServerClientId || clientId == NetworkManager.Singleton.LocalClientId)
         {
@@ -127,14 +152,14 @@ public class TestCoordinator : NetworkBehaviour
         }
     }
 
-    public static string GetMethodInfo(Action<byte[]> method)
+    private static string GetMethodInfo(Action<byte[]> method)
     {
-        return $"{method.Method.DeclaringType.FullName}{methodFullNameSplitChar}{method.Method.Name}";
+        return $"{method.Method.DeclaringType.FullName}{k_MethodFullNameSplitChar}{method.Method.Name}";
     }
 
-    public static string GetMethodInfo(Action method)
+    private static string GetMethodInfo(Action method)
     {
-        return $"{method.Method.DeclaringType.FullName}{methodFullNameSplitChar}{method.Method.Name}";
+        return $"{method.Method.DeclaringType.FullName}{k_MethodFullNameSplitChar}{method.Method.Name}";
     }
 
     [ServerRpc(RequireOwnership = false)]
@@ -207,9 +232,9 @@ public class TestCoordinator : NetworkBehaviour
                 return true;
             }
 
-            foreach (var kv in Instance.m_TestResultsLocal)
+            foreach (var clientIdAndTestResultList in Instance.m_TestResultsLocal)
             {
-                if (kv.Value.Count > 0)
+                if (clientIdAndTestResultList.Value.Count > 0)
                 {
                     return true;
                 }
@@ -282,28 +307,13 @@ public class TestCoordinator : NetworkBehaviour
         }
     }
 
-    [ServerRpc]
-    public void TriggerActionIDServerRpc(string actionID, byte[] args, ServerRpcParams serverRpcParams = default)
-    {
-        Debug.Log($"received RPC from client, server side triggering action ID {actionID}");
-        try
-        {
-            ExecuteStepInContext.allActions[actionID].Invoke(args);
-        }
-        catch (Exception e)
-        {
-            WriteErrorServerRpc(e.Message);
-            throw;
-        }
-    }
-
     [ClientRpc]
     public void TriggerInternalClientRpc(string methodInfoString, byte[] args, ClientRpcParams clientRpcParams = default)
     {
         try
         {
             Debug.Log($"received client RPC for method {methodInfoString}");
-            var split = methodInfoString.Split(methodFullNameSplitChar);
+            var split = methodInfoString.Split(k_MethodFullNameSplitChar);
             (string classToExecute, string staticMethodToExecute) info = (split[0], split[1]);
 
             var foundType = Type.GetType(info.classToExecute);
@@ -312,20 +322,13 @@ public class TestCoordinator : NetworkBehaviour
                 throw new Exception($"couldn't find {info.classToExecute}");
             }
 
-            var foundMethod = foundType.GetMethod(info.staticMethodToExecute);
+            var foundMethod = foundType.GetMethod(info.staticMethodToExecute, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
             if (foundMethod == null)
             {
                 throw new Exception($"couldn't find method {info.staticMethodToExecute}");
             }
 
-            if (args != null)
-            {
-                foundMethod.Invoke(null, new[] { args });
-            }
-            else
-            {
-                foundMethod.Invoke(null, null);
-            }
+            foundMethod.Invoke(null, args != null ? new object[] { args } : null);
         }
         catch (Exception e)
         {
@@ -353,76 +356,7 @@ public class TestCoordinator : NetworkBehaviour
 
     private float m_TimeSinceLastConnected;
 
-    public void Update()
-    {
-        if ((IsServer && NetworkManager.Singleton.IsListening) || (IsClient && NetworkManager.Singleton.IsConnectedClient))
-        {
-            m_TimeSinceLastConnected = Time.time;
-        }
-        else if (Time.time - m_TimeSinceLastConnected > maxWaitTimeout || m_ShouldShutdown)
-        {
-            // Make sure we don't have zombie processes
-            Debug.Log($"quitting application, shouldShutdown set to {m_ShouldShutdown}, is listening {NetworkManager.Singleton.IsListening}, is connected client {NetworkManager.Singleton.IsConnectedClient}");
-            if (!m_ShouldShutdown)
-            {
-#if UNITY_EDITOR
-                UnityEditor.EditorApplication.isPlaying = false;
-#else
-                Application.Quit();
-#endif
-                Assert.Fail($"something wrong happened, was not connected for {Time.time - m_TimeSinceLastConnected} seconds");
-            }
-        }
-    }
 
-    public void TestRunTeardown()
-    {
-        m_TestResultsLocal.Clear();
-    }
-
-    public static void StartWorkerNode()
-    {
-        var workerNode = new Process();
-
-        //TODO this should be replaced eventually by proper orchestration
-        // TODO test on windows
-        var exeName = "testproject";
-        string buildInstructions = $"You probably didn't generate your build. Please make sure you build a player using the '{BuildAndRunMultiprocessTests.BuildAndExecuteMenuName}' menu";
-        try
-        {
-            var buildInfo = File.ReadAllText(Path.Combine(Application.streamingAssetsPath, MultiprocessOrchestration.buildInfoFileName));
-#if UNITY_EDITOR_OSX || UNITY_STANDALONE_OSX
-            workerNode.StartInfo.FileName = $"{buildInfo}.app/Contents/MacOS/{exeName}";
-#elif UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN
-            workerNode.StartInfo.FileName = $"{buildInfo}/{exeName}.exe";
-#else
-            throw new NotImplementedException("StartWorkerNode: Current platform not supported");
-#endif
-        }
-        catch (FileNotFoundException)
-        {
-            throw new Exception($"Couldn't find build info file. {buildInstructions}");
-        }
-
-        workerNode.StartInfo.UseShellExecute = false;
-        workerNode.StartInfo.RedirectStandardError = true;
-        workerNode.StartInfo.RedirectStandardOutput = true;
-        workerNode.StartInfo.Arguments = $"{isWorkerArg} -popupwindow -screen-width 100 -screen-height 100";
-        try
-        {
-            var newProcessStarted = workerNode.Start();
-            Debug.Log($"new process started? {newProcessStarted}");
-            if (!newProcessStarted)
-            {
-                throw new Exception("Process not started!");
-            }
-        }
-        catch (Win32Exception e)
-        {
-            Debug.LogError($"Error starting player, {buildInstructions}, {e.Message} {e.Data} {e.ErrorCode}");
-            throw e;
-        }
-    }
 
     public class ExecuteStepInContext : CustomYieldInstruction
     {
@@ -430,11 +364,6 @@ public class TestCoordinator : NetworkBehaviour
         {
             Server,
             Clients
-        }
-
-        public class StepTimeoutException : Exception
-        {
-            public StepTimeoutException(string message) : base(message) { }
         }
 
         [AttributeUsage(AttributeTargets.Method)]
@@ -588,10 +517,7 @@ public class TestCoordinator : NetworkBehaviour
                     {
                         return false;
                     }
-                    else
-                    {
-                        throw new StepTimeoutException($"timeout for Context Step with action ID {m_CurrentActionID}");
-                    }
+                    Assert.Fail($"timeout for Context Step with action ID {m_CurrentActionID}");
                 }
                 if (m_AdditionalIsFinishedWaiter != null)
                 {

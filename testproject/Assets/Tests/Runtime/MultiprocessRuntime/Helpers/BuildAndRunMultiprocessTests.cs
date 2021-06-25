@@ -1,11 +1,8 @@
 using System;
 using System.IO;
-using MLAPI;
-using MLAPI.MultiprocessRuntimeTests;
 #if UNITY_EDITOR
 using UnityEditor;
 using UnityEditor.Build.Reporting;
-using UnityEditor.TestTools.TestRunner.Api;
 #endif
 using UnityEngine;
 
@@ -41,7 +38,6 @@ public class BuildAndRunMultiprocessTests : MonoBehaviour
         }
     }
 
-
     [MenuItem("MLAPI Tests/Delete Test Build")]
     public static void DeleteBuild()
     {
@@ -75,7 +71,7 @@ public class BuildAndRunMultiprocessTests : MonoBehaviour
     /// reporting. We only want to main node to do that, worker nodes should be dumb
     /// </summary>
     /// <returns></returns>
-    public static bool Build(bool isDebug=false)
+    public static bool Build(bool isDebug = false)
     {
         // Save standalone build path to file
         var f = File.CreateText(Path.Combine(Application.streamingAssetsPath, MultiprocessOrchestration.buildInfoFileName));
@@ -83,7 +79,7 @@ public class BuildAndRunMultiprocessTests : MonoBehaviour
         f.Close();
 
         // var buildPath = Application.streamingAssetsPath;
-        // deleting so we don't endup testing on outdated builds
+        // deleting so we don't end up testing on outdated builds if there's a build failure
         DeleteBuild();
 #if UNITY_EDITOR_OSX
         var buildTarget = BuildTarget.StandaloneOSX;
@@ -105,7 +101,7 @@ public class BuildAndRunMultiprocessTests : MonoBehaviour
 
         buildOptions &= ~BuildOptions.AutoRunPlayer;
         var buildReport = BuildPipeline.BuildPlayer(
-            new string[] { $"Assets/Scenes/{mainSceneName}.unity" },
+            new[] { $"Assets/Scenes/{mainSceneName}.unity" },
             buildPath,
             buildTarget,
             buildOptions);

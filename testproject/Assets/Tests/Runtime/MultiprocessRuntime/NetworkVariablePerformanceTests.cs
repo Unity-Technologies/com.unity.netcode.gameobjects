@@ -1,19 +1,15 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.ComponentModel;
 using MLAPI.NetworkVariable;
 using MLAPI.Spawning;
 using NUnit.Framework;
-using NUnit.Framework.Internal;
 using Unity.PerformanceTesting;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
-using Debug = UnityEngine.Debug;
-using Random = System.Random;
 using static TestCoordinator.ExecuteStepInContext;
-
+using Random = System.Random;
 
 namespace MLAPI.MultiprocessRuntimeTests
 {
@@ -21,59 +17,59 @@ namespace MLAPI.MultiprocessRuntimeTests
     public class NetworkVariablePerformanceTests : BaseMultiprocessTests
     {
         protected override int NbWorkers { get; } = 1;
-        private const int k_MaxObjectstoSpawn = 100000;
+        private const int k_MaxObjectsToSpawn = 100000;
         private List<NetworkObject> m_SpawnedObjects = new List<NetworkObject>();
         private static GameObjectPool s_ObjectPool;
         protected override bool m_IsPerformanceTest => true;
 
-        public class OneNetVar : NetworkBehaviour
+        private class OneNetVar : NetworkBehaviour
         {
             public static int nbInstances;
-            public NetworkVariableInt oneInt;
+            public NetworkVariableInt oneInt = new NetworkVariableInt();
 
             public void Init()
             {
                 nbInstances++;
-                Debug.Log("spawning!!!!!!");
+                if (IsServer)
+                {
+                    oneInt.Value = 1;
+                }
             }
 
             private void OnDisable()
             {
                 nbInstances--;
             }
-
-            private void Update()
-            {
-                // Debug.Log($"nb one net var instance!!!!! {nbInstances}");
-            }
         }
 
-        public class CustomPrefabSpawnForTest1 : INetworkPrefabInstanceHandler
+        private class CustomPrefabSpawnForTest1 : INetworkPrefabInstanceHandler
         {
-            private GameObject m_PrefabToSpawn;
+            // private GameObject m_PrefabToSpawn;
             private GameObjectPool m_ObjectPool;
 
             public CustomPrefabSpawnForTest1(GameObject prefabToSpawn)
             {
-                m_PrefabToSpawn = prefabToSpawn;
+                // m_PrefabToSpawn = prefabToSpawn;
                 m_ObjectPool = new GameObjectPool();
-                m_ObjectPool.Init(k_MaxObjectstoSpawn, m_PrefabToSpawn);
+                m_ObjectPool.Init(k_MaxObjectsToSpawn, prefabToSpawn);
             }
 
             public NetworkObject HandleNetworkPrefabSpawn(ulong ownerClientId, Vector3 position, Quaternion rotation)
             {
                 var networkObject = m_ObjectPool.Get().GetComponent<NetworkObject>();
                 var r = new Random();
-                networkObject.transform.position = new Vector3(r.Next(-10, 10), r.Next(-10, 10), r.Next(-10, 10));
-                networkObject.transform.rotation = rotation;
+                Transform netTransform = networkObject.transform;
+                netTransform.position = new Vector3(r.Next(-10, 10), r.Next(-10, 10), r.Next(-10, 10));
+                netTransform.rotation = rotation;
                 SetupSpawnedObject(networkObject.gameObject); // adds custom component on spawn
                 return networkObject;
             }
 
             public void HandleNetworkPrefabDestroy(NetworkObject networkObject)
             {
-                networkObject.transform.position = Vector3.zero;
-                networkObject.transform.rotation = Quaternion.identity;
+                Transform netTransform = networkObject.transform;
+                netTransform.position = Vector3.zero;
+                netTransform.rotation = Quaternion.identity;
                 // TeardownSpawnedObject(networkObject.gameObject);
                 m_ObjectPool.Release(networkObject.gameObject);
 
@@ -86,7 +82,7 @@ namespace MLAPI.MultiprocessRuntimeTests
             var prefabToSpawn = PrefabReference.Instance.referencedPrefab;
 
             s_ObjectPool = new GameObjectPool();
-            s_ObjectPool.Init(k_MaxObjectstoSpawn, prefabToSpawn);
+            s_ObjectPool.Init(k_MaxObjectsToSpawn, prefabToSpawn);
         }
 
         [OneTimeSetUp]
@@ -103,7 +99,7 @@ namespace MLAPI.MultiprocessRuntimeTests
 
             yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Server, _ =>
             {
-                Assert.LessOrEqual(nbObjects, k_MaxObjectstoSpawn); // sanity check
+                Assert.LessOrEqual(nbObjects, k_MaxObjectsToSpawn); // sanity check
             });
 
             yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Clients, stepToExecute: nbObjectsBytes =>
@@ -173,7 +169,7 @@ namespace MLAPI.MultiprocessRuntimeTests
             yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Server, bytes =>
             {
                 // add measurements
-                var allocated = new SampleGroup($"NbSpawnedPerFrame", SampleUnit.Undefined);
+                var allocated = new SampleGroup("NbSpawnedPerFrame", SampleUnit.Undefined);
 
                 foreach (var clientId in TestCoordinator.AllClientIdsWithResults)
                 {

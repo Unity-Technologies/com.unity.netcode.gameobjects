@@ -1,23 +1,34 @@
 using System;
 using System.Collections;
-using MLAPI;
-using MLAPI.MultiprocessRuntimeTests;
+using System.Linq;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
-using static TestCoordinator.ExecuteStepInContext;
 
 namespace MLAPI.MultiprocessRuntimeTests
 {
+    [TestFixture(1)]
+    [TestFixture(2)]
     public class TestCoordinatorTests : BaseMultiprocessTests
     {
-        protected override int NbWorkers { get; } = 1;
+        private int m_NbWorkers;
+        protected override int NbWorkers => m_NbWorkers;
 
         protected override bool m_IsPerformanceTest => false;
 
-        public static void ExecuteSimpleCoordinatorTest()
+        public TestCoordinatorTests(int nbWorkers)
+        {
+            m_NbWorkers = nbWorkers;
+        }
+
+        private static void ExecuteSimpleCoordinatorTest()
         {
             TestCoordinator.Instance.WriteTestResultsServerRpc(float.PositiveInfinity);
+        }
+
+        private static void ExecuteWithArgs(byte[] args)
+        {
+            TestCoordinator.Instance.WriteTestResultsServerRpc(args[0]);
         }
 
         [UnityTest]
@@ -27,19 +38,35 @@ namespace MLAPI.MultiprocessRuntimeTests
             // Call the method
             TestCoordinator.Instance.TriggerRpc(ExecuteSimpleCoordinatorTest);
 
+            var nbResults = 0;
             for (int i = 0; i < NbWorkers; i++) // wait and test for the two clients
             {
                 yield return new WaitUntil(TestCoordinator.ResultIsSet());
 
-                var nbResults = 0;
-                foreach (var current in TestCoordinator.ConsumeCurrentResult())
-                {
-                    Debug.Log($"got results, asserting, result is {current.result} from key {current.clientId}");
-                    Assert.Greater(current.result, 0f);
-                    nbResults++;
-                }
-                Assert.That(nbResults, Is.EqualTo(1));
+                var current = TestCoordinator.ConsumeCurrentResult().Take(1).Single();
+                Debug.Log($"got results, asserting, result is {current.result} from key {current.clientId}");
+                Assert.Greater(current.result, 0f);
+                nbResults++;
             }
+            Assert.That(nbResults, Is.EqualTo(NbWorkers));
+        }
+
+        [UnityTest]
+        public IEnumerator CheckTestCoordinatorWithArgs()
+        {
+            TestCoordinator.Instance.TriggerRpc(ExecuteWithArgs, 99);
+            var nbResults = 0;
+
+            for (int i = 0; i < NbWorkers; i++) // wait and test for the two clients
+            {
+                yield return new WaitUntil(TestCoordinator.ResultIsSet());
+
+                var current = TestCoordinator.ConsumeCurrentResult().Take(1).Single();
+                Debug.Log($"got results, asserting, result is {current.result} from key {current.clientId}");
+                Assert.That(current.result, Is.EqualTo(99));
+                nbResults++;
+            }
+            Assert.That(nbResults, Is.EqualTo(NbWorkers));
         }
     }
 }
