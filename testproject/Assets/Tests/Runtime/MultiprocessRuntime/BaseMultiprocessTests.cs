@@ -17,7 +17,6 @@ namespace MLAPI.MultiprocessRuntimeTests
     [MultiprocessTests]
     public abstract class BaseMultiprocessTests
     {
-        public const string mainSceneName = "MultiprocessTestingScene";
 
         protected virtual bool m_IsPerformanceTest => true;
 
@@ -33,7 +32,7 @@ namespace MLAPI.MultiprocessRuntimeTests
                 Assert.Ignore("Ignoring tests that shouldn't run from unity editor. Performance tests should be run from remote test execution on device (this can be ran using the \"run selected tests (your platform) button\"");
             }
 
-            SceneManager.LoadScene(mainSceneName, LoadSceneMode.Single);
+            SceneManager.LoadScene(BuildAndRunMultiprocessTests.mainSceneName, LoadSceneMode.Single);
             SceneManager.sceneLoaded += OnSceneLoaded;
 
             Debug.Log("starting processes");

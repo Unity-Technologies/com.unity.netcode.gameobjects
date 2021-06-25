@@ -24,7 +24,7 @@ namespace MLAPI.MultiprocessRuntimeTests
         private const int k_MaxObjectstoSpawn = 100000;
         private List<NetworkObject> m_SpawnedObjects = new List<NetworkObject>();
         private static GameObjectPool s_ObjectPool;
-        protected override bool m_IsPerformanceTest => false; // for debug, todo remove me
+        protected override bool m_IsPerformanceTest => true;
 
         public class OneNetVar : NetworkBehaviour
         {
@@ -106,7 +106,7 @@ namespace MLAPI.MultiprocessRuntimeTests
                 Assert.LessOrEqual(nbObjects, k_MaxObjectstoSpawn); // sanity check
             });
 
-            yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Clients, paramToPass: BitConverter.GetBytes(nbObjects), todo: nbObjectsBytes =>
+            yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Clients, stepToExecute: nbObjectsBytes =>
             {
                 // setup clients
 
@@ -134,7 +134,7 @@ namespace MLAPI.MultiprocessRuntimeTests
                     }
                 }
                 NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate += Update;
-            });
+            }, paramToPass: BitConverter.GetBytes(nbObjects));
 
             yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Server, _ =>
             {
@@ -142,8 +142,6 @@ namespace MLAPI.MultiprocessRuntimeTests
                 using (Measure.Scope($"Time Taken For Spawning {nbObjects} objects and getting report"))
                 {
                     // spawn prefabs for test
-
-                    // todo test with multiple workers
                     for (int i = 0; i < nbObjects; i++)
                     {
                         var spawnedObject = s_ObjectPool.Get();
@@ -226,7 +224,7 @@ namespace MLAPI.MultiprocessRuntimeTests
                     }
                 }
                 NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate += WaitForAllOneNetVarToDespawn;
-            }, spansMultipleUpdates: true);
+            }, waitMultipleUpdates: true);
         }
 
         [OneTimeTearDown]

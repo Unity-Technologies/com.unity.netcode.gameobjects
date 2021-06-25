@@ -15,9 +15,10 @@ using UnityEngine;
 /// </summary>
 public class BuildAndRunMultiprocessTests : MonoBehaviour
 {
-    // todo make sure my asmdef changes haven't removed any usual tests, that all previous tests are there
     public const string BuildAndExecuteMenuName = "MLAPI Tests/Build - Execute multiprocess tests #%t";
     public static string buildPath => Path.Combine(Path.GetDirectoryName(Application.dataPath), "Builds/MultiprocessTestBuild");
+    public const string mainSceneName = "MultiprocessTestingScene";
+
 
 #if UNITY_EDITOR
     [MenuItem("MLAPI Tests/Build Test Player #t")]
@@ -77,7 +78,7 @@ public class BuildAndRunMultiprocessTests : MonoBehaviour
     public static bool Build(bool isDebug=false)
     {
         // Save standalone build path to file
-        var f = File.CreateText(Path.Combine(Application.streamingAssetsPath, TestCoordinator.buildInfoFileName));
+        var f = File.CreateText(Path.Combine(Application.streamingAssetsPath, MultiprocessOrchestration.buildInfoFileName));
         f.Write(buildPath);
         f.Close();
 
@@ -104,7 +105,7 @@ public class BuildAndRunMultiprocessTests : MonoBehaviour
 
         buildOptions &= ~BuildOptions.AutoRunPlayer;
         var buildReport = BuildPipeline.BuildPlayer(
-            new string[] { $"Assets/Scenes/{BaseMultiprocessTests.mainSceneName}.unity" },
+            new string[] { $"Assets/Scenes/{mainSceneName}.unity" },
             buildPath,
             buildTarget,
             buildOptions);

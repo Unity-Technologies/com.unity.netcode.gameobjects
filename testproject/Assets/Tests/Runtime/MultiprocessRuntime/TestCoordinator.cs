@@ -5,10 +5,9 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using MLAPI;
 using MLAPI.Messaging;
-using MLAPI.NetworkVariable;
-using MLAPI.NetworkVariable.Collections;
 using NUnit.Framework;
 using NUnit.Framework.Interfaces;
 using UnityEngine;
@@ -16,7 +15,7 @@ using UnityEngine.TestTools;
 using Debug = UnityEngine.Debug;
 
 [RequireComponent(typeof(NetworkObject))]
-internal class TestCoordinator : NetworkBehaviour
+public class TestCoordinator : NetworkBehaviour
 {
     /// <summary>
     /// TestCoordinator
@@ -27,7 +26,6 @@ internal class TestCoordinator : NetworkBehaviour
     public const float maxWaitTimeout = 10;
     public const char methodFullNameSplitChar = '@';
     public const string isWorkerArg = "-isWorker";
-    public const string buildInfoFileName = "buildInfo.txt";
 
     public bool isRegistering;
     public bool hasRegistered;
@@ -39,19 +37,7 @@ internal class TestCoordinator : NetworkBehaviour
 
     private bool m_ShouldShutdown;
 
-    // private NetworkDictionary<ulong, float> m_TestResults = new NetworkDictionary<ulong, float>(new NetworkVariableSettings
-    // {
-    //     WritePermission = NetworkVariablePermission.Everyone,
-    //     ReadPermission = NetworkVariablePermission.Everyone
-    // }); // todo this is starting to look like the wrong way to sync results. If we have multiple results arriving one after the other, there's a risk they'll overwrite one another
-
     private Dictionary<ulong, List<float>> m_TestResultsLocal = new Dictionary<ulong, List<float>>();
-
-    private NetworkList<string> m_ErrorMessages = new NetworkList<string>(new NetworkVariableSettings
-    {
-        ReadPermission = NetworkVariablePermission.Everyone,
-        WritePermission = NetworkVariablePermission.Everyone
-    });
 
     public static TestCoordinator Instance;
 
@@ -74,11 +60,8 @@ internal class TestCoordinator : NetworkBehaviour
         {
             Debug.Log("starting MLAPI client");
             NetworkManager.Singleton.StartClient();
-
-            // StartCoroutine(WaitForClientConnected()); // in case builds fail, can't have the old builds just stay idle. If they can't connect after a certain amount of time, disconnect
         }
 
-        m_ErrorMessages.OnListChanged += OnErrorMessageChanged;
         NetworkManager.OnClientDisconnectCallback += OnClientDisconnectCallback;
 
         // registering magically all method steps
@@ -86,23 +69,38 @@ internal class TestCoordinator : NetworkBehaviour
         var registeredMethods = typeof(TestCoordinator).Assembly.GetTypes().SelectMany(t => t.GetMethods())
             .Where(m => m.GetCustomAttributes(typeof(ExecuteStepInContext.MultiprocessContextBasedTestAttribute), true).Length > 0)
             .ToArray();
-        foreach (var method in registeredMethods)
+        if (registeredMethods.Length == 0)
         {
-            var instance = Activator.CreateInstance(method.ReflectedType);
+            throw new Exception("Couldn't find any registered methods for multiprocess testing. Is TestCoordinator in same assembly as test methods?");
+        }
 
-            // ExecuteStepInContext.InitTest(method);
-            var parameters = method.GetParameters();
-            object[] parametersToPass = new object[parameters.Length];
-            for (int i = 0; i < parameters.Length; i++)
+        object[] GetParameterValuesToPass(ParameterInfo[] parameterInfo)
+        {
+            object[] parametersToReturn = new object[parameterInfo.Length];
+            for (int i = 0; i < parameterInfo.Length; i++)
             {
-                var paramType = parameters[i].GetType();
+                var paramType = parameterInfo[i].GetType();
                 object defaultObj = null;
                 if(paramType.IsValueType)
                 {
                     defaultObj = Activator.CreateInstance(paramType);
                 }
-                parametersToPass[i] = defaultObj;
+                parametersToReturn[i] = defaultObj;
             }
+
+            return parametersToReturn;
+        }
+        foreach (var method in registeredMethods)
+        {
+            var methodsType = method.ReflectedType;
+            var allConstructors = methodsType.GetConstructors();
+            if (allConstructors.Length > 1)
+            {
+                throw new NotImplementedException("Case not implemented where test has more than one contructor");
+            }
+            var contructorParameters = allConstructors[0].GetParameters();
+            var instance = Activator.CreateInstance(methodsType, GetParameterValuesToPass(contructorParameters));
+            var parametersToPass = GetParameterValuesToPass(method.GetParameters());
             var result = (IEnumerator)method.Invoke(instance, parametersToPass.ToArray());
             while (result.MoveNext()) { }
         }
@@ -113,39 +111,11 @@ internal class TestCoordinator : NetworkBehaviour
 
     public void OnDestroy()
     {
-        m_ErrorMessages.OnListChanged -= OnErrorMessageChanged;
         if (NetworkObject != null && NetworkManager != null)
         {
             NetworkManager.OnClientDisconnectCallback -= OnClientDisconnectCallback;
         }
     }
-
-    private void OnErrorMessageChanged(NetworkListEvent<string> listChangedEvent)
-    {
-        switch (listChangedEvent.Type)
-        {
-            case NetworkListEvent<string>.EventType.Add:
-            case NetworkListEvent<string>.EventType.Insert:
-            case NetworkListEvent<string>.EventType.Value:
-                Debug.LogError($"Got Exception client side {listChangedEvent.Value}, type is {listChangedEvent.Type} and index is {listChangedEvent.Index}");
-                m_ErrorMessages.RemoveAt(listChangedEvent.Index); // consume error message
-                break;
-        }
-    }
-
-    // private static void OnResultsChanged(NetworkDictionaryEvent<ulong, float> dictChangedEvent)
-    // {
-    //     if (dictChangedEvent.Key != NetworkManager.Singleton.LocalClientId)
-    //     {
-    //         switch (dictChangedEvent.Type)
-    //         {
-    //             case NetworkDictionaryEvent<ulong, float>.EventType.Add:
-    //             case NetworkDictionaryEvent<ulong, float>.EventType.Value:
-    //                 Instance.AllClientIdWithResults.Add(dictChangedEvent.Key);
-    //                 break;
-    //         }
-    //     }
-    // }
 
     private void OnClientDisconnectCallback(ulong clientId)
     {
@@ -178,21 +148,12 @@ internal class TestCoordinator : NetworkBehaviour
         }
 
         m_TestResultsLocal[senderId].Add(result);
-
-        // Instance.CurrentClientIdWithResults = receiveParams.SenderClientId;
     }
 
-    // public static void WriteResults(float result)
-    // {
-    //
-    //     // Instance.m_TestResults[NetworkManager.Singleton.LocalClientId] = result;
-    // }
-
-    public static void WriteError(string errorMessage)
+    [ServerRpc(RequireOwnership = false)]
+    public void WriteErrorServerRpc(string errorMessage, ServerRpcParams receiveParams = default)
     {
-        var localId = NetworkManager.Singleton.LocalClientId;
-
-        Instance.m_ErrorMessages.Add($"{localId}@{errorMessage}");
+        Debug.LogError($"Got Exception client side {errorMessage}, from client {receiveParams.Receive.SenderClientId}");
     }
 
     public static IEnumerable<(ulong clientId, float result)> ConsumeCurrentResult()
@@ -206,13 +167,21 @@ internal class TestCoordinator : NetworkBehaviour
                 yield return toReturn;
             }
         }
+    }
 
-        // throw new NotImplementedException("Should not be here");
+    public static IEnumerable<float> ConsumeCurrentResult(ulong clientID)
+    {
+        var allResults = Instance.m_TestResultsLocal[clientID];
+        while (allResults.Count > 0)
+        {
+            var toReturn = allResults[0];
+            allResults.RemoveAt(0);
+            yield return toReturn;
+        }
     }
 
     public static float PeekLatestResult(ulong clientId)
     {
-        // foreach (var kv in Instance.m_TestResultsLocal)
         if (Instance.m_TestResultsLocal.ContainsKey(clientId) && Instance.m_TestResultsLocal[clientId].Count > 0)
         {
             return Instance.m_TestResultsLocal[clientId].Last();
@@ -245,13 +214,6 @@ internal class TestCoordinator : NetworkBehaviour
                     return true;
                 }
             }
-
-            // if (Instance.AllClientIdWithResults.Count > 0)
-            // {
-            //     Instance.CurrentClientIdWithResults = Instance.AllClientIdWithResults[0];
-            //     Instance.AllClientIdWithResults.RemoveAt(0);
-            //     return true;
-            // }
 
             return false;
         };
@@ -309,14 +271,30 @@ internal class TestCoordinator : NetworkBehaviour
     public void TriggerActionIDClientRpc(string actionID, byte[] args, ClientRpcParams clientRpcParams = default)
     {
         Debug.Log($"received RPC from server, client side triggering action ID {actionID}");
-        ExecuteStepInContext.allActions[actionID].Invoke(args);
+        try
+        {
+            ExecuteStepInContext.allActions[actionID].Invoke(args);
+        }
+        catch (Exception e)
+        {
+            WriteErrorServerRpc(e.Message);
+            throw;
+        }
     }
 
     [ServerRpc]
     public void TriggerActionIDServerRpc(string actionID, byte[] args, ServerRpcParams serverRpcParams = default)
     {
         Debug.Log($"received RPC from client, server side triggering action ID {actionID}");
-        ExecuteStepInContext.allActions[actionID].Invoke(args);
+        try
+        {
+            ExecuteStepInContext.allActions[actionID].Invoke(args);
+        }
+        catch (Exception e)
+        {
+            WriteErrorServerRpc(e.Message);
+            throw;
+        }
     }
 
     [ClientRpc]
@@ -351,19 +329,26 @@ internal class TestCoordinator : NetworkBehaviour
         }
         catch (Exception e)
         {
-            WriteError(e.Message);
-
-            // throw e;
+            WriteErrorServerRpc(e.Message);
+            throw;
         }
     }
 
     [ClientRpc]
     public void CloseRemoteClientRpc()
     {
-        NetworkManager.Singleton.StopClient();
-        m_ShouldShutdown = true; // wait until isConnectedClient is false to run Application Quit in next update
-        Debug.Log("Quitting player cleanly");
-        Application.Quit();
+        try
+        {
+            NetworkManager.Singleton.StopClient();
+            m_ShouldShutdown = true; // wait until isConnectedClient is false to run Application Quit in next update
+            Debug.Log("Quitting player cleanly");
+            Application.Quit();
+        }
+        catch (Exception e)
+        {
+            WriteErrorServerRpc(e.Message);
+            throw;
+        }
     }
 
     private float m_TimeSinceLastConnected;
@@ -392,12 +377,7 @@ internal class TestCoordinator : NetworkBehaviour
 
     public void TestRunTeardown()
     {
-        // m_TestResults.Clear();
         m_TestResultsLocal.Clear();
-        m_ErrorMessages.Clear();
-
-        // AllClientIdWithResults.Clear();
-        // CurrentClientIdWithResults = 0;
     }
 
     public static void StartWorkerNode()
@@ -410,7 +390,7 @@ internal class TestCoordinator : NetworkBehaviour
         string buildInstructions = $"You probably didn't generate your build. Please make sure you build a player using the '{BuildAndRunMultiprocessTests.BuildAndExecuteMenuName}' menu";
         try
         {
-            var buildInfo = File.ReadAllText(Path.Combine(Application.streamingAssetsPath, buildInfoFileName));
+            var buildInfo = File.ReadAllText(Path.Combine(Application.streamingAssetsPath, MultiprocessOrchestration.buildInfoFileName));
 #if UNITY_EDITOR_OSX || UNITY_STANDALONE_OSX
             workerNode.StartInfo.FileName = $"{buildInfo}.app/Contents/MacOS/{exeName}";
 #elif UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN
@@ -452,6 +432,11 @@ internal class TestCoordinator : NetworkBehaviour
             Clients
         }
 
+        public class StepTimeoutException : Exception
+        {
+            public StepTimeoutException(string message) : base(message) { }
+        }
+
         [AttributeUsage(AttributeTargets.Method)]
         public class MultiprocessContextBasedTestAttribute : NUnitAttribute, IOuterUnityTestAction
         {
@@ -467,13 +452,11 @@ internal class TestCoordinator : NetworkBehaviour
         }
 
         private StepExecutionContext m_ActionContext;
-        private Action<byte[]> m_Todo;
+        private Action<byte[]> m_StepToExecute;
         public static Dictionary<string, ExecuteStepInContext> allActions = new Dictionary<string, ExecuteStepInContext>();
 
-        // private static int s_ActionID;
         private static Dictionary<string, int> s_MethodIDCounter = new Dictionary<string, int>();
 
-        // private int m_CurrentActionID;
         private NetworkManager m_NetworkManager;
         private bool m_IsRegistering;
         private List<Func<bool>> m_RemoteIsFinishedChecks = new List<Func<bool>>();
@@ -481,7 +464,8 @@ internal class TestCoordinator : NetworkBehaviour
 
         private string m_CurrentActionID;
 
-        private bool m_SpansMultipleUpdates;
+        private bool m_WaitMultipleUpdates;
+        private bool m_TimeoutExpected;
 
         private float m_StartTime;
         private bool isTimingOut => Time.time - m_StartTime > maxWaitTimeout;
@@ -508,17 +492,20 @@ internal class TestCoordinator : NetworkBehaviour
         /// making it more readable. This allows not having to jump between static client methods and test method
         /// </summary>
         /// <param name="actionContext">context to use. for example, should execute client side? server side?</param>
-        /// <param name="todo">action to execute</param>
+        /// <param name="stepToExecute">action to execute</param>
+        /// <param name="timeoutExpected"></param>
         /// <param name="paramToPass">parameters to pass to action</param>
         /// <param name="networkManager"></param>
-        /// <param name="spansMultipleUpdates"> waits multiple frames before allowing the execution to continue. This means ClientFinishedServerRpc must be called manually</param>
-        public ExecuteStepInContext(StepExecutionContext actionContext, Action<byte[]> todo, byte[] paramToPass = default, NetworkManager networkManager = null, bool spansMultipleUpdates = false, Func<bool> additionalIsFinishedWaiter = null)
+        /// <param name="waitMultipleUpdates"> waits multiple frames before allowing the execution to continue. This means ClientFinishedServerRpc must be called manually</param>
+        /// <param name="additionalIsFinishedWaiter"></param>
+        public ExecuteStepInContext(StepExecutionContext actionContext, Action<byte[]> stepToExecute, bool timeoutExpected = false, byte[] paramToPass = default, NetworkManager networkManager = null, bool waitMultipleUpdates = false, Func<bool> additionalIsFinishedWaiter = null)
         {
             m_StartTime = Time.time;
             m_IsRegistering = Instance.isRegistering;
             m_ActionContext = actionContext;
-            m_Todo = todo;
-            m_SpansMultipleUpdates = spansMultipleUpdates;
+            m_StepToExecute = stepToExecute;
+            m_WaitMultipleUpdates = waitMultipleUpdates;
+            m_TimeoutExpected = timeoutExpected;
             if (additionalIsFinishedWaiter != null)
             {
                 m_AdditionalIsFinishedWaiter = additionalIsFinishedWaiter;
@@ -529,7 +516,7 @@ internal class TestCoordinator : NetworkBehaviour
                 networkManager = NetworkManager.Singleton;
             }
 
-            m_NetworkManager = networkManager; // todo test using this for in-process tests too?
+            m_NetworkManager = networkManager; // todo test using this for multiinstance tests too?
 
             var callerMethod = new StackFrame(1).GetMethod(); // one skip frame for current method
 
@@ -551,7 +538,7 @@ internal class TestCoordinator : NetworkBehaviour
             {
                 if (ShouldExecuteLocally)
                 {
-                    m_Todo.Invoke(paramToPass);
+                    m_StepToExecute.Invoke(paramToPass);
                 }
                 else
                 {
@@ -569,7 +556,7 @@ internal class TestCoordinator : NetworkBehaviour
                     }
                     else
                     {
-                        Instance.TriggerActionIDServerRpc(currentActionID, paramToPass);
+                        throw new NotImplementedException();
                     }
                 }
             }
@@ -577,8 +564,8 @@ internal class TestCoordinator : NetworkBehaviour
 
         public void Invoke(byte[] args)
         {
-            m_Todo.Invoke(args);
-            if (!m_SpansMultipleUpdates)
+            m_StepToExecute.Invoke(args);
+            if (!m_WaitMultipleUpdates)
             {
                 if (!m_NetworkManager.IsServer)
                 {
@@ -597,8 +584,14 @@ internal class TestCoordinator : NetworkBehaviour
             {
                 if (isTimingOut)
                 {
-                    Assert.Fail($"timeout for Context Step with action ID {m_CurrentActionID}");
-                    return false;
+                    if (m_TimeoutExpected)
+                    {
+                        return false;
+                    }
+                    else
+                    {
+                        throw new StepTimeoutException($"timeout for Context Step with action ID {m_CurrentActionID}");
+                    }
                 }
                 if (m_AdditionalIsFinishedWaiter != null)
                 {

@@ -1,10 +1,5 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Xml.Schema;
-using NUnit.Framework.Internal.Commands;
 using UnityEngine;
-using UnityEngine.Events;
 
 /// <summary>
 /// Component who's purpose is to expose callbacks to code tests
@@ -23,6 +18,14 @@ public class CallbackComponent : MonoBehaviour
     // Update is called once per frame
     private void Update()
     {
-        OnUpdate?.Invoke(Time.deltaTime);
+        try
+        {
+            OnUpdate?.Invoke(Time.deltaTime);
+        }
+        catch (Exception e)
+        {
+            TestCoordinator.Instance.WriteErrorServerRpc(e.Message);
+            throw;
+        }
     }
 }

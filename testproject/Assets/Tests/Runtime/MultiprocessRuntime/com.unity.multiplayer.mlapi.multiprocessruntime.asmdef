@@ -6,7 +6,8 @@
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",
         "ScriptsForAutomatedTesting",
-        "Unity.PerformanceTesting"
+        "Unity.PerformanceTesting",
+        "MultiprocessTestsHelpers"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
