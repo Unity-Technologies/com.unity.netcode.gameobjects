@@ -8,7 +8,7 @@ using UnityEngine;
 
 /// <summary>
 /// This is needed as Unity throws "An abnormal situation has occurred: the PlayerLoop internal function has been called recursively. Please contact Customer Support with a sample project so that we can reproduce the problem and troubleshoot it."
-/// when trying to build from Setup() steps in tests.
+/// when trying to build from Setup() steps in tests. This is the only manual step needed before running multiprocess tests. This can be automatically called by CI.
 /// </summary>
 public class BuildMultiprocessTestPlayer : MonoBehaviour
 {
@@ -19,7 +19,7 @@ public class BuildMultiprocessTestPlayer : MonoBehaviour
 
 #if UNITY_EDITOR
     [MenuItem("MLAPI Tests/Build Test Player #t")]
-    public static void BuildNoExecute()
+    public static void BuildReleasePlayer()
     {
         var success = Build();
         if (!success)
@@ -29,7 +29,7 @@ public class BuildMultiprocessTestPlayer : MonoBehaviour
     }
 
     [MenuItem("MLAPI Tests/Build Test Player in debug mode")]
-    public static void BuildDebug()
+    public static void BuildDebugPlayer()
     {
         var success = Build(true);
         if (!success)

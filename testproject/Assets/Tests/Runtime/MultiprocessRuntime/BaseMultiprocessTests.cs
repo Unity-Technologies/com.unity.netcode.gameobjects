@@ -16,7 +16,6 @@ namespace MLAPI.MultiprocessRuntimeTests
     [MultiprocessTests]
     public abstract class BaseMultiprocessTests
     {
-
         protected virtual bool m_IsPerformanceTest => true;
 
         private bool ShouldIgnoreTests => m_IsPerformanceTest && Application.isEditor;
@@ -28,7 +27,7 @@ namespace MLAPI.MultiprocessRuntimeTests
         {
             if (ShouldIgnoreTests)
             {
-                Assert.Ignore("Ignoring tests that shouldn't run from unity editor. Performance tests should be run from remote test execution on device (this can be ran using the \"run selected tests (your platform) button\"");
+                Assert.Ignore("Ignoring tests that shouldn't run from unity editor. Performance tests should be run from remote test execution on device (this can be ran using the \"run selected tests (your platform)\" button");
             }
 
             SceneManager.LoadScene(BuildMultiprocessTestPlayer.mainSceneName, LoadSceneMode.Single);
@@ -37,7 +36,7 @@ namespace MLAPI.MultiprocessRuntimeTests
             Debug.Log("starting processes");
             for (int i = 0; i < NbWorkers; i++)
             {
-                MultiprocessOrchestration.StartWorkerNode(); // will automatically start as clients
+                MultiprocessOrchestration.StartWorkerNode(); // will automatically start built player as clients
             }
 
             Debug.Log("processes started");
@@ -87,7 +86,5 @@ namespace MLAPI.MultiprocessRuntimeTests
             }
         }
     }
-
-
 }
 

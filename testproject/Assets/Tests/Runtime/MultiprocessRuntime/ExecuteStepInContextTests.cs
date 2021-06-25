@@ -8,6 +8,9 @@ using static TestCoordinator.ExecuteStepInContext;
 
 namespace MLAPI.MultiprocessRuntimeTests
 {
+    /// <summary>
+    /// Smoke tests for ExecuteStepInContext, to make sure it's working properly before being used in other tests
+    /// </summary>
     [TestFixture(1)]
     [TestFixture(2)]
     public class ExecuteStepInContextTests : BaseMultiprocessTests

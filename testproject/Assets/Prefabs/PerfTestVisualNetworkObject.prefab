@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 9115731988109684243}
   - component: {fileID: 9115731988109684253}
   m_Layer: 0
-  m_Name: VisualNetworkObject
+  m_Name: PerfTestVisualNetworkObject
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

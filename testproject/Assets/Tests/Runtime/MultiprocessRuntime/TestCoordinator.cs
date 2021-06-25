@@ -14,6 +14,8 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using Debug = UnityEngine.Debug;
 
+// todo test with UTP
+
 [RequireComponent(typeof(NetworkObject))]
 public class TestCoordinator : NetworkBehaviour
 {
@@ -357,6 +359,12 @@ public class TestCoordinator : NetworkBehaviour
 
 
 
+    /// <summary>
+    /// Allows for context based delegate execution.
+    /// Can specify where you want that lambda executed (client side? server side?) and it'll automatically wait for the end
+    /// of a clientRPC server side and vice versa.
+    /// todo this could be used as an in-game tool too? for protocols that require a lot of back and forth?
+    /// </summary>
     public class ExecuteStepInContext : CustomYieldInstruction
     {
         public enum StepExecutionContext
