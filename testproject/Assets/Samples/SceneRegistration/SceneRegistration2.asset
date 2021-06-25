@@ -14,8 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_SceneRegistrations:
   - {fileID: 11400000, guid: 868c31ba31be71c43801cecb19b3631c, type: 2}
+  m_NetworkManagerScene: 
   m_KnownSceneRegistrations:
   - {fileID: 11400000, guid: 868c31ba31be71c43801cecb19b3631c, type: 2}
-  AssignedToNetworkManager: 1
-  NetworkManagerScene: {fileID: 102900000, guid: 619b9eba5892d5a4e9dd1d6cafb0059a,
-    type: 3}
+  NetworkManagerScene: {fileID: 0}

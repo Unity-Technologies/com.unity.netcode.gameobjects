@@ -81,9 +81,18 @@ namespace MLAPI.SceneManagement
             }
         }
 
-        [SerializeField]
-        [HideInInspector]
-        internal bool AssignedToNetworkManager;
+
+        internal bool AssignedToNetworkManager
+        {
+            get
+            {
+                if(NetworkManagerScene != null)
+                {
+                    return true;
+                }
+                return false;
+            }
+        }
 
         [SceneReadOnlyProperty]
         [SerializeField]
@@ -91,7 +100,6 @@ namespace MLAPI.SceneManagement
 
         internal void AssignNetworkManagerScene(bool isAssigned = true)
         {
-            AssignedToNetworkManager = isAssigned;
             if (isAssigned)
             {
                 var currentScene = SceneManager.GetActiveScene();
@@ -100,11 +108,14 @@ namespace MLAPI.SceneManagement
                 {
                     m_NetworkManagerScene = NetworkManagerScene.name;
                     AddOrRemoveSceneAsset(NetworkManagerScene, true);
-                }                 
+                }
             }
             else
             {
-                AddOrRemoveSceneAsset(NetworkManagerScene, false);
+                if (NetworkManagerScene != null)
+                {
+                    AddOrRemoveSceneAsset(NetworkManagerScene, false);
+                }
                 NetworkManagerScene = null;
                 m_NetworkManagerScene = string.Empty;
             }
@@ -139,7 +150,7 @@ namespace MLAPI.SceneManagement
             }
 
             m_KnownSceneRegistrations.Clear();
-            m_KnownSceneRegistrations.AddRange(m_SceneRegistrations);            
+            m_KnownSceneRegistrations.AddRange(m_SceneRegistrations);
             ValidateBuildSettingsScenes();
         }
 
@@ -185,7 +196,7 @@ namespace MLAPI.SceneManagement
             foreach(var sceneRegistrationEntry in m_SceneRegistrations)
             {
                 sceneRegistrationEntry.WriteHashSynchValues(writer);
-            }            
+            }
         }
     }
 

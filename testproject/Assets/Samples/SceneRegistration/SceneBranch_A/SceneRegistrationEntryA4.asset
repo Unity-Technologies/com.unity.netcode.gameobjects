@@ -14,11 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_PreviousPrimaryScene: {fileID: 102900000, guid: dd570b5916593cb41bab8beb1c9d9315,
     type: 3}
-  m_PreviousAddtiveSceneGroup: {fileID: 11400000, guid: 836cd2be89c079a438eb7550fe4a3f09,
-    type: 2}
+  m_PreviousAddtiveSceneGroup: {fileID: 0}
   m_PrimaryScene: {fileID: 102900000, guid: dd570b5916593cb41bab8beb1c9d9315, type: 3}
   m_AutoIncludeInBuild: 1
   SceneIdentifier: 0
   m_PrimarySceneName: ConnectionApprovalTest
-  m_AddtiveSceneGroup: {fileID: 11400000, guid: 836cd2be89c079a438eb7550fe4a3f09,
-    type: 2}
+  m_AddtiveSceneGroup: {fileID: 0}

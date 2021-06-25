@@ -13,10 +13,10 @@ MonoBehaviour:
   m_Name: AdditiveSceneGroupB_1
   m_EditorClassIdentifier: 
   m_AdditiveSceneGroups:
-  - {fileID: 0}
+  - {fileID: 11400000, guid: 18cfeab1fd0509e46b827b44b4cf48fb, type: 2}
   m_KnownAdditiveSceneGroups:
-  - {fileID: 0}
+  - {fileID: 11400000, guid: 18cfeab1fd0509e46b827b44b4cf48fb, type: 2}
   m_AdditiveScenes:
-  - Scene: {fileID: 102900000, guid: 619b9eba5892d5a4e9dd1d6cafb0059a, type: 3}
+  - Scene: {fileID: 102900000, guid: 60b648de486f45640b2f898d15ccebd4, type: 3}
     AutoIncludeInBuild: 1
-    SceneEntryName: EnableDisableSceneNetworkObject
+    SceneEntryName: AnotherScene5

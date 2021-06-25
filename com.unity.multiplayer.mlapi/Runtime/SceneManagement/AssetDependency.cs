@@ -15,7 +15,7 @@ namespace MLAPI.SceneManagement
     /// dependencies.  Dependencies are ordered in a top down fashion such that any parents that depend upon any
     /// child-relative AssetDependency will notify the child-relative AssetDependency that it "depends upon" this asset.
     /// Notes:
-    /// ExecuteInEditMode attribute is required in order to assure the ObservableCollection CollectionChanged event is 
+    /// ExecuteInEditMode attribute is required in order to assure the ObservableCollection CollectionChanged event is
     /// registered so changes in dependencies can be more easily
     /// managed.
     /// </summary>
@@ -53,8 +53,8 @@ namespace MLAPI.SceneManagement
         }
 
         /// <summary>
-        /// Child derived classes can override this method to recieve notifications of a 
-        /// dependency addition 
+        /// Child derived classes can override this method to receive notifications of a
+        /// dependency addition
         /// </summary>
         /// <param name="dependencyAdded"></param>
         protected virtual void OnDependecyAdded(IAssetDependency dependencyAdded)
@@ -63,8 +63,8 @@ namespace MLAPI.SceneManagement
         }
 
         /// <summary>
-        /// Child derived classes can override this method to recieve notifications of a 
-        /// dependency removal 
+        /// Child derived classes can override this method to receive notifications of a
+        /// dependency removal
         /// </summary>
         /// <param name="dependencyRemoved"></param>
         protected virtual void OnDependecyRemoved(IAssetDependency dependencyRemoved)

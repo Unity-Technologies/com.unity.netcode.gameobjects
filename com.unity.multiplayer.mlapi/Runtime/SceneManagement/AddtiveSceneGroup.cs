@@ -29,7 +29,7 @@ namespace MLAPI.SceneManagement
 #if UNITY_EDITOR
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         /// <param name="dependencyRemoved"></param>
         protected override void OnDependecyRemoved(IAssetDependency dependencyRemoved)
@@ -38,7 +38,7 @@ namespace MLAPI.SceneManagement
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         /// <param name="dependencyAdded"></param>
         protected override void OnDependecyAdded(IAssetDependency dependencyAdded)
@@ -102,7 +102,7 @@ namespace MLAPI.SceneManagement
                 }
             }
 
-            // Now validate the build settings includsion for any reference additive scene groups
+            // Now validate the build settings inclusion for any reference additive scene groups
             foreach(var additveSceneGroup in m_AdditiveSceneGroups)
             {
                 if (additveSceneGroup != null)

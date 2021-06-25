@@ -10,13 +10,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9c4b50146588e074881aa52f9648adf9, type: 3}
-  m_Name: SceneRegistrationEntryA1
+  m_Name: SceneRegistrationEntryA6
   m_EditorClassIdentifier: 
-  m_PreviousPrimaryScene: {fileID: 102900000, guid: 9fc0d4010bbf28b4594072e72b8655ab,
+  m_PreviousPrimaryScene: {fileID: 102900000, guid: 1c2375a896b2e8c4a841aa61224b8494,
     type: 3}
   m_PreviousAddtiveSceneGroup: {fileID: 0}
-  m_PrimaryScene: {fileID: 102900000, guid: 9fc0d4010bbf28b4594072e72b8655ab, type: 3}
+  m_PrimaryScene: {fileID: 102900000, guid: 1c2375a896b2e8c4a841aa61224b8494, type: 3}
   m_AutoIncludeInBuild: 1
   SceneIdentifier: 0
-  m_PrimarySceneName: SampleScene
+  m_PrimarySceneName: SceneTransitioningTest
   m_AddtiveSceneGroup: {fileID: 0}

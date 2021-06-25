@@ -252,8 +252,8 @@ namespace MLAPI
             if(NetworkConfig.SceneRegistration != null && !NetworkConfig.SceneRegistration.AssignedToNetworkManager)
             {
                 m_SceneRegistration = NetworkConfig.SceneRegistration;
-                NetworkConfig.SceneRegistration.AssignNetworkManagerScene();                
-                
+                NetworkConfig.SceneRegistration.AssignNetworkManagerScene();
+
             }
             else if (m_SceneRegistration != null && NetworkConfig.SceneRegistration != m_SceneRegistration && m_SceneRegistration.AssignedToNetworkManager)
             {

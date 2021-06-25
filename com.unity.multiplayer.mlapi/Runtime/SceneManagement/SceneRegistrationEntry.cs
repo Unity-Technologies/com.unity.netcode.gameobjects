@@ -80,7 +80,7 @@ namespace MLAPI.SceneManagement
             // If the newly assigned scene is not null
             if (m_PrimaryScene != null)
             {
-                // As long as we should include this scnee registration entry, then add it to the build settings list of scenes to be included
+                // As long as we should include this scene registration entry, then add it to the build settings list of scenes to be included
                 SceneRegistration.AddOrRemoveSceneAsset(m_PrimaryScene, ShouldIncludeInBuildSettings());
             }
 

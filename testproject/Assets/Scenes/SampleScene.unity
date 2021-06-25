@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 705507994}
-  m_IndirectSpecularColor: {r: 0.44657874, g: 0.49641275, b: 0.5748172, a: 1}
+  m_IndirectSpecularColor: {r: 0.44657898, g: 0.4964133, b: 0.5748178, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -509,6 +509,7 @@ MonoBehaviour:
   GlobalObjectIdHash: 3604669530
   AlwaysReplicateAsRoot: 0
   DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
 --- !u!114 &402668304
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -888,6 +889,7 @@ MonoBehaviour:
   NetworkConfig:
     ProtocolVersion: 0
     NetworkTransport: {fileID: 620561610}
+    SceneRegistration: {fileID: 0}
     RegisteredScenes:
     - SampleScene
     AllowRuntimeSceneChanges: 0
@@ -920,6 +922,7 @@ MonoBehaviour:
     EnableMessageBuffering: 1
     MessageBufferTimeout: 20
     EnableNetworkLogs: 1
+  m_SceneRegistration: {fileID: 0}
 --- !u!4 &620561612
 Transform:
   m_ObjectHideFlags: 0
@@ -927,8 +930,8 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 620561609}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 1}
+  m_LocalRotation: {x: 0.06661005, y: 0.9301148, z: -0.29262593, w: 0.21170676}
+  m_LocalPosition: {x: -1.0347366, y: 2.9539723, z: 9.135599}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
@@ -1833,6 +1836,7 @@ MonoBehaviour:
   GlobalObjectIdHash: 3972363333
   AlwaysReplicateAsRoot: 0
   DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
 --- !u!65 &963826007
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -2341,6 +2345,7 @@ MonoBehaviour:
   GlobalObjectIdHash: 1445980162
   AlwaysReplicateAsRoot: 0
   DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
 --- !u!54 &1397037320
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -2606,6 +2611,7 @@ MonoBehaviour:
   GlobalObjectIdHash: 1148320762
   AlwaysReplicateAsRoot: 0
   DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
 --- !u!54 &1402467447
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -3020,6 +3026,7 @@ MonoBehaviour:
   GlobalObjectIdHash: 2710131580
   AlwaysReplicateAsRoot: 0
   DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
 --- !u!114 &1475593096
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3474,4 +3481,3 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2036456027}
   m_Mesh: {fileID: 10209, guid: 0000000000000000e000000000000000, type: 0}
-  
