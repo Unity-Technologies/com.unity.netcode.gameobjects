@@ -2,6 +2,7 @@ using System;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using UnityEditor;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
 
@@ -14,20 +15,24 @@ public class MultiprocessOrchestration
     {
         var workerNode = new Process();
 
-        //TODO this should be replaced eventually by proper orchestration
-        // TODO test on windows
-        const string exeName = "testproject";
+        //TODO this should be replaced eventually by proper orchestration for all supported platforms
         string buildInstructions = $"You probably didn't generate your build. Please make sure you build a player using the '{BuildMultiprocessTestPlayer.BuildAndExecuteMenuName}' menu";
         try
         {
             var buildInfo = File.ReadAllText(Path.Combine(Application.streamingAssetsPath, buildInfoFileName));
-#if UNITY_EDITOR_OSX || UNITY_STANDALONE_OSX
-            workerNode.StartInfo.FileName = $"{buildInfo}.app/Contents/MacOS/{exeName}";
-#elif UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN
-            workerNode.StartInfo.FileName = $"{buildInfo}/{exeName}.exe";
-#else
-            throw new NotImplementedException("StartWorkerNode: Current platform not supported");
-#endif
+            switch (Application.platform)
+            {
+                case RuntimePlatform.OSXPlayer:
+                case RuntimePlatform.OSXEditor:
+                    workerNode.StartInfo.FileName = $"{buildInfo}.app/Contents/MacOS/testproject";
+                    break;
+                case RuntimePlatform.WindowsPlayer:
+                case RuntimePlatform.WindowsEditor:
+                    workerNode.StartInfo.FileName = $"{buildInfo}.exe";
+                    break;
+                default:
+                    throw new NotImplementedException("StartWorkerNode: Current platform not supported");
+            }
         }
         catch (FileNotFoundException)
         {

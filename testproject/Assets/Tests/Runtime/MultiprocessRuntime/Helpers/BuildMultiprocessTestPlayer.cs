@@ -8,7 +8,7 @@ using UnityEngine;
 
 /// <summary>
 /// This is needed as Unity throws "An abnormal situation has occurred: the PlayerLoop internal function has been called recursively. Please contact Customer Support with a sample project so that we can reproduce the problem and troubleshoot it."
-/// when trying to build from Setup() steps in tests. This is the only manual step needed before running multiprocess tests. This can be automatically called by CI.
+/// when trying to build from Setup() steps in tests.
 /// </summary>
 public class BuildMultiprocessTestPlayer : MonoBehaviour
 {
@@ -19,7 +19,7 @@ public class BuildMultiprocessTestPlayer : MonoBehaviour
 
 #if UNITY_EDITOR
     [MenuItem("MLAPI Tests/Build Test Player #t")]
-    public static void BuildReleasePlayer()
+    public static void BuildNoExecute()
     {
         var success = Build();
         if (!success)
@@ -29,7 +29,7 @@ public class BuildMultiprocessTestPlayer : MonoBehaviour
     }
 
     [MenuItem("MLAPI Tests/Build Test Player in debug mode")]
-    public static void BuildDebugPlayer()
+    public static void BuildDebug()
     {
         var success = Build(true);
         if (!success)
@@ -41,29 +41,35 @@ public class BuildMultiprocessTestPlayer : MonoBehaviour
     [MenuItem("MLAPI Tests/Delete Test Build")]
     public static void DeleteBuild()
     {
-#if UNITY_EDITOR_OSX
-        var toDelete = buildPath + ".app";
-        if (Directory.Exists(toDelete))
+        switch (Application.platform)
         {
-            Directory.Delete(toDelete, recursive: true);
+            case RuntimePlatform.WindowsPlayer:
+            case RuntimePlatform.WindowsEditor:
+                var exePath = $"{buildPath}.exe";
+                if (File.Exists(exePath))
+                {
+                    File.Delete(exePath);
+                }
+                else
+                {
+                    Debug.Log($"exe {exePath} doesn't exists");
+                }
+                break;
+            case RuntimePlatform.OSXPlayer:
+            case RuntimePlatform.OSXEditor:
+                var toDelete = buildPath + ".app";
+                if (Directory.Exists(toDelete))
+                {
+                    Directory.Delete(toDelete, recursive: true);
+                }
+                else
+                {
+                    Debug.Log($"directory {toDelete} doesn't exists");
+                }
+                break;
+            default:
+                throw new NotImplementedException();
         }
-        else
-        {
-            Debug.Log($"directory {toDelete} doesn't exists");
-        }
-#elif UNITY_EDITOR_WIN
-        var exePath = Path.Combine(buildPath, $"{PlayerSettings.productName}.exe");
-        if (File.Exists(exePath))
-        {
-            File.Delete(exePath);
-        }
-        else
-        {
-            Debug.Log($"exe {exePath} doesn't exists");
-        }
-#else
-        throw new NotImplementedException();
-#endif
     }
 
     /// <summary>
@@ -81,14 +87,7 @@ public class BuildMultiprocessTestPlayer : MonoBehaviour
         // var buildPath = Application.streamingAssetsPath;
         // deleting so we don't end up testing on outdated builds if there's a build failure
         DeleteBuild();
-#if UNITY_EDITOR_OSX
-        var buildTarget = BuildTarget.StandaloneOSX;
-#elif UNITY_EDITOR_WIN
-        // todo test on windows
-        var buildTarget = BuildTarget.StandaloneWindows;
-#else
-        throw new NotImplementedException("Building for this platform is not supported");
-#endif
+
         var buildOptions = BuildOptions.None;
         buildOptions |= BuildOptions.IncludeTestAssemblies;
         buildOptions |= BuildOptions.StrictMode;
@@ -99,15 +98,20 @@ public class BuildMultiprocessTestPlayer : MonoBehaviour
             // will have more connection permission popups when launching though
         }
 
+        var buildPathToUse = buildPath;
+        if (Application.platform == RuntimePlatform.WindowsPlayer || Application.platform == RuntimePlatform.WindowsEditor)
+        {
+            buildPathToUse += ".exe";
+        }
+
         buildOptions &= ~BuildOptions.AutoRunPlayer;
         var buildReport = BuildPipeline.BuildPlayer(
             new[] { $"Assets/Scenes/{mainSceneName}.unity" },
-            buildPath,
-            buildTarget,
+            buildPathToUse,
+            EditorUserBuildSettings.activeBuildTarget,
             buildOptions);
 
         return buildReport.summary.result == BuildResult.Succeeded;
     }
 #endif
-
 }
