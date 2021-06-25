@@ -112,7 +112,7 @@ namespace MLAPI.MultiprocessRuntimeTests
             {
                 // wait for spawn results coming from clients
                 int finishedCount = 0;
-                if (TestCoordinator.AllClientIdsWithResults.Length != NbWorkers)
+                if (TestCoordinator.AllClientIdsWithResults.Count != NbWorkers)
                 {
                     return false;
                 }
@@ -140,7 +140,7 @@ namespace MLAPI.MultiprocessRuntimeTests
                     Assert.That(lastResult, Is.EqualTo(nbObjects));
                 }
 
-                Assert.That(TestCoordinator.AllClientIdsWithResults.Length, Is.EqualTo(NbWorkers));
+                Assert.That(TestCoordinator.AllClientIdsWithResults.Count, Is.EqualTo(NbWorkers));
                 foreach (var (clientId, result) in TestCoordinator.ConsumeCurrentResult())
                 {
                     Debug.Log($"got result {result} from key {clientId}");

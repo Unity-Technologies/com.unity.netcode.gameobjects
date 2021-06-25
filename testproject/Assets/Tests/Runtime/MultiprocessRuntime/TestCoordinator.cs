@@ -16,30 +16,32 @@ using Debug = UnityEngine.Debug;
 
 // todo test with UTP
 
+/// <summary>
+/// TestCoordinator
+/// Used for coordinating multiprocess end to end tests. Used to call RPCs on other nodes and gather results
+/// This is needed to coordinate server and client execution steps. The current remote player test runner hardcodes test
+/// to run in a bootstrap scene before launching the player and doesn't call each tests individually. There's not opportunity
+/// to coordinate test execution between client and server with that model.
+/// The only per tests communication already existing is to get the results per test as they are running
+/// With this test coordinator, it's not possible to start a main test node with the test runner and have that server start other worker nodes
+/// on which to execute client tests. We use MLAPI as both a test framework and as the target of our performance tests.
+/// </summary>
 [RequireComponent(typeof(NetworkObject))]
 public class TestCoordinator : NetworkBehaviour
 {
-    /// <summary>
-    /// TestCoordinator
-    /// Used for coordinating multiprocess end to end tests. Used to call RPCs on other nodes and gather results
-    /// /// Needed since the current remote player test runner hardcodes test to run in a bootstrap scene before launching the player.
-    /// There's not per-test communication to run these tests, only to get the results per test as they are running
-    /// </summary>
     public const float maxWaitTimeout = 10;
     private const char k_MethodFullNameSplitChar = '@';
+
     public bool isRegistering;
     public bool hasRegistered;
-
-    public static List<ulong> AllClientIdExceptMine
-    {
-        get { return NetworkManager.Singleton.ConnectedClients.Keys.ToList().FindAll(client => client != NetworkManager.Singleton.LocalClientId); }
-    }
-
     private bool m_ShouldShutdown;
-
-    private Dictionary<ulong, List<float>> m_TestResultsLocal = new Dictionary<ulong, List<float>>();
+    private float m_TimeSinceLastConnected;
 
     public static TestCoordinator Instance;
+
+    private Dictionary<ulong, List<float>> m_TestResultsLocal = new Dictionary<ulong, List<float>>();
+    public static List<ulong> AllClientIdsWithResults => Instance.m_TestResultsLocal.Keys.ToList();
+    public static List<ulong> AllClientIdExceptMine => NetworkManager.Singleton.ConnectedClients.Keys.ToList().FindAll(client => client != NetworkManager.Singleton.LocalClientId);
 
     private void Awake()
     {
@@ -121,14 +123,19 @@ public class TestCoordinator : NetworkBehaviour
             Debug.Log($"quitting application, shouldShutdown set to {m_ShouldShutdown}, is listening {NetworkManager.Singleton.IsListening}, is connected client {NetworkManager.Singleton.IsConnectedClient}");
             if (!m_ShouldShutdown)
             {
-#if UNITY_EDITOR
-                UnityEditor.EditorApplication.isPlaying = false;
-#else
-                Application.Quit();
-#endif
+                QuitApplication();
                 Assert.Fail($"something wrong happened, was not connected for {Time.time - m_TimeSinceLastConnected} seconds");
             }
         }
+    }
+
+    private static void QuitApplication()
+    {
+#if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+#else
+        Application.Quit();
+#endif
     }
 
     public void TestRunTeardown()
@@ -150,7 +157,7 @@ public class TestCoordinator : NetworkBehaviour
         {
             // if disconnect callback is for me or for server, quit, we're done here
             Debug.Log($"received disconnect from {clientId}, quitting");
-            Application.Quit();
+            QuitApplication();
         }
     }
 
@@ -162,24 +169,6 @@ public class TestCoordinator : NetworkBehaviour
     private static string GetMethodInfo(Action method)
     {
         return $"{method.Method.DeclaringType.FullName}{k_MethodFullNameSplitChar}{method.Method.Name}";
-    }
-
-    [ServerRpc(RequireOwnership = false)]
-    public void WriteTestResultsServerRpc(float result, ServerRpcParams receiveParams = default)
-    {
-        var senderId = receiveParams.Receive.SenderClientId;
-        if (!m_TestResultsLocal.ContainsKey(senderId))
-        {
-            m_TestResultsLocal[senderId] = new List<float>();
-        }
-
-        m_TestResultsLocal[senderId].Add(result);
-    }
-
-    [ServerRpc(RequireOwnership = false)]
-    public void WriteErrorServerRpc(string errorMessage, ServerRpcParams receiveParams = default)
-    {
-        Debug.LogError($"Got Exception client side {errorMessage}, from client {receiveParams.Receive.SenderClientId}");
     }
 
     public static IEnumerable<(ulong clientId, float result)> ConsumeCurrentResult()
@@ -216,11 +205,17 @@ public class TestCoordinator : NetworkBehaviour
         return float.NaN;
     }
 
-    public static ulong[] AllClientIdsWithResults => Instance.m_TestResultsLocal.Keys.ToArray();
-
+    /// <summary>
+    /// Returns appropriate lambda according to parameters
+    /// Includes time check to make sure this times out
+    /// </summary>
+    /// <param name="useTimeoutException"></param>
+    /// <returns></returns>
+    /// <exception cref="Exception"></exception>
     public static Func<bool> ResultIsSet(bool useTimeoutException = true)
     {
         var startWaitTime = Time.time;
+        Debug.Log("calling result is set");
         return () =>
         {
             if (Time.time - startWaitTime > maxWaitTimeout)
@@ -281,16 +276,16 @@ public class TestCoordinator : NetworkBehaviour
         m_ClientIsFinished[p.Receive.SenderClientId] = true;
     }
 
-    public void TriggerRpc(Action<byte[]> methodInfo, params byte[] args)
+    public void InvokeFromMethodActionRpc(Action<byte[]> methodInfo, params byte[] args)
     {
         var methodInfoString = GetMethodInfo(methodInfo);
-        TriggerInternalClientRpc(methodInfoString, args, new ClientRpcParams { Send = new ClientRpcSendParams { TargetClientIds = AllClientIdExceptMine.ToArray() } });
+        InvokeFromMethodNameClientRpc(methodInfoString, args, new ClientRpcParams { Send = new ClientRpcSendParams { TargetClientIds = AllClientIdExceptMine.ToArray() } });
     }
 
-    public void TriggerRpc(Action methodInfo)
+    public void InvokeFromMethodActionRpc(Action methodInfo)
     {
         var methodInfoString = GetMethodInfo(methodInfo);
-        TriggerInternalClientRpc(methodInfoString, null, new ClientRpcParams { Send = new ClientRpcSendParams { TargetClientIds = AllClientIdExceptMine.ToArray() } });
+        InvokeFromMethodNameClientRpc(methodInfoString, null, new ClientRpcParams { Send = new ClientRpcSendParams { TargetClientIds = AllClientIdExceptMine.ToArray() } });
     }
 
     [ClientRpc]
@@ -309,7 +304,7 @@ public class TestCoordinator : NetworkBehaviour
     }
 
     [ClientRpc]
-    public void TriggerInternalClientRpc(string methodInfoString, byte[] args, ClientRpcParams clientRpcParams = default)
+    public void InvokeFromMethodNameClientRpc(string methodInfoString, byte[] args, ClientRpcParams clientRpcParams = default)
     {
         try
         {
@@ -355,8 +350,23 @@ public class TestCoordinator : NetworkBehaviour
         }
     }
 
-    private float m_TimeSinceLastConnected;
+    [ServerRpc(RequireOwnership = false)]
+    public void WriteTestResultsServerRpc(float result, ServerRpcParams receiveParams = default)
+    {
+        var senderId = receiveParams.Receive.SenderClientId;
+        if (!m_TestResultsLocal.ContainsKey(senderId))
+        {
+            m_TestResultsLocal[senderId] = new List<float>();
+        }
 
+        m_TestResultsLocal[senderId].Add(result);
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    public void WriteErrorServerRpc(string errorMessage, ServerRpcParams receiveParams = default)
+    {
+        Debug.LogError($"Got Exception client side {errorMessage}, from client {receiveParams.Receive.SenderClientId}");
+    }
 
 
     /// <summary>
@@ -389,8 +399,10 @@ public class TestCoordinator : NetworkBehaviour
 
         private StepExecutionContext m_ActionContext;
         private Action<byte[]> m_StepToExecute;
-        public static Dictionary<string, ExecuteStepInContext> allActions = new Dictionary<string, ExecuteStepInContext>();
+        private string m_CurrentActionID;
 
+        // as a remote worker, I store all available actions so I can execute them when triggered from RPCs
+        public static Dictionary<string, ExecuteStepInContext> allActions = new Dictionary<string, ExecuteStepInContext>();
         private static Dictionary<string, int> s_MethodIDCounter = new Dictionary<string, int>();
 
         private NetworkManager m_NetworkManager;
@@ -398,13 +410,14 @@ public class TestCoordinator : NetworkBehaviour
         private List<Func<bool>> m_RemoteIsFinishedChecks = new List<Func<bool>>();
         private Func<bool> m_AdditionalIsFinishedWaiter;
 
-        private string m_CurrentActionID;
 
         private bool m_WaitMultipleUpdates;
         private bool m_TimeoutExpected;
 
         private float m_StartTime;
         private bool isTimingOut => Time.time - m_StartTime > maxWaitTimeout;
+
+        private bool ShouldExecuteLocally => (m_ActionContext == StepExecutionContext.Server && m_NetworkManager.IsServer) || (m_ActionContext == StepExecutionContext.Clients && !m_NetworkManager.IsServer);
 
         // Assumes this is called from same callsite as ExecuteInContext (and assumes this is called from IEnumerator).
         // This relies on the name to be unique for each generated IEnumerator state machines
@@ -420,8 +433,6 @@ public class TestCoordinator : NetworkBehaviour
             var info = callerTypeName;
             return info;
         }
-
-        private bool ShouldExecuteLocally => (m_ActionContext == StepExecutionContext.Server && m_NetworkManager.IsServer) || (m_ActionContext == StepExecutionContext.Clients && !m_NetworkManager.IsServer);
 
         /// <summary>
         /// Executes an action with the specified context. This allows writing tests all in the same sequential flow,
@@ -468,6 +479,7 @@ public class TestCoordinator : NetworkBehaviour
             if (m_IsRegistering)
             {
                 Debug.Log($"registering action with id {currentActionID}");
+                Assert.That(allActions, Does.Not.Contain(currentActionID)); // sanity check
                 allActions[currentActionID] = this;
             }
             else
@@ -558,5 +570,4 @@ public class TestCoordinator : NetworkBehaviour
             }
         }
     }
-
 }

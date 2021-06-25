@@ -36,7 +36,7 @@ namespace MLAPI.MultiprocessRuntimeTests
         {
             // Sanity check for TestCoordinator
             // Call the method
-            TestCoordinator.Instance.TriggerRpc(ExecuteSimpleCoordinatorTest);
+            TestCoordinator.Instance.InvokeFromMethodActionRpc(ExecuteSimpleCoordinatorTest);
 
             var nbResults = 0;
             for (int i = 0; i < NbWorkers; i++) // wait and test for the two clients
@@ -54,7 +54,7 @@ namespace MLAPI.MultiprocessRuntimeTests
         [UnityTest]
         public IEnumerator CheckTestCoordinatorWithArgs()
         {
-            TestCoordinator.Instance.TriggerRpc(ExecuteWithArgs, 99);
+            TestCoordinator.Instance.InvokeFromMethodActionRpc(ExecuteWithArgs, 99);
             var nbResults = 0;
 
             for (int i = 0; i < NbWorkers; i++) // wait and test for the two clients
