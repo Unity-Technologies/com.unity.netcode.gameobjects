@@ -17,7 +17,7 @@ public class MultiprocessOrchestration
         //TODO this should be replaced eventually by proper orchestration
         // TODO test on windows
         const string exeName = "testproject";
-        string buildInstructions = $"You probably didn't generate your build. Please make sure you build a player using the '{BuildAndRunMultiprocessTests.BuildAndExecuteMenuName}' menu";
+        string buildInstructions = $"You probably didn't generate your build. Please make sure you build a player using the '{BuildMultiprocessTestPlayer.BuildAndExecuteMenuName}' menu";
         try
         {
             var buildInfo = File.ReadAllText(Path.Combine(Application.streamingAssetsPath, buildInfoFileName));

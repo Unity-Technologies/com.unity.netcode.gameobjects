@@ -31,7 +31,7 @@ namespace MLAPI.MultiprocessRuntimeTests
                 Assert.Ignore("Ignoring tests that shouldn't run from unity editor. Performance tests should be run from remote test execution on device (this can be ran using the \"run selected tests (your platform) button\"");
             }
 
-            SceneManager.LoadScene(BuildAndRunMultiprocessTests.mainSceneName, LoadSceneMode.Single);
+            SceneManager.LoadScene(BuildMultiprocessTestPlayer.mainSceneName, LoadSceneMode.Single);
             SceneManager.sceneLoaded += OnSceneLoaded;
 
             Debug.Log("starting processes");

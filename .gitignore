@@ -3,3 +3,4 @@
 .vscode
 .idea
 com.unity.test-framework@1.1.24-sam
+StreamingAssets/buildInfo.txt
