@@ -15,13 +15,14 @@ MonoBehaviour:
   m_SceneRegistrations:
   - Scene: {fileID: 102900000, guid: 073bd2111475c0643be45b7abe6a97ad, type: 3}
     IncludeInBuild: 1
-    AdditiveSceneGroup: {fileID: 0}
     m_KnownAdditiveSceneGroup: {fileID: 0}
+    AdditiveSceneGroup: {fileID: 0}
     SceneEntryName: SceneWeAreSwitchingFrom
   - Scene: {fileID: 102900000, guid: ee4d4a69e7f79bc4c861cd9a4b99dd0f, type: 3}
     IncludeInBuild: 1
-    AdditiveSceneGroup: {fileID: 0}
     m_KnownAdditiveSceneGroup: {fileID: 0}
+    AdditiveSceneGroup: {fileID: 0}
     SceneEntryName: SceneWeAreSwitchingTo
-  m_NetworkManagerScene: 
-  NetworkManagerScene: {fileID: 0}
+  m_NetworkManagerScene: SceneWeAreSwitchingFrom
+  NetworkManagerScene: {fileID: 102900000, guid: 073bd2111475c0643be45b7abe6a97ad,
+    type: 3}

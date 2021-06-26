@@ -23,8 +23,6 @@ namespace MLAPI.SceneManagement
         private string m_NetworkManagerScene;
 
 #if UNITY_EDITOR
-
-
         public static string GetSceneNameFromPath(string scenePath)
         {
             var begin = scenePath.LastIndexOf("/", StringComparison.Ordinal) + 1;
@@ -36,8 +34,6 @@ namespace MLAPI.SceneManagement
         {
             foreach (var editorBuildSettingsScene in EditorBuildSettings.scenes)
             {
-                //var sceneName = GetSceneNameFromPath(editorBuildSettingsScene.path);
-
                 if (!NetworkManager.BuildSettingsSceneLookUpTable.ContainsKey(editorBuildSettingsScene.path))
                 {
                     NetworkManager.BuildSettingsSceneLookUpTable.Add(editorBuildSettingsScene.path, editorBuildSettingsScene);
@@ -45,12 +41,24 @@ namespace MLAPI.SceneManagement
             }
         }
 
-        internal static void SynchronizeScenes()
+        /// <summary>
+        /// This is needed in the event you have multiple assembly definitions that all have SceneRegistrations within them
+        /// We have to make sure that we use the scene path as the key in order to allow for "the same scene name" to exist
+        /// but in a different path.  As such, when we are synchronizing our build settings scenes in build list we need to
+        /// always do a full comparison against the existing scenes in build list and our current assembly's scenes in build
+        /// list.
+        /// </summary>
+        /// <param name="removeEntry">path to sceneAsset that will be excluding from build settings scenes in build list</param>
+        internal static void SynchronizeScenes(string removeEntry = null)
         {
             var currentScenes = new Dictionary<string, EditorBuildSettingsScene>();
             foreach (var sceneEntry in EditorBuildSettings.scenes)
             {
-                if(!currentScenes.ContainsKey(sceneEntry.path))
+                if (removeEntry != null && sceneEntry.path == removeEntry)
+                {
+                    continue;
+                }
+                if (!currentScenes.ContainsKey(sceneEntry.path))
                 {
                     currentScenes.Add(sceneEntry.path, sceneEntry);
                 }
@@ -58,27 +66,32 @@ namespace MLAPI.SceneManagement
                 {
                     Debug.LogWarning($"{sceneEntry.path} already exists in dictionary!");
                 }
-
             }
 
             foreach (var keyPair in NetworkManager.BuildSettingsSceneLookUpTable)
             {
                 if (!currentScenes.ContainsKey(keyPair.Key))
                 {
-                    currentScenes.Add(keyPair.Key,keyPair.Value);
+                    currentScenes.Add(keyPair.Key, keyPair.Value);
                 }
             }
-            EditorBuildSettings.scenes = currentScenes.Values.ToArray();
+            currentScenes = currentScenes.OrderBy(x => x.Key).ToDictionary((keyItem)=>keyItem.Key,(valueItem) => valueItem.Value);
 
+            EditorBuildSettings.scenes = currentScenes.Values.ToArray();
         }
 
-
+        /// <summary>
+        /// Adds or removes a scene asset to the build settings scenes in build list
+        /// </summary>
+        /// <param name="scene">SceneAsset</param>
+        /// <param name="addScene">true or false</param>
         internal static void AddOrRemoveSceneAsset(SceneAsset scene, bool addScene)
         {
             if (NetworkManager.BuildSettingsSceneLookUpTable == null)
             {
                 NetworkManager.BuildSettingsSceneLookUpTable = new Dictionary<string, EditorBuildSettingsScene>();
             }
+
             if (NetworkManager.BuildSettingsSceneLookUpTable.Count != EditorBuildSettings.scenes.Length)
             {
                 BuildLookupTableFromEditorBuildSettings();
@@ -93,7 +106,6 @@ namespace MLAPI.SceneManagement
                 {
                     NetworkManager.BuildSettingsSceneLookUpTable.Add(assetPath, new EditorBuildSettingsScene(assetPath, true));
                     SynchronizeScenes();
-                    //EditorBuildSettings.scenes = NetworkManager.BuildSettingsSceneLookUpTable.Values.ToArray();
                 }
             }
             else
@@ -102,9 +114,7 @@ namespace MLAPI.SceneManagement
                 if (NetworkManager.BuildSettingsSceneLookUpTable.ContainsKey(assetPath))
                 {
                     NetworkManager.BuildSettingsSceneLookUpTable.Remove(assetPath);
-
-                    SynchronizeScenes();
-                    //EditorBuildSettings.scenes = NetworkManager.BuildSettingsSceneLookUpTable.Values.ToArray();
+                    SynchronizeScenes(assetPath);
                 }
             }
         }
@@ -149,7 +159,11 @@ namespace MLAPI.SceneManagement
             ValidateBuildSettingsScenes();
         }
 
-
+        /// <summary>
+        /// For this asset dependency, we check to see if we have been added to a NetworkManager instance within a scene
+        /// that is contained within the project
+        /// </summary>
+        /// <returns>true or false</returns>
         protected override bool OnShouldAssetBeIncluded()
         {
             return AssignedToNetworkManager;
@@ -205,6 +219,10 @@ namespace MLAPI.SceneManagement
             return OnShouldAssetBeIncluded();
         }
 #endif
+        /// <summary>
+        /// Invoked to generate the hash value for the NetworkConfig comparison when a client is connecting
+        /// </summary>
+        /// <param name="writer"></param>
         protected override void OnWriteHashSynchValues(NetworkWriter writer)
         {
             if (m_NetworkManagerScene != null && m_NetworkManagerScene != string.Empty)
@@ -225,6 +243,12 @@ namespace MLAPI.SceneManagement
             }
         }
 
+        /// <summary>
+        /// Gets all scene names within this scene registration's scope
+        /// NOTE: Scene names can be the same and this is not a good way to distinguish between scenes but is
+        /// used for backwards compatibility purposes until no longer needed
+        /// </summary>
+        /// <returns></returns>
         public List<string> GetAllScenes()
         {
             var allScenes = new List<string>();
@@ -306,9 +330,5 @@ namespace MLAPI.SceneManagement
         }
         [HideInInspector]
         public string SceneEntryName;
-
-
     }
-
-
 }
