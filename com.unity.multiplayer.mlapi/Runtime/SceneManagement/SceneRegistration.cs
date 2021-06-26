@@ -34,7 +34,6 @@ namespace MLAPI.SceneManagement
 
         private static void BuildLookupTableFromEditorBuildSettings()
         {
-            //s_BuildSettingsSceneLookUpTable.Clear();
             foreach (var editorBuildSettingsScene in EditorBuildSettings.scenes)
             {
                 var sceneName = GetSceneNameFromPath(editorBuildSettingsScene.path);
@@ -45,6 +44,26 @@ namespace MLAPI.SceneManagement
                 }
             }
         }
+
+        internal static void SynchronizeScenes()
+        {
+            var currentScenes = new Dictionary<string, EditorBuildSettingsScene>();
+            foreach (var sceneEntry in EditorBuildSettings.scenes)
+            {
+                currentScenes.Add(GetSceneNameFromPath(sceneEntry.path), sceneEntry);
+            }
+
+            foreach (var keyPair in NetworkManager.BuildSettingsSceneLookUpTable)
+            {
+                if (!currentScenes.ContainsKey(keyPair.Key))
+                {
+                    currentScenes.Add(keyPair.Key,keyPair.Value);
+                }
+            }
+            EditorBuildSettings.scenes = currentScenes.Values.ToArray();
+
+        }
+
 
         internal static void AddOrRemoveSceneAsset(SceneAsset scene, bool addScene)
         {
@@ -63,7 +82,8 @@ namespace MLAPI.SceneManagement
                 if (!NetworkManager.BuildSettingsSceneLookUpTable.ContainsKey(scene.name))
                 {
                     NetworkManager.BuildSettingsSceneLookUpTable.Add(scene.name, new EditorBuildSettingsScene(AssetDatabase.GetAssetPath(scene), true));
-                    EditorBuildSettings.scenes = NetworkManager.BuildSettingsSceneLookUpTable.Values.ToArray();
+                    SynchronizeScenes();
+                    //EditorBuildSettings.scenes = NetworkManager.BuildSettingsSceneLookUpTable.Values.ToArray();
                 }
             }
             else
@@ -72,7 +92,9 @@ namespace MLAPI.SceneManagement
                 if (NetworkManager.BuildSettingsSceneLookUpTable.ContainsKey(scene.name))
                 {
                     NetworkManager.BuildSettingsSceneLookUpTable.Remove(scene.name);
-                    EditorBuildSettings.scenes = NetworkManager.BuildSettingsSceneLookUpTable.Values.ToArray();
+
+                    SynchronizeScenes();
+                    //EditorBuildSettings.scenes = NetworkManager.BuildSettingsSceneLookUpTable.Values.ToArray();
                 }
             }
         }
@@ -125,7 +147,7 @@ namespace MLAPI.SceneManagement
 
         private void OnValidate()
         {
-            if (!BuildPipeline.isBuildingPlayer)
+            //if (!BuildPipeline.isBuildingPlayer)
             {
                 ValidateBuildSettingsScenes();
             }
@@ -191,6 +213,26 @@ namespace MLAPI.SceneManagement
                     }
                 }
             }
+        }
+
+        public List<string> GetAllScenes()
+        {
+            var allScenes = new List<string>();
+
+            if (m_NetworkManagerScene != null && m_NetworkManagerScene != string.Empty)
+            {
+                allScenes.Add(m_NetworkManagerScene);
+            }
+
+            foreach (var sceneRegistrationEntry in m_SceneRegistrations)
+            {
+                if (sceneRegistrationEntry != null && sceneRegistrationEntry.SceneEntryName != null && sceneRegistrationEntry.SceneEntryName != string.Empty)
+                {
+                    allScenes.Add(sceneRegistrationEntry.SceneEntryName);
+                }
+            }
+
+            return allScenes;
         }
     }
 

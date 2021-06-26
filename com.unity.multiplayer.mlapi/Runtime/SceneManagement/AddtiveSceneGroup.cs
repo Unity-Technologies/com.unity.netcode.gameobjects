@@ -48,10 +48,10 @@ namespace MLAPI.SceneManagement
 
         private void OnValidate()
         {
-            if(BuildPipeline.isBuildingPlayer)
-            {
-                return;
-            }
+            //if(BuildPipeline.isBuildingPlayer)
+            //{
+            //    return;
+            //}
 
             foreach (var entry in m_AdditiveSceneGroups)
             {

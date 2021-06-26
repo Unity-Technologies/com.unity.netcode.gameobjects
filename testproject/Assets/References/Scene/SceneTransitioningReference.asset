@@ -13,10 +13,12 @@ MonoBehaviour:
   m_Name: SceneTransitioningReference
   m_EditorClassIdentifier: 
   SceneToReference: {fileID: 102900000, guid: 1c2375a896b2e8c4a841aa61224b8494, type: 3}
-  m_DisplayName: Scene Transitioning Test
   m_IncludedScenes:
   - {fileID: 102900000, guid: 79c2bf7d6b7a06a42a94982aaf1904d8, type: 3}
   - {fileID: 102900000, guid: 637ab8340e96a2949adfe5bfdd42b924, type: 3}
+  m_SceneRegistration: {fileID: 11400000, guid: 05b7cb8c99cbc3346b4d175e67c2d89c,
+    type: 2}
+  m_DisplayName: Scene Transitioning Test
   m_ReferencedScenes:
   - SceneTransitioningTest
   - SecondSceneToLoad

@@ -249,7 +249,7 @@ namespace MLAPI
                 }
             }
 
-            if (!UnityEditor.BuildPipeline.isBuildingPlayer)
+            //if (!UnityEditor.BuildPipeline.isBuildingPlayer)
             {
                 // Detect when SceneRegistration is assigned or deleted to determine if the scenes associated with the SceneRegistration
                 // should be included in the build settings.

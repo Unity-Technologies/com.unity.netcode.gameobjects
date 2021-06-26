@@ -5,15 +5,20 @@ using UnityEngine;
 using UnityEditor;
 #endif
 
+using MLAPI.SceneManagement;
+
 [CreateAssetMenu(fileName = "SceneReference", menuName = "MLAPI/SceneReference")]
 [Serializable]
-public class SceneReference : ScriptableObject,ISceneReference
+public class SceneReference : ScriptableObject, ISceneReference
 {
-#if UNITY_EDITOR    
+#if UNITY_EDITOR
     public SceneAsset SceneToReference;
     [SerializeField]
     private List<SceneAsset> m_IncludedScenes;
 #endif
+    [SerializeField]
+    private SceneRegistration m_SceneRegistration;
+
     [SerializeField]
     private string m_DisplayName;
 
@@ -21,7 +26,9 @@ public class SceneReference : ScriptableObject,ISceneReference
     [SerializeField]
     private List<string> m_ReferencedScenes;
 
-#if UNITY_EDITOR    
+
+
+#if UNITY_EDITOR
     private void OnValidate()
     {
         if (m_ReferencedScenes == null)
@@ -55,7 +62,14 @@ public class SceneReference : ScriptableObject,ISceneReference
 
     public List<string> GetReferencedScenes()
     {
-        return m_ReferencedScenes;
+        if (m_SceneRegistration != null)
+        {
+            return m_SceneRegistration.GetAllScenes();
+        }
+        else
+        {
+            return m_ReferencedScenes;
+        }
     }
 
 
@@ -63,7 +77,7 @@ public class SceneReference : ScriptableObject,ISceneReference
 
 
 public interface ISceneReference
-{ 
+{
     string GetDisplayName();
     List<string> GetReferencedScenes();
 }
