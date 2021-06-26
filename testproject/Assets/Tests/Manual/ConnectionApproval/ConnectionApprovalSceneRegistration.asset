@@ -15,9 +15,9 @@ MonoBehaviour:
   m_SceneRegistrations:
   - Scene: {fileID: 102900000, guid: dd570b5916593cb41bab8beb1c9d9315, type: 3}
     IncludeInBuild: 1
-    AdditiveSceneGroup: {fileID: 0}
-    m_KnownAdditiveSceneGroup: {fileID: 0}
     SceneEntryName: ConnectionApprovalTest
+    m_KnownAdditiveSceneGroup: {fileID: 0}
+    AdditiveSceneGroup: {fileID: 0}
   m_NetworkManagerScene: ConnectionApprovalTest
   NetworkManagerScene: {fileID: 102900000, guid: dd570b5916593cb41bab8beb1c9d9315,
     type: 3}

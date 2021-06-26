@@ -171,10 +171,7 @@ namespace MLAPI.SceneManagement
 
         private void OnValidate()
         {
-            //if (!BuildPipeline.isBuildingPlayer)
-            {
-                ValidateBuildSettingsScenes();
-            }
+            ValidateBuildSettingsScenes();
         }
 
         /// <summary>
@@ -275,18 +272,17 @@ namespace MLAPI.SceneManagement
     /// the scene name that it is pointing to for runtime
     /// </summary>
     [Serializable]
-    public class SceneEntry : ISerializationCallbackReceiver
+    public class SceneEntry : SceneEntryBsase
     {
 #if UNITY_EDITOR
-        public SceneAsset Scene;
-
-        [Tooltip("When set to true, this will automatically register all of the additive scenes with the build settings scenes in build list.  If false, then the scene(s) have to be manually added or will not be included in the build.")]
-        public bool IncludeInBuild;
-
         [SerializeField]
         [HideInInspector]
         private AddtiveSceneGroup m_KnownAdditiveSceneGroup;
 
+        /// <summary>
+        /// Updates the dependencies for the additive scene group associated with this SceneEntry
+        /// </summary>
+        /// <param name="assetDependency"></param>
         internal void UpdateAdditiveSceneGroup(SceneRegistration assetDependency)
         {
             if (AdditiveSceneGroup != m_KnownAdditiveSceneGroup)
@@ -300,10 +296,16 @@ namespace MLAPI.SceneManagement
 
             if (AdditiveSceneGroup != null)
             {
-                AdditiveSceneGroup.AddDependency(assetDependency);
+                if (IncludeInBuild)
+                {
+                    AdditiveSceneGroup.AddDependency(assetDependency);
+                }
+                else
+                {
+                    AdditiveSceneGroup.RemoveDependency(assetDependency);
+                }
                 AdditiveSceneGroup.ValidateBuildSettingsScenes();
             }
-
 
             if (m_KnownAdditiveSceneGroup != AdditiveSceneGroup)
             {
@@ -311,14 +313,33 @@ namespace MLAPI.SceneManagement
             }
         }
 #endif
-
         public AddtiveSceneGroup AdditiveSceneGroup;
+    }
 
+
+    /// <summary>
+    /// A container class to hold the editor specific assets and
+    /// the scene name that it is pointing to for runtime
+    /// </summary>
+    [Serializable]
+    public class SceneEntryBsase : ISerializationCallbackReceiver
+    {
+#if UNITY_EDITOR
+        [Tooltip("When set to true, this will automatically register all of the additive scenes (including groups) with the build settings scenes in build list.  If false, then the scene(s) have to be manually added or will not be included in the build.")]
+        public bool IncludeInBuild;
+        public SceneAsset Scene;
+#endif
+
+        [HideInInspector]
+        public string SceneEntryName;
 
         public void OnAfterDeserialize()
         {
         }
 
+        /// <summary>
+        /// This is used to extract the scene name from the SceneAsset
+        /// </summary>
         public void OnBeforeSerialize()
         {
 #if UNITY_EDITOR
@@ -328,7 +349,5 @@ namespace MLAPI.SceneManagement
             }
 #endif
         }
-        [HideInInspector]
-        public string SceneEntryName;
     }
 }

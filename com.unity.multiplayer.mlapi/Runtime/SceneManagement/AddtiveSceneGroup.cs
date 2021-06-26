@@ -48,11 +48,8 @@ namespace MLAPI.SceneManagement
 
         private void OnValidate()
         {
-            //if(BuildPipeline.isBuildingPlayer)
-            //{
-            //    return;
-            //}
-
+            // Always add all known dependencies during validation
+            // We can apply the same dependencies since AddDependency checks to assure that the dependency doesn't already exist before adding it
             foreach (var entry in m_AdditiveSceneGroups)
             {
                 if (entry != null)
@@ -61,6 +58,8 @@ namespace MLAPI.SceneManagement
                 }
             }
 
+            // Once all dependencies have been added, then check to see if we lost a dependency
+            // If so, then we remove that dependency
             foreach (var entry in m_KnownAdditiveSceneGroups)
             {
                 if (entry != null)
@@ -72,12 +71,15 @@ namespace MLAPI.SceneManagement
                 }
             }
 
+            // Next, keep m_KnownAdditiveSceneGroups in sync with m_AdditiveSceneGroups
             m_KnownAdditiveSceneGroups.Clear();
             m_KnownAdditiveSceneGroups.AddRange(m_AdditiveSceneGroups);
             ValidateBuildSettingsScenes();
         }
 
-
+        /// <summary>
+        /// Validate that all scenes in the build list is in sync with the current relative AdditiveSceneGroup and its children
+        /// </summary>
         internal void ValidateBuildSettingsScenes()
         {
             var shouldInclude = ShouldAssetBeIncluded();
@@ -90,7 +92,7 @@ namespace MLAPI.SceneManagement
                     // Only filter out the referenced AdditiveSceneEntries if we shouldn't include this specific AdditiveSceneGroup's reference scene assets
                     // Note: Other AdditiveSceneGroups could have other associated SceneRegistrationEntries that might qualify it to be added to the build settings
                     // so we only apply this to the current AddtiveSceneGroup's referenced AdditiveSceneEntries
-                    SceneRegistration.AddOrRemoveSceneAsset(includedScene.Scene, shouldInclude && partOfRootBranch && includedScene.AutoIncludeInBuild);
+                    SceneRegistration.AddOrRemoveSceneAsset(includedScene.Scene, shouldInclude && partOfRootBranch && includedScene.IncludeInBuild);
                 }
             }
 
@@ -141,30 +143,8 @@ namespace MLAPI.SceneManagement
     /// the scene name that it is pointing to for runtime
     /// </summary>
     [Serializable]
-    public class AdditiveSceneEntry: ISerializationCallbackReceiver
+    public class AdditiveSceneEntry : SceneEntryBsase
     {
-#if UNITY_EDITOR
-        public SceneAsset Scene;
-
-        [Tooltip("When set to true, this will automatically register all of the additive scenes with the build settings scenes in build list.  If false, then the scene(s) have to be manually added or will not be included in the build.")]
-        public bool AutoIncludeInBuild;
-#endif
-        [HideInInspector]
-        public string SceneEntryName;
-
-        public void OnAfterDeserialize()
-        {
-
-        }
-        public void OnBeforeSerialize()
-        {
-#if UNITY_EDITOR
-            if (Scene != null && SceneEntryName != Scene.name)
-            {
-                SceneEntryName = Scene.name;
-            }
-#endif
-        }
     }
 
 

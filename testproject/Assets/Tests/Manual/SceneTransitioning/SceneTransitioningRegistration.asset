@@ -15,19 +15,19 @@ MonoBehaviour:
   m_SceneRegistrations:
   - Scene: {fileID: 102900000, guid: 1c2375a896b2e8c4a841aa61224b8494, type: 3}
     IncludeInBuild: 1
+    SceneEntryName: SceneTransitioningTest
     m_KnownAdditiveSceneGroup: {fileID: 0}
     AdditiveSceneGroup: {fileID: 0}
-    SceneEntryName: SceneTransitioningTest
   - Scene: {fileID: 102900000, guid: 79c2bf7d6b7a06a42a94982aaf1904d8, type: 3}
     IncludeInBuild: 1
+    SceneEntryName: SecondSceneToLoad
     m_KnownAdditiveSceneGroup: {fileID: 0}
     AdditiveSceneGroup: {fileID: 0}
-    SceneEntryName: SecondSceneToLoad
   - Scene: {fileID: 102900000, guid: 637ab8340e96a2949adfe5bfdd42b924, type: 3}
     IncludeInBuild: 1
+    SceneEntryName: ThirdSceneToLoad
     m_KnownAdditiveSceneGroup: {fileID: 0}
     AdditiveSceneGroup: {fileID: 0}
-    SceneEntryName: ThirdSceneToLoad
   m_NetworkManagerScene: SceneTransitioningTest
   NetworkManagerScene: {fileID: 102900000, guid: 1c2375a896b2e8c4a841aa61224b8494,
     type: 3}
