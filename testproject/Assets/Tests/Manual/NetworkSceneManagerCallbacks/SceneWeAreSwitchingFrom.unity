@@ -412,6 +412,8 @@ MonoBehaviour:
   NetworkConfig:
     ProtocolVersion: 0
     NetworkTransport: {fileID: 746470208}
+    SceneRegistration: {fileID: 11400000, guid: c4033f0f488998342a47ee9398b5c316,
+      type: 2}
     RegisteredScenes:
     - SceneWeAreSwitchingFrom
     - SceneWeAreSwitchingTo
@@ -439,6 +441,8 @@ MonoBehaviour:
     EnableMessageBuffering: 1
     MessageBufferTimeout: 20
     EnableNetworkLogs: 1
+  m_SceneRegistration: {fileID: 11400000, guid: c4033f0f488998342a47ee9398b5c316,
+    type: 2}
 --- !u!4 &746470210
 Transform:
   m_ObjectHideFlags: 0
@@ -586,6 +590,7 @@ MonoBehaviour:
   GlobalObjectIdHash: 4103035044
   AlwaysReplicateAsRoot: 0
   DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
 --- !u!114 &1146788460
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -1008,7 +1008,8 @@ MonoBehaviour:
   NetworkConfig:
     ProtocolVersion: 0
     NetworkTransport: {fileID: 1024114719}
-    SceneRegistration: {fileID: 0}
+    SceneRegistration: {fileID: 11400000, guid: 05b7cb8c99cbc3346b4d175e67c2d89c,
+      type: 2}
     RegisteredScenes:
     - SceneTransitioningTest
     - SecondSceneToLoad
@@ -1045,7 +1046,8 @@ MonoBehaviour:
     EnableMessageBuffering: 1
     MessageBufferTimeout: 20
     EnableNetworkLogs: 1
-  m_SceneRegistration: {fileID: 0}
+  m_SceneRegistration: {fileID: 11400000, guid: 05b7cb8c99cbc3346b4d175e67c2d89c,
+    type: 2}
 --- !u!114 &1024114719
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -1433,7 +1433,8 @@ MonoBehaviour:
   NetworkConfig:
     ProtocolVersion: 0
     NetworkTransport: {fileID: 1706952616}
-    SceneRegistration: {fileID: 0}
+    SceneRegistration: {fileID: 11400000, guid: 600719e4f344cd24ba0f8b17e1a2ffbd,
+      type: 2}
     RegisteredScenes:
     - TestEnableDisableSceneNetworkObject
     - EnableDisableSceneNetworkObject
@@ -1461,7 +1462,8 @@ MonoBehaviour:
     EnableMessageBuffering: 1
     MessageBufferTimeout: 20
     EnableNetworkLogs: 1
-  m_SceneRegistration: {fileID: 0}
+  m_SceneRegistration: {fileID: 11400000, guid: 600719e4f344cd24ba0f8b17e1a2ffbd,
+    type: 2}
 --- !u!114 &1706952616
 MonoBehaviour:
   m_ObjectHideFlags: 0

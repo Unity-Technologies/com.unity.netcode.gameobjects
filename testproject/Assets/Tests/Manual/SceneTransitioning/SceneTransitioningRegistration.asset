@@ -10,27 +10,24 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 180fe42d996da264ab3d32e3fc9033ca, type: 3}
-  m_Name: SceneRegistration
+  m_Name: SceneTransitioningRegistration
   m_EditorClassIdentifier: 
   m_SceneRegistrations:
   - Scene: {fileID: 102900000, guid: 1c2375a896b2e8c4a841aa61224b8494, type: 3}
-    AutoIncludeInBuild: 1
-    AdditiveSceneGroup: {fileID: 0}
+    IncludeInBuild: 1
     m_KnownAdditiveSceneGroup: {fileID: 0}
+    AdditiveSceneGroup: {fileID: 0}
     SceneEntryName: SceneTransitioningTest
   - Scene: {fileID: 102900000, guid: 79c2bf7d6b7a06a42a94982aaf1904d8, type: 3}
-    AutoIncludeInBuild: 1
-    AdditiveSceneGroup: {fileID: 11400000, guid: 863734e265d8f81478833cbf1902f460,
-      type: 2}
-    m_KnownAdditiveSceneGroup: {fileID: 11400000, guid: 863734e265d8f81478833cbf1902f460,
-      type: 2}
+    IncludeInBuild: 1
+    m_KnownAdditiveSceneGroup: {fileID: 0}
+    AdditiveSceneGroup: {fileID: 0}
     SceneEntryName: SecondSceneToLoad
   - Scene: {fileID: 102900000, guid: 637ab8340e96a2949adfe5bfdd42b924, type: 3}
-    AutoIncludeInBuild: 1
-    AdditiveSceneGroup: {fileID: 0}
+    IncludeInBuild: 1
     m_KnownAdditiveSceneGroup: {fileID: 0}
+    AdditiveSceneGroup: {fileID: 0}
     SceneEntryName: ThirdSceneToLoad
   m_NetworkManagerScene: SceneTransitioningTest
-  m_KnownSceneRegistrations: []
   NetworkManagerScene: {fileID: 102900000, guid: 1c2375a896b2e8c4a841aa61224b8494,
     type: 3}

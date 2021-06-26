@@ -863,6 +863,7 @@ MonoBehaviour:
   GlobalObjectIdHash: 1844309308
   AlwaysReplicateAsRoot: 0
   DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
 --- !u!114 &1207168974
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1035,6 +1036,8 @@ MonoBehaviour:
   NetworkConfig:
     ProtocolVersion: 0
     NetworkTransport: {fileID: 1574548685}
+    SceneRegistration: {fileID: 11400000, guid: 6c63687ca9a2e6b418b8770dde3c7b66,
+      type: 2}
     RegisteredScenes:
     - RpcTesting
     AllowRuntimeSceneChanges: 0
@@ -1061,6 +1064,8 @@ MonoBehaviour:
     EnableMessageBuffering: 1
     MessageBufferTimeout: 20
     EnableNetworkLogs: 1
+  m_SceneRegistration: {fileID: 11400000, guid: 6c63687ca9a2e6b418b8770dde3c7b66,
+    type: 2}
 --- !u!4 &1574548687
 Transform:
   m_ObjectHideFlags: 0

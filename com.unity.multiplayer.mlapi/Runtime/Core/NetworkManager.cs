@@ -231,6 +231,9 @@ namespace MLAPI
         [HideInInspector]
         [SerializeField]
         private SceneRegistration m_SceneRegistration;
+
+        static internal Dictionary<string, UnityEditor.EditorBuildSettingsScene> BuildSettingsSceneLookUpTable;
+
         private void OnValidate()
         {
             if (NetworkConfig == null)
@@ -246,19 +249,20 @@ namespace MLAPI
                 }
             }
 
-
-            // Detect when SceneRegistration is assigned or deleted to determine if the scenes associated with the SceneRegistration
-            // should be included in the build settings.
-            if(NetworkConfig.SceneRegistration != null && !NetworkConfig.SceneRegistration.AssignedToNetworkManager)
+            if (!UnityEditor.BuildPipeline.isBuildingPlayer)
             {
-                m_SceneRegistration = NetworkConfig.SceneRegistration;
-                NetworkConfig.SceneRegistration.AssignNetworkManagerScene();
-
-            }
-            else if (m_SceneRegistration != null && NetworkConfig.SceneRegistration != m_SceneRegistration && m_SceneRegistration.AssignedToNetworkManager)
-            {
-                m_SceneRegistration.AssignNetworkManagerScene(false);
-                m_SceneRegistration = null;
+                // Detect when SceneRegistration is assigned or deleted to determine if the scenes associated with the SceneRegistration
+                // should be included in the build settings.
+                if (NetworkConfig.SceneRegistration != null && (!NetworkConfig.SceneRegistration.AssignedToNetworkManager))
+                {
+                    m_SceneRegistration = NetworkConfig.SceneRegistration;
+                    NetworkConfig.SceneRegistration.AssignNetworkManagerScene();
+                }
+                else if (m_SceneRegistration != null && NetworkConfig.SceneRegistration != m_SceneRegistration && m_SceneRegistration.AssignedToNetworkManager)
+                {
+                    m_SceneRegistration.AssignNetworkManagerScene(false);
+                    m_SceneRegistration = null;
+                }
             }
 
             var activeScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();

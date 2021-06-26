@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 180fe42d996da264ab3d32e3fc9033ca, type: 3}
+  m_Name: SampleSceneRegistration
+  m_EditorClassIdentifier: 
+  m_SceneRegistrations:
+  - Scene: {fileID: 102900000, guid: 9fc0d4010bbf28b4594072e72b8655ab, type: 3}
+    IncludeInBuild: 1
+    AdditiveSceneGroup: {fileID: 0}
+    m_KnownAdditiveSceneGroup: {fileID: 0}
+    SceneEntryName: SampleScene
+  m_NetworkManagerScene: SampleScene
+  NetworkManagerScene: {fileID: 102900000, guid: 9fc0d4010bbf28b4594072e72b8655ab,
+    type: 3}

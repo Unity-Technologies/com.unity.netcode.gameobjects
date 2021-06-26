@@ -23,15 +23,7 @@ namespace MLAPI.SceneManagement
         private string m_NetworkManagerScene;
 
 #if UNITY_EDITOR
-        // Since Unity does not support observable collections there are two ways to approach this:
-        // 1.) Make a duplicate list that adjusts itself during OnValidate
-        // 2.) Make a customizable property editor that can handle the serialization process (which you will end up with two lists in the end anyway)
-        // For this pass, I opted for solution #1
-        [HideInInspector]
-        [SerializeField]
-        private List<SceneEntry> m_KnownSceneRegistrations;
 
-        static private Dictionary<string, EditorBuildSettingsScene> s_BuildSettingsSceneLookUpTable = new Dictionary<string, EditorBuildSettingsScene>();
 
         public static string GetSceneNameFromPath(string scenePath)
         {
@@ -42,21 +34,25 @@ namespace MLAPI.SceneManagement
 
         private static void BuildLookupTableFromEditorBuildSettings()
         {
-            s_BuildSettingsSceneLookUpTable.Clear();
+            //s_BuildSettingsSceneLookUpTable.Clear();
             foreach (var editorBuildSettingsScene in EditorBuildSettings.scenes)
             {
                 var sceneName = GetSceneNameFromPath(editorBuildSettingsScene.path);
 
-                if (!s_BuildSettingsSceneLookUpTable.ContainsKey(sceneName))
+                if (!NetworkManager.BuildSettingsSceneLookUpTable.ContainsKey(sceneName))
                 {
-                    s_BuildSettingsSceneLookUpTable.Add(sceneName, editorBuildSettingsScene);
+                    NetworkManager.BuildSettingsSceneLookUpTable.Add(sceneName, editorBuildSettingsScene);
                 }
             }
         }
 
         internal static void AddOrRemoveSceneAsset(SceneAsset scene, bool addScene)
         {
-            if (s_BuildSettingsSceneLookUpTable.Count != EditorBuildSettings.scenes.Length)
+            if (NetworkManager.BuildSettingsSceneLookUpTable == null)
+            {
+                NetworkManager.BuildSettingsSceneLookUpTable = new Dictionary<string, EditorBuildSettingsScene>();
+            }
+            if (NetworkManager.BuildSettingsSceneLookUpTable.Count != EditorBuildSettings.scenes.Length)
             {
                 BuildLookupTableFromEditorBuildSettings();
             }
@@ -64,23 +60,22 @@ namespace MLAPI.SceneManagement
             if (addScene)
             {
                 // If the scene does not exist in our local list, then add it and update the build settings
-                if (!s_BuildSettingsSceneLookUpTable.ContainsKey(scene.name))
+                if (!NetworkManager.BuildSettingsSceneLookUpTable.ContainsKey(scene.name))
                 {
-                    s_BuildSettingsSceneLookUpTable.Add(scene.name, new EditorBuildSettingsScene(AssetDatabase.GetAssetPath(scene), true));
-                    EditorBuildSettings.scenes = s_BuildSettingsSceneLookUpTable.Values.ToArray();
+                    NetworkManager.BuildSettingsSceneLookUpTable.Add(scene.name, new EditorBuildSettingsScene(AssetDatabase.GetAssetPath(scene), true));
+                    EditorBuildSettings.scenes = NetworkManager.BuildSettingsSceneLookUpTable.Values.ToArray();
                 }
             }
             else
             {
                 // If the scene does exist in our local list, then remove it
-                if (s_BuildSettingsSceneLookUpTable.ContainsKey(scene.name))
+                if (NetworkManager.BuildSettingsSceneLookUpTable.ContainsKey(scene.name))
                 {
-                    s_BuildSettingsSceneLookUpTable.Remove(scene.name);
-                    EditorBuildSettings.scenes = s_BuildSettingsSceneLookUpTable.Values.ToArray();
+                    NetworkManager.BuildSettingsSceneLookUpTable.Remove(scene.name);
+                    EditorBuildSettings.scenes = NetworkManager.BuildSettingsSceneLookUpTable.Values.ToArray();
                 }
             }
         }
-
 
         internal bool AssignedToNetworkManager
         {
@@ -130,7 +125,10 @@ namespace MLAPI.SceneManagement
 
         private void OnValidate()
         {
-            ValidateBuildSettingsScenes();
+            if (!BuildPipeline.isBuildingPlayer)
+            {
+                ValidateBuildSettingsScenes();
+            }
         }
 
         /// <summary>
@@ -154,7 +152,7 @@ namespace MLAPI.SceneManagement
                             sceneRegistrationEntry.SceneEntryName = sceneRegistrationEntry.Scene.name;
                         }
 
-                        AddOrRemoveSceneAsset(sceneRegistrationEntry.Scene, shouldInclude && partOfRootBranch && sceneRegistrationEntry.AutoIncludeInBuild);
+                        AddOrRemoveSceneAsset(sceneRegistrationEntry.Scene, shouldInclude && partOfRootBranch && sceneRegistrationEntry.IncludeInBuild);
 
                         sceneRegistrationEntry.UpdateAdditiveSceneGroup(this);
                     }
@@ -187,7 +185,7 @@ namespace MLAPI.SceneManagement
                 if (sceneRegistrationEntry != null && sceneRegistrationEntry.SceneEntryName != null && sceneRegistrationEntry.SceneEntryName != string.Empty)
                 {
                     writer.WriteString(sceneRegistrationEntry.SceneEntryName);
-                    if (sceneRegistrationEntry.AdditiveSceneGroup != null )
+                    if (sceneRegistrationEntry.AdditiveSceneGroup != null)
                     {
                         sceneRegistrationEntry.AdditiveSceneGroup.WriteHashSynchValues(writer);
                     }
@@ -207,9 +205,7 @@ namespace MLAPI.SceneManagement
         public SceneAsset Scene;
 
         [Tooltip("When set to true, this will automatically register all of the additive scenes with the build settings scenes in build list.  If false, then the scene(s) have to be manually added or will not be included in the build.")]
-        public bool AutoIncludeInBuild;
-
-        public AddtiveSceneGroup AdditiveSceneGroup;
+        public bool IncludeInBuild;
 
         [SerializeField]
         [HideInInspector]
@@ -237,9 +233,11 @@ namespace MLAPI.SceneManagement
             {
                 m_KnownAdditiveSceneGroup = AdditiveSceneGroup;
             }
-
-
         }
+#endif
+
+        public AddtiveSceneGroup AdditiveSceneGroup;
+
 
         public void OnAfterDeserialize()
         {
@@ -247,13 +245,13 @@ namespace MLAPI.SceneManagement
 
         public void OnBeforeSerialize()
         {
+#if UNITY_EDITOR
             if (Scene != null && SceneEntryName != Scene.name)
             {
                 SceneEntryName = Scene.name;
             }
-        }
-
 #endif
+        }
         [HideInInspector]
         public string SceneEntryName;
 

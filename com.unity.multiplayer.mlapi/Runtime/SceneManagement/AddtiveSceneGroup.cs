@@ -48,6 +48,11 @@ namespace MLAPI.SceneManagement
 
         private void OnValidate()
         {
+            if(BuildPipeline.isBuildingPlayer)
+            {
+                return;
+            }
+
             foreach (var entry in m_AdditiveSceneGroups)
             {
                 if (entry != null)
@@ -153,10 +158,12 @@ namespace MLAPI.SceneManagement
         }
         public void OnBeforeSerialize()
         {
-            if(Scene != null && SceneEntryName != Scene.name)
+#if UNITY_EDITOR
+            if (Scene != null && SceneEntryName != Scene.name)
             {
                 SceneEntryName = Scene.name;
             }
+#endif
         }
     }
 
