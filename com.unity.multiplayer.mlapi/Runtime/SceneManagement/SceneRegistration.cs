@@ -36,11 +36,11 @@ namespace MLAPI.SceneManagement
         {
             foreach (var editorBuildSettingsScene in EditorBuildSettings.scenes)
             {
-                var sceneName = GetSceneNameFromPath(editorBuildSettingsScene.path);
+                //var sceneName = GetSceneNameFromPath(editorBuildSettingsScene.path);
 
-                if (!NetworkManager.BuildSettingsSceneLookUpTable.ContainsKey(sceneName))
+                if (!NetworkManager.BuildSettingsSceneLookUpTable.ContainsKey(editorBuildSettingsScene.path))
                 {
-                    NetworkManager.BuildSettingsSceneLookUpTable.Add(sceneName, editorBuildSettingsScene);
+                    NetworkManager.BuildSettingsSceneLookUpTable.Add(editorBuildSettingsScene.path, editorBuildSettingsScene);
                 }
             }
         }
@@ -50,7 +50,15 @@ namespace MLAPI.SceneManagement
             var currentScenes = new Dictionary<string, EditorBuildSettingsScene>();
             foreach (var sceneEntry in EditorBuildSettings.scenes)
             {
-                currentScenes.Add(GetSceneNameFromPath(sceneEntry.path), sceneEntry);
+                if(!currentScenes.ContainsKey(sceneEntry.path))
+                {
+                    currentScenes.Add(sceneEntry.path, sceneEntry);
+                }
+                else
+                {
+                    Debug.LogWarning($"{sceneEntry.path} already exists in dictionary!");
+                }
+
             }
 
             foreach (var keyPair in NetworkManager.BuildSettingsSceneLookUpTable)
@@ -76,12 +84,14 @@ namespace MLAPI.SceneManagement
                 BuildLookupTableFromEditorBuildSettings();
             }
 
+            var assetPath = AssetDatabase.GetAssetPath(scene);
+
             if (addScene)
             {
                 // If the scene does not exist in our local list, then add it and update the build settings
-                if (!NetworkManager.BuildSettingsSceneLookUpTable.ContainsKey(scene.name))
+                if (!NetworkManager.BuildSettingsSceneLookUpTable.ContainsKey(assetPath))
                 {
-                    NetworkManager.BuildSettingsSceneLookUpTable.Add(scene.name, new EditorBuildSettingsScene(AssetDatabase.GetAssetPath(scene), true));
+                    NetworkManager.BuildSettingsSceneLookUpTable.Add(assetPath, new EditorBuildSettingsScene(assetPath, true));
                     SynchronizeScenes();
                     //EditorBuildSettings.scenes = NetworkManager.BuildSettingsSceneLookUpTable.Values.ToArray();
                 }
@@ -89,9 +99,9 @@ namespace MLAPI.SceneManagement
             else
             {
                 // If the scene does exist in our local list, then remove it
-                if (NetworkManager.BuildSettingsSceneLookUpTable.ContainsKey(scene.name))
+                if (NetworkManager.BuildSettingsSceneLookUpTable.ContainsKey(assetPath))
                 {
-                    NetworkManager.BuildSettingsSceneLookUpTable.Remove(scene.name);
+                    NetworkManager.BuildSettingsSceneLookUpTable.Remove(assetPath);
 
                     SynchronizeScenes();
                     //EditorBuildSettings.scenes = NetworkManager.BuildSettingsSceneLookUpTable.Values.ToArray();
