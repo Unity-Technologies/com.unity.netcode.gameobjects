@@ -131,6 +131,7 @@ namespace MLAPI.SceneManagement
             {
                 return IsRootAssetDependency();
             }
+
             foreach(var dependency in m_Dependencies)
             {
                 if(dependency.BelongsToRootAssetBranch())

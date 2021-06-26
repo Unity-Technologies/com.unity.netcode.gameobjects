@@ -16,7 +16,7 @@ namespace MLAPI.SceneManagement
     public class SceneRegistration : AssetDependency
     {
         [SerializeField]
-        private List<SceneRegistrationEntry> m_SceneRegistrations;
+        private List<SceneEntry> m_SceneRegistrations;
 
         [HideInInspector]
         [SerializeField]
@@ -29,7 +29,7 @@ namespace MLAPI.SceneManagement
         // For this pass, I opted for solution #1
         [HideInInspector]
         [SerializeField]
-        private List<SceneRegistrationEntry> m_KnownSceneRegistrations;
+        private List<SceneEntry> m_KnownSceneRegistrations;
 
         static private Dictionary<string, EditorBuildSettingsScene> s_BuildSettingsSceneLookUpTable = new Dictionary<string, EditorBuildSettingsScene>();
 
@@ -86,7 +86,7 @@ namespace MLAPI.SceneManagement
         {
             get
             {
-                if(NetworkManagerScene != null)
+                if (NetworkManagerScene != null)
                 {
                     return true;
                 }
@@ -104,7 +104,7 @@ namespace MLAPI.SceneManagement
             {
                 var currentScene = SceneManager.GetActiveScene();
                 NetworkManagerScene = AssetDatabase.LoadAssetAtPath<SceneAsset>(currentScene.path);
-                if(NetworkManagerScene != null)
+                if (NetworkManagerScene != null)
                 {
                     m_NetworkManagerScene = NetworkManagerScene.name;
                     AddOrRemoveSceneAsset(NetworkManagerScene, true);
@@ -130,27 +130,6 @@ namespace MLAPI.SceneManagement
 
         private void OnValidate()
         {
-            foreach (var entry in m_SceneRegistrations)
-            {
-                if (entry != null)
-                {
-                    entry.AddDependency(this);
-                }
-            }
-
-            foreach (var entry in m_KnownSceneRegistrations)
-            {
-                if (entry != null)
-                {
-                    if (!m_SceneRegistrations.Contains(entry))
-                    {
-                        entry.RemoveDependency(this);
-                    }
-                }
-            }
-
-            m_KnownSceneRegistrations.Clear();
-            m_KnownSceneRegistrations.AddRange(m_SceneRegistrations);
             ValidateBuildSettingsScenes();
         }
 
@@ -161,13 +140,23 @@ namespace MLAPI.SceneManagement
         internal void ValidateBuildSettingsScenes()
         {
             //Cycle through all scenes registered and validate the build settings scenes list
-            if (m_SceneRegistrations != null)
+            if (m_SceneRegistrations != null && m_SceneRegistrations.Count > 0)
             {
+                var shouldInclude = ShouldAssetBeIncluded();
+                var partOfRootBranch = BelongsToRootAssetBranch();
+
                 foreach (var sceneRegistrationEntry in m_SceneRegistrations)
                 {
-                    if (sceneRegistrationEntry != null)
+                    if (sceneRegistrationEntry != null && sceneRegistrationEntry.Scene != null)
                     {
-                        sceneRegistrationEntry.ValidateBuildSettingsScenes();
+                        if (sceneRegistrationEntry.SceneEntryName != sceneRegistrationEntry.Scene.name)
+                        {
+                            sceneRegistrationEntry.SceneEntryName = sceneRegistrationEntry.Scene.name;
+                        }
+
+                        AddOrRemoveSceneAsset(sceneRegistrationEntry.Scene, shouldInclude && partOfRootBranch && sceneRegistrationEntry.AutoIncludeInBuild);
+
+                        sceneRegistrationEntry.UpdateAdditiveSceneGroup(this);
                     }
                 }
             }
@@ -188,16 +177,87 @@ namespace MLAPI.SceneManagement
 #endif
         protected override void OnWriteHashSynchValues(NetworkWriter writer)
         {
-            if(m_NetworkManagerScene != null && m_NetworkManagerScene != string.Empty)
+            if (m_NetworkManagerScene != null && m_NetworkManagerScene != string.Empty)
             {
                 writer.WriteString(m_NetworkManagerScene);
             }
 
-            foreach(var sceneRegistrationEntry in m_SceneRegistrations)
+            foreach (var sceneRegistrationEntry in m_SceneRegistrations)
             {
-                sceneRegistrationEntry.WriteHashSynchValues(writer);
+                if (sceneRegistrationEntry != null && sceneRegistrationEntry.SceneEntryName != null && sceneRegistrationEntry.SceneEntryName != string.Empty)
+                {
+                    writer.WriteString(sceneRegistrationEntry.SceneEntryName);
+                    if (sceneRegistrationEntry.AdditiveSceneGroup != null )
+                    {
+                        sceneRegistrationEntry.AdditiveSceneGroup.WriteHashSynchValues(writer);
+                    }
+                }
             }
         }
+    }
+
+    /// <summary>
+    /// A container class to hold the editor specific assets and
+    /// the scene name that it is pointing to for runtime
+    /// </summary>
+    [Serializable]
+    public class SceneEntry : ISerializationCallbackReceiver
+    {
+#if UNITY_EDITOR
+        public SceneAsset Scene;
+
+        [Tooltip("When set to true, this will automatically register all of the additive scenes with the build settings scenes in build list.  If false, then the scene(s) have to be manually added or will not be included in the build.")]
+        public bool AutoIncludeInBuild;
+
+        public AddtiveSceneGroup AdditiveSceneGroup;
+
+        [SerializeField]
+        [HideInInspector]
+        private AddtiveSceneGroup m_KnownAdditiveSceneGroup;
+
+        internal void UpdateAdditiveSceneGroup(SceneRegistration assetDependency)
+        {
+            if (AdditiveSceneGroup != m_KnownAdditiveSceneGroup)
+            {
+                if (m_KnownAdditiveSceneGroup != null)
+                {
+                    m_KnownAdditiveSceneGroup.RemoveDependency(assetDependency);
+                    m_KnownAdditiveSceneGroup.ValidateBuildSettingsScenes();
+                }
+            }
+
+            if (AdditiveSceneGroup != null)
+            {
+                AdditiveSceneGroup.AddDependency(assetDependency);
+                AdditiveSceneGroup.ValidateBuildSettingsScenes();
+            }
+
+
+            if (m_KnownAdditiveSceneGroup != AdditiveSceneGroup)
+            {
+                m_KnownAdditiveSceneGroup = AdditiveSceneGroup;
+            }
+
+
+        }
+
+        public void OnAfterDeserialize()
+        {
+        }
+
+        public void OnBeforeSerialize()
+        {
+            if (Scene != null && SceneEntryName != Scene.name)
+            {
+                SceneEntryName = Scene.name;
+            }
+        }
+
+#endif
+        [HideInInspector]
+        public string SceneEntryName;
+
+
     }
 
 

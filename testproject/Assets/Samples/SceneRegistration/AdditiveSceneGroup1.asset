@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b9f97901b434bd84bb2a433719183485, type: 3}
+  m_Name: AdditiveSceneGroup1
+  m_EditorClassIdentifier: 
+  m_AdditiveSceneGroups: []
+  m_KnownAdditiveSceneGroups: []
+  m_AdditiveScenes:
+  - Scene: {fileID: 102900000, guid: 466e828eb554ee44c900882db6c9d3a7, type: 3}
+    AutoIncludeInBuild: 1
+    SceneEntryName: AdditiveScene 1
+  - Scene: {fileID: 102900000, guid: ddb4e18dbd30daf4ab011d3232a63786, type: 3}
+    AutoIncludeInBuild: 1
+    SceneEntryName: AdditiveScene 2
+  - Scene: {fileID: 102900000, guid: c4ebb19d1542fdb4a8fe49b774ab16a0, type: 3}
+    AutoIncludeInBuild: 1
+    SceneEntryName: AdditiveScene 3
+  - Scene: {fileID: 102900000, guid: b12634a7636aba845801ca83d4ba61c2, type: 3}
+    AutoIncludeInBuild: 1
+    SceneEntryName: AdditiveScene 4
+  - Scene: {fileID: 102900000, guid: 9904940443bdd09489233649a5b6e0b8, type: 3}
+    AutoIncludeInBuild: 1
+    SceneEntryName: AdditiveScene 5
+  - Scene: {fileID: 102900000, guid: 2fc7efd990522b74caaa4cc1b42dfdc5, type: 3}
+    AutoIncludeInBuild: 1
+    SceneEntryName: AdditiveScene 6

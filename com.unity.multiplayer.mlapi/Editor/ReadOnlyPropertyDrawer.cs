@@ -13,7 +13,12 @@ namespace MLAPI.Editor
     {
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
-
+            EditorGUI.BeginProperty(position, label, property);
+            // Disable the read only field
+            GUI.enabled = false;
+            EditorGUI.PropertyField(new Rect(position.x, position.y, position.width, position.height), property, label);
+            GUI.enabled = true;
+            EditorGUI.EndProperty();
         }
     }
 
@@ -25,7 +30,7 @@ namespace MLAPI.Editor
         private const bool k_LoadScene = true;
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
-        {                     
+        {
             EditorGUI.BeginProperty(position, label, property);
             // Disable the read only field
             GUI.enabled = false;

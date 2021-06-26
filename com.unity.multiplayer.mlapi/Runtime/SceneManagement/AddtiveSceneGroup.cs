@@ -48,19 +48,6 @@ namespace MLAPI.SceneManagement
 
         private void OnValidate()
         {
-            // Assure our included additive scene entries' names are all valid
-            // If not, then assign the proper scene name to the AdditiveSceneEntry.SceneEntryName
-            foreach (var includedScene in m_AdditiveScenes)
-            {
-                if (includedScene != null)
-                {
-                    if (includedScene.Scene != null && includedScene.Scene.name != includedScene.SceneEntryName)
-                    {
-                        includedScene.SceneEntryName = includedScene.Scene.name;
-                    }
-                }
-            }
-
             foreach (var entry in m_AdditiveSceneGroups)
             {
                 if (entry != null)
@@ -149,7 +136,7 @@ namespace MLAPI.SceneManagement
     /// the scene name that it is pointing to for runtime
     /// </summary>
     [Serializable]
-    public class AdditiveSceneEntry
+    public class AdditiveSceneEntry: ISerializationCallbackReceiver
     {
 #if UNITY_EDITOR
         public SceneAsset Scene;
@@ -159,6 +146,18 @@ namespace MLAPI.SceneManagement
 #endif
         [HideInInspector]
         public string SceneEntryName;
+
+        public void OnAfterDeserialize()
+        {
+
+        }
+        public void OnBeforeSerialize()
+        {
+            if(Scene != null && SceneEntryName != Scene.name)
+            {
+                SceneEntryName = Scene.name;
+            }
+        }
     }
 
 
