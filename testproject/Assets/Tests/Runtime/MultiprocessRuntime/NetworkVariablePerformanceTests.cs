@@ -5,6 +5,7 @@ using MLAPI.NetworkVariable;
 using NUnit.Framework;
 using Unity.PerformanceTesting;
 using UnityEngine;
+using UnityEngine.Profiling;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using static TestCoordinator.ExecuteStepInContext;
@@ -107,6 +108,9 @@ namespace MLAPI.MultiprocessRuntimeTests
                 using (Measure.Scope($"Time Taken For Spawning {nbObjects} objects server side and getting report"))
                 {
                     // spawn prefabs for test
+                    var totalAllocSampleGroup = new SampleGroup("GC Alloc", SampleUnit.Kilobyte);
+                    var beforeAllocatedMemory = Profiler.GetTotalAllocatedMemoryLong();
+                    Measure.Custom(totalAllocSampleGroup, beforeAllocatedMemory / 1024);
                     for (int i = 0; i < nbObjects; i++)
                     {
                         var spawnedObject = s_ServerObjectPool.Get();
@@ -114,6 +118,12 @@ namespace MLAPI.MultiprocessRuntimeTests
                         spawnedObject.NetworkObject.Spawn(destroyWithScene: true);
                         m_ServerSpawnedObjects.Add(spawnedObject);
                     }
+
+                    var afterAllocatedMemory = Profiler.GetTotalAllocatedMemoryLong();
+                    Measure.Custom(totalAllocSampleGroup, afterAllocatedMemory / 1024);
+                    var diffAllocSampleGroup = new SampleGroup("GC Alloc diff for Spawn Server side", SampleUnit.Byte);
+                    Measure.Custom(diffAllocSampleGroup, afterAllocatedMemory - beforeAllocatedMemory);
+
                 }
             }, additionalIsFinishedWaiter: () =>
             {
@@ -140,7 +150,7 @@ namespace MLAPI.MultiprocessRuntimeTests
             {
                 // add measurements
                 // todo add more metrics like memory usage, time taken to execute, etc
-                var allocated = new SampleGroup("NbSpawnedPerFrame", SampleUnit.Undefined);
+                var allocated = new SampleGroup("NbSpawnedPerFrame client side", SampleUnit.Undefined);
 
                 foreach (var clientId in TestCoordinator.AllClientIdsWithResults)
                 {
