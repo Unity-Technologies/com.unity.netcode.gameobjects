@@ -32,8 +32,7 @@ public class TestCoordinator : NetworkBehaviour
     public const float maxWaitTimeout = 20;
     private const char k_MethodFullNameSplitChar = '@';
 
-    public bool isRegistering;
-    public bool hasRegistered;
+
     private bool m_ShouldShutdown;
     private float m_TimeSinceLastConnected;
     private float m_TimeSinceLastKeepAlive;
@@ -45,7 +44,6 @@ public class TestCoordinator : NetworkBehaviour
 
     public static Dictionary<ulong, List<float>>.KeyCollection AllClientIdsWithResults => Instance.m_TestResultsLocal.Keys;
     public static List<ulong> AllClientIdExceptMine => NetworkManager.Singleton.ConnectedClients.Keys.ToList().FindAll(client => client != NetworkManager.Singleton.LocalClientId);
-    private List<object> m_AllClientTestInstances = new List<object>(); // to keep an instance for each tests, so captured context in each step is kept
 
     private void Awake()
     {
@@ -70,69 +68,7 @@ public class TestCoordinator : NetworkBehaviour
 
         NetworkManager.OnClientDisconnectCallback += OnClientDisconnectCallback;
 
-        // registering magically all context based steps
-        isRegistering = true;
-        var registeredMethods = typeof(TestCoordinator).Assembly.GetTypes().SelectMany(t => t.GetMethods())
-            .Where(m => m.GetCustomAttributes(typeof(ExecuteStepInContext.MultiprocessContextBasedTestAttribute), true).Length > 0)
-            .ToArray();
-        HashSet<Type> typesWithContextMethods = new HashSet<Type>();
-        foreach (var method in registeredMethods)
-        {
-            typesWithContextMethods.Add(method.ReflectedType);
-        }
-
-        if (registeredMethods.Length == 0)
-        {
-            throw new Exception("Couldn't find any registered methods for multiprocess testing. Is TestCoordinator in same assembly as test methods?");
-        }
-
-        object[] GetParameterValuesToPass(ParameterInfo[] parameterInfo)
-        {
-            object[] parametersToReturn = new object[parameterInfo.Length];
-            for (int i = 0; i < parameterInfo.Length; i++)
-            {
-                var paramType = parameterInfo[i].GetType();
-                object defaultObj = null;
-                if (paramType.IsValueType)
-                {
-                    defaultObj = Activator.CreateInstance(paramType);
-                }
-
-                parametersToReturn[i] = defaultObj;
-            }
-
-            return parametersToReturn;
-        }
-
-        foreach (var contextType in typesWithContextMethods)
-        {
-            var allConstructors = contextType.GetConstructors();
-            if (allConstructors.Length > 1)
-            {
-                throw new NotImplementedException("Case not implemented where test has more than one contructor");
-            }
-
-            var instance = Activator.CreateInstance(contextType, allConstructors.Length > 0 ? GetParameterValuesToPass(allConstructors[0].GetParameters()) : null);
-            m_AllClientTestInstances.Add(instance); // keeping that instance so tests can use captured local attributes
-
-            List<MethodInfo> typeMethodsWithContextSteps = new List<MethodInfo>();
-            foreach (var method in contextType.GetMethods())
-            {
-                if (method.GetCustomAttributes(typeof(ExecuteStepInContext.MultiprocessContextBasedTestAttribute), true).Length > 0)
-                {
-                    typeMethodsWithContextSteps.Add(method);
-                }
-            }
-            foreach (var method in typeMethodsWithContextSteps)
-            {
-                var parametersToPass = GetParameterValuesToPass(method.GetParameters());
-                var enumerator = (IEnumerator)method.Invoke(instance, parametersToPass.ToArray());
-                while (enumerator.MoveNext()) { }
-            }
-        }
-
-        isRegistering = false;
-        hasRegistered = true;
+        ExecuteStepInContext.InitializeAllSteps();
     }
 
     public void Update()

@@ -4,7 +4,7 @@ using System.Text.RegularExpressions;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
-using static TestCoordinator.ExecuteStepInContext;
+using static ExecuteStepInContext;
 
 namespace MLAPI.MultiprocessRuntimeTests
 {
@@ -23,17 +23,17 @@ namespace MLAPI.MultiprocessRuntimeTests
         protected override int NbWorkers => m_NbWorkersToTest;
         protected override bool m_IsPerformanceTest => false;
 
-        [UnityTest, MultiprocessContextBasedTestAttribute]
+        [UnityTest, MultiprocessContextBasedTest]
         public IEnumerator TestWithParameters([Values(1, 2, 3)] int a)
         {
             InitContextSteps();
 
-            yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Server, bytes =>
+            yield return new ExecuteStepInContext(StepExecutionContext.Server, bytes =>
             {
                 Assert.Less(a, 4);
                 Assert.Greater(a, 0);
             });
-            yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Clients, bytes =>
+            yield return new ExecuteStepInContext(StepExecutionContext.Clients, bytes =>
             {
                 var clientA = BitConverter.ToInt32(bytes, 0);
                 Assert.True(!NetworkManager.Singleton.IsServer);
@@ -42,7 +42,7 @@ namespace MLAPI.MultiprocessRuntimeTests
             }, paramToPass: BitConverter.GetBytes(a));
         }
 
-        [UnityTest, MultiprocessContextBasedTestAttribute]
+        [UnityTest, MultiprocessContextBasedTest]
         [TestCase(1, 2, ExpectedResult = null)]
         [TestCase(2, 3, ExpectedResult = null)]
         [TestCase(3, 4, ExpectedResult = null)]
@@ -50,14 +50,14 @@ namespace MLAPI.MultiprocessRuntimeTests
         {
             InitContextSteps();
 
-            yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Server, bytes =>
+            yield return new ExecuteStepInContext(StepExecutionContext.Server, bytes =>
             {
                 Assert.Less(a, 4);
                 Assert.Greater(a, 0);
                 Assert.Less(b, 5);
                 Assert.Greater(b, 1);
             });
-            yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Clients, bytes =>
+            yield return new ExecuteStepInContext(StepExecutionContext.Clients, bytes =>
             {
                 var clientB = BitConverter.ToInt32(bytes, 0);
                 Assert.True(!NetworkManager.Singleton.IsServer);
@@ -66,17 +66,17 @@ namespace MLAPI.MultiprocessRuntimeTests
             }, paramToPass: BitConverter.GetBytes(b));
         }
 
-        [UnityTest, MultiprocessContextBasedTestAttribute]
+        [UnityTest, MultiprocessContextBasedTest]
         public IEnumerator TestExceptionClientSide()
         {
             InitContextSteps();
 
             const string exceptionMessageToTest = "This is an exception for TestCoordinator that's expected";
-            yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Clients, _ =>
+            yield return new ExecuteStepInContext(StepExecutionContext.Clients, _ =>
             {
                 throw new Exception(exceptionMessageToTest);
-            }, ignoreTimeout: true);
-            yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Server, _ =>
+            }, ignoreTimeoutException: true);
+            yield return new ExecuteStepInContext(StepExecutionContext.Server, _ =>
             {
                 for (int i = 0; i < m_NbWorkersToTest; i++)
                 {
@@ -85,7 +85,7 @@ namespace MLAPI.MultiprocessRuntimeTests
             });
 
             const string exceptionUpdateMessageToTest = "This is an exception for update loop client side that's expected";
-            yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Clients, _ =>
+            yield return new ExecuteStepInContext(StepExecutionContext.Clients, _ =>
             {
                 void Update(float __)
                 {
@@ -94,8 +94,8 @@ namespace MLAPI.MultiprocessRuntimeTests
                 }
                 NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate += Update;
 
-            }, ignoreTimeout: true);
-            yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Server, _ =>
+            }, ignoreTimeoutException: true);
+            yield return new ExecuteStepInContext(StepExecutionContext.Server, _ =>
             {
                 for (int i = 0; i < m_NbWorkersToTest; i++)
                 {
@@ -104,13 +104,13 @@ namespace MLAPI.MultiprocessRuntimeTests
             });
         }
 
-        [UnityTest, MultiprocessContextBasedTestAttribute]
+        [UnityTest, MultiprocessContextBasedTest]
         public IEnumerator ContextTestWithAdditionalWait()
         {
             InitContextSteps();
 
             const int maxValue = 10;
-            yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Clients, _ =>
+            yield return new ExecuteStepInContext(StepExecutionContext.Clients, _ =>
             {
                 int count = 0;
 
@@ -136,7 +136,7 @@ namespace MLAPI.MultiprocessRuntimeTests
                 }
                 return nbFinished == m_NbWorkersToTest;
             });
-            yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Server, _ =>
+            yield return new ExecuteStepInContext(StepExecutionContext.Server, _ =>
             {
                 Assert.That(TestCoordinator.AllClientIdExceptMine.Count, Is.EqualTo(m_NbWorkersToTest));
                 foreach (var clientID in TestCoordinator.AllClientIdExceptMine)
@@ -151,20 +151,20 @@ namespace MLAPI.MultiprocessRuntimeTests
             });
         }
 
-        [UnityTest, MultiprocessContextBasedTestAttribute]
+        [UnityTest, MultiprocessContextBasedTest]
         public IEnumerator TestExecuteInContext()
         {
             InitContextSteps();
 
             int stepCountExecuted = 0;
-            yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Server, args =>
+            yield return new ExecuteStepInContext(StepExecutionContext.Server, args =>
             {
                 stepCountExecuted++;
                 int count = BitConverter.ToInt32(args, 0);
                 Assert.That(count, Is.EqualTo(1));
             }, paramToPass: BitConverter.GetBytes(1));
 
-            yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Clients, args =>
+            yield return new ExecuteStepInContext(StepExecutionContext.Clients, args =>
             {
                 int count = BitConverter.ToInt32(args, 0);
                 Assert.That(count, Is.EqualTo(2));
@@ -174,7 +174,7 @@ namespace MLAPI.MultiprocessRuntimeTests
 #endif
             }, paramToPass: BitConverter.GetBytes(2));
 
-            yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Server, _ =>
+            yield return new ExecuteStepInContext(StepExecutionContext.Server, _ =>
             {
                 stepCountExecuted++;
                 int resultCountFromWorkers = 0;
@@ -188,7 +188,7 @@ namespace MLAPI.MultiprocessRuntimeTests
             });
 
             const int timeToWait = 4;
-            yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Clients, _ =>
+            yield return new ExecuteStepInContext(StepExecutionContext.Clients, _ =>
             {
                 void Update(float __)
                 {
@@ -204,7 +204,7 @@ namespace MLAPI.MultiprocessRuntimeTests
                 NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate += Update;
             }, waitMultipleUpdates: true); // waits multiple frames before allowing the next action to continue.
 
-            yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Server, args =>
+            yield return new ExecuteStepInContext(StepExecutionContext.Server, args =>
             {
                 stepCountExecuted++;
                 int count = 0;
@@ -217,7 +217,7 @@ namespace MLAPI.MultiprocessRuntimeTests
                 Assert.Greater(count, 0);
             });
 
-            if (!TestCoordinator.Instance.isRegistering)
+            if (!isRegistering)
             {
                 Assert.AreEqual(3, stepCountExecuted);
             }

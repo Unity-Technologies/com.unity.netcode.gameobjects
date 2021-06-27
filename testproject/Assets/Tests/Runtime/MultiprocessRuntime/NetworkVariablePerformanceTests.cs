@@ -8,7 +8,7 @@ using UnityEngine;
 using UnityEngine.Profiling;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
-using static TestCoordinator.ExecuteStepInContext;
+using static ExecuteStepInContext;
 using Object = UnityEngine.Object;
 
 namespace MLAPI.MultiprocessRuntimeTests
@@ -73,12 +73,12 @@ namespace MLAPI.MultiprocessRuntimeTests
             //     yield return new WaitForSeconds(20); // uncomment to be able to attach debugger and profiler to running build
             // }
 
-            yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Server, _ =>
+            yield return new ExecuteStepInContext(StepExecutionContext.Server, _ =>
             {
                 Assert.LessOrEqual(nbObjects, k_MaxObjectsToSpawn); // sanity check
             });
 
-            yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Clients, stepToExecute: nbObjectsBytes =>
+            yield return new ExecuteStepInContext(StepExecutionContext.Clients, stepToExecute: nbObjectsBytes =>
             {
                 // setup clients
                 InitPrefab();
@@ -106,7 +106,7 @@ namespace MLAPI.MultiprocessRuntimeTests
                 NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate += Update;
             }, paramToPass: BitConverter.GetBytes(nbObjects));
 
-            yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Server, _ =>
+            yield return new ExecuteStepInContext(StepExecutionContext.Server, _ =>
             {
                 // start test
                 using (Measure.Scope($"Time Taken For Spawning {nbObjects} objects server side and getting report"))
@@ -150,7 +150,7 @@ namespace MLAPI.MultiprocessRuntimeTests
                 return finishedCount == NbWorkers;
             });
             float serverLastResult = 0;
-            yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Server, bytes =>
+            yield return new ExecuteStepInContext(StepExecutionContext.Server, bytes =>
             {
                 // add measurements
                 // todo add more client-side metrics like memory usage, time taken to execute, etc
@@ -170,12 +170,12 @@ namespace MLAPI.MultiprocessRuntimeTests
                 }
 
             });
-            yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Clients, nbObjectsBytes =>
+            yield return new ExecuteStepInContext(StepExecutionContext.Clients, nbObjectsBytes =>
             {
                 var nbObjectsParam = BitConverter.ToInt32(nbObjectsBytes, 0);
                 Assert.That(GameObject.FindObjectsOfType(typeof(OneNetVar)).Length, Is.EqualTo(nbObjectsParam+1), "Wrong number of spawned objects client side"); // +1 for the prefab to spawn
             }, paramToPass:BitConverter.GetBytes(nbObjects));
-            yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Server, bytes =>
+            yield return new ExecuteStepInContext(StepExecutionContext.Server, bytes =>
             {
                 Debug.Log($"finished with test for {nbObjects} expected objects and got {serverLastResult} objects");
             });
@@ -187,7 +187,7 @@ namespace MLAPI.MultiprocessRuntimeTests
         {
             InitContextSteps();
 
-            yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Server, bytes =>
+            yield return new ExecuteStepInContext(StepExecutionContext.Server, bytes =>
             {
                 foreach (var spawnedObject in m_ServerSpawnedObjects)
                 {
@@ -199,7 +199,7 @@ namespace MLAPI.MultiprocessRuntimeTests
                 s_ServerObjectPool.Dispose();
             });
 
-            yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Clients, bytes =>
+            yield return new ExecuteStepInContext(StepExecutionContext.Clients, bytes =>
             {
                 NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate = null; // todo move access to callbackcomponent to singleton
 
@@ -212,9 +212,9 @@ namespace MLAPI.MultiprocessRuntimeTests
                     }
                 }
                 NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate += UpdateWaitForAllOneNetVarToDespawn;
-            }, waitMultipleUpdates: true, ignoreTimeout:true); // ignoring timeout since you don't want to hide any issues in the main tests
+            }, waitMultipleUpdates: true, ignoreTimeoutException:true); // ignoring timeout since you don't want to hide any issues in the main tests
 
-            yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Clients, _ =>
+            yield return new ExecuteStepInContext(StepExecutionContext.Clients, _ =>
             {
                 m_ClientPrefabHandler.Dispose();
                 NetworkManager.Singleton.PrefabHandler.RemoveHandler(PrefabReference.Instance.referencedPrefab);

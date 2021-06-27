@@ -2,6 +2,8 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
+using System.Reflection;
 using MLAPI;
 using MLAPI.Messaging;
 using NUnit.Framework;
@@ -29,7 +31,7 @@ public class ExecuteStepInContext : CustomYieldInstruction
     {
         public IEnumerator BeforeTest(ITest test)
         {
-            yield return new WaitUntil(() => TestCoordinator.Instance != null && TestCoordinator.Instance.hasRegistered);
+            yield return new WaitUntil(() => TestCoordinator.Instance != null && hasRegistered);
         }
 
         public IEnumerator AfterTest(ITest test)
@@ -58,6 +60,10 @@ public class ExecuteStepInContext : CustomYieldInstruction
     private bool isTimingOut => Time.time - m_StartTime > TestCoordinator.maxWaitTimeout;
     private bool ShouldExecuteLocally => (m_ActionContext == StepExecutionContext.Server && m_NetworkManager.IsServer) || (m_ActionContext == StepExecutionContext.Clients && !m_NetworkManager.IsServer);
 
+    public static bool isRegistering;
+    public static bool hasRegistered;
+    private static List<object> m_AllClientTestInstances = new List<object>(); // to keep an instance for each tests, so captured context in each step is kept
+
     /// <summary>
     /// This MUST be called at the beginning of each test in order to use context based steps.
     /// Assumes this is called from same callsite as ExecuteInContext (and assumes this is called from IEnumerator).
@@ -76,6 +82,74 @@ public class ExecuteStepInContext : CustomYieldInstruction
         return info;
     }
 
+    internal static void InitializeAllSteps()
+    {
+        // registering magically all context based steps
+        isRegistering = true;
+        var registeredMethods = typeof(TestCoordinator).Assembly.GetTypes().SelectMany(t => t.GetMethods())
+            .Where(m => m.GetCustomAttributes(typeof(ExecuteStepInContext.MultiprocessContextBasedTestAttribute), true).Length > 0)
+            .ToArray();
+        HashSet<Type> typesWithContextMethods = new HashSet<Type>();
+        foreach (var method in registeredMethods)
+        {
+            typesWithContextMethods.Add(method.ReflectedType);
+        }
+
+        if (registeredMethods.Length == 0)
+        {
+            throw new Exception("Couldn't find any registered methods for multiprocess testing. Is TestCoordinator in same assembly as test methods?");
+        }
+
+        object[] GetParameterValuesToPass(ParameterInfo[] parameterInfo)
+        {
+            object[] parametersToReturn = new object[parameterInfo.Length];
+            for (int i = 0; i < parameterInfo.Length; i++)
+            {
+                var paramType = parameterInfo[i].GetType();
+                object defaultObj = null;
+                if (paramType.IsValueType)
+                {
+                    defaultObj = Activator.CreateInstance(paramType);
+                }
+
+                parametersToReturn[i] = defaultObj;
+            }
+
+            return parametersToReturn;
+        }
+
+        foreach (var contextType in typesWithContextMethods)
+        {
+            var allConstructors = contextType.GetConstructors();
+            if (allConstructors.Length > 1)
+            {
+                throw new NotImplementedException("Case not implemented where test has more than one contructor");
+            }
+
+            var instance = Activator.CreateInstance(contextType, allConstructors.Length > 0 ? GetParameterValuesToPass(allConstructors[0].GetParameters()) : null);
+            m_AllClientTestInstances.Add(instance); // keeping that instance so tests can use captured local attributes
+
+            List<MethodInfo> typeMethodsWithContextSteps = new List<MethodInfo>();
+            foreach (var method in contextType.GetMethods())
+            {
+                if (method.GetCustomAttributes(typeof(ExecuteStepInContext.MultiprocessContextBasedTestAttribute), true).Length > 0)
+                {
+                    typeMethodsWithContextSteps.Add(method);
+                }
+            }
+
+            foreach (var method in typeMethodsWithContextSteps)
+            {
+                var parametersToPass = GetParameterValuesToPass(method.GetParameters());
+                var enumerator = (IEnumerator)method.Invoke(instance, parametersToPass.ToArray());
+                while (enumerator.MoveNext()) { }
+            }
+        }
+
+        isRegistering = false;
+        hasRegistered = true;
+    }
+
     /// <summary>
     /// Executes an action with the specified context. This allows writing tests all in the same sequential flow,
     /// making it more readable. This allows not having to jump between static client methods and test method
@@ -90,7 +164,7 @@ public class ExecuteStepInContext : CustomYieldInstruction
     public ExecuteStepInContext(StepExecutionContext actionContext, Action<byte[]> stepToExecute, bool ignoreTimeoutException = false, byte[] paramToPass = default, NetworkManager networkManager = null, bool waitMultipleUpdates = false, Func<bool> additionalIsFinishedWaiter = null)
     {
         m_StartTime = Time.time;
-        m_IsRegistering = TestCoordinator.Instance.isRegistering;
+        m_IsRegistering = isRegistering;
         m_ActionContext = actionContext;
         m_StepToExecute = stepToExecute;
         m_WaitMultipleUpdates = waitMultipleUpdates;
