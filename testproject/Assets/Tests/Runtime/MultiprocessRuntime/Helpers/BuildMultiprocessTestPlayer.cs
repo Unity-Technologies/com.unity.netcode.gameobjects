@@ -20,7 +20,7 @@ public class BuildMultiprocessTestPlayer : MonoBehaviour
 
 #if UNITY_EDITOR
     [MenuItem(multiprocessBaseMenuName+"/Build Test Player #t")]
-    public static void BuildNoExecute()
+    public static void BuildNoDebug()
     {
         var success = Build();
         if (!success)
