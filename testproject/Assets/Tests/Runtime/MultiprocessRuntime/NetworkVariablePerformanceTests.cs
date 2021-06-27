@@ -44,9 +44,9 @@ namespace MLAPI.MultiprocessRuntimeTests
         }
 
         [OneTimeSetUp]
-        public override void SetupTestFixture()
+        public override void SetupTestSuite()
         {
-            base.SetupTestFixture();
+            base.SetupTestSuite();
             SceneManager.sceneLoaded += OnSceneLoadedInitSetupSuite;
         }
 
@@ -59,12 +59,15 @@ namespace MLAPI.MultiprocessRuntimeTests
 
         private void InitPrefab()
         {
+            if (m_PrefabToSpawn == null)
+        {
             var prefabCopy = Object.Instantiate(PrefabReference.Instance.referencedPrefab);
             m_PrefabToSpawn = prefabCopy.AddComponent<OneNetVar>();
         }
+        }
 
         [UnityTest, Performance, MultiprocessContextBasedTest]
-        public IEnumerator TestSpawningManyObjects([Values(1, 1000, 2000, 10000)] int nbObjects)
+        public IEnumerator TestSpawningManyObjects([Values(1, 2, 1000, 2000, 10000)] int nbObjects)
         {
             InitContextSteps();
 
@@ -196,7 +199,6 @@ namespace MLAPI.MultiprocessRuntimeTests
                     StopSpawnedObject(spawnedObject);
                 }
                 m_ServerSpawnedObjects.Clear();
-                s_ServerObjectPool.Dispose();
             });
 
             yield return new ExecuteStepInContext(StepExecutionContext.Clients, bytes =>
@@ -217,7 +219,7 @@ namespace MLAPI.MultiprocessRuntimeTests
             yield return new ExecuteStepInContext(StepExecutionContext.Clients, _ =>
             {
                 m_ClientPrefabHandler.Dispose();
-                NetworkManager.Singleton.PrefabHandler.RemoveHandler(PrefabReference.Instance.referencedPrefab);
+                NetworkManager.Singleton.PrefabHandler.RemoveHandler(m_PrefabToSpawn.NetworkObject);
             });
         }
 
@@ -225,6 +227,7 @@ namespace MLAPI.MultiprocessRuntimeTests
         public override void TeardownSuite()
         {
             base.TeardownSuite();
+            s_ServerObjectPool.Dispose();
             SceneManager.sceneLoaded -= OnSceneLoadedInitSetupSuite;
         }
 
