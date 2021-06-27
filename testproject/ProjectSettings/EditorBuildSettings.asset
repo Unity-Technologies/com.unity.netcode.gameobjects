@@ -41,4 +41,7 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Tests/Manual/NetworkSceneManagerCallbacks/SceneWeAreSwitchingFrom.unity
     guid: 073bd2111475c0643be45b7abe6a97ad
+  - enabled: 1
+    path: Assets/Scenes/MultiprocessTestingScene.unity
+    guid: 76743cb7b342c49279327834918a9c6e
   m_configObjects: {}
