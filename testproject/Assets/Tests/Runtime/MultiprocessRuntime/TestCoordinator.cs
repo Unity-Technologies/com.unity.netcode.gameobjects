@@ -42,9 +42,12 @@ public class TestCoordinator : NetworkBehaviour
 
     public static TestCoordinator Instance;
 
-    private Dictionary<ulong, List<float>> m_TestResultsLocal = new Dictionary<ulong, List<float>>();
-    public static List<ulong> AllClientIdsWithResults => Instance.m_TestResultsLocal.Keys.ToList();
+    private Dictionary<ulong, List<float>> m_TestResultsLocal = new Dictionary<ulong, List<float>>(); // this isn't super efficient, but since it's used for signaling around the tests, shouldn't be too bad
+    private Dictionary<ulong, bool> m_ClientIsFinished = new Dictionary<ulong, bool>();
+
+    public static Dictionary<ulong, List<float>>.KeyCollection AllClientIdsWithResults => Instance.m_TestResultsLocal.Keys;
     public static List<ulong> AllClientIdExceptMine => NetworkManager.Singleton.ConnectedClients.Keys.ToList().FindAll(client => client != NetworkManager.Singleton.LocalClientId);
+    private List<object> m_AllClientTestInstances = new List<object>(); // to keep an instance for each tests, so captured context in each step is kept
 
     private void Awake()
     {
@@ -69,11 +72,17 @@ public class TestCoordinator : NetworkBehaviour
 
         NetworkManager.OnClientDisconnectCallback += OnClientDisconnectCallback;
 
-        // registering magically all method steps
+        // registering magically all context based steps
         isRegistering = true;
         var registeredMethods = typeof(TestCoordinator).Assembly.GetTypes().SelectMany(t => t.GetMethods())
             .Where(m => m.GetCustomAttributes(typeof(ExecuteStepInContext.MultiprocessContextBasedTestAttribute), true).Length > 0)
             .ToArray();
+        HashSet<Type> typesWithContextMethods = new HashSet<Type>();
+        foreach (var method in registeredMethods)
+        {
+            typesWithContextMethods.Add(method.ReflectedType);
+        }
+
         if (registeredMethods.Length == 0)
         {
             throw new Exception("Couldn't find any registered methods for multiprocess testing. Is TestCoordinator in same assembly as test methods?");
@@ -86,28 +95,42 @@ public class TestCoordinator : NetworkBehaviour
             {
                 var paramType = parameterInfo[i].GetType();
                 object defaultObj = null;
-                if(paramType.IsValueType)
+                if (paramType.IsValueType)
                 {
                     defaultObj = Activator.CreateInstance(paramType);
                 }
+
                 parametersToReturn[i] = defaultObj;
             }
 
             return parametersToReturn;
         }
-        foreach (var method in registeredMethods)
+
+        foreach (var contextType in typesWithContextMethods)
         {
-            var methodsType = method.ReflectedType;
-            var allConstructors = methodsType.GetConstructors();
+            var allConstructors = contextType.GetConstructors();
             if (allConstructors.Length > 1)
             {
                 throw new NotImplementedException("Case not implemented where test has more than one contructor");
             }
-            var contructorParameters = allConstructors[0].GetParameters();
-            var instance = Activator.CreateInstance(methodsType, GetParameterValuesToPass(contructorParameters));
-            var parametersToPass = GetParameterValuesToPass(method.GetParameters());
-            var result = (IEnumerator)method.Invoke(instance, parametersToPass.ToArray());
-            while (result.MoveNext()) { }
+
+            var instance = Activator.CreateInstance(contextType, allConstructors.Length > 0 ? GetParameterValuesToPass(allConstructors[0].GetParameters()) : null);
+            m_AllClientTestInstances.Add(instance); // keeping that instance so tests can use captured local attributes
+
+            List<MethodInfo> typeMethodsWithContextSteps = new List<MethodInfo>();
+            foreach (var method in contextType.GetMethods())
+            {
+                if (method.GetCustomAttributes(typeof(ExecuteStepInContext.MultiprocessContextBasedTestAttribute), true).Length > 0)
+                {
+                    typeMethodsWithContextSteps.Add(method);
+                }
+            }
+            foreach (var method in typeMethodsWithContextSteps)
+            {
+                var parametersToPass = GetParameterValuesToPass(method.GetParameters());
+                var enumerator = (IEnumerator)method.Invoke(instance, parametersToPass.ToArray());
+                while (enumerator.MoveNext()) { }
+            }
         }
 
         isRegistering = false;
@@ -246,8 +269,6 @@ public class TestCoordinator : NetworkBehaviour
             return false;
         };
     }
-
-    private Dictionary<ulong, bool> m_ClientIsFinished = new Dictionary<ulong, bool>();
 
     public static Func<bool> ConsumeClientIsFinished(ulong clientId, bool useTimeoutException = true)
     {
