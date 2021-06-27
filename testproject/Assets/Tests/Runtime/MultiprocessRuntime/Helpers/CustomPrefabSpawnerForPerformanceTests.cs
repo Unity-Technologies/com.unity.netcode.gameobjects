@@ -6,15 +6,15 @@ using MLAPI.Spawning;
 
 namespace MLAPI.MultiprocessRuntimeTests
 {
-    public class CustomPrefabSpawnerForPerformanceTests : INetworkPrefabInstanceHandler
+    public class CustomPrefabSpawnerForPerformanceTests<T> : INetworkPrefabInstanceHandler, IDisposable where T : NetworkBehaviour
     {
-        private GameObjectPool m_ObjectPool;
-        private Func<GameObject, NetworkObject> m_SetupSpawnedObject;
-        private Action<NetworkObject> m_OnRelease;
+        private GameObjectPool<T> m_ObjectPool;
+        private Action<T> m_SetupSpawnedObject;
+        private Action<T> m_OnRelease;
 
-        public CustomPrefabSpawnerForPerformanceTests(GameObject prefabToSpawn, int maxObjectsToSpawn, Func<GameObject, NetworkObject> setupSpawnedObject, Action<NetworkObject> onRelease)
+        public CustomPrefabSpawnerForPerformanceTests(T prefabToSpawn, int maxObjectsToSpawn, Action<T> setupSpawnedObject, Action<T> onRelease)
         {
-            m_ObjectPool = new GameObjectPool();
+            m_ObjectPool = new GameObjectPool<T>();
             m_ObjectPool.Init(maxObjectsToSpawn, prefabToSpawn);
             m_SetupSpawnedObject = setupSpawnedObject;
             m_OnRelease = onRelease;
@@ -22,21 +22,28 @@ namespace MLAPI.MultiprocessRuntimeTests
 
         public NetworkObject HandleNetworkPrefabSpawn(ulong ownerClientId, Vector3 position, Quaternion rotation)
         {
-            var networkObject = m_ObjectPool.Get().GetComponent<NetworkObject>(); // todo this is expensive
+            var netBehaviour = m_ObjectPool.Get();
+            var networkObject = netBehaviour.NetworkObject;
             Transform netTransform = networkObject.transform;
             netTransform.position = position;
             netTransform.rotation = rotation;
-            m_SetupSpawnedObject(networkObject.gameObject); // adds custom component on spawn
+            m_SetupSpawnedObject(netBehaviour);
             return networkObject;
         }
 
         public void HandleNetworkPrefabDestroy(NetworkObject networkObject)
         {
-            m_OnRelease(networkObject);
+            var behaviour = networkObject.gameObject.GetComponent<T>(); // todo expensive
+            m_OnRelease(behaviour);
             Transform netTransform = networkObject.transform;
             netTransform.position = Vector3.zero;
             netTransform.rotation = Quaternion.identity;
-            m_ObjectPool.Release(networkObject.gameObject);
+            m_ObjectPool.Release(behaviour);
+        }
+
+        public void Dispose()
+        {
+            m_ObjectPool.Dispose();
         }
     }
 }

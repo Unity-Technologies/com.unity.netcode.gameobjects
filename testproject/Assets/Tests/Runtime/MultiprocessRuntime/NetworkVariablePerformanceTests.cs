@@ -8,6 +8,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using static TestCoordinator.ExecuteStepInContext;
+using Object = UnityEngine.Object;
 
 namespace MLAPI.MultiprocessRuntimeTests
 {
@@ -16,9 +17,11 @@ namespace MLAPI.MultiprocessRuntimeTests
     {
         protected override int NbWorkers { get; } = 1;
         private const int k_MaxObjectsToSpawn = 10000;
-        private List<NetworkObject> m_SpawnedObjects = new List<NetworkObject>();
-        private static GameObjectPool s_ObjectPool;
-        protected override bool m_IsPerformanceTest => true;
+        private List<OneNetVar> m_ServerSpawnedObjects = new List<OneNetVar>();
+        private static GameObjectPool<OneNetVar> s_ServerObjectPool;
+        private CustomPrefabSpawnerForPerformanceTests<OneNetVar> m_ClientPrefabHandler;
+        private OneNetVar m_PrefabToSpawn;
+        protected override bool m_IsPerformanceTest => false; // todo revert to true, this is for debug
 
         private class OneNetVar : NetworkBehaviour
         {
@@ -40,19 +43,24 @@ namespace MLAPI.MultiprocessRuntimeTests
             }
         }
 
-        private static void OnSceneLoadedInitSetupSuite(Scene scene, LoadSceneMode loadSceneMode)
-        {
-            var prefabToSpawn = PrefabReference.Instance.referencedPrefab;
-
-            s_ObjectPool = new GameObjectPool();
-            s_ObjectPool.Init(k_MaxObjectsToSpawn, prefabToSpawn);
-        }
-
         [OneTimeSetUp]
         public override void SetupTestFixture()
         {
             base.SetupTestFixture();
             SceneManager.sceneLoaded += OnSceneLoadedInitSetupSuite;
+        }
+
+        private void OnSceneLoadedInitSetupSuite(Scene scene, LoadSceneMode loadSceneMode)
+        {
+            InitPrefab();
+            s_ServerObjectPool = new GameObjectPool<OneNetVar>();
+            s_ServerObjectPool.Init(k_MaxObjectsToSpawn, m_PrefabToSpawn);
+        }
+
+        private void InitPrefab()
+        {
+            var prefabCopy = Object.Instantiate(PrefabReference.Instance.referencedPrefab);
+            m_PrefabToSpawn = prefabCopy.AddComponent<OneNetVar>();
         }
 
         [UnityTest, Performance, MultiprocessContextBasedTest]
@@ -68,11 +76,11 @@ namespace MLAPI.MultiprocessRuntimeTests
             yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Clients, stepToExecute: nbObjectsBytes =>
             {
                 // setup clients
-
+                InitPrefab();
                 var targetCount = BitConverter.ToInt32(nbObjectsBytes, 0);
-                var prefabToSpawn = PrefabReference.Instance.referencedPrefab;
-                var hasAddedHandler = NetworkManager.Singleton.PrefabHandler.AddHandler(prefabToSpawn,
-                    new CustomPrefabSpawnerForPerformanceTests(prefabToSpawn, k_MaxObjectsToSpawn, SetupSpawnedObject, StopSpawnedObject));
+
+                m_ClientPrefabHandler = new CustomPrefabSpawnerForPerformanceTests<OneNetVar>(m_PrefabToSpawn, k_MaxObjectsToSpawn, SetupSpawnedObject, StopSpawnedObject);
+                var hasAddedHandler = NetworkManager.Singleton.PrefabHandler.AddHandler(m_PrefabToSpawn.NetworkObject, m_ClientPrefabHandler);
                 Assert.That(hasAddedHandler);
 
                 // add client side reporter for later spawn steps
@@ -101,10 +109,10 @@ namespace MLAPI.MultiprocessRuntimeTests
                     // spawn prefabs for test
                     for (int i = 0; i < nbObjects; i++)
                     {
-                        var spawnedObject = s_ObjectPool.Get();
-                        var netObj = SetupSpawnedObject(spawnedObject);
-                        netObj.Spawn(destroyWithScene: true);
-                        m_SpawnedObjects.Add(netObj);
+                        var spawnedObject = s_ServerObjectPool.Get();
+                        SetupSpawnedObject(spawnedObject);
+                        spawnedObject.NetworkObject.Spawn(destroyWithScene: true);
+                        m_ServerSpawnedObjects.Add(spawnedObject);
                     }
                 }
             }, additionalIsFinishedWaiter: () =>
@@ -127,6 +135,7 @@ namespace MLAPI.MultiprocessRuntimeTests
 
                 return finishedCount == NbWorkers;
             });
+            float serverLastResult = 0;
             yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Server, bytes =>
             {
                 // add measurements
@@ -143,14 +152,20 @@ namespace MLAPI.MultiprocessRuntimeTests
                 foreach (var (clientId, result) in TestCoordinator.ConsumeCurrentResult())
                 {
                     Measure.Custom(allocated, result);
+                    serverLastResult = result;
                 }
 
             });
             yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Clients, nbObjectsBytes =>
             {
                 var nbObjectsParam = BitConverter.ToInt32(nbObjectsBytes, 0);
-                Assert.That(GameObject.FindObjectsOfType(typeof(OneNetVar)).Length, Is.EqualTo(nbObjectsParam), "Wrong number of spawned objects client side");
+                Assert.That(GameObject.FindObjectsOfType(typeof(OneNetVar)).Length, Is.EqualTo(nbObjectsParam+1), "Wrong number of spawned objects client side"); // +1 for the prefab to spawn
             }, paramToPass:BitConverter.GetBytes(nbObjects));
+            yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Server, bytes =>
+            {
+                Debug.Log($"finished with test for {nbObjects} expected objects and got {serverLastResult} objects");
+            });
+
         }
 
         [UnityTearDown, MultiprocessContextBasedTest]
@@ -160,14 +175,14 @@ namespace MLAPI.MultiprocessRuntimeTests
 
             yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Server, bytes =>
             {
-                foreach (var spawnedObject in m_SpawnedObjects)
+                foreach (var spawnedObject in m_ServerSpawnedObjects)
                 {
-                    spawnedObject.Despawn();
-                    s_ObjectPool.Release(spawnedObject.gameObject);
+                    spawnedObject.NetworkObject.Despawn();
+                    s_ServerObjectPool.Release(spawnedObject);
                     StopSpawnedObject(spawnedObject);
                 }
-                m_SpawnedObjects.Clear();
-                s_ObjectPool.Finish();
+                m_ServerSpawnedObjects.Clear();
+                s_ServerObjectPool.Dispose();
             });
 
             yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Clients, bytes =>
@@ -187,8 +202,8 @@ namespace MLAPI.MultiprocessRuntimeTests
 
             yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Clients, _ =>
             {
+                m_ClientPrefabHandler.Dispose();
                 NetworkManager.Singleton.PrefabHandler.RemoveHandler(PrefabReference.Instance.referencedPrefab);
-                s_ObjectPool.Finish();
             });
         }
 
@@ -199,15 +214,12 @@ namespace MLAPI.MultiprocessRuntimeTests
             SceneManager.sceneLoaded -= OnSceneLoadedInitSetupSuite;
         }
 
-        private static NetworkObject SetupSpawnedObject(GameObject spawnedObject)
+        private static void SetupSpawnedObject(OneNetVar spawnedObject)
         {
-            spawnedObject.name = "ReplicatedObjectTest1";
-            var oneNetVar = spawnedObject.AddComponent<OneNetVar>(); // todo this is expensive
-            oneNetVar.Init();
-            return oneNetVar.NetworkObject;
+            spawnedObject.Init();
         }
 
-        private static void StopSpawnedObject(NetworkObject destroyedObject)
+        private static void StopSpawnedObject(OneNetVar destroyedObject)
         {
             OneNetVar.Stop();
         }
