@@ -24,7 +24,7 @@ namespace MLAPI.MultiprocessRuntimeTests
         protected abstract int NbWorkers { get; }
 
         [OneTimeSetUp]
-        public virtual void SetupTestFixture()
+        public virtual void SetupTestSuite()
         {
             if (ShouldIgnoreTests)
             {
