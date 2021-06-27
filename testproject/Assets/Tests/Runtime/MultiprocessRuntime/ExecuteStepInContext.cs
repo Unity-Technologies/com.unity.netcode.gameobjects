@@ -50,7 +50,7 @@ public class ExecuteStepInContext : CustomYieldInstruction
 
     private NetworkManager m_NetworkManager;
     private bool m_IsRegistering;
-    private List<Func<bool>> m_RemoteIsFinishedChecks = new List<Func<bool>>();
+    private List<Func<bool>> m_ClientIsFinishedChecks = new List<Func<bool>>();
     private Func<bool> m_AdditionalIsFinishedWaiter;
 
     private bool m_WaitMultipleUpdates;
@@ -169,11 +169,10 @@ public class ExecuteStepInContext : CustomYieldInstruction
         m_StepToExecute = stepToExecute;
         m_WaitMultipleUpdates = waitMultipleUpdates;
         m_IgnoreTimeoutException = ignoreTimeoutException;
+
         if (additionalIsFinishedWaiter != null)
         {
             m_AdditionalIsFinishedWaiter = additionalIsFinishedWaiter;
-
-            // m_IsFinishedChecks.Add(additionalIsFinishedWaiter);
         }
 
         if (networkManager == null)
@@ -216,7 +215,7 @@ public class ExecuteStepInContext : CustomYieldInstruction
                         });
                     foreach (var clientId in TestCoordinator.AllClientIdExceptMine)
                     {
-                        m_RemoteIsFinishedChecks.Add(TestCoordinator.ConsumeClientIsFinished(clientId));
+                        m_ClientIsFinishedChecks.Add(TestCoordinator.ConsumeClientIsFinished(clientId));
                     }
                 }
                 else
@@ -267,16 +266,16 @@ public class ExecuteStepInContext : CustomYieldInstruction
                 }
             }
 
-            if (m_IsRegistering || ShouldExecuteLocally || m_RemoteIsFinishedChecks == null)
+            if (m_IsRegistering || ShouldExecuteLocally || m_ClientIsFinishedChecks == null)
             {
                 return false;
             }
 
-            for (int i = m_RemoteIsFinishedChecks.Count - 1; i >= 0; i--)
+            for (int i = m_ClientIsFinishedChecks.Count - 1; i >= 0; i--)
             {
-                if (m_RemoteIsFinishedChecks[i].Invoke())
+                if (m_ClientIsFinishedChecks[i].Invoke())
                 {
-                    m_RemoteIsFinishedChecks.RemoveAt(i);
+                    m_ClientIsFinishedChecks.RemoveAt(i);
                 }
                 else
                 {
