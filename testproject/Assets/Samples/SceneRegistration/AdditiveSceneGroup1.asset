@@ -17,21 +17,21 @@ MonoBehaviour:
   m_KnownAdditiveSceneGroups:
   - {fileID: 11400000, guid: b4d16e1c84f7d6b44a88701c32e102a7, type: 2}
   m_AdditiveScenes:
-  - Scene: {fileID: 102900000, guid: 466e828eb554ee44c900882db6c9d3a7, type: 3}
-    IncludeInBuild: 1
+  - IncludeInBuild: 1
+    Scene: {fileID: 102900000, guid: 466e828eb554ee44c900882db6c9d3a7, type: 3}
     SceneEntryName: AdditiveScene 1
-  - Scene: {fileID: 102900000, guid: ddb4e18dbd30daf4ab011d3232a63786, type: 3}
-    IncludeInBuild: 1
+  - IncludeInBuild: 1
+    Scene: {fileID: 102900000, guid: ddb4e18dbd30daf4ab011d3232a63786, type: 3}
     SceneEntryName: AdditiveScene 2
-  - Scene: {fileID: 102900000, guid: c4ebb19d1542fdb4a8fe49b774ab16a0, type: 3}
-    IncludeInBuild: 1
+  - IncludeInBuild: 1
+    Scene: {fileID: 102900000, guid: c4ebb19d1542fdb4a8fe49b774ab16a0, type: 3}
     SceneEntryName: AdditiveScene 3
-  - Scene: {fileID: 102900000, guid: b12634a7636aba845801ca83d4ba61c2, type: 3}
-    IncludeInBuild: 1
+  - IncludeInBuild: 1
+    Scene: {fileID: 102900000, guid: b12634a7636aba845801ca83d4ba61c2, type: 3}
     SceneEntryName: AdditiveScene 4
-  - Scene: {fileID: 102900000, guid: 9904940443bdd09489233649a5b6e0b8, type: 3}
-    IncludeInBuild: 1
+  - IncludeInBuild: 1
+    Scene: {fileID: 102900000, guid: 9904940443bdd09489233649a5b6e0b8, type: 3}
     SceneEntryName: AdditiveScene 5
-  - Scene: {fileID: 102900000, guid: 2fc7efd990522b74caaa4cc1b42dfdc5, type: 3}
-    IncludeInBuild: 1
+  - IncludeInBuild: 1
+    Scene: {fileID: 102900000, guid: 2fc7efd990522b74caaa4cc1b42dfdc5, type: 3}
     SceneEntryName: AdditiveScene 6

@@ -249,20 +249,19 @@ namespace MLAPI
                 }
             }
 
-            //if (!UnityEditor.BuildPipeline.isBuildingPlayer)
+
+            // Detect when SceneRegistration is assigned or deleted to determine if the scenes associated with the SceneRegistration
+            // should be included in the build settings.
+            if (NetworkConfig.SceneRegistration != null && (!NetworkConfig.SceneRegistration.AssignedToNetworkManager))
             {
-                // Detect when SceneRegistration is assigned or deleted to determine if the scenes associated with the SceneRegistration
-                // should be included in the build settings.
-                if (NetworkConfig.SceneRegistration != null && (!NetworkConfig.SceneRegistration.AssignedToNetworkManager))
-                {
-                    m_SceneRegistration = NetworkConfig.SceneRegistration;
-                    NetworkConfig.SceneRegistration.AssignNetworkManagerScene();
-                }
-                else if (m_SceneRegistration != null && NetworkConfig.SceneRegistration != m_SceneRegistration && m_SceneRegistration.AssignedToNetworkManager)
-                {
-                    m_SceneRegistration.AssignNetworkManagerScene(false);
-                    m_SceneRegistration = null;
-                }
+                m_SceneRegistration = NetworkConfig.SceneRegistration;
+                NetworkConfig.SceneRegistration.AssignNetworkManagerScene();
+            }
+
+            if (m_SceneRegistration != null && NetworkConfig.SceneRegistration != m_SceneRegistration && m_SceneRegistration.AssignedToNetworkManager)
+            {
+                m_SceneRegistration.AssignNetworkManagerScene(false);
+                m_SceneRegistration = NetworkConfig.SceneRegistration;
             }
 
             var activeScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();

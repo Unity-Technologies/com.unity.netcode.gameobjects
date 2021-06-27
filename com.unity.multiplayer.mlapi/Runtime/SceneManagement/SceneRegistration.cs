@@ -2,11 +2,12 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using MLAPI.Serialization;
-
 using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
 using UnityEngine.SceneManagement;
+using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 #endif
 
 namespace MLAPI.SceneManagement
@@ -16,13 +17,17 @@ namespace MLAPI.SceneManagement
     public class SceneRegistration : AssetDependency
     {
         [SerializeField]
-        private List<SceneEntry> m_SceneRegistrations;
+        internal List<SceneEntry> SceneRegistrations;
 
         [HideInInspector]
         [SerializeField]
         private string m_NetworkManagerScene;
 
 #if UNITY_EDITOR
+
+        [HideInInspector]
+        [SerializeField]
+        private List<SceneEntry> m_KnownSceneRegistrations;
         public static string GetSceneNameFromPath(string scenePath)
         {
             var begin = scenePath.LastIndexOf("/", StringComparison.Ordinal) + 1;
@@ -75,7 +80,7 @@ namespace MLAPI.SceneManagement
                     currentScenes.Add(keyPair.Key, keyPair.Value);
                 }
             }
-            currentScenes = currentScenes.OrderBy(x => x.Key).ToDictionary((keyItem)=>keyItem.Key,(valueItem) => valueItem.Value);
+            currentScenes = currentScenes.OrderBy(x => x.Key).ToDictionary((keyItem) => keyItem.Key, (valueItem) => valueItem.Value);
 
             EditorBuildSettings.scenes = currentScenes.Values.ToArray();
         }
@@ -181,23 +186,17 @@ namespace MLAPI.SceneManagement
         internal void ValidateBuildSettingsScenes()
         {
             //Cycle through all scenes registered and validate the build settings scenes list
-            if (m_SceneRegistrations != null && m_SceneRegistrations.Count > 0)
+            if (SceneRegistrations != null && SceneRegistrations.Count > 0)
             {
                 var shouldInclude = ShouldAssetBeIncluded();
                 var partOfRootBranch = BelongsToRootAssetBranch();
-
-                foreach (var sceneRegistrationEntry in m_SceneRegistrations)
+                foreach (var sceneEntry in SceneRegistrations)
                 {
-                    if (sceneRegistrationEntry != null && sceneRegistrationEntry.Scene != null)
+                    if (sceneEntry != null && sceneEntry.Scene != null)
                     {
-                        if (sceneRegistrationEntry.SceneEntryName != sceneRegistrationEntry.Scene.name)
-                        {
-                            sceneRegistrationEntry.SceneEntryName = sceneRegistrationEntry.Scene.name;
-                        }
-
-                        AddOrRemoveSceneAsset(sceneRegistrationEntry.Scene, shouldInclude && partOfRootBranch && sceneRegistrationEntry.IncludeInBuild);
-
-                        sceneRegistrationEntry.UpdateAdditiveSceneGroup(this);
+                        sceneEntry.AddDependency(this);
+                        AddOrRemoveSceneAsset(sceneEntry.Scene, shouldInclude && partOfRootBranch && sceneEntry.IncludeInBuild);
+                        sceneEntry.UpdateAdditiveSceneGroup();
                     }
                 }
             }
@@ -227,7 +226,7 @@ namespace MLAPI.SceneManagement
                 writer.WriteString(m_NetworkManagerScene);
             }
 
-            foreach (var sceneRegistrationEntry in m_SceneRegistrations)
+            foreach (var sceneRegistrationEntry in SceneRegistrations)
             {
                 if (sceneRegistrationEntry != null && sceneRegistrationEntry.SceneEntryName != null && sceneRegistrationEntry.SceneEntryName != string.Empty)
                 {
@@ -255,7 +254,7 @@ namespace MLAPI.SceneManagement
                 allScenes.Add(m_NetworkManagerScene);
             }
 
-            foreach (var sceneRegistrationEntry in m_SceneRegistrations)
+            foreach (var sceneRegistrationEntry in SceneRegistrations)
             {
                 if (sceneRegistrationEntry != null && sceneRegistrationEntry.SceneEntryName != null && sceneRegistrationEntry.SceneEntryName != string.Empty)
                 {
@@ -277,20 +276,20 @@ namespace MLAPI.SceneManagement
 #if UNITY_EDITOR
         [SerializeField]
         [HideInInspector]
-        private AddtiveSceneGroup m_KnownAdditiveSceneGroup;
+        internal AddtiveSceneGroup KnownAdditiveSceneGroup;
 
         /// <summary>
         /// Updates the dependencies for the additive scene group associated with this SceneEntry
         /// </summary>
         /// <param name="assetDependency"></param>
-        internal void UpdateAdditiveSceneGroup(SceneRegistration assetDependency)
+        internal void UpdateAdditiveSceneGroup()
         {
-            if (AdditiveSceneGroup != m_KnownAdditiveSceneGroup)
+            if (AdditiveSceneGroup != KnownAdditiveSceneGroup)
             {
-                if (m_KnownAdditiveSceneGroup != null)
+                if (KnownAdditiveSceneGroup != null)
                 {
-                    m_KnownAdditiveSceneGroup.RemoveDependency(assetDependency);
-                    m_KnownAdditiveSceneGroup.ValidateBuildSettingsScenes();
+                    KnownAdditiveSceneGroup.RemoveDependency(this);
+                    KnownAdditiveSceneGroup.ValidateBuildSettingsScenes();
                 }
             }
 
@@ -298,20 +297,37 @@ namespace MLAPI.SceneManagement
             {
                 if (IncludeInBuild)
                 {
-                    AdditiveSceneGroup.AddDependency(assetDependency);
+                    AdditiveSceneGroup.AddDependency(this);
                 }
                 else
                 {
-                    AdditiveSceneGroup.RemoveDependency(assetDependency);
+                    AdditiveSceneGroup.RemoveDependency(this);
                 }
                 AdditiveSceneGroup.ValidateBuildSettingsScenes();
             }
 
-            if (m_KnownAdditiveSceneGroup != AdditiveSceneGroup)
+            if (KnownAdditiveSceneGroup != AdditiveSceneGroup)
             {
-                m_KnownAdditiveSceneGroup = AdditiveSceneGroup;
+                KnownAdditiveSceneGroup = AdditiveSceneGroup;
             }
         }
+
+        protected override void OnAddedToList()
+        {
+
+            base.OnAddedToList();
+        }
+
+        protected override void OnRemovedFromList()
+        {
+            IncludeInBuild = false;
+            if (Scene != null)
+            {
+                SceneRegistration.AddOrRemoveSceneAsset(Scene, false);
+            }
+            UpdateAdditiveSceneGroup();
+        }
+
 #endif
         public AddtiveSceneGroup AdditiveSceneGroup;
     }
@@ -322,14 +338,13 @@ namespace MLAPI.SceneManagement
     /// the scene name that it is pointing to for runtime
     /// </summary>
     [Serializable]
-    public class SceneEntryBsase : ISerializationCallbackReceiver
+    public class SceneEntryBsase : ISerializationCallbackReceiver, ISmartItem, IAssetDependency
     {
 #if UNITY_EDITOR
         [Tooltip("When set to true, this will automatically register all of the additive scenes (including groups) with the build settings scenes in build list.  If false, then the scene(s) have to be manually added or will not be included in the build.")]
         public bool IncludeInBuild;
         public SceneAsset Scene;
 #endif
-
         [HideInInspector]
         public string SceneEntryName;
 
@@ -348,6 +363,312 @@ namespace MLAPI.SceneManagement
                 SceneEntryName = Scene.name;
             }
 #endif
+        }
+
+        protected virtual void OnAddedToList()
+        {
+
+        }
+
+        public void AddedToList()
+        {
+#if UNITY_EDITOR
+            m_Dependencies.CollectionChanged += Dependencies_CollectionChanged;
+#endif
+            OnAddedToList();
+        }
+
+        protected virtual void OnRemovedFromList()
+        {
+
+        }
+
+        public void RemovedFromList()
+        {
+            OnRemovedFromList();
+#if UNITY_EDITOR
+            m_Dependencies.CollectionChanged -= Dependencies_CollectionChanged;
+#endif
+        }
+
+
+        protected virtual void OnWriteHashSynchValues(NetworkWriter writer)
+        {
+            if (SceneEntryName != null && SceneEntryName != string.Empty)
+            {
+                writer.WriteString(SceneEntryName);
+            }
+        }
+
+        public void WriteHashSynchValues(NetworkWriter writer)
+        {
+            OnWriteHashSynchValues(writer);
+        }
+
+
+#if UNITY_EDITOR
+        [HideInInspector]
+        [SerializeField]
+        protected ObservableCollection<IAssetDependency> m_Dependencies = new ObservableCollection<IAssetDependency>();
+
+        /// <summary>
+        /// Parent assets can use this to notify any child assets that it "depends" upon this asset
+        /// </summary>
+        /// <param name="assetDependency"></param>
+        public void AddDependency(IAssetDependency assetDependency)
+        {
+            if (!m_Dependencies.Contains(assetDependency))
+            {
+                m_Dependencies.Add(assetDependency);
+            }
+        }
+
+        /// <summary>
+        /// Parent assets can use this to notify any child assets that it no longer "depends" upon this asset
+        /// </summary>
+        /// <param name="assetDependency"></param>
+        public void RemoveDependency(IAssetDependency assetDependency)
+        {
+            if (m_Dependencies.Contains(assetDependency))
+            {
+                m_Dependencies.Remove(assetDependency);
+            }
+        }
+
+        /// <summary>
+        /// Child derived classes can override this method to receive notifications of a
+        /// dependency addition
+        /// </summary>
+        /// <param name="dependencyAdded"></param>
+        protected virtual void OnDependecyAdded(IAssetDependency dependencyAdded)
+        {
+
+        }
+
+        /// <summary>
+        /// Child derived classes can override this method to receive notifications of a
+        /// dependency removal
+        /// </summary>
+        /// <param name="dependencyRemoved"></param>
+        protected virtual void OnDependecyRemoved(IAssetDependency dependencyRemoved)
+        {
+
+        }
+
+        private void DependencyRemoved(NotifyCollectionChangedEventArgs e)
+        {
+            foreach (var item in e.OldItems)
+            {
+                OnDependecyRemoved(item as IAssetDependency);
+            }
+        }
+
+        private void DependencyAdded(NotifyCollectionChangedEventArgs e)
+        {
+            foreach (var item in e.NewItems)
+            {
+                OnDependecyAdded(item as IAssetDependency);
+            }
+        }
+
+        private void Dependencies_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+        {
+            switch (e.Action)
+            {
+                case NotifyCollectionChangedAction.Add:
+                    {
+                        DependencyAdded(e);
+                        break;
+                    }
+                case NotifyCollectionChangedAction.Remove:
+                    {
+                        DependencyRemoved(e);
+                        break;
+                    }
+            }
+        }
+
+        protected virtual bool OnIsRootAssetDependency()
+        {
+            return false;
+        }
+
+        public bool IsRootAssetDependency()
+        {
+            return OnIsRootAssetDependency();
+        }
+
+        protected virtual bool OnHasDependencies()
+        {
+            return (m_Dependencies.Count > 0);
+        }
+
+        public bool HasDependencies()
+        {
+            return OnHasDependencies();
+        }
+
+        public bool BelongsToRootAssetBranch()
+        {
+            if (m_Dependencies.Count == 0)
+            {
+                return IsRootAssetDependency();
+            }
+
+            foreach (var dependency in m_Dependencies)
+            {
+                if (dependency.BelongsToRootAssetBranch())
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Virtual method to allow for customizing the logic that determines if
+        /// an asset dependency should be included (defaults to true unless overridden
+        /// </summary>
+        /// <returns></returns>
+        protected virtual bool OnShouldAssetBeIncluded()
+        {
+            return true;
+        }
+
+        /// <summary>
+        /// Determines if the asset has any dependencies that are marked to be included
+        /// </summary>
+        /// <returns>true or false</returns>
+        public bool ShouldAssetBeIncluded()
+        {
+            if (IsRootAssetDependency())
+            {
+                return true;
+            }
+            if (HasDependencies())
+            {
+                foreach (var dependency in m_Dependencies)
+                {
+                    if (dependency.ShouldAssetBeIncluded())
+                    {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+#endif
+    }
+
+    public interface ISmartItem
+    {
+        void AddedToList();
+        void RemovedFromList();
+    }
+
+
+    public class SmartItemList<T> : List<T> where T : ISmartItem
+    {
+        private readonly IList<T> m_List = new List<T>();
+
+        public delegate void OnItemChangeDelegateHandler(T itemThatChanged);
+        public event OnItemChangeDelegateHandler OnItemAddedNotification;
+        public event OnItemChangeDelegateHandler OnItemRemovedNotification;
+
+        public new IEnumerator<T> GetEnumerator()
+        {
+            return m_List.GetEnumerator();
+        }
+
+        protected virtual void OnItemAdded(T item)
+        {
+            if (OnItemAddedNotification != null)
+            {
+                OnItemAddedNotification.Invoke(item);
+            }
+        }
+
+        protected virtual void OnItemRemoved(T item)
+        {
+            if (OnItemRemovedNotification != null)
+            {
+                OnItemRemovedNotification.Invoke(item);
+            }
+        }
+
+        public new void Add(T item)
+        {
+            m_List.Add(item);
+            item.AddedToList();
+        }
+
+        public new void Clear()
+        {
+            foreach (var item in m_List)
+            {
+                item.RemovedFromList();
+            }
+            m_List.Clear();
+        }
+
+        public new bool Contains(T item)
+        {
+            return m_List.Contains(item);
+        }
+
+        public new void CopyTo(T[] array, int arrayIndex)
+        {
+            m_List.CopyTo(array, arrayIndex);
+        }
+
+        public new bool Remove(T item)
+        {
+            if (m_List.Remove(item))
+            {
+                item.RemovedFromList();
+                return true;
+            }
+            return false;
+        }
+
+        public new int Count
+        {
+            get { return m_List.Count; }
+        }
+
+        public bool IsReadOnly
+        {
+            get { return m_List.IsReadOnly; }
+        }
+
+        public new int IndexOf(T item)
+        {
+            return m_List.IndexOf(item);
+        }
+
+        public new void Insert(int index, T item)
+        {
+            if (m_List.Count > index)
+            {
+                m_List.Insert(index, item);
+                item.AddedToList();
+            }
+        }
+
+        public new void RemoveAt(int index)
+        {
+            if (m_List.Count > index)
+            {
+                T item = m_List[index];
+                m_List.RemoveAt(index);
+                item.RemovedFromList();
+            }
+        }
+
+        public new T this[int index]
+        {
+            get { return m_List[index]; }
+            set { m_List[index] = value; }
         }
     }
 }
