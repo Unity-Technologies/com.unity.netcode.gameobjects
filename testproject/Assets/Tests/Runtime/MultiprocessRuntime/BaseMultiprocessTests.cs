@@ -16,6 +16,7 @@ namespace MLAPI.MultiprocessRuntimeTests
     [MultiprocessTests]
     public abstract class BaseMultiprocessTests
     {
+
         protected virtual bool m_IsPerformanceTest => true;
 
         private bool ShouldIgnoreTests => m_IsPerformanceTest && Application.isEditor;
@@ -64,6 +65,7 @@ namespace MLAPI.MultiprocessRuntimeTests
                     throw new Exception($"waiting too long to see clients to connect, got {NetworkManager.Singleton.ConnectedClients.Count - 1} clients, but was expecting {NbWorkers}, failing");
                 }
             }
+            TestCoordinator.Instance.KeepAliveClientRpc();
         }
 
         [TearDown]

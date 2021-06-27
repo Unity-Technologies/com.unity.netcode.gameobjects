@@ -46,7 +46,6 @@ public class MultiprocessOrchestration
         try
         {
             var newProcessStarted = workerNode.Start();
-            Debug.Log($"new process started? {newProcessStarted}");
             if (!newProcessStarted)
             {
                 throw new Exception("Process not started!");

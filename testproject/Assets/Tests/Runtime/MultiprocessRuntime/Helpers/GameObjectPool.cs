@@ -11,31 +11,38 @@ namespace MLAPI.MultiprocessRuntimeTests
     /// </summary>
     public class GameObjectPool
     {
-        private List<GameObject> m_GameObjectPool;
+        private List<GameObject> m_AllGameObject;
         private Stack<int> m_FreeIndexes;
         private Dictionary<GameObject, int> m_ReverseLookup = new Dictionary<GameObject, int>();
 
         public void Init(int originalCount, GameObject prefabToSpawn)
         {
-            m_GameObjectPool = new List<GameObject>(originalCount);
+            m_AllGameObject = new List<GameObject>(originalCount);
             m_FreeIndexes = new Stack<int>(originalCount);
             for (int i = 0; i < originalCount; i++)
             {
                 var go = Object.Instantiate(prefabToSpawn);
                 go.SetActive(false);
-                m_GameObjectPool.Add(go);
+                m_AllGameObject.Add(go);
                 m_FreeIndexes.Push(i);
                 m_ReverseLookup[go] = i;
             }
         }
 
+        public void Finish()
+        {
+            foreach (var gameObject in m_AllGameObject)
+            {
+                Object.Destroy(gameObject);
+            }
+        }
         public GameObject Get()
         {
             if (m_FreeIndexes.Count == 0)
             {
                 throw new Exception("Pool full!");
             }
-            var o = m_GameObjectPool[m_FreeIndexes.Pop()];
+            var o = m_AllGameObject[m_FreeIndexes.Pop()];
             o.SetActive(true);
             return o;
         }

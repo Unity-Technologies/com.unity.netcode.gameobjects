@@ -29,13 +29,16 @@ using Debug = UnityEngine.Debug;
 [RequireComponent(typeof(NetworkObject))]
 public class TestCoordinator : NetworkBehaviour
 {
-    public const float maxWaitTimeout = 10;
+    public const int perTestTimeout = 5 * 60; // seconds
+
+    public const float maxWaitTimeout = 20;
     private const char k_MethodFullNameSplitChar = '@';
 
     public bool isRegistering;
     public bool hasRegistered;
     private bool m_ShouldShutdown;
     private float m_TimeSinceLastConnected;
+    private float m_TimeSinceLastKeepAlive;
 
     public static TestCoordinator Instance;
 
@@ -113,6 +116,11 @@ public class TestCoordinator : NetworkBehaviour
 
     public void Update()
     {
+        if (Time.time - m_TimeSinceLastKeepAlive > perTestTimeout)
+        {
+            QuitApplication();
+            Assert.Fail("Stayed idle too long");
+        }
         if ((IsServer && NetworkManager.Singleton.IsListening) || (IsClient && NetworkManager.Singleton.IsConnectedClient))
         {
             m_TimeSinceLastConnected = Time.time;
@@ -350,6 +358,12 @@ public class TestCoordinator : NetworkBehaviour
         }
     }
 
+    [ClientRpc]
+    public void KeepAliveClientRpc()
+    {
+        m_TimeSinceLastKeepAlive = Time.time;
+    }
+
     [ServerRpc(RequireOwnership = false)]
     public void WriteTestResultsServerRpc(float result, ServerRpcParams receiveParams = default)
     {
@@ -412,7 +426,7 @@ public class TestCoordinator : NetworkBehaviour
 
 
         private bool m_WaitMultipleUpdates;
-        private bool m_TimeoutExpected;
+        private bool m_IgnoreTimeout;
 
         private float m_StartTime;
         private bool isTimingOut => Time.time - m_StartTime > maxWaitTimeout;
@@ -440,19 +454,19 @@ public class TestCoordinator : NetworkBehaviour
         /// </summary>
         /// <param name="actionContext">context to use. for example, should execute client side? server side?</param>
         /// <param name="stepToExecute">action to execute</param>
-        /// <param name="timeoutExpected"></param>
+        /// <param name="ignoreTimeout"></param>
         /// <param name="paramToPass">parameters to pass to action</param>
         /// <param name="networkManager"></param>
         /// <param name="waitMultipleUpdates"> waits multiple frames before allowing the execution to continue. This means ClientFinishedServerRpc must be called manually</param>
         /// <param name="additionalIsFinishedWaiter"></param>
-        public ExecuteStepInContext(StepExecutionContext actionContext, Action<byte[]> stepToExecute, bool timeoutExpected = false, byte[] paramToPass = default, NetworkManager networkManager = null, bool waitMultipleUpdates = false, Func<bool> additionalIsFinishedWaiter = null)
+        public ExecuteStepInContext(StepExecutionContext actionContext, Action<byte[]> stepToExecute, bool ignoreTimeout = false, byte[] paramToPass = default, NetworkManager networkManager = null, bool waitMultipleUpdates = false, Func<bool> additionalIsFinishedWaiter = null)
         {
             m_StartTime = Time.time;
             m_IsRegistering = Instance.isRegistering;
             m_ActionContext = actionContext;
             m_StepToExecute = stepToExecute;
             m_WaitMultipleUpdates = waitMultipleUpdates;
-            m_TimeoutExpected = timeoutExpected;
+            m_IgnoreTimeout = ignoreTimeout;
             if (additionalIsFinishedWaiter != null)
             {
                 m_AdditionalIsFinishedWaiter = additionalIsFinishedWaiter;
@@ -532,11 +546,12 @@ public class TestCoordinator : NetworkBehaviour
             {
                 if (isTimingOut)
                 {
-                    if (m_TimeoutExpected)
+                    if (m_IgnoreTimeout)
                     {
+                        Debug.LogWarning($"Timeout ignored for action ID {m_CurrentActionID}");
                         return false;
                     }
-                    Assert.Fail($"timeout for Context Step with action ID {m_CurrentActionID}");
+                    throw new Exception($"timeout for Context Step with action ID {m_CurrentActionID}");
                 }
                 if (m_AdditionalIsFinishedWaiter != null)
                 {
@@ -548,15 +563,11 @@ public class TestCoordinator : NetworkBehaviour
                 }
                 if (m_IsRegistering || ShouldExecuteLocally || m_RemoteIsFinishedChecks == null)
                 {
-
                     return false;
                 }
-
                 for (int i = m_RemoteIsFinishedChecks.Count - 1; i >= 0; i--)
                 {
-                    var waiter = m_RemoteIsFinishedChecks[i];
-                    var receivedResponse = waiter.Invoke();
-                    if (receivedResponse)
+                    if (m_RemoteIsFinishedChecks[i].Invoke())
                     {
                         m_RemoteIsFinishedChecks.RemoveAt(i);
                     }
@@ -565,7 +576,6 @@ public class TestCoordinator : NetworkBehaviour
                         return true;
                     }
                 }
-
                 return false;
             }
         }

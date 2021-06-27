@@ -678,7 +678,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   DontDestroy: 0
   RunInBackground: 1
-  LogLevel: 0
+  LogLevel: 1
   NetworkConfig:
     ProtocolVersion: 0
     NetworkTransport: {fileID: 1674777073}
@@ -697,7 +697,7 @@ MonoBehaviour:
       OverridingTargetPrefab: {fileID: 0}
     ReceiveTickrate: 64
     NetworkTickIntervalSec: 0.05
-    MaxReceiveEventsPerTickRate: 10000
+    MaxReceiveEventsPerTickRate: -1
     EventTickrate: 64
     ClientConnectionBufferTimeout: 10
     ConnectionApproval: 0

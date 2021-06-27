@@ -75,7 +75,7 @@ namespace MLAPI.MultiprocessRuntimeTests
             yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Clients, _ =>
             {
                 throw new Exception(exceptionMessageToTest);
-            }, timeoutExpected: true);
+            }, ignoreTimeout: true);
             yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Server, _ =>
             {
                 for (int i = 0; i < m_NbWorkersToTest; i++)
@@ -94,7 +94,7 @@ namespace MLAPI.MultiprocessRuntimeTests
                 }
                 NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate += Update;
 
-            }, timeoutExpected: true);
+            }, ignoreTimeout: true);
             yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Server, _ =>
             {
                 for (int i = 0; i < m_NbWorkersToTest; i++)
