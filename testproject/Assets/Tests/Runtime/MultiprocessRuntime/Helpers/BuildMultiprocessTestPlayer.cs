@@ -80,12 +80,11 @@ public class BuildMultiprocessTestPlayer : MonoBehaviour
     /// <returns></returns>
     public static bool Build(bool isDebug = false)
     {
-        // Save standalone build path to file
+        // Save standalone build path to file so we can read it from standalone tests (that are not running from editor)
         var f = File.CreateText(Path.Combine(Application.streamingAssetsPath, MultiprocessOrchestration.buildInfoFileName));
         f.Write(buildPath);
         f.Close();
 
-        // var buildPath = Application.streamingAssetsPath;
         // deleting so we don't end up testing on outdated builds if there's a build failure
         DeleteBuild();
 
