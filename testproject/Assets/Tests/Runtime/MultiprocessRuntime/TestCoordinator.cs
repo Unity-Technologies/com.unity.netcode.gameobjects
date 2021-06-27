@@ -68,7 +68,7 @@ public class TestCoordinator : NetworkBehaviour
 
         NetworkManager.OnClientDisconnectCallback += OnClientDisconnectCallback;
 
-        ExecuteStepInContext.InitializeAllSteps();
+        // ExecuteStepInContext.InitializeAllSteps();
     }
 
     public void Update()
@@ -256,7 +256,7 @@ public class TestCoordinator : NetworkBehaviour
         Debug.Log($"received RPC from server, client side triggering action ID {actionID}");
         try
         {
-            ExecuteStepInContext.allActions[actionID].Invoke(args);
+            // ExecuteStepInContext.allActions[actionID].Invoke(args);
         }
         catch (Exception e)
         {
