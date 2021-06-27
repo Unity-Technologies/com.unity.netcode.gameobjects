@@ -44,7 +44,6 @@ namespace MLAPI.MultiprocessRuntimeTests
                 yield return new WaitUntil(TestCoordinator.ResultIsSet());
 
                 var (clientId, result) = TestCoordinator.ConsumeCurrentResult().Take(1).Single();
-                Debug.Log($"got results, asserting, result is {result} from key {clientId}");
                 Assert.Greater(result, 0f);
                 nbResults++;
             }
@@ -62,7 +61,6 @@ namespace MLAPI.MultiprocessRuntimeTests
                 yield return new WaitUntil(TestCoordinator.ResultIsSet());
 
                 var (clientId, result) = TestCoordinator.ConsumeCurrentResult().Take(1).Single();
-                Debug.Log($"got results, asserting, result is {result} from key {clientId}");
                 Assert.That(result, Is.EqualTo(99));
                 nbResults++;
             }

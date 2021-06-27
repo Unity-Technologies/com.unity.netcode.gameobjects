@@ -34,18 +34,14 @@ namespace MLAPI.MultiprocessRuntimeTests
             SceneManager.LoadScene(BuildMultiprocessTestPlayer.mainSceneName, LoadSceneMode.Single);
             SceneManager.sceneLoaded += OnSceneLoaded;
 
-            Debug.Log("starting processes");
             for (int i = 0; i < NbWorkers; i++)
             {
                 MultiprocessOrchestration.StartWorkerNode(); // will automatically start built player as clients
             }
-
-            Debug.Log("processes started");
         }
 
         private static void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
-            Debug.Log("starting MLAPI host");
             SceneManager.sceneLoaded -= OnSceneLoaded;
             NetworkManager.Singleton.StartHost();
         }
@@ -82,7 +78,6 @@ namespace MLAPI.MultiprocessRuntimeTests
         {
             if (!ShouldIgnoreTests)
             {
-                Debug.Log("Teardown, closing remote clients and stopping host");
                 TestCoordinator.Instance.CloseRemoteClientRpc();
                 NetworkManager.Singleton.StopHost();
             }

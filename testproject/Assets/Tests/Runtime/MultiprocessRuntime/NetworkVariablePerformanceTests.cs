@@ -56,7 +56,7 @@ namespace MLAPI.MultiprocessRuntimeTests
         }
 
         [UnityTest, Performance, MultiprocessContextBasedTest]
-        public IEnumerator TestSpawningManyObjects([Values(1, 1000, 2000, 3000, 5000, 10000)] int nbObjects)
+        public IEnumerator TestSpawningManyObjects([Values(1, 1000, 2000, 10000)] int nbObjects)
         {
             InitContextSteps();
 
@@ -142,7 +142,6 @@ namespace MLAPI.MultiprocessRuntimeTests
                 Assert.That(TestCoordinator.AllClientIdsWithResults.Count, Is.EqualTo(NbWorkers));
                 foreach (var (clientId, result) in TestCoordinator.ConsumeCurrentResult())
                 {
-                    Debug.Log($"got result {result} from key {clientId}");
                     Measure.Custom(allocated, result);
                 }
 
@@ -152,10 +151,6 @@ namespace MLAPI.MultiprocessRuntimeTests
                 var nbObjectsParam = BitConverter.ToInt32(nbObjectsBytes, 0);
                 Assert.That(GameObject.FindObjectsOfType(typeof(OneNetVar)).Length, Is.EqualTo(nbObjectsParam), "Wrong number of spawned objects client side");
             }, paramToPass:BitConverter.GetBytes(nbObjects));
-            yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Server, bytes =>
-            {
-                Debug.Log($"finished with test for {nbObjects} objects");
-            });
         }
 
         [UnityTearDown, MultiprocessContextBasedTest]
@@ -193,6 +188,7 @@ namespace MLAPI.MultiprocessRuntimeTests
             yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Clients, _ =>
             {
                 NetworkManager.Singleton.PrefabHandler.RemoveHandler(PrefabReference.Instance.referencedPrefab);
+                s_ObjectPool.Finish();
             });
         }
 

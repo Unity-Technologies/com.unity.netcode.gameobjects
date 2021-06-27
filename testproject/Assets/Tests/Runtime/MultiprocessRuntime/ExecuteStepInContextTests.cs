@@ -161,14 +161,12 @@ namespace MLAPI.MultiprocessRuntimeTests
             {
                 stepCountExecuted++;
                 int count = BitConverter.ToInt32(args, 0);
-                Debug.Log($"something server side, count is {count}");
                 Assert.That(count, Is.EqualTo(1));
             }, paramToPass: BitConverter.GetBytes(1));
 
             yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Clients, args =>
             {
                 int count = BitConverter.ToInt32(args, 0);
-                Debug.Log($"something client side, count is {count}");
                 Assert.That(count, Is.EqualTo(2));
                 TestCoordinator.Instance.WriteTestResultsServerRpc(12345);
 #if UNITY_EDITOR

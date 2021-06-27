@@ -223,7 +223,6 @@ public class TestCoordinator : NetworkBehaviour
     public static Func<bool> ResultIsSet(bool useTimeoutException = true)
     {
         var startWaitTime = Time.time;
-        Debug.Log("calling result is set");
         return () =>
         {
             if (Time.time - startWaitTime > maxWaitTimeout)
@@ -316,7 +315,6 @@ public class TestCoordinator : NetworkBehaviour
     {
         try
         {
-            Debug.Log($"received client RPC for method {methodInfoString}");
             var split = methodInfoString.Split(k_MethodFullNameSplitChar);
             var (classToExecute, staticMethodToExecute) = (split[0], split[1]);
 
@@ -492,7 +490,6 @@ public class TestCoordinator : NetworkBehaviour
 
             if (m_IsRegistering)
             {
-                Debug.Log($"registering action with id {currentActionID}");
                 Assert.That(allActions, Does.Not.Contain(currentActionID)); // sanity check
                 allActions[currentActionID] = this;
             }
