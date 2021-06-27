@@ -14,8 +14,6 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using Debug = UnityEngine.Debug;
 
-// todo test with UTP
-
 /// <summary>
 /// TestCoordinator
 /// Used for coordinating multiprocess end to end tests. Used to call RPCs on other nodes and gather results

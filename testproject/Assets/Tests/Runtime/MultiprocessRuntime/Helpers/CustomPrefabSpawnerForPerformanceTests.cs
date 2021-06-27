@@ -33,7 +33,7 @@ namespace MLAPI.MultiprocessRuntimeTests
 
         public void HandleNetworkPrefabDestroy(NetworkObject networkObject)
         {
-            var behaviour = networkObject.gameObject.GetComponent<T>(); // todo expensive
+            var behaviour = networkObject.gameObject.GetComponent<T>(); // todo expensive, only used in teardown for now, should optimize eventually
             m_OnRelease(behaviour);
             Transform netTransform = networkObject.transform;
             netTransform.position = Vector3.zero;

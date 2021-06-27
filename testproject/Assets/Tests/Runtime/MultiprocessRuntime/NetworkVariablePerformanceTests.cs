@@ -13,7 +13,6 @@ using Object = UnityEngine.Object;
 
 namespace MLAPI.MultiprocessRuntimeTests
 {
-    // todo profile all this
     public class NetworkVariablePerformanceTests : BaseMultiprocessTests
     {
         protected override int NbWorkers { get; } = 1;
@@ -22,7 +21,7 @@ namespace MLAPI.MultiprocessRuntimeTests
         private static GameObjectPool<OneNetVar> s_ServerObjectPool;
         private CustomPrefabSpawnerForPerformanceTests<OneNetVar> m_ClientPrefabHandler;
         private OneNetVar m_PrefabToSpawn;
-        protected override bool m_IsPerformanceTest => false; // todo revert to true, this is for debug
+        protected override bool m_IsPerformanceTest => true;
 
         private class OneNetVar : NetworkBehaviour
         {
@@ -68,6 +67,11 @@ namespace MLAPI.MultiprocessRuntimeTests
         public IEnumerator TestSpawningManyObjects([Values(1, 1000, 2000, 10000)] int nbObjects)
         {
             InitContextSteps();
+
+            // if (!TestCoordinator.Instance.isRegistering)
+            // {
+            //     yield return new WaitForSeconds(20); // uncomment to be able to attach debugger and profiler to running build
+            // }
 
             yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Server, _ =>
             {
@@ -149,7 +153,7 @@ namespace MLAPI.MultiprocessRuntimeTests
             yield return new TestCoordinator.ExecuteStepInContext(StepExecutionContext.Server, bytes =>
             {
                 // add measurements
-                // todo add more metrics like memory usage, time taken to execute, etc
+                // todo add more client-side metrics like memory usage, time taken to execute, etc
                 var allocated = new SampleGroup("NbSpawnedPerFrame client side", SampleUnit.Undefined);
 
                 foreach (var clientId in TestCoordinator.AllClientIdsWithResults)

@@ -43,6 +43,7 @@ public class MultiprocessOrchestration
         workerNode.StartInfo.RedirectStandardError = true;
         workerNode.StartInfo.RedirectStandardOutput = true;
         workerNode.StartInfo.Arguments = $"{isWorkerArg} -popupwindow -screen-width 100 -screen-height 100";
+        // workerNode.StartInfo.Arguments += " -deepprofiling"; // enable for deep profiling
         try
         {
             var newProcessStarted = workerNode.Start();
