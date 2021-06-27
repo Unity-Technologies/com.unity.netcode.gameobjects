@@ -51,17 +51,18 @@ public class ExecuteStepInContext : CustomYieldInstruction
     private List<Func<bool>> m_RemoteIsFinishedChecks = new List<Func<bool>>();
     private Func<bool> m_AdditionalIsFinishedWaiter;
 
-
     private bool m_WaitMultipleUpdates;
     private bool m_IgnoreTimeoutException;
 
     private float m_StartTime;
     private bool isTimingOut => Time.time - m_StartTime > TestCoordinator.maxWaitTimeout;
-
     private bool ShouldExecuteLocally => (m_ActionContext == StepExecutionContext.Server && m_NetworkManager.IsServer) || (m_ActionContext == StepExecutionContext.Clients && !m_NetworkManager.IsServer);
 
-    // Assumes this is called from same callsite as ExecuteInContext (and assumes this is called from IEnumerator).
-    // This relies on the name to be unique for each generated IEnumerator state machines
+    /// <summary>
+    /// This MUST be called at the beginning of each test in order to use context based steps.
+    /// Assumes this is called from same callsite as ExecuteInContext (and assumes this is called from IEnumerator).
+    /// This relies on the name to be unique for each generated IEnumerator state machines
+    /// </summary>
     public static void InitContextSteps()
     {
         var callerMethod = new StackFrame(1).GetMethod();
