@@ -4,6 +4,7 @@
     "references": [
         "Unity.Multiplayer.MLAPI.Runtime",
         "Unity.Multiplayer.MLAPI.Editor",
+        "Unity.Multiplayer.MLAPI.Prototyping",
         "Unity.Multiplayer.Transport.UTP",
         "Unity.Services.Authentication",
         "Unity.Services.Core"

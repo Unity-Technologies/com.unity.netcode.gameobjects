@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using MLAPI.Messaging;
 using MLAPI.Messaging.Buffering;
@@ -25,9 +25,9 @@ namespace MLAPI.Profiling
         private readonly ProfilerMarker m_RpcReceiveQueueItemServerRpc = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(RpcReceiveQueueItem)}.{nameof(RpcQueueContainer.QueueItemType.ServerRpc)}");
         private readonly ProfilerMarker m_RpcReceiveQueueItemClientRpc = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(RpcReceiveQueueItem)}.{nameof(RpcQueueContainer.QueueItemType.ClientRpc)}");
         private readonly ProfilerMarker m_HandleAllClientsSwitchSceneCompleted = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleAllClientsSwitchSceneCompleted)}");
-        
+
         private readonly IInternalMessageHandler m_MessageHandler;
-        
+
         internal InternalMessageHandlerProfilingDecorator(IInternalMessageHandler messageHandler)
         {
             m_MessageHandler = messageHandler;
