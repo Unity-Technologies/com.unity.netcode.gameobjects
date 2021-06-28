@@ -1,43 +1,36 @@
 using System;
 using System.Collections;
-using System.Diagnostics;
-using System.Linq;
 using MLAPI.Messaging;
 using NUnit.Framework;
-using UnityEditor;
 using UnityEngine;
 using UnityEngine.TestTools;
 using Debug = UnityEngine.Debug;
 
 namespace MLAPI.RuntimeTests
 {
-    public class RPCTests
+    public class RpcTests
     {
-        public class RPCTestNetworkBehaviour : NetworkBehaviour
+        public class RpcTestNB : NetworkBehaviour
         {
-            public event Action OnServer_RPC;
-            public event Action OnClient_RPC;
+            public event Action OnServer_Rpc;
+            public event Action OnClient_Rpc;
 
             [ServerRpc]
             public void MyServerRpc()
             {
-                OnServer_RPC();
+                OnServer_Rpc();
             }
 
             [ClientRpc]
             public void MyClientRpc()
             {
-                OnClient_RPC();
+                OnClient_Rpc();
             }
         }
 
         [UnityTest]
-        public IEnumerator TestRPCs()
+        public IEnumerator TestRpcs()
         {
-            // Set target frameRate to work around ubuntu timings
-            int targetFrameRate = Application.targetFrameRate;
-            Application.targetFrameRate = 120;
-
             // Create multiple NetworkManager instances
             if (!MultiInstanceHelpers.Create(1, out NetworkManager server, out NetworkManager[] clients))
             {
@@ -56,7 +49,7 @@ namespace MLAPI.RuntimeTests
             // Create playerPrefab
             var playerPrefab = new GameObject("Player");
             NetworkObject networkObject = playerPrefab.AddComponent<NetworkObject>();
-            playerPrefab.AddComponent<RPCTestNetworkBehaviour>();
+            playerPrefab.AddComponent<RpcTestNB>();
 
             // Make it a prefab
             MultiInstanceHelpers.MakeNetworkedObjectTestPrefab(networkObject);
@@ -72,7 +65,6 @@ namespace MLAPI.RuntimeTests
             // Start the instances
             if (!MultiInstanceHelpers.Start(true, server, clients))
             {
-                Debug.LogError("Failed to start instances");
                 Assert.Fail("Failed to start instances");
             }
 
@@ -92,50 +84,47 @@ namespace MLAPI.RuntimeTests
             yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == clients[0].LocalClientId), clients[0], clientClientPlayerResult));
 
             // Setup state
-            bool hasReceivedServerRPC = false;
-            bool hasReceivedClientRPCRemotely = false;
-            bool hasReceivedClientRPCLocally = false;
+            bool hasReceivedServerRpc = false;
+            bool hasReceivedClientRpcRemotely = false;
+            bool hasReceivedClientRpcLocally = false;
 
-            clientClientPlayerResult.Result.GetComponent<RPCTestNetworkBehaviour>().OnClient_RPC += () =>
+            clientClientPlayerResult.Result.GetComponent<RpcTestNB>().OnClient_Rpc += () =>
             {
-                Debug.Log("ClientRPC received on client object");
-                hasReceivedClientRPCRemotely = true;
+                Debug.Log("ClientRpc received on client object");
+                hasReceivedClientRpcRemotely = true;
             };
 
-            clientClientPlayerResult.Result.GetComponent<RPCTestNetworkBehaviour>().OnServer_RPC += () =>
-            {
-                // The RPC invoked locally. (Weaver failure?)
-                Assert.Fail("ServerRPC invoked locally. Weaver failure?");
-            };
-
-            serverClientPlayerResult.Result.GetComponent<RPCTestNetworkBehaviour>().OnServer_RPC += () =>
-            {
-                Debug.Log("ServerRPC received on server object");
-                hasReceivedServerRPC = true;
-            };
-
-            serverClientPlayerResult.Result.GetComponent<RPCTestNetworkBehaviour>().OnClient_RPC += () =>
+            clientClientPlayerResult.Result.GetComponent<RpcTestNB>().OnServer_Rpc += () =>
             {
                 // The RPC invoked locally. (Weaver failure?)
-                Debug.Log("ClientRPC received on server object");
-                hasReceivedClientRPCLocally = true;
+                Assert.Fail("ServerRpc invoked locally. Weaver failure?");
             };
 
-            // Send ServerRPC
-            clientClientPlayerResult.Result.GetComponent<RPCTestNetworkBehaviour>().MyServerRpc();
+            serverClientPlayerResult.Result.GetComponent<RpcTestNB>().OnServer_Rpc += () =>
+            {
+                Debug.Log("ServerRpc received on server object");
+                hasReceivedServerRpc = true;
+            };
 
-            // Send ClientRPC
-            serverClientPlayerResult.Result.GetComponent<RPCTestNetworkBehaviour>().MyClientRpc();
+            serverClientPlayerResult.Result.GetComponent<RpcTestNB>().OnClient_Rpc += () =>
+            {
+                // The RPC invoked locally. (Weaver failure?)
+                Debug.Log("ClientRpc received on server object");
+                hasReceivedClientRpcLocally = true;
+            };
+
+            // Send ServerRpc
+            clientClientPlayerResult.Result.GetComponent<RpcTestNB>().MyServerRpc();
+
+            // Send ClientRpc
+            serverClientPlayerResult.Result.GetComponent<RpcTestNB>().MyClientRpc();
 
             // Wait for RPCs to be received
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForCondition(() => hasReceivedServerRPC && hasReceivedClientRPCLocally && hasReceivedClientRPCRemotely));
+            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForCondition(() => hasReceivedServerRpc && hasReceivedClientRpcLocally && hasReceivedClientRpcRemotely));
 
-            Assert.True(hasReceivedServerRPC, "ServerRPC was not received");
-            Assert.True(hasReceivedClientRPCLocally, "ClientRPC was not locally received on the server");
-            Assert.True(hasReceivedClientRPCRemotely, "ClientRPC was not remotely received on the client");
-
-            // Release frame rate
-            Application.targetFrameRate = targetFrameRate;
+            Assert.True(hasReceivedServerRpc, "ServerRpc was not received");
+            Assert.True(hasReceivedClientRpcLocally, "ClientRpc was not locally received on the server");
+            Assert.True(hasReceivedClientRpcRemotely, "ClientRpc was not remotely received on the client");
 
             // Cleanup
             MultiInstanceHelpers.Destroy();

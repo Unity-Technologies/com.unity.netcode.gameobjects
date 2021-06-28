@@ -91,6 +91,12 @@ namespace MLAPI.NetworkVariable
         private bool m_IsDirty = false;
 
         /// <summary>
+        /// Gets or sets the name of the network variable's instance
+        /// (MemberInfo) where it was declared.
+        /// </summary>
+        public string Name { get; internal set; }
+
+        /// <summary>
         /// Sets whether or not the variable needs to be delta synced
         /// </summary>
         public void SetDirty(bool isDirty)
@@ -204,7 +210,7 @@ namespace MLAPI.NetworkVariable
         /// <inheritdoc />
         public void WriteField(Stream stream)
         {
-           using (var writer = PooledNetworkWriter.Get(stream))
+            using (var writer = PooledNetworkWriter.Get(stream))
             {
                 writer.WriteObjectPacked(m_InternalValue); //BOX
             }

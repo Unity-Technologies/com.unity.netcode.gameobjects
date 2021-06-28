@@ -1,4 +1,4 @@
-﻿using MLAPI.Messaging;
+using MLAPI.Messaging;
 using MLAPI.Profiling;
 using NUnit.Framework;
 using UnityEngine;
