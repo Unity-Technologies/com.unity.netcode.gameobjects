@@ -60,7 +60,7 @@ namespace TestProject.ManualTests
             }
         }
 
-        public override void NetworkStart()
+        public override void OnNetworkSpawn()
         {
             if (m_SimulateFailure)
             {

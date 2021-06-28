@@ -32,9 +32,9 @@ public class PlayerMovement : NetworkBehaviour
         }
     }
 
-    public override void NetworkStart()
+    public override void OnNetworkSpawn()
     {
-        base.NetworkStart();
+        base.OnNetworkSpawn();
         Players[OwnerClientId] = this; // todo should really have a NetworkStop for unregistering this...
     }
 

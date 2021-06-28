@@ -6,7 +6,7 @@ using Unity.Multiplayer.NetworkProfiler.Models;
 
 namespace MLAPI.Metrics
 {
-#if true
+#if MULTIPLAYER_TOOLS
     public class NetworkMetrics : INetworkMetrics
     {
         readonly EventMetric<NamedMessageEvent> m_NamedMessageSentEvent = new EventMetric<NamedMessageEvent>(MetricNames.NamedMessageSent);

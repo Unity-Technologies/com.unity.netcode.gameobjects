@@ -273,6 +273,7 @@ namespace MLAPI.Messaging
             {
                 var longValue = reader.ReadUInt64Packed(); // NetworkObjectId (temporary, we reset position just below)
                 var shortValue = reader.ReadUInt16Packed(); // NetworkBehaviourId (temporary, we reset position just below)
+                var intValue = reader.ReadUInt32Packed(); // NetworkRpcMethodId (temporary, we reset position just below)
                 updateStage = (NetworkUpdateStage)reader.ReadByteDirect();
             }
 
