@@ -9,6 +9,12 @@ namespace MLAPI.NetworkVariable
     public interface INetworkVariable
     {
         /// <summary>
+        /// Gets or sets the name of the network variable's instance
+        /// (MemberInfo) where it was declared.
+        /// </summary>
+        string Name { get; }
+
+        /// <summary>
         /// Returns the name of the channel to be used for syncing
         /// </summary>
         /// <returns>The name of the channel to be used for syncing</returns>
@@ -73,7 +79,5 @@ namespace MLAPI.NetworkVariable
         /// </summary>
         /// <param name="behaviour">The behaviour the container behaves to</param>
         void SetNetworkBehaviour(NetworkBehaviour behaviour);
-
-        string Name { get; set; }
     }
 }

@@ -158,7 +158,7 @@ namespace TestProject.ManualTests
         /// <summary>
         /// Override NetworkBehaviour.NetworkStart
         /// </summary>
-        public override void NetworkStart()
+        public override void OnNetworkSpawn()
         {
             InitializeObjectPool();
             if (IsServer)

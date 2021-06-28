@@ -195,7 +195,7 @@ namespace MLAPI.Messaging
                     return;
                 }
                 m_NetworkManager.NetworkMetrics.TrackObjectDestroyReceived(clientId, networkId, sobj.name, (ulong)stream.Length);
-                NetworkManager.SpawnManager.OnDestroyObject(networkId, true);
+                NetworkManager.SpawnManager.OnDespawnObject(networkId, true);
             }
         }
 
