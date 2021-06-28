@@ -18,7 +18,7 @@ namespace MLAPI.SceneManagement
 
         [HideInInspector]
         [SerializeField]
-        private AddtiveSceneGroup m_PreviousAddtiveSceneGroup;
+        private AdditiveSceneGroup m_PreviousAddtiveSceneGroup;
 
         [SerializeField]
         private SceneAsset m_PrimaryScene;
@@ -117,7 +117,7 @@ namespace MLAPI.SceneManagement
         private string m_PrimarySceneName;
 
         [SerializeField]
-        private AddtiveSceneGroup m_AddtiveSceneGroup;
+        private AdditiveSceneGroup m_AddtiveSceneGroup;
 
 
         public string GetPrimaryScene()

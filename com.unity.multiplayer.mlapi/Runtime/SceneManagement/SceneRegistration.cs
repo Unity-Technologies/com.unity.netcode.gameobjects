@@ -276,7 +276,7 @@ namespace MLAPI.SceneManagement
 #if UNITY_EDITOR
         [SerializeField]
         [HideInInspector]
-        internal AddtiveSceneGroup KnownAdditiveSceneGroup;
+        internal AdditiveSceneGroup KnownAdditiveSceneGroup;
 
         /// <summary>
         /// Updates the dependencies for the additive scene group associated with this SceneEntry
@@ -329,7 +329,7 @@ namespace MLAPI.SceneManagement
         }
 
 #endif
-        public AddtiveSceneGroup AdditiveSceneGroup;
+        public AdditiveSceneGroup AdditiveSceneGroup;
     }
 
 

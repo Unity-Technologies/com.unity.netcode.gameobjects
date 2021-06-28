@@ -10,10 +10,10 @@ namespace MLAPI.SceneManagement
 {
     [CreateAssetMenu(fileName = "AdditiveSceneGroup", menuName = "MLAPI/SceneManagement/AdditiveSceneGroup")]
     [Serializable]
-    public class AddtiveSceneGroup : AssetDependency, IAdditiveSceneGroup
+    public class AdditiveSceneGroup : AssetDependency, IAdditiveSceneGroup
     {
         [SerializeField]
-        private List<AddtiveSceneGroup> m_AdditiveSceneGroups;
+        private List<AdditiveSceneGroup> m_AdditiveSceneGroups;
 
         // Since Unity does not support observable collections there are two ways to approach this:
         // 1.) Make a duplicate list that adjusts itself during OnValidate
@@ -21,7 +21,7 @@ namespace MLAPI.SceneManagement
         // For this pass, I opted for solution #1
         [HideInInspector]
         [SerializeField]
-        private List<AddtiveSceneGroup> m_KnownAdditiveSceneGroups = new List<AddtiveSceneGroup>();
+        private List<AdditiveSceneGroup> m_KnownAdditiveSceneGroups = new List<AdditiveSceneGroup>();
 
         [SerializeField]
         private List<AdditiveSceneEntry> m_AdditiveScenes;
@@ -48,14 +48,35 @@ namespace MLAPI.SceneManagement
 
         private void OnValidate()
         {
+            var additiveScenesDirty = m_KnownAdditiveSceneGroups.Count != m_AdditiveSceneGroups.Count;
+            // Used to catch the scenario where a user accidentally assigns an AdditiveSceneGroup to itself
+            AdditiveSceneGroup recursionTrap = null;
             // Always add all known dependencies during validation
             // We can apply the same dependencies since AddDependency checks to assure that the dependency doesn't already exist before adding it
             foreach (var entry in m_AdditiveSceneGroups)
             {
                 if (entry != null)
                 {
-                    entry.AddDependency(this);
+                    // Make sure the user has not added an AdditiveSceneGroup to itself
+                    if (entry != this)
+                    {
+                        entry.AddDependency(this);
+                    }
+                    else
+                    {
+                        recursionTrap = entry;
+                    }
                 }
+            }
+
+            // Remove this entry if it exists
+            if(recursionTrap != null)
+            {
+                var index = m_AdditiveSceneGroups.IndexOf(recursionTrap);
+                m_AdditiveSceneGroups[index] = null;
+
+                Debug.LogError($"AdditiveSceneGroup {recursionTrap.name} cannot be added to the Additive Scene Groups of {name} (itself).  Invalid assignment!");
+                additiveScenesDirty = true;
             }
 
             // Once all dependencies have been added, then check to see if we lost a dependency
@@ -67,13 +88,19 @@ namespace MLAPI.SceneManagement
                     if (!m_AdditiveSceneGroups.Contains(entry))
                     {
                         entry.RemoveDependency(this);
+                        entry.ValidateBuildSettingsScenes();
+                        additiveScenesDirty = true;
                     }
                 }
             }
 
-            // Next, keep m_KnownAdditiveSceneGroups in sync with m_AdditiveSceneGroups
-            m_KnownAdditiveSceneGroups.Clear();
-            m_KnownAdditiveSceneGroups.AddRange(m_AdditiveSceneGroups);
+            if (additiveScenesDirty)
+            {
+                // Next, keep m_KnownAdditiveSceneGroups in sync with m_AdditiveSceneGroups
+                m_KnownAdditiveSceneGroups.Clear();
+                m_KnownAdditiveSceneGroups.AddRange(m_AdditiveSceneGroups);
+            }
+
             ValidateBuildSettingsScenes();
         }
 
@@ -91,7 +118,7 @@ namespace MLAPI.SceneManagement
                 {
                     // Only filter out the referenced AdditiveSceneEntries if we shouldn't include this specific AdditiveSceneGroup's reference scene assets
                     // Note: Other AdditiveSceneGroups could have other associated SceneRegistrationEntries that might qualify it to be added to the build settings
-                    // so we only apply this to the current AddtiveSceneGroup's referenced AdditiveSceneEntries
+                    // so we only apply this to the current AdditiveSceneGroup's referenced AdditiveSceneEntries
                     SceneRegistration.AddOrRemoveSceneAsset(includedScene.Scene, shouldInclude && partOfRootBranch && includedScene.IncludeInBuild);
                 }
             }
