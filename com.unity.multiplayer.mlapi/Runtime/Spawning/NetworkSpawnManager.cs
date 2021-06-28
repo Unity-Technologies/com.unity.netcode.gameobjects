@@ -670,7 +670,7 @@ namespace MLAPI.Spawning
 
                                 rpcQueueContainer.AddToInternalMLAPISendQueue(queueItem);
 
-                                NetworkManager.NetworkMetrics.TrackObjectDestroySent(clientIds, networkId, sobj.name, (ulong)buffer.Length);
+                                NetworkManager.NetworkMetrics.TrackObjectDestroySent(clientIds, networkId, networkObject.name, (ulong)buffer.Length);
                             }
                         }
                     }

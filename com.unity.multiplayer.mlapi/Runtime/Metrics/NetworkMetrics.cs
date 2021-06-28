@@ -10,6 +10,8 @@ namespace MLAPI.Metrics
 #if MULTIPLAYER_TOOLS
     public class NetworkMetrics : INetworkMetrics
     {
+        private readonly NetworkManager m_NetworkManager;
+
         readonly EventMetric<NamedMessageEvent> m_NamedMessageSentEvent = new EventMetric<NamedMessageEvent>(MetricNames.NamedMessageSent);
         readonly EventMetric<NamedMessageEvent> m_NamedMessageReceivedEvent = new EventMetric<NamedMessageEvent>(MetricNames.NamedMessageReceived);
 
@@ -31,8 +33,9 @@ namespace MLAPI.Metrics
 
         private Dictionary<ulong, NetworkObjectIdentifier> m_NetworkGameObjects = new Dictionary<ulong, NetworkObjectIdentifier>();
 
-        public NetworkMetrics()
+        public NetworkMetrics(NetworkManager networkManager)
         {
+            m_NetworkManager = networkManager;
             Dispatcher = new MetricDispatcherBuilder()
                 .WithMetricEvents(m_NamedMessageSentEvent, m_NamedMessageReceivedEvent)
                 .WithMetricEvents(m_UnnamedMessageSentEvent, m_UnnamedMessageReceivedEvent)
