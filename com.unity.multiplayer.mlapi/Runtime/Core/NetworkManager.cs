@@ -496,9 +496,10 @@ namespace MLAPI
             }
 
             // Clear out anything that is invalid or not used (for invalid entries we already logged warnings to the user earlier)
-            foreach (var networkPrefabIndexToRemove in removeEmptyPrefabs)
+            // Iterate backwards so indices don't shift as we remove
+            for (int i = removeEmptyPrefabs.Count-1; i >= 0; i--)
             {
-                NetworkConfig.NetworkPrefabs.RemoveAt(networkPrefabIndexToRemove);
+                NetworkConfig.NetworkPrefabs.RemoveAt(removeEmptyPrefabs[i]);
             }
             removeEmptyPrefabs.Clear();
 
