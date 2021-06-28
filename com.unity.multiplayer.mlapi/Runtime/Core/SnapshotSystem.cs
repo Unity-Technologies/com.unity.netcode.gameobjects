@@ -52,7 +52,11 @@ namespace MLAPI
         internal bool IsPlayerObject;
         internal ulong OwnerClientId;
         internal ulong? ParentNetworkId;
-        internal Transform ObjectTransform;
+        internal Vector3 ObjectPosition;
+        internal Quaternion ObjectRotation;
+        internal Vector3 ObjectScale;
+
+        internal ushort TickWritten;
     }
 
     // A table of NetworkVariables that constitutes a Snapshot.
@@ -64,6 +68,7 @@ namespace MLAPI
     {
         // todo --M1-- functionality to grow these will be needed in a later milestone
         private const int k_MaxVariables = 2000;
+        private const int k_MaxSpawns = 100;
         private const int k_BufferSize = 30000;
 
         public byte[] MainBuffer = new byte[k_BufferSize]; // buffer holding a snapshot in memory
@@ -74,9 +79,15 @@ namespace MLAPI
         public Entry[] Entries = new Entry[k_MaxVariables];
         public int LastEntry = 0;
 
+        public SnapshotSpawnCommand[] Spawns = new SnapshotSpawnCommand[k_MaxSpawns];
+        public int NumSpawns = 0;
+
         private MemoryStream m_BufferStream;
         private NetworkManager m_NetworkManager;
         private bool m_TickIndex;
+
+        // indexed by ObjectId
+        internal Dictionary<ulong, ushort> m_TickApplied;
 
         /// <summary>
         /// Constructor
@@ -135,6 +146,15 @@ namespace MLAPI
             return pos;
         }
 
+        internal void AddSpawn(SnapshotSpawnCommand command)
+        {
+            if (NumSpawns < k_MaxSpawns)
+            {
+                Spawns[NumSpawns] = command;
+                NumSpawns++;
+            }
+        }
+
         /// <summary>
         /// Write an Entry to send
         /// Must match ReadEntry
@@ -151,6 +171,26 @@ namespace MLAPI
             writer.WriteUInt16(entry.Key.TickWritten);
             writer.WriteUInt16(entry.Position);
             writer.WriteUInt16(entry.Length);
+        }
+
+        internal void WriteSpawn(NetworkWriter writer, in SnapshotSpawnCommand spawn)
+        {
+            writer.WriteUInt64(spawn.NetworkObjectId);
+            writer.WriteUInt64(spawn.GlobalObjectIdHash);
+            writer.WriteBool(spawn.IsSceneObject);
+
+            writer.WriteBool(spawn.IsPlayerObject);
+            writer.WriteUInt64(spawn.OwnerClientId);
+            writer.WriteBool(spawn.ParentNetworkId == null);
+            if (spawn.ParentNetworkId != null)
+            {
+                writer.WriteUInt64(spawn.ParentNetworkId.Value);
+            }
+            writer.WriteVector3(spawn.ObjectPosition);
+            writer.WriteRotation(spawn.ObjectRotation);
+            writer.WriteVector3(spawn.ObjectScale);
+
+            writer.WriteUInt16(spawn.TickWritten);
         }
 
         /// <summary>
@@ -170,6 +210,36 @@ namespace MLAPI
 
             return entry;
         }
+
+        internal SnapshotSpawnCommand ReadSpawn(NetworkReader reader)
+        {
+            SnapshotSpawnCommand command;
+
+            command.NetworkObjectId = reader.ReadUInt64();
+            command.GlobalObjectIdHash = (uint)reader.ReadUInt64();
+            command.IsSceneObject = reader.ReadBool();
+            command.IsPlayerObject = reader.ReadBool();
+            command.OwnerClientId = reader.ReadUInt64();
+            bool parentIdPresent;
+            parentIdPresent = reader.ReadBool();
+            if (parentIdPresent)
+            {
+                command.ParentNetworkId = reader.ReadUInt64();
+            }
+            else
+            {
+                command.ParentNetworkId = null;
+            }
+
+            command.ObjectPosition = reader.ReadVector3();
+            command.ObjectRotation = reader.ReadRotation();
+            command.ObjectScale = reader.ReadVector3();
+
+            command.TickWritten = reader.ReadUInt16();
+
+            return command;
+        }
+
 
         /// <summary>
         /// Allocate memory from the buffer for the Entry and update it to point to the right location
@@ -260,6 +330,45 @@ namespace MLAPI
                 }
             }
         }
+
+        internal void ReadSpawns(NetworkReader reader)
+        {
+            SnapshotSpawnCommand command;
+            short count = reader.ReadInt16();
+
+            for (var i = 0; i < count; i++)
+            {
+                command = ReadSpawn(reader);
+                // todo: actually spawn object
+
+
+                // what is a soft sync ?
+                // what are spawn payloads ?
+/*
+                internal ulong NetworkObjectId;
+
+                // archetype
+                internal uint GlobalObjectIdHash;
+                internal bool IsSceneObject;
+
+                // parameters
+                internal bool IsPlayerObject;
+                internal ulong OwnerClientId;
+                internal ulong? ParentNetworkId;
+                internal Vector3 ObjectPosition;
+                internal Quaternion ObjectRotation;
+                internal Vector3 ObjectScale;
+
+                internal ushort TickWritten;
+*/
+                Debug.Log(string.Format("Spawning command ObjectId {0} Parent {1}", command.NetworkObjectId, command.ParentNetworkId));
+
+                var networkObject = m_NetworkManager.SpawnManager.CreateLocalNetworkObject(false, command.GlobalObjectIdHash, command.OwnerClientId, command.ParentNetworkId, command.ObjectPosition, command.ObjectRotation);
+                m_NetworkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, command.NetworkObjectId, true, command.IsPlayerObject, command.OwnerClientId, null, false, 0, true, false);
+
+            }
+        }
+
 
         /// <summary>
         /// Helper function to find the NetworkVariable object from a key
@@ -362,6 +471,7 @@ namespace MLAPI
 
                 WriteBuffer(buffer);
                 WriteIndex(buffer);
+                WriteSpawns(buffer);
 
                 m_NetworkManager.MessageSender.Send(clientId, NetworkConstants.SNAPSHOT_DATA,
                     NetworkChannel.SnapshotExchange, buffer);
@@ -380,6 +490,18 @@ namespace MLAPI
                 for (var i = 0; i < m_Snapshot.LastEntry; i++)
                 {
                     m_Snapshot.WriteEntry(writer, in m_Snapshot.Entries[i]);
+                }
+            }
+        }
+
+        private void WriteSpawns(NetworkBuffer buffer)
+        {
+            using (var writer = PooledNetworkWriter.Get(buffer))
+            {
+                writer.WriteInt16((short)m_Snapshot.NumSpawns);
+                for (var i = 0; i < m_Snapshot.NumSpawns; i++)
+                {
+                    m_Snapshot.WriteSpawn(writer, in m_Snapshot.Spawns[i]);
                 }
             }
         }
@@ -404,6 +526,17 @@ namespace MLAPI
 
         internal void Spawn(SnapshotSpawnCommand command)
         {
+            if (command.ParentNetworkId == null)
+            {
+                Debug.Log(string.Format("Spawning command for ObjectId {0} No parent", command.NetworkObjectId ));
+            }
+            else
+            {
+                Debug.Log(string.Format("Spawning command for ObjectId {0} Parent {1}", command.NetworkObjectId, command.ParentNetworkId.Value ));
+            }
+
+            command.TickWritten = m_CurrentTick;
+            m_Snapshot.AddSpawn(command);
         }
 
         // todo: consider using a Key, instead of 3 ints, if it can be exposed
@@ -465,6 +598,7 @@ namespace MLAPI
 
                 m_Snapshot.ReadBuffer(reader, snapshotStream);
                 m_Snapshot.ReadIndex(reader);
+                m_Snapshot.ReadSpawns(reader);
             }
 
             SendAck(clientId, snapshotTick);

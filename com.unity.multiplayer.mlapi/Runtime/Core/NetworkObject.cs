@@ -433,7 +433,10 @@ namespace MLAPI
                 command.ParentNetworkId = NetworkManager.SpawnManager.GetSpawnParentId(this);
                 command.GlobalObjectIdHash = GlobalObjectIdHash;
                 // todo: check if (IncludeTransformWhenSpawning == null || IncludeTransformWhenSpawning(clientId)) for any clientId
-                command.ObjectTransform = transform;
+                command.ObjectPosition = transform.position;
+                command.ObjectRotation = transform.rotation;
+                command.ObjectScale = transform.localScale;
+                command.TickWritten = 0; // will be reset in Spawn
 
                 NetworkManager.SnapshotSystem.Spawn(command);
             }

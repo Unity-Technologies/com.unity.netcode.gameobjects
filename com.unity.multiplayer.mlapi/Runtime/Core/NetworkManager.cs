@@ -55,8 +55,8 @@ namespace MLAPI
         internal static bool UseClassicDelta = false;
         internal static bool UseSnapshot = true;
 
-        internal static bool UseClassicSpawn = true;
-        internal static bool UseSnapshotSpawn = false;
+        internal static bool UseClassicSpawn = false;
+        internal static bool UseSnapshotSpawn = true;
 
         internal RpcQueueContainer RpcQueueContainer { get; private set; }
         internal NetworkTickSystem NetworkTickSystem { get; private set; }
