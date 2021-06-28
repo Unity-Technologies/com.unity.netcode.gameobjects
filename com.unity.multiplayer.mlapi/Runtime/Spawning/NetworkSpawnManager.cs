@@ -248,8 +248,9 @@ namespace MLAPI.Spawning
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
                     {
                         NetworkLog.LogError($"{nameof(NetworkPrefab)} hash was not found! In-Scene placed {nameof(NetworkObject)} soft synchronization failure for Hash: {globalObjectIdHash}!");
-                        return null;
                     }
+
+                    return null;
                 }
                 else
                 {
