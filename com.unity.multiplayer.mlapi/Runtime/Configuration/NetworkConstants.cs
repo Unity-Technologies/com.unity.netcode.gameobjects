@@ -18,6 +18,7 @@ namespace MLAPI.Configuration
         internal const byte TIME_SYNC = 11;
         internal const byte NETWORK_VARIABLE_DELTA = 12;
         internal const byte ALL_CLIENTS_LOADED_SCENE = 14;
+        internal const byte PARENT_SYNC = 16;
         internal const byte UNNAMED_MESSAGE = 20;
         internal const byte DESTROY_OBJECTS = 21;
         internal const byte NAMED_MESSAGE = 22;
@@ -46,7 +47,7 @@ namespace MLAPI.Configuration
             "",
             "ALL_CLIENTS_SWITCH_SCENE_COMPLETED",
             "",
-            "", // 16
+            "PARENT_SYNC", // 16
             "",
             "",
             "",
