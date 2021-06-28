@@ -190,7 +190,12 @@ namespace MLAPI.Messaging
             using (var reader = PooledNetworkReader.Get(stream))
             {
                 ulong networkId = reader.ReadUInt64Packed();
-                NetworkManager.SpawnManager.OnDespawnObject(networkId, true);
+                if (!NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(networkId, out NetworkObject networkObject))
+                {
+                    return;
+                }
+
+                NetworkManager.SpawnManager.OnDespawnObject(networkObject, true);
             }
         }
 
