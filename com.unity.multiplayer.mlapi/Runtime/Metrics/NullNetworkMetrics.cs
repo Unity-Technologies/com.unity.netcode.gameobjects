@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 
 namespace MLAPI.Metrics
 {
@@ -37,6 +37,14 @@ namespace MLAPI.Metrics
         }
 
         public void TrackNetworkVariableDeltaReceived(ulong senderClientId, ulong networkObjectId, string gameObjectName, string variableName, ulong bytesCount)
+        {
+        }
+
+        public void TrackOwnershipChangeSent(ulong receiverClientId, ulong networkObjectId, string gameObjectName, ulong bytesCount)
+        {
+        }
+
+        public void TrackOwnershipChangeReceived(ulong senderClientId, ulong networkObjectId, string gameObjectName, ulong bytesCount)
         {
         }
 

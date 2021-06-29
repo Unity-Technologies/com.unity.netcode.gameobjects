@@ -114,6 +114,11 @@ namespace MLAPI.Spawning
                 writer.WriteUInt64Packed(networkObject.OwnerClientId);
 
                 NetworkManager.MessageSender.Send(NetworkConstants.CHANGE_OWNER, NetworkChannel.Internal, buffer);
+
+                foreach (var client in NetworkManager.ConnectedClients)
+                {
+                    NetworkManager.NetworkMetrics.TrackOwnershipChangeSent(client.Key, networkObject.NetworkObjectId, networkObject.name, (ulong)buffer.Length);
+                }
             }
         }
 
@@ -151,6 +156,11 @@ namespace MLAPI.Spawning
                 writer.WriteUInt64Packed(clientId);
 
                 NetworkManager.MessageSender.Send(NetworkConstants.CHANGE_OWNER, NetworkChannel.Internal, buffer);
+
+                foreach (var client in NetworkManager.ConnectedClients)
+                {
+                    NetworkManager.NetworkMetrics.TrackOwnershipChangeSent(client.Key, networkObject.NetworkObjectId, networkObject.name, (ulong)buffer.Length);
+                }
             }
         }
 

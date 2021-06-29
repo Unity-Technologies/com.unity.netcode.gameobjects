@@ -220,19 +220,22 @@ namespace MLAPI.Messaging
                 ulong networkId = reader.ReadUInt64Packed();
                 ulong ownerClientId = reader.ReadUInt64Packed();
 
-                if (NetworkManager.SpawnManager.SpawnedObjects[networkId].OwnerClientId == NetworkManager.LocalClientId)
+                var networkObject = NetworkManager.SpawnManager.SpawnedObjects[networkId];
+                if (networkObject.OwnerClientId == NetworkManager.LocalClientId)
                 {
                     //We are current owner.
-                    NetworkManager.SpawnManager.SpawnedObjects[networkId].InvokeBehaviourOnLostOwnership();
+                    networkObject.InvokeBehaviourOnLostOwnership();
                 }
 
                 if (ownerClientId == NetworkManager.LocalClientId)
                 {
                     //We are new owner.
-                    NetworkManager.SpawnManager.SpawnedObjects[networkId].InvokeBehaviourOnGainedOwnership();
+                    networkObject.InvokeBehaviourOnGainedOwnership();
                 }
 
-                NetworkManager.SpawnManager.SpawnedObjects[networkId].OwnerClientId = ownerClientId;
+                networkObject.OwnerClientId = ownerClientId;
+
+                NetworkManager.NetworkMetrics.TrackOwnershipChangeReceived(clientId, networkObject.NetworkObjectId, networkObject.name, (ulong)stream.Length);
             }
         }
 
