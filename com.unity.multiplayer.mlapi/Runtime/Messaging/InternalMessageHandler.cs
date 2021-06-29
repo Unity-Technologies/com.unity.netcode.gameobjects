@@ -86,6 +86,7 @@ namespace MLAPI.Messaging
 
                 void DelayedSpawnAction(Stream continuationStream)
                 {
+                    
                     using (var continuationReader = PooledNetworkReader.Get(continuationStream))
                     {
                         if (!NetworkManager.NetworkConfig.EnableSceneManagement)
@@ -94,7 +95,7 @@ namespace MLAPI.Messaging
                         }
                         else
                         {
-                            NetworkManager.SpawnManager.ClientCollectSoftSyncSceneObjectSweep(null);
+                            NetworkManager.SceneManager.PopulateScenePlacedObjects();
                         }
 
                         var objectCount = continuationReader.ReadUInt32Packed();
@@ -103,7 +104,6 @@ namespace MLAPI.Messaging
                             NetworkObject.DeserializeSceneObject(continuationStream as NetworkBuffer, continuationReader, m_NetworkManager);
                         }
 
-                        NetworkManager.SpawnManager.CleanDiffedSceneObjects();
                         NetworkManager.IsConnectedClient = true;
                         NetworkManager.InvokeOnClientConnectedCallback(NetworkManager.LocalClientId);
                     }
@@ -190,7 +190,15 @@ namespace MLAPI.Messaging
             using (var reader = PooledNetworkReader.Get(stream))
             {
                 ulong networkId = reader.ReadUInt64Packed();
-                NetworkManager.SpawnManager.OnDespawnObject(networkId, true);
+                if (!NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(networkId, out NetworkObject networkObject))
+                {
+                    // This is the same check and log message that happens inside OnDespawnObject, but we have to do it here
+                    // while we still have access to the network ID, otherwise the log message will be less useful.
+                    Debug.LogWarning($"Trying to destroy object {networkId} but it doesn't seem to exist anymore!");
+                    return;
+                }
+
+                NetworkManager.SpawnManager.OnDespawnObject(networkObject, true);
             }
         }
 
