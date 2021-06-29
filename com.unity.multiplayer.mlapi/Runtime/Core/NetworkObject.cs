@@ -405,9 +405,9 @@ namespace MLAPI
 
         private void OnDestroy()
         {
-            if (NetworkManager != null && NetworkManager.SpawnManager != null && NetworkManager.SpawnManager.SpawnedObjects.ContainsKey(NetworkObjectId))
+            if (NetworkManager != null && NetworkManager.SpawnManager != null && NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(NetworkObjectId, out var networkObject))
             {
-                NetworkManager.SpawnManager.OnDespawnObject(NetworkObjectId, false);
+                NetworkManager.SpawnManager.OnDespawnObject(networkObject, false);
             }
         }
 
