@@ -25,9 +25,6 @@ namespace MLAPI.Spawning
         /// </summary>
         public readonly Dictionary<ulong, NetworkObject> SpawnedObjects = new Dictionary<ulong, NetworkObject>();
 
-        // Pending SoftSync objects
-        internal readonly Dictionary<ulong, NetworkObject> PendingSoftSyncObjects = new Dictionary<ulong, NetworkObject>();
-
         /// <summary>
         /// A list of the spawned objects
         /// </summary>
@@ -246,17 +243,19 @@ namespace MLAPI.Spawning
             }
             else
             {
-                // SoftSync them by mapping
-                if (!PendingSoftSyncObjects.TryGetValue(globalObjectIdHash, out NetworkObject networkObject))
+                if (!NetworkManager.SceneManager.ScenePlacedObjects.TryGetValue(globalObjectIdHash, out NetworkObject networkObject))
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
                     {
                         NetworkLog.LogError($"{nameof(NetworkPrefab)} hash was not found! In-Scene placed {nameof(NetworkObject)} soft synchronization failure for Hash: {globalObjectIdHash}!");
                     }
+
                     return null;
                 }
-
-                PendingSoftSyncObjects.Remove(globalObjectIdHash);
+                else
+                {
+                    NetworkManager.SceneManager.ScenePlacedObjects.Remove(globalObjectIdHash);
+                }
 
                 if (parentNetworkObject != null)
                 {
@@ -557,20 +556,6 @@ namespace MLAPI.Spawning
             }
         }
 
-        internal void CleanDiffedSceneObjects()
-        {
-            // Clean up any in-scene objects that had been destroyed
-            if (PendingSoftSyncObjects.Count > 0)
-            {
-                foreach (var pair in PendingSoftSyncObjects)
-                {
-                    UnityEngine.Object.Destroy(pair.Value.gameObject);
-                }
-
-                // Make sure to clear this once done destroying all remaining NetworkObjects
-                PendingSoftSyncObjects.Clear();
-            }
-        }
 
         internal void ServerSpawnSceneObjectsOnStartSweep()
         {
@@ -583,25 +568,6 @@ namespace MLAPI.Spawning
                     if (networkObjects[i].IsSceneObject == null)
                     {
                         SpawnNetworkObjectLocally(networkObjects[i], GetNetworkObjectId(), true, false, null, null, false, 0, false, true);
-                    }
-                }
-            }
-        }
-
-        internal void ClientCollectSoftSyncSceneObjectSweep(NetworkObject[] networkObjects)
-        {
-            if (networkObjects == null)
-            {
-                networkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>();
-            }
-
-            for (int i = 0; i < networkObjects.Length; i++)
-            {
-                if (networkObjects[i].NetworkManager == NetworkManager)
-                {
-                    if (networkObjects[i].IsSceneObject == null)
-                    {
-                        PendingSoftSyncObjects.Add(networkObjects[i].GlobalObjectIdHash, networkObjects[i]);
                     }
                 }
             }
