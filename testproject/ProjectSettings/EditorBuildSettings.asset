@@ -9,8 +9,41 @@ EditorBuildSettings:
     path: Assets/MainMenu.unity
     guid: 21c7fd68cda9dd9488fc0cc01f885e39
   - enabled: 1
+    path: Assets/Samples/EnableDisableNetworkObject/EnableDisableSceneNetworkObject.unity
+    guid: 619b9eba5892d5a4e9dd1d6cafb0059a
+  - enabled: 1
     path: Assets/Samples/SamplesMenu.unity
     guid: 037562c9b1a469f498dfb34256ddf86f
+  - enabled: 1
+    path: Assets/Samples/SceneRegistration/AdditiveScenes/AdditiveScene 1.unity
+    guid: 466e828eb554ee44c900882db6c9d3a7
+  - enabled: 1
+    path: Assets/Samples/SceneRegistration/AdditiveScenes/AdditiveScene 2.unity
+    guid: ddb4e18dbd30daf4ab011d3232a63786
+  - enabled: 1
+    path: Assets/Samples/SceneRegistration/AdditiveScenes/AdditiveScene 3.unity
+    guid: c4ebb19d1542fdb4a8fe49b774ab16a0
+  - enabled: 1
+    path: Assets/Samples/SceneRegistration/AdditiveScenes/AdditiveScene 4.unity
+    guid: b12634a7636aba845801ca83d4ba61c2
+  - enabled: 1
+    path: Assets/Samples/SceneRegistration/AdditiveScenes/AdditiveScene 5.unity
+    guid: 9904940443bdd09489233649a5b6e0b8
+  - enabled: 1
+    path: Assets/Samples/SceneRegistration/AdditiveScenes/AdditiveScene 6.unity
+    guid: 2fc7efd990522b74caaa4cc1b42dfdc5
+  - enabled: 1
+    path: Assets/Samples/SceneRegistration/SceneLevel-1.unity
+    guid: 228aa7771c79e6341a8fa9bc684c5766
+  - enabled: 1
+    path: Assets/Samples/SceneRegistration/SceneLevel-2.unity
+    guid: 5add0389cebf7fa438efb6c2ac0a6fe1
+  - enabled: 1
+    path: Assets/Samples/SceneRegistration/SceneLevel-3.unity
+    guid: 45a35678967fd6744bae54a375eec459
+  - enabled: 1
+    path: Assets/Samples/SceneRegistration/TestScene.unity
+    guid: e729f848287dcb94c99ff859aefc8511
   - enabled: 1
     path: Assets/Scenes/SampleScene.unity
     guid: 9fc0d4010bbf28b4594072e72b8655ab

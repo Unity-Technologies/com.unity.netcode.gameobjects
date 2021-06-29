@@ -14,4 +14,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_AdditiveSceneGroups: []
   m_KnownAdditiveSceneGroups: []
-  m_AdditiveScenes: []
+  m_AdditiveScenes:
+  - IncludeInBuild: 1
+    Scene: {fileID: 102900000, guid: b12634a7636aba845801ca83d4ba61c2, type: 3}
+    SceneEntryName: AdditiveScene 4
+  - IncludeInBuild: 1
+    Scene: {fileID: 102900000, guid: 9904940443bdd09489233649a5b6e0b8, type: 3}
+    SceneEntryName: AdditiveScene 5
+  - IncludeInBuild: 1
+    Scene: {fileID: 102900000, guid: 2fc7efd990522b74caaa4cc1b42dfdc5, type: 3}
+    SceneEntryName: AdditiveScene 6

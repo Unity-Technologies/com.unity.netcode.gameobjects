@@ -112,7 +112,12 @@ namespace MLAPI.Editor
             var newSceneEntry = new SceneEntry();
             newSceneEntry.IncludeInBuild = true;
             newSceneEntry.AddedToList();
+            if(m_SceneRegistration.SceneRegistrations == null)
+            {
+                m_SceneRegistration.SceneRegistrations = new List<SceneEntry>();
+            }
             m_SceneRegistration.SceneRegistrations.Add(newSceneEntry);
+            m_SceneRegistration.ValidateBuildSettingsScenes();
         }
 
 
@@ -131,6 +136,8 @@ namespace MLAPI.Editor
                 m_SceneRegistration.SceneRegistrations.Remove(sceneEntry);
 
             }
+
+            m_SceneRegistration.ValidateBuildSettingsScenes();
         }
     }
 }

@@ -12,12 +12,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 180fe42d996da264ab3d32e3fc9033ca, type: 3}
   m_Name: SampleSceneRegistration
   m_EditorClassIdentifier: 
-  m_SceneRegistrations:
-  - Scene: {fileID: 102900000, guid: 9fc0d4010bbf28b4594072e72b8655ab, type: 3}
-    IncludeInBuild: 1
-    AdditiveSceneGroup: {fileID: 0}
-    m_KnownAdditiveSceneGroup: {fileID: 0}
+  SceneRegistrations:
+  - IncludeInBuild: 1
+    Scene: {fileID: 102900000, guid: 9fc0d4010bbf28b4594072e72b8655ab, type: 3}
     SceneEntryName: SampleScene
+    KnownAdditiveSceneGroup: {fileID: 0}
+    AdditiveSceneGroup: {fileID: 0}
   m_NetworkManagerScene: SampleScene
+  m_KnownSceneRegistrations: []
   NetworkManagerScene: {fileID: 102900000, guid: 9fc0d4010bbf28b4594072e72b8655ab,
     type: 3}

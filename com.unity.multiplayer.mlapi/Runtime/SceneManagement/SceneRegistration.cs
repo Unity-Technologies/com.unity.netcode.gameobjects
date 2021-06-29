@@ -200,6 +200,12 @@ namespace MLAPI.SceneManagement
                     }
                 }
             }
+
+            if(NetworkManagerScene != null)
+            {
+                AddOrRemoveSceneAsset(NetworkManagerScene, true);
+            }
+
         }
 
         /// <summary>
