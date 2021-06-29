@@ -499,9 +499,10 @@ namespace MLAPI
             }
 
             // Clear out anything that is invalid or not used (for invalid entries we already logged warnings to the user earlier)
-            foreach (var networkPrefabIndexToRemove in removeEmptyPrefabs)
+            // Iterate backwards so indices don't shift as we remove
+            for (int i = removeEmptyPrefabs.Count-1; i >= 0; i--)
             {
-                NetworkConfig.NetworkPrefabs.RemoveAt(networkPrefabIndexToRemove);
+                NetworkConfig.NetworkPrefabs.RemoveAt(removeEmptyPrefabs[i]);
             }
             removeEmptyPrefabs.Clear();
 
@@ -1515,7 +1516,7 @@ namespace MLAPI
                         if (PrefabHandler.ContainsHandler(ConnectedClients[clientId].PlayerObject.GlobalObjectIdHash))
                         {
                             PrefabHandler.HandleNetworkPrefabDestroy(ConnectedClients[clientId].PlayerObject);
-                            SpawnManager.OnDespawnObject(ConnectedClients[clientId].PlayerObject.NetworkObjectId, false);
+                            SpawnManager.OnDespawnObject(ConnectedClients[clientId].PlayerObject, false);
                         }
                         else
                         {
@@ -1533,7 +1534,7 @@ namespace MLAPI
                                 if (PrefabHandler.ContainsHandler(ConnectedClients[clientId].OwnedObjects[i].GlobalObjectIdHash))
                                 {
                                     PrefabHandler.HandleNetworkPrefabDestroy(ConnectedClients[clientId].OwnedObjects[i]);
-                                    SpawnManager.OnDespawnObject(ConnectedClients[clientId].OwnedObjects[i].NetworkObjectId, false);
+                                    SpawnManager.OnDespawnObject(ConnectedClients[clientId].OwnedObjects[i], false);
                                 }
                                 else
                                 {
