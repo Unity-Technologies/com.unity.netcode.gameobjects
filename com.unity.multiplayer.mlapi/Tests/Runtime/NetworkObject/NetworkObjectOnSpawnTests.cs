@@ -27,12 +27,9 @@ namespace MLAPI.RuntimeTests
 
             yield return null;
 
-            // instantiate
-            var instance = Object.Instantiate(gameObject);
-            yield return null;
-
             // destroy
-            Object.Destroy(instance);
+            Object.Destroy(gameObject);
+            
             yield return null;
         }
 
