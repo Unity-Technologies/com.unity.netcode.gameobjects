@@ -124,6 +124,7 @@ namespace TestProject.ManualTests
         {
             m_LastStatsDump = "Server Stats";
             m_LastStatsDump += "\ndeltaTime: [" + Time.deltaTime.ToString() + "]";
+            // TODO: Fill out NetStats related information here when ready
         }
 
         /// <summary>
@@ -160,6 +161,8 @@ namespace TestProject.ManualTests
                     {
                         m_LastStatsDump = m_IsServer ? "Server Stats" : "Client Stats";
                         m_LastStatsDump += "\ndeltaTime: [" + Time.deltaTime.ToString() + "]";
+
+                        // TODO: Fill out NetStats related information here when ready
                     }
                     if (NetworkManager.Singleton.IsServer && m_ClientsToUpdate.Count > 0)
                     {
