@@ -161,10 +161,13 @@ namespace MLAPI.Messaging
                     rot = Quaternion.Euler(reader.ReadSinglePacked(), reader.ReadSinglePacked(), reader.ReadSinglePacked());
                 }
 
+                var (isReparented, latestParent) = NetworkObject.ReadNetworkParenting(reader);
+
                 var hasPayload = reader.ReadBool();
                 var payLoadLength = hasPayload ? reader.ReadInt32Packed() : 0;
 
-                var networkObject = NetworkManager.SpawnManager.CreateLocalNetworkObject(softSync, prefabHash, ownerClientId, parentNetworkId, pos, rot);
+                var networkObject = NetworkManager.SpawnManager.CreateLocalNetworkObject(softSync, prefabHash, ownerClientId, parentNetworkId, pos, rot, isReparented);
+                networkObject.SetNetworkParenting(isReparented, latestParent);
                 NetworkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, networkId, softSync, isPlayerObject, ownerClientId, stream, hasPayload, payLoadLength, true, false);
 
                 Queue<BufferManager.BufferedMessage> bufferQueue = NetworkManager.BufferManager.ConsumeBuffersForNetworkId(networkId);
@@ -189,13 +192,15 @@ namespace MLAPI.Messaging
             using (var reader = PooledNetworkReader.Get(stream))
             {
                 ulong networkId = reader.ReadUInt64Packed();
-                if (!m_NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(networkId, out NetworkObject sobj))
+                if (!NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(networkId, out NetworkObject networkObject))
                 {
+                    // This is the same check and log message that happens inside OnDespawnObject, but we have to do it here
+                    // while we still have access to the network ID, otherwise the log message will be less useful.
                     Debug.LogWarning($"Trying to destroy object {networkId} but it doesn't seem to exist anymore!");
                     return;
                 }
-                m_NetworkManager.NetworkMetrics.TrackObjectDestroyReceived(clientId, networkId, sobj.name, (ulong)stream.Length);
-                NetworkManager.SpawnManager.OnDespawnObject(networkId, true);
+                m_NetworkManager.NetworkMetrics.TrackObjectDestroyReceived(clientId, networkId, networkObject.name, (ulong)stream.Length);
+                NetworkManager.SpawnManager.OnDespawnObject(networkObject, true);
             }
         }
 

@@ -325,11 +325,11 @@ namespace MLAPI
         }
 #endif
 
-        private void Init(bool server)
+        private void Initialize(bool server)
         {
             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
             {
-                NetworkLog.LogInfo(nameof(Init));
+                NetworkLog.LogInfo(nameof(Initialize));
             }
 
             LocalClientId = 0;
@@ -340,6 +340,7 @@ namespace MLAPI
             PendingClients.Clear();
             ConnectedClients.Clear();
             ConnectedClientsList.Clear();
+            NetworkObject.OrphanChildren.Clear();
 
             // Create spawn manager instance
             SpawnManager = new NetworkSpawnManager(this);
@@ -520,9 +521,10 @@ namespace MLAPI
             }
 
             // Clear out anything that is invalid or not used (for invalid entries we already logged warnings to the user earlier)
-            foreach (var networkPrefabIndexToRemove in removeEmptyPrefabs)
+            // Iterate backwards so indices don't shift as we remove
+            for (int i = removeEmptyPrefabs.Count-1; i >= 0; i--)
             {
-                NetworkConfig.NetworkPrefabs.RemoveAt(networkPrefabIndexToRemove);
+                NetworkConfig.NetworkPrefabs.RemoveAt(removeEmptyPrefabs[i]);
             }
             removeEmptyPrefabs.Clear();
 
@@ -566,7 +568,7 @@ namespace MLAPI
                 }
             }
 
-            Init(true);
+            Initialize(true);
 
             var socketTasks = NetworkConfig.NetworkTransport.StartServer();
 
@@ -601,7 +603,7 @@ namespace MLAPI
                 return SocketTask.Fault.AsTasks();
             }
 
-            Init(false);
+            Initialize(false);
 
             var socketTasks = NetworkConfig.NetworkTransport.StartClient();
 
@@ -727,7 +729,7 @@ namespace MLAPI
                 }
             }
 
-            Init(true);
+            Initialize(true);
 
             var socketTasks = NetworkConfig.NetworkTransport.StartServer();
 
@@ -1357,6 +1359,29 @@ namespace MLAPI
 
                             break;
                         }
+                    case NetworkConstants.PARENT_SYNC:
+                        {
+                            if (IsClient)
+                            {
+                                using (var reader = PooledNetworkReader.Get(messageStream))
+                                {
+                                    var networkObjectId = reader.ReadUInt64Packed();
+                                    var (isReparented, latestParent) = NetworkObject.ReadNetworkParenting(reader);
+                                    if (SpawnManager.SpawnedObjects.ContainsKey(networkObjectId))
+                                    {
+                                        var networkObject = SpawnManager.SpawnedObjects[networkObjectId];
+                                        networkObject.SetNetworkParenting(isReparented, latestParent);
+                                        networkObject.ApplyNetworkParenting();
+                                    }
+                                    else if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+                                    {
+                                        NetworkLog.LogWarning($"Read {nameof(NetworkConstants.PARENT_SYNC)} for {nameof(NetworkObject)} #{networkObjectId} but could not find it in the {nameof(SpawnManager.SpawnedObjects)}");
+                                    }
+                                }
+                            }
+
+                            break;
+                        }
                     default:
                         if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
                         {
@@ -1508,7 +1533,7 @@ namespace MLAPI
                         if (PrefabHandler.ContainsHandler(ConnectedClients[clientId].PlayerObject.GlobalObjectIdHash))
                         {
                             PrefabHandler.HandleNetworkPrefabDestroy(ConnectedClients[clientId].PlayerObject);
-                            SpawnManager.OnDespawnObject(ConnectedClients[clientId].PlayerObject.NetworkObjectId, false);
+                            SpawnManager.OnDespawnObject(ConnectedClients[clientId].PlayerObject, false);
                         }
                         else
                         {
@@ -1526,7 +1551,7 @@ namespace MLAPI
                                 if (PrefabHandler.ContainsHandler(ConnectedClients[clientId].OwnedObjects[i].GlobalObjectIdHash))
                                 {
                                     PrefabHandler.HandleNetworkPrefabDestroy(ConnectedClients[clientId].OwnedObjects[i]);
-                                    SpawnManager.OnDespawnObject(ConnectedClients[clientId].OwnedObjects[i].NetworkObjectId, false);
+                                    SpawnManager.OnDespawnObject(ConnectedClients[clientId].OwnedObjects[i], false);
                                 }
                                 else
                                 {
