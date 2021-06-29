@@ -614,8 +614,10 @@ namespace MLAPI.Spawning
                 return;
             }
 
+            // We have to do this check first as subsequent checks assume we can access NetworkObjectId.
             if (networkObject == null)
             {
+                Debug.LogWarning($"Trying to destroy network object but it is null");
                 return;
             }
 
@@ -625,7 +627,6 @@ namespace MLAPI.Spawning
                 Debug.LogWarning($"Trying to destroy object {networkObject.NetworkObjectId} but it doesn't seem to exist anymore!");
                 return;
             }
-
 
             // Move child NetworkObjects to the root when parent NetworkObject is destroyed
             foreach (var spawnedNetObj in SpawnedObjectsList)

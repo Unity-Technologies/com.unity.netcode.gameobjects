@@ -192,6 +192,9 @@ namespace MLAPI.Messaging
                 ulong networkId = reader.ReadUInt64Packed();
                 if (!NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(networkId, out NetworkObject networkObject))
                 {
+                    // This is the same check and log message that happens inside OnDespawnObject, but we have to do it here
+                    // while we still have access to the network ID, otherwise the log message will be less useful.
+                    Debug.LogWarning($"Trying to destroy object {networkId} but it doesn't seem to exist anymore!");
                     return;
                 }
 
