@@ -50,7 +50,7 @@ namespace MLAPI
                 return;
             }
 
-            // do NOT regenerate GlobalObjectIdHash if Editor is transitining into or out of PlayMode
+            // do NOT regenerate GlobalObjectIdHash if Editor is transitioning into or out of PlayMode
             if (!UnityEditor.EditorApplication.isPlaying && UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
             {
                 return;
@@ -405,9 +405,9 @@ namespace MLAPI
 
         private void OnDestroy()
         {
-            if (NetworkManager != null && NetworkManager.SpawnManager != null && NetworkManager.SpawnManager.SpawnedObjects.ContainsKey(NetworkObjectId))
+            if (NetworkManager != null && NetworkManager.SpawnManager != null && NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(NetworkObjectId, out var networkObject))
             {
-                NetworkManager.SpawnManager.OnDespawnObject(NetworkObjectId, false);
+                NetworkManager.SpawnManager.OnDespawnObject(networkObject, false);
             }
         }
 
