@@ -1,4 +1,5 @@
 using System.Collections;
+using MLAPI.Configuration;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -12,6 +13,7 @@ namespace MLAPI.RuntimeTests
         private NetworkManager m_ServerNetworkManager;
         private NetworkManager[] m_ClientNetworkManagers;
         private GameObject m_PlayerPrefab;
+        private GameObject m_DummyPrefab;
 
         [UnitySetUp]
         public IEnumerator Setup()
@@ -27,10 +29,15 @@ namespace MLAPI.RuntimeTests
             m_PlayerPrefab = new GameObject("PlayerPrefabPrototype");
             MultiInstanceHelpers.MakeNetworkedObjectTestPrefab(m_PlayerPrefab.AddComponent<NetworkObject>());
 
+            m_DummyPrefab = new GameObject("DummyPrefabPrototype");
+            MultiInstanceHelpers.MakeNetworkedObjectTestPrefab(m_DummyPrefab.AddComponent<NetworkObject>());
+
             m_ServerNetworkManager.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
+            m_ServerNetworkManager.NetworkConfig.NetworkPrefabs.Add(new NetworkPrefab { Prefab = m_DummyPrefab });
             foreach (var clientNetworkManager in m_ClientNetworkManagers)
             {
                 clientNetworkManager.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
+                clientNetworkManager.NetworkConfig.NetworkPrefabs.Add(new NetworkPrefab { Prefab = m_DummyPrefab });
             }
 
             Assert.That(MultiInstanceHelpers.Start(/* isHost = */ true, m_ServerNetworkManager, m_ClientNetworkManagers));
@@ -46,6 +53,11 @@ namespace MLAPI.RuntimeTests
             if (m_PlayerPrefab != null)
             {
                 Object.Destroy(m_PlayerPrefab);
+            }
+
+            if (m_DummyPrefab != null)
+            {
+                Object.Destroy(m_DummyPrefab);
             }
         }
 
@@ -63,24 +75,69 @@ namespace MLAPI.RuntimeTests
                 Assert.That(clientNetworkManager.SpawnManager.SpawnedObjects.ContainsKey(c0PlayerObjectId));
             }
 
-            // m_ServerNetworkManager.DisconnectClient(c0PlayerClientId);
-            m_ClientNetworkManagers[0].StopClient();
+
+            m_ServerNetworkManager.DisconnectClient(c0PlayerClientId);
 
             int nextFrameNumber = Time.frameCount + 2;
             yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
 
-            Assert.That(!m_ServerNetworkManager.ConnectedClients.ContainsKey(c0PlayerClientId));
-            Assert.That(!m_ServerNetworkManager.SpawnManager.SpawnedObjects.ContainsKey(c0PlayerObjectId));
+            Assert.That(m_ServerNetworkManager.ConnectedClients.ContainsKey(c0PlayerClientId), Is.False);
+            Assert.That(m_ServerNetworkManager.SpawnManager.SpawnedObjects.ContainsKey(c0PlayerObjectId), Is.False);
             foreach (var clientNetworkManager in m_ClientNetworkManagers)
             {
-                Assert.That(!clientNetworkManager.SpawnManager.SpawnedObjects.ContainsKey(c0PlayerObjectId));
+                Assert.That(clientNetworkManager.SpawnManager.SpawnedObjects.ContainsKey(c0PlayerObjectId), Is.False);
             }
         }
 
         [UnityTest]
         public IEnumerator ShouldDestroyOwnedObjectsOnDisconnect()
         {
-            yield return new WaitForSeconds(0.1f);
+            var sDummyGameObject = Object.Instantiate(m_DummyPrefab);
+            var sDummyNetworkObject = sDummyGameObject.GetComponent<NetworkObject>();
+            sDummyNetworkObject.NetworkManagerOwner = m_ServerNetworkManager;
+            sDummyNetworkObject.DontDestroyWithOwner = false;
+            sDummyNetworkObject.Spawn();
+            var sDummyObjectId = sDummyNetworkObject.NetworkObjectId;
+
+            int nextFrameNumber = Time.frameCount + 2;
+            yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
+
+            Assert.That(m_ServerNetworkManager.SpawnManager.SpawnedObjects.ContainsKey(sDummyObjectId));
+            foreach (var clientNetworkManager in m_ClientNetworkManagers)
+            {
+                Assert.That(clientNetworkManager.SpawnManager.SpawnedObjects.ContainsKey(sDummyObjectId));
+            }
+
+
+            var c0PlayerClientId = m_ServerNetworkManager.ConnectedClientsList[0].ClientId;
+            sDummyNetworkObject.ChangeOwnership(c0PlayerClientId);
+
+            nextFrameNumber = Time.frameCount + 2;
+            yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
+
+            Assert.That(m_ServerNetworkManager.SpawnManager.SpawnedObjects[sDummyObjectId].OwnerClientId, Is.EqualTo(c0PlayerClientId));
+            foreach (var clientNetworkManager in m_ClientNetworkManagers)
+            {
+                Assert.That(clientNetworkManager.SpawnManager.SpawnedObjects[sDummyObjectId].OwnerClientId, Is.EqualTo(c0PlayerClientId));
+            }
+
+
+            m_ServerNetworkManager.DisconnectClient(c0PlayerClientId);
+
+            nextFrameNumber = Time.frameCount + 2;
+            yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
+
+            Assert.That(m_ServerNetworkManager.SpawnManager.SpawnedObjects.ContainsKey(sDummyObjectId), Is.False);
+            foreach (var clientNetworkManager in m_ClientNetworkManagers)
+            {
+                Assert.That(clientNetworkManager.SpawnManager.SpawnedObjects.ContainsKey(sDummyObjectId), Is.False);
+            }
+
+
+            if (sDummyGameObject != null)
+            {
+                Object.Destroy(sDummyGameObject);
+            }
         }
 
         [UnityTest]
