@@ -151,26 +151,61 @@ namespace MLAPI.RuntimeTests.Metrics.NetworkObjects
         {
             m_NewNetworkObject.Spawn();
 
+            // Spawn another network object so we can hide multiple.
             var gameObject = new GameObject(m_NewNetworkObjectName);
             var anotherNetworkObject = gameObject.AddComponent<NetworkObject>();
             anotherNetworkObject.NetworkManagerOwner = m_Server;
+            anotherNetworkObject.Spawn();
+
+            var waitForMetricEvent = new WaitForMetricValues<MultipleObjectsDestroyedEvent>(m_ServerMetrics.Dispatcher, MetricNames.MultipleObjectDestroyedSent);
+            yield return waitForMetricEvent.WaitForAFewFrames();
 
             NetworkObject.NetworkHide(new List<NetworkObject>{m_NewNetworkObject, anotherNetworkObject}, m_Client.LocalClientId);
 
-            var waitForMetricEvent = new WaitForMetricValues<MultipleObjectsDestroyedEvent>(m_ServerMetrics.Dispatcher, MetricNames.MultipleObjectDestroyedSent);
             yield return waitForMetricEvent.Wait(60);
-
-            m_Server.SpawnManager.OnDespawnObject(m_NewNetworkObject, true);
-
-            yield return waitForMetricEvent.WaitForAFewFrames();
 
             var objectDestroyedSentMetricValues = waitForMetricEvent.EnsureMetricValuesHaveBeenFound();
             // As there's a client and server, this event is emitted twice.
-            Assert.AreEqual(2, objectDestroyedSentMetricValues.Count);
+            Assert.AreEqual(1, objectDestroyedSentMetricValues.Count);
 
-            var objectDestroyed = objectDestroyedSentMetricValues.Last();
-            Assert.AreEqual(m_Client.LocalClientId, objectDestroyed.Connection.Id);
-            Assert.AreEqual(m_NewNetworkObjectName, objectDestroyed.NetworkId.Name);
+            var objectsDestroyed = objectDestroyedSentMetricValues.First();
+            Assert.AreEqual(m_Client.LocalClientId, objectsDestroyed.Connection.Id);
+            Assert.AreEqual(2, objectsDestroyed.NetworkIds.Count);
+            Assert.AreEqual(m_NewNetworkObjectName, objectsDestroyed.NetworkIds.First().Name);
+            Assert.AreEqual(m_NewNetworkObject.NetworkObjectId, objectsDestroyed.NetworkIds.First().NetworkId);
+        }
+
+        [UnityTest]
+        public IEnumerator TrackMultipleNetworkObjectSpawnSentMetric()
+        {
+            m_NewNetworkObject.Spawn();
+
+            // Spawn another network object so we can hide multiple.
+            var gameObject = new GameObject(m_NewNetworkObjectName);
+            var anotherNetworkObject = gameObject.AddComponent<NetworkObject>();
+            anotherNetworkObject.NetworkManagerOwner = m_Server;
+            anotherNetworkObject.Spawn();
+
+            var waitForMetricEvent = new WaitForMetricValues<MultipleObjectsSpawnedEvent>(m_ServerMetrics.Dispatcher, MetricNames.MultipleObjectsSpawnedSent);
+            yield return waitForMetricEvent.WaitForAFewFrames();
+
+            NetworkObject.NetworkHide(new List<NetworkObject>{m_NewNetworkObject, anotherNetworkObject}, m_Client.LocalClientId);
+
+            yield return waitForMetricEvent.WaitForAFewFrames();
+
+            NetworkObject.NetworkShow(new List<NetworkObject>{m_NewNetworkObject, anotherNetworkObject}, m_Client.LocalClientId);
+
+            yield return waitForMetricEvent.Wait(60);
+
+            var objectSpawnedSentMetricValues = waitForMetricEvent.EnsureMetricValuesHaveBeenFound();
+            // As there's a client and server, this event is emitted twice.
+            Assert.AreEqual(1, objectSpawnedSentMetricValues.Count);
+
+            var objectsSpawned = objectSpawnedSentMetricValues.First();
+            Assert.AreEqual(m_Client.LocalClientId, objectsSpawned.Connection.Id);
+            Assert.AreEqual(2, objectsSpawned.NetworkIds.Count);
+            Assert.AreEqual(m_NewNetworkObjectName, objectsSpawned.NetworkIds.First().Name);
+            Assert.AreEqual(m_NewNetworkObject.NetworkObjectId, objectsSpawned.NetworkIds.First().NetworkId);
         }
     }
 }
