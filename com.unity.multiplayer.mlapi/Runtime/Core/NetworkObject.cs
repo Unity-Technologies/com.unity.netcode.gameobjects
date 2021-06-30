@@ -440,7 +440,18 @@ namespace MLAPI
                 command.OwnerClientId = OwnerClientId;
                 command.IsPlayerObject = IsPlayerObject;
                 command.IsSceneObject = (IsSceneObject == null) || IsSceneObject.Value;
-                command.ParentNetworkId = NetworkManager.SpawnManager.GetSpawnParentId(this);
+
+                ulong? parent = NetworkManager.SpawnManager.GetSpawnParentId(this);
+                if (parent != null)
+                {
+                    command.ParentNetworkId = parent.Value;
+                }
+                else
+                {
+                    // write own network id, when no parents. todo: optimize this.
+                    command.ParentNetworkId = command.NetworkObjectId;
+                }
+
                 command.GlobalObjectIdHash = GlobalObjectIdHash;
                 // todo: check if (IncludeTransformWhenSpawning == null || IncludeTransformWhenSpawning(clientId)) for any clientId
                 command.ObjectPosition = transform.position;

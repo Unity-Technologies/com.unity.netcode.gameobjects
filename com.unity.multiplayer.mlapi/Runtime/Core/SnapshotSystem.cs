@@ -51,7 +51,7 @@ namespace MLAPI
         // parameters
         internal bool IsPlayerObject;
         internal ulong OwnerClientId;
-        internal ulong? ParentNetworkId;
+        internal ulong ParentNetworkId;
         internal Vector3 ObjectPosition;
         internal Quaternion ObjectRotation;
         internal Vector3 ObjectScale;
@@ -87,7 +87,7 @@ namespace MLAPI
         private bool m_TickIndex;
 
         // indexed by ObjectId
-        internal Dictionary<ulong, ushort> m_TickApplied;
+        internal Dictionary<ulong, ushort> m_TickApplied = new Dictionary<ulong, ushort>();
 
         /// <summary>
         /// Constructor
@@ -150,6 +150,8 @@ namespace MLAPI
         {
             if (NumSpawns < k_MaxSpawns)
             {
+                Debug.Log(string.Format("Spawning {0} {1} {2} {3} {4} {5} {6}", command.NetworkObjectId, command.GlobalObjectIdHash, command.IsSceneObject, command.IsPlayerObject, command.OwnerClientId, command.ParentNetworkId, command.ObjectPosition));
+
                 Spawns[NumSpawns] = command;
                 NumSpawns++;
             }
@@ -181,11 +183,7 @@ namespace MLAPI
 
             writer.WriteBool(spawn.IsPlayerObject);
             writer.WriteUInt64(spawn.OwnerClientId);
-            writer.WriteBool(spawn.ParentNetworkId == null);
-            if (spawn.ParentNetworkId != null)
-            {
-                writer.WriteUInt64(spawn.ParentNetworkId.Value);
-            }
+            writer.WriteUInt64(spawn.ParentNetworkId);
             writer.WriteVector3(spawn.ObjectPosition);
             writer.WriteRotation(spawn.ObjectRotation);
             writer.WriteVector3(spawn.ObjectScale);
@@ -220,17 +218,7 @@ namespace MLAPI
             command.IsSceneObject = reader.ReadBool();
             command.IsPlayerObject = reader.ReadBool();
             command.OwnerClientId = reader.ReadUInt64();
-            bool parentIdPresent;
-            parentIdPresent = reader.ReadBool();
-            if (parentIdPresent)
-            {
-                command.ParentNetworkId = reader.ReadUInt64();
-            }
-            else
-            {
-                command.ParentNetworkId = null;
-            }
-
+            command.ParentNetworkId = reader.ReadUInt64();
             command.ObjectPosition = reader.ReadVector3();
             command.ObjectRotation = reader.ReadRotation();
             command.ObjectScale = reader.ReadVector3();
@@ -339,36 +327,39 @@ namespace MLAPI
             for (var i = 0; i < count; i++)
             {
                 command = ReadSpawn(reader);
-                // todo: actually spawn object
 
+                if (m_TickApplied.ContainsKey(command.NetworkObjectId) &&
+                    command.TickWritten <= m_TickApplied[command.NetworkObjectId])
+                {
+                    continue;
+                }
+
+                m_TickApplied[command.NetworkObjectId] = command.TickWritten;
 
                 // what is a soft sync ?
                 // what are spawn payloads ?
-/*
-                internal ulong NetworkObjectId;
 
-                // archetype
-                internal uint GlobalObjectIdHash;
-                internal bool IsSceneObject;
-
-                // parameters
-                internal bool IsPlayerObject;
-                internal ulong OwnerClientId;
-                internal ulong? ParentNetworkId;
-                internal Vector3 ObjectPosition;
-                internal Quaternion ObjectRotation;
-                internal Vector3 ObjectScale;
-
-                internal ushort TickWritten;
-*/
                 Debug.Log(string.Format("Spawning command ObjectId {0} Parent {1}", command.NetworkObjectId, command.ParentNetworkId));
 
-                var networkObject = m_NetworkManager.SpawnManager.CreateLocalNetworkObject(false, command.GlobalObjectIdHash, command.OwnerClientId, command.ParentNetworkId, command.ObjectPosition, command.ObjectRotation);
-                m_NetworkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, command.NetworkObjectId, true, command.IsPlayerObject, command.OwnerClientId, null, false, 0, true, false);
-
+                if (command.ParentNetworkId == command.NetworkObjectId)
+                {
+                    var networkObject = m_NetworkManager.SpawnManager.CreateLocalNetworkObject(false, command.GlobalObjectIdHash, command.OwnerClientId, null, command.ObjectPosition, command.ObjectRotation);
+                    m_NetworkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, command.NetworkObjectId, true, command.IsPlayerObject, command.OwnerClientId, null, false, 0, false, false);
+                }
+                else
+                {
+                    var networkObject = m_NetworkManager.SpawnManager.CreateLocalNetworkObject(false, command.GlobalObjectIdHash, command.OwnerClientId, command.ParentNetworkId, command.ObjectPosition, command.ObjectRotation);
+                    m_NetworkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, command.NetworkObjectId, true, command.IsPlayerObject, command.OwnerClientId, null, false, 0, false, false);
+                }
             }
         }
 
+        internal void ReadAcks(NetworkReader reader)
+        {
+            short ack = reader.ReadInt16();
+
+
+        }
 
         /// <summary>
         /// Helper function to find the NetworkVariable object from a key
@@ -441,13 +432,6 @@ namespace MLAPI
                     {
                         SendSnapshot(m_NetworkManager.ServerClientId);
                     }
-
-
-
-                    if (tick % 30 == 0)
-                    {
-                        DebugDisplayStore(m_Snapshot, "Main snapshot");
-                    }
                 }
             }
         }
@@ -472,6 +456,7 @@ namespace MLAPI
                 WriteBuffer(buffer);
                 WriteIndex(buffer);
                 WriteSpawns(buffer);
+                WriteAcks(buffer);
 
                 m_NetworkManager.MessageSender.Send(clientId, NetworkConstants.SNAPSHOT_DATA,
                     NetworkChannel.SnapshotExchange, buffer);
@@ -506,6 +491,14 @@ namespace MLAPI
             }
         }
 
+        private void WriteAcks(NetworkBuffer buffer)
+        {
+            using (var writer = PooledNetworkWriter.Get(buffer))
+            {
+                writer.WriteInt16((short)0);
+            }
+        }
+
         /// <summary>
         /// Write the buffer of a snapshot
         /// Must match ReadBuffer
@@ -526,15 +519,6 @@ namespace MLAPI
 
         internal void Spawn(SnapshotSpawnCommand command)
         {
-            if (command.ParentNetworkId == null)
-            {
-                Debug.Log(string.Format("Spawning command for ObjectId {0} No parent", command.NetworkObjectId ));
-            }
-            else
-            {
-                Debug.Log(string.Format("Spawning command for ObjectId {0} Parent {1}", command.NetworkObjectId, command.ParentNetworkId.Value ));
-            }
-
             command.TickWritten = m_CurrentTick;
             m_Snapshot.AddSpawn(command);
         }
@@ -599,33 +583,10 @@ namespace MLAPI
                 m_Snapshot.ReadBuffer(reader, snapshotStream);
                 m_Snapshot.ReadIndex(reader);
                 m_Snapshot.ReadSpawns(reader);
+                m_Snapshot.ReadAcks(reader);
             }
 
-            SendAck(clientId, snapshotTick);
-        }
-
-        public void ReadAck(ulong clientId, Stream snapshotStream)
-        {
-            using (var reader = PooledNetworkReader.Get(snapshotStream))
-            {
-                var ackTick = reader.ReadUInt16();
-            }
-        }
-
-        public void SendAck(ulong clientId, ushort tick)
-        {
-            using (var buffer = PooledNetworkBuffer.Get())
-            {
-                using (var writer = PooledNetworkWriter.Get(buffer))
-                {
-                    writer.WriteUInt16(tick);
-                }
-
-                m_NetworkManager.MessageSender.Send(clientId, NetworkConstants.SNAPSHOT_ACK,
-                    NetworkChannel.SnapshotExchange, buffer);
-                buffer.Dispose();
-            }
-
+            // todo: handle acks
         }
 
         // todo --M1--

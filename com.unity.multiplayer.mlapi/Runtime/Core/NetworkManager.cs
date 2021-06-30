@@ -1196,9 +1196,6 @@ namespace MLAPI
                     case NetworkConstants.SNAPSHOT_DATA:
                         InternalMessageHandler.HandleSnapshot(clientId, messageStream);
                         break;
-                    case NetworkConstants.SNAPSHOT_ACK:
-                        InternalMessageHandler.HandleAck(clientId, messageStream);
-                        break;
 
                     case NetworkConstants.CONNECTION_REQUEST:
                         if (IsServer)
