@@ -66,6 +66,11 @@ namespace MLAPI.Serialization
         /// </summary>
         public bool Resizable { get; }
 
+        /// <summary>
+        /// Gets the internal byte array, if you gotta go fast.
+        /// </summary>
+        public byte[] ByteArray() => target;
+
         private float _growthFactor;
         /// <summary>
         /// Factor by which buffer should grow when necessary.
