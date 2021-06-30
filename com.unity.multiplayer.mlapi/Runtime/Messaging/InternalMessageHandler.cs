@@ -12,7 +12,6 @@ using MLAPI.Configuration;
 using MLAPI.Messaging.Buffering;
 using MLAPI.Profiling;
 using MLAPI.Serialization;
-using Unity.Multiplayer.NetworkProfiler.Models;
 
 namespace MLAPI.Messaging
 {
