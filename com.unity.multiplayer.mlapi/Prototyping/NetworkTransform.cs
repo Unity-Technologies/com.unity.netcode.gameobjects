@@ -89,6 +89,7 @@ namespace MLAPI.Prototyping
         /// <summary>
         /// Sets whether this transform should sync local or world properties. This is important to set since reparenting this transform
         /// could have issues if using world position (depending on who gets synced first: the parent or the child)
+        /// Having a child always at position 0,0,0 for example will have less possibilities of desync than when using world positions
         /// </summary>
         [SerializeField, Tooltip("Sets whether this transform should sync local or world properties. This should be set if reparenting.")]
         private NetworkVariableBool m_UseLocal = new NetworkVariableBool();
@@ -99,10 +100,46 @@ namespace MLAPI.Prototyping
             set => m_UseLocal.Value = value;
         }
 
+        /// <summary>
+        /// Updates the NetworkTransform's authority model at runtime.
+        /// </summary>
+        /// <param name="newAuthority"></param>
+        public void SetAuthority(Authority newAuthority)
+        {
+            TransformAuthority = newAuthority;
+            UpdateVarPermissions();
+            // todo this should be synced with the other side. let's wait for a more final solution before adding more code here
+        }
+
+        private void UpdateOneVarPermission<T>(NetworkVariable<T> varToUpdate)
+        {
+            switch (TransformAuthority)
+            {
+                case Authority.Client:
+                    varToUpdate.Settings.WritePermission = NetworkVariablePermission.OwnerOnly;
+                    break;
+                case Authority.Shared:
+                    varToUpdate.Settings.WritePermission = NetworkVariablePermission.Everyone;
+                    break;
+                case Authority.Server:
+                    m_NetworkPosition.Settings.WritePermission = NetworkVariablePermission.ServerOnly;
+                    break;
+                default:
+                    throw new NotImplementedException($"{TransformAuthority} is not handled");
+            }
+        }
+
+        private void UpdateVarPermissions()
+        {
+            UpdateOneVarPermission(m_NetworkPosition);
+            UpdateOneVarPermission(m_NetworkRotation);
+            UpdateOneVarPermission(m_NetworkWorldScale);
+            UpdateOneVarPermission(m_UseLocal);
+        }
+
         private NetworkVariableVector3 m_NetworkPosition = new NetworkVariableVector3();
         private NetworkVariableQuaternion m_NetworkRotation = new NetworkVariableQuaternion();
         private NetworkVariableVector3 m_NetworkWorldScale = new NetworkVariableVector3();
-        // private NetworkTransform m_NetworkParent; // TODO handle this here?
 
         private Transform m_Transform;
 
@@ -197,20 +234,7 @@ namespace MLAPI.Prototyping
             SetupVar(m_NetworkRotation, m_CurrentRotation, ref m_OldRotation);
             SetupVar(m_NetworkWorldScale, m_CurrentScale, ref m_OldScale);
 
-            if (TransformAuthority == Authority.Client)
-            {
-                m_NetworkPosition.Settings.WritePermission = NetworkVariablePermission.OwnerOnly;
-                m_NetworkRotation.Settings.WritePermission = NetworkVariablePermission.OwnerOnly;
-                m_NetworkWorldScale.Settings.WritePermission = NetworkVariablePermission.OwnerOnly;
-                m_UseLocal.Settings.WritePermission = NetworkVariablePermission.OwnerOnly;
-            }
-            else if (TransformAuthority == Authority.Shared)
-            {
-                m_NetworkPosition.Settings.WritePermission = NetworkVariablePermission.Everyone;
-                m_NetworkRotation.Settings.WritePermission = NetworkVariablePermission.Everyone;
-                m_NetworkWorldScale.Settings.WritePermission = NetworkVariablePermission.Everyone;
-                m_UseLocal.Settings.WritePermission = NetworkVariablePermission.Everyone;
-            }
+            UpdateVarPermissions();
         }
 
         public override void OnNetworkObjectParentChanged(NetworkObject parentNetworkObject)

@@ -59,6 +59,7 @@ namespace MLAPI
         internal NetworkTickSystem NetworkTickSystem { get; private set; }
 
         internal SnapshotSystem SnapshotSystem { get; private set; }
+        internal NetworkBehaviourUpdater BehaviourUpdater { get; private set; }
 
         private NetworkPrefabHandler m_PrefabHandler;
         public NetworkPrefabHandler PrefabHandler
@@ -126,7 +127,7 @@ namespace MLAPI
         public ulong ServerClientId => NetworkConfig.NetworkTransport?.ServerClientId ?? throw new NullReferenceException($"The transport in the active {nameof(NetworkConfig)} is null");
 
         /// <summary>
-        /// The clientId the server calls the local client by, only valid for clients
+        /// Returns ServerClientId if IsServer or LocalClientId if not
         /// </summary>
         public ulong LocalClientId
         {
@@ -348,6 +349,8 @@ namespace MLAPI
 
             SceneManager = new NetworkSceneManager(this);
 
+            BehaviourUpdater = new NetworkBehaviourUpdater();
+
             // Only create this if it's not already set (like in test cases)
             MessageHandler ??= CreateMessageHandler();
 
@@ -496,9 +499,10 @@ namespace MLAPI
             }
 
             // Clear out anything that is invalid or not used (for invalid entries we already logged warnings to the user earlier)
-            foreach (var networkPrefabIndexToRemove in removeEmptyPrefabs)
+            // Iterate backwards so indices don't shift as we remove
+            for (int i = removeEmptyPrefabs.Count-1; i >= 0; i--)
             {
-                NetworkConfig.NetworkPrefabs.RemoveAt(networkPrefabIndexToRemove);
+                NetworkConfig.NetworkPrefabs.RemoveAt(removeEmptyPrefabs[i]);
             }
             removeEmptyPrefabs.Clear();
 
@@ -844,6 +848,11 @@ namespace MLAPI
                 CustomMessagingManager = null;
             }
 
+            if (BehaviourUpdater != null)
+            {
+                BehaviourUpdater = null;
+            }
+
             //The Transport is set during Init time, thus it is possible for the Transport to be null
             NetworkConfig?.NetworkTransport?.Shutdown();
         }
@@ -931,7 +940,7 @@ namespace MLAPI
                     if (NetworkConfig.EnableNetworkVariable)
                     {
                         // Do NetworkVariable updates
-                        NetworkBehaviour.NetworkBehaviourUpdate(this);
+                        BehaviourUpdater.NetworkBehaviourUpdate(this);
                     }
 
                     if (!IsServer && NetworkConfig.EnableMessageBuffering)
@@ -1173,7 +1182,7 @@ namespace MLAPI
 
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
                 {
-                    NetworkLog.LogInfo($"Data Header: {nameof(messageType)}={messageType}");
+                    NetworkLog.LogInfo($"Handling incoming Data Header: {nameof(messageType)}={NetworkConstants.MESSAGE_NAMES[messageType]}(int={messageType})");
                 }
 
                 // Client tried to send a network message that was not the connection request before he was accepted.
@@ -1511,7 +1520,7 @@ namespace MLAPI
                         if (PrefabHandler.ContainsHandler(ConnectedClients[clientId].PlayerObject.GlobalObjectIdHash))
                         {
                             PrefabHandler.HandleNetworkPrefabDestroy(ConnectedClients[clientId].PlayerObject);
-                            SpawnManager.OnDespawnObject(ConnectedClients[clientId].PlayerObject.NetworkObjectId, false);
+                            SpawnManager.OnDespawnObject(ConnectedClients[clientId].PlayerObject, false);
                         }
                         else
                         {
@@ -1529,7 +1538,7 @@ namespace MLAPI
                                 if (PrefabHandler.ContainsHandler(ConnectedClients[clientId].OwnedObjects[i].GlobalObjectIdHash))
                                 {
                                     PrefabHandler.HandleNetworkPrefabDestroy(ConnectedClients[clientId].OwnedObjects[i]);
-                                    SpawnManager.OnDespawnObject(ConnectedClients[clientId].OwnedObjects[i].NetworkObjectId, false);
+                                    SpawnManager.OnDespawnObject(ConnectedClients[clientId].OwnedObjects[i], false);
                                 }
                                 else
                                 {
