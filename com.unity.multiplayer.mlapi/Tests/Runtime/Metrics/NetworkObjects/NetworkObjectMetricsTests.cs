@@ -9,7 +9,6 @@ using UnityEngine.TestTools;
 
 namespace MLAPI.RuntimeTests.Metrics.NetworkObjects
 {
-#if true
     public class NetworkObjectMetricsTests
     {
         NetworkManager m_Server;
@@ -17,7 +16,10 @@ namespace MLAPI.RuntimeTests.Metrics.NetworkObjects
         NetworkMetrics m_ClientMetrics;
         NetworkMetrics m_ServerMetrics;
 
-        [UnitySetUp]
+        private NetworkObject m_NewNetworkObject;
+        private const string m_NewNetworkObjectName = "TestNetworkObjectToSpawn";
+
+            [UnitySetUp]
         public IEnumerator SetUp()
         {
             if (!MultiInstanceHelpers.Create(1, out m_Server, out var clients))
@@ -50,6 +52,10 @@ namespace MLAPI.RuntimeTests.Metrics.NetworkObjects
             m_Client = clients.First();
             m_ClientMetrics = m_Client.NetworkMetrics as NetworkMetrics;
             m_ServerMetrics = m_Server.NetworkMetrics as NetworkMetrics;
+
+            var gameObject = new GameObject(m_NewNetworkObjectName);
+            m_NewNetworkObject = gameObject.AddComponent<NetworkObject>();
+            m_NewNetworkObject.NetworkManagerOwner = m_Server;
         }
 
         [UnityTearDown]
@@ -63,14 +69,9 @@ namespace MLAPI.RuntimeTests.Metrics.NetworkObjects
         [UnityTest]
         public IEnumerator TrackNetworkObjectSpawnSentMetric()
         {
-            var objectName = "TestNetworkObjectToSpawn";
-            var gameObject = new GameObject(objectName);
-            var networkObject = gameObject.AddComponent<NetworkObject>();
-            networkObject.NetworkManagerOwner = m_Server;
-
             var waitForMetricEvent = new WaitForMetricValues<ObjectSpawnedEvent>(m_ServerMetrics.Dispatcher, MetricNames.ObjectSpawnedSent);
 
-            networkObject.Spawn();
+            m_NewNetworkObject.Spawn();
 
             yield return waitForMetricEvent.WaitForAFewFrames();
 
@@ -79,20 +80,15 @@ namespace MLAPI.RuntimeTests.Metrics.NetworkObjects
 
             var objectSpawned = objectSpawnedSentMetricValues.First();
             Assert.AreEqual(m_Client.LocalClientId, objectSpawned.Connection.Id);
-            Assert.AreEqual(objectName, objectSpawned.NetworkId.Name);
+            Assert.AreEqual(m_NewNetworkObjectName, objectSpawned.NetworkId.Name);
         }
 
         [UnityTest]
         public IEnumerator TrackNetworkObjectSpawnReceivedMetric()
         {
-            var objectName = "TestNetworkObjectToSpawn";
-            var gameObject = new GameObject(objectName);
-            var networkObject = gameObject.AddComponent<NetworkObject>();
-            networkObject.NetworkManagerOwner = m_Server;
-
             var waitForMetricEvent = new WaitForMetricValues<ObjectSpawnedEvent>(m_ClientMetrics.Dispatcher, MetricNames.ObjectSpawnedReceived);
 
-            networkObject.Spawn();
+            m_NewNetworkObject.Spawn();
 
             yield return waitForMetricEvent.WaitForAFewFrames();
 
@@ -101,7 +97,7 @@ namespace MLAPI.RuntimeTests.Metrics.NetworkObjects
 
             var objectSpawned = objectSpawnedReceivedMetricValues.First();
             Assert.AreEqual(m_Server.LocalClientId, objectSpawned.Connection.Id);
-            Assert.AreEqual(networkObject.NetworkObjectId, objectSpawned.NetworkId.NetworkId);
+            Assert.AreEqual(m_NewNetworkObject.NetworkObjectId, objectSpawned.NetworkId.NetworkId);
             // TODO: this should not be the name of the network object
             Assert.AreEqual("Player(Clone)", objectSpawned.NetworkId.Name); // What?
         }
@@ -109,17 +105,13 @@ namespace MLAPI.RuntimeTests.Metrics.NetworkObjects
         [UnityTest]
         public IEnumerator TrackNetworkObjectDestroySentMetric()
         {
-            var objectName = "TestNetworkObjectToDestroy";
-            var gameObject = new GameObject(objectName);
-            var networkObject = gameObject.AddComponent<NetworkObject>();
-            networkObject.NetworkManagerOwner = m_Server;
-            networkObject.Spawn();
+            m_NewNetworkObject.Spawn();
 
             var waitForMetricEvent = new WaitForMetricValues<ObjectDestroyedEvent>(m_ServerMetrics.Dispatcher, MetricNames.ObjectDestroyedSent);
             // TODO: is there a better way of waiting here?
             yield return waitForMetricEvent.WaitForAFewFrames();
 
-            m_Server.SpawnManager.OnDestroyObject(networkObject.NetworkObjectId, true);
+            m_Server.SpawnManager.OnDespawnObject(m_NewNetworkObject, true);
 
             yield return waitForMetricEvent.WaitForAFewFrames();
 
@@ -129,23 +121,18 @@ namespace MLAPI.RuntimeTests.Metrics.NetworkObjects
 
             var objectDestroyed = objectDestroyedSentMetricValues.Last();
             Assert.AreEqual(m_Client.LocalClientId, objectDestroyed.Connection.Id);
-            Assert.AreEqual(objectName, objectDestroyed.NetworkId.Name);
+            Assert.AreEqual(m_NewNetworkObjectName, objectDestroyed.NetworkId.Name);
         }
 
         [UnityTest]
         public IEnumerator TrackNetworkObjectDestroyReceivedMetric()
         {
-            var objectName = "TestNetworkObjectToDestroy";
-            var gameObject = new GameObject(objectName);
-            var networkObject = gameObject.AddComponent<NetworkObject>();
-            networkObject.NetworkManagerOwner = m_Server;
-
-            networkObject.Spawn();
+            m_NewNetworkObject.Spawn();
             var waitForMetricEvent = new WaitForMetricValues<ObjectDestroyedEvent>(m_ClientMetrics.Dispatcher, MetricNames.ObjectDestroyedReceived);
 
             yield return waitForMetricEvent.WaitForAFewFrames();
 
-            m_Server.SpawnManager.OnDestroyObject(networkObject.NetworkObjectId, true);
+            m_Server.SpawnManager.OnDespawnObject(m_NewNetworkObject, true);
             yield return waitForMetricEvent.Wait(60);
 
             var objectDestroyedReceivedMetricValues = waitForMetricEvent.EnsureMetricValuesHaveBeenFound();
@@ -153,9 +140,9 @@ namespace MLAPI.RuntimeTests.Metrics.NetworkObjects
 
             var objectDestroyed = objectDestroyedReceivedMetricValues.First();
             Assert.AreEqual(m_Server.LocalClientId, objectDestroyed.Connection.Id);
-            Assert.AreEqual(networkObject.NetworkObjectId, objectDestroyed.NetworkId.NetworkId);
-            // Assert.AreEqual(, objectDestroyed.NetworkId.Name); // What?
+            Assert.AreEqual(m_NewNetworkObject.NetworkObjectId, objectDestroyed.NetworkId.NetworkId);
+            // Bug: Currently the object name is always "Player Clone"
+            // Assert.AreEqual(m_NewNetworkObjectName, objectDestroyed.NetworkId.Name);
         }
     }
-#endif
 }
