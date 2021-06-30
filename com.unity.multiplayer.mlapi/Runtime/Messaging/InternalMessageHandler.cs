@@ -325,7 +325,7 @@ namespace MLAPI.Messaging
                 }
                 else
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
                     {
                         NetworkLog.LogWarning($"{nameof(NetworkConstants.NETWORK_VARIABLE_DELTA)} message received for a non-existent object with {nameof(networkObjectId)}: {networkObjectId}. This delta will be buffered and might be recovered.");
                     }
