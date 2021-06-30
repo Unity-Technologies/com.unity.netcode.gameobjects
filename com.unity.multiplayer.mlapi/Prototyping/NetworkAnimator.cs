@@ -79,138 +79,144 @@ namespace MLAPI.Prototyping
 
             public void NetworkSerialize(NetworkSerializer serializer)
             {
-                //int parameters
+                SerializeIntParameters(serializer);
+                SerializeFloatParameters(serializer); 
+                SerializeBoolParameters(serializer);
+                SerializeTriggerParameters(serializer); 
+                SerializeAnimatorLayerStates(serializer);
+            }
+
+            private void SerializeAnimatorLayerStates(NetworkSerializer serializer)
+            {
+                int layerCount = serializer.IsReading ? 0 : States.Length;
+                serializer.Serialize(ref layerCount);
+
+                if (serializer.IsReading && States.Length != layerCount)
                 {
-                    int paramCount = serializer.IsReading ? 0 : IntParameters.Count;
-                    serializer.Serialize(ref paramCount);
-                
-                    var paramArray = serializer.IsReading ? new KeyValuePair<int, int>[paramCount] : IntParameters.ToArray();
-                    
-                    for (int paramIndex = 0; paramIndex < paramCount; paramIndex++)
-                    {
-                        var paramId = serializer.IsReading ? 0 : paramArray[paramIndex].Key;
-                        serializer.Serialize(ref paramId);
-                        
-                        var paramInt = serializer.IsReading ? 0 : paramArray[paramIndex].Value;
-                        serializer.Serialize(ref paramInt);
-                
-                        if (serializer.IsReading)
-                        {
-                            paramArray[paramIndex] = new KeyValuePair<int,int>(paramId, paramInt);
-                        }
-                    }
-                
-                    if (serializer.IsReading)
-                    {
-                        IntParameters = paramArray.ToDictionary(pair => pair.Key, pair => pair.Value);
-                    }
+                    States = new LayerState[layerCount];
                 }
 
-                //float parameters
+                for (int paramIndex = 0; paramIndex < layerCount; paramIndex++)
                 {
-                    int paramCount = serializer.IsReading ? 0 : FloatParameters.Count;
-                    serializer.Serialize(ref paramCount);
+                    var stateHash = serializer.IsReading ? 0 : States[paramIndex].StateHash;
+                    serializer.Serialize(ref stateHash);
 
-                    var paramArray = serializer.IsReading ? new KeyValuePair<int, float>[paramCount] : FloatParameters.ToArray();
-                    for (int paramIndex = 0; paramIndex < paramCount; paramIndex++)
-                    {
-                        var paramId = serializer.IsReading ? 0 : paramArray[paramIndex].Key;
-                        serializer.Serialize(ref paramId);
-                        
-                        var paramFloat = serializer.IsReading ? 0 : paramArray[paramIndex].Value;
-                        serializer.Serialize(ref paramFloat);
+                    var layerWeight = serializer.IsReading ? 0 : States[paramIndex].LayerWeight;
+                    serializer.Serialize(ref layerWeight);
 
-                        if (serializer.IsReading)
-                        {
-                            paramArray[paramIndex] = new KeyValuePair<int,float>(paramId, paramFloat);
-                        }
-                    }
+                    var normalizedStateTime = serializer.IsReading ? 0 : States[paramIndex].NormalizedStateTime;
+                    serializer.Serialize(ref normalizedStateTime);
 
                     if (serializer.IsReading)
                     {
-                        FloatParameters = paramArray.ToDictionary(pair => pair.Key, pair => pair.Value);
+                        States[paramIndex] = new LayerState()
+                        {
+                            LayerWeight = layerWeight, StateHash = stateHash,
+                            NormalizedStateTime = normalizedStateTime
+                        };
                     }
                 }
-                
-                //bool parameters
+            }
+
+            private void SerializeTriggerParameters(NetworkSerializer serializer)
+            {
+                int paramCount = serializer.IsReading ? 0 : TriggerParameters.Count;
+                serializer.Serialize(ref paramCount);
+
+                var paramArray = serializer.IsReading ? new int[paramCount] : TriggerParameters.ToArray();
+                for (int i = 0; i < paramCount; i++)
                 {
-                    int paramCount = serializer.IsReading ? 0 : BoolParameters.Count;
-                    serializer.Serialize(ref paramCount);
-
-                    var paramArray = serializer.IsReading ? new KeyValuePair<int, bool>[paramCount] : BoolParameters.ToArray();
-                    for (int paramIndex = 0; paramIndex < paramCount; paramIndex++)
-                    {
-                        var paramId = serializer.IsReading ? 0 : paramArray[paramIndex].Key;
-                        serializer.Serialize(ref paramId);
-                        
-                        var paramBool = serializer.IsReading ? false : paramArray[paramIndex].Value;
-                        serializer.Serialize(ref paramBool);
-
-                        if (serializer.IsReading)
-                        {
-                            paramArray[paramIndex] = new KeyValuePair<int,bool>(paramId, paramBool);
-                        }
-                    }
+                    var paramId = serializer.IsReading ? 0 : paramArray[i];
+                    serializer.Serialize(ref paramId);
 
                     if (serializer.IsReading)
                     {
-                        BoolParameters = paramArray.ToDictionary(pair => pair.Key, pair => pair.Value);
+                        paramArray[i] = paramId;
                     }
                 }
-                
-                //trigger parameters
+
+                if (serializer.IsReading)
                 {
-                    int paramCount = serializer.IsReading ? 0 : TriggerParameters.Count;
-                    serializer.Serialize(ref paramCount);
+                    TriggerParameters = new HashSet<int>(paramArray);
+                }
+            }
 
-                    var paramArray = serializer.IsReading ? new int[paramCount] : TriggerParameters.ToArray();
-                    for (int i = 0; i < paramCount; i++)
-                    {
-                        var paramId = serializer.IsReading ? 0 : paramArray[i];
-                        serializer.Serialize(ref paramId);
+            private void SerializeBoolParameters(NetworkSerializer serializer)
+            {
+                int paramCount = serializer.IsReading ? 0 : BoolParameters.Count;
+                serializer.Serialize(ref paramCount);
 
-                        if (serializer.IsReading)
-                        {
-                            paramArray[i] = paramId;
-                        }
-                    }
+                var paramArray = serializer.IsReading ? new KeyValuePair<int, bool>[paramCount] : BoolParameters.ToArray();
+                for (int paramIndex = 0; paramIndex < paramCount; paramIndex++)
+                {
+                    var paramId = serializer.IsReading ? 0 : paramArray[paramIndex].Key;
+                    serializer.Serialize(ref paramId);
+
+                    var paramBool = serializer.IsReading ? false : paramArray[paramIndex].Value;
+                    serializer.Serialize(ref paramBool);
 
                     if (serializer.IsReading)
                     {
-                        TriggerParameters = new HashSet<int>(paramArray);
+                        paramArray[paramIndex] = new KeyValuePair<int, bool>(paramId, paramBool);
                     }
                 }
-                
-                //layer state
+
+                if (serializer.IsReading)
                 {
-                    int layerCount = serializer.IsReading ? 0 : States.Length;
-                    serializer.Serialize(ref layerCount);
+                    BoolParameters = paramArray.ToDictionary(pair => pair.Key, pair => pair.Value);
+                }
+            }
 
-                    if (serializer.IsReading && States.Length != layerCount)
+            private void SerializeFloatParameters(NetworkSerializer serializer)
+            {
+                int paramCount = serializer.IsReading ? 0 : FloatParameters.Count;
+                serializer.Serialize(ref paramCount);
+
+                var paramArray = serializer.IsReading ? new KeyValuePair<int, float>[paramCount] : FloatParameters.ToArray();
+                for (int paramIndex = 0; paramIndex < paramCount; paramIndex++)
+                {
+                    var paramId = serializer.IsReading ? 0 : paramArray[paramIndex].Key;
+                    serializer.Serialize(ref paramId);
+
+                    var paramFloat = serializer.IsReading ? 0 : paramArray[paramIndex].Value;
+                    serializer.Serialize(ref paramFloat);
+
+                    if (serializer.IsReading)
                     {
-                        States = new LayerState[layerCount];
+                        paramArray[paramIndex] = new KeyValuePair<int, float>(paramId, paramFloat);
                     }
+                }
 
-                    for (int paramIndex = 0; paramIndex < layerCount; paramIndex++)
+                if (serializer.IsReading)
+                {
+                    FloatParameters = paramArray.ToDictionary(pair => pair.Key, pair => pair.Value);
+                }
+            }
+
+            private void SerializeIntParameters(NetworkSerializer serializer)
+            {
+                int paramCount = serializer.IsReading ? 0 : IntParameters.Count;
+                serializer.Serialize(ref paramCount);
+
+                var paramArray = serializer.IsReading ? new KeyValuePair<int, int>[paramCount] : IntParameters.ToArray();
+
+                for (int paramIndex = 0; paramIndex < paramCount; paramIndex++)
+                {
+                    var paramId = serializer.IsReading ? 0 : paramArray[paramIndex].Key;
+                    serializer.Serialize(ref paramId);
+
+                    var paramInt = serializer.IsReading ? 0 : paramArray[paramIndex].Value;
+                    serializer.Serialize(ref paramInt);
+
+                    if (serializer.IsReading)
                     {
-                        var stateHash = serializer.IsReading ? 0 : States[paramIndex].StateHash;
-                        serializer.Serialize(ref stateHash);
-
-                        var layerWeight = serializer.IsReading ? 0 : States[paramIndex].LayerWeight;
-                        serializer.Serialize(ref layerWeight);
-
-                        var normalizedStateTime = serializer.IsReading ? 0 : States[paramIndex].NormalizedStateTime;
-                        serializer.Serialize(ref normalizedStateTime);
-
-                        if (serializer.IsReading)
-                        {
-                            States[paramIndex] = new LayerState()
-                            {
-                                LayerWeight = layerWeight, StateHash = stateHash,
-                                NormalizedStateTime = normalizedStateTime
-                            };
-                        }
+                        paramArray[paramIndex] = new KeyValuePair<int, int>(paramId, paramInt);
                     }
+                }
+
+                if (serializer.IsReading)
+                {
+                    IntParameters = paramArray.ToDictionary(pair => pair.Key, pair => pair.Value);
                 }
             }
         }
@@ -248,7 +254,7 @@ namespace MLAPI.Prototyping
         private AnimatorSnapshot m_AnimatorSnapshot;
         private List<(int, AnimatorControllerParameterType)> m_CachedAnimatorParameters;
         
-        public override void NetworkStart()
+        public override void OnNetworkSpawn()
         {
             var parameters = m_Animator.parameters;
             m_CachedAnimatorParameters = new List<(int, AnimatorControllerParameterType)>(parameters.Length);
@@ -354,7 +360,7 @@ namespace MLAPI.Prototyping
             if (IsAuthorityOverAnimator)
             {
                 bool shouldSendBasedOnTime = CheckSendRate();
-                bool shouldSendBasedOnChanges = PollStateChange();
+                bool shouldSendBasedOnChanges = StoreState();
                 if (m_ServerRequestsAnimationResync || shouldSendBasedOnTime || shouldSendBasedOnChanges)
                 {
                     SendAllParamsAndState();
@@ -376,20 +382,29 @@ namespace MLAPI.Prototyping
             return false;
         }
 
-        private bool PollStateChange()
+        private bool StoreState()
+        {
+            bool layerStateChanged = StoreLayerState();
+            bool animatorParametersChanged = StoreParameters();
+
+            return layerStateChanged || animatorParametersChanged;
+        }
+        
+        private bool StoreLayerState()
         {
             bool changed = false;
-            
+                
             for (int i = 0; i < m_AnimatorSnapshot.States.Length; i++)
             {
                 var animStateInfo = m_Animator.GetCurrentAnimatorStateInfo(i);
 
-                bool didStateChange =  m_AnimatorSnapshot.States[i].StateHash != animStateInfo.fullPathHash;
-                bool enoughDelta = !didStateChange && (animStateInfo.normalizedTime -  m_AnimatorSnapshot.States[i].NormalizedStateTime) >= 0.15f;
+                bool didStateChange = m_AnimatorSnapshot.States[i].StateHash != animStateInfo.fullPathHash;
+                bool enoughDelta = !didStateChange &&
+                                   (animStateInfo.normalizedTime - m_AnimatorSnapshot.States[i].NormalizedStateTime) >= 0.15f;
 
                 float newLayerWeight = m_Animator.GetLayerWeight(i);
-                bool layerWeightChanged = Mathf.Abs( m_AnimatorSnapshot.States[i].LayerWeight - newLayerWeight) > Mathf.Epsilon;
-                
+                bool layerWeightChanged = Mathf.Abs(m_AnimatorSnapshot.States[i].LayerWeight - newLayerWeight) > Mathf.Epsilon;
+
                 if (didStateChange || enoughDelta || layerWeightChanged)
                 {
                     m_AnimatorSnapshot.States[i] = new LayerState
@@ -402,6 +417,12 @@ namespace MLAPI.Prototyping
                 }
             }
 
+            return changed;
+        }
+
+        private bool StoreParameters()
+        {
+            bool changed = false;
             foreach (var animParam in m_CachedAnimatorParameters)
             {
                 var animParamHash = animParam.Item1;
@@ -426,7 +447,7 @@ namespace MLAPI.Prototyping
                         break;
                 }
             }
-            
+
             return changed;
         }
 
@@ -460,7 +481,6 @@ namespace MLAPI.Prototyping
             {
                 return;
             }
-
             
             ApplyAnimatorSnapshot(animSnapshot);
             
