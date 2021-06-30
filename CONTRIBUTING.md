@@ -42,7 +42,7 @@ We accept changes and improvements to our documentation. Just submit a Pull Requ
 
 ## <a name="cla"></a> Contributor License Agreements
 
-When you open a pull request, you will be asked to acknolwedge our Contributor License Agreement. We allow both individual contributions and contributions made on behalf of companies. We use an open source tool called CLA assistant. If you have any questions on our CLA, please submit an issue
+When you open a pull request, you will be asked to enter into Unity's License Agreement which is based on The Apache Software Foundation's contribution agreement. We allow both individual contributions and contributions made on behalf of companies. We use an open source tool called CLA assistant. If you have any questions on our CLA, please submit an issue
 
 ## <a name="submit-pr"></a> Pull Request Submission Guidelines
 
@@ -75,7 +75,7 @@ If the change isn't backwards compatible. You have to disclose that in the foote
 ```
 perf(networked-vars): Improved performance by removing duplex functionality
 
-BREAKING CHANGE: Removes duplex functionality from networked vars in order to improve performance
+BREAKING CHANGE: Removes duplex functionality from network variables in order to improve performance
 ```
 Samples:
 
