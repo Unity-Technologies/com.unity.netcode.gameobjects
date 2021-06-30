@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using Unity.Multiplayer.NetworkProfiler.Models;
 
 namespace MLAPI.Metrics
 {
