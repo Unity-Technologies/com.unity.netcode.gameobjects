@@ -8,9 +8,10 @@ using UnityEngine.TestTools;
 
 namespace MLAPI.RuntimeTests
 {
-    public class NetworkObjectOnSpawnTests
+    public class NetworkObjectOnSpawnTests : BaseMultiInstanceTest
     {
-        private GameObject m_Prefab;
+        protected override int NbClients => 2;
+
 
         /// <summary>
         /// Tests that instantiating a <see cref="NetworkObject"/> and destroying without spawning it
@@ -26,12 +27,9 @@ namespace MLAPI.RuntimeTests
 
             yield return null;
 
-            // instantiate
-            var instance = Object.Instantiate(gameObject);
-            yield return null;
-
             // destroy
-            Object.Destroy(instance);
+            Object.Destroy(gameObject);
+            
             yield return null;
         }
 
@@ -48,6 +46,16 @@ namespace MLAPI.RuntimeTests
             }
         }
 
+        [UnitySetUp]
+        public override IEnumerator Setup()
+        {
+            yield return StartSomeClientsAndServerWithPlayers(true, NbClients, playerPrefab =>
+            {
+                // add test component
+                playerPrefab.AddComponent<TrackOnSpawnFunctions>();
+            });
+        }
+
         /// <summary>
         /// Test that callbacks are run for playerobject spawn, despawn, regular spawn, destroy on server.
         /// </summary>
@@ -55,51 +63,17 @@ namespace MLAPI.RuntimeTests
         [UnityTest]
         public IEnumerator TestOnNetworkSpawnCallbacks()
         {
-            // Create Host and (numClients) clients
-            Assert.True(MultiInstanceHelpers.Create(2, out NetworkManager server, out NetworkManager[] clients));
-
-            // Create a default player GameObject to use
-            m_Prefab = new GameObject("TestObject");
-            var networkObject = m_Prefab.AddComponent<NetworkObject>();
-
-            // add test component
-            m_Prefab.AddComponent<TrackOnSpawnFunctions>();
-
-            // Make it a prefab
-            MultiInstanceHelpers.MakeNetworkedObjectTestPrefab(networkObject);
-
-            // Set the player prefab
-            server.NetworkConfig.PlayerPrefab = m_Prefab;
-
-            // Set all of the client's player prefab
-            for (int i = 0; i < clients.Length; i++)
-            {
-                clients[i].NetworkConfig.PlayerPrefab = m_Prefab;
-            }
-
-            // Start the instances
-            if (!MultiInstanceHelpers.Start(true, server, clients))
-            {
-                Assert.Fail("Failed to start instances");
-            }
-
-            // [Client-Side] Wait for a connection to the server
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(clients, null, 512));
-
-            // [Host-Side] Check to make sure all clients are connected
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnectedToServer(server, clients.Length + 1, null, 512));
-
             // [Host-Side] Get the Host owned instance
             var serverClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == clients[0].LocalClientId), server, serverClientPlayerResult));
+            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), m_ServerNetworkManager, serverClientPlayerResult));
 
             var serverInstance = serverClientPlayerResult.Result.GetComponent<TrackOnSpawnFunctions>();
 
             var clientInstances = new List<TrackOnSpawnFunctions>();
-            foreach (var client in clients)
+            foreach (var client in m_ClientNetworkManagers)
             {
                 var clientClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
-                yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == clients[0].LocalClientId), client, clientClientPlayerResult));
+                yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), client, clientClientPlayerResult));
                 var clientRpcTests = clientClientPlayerResult.Result.GetComponent<TrackOnSpawnFunctions>();
                 Assert.IsNotNull(clientRpcTests);
                 clientInstances.Add(clientRpcTests);
@@ -174,9 +148,6 @@ namespace MLAPI.RuntimeTests
             {
                 Assert.AreEqual(1, clientInstance.OnNetworkDespawnCalledCount);
             }
-
-            // Shutdown and clean up both of our NetworkManager instances
-            MultiInstanceHelpers.Destroy();
         }
 
         private class TrackOnSpawnFunctions : NetworkBehaviour
@@ -192,16 +163,6 @@ namespace MLAPI.RuntimeTests
             public override void OnNetworkDespawn()
             {
                 OnNetworkDespawnCalledCount++;
-            }
-        }
-
-        [TearDown]
-        public void TearDown()
-        {
-            if (m_Prefab != null)
-            {
-                Object.Destroy(m_Prefab);
-                m_Prefab = null;
             }
         }
     }
