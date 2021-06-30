@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using MLAPI.Configuration;
-using MLAPI.Connection;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using NUnit.Framework;
@@ -192,7 +191,7 @@ namespace MLAPI.RuntimeTests
             if (CurrentNetworkManagerMode != NetworkManagerOperatingMode.None)
             {
                 // With some unit tests the Singleton can still be from a previous unit test
-                // depending upon the order of operations that occurred.
+                // depending upon the order of operations that occurred. 
                 if (NetworkManager.Singleton != NetworkManagerObject)
                 {
                     NetworkManagerObject.SetSingleton();

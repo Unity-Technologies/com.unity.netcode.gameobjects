@@ -11,7 +11,6 @@ using MLAPI.SceneManagement;
 using MLAPI.Serialization;
 using MLAPI.Serialization.Pooled;
 using MLAPI.Transports;
-using Unity.Multiplayer.NetworkProfiler.Models;
 using UnityEngine;
 
 namespace MLAPI.Spawning
