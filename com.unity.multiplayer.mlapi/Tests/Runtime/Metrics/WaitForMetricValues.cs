@@ -12,8 +12,6 @@ namespace MLAPI.RuntimeTests.Metrics
     {
         private readonly string m_MetricName;
         private bool m_Found = false;
-        private bool m_HasError = false;
-        private string m_Error = string.Empty;
         private uint m_NbFrames = 0;
         private IReadOnlyCollection<TMetric> m_Values;
 
@@ -36,11 +34,6 @@ namespace MLAPI.RuntimeTests.Metrics
 
         public IReadOnlyCollection<TMetric> EnsureMetricValuesHaveBeenFound()
         {
-            if (m_HasError)
-            {
-                Assert.Fail(m_Error);
-            }
-
             if (!m_Found)
             {
                 Assert.Fail($"Found no matching values for metric of type '{typeof(TMetric).Name}', with name '{m_MetricName}' during '{m_NbFrames}' frames.");
@@ -51,36 +44,16 @@ namespace MLAPI.RuntimeTests.Metrics
 
         public void Observe(MetricCollection collection)
         {
-            if (m_Found || m_HasError)
+            if (m_Found)
             {
                 return;
             }
 
-            if (collection.Metrics.Count(x => x.Name == m_MetricName) > 1)
-            {
-                m_HasError = true;
-                m_Error = $"Multiple matches found for metric with name '{m_MetricName}'.";
-
-                return;
-            }
-
-            var metric = collection.Metrics.FirstOrDefault(x => x.Name == m_MetricName);
-            if (metric == default)
-            {
-                m_HasError = true;
-                m_Error = $"Metric with name '{m_MetricName}' was not found.";
-
-                return;
-            }
+            var metric = collection.Metrics.SingleOrDefault(x => x.Name == m_MetricName);
+            Assert.NotNull(metric);
 
             var typedMetric = metric as IEventMetric<TMetric>;
-            if (typedMetric == null)
-            {
-                m_HasError = true;
-                m_Error = $"Metric with name '{m_MetricName}' was expected to be of type '{typeof(TMetric).Name}' but was '{metric.GetType().Name}'.";
-
-                return;
-            }
+            Assert.NotNull(typedMetric);
 
             if (typedMetric.Values.Any())
             {
@@ -91,7 +64,7 @@ namespace MLAPI.RuntimeTests.Metrics
 
         public IEnumerator Wait(uint maxNbFrames)
         {
-            while (!m_Found && m_NbFrames < maxNbFrames && !m_HasError)
+            while (!m_Found && m_NbFrames < maxNbFrames)
             {
                 m_NbFrames++;
                 yield return new WaitForEndOfFrame();
