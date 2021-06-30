@@ -32,7 +32,6 @@ namespace MLAPI.Metrics
 
         void TrackObjectDestroyReceived(ulong senderClientId, ulong networkObjectId, string gameObjectName, ulong bytesCount);
 
-
         void TrackMultipleObjectSpawnSent(ulong receiverClientId, Dictionary<ulong,string> networkObjectIdToName, ulong bytesCount);
 
         void TrackMultipleObjectDestroySent(ulong receiverClientId, Dictionary<ulong,string> networkObjectIdToName, ulong bytesCount);

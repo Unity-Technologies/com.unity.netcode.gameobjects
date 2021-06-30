@@ -302,6 +302,7 @@ namespace MLAPI
                 networkManager.MessageSender.Send(clientId, NetworkConstants.ADD_OBJECTS, NetworkChannel.Internal, buffer);
                 networkManager.NetworkMetrics.TrackMultipleObjectSpawnSent(clientId, networkObjectIdToName, (ulong) buffer.Length);
             }
+            // TODO: add metric for spawn objects here
         }
 
         /// <summary>
@@ -405,6 +406,7 @@ namespace MLAPI
                 networkManager.MessageSender.Send(clientId, NetworkConstants.DESTROY_OBJECTS, NetworkChannel.Internal, buffer);
                 networkManager.NetworkMetrics.TrackMultipleObjectDestroySent(clientId, networkObjectIdToName, (ulong) buffer.Length);
             }
+                // TODO: add metric for destroy objects here
         }
 
         private void OnDestroy()
