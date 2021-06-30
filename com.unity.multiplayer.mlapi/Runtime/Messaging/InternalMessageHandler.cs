@@ -181,6 +181,8 @@ namespace MLAPI.Messaging
                         BufferManager.RecycleConsumedBufferedMessage(message);
                     }
                 }
+
+                m_NetworkManager.NetworkMetrics.TrackObjectSpawnReceived(clientId, networkObject.NetworkObjectId, networkObject.name, (ulong)stream.Length);
             }
         }
 
@@ -196,7 +198,7 @@ namespace MLAPI.Messaging
                     Debug.LogWarning($"Trying to destroy object {networkId} but it doesn't seem to exist anymore!");
                     return;
                 }
-
+                m_NetworkManager.NetworkMetrics.TrackObjectDestroyReceived(clientId, networkId, networkObject.name, (ulong)stream.Length);
                 NetworkManager.SpawnManager.OnDespawnObject(networkObject, true);
             }
         }

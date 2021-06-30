@@ -62,7 +62,7 @@ namespace MLAPI.RuntimeTests.Metrics
             }
         }
 
-        private IEnumerator Wait(uint maxNbFrames)
+        public IEnumerator Wait(uint maxNbFrames)
         {
             while (!m_Found && m_NbFrames < maxNbFrames)
             {

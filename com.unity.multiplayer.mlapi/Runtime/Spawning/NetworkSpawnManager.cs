@@ -78,6 +78,7 @@ namespace MLAPI.Spawning
             {
                 throw new NotServerException("Only the server can find player objects from other clients.");
             }
+
             if (NetworkManager.ConnectedClients.TryGetValue(clientId, out NetworkClient networkClient))
             {
                 return networkClient.PlayerObject;
@@ -223,6 +224,7 @@ namespace MLAPI.Spawning
                         {
                             NetworkLog.LogError($"Failed to create object locally. [{nameof(globalObjectIdHash)}={globalObjectIdHash}]. {nameof(NetworkPrefab)} could not be found. Is the prefab registered with {nameof(NetworkManager)}?");
                         }
+
                         return null;
                     }
 
@@ -253,6 +255,7 @@ namespace MLAPI.Spawning
                     {
                         NetworkLog.LogError($"{nameof(NetworkPrefab)} hash was not found! In-Scene placed {nameof(NetworkObject)} soft synchronization failure for Hash: {globalObjectIdHash}!");
                     }
+
                     return null;
                 }
 
@@ -377,9 +380,10 @@ namespace MLAPI.Spawning
                 NetworkId = 0,
                 NetworkBuffer = buffer,
                 NetworkChannel = NetworkChannel.Internal,
-                ClientNetworkIds = new[] { clientId }
+                ClientNetworkIds = new[] {clientId}
             };
             rpcQueueContainer.AddToInternalMLAPISendQueue(queueItem);
+            NetworkManager.NetworkMetrics.TrackObjectSpawnSent(clientId, networkObject.NetworkObjectId, networkObject.name, (ulong)buffer.Length);
         }
 
         internal void WriteSpawnCallForObject(NetworkBuffer buffer, ulong clientId, NetworkObject networkObject, Stream payload)
@@ -435,7 +439,7 @@ namespace MLAPI.Spawning
 
                 if (payload != null)
                 {
-                    writer.WriteInt32Packed((int)payload.Length);
+                    writer.WriteInt32Packed((int) payload.Length);
                 }
 
                 if (NetworkManager.NetworkConfig.EnableNetworkVariable)
@@ -684,6 +688,7 @@ namespace MLAPI.Spawning
                             {
                                 writer.WriteUInt64Packed(networkObject.NetworkObjectId);
 
+                                var clientIds = NetworkManager.ConnectedClientsList.Select(c => c.ClientId).ToArray();
                                 var queueItem = new RpcFrameQueueItem
                                 {
                                     UpdateStage = NetworkUpdateStage.PostLateUpdate,
@@ -691,10 +696,12 @@ namespace MLAPI.Spawning
                                     NetworkId = networkObject.NetworkObjectId,
                                     NetworkBuffer = buffer,
                                     NetworkChannel = NetworkChannel.Internal,
-                                    ClientNetworkIds = NetworkManager.ConnectedClientsList.Select(c => c.ClientId).ToArray()
+                                    ClientNetworkIds = clientIds,
                                 };
 
                                 rpcQueueContainer.AddToInternalMLAPISendQueue(queueItem);
+
+                                NetworkManager.NetworkMetrics.TrackObjectDestroySent(clientIds, networkObject.NetworkObjectId, networkObject.name, (ulong)buffer.Length);
                             }
                         }
                     }
