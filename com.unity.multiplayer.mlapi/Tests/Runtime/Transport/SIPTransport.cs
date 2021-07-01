@@ -91,10 +91,10 @@ public class SIPTransport : NetworkTransport
             });
 
             // Remove the local connection on remote
-            // m_Peers[clientId].Transport.m_LocalConnection = null;
+            m_Peers[clientId].Transport.m_LocalConnection = null;
 
             // Remove connection on server
-            // m_Peers.Remove(clientId);
+            m_Peers.Remove(clientId);
         }
     }
 
