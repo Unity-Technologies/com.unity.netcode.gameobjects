@@ -7,14 +7,13 @@ using MLAPI;
 using MLAPI.RuntimeTests;
 using MLAPI.Serialization;
 using MLAPI.Messaging;
+using UnityEditorInternal;
 using Debug = UnityEngine.Debug;
 
 namespace TestProject.RuntimeTests
 {
-    public class RpcINetworkSerializable
+    public class RpcINetworkSerializable : BaseMultiInstanceTest
     {
-        private GameObject m_PlayerPrefab;
-
         private UserSerializableClass m_UserSerializableClass;
         private List<UserSerializableClass> m_UserSerializableClassArray;
 
@@ -22,6 +21,14 @@ namespace TestProject.RuntimeTests
 
         private bool m_IsSendingNull;
         private bool m_IsArrayEmpty;
+
+        protected override int NbClients => 1;
+
+        [UnitySetUp]
+        public override IEnumerator Setup()
+        {
+            yield break; // ignore
+        }
 
         /// <summary>
         /// Tests that INetworkSerializable can be used through RPCs by a user
@@ -31,43 +38,16 @@ namespace TestProject.RuntimeTests
         public IEnumerator NetworkSerializableTest()
         {
             m_FinishedTest = false;
-            var numClients = 1;
             var startTime = Time.realtimeSinceStartup;
 
-            // Create Host and (numClients) clients
-            Assert.True(MultiInstanceHelpers.Create(numClients, out NetworkManager server, out NetworkManager[] clients));
-
-            // Create a default player GameObject to use
-            m_PlayerPrefab = new GameObject("Player");
-            var networkObject = m_PlayerPrefab.AddComponent<NetworkObject>();
-            m_PlayerPrefab.AddComponent<TestSerializationComponent>();
-
-            // Make it a prefab
-            MultiInstanceHelpers.MakeNetworkedObjectTestPrefab(networkObject);
-
-            // [Host-Side] Set the player prefab
-            server.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
-
-            foreach (var client in clients)
+            yield return StartSomeClientsAndServerWithPlayers(true, NbClients, playerPrefab =>
             {
-                client.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
-            }
-
-            // Start the instances
-            if (!MultiInstanceHelpers.Start(true, server, clients))
-            {
-                Assert.Fail("Failed to start instances");
-            }
-
-            // [Client-Side] Wait for a connection to the server
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(clients, null, 512));
-
-            // [Host-Side] Check to make sure all clients are connected
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnectedToServer(server, clients.Length + 1, null, 512));
+                playerPrefab.AddComponent<TestSerializationComponent>();
+            });
 
             // [Client-Side] We only need to get the client side Player's NetworkObject so we can grab that instance of the TestSerializationComponent
             var clientClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == clients[0].LocalClientId), clients[0], clientClientPlayerResult));
+            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), m_ClientNetworkManagers[0], clientClientPlayerResult));
             var clientSideNetworkBehaviourClass = clientClientPlayerResult.Result.gameObject.GetComponent<TestSerializationComponent>();
             clientSideNetworkBehaviourClass.OnSerializableClassUpdated = OnClientReceivedUserSerializableClassUpdated;
 
@@ -111,9 +91,8 @@ namespace TestProject.RuntimeTests
             }
 
             // End of test
-            clients[0].StopClient();
-            server.StopHost();
-
+            m_ClientNetworkManagers[0].StopClient();
+            m_ServerNetworkManager.StopHost();
         }
 
         /// <summary>
@@ -177,49 +156,22 @@ namespace TestProject.RuntimeTests
                 m_IsArrayEmpty = true;
             }
 
-            var numClients = 1;
             var startTime = Time.realtimeSinceStartup;
 
-            // Create Host and (numClients) clients
-            Assert.True(MultiInstanceHelpers.Create(numClients, out NetworkManager server, out NetworkManager[] clients));
-
-            // Create a default player GameObject to use
-            m_PlayerPrefab = new GameObject("Player");
-            var networkObject = m_PlayerPrefab.AddComponent<NetworkObject>();
-            m_PlayerPrefab.AddComponent<TestCustomTypesArrayComponent>();
-
-            // Make it a prefab
-            MultiInstanceHelpers.MakeNetworkedObjectTestPrefab(networkObject);
-
-            // [Host-Side] Set the player prefab
-            server.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
-
-            foreach (var client in clients)
+            yield return StartSomeClientsAndServerWithPlayers(true, NbClients, playerPrefab =>
             {
-                client.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
-            }
-
-            // Start the instances
-            if (!MultiInstanceHelpers.Start(true, server, clients))
-            {
-                Assert.Fail("Failed to start instances");
-            }
-
-            // [Client-Side] Wait for a connection to the server
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(clients, null, 512));
-
-            // [Host-Side] Check to make sure all clients are connected
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnectedToServer(server, clients.Length + 1, null, 512));
+                playerPrefab.AddComponent<TestCustomTypesArrayComponent>();
+            });
 
             // [Host-Side] Get the host-server side Player's NetworkObject so we can grab that instance of the TestCustomTypesArrayComponent
             var serverClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == clients[0].LocalClientId), server, serverClientPlayerResult));
+            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), m_ServerNetworkManager, serverClientPlayerResult));
             var serverSideNetworkBehaviourClass = serverClientPlayerResult.Result.gameObject.GetComponent<TestCustomTypesArrayComponent>();
             serverSideNetworkBehaviourClass.OnSerializableClassesUpdatedServerRpc = OnServerReceivedUserSerializableClassesUpdated;
 
             // [Client-Side] Get the client side Player's NetworkObject so we can grab that instance of the TestCustomTypesArrayComponent
             var clientClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == clients[0].LocalClientId), clients[0], clientClientPlayerResult));
+            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), m_ClientNetworkManagers[0], clientClientPlayerResult));
             var clientSideNetworkBehaviourClass = clientClientPlayerResult.Result.gameObject.GetComponent<TestCustomTypesArrayComponent>();
             clientSideNetworkBehaviourClass.OnSerializableClassesUpdatedClientRpc = OnClientReceivedUserSerializableClassesUpdated;
 
@@ -261,8 +213,8 @@ namespace TestProject.RuntimeTests
             Assert.False(timedOut);
 
             // End of test
-            clients[0].StopClient();
-            server.StopHost();
+            m_ClientNetworkManagers[0].StopClient();
+            m_ServerNetworkManager.StopHost();
 
         }
 
@@ -314,18 +266,6 @@ namespace TestProject.RuntimeTests
             ValidateUserSerializableClasses(userSerializableClass);
         }
 
-        [TearDown]
-        public void TearDown()
-        {
-            if (m_PlayerPrefab != null)
-            {
-                Object.Destroy(m_PlayerPrefab);
-                m_PlayerPrefab = null;
-            }
-
-            // Shutdown and clean up both of our NetworkManager instances
-            MultiInstanceHelpers.Destroy();
-        }
     }
 
     /// <summary>
