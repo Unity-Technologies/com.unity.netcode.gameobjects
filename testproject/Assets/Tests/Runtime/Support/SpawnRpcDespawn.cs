@@ -27,10 +27,8 @@ namespace TestProject.RuntimeTests.Support
         public NetworkObject HandleNetworkPrefabSpawn(ulong ownerClientId, Vector3 position, Quaternion rotation)
         {
             WasSpawned = true;
-            if (SpawnRpcDespawn.TestStage != NetworkUpdateStage.Immediate)
-            {
-                Assert.AreEqual(SpawnRpcDespawn.TestStage, NetworkUpdateLoop.UpdateStage);
-            }
+            Assert.AreEqual(SpawnRpcDespawn.TestStage, NetworkUpdateLoop.UpdateStage);
+
 
             // See if there is a valid registered NetworkPrefabOverrideLink associated with the provided prefabHash
             GameObject networkPrefabReference = null;
@@ -68,7 +66,7 @@ namespace TestProject.RuntimeTests.Support
         public void HandleNetworkPrefabDestroy(NetworkObject networkObject)
         {
             WasDestroyed = true;
-            if (networkObject.NetworkManager.IsClient && SpawnRpcDespawn.TestStage != NetworkUpdateStage.Immediate)
+            if (networkObject.NetworkManager.IsClient)
             {
                 Assert.AreEqual(SpawnRpcDespawn.TestStage, NetworkUpdateLoop.UpdateStage);
             }
@@ -88,10 +86,7 @@ namespace TestProject.RuntimeTests.Support
         [ClientRpc]
         public void SendIncrementUpdateCountClientRpc()
         {
-            if (SpawnRpcDespawn.TestStage != NetworkUpdateStage.Immediate)
-            {
-                Assert.AreEqual(TestStage, NetworkUpdateLoop.UpdateStage);
-            }
+            Assert.AreEqual(TestStage, NetworkUpdateLoop.UpdateStage);
 
             StageExecutedByReceiver = NetworkUpdateLoop.UpdateStage;
             ++ClientUpdateCount;
@@ -109,19 +104,12 @@ namespace TestProject.RuntimeTests.Support
         {
             Debug.Log("Activated");
             m_Active = true;
-            if (TestStage == NetworkUpdateStage.Immediate)
-            {
-                RunTest();
-            }
         }
 
         public void NetworkStart()
         {
             Debug.Log($"Network Start on client {NetworkManager.LocalClientId.ToString()}");
-            if (SpawnRpcDespawn.TestStage != NetworkUpdateStage.Immediate)
-            {
-                Assert.AreEqual(TestStage, NetworkUpdateLoop.UpdateStage);
-            }
+            Assert.AreEqual(TestStage, NetworkUpdateLoop.UpdateStage);
         }
 
         public void Awake()

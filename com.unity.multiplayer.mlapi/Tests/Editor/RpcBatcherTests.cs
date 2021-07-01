@@ -62,7 +62,7 @@ namespace MLAPI.EditorTests
                 // In order to replicate this behaviour, we'll read 8 bits before calling ReceiveItems()
                 recvStream.ReadByte();
 
-                recvBatcher.ReceiveItems(recvStream, (stream, type, id, time) => ++recvItemCounter, default, default);
+                recvBatcher.ReceiveItems(recvStream, (stream, type, id, time, channel) => ++recvItemCounter, default, default, default);
             }
 
             Assert.AreEqual(k_QueueItemCount, recvItemCounter);
@@ -120,7 +120,7 @@ namespace MLAPI.EditorTests
                 // In order to replicate this behaviour, we'll read 8 bits before calling ReceiveItems()
                 recvStream.ReadByte();
 
-                recvBatcher.ReceiveItems(recvStream, (stream, type, id, time) => ++recvItemCounter, default, default);
+                recvBatcher.ReceiveItems(recvStream, (stream, type, id, time, channel) => ++recvItemCounter, default, default, default);
             }
 
             Assert.AreEqual(k_QueueItemCount, recvItemCounter);

@@ -1,7 +1,5 @@
 using System;
-using System.Collections.Generic;
 using Unity.Profiling;
-using MLAPI.Configuration;
 using MLAPI.Profiling;
 using MLAPI.Logging;
 using UnityEngine;
@@ -36,12 +34,6 @@ namespace MLAPI.Messaging
             {
                 switch (item.MessageType)
                 {
-                    case MessageQueueContainer.MessageType.ClientRpc:
-                    case MessageQueueContainer.MessageType.ServerRpc:
-                        // Can rely on currentStage == the original updateStage in the buffer
-                        // After all, that's the whole point of it being in the buffer.
-                        m_NetworkManager.InvokeRpc(item, item.UpdateStage);
-                        break;
                     case MessageQueueContainer.MessageType.ConnectionRequest:
                         if (m_NetworkManager.IsServer)
                         {
@@ -56,6 +48,12 @@ namespace MLAPI.Messaging
                         }
 
                         break;
+                    case MessageQueueContainer.MessageType.ClientRpc:
+                    case MessageQueueContainer.MessageType.ServerRpc:
+                        // Can rely on currentStage == the original updateStage in the buffer
+                        // After all, that's the whole point of it being in the buffer.
+                        m_NetworkManager.InvokeRpc(item, item.UpdateStage);
+                        break;
                     case MessageQueueContainer.MessageType.CreateObject:
                         if (m_NetworkManager.IsClient)
                         {
@@ -63,10 +61,24 @@ namespace MLAPI.Messaging
                         }
 
                         break;
+                    case MessageQueueContainer.MessageType.CreateObjects:
+                        if (m_NetworkManager.IsClient)
+                        {
+                            m_NetworkManager.MessageHandler.HandleAddObjects(item.NetworkId, item.NetworkBuffer);
+                        }
+
+                        break;
                     case MessageQueueContainer.MessageType.DestroyObject:
                         if (m_NetworkManager.IsClient)
                         {
                             m_NetworkManager.MessageHandler.HandleDestroyObject(item.NetworkId, item.NetworkBuffer);
+                        }
+
+                        break;
+                    case MessageQueueContainer.MessageType.DestroyObjects:
+                        if (m_NetworkManager.IsClient)
+                        {
+                            m_NetworkManager.MessageHandler.HandleDestroyObjects(item.NetworkId, item.NetworkBuffer);
                         }
 
                         break;
@@ -81,6 +93,51 @@ namespace MLAPI.Messaging
                         if (m_NetworkManager.IsClient)
                         {
                             m_NetworkManager.MessageHandler.HandleTimeSync(item.NetworkId, item.NetworkBuffer, item.Timestamp);
+                        }
+
+                        break;
+
+                    case MessageQueueContainer.MessageType.UnnamedMessage:
+                        m_NetworkManager.MessageHandler.HandleUnnamedMessage(item.NetworkId, item.NetworkBuffer);
+                        break;
+                    case MessageQueueContainer.MessageType.NamedMessage:
+                        m_NetworkManager.MessageHandler.HandleNamedMessage(item.NetworkId, item.NetworkBuffer);
+                        break;
+                    case MessageQueueContainer.MessageType.ServerLog:
+                        if (m_NetworkManager.IsServer && m_NetworkManager.NetworkConfig.EnableNetworkLogs)
+                        {
+                            m_NetworkManager.MessageHandler.HandleNetworkLog(item.NetworkId, item.NetworkBuffer);
+                        }
+
+                        break;
+                    case MessageQueueContainer.MessageType.SnapshotData:
+                        m_NetworkManager.MessageHandler.HandleNetworkLog(item.NetworkId, item.NetworkBuffer);
+                        break;
+                    case MessageQueueContainer.MessageType.NetworkVariableDelta:
+                        m_NetworkManager.MessageHandler.HandleNetworkVariableDelta(item.NetworkId, item.NetworkBuffer);
+                        break;
+                    case MessageQueueContainer.MessageType.SwitchScene:
+                        if (m_NetworkManager.IsClient)
+                        {
+                            m_NetworkManager.MessageHandler.HandleSwitchScene(item.NetworkId, item.NetworkBuffer);
+                        }
+
+                        break;
+                    case MessageQueueContainer.MessageType.ClientSwitchSceneCompleted:
+                        if (m_NetworkManager.IsServer && m_NetworkManager.NetworkConfig.EnableSceneManagement)
+                        {
+                            m_NetworkManager.MessageHandler.HandleClientSwitchSceneCompleted(item.NetworkId, item.NetworkBuffer);
+                        }
+                        else if (!m_NetworkManager.NetworkConfig.EnableSceneManagement)
+                        {
+                            NetworkLog.LogWarning($"Server received {MessageQueueContainer.MessageType.ClientSwitchSceneCompleted} from client id {item.NetworkId.ToString()}");
+                        }
+
+                        break;
+                    case MessageQueueContainer.MessageType.AllClientsLoadedScene:
+                        if (m_NetworkManager.IsClient)
+                        {
+                            m_NetworkManager.MessageHandler.HandleAllClientsSwitchSceneCompleted(item.NetworkId, item.NetworkBuffer);
                         }
 
                         break;
@@ -244,6 +301,7 @@ namespace MLAPI.Messaging
             switch (item.MessageType)
             {
                 case MessageQueueContainer.MessageType.ServerRpc:
+                    // TODO: Can we remove this special case for server RPCs?
                     {
                         m_MessageQueueContainer.NetworkManager.NetworkConfig.NetworkTransport.Send(item.NetworkId, item.MessageData, item.NetworkChannel);
 
@@ -255,7 +313,7 @@ namespace MLAPI.Messaging
                         ProfilerStatManager.MessagesSent.Record();
                         break;
                     }
-                case MessageQueueContainer.MessageType.ClientRpc:
+                default:
                     {
                         foreach (ulong clientid in item.ClientNetworkIds)
                         {

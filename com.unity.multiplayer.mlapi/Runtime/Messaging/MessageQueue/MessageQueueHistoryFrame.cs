@@ -80,6 +80,7 @@ namespace MLAPI.Messaging
             m_CurrentItem.MessageType = (MessageQueueContainer.MessageType)QueueReader.ReadUInt16();
             m_CurrentItem.Timestamp = QueueReader.ReadSingle();
             m_CurrentItem.NetworkId = QueueReader.ReadUInt64();
+            m_CurrentItem.NetworkChannel = (NetworkChannel)QueueReader.ReadByteDirect();
 
             //Clear out any current value for the client ids
             m_CurrentItem.ClientNetworkIds = new ulong[0];
@@ -88,7 +89,6 @@ namespace MLAPI.Messaging
             if (m_QueueFrameType == QueueFrameType.Outbound)
             {
                 //Outbound we care about both channel and clients
-                m_CurrentItem.NetworkChannel = (NetworkChannel)QueueReader.ReadByteDirect();
                 int numClients = QueueReader.ReadInt32();
                 if (numClients > 0 && numClients < m_MaximumClients)
                 {

@@ -28,12 +28,22 @@ namespace MLAPI.Messaging
         {
             ConnectionRequest,
             ConnectionApproved,
-            ServerRpc,
             ClientRpc,
+            ServerRpc,
             CreateObject,
+            CreateObjects,
             DestroyObject,
+            DestroyObjects,
             ChangeOwner,
             TimeSync,
+            UnnamedMessage,
+            NamedMessage,
+            ServerLog,
+            SnapshotData,
+            NetworkVariableDelta,
+            SwitchScene,
+            ClientSwitchSceneCompleted,
+            AllClientsLoadedScene,
 
             None //Indicates end of frame
         }
@@ -124,16 +134,19 @@ namespace MLAPI.Messaging
                     //Switch to the outbound queue
                     writer = BeginAddQueueItemToFrame(messageType, Time.realtimeSinceStartup, transportChannel, 0,
                         clientIds, MessageQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
+
+                    writer.WriteByte((byte)messageType);
+                    writer.WriteByte((byte)updateStage); // NetworkUpdateStage
                 }
             }
             else
             {
                 writer = BeginAddQueueItemToFrame(messageType, Time.realtimeSinceStartup, transportChannel, 0,
                     clientIds, MessageQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
-            }
 
-            writer.WriteByte((byte)messageType);
-            writer.WriteByte((byte)updateStage); // NetworkUpdateStage
+                writer.WriteByte((byte)messageType);
+                writer.WriteByte((byte)updateStage); // NetworkUpdateStage
+            }
 
             return new InternalCommandContext(writer, clientIds, updateStage, this);
         }
@@ -305,29 +318,9 @@ namespace MLAPI.Messaging
         /// <param name="timeStamp">when it was received</param>
         /// <param name="sourceNetworkId">who sent the rpc</param>
         /// <param name="message">the message being received</param>
-        internal void AddQueueItemToInboundFrame(MessageType qItemType, float timeStamp, ulong sourceNetworkId, NetworkBuffer message)
+        internal void AddQueueItemToInboundFrame(MessageType qItemType, float timeStamp, ulong sourceNetworkId, NetworkBuffer message, NetworkChannel receiveChannel)
         {
             NetworkUpdateStage updateStage = (NetworkUpdateStage)message.ReadByte();
-
-            if (updateStage == NetworkUpdateStage.Immediate)
-            {
-                using (var reader = PooledNetworkReader.Get(message))
-                {
-                    var immediateItem = new MessageFrameItem
-                    {
-                        MessageType = qItemType,
-                        Timestamp = timeStamp,
-                        NetworkId = sourceNetworkId,
-                        UpdateStage = updateStage,
-                        StreamSize = message.Length,
-                        NetworkBuffer = message,
-                        NetworkReader = reader
-                    };
-                    m_MessageQueueProcessor.ProcessMessage(immediateItem);
-                }
-
-                return;
-            }
 
             var messageFrameItem = GetQueueHistoryFrame(MessageQueueHistoryFrame.QueueFrameType.Inbound, updateStage);
             messageFrameItem.IsDirty = true;
@@ -338,6 +331,7 @@ namespace MLAPI.Messaging
             messageFrameItem.QueueWriter.WriteUInt16((ushort)qItemType);
             messageFrameItem.QueueWriter.WriteSingle(timeStamp);
             messageFrameItem.QueueWriter.WriteUInt64(sourceNetworkId);
+            messageFrameItem.QueueWriter.WriteByte((byte)receiveChannel);
 
             //Inbound we copy the entire packet and store the position offset
             long streamSize = message.Length - message.Position;
@@ -413,11 +407,10 @@ namespace MLAPI.Messaging
             messageQueueHistoryFrame.QueueWriter.WriteUInt16((ushort)qItemType);
             messageQueueHistoryFrame.QueueWriter.WriteSingle(timeStamp);
             messageQueueHistoryFrame.QueueWriter.WriteUInt64(sourceNetworkId);
+            messageQueueHistoryFrame.QueueWriter.WriteByte((byte)networkChannel);
 
             if (queueFrameType != MessageQueueHistoryFrame.QueueFrameType.Inbound)
             {
-                messageQueueHistoryFrame.QueueWriter.WriteByte((byte)networkChannel);
-
                 if (targetNetworkIds != null && targetNetworkIds.Length != 0)
                 {
                     //In the event the host is one of the networkIds, for outbound we want to ignore it (at this spot only!!)
@@ -549,7 +542,7 @@ namespace MLAPI.Messaging
                         loopBackHistoryFrame.QueueWriter.WriteInt64(0);
                     }
 
-                    //Write RPC data
+                    //Write message data
                     loopBackHistoryFrame.QueueWriter.WriteBytes(
                         messageQueueHistoryItem.QueueBuffer.GetBuffer(),
                         messageSize,
@@ -580,15 +573,6 @@ namespace MLAPI.Messaging
 
             //Add the packed size to the offsets for parsing over various entries
             messageQueueHistoryItem.QueueItemOffsets.Add((uint)messageQueueHistoryItem.QueueBuffer.Position);
-            if (updateStage == NetworkUpdateStage.Immediate)
-            {
-                ProcessAndFlushMessageQueue(
-                    queueFrameType == MessageQueueHistoryFrame.QueueFrameType.Inbound ?
-                        MessageQueueProcessingTypes.Receive :
-                        MessageQueueProcessingTypes.Send,
-                    updateStage
-                );
-            }
         }
 
         /// <summary>

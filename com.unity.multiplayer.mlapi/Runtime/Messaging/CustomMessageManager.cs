@@ -55,7 +55,16 @@ namespace MLAPI.Messaging
                 return;
             }
 
-            m_NetworkManager.MessageSender.Send(NetworkConstants.UNNAMED_MESSAGE, networkChannel, clientIds, buffer);
+            using (var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
+                MessageQueueContainer.MessageType.UnnamedMessage,
+                networkChannel,
+                clientIds.ToArray(),
+                NetworkUpdateLoop.UpdateStage
+            ))
+            {
+                context.NetworkWriter.WriteBytes(buffer.GetBuffer(), buffer.Length);
+            }
+
             PerformanceDataManager.Increment(ProfilerConstants.UnnamedMessageSent);
         }
 
@@ -67,8 +76,16 @@ namespace MLAPI.Messaging
         /// <param name="networkChannel">The channel tos end the data on</param>
         public void SendUnnamedMessage(ulong clientId, NetworkBuffer buffer, NetworkChannel networkChannel = NetworkChannel.Internal)
         {
-            m_NetworkManager.MessageSender.Send(clientId, NetworkConstants.UNNAMED_MESSAGE, networkChannel, buffer);
-            PerformanceDataManager.Increment(ProfilerConstants.UnnamedMessageSent);
+
+            using (var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
+                MessageQueueContainer.MessageType.UnnamedMessage,
+                networkChannel,
+                new []{clientId},
+                NetworkUpdateLoop.UpdateStage
+            ))
+            {
+                context.NetworkWriter.WriteBytes(buffer.GetBuffer(), buffer.Length);
+            }
         }
 
         /// <summary>
@@ -156,16 +173,19 @@ namespace MLAPI.Messaging
                     break;
             }
 
-            using (var messageBuffer = PooledNetworkBuffer.Get())
-            using (var writer = PooledNetworkWriter.Get(messageBuffer))
+
+            using (var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
+                MessageQueueContainer.MessageType.NamedMessage,
+                networkChannel,
+                new []{clientId},
+                NetworkUpdateLoop.UpdateStage
+            ))
             {
-                writer.WriteUInt64Packed(hash);
+                context.NetworkWriter.WriteUInt64Packed(hash);
 
-                messageBuffer.CopyFrom(stream);
-
-                m_NetworkManager.MessageSender.Send(clientId, NetworkConstants.NAMED_MESSAGE, networkChannel, messageBuffer);
-                PerformanceDataManager.Increment(ProfilerConstants.NamedMessageSent);
+                stream.CopyTo(context.NetworkWriter.GetStream());
             }
+            PerformanceDataManager.Increment(ProfilerConstants.NamedMessageSent);
         }
 
         /// <summary>
@@ -177,6 +197,16 @@ namespace MLAPI.Messaging
         /// <param name="networkChannel">The channel to send the data on</param>
         public void SendNamedMessage(string name, List<ulong> clientIds, Stream stream, NetworkChannel networkChannel = NetworkChannel.Internal)
         {
+            if (!m_NetworkManager.IsServer)
+            {
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
+                {
+                    NetworkLog.LogWarning("Can not send named messages to multiple users as a client");
+                }
+
+                return;
+            }
+
             ulong hash = 0;
             switch (m_NetworkManager.NetworkConfig.RpcHashSize)
             {
@@ -188,26 +218,18 @@ namespace MLAPI.Messaging
                     break;
             }
 
-            using (var messageBuffer = PooledNetworkBuffer.Get())
-            using (var writer = PooledNetworkWriter.Get(messageBuffer))
+            using (var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
+                MessageQueueContainer.MessageType.NamedMessage,
+                networkChannel,
+                clientIds.ToArray(),
+                NetworkUpdateLoop.UpdateStage
+            ))
             {
-                writer.WriteUInt64Packed(hash);
+                context.NetworkWriter.WriteUInt64Packed(hash);
 
-                messageBuffer.CopyFrom(stream);
-
-                if (!m_NetworkManager.IsServer)
-                {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
-                    {
-                        NetworkLog.LogWarning("Can not send named messages to multiple users as a client");
-                    }
-
-                    return;
-                }
-
-                m_NetworkManager.MessageSender.Send(NetworkConstants.NAMED_MESSAGE, networkChannel, clientIds, messageBuffer);
-                PerformanceDataManager.Increment(ProfilerConstants.NamedMessageSent);
+                stream.CopyTo(context.NetworkWriter.GetStream());
             }
+            PerformanceDataManager.Increment(ProfilerConstants.NamedMessageSent);
         }
     }
 }

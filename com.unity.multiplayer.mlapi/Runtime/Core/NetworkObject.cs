@@ -6,6 +6,7 @@ using MLAPI.Configuration;
 using MLAPI.Exceptions;
 using MLAPI.Hashing;
 using MLAPI.Logging;
+using MLAPI.Messaging;
 using MLAPI.Serialization.Pooled;
 using MLAPI.Transports;
 using MLAPI.Serialization;
@@ -277,20 +278,23 @@ namespace MLAPI
                 }
             }
 
-            using (var buffer = PooledNetworkBuffer.Get())
-            using (var writer = PooledNetworkWriter.Get(buffer))
+
+            using (var context = networkManager.MessageQueueContainer.EnterInternalCommandContext(
+                MessageQueueContainer.MessageType.CreateObjects,
+                NetworkChannel.Internal,
+                new [] {clientId},
+                NetworkUpdateLoop.UpdateStage
+            ))
             {
-                writer.WriteUInt16Packed((ushort)networkObjects.Count);
+                context.NetworkWriter.WriteUInt16Packed((ushort)networkObjects.Count);
 
                 for (int i = 0; i < networkObjects.Count; i++)
                 {
                     // Send spawn call
                     networkObjects[i].Observers.Add(clientId);
 
-                    networkManager.SpawnManager.WriteSpawnCallForObject(writer, clientId, networkObjects[i], payload);
+                    networkManager.SpawnManager.WriteSpawnCallForObject(context.NetworkWriter, clientId, networkObjects[i], payload);
                 }
-
-                networkManager.MessageSender.Send(clientId, NetworkConstants.ADD_OBJECTS, NetworkChannel.Internal, buffer);
             }
         }
 
@@ -324,12 +328,14 @@ namespace MLAPI
             // Send destroy call
             Observers.Remove(clientId);
 
-            using (var buffer = PooledNetworkBuffer.Get())
-            using (var writer = PooledNetworkWriter.Get(buffer))
+            using (var context = NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
+                MessageQueueContainer.MessageType.DestroyObject,
+                NetworkChannel.Internal,
+                new[] {clientId},
+                NetworkUpdateLoop.UpdateStage
+            ))
             {
-                writer.WriteUInt64Packed(NetworkObjectId);
-
-                NetworkManager.MessageSender.Send(clientId, NetworkConstants.DESTROY_OBJECT, NetworkChannel.Internal, buffer);
+                context.NetworkWriter.WriteUInt64Packed(NetworkObjectId);
             }
         }
 
@@ -376,20 +382,22 @@ namespace MLAPI
                 }
             }
 
-            using (var buffer = PooledNetworkBuffer.Get())
-            using (var writer = PooledNetworkWriter.Get(buffer))
+            using (var context = networkManager.MessageQueueContainer.EnterInternalCommandContext(
+                MessageQueueContainer.MessageType.DestroyObjects,
+                NetworkChannel.Internal,
+                new[] {clientId},
+                NetworkUpdateLoop.UpdateStage
+            ))
             {
-                writer.WriteUInt16Packed((ushort)networkObjects.Count);
+                context.NetworkWriter.WriteUInt16Packed((ushort)networkObjects.Count);
 
                 for (int i = 0; i < networkObjects.Count; i++)
                 {
                     // Send destroy call
                     networkObjects[i].Observers.Remove(clientId);
 
-                    writer.WriteUInt64Packed(networkObjects[i].NetworkObjectId);
+                    context.NetworkWriter.WriteUInt64Packed(networkObjects[i].NetworkObjectId);
                 }
-
-                networkManager.MessageSender.Send(clientId, NetworkConstants.DESTROY_OBJECTS, NetworkChannel.Internal, buffer);
             }
         }
 
@@ -782,19 +790,6 @@ namespace MLAPI
 
             // Spawn the NetworkObject
             networkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, networkId, isSceneObject, isPlayerObject, ownerClientId, objectStream, false, 0, true, false);
-
-            var bufferQueue = networkManager.BufferManager.ConsumeBuffersForNetworkId(networkId);
-
-            // Apply buffered messages
-            if (bufferQueue != null)
-            {
-                while (bufferQueue.Count > 0)
-                {
-                    Messaging.Buffering.BufferManager.BufferedMessage message = bufferQueue.Dequeue();
-                    networkManager.HandleIncomingData(message.SenderClientId, message.NetworkChannel, new ArraySegment<byte>(message.NetworkBuffer.GetBuffer(), (int)message.NetworkBuffer.Position, (int)message.NetworkBuffer.Length), message.ReceiveTime, false);
-                    Messaging.Buffering.BufferManager.RecycleConsumedBufferedMessage(message);
-                }
-            }
 
             return networkObject;
         }

@@ -157,10 +157,7 @@ namespace TestProject.RuntimeTests
                 yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
             }
 
-            if (testStage != NetworkUpdateStage.Immediate)
-            {
-                Assert.AreEqual(testStage, Support.SpawnRpcDespawn.StageExecutedByReceiver);
-            }
+            Assert.AreEqual(testStage, Support.SpawnRpcDespawn.StageExecutedByReceiver);
             Assert.AreEqual(Support.SpawnRpcDespawn.ServerUpdateCount + 1, Support.SpawnRpcDespawn.ClientUpdateCount);
             Assert.True(handler.WasSpawned);
             Assert.True(handler.WasDestroyed);

@@ -90,10 +90,11 @@ namespace MLAPI
             {
                 writer = messageQueueContainer.BeginAddQueueItemToFrame(MessageQueueContainer.MessageType.ServerRpc, Time.realtimeSinceStartup, transportChannel,
                     NetworkManager.ServerClientId, null, MessageQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
+
+                writer.WriteByte((byte)MessageQueueContainer.MessageType.ServerRpc);
+                writer.WriteByte((byte)serverRpcParams.Send.UpdateStage); // NetworkUpdateStage
             }
 
-            writer.WriteByte((byte)MessageQueueContainer.MessageType.ServerRpc);
-            writer.WriteByte((byte)serverRpcParams.Send.UpdateStage); // NetworkUpdateStage
             writer.WriteUInt64Packed(NetworkObjectId); // NetworkObjectId
             writer.WriteUInt16Packed(NetworkBehaviourId); // NetworkBehaviourId
 
@@ -115,6 +116,11 @@ namespace MLAPI
             if (serializer == null)
             {
                 return;
+            }
+
+            if (serverRpcParams.Send.UpdateStage == NetworkUpdateStage.Unset)
+            {
+                serverRpcParams.Send.UpdateStage = NetworkUpdateLoop.UpdateStage;
             }
 
             var messageQueueContainer = NetworkManager.MessageQueueContainer;
@@ -178,16 +184,18 @@ namespace MLAPI
                     //Switch to the outbound queue
                     writer = messageQueueContainer.BeginAddQueueItemToFrame(MessageQueueContainer.MessageType.ClientRpc, Time.realtimeSinceStartup, transportChannel, NetworkObjectId,
                         clientIds, MessageQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
+                    writer.WriteByte((byte)MessageQueueContainer.MessageType.ClientRpc);
+                    writer.WriteByte((byte)clientRpcParams.Send.UpdateStage); // NetworkUpdateStage
                 }
             }
             else
             {
                 writer = messageQueueContainer.BeginAddQueueItemToFrame(MessageQueueContainer.MessageType.ClientRpc, Time.realtimeSinceStartup, transportChannel, NetworkObjectId,
                     clientIds, MessageQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
+                writer.WriteByte((byte)MessageQueueContainer.MessageType.ClientRpc);
+                writer.WriteByte((byte)clientRpcParams.Send.UpdateStage); // NetworkUpdateStage
             }
 
-            writer.WriteByte((byte)MessageQueueContainer.MessageType.ClientRpc);
-            writer.WriteByte((byte)clientRpcParams.Send.UpdateStage); // NetworkUpdateStage
             writer.WriteUInt64Packed(NetworkObjectId); // NetworkObjectId
             writer.WriteUInt16Packed(NetworkBehaviourId); // NetworkBehaviourId
 
@@ -662,8 +670,15 @@ namespace MLAPI
 
                             if (writtenAny)
                             {
-                                NetworkManager.MessageSender.Send(clientId, NetworkConstants.NETWORK_VARIABLE_DELTA,
-                                    m_ChannelsForNetworkVariableGroups[j], buffer);
+                                using (var context = NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
+                                    MessageQueueContainer.MessageType.NetworkVariableDelta,
+                                    m_ChannelsForNetworkVariableGroups[j],
+                                    new[] {clientId},
+                                    NetworkUpdateLoop.UpdateStage
+                                ))
+                                {
+                                    context.NetworkWriter.WriteBytes(buffer.GetBuffer(), buffer.Length);
+                                }
                             }
                         }
                     }

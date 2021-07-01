@@ -20,14 +20,13 @@ namespace MLAPI
     public enum NetworkUpdateStage : byte
     {
         Unset = 0, // Default
-        Immediate = 1, // Bypass queueing, send and process immediately
-        Initialization = 2,
-        EarlyUpdate = 3,
-        FixedUpdate = 4,
-        PreUpdate = 5,
-        Update = 6,
-        PreLateUpdate = 7,
-        PostLateUpdate = 8
+        Initialization = 1,
+        EarlyUpdate = 2,
+        FixedUpdate = 3,
+        PreUpdate = 4,
+        Update = 5,
+        PreLateUpdate = 6,
+        PostLateUpdate = 7
     }
 
     /// <summary>
