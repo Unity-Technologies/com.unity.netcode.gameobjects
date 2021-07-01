@@ -76,7 +76,10 @@ namespace TestProject.ManualTests
         /// </summary>
         private void OnDestroy()
         {
-            NetworkManager.OnClientConnectedCallback -= OnClientConnectedCallback;
+            if (NetworkManager != null)
+            {
+                NetworkManager.OnClientConnectedCallback -= OnClientConnectedCallback;
+            }
         }
 
         /// <summary>

@@ -81,7 +81,6 @@ namespace MLAPI.SceneManagement
         internal readonly Dictionary<Guid, SceneSwitchProgress> SceneSwitchProgresses = new Dictionary<Guid, SceneSwitchProgress>();
         internal readonly Dictionary<uint, NetworkObject> ScenePlacedObjects = new Dictionary<uint, NetworkObject>();
 
-        private static Scene s_LastScene;
         private static string s_NextSceneName;
         private static bool s_IsSwitching = false;
         internal static uint CurrentSceneIndex = 0;
@@ -136,7 +135,7 @@ namespace MLAPI.SceneManagement
         /// <param name="sceneName">The name of the scene to switch to</param>
         /// <param name="loadSceneMode">The mode to load the scene (Additive vs Single)</param>
         /// <returns>SceneSwitchProgress</returns>
-        public SceneSwitchProgress SwitchScene(string sceneName, LoadSceneMode loadSceneMode = LoadSceneMode.Single)
+        public SceneSwitchProgress SwitchScene(string sceneName,LoadSceneMode loadSceneMode = LoadSceneMode.Single, List<string> scenesToUnload = null)
         {
             if (!m_NetworkManager.IsServer)
             {
@@ -169,9 +168,11 @@ namespace MLAPI.SceneManagement
                 return null;
             }
 
-            m_NetworkManager.SpawnManager.ServerDestroySpawnedSceneObjects(); //Destroy current scene objects before switching.
+            if (loadSceneMode != LoadSceneMode.Additive)
+            {
+                m_NetworkManager.SpawnManager.ServerDestroySpawnedSceneObjects(); //Destroy current scene objects before switching.
+            }
             s_IsSwitching = true;
-            s_LastScene = SceneManager.GetActiveScene();
 
             var switchSceneProgress = new SceneSwitchProgress(m_NetworkManager);
             SceneSwitchProgresses.Add(switchSceneProgress.Guid, switchSceneProgress);
@@ -195,8 +196,11 @@ namespace MLAPI.SceneManagement
                 }
             };
 
-            // Move ALL NetworkObjects to the temp scene
-            MoveObjectsToDontDestroyOnLoad();
+            if (loadSceneMode != LoadSceneMode.Additive)
+            {
+                // Move ALL NetworkObjects to the temp scene
+                MoveObjectsToDontDestroyOnLoad();
+            }
 
             IsSpawnedObjectsPendingInDontDestroyOnLoad = true;
 
@@ -205,7 +209,7 @@ namespace MLAPI.SceneManagement
 
             s_NextSceneName = sceneName;
 
-            sceneLoad.completed += (AsyncOperation asyncOp2) => { OnSceneLoaded(switchSceneProgress.Guid, null); };
+            sceneLoad.completed += (AsyncOperation asyncOp2) => { OnSceneLoaded(switchSceneProgress.Guid, null, loadSceneMode); };
             switchSceneProgress.SetSceneLoadOperation(sceneLoad);
             OnSceneSwitchStarted?.Invoke(sceneLoad);
 
@@ -213,7 +217,7 @@ namespace MLAPI.SceneManagement
         }
 
         // Called on client
-        internal void OnSceneSwitch(uint sceneIndex, Guid switchSceneGuid, Stream objectStream)
+        internal void OnSceneSwitch(uint sceneIndex, Guid switchSceneGuid, Stream objectStream, LoadSceneMode loadSceneMode)
         {
             if (!SceneIndexToString.TryGetValue(sceneIndex, out string sceneName) || !RegisteredSceneNames.Contains(sceneName))
             {
@@ -225,20 +229,24 @@ namespace MLAPI.SceneManagement
                 return;
             }
 
-            s_LastScene = SceneManager.GetActiveScene();
-
-            // Move ALL NetworkObjects to the temp scene
-            MoveObjectsToDontDestroyOnLoad();
+            if (loadSceneMode == LoadSceneMode.Single)
+            {
+                // Move ALL NetworkObjects to the temp scene
+                MoveObjectsToDontDestroyOnLoad();
+            }
 
             IsSpawnedObjectsPendingInDontDestroyOnLoad = true;
 
-            var sceneLoad = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Single);
+            var sceneLoad = SceneManager.LoadSceneAsync(sceneName, loadSceneMode);
 
             s_NextSceneName = sceneName;
 
-            sceneLoad.completed += asyncOp2 => OnSceneLoaded(switchSceneGuid, objectStream);
+            sceneLoad.completed += asyncOp2 => OnSceneLoaded(switchSceneGuid, objectStream, loadSceneMode);
             OnSceneSwitchStarted?.Invoke(sceneLoad);
         }
+
+
+
 
         internal void OnFirstSceneSwitchSync(uint sceneIndex, Guid switchSceneGuid)
         {
@@ -257,7 +265,6 @@ namespace MLAPI.SceneManagement
                 return; //This scene is already loaded. This usually happends at first load
             }
 
-            s_LastScene = SceneManager.GetActiveScene();
             s_NextSceneName = sceneName;
             CurrentActiveSceneIndex = SceneNameToIndex[sceneName];
 
@@ -283,7 +290,7 @@ namespace MLAPI.SceneManagement
         /// -- Before any "DontDestroyOnLoad" NetworkObjects have been added back into the scene.
         /// Added the ability to choose not to clear the scene placed objects for additive scene loading.
         /// </summary>
-        internal void PopulateScenePlacedObjects(bool clearScenePlacedObjects = true)
+        internal void PopulateScenePlacedObjects(Scene sceneToFilterBy, bool clearScenePlacedObjects = true)
         {
             if (clearScenePlacedObjects)
             {
@@ -294,13 +301,13 @@ namespace MLAPI.SceneManagement
 
             // Just add every NetworkObject found that isn't already in the list
             // If any "non-in-scene placed NetworkObjects" are added to this list it shouldn't matter
-            // The only thing that matters is making sure each NetworkObject is keyed off of their GlobalObjectIdHash            
+            // The only thing that matters is making sure each NetworkObject is keyed off of their GlobalObjectIdHash
             foreach (var networkObjectInstance in networkObjects)
             {
                 if (!ScenePlacedObjects.ContainsKey(networkObjectInstance.GlobalObjectIdHash))
                 {
-                    // We check to make sure the NetworkManager instance is the same one to be "MultiInstanceHelpers" compatible
-                    if (networkObjectInstance.IsSceneObject == null && networkObjectInstance.NetworkManager == m_NetworkManager)
+                    // We check to make sure the NetworkManager instance is the same one to be "MultiInstanceHelpers" compatible and filter the list on a per scene basis (additive scenes)
+                    if (networkObjectInstance.IsSceneObject == null && networkObjectInstance.NetworkManager == m_NetworkManager && networkObjectInstance.gameObject.scene == sceneToFilterBy)
                     {
                         ScenePlacedObjects.Add(networkObjectInstance.GlobalObjectIdHash, networkObjectInstance);
                     }
@@ -308,17 +315,20 @@ namespace MLAPI.SceneManagement
             }
         }
 
-        private void OnSceneLoaded(Guid switchSceneGuid, Stream objectStream)
+        private void OnSceneLoaded(Guid switchSceneGuid, Stream objectStream, LoadSceneMode loadSceneMode)
         {
             CurrentActiveSceneIndex = SceneNameToIndex[s_NextSceneName];
             var nextScene = SceneManager.GetSceneByName(s_NextSceneName);
             SceneManager.SetActiveScene(nextScene);
 
             //Get all NetworkObjects loaded by the scene
-            PopulateScenePlacedObjects();
+            PopulateScenePlacedObjects(nextScene);
 
-            // Move all objects to the new scene
-            MoveObjectsToScene(nextScene);
+            if (loadSceneMode == LoadSceneMode.Single)
+            {
+                // Move all objects to the new scene
+                MoveObjectsToScene(nextScene);
+            }
 
             IsSpawnedObjectsPendingInDontDestroyOnLoad = false;
 
@@ -326,15 +336,15 @@ namespace MLAPI.SceneManagement
 
             if (m_NetworkManager.IsServer)
             {
-                OnServerLoadedScene(switchSceneGuid);
+                OnServerLoadedScene(switchSceneGuid, loadSceneMode);
             }
             else
             {
-                OnClientLoadedScene(switchSceneGuid, objectStream);
+                OnClientLoadedScene(switchSceneGuid, objectStream, loadSceneMode);
             }
         }
 
-        private void OnServerLoadedScene(Guid switchSceneGuid)
+        private void OnServerLoadedScene(Guid switchSceneGuid, LoadSceneMode loadSceneMode)
         {
             // Register in-scene placed NetworkObjects with MLAPI
             foreach (var keyValuePair in ScenePlacedObjects)
@@ -354,6 +364,7 @@ namespace MLAPI.SceneManagement
                     {
                         writer.WriteUInt32Packed(CurrentActiveSceneIndex);
                         writer.WriteByteArray(switchSceneGuid.ToByteArray());
+                        writer.WriteBool(loadSceneMode == LoadSceneMode.Additive);
 
                         uint sceneObjectsToSpawn = 0;
 
@@ -390,7 +401,7 @@ namespace MLAPI.SceneManagement
             OnSceneSwitched?.Invoke();
         }
 
-        private void OnClientLoadedScene(Guid switchSceneGuid, Stream objectStream)
+        private void OnClientLoadedScene(Guid switchSceneGuid, Stream objectStream, LoadSceneMode loadSceneMode)
         {
             var networkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>();
 

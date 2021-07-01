@@ -86,7 +86,7 @@ namespace MLAPI.Messaging
 
                 void DelayedSpawnAction(Stream continuationStream)
                 {
-                    
+
                     using (var continuationReader = PooledNetworkReader.Get(continuationStream))
                     {
                         if (!NetworkManager.NetworkConfig.EnableSceneManagement)
@@ -95,7 +95,7 @@ namespace MLAPI.Messaging
                         }
                         else
                         {
-                            NetworkManager.SceneManager.PopulateScenePlacedObjects();
+                            NetworkManager.SceneManager.PopulateScenePlacedObjects(SceneManager.GetActiveScene());
                         }
 
                         var objectCount = continuationReader.ReadUInt32Packed();
@@ -208,12 +208,12 @@ namespace MLAPI.Messaging
             {
                 uint sceneIndex = reader.ReadUInt32Packed();
                 var switchSceneGuid = new Guid(reader.ReadByteArray());
-
+                var isAdditivelyLoadedScene = reader.ReadBool();
                 var objectBuffer = new NetworkBuffer();
                 objectBuffer.CopyUnreadFrom(stream);
                 objectBuffer.Position = 0;
 
-                m_NetworkManager.SceneManager.OnSceneSwitch(sceneIndex, switchSceneGuid, objectBuffer);
+                m_NetworkManager.SceneManager.OnSceneSwitch(sceneIndex, switchSceneGuid, objectBuffer, isAdditivelyLoadedScene ? LoadSceneMode.Additive:LoadSceneMode.Single);
             }
         }
 
