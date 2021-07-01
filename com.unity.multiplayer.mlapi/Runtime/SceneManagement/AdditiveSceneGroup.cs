@@ -133,6 +133,21 @@ namespace MLAPI.SceneManagement
             }
         }
 
+        internal List<SceneAsset> GetAdditiveSceneAssets()
+        {
+            var additiveSceneAssets = new List<SceneAsset>();
+
+            foreach(var additiveSceneEntry in m_AdditiveScenes)
+            {
+                if(additiveSceneEntry != null && additiveSceneEntry.Scene != null)
+                {
+                    additiveSceneAssets.Add(additiveSceneEntry.Scene);
+                }
+            }
+
+            return additiveSceneAssets;
+        }
+
 #endif
 
         protected virtual List<AdditiveSceneEntry> OnGetAdditiveScenes()

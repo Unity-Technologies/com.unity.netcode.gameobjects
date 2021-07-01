@@ -14,33 +14,106 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   SceneRegistrations:
   - IncludeInBuild: 1
+    Scene: {fileID: 102900000, guid: e729f848287dcb94c99ff859aefc8511, type: 3}
+    SceneEntryName: TestScene
+    AdditiveSceneGroup: {fileID: 0}
+    Mode: 0
+    m_SavedSceneSetup:
+    - m_Path: Assets/Samples/SceneRegistration/TestScene.unity
+      m_IsLoaded: 1
+      m_IsActive: 1
+      m_IsSubScene: 0
+    - m_Path: Assets/Samples/SceneRegistration/AdditiveScenes/AdditiveScene 1.unity
+      m_IsLoaded: 1
+      m_IsActive: 0
+      m_IsSubScene: 0
+    - m_Path: Assets/Samples/SceneRegistration/AdditiveScenes/AdditiveScene 2.unity
+      m_IsLoaded: 1
+      m_IsActive: 0
+      m_IsSubScene: 0
+    - m_Path: Assets/Samples/SceneRegistration/AdditiveScenes/AdditiveScene 3.unity
+      m_IsLoaded: 1
+      m_IsActive: 0
+      m_IsSubScene: 0
+    IsNetworkManagerScene: 1
+    KnownAdditiveSceneGroup: {fileID: 0}
+  - IncludeInBuild: 1
     Scene: {fileID: 102900000, guid: 228aa7771c79e6341a8fa9bc684c5766, type: 3}
     SceneEntryName: SceneLevel-1
-    KnownAdditiveSceneGroup: {fileID: 11400000, guid: 863734e265d8f81478833cbf1902f460,
-      type: 2}
-    AdditiveSceneGroup: {fileID: 11400000, guid: 863734e265d8f81478833cbf1902f460,
-      type: 2}
+    AdditiveSceneGroup: {fileID: 0}
+    Mode: 0
+    m_SavedSceneSetup:
+    - m_Path: Assets/Samples/SceneRegistration/SceneLevel-1.unity
+      m_IsLoaded: 1
+      m_IsActive: 1
+      m_IsSubScene: 0
+    - m_Path: Assets/Samples/SceneRegistration/AdditiveScenes/AdditiveScene 1.unity
+      m_IsLoaded: 1
+      m_IsActive: 0
+      m_IsSubScene: 0
+    - m_Path: Assets/Samples/SceneRegistration/AdditiveScenes/AdditiveScene 2.unity
+      m_IsLoaded: 1
+      m_IsActive: 0
+      m_IsSubScene: 0
+    IsNetworkManagerScene: 0
+    KnownAdditiveSceneGroup: {fileID: 0}
   - IncludeInBuild: 1
     Scene: {fileID: 102900000, guid: 5add0389cebf7fa438efb6c2ac0a6fe1, type: 3}
     SceneEntryName: SceneLevel-2
-    KnownAdditiveSceneGroup: {fileID: 0}
     AdditiveSceneGroup: {fileID: 0}
+    Mode: 0
+    m_SavedSceneSetup:
+    - m_Path: Assets/Samples/SceneRegistration/SceneLevel-2.unity
+      m_IsLoaded: 1
+      m_IsActive: 1
+      m_IsSubScene: 0
+    - m_Path: Assets/Samples/SceneRegistration/AdditiveScenes/AdditiveScene 4.unity
+      m_IsLoaded: 1
+      m_IsActive: 0
+      m_IsSubScene: 0
+    - m_Path: Assets/Samples/SceneRegistration/AdditiveScenes/AdditiveScene 5.unity
+      m_IsLoaded: 1
+      m_IsActive: 0
+      m_IsSubScene: 0
+    IsNetworkManagerScene: 0
+    KnownAdditiveSceneGroup: {fileID: 0}
   - IncludeInBuild: 1
     Scene: {fileID: 102900000, guid: 45a35678967fd6744bae54a375eec459, type: 3}
     SceneEntryName: SceneLevel-3
-    KnownAdditiveSceneGroup: {fileID: 0}
     AdditiveSceneGroup: {fileID: 0}
+    Mode: 0
+    m_SavedSceneSetup:
+    - m_Path: Assets/Samples/SceneRegistration/SceneLevel-3.unity
+      m_IsLoaded: 1
+      m_IsActive: 1
+      m_IsSubScene: 0
+    IsNetworkManagerScene: 0
+    KnownAdditiveSceneGroup: {fileID: 0}
+  - IncludeInBuild: 1
+    Scene: {fileID: 102900000, guid: 91c53cf6ac2a36447889e211d81d1e23, type: 3}
+    SceneEntryName: SceneLevel-4
+    AdditiveSceneGroup: {fileID: 0}
+    Mode: 0
+    m_SavedSceneSetup: []
+    IsNetworkManagerScene: 0
+    KnownAdditiveSceneGroup: {fileID: 0}
   m_NetworkManagerScene: TestScene
   m_KnownSceneRegistrations:
   - IncludeInBuild: 1
     Scene: {fileID: 102900000, guid: 228aa7771c79e6341a8fa9bc684c5766, type: 3}
     SceneEntryName: SceneLevel-1
-    KnownAdditiveSceneGroup: {fileID: 0}
     AdditiveSceneGroup: {fileID: 0}
+    Mode: 0
+    m_SavedSceneSetup: []
+    IsNetworkManagerScene: 0
+    KnownAdditiveSceneGroup: {fileID: 0}
   - IncludeInBuild: 1
     Scene: {fileID: 102900000, guid: 228aa7771c79e6341a8fa9bc684c5766, type: 3}
     SceneEntryName: SceneLevel-1
-    KnownAdditiveSceneGroup: {fileID: 0}
     AdditiveSceneGroup: {fileID: 0}
+    Mode: 0
+    m_SavedSceneSetup: []
+    IsNetworkManagerScene: 0
+    KnownAdditiveSceneGroup: {fileID: 0}
   NetworkManagerScene: {fileID: 102900000, guid: e729f848287dcb94c99ff859aefc8511,
     type: 3}

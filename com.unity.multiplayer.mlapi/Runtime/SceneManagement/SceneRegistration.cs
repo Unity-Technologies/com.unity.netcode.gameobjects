@@ -6,6 +6,7 @@ using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
 using UnityEngine.SceneManagement;
+using UnityEditor.SceneManagement;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 #endif
@@ -24,10 +25,12 @@ namespace MLAPI.SceneManagement
         private string m_NetworkManagerScene;
 
 #if UNITY_EDITOR
-
         [HideInInspector]
         [SerializeField]
         private List<SceneEntry> m_KnownSceneRegistrations;
+
+        #region Static Methods and Properties
+
         public static string GetSceneNameFromPath(string scenePath)
         {
             var begin = scenePath.LastIndexOf("/", StringComparison.Ordinal) + 1;
@@ -123,6 +126,7 @@ namespace MLAPI.SceneManagement
                 }
             }
         }
+        #endregion
 
         internal bool AssignedToNetworkManager
         {
@@ -149,19 +153,59 @@ namespace MLAPI.SceneManagement
                 if (NetworkManagerScene != null)
                 {
                     m_NetworkManagerScene = NetworkManagerScene.name;
-                    AddOrRemoveSceneAsset(NetworkManagerScene, true);
+                    UpdateNetworkManagerSceneEntry(NetworkManagerScene, true);
+                    //AddOrRemoveSceneAsset(NetworkManagerScene, true);
                 }
             }
             else
             {
                 if (NetworkManagerScene != null)
                 {
-                    AddOrRemoveSceneAsset(NetworkManagerScene, false);
+                    UpdateNetworkManagerSceneEntry(NetworkManagerScene, false);
+                    //AddOrRemoveSceneAsset(NetworkManagerScene, false);
                 }
                 NetworkManagerScene = null;
                 m_NetworkManagerScene = string.Empty;
             }
             ValidateBuildSettingsScenes();
+        }
+
+        private SceneEntry GetAssociatedSceneEntry(SceneAsset sceneAsset)
+        {
+            foreach (var sceneEntry in SceneRegistrations)
+            {
+                if (sceneEntry != null && sceneEntry.Scene == sceneAsset)
+                {
+                    return sceneEntry;
+                }
+            }
+
+            return null;
+        }
+
+
+        private void UpdateNetworkManagerSceneEntry(SceneAsset sceneAsset, bool isAdding)
+        {
+            if (SceneRegistrations == null)
+            {
+                SceneRegistrations = new List<SceneEntry>();
+            }
+
+            var sceneEntry = GetAssociatedSceneEntry(sceneAsset);
+
+
+            if(isAdding && sceneEntry == null)
+            {
+                var newEntry = new SceneEntry();
+                newEntry.IncludeInBuild = true;
+                newEntry.Scene = sceneAsset;
+                newEntry.IsNetworkManagerScene = true;
+                SceneRegistrations.Insert(0,newEntry);      //Always make it the zero slot index
+            }
+            else if (!isAdding && sceneEntry != null)
+            {
+                SceneRegistrations.Remove(sceneEntry);
+            }
         }
 
         /// <summary>
@@ -174,6 +218,8 @@ namespace MLAPI.SceneManagement
             return AssignedToNetworkManager;
         }
 
+        private bool m_HasInitialized;
+
         private void OnValidate()
         {
             ValidateBuildSettingsScenes();
@@ -185,6 +231,11 @@ namespace MLAPI.SceneManagement
         /// </summary>
         internal void ValidateBuildSettingsScenes()
         {
+            //NSS TODO: Temporary hack to just assure we receive these messages
+            EditorSceneManager.sceneClosing -= EditorSceneManager_sceneClosing;
+            EditorSceneManager.sceneOpened -= EditorSceneManager_sceneOpened;
+            EditorSceneManager.sceneClosing += EditorSceneManager_sceneClosing;
+            EditorSceneManager.sceneOpened += EditorSceneManager_sceneOpened;
             //Cycle through all scenes registered and validate the build settings scenes list
             if (SceneRegistrations != null && SceneRegistrations.Count > 0)
             {
@@ -201,7 +252,7 @@ namespace MLAPI.SceneManagement
                 }
             }
 
-            if(NetworkManagerScene != null)
+            if (NetworkManagerScene != null)
             {
                 AddOrRemoveSceneAsset(NetworkManagerScene, true);
             }
@@ -220,7 +271,92 @@ namespace MLAPI.SceneManagement
         {
             return OnShouldAssetBeIncluded();
         }
+
+
+        private SceneEntry GetSceneEntryFromScene(Scene scene)
+        {
+            foreach (var sceneEntry in SceneRegistrations)
+            {
+                if (sceneEntry != null && sceneEntry.Scene != null)
+                {
+                    var sceneEntryPath = AssetDatabase.GetAssetPath(sceneEntry.Scene);
+                    if(sceneEntryPath == scene.path)
+                    {
+                        return sceneEntry;
+                    }
+                }
+            }
+            return null;
+        }
+
+        private bool AreAnySceneEntriesCurrentlyLoaded()
+        {
+            return (GetCurrentlyOpenedSceneEntry() != null);
+        }
+
+        private SceneEntry GetCurrentlyOpenedSceneEntry()
+        {
+            foreach (var sceneEntry in SceneRegistrations)
+            {
+                if (sceneEntry != null && sceneEntry.IsCurrentlyOpened)
+                {
+                    return sceneEntry;
+                }
+            }
+            return null;
+        }
+
+
+        internal void RefreshCurrentlyOpenedSceneEntry()
+        {
+            var openedSceneEntry = GetCurrentlyOpenedSceneEntry();
+            if (openedSceneEntry != null)
+            {
+                openedSceneEntry.RefreshAdditiveScenes();
+            }
+        }
+
+
+        private void EditorSceneManager_sceneOpened(Scene scene, OpenSceneMode mode)
+        {
+            var sceneEntry = GetSceneEntryFromScene(scene);
+            if (sceneEntry != null)
+            {
+                // Circular reference check:
+                // A base (master) scene of a SceneEntry cannot reference another base scene that belongs to
+                // a SceneEntry of the same SceneRegistration.
+                if(!AreAnySceneEntriesCurrentlyLoaded())
+                {
+                    sceneEntry.BaseSceneLoaded();
+                }
+                else
+                {
+                    Debug.LogError($"Detected SceneEntry {scene.name} being added to another base(master) scene from another SceneEntry!  Circular references are not allowed!");
+                    sceneEntry.IsCurrentlyOpened = false;
+                    EditorSceneManager.CloseScene(scene, true);
+                }
+            }
+            else
+            {
+                RefreshCurrentlyOpenedSceneEntry();
+            }
+        }
+
+        /// <summary>
+        /// Trap to detect if there were any updates made to the scene hierarchy
+        /// </summary>
+        /// <param name="scene"></param>
+        /// <param name="removingScene"></param>
+        private void EditorSceneManager_sceneClosing(Scene scene, bool removingScene)
+        {
+            var sceneEntry = GetSceneEntryFromScene(scene);
+            if (sceneEntry != null)
+            {
+                sceneEntry.BaseSceneUnloadeding();
+            }
+        }
 #endif
+
         /// <summary>
         /// Invoked to generate the hash value for the NetworkConfig comparison when a client is connecting
         /// </summary>
@@ -272,6 +408,18 @@ namespace MLAPI.SceneManagement
         }
     }
 
+#if UNITY_EDITOR
+    [Serializable]
+    public class NetworkSceneSetup:SceneSetup
+    {
+
+
+        public SceneAsset SceneAsset;
+    }
+
+#endif
+
+
     /// <summary>
     /// A container class to hold the editor specific assets and
     /// the scene name that it is pointing to for runtime
@@ -279,10 +427,101 @@ namespace MLAPI.SceneManagement
     [Serializable]
     public class SceneEntry : SceneEntryBsase
     {
+
+        public AdditiveSceneGroup AdditiveSceneGroup;
+
 #if UNITY_EDITOR
+
+        internal bool IsCurrentlyOpened;
+
         [SerializeField]
+        internal LoadSceneMode Mode;
+
+        [ReadOnlyProperty]
+        [SerializeField]
+        internal List<SceneSetup> m_SavedSceneSetup;
+
         [HideInInspector]
+        [SerializeField]
+        private Dictionary<SceneSetup, SceneAsset> m_SceneSetupToSceneAssetTable = new Dictionary<SceneSetup, SceneAsset>();
+
+        [HideInInspector]
+        [SerializeField]
+        internal bool IsNetworkManagerScene;
+
+        [HideInInspector]
+        [SerializeField]
         internal AdditiveSceneGroup KnownAdditiveSceneGroup;
+
+
+        private void ValidateSceneSetupToSceneAssetTable()
+        {
+            foreach(var keyPair in m_SceneSetupToSceneAssetTable)
+            {
+                var sceneAssetPath = AssetDatabase.GetAssetPath(keyPair.Value);
+                if(keyPair.Key.path != sceneAssetPath)
+                {
+                    Debug.LogWarning($"Detected SceneAsset name or path change from {keyPair.Key.path} to {sceneAssetPath}");
+                    keyPair.Key.path = sceneAssetPath;
+                }
+            }
+        }
+
+        internal void BaseSceneLoaded()
+        {
+            IsCurrentlyOpened = true;
+            ValidateSceneSetupToSceneAssetTable();
+            var currentSceneSetup = EditorSceneManager.GetSceneManagerSetup();
+
+            var sceneEntryPath = AssetDatabase.GetAssetPath(Scene);
+            foreach (var sceneSetup in m_SavedSceneSetup)
+            {
+                if (sceneEntryPath != sceneSetup.path)
+                {
+                    if (!currentSceneSetup.Contains(sceneSetup))
+                    {
+                        if(sceneSetup.isLoaded)
+                        {
+                            EditorSceneManager.OpenScene(sceneSetup.path, OpenSceneMode.Additive);
+                        }
+                        else
+                        {
+                            EditorSceneManager.OpenScene(sceneSetup.path, OpenSceneMode.AdditiveWithoutLoading);
+                        }
+                    }
+                }
+            }
+        }
+
+        private void RebuildSceneSetupToSceneAssetTable()
+        {
+            m_SceneSetupToSceneAssetTable = new Dictionary<SceneSetup, SceneAsset>();
+            foreach(var sceneSetup in m_SavedSceneSetup)
+            {
+                var sceneAsset = AssetDatabase.LoadAssetAtPath<SceneAsset>(sceneSetup.path);
+                m_SceneSetupToSceneAssetTable.Add(sceneSetup, sceneAsset);
+            }
+        }
+
+        internal void BaseSceneUnloadeding()
+        {
+            if (IsCurrentlyOpened)
+            {
+                IsCurrentlyOpened = false;
+                RefreshAdditiveScenes();
+            }
+        }
+
+        internal void RefreshAdditiveScenes()
+        {
+            m_SavedSceneSetup = new List<SceneSetup>(EditorSceneManager.GetSceneManagerSetup());
+            RebuildSceneSetupToSceneAssetTable();
+        }
+
+        internal void UpdateAdditiveScenes()
+        {
+
+        }
 
         /// <summary>
         /// Updates the dependencies for the additive scene group associated with this SceneEntry
@@ -326,16 +565,19 @@ namespace MLAPI.SceneManagement
 
         protected override void OnRemovedFromList()
         {
-            IncludeInBuild = false;
-            if (Scene != null)
+            if (!IsNetworkManagerScene)
             {
-                SceneRegistration.AddOrRemoveSceneAsset(Scene, false);
+                IncludeInBuild = false;
+                if (Scene != null)
+                {
+                    SceneRegistration.AddOrRemoveSceneAsset(Scene, false);
+                }
+                UpdateAdditiveSceneGroup();
             }
-            UpdateAdditiveSceneGroup();
         }
 
 #endif
-        public AdditiveSceneGroup AdditiveSceneGroup;
+
     }
 
 

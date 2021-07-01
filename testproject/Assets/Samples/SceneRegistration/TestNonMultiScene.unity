@@ -188,6 +188,8 @@ MonoBehaviour:
       type: 2}
     RegisteredScenes:
     - TestScene
+    - TestWithAdditiveScenes
+    - TestNonMultiScene
     AllowRuntimeSceneChanges: 0
     PlayerPrefab: {fileID: 0}
     NetworkPrefabs: []

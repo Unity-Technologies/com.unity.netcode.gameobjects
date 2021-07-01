@@ -264,6 +264,11 @@ namespace MLAPI
                 m_SceneRegistration = NetworkConfig.SceneRegistration;
             }
 
+            if(m_SceneRegistration != null)
+            {
+                m_SceneRegistration.ValidateBuildSettingsScenes();
+            }
+
             var activeScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
             var activeSceneName = activeScene.name;
             if (!NetworkConfig.RegisteredScenes.Contains(activeSceneName))
