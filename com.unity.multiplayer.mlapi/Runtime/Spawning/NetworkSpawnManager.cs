@@ -525,7 +525,10 @@ namespace MLAPI.Spawning
                         {
                             NetworkManager.PrefabHandler.HandleNetworkPrefabDestroy(networkObjects[i]);
 
-                            OnDestroyObject(networkObjects[i].NetworkObjectId, false);
+                            if (SpawnedObjects.ContainsKey(networkObjects[i].NetworkObjectId))
+                            {
+                                OnDestroyObject(networkObjects[i].NetworkObjectId, false);
+                            }
                         }
                         else
                         {
@@ -658,7 +661,7 @@ namespace MLAPI.Spawning
                         if (NetworkManager.ConnectedClientsList.Count > 0)
                         {
 
-                            ulong[] clientIds = NetworkManager.ConnectedClientsIds;
+                            ulong[] clientIds = NetworkManager.ConnectedClientsIds.Where((id) => id != NetworkManager.ServerClientId).ToArray();
                             using (
                                 var context = messageQueueContainer.EnterInternalCommandContext(
                                     MessageQueueContainer.MessageType.DestroyObject,

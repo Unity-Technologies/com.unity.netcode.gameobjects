@@ -6,7 +6,7 @@ using UnityEngine;
 namespace MLAPI.Messaging
 {
     /// <summary>
-    /// Used by the MessageQueueContainer to hold queued RPCs
+    /// Used by the MessageQueueContainer to hold queued messages
     /// </summary>
     public class MessageQueueHistoryFrame
     {
@@ -17,7 +17,7 @@ namespace MLAPI.Messaging
         }
 
         public bool IsDirty; //Used to determine if this queue history frame has been reset (cleaned) yet
-        public bool HasLoopbackData; //Used to determine if a dirt frame is dirty because rpcs are being looped back betwen HostClient and HostServer
+        public bool HasLoopbackData; //Used to determine if a dirt frame is dirty because messages are being looped back betwen HostClient and HostServer
         public uint TotalSize;
         public List<uint> QueueItemOffsets;
 
@@ -33,7 +33,7 @@ namespace MLAPI.Messaging
         private readonly QueueFrameType m_QueueFrameType;
         private int m_MaximumClients;
         private long m_CurrentStreamSizeMark;
-        private NetworkUpdateStage m_StreamUpdateStage; //Update stage specific to RPCs (typically inbound has most potential for variation)
+        private NetworkUpdateStage m_StreamUpdateStage; //Update stage specific to messages (typically inbound has most potential for variation)
         private int m_MaxStreamBounds;
         private const int k_MinStreamBounds = 0;
 
@@ -62,7 +62,7 @@ namespace MLAPI.Messaging
         }
 
         /// <summary>
-        /// Returns the current position that was marked (to track size of RPC msg)
+        /// Returns the current position that was marked (to track size of msg)
         /// </summary>
         /// <returns>m_CurrentStreamSizeMark</returns>
         public long GetCurrentMarkedPosition()
@@ -108,7 +108,7 @@ namespace MLAPI.Messaging
             m_CurrentItem.StreamSize = QueueReader.ReadInt64();
 
             //Sanity checking for boundaries
-            if (m_CurrentItem.StreamSize < m_MaxStreamBounds && m_CurrentItem.StreamSize > k_MinStreamBounds)
+            if (m_CurrentItem.StreamSize < m_MaxStreamBounds && m_CurrentItem.StreamSize >= k_MinStreamBounds)
             {
                 //Inbound and Outbound message streams are handled differently
                 if (m_QueueFrameType == QueueFrameType.Inbound)
@@ -119,10 +119,10 @@ namespace MLAPI.Messaging
                     //Always make sure we are positioned at the start of the stream before we write
                     m_CurrentItem.NetworkBuffer.Position = 0;
 
-                    //Write the entire message to the m_CurrentQueueItem stream (1 stream is re-used for all incoming RPCs)
+                    //Write the entire message to the m_CurrentQueueItem stream (1 stream is re-used for all incoming messages)
                     m_CurrentItem.NetworkWriter.ReadAndWrite(QueueReader, m_CurrentItem.StreamSize);
 
-                    //Reset the position back to the offset so std rpc API can process the message properly
+                    //Reset the position back to the offset so std API can process the message properly
                     //(i.e. minus the already processed header)
                     m_CurrentItem.NetworkBuffer.Position = position;
                 }
@@ -199,7 +199,7 @@ namespace MLAPI.Messaging
         /// <summary>
         /// Should be called once all processing of the current frame is complete.
         /// This only closes the m_CurrentQueueItem's stream which is used as a "middle-man" (currently)
-        /// for delivering the RPC message to the method requesting a queue item from a frame.
+        /// for delivering the message to the method requesting a queue item from a frame.
         /// </summary>
         public void CloseQueue()
         {
@@ -227,9 +227,9 @@ namespace MLAPI.Messaging
         /// QueueHistoryFrame Constructor
         /// </summary>
         /// <param name="queueType">Inbound or Outbound</param>
-        /// <param name="updateStage">Network Update Stage this RpcQueueHistoryFrame is assigned to</param>
+        /// <param name="updateStage">Network Update Stage this MessageQueueHistoryFrame is assigned to</param>
         /// <param name="maxClients">maximum number of clients</param>
-        /// <param name="maxStreamBounds">maximum size of the message stream an RPC can have (defaults to 1MB)</param>
+        /// <param name="maxStreamBounds">maximum size of the message stream a message can have (defaults to 1MB)</param>
         public MessageQueueHistoryFrame(QueueFrameType queueType, NetworkUpdateStage updateStage, int maxClients = 512, int maxStreamBounds = 1 << 20)
         {
             //The added 512 is the Queue History Frame header information, leaving room to grow

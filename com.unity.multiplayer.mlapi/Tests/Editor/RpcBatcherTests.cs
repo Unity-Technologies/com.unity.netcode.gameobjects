@@ -53,15 +53,6 @@ namespace MLAPI.EditorTests
             foreach (var recvStream in sendStreamQueue)
             {
                 recvStream.Position = 0;
-
-                // todo: revisit
-                // The following line is sub-optimal
-                // The stream returned by SendItems() includes:
-                // - 8 bits for the MLAPI message types.
-                // ReceiveItems expects those to have been stripped by the receive code.
-                // In order to replicate this behaviour, we'll read 8 bits before calling ReceiveItems()
-                recvStream.ReadByte();
-
                 recvBatcher.ReceiveItems(recvStream, (stream, type, id, time, channel) => ++recvItemCounter, default, default, default);
             }
 
@@ -111,15 +102,6 @@ namespace MLAPI.EditorTests
             foreach (var recvStream in sendStreamQueue)
             {
                 recvStream.Position = 0;
-
-                // todo: revisit
-                // The following line is sub-optimal
-                // The stream returned by SendItems() includes:
-                // - 8 bits for the MLAPI message types.
-                // ReceiveItems expects those to have been stripped by the receive code.
-                // In order to replicate this behaviour, we'll read 8 bits before calling ReceiveItems()
-                recvStream.ReadByte();
-
                 recvBatcher.ReceiveItems(recvStream, (stream, type, id, time, channel) => ++recvItemCounter, default, default, default);
             }
 

@@ -14,11 +14,11 @@ namespace MLAPI.Messaging
 {
     /// <summary>
     /// MessageQueueContainer
-    /// Handles the management of an Rpc Queue
+    /// Handles the management of a Message Queue
     /// </summary>
     internal class MessageQueueContainer : INetworkUpdateSystem, IDisposable
     {
-        private const int k_MinQueueHistory = 2; //We need a minimum of 2 queue history buffers in order to properly handle looping back Rpcs when a host
+        private const int k_MinQueueHistory = 2; //We need a minimum of 2 queue history buffers in order to properly handle looping back messages when a host
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private static int s_MessageQueueContainerInstances;
@@ -84,7 +84,7 @@ namespace MLAPI.Messaging
         /// Enables or disables batching
         /// </summary>
         /// <param name="isbatchingEnabled">true or false</param>
-        public void EnableBatchedRpcs(bool isbatchingEnabled)
+        public void EnableBatchedMessages(bool isbatchingEnabled)
         {
             m_IsNotUsingBatching = !isbatchingEnabled;
         }
@@ -115,8 +115,8 @@ namespace MLAPI.Messaging
             PooledNetworkWriter writer;
 
             //NOTES ON BELOW CHANGES:
-            //The following checks for IsHost and whether the host client id is part of the clients to recieve the RPC
-            //Is part of a patch-fix to handle looping back RPCs into the next frame's inbound queue.
+            //The following checks for IsHost and whether the host client id is part of the clients to recieve the message
+            //Is part of a patch-fix to handle looping back messages into the next frame's inbound queue.
             //!!! This code is temporary and will change (soon) when NetworkSerializer can be configured for mutliple NetworkWriters!!!
             var containsServerClientId = clientIds.Contains(NetworkManager.ServerClientId);
             if (NetworkManager.IsHost && containsServerClientId)
@@ -133,7 +133,7 @@ namespace MLAPI.Messaging
 
                     //Switch to the outbound queue
                     writer = BeginAddQueueItemToFrame(messageType, Time.realtimeSinceStartup, transportChannel, 0,
-                        clientIds, MessageQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
+                        clientIds.Where((id) => id != NetworkManager.ServerClientId).ToArray(), MessageQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
 
                     writer.WriteByte((byte)messageType);
                     writer.WriteByte((byte)updateStage); // NetworkUpdateStage
@@ -153,7 +153,7 @@ namespace MLAPI.Messaging
 
 
         /// <summary>
-        /// Will process the RPC queue and then move to the next available frame
+        /// Will process the message queue and then move to the next available frame
         /// </summary>
         /// <param name="queueType">Inbound or Outbound</param>
         /// <param name="currentUpdateStage">Network Update Stage assigned MessageQueueHistoryFrame to be processed and flushed</param>
@@ -243,12 +243,12 @@ namespace MLAPI.Messaging
                     if (queueType == MessageQueueHistoryFrame.QueueFrameType.Inbound)
                     {
                         ProfilerStatManager.MessageInQueueSize.Record((int)messageQueueHistoryItem.TotalSize);
-                        PerformanceDataManager.Increment(ProfilerConstants.RpcInQueueSize, (int)messageQueueHistoryItem.TotalSize);
+                        PerformanceDataManager.Increment(ProfilerConstants.MessageInQueueSize, (int)messageQueueHistoryItem.TotalSize);
                     }
                     else
                     {
                         ProfilerStatManager.MessageOutQueueSize.Record((int)messageQueueHistoryItem.TotalSize);
-                        PerformanceDataManager.Increment(ProfilerConstants.RpcOutQueueSize, (int)messageQueueHistoryItem.TotalSize);
+                        PerformanceDataManager.Increment(ProfilerConstants.MessageOutQueueSize, (int)messageQueueHistoryItem.TotalSize);
                     }
                 }
 
@@ -312,11 +312,11 @@ namespace MLAPI.Messaging
 
         /// <summary>
         /// AddQueueItemToInboundFrame
-        /// Adds an RPC queue item to the outbound frame
+        /// Adds a message queue item to the outbound frame
         /// </summary>
-        /// <param name="qItemType">type of rpc (client or server)</param>
+        /// <param name="qItemType">type of message</param>
         /// <param name="timeStamp">when it was received</param>
-        /// <param name="sourceNetworkId">who sent the rpc</param>
+        /// <param name="sourceNetworkId">who sent the message</param>
         /// <param name="message">the message being received</param>
         internal void AddQueueItemToInboundFrame(MessageType qItemType, float timeStamp, ulong sourceNetworkId, NetworkBuffer message, NetworkChannel receiveChannel)
         {
@@ -485,7 +485,7 @@ namespace MLAPI.Messaging
             var loopBackHistoryFrame = messageQueueHistoryItem.LoopbackHistoryFrame;
 
             var pbWriter = (PooledNetworkWriter)writer;
-            if (pbWriter != messageQueueHistoryItem.QueueWriter && !getNextFrame)
+            if (pbWriter != messageQueueHistoryItem.QueueWriter)
             {
                 UnityEngine.Debug.LogError($"{nameof(MessageQueueContainer)} {queueFrameType} passed writer is not the same as the current {nameof(PooledNetworkWriter)} for the {queueFrameType}!");
             }
@@ -754,6 +754,7 @@ namespace MLAPI.Messaging
                     }
                 }
             }
+            m_MessageQueueProcessor.Shutdown();
 
             //Clear history and parameters
             m_QueueHistory.Clear();

@@ -8,8 +8,8 @@ namespace MLAPI.Messaging
 {
     /// <summary>
     /// MessageFrameItem
-    /// Container structure for RPCs written to the Queue Frame
-    /// Used for both Inbound and Outbound RPCs
+    /// Container structure for messages written to the Queue Frame
+    /// Used for both Inbound and Outbound messages
     /// NOTE: This structure will change in the near future and is in a state of flux.
     /// This will include removing specific properties or changing property types
     /// </summary>
@@ -17,9 +17,9 @@ namespace MLAPI.Messaging
     {
         public NetworkUpdateStage UpdateStage;
         public MessageQueueContainer.MessageType MessageType;
-        public ulong NetworkId; //Sender's network Identifier
+        public ulong NetworkId; //Sender's network Identifier, or recipient identifier for server RPCs
         public NetworkChannel NetworkChannel;
-        public ulong[] ClientNetworkIds; //Server invoked Client RPCs only
+        public ulong[] ClientNetworkIds; //Everything other than server RPCs
         public long StreamSize;
         public float Timestamp;
         public PooledNetworkWriter NetworkWriter;

@@ -19,7 +19,7 @@ namespace MLAPI.Messaging
         private static ProfilerMarker s_ProcessSendQueue = new ProfilerMarker($"{nameof(MessageQueueProcessor)}.{nameof(ProcessSendQueue)}");
 #endif
 
-        // Batcher object used to manage the RPC batching on the send side
+        // Batcher object used to manage the message batching on the send side
         private readonly MessageBatcher m_MessageBatcher = new MessageBatcher();
         private const int k_BatchThreshold = 512;
 
@@ -27,6 +27,11 @@ namespace MLAPI.Messaging
         private MessageQueueContainer m_MessageQueueContainer;
 
         private readonly NetworkManager m_NetworkManager;
+
+        public void Shutdown()
+        {
+            m_MessageBatcher.Shutdown();
+        }
 
         public void ProcessMessage(in MessageFrameItem item)
         {
@@ -159,7 +164,7 @@ namespace MLAPI.Messaging
 
         /// <summary>
         /// ProcessReceiveQueue
-        /// Public facing interface method to start processing all RPCs in the current inbound frame
+        /// Public facing interface method to start processing all messages in the current inbound frame
         /// </summary>
         public void ProcessReceiveQueue(NetworkUpdateStage currentStage, bool isTesting)
         {
@@ -227,7 +232,7 @@ namespace MLAPI.Messaging
         }
 
         /// <summary>
-        /// Sends all RPC queue items in the current outbound frame
+        /// Sends all message queue items in the current outbound frame
         /// </summary>
         /// <param name="isListening">if flase it will just process through the queue items but attempt to send</param>
         private void MessageQueueSendAndFlush(bool isListening)
@@ -269,7 +274,7 @@ namespace MLAPI.Messaging
                     }
                 }
 
-                //If we processed any RPCs, then advance to the next frame
+                //If we processed any messages, then advance to the next frame
                 if (advanceFrameHistory)
                 {
                     m_MessageQueueContainer.AdvanceFrameHistory(MessageQueueHistoryFrame.QueueFrameType.Outbound);
@@ -293,7 +298,7 @@ namespace MLAPI.Messaging
 
         /// <summary>
         /// SendFrameQueueItem
-        /// Sends the RPC Queue Item to the specified destination
+        /// Sends the Message Queue Item to the specified destination
         /// </summary>
         /// <param name="item">Information on what to send</param>
         private void SendFrameQueueItem(MessageFrameItem item)
@@ -308,7 +313,7 @@ namespace MLAPI.Messaging
                         //For each packet sent, we want to record how much data we have sent
 
                         PerformanceDataManager.Increment(ProfilerConstants.ByteSent, (int)item.StreamSize);
-                        PerformanceDataManager.Increment(ProfilerConstants.RpcSent);
+                        PerformanceDataManager.Increment(ProfilerConstants.MessagesSent);
                         ProfilerStatManager.BytesSent.Record((int)item.StreamSize);
                         ProfilerStatManager.MessagesSent.Record();
                         break;
@@ -324,8 +329,8 @@ namespace MLAPI.Messaging
                             ProfilerStatManager.BytesSent.Record((int)item.StreamSize);
                         }
 
-                        //For each client we send to, we want to record how many RPCs we have sent
-                        PerformanceDataManager.Increment(ProfilerConstants.RpcSent, item.ClientNetworkIds.Length);
+                        //For each client we send to, we want to record how many messages we have sent
+                        PerformanceDataManager.Increment(ProfilerConstants.MessagesSent, item.ClientNetworkIds.Length);
                         ProfilerStatManager.MessagesSent.Record(item.ClientNetworkIds.Length);
 
                         break;

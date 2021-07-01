@@ -103,11 +103,11 @@ namespace TestProject.RuntimeTests
             }
 
             // Set the RPC Batch sending mode
-            server.MessageQueueContainer.EnableBatchedRpcs(useBatching);
+            server.MessageQueueContainer.EnableBatchedMessages(useBatching);
 
             for (int i = 0; i < clients.Length; i++)
             {
-                clients[i].MessageQueueContainer.EnableBatchedRpcs(useBatching);
+                clients[i].MessageQueueContainer.EnableBatchedMessages(useBatching);
             }
 
             // [Client-Side] Wait for a connection to the server 

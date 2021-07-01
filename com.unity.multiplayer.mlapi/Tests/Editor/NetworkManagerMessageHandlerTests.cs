@@ -1,10 +1,12 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using MLAPI.Configuration;
 using MLAPI.Editor;
 using MLAPI.Messaging;
 using MLAPI.Serialization;
+using MLAPI.Serialization.Pooled;
 using MLAPI.Transports;
 using MLAPI.Transports.Tasks;
 using NUnit.Framework;
@@ -36,7 +38,10 @@ namespace MLAPI.EditorTests
             networkManager.NetworkConfig.NetworkTransport = transport;
 
             // Replace the real message handler with a dummy one that just prints a result
-            networkManager.MessageHandler = new DummyMessageHandler();
+            networkManager.MessageHandler = new DummyMessageHandler(networkManager);
+
+            // Have to force the update stage to something valid. It starts at Unset.
+            NetworkUpdateLoop.UpdateStage = NetworkUpdateStage.Update;
 
             using (var inputBuffer = new NetworkBuffer())
             {
@@ -45,222 +50,207 @@ namespace MLAPI.EditorTests
 
                 // Disable batching to make the RPCs come straight through
                 // This has to be done post start
-                networkManager.MessageQueueContainer.EnableBatchedRpcs(false);
+                networkManager.MessageQueueContainer.EnableBatchedMessages(false);
 
                 // Should cause log (server only)
                 LogAssert.Expect(LogType.Log, nameof(MessageHandlerReceivedMessageServerClient) + " " + nameof(DummyMessageHandler.HandleConnectionRequest));
-                using (var messageStream = MessagePacker.WrapMessage(MessageQueueContainer.MessageType.ConnectionRequest, inputBuffer))
+                using (var messageStream = MessagePacker.WrapMessage(MessageQueueContainer.MessageType.ConnectionRequest, inputBuffer, networkManager.MessageQueueContainer.IsUsingBatching()))
                 {
                     networkManager.HandleIncomingData(0, NetworkChannel.Internal, new ArraySegment<byte>(messageStream.GetBuffer(), 0, (int)messageStream.Length), 0);
                 }
 
                 // Should not cause log (client only)
-                using (var messageStream = MessagePacker.WrapMessage(MessageQueueContainer.MessageType.ConnectionApproved, inputBuffer))
+                using (var messageStream = MessagePacker.WrapMessage(MessageQueueContainer.MessageType.ConnectionApproved, inputBuffer, networkManager.MessageQueueContainer.IsUsingBatching()))
                 {
                     networkManager.HandleIncomingData(0, NetworkChannel.Internal, new ArraySegment<byte>(messageStream.GetBuffer(), 0, (int)messageStream.Length), 0);
                 }
 
                 // Should not cause log (client only)
-                using (var messageStream = MessagePacker.WrapMessage(MessageQueueContainer.MessageType.CreateObject, inputBuffer))
+                using (var messageStream = MessagePacker.WrapMessage(MessageQueueContainer.MessageType.CreateObject, inputBuffer, networkManager.MessageQueueContainer.IsUsingBatching()))
                 {
                     networkManager.HandleIncomingData(0, NetworkChannel.Internal, new ArraySegment<byte>(messageStream.GetBuffer(), 0, (int)messageStream.Length), 0);
                 }
 
                 // Should not cause log (client only)
-                using (var messageStream = MessagePacker.WrapMessage(MessageQueueContainer.MessageType.DestroyObject, inputBuffer))
+                using (var messageStream = MessagePacker.WrapMessage(MessageQueueContainer.MessageType.DestroyObject, inputBuffer, networkManager.MessageQueueContainer.IsUsingBatching()))
                 {
                     networkManager.HandleIncomingData(0, NetworkChannel.Internal, new ArraySegment<byte>(messageStream.GetBuffer(), 0, (int)messageStream.Length), 0);
                 }
 
                 // Should not cause log (client only)
-                using (var messageStream = MessagePacker.WrapMessage(MessageQueueContainer.MessageType.SwitchScene, inputBuffer))
+                using (var messageStream = MessagePacker.WrapMessage(MessageQueueContainer.MessageType.SwitchScene, inputBuffer, networkManager.MessageQueueContainer.IsUsingBatching()))
                 {
                     networkManager.HandleIncomingData(0, NetworkChannel.Internal, new ArraySegment<byte>(messageStream.GetBuffer(), 0, (int)messageStream.Length), 0);
                 }
 
                 // Should not cause log (client only)
-                using (var messageStream = MessagePacker.WrapMessage(MessageQueueContainer.MessageType.ChangeOwner, inputBuffer))
+                using (var messageStream = MessagePacker.WrapMessage(MessageQueueContainer.MessageType.ChangeOwner, inputBuffer, networkManager.MessageQueueContainer.IsUsingBatching()))
                 {
                     networkManager.HandleIncomingData(0, NetworkChannel.Internal, new ArraySegment<byte>(messageStream.GetBuffer(), 0, (int)messageStream.Length), 0);
                 }
 
                 // Should not cause log (client only)
-                using (var messageStream = MessagePacker.WrapMessage(MessageQueueContainer.MessageType.CreateObjects, inputBuffer))
+                using (var messageStream = MessagePacker.WrapMessage(MessageQueueContainer.MessageType.CreateObjects, inputBuffer, networkManager.MessageQueueContainer.IsUsingBatching()))
                 {
                     networkManager.HandleIncomingData(0, NetworkChannel.Internal, new ArraySegment<byte>(messageStream.GetBuffer(), 0, (int)messageStream.Length), 0);
                 }
 
                 // Should not cause log (client only)
-                using (var messageStream = MessagePacker.WrapMessage(MessageQueueContainer.MessageType.DestroyObjects, inputBuffer))
+                using (var messageStream = MessagePacker.WrapMessage(MessageQueueContainer.MessageType.DestroyObjects, inputBuffer, networkManager.MessageQueueContainer.IsUsingBatching()))
                 {
                     networkManager.HandleIncomingData(0, NetworkChannel.Internal, new ArraySegment<byte>(messageStream.GetBuffer(), 0, (int)messageStream.Length), 0);
                 }
 
                 // Should not cause log (client only)
-                using (var messageStream = MessagePacker.WrapMessage(MessageQueueContainer.MessageType.TimeSync, inputBuffer))
+                using (var messageStream = MessagePacker.WrapMessage(MessageQueueContainer.MessageType.TimeSync, inputBuffer, networkManager.MessageQueueContainer.IsUsingBatching()))
                 {
                     networkManager.HandleIncomingData(0, NetworkChannel.Internal, new ArraySegment<byte>(messageStream.GetBuffer(), 0, (int)messageStream.Length), 0);
                 }
 
                 // Should cause log (server and client)
                 LogAssert.Expect(LogType.Log, nameof(MessageHandlerReceivedMessageServerClient) + " " + nameof(DummyMessageHandler.HandleNetworkVariableDelta));
-                using (var messageStream = MessagePacker.WrapMessage(MessageQueueContainer.MessageType.NetworkVariableDelta, inputBuffer))
+                using (var messageStream = MessagePacker.WrapMessage(MessageQueueContainer.MessageType.NetworkVariableDelta, inputBuffer, networkManager.MessageQueueContainer.IsUsingBatching()))
                 {
                     networkManager.HandleIncomingData(0, NetworkChannel.Internal, new ArraySegment<byte>(messageStream.GetBuffer(), 0, (int)messageStream.Length), 0);
                 }
 
                 // Should cause log (server and client)
                 LogAssert.Expect(LogType.Log, nameof(MessageHandlerReceivedMessageServerClient) + " " + nameof(DummyMessageHandler.HandleUnnamedMessage));
-                using (var messageStream = MessagePacker.WrapMessage(MessageQueueContainer.MessageType.UnnamedMessage, inputBuffer))
+                using (var messageStream = MessagePacker.WrapMessage(MessageQueueContainer.MessageType.UnnamedMessage, inputBuffer, networkManager.MessageQueueContainer.IsUsingBatching()))
                 {
                     networkManager.HandleIncomingData(0, NetworkChannel.Internal, new ArraySegment<byte>(messageStream.GetBuffer(), 0, (int)messageStream.Length), 0);
                 }
 
                 // Should cause log (server and client)
                 LogAssert.Expect(LogType.Log, nameof(MessageHandlerReceivedMessageServerClient) + " " + nameof(DummyMessageHandler.HandleNamedMessage));
-                using (var messageStream = MessagePacker.WrapMessage(MessageQueueContainer.MessageType.NamedMessage, inputBuffer))
+                using (var messageStream = MessagePacker.WrapMessage(MessageQueueContainer.MessageType.NamedMessage, inputBuffer, networkManager.MessageQueueContainer.IsUsingBatching()))
                 {
                     networkManager.HandleIncomingData(0, NetworkChannel.Internal, new ArraySegment<byte>(messageStream.GetBuffer(), 0, (int)messageStream.Length), 0);
                 }
 
                 // Should cause log (server only)
                 LogAssert.Expect(LogType.Log, nameof(MessageHandlerReceivedMessageServerClient) + " " + nameof(DummyMessageHandler.HandleClientSwitchSceneCompleted));
-                using (var messageStream = MessagePacker.WrapMessage(MessageQueueContainer.MessageType.ClientSwitchSceneCompleted, inputBuffer))
+                using (var messageStream = MessagePacker.WrapMessage(MessageQueueContainer.MessageType.ClientSwitchSceneCompleted, inputBuffer, networkManager.MessageQueueContainer.IsUsingBatching()))
                 {
                     networkManager.HandleIncomingData(0, NetworkChannel.Internal, new ArraySegment<byte>(messageStream.GetBuffer(), 0, (int)messageStream.Length), 0);
                 }
 
                 // Should cause log (server only)
                 LogAssert.Expect(LogType.Log, nameof(MessageHandlerReceivedMessageServerClient) + " " + nameof(DummyMessageHandler.HandleNetworkLog));
-                using (var messageStream = MessagePacker.WrapMessage(MessageQueueContainer.MessageType.ServerLog, inputBuffer))
+                using (var messageStream = MessagePacker.WrapMessage(MessageQueueContainer.MessageType.ServerLog, inputBuffer, networkManager.MessageQueueContainer.IsUsingBatching()))
                 {
                     networkManager.HandleIncomingData(0, NetworkChannel.Internal, new ArraySegment<byte>(messageStream.GetBuffer(), 0, (int)messageStream.Length), 0);
                 }
-
-                // Should cause log (server only)
-                LogAssert.Expect(LogType.Log, nameof(MessageHandlerReceivedMessageServerClient) + " " + nameof(DummyMessageHandler.MessageReceiveQueueItem));
-                networkManager.HandleIncomingData(0, NetworkChannel.Internal, new ArraySegment<byte>(inputBuffer.GetBuffer(), 0, (int)inputBuffer.Length), 0);
-
-                    // Should not cause log (client only)
-                networkManager.HandleIncomingData(0, NetworkChannel.Internal, new ArraySegment<byte>(inputBuffer.GetBuffer(), 0, (int)inputBuffer.Length), 0);
-
 
                 // Stop server to trigger full shutdown
                 networkManager.StopServer();
 
                 // Replace the real message handler with a dummy one that just prints a result
-                networkManager.MessageHandler = new DummyMessageHandler();
+                networkManager.MessageHandler = new DummyMessageHandler(networkManager);
 
                 // Start client since pre-message-handler passes IsServer & IsClient checks
                 networkManager.StartClient();
 
                 // Disable batching to make the RPCs come straight through
                 // This has to be done post start (and post restart since the queue container is reset)
-                networkManager.MessageQueueContainer.EnableBatchedRpcs(false);
+                networkManager.MessageQueueContainer.EnableBatchedMessages(false);
 
                 // Should not cause log (server only)
-                using (var messageStream = MessagePacker.WrapMessage(MessageQueueContainer.MessageType.ConnectionRequest, inputBuffer))
+                using (var messageStream = MessagePacker.WrapMessage(MessageQueueContainer.MessageType.ConnectionRequest, inputBuffer, networkManager.MessageQueueContainer.IsUsingBatching()))
                 {
                     networkManager.HandleIncomingData(0, NetworkChannel.Internal, new ArraySegment<byte>(messageStream.GetBuffer(), 0, (int)messageStream.Length), 0);
                 }
 
                 // Should cause log (client only)
                 LogAssert.Expect(LogType.Log, nameof(MessageHandlerReceivedMessageServerClient) + " " + nameof(DummyMessageHandler.HandleConnectionApproved));
-                using (var messageStream = MessagePacker.WrapMessage(MessageQueueContainer.MessageType.ConnectionApproved, inputBuffer))
+                using (var messageStream = MessagePacker.WrapMessage(MessageQueueContainer.MessageType.ConnectionApproved, inputBuffer, networkManager.MessageQueueContainer.IsUsingBatching()))
                 {
                     networkManager.HandleIncomingData(0, NetworkChannel.Internal, new ArraySegment<byte>(messageStream.GetBuffer(), 0, (int)messageStream.Length), 0);
                 }
 
                 // Should cause log (client only)
                 LogAssert.Expect(LogType.Log, nameof(MessageHandlerReceivedMessageServerClient) + " " + nameof(DummyMessageHandler.HandleAddObject));
-                using (var messageStream = MessagePacker.WrapMessage(MessageQueueContainer.MessageType.CreateObject, inputBuffer))
+                using (var messageStream = MessagePacker.WrapMessage(MessageQueueContainer.MessageType.CreateObject, inputBuffer, networkManager.MessageQueueContainer.IsUsingBatching()))
                 {
                     networkManager.HandleIncomingData(0, NetworkChannel.Internal, new ArraySegment<byte>(messageStream.GetBuffer(), 0, (int)messageStream.Length), 0);
                 }
 
                 // Should cause log (client only)
                 LogAssert.Expect(LogType.Log, nameof(MessageHandlerReceivedMessageServerClient) + " " + nameof(DummyMessageHandler.HandleDestroyObject));
-                using (var messageStream = MessagePacker.WrapMessage(MessageQueueContainer.MessageType.DestroyObject, inputBuffer))
+                using (var messageStream = MessagePacker.WrapMessage(MessageQueueContainer.MessageType.DestroyObject, inputBuffer, networkManager.MessageQueueContainer.IsUsingBatching()))
                 {
                     networkManager.HandleIncomingData(0, NetworkChannel.Internal, new ArraySegment<byte>(messageStream.GetBuffer(), 0, (int)messageStream.Length), 0);
                 }
 
                 // Should cause log (client only)
                 LogAssert.Expect(LogType.Log, nameof(MessageHandlerReceivedMessageServerClient) + " " + nameof(DummyMessageHandler.HandleSwitchScene));
-                using (var messageStream = MessagePacker.WrapMessage(MessageQueueContainer.MessageType.SwitchScene, inputBuffer))
+                using (var messageStream = MessagePacker.WrapMessage(MessageQueueContainer.MessageType.SwitchScene, inputBuffer, networkManager.MessageQueueContainer.IsUsingBatching()))
                 {
                     networkManager.HandleIncomingData(0, NetworkChannel.Internal, new ArraySegment<byte>(messageStream.GetBuffer(), 0, (int)messageStream.Length), 0);
                 }
 
                 // Should cause log (client only)
                 LogAssert.Expect(LogType.Log, nameof(MessageHandlerReceivedMessageServerClient) + " " + nameof(DummyMessageHandler.HandleChangeOwner));
-                using (var messageStream = MessagePacker.WrapMessage(MessageQueueContainer.MessageType.ChangeOwner, inputBuffer))
+                using (var messageStream = MessagePacker.WrapMessage(MessageQueueContainer.MessageType.ChangeOwner, inputBuffer, networkManager.MessageQueueContainer.IsUsingBatching()))
                 {
                     networkManager.HandleIncomingData(0, NetworkChannel.Internal, new ArraySegment<byte>(messageStream.GetBuffer(), 0, (int)messageStream.Length), 0);
                 }
 
                 // Should cause log (client only)
                 LogAssert.Expect(LogType.Log, nameof(MessageHandlerReceivedMessageServerClient) + " " + nameof(DummyMessageHandler.HandleAddObjects));
-                using (var messageStream = MessagePacker.WrapMessage(MessageQueueContainer.MessageType.CreateObjects, inputBuffer))
+                using (var messageStream = MessagePacker.WrapMessage(MessageQueueContainer.MessageType.CreateObjects, inputBuffer, networkManager.MessageQueueContainer.IsUsingBatching()))
                 {
                     networkManager.HandleIncomingData(0, NetworkChannel.Internal, new ArraySegment<byte>(messageStream.GetBuffer(), 0, (int)messageStream.Length), 0);
                 }
 
                 // Should cause log (client only)
                 LogAssert.Expect(LogType.Log, nameof(MessageHandlerReceivedMessageServerClient) + " " + nameof(DummyMessageHandler.HandleDestroyObjects));
-                using (var messageStream = MessagePacker.WrapMessage(MessageQueueContainer.MessageType.DestroyObjects, inputBuffer))
+                using (var messageStream = MessagePacker.WrapMessage(MessageQueueContainer.MessageType.DestroyObjects, inputBuffer, networkManager.MessageQueueContainer.IsUsingBatching()))
                 {
                     networkManager.HandleIncomingData(0, NetworkChannel.Internal, new ArraySegment<byte>(messageStream.GetBuffer(), 0, (int)messageStream.Length), 0);
                 }
 
                 // Should cause log (client only)
                 LogAssert.Expect(LogType.Log, nameof(MessageHandlerReceivedMessageServerClient) + " " + nameof(DummyMessageHandler.HandleTimeSync));
-                using (var messageStream = MessagePacker.WrapMessage(MessageQueueContainer.MessageType.TimeSync, inputBuffer))
+                using (var messageStream = MessagePacker.WrapMessage(MessageQueueContainer.MessageType.TimeSync, inputBuffer, networkManager.MessageQueueContainer.IsUsingBatching()))
                 {
                     networkManager.HandleIncomingData(0, NetworkChannel.Internal, new ArraySegment<byte>(messageStream.GetBuffer(), 0, (int)messageStream.Length), 0);
                 }
 
                 // Should cause log (server and client)
                 LogAssert.Expect(LogType.Log, nameof(MessageHandlerReceivedMessageServerClient) + " " + nameof(DummyMessageHandler.HandleNetworkVariableDelta));
-                using (var messageStream = MessagePacker.WrapMessage(MessageQueueContainer.MessageType.NetworkVariableDelta, inputBuffer))
+                using (var messageStream = MessagePacker.WrapMessage(MessageQueueContainer.MessageType.NetworkVariableDelta, inputBuffer, networkManager.MessageQueueContainer.IsUsingBatching()))
                 {
                     networkManager.HandleIncomingData(0, NetworkChannel.Internal, new ArraySegment<byte>(messageStream.GetBuffer(), 0, (int)messageStream.Length), 0);
                 }
 
                 // Should cause log (server and client)
                 LogAssert.Expect(LogType.Log, nameof(MessageHandlerReceivedMessageServerClient) + " " + nameof(DummyMessageHandler.HandleUnnamedMessage));
-                using (var messageStream = MessagePacker.WrapMessage(MessageQueueContainer.MessageType.UnnamedMessage, inputBuffer))
+                using (var messageStream = MessagePacker.WrapMessage(MessageQueueContainer.MessageType.UnnamedMessage, inputBuffer, networkManager.MessageQueueContainer.IsUsingBatching()))
                 {
                     networkManager.HandleIncomingData(0, NetworkChannel.Internal, new ArraySegment<byte>(messageStream.GetBuffer(), 0, (int)messageStream.Length), 0);
                 }
 
                 // Should cause log (server and client)
                 LogAssert.Expect(LogType.Log, nameof(MessageHandlerReceivedMessageServerClient) + " " + nameof(DummyMessageHandler.HandleNamedMessage));
-                using (var messageStream = MessagePacker.WrapMessage(MessageQueueContainer.MessageType.NamedMessage, inputBuffer))
+                using (var messageStream = MessagePacker.WrapMessage(MessageQueueContainer.MessageType.NamedMessage, inputBuffer, networkManager.MessageQueueContainer.IsUsingBatching()))
                 {
                     networkManager.HandleIncomingData(0, NetworkChannel.Internal, new ArraySegment<byte>(messageStream.GetBuffer(), 0, (int)messageStream.Length), 0);
                 }
 
                 // Should not cause log (server only)
-                using (var messageStream = MessagePacker.WrapMessage(MessageQueueContainer.MessageType.ClientSwitchSceneCompleted, inputBuffer))
+                using (var messageStream = MessagePacker.WrapMessage(MessageQueueContainer.MessageType.ClientSwitchSceneCompleted, inputBuffer, networkManager.MessageQueueContainer.IsUsingBatching()))
                 {
                     networkManager.HandleIncomingData(0, NetworkChannel.Internal, new ArraySegment<byte>(messageStream.GetBuffer(), 0, (int)messageStream.Length), 0);
                 }
 
                 // Should not cause log (server only)
-                using (var messageStream = MessagePacker.WrapMessage(MessageQueueContainer.MessageType.ServerLog, inputBuffer))
+                using (var messageStream = MessagePacker.WrapMessage(MessageQueueContainer.MessageType.ServerLog, inputBuffer, networkManager.MessageQueueContainer.IsUsingBatching()))
                 {
                     networkManager.HandleIncomingData(0, NetworkChannel.Internal, new ArraySegment<byte>(messageStream.GetBuffer(), 0, (int)messageStream.Length), 0);
                 }
 
-                // Should not cause log (server only)
-                networkManager.HandleIncomingData(0, NetworkChannel.Internal, new ArraySegment<byte>(inputBuffer.GetBuffer(), 0, (int)inputBuffer.Length), 0);
-
-                    // Should cause log (client only)
-                LogAssert.Expect(LogType.Log, nameof(MessageHandlerReceivedMessageServerClient) + " " + nameof(DummyMessageHandler.MessageReceiveQueueItem));
-                networkManager.HandleIncomingData(0, NetworkChannel.Internal, new ArraySegment<byte>(inputBuffer.GetBuffer(), 0, (int)inputBuffer.Length), 0);
-
-                    // Full cleanup
+                // Full cleanup
                 networkManager.StopClient();
             }
 
@@ -275,6 +265,11 @@ namespace MLAPI.EditorTests
     internal class DummyMessageHandler : IInternalMessageHandler
     {
         public NetworkManager NetworkManager { get; }
+
+        public DummyMessageHandler(NetworkManager networkManager)
+        {
+            NetworkManager = networkManager;
+        }
 
         public void HandleConnectionRequest(ulong clientId, Stream stream) => VerifyCalled(nameof(HandleConnectionRequest));
 
@@ -298,10 +293,14 @@ namespace MLAPI.EditorTests
 
         public void HandleNetworkVariableDelta(ulong clientId, Stream stream) => VerifyCalled(nameof(HandleNetworkVariableDelta));
 
-        public void MessageReceiveQueueItem(ulong clientId, Stream stream, float receiveTime, MessageQueueContainer.MessageType messageType,
-            NetworkChannel receiveChannel) => VerifyCalled(nameof(MessageReceiveQueueItem));
-
-        public void MessageReceiveQueueItem(ulong clientId, Stream stream, float receiveTime, MessageQueueContainer.MessageType messageType) => VerifyCalled(nameof(MessageReceiveQueueItem));
+        public void MessageReceiveQueueItem(ulong clientId, Stream stream, float receiveTime,
+            MessageQueueContainer.MessageType messageType,
+            NetworkChannel receiveChannel)
+        {
+            var messageQueueContainer = NetworkManager.MessageQueueContainer;
+            messageQueueContainer.AddQueueItemToInboundFrame(messageType, receiveTime, clientId, (NetworkBuffer)stream, receiveChannel);
+            messageQueueContainer.ProcessAndFlushMessageQueue(MessageQueueContainer.MessageQueueProcessingTypes.Receive, NetworkUpdateLoop.UpdateStage);
+        }
 
         public void HandleUnnamedMessage(ulong clientId, Stream stream) => VerifyCalled(nameof(HandleUnnamedMessage));
 

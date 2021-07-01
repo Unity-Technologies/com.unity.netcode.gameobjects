@@ -6,13 +6,12 @@ namespace MLAPI.EditorTests
 {
     internal static class MessagePacker
     {
-        internal static NetworkBuffer WrapMessage(MessageQueueContainer.MessageType messageType, NetworkBuffer messageBody)
+        internal static NetworkBuffer WrapMessage(MessageQueueContainer.MessageType messageType, NetworkBuffer messageBody, bool useBatching)
         {
             var outBuffer = PooledNetworkBuffer.Get();
             var outStream = PooledNetworkWriter.Get(outBuffer);
             {
-
-                if (NetworkManager.Singleton.MessageQueueContainer.IsUsingBatching())
+                if (useBatching)
                 {
                     // write the amounts of bytes that are coming up
                     MessageBatcher.PushLength((int)messageBody.Length, ref outStream);
@@ -21,6 +20,7 @@ namespace MLAPI.EditorTests
                     outStream.WriteBytes(messageBody.GetBuffer(), messageBody.Length);
                 }
                 outStream.WriteByte((byte)messageType);
+                outStream.WriteByte((byte)NetworkUpdateLoop.UpdateStage);
             }
             outStream.Dispose();
             return outBuffer;

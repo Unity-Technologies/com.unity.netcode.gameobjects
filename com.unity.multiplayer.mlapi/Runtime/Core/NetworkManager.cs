@@ -625,7 +625,7 @@ namespace MLAPI
             var disconnectedIds = new HashSet<ulong>();
             //Don't know if I have to disconnect the clients. I'm assuming the NetworkTransport does all the cleaning on shtudown. But this way the clients get a disconnect message from server (so long it does't get lost)
 
-            // make sure all RPCs are flushed before transport disconnect clients
+            // make sure all messages are flushed before transport disconnect clients
             if (MessageQueueContainer != null)
             {
                 MessageQueueContainer.ProcessAndFlushMessageQueue(
@@ -862,6 +862,8 @@ namespace MLAPI
             {
                 CustomMessagingManager = null;
             }
+
+            m_MessageBatcher.Shutdown();
 
             //The Transport is set during Init time, thus it is possible for the Transport to be null
             NetworkConfig?.NetworkTransport?.Shutdown();
@@ -1179,7 +1181,7 @@ namespace MLAPI
                 {
                     m_MessageBatcher.ReceiveItems(messageStream, ReceiveCallback, clientId, receiveTime, networkChannel);
                     ProfilerStatManager.MessageBatchesRcvd.Record();
-                    PerformanceDataManager.Increment(ProfilerConstants.RpcBatchesReceived);
+                    PerformanceDataManager.Increment(ProfilerConstants.MessageBatchesReceived);
                 }
                 else
                 {

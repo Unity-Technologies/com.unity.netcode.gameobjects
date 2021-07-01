@@ -183,7 +183,7 @@ namespace MLAPI
 
                     //Switch to the outbound queue
                     writer = messageQueueContainer.BeginAddQueueItemToFrame(MessageQueueContainer.MessageType.ClientRpc, Time.realtimeSinceStartup, transportChannel, NetworkObjectId,
-                        clientIds, MessageQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
+                        clientIds.Where((id) => id != NetworkManager.ServerClientId).ToArray(), MessageQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
                     writer.WriteByte((byte)MessageQueueContainer.MessageType.ClientRpc);
                     writer.WriteByte((byte)clientRpcParams.Send.UpdateStage); // NetworkUpdateStage
                 }
@@ -217,6 +217,11 @@ namespace MLAPI
             if (serializer == null)
             {
                 return;
+            }
+
+            if (clientRpcParams.Send.UpdateStage == NetworkUpdateStage.Unset)
+            {
+                clientRpcParams.Send.UpdateStage = NetworkUpdateLoop.UpdateStage;
             }
 
             var messageQueueContainer = NetworkManager.MessageQueueContainer;

@@ -30,6 +30,16 @@ namespace MLAPI.Messaging
         // Stores the stream of batched RPC to send to each client, by ClientId
         private readonly Dictionary<ulong, SendStream> m_SendDict = new Dictionary<ulong, SendStream>();
 
+        public void Shutdown()
+        {
+            foreach (var kvp in m_SendDict)
+            {
+                kvp.Value.Writer.Dispose();
+                kvp.Value.Buffer.Dispose();
+            }
+            m_SendDict.Clear();
+        }
+
         // Used to store targets, internally
         private ulong[] m_TargetList = new ulong[0];
 
@@ -139,7 +149,7 @@ namespace MLAPI.Messaging
                 ProfilerStatManager.BytesSent.Record(item.MessageData.Count);
                 ProfilerStatManager.MessagesSent.Record();
                 PerformanceDataManager.Increment(ProfilerConstants.ByteSent, item.MessageData.Count);
-                PerformanceDataManager.Increment(ProfilerConstants.RpcSent);
+                PerformanceDataManager.Increment(ProfilerConstants.MessagesSent);
             }
         }
 
@@ -149,7 +159,7 @@ namespace MLAPI.Messaging
 
         /// <summary>
         /// SendItems
-        /// Send any batch of RPC that are of length above threshold
+        /// Send any batch of messages that are of length above threshold
         /// </summary>
         /// <param name="thresholdBytes"> the threshold in bytes</param>
         /// <param name="sendCallback"> the function to call for sending the batch</param>
@@ -170,7 +180,7 @@ namespace MLAPI.Messaging
                         entry.Value.Buffer.Position = 0;
                         entry.Value.IsEmpty = true;
                         ProfilerStatManager.MessageBatchesSent.Record();
-                        PerformanceDataManager.Increment(ProfilerConstants.RpcBatchesSent);
+                        PerformanceDataManager.Increment(ProfilerConstants.MessageBatchesSent);
                     }
                 }
             }
@@ -178,9 +188,9 @@ namespace MLAPI.Messaging
 
         /// <summary>
         /// ReceiveItems
-        /// Process the messageStream and call the callback with individual RPC messages
+        /// Process the messageStream and call the callback with individual messages
         /// </summary>
-        /// <param name="messageBuffer"> the messageStream containing the batched RPC</param>
+        /// <param name="messageBuffer"> the messageStream containing the batched messages</param>
         /// <param name="receiveCallback"> the callback to call has type int f(message, type, clientId, time) </param>
         /// <param name="messageType"> the message type to pass back to callback</param>
         /// <param name="clientId"> the clientId to pass back to callback</param>
@@ -208,8 +218,8 @@ namespace MLAPI.Messaging
                     MessageQueueContainer.MessageType messageType = (MessageQueueContainer.MessageType) copy.ReadByte();
                     receiveCallback(copy, messageType, clientId, receiveTime, receiveChannel);
 
-                    // seek over the RPC
-                    // RPCReceiveQueueItem peeks at content, it doesn't advance
+                    // seek over the message
+                    // MessageReceiveQueueItem peeks at content, it doesn't advance
                     messageBuffer.Seek(messageSize, SeekOrigin.Current);
                 } while (messageBuffer.Position < messageBuffer.Length);
             }

@@ -445,7 +445,7 @@ namespace MLAPI.Messaging
             }
 
             ProfilerStatManager.MessagesRcvd.Record();
-            PerformanceDataManager.Increment(ProfilerConstants.RpcReceived);
+            PerformanceDataManager.Increment(ProfilerConstants.MessagesReceived);
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             switch (messageType)
