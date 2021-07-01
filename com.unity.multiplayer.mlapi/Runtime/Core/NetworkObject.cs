@@ -20,7 +20,9 @@ namespace MLAPI
     [DisallowMultipleComponent]
     public sealed class NetworkObject : MonoBehaviour
     {
-        [HideInInspector] [SerializeField] internal uint GlobalObjectIdHash;
+        [HideInInspector]
+        [SerializeField]
+        internal uint GlobalObjectIdHash;
 
 #if UNITY_EDITOR
         // HEAD: DO NOT USE! TEST ONLY TEMP IMPL, WILL BE REMOVED
@@ -288,7 +290,7 @@ namespace MLAPI
             using (var buffer = PooledNetworkBuffer.Get())
             using (var writer = PooledNetworkWriter.Get(buffer))
             {
-                writer.WriteUInt16Packed((ushort) networkObjects.Count);
+                writer.WriteUInt16Packed((ushort)networkObjects.Count);
 
                 for (int i = 0; i < networkObjects.Count; i++)
                 {
@@ -390,7 +392,7 @@ namespace MLAPI
             using (var buffer = PooledNetworkBuffer.Get())
             using (var writer = PooledNetworkWriter.Get(buffer))
             {
-                writer.WriteUInt16Packed((ushort) networkObjects.Count);
+                writer.WriteUInt16Packed((ushort)networkObjects.Count);
 
                 var networkObjectIdToName = new Dictionary<ulong, string>();
 
@@ -435,7 +437,7 @@ namespace MLAPI
                 spawnPayload.Position = 0;
             }
 
-            NetworkManager.SpawnManager.SpawnNetworkObjectLocally(this, NetworkManager.SpawnManager.GetNetworkObjectId(), false, playerObject, ownerClientId, spawnPayload, spawnPayload != null, spawnPayload == null ? 0 : (int) spawnPayload.Length, false, destroyWithScene);
+            NetworkManager.SpawnManager.SpawnNetworkObjectLocally(this, NetworkManager.SpawnManager.GetNetworkObjectId(), false, playerObject, ownerClientId, spawnPayload, spawnPayload != null, spawnPayload == null ? 0 : (int)spawnPayload.Length, false, destroyWithScene);
 
             for (int i = 0; i < NetworkManager.ConnectedClientsList.Count; i++)
             {
@@ -746,7 +748,6 @@ namespace MLAPI
                         NetworkLog.LogWarning($"{nameof(NetworkObject)} ({name}) cannot find its parent, added to {nameof(OrphanChildren)} set");
                     }
                 }
-
                 return false;
             }
 
@@ -769,7 +770,6 @@ namespace MLAPI
                     objectsToRemove.Add(orphanObject);
                 }
             }
-
             foreach (var networkObject in objectsToRemove)
             {
                 OrphanChildren.Remove(networkObject);
@@ -976,7 +976,7 @@ namespace MLAPI
                     buffer.Position = positionBeforeNetworkVariableData - sizeof(uint);
 
                     // Now write the actual data size written into our unpacked UInt32 placeholder position
-                    writer.WriteUInt32((uint) (networkVariableDataSize));
+                    writer.WriteUInt32((uint)(networkVariableDataSize));
 
                     // Finally, revert the buffer position back to the end of the network variable data written
                     buffer.Position = endOfNetworkVariableData;
@@ -1060,7 +1060,7 @@ namespace MLAPI
                 while (bufferQueue.Count > 0)
                 {
                     Messaging.Buffering.BufferManager.BufferedMessage message = bufferQueue.Dequeue();
-                    networkManager.HandleIncomingData(message.SenderClientId, message.NetworkChannel, new ArraySegment<byte>(message.NetworkBuffer.GetBuffer(), (int) message.NetworkBuffer.Position, (int) message.NetworkBuffer.Length), message.ReceiveTime, false);
+                    networkManager.HandleIncomingData(message.SenderClientId, message.NetworkChannel, new ArraySegment<byte>(message.NetworkBuffer.GetBuffer(), (int)message.NetworkBuffer.Position, (int)message.NetworkBuffer.Length), message.ReceiveTime, false);
                     Messaging.Buffering.BufferManager.RecycleConsumedBufferedMessage(message);
                 }
             }
