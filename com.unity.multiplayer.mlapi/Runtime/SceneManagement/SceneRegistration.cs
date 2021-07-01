@@ -472,21 +472,23 @@ namespace MLAPI.SceneManagement
             IsCurrentlyOpened = true;
             ValidateSceneSetupToSceneAssetTable();
             var currentSceneSetup = EditorSceneManager.GetSceneManagerSetup();
-
-            var sceneEntryPath = AssetDatabase.GetAssetPath(Scene);
-            foreach (var sceneSetup in m_SavedSceneSetup)
+            if (Scene != null)
             {
-                if (sceneEntryPath != sceneSetup.path)
+                var sceneEntryPath = AssetDatabase.GetAssetPath(Scene);
+                foreach (var sceneSetup in m_SavedSceneSetup)
                 {
-                    if (!currentSceneSetup.Contains(sceneSetup))
+                    if (sceneEntryPath != sceneSetup.path)
                     {
-                        if(sceneSetup.isLoaded)
+                        if (!currentSceneSetup.Contains(sceneSetup))
                         {
-                            EditorSceneManager.OpenScene(sceneSetup.path, OpenSceneMode.Additive);
-                        }
-                        else
-                        {
-                            EditorSceneManager.OpenScene(sceneSetup.path, OpenSceneMode.AdditiveWithoutLoading);
+                            if (sceneSetup.isLoaded)
+                            {
+                                EditorSceneManager.OpenScene(sceneSetup.path, OpenSceneMode.Additive);
+                            }
+                            else
+                            {
+                                EditorSceneManager.OpenScene(sceneSetup.path, OpenSceneMode.AdditiveWithoutLoading);
+                            }
                         }
                     }
                 }

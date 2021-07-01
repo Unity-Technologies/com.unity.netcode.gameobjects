@@ -18,10 +18,10 @@ EditorBuildSettings:
     path: Assets/Samples/SceneRegistration/MLAPIBootStrap.unity
     guid: e729f848287dcb94c99ff859aefc8511
   - enabled: 1
-    path: Assets/Samples/SceneRegistration/MLAPIBootStrap.unity
-    guid: e729f848287dcb94c99ff859aefc8511
-  - enabled: 1
     path: Assets/Samples/SceneRegistration/SceneLevel-1.unity
+    guid: 228aa7771c79e6341a8fa9bc684c5766
+  - enabled: 1
+    path: Assets/Samples/SceneRegistration/SceneLevel-1A.unity
     guid: 228aa7771c79e6341a8fa9bc684c5766
   - enabled: 1
     path: Assets/Samples/SceneRegistration/SceneLevel-2.unity
@@ -32,9 +32,6 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Samples/SceneRegistration/SceneLevel-4.unity
     guid: 91c53cf6ac2a36447889e211d81d1e23
-  - enabled: 1
-    path: Assets/Samples/SceneRegistration/MLAPIBootStrap.unity
-    guid: e729f848287dcb94c99ff859aefc8511
   - enabled: 1
     path: Assets/Scenes/SampleScene.unity
     guid: 9fc0d4010bbf28b4594072e72b8655ab

@@ -187,10 +187,8 @@ MonoBehaviour:
     SceneRegistration: {fileID: 11400000, guid: ea4a0987e5ce32244af3b8e7699fc223,
       type: 2}
     RegisteredScenes:
-    - TestScene
-    - AdditiveScene 1
     - MLAPIBootStrap
-    - MLAPIBootStrap_A
+    - MLAPIBootStrap
     AllowRuntimeSceneChanges: 0
     PlayerPrefab: {fileID: 0}
     NetworkPrefabs: []

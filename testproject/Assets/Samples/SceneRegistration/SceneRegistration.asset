@@ -15,31 +15,19 @@ MonoBehaviour:
   SceneRegistrations:
   - IncludeInBuild: 1
     Scene: {fileID: 102900000, guid: e729f848287dcb94c99ff859aefc8511, type: 3}
-    SceneEntryName: TestScene
+    SceneEntryName: MLAPIBootStrap
     AdditiveSceneGroup: {fileID: 0}
     Mode: 0
     m_SavedSceneSetup:
-    - m_Path: Assets/Samples/SceneRegistration/TestScene.unity
+    - m_Path: Assets/Samples/SceneRegistration/MLAPIBootStrap.unity
       m_IsLoaded: 1
       m_IsActive: 1
-      m_IsSubScene: 0
-    - m_Path: Assets/Samples/SceneRegistration/AdditiveScenes/AdditiveScene 1.unity
-      m_IsLoaded: 1
-      m_IsActive: 0
-      m_IsSubScene: 0
-    - m_Path: Assets/Samples/SceneRegistration/AdditiveScenes/AdditiveScene 2.unity
-      m_IsLoaded: 1
-      m_IsActive: 0
-      m_IsSubScene: 0
-    - m_Path: Assets/Samples/SceneRegistration/AdditiveScenes/AdditiveScene 3.unity
-      m_IsLoaded: 1
-      m_IsActive: 0
       m_IsSubScene: 0
     IsNetworkManagerScene: 1
     KnownAdditiveSceneGroup: {fileID: 0}
   - IncludeInBuild: 1
     Scene: {fileID: 102900000, guid: 228aa7771c79e6341a8fa9bc684c5766, type: 3}
-    SceneEntryName: SceneLevel-1
+    SceneEntryName: SceneLevel-1A
     AdditiveSceneGroup: {fileID: 0}
     Mode: 0
     m_SavedSceneSetup:
@@ -51,7 +39,11 @@ MonoBehaviour:
       m_IsLoaded: 1
       m_IsActive: 0
       m_IsSubScene: 0
-    - m_Path: Assets/Samples/SceneRegistration/AdditiveScenes/AdditiveScene 2.unity
+    - m_Path: Assets/Samples/SceneRegistration/AdditiveScenes/AdditiveScene 4.unity
+      m_IsLoaded: 0
+      m_IsActive: 0
+      m_IsSubScene: 0
+    - m_Path: Assets/Samples/SceneRegistration/AdditiveScenes/AdditiveScene 5.unity
       m_IsLoaded: 1
       m_IsActive: 0
       m_IsSubScene: 0
@@ -67,7 +59,11 @@ MonoBehaviour:
       m_IsLoaded: 1
       m_IsActive: 1
       m_IsSubScene: 0
-    - m_Path: Assets/Samples/SceneRegistration/AdditiveScenes/AdditiveScene 4.unity
+    - m_Path: Assets/Samples/SceneRegistration/AdditiveScenes/AdditiveScene 1.unity
+      m_IsLoaded: 1
+      m_IsActive: 0
+      m_IsSubScene: 0
+    - m_Path: Assets/Samples/SceneRegistration/AdditiveScenes/AdditiveScene 3.unity
       m_IsLoaded: 1
       m_IsActive: 0
       m_IsSubScene: 0
@@ -87,6 +83,14 @@ MonoBehaviour:
       m_IsLoaded: 1
       m_IsActive: 1
       m_IsSubScene: 0
+    - m_Path: Assets/Samples/SceneRegistration/AdditiveScenes/AdditiveScene 2.unity
+      m_IsLoaded: 1
+      m_IsActive: 0
+      m_IsSubScene: 0
+    - m_Path: Assets/Samples/SceneRegistration/AdditiveScenes/AdditiveScene 4.unity
+      m_IsLoaded: 1
+      m_IsActive: 0
+      m_IsSubScene: 0
     IsNetworkManagerScene: 0
     KnownAdditiveSceneGroup: {fileID: 0}
   - IncludeInBuild: 1
@@ -94,14 +98,30 @@ MonoBehaviour:
     SceneEntryName: SceneLevel-4
     AdditiveSceneGroup: {fileID: 0}
     Mode: 0
-    m_SavedSceneSetup: []
+    m_SavedSceneSetup:
+    - m_Path: Assets/Samples/SceneRegistration/SceneLevel-4.unity
+      m_IsLoaded: 1
+      m_IsActive: 1
+      m_IsSubScene: 0
+    - m_Path: Assets/Samples/SceneRegistration/AdditiveScenes/AdditiveScene 5.unity
+      m_IsLoaded: 1
+      m_IsActive: 0
+      m_IsSubScene: 0
+    - m_Path: Assets/Samples/SceneRegistration/AdditiveScenes/AdditiveScene 3.unity
+      m_IsLoaded: 1
+      m_IsActive: 0
+      m_IsSubScene: 0
+    - m_Path: Assets/Samples/SceneRegistration/AdditiveScenes/AdditiveScene 2.unity
+      m_IsLoaded: 1
+      m_IsActive: 0
+      m_IsSubScene: 0
     IsNetworkManagerScene: 0
     KnownAdditiveSceneGroup: {fileID: 0}
-  m_NetworkManagerScene: TestScene
+  m_NetworkManagerScene: MLAPIBootStrap
   m_KnownSceneRegistrations:
   - IncludeInBuild: 1
     Scene: {fileID: 102900000, guid: 228aa7771c79e6341a8fa9bc684c5766, type: 3}
-    SceneEntryName: SceneLevel-1
+    SceneEntryName: SceneLevel-1A
     AdditiveSceneGroup: {fileID: 0}
     Mode: 0
     m_SavedSceneSetup: []
@@ -109,7 +129,7 @@ MonoBehaviour:
     KnownAdditiveSceneGroup: {fileID: 0}
   - IncludeInBuild: 1
     Scene: {fileID: 102900000, guid: 228aa7771c79e6341a8fa9bc684c5766, type: 3}
-    SceneEntryName: SceneLevel-1
+    SceneEntryName: SceneLevel-1A
     AdditiveSceneGroup: {fileID: 0}
     Mode: 0
     m_SavedSceneSetup: []

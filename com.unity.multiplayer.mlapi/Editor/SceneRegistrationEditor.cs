@@ -83,7 +83,7 @@ namespace MLAPI.Editor
             var sceneEntryItem = m_SceneEntryList.serializedProperty.GetArrayElementAtIndex(index);
             var sceneSetupItems = sceneEntryItem.FindPropertyRelative(nameof(SceneEntry.m_SavedSceneSetup));
             var sceneEntry = m_SceneRegistration.SceneRegistrations[index];
-            sceneEntry.RefreshAdditiveScenes();
+            //sceneEntry.RefreshAdditiveScenes();
             var includeInBuild = sceneEntryItem.FindPropertyRelative(nameof(SceneEntry.IncludeInBuild));
             var sceneEntryItemSceneAsset = sceneEntryItem.FindPropertyRelative(nameof(SceneEntry.Scene));
             var sceneAssetLoadMode = sceneEntryItem.FindPropertyRelative(nameof(SceneEntry.Mode));
@@ -94,8 +94,7 @@ namespace MLAPI.Editor
 
             EditorGUI.LabelField(new Rect(currentXPosition, rect.y, labelWidth, EditorGUIUtility.singleLineHeight), $"Scene Entry - {index}");
 
-
-            if (sceneEntry.IsNetworkManagerScene)
+            if (sceneEntry != null && sceneEntry.IsNetworkManagerScene)
             {
                 GUI.enabled = false;
             }
@@ -104,7 +103,7 @@ namespace MLAPI.Editor
             currentXPosition += labelWidth;
             EditorGUI.PropertyField(new Rect(currentXPosition, rect.y, 20, EditorGUIUtility.singleLineHeight), includeInBuild, GUIContent.none);
 
-            if (sceneEntry.IsNetworkManagerScene)
+            if (sceneEntry != null && sceneEntry.IsNetworkManagerScene)
             {
                 GUI.enabled = true;
             }
@@ -121,7 +120,7 @@ namespace MLAPI.Editor
             currentXPosition += labelWidth;
 
 
-            if (sceneEntry.IsNetworkManagerScene)
+            if (sceneEntry != null && sceneEntry.IsNetworkManagerScene)
             {
                 GUI.enabled = false;
             }
@@ -133,7 +132,7 @@ namespace MLAPI.Editor
             //Draw base scene asset property
             EditorGUI.PropertyField(new Rect(currentXPosition, rect.y, rect.width - (currentXPosition - rect.x), EditorGUIUtility.singleLineHeight), sceneEntryItemSceneAsset, GUIContent.none);
 
-            if (sceneEntry.IsNetworkManagerScene)
+            if (sceneEntry != null && sceneEntry.IsNetworkManagerScene)
             {
                 GUI.enabled = true;
             }
@@ -141,14 +140,22 @@ namespace MLAPI.Editor
             rect.y += EditorGUIUtility.singleLineHeight + 5;
 
             EditorGUI.LabelField(new Rect(rect.x, rect.y, labelWidth, EditorGUIUtility.singleLineHeight), "Additive Scenes");
-            var content = string.Empty;
-            foreach(var contentVal in sceneEntry.m_SavedSceneSetup)
+
+            if(sceneEntry != null)
             {
-                content += $"{SceneRegistration.GetSceneNameFromPath(contentVal.path)},";
+                var content = string.Empty;
+                if (sceneEntry.m_SavedSceneSetup != null)
+                {
+                    foreach (var contentVal in sceneEntry.m_SavedSceneSetup)
+                    {
+                        content += $"{SceneRegistration.GetSceneNameFromPath(contentVal.path)},";
+                    }
+                    GUI.enabled = false;
+                    EditorGUI.TextField(new Rect(rect.x + labelWidth, rect.y, rect.width - labelWidth, EditorGUIUtility.singleLineHeight), content);
+                    GUI.enabled = true;
+                }
             }
-            GUI.enabled = false;
-            EditorGUI.TextField(new Rect(rect.x + labelWidth, rect.y, rect.width - labelWidth, EditorGUIUtility.singleLineHeight), content);
-            GUI.enabled = true;
+
             //EditorGUI.MultiPropertyField(new Rect(rect.x + labelWidth, rect.y, rect.width - labelWidth, EditorGUIUtility.singleLineHeight), content.ToArray(), sceneSetupItems);
             //EditorGUI.PropertyField(new Rect(rect.x + labelWidth, rect.y, rect.width - labelWidth, 100), sceneSetupItems, GUIContent.none);
             //EditorGUI.PropertyField(new Rect(rect.x + labelWidth, rect.y, rect.width - labelWidth, EditorGUIUtility.singleLineHeight), sceneEntryItemAdditiveSceneGroup, GUIContent.none);
