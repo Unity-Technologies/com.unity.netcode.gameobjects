@@ -329,7 +329,7 @@ namespace MLAPI.SceneManagement
                         uint sceneObjectsToSpawn = 0;
                         for (int i = 0; i < newSceneObjects.Count; i++)
                         {
-                            if (newSceneObjects[i].Observers.Contains(m_NetworkManager.ConnectedClientsList[j].ClientId))
+//                            if (newSceneObjects[i].Observers.Contains(m_NetworkManager.ConnectedClientsList[j].ClientId))
                             {
                                 sceneObjectsToSpawn++;
                             }
@@ -340,7 +340,7 @@ namespace MLAPI.SceneManagement
 
                         for (int i = 0; i < newSceneObjects.Count; i++)
                         {
-                            if (newSceneObjects[i].Observers.Contains(m_NetworkManager.ConnectedClientsList[j].ClientId))
+ //                           if (newSceneObjects[i].Observers.Contains(m_NetworkManager.ConnectedClientsList[j].ClientId))
                             {
                                 newSceneObjects[i].SerializeSceneObject(writer, m_NetworkManager.ConnectedClientsList[j].ClientId);
                             }

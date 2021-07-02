@@ -63,31 +63,31 @@ namespace MLAPI.Editor
                 EditorGUILayout.TextField(nameof(NetworkObject.NetworkManager), m_NetworkObject.NetworkManager == null ? "null" : m_NetworkObject.NetworkManager.gameObject.name);
                 GUI.enabled = guiEnabled;
 
-                if (m_NetworkObject.NetworkManager != null && m_NetworkObject.NetworkManager.IsServer)
-                {
-                    m_ShowObservers = EditorGUILayout.Foldout(m_ShowObservers, "Observers");
-
-                    if (m_ShowObservers)
-                    {
-                        HashSet<ulong>.Enumerator observerClientIds = m_NetworkObject.GetObservers();
-
-                        EditorGUI.indentLevel += 1;
-
-                        while (observerClientIds.MoveNext())
-                        {
-                            if (m_NetworkObject.NetworkManager.ConnectedClients[observerClientIds.Current].PlayerObject != null)
-                            {
-                                EditorGUILayout.ObjectField($"ClientId: {observerClientIds.Current}", m_NetworkObject.NetworkManager.ConnectedClients[observerClientIds.Current].PlayerObject, typeof(GameObject), false);
-                            }
-                            else
-                            {
-                                EditorGUILayout.TextField($"ClientId: {observerClientIds.Current}", EditorStyles.label);
-                            }
-                        }
-
-                        EditorGUI.indentLevel -= 1;
-                    }
-                }
+//kk                if (m_NetworkObject.NetworkManager != null && m_NetworkObject.NetworkManager.IsServer)
+//kk                {
+//kk                    m_ShowObservers = EditorGUILayout.Foldout(m_ShowObservers, "Observers");
+//kk
+//kk                    if (m_ShowObservers)
+//kk                    {
+//kk                        HashSet<ulong>.Enumerator observerClientIds = m_NetworkObject.GetObservers();
+//kk
+//kk                        EditorGUI.indentLevel += 1;
+//kk
+//kk                        while (observerClientIds.MoveNext())
+//kk                        {
+//kk                            if (m_NetworkObject.NetworkManager.ConnectedClients[observerClientIds.Current].PlayerObject != null)
+//kk                            {
+//kk                                EditorGUILayout.ObjectField($"ClientId: {observerClientIds.Current}", m_NetworkObject.NetworkManager.ConnectedClients[observerClientIds.Current].PlayerObject, typeof(GameObject), false);
+//kk                            }
+//kk                            else
+//kk                            {
+//kk                                EditorGUILayout.TextField($"ClientId: {observerClientIds.Current}", EditorStyles.label);
+//kk                            }
+//kk                        }
+//kk
+//kk                        EditorGUI.indentLevel -= 1;
+//kk                    }
+//kk                }
             }
             else
             {

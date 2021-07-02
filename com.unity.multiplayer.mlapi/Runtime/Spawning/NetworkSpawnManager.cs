@@ -332,16 +332,16 @@ namespace MLAPI.Spawning
                 }
             }
 
-            if (NetworkManager.IsServer)
-            {
-                for (int i = 0; i < NetworkManager.ConnectedClientsList.Count; i++)
-                {
-                    if (networkObject.CheckObjectVisibility == null || networkObject.CheckObjectVisibility(NetworkManager.ConnectedClientsList[i].ClientId))
-                    {
-                        networkObject.Observers.Add(NetworkManager.ConnectedClientsList[i].ClientId);
-                    }
-                }
-            }
+//            if (NetworkManager.IsServer)
+//            {
+//                for (int i = 0; i < NetworkManager.ConnectedClientsList.Count; i++)
+//                {
+//                    if (networkObject.CheckObjectVisibility == null || networkObject.CheckObjectVisibility(NetworkManager.ConnectedClientsList[i].ClientId))
+//                    {
+//                        networkObject.Observers.Add(NetworkManager.ConnectedClientsList[i].ClientId);
+//                    }
+//                }
+//            }
 
             networkObject.SetCachedParent(networkObject.transform.parent);
             networkObject.ApplyNetworkParenting();

@@ -1555,10 +1555,10 @@ namespace MLAPI
                     }
 
                     // TODO: Could(should?) be replaced with more memory per client, by storing the visiblity
-                    foreach (var sobj in SpawnManager.SpawnedObjectsList)
-                    {
-                        sobj.Observers.Remove(clientId);
-                    }
+//                    foreach (var sobj in SpawnManager.SpawnedObjectsList)
+//                    {
+//                        sobj.Observers.Remove(clientId);
+//                    }
                 }
 
                 for (int i = 0; i < ConnectedClientsList.Count; i++)
@@ -1629,8 +1629,8 @@ namespace MLAPI
                 {
                     if (ownerClientId == ServerClientId || sobj.CheckObjectVisibility == null || sobj.CheckObjectVisibility(ownerClientId))
                     {
-                        m_ObservedObjects.Add(sobj);
-                        sobj.Observers.Add(ownerClientId);
+                        m_ObservedObjects.Add(sobj); //??
+//                        sobj.Observers.Add(ownerClientId);
                     }
                 }
 
@@ -1671,8 +1671,8 @@ namespace MLAPI
                 foreach (KeyValuePair<ulong, NetworkClient> clientPair in ConnectedClients)
                 {
                     if (clientPair.Key == ownerClientId ||
-                        ConnectedClients[ownerClientId].PlayerObject == null ||
-                        !ConnectedClients[ownerClientId].PlayerObject.Observers.Contains(clientPair.Key))
+                        ConnectedClients[ownerClientId].PlayerObject == null) // ||
+//kk                        !ConnectedClients[ownerClientId].PlayerObject.Observers.Contains(clientPair.Key))
                     {
                         continue; //The new client.
                     }
