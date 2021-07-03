@@ -269,24 +269,24 @@ namespace MLAPI
                 //    };
                 //}
 
-                var activeSceneAsset = AssetDatabase.LoadAssetAtPath<SceneAsset>(activeScene.path);
-                if (!NetworkConfig.RegisteredSceneAssets.Contains(activeSceneAsset))
-                {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                    {
-                        NetworkLog.LogInfo($"Active scene {activeSceneAsset.name} is not registered as a network scene. Since scene management is enabled, it was automatically added.");
-                    }
+                //var activeSceneAsset = AssetDatabase.LoadAssetAtPath<SceneAsset>(activeScene.path);
+                //if (!NetworkConfig.RegisteredSceneAssets.Contains(activeSceneAsset))
+                //{
+                //    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                //    {
+                //        NetworkLog.LogInfo($"Active scene {activeSceneAsset.name} is not registered as a network scene. Since scene management is enabled, it was automatically added.");
+                //    }
 
-                    NetworkConfig.RegisteredSceneAssets.Add(activeSceneAsset);
-                    EditorApplication.delayCall += () =>
-                    {
-                        if (!EditorApplication.isPlaying)
-                        {
-                            EditorUtility.SetDirty(this);
-                            UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(activeScene);
-                        }
-                    };
-                }
+                //    NetworkConfig.RegisteredSceneAssets.Add(activeSceneAsset);
+                //    EditorApplication.delayCall += () =>
+                //    {
+                //        if (!EditorApplication.isPlaying && !EditorApplication.isUpdating)
+                //        {
+                //            EditorUtility.SetDirty(this);
+                //            UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(activeScene);
+                //        }
+                //    };
+                //}
 
                 if(NetworkConfig.RegisteredSceneAssets.Count > 0)
                 {
