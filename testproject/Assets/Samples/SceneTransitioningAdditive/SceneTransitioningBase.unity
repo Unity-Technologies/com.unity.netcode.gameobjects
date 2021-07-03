@@ -1017,6 +1017,10 @@ MonoBehaviour:
     - SceneTransitioningBase
     - SecondSceneAdditive
     - ThirdSceneAdditive
+    RegisteredSceneAssets:
+    - {fileID: 102900000, guid: 780f96a61e8ac8e41b638ae8ec3a3236, type: 3}
+    - {fileID: 102900000, guid: 41a0239b0c49e2047b7063c822f0df8a, type: 3}
+    - {fileID: 102900000, guid: c6a3d883c8253ee43bca4f2b03797d7b, type: 3}
     AllowRuntimeSceneChanges: 0
     PlayerPrefab: {fileID: 4079352819444256614, guid: c16f03336b6104576a565ef79ad643c0,
       type: 3}

@@ -47,6 +47,7 @@ namespace MLAPI.Editor
 
         private ReorderableList m_NetworkPrefabsList;
         private ReorderableList m_RegisteredScenesList;
+        private ReorderableList m_RegisteredSceneAssetsList;
 
         private NetworkManager m_NetworkManager;
         private bool m_Initialized;
@@ -235,6 +236,24 @@ namespace MLAPI.Editor
                 EditorGUI.PropertyField(new Rect(rect.x + firstLabelWidth, rect.y, rect.width - firstLabelWidth - padding, EditorGUIUtility.singleLineHeight), element, GUIContent.none);
             };
             m_RegisteredScenesList.drawHeaderCallback = rect => EditorGUI.LabelField(rect, "Registered Scene Names");
+
+            m_RegisteredSceneAssetsList = new ReorderableList(serializedObject, serializedObject.FindProperty(nameof(NetworkManager.NetworkConfig)).FindPropertyRelative(nameof(NetworkConfig.RegisteredSceneAssets)), true, true, true, true);
+            m_RegisteredSceneAssetsList.drawElementCallback = (rect, index, isActive, isFocused) =>
+            {
+                var sceneAsset = m_RegisteredSceneAssetsList.serializedProperty.GetArrayElementAtIndex(index);
+                int firstLabelWidth = 38;
+                int padding = 2;
+
+                EditorGUI.LabelField(new Rect(rect.x, rect.y, firstLabelWidth, EditorGUIUtility.singleLineHeight), $"{index}");
+                EditorGUI.PropertyField(new Rect(rect.x + firstLabelWidth, rect.y, rect.width - firstLabelWidth - padding, EditorGUIUtility.singleLineHeight), sceneAsset, GUIContent.none);
+            };
+
+            m_RegisteredSceneAssetsList.drawHeaderCallback = rect => EditorGUI.LabelField(rect, "Registered Scene Entries");
+
+            m_RegisteredSceneAssetsList.onAddCallback = (registeredList) =>
+            {
+                m_NetworkManager.NetworkConfig.RegisteredSceneAssets.Add(null);
+            };
         }
 
         public override void OnInspectorGUI()
@@ -272,6 +291,7 @@ namespace MLAPI.Editor
                 using (new EditorGUI.DisabledScope(!m_NetworkManager.NetworkConfig.EnableSceneManagement))
                 {
                     m_RegisteredScenesList.DoLayoutList();
+                    m_RegisteredSceneAssetsList.DoLayoutList();
                     EditorGUILayout.Space();
                 }
 

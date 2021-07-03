@@ -2,6 +2,10 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
+
 using MLAPI.Logging;
 using MLAPI.Configuration;
 using MLAPI.Internal;
@@ -220,7 +224,7 @@ namespace MLAPI
         public NetworkConfig NetworkConfig;
 
         /// <summary>
-        /// The current hostname we are connected to, used to validate certificate
+        /// The current host name we are connected to, used to validate certificate
         /// </summary>
         public string ConnectedHostname { get; private set; }
 
@@ -243,27 +247,65 @@ namespace MLAPI
             }
 
             var activeScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
-            var activeSceneName = activeScene.name;
-            if (!NetworkConfig.RegisteredScenes.Contains(activeSceneName))
+
+            if (NetworkConfig.EnableSceneManagement)
             {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                //var activeSceneName = activeScene.name;
+                //if (!NetworkConfig.RegisteredScenes.Contains(activeSceneName))
+                //{
+                //    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                //    {
+                //        NetworkLog.LogWarning("Active scene is not registered as a network scene. The MLAPI has added it");
+                //    }
+
+                //    NetworkConfig.RegisteredScenes.Add(activeSceneName);
+                //    EditorApplication.delayCall += () =>
+                //    {
+                //        if (!EditorApplication.isPlaying)
+                //        {
+                //            EditorUtility.SetDirty(this);
+                //            UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(activeScene);
+                //        }
+                //    };
+                //}
+
+                var activeSceneAsset = AssetDatabase.LoadAssetAtPath<SceneAsset>(activeScene.path);
+                if (!NetworkConfig.RegisteredSceneAssets.Contains(activeSceneAsset))
                 {
-                    NetworkLog.LogWarning("Active scene is not registered as a network scene. The MLAPI has added it");
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                    {
+                        NetworkLog.LogInfo($"Active scene {activeSceneAsset.name} is not registered as a network scene. Since scene management is enabled, it was automatically added.");
+                    }
+
+                    NetworkConfig.RegisteredSceneAssets.Add(activeSceneAsset);
+                    EditorApplication.delayCall += () =>
+                    {
+                        if (!EditorApplication.isPlaying)
+                        {
+                            EditorUtility.SetDirty(this);
+                            UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(activeScene);
+                        }
+                    };
                 }
 
-                NetworkConfig.RegisteredScenes.Add(activeSceneName);
-                UnityEditor.EditorApplication.delayCall += () =>
+                if(NetworkConfig.RegisteredSceneAssets.Count > 0)
                 {
-                    if (!UnityEditor.EditorApplication.isPlaying)
+                    foreach(var sceneAsset in NetworkConfig.RegisteredSceneAssets)
                     {
-                        UnityEditor.EditorUtility.SetDirty(this);
-                        UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(activeScene);
+                        if(NetworkConfig.RegisteredScenes == null)
+                        {
+                            NetworkConfig.RegisteredScenes = new List<string>();
+                        }
+                        if(!NetworkConfig.RegisteredScenes.Contains(sceneAsset.name))
+                        {
+                            NetworkConfig.RegisteredScenes.Add(sceneAsset.name);
+                        }
                     }
-                };
+                }
             }
 
             // If the scene is not dirty or the asset database is currently updating then we can skip updating the NetworkPrefab information
-            if (!activeScene.isDirty || UnityEditor.EditorApplication.isUpdating)
+            if (!activeScene.isDirty || EditorApplication.isUpdating)
             {
                 return;
             }
