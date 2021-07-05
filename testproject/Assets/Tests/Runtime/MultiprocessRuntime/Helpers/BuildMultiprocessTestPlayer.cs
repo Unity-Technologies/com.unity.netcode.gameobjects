@@ -53,7 +53,7 @@ public class BuildMultiprocessTestPlayer : MonoBehaviour
                 }
                 else
                 {
-                    Debug.Log($"exe {exePath} doesn't exists");
+                    Debug.Log($"exe {exePath} doesn't exist");
                 }
                 break;
             case RuntimePlatform.OSXPlayer:
@@ -65,7 +65,7 @@ public class BuildMultiprocessTestPlayer : MonoBehaviour
                 }
                 else
                 {
-                    Debug.Log($"directory {toDelete} doesn't exists");
+                    Debug.Log($"directory {toDelete} doesn't exist");
                 }
                 break;
             default:
