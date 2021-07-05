@@ -43,7 +43,7 @@ public class TestCoordinator : NetworkBehaviour
     private Dictionary<ulong, bool> m_ClientIsFinished = new Dictionary<ulong, bool>();
 
     public static Dictionary<ulong, List<float>>.KeyCollection AllClientIdsWithResults => Instance.m_TestResultsLocal.Keys;
-    public static List<ulong> AllClientIdExceptMine => NetworkManager.Singleton.ConnectedClients.Keys.ToList().FindAll(client => client != NetworkManager.Singleton.LocalClientId);
+    public static List<ulong> AllClientIdsExceptMine => NetworkManager.Singleton.ConnectedClients.Keys.ToList().FindAll(client => client != NetworkManager.Singleton.LocalClientId);
 
     private void Awake()
     {
@@ -241,13 +241,13 @@ public class TestCoordinator : NetworkBehaviour
     public void InvokeFromMethodActionRpc(Action<byte[]> methodInfo, params byte[] args)
     {
         var methodInfoString = GetMethodInfo(methodInfo);
-        InvokeFromMethodNameClientRpc(methodInfoString, args, new ClientRpcParams { Send = new ClientRpcSendParams { TargetClientIds = AllClientIdExceptMine.ToArray() } });
+        InvokeFromMethodNameClientRpc(methodInfoString, args, new ClientRpcParams { Send = new ClientRpcSendParams { TargetClientIds = AllClientIdsExceptMine.ToArray() } });
     }
 
     public void InvokeFromMethodActionRpc(Action methodInfo)
     {
         var methodInfoString = GetMethodInfo(methodInfo);
-        InvokeFromMethodNameClientRpc(methodInfoString, null, new ClientRpcParams { Send = new ClientRpcSendParams { TargetClientIds = AllClientIdExceptMine.ToArray() } });
+        InvokeFromMethodNameClientRpc(methodInfoString, null, new ClientRpcParams { Send = new ClientRpcSendParams { TargetClientIds = AllClientIdsExceptMine.ToArray() } });
     }
 
     [ClientRpc]
