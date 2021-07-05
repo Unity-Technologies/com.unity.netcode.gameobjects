@@ -282,7 +282,7 @@ public class TestCoordinator : NetworkBehaviour
             var foundMethod = foundType.GetMethod(staticMethodToExecute, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
             if (foundMethod == null)
             {
-                throw new Exception($"couldn't find method {staticMethodToExecute}");
+                throw new MissingMethodException($"couldn't find method {staticMethodToExecute}");
             }
 
             foundMethod.Invoke(null, args != null ? new object[] { args } : null);
