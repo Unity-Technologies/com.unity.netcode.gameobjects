@@ -10,7 +10,7 @@ using UnityEngine;
 /// This is needed as Unity throws "An abnormal situation has occurred: the PlayerLoop internal function has been called recursively. Please contact Customer Support with a sample project so that we can reproduce the problem and troubleshoot it."
 /// when trying to build from Setup() steps in tests.
 /// </summary>
-public class BuildMultiprocessTestPlayer : MonoBehaviour
+public static class BuildMultiprocessTestPlayer
 {
     public const string BuildAndExecuteMenuName = k_MultiprocessBaseMenuName + "/Build - Execute multiprocess tests #%t";
     private const string k_MultiprocessBaseMenuName = "MLAPI Multiprocess Test";
@@ -80,9 +80,7 @@ public class BuildMultiprocessTestPlayer : MonoBehaviour
     public static bool Build(bool isDebug = false)
     {
         // Save standalone build path to file so we can read it from standalone tests (that are not running from editor)
-        var f = File.CreateText(Path.Combine(Application.streamingAssetsPath, MultiprocessOrchestration.BuildInfoFileName));
-        f.Write(s_BuildPath);
-        f.Close();
+        File.WriteAllText(Path.Combine(Application.streamingAssetsPath, MultiprocessOrchestration.BuildInfoFileName), s_BuildPath);
 
         // deleting so we don't end up testing on outdated builds if there's a build failure
         DeleteBuild();

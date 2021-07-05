@@ -16,6 +16,8 @@ public class MultiprocessOrchestration
         var workerNode = new Process();
 
         //TODO this should be replaced eventually by proper orchestration for all supported platforms
+        // Starting new local processes is a solution to help run perf tests locally. CI should have multi machine orchestration to
+        // run performance tests with more realistic conditions.
         string buildInstructions = $"You probably didn't generate your build. Please make sure you build a player using the '{BuildMultiprocessTestPlayer.BuildAndExecuteMenuName}' menu";
         try
         {
@@ -36,7 +38,8 @@ public class MultiprocessOrchestration
         }
         catch (FileNotFoundException)
         {
-            throw new Exception($"Couldn't find build info file. {buildInstructions}");
+            Debug.LogError($"Couldn't find build info file. {buildInstructions}");
+            throw;
         }
 
         workerNode.StartInfo.UseShellExecute = false;
