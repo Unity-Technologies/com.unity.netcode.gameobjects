@@ -84,7 +84,7 @@ namespace MLAPI.Prototyping
         /// The channel to send the data on
         /// </summary>
         [SerializeField, Tooltip("The channel to send the data on.")]
-        public NetworkChannel Channel = NetworkChannel.NetworkVariable;
+        public NetworkChannel Channel = NetworkChannel.PositionUpdate;
 
         /// <summary>
         /// Sets whether this transform should sync local or world properties. This is important to set since reparenting this transform
