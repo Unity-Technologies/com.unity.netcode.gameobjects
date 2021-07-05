@@ -12,13 +12,13 @@ using UnityEngine;
 /// </summary>
 public static class BuildMultiprocessTestPlayer
 {
-    public const string BuildAndExecuteMenuName = k_MultiprocessBaseMenuName + "/Build - Execute multiprocess tests #%t";
-    private const string k_MultiprocessBaseMenuName = "MLAPI Multiprocess Test";
-    private const string k_MainSceneName = "MultiprocessTestingScene";
-    private static string s_BuildPath => Path.Combine(Path.GetDirectoryName(Application.dataPath), "Builds/MultiprocessTestBuild");
+    public const string MultiprocessBaseMenuName = "MLAPI Multiprocess Test";
+    public const string BuildAndExecuteMenuName = MultiprocessBaseMenuName + "/Build - Execute multiprocess tests #%t";
+    public const string MainSceneName = "MultiprocessTestingScene";
+    public static string BuildPath => Path.Combine(Path.GetDirectoryName(Application.dataPath), "Builds/MultiprocessTestBuild");
 
 #if UNITY_EDITOR
-    [MenuItem(k_MultiprocessBaseMenuName+"/Build Test Player #t")]
+    [MenuItem(MultiprocessBaseMenuName+"/Build Test Player #t")]
     public static void BuildNoDebug()
     {
         var success = Build();
@@ -28,7 +28,7 @@ public static class BuildMultiprocessTestPlayer
         }
     }
 
-    [MenuItem(k_MultiprocessBaseMenuName+"/Build Test Player in debug mode")]
+    [MenuItem(MultiprocessBaseMenuName+"/Build Test Player in debug mode")]
     public static void BuildDebug()
     {
         var success = Build(true);
@@ -38,14 +38,14 @@ public static class BuildMultiprocessTestPlayer
         }
     }
 
-    [MenuItem(k_MultiprocessBaseMenuName+"/Delete Test Build")]
+    [MenuItem(MultiprocessBaseMenuName+"/Delete Test Build")]
     public static void DeleteBuild()
     {
         switch (Application.platform)
         {
             case RuntimePlatform.WindowsPlayer:
             case RuntimePlatform.WindowsEditor:
-                var exePath = $"{s_BuildPath}.exe";
+                var exePath = $"{BuildPath}.exe";
                 if (File.Exists(exePath))
                 {
                     File.Delete(exePath);
@@ -57,7 +57,7 @@ public static class BuildMultiprocessTestPlayer
                 break;
             case RuntimePlatform.OSXPlayer:
             case RuntimePlatform.OSXEditor:
-                var toDelete = s_BuildPath + ".app";
+                var toDelete = BuildPath + ".app";
                 if (Directory.Exists(toDelete))
                 {
                     Directory.Delete(toDelete, recursive: true);
@@ -80,7 +80,7 @@ public static class BuildMultiprocessTestPlayer
     public static bool Build(bool isDebug = false)
     {
         // Save standalone build path to file so we can read it from standalone tests (that are not running from editor)
-        File.WriteAllText(Path.Combine(Application.streamingAssetsPath, MultiprocessOrchestration.BuildInfoFileName), s_BuildPath);
+        File.WriteAllText(Path.Combine(Application.streamingAssetsPath, MultiprocessOrchestration.BuildInfoFileName), BuildPath);
 
         // deleting so we don't end up testing on outdated builds if there's a build failure
         DeleteBuild();
@@ -95,7 +95,7 @@ public static class BuildMultiprocessTestPlayer
             // will have more connection permission popups when launching though
         }
 
-        var buildPathToUse = s_BuildPath;
+        var buildPathToUse = BuildPath;
         if (Application.platform == RuntimePlatform.WindowsPlayer || Application.platform == RuntimePlatform.WindowsEditor)
         {
             buildPathToUse += ".exe";
@@ -103,7 +103,7 @@ public static class BuildMultiprocessTestPlayer
 
         buildOptions &= ~BuildOptions.AutoRunPlayer;
         var buildReport = BuildPipeline.BuildPlayer(
-            new[] { $"Assets/Scenes/{k_MainSceneName}.unity" },
+            new[] { $"Assets/Scenes/{MainSceneName}.unity" },
             buildPathToUse,
             EditorUserBuildSettings.activeBuildTarget,
             buildOptions);
