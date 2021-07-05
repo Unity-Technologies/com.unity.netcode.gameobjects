@@ -8,8 +8,8 @@ using Debug = UnityEngine.Debug;
 
 public class MultiprocessOrchestration
 {
-    public const string buildInfoFileName = "buildInfo.txt";
-    public const string isWorkerArg = "-isWorker";
+    public const string BuildInfoFileName = "buildInfo.txt";
+    public const string IsWorkerArg = "-isWorker";
 
     public static void StartWorkerNode()
     {
@@ -19,7 +19,7 @@ public class MultiprocessOrchestration
         string buildInstructions = $"You probably didn't generate your build. Please make sure you build a player using the '{BuildMultiprocessTestPlayer.BuildAndExecuteMenuName}' menu";
         try
         {
-            var buildInfo = File.ReadAllText(Path.Combine(Application.streamingAssetsPath, buildInfoFileName));
+            var buildInfo = File.ReadAllText(Path.Combine(Application.streamingAssetsPath, BuildInfoFileName));
             switch (Application.platform)
             {
                 case RuntimePlatform.OSXPlayer:
@@ -42,7 +42,7 @@ public class MultiprocessOrchestration
         workerNode.StartInfo.UseShellExecute = false;
         workerNode.StartInfo.RedirectStandardError = true;
         workerNode.StartInfo.RedirectStandardOutput = true;
-        workerNode.StartInfo.Arguments = $"{isWorkerArg} -popupwindow -screen-width 100 -screen-height 100";
+        workerNode.StartInfo.Arguments = $"{IsWorkerArg} -popupwindow -screen-width 100 -screen-height 100";
         // workerNode.StartInfo.Arguments += " -deepprofiling"; // enable for deep profiling
         try
         {
