@@ -211,9 +211,9 @@ public class ExecuteStepInContext : CustomYieldInstruction
                     TestCoordinator.Instance.TriggerActionIDClientRpc(currentActionID, paramToPass,
                         clientRpcParams: new ClientRpcParams
                         {
-                            Send = new ClientRpcSendParams { TargetClientIds = TestCoordinator.AllClientIdExceptMine.ToArray() }
+                            Send = new ClientRpcSendParams { TargetClientIds = TestCoordinator.AllClientIdsExceptMine.ToArray() }
                         });
-                    foreach (var clientId in TestCoordinator.AllClientIdExceptMine)
+                    foreach (var clientId in TestCoordinator.AllClientIdsExceptMine)
                     {
                         m_ClientIsFinishedChecks.Add(TestCoordinator.ConsumeClientIsFinished(clientId));
                     }

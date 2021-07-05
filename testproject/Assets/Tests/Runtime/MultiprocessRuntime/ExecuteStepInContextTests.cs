@@ -129,7 +129,7 @@ namespace MLAPI.MultiprocessRuntimeTests
                 int nbFinished = 0;
                 for (int i = 0; i < m_NbWorkersToTest; i++)
                 {
-                    if (TestCoordinator.PeekLatestResult(TestCoordinator.AllClientIdExceptMine[i]) == maxValue)
+                    if (TestCoordinator.PeekLatestResult(TestCoordinator.AllClientIdsExceptMine[i]) == maxValue)
                     {
                         nbFinished++;
                     }
@@ -138,8 +138,8 @@ namespace MLAPI.MultiprocessRuntimeTests
             });
             yield return new ExecuteStepInContext(StepExecutionContext.Server, _ =>
             {
-                Assert.That(TestCoordinator.AllClientIdExceptMine.Count, Is.EqualTo(m_NbWorkersToTest));
-                foreach (var clientID in TestCoordinator.AllClientIdExceptMine)
+                Assert.That(TestCoordinator.AllClientIdsExceptMine.Count, Is.EqualTo(m_NbWorkersToTest));
+                foreach (var clientID in TestCoordinator.AllClientIdsExceptMine)
                 {
                     var current = 0;
                     foreach (var res in TestCoordinator.ConsumeCurrentResult(clientID))
