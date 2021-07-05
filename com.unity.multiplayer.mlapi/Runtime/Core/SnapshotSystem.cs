@@ -85,6 +85,7 @@ namespace MLAPI
         /// <param name="key">The key we're looking for</param>
         public int Find(VariableKey key)
         {
+            // todo: Add a IEquatable interface for VariableKey. Rely on that instead.
             for (int i = 0; i < LastEntry; i++)
             {
                 if (Entries[i].Key.NetworkObjectId == key.NetworkObjectId &&
@@ -102,7 +103,7 @@ namespace MLAPI
         /// <summary>
         /// Adds an entry in the table for a new key
         /// </summary>
-        public int AddEntry(VariableKey k)
+        public int AddEntry(in VariableKey k)
         {
             var pos = LastEntry++;
             var entry = Entries[pos];
@@ -165,13 +166,12 @@ namespace MLAPI
             // todo: deal with free space
             // todo: deal with full buffer
 
-            int pos;
-
             if (entry.Length > 0)
             {
                 Allocator.Deallocate(index);
             }
 
+            int pos;
             bool ret = Allocator.Allocate(index, size, out pos);
 
             if (!ret)
@@ -200,6 +200,7 @@ namespace MLAPI
             {
                 if (Entries[i].Fresh && Entries[i].Key.TickWritten > 0)
                 {
+                    // todo: there might be a race condition here with object reuse. To investigate.
                     var networkVariable = FindNetworkVar(Entries[i].Key);
 
                     if (networkVariable != null)
