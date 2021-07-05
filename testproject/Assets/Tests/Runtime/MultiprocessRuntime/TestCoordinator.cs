@@ -59,7 +59,7 @@ public class TestCoordinator : NetworkBehaviour
 
     public void Start()
     {
-        bool isClient = Environment.GetCommandLineArgs().Any(value => value == MultiprocessOrchestration.isWorkerArg);
+        bool isClient = Environment.GetCommandLineArgs().Any(value => value == MultiprocessOrchestration.IsWorkerArg);
         if (isClient)
         {
             Debug.Log("starting MLAPI client");
