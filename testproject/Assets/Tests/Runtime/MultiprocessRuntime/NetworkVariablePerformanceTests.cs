@@ -60,10 +60,10 @@ namespace MLAPI.MultiprocessRuntimeTests
         private void InitPrefab()
         {
             if (m_PrefabToSpawn == null)
-        {
-            var prefabCopy = Object.Instantiate(PrefabReference.Instance.referencedPrefab);
-            m_PrefabToSpawn = prefabCopy.AddComponent<OneNetVar>();
-        }
+            {
+                var prefabCopy = Object.Instantiate(PrefabReference.Instance.referencedPrefab);
+                m_PrefabToSpawn = prefabCopy.AddComponent<OneNetVar>();
+            }
         }
 
         [UnityTest, Performance, MultiprocessContextBasedTest]
@@ -106,6 +106,7 @@ namespace MLAPI.MultiprocessRuntimeTests
                         }
                     }
                 }
+
                 NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate += Update;
             }, paramToPass: BitConverter.GetBytes(nbObjects));
 
@@ -176,8 +177,8 @@ namespace MLAPI.MultiprocessRuntimeTests
             yield return new ExecuteStepInContext(StepExecutionContext.Clients, nbObjectsBytes =>
             {
                 var nbObjectsParam = BitConverter.ToInt32(nbObjectsBytes, 0);
-                Assert.That(GameObject.FindObjectsOfType(typeof(OneNetVar)).Length, Is.EqualTo(nbObjectsParam+1), "Wrong number of spawned objects client side"); // +1 for the prefab to spawn
-            }, paramToPass:BitConverter.GetBytes(nbObjects));
+                Assert.That(GameObject.FindObjectsOfType(typeof(OneNetVar)).Length, Is.EqualTo(nbObjectsParam + 1), "Wrong number of spawned objects client side"); // +1 for the prefab to spawn
+            }, paramToPass: BitConverter.GetBytes(nbObjects));
             yield return new ExecuteStepInContext(StepExecutionContext.Server, bytes =>
             {
                 Debug.Log($"finished with test for {nbObjects} expected objects and got {serverLastResult} objects");
@@ -198,6 +199,7 @@ namespace MLAPI.MultiprocessRuntimeTests
                     s_ServerObjectPool.Release(spawnedObject);
                     StopSpawnedObject(spawnedObject);
                 }
+
                 m_ServerSpawnedObjects.Clear();
             });
 
@@ -213,8 +215,9 @@ namespace MLAPI.MultiprocessRuntimeTests
                         TestCoordinator.Instance.ClientFinishedServerRpc();
                     }
                 }
+
                 NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate += UpdateWaitForAllOneNetVarToDespawn;
-            }, waitMultipleUpdates: true, ignoreTimeoutException:true); // ignoring timeout since you don't want to hide any issues in the main tests
+            }, waitMultipleUpdates: true, ignoreTimeoutException: true); // ignoring timeout since you don't want to hide any issues in the main tests
 
             yield return new ExecuteStepInContext(StepExecutionContext.Clients, _ =>
             {
