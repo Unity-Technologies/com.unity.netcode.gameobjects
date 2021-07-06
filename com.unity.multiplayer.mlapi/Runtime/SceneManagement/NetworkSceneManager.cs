@@ -133,6 +133,13 @@ namespace MLAPI.SceneManagement
             SceneNameToIndex.Add(sceneName, index);
         }
 
+
+        /// <summary>
+        /// Validates the new scene event request by the server-side code.
+        /// This also initializes some commonly shared values as well as switchSceneProgress
+        /// </summary>
+        /// <param name="sceneName"></param>
+        /// <returns>SceneSwitchProgress (if null it failed)</returns>
         private SceneSwitchProgress ValidateServerSceneEvent(string sceneName)
         {
             if (!m_NetworkManager.IsServer)
@@ -165,8 +172,11 @@ namespace MLAPI.SceneManagement
 
                 return null;
             }
+
             var switchSceneProgress = new SceneSwitchProgress(m_NetworkManager);
             SceneSwitchProgresses.Add(switchSceneProgress.Guid, switchSceneProgress);
+
+            // NSS TODO: remove any of these values that are no longer needed
             CurrentSceneSwitchProgressGuid = switchSceneProgress.Guid;
             CurrentActiveSceneIndex = SceneNameToIndex[sceneName];
             s_IsSwitching = true;
@@ -198,7 +208,9 @@ namespace MLAPI.SceneManagement
         /// Additively loads the scene
         /// </summary>
         /// <param name="sceneName"></param>
-        /// <returns></returns>
+        /// NSS TODO: This could probably stand to have some form of "scene event status" class/structure that will
+        /// include any error types/messages and the SceneSwitchProgress class associated with the status (if success)
+        /// <returns>SceneSwitchProgress  (if null this call failed)</returns>
         public SceneSwitchProgress LoadScene(string sceneName)
         {
             var switchSceneProgress = ValidateServerSceneEvent(sceneName);
@@ -210,6 +222,8 @@ namespace MLAPI.SceneManagement
             SceneEventData.SwitchSceneGuid = switchSceneProgress.Guid;
             SceneEventData.SceneEventType = SceneEventData.SceneEventTypes.LOAD;
             SceneEventData.SceneIndex = SceneNameToIndex[sceneName];
+
+            // NSS TODO: remove this completely once done with the transition
             SceneEventData.LoadSceneMode = LoadSceneMode.Additive;
 
             // Begin the scene event
@@ -224,6 +238,8 @@ namespace MLAPI.SceneManagement
         /// </summary>
         /// <param name="sceneName">The name of the scene to switch to</param>
         /// <param name="loadSceneMode">The mode to load the scene (Additive vs Single)</param>
+        /// NSS TODO: This could probably stand to have some form of "scene event status" class/structure that will
+        /// include any error types/messages and the SceneSwitchProgress class associated with the status (if success)
         /// <returns>SceneSwitchProgress</returns>
         public SceneSwitchProgress SwitchScene(string sceneName, LoadSceneMode loadSceneMode = LoadSceneMode.Single)
         {
@@ -232,7 +248,6 @@ namespace MLAPI.SceneManagement
             {
                 return LoadScene(sceneName);
             }
-
 
             var switchSceneProgress = ValidateServerSceneEvent(sceneName);
             if (switchSceneProgress == null)
@@ -243,6 +258,8 @@ namespace MLAPI.SceneManagement
             SceneEventData.SwitchSceneGuid = switchSceneProgress.Guid;
             SceneEventData.SceneEventType = SceneEventData.SceneEventTypes.SWITCH;
             SceneEventData.SceneIndex = SceneNameToIndex[sceneName];
+
+            // NSS TODO: remove this completely once done with the transition
             SceneEventData.LoadSceneMode = LoadSceneMode.Single;
 
             // Destroy current scene objects before switching.
@@ -258,6 +275,12 @@ namespace MLAPI.SceneManagement
             return switchSceneProgress;
         }
 
+        /// <summary>
+        /// Commonly shared code between switching and additively loading a scene
+        /// </summary>
+        /// <param name="sceneName">name of the scene to be loaded</param>
+        /// <param name="switchSceneProgress">SceneSwitchProgress class instance</param>
+        /// <param name="loadSceneMode">how the scene will be loaded</param>
         private void OnBeginSceneEvent(string sceneName, SceneSwitchProgress switchSceneProgress, LoadSceneMode loadSceneMode)
         {
             // start loading the scene
@@ -301,7 +324,11 @@ namespace MLAPI.SceneManagement
             OnSceneSwitchStarted?.Invoke(sceneLoad);
         }
 
-
+        /// <summary>
+        /// Client approval specific
+        /// </summary>
+        /// <param name="sceneIndex"></param>
+        /// <param name="switchSceneGuid"></param>
         internal void OnFirstSceneSwitchSync(uint sceneIndex, Guid switchSceneGuid)
         {
             if (!SceneIndexToString.TryGetValue(sceneIndex, out string sceneName) || !RegisteredSceneNames.Contains(sceneName))
@@ -335,7 +362,9 @@ namespace MLAPI.SceneManagement
             s_IsSwitching = false;
         }
 
-
+        /// <summary>
+        /// Client and Server: Generic on scene loaded callback method to be called upon a scene loading
+        /// </summary>
         private void OnSceneLoaded()
         {
             var nextScene = SceneManager.GetSceneByName(s_NextSceneName);
@@ -350,8 +379,10 @@ namespace MLAPI.SceneManagement
                 MoveObjectsToScene(nextScene);
             }
 
+            // NSS TODO: I think this can be determined differently and removed completely
             IsSpawnedObjectsPendingInDontDestroyOnLoad = false;
 
+            // NSS TODO: We might want to set this sooner, what happens if there is a connection during asynchronous scene loading?
             CurrentSceneIndex = CurrentActiveSceneIndex;
 
             if (m_NetworkManager.IsServer)
@@ -364,6 +395,10 @@ namespace MLAPI.SceneManagement
             }
         }
 
+
+        /// <summary>
+        /// Server specific on scene loaded callback method invoked by OnSceneLoading only
+        /// </summary>
         private void OnServerLoadedScene()
         {
             // Register in-scene placed NetworkObjects with MLAPI
@@ -402,6 +437,40 @@ namespace MLAPI.SceneManagement
             OnSceneSwitched?.Invoke();
         }
 
+        /// <summary>
+        /// NSS TODO: This might go back into the above method
+        /// </summary>
+        /// <param name="clientId"></param>
+        /// <param name="writer"></param>
+        internal void SynchronizeInSceneObjects(ulong clientId, NetworkWriter writer)
+        {
+            writer.WriteObjectPacked(SceneEventData);
+
+            uint sceneObjectsToSpawn = 0;
+
+            foreach (var keyValuePair in ScenePlacedObjects)
+            {
+                if (keyValuePair.Value.Observers.Contains(clientId))
+                {
+                    sceneObjectsToSpawn++;
+                }
+            }
+
+            // Write number of scene objects to spawn
+            writer.WriteUInt32Packed(sceneObjectsToSpawn);
+            foreach (var keyValuePair in ScenePlacedObjects)
+            {
+                if (keyValuePair.Value.Observers.Contains(clientId))
+                {
+                    keyValuePair.Value.SerializeSceneObject(writer, clientId);
+                }
+            }
+        }
+
+
+        /// <summary>
+        /// Client specific on scene loaded callback method invoked by OnSceneLoading only
+        /// </summary>
         private void OnClientLoadedScene()
         {
             var networkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>();
@@ -430,31 +499,6 @@ namespace MLAPI.SceneManagement
         }
 
 
-
-        internal void SynchronizeInSceneObjects(ulong clientId, NetworkWriter writer)
-        {
-            writer.WriteObjectPacked(SceneEventData);
-
-            uint sceneObjectsToSpawn = 0;
-
-            foreach (var keyValuePair in ScenePlacedObjects)
-            {
-                if (keyValuePair.Value.Observers.Contains(clientId))
-                {
-                    sceneObjectsToSpawn++;
-                }
-            }
-
-            // Write number of scene objects to spawn
-            writer.WriteUInt32Packed(sceneObjectsToSpawn);
-            foreach (var keyValuePair in ScenePlacedObjects)
-            {
-                if (keyValuePair.Value.Observers.Contains(clientId))
-                {
-                    keyValuePair.Value.SerializeSceneObject(writer, clientId);
-                }
-            }
-        }
 
         internal bool HasSceneMismatch(uint sceneIndex) => SceneManager.GetActiveScene().name != SceneIndexToString[sceneIndex];
 
@@ -551,6 +595,11 @@ namespace MLAPI.SceneManagement
             OnNotifyClientAllClientsLoadedScene?.Invoke(clientIds, timedOutClientIds);
         }
 
+
+        /// <summary>
+        /// Client Side: Handles incoming SCENE_EVENT messages
+        /// </summary>
+        /// <param name="stream">data associated with the event</param>
         private void HandleClientSceneEvent(Stream stream)
         {
             switch (SceneEventData.SceneEventType)
@@ -570,6 +619,11 @@ namespace MLAPI.SceneManagement
             }
         }
 
+        /// <summary>
+        /// Server Side: Handles incoming scene events
+        /// </summary>
+        /// <param name="clientId">client who sent the event</param>
+        /// <param name="stream">data associated with the event</param>
         private void HandleServerSceneEvent(ulong clientId, Stream stream)
         {
             switch (SceneEventData.SceneEventType)
@@ -587,6 +641,11 @@ namespace MLAPI.SceneManagement
             }
         }
 
+        /// <summary>
+        /// Both Client and Server: Incoming scene event entry point
+        /// </summary>
+        /// <param name="clientId">client who sent the scene event</param>
+        /// <param name="stream">data associated with the scene event</param>
         public void HandleSceneEvent(ulong clientId, Stream stream)
         {
             if (m_NetworkManager != null)
@@ -615,7 +674,6 @@ namespace MLAPI.SceneManagement
                 Debug.LogError($"{nameof(NetworkSceneManager.HandleSceneEvent)} was invoked but {nameof(NetworkManager)} reference was null!");
             }
         }
-
     }
 
     [Serializable]
