@@ -60,15 +60,19 @@ namespace MLAPI.Logging
 
             if (NetworkManager.Singleton != null && !NetworkManager.Singleton.IsServer && NetworkManager.Singleton.NetworkConfig.EnableNetworkLogs)
             {
-                using (var context = NetworkManager.Singleton.MessageQueueContainer.EnterInternalCommandContext(
+                var context = NetworkManager.Singleton.MessageQueueContainer.EnterInternalCommandContext(
                     MessageQueueContainer.MessageType.ServerLog,
                     NetworkChannel.Internal,
-                    new []{NetworkManager.Singleton.ServerClientId},
+                    new[] {NetworkManager.Singleton.ServerClientId},
                     NetworkUpdateLoop.UpdateStage
-                ))
+                );
+                if (context != null)
                 {
-                    context.NetworkWriter.WriteByte((byte)logType);
-                    context.NetworkWriter.WriteStringPacked(message);
+                    using (var icontext = (InternalCommandContext) context)
+                    {
+                        icontext.NetworkWriter.WriteByte((byte) logType);
+                        icontext.NetworkWriter.WriteStringPacked(message);
+                    }
                 }
             }
         }

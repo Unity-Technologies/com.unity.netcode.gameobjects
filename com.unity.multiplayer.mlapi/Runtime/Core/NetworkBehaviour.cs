@@ -49,6 +49,17 @@ namespace MLAPI
             if (serverRpcParams.Send.UpdateStage == NetworkUpdateStage.Unset)
             {
                 serverRpcParams.Send.UpdateStage = NetworkUpdateLoop.UpdateStage;
+
+                if (serverRpcParams.Send.UpdateStage == NetworkUpdateStage.Initialization)
+                {
+                    serverRpcParams.Send.UpdateStage = NetworkUpdateStage.EarlyUpdate;
+                }
+            }
+
+            if (serverRpcParams.Send.UpdateStage == NetworkUpdateStage.Initialization)
+            {
+                throw new NotSupportedException(
+                    $"{nameof(NetworkUpdateStage.Initialization)} cannot be used as a target for processing RPCs.");
             }
 
             var messageQueueContainer = NetworkManager.MessageQueueContainer;
@@ -90,6 +101,11 @@ namespace MLAPI
             if (serverRpcParams.Send.UpdateStage == NetworkUpdateStage.Unset)
             {
                 serverRpcParams.Send.UpdateStage = NetworkUpdateLoop.UpdateStage;
+
+                if (serverRpcParams.Send.UpdateStage == NetworkUpdateStage.Initialization)
+                {
+                    serverRpcParams.Send.UpdateStage = NetworkUpdateStage.EarlyUpdate;
+                }
             }
 
             var messageQueueContainer = NetworkManager.MessageQueueContainer;
@@ -113,6 +129,17 @@ namespace MLAPI
             if (clientRpcParams.Send.UpdateStage == NetworkUpdateStage.Unset)
             {
                 clientRpcParams.Send.UpdateStage = NetworkUpdateLoop.UpdateStage;
+
+                if (clientRpcParams.Send.UpdateStage == NetworkUpdateStage.Initialization)
+                {
+                    clientRpcParams.Send.UpdateStage = NetworkUpdateStage.EarlyUpdate;
+                }
+            }
+
+            if (clientRpcParams.Send.UpdateStage == NetworkUpdateStage.Initialization)
+            {
+                throw new NotSupportedException(
+                    $"{nameof(NetworkUpdateStage.Initialization)} cannot be used as a target for processing RPCs.");
             }
 
             // This will start a new queue item entry and will then return the writer to the current frame's stream
@@ -145,7 +172,7 @@ namespace MLAPI
 
                     //Switch to the outbound queue
                     writer = messageQueueContainer.BeginAddQueueItemToFrame(MessageQueueContainer.MessageType.ClientRpc, Time.realtimeSinceStartup, transportChannel, NetworkObjectId,
-                        clientIds.Where((id) => id != NetworkManager.ServerClientId).ToArray(), MessageQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
+                        clientIds, MessageQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
                     writer.WriteByte((byte)MessageQueueContainer.MessageType.ClientRpc);
                     writer.WriteByte((byte)clientRpcParams.Send.UpdateStage); // NetworkUpdateStage
                 }
@@ -179,6 +206,11 @@ namespace MLAPI
             if (clientRpcParams.Send.UpdateStage == NetworkUpdateStage.Unset)
             {
                 clientRpcParams.Send.UpdateStage = NetworkUpdateLoop.UpdateStage;
+
+                if (clientRpcParams.Send.UpdateStage == NetworkUpdateStage.Initialization)
+                {
+                    clientRpcParams.Send.UpdateStage = NetworkUpdateStage.EarlyUpdate;
+                }
             }
 
             var messageQueueContainer = NetworkManager.MessageQueueContainer;
@@ -565,14 +597,18 @@ namespace MLAPI
 
                             if (writtenAny)
                             {
-                                using (var context = NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
+                                var context = NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
                                     MessageQueueContainer.MessageType.NetworkVariableDelta,
                                     m_ChannelsForNetworkVariableGroups[j],
                                     new[] {clientId},
                                     NetworkUpdateLoop.UpdateStage
-                                ))
+                                );
+                                if (context != null)
                                 {
-                                    context.NetworkWriter.WriteBytes(buffer.GetBuffer(), buffer.Length);
+                                    using (var icontext = (InternalCommandContext)context)
+                                    {
+                                        icontext.NetworkWriter.WriteBytes(buffer.GetBuffer(), buffer.Length);
+                                    }
                                 }
                             }
                         }

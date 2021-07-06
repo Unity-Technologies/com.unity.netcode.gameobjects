@@ -110,15 +110,19 @@ namespace MLAPI.Spawning
 
             var messageQueueContainer = NetworkManager.MessageQueueContainer;
 
-            using (var context = messageQueueContainer.EnterInternalCommandContext(
+            var context = messageQueueContainer.EnterInternalCommandContext(
                 MessageQueueContainer.MessageType.ChangeOwner,
                 NetworkChannel.Internal,
                 NetworkManager.ConnectedClientsIds,
                 NetworkUpdateLoop.UpdateStage
-            ))
+            );
+            if (context != null)
             {
-                context.NetworkWriter.WriteUInt64Packed(networkObject.NetworkObjectId);
-                context.NetworkWriter.WriteUInt64Packed(networkObject.OwnerClientId);
+                using (var icontext = (InternalCommandContext) context)
+                {
+                    icontext.NetworkWriter.WriteUInt64Packed(networkObject.NetworkObjectId);
+                    icontext.NetworkWriter.WriteUInt64Packed(networkObject.OwnerClientId);
+                }
             }
         }
 
@@ -151,17 +155,19 @@ namespace MLAPI.Spawning
 
             ulong[] clientIds = NetworkManager.ConnectedClientsIds;
             var messageQueueContainer = NetworkManager.MessageQueueContainer;
-            using(
-                var context = messageQueueContainer.EnterInternalCommandContext(
-                    MessageQueueContainer.MessageType.ChangeOwner,
-                    NetworkChannel.Internal,
-                    clientIds,
-                    NetworkUpdateLoop.UpdateStage
-                )
-            )
+            var context = messageQueueContainer.EnterInternalCommandContext(
+                MessageQueueContainer.MessageType.ChangeOwner,
+                NetworkChannel.Internal,
+                clientIds,
+                NetworkUpdateLoop.UpdateStage
+            );
+            if (context != null)
             {
-                context.NetworkWriter.WriteUInt64Packed(networkObject.NetworkObjectId);
-                context.NetworkWriter.WriteUInt64Packed(clientId);
+                using (var icontext = (InternalCommandContext) context)
+                {
+                    icontext.NetworkWriter.WriteUInt64Packed(networkObject.NetworkObjectId);
+                    icontext.NetworkWriter.WriteUInt64Packed(clientId);
+                }
             }
         }
 
@@ -380,16 +386,18 @@ namespace MLAPI.Spawning
             var messageQueueContainer = NetworkManager.MessageQueueContainer;
 
             ulong[] clientIds = NetworkManager.ConnectedClientsIds;
-            using(
-                var context = messageQueueContainer.EnterInternalCommandContext(
-                    MessageQueueContainer.MessageType.CreateObject,
-                    NetworkChannel.Internal,
-                    clientIds,
-                    NetworkUpdateLoop.UpdateStage
-                )
-            )
+            var context = messageQueueContainer.EnterInternalCommandContext(
+                MessageQueueContainer.MessageType.CreateObject,
+                NetworkChannel.Internal,
+                clientIds,
+                NetworkUpdateLoop.UpdateStage
+            );
+            if (context != null)
             {
-                WriteSpawnCallForObject(context.NetworkWriter, clientId, networkObject, payload);
+                using (var icontext = (InternalCommandContext) context)
+                {
+                    WriteSpawnCallForObject(icontext.NetworkWriter, clientId, networkObject, payload);
+                }
             }
         }
 
@@ -398,8 +406,6 @@ namespace MLAPI.Spawning
             writer.WriteBool(networkObject.IsPlayerObject);
             writer.WriteUInt64Packed(networkObject.NetworkObjectId);
             writer.WriteUInt64Packed(networkObject.OwnerClientId);
-
-            Debug.Log($"Spawning {networkObject.IsPlayerObject} {networkObject.NetworkObjectId} {networkObject.OwnerClientId}");
 
             NetworkObject parentNetworkObject = null;
 
@@ -661,17 +667,19 @@ namespace MLAPI.Spawning
                         if (NetworkManager.ConnectedClientsList.Count > 0)
                         {
 
-                            ulong[] clientIds = NetworkManager.ConnectedClientsIds.Where((id) => id != NetworkManager.ServerClientId).ToArray();
-                            using (
-                                var context = messageQueueContainer.EnterInternalCommandContext(
-                                    MessageQueueContainer.MessageType.DestroyObject,
-                                    NetworkChannel.Internal,
-                                    clientIds,
-                                    NetworkUpdateLoop.UpdateStage
-                                )
-                            )
+                            ulong[] clientIds = NetworkManager.ConnectedClientsIds;
+                            var context = messageQueueContainer.EnterInternalCommandContext(
+                                MessageQueueContainer.MessageType.DestroyObject,
+                                NetworkChannel.Internal,
+                                clientIds,
+                                NetworkUpdateLoop.UpdateStage
+                            );
+                            if (context != null)
                             {
-                                context.NetworkWriter.WriteUInt64Packed(networkObject.NetworkObjectId);
+                                using (var icontext = (InternalCommandContext) context)
+                                {
+                                    icontext.NetworkWriter.WriteUInt64Packed(networkObject.NetworkObjectId);
+                                }
                             }
                         }
                     }

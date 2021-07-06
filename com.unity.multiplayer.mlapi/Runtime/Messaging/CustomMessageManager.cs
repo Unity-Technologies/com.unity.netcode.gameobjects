@@ -55,14 +55,18 @@ namespace MLAPI.Messaging
                 return;
             }
 
-            using (var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
+            var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
                 MessageQueueContainer.MessageType.UnnamedMessage,
                 networkChannel,
                 clientIds.ToArray(),
                 NetworkUpdateLoop.UpdateStage
-            ))
+            );
+            if (context != null)
             {
-                context.NetworkWriter.WriteBytes(buffer.GetBuffer(), buffer.Length);
+                using (var icontext = (InternalCommandContext) context)
+                {
+                    icontext.NetworkWriter.WriteBytes(buffer.GetBuffer(), buffer.Length);
+                }
             }
 
             PerformanceDataManager.Increment(ProfilerConstants.UnnamedMessageSent);
@@ -77,14 +81,18 @@ namespace MLAPI.Messaging
         public void SendUnnamedMessage(ulong clientId, NetworkBuffer buffer, NetworkChannel networkChannel = NetworkChannel.Internal)
         {
 
-            using (var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
+            var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
                 MessageQueueContainer.MessageType.UnnamedMessage,
                 networkChannel,
-                new []{clientId},
+                new[] {clientId},
                 NetworkUpdateLoop.UpdateStage
-            ))
+            );
+            if (context != null)
             {
-                context.NetworkWriter.WriteBytes(buffer.GetBuffer(), buffer.Length);
+                using (var icontext = (InternalCommandContext) context)
+                {
+                    icontext.NetworkWriter.WriteBytes(buffer.GetBuffer(), buffer.Length);
+                }
             }
         }
 
@@ -174,16 +182,20 @@ namespace MLAPI.Messaging
             }
 
 
-            using (var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
+            var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
                 MessageQueueContainer.MessageType.NamedMessage,
                 networkChannel,
-                new []{clientId},
+                new[] {clientId},
                 NetworkUpdateLoop.UpdateStage
-            ))
+            );
+            if (context != null)
             {
-                context.NetworkWriter.WriteUInt64Packed(hash);
+                using (var icontext = (InternalCommandContext) context)
+                {
+                    icontext.NetworkWriter.WriteUInt64Packed(hash);
 
-                stream.CopyTo(context.NetworkWriter.GetStream());
+                    stream.CopyTo(icontext.NetworkWriter.GetStream());
+                }
             }
             PerformanceDataManager.Increment(ProfilerConstants.NamedMessageSent);
         }
@@ -218,16 +230,20 @@ namespace MLAPI.Messaging
                     break;
             }
 
-            using (var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
+            var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
                 MessageQueueContainer.MessageType.NamedMessage,
                 networkChannel,
                 clientIds.ToArray(),
                 NetworkUpdateLoop.UpdateStage
-            ))
+            );
+            if (context != null)
             {
-                context.NetworkWriter.WriteUInt64Packed(hash);
+                using (var icontext = (InternalCommandContext) context)
+                {
+                    icontext.NetworkWriter.WriteUInt64Packed(hash);
 
-                stream.CopyTo(context.NetworkWriter.GetStream());
+                    stream.CopyTo(icontext.NetworkWriter.GetStream());
+                }
             }
             PerformanceDataManager.Increment(ProfilerConstants.NamedMessageSent);
         }

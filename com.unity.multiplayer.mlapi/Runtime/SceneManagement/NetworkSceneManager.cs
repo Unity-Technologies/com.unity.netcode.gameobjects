@@ -180,18 +180,22 @@ namespace MLAPI.SceneManagement
             {
                 OnNotifyServerAllClientsLoadedScene?.Invoke(switchSceneProgress, timedOut);
 
-                using (var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
+                var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
                     MessageQueueContainer.MessageType.AllClientsLoadedScene,
                     NetworkChannel.Internal,
                     new[] {NetworkManager.Singleton.ServerClientId},
                     NetworkUpdateLoop.UpdateStage
-                ))
+                );
+                if (context != null)
                 {
-                    var doneClientIds = switchSceneProgress.DoneClients.ToArray();
-                    var timedOutClientIds = m_NetworkManager.ConnectedClients.Keys.Except(doneClientIds).ToArray();
+                    using (var icontext = (InternalCommandContext) context)
+                    {
+                        var doneClientIds = switchSceneProgress.DoneClients.ToArray();
+                        var timedOutClientIds = m_NetworkManager.ConnectedClients.Keys.Except(doneClientIds).ToArray();
 
-                    context.NetworkWriter.WriteULongArray(doneClientIds, doneClientIds.Length);
-                    context.NetworkWriter.WriteULongArray(timedOutClientIds, timedOutClientIds.Length);
+                        icontext.NetworkWriter.WriteULongArray(doneClientIds, doneClientIds.Length);
+                        icontext.NetworkWriter.WriteULongArray(timedOutClientIds, timedOutClientIds.Length);
+                    }
                 }
             };
 
@@ -264,14 +268,18 @@ namespace MLAPI.SceneManagement
             IsSpawnedObjectsPendingInDontDestroyOnLoad = true;
             SceneManager.LoadScene(sceneName);
 
-            using (var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
+            var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
                 MessageQueueContainer.MessageType.ClientSwitchSceneCompleted,
                 NetworkChannel.Internal,
                 new[] {m_NetworkManager.ServerClientId},
                 NetworkUpdateLoop.UpdateStage
-            ))
+            );
+            if (context != null)
             {
-                context.NetworkWriter.WriteByteArray(switchSceneGuid.ToByteArray());
+                using (var icontext = (InternalCommandContext) context)
+                {
+                    icontext.NetworkWriter.WriteByteArray(switchSceneGuid.ToByteArray());
+                }
             }
 
             s_IsSwitching = false;
@@ -297,7 +305,7 @@ namespace MLAPI.SceneManagement
 
             // Just add every NetworkObject found that isn't already in the list
             // If any "non-in-scene placed NetworkObjects" are added to this list it shouldn't matter
-            // The only thing that matters is making sure each NetworkObject is keyed off of their GlobalObjectIdHash            
+            // The only thing that matters is making sure each NetworkObject is keyed off of their GlobalObjectIdHash
             foreach (var networkObjectInstance in networkObjects)
             {
                 if (!ScenePlacedObjects.ContainsKey(networkObjectInstance.GlobalObjectIdHash))
@@ -352,33 +360,37 @@ namespace MLAPI.SceneManagement
             {
                 if (m_NetworkManager.ConnectedClientsList[j].ClientId != m_NetworkManager.ServerClientId)
                 {
-                    using (var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
+                    var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
                         MessageQueueContainer.MessageType.SwitchScene,
                         NetworkChannel.Internal,
                         new[] {m_NetworkManager.ConnectedClientsList[j].ClientId},
                         NetworkUpdateLoop.UpdateStage
-                    ))
+                    );
+                    if (context != null)
                     {
-                        context.NetworkWriter.WriteUInt32Packed(CurrentActiveSceneIndex);
-                        context.NetworkWriter.WriteByteArray(switchSceneGuid.ToByteArray());
-
-                        uint sceneObjectsToSpawn = 0;
-
-                        foreach (var keyValuePair in ScenePlacedObjects)
+                        using (var icontext = (InternalCommandContext)context)
                         {
-                            if (keyValuePair.Value.Observers.Contains(m_NetworkManager.ConnectedClientsList[j].ClientId))
+                            icontext.NetworkWriter.WriteUInt32Packed(CurrentActiveSceneIndex);
+                            icontext.NetworkWriter.WriteByteArray(switchSceneGuid.ToByteArray());
+
+                            uint sceneObjectsToSpawn = 0;
+
+                            foreach (var keyValuePair in ScenePlacedObjects)
                             {
-                                sceneObjectsToSpawn++;
+                                if (keyValuePair.Value.Observers.Contains(m_NetworkManager.ConnectedClientsList[j].ClientId))
+                                {
+                                    sceneObjectsToSpawn++;
+                                }
                             }
-                        }
 
-                        // Write number of scene objects to spawn
-                        context.NetworkWriter.WriteUInt32Packed(sceneObjectsToSpawn);
-                        foreach (var keyValuePair in ScenePlacedObjects)
-                        {
-                            if (keyValuePair.Value.Observers.Contains(m_NetworkManager.ConnectedClientsList[j].ClientId))
+                            // Write number of scene objects to spawn
+                            icontext.NetworkWriter.WriteUInt32Packed(sceneObjectsToSpawn);
+                            foreach (var keyValuePair in ScenePlacedObjects)
                             {
-                                keyValuePair.Value.SerializeSceneObject(context.NetworkWriter, m_NetworkManager.ConnectedClientsList[j].ClientId);
+                                if (keyValuePair.Value.Observers.Contains(m_NetworkManager.ConnectedClientsList[j].ClientId))
+                                {
+                                    keyValuePair.Value.SerializeSceneObject(icontext.NetworkWriter, m_NetworkManager.ConnectedClientsList[j].ClientId);
+                                }
                             }
                         }
                     }
@@ -410,14 +422,18 @@ namespace MLAPI.SceneManagement
                 }
             }
 
-            using (var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
+            var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
                 MessageQueueContainer.MessageType.ClientSwitchSceneCompleted,
                 NetworkChannel.Internal,
                 new[] {m_NetworkManager.ServerClientId},
                 NetworkUpdateLoop.UpdateStage
-            ))
+            );
+            if (context != null)
             {
-                context.NetworkWriter.WriteByteArray(switchSceneGuid.ToByteArray());
+                using (var icontext = (InternalCommandContext) context)
+                {
+                    icontext.NetworkWriter.WriteByteArray(switchSceneGuid.ToByteArray());
+                }
             }
 
             s_IsSwitching = false;

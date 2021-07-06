@@ -130,7 +130,7 @@ namespace MLAPI.EditorTests.Profiling
         }
 
         [Test]
-        public void RpcReceiveQueueItemCallsUnderlyingHandler()
+        public void MessageReceiveQueueItemCallsUnderlyingHandler()
         {
             m_Decorator.MessageReceiveQueueItem(0, null, 0.0f, MessageQueueContainer.MessageType.None, NetworkChannel.Internal);
 

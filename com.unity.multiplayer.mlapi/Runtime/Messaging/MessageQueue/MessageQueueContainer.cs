@@ -111,43 +111,29 @@ namespace MLAPI.Messaging
         /// <param name="clientIds">The destinations for this message</param>
         /// <param name="updateStage">The stage at which the message will be processed on the receiving side</param>
         /// <returns></returns>
-        internal InternalCommandContext EnterInternalCommandContext(MessageQueueContainer.MessageType messageType, NetworkChannel transportChannel, ulong[] clientIds, NetworkUpdateStage updateStage)
+        internal InternalCommandContext? EnterInternalCommandContext(MessageQueueContainer.MessageType messageType, NetworkChannel transportChannel, ulong[] clientIds, NetworkUpdateStage updateStage)
         {
             PooledNetworkWriter writer;
-
-            //NOTES ON BELOW CHANGES:
-            //The following checks for IsHost and whether the host client id is part of the clients to recieve the message
-            //Is part of a patch-fix to handle looping back messages into the next frame's inbound queue.
-            //!!! This code is temporary and will change (soon) when NetworkSerializer can be configured for mutliple NetworkWriters!!!
-            var containsServerClientId = clientIds.Contains(NetworkManager.ServerClientId);
-            if (NetworkManager.IsHost && containsServerClientId)
+            if (updateStage == NetworkUpdateStage.Initialization)
             {
-                //Always write to the next frame's inbound queue
-                writer = BeginAddQueueItemToFrame(messageType, Time.realtimeSinceStartup, transportChannel,
-                    NetworkManager.ServerClientId, null, MessageQueueHistoryFrame.QueueFrameType.Inbound, updateStage);
-
-                //Handle sending to the other clients, if so the above notes explain why this code is here (a temporary patch-fix)
-                if (clientIds.Length > 1)
-                {
-                    //Set the loopback frame
-                    SetLoopBackFrameItem(updateStage);
-
-                    //Switch to the outbound queue
-                    writer = BeginAddQueueItemToFrame(messageType, Time.realtimeSinceStartup, transportChannel, 0,
-                        clientIds.Where((id) => id != NetworkManager.ServerClientId).ToArray(), MessageQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
-
-                    writer.WriteByte((byte)messageType);
-                    writer.WriteByte((byte)updateStage); // NetworkUpdateStage
-                }
+                updateStage = NetworkUpdateStage.EarlyUpdate;
             }
-            else
+
+            if (NetworkManager.IsServer)
             {
-                writer = BeginAddQueueItemToFrame(messageType, Time.realtimeSinceStartup, transportChannel, 0,
-                    clientIds, MessageQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
-
-                writer.WriteByte((byte)messageType);
-                writer.WriteByte((byte)updateStage); // NetworkUpdateStage
+                clientIds = clientIds.Where((id) => id != NetworkManager.ServerClientId).ToArray();
             }
+
+            if (clientIds.Length == 0)
+            {
+                return null;
+            }
+
+            writer = BeginAddQueueItemToFrame(messageType, Time.realtimeSinceStartup, transportChannel, 0,
+                clientIds, MessageQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
+
+            writer.WriteByte((byte)messageType);
+            writer.WriteByte((byte)updateStage); // NetworkUpdateStage
 
             return new InternalCommandContext(writer, clientIds, updateStage, this);
         }
@@ -414,7 +400,6 @@ namespace MLAPI.Messaging
             {
                 if (targetNetworkIds != null && targetNetworkIds.Length != 0)
                 {
-                    Debug.Log($"{sourceNetworkId} Going to send a message of type {qItemType} to {string.Join(",",targetNetworkIds.Select(x => x.ToString()).ToArray())}");
                     //In the event the host is one of the networkIds, for outbound we want to ignore it (at this spot only!!)
                     //Get a count of clients we are going to send to (and write into the buffer)
                     var numberOfClients = 0;
@@ -446,10 +431,6 @@ namespace MLAPI.Messaging
                 {
                     messageQueueHistoryFrame.QueueWriter.WriteInt32(0);
                 }
-            }
-            else
-            {
-                Debug.Log($"{sourceNetworkId} Going to send a message of type {qItemType} to myself");
             }
 
             //Mark where we started in the stream to later determine the actual RPC message size (position before writing RPC message vs position after write has completed)

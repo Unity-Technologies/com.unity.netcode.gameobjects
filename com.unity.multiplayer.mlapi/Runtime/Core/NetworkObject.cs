@@ -290,21 +290,27 @@ namespace MLAPI
             }
 
 
-            using (var context = networkManager.MessageQueueContainer.EnterInternalCommandContext(
+            var context = networkManager.MessageQueueContainer.EnterInternalCommandContext(
                 MessageQueueContainer.MessageType.CreateObjects,
                 NetworkChannel.Internal,
-                new [] {clientId},
+                new[] {clientId},
                 NetworkUpdateLoop.UpdateStage
-            ))
+            );
+
+            if (context != null)
             {
-                context.NetworkWriter.WriteUInt16Packed((ushort)networkObjects.Count);
-
-                for (int i = 0; i < networkObjects.Count; i++)
+                using (var icontext = (InternalCommandContext) context)
                 {
-                    // Send spawn call
-                    networkObjects[i].Observers.Add(clientId);
+                    icontext.NetworkWriter.WriteUInt16Packed((ushort) networkObjects.Count);
 
-                    networkManager.SpawnManager.WriteSpawnCallForObject(context.NetworkWriter, clientId, networkObjects[i], payload);
+                    for (int i = 0; i < networkObjects.Count; i++)
+                    {
+                        // Send spawn call
+                        networkObjects[i].Observers.Add(clientId);
+
+                        networkManager.SpawnManager.WriteSpawnCallForObject(icontext.NetworkWriter, clientId,
+                            networkObjects[i], payload);
+                    }
                 }
             }
         }
@@ -339,14 +345,18 @@ namespace MLAPI
             // Send destroy call
             Observers.Remove(clientId);
 
-            using (var context = NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
+            var context = NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
                 MessageQueueContainer.MessageType.DestroyObject,
                 NetworkChannel.Internal,
                 new[] {clientId},
                 NetworkUpdateLoop.UpdateStage
-            ))
+            );
+            if (context != null)
             {
-                context.NetworkWriter.WriteUInt64Packed(NetworkObjectId);
+                using (var icontext = (InternalCommandContext) context)
+                {
+                    icontext.NetworkWriter.WriteUInt64Packed(NetworkObjectId);
+                }
             }
         }
 
@@ -393,21 +403,25 @@ namespace MLAPI
                 }
             }
 
-            using (var context = networkManager.MessageQueueContainer.EnterInternalCommandContext(
+            var context = networkManager.MessageQueueContainer.EnterInternalCommandContext(
                 MessageQueueContainer.MessageType.DestroyObjects,
                 NetworkChannel.Internal,
                 new[] {clientId},
                 NetworkUpdateLoop.UpdateStage
-            ))
+            );
+            if (context != null)
             {
-                context.NetworkWriter.WriteUInt16Packed((ushort)networkObjects.Count);
-
-                for (int i = 0; i < networkObjects.Count; i++)
+                using (var icontext = (InternalCommandContext) context)
                 {
-                    // Send destroy call
-                    networkObjects[i].Observers.Remove(clientId);
+                    icontext.NetworkWriter.WriteUInt16Packed((ushort) networkObjects.Count);
 
-                    context.NetworkWriter.WriteUInt64Packed(networkObjects[i].NetworkObjectId);
+                    for (int i = 0; i < networkObjects.Count; i++)
+                    {
+                        // Send destroy call
+                        networkObjects[i].Observers.Remove(clientId);
+
+                        icontext.NetworkWriter.WriteUInt64Packed(networkObjects[i].NetworkObjectId);
+                    }
                 }
             }
         }
@@ -685,17 +699,20 @@ namespace MLAPI
             m_IsReparented = true;
             ApplyNetworkParenting();
 
-            using(
-                var context = NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
-                    MessageQueueContainer.MessageType.ParentSync,
-                    NetworkChannel.Internal,
-                    NetworkManager.ConnectedClientsIds.Where((id) => Observers.Contains(id)).ToArray(),
-                    NetworkUpdateLoop.UpdateStage
-                )
-            )
+            var context = NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
+                MessageQueueContainer.MessageType.ParentSync,
+                NetworkChannel.Internal,
+                NetworkManager.ConnectedClientsIds.Where((id) => Observers.Contains(id)).ToArray(),
+                NetworkUpdateLoop.UpdateStage
+            );
+
+            if (context != null)
             {
-                context.NetworkWriter.WriteUInt64Packed(NetworkObjectId);
-                WriteNetworkParenting(context.NetworkWriter, m_IsReparented, m_LatestParent);
+                using (var icontext = (InternalCommandContext) context)
+                {
+                    icontext.NetworkWriter.WriteUInt64Packed(NetworkObjectId);
+                    WriteNetworkParenting(icontext.NetworkWriter, m_IsReparented, m_LatestParent);
+                }
             }
         }
 

@@ -37,7 +37,6 @@ namespace MLAPI.Messaging
 
         public void ProcessMessage(in MessageFrameItem item)
         {
-            Debug.Log($"{m_NetworkManager.LocalClientId} processing {item.MessageType}");
             try
             {
                 switch (item.MessageType)

@@ -85,7 +85,6 @@ namespace MLAPI.Messaging
 
                 void DelayedSpawnAction(Stream continuationStream)
                 {
-
                     using (var continuationReader = PooledNetworkReader.Get(continuationStream))
                     {
                         if (!NetworkManager.NetworkConfig.EnableSceneManagement)
@@ -144,7 +143,6 @@ namespace MLAPI.Messaging
                 var ownerClientId = reader.ReadUInt64Packed();
                 var hasParent = reader.ReadBool();
                 ulong? parentNetworkId = null;
-                Debug.Log($"Reading spawn {isPlayerObject} {networkId} {ownerClientId}");
 
                 if (hasParent)
                 {

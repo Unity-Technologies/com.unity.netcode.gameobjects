@@ -93,7 +93,8 @@ namespace TestProject.RuntimeTests
         [UnityTest]
         public IEnumerator SpawnRpcDespawn([Values]NetworkUpdateStage testStage)
         {
-            if (testStage == NetworkUpdateStage.Unset)
+            // Neither of these is supported for sending RPCs.
+            if (testStage == NetworkUpdateStage.Unset || testStage == NetworkUpdateStage.Initialization)
             {
                 yield break;
             }
@@ -142,7 +143,7 @@ namespace TestProject.RuntimeTests
             srdComponent.Activate();
 
             // Wait until all objects have spawned.
-            int expectedCount = Support.SpawnRpcDespawn.ClientUpdateCount + 2; // +2 = one for client, one for host's client.
+            int expectedCount = Support.SpawnRpcDespawn.ClientUpdateCount + 1;
             const int maxFrames = 240;
             var doubleCheckTime = Time.realtimeSinceStartup + 1.0f;
             while (Support.SpawnRpcDespawn.ClientUpdateCount < expectedCount)
@@ -153,7 +154,7 @@ namespace TestProject.RuntimeTests
                     // frame rate than expected
                     if (doubleCheckTime < Time.realtimeSinceStartup)
                     {
-                        Assert.Fail("Did not successfully spawn all expected NetworkObjects");
+                        Assert.Fail("Did not successfully call all expected client RPCs");
                         break;
                     }
                 }
@@ -162,7 +163,7 @@ namespace TestProject.RuntimeTests
             }
 
             Assert.AreEqual(testStage, Support.SpawnRpcDespawn.StageExecutedByReceiver);
-            Assert.AreEqual(Support.SpawnRpcDespawn.ServerUpdateCount + 1, Support.SpawnRpcDespawn.ClientUpdateCount);
+            Assert.AreEqual(Support.SpawnRpcDespawn.ServerUpdateCount, Support.SpawnRpcDespawn.ClientUpdateCount);
             Assert.True(handler.WasSpawned);
             Assert.True(handler.WasDestroyed);
         }

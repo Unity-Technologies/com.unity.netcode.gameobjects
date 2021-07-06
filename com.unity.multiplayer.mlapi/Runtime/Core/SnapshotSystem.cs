@@ -184,16 +184,21 @@ namespace MLAPI
         {
             // Send the entry index and the buffer where the variables are serialized
 
-            using (var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
+            var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
                 MessageQueueContainer.MessageType.SnapshotData,
                 NetworkChannel.SnapshotExchange,
-                new []{clientId},
+                new[] {clientId},
                 NetworkUpdateLoop.UpdateStage
-            ))
+            );
+
+            if (context != null)
             {
-                NetworkBuffer buffer = context.NetworkWriter.GetStream() as NetworkBuffer;
-                WriteIndex(buffer);
-                WriteBuffer(buffer);
+                using (var icontext = (InternalCommandContext) context)
+                {
+                    NetworkBuffer buffer = icontext.NetworkWriter.GetStream() as NetworkBuffer;
+                    WriteIndex(buffer);
+                    WriteBuffer(buffer);
+                }
             }
         }
 
