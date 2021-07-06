@@ -18,26 +18,26 @@ namespace MLAPI.Prototyping
             public Dictionary<int, float> FloatParameters;
             public Dictionary<int, int> IntParameters;
             public HashSet<int> TriggerParameters;
-            public LayerState[] States;
-            
-            public AnimatorSnapshot(Dictionary<int, bool> boolParameters, Dictionary<int, float> floatParameters, Dictionary<int, int> intParameters, HashSet<int> triggerParameters, LayerState[] states)
+            public LayerState[] LayerStates;
+
+            public AnimatorSnapshot(Dictionary<int, bool> boolParameters, Dictionary<int, float> floatParameters, Dictionary<int, int> intParameters, HashSet<int> triggerParameters, LayerState[] layerStates)
             {
                 BoolParameters = boolParameters;
                 FloatParameters = floatParameters;
                 IntParameters = intParameters;
                 TriggerParameters = triggerParameters;
-                States = states;
+                LayerStates = layerStates;
             }
-            
+
             public AnimatorSnapshot()
             {
                 BoolParameters = new Dictionary<int, bool>(0);
                 FloatParameters = new Dictionary<int, float>(0);
                 IntParameters = new Dictionary<int, int>(0);
                 TriggerParameters = new HashSet<int>();
-                States = new LayerState[0];
+                LayerStates = new LayerState[0];
             }
-            
+
             public bool SetInt(int key, int value)
             {
                 if (IntParameters.TryGetValue(key, out var existingValue) && existingValue == value)
@@ -80,38 +80,39 @@ namespace MLAPI.Prototyping
             public void NetworkSerialize(NetworkSerializer serializer)
             {
                 SerializeIntParameters(serializer);
-                SerializeFloatParameters(serializer); 
+                SerializeFloatParameters(serializer);
                 SerializeBoolParameters(serializer);
-                SerializeTriggerParameters(serializer); 
+                SerializeTriggerParameters(serializer);
                 SerializeAnimatorLayerStates(serializer);
             }
 
             private void SerializeAnimatorLayerStates(NetworkSerializer serializer)
             {
-                int layerCount = serializer.IsReading ? 0 : States.Length;
+                int layerCount = serializer.IsReading ? 0 : LayerStates.Length;
                 serializer.Serialize(ref layerCount);
 
-                if (serializer.IsReading && States.Length != layerCount)
+                if (serializer.IsReading && LayerStates.Length != layerCount)
                 {
-                    States = new LayerState[layerCount];
+                    LayerStates = new LayerState[layerCount];
                 }
 
                 for (int paramIndex = 0; paramIndex < layerCount; paramIndex++)
                 {
-                    var stateHash = serializer.IsReading ? 0 : States[paramIndex].StateHash;
+                    var stateHash = serializer.IsReading ? 0 : LayerStates[paramIndex].StateHash;
                     serializer.Serialize(ref stateHash);
 
-                    var layerWeight = serializer.IsReading ? 0 : States[paramIndex].LayerWeight;
+                    var layerWeight = serializer.IsReading ? 0 : LayerStates[paramIndex].LayerWeight;
                     serializer.Serialize(ref layerWeight);
 
-                    var normalizedStateTime = serializer.IsReading ? 0 : States[paramIndex].NormalizedStateTime;
+                    var normalizedStateTime = serializer.IsReading ? 0 : LayerStates[paramIndex].NormalizedStateTime;
                     serializer.Serialize(ref normalizedStateTime);
 
                     if (serializer.IsReading)
                     {
-                        States[paramIndex] = new LayerState()
+                        LayerStates[paramIndex] = new LayerState()
                         {
-                            LayerWeight = layerWeight, StateHash = stateHash,
+                            LayerWeight = layerWeight,
+                            StateHash = stateHash,
                             NormalizedStateTime = normalizedStateTime
                         };
                     }
@@ -220,7 +221,7 @@ namespace MLAPI.Prototyping
                 }
             }
         }
-        
+
         private struct LayerState
         {
             public int StateHash;
@@ -243,17 +244,17 @@ namespace MLAPI.Prototyping
         /// </summary>
         [Tooltip("Defines who can update this transform.")]
         public Authority AnimatorAuthority = Authority.Owner;
-        
-        [SerializeField] 
+
+        [SerializeField]
         private float m_SendRate = 0.1f;
         private float m_NextSendTime = 0.0f;
         private bool m_ServerRequestsAnimationResync = false;
-        [SerializeField] 
+        [SerializeField]
         private Animator m_Animator;
-        
+
         private AnimatorSnapshot m_AnimatorSnapshot;
         private List<(int, AnimatorControllerParameterType)> m_CachedAnimatorParameters;
-        
+
         public override void OnNetworkSpawn()
         {
             var parameters = m_Animator.parameters;
@@ -266,7 +267,7 @@ namespace MLAPI.Prototyping
             for (var i = 0; i < parameters.Length; i++)
             {
                 var parameter = parameters[i];
-                
+
                 if (m_Animator.IsParameterControlledByCurve(parameter.nameHash))
                 {
                     //we are ignoring parameters that are controlled by animation curves - syncing the layer states indirectly syncs the values that are driven by the animation curves 
@@ -320,7 +321,7 @@ namespace MLAPI.Prototyping
             {
                 m_ServerRequestsAnimationResync = true;
             }
-            
+
             var clientRpcParams = new ClientRpcParams
             {
                 Send = new ClientRpcSendParams
@@ -331,7 +332,7 @@ namespace MLAPI.Prototyping
                         .ToArray()
                 }
             };
-                
+
             RequestResyncClientRpc(clientRpcParams);
         }
 
@@ -369,7 +370,7 @@ namespace MLAPI.Prototyping
                 }
             }
         }
-        
+
         private bool CheckSendRate()
         {
             var networkTime = NetworkManager.NetworkTime;
@@ -389,25 +390,25 @@ namespace MLAPI.Prototyping
 
             return layerStateChanged || animatorParametersChanged;
         }
-        
+
         private bool StoreLayerState()
         {
             bool changed = false;
-                
-            for (int i = 0; i < m_AnimatorSnapshot.States.Length; i++)
+
+            for (int i = 0; i < m_AnimatorSnapshot.LayerStates.Length; i++)
             {
                 var animStateInfo = m_Animator.GetCurrentAnimatorStateInfo(i);
 
-                bool didStateChange = m_AnimatorSnapshot.States[i].StateHash != animStateInfo.fullPathHash;
+                bool didStateChange = m_AnimatorSnapshot.LayerStates[i].StateHash != animStateInfo.fullPathHash;
                 bool enoughDelta = !didStateChange &&
-                                   (animStateInfo.normalizedTime - m_AnimatorSnapshot.States[i].NormalizedStateTime) >= 0.15f;
+                                   (animStateInfo.normalizedTime - m_AnimatorSnapshot.LayerStates[i].NormalizedStateTime) >= 0.15f;
 
                 float newLayerWeight = m_Animator.GetLayerWeight(i);
-                bool layerWeightChanged = Mathf.Abs(m_AnimatorSnapshot.States[i].LayerWeight - newLayerWeight) > Mathf.Epsilon;
+                bool layerWeightChanged = Mathf.Abs(m_AnimatorSnapshot.LayerStates[i].LayerWeight - newLayerWeight) > Mathf.Epsilon;
 
                 if (didStateChange || enoughDelta || layerWeightChanged)
                 {
-                    m_AnimatorSnapshot.States[i] = new LayerState
+                    m_AnimatorSnapshot.LayerStates[i] = new LayerState
                     {
                         StateHash = animStateInfo.fullPathHash,
                         NormalizedStateTime = animStateInfo.normalizedTime,
@@ -427,7 +428,7 @@ namespace MLAPI.Prototyping
             {
                 var animParamHash = animParam.Item1;
                 var animParamType = animParam.Item2;
-                
+
                 switch (animParamType)
                 {
                     case AnimatorControllerParameterType.Float:
@@ -465,7 +466,7 @@ namespace MLAPI.Prototyping
                             .ToArray()
                     }
                 };
-                
+
                 SendParamsAndLayerStatesClientRpc(m_AnimatorSnapshot, clientRpcParams);
             }
             else
@@ -473,7 +474,7 @@ namespace MLAPI.Prototyping
                 SendParamsAndLayerStatesServerRpc(m_AnimatorSnapshot);
             }
         }
-        
+
         [ServerRpc]
         private void SendParamsAndLayerStatesServerRpc(AnimatorSnapshot animSnapshot, ServerRpcParams serverRpcParams = default)
         {
@@ -481,9 +482,9 @@ namespace MLAPI.Prototyping
             {
                 return;
             }
-            
+
             ApplyAnimatorSnapshot(animSnapshot);
-            
+
             var clientRpcParams = new ClientRpcParams
             {
                 Send = new ClientRpcSendParams
@@ -494,7 +495,7 @@ namespace MLAPI.Prototyping
                         .ToArray()
                 }
             };
-            
+
             SendParamsAndLayerStatesClientRpc(animSnapshot, clientRpcParams);
         }
 
@@ -505,7 +506,7 @@ namespace MLAPI.Prototyping
             {
                 return;
             }
-            
+
             ApplyAnimatorSnapshot(animSnapshot);
         }
 
@@ -530,10 +531,10 @@ namespace MLAPI.Prototyping
             {
                 m_Animator.SetTrigger(triggerParameter);
             }
-            
-            for (var layerIndex = 0; layerIndex < animatorSnapshot.States.Length; layerIndex++)
+
+            for (var layerIndex = 0; layerIndex < animatorSnapshot.LayerStates.Length; layerIndex++)
             {
-                var layerState = animatorSnapshot.States[layerIndex];
+                var layerState = animatorSnapshot.LayerStates[layerIndex];
 
                 m_Animator.SetLayerWeight(layerIndex, layerState.LayerWeight);
 
