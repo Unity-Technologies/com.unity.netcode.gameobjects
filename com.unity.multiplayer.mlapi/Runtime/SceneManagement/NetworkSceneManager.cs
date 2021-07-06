@@ -133,13 +133,7 @@ namespace MLAPI.SceneManagement
             SceneNameToIndex.Add(sceneName, index);
         }
 
-        /// <summary>
-        /// Switches to a scene with a given name. Can only be called from Server
-        /// </summary>
-        /// <param name="sceneName">The name of the scene to switch to</param>
-        /// <param name="loadSceneMode">The mode to load the scene (Additive vs Single)</param>
-        /// <returns>SceneSwitchProgress</returns>
-        public SceneSwitchProgress SwitchScene(string sceneName, LoadSceneMode loadSceneMode = LoadSceneMode.Single, List<string> scenesToUnload = null)
+        private SceneSwitchProgress ValidateServerSceneEvent(string sceneName)
         {
             if (!m_NetworkManager.IsServer)
             {
@@ -171,22 +165,13 @@ namespace MLAPI.SceneManagement
 
                 return null;
             }
-
-            if (loadSceneMode != LoadSceneMode.Additive)
-            {
-                m_NetworkManager.SpawnManager.ServerDestroySpawnedSceneObjects(); //Destroy current scene objects before switching.
-            }
-            s_IsSwitching = true;
-
             var switchSceneProgress = new SceneSwitchProgress(m_NetworkManager);
             SceneSwitchProgresses.Add(switchSceneProgress.Guid, switchSceneProgress);
             CurrentSceneSwitchProgressGuid = switchSceneProgress.Guid;
-
-            SceneEventData.SwitchSceneGuid = switchSceneProgress.Guid;
-            SceneEventData.SceneEventType = SceneEventData.SceneEventTypes.SWITCH;
             CurrentActiveSceneIndex = SceneNameToIndex[sceneName];
-            SceneEventData.SceneIndex = CurrentActiveSceneIndex;
-            SceneEventData.LoadSceneMode = loadSceneMode;
+            s_IsSwitching = true;
+            IsSpawnedObjectsPendingInDontDestroyOnLoad = true;
+            s_NextSceneName = sceneName;
 
             switchSceneProgress.OnClientLoadedScene += clientId => { OnNotifyServerClientLoadedScene?.Invoke(switchSceneProgress, clientId); };
             switchSceneProgress.OnComplete += timedOut =>
@@ -206,28 +191,87 @@ namespace MLAPI.SceneManagement
                 }
             };
 
-            if (loadSceneMode != LoadSceneMode.Additive)
-            {
-                // Move ALL NetworkObjects to the temp scene
-                MoveObjectsToDontDestroyOnLoad();
-            }
-
-            IsSpawnedObjectsPendingInDontDestroyOnLoad = true;
-
-            // Switch scene
-            AsyncOperation sceneLoad = SceneManager.LoadSceneAsync(sceneName, loadSceneMode);
-
-            s_NextSceneName = sceneName;
-
-            sceneLoad.completed += (AsyncOperation asyncOp2) => { OnSceneLoaded(); };
-            switchSceneProgress.SetSceneLoadOperation(sceneLoad);
-            OnSceneSwitchStarted?.Invoke(sceneLoad);
-
             return switchSceneProgress;
         }
 
-        // Called on client
-        internal void OnSceneSwitch(Stream objectStream)
+        /// <summary>
+        /// Additively loads the scene
+        /// </summary>
+        /// <param name="sceneName"></param>
+        /// <returns></returns>
+        public SceneSwitchProgress LoadScene(string sceneName)
+        {
+            var switchSceneProgress = ValidateServerSceneEvent(sceneName);
+            if (switchSceneProgress == null)
+            {
+                return null;
+            }
+
+            SceneEventData.SwitchSceneGuid = switchSceneProgress.Guid;
+            SceneEventData.SceneEventType = SceneEventData.SceneEventTypes.LOAD;
+            SceneEventData.SceneIndex = SceneNameToIndex[sceneName];
+            SceneEventData.LoadSceneMode = LoadSceneMode.Additive;
+
+            // Begin the scene event
+            OnBeginSceneEvent(sceneName, switchSceneProgress, LoadSceneMode.Additive);
+
+            //Return our scene progress instance
+            return switchSceneProgress;
+        }
+
+        /// <summary>
+        /// Switches to a scene with a given name. Can only be called from Server
+        /// </summary>
+        /// <param name="sceneName">The name of the scene to switch to</param>
+        /// <param name="loadSceneMode">The mode to load the scene (Additive vs Single)</param>
+        /// <returns>SceneSwitchProgress</returns>
+        public SceneSwitchProgress SwitchScene(string sceneName, LoadSceneMode loadSceneMode = LoadSceneMode.Single)
+        {
+            // NSS TODO: Remove this once the LoadScene method is completed and all areas in the code that use the loadSceneMode parameter are updated
+            if(loadSceneMode == LoadSceneMode.Additive)
+            {
+                return LoadScene(sceneName);
+            }
+
+
+            var switchSceneProgress = ValidateServerSceneEvent(sceneName);
+            if (switchSceneProgress == null)
+            {
+                return null;
+            }
+
+            SceneEventData.SwitchSceneGuid = switchSceneProgress.Guid;
+            SceneEventData.SceneEventType = SceneEventData.SceneEventTypes.SWITCH;
+            SceneEventData.SceneIndex = SceneNameToIndex[sceneName];
+            SceneEventData.LoadSceneMode = LoadSceneMode.Single;
+
+            // Destroy current scene objects before switching.
+            m_NetworkManager.SpawnManager.ServerDestroySpawnedSceneObjects();
+
+            // Preserve the objects that should not be destroyed during the scene event
+            MoveObjectsToDontDestroyOnLoad();
+
+            // Begin the scene event
+            OnBeginSceneEvent(sceneName, switchSceneProgress, LoadSceneMode.Single);
+
+            //Return our scene progress instance
+            return switchSceneProgress;
+        }
+
+        private void OnBeginSceneEvent(string sceneName, SceneSwitchProgress switchSceneProgress, LoadSceneMode loadSceneMode)
+        {
+            // start loading the scene
+            AsyncOperation sceneLoad = SceneManager.LoadSceneAsync(sceneName, loadSceneMode);
+            sceneLoad.completed += (AsyncOperation asyncOp2) => { OnSceneLoaded(); };
+            switchSceneProgress.SetSceneLoadOperation(sceneLoad);
+            OnSceneSwitchStarted?.Invoke(sceneLoad);
+        }
+
+        /// <summary>
+        /// Client Side: handles both forms of scene loading
+        /// </summary>
+        /// <param name="objectStream">Stream data associated with the event </param>
+        internal void OnSceneLoadingEvent(Stream objectStream)
         {
             SceneEventData.CopyUndreadFromStream(objectStream);
 
@@ -256,8 +300,6 @@ namespace MLAPI.SceneManagement
             sceneLoad.completed += asyncOp2 => OnSceneLoaded();
             OnSceneSwitchStarted?.Invoke(sceneLoad);
         }
-
-
 
 
         internal void OnFirstSceneSwitchSync(uint sceneIndex, Guid switchSceneGuid)
@@ -292,9 +334,6 @@ namespace MLAPI.SceneManagement
 
             s_IsSwitching = false;
         }
-
-
-
 
 
         private void OnSceneLoaded()
@@ -355,7 +394,7 @@ namespace MLAPI.SceneManagement
             // Tell server that scene load is completed
             if (m_NetworkManager.IsHost)
             {
-                OnClientSwitchSceneCompleted(m_NetworkManager.LocalClientId, SceneEventData.SwitchSceneGuid);
+                OnClientSceneLoadingEventCompleted(m_NetworkManager.LocalClientId, SceneEventData.SwitchSceneGuid);
             }
 
             s_IsSwitching = false;
@@ -380,9 +419,8 @@ namespace MLAPI.SceneManagement
             using (var buffer = PooledNetworkBuffer.Get())
             using (var writer = PooledNetworkWriter.Get(buffer))
             {
-                SceneEventData.SceneEventType = SceneEventData.SceneEventTypes.SWITCH_COMPLETE;
+                SceneEventData.SceneEventType = SceneEventData.SceneEventType == SceneEventData.SceneEventTypes.SWITCH ?  SceneEventData.SceneEventTypes.SWITCH_COMPLETE: SceneEventData.SceneEventTypes.LOAD_COMPLETE;
                 writer.WriteObjectPacked(SceneEventData);
-                //writer.WriteByteArray(SceneEventData.SwitchSceneGuid.ToByteArray());
                 m_NetworkManager.MessageSender.Send(m_NetworkManager.ServerClientId, NetworkConstants.SCENE_EVENT, NetworkChannel.Internal, buffer);
             }
 
@@ -396,9 +434,6 @@ namespace MLAPI.SceneManagement
         internal void SynchronizeInSceneObjects(ulong clientId, NetworkWriter writer)
         {
             writer.WriteObjectPacked(SceneEventData);
-            //writer.WriteUInt32Packed(CurrentActiveSceneIndex);
-            //writer.WriteByteArray(switchSceneGuid.ToByteArray());
-            //writer.WriteBool(loadSceneMode == LoadSceneMode.Additive);
 
             uint sceneObjectsToSpawn = 0;
 
@@ -424,7 +459,7 @@ namespace MLAPI.SceneManagement
         internal bool HasSceneMismatch(uint sceneIndex) => SceneManager.GetActiveScene().name != SceneIndexToString[sceneIndex];
 
         // Called on server
-        internal void OnClientSwitchSceneCompleted(ulong clientId, Guid switchSceneGuid)
+        internal void OnClientSceneLoadingEventCompleted(ulong clientId, Guid switchSceneGuid)
         {
             if (switchSceneGuid == Guid.Empty)
             {
@@ -520,9 +555,11 @@ namespace MLAPI.SceneManagement
         {
             switch (SceneEventData.SceneEventType)
             {
+                // Both events are basically the same with some minor differences
                 case SceneEventData.SceneEventTypes.SWITCH:
+                case SceneEventData.SceneEventTypes.LOAD:
                     {
-                        OnSceneSwitch(stream);
+                        OnSceneLoadingEvent(stream);
                         break;
                     }
                 default:
@@ -539,7 +576,7 @@ namespace MLAPI.SceneManagement
             {
                 case SceneEventData.SceneEventTypes.SWITCH_COMPLETE:
                     {
-                        OnClientSwitchSceneCompleted(clientId,SceneEventData.SwitchSceneGuid);
+                        OnClientSceneLoadingEventCompleted(clientId,SceneEventData.SwitchSceneGuid);
                         break;
                     }
                 default:
@@ -549,7 +586,6 @@ namespace MLAPI.SceneManagement
                     }
             }
         }
-
 
         public void HandleSceneEvent(ulong clientId, Stream stream)
         {
@@ -570,7 +606,7 @@ namespace MLAPI.SceneManagement
                 }
                 else
                 {
-                    Debug.LogError($"Scene Event {nameof(OnSceneSwitch)} was invoked with a null stream!");
+                    Debug.LogError($"Scene Event {nameof(OnSceneLoadingEvent)} was invoked with a null stream!");
                     return;
                 }
             }

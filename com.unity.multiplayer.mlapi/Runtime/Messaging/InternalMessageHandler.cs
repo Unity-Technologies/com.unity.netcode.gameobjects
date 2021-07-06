@@ -297,7 +297,7 @@ namespace MLAPI.Messaging
         {
             using (var reader = PooledNetworkReader.Get(stream))
             {
-                m_NetworkManager.SceneManager.OnClientSwitchSceneCompleted(clientId, new Guid(reader.ReadByteArray()));
+                m_NetworkManager.SceneManager.OnClientSceneLoadingEventCompleted(clientId, new Guid(reader.ReadByteArray()));
             }
         }
 

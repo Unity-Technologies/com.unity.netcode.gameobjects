@@ -108,7 +108,7 @@ namespace TestProject.ManualTests
                     OnSceneSwitchBegin?.Invoke();
                     m_ExitingScene = true;
                     ExitingNow = true;
-                    m_CurrentSceneSwitchProgress = NetworkManager.Singleton.SceneManager.SwitchScene(m_SceneToSwitchTo[m_CurrentSceneIndex], UnityEngine.SceneManagement.LoadSceneMode.Additive);
+                    m_CurrentSceneSwitchProgress = NetworkManager.Singleton.SceneManager.LoadScene(m_SceneToSwitchTo[m_CurrentSceneIndex]);
                     m_CurrentSceneIndex++;
                     m_CurrentSceneSwitchProgress.OnComplete += CurrentSceneSwitchProgress_OnComplete;
                 }
