@@ -66,20 +66,20 @@ public class ExecuteStepInContext : CustomYieldInstruction
 
     /// <summary>
     /// This MUST be called at the beginning of each test in order to use context based steps.
-    /// Assumes this is called from same callsite as ExecuteInContext (and assumes this is called from IEnumerator).
+    /// Assumes this is called from same callsite as ExecuteStepInContext (and assumes this is called from IEnumerator, the method full name is unique
+    /// even with the same method name and different parameters).
     /// This relies on the name to be unique for each generated IEnumerator state machines
     /// </summary>
     public static void InitContextSteps()
     {
         var callerMethod = new StackFrame(1).GetMethod();
-        var methodIdentifier = GetMethodIdentifier(callerMethod.DeclaringType.FullName); // since this is called from IEnumerator, this should be a generated class
+        var methodIdentifier = GetMethodIdentifier(callerMethod); // since this is called from IEnumerator, this should be a generated class, making it unique
         s_MethodIDCounter[methodIdentifier] = 0;
     }
 
-    private static string GetMethodIdentifier(string callerTypeName)
+    private static string GetMethodIdentifier(MethodBase callerMethod)
     {
-        var info = callerTypeName;
-        return info;
+        return callerMethod.DeclaringType.FullName;
     }
 
     internal static void InitializeAllSteps()
@@ -184,7 +184,7 @@ public class ExecuteStepInContext : CustomYieldInstruction
 
         var callerMethod = new StackFrame(1).GetMethod(); // one skip frame for current method
 
-        var methodId = GetMethodIdentifier(callerMethod.DeclaringType.FullName); // assumes called from IEnumerator MoveNext, which should be the case since we're a CustomYieldInstruction
+        var methodId = GetMethodIdentifier(callerMethod); // assumes called from IEnumerator MoveNext, which should be the case since we're a CustomYieldInstruction. This will return a generated class name which should be unique
         if (!s_MethodIDCounter.ContainsKey(methodId))
         {
             s_MethodIDCounter[methodId] = 0;
@@ -211,9 +211,9 @@ public class ExecuteStepInContext : CustomYieldInstruction
                     TestCoordinator.Instance.TriggerActionIDClientRpc(currentActionID, paramToPass,
                         clientRpcParams: new ClientRpcParams
                         {
-                            Send = new ClientRpcSendParams { TargetClientIds = TestCoordinator.AllClientIdExceptMine.ToArray() }
+                            Send = new ClientRpcSendParams { TargetClientIds = TestCoordinator.AllClientIdsExceptMine.ToArray() }
                         });
-                    foreach (var clientId in TestCoordinator.AllClientIdExceptMine)
+                    foreach (var clientId in TestCoordinator.AllClientIdsExceptMine)
                     {
                         m_ClientIsFinishedChecks.Add(TestCoordinator.ConsumeClientIsFinished(clientId));
                     }

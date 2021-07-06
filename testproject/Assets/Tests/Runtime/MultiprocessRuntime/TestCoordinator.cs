@@ -42,8 +42,8 @@ public class TestCoordinator : NetworkBehaviour
     private Dictionary<ulong, List<float>> m_TestResultsLocal = new Dictionary<ulong, List<float>>(); // this isn't super efficient, but since it's used for signaling around the tests, shouldn't be too bad
     private Dictionary<ulong, bool> m_ClientIsFinished = new Dictionary<ulong, bool>();
 
-    public static Dictionary<ulong, List<float>>.KeyCollection AllClientIdsWithResults => Instance.m_TestResultsLocal.Keys;
-    public static List<ulong> AllClientIdExceptMine => NetworkManager.Singleton.ConnectedClients.Keys.ToList().FindAll(client => client != NetworkManager.Singleton.LocalClientId);
+    public static List<ulong> AllClientIdsWithResults => Instance.m_TestResultsLocal.Keys.ToList();
+    public static List<ulong> AllClientIdsExceptMine => NetworkManager.Singleton.ConnectedClients.Keys.ToList().FindAll(client => client != NetworkManager.Singleton.LocalClientId);
 
     private void Awake()
     {
@@ -59,7 +59,7 @@ public class TestCoordinator : NetworkBehaviour
 
     public void Start()
     {
-        bool isClient = Environment.GetCommandLineArgs().Any(value => value == MultiprocessOrchestration.isWorkerArg);
+        bool isClient = Environment.GetCommandLineArgs().Any(value => value == MultiprocessOrchestration.IsWorkerArg);
         if (isClient)
         {
             Debug.Log("starting MLAPI client");
@@ -241,13 +241,13 @@ public class TestCoordinator : NetworkBehaviour
     public void InvokeFromMethodActionRpc(Action<byte[]> methodInfo, params byte[] args)
     {
         var methodInfoString = GetMethodInfo(methodInfo);
-        InvokeFromMethodNameClientRpc(methodInfoString, args, new ClientRpcParams { Send = new ClientRpcSendParams { TargetClientIds = AllClientIdExceptMine.ToArray() } });
+        InvokeFromMethodNameClientRpc(methodInfoString, args, new ClientRpcParams { Send = new ClientRpcSendParams { TargetClientIds = AllClientIdsExceptMine.ToArray() } });
     }
 
     public void InvokeFromMethodActionRpc(Action methodInfo)
     {
         var methodInfoString = GetMethodInfo(methodInfo);
-        InvokeFromMethodNameClientRpc(methodInfoString, null, new ClientRpcParams { Send = new ClientRpcSendParams { TargetClientIds = AllClientIdExceptMine.ToArray() } });
+        InvokeFromMethodNameClientRpc(methodInfoString, null, new ClientRpcParams { Send = new ClientRpcSendParams { TargetClientIds = AllClientIdsExceptMine.ToArray() } });
     }
 
     [ClientRpc]
@@ -282,7 +282,7 @@ public class TestCoordinator : NetworkBehaviour
             var foundMethod = foundType.GetMethod(staticMethodToExecute, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
             if (foundMethod == null)
             {
-                throw new Exception($"couldn't find method {staticMethodToExecute}");
+                throw new MissingMethodException($"couldn't find method {staticMethodToExecute}");
             }
 
             foundMethod.Invoke(null, args != null ? new object[] { args } : null);

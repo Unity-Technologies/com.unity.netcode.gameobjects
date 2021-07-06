@@ -1,12 +1,13 @@
-using MLAPI;
 using UnityEngine;
+using MLAPI;
+
 
 namespace TestProject.ManualTests
 {
     /// <summary>
     /// Used to simulate a player moving around
     /// </summary>
-    public class PlayerMovementManager : MonoBehaviour
+    public class PlayerMovementManager : NetworkBehaviour
     {
         public int MoveSpeed = 10;
 
@@ -14,12 +15,24 @@ namespace TestProject.ManualTests
 
         private RandomMovement m_RandomMovement;
 
+        private Rigidbody m_Rigidbody;
+
 
         // Start is called before the first frame update
         private void Start()
         {
             m_NetworkedObject = GetComponent<NetworkObject>();
             m_RandomMovement = GetComponent<RandomMovement>();
+         
+        }
+
+        public override void OnNetworkSpawn()
+        {
+            m_Rigidbody = GetComponent<Rigidbody>();
+            if (m_Rigidbody != null)
+            {
+                m_Rigidbody.isKinematic = !NetworkObject.IsOwner;
+            }
         }
 
         private void Update()
@@ -37,6 +50,7 @@ namespace TestProject.ManualTests
         {
             if (m_NetworkedObject && m_NetworkedObject.NetworkManager && m_NetworkedObject.NetworkManager.IsListening)
             {
+
                 if (!m_NetworkedObject.IsOwner)
                 {
                     return;

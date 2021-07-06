@@ -2,33 +2,36 @@ using System;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using MLAPI.MultiprocessRuntimeTests;
 using UnityEditor;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
 
 public class MultiprocessOrchestration
 {
-    public const string buildInfoFileName = "buildInfo.txt";
-    public const string isWorkerArg = "-isWorker";
+    public const string IsWorkerArg = "-isWorker";
 
     public static void StartWorkerNode()
     {
         var workerNode = new Process();
 
         //TODO this should be replaced eventually by proper orchestration for all supported platforms
+        // Starting new local processes is a solution to help run perf tests locally. CI should have multi machine orchestration to
+        // run performance tests with more realistic conditions.
         string buildInstructions = $"You probably didn't generate your build. Please make sure you build a player using the '{BuildMultiprocessTestPlayer.BuildAndExecuteMenuName}' menu";
         try
         {
-            var buildInfo = File.ReadAllText(Path.Combine(Application.streamingAssetsPath, buildInfoFileName));
+
+            var buildPath = BuildMultiprocessTestPlayer.ReadBuildInfo().buildPath;
             switch (Application.platform)
             {
                 case RuntimePlatform.OSXPlayer:
                 case RuntimePlatform.OSXEditor:
-                    workerNode.StartInfo.FileName = $"{buildInfo}.app/Contents/MacOS/testproject";
+                    workerNode.StartInfo.FileName = $"{buildPath}.app/Contents/MacOS/testproject";
                     break;
                 case RuntimePlatform.WindowsPlayer:
                 case RuntimePlatform.WindowsEditor:
-                    workerNode.StartInfo.FileName = $"{buildInfo}.exe";
+                    workerNode.StartInfo.FileName = $"{buildPath}.exe";
                     break;
                 default:
                     throw new NotImplementedException("StartWorkerNode: Current platform not supported");
@@ -36,13 +39,14 @@ public class MultiprocessOrchestration
         }
         catch (FileNotFoundException)
         {
-            throw new Exception($"Couldn't find build info file. {buildInstructions}");
+            Debug.LogError($"Couldn't find build info file. {buildInstructions}");
+            throw;
         }
 
         workerNode.StartInfo.UseShellExecute = false;
         workerNode.StartInfo.RedirectStandardError = true;
         workerNode.StartInfo.RedirectStandardOutput = true;
-        workerNode.StartInfo.Arguments = $"{isWorkerArg} -popupwindow -screen-width 100 -screen-height 100";
+        workerNode.StartInfo.Arguments = $"{IsWorkerArg} -popupwindow -screen-width 100 -screen-height 100";
         // workerNode.StartInfo.Arguments += " -deepprofiling"; // enable for deep profiling
         try
         {
