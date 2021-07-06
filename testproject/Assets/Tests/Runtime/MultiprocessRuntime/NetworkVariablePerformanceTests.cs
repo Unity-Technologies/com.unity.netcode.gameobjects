@@ -71,10 +71,13 @@ namespace MLAPI.MultiprocessRuntimeTests
         {
             InitContextSteps();
 
-            // if (!TestCoordinator.Instance.isRegistering)
-            // {
-            //     yield return new WaitForSeconds(20); // uncomment to be able to attach debugger and profiler to running build
-            // }
+            if (!isRegistering && TestCoordinator.Instance.NetworkManager.IsServer && BuildMultiprocessTestPlayer.ReadBuildInfo().isDebug)
+            {
+                // build test player in debug mode to enable this
+                var timeToWait = 20;
+                Debug.Log($"Debug mode tests enabled, waiting {timeToWait} seconds to give some time to attach debugger");
+                yield return new WaitForSeconds(timeToWait);
+            }
 
             yield return new ExecuteStepInContext(StepExecutionContext.Server, _ =>
             {

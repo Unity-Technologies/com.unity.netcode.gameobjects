@@ -2,13 +2,13 @@ using System;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using MLAPI.MultiprocessRuntimeTests;
 using UnityEditor;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
 
 public class MultiprocessOrchestration
 {
-    public const string BuildInfoFileName = "buildInfo.txt";
     public const string IsWorkerArg = "-isWorker";
 
     public static void StartWorkerNode()
@@ -21,16 +21,17 @@ public class MultiprocessOrchestration
         string buildInstructions = $"You probably didn't generate your build. Please make sure you build a player using the '{BuildMultiprocessTestPlayer.BuildAndExecuteMenuName}' menu";
         try
         {
-            var buildInfo = File.ReadAllText(Path.Combine(Application.streamingAssetsPath, BuildInfoFileName));
+
+            var buildPath = BuildMultiprocessTestPlayer.ReadBuildInfo().buildPath;
             switch (Application.platform)
             {
                 case RuntimePlatform.OSXPlayer:
                 case RuntimePlatform.OSXEditor:
-                    workerNode.StartInfo.FileName = $"{buildInfo}.app/Contents/MacOS/testproject";
+                    workerNode.StartInfo.FileName = $"{buildPath}.app/Contents/MacOS/testproject";
                     break;
                 case RuntimePlatform.WindowsPlayer:
                 case RuntimePlatform.WindowsEditor:
-                    workerNode.StartInfo.FileName = $"{buildInfo}.exe";
+                    workerNode.StartInfo.FileName = $"{buildPath}.exe";
                     break;
                 default:
                     throw new NotImplementedException("StartWorkerNode: Current platform not supported");
