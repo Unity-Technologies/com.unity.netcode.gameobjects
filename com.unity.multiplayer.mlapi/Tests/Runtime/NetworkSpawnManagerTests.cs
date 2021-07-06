@@ -6,59 +6,13 @@ using UnityEngine.TestTools;
 
 namespace MLAPI.RuntimeTests
 {
-    public class NetworkSpawnManagerTests
+    public class NetworkSpawnManagerTests : BaseMultiInstanceTest
     {
-        private NetworkManager m_ServerNetworkManager;
-        private NetworkManager[] m_ClientNetworkManagers;
-        private GameObject m_PlayerPrefab;
-
         private ulong serverSideClientId => m_ServerNetworkManager.ServerClientId;
         private ulong clientSideClientId => m_ClientNetworkManagers[0].LocalClientId;
         private ulong otherClientSideClientId => m_ClientNetworkManagers[1].LocalClientId;
 
-        [UnitySetUp]
-        public IEnumerator Setup()
-        {
-            // Create multiple NetworkManager instances
-            if (!MultiInstanceHelpers.Create(2, out NetworkManager server, out NetworkManager[] clients))
-            {
-                Debug.LogError("Failed to create instances");
-                Assert.Fail("Failed to create instances");
-            }
-
-            m_ServerNetworkManager = server;
-            m_ClientNetworkManagers = clients;
-
-            // Create playerPrefab
-            m_PlayerPrefab = new GameObject("Player");
-            NetworkObject networkObject = m_PlayerPrefab.AddComponent<NetworkObject>();
-
-            // Make it a prefab
-            MultiInstanceHelpers.MakeNetworkedObjectTestPrefab(networkObject);
-
-            // Set the player prefab
-            server.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
-
-            for (int i = 0; i < clients.Length; i++)
-            {
-                clients[i].NetworkConfig.PlayerPrefab = m_PlayerPrefab;
-            }
-
-            // Start the instances
-            if (!MultiInstanceHelpers.Start(true, server, clients))
-            {
-                Assert.Fail("Failed to start instances");
-            }
-
-            // Wait for connection on client side
-            for (int i = 0; i < clients.Length; i++)
-            {
-                yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientConnected(clients[i]));
-            }
-
-            // Wait for connection on server side
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnectedToServer(server, clientCount: 3));
-        }
+        protected override int NbClients => 2;
 
         [Test]
         public void TestServerCanAccessItsOwnPlayer()
@@ -168,20 +122,9 @@ namespace MLAPI.RuntimeTests
             var nbConnectedClients = m_ServerNetworkManager.ConnectedClients.Count;
             MultiInstanceHelpers.StopOneClient(newClientNetworkManager);
             yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForCondition(() => m_ServerNetworkManager.ConnectedClients.Count == nbConnectedClients - 1));
+
             serverSideNewClientPlayer = m_ServerNetworkManager.SpawnManager.GetPlayerNetworkObject(newClientLocalClientId);
             Assert.Null(serverSideNewClientPlayer);
-        }
-
-        [UnityTearDown]
-        public IEnumerator Teardown()
-        {
-            // Shutdown and clean up both of our NetworkManager instances
-            MultiInstanceHelpers.Destroy();
-            Object.Destroy(m_PlayerPrefab);
-
-            // wait for next frame so everything is destroyed, so following tests can execute from clean environment
-            int nextFrameNumber = Time.frameCount + 1;
-            yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
         }
     }
 }
