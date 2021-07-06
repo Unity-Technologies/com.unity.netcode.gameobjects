@@ -33,7 +33,7 @@ public class MultiprocessOrchestration
                     workerNode.StartInfo.FileName = $"{buildInfo}.exe";
                     break;
                 default:
-                    throw new NotImplementedException("StartWorkerNode: Current platform not supported");
+                    throw new NotImplementedException($"{nameof(StartWorkerNode)}: Current platform is not supported");
             }
         }
         catch (FileNotFoundException)
@@ -52,7 +52,7 @@ public class MultiprocessOrchestration
             var newProcessStarted = workerNode.Start();
             if (!newProcessStarted)
             {
-                throw new Exception("Process not started!");
+                throw new Exception("Failed to start process!");
             }
         }
         catch (Win32Exception e)
