@@ -178,7 +178,7 @@ namespace MLAPI.RuntimeTests
         private static CoroutineRunner s_CoroutineRunner;
 
         /// <summary>
-        /// Runs a IEnumerator as a Coroutine on a dummy GameObject.
+        /// Runs a IEnumerator as a Coroutine on a dummy GameObject. Used to get exceptions coming from the coroutine
         /// </summary>
         /// <param name="enumerator">The IEnumerator to run</param>
         public static Coroutine Run(IEnumerator enumerator)

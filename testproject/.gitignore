@@ -72,3 +72,5 @@ crashlytics-build.properties
 
 /[Aa]ssets/[Ss]treamingAssets/buildInfo.txt
 /[Aa]ssets/[Ss]treamingAssets/buildInfo.txt.meta
+
+InitTestScene*
