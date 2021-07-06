@@ -24,6 +24,36 @@ namespace MLAPI.MultiprocessRuntimeTests
         protected override bool m_IsPerformanceTest => false;
 
         [UnityTest, MultiprocessContextBasedTest]
+        public IEnumerator TestWithSameName([Values(1)]int a)
+        {
+            // ExecuteStepInContext bases itself on method name to identify steps. We need to make sure that methods with
+            // same names, but different signatures behave correctly
+            InitContextSteps();
+            yield return new ExecuteStepInContext(StepExecutionContext.Server, bytes =>
+            {
+                Assert.That(a, Is.EqualTo(1));
+            });
+            yield return new ExecuteStepInContext(StepExecutionContext.Clients, bytes =>
+            {
+                Assert.That(BitConverter.ToInt32(bytes, 0), Is.EqualTo(1));
+            }, paramToPass: BitConverter.GetBytes(a));
+        }
+
+        [UnityTest, MultiprocessContextBasedTest]
+        public IEnumerator TestWithSameName([Values(2)]int a, [Values(3)]int b)
+        {
+            InitContextSteps();
+            yield return new ExecuteStepInContext(StepExecutionContext.Server, bytes =>
+            {
+                Assert.That(b, Is.EqualTo(3));
+            });
+            yield return new ExecuteStepInContext(StepExecutionContext.Clients, bytes =>
+            {
+                Assert.That(BitConverter.ToInt32(bytes, 0), Is.EqualTo(3));
+            }, paramToPass: BitConverter.GetBytes(b));
+        }
+
+        [UnityTest, MultiprocessContextBasedTest]
         public IEnumerator TestWithParameters([Values(1, 2, 3)] int a)
         {
             InitContextSteps();
