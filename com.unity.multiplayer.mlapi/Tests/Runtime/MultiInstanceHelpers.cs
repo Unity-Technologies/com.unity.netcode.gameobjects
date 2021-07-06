@@ -15,8 +15,10 @@ namespace MLAPI.RuntimeTests
     /// </summary>
     public static class MultiInstanceHelpers
     {
-
-        public static List<NetworkManager> NetworkManagerInstances = new List<NetworkManager>();
+        private static List<NetworkManager> s_NetworkManagerInstances = new List<NetworkManager>();
+        private static bool s_IsStarted;
+        private static int s_ClientCount;
+        private static int s_OriginalTargetFrameRate = -1;
 
         /// <summary>
         /// Creates NetworkingManagers and configures them for use in a multi instance setting.
@@ -24,9 +26,9 @@ namespace MLAPI.RuntimeTests
         /// <param name="clientCount">The amount of clients</param>
         /// <param name="server">The server NetworkManager</param>
         /// <param name="clients">The clients NetworkManagers</param>
-        public static bool Create(int clientCount, out NetworkManager server, out NetworkManager[] clients)
+        public static bool Create(int clientCount, out NetworkManager server, out NetworkManager[] clients, int targetFrameRate = 60)
         {
-            NetworkManagerInstances = new List<NetworkManager>();
+            s_NetworkManagerInstances = new List<NetworkManager>();
 
             CreateNewClients(clientCount, out clients);
 
@@ -36,7 +38,7 @@ namespace MLAPI.RuntimeTests
 
                 // Create networkManager component
                 server = go.AddComponent<NetworkManager>();
-                NetworkManagerInstances.Insert(0, server);
+                s_NetworkManagerInstances.Insert(0, server);
 
                 // Set the NetworkConfig
                 server.NetworkConfig = new NetworkConfig()
@@ -47,6 +49,9 @@ namespace MLAPI.RuntimeTests
                     NetworkTransport = go.AddComponent<SIPTransport>()
                 };
             }
+
+            s_OriginalTargetFrameRate = Application.targetFrameRate;
+            Application.targetFrameRate = targetFrameRate;
 
             return true;
         }
@@ -78,7 +83,7 @@ namespace MLAPI.RuntimeTests
                 };
             }
 
-            NetworkManagerInstances.AddRange(clients);
+            s_NetworkManagerInstances.AddRange(clients);
             return true;
         }
 
@@ -90,7 +95,7 @@ namespace MLAPI.RuntimeTests
         {
             clientToStop.StopClient();
             Object.Destroy(clientToStop.gameObject);
-            NetworkManagerInstances.Remove(clientToStop);
+            s_NetworkManagerInstances.Remove(clientToStop);
         }
 
         /// <summary>
@@ -99,8 +104,15 @@ namespace MLAPI.RuntimeTests
         /// </summary>
         public static void Destroy()
         {
+            if (!s_IsStarted)
+            {
+                throw new InvalidOperationException("MultiInstanceHelper is not started");
+            }
+
+            s_IsStarted = false;
+
             // Shutdown the server which forces clients to disconnect
-            foreach (var networkManager in NetworkManagerInstances)
+            foreach (var networkManager in s_NetworkManagerInstances)
             {
                 if (networkManager.IsHost)
                 {
@@ -117,18 +129,20 @@ namespace MLAPI.RuntimeTests
             }
 
             // Destroy the network manager instances
-            foreach (var networkManager in NetworkManagerInstances)
+            foreach (var networkManager in s_NetworkManagerInstances)
             {
                 Object.Destroy(networkManager.gameObject);
             }
 
-            NetworkManagerInstances.Clear();
+            s_NetworkManagerInstances.Clear();
 
             // Destroy the temporary GameObject used to run co-routines
             if (s_CoroutineRunner != null)
             {
                 Object.Destroy(s_CoroutineRunner);
             }
+
+            Application.targetFrameRate = s_OriginalTargetFrameRate;
         }
 
         /// <summary>
@@ -139,6 +153,14 @@ namespace MLAPI.RuntimeTests
         /// <param name="clients">The Clients NetworkManager</param>
         public static bool Start(bool host, NetworkManager server, NetworkManager[] clients)
         {
+            if (s_IsStarted)
+            {
+                throw new InvalidOperationException("MultiInstanceHelper already started. Did you forget to Destroy?");
+            }
+
+            s_IsStarted = true;
+            s_ClientCount = clients.Length;
+
             if (host)
             {
                 server.StartHost();
@@ -164,7 +186,7 @@ namespace MLAPI.RuntimeTests
         private static CoroutineRunner s_CoroutineRunner;
 
         /// <summary>
-        /// Runs a IEnumerator as a Coroutine on a dummy GameObject.
+        /// Runs a IEnumerator as a Coroutine on a dummy GameObject. Used to get exceptions coming from the coroutine
         /// </summary>
         /// <param name="enumerator">The IEnumerator to run</param>
         public static Coroutine Run(IEnumerator enumerator)
@@ -204,6 +226,32 @@ namespace MLAPI.RuntimeTests
 
             // Prevent object from being snapped up as a scene object
             networkObject.IsSceneObject = false;
+        }
+
+        // We use GameObject instead of SceneObject to be able to keep hierarchy
+        public static void MarkAsSceneObjectRoot(GameObject networkObjectRoot, NetworkManager server, NetworkManager[] clients)
+        {
+            networkObjectRoot.name += " - Server";
+
+            NetworkObject[] serverNetworkObjects = networkObjectRoot.GetComponentsInChildren<NetworkObject>();
+
+            for (int i = 0; i < serverNetworkObjects.Length; i++)
+            {
+                serverNetworkObjects[i].NetworkManagerOwner = server;
+            }
+
+            for (int i = 0; i < clients.Length; i++)
+            {
+                GameObject root = Object.Instantiate(networkObjectRoot);
+                root.name += " - Client - " + i;
+
+                NetworkObject[] clientNetworkObjects = root.GetComponentsInChildren<NetworkObject>();
+
+                for (int j = 0; j < clientNetworkObjects.Length; j++)
+                {
+                    clientNetworkObjects[j].NetworkManagerOwner = clients[i];
+                }
+            }
         }
 
         /// <summary>
@@ -277,7 +325,7 @@ namespace MLAPI.RuntimeTests
         /// <param name="maxFrames">The max frames to wait for</param>
         public static IEnumerator WaitForClientConnectedToServer(NetworkManager server, CoroutineResultWrapper<bool> result = null, int maxFrames = 64)
         {
-            yield return WaitForClientsConnectedToServer(server, 1, result, maxFrames);
+            yield return WaitForClientsConnectedToServer(server, server.IsHost ? s_ClientCount + 1 : s_ClientCount, result, maxFrames);
         }
 
         /// <summary>

@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using NUnit.Framework;
@@ -7,31 +8,21 @@ using TestProject.ManualTests;
 using MLAPI.RuntimeTests;
 using MLAPI;
 using Debug = UnityEngine.Debug;
+using Object = UnityEngine.Object;
 
 namespace TestProject.RuntimeTests
 {
-    public class RPCTestsAutomated
+    public class RpcTestsAutomated : BaseMultiInstanceTest
     {
         private bool m_TimedOut;
-
         private int m_MaxFrames;
 
-        private GameObject m_PlayerPrefab;
+        protected override int NbClients => throw new NotSupportedException("Not implemented on purpose, setup is implementing this itself");
 
-        private int m_OriginalTargetFrameRate;
-
-        [SetUp]
-        public void SetUp()
+        [UnitySetUp]
+        public override IEnumerator Setup()
         {
-            // Just always track the current target frame rate (will be re-applied upon TearDown)
-            m_OriginalTargetFrameRate = Application.targetFrameRate;
-
-            // Since we use frame count as a metric, we need to assure it runs at a "common update rate"
-            // between platforms (i.e. Ubuntu seems to run at much higher FPS when set to -1)
-            if (Application.targetFrameRate < 0 || Application.targetFrameRate > 120)
-            {
-                Application.targetFrameRate = 120;
-            }
+            yield break;
         }
 
         /// <summary>
@@ -57,7 +48,7 @@ namespace TestProject.RuntimeTests
         /// <summary>
         /// This just helps to simplify any further tests that can leverage from
         /// the RpcQueueManualTests' wide array of RPC testing under different
-        /// conditions.  
+        /// conditions.
         /// Currently this allows for the adjustment of client count and whether
         /// RPC Batching is enabled or not.
         /// </summary>
@@ -72,53 +63,23 @@ namespace TestProject.RuntimeTests
             // Set RpcQueueManualTests into unit testing mode
             RpcQueueManualTests.UnitTesting = true;
 
-            // Create Host and (numClients) clients 
-            Assert.True(MultiInstanceHelpers.Create(numClients, out NetworkManager server, out NetworkManager[] clients));
-
-            // Create a default player GameObject to use
-            m_PlayerPrefab = new GameObject("Player");
-            var networkObject = m_PlayerPrefab.AddComponent<NetworkObject>();
-
-            // Add our RpcQueueManualTests component
-            m_PlayerPrefab.AddComponent<RpcQueueManualTests>();
-
-            // Make it a prefab
-            MultiInstanceHelpers.MakeNetworkedObjectTestPrefab(networkObject);
-
-            // Set the player prefab
-            server.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
-
-
-            // Set all of the client's player prefab
-            for (int i = 0; i < clients.Length; i++)
+            yield return StartSomeClientsAndServerWithPlayers(useHost:true, numClients, playerPrefab =>
             {
-                clients[i].NetworkConfig.PlayerPrefab = m_PlayerPrefab;
-            }
-
-            // Start the instances
-            if (!MultiInstanceHelpers.Start(true, server, clients))
-            {
-                Debug.LogError("Failed to start instances");
-                Assert.Fail("Failed to start instances");
-            }
+                // Add our RpcQueueManualTests component
+                playerPrefab.AddComponent<RpcQueueManualTests>();
+            });
 
             // Set the RPC Batch sending mode
-            server.MessageQueueContainer.EnableBatchedMessages(useBatching);
+            m_ServerNetworkManager.MessageQueueContainer.EnableBatchedMessages(useBatching);
 
-            for (int i = 0; i < clients.Length; i++)
+            for (int i = 0; i < m_ClientNetworkManagers.Length; i++)
             {
-                clients[i].MessageQueueContainer.EnableBatchedMessages(useBatching);
+                m_ClientNetworkManagers[i].MessageQueueContainer.EnableBatchedMessages(useBatching);
             }
-
-            // [Client-Side] Wait for a connection to the server 
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(clients, null, 512));
-
-            // [Host-Side] Check to make sure all clients are connected
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnectedToServer(server, clients.Length + 1, null, 512));
 
             // [Host-Side] Get the Host owned instance of the RpcQueueManualTests
             var serverClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == clients[0].LocalClientId), server, serverClientPlayerResult));
+            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), m_ServerNetworkManager, serverClientPlayerResult));
 
             var serverRpcTests = serverClientPlayerResult.Result.GetComponent<RpcQueueManualTests>();
             Assert.IsNotNull(serverRpcTests);
@@ -128,10 +89,10 @@ namespace TestProject.RuntimeTests
 
             // [Client-Side] Get all of the RpcQueueManualTests instances relative to each client
             var clientRpcQueueManualTestInstsances = new List<RpcQueueManualTests>();
-            foreach (var client in clients)
+            foreach (var client in m_ClientNetworkManagers)
             {
                 var clientClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
-                yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == clients[0].LocalClientId), client, clientClientPlayerResult));
+                yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), client, clientClientPlayerResult));
                 var clientRpcTests = clientClientPlayerResult.Result.GetComponent<RpcQueueManualTests>();
                 Assert.IsNotNull(clientRpcTests);
                 clientRpcQueueManualTestInstsances.Add(clientRpcTests);
@@ -187,21 +148,6 @@ namespace TestProject.RuntimeTests
             }
 
             Debug.Log($"Total frames updated = {Time.frameCount - startFrameCount} within {Time.realtimeSinceStartup - startTime} seconds.");
-        }
-
-        [TearDown]
-        public void TearDown()
-        {
-            if (m_PlayerPrefab != null)
-            {
-                Object.Destroy(m_PlayerPrefab);
-                m_PlayerPrefab = null;
-            }
-            // Shutdown and clean up both of our NetworkManager instances
-            MultiInstanceHelpers.Destroy();
-
-            // Set the application's target frame rate back to its original value
-            Application.targetFrameRate = m_OriginalTargetFrameRate;
         }
     }
 }

@@ -44,6 +44,7 @@ namespace MLAPI.Messaging
             SwitchScene,
             ClientSwitchSceneCompleted,
             AllClientsLoadedScene,
+            ParentSync,
 
             None //Indicates end of frame
         }
@@ -413,6 +414,7 @@ namespace MLAPI.Messaging
             {
                 if (targetNetworkIds != null && targetNetworkIds.Length != 0)
                 {
+                    Debug.Log($"{sourceNetworkId} Going to send a message of type {qItemType} to {string.Join(",",targetNetworkIds.Select(x => x.ToString()).ToArray())}");
                     //In the event the host is one of the networkIds, for outbound we want to ignore it (at this spot only!!)
                     //Get a count of clients we are going to send to (and write into the buffer)
                     var numberOfClients = 0;
@@ -444,6 +446,10 @@ namespace MLAPI.Messaging
                 {
                     messageQueueHistoryFrame.QueueWriter.WriteInt32(0);
                 }
+            }
+            else
+            {
+                Debug.Log($"{sourceNetworkId} Going to send a message of type {qItemType} to myself");
             }
 
             //Mark where we started in the stream to later determine the actual RPC message size (position before writing RPC message vs position after write has completed)

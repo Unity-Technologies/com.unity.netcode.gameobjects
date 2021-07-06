@@ -174,9 +174,12 @@ namespace UnityEditor
             EditorGUI.BeginChangeCheck();
             serializedObject.Update();
 
-            for (int i = 0; i < m_NetworkVariableNames.Count; i++)
+            if (EditorApplication.isPlaying)
             {
-                RenderNetworkVariable(i);
+                for (int i = 0; i < m_NetworkVariableNames.Count; i++)
+                {
+                    RenderNetworkVariable(i);
+                }
             }
 
             var property = serializedObject.GetIterator();

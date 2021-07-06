@@ -2,7 +2,6 @@ using System;
 using MLAPI.NetworkVariable;
 using MLAPI.Transports;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace MLAPI.Prototyping
 {
@@ -41,8 +40,6 @@ namespace MLAPI.Prototyping
         /// TODO MTT-766 once we have per var interpolation
         /// Enable interpolation
         /// </summary>
-        // ReSharper disable once NotAccessedField.Global
-        [FormerlySerializedAs("m_InterpolatePosition")]
         [SerializeField, Tooltip("This requires AssumeSyncedSends to be true")]
         public bool InterpolatePosition = true;
 
@@ -50,7 +47,6 @@ namespace MLAPI.Prototyping
         /// TODO MTT-766 once we have per var interpolation
         /// The distance before snaping to the position
         /// </summary>
-        // ReSharper disable once NotAccessedField.Global
         [SerializeField, Tooltip("The transform will snap if the distance is greater than this distance")]
         public float SnapDistance = 10f;
 
@@ -58,7 +54,6 @@ namespace MLAPI.Prototyping
         /// TODO MTT-766 once we have per var interpolation
         /// Should the server interpolate
         /// </summary>
-        // ReSharper disable once NotAccessedField.Global
         [SerializeField]
         public bool InterpolateServer = true;
 
@@ -68,7 +63,6 @@ namespace MLAPI.Prototyping
         ///      The setting in the NetworkTransform would be to just apply it to our netvars when available
         /// The min meters to move before a send is sent
         /// </summary>
-        // ReSharper disable once NotAccessedField.Global
         [SerializeField, Tooltip("The min meters to move before a send is sent")]
         public float MinMeters = 0.15f;
 
@@ -76,7 +70,6 @@ namespace MLAPI.Prototyping
         /// TODO MTT-767 once we have this per var setting
         /// The min degrees to rotate before a send is sent
         /// </summary>
-        // ReSharper disable once NotAccessedField.Global
         [SerializeField, Tooltip("The min degrees to rotate before a send is sent")]
         public float MinDegrees = 1.5f;
 
@@ -84,7 +77,6 @@ namespace MLAPI.Prototyping
         /// TODO MTT-767 once we have this per var setting
         /// The min meters to scale before a send is sent
         /// </summary>
-        // ReSharper disable once NotAccessedField.Global
         [SerializeField, Tooltip("The min meters to scale before a send is sent")]
         public float MinSize = 0.15f;
 
@@ -97,6 +89,7 @@ namespace MLAPI.Prototyping
         /// <summary>
         /// Sets whether this transform should sync local or world properties. This is important to set since reparenting this transform
         /// could have issues if using world position (depending on who gets synced first: the parent or the child)
+        /// Having a child always at position 0,0,0 for example will have less possibilities of desync than when using world positions
         /// </summary>
         [SerializeField, Tooltip("Sets whether this transform should sync local or world properties. This should be set if reparenting.")]
         private NetworkVariableBool m_UseLocal = new NetworkVariableBool();
@@ -107,10 +100,46 @@ namespace MLAPI.Prototyping
             set => m_UseLocal.Value = value;
         }
 
+        /// <summary>
+        /// Updates the NetworkTransform's authority model at runtime.
+        /// </summary>
+        /// <param name="newAuthority"></param>
+        public void SetAuthority(Authority newAuthority)
+        {
+            TransformAuthority = newAuthority;
+            UpdateVarPermissions();
+            // todo this should be synced with the other side. let's wait for a more final solution before adding more code here
+        }
+
+        private void UpdateOneVarPermission<T>(NetworkVariable<T> varToUpdate)
+        {
+            switch (TransformAuthority)
+            {
+                case Authority.Client:
+                    varToUpdate.Settings.WritePermission = NetworkVariablePermission.OwnerOnly;
+                    break;
+                case Authority.Shared:
+                    varToUpdate.Settings.WritePermission = NetworkVariablePermission.Everyone;
+                    break;
+                case Authority.Server:
+                    m_NetworkPosition.Settings.WritePermission = NetworkVariablePermission.ServerOnly;
+                    break;
+                default:
+                    throw new NotImplementedException($"{TransformAuthority} is not handled");
+            }
+        }
+
+        private void UpdateVarPermissions()
+        {
+            UpdateOneVarPermission(m_NetworkPosition);
+            UpdateOneVarPermission(m_NetworkRotation);
+            UpdateOneVarPermission(m_NetworkWorldScale);
+            UpdateOneVarPermission(m_UseLocal);
+        }
+
         private NetworkVariableVector3 m_NetworkPosition = new NetworkVariableVector3();
         private NetworkVariableQuaternion m_NetworkRotation = new NetworkVariableQuaternion();
         private NetworkVariableVector3 m_NetworkWorldScale = new NetworkVariableVector3();
-        // private NetworkTransform m_NetworkParent; // TODO handle this here?
 
         private Transform m_Transform;
 
@@ -178,7 +207,7 @@ namespace MLAPI.Prototyping
             m_Transform.localScale = new Vector3(globalScale.x / lossyScale.x, globalScale.y / lossyScale.y, globalScale.z / lossyScale.z);
         }
 
-        private bool CanUpdateTransform()
+        public bool CanUpdateTransform()
         {
             return (IsClient && TransformAuthority == Authority.Client && IsOwner) || (IsServer && TransformAuthority == Authority.Server) || TransformAuthority == Authority.Shared;
         }
@@ -188,7 +217,7 @@ namespace MLAPI.Prototyping
             m_Transform = transform;
         }
 
-        public override void NetworkStart()
+        public override void OnNetworkSpawn()
         {
             void SetupVar<T>(NetworkVariable<T> v, T initialValue, ref T oldVal)
             {
@@ -205,20 +234,12 @@ namespace MLAPI.Prototyping
             SetupVar(m_NetworkRotation, m_CurrentRotation, ref m_OldRotation);
             SetupVar(m_NetworkWorldScale, m_CurrentScale, ref m_OldScale);
 
-            if (TransformAuthority == Authority.Client)
-            {
-                m_NetworkPosition.Settings.WritePermission = NetworkVariablePermission.OwnerOnly;
-                m_NetworkRotation.Settings.WritePermission = NetworkVariablePermission.OwnerOnly;
-                m_NetworkWorldScale.Settings.WritePermission = NetworkVariablePermission.OwnerOnly;
-                m_UseLocal.Settings.WritePermission = NetworkVariablePermission.OwnerOnly;
-            }
-            else if (TransformAuthority == Authority.Shared)
-            {
-                m_NetworkPosition.Settings.WritePermission = NetworkVariablePermission.Everyone;
-                m_NetworkRotation.Settings.WritePermission = NetworkVariablePermission.Everyone;
-                m_NetworkWorldScale.Settings.WritePermission = NetworkVariablePermission.Everyone;
-                m_UseLocal.Settings.WritePermission = NetworkVariablePermission.Everyone;
-            }
+            UpdateVarPermissions();
+        }
+
+        public override void OnNetworkObjectParentChanged(NetworkObject parentNetworkObject)
+        {
+            // TODO: handle parent NetworkObject change and potentially optimize pos/rot/scale replication?
         }
 
         private NetworkVariable<T>.OnValueChangedDelegate GetOnValueChangedDelegate<T>(Action<T> assignCurrent)
@@ -287,7 +308,7 @@ namespace MLAPI.Prototyping
                 m_CurrentScale != m_OldScale
             )
             {
-                Debug.LogError($"Trying to update transform's position for object {gameObject.name} with ID {NetworkObjectId} when you're not allowed, please validate your {nameof(NetworkTransform)}'s authority settings", gameObject);
+                Debug.LogError($"Trying to update transform's position for object {gameObject.name} with ID {NetworkObjectId} when you're not allowed, please validate your {nameof(NetworkTransform)}'s authority settings. It's also possible you have other systems updating your transform's position, such as a rigid body for example.", gameObject);
                 m_CurrentPosition = m_NetworkPosition.Value;
                 m_CurrentRotation = m_NetworkRotation.Value;
                 m_CurrentScale = m_NetworkWorldScale.Value;

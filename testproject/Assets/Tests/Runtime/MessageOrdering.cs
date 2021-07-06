@@ -19,10 +19,14 @@ namespace TestProject.RuntimeTests
         public IEnumerator Teardown()
         {
             // Shutdown and clean up both of our NetworkManager instances
-            MultiInstanceHelpers.Destroy();
-            UnityEngine.Object.Destroy(m_Prefab);
-            Support.SpawnRpcDespawn.ClientUpdateCount = 0;
-            Support.SpawnRpcDespawn.ServerUpdateCount = 0;
+            if (m_Prefab)
+            {
+                MultiInstanceHelpers.Destroy();
+                UnityEngine.Object.Destroy(m_Prefab);
+                m_Prefab = null;
+                Support.SpawnRpcDespawn.ClientUpdateCount = 0;
+                Support.SpawnRpcDespawn.ServerUpdateCount = 0;
+            }
             yield break;
         }
 

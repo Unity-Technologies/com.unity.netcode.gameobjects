@@ -1,7 +1,9 @@
 using System;
+using MLAPI.Configuration;
 using Unity.Profiling;
 using MLAPI.Profiling;
 using MLAPI.Logging;
+using MLAPI.Serialization.Pooled;
 using UnityEngine;
 
 namespace MLAPI.Messaging
@@ -35,6 +37,7 @@ namespace MLAPI.Messaging
 
         public void ProcessMessage(in MessageFrameItem item)
         {
+            Debug.Log($"{m_NetworkManager.LocalClientId} processing {item.MessageType}");
             try
             {
                 switch (item.MessageType)
@@ -146,6 +149,25 @@ namespace MLAPI.Messaging
                         }
 
                         break;
+                    case MessageQueueContainer.MessageType.ParentSync:
+                        if (m_NetworkManager.IsClient)
+                        {
+                            var networkObjectId = item.NetworkReader.ReadUInt64Packed();
+                            var (isReparented, latestParent) = NetworkObject.ReadNetworkParenting(item.NetworkReader);
+                            if (m_NetworkManager.SpawnManager.SpawnedObjects.ContainsKey(networkObjectId))
+                            {
+                                var networkObject = m_NetworkManager.SpawnManager.SpawnedObjects[networkObjectId];
+                                networkObject.SetNetworkParenting(isReparented, latestParent);
+                                networkObject.ApplyNetworkParenting();
+                            }
+                            else if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+                            {
+                                NetworkLog.LogWarning($"Read {item.MessageType} for {nameof(NetworkObject)} #{networkObjectId} but could not find it in the {nameof(m_NetworkManager.SpawnManager.SpawnedObjects)}");
+                            }
+                        }
+
+                        break;
+
                     default:
                         NetworkLog.LogWarning($"Received unknown message {((int)item.MessageType).ToString()}");
                         break;
