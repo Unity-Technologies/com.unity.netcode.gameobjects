@@ -135,6 +135,80 @@ namespace MLAPI.Messaging
             }
         }
 
+        public void HandleConnectionApprovedOriginal(ulong clientId, Stream stream, float receiveTime)
+        {
+            using (var reader = PooledNetworkReader.Get(stream))
+            {
+                NetworkManager.LocalClientId = reader.ReadUInt64Packed();
+
+                uint sceneIndex = 0;
+                var sceneSwitchProgressGuid = new Guid();
+
+                if (NetworkManager.NetworkConfig.EnableSceneManagement)
+                {
+                    sceneIndex = reader.ReadUInt32Packed();
+                    sceneSwitchProgressGuid = new Guid(reader.ReadByteArray());
+                }
+
+                bool sceneSwitch = NetworkManager.NetworkConfig.EnableSceneManagement && NetworkManager.SceneManager.HasSceneMismatch(sceneIndex);
+
+                float netTime = reader.ReadSinglePacked();
+                NetworkManager.UpdateNetworkTime(clientId, netTime, receiveTime, true);
+
+                NetworkManager.ConnectedClients.Add(NetworkManager.LocalClientId, new NetworkClient { ClientId = NetworkManager.LocalClientId });
+
+
+                void DelayedSpawnAction(Stream continuationStream)
+                {
+
+                    using (var continuationReader = PooledNetworkReader.Get(continuationStream))
+                    {
+                        if (!NetworkManager.NetworkConfig.EnableSceneManagement)
+                        {
+                            NetworkManager.SpawnManager.DestroySceneObjects();
+                        }
+                        else
+                        {
+                            NetworkManager.SceneManager.PopulateScenePlacedObjects(SceneManager.GetActiveScene());
+                        }
+
+                        var objectCount = continuationReader.ReadUInt32Packed();
+                        for (int i = 0; i < objectCount; i++)
+                        {
+                            NetworkObject.DeserializeSceneObject(continuationStream as NetworkBuffer, continuationReader, m_NetworkManager);
+                        }
+
+                        NetworkManager.IsConnectedClient = true;
+                        NetworkManager.InvokeOnClientConnectedCallback(NetworkManager.LocalClientId);
+                    }
+                }
+
+                if (sceneSwitch)
+                {
+                    UnityAction<Scene, Scene> onSceneLoaded = null;
+
+                    var continuationBuffer = new NetworkBuffer();
+                    continuationBuffer.CopyUnreadFrom(stream);
+                    continuationBuffer.Position = 0;
+
+                    void OnSceneLoadComplete()
+                    {
+                        SceneManager.activeSceneChanged -= onSceneLoaded;
+                        NetworkSceneManager.IsSpawnedObjectsPendingInDontDestroyOnLoad = false;
+                        DelayedSpawnAction(continuationBuffer);
+                    }
+
+                    onSceneLoaded = (oldScene, newScene) => { OnSceneLoadComplete(); };
+                    SceneManager.activeSceneChanged += onSceneLoaded;
+                    m_NetworkManager.SceneManager.OnFirstSceneSwitchSync(sceneIndex, sceneSwitchProgressGuid);
+                }
+                else
+                {
+                    DelayedSpawnAction(stream);
+                }
+            }
+        }
+
         public void HandleAddObject(ulong clientId, Stream stream)
         {
             using (var reader = PooledNetworkReader.Get(stream))
@@ -204,17 +278,19 @@ namespace MLAPI.Messaging
 
         public void HandleSwitchScene(ulong clientId, Stream stream)
         {
-            using (var reader = PooledNetworkReader.Get(stream))
-            {
-                uint sceneIndex = reader.ReadUInt32Packed();
-                var switchSceneGuid = new Guid(reader.ReadByteArray());
-                var isAdditivelyLoadedScene = reader.ReadBool();
-                var objectBuffer = new NetworkBuffer();
-                objectBuffer.CopyUnreadFrom(stream);
-                objectBuffer.Position = 0;
+            Debug.LogError("HandleSwitchScene is no longer supported!\n");
+            //m_NetworkManager.SceneManager.OnSceneSwitch(stream);
+            //using (var reader = PooledNetworkReader.Get(stream))
+            //{
+            //    uint sceneIndex = reader.ReadUInt32Packed();
+            //    var switchSceneGuid = new Guid(reader.ReadByteArray());
+            //    var isAdditivelyLoadedScene = reader.ReadBool();
+            //    var objectBuffer = new NetworkBuffer();
+            //    objectBuffer.CopyUnreadFrom(stream);
+            //    objectBuffer.Position = 0;
 
-                m_NetworkManager.SceneManager.OnSceneSwitch(sceneIndex, switchSceneGuid, objectBuffer, isAdditivelyLoadedScene ? LoadSceneMode.Additive:LoadSceneMode.Single);
-            }
+            //    m_NetworkManager.SceneManager.OnSceneSwitch(sceneIndex, switchSceneGuid, objectBuffer, isAdditivelyLoadedScene ? LoadSceneMode.Additive:LoadSceneMode.Single);
+            //}
         }
 
         public void HandleClientSwitchSceneCompleted(ulong clientId, Stream stream)

@@ -66,8 +66,6 @@ namespace MLAPI.Configuration
             "CLIENT_RPC",
             "SWITCH_SCENE",
             "SCENE_EVENT",              // New Scene Event command (to replace and add Switch, Load, and Unload with sub-commands and additional information to define the scene event)
-            "SCENE_EVENT_NOTIFICATION", // New Scene Event Notification (to provide a single command for scene event notifications, sub-commands and additional information will be included)
-            "CLIENT_SWITCH_SCENE_COMPLETED",
             "INVALID" // 36
         };
     }

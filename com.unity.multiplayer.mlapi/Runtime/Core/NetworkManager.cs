@@ -246,48 +246,8 @@ namespace MLAPI
                 }
             }
 
-            var activeScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
-
             if (NetworkConfig.EnableSceneManagement)
             {
-                //var activeSceneName = activeScene.name;
-                //if (!NetworkConfig.RegisteredScenes.Contains(activeSceneName))
-                //{
-                //    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                //    {
-                //        NetworkLog.LogWarning("Active scene is not registered as a network scene. The MLAPI has added it");
-                //    }
-
-                //    NetworkConfig.RegisteredScenes.Add(activeSceneName);
-                //    EditorApplication.delayCall += () =>
-                //    {
-                //        if (!EditorApplication.isPlaying)
-                //        {
-                //            EditorUtility.SetDirty(this);
-                //            UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(activeScene);
-                //        }
-                //    };
-                //}
-
-                //var activeSceneAsset = AssetDatabase.LoadAssetAtPath<SceneAsset>(activeScene.path);
-                //if (!NetworkConfig.RegisteredSceneAssets.Contains(activeSceneAsset))
-                //{
-                //    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                //    {
-                //        NetworkLog.LogInfo($"Active scene {activeSceneAsset.name} is not registered as a network scene. Since scene management is enabled, it was automatically added.");
-                //    }
-
-                //    NetworkConfig.RegisteredSceneAssets.Add(activeSceneAsset);
-                //    EditorApplication.delayCall += () =>
-                //    {
-                //        if (!EditorApplication.isPlaying && !EditorApplication.isUpdating)
-                //        {
-                //            EditorUtility.SetDirty(this);
-                //            UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(activeScene);
-                //        }
-                //    };
-                //}
-
                 if(NetworkConfig.RegisteredSceneAssets.Count > 0)
                 {
                     foreach(var sceneAsset in NetworkConfig.RegisteredSceneAssets)
@@ -303,6 +263,8 @@ namespace MLAPI
                     }
                 }
             }
+
+            var activeScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
 
             // If the scene is not dirty or the asset database is currently updating then we can skip updating the NetworkPrefab information
             if (!activeScene.isDirty || EditorApplication.isUpdating)
@@ -1284,13 +1246,27 @@ namespace MLAPI
                         }
 
                         break;
-                    case NetworkConstants.SWITCH_SCENE:
-                        if (IsClient)
-                        {
-                            MessageHandler.HandleSwitchScene(clientId, messageStream);
-                        }
+                    //case NetworkConstants.SWITCH_SCENE:
+                    //    {
+                    //        if (IsClient)
+                    //        {
+                    //            MessageHandler.HandleSwitchScene(clientId, messageStream);
 
-                        break;
+                    //        }
+                    //        break;
+                    //    }
+                    case NetworkConstants.SCENE_EVENT:
+                        {
+                            if (SceneManager != null)
+                            {
+                                SceneManager.HandleSceneEvent(clientId, messageStream);
+                            }
+                            else
+                            {
+                                Debug.LogError($"Received {nameof(NetworkConstants.SCENE_EVENT)} but {nameof(SceneManager)} is null!");
+                            }
+                            break;
+                        }
                     case NetworkConstants.CHANGE_OWNER:
                         if (IsClient)
                         {
@@ -1336,23 +1312,11 @@ namespace MLAPI
                     case NetworkConstants.NAMED_MESSAGE:
                         MessageHandler.HandleNamedMessage(clientId, messageStream);
                         break;
-                    case NetworkConstants.CLIENT_SWITCH_SCENE_COMPLETED:
-                        if (IsServer && NetworkConfig.EnableSceneManagement)
-                        {
-                            MessageHandler.HandleClientSwitchSceneCompleted(clientId, messageStream);
-                        }
-                        else if (!NetworkConfig.EnableSceneManagement)
-                        {
-                            NetworkLog.LogWarning($"Server received {nameof(NetworkConstants.CLIENT_SWITCH_SCENE_COMPLETED)} from client id {clientId}");
-                        }
-
-                        break;
                     case NetworkConstants.ALL_CLIENTS_LOADED_SCENE:
                         if (IsClient)
                         {
                             MessageHandler.HandleAllClientsSwitchSceneCompleted(clientId, messageStream);
                         }
-
                         break;
                     case NetworkConstants.SERVER_LOG:
                         if (IsServer && NetworkConfig.EnableNetworkLogs)
@@ -1687,6 +1651,8 @@ namespace MLAPI
 
                 if (ownerClientId != ServerClientId)
                 {
+
+
                     // Don't send any data over the wire if the host "connected"
                     using (var buffer = PooledNetworkBuffer.Get())
                     using (var writer = PooledNetworkWriter.Get(buffer))
