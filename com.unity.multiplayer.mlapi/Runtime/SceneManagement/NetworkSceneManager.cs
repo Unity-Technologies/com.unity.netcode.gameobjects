@@ -244,7 +244,7 @@ namespace MLAPI.SceneManagement
         public SceneSwitchProgress SwitchScene(string sceneName, LoadSceneMode loadSceneMode = LoadSceneMode.Single)
         {
             // NSS TODO: Remove this once the LoadScene method is completed and all areas in the code that use the loadSceneMode parameter are updated
-            if(loadSceneMode == LoadSceneMode.Additive)
+            if (loadSceneMode == LoadSceneMode.Additive)
             {
                 return LoadScene(sceneName);
             }
@@ -418,7 +418,7 @@ namespace MLAPI.SceneManagement
                     {
                         using (var writer = PooledNetworkWriter.Get(buffer))
                         {
-                            SynchronizeInSceneObjects(m_NetworkManager.ConnectedClientsList[j].ClientId,writer);
+                            SynchronizeInSceneObjects(m_NetworkManager.ConnectedClientsList[j].ClientId, writer);
 
                             m_NetworkManager.MessageSender.Send(m_NetworkManager.ConnectedClientsList[j].ClientId, NetworkConstants.SCENE_EVENT, NetworkChannel.Internal, buffer);
                         }
@@ -488,7 +488,7 @@ namespace MLAPI.SceneManagement
             using (var buffer = PooledNetworkBuffer.Get())
             using (var writer = PooledNetworkWriter.Get(buffer))
             {
-                SceneEventData.SceneEventType = SceneEventData.SceneEventType == SceneEventData.SceneEventTypes.SWITCH ?  SceneEventData.SceneEventTypes.SWITCH_COMPLETE: SceneEventData.SceneEventTypes.LOAD_COMPLETE;
+                SceneEventData.SceneEventType = SceneEventData.SceneEventType == SceneEventData.SceneEventTypes.SWITCH ? SceneEventData.SceneEventTypes.SWITCH_COMPLETE : SceneEventData.SceneEventTypes.LOAD_COMPLETE;
                 writer.WriteObjectPacked(SceneEventData);
                 m_NetworkManager.MessageSender.Send(m_NetworkManager.ServerClientId, NetworkConstants.SCENE_EVENT, NetworkChannel.Internal, buffer);
             }
@@ -630,7 +630,7 @@ namespace MLAPI.SceneManagement
             {
                 case SceneEventData.SceneEventTypes.SWITCH_COMPLETE:
                     {
-                        OnClientSceneLoadingEventCompleted(clientId,SceneEventData.SwitchSceneGuid);
+                        OnClientSceneLoadingEventCompleted(clientId, SceneEventData.SwitchSceneGuid);
                         break;
                     }
                 default:
@@ -654,7 +654,7 @@ namespace MLAPI.SceneManagement
                 {
                     var reader = NetworkReaderPool.GetReader(stream);
                     SceneEventData = (SceneEventData)reader.ReadObjectPacked(typeof(SceneEventData));
-                    if(SceneEventData.IsSceneEventClientSide())
+                    if (SceneEventData.IsSceneEventClientSide())
                     {
                         HandleClientSceneEvent(stream);
                     }
@@ -677,7 +677,7 @@ namespace MLAPI.SceneManagement
     }
 
     [Serializable]
-    public class SceneEventData : INetworkSerializable,IDisposable
+    public class SceneEventData : INetworkSerializable, IDisposable
     {
         public enum SceneEventTypes
         {
@@ -697,9 +697,13 @@ namespace MLAPI.SceneManagement
 
         internal PooledNetworkBuffer InternalBuffer;
 
+        /// <summary>
+        /// Determines if the scene event type was intended for the client ( or server )
+        /// </summary>
+        /// <returns>true (client should handle this message) false (server should handle this message)</returns>
         public bool IsSceneEventClientSide()
         {
-            switch(SceneEventType)
+            switch (SceneEventType)
             {
                 case SceneEventTypes.LOAD:
                 case SceneEventTypes.SWITCH:
@@ -710,6 +714,11 @@ namespace MLAPI.SceneManagement
             }
             return false;
         }
+
+        /// <summary>
+        /// Serialize this class instance
+        /// </summary>
+        /// <param name="writer"></param>
         private void OnWrite(NetworkWriter writer)
         {
             writer.WriteByte((byte)SceneEventType);
@@ -718,6 +727,10 @@ namespace MLAPI.SceneManagement
             writer.WriteUInt32Packed(SceneIndex);
         }
 
+        /// <summary>
+        /// Deserialize this class instance
+        /// </summary>
+        /// <param name="reader"></param>
         private void OnRead(NetworkReader reader)
         {
             var sceneEventTypeValue = reader.ReadByte();
@@ -748,6 +761,10 @@ namespace MLAPI.SceneManagement
 
         }
 
+        /// <summary>
+        /// INetworkSerializable implementation method
+        /// </summary>
+        /// <param name="serializer">serializer passed in during serialization</param>
         public void NetworkSerialize(NetworkSerializer serializer)
         {
             if (serializer.IsReading)
@@ -760,6 +777,10 @@ namespace MLAPI.SceneManagement
             }
         }
 
+        /// <summary>
+        /// Used to store data during an asynchronous scene loading event
+        /// </summary>
+        /// <param name="stream"></param>
         internal void CopyUndreadFromStream(Stream stream)
         {
             InternalBuffer.Position = 0;
@@ -767,9 +788,12 @@ namespace MLAPI.SceneManagement
             InternalBuffer.Position = 0;
         }
 
+        /// <summary>
+        /// Used to release the pooled network buffer
+        /// </summary>
         public void Dispose()
         {
-            if(InternalBuffer != null)
+            if (InternalBuffer != null)
             {
                 NetworkBufferPool.PutBackInPool(InternalBuffer);
                 InternalBuffer = null;
