@@ -132,14 +132,14 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 34066665}
-  - component: {fileID: 34066666}
+  - component: {fileID: 34066667}
   m_Layer: 5
   m_Name: SwitchSceneParent
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &34066665
 RectTransform:
   m_ObjectHideFlags: 0
@@ -160,7 +160,7 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 100}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &34066666
+--- !u!114 &34066667
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -169,16 +169,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 34066664}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fd82b56fddb35f2418f27a65b6bb3b54, type: 3}
+  m_Script: {fileID: 11500000, guid: 244f0414ea8419b41ac51adb305d64b0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   m_SwitchSceneButtonObject: {fileID: 1347823141}
-  m_SceneToSwitchTo:
-  - AdditiveSceneOne
-  - AdditiveSceneTwo
-  m_SceneAssets:
-  - {fileID: 102900000, guid: 41a0239b0c49e2047b7063c822f0df8a, type: 3}
-  - {fileID: 102900000, guid: c6a3d883c8253ee43bca4f2b03797d7b, type: 3}
+  m_SceneToSwitchTo: SceneTransitioningBase1
 --- !u!1 &37242881
 GameObject:
   m_ObjectHideFlags: 0
@@ -424,7 +419,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: Additive Scene -2
+  m_Text: Additive Scene - 4
 --- !u!222 &57065844
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -622,7 +617,7 @@ RectTransform:
   m_Children:
   - {fileID: 1865409449}
   m_Father: {fileID: 0}
-  m_RootOrder: 3
+  m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
@@ -729,7 +724,7 @@ RectTransform:
   - {fileID: 884557066}
   - {fileID: 291820796}
   m_Father: {fileID: 0}
-  m_RootOrder: 4
+  m_RootOrder: 3
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
@@ -785,8 +780,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 475de064003ff104fb88b1fbccd0f417, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_SceneToLoad: AdditiveSceneTwo
-  m_SceneAsset: {fileID: 102900000, guid: c6a3d883c8253ee43bca4f2b03797d7b, type: 3}
+  m_SceneToLoad: AdditiveScene4
+  m_SceneAsset: {fileID: 102900000, guid: dc7e17c86f5ca81478043be306027c13, type: 3}
 --- !u!1 &300124661
 GameObject:
   m_ObjectHideFlags: 0
@@ -1371,8 +1366,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 475de064003ff104fb88b1fbccd0f417, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_SceneToLoad: AdditiveSceneOne
-  m_SceneAsset: {fileID: 102900000, guid: 41a0239b0c49e2047b7063c822f0df8a, type: 3}
+  m_SceneToLoad: AdditiveScene3
+  m_SceneAsset: {fileID: 102900000, guid: 7da3dd618f5b5a34db1f6d3c9511e221, type: 3}
 --- !u!850595691 &903034822
 LightingSettings:
   m_ObjectHideFlags: 0
@@ -1434,135 +1429,6 @@ LightingSettings:
   m_PVRFilteringAtrousPositionSigmaDirect: 0.5
   m_PVRFilteringAtrousPositionSigmaIndirect: 2
   m_PVRFilteringAtrousPositionSigmaAO: 1
---- !u!1 &1024114717
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1024114720}
-  - component: {fileID: 1024114719}
-  - component: {fileID: 1024114718}
-  m_Layer: 0
-  m_Name: NetworkManager
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1024114718
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1024114717}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 593a2fe42fa9d37498c96f9a383b6521, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  DontDestroy: 1
-  RunInBackground: 1
-  LogLevel: 1
-  NetworkConfig:
-    ProtocolVersion: 0
-    NetworkTransport: {fileID: 1024114719}
-    RegisteredScenes:
-    - SceneTransitioningBase
-    - SecondSceneAdditive
-    - ThirdSceneAdditive
-    - AdditiveSceneOne
-    - AdditiveSceneTwo
-    RegisteredSceneAssets:
-    - {fileID: 102900000, guid: 780f96a61e8ac8e41b638ae8ec3a3236, type: 3}
-    - {fileID: 102900000, guid: 41a0239b0c49e2047b7063c822f0df8a, type: 3}
-    - {fileID: 102900000, guid: c6a3d883c8253ee43bca4f2b03797d7b, type: 3}
-    AllowRuntimeSceneChanges: 0
-    PlayerPrefab: {fileID: 4079352819444256614, guid: c16f03336b6104576a565ef79ad643c0,
-      type: 3}
-    NetworkPrefabs:
-    - Override: 0
-      Prefab: {fileID: 771575417923360811, guid: c0a45bdb516f341498d933b7a7ed4fc1,
-        type: 3}
-      SourcePrefabToOverride: {fileID: 771575417923360811, guid: c0a45bdb516f341498d933b7a7ed4fc1,
-        type: 3}
-      SourceHashToOverride: 0
-      OverridingTargetPrefab: {fileID: 8059323910720821982, guid: d143db9172e1f234e99d450286b77695,
-        type: 3}
-    - Override: 0
-      Prefab: {fileID: 1086419352113069865, guid: ed799d5402b325c4f8f41918224a1ba7,
-        type: 3}
-      SourcePrefabToOverride: {fileID: 0}
-      SourceHashToOverride: 0
-      OverridingTargetPrefab: {fileID: 0}
-    - Override: 0
-      Prefab: {fileID: 1086419352113069865, guid: 8a415e2c2210434458836779302bc4d3,
-        type: 3}
-      SourcePrefabToOverride: {fileID: 0}
-      SourceHashToOverride: 0
-      OverridingTargetPrefab: {fileID: 0}
-    ReceiveTickrate: 64
-    NetworkTickIntervalSec: 0.05
-    MaxReceiveEventsPerTickRate: 500
-    EventTickrate: 64
-    ClientConnectionBufferTimeout: 10
-    ConnectionApproval: 0
-    ConnectionData: 
-    EnableTimeResync: 0
-    TimeResyncInterval: 30
-    EnableNetworkVariable: 1
-    EnsureNetworkVariableLengthSafety: 0
-    EnableSceneManagement: 1
-    ForceSamePrefabs: 1
-    RecycleNetworkIds: 1
-    NetworkIdRecycleDelay: 120
-    RpcHashSize: 0
-    LoadSceneTimeOut: 120
-    EnableMessageBuffering: 1
-    MessageBufferTimeout: 20
-    EnableNetworkLogs: 1
---- !u!114 &1024114719
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1024114717}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b84c2d8dfe509a34fb59e2b81f8e1319, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  MessageBufferSize: 65535
-  MaxConnections: 100
-  MaxSentMessageQueueSize: 512
-  ConnectAddress: 127.0.0.1
-  ConnectPort: 7777
-  ServerListenPort: 7777
-  ServerWebsocketListenPort: 8887
-  SupportWebsocket: 0
-  Channels: []
-  UseMLAPIRelay: 0
-  MLAPIRelayAddress: 184.72.104.138
-  MLAPIRelayPort: 8888
-  MessageSendMode: 0
---- !u!4 &1024114720
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1024114717}
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.000061035156, y: 0.000015258789, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_RootOrder: 2
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1113539278
 GameObject:
   m_ObjectHideFlags: 0
@@ -1600,7 +1466,7 @@ MonoBehaviour:
   ObjectSpeed: 8
   EnableHandler: 0
   RegisterUsingNetworkObject: 0
-  ServerObjectToPool: {fileID: 771575417923360811, guid: c0a45bdb516f341498d933b7a7ed4fc1,
+  ServerObjectToPool: {fileID: 47844432802121000, guid: 894296ee6a442ef49b3637b680c7bdf7,
     type: 3}
   ClientObjectToPool: {fileID: 0}
   SwitchScene: {fileID: 0}
@@ -1618,7 +1484,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 5
+  m_RootOrder: 4
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1113539281
 MonoBehaviour:
@@ -1632,7 +1498,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 1983031731
+  GlobalObjectIdHash: 3420537353
   AlwaysReplicateAsRoot: 0
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
@@ -1669,7 +1535,7 @@ Transform:
   - {fileID: 57392474}
   - {fileID: 1336081255}
   m_Father: {fileID: 0}
-  m_RootOrder: 6
+  m_RootOrder: 5
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1336081251
 GameObject:
@@ -1850,9 +1716,8 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 34066666}
-        m_TargetAssemblyTypeName: TestProject.ManualTests.SwitchSceneHandlerAdditive,
-          Assembly-CSharp
+      - m_Target: {fileID: 34066667}
+        m_TargetAssemblyTypeName: TestProject.ManualTests.SwitchSceneHandler, TestProject.ManualTests
         m_MethodName: OnSwitchScene
         m_Mode: 1
         m_Arguments:
@@ -1961,7 +1826,7 @@ MonoBehaviour:
   m_FontData:
     m_Font: {fileID: 10102, guid: 0000000000000000e000000000000000, type: 0}
     m_FontSize: 18
-    m_FontStyle: 0
+    m_FontStyle: 1
     m_BestFit: 0
     m_MinSize: 1
     m_MaxSize: 40
@@ -1971,7 +1836,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: First Scene Loaded
+  m_Text: Scene Transitioning Base - 2
 --- !u!222 &1383741140
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -2444,7 +2309,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: Additive Scene - 1
+  m_Text: Additive Scene - 3
 --- !u!222 &1638885890
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -3310,7 +3175,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 7
+  m_RootOrder: 6
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &2107482022
 MonoBehaviour:
@@ -3337,7 +3202,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 3197939627
+  GlobalObjectIdHash: 515328755
   AlwaysReplicateAsRoot: 0
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
