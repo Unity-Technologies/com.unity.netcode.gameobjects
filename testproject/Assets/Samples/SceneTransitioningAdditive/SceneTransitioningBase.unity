@@ -1137,7 +1137,7 @@ MonoBehaviour:
   AutoSpawnEnable: 1
   InitialSpawnDelay: 0.2
   SpawnsPerSecond: 1
-  PoolSize: 128
+  PoolSize: 32
   ObjectSpeed: 8
   EnableHandler: 0
   RegisterUsingNetworkObject: 0

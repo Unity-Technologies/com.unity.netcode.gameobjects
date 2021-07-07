@@ -133,14 +133,13 @@ namespace MLAPI.SceneManagement
             SceneNameToIndex.Add(sceneName, index);
         }
 
-
         /// <summary>
         /// Validates the new scene event request by the server-side code.
         /// This also initializes some commonly shared values as well as switchSceneProgress
         /// </summary>
         /// <param name="sceneName"></param>
         /// <returns>SceneSwitchProgress (if null it failed)</returns>
-        private SceneSwitchProgress ValidateServerSceneEvent(string sceneName)
+        private SceneSwitchProgress ValidateServerSceneEvent(string sceneName, bool isUnloading = false)
         {
             if (!m_NetworkManager.IsServer)
             {
@@ -178,10 +177,15 @@ namespace MLAPI.SceneManagement
 
             // NSS TODO: remove any of these values that are no longer needed
             CurrentSceneSwitchProgressGuid = switchSceneProgress.Guid;
-            CurrentActiveSceneIndex = SceneNameToIndex[sceneName];
+            if (!isUnloading)
+            {
+                CurrentActiveSceneIndex = SceneNameToIndex[sceneName];
+                IsSpawnedObjectsPendingInDontDestroyOnLoad = true;
+                s_NextSceneName = sceneName;
+            }
+
             s_IsSwitching = true;
-            IsSpawnedObjectsPendingInDontDestroyOnLoad = true;
-            s_NextSceneName = sceneName;
+
 
             switchSceneProgress.OnClientLoadedScene += clientId => { OnNotifyServerClientLoadedScene?.Invoke(switchSceneProgress, clientId); };
             switchSceneProgress.OnComplete += timedOut =>
@@ -197,11 +201,90 @@ namespace MLAPI.SceneManagement
                     writer.WriteULongArray(doneClientIds, doneClientIds.Length);
                     writer.WriteULongArray(timedOutClientIds, timedOutClientIds.Length);
 
+                    // NSS TODO: This will need to be modified for loading and unloading
                     m_NetworkManager.MessageSender.Send(NetworkManager.Singleton.ServerClientId, NetworkConstants.ALL_CLIENTS_LOADED_SCENE, NetworkChannel.Internal, buffer);
                 }
             };
 
             return switchSceneProgress;
+        }
+
+        public SceneSwitchProgress UnloadScene(string sceneName)
+        {
+            // Make sure the scene is actually loaded
+            var sceneToUnload = SceneManager.GetSceneByName(sceneName);
+            if (sceneToUnload == null)
+            {
+                Debug.LogWarning($"{nameof(UnloadScene)} was called, but the scene {sceneName} is not currently loaded!");
+                return null;
+            }
+
+            var switchSceneProgress = ValidateServerSceneEvent(sceneName,true);
+            if (switchSceneProgress == null)
+            {
+                return null;
+            }
+
+            SceneEventData.SwitchSceneGuid = switchSceneProgress.Guid;
+            SceneEventData.SceneEventType = SceneEventData.SceneEventTypes.UNLOAD;
+            SceneEventData.SceneIndex = SceneNameToIndex[sceneName];
+
+            for (int j = 0; j < m_NetworkManager.ConnectedClientsList.Count; j++)
+            {
+                using (var buffer = PooledNetworkBuffer.Get())
+                {
+                    using (var writer = PooledNetworkWriter.Get(buffer))
+                    {
+                        writer.WriteObjectPacked(SceneEventData);
+
+                        m_NetworkManager.MessageSender.Send(m_NetworkManager.ConnectedClientsList[j].ClientId, NetworkConstants.SCENE_EVENT, NetworkChannel.Internal, buffer);
+                    }
+                }
+            }
+
+            // start loading the scene
+            AsyncOperation sceneUnload = SceneManager.UnloadSceneAsync(sceneToUnload);
+            sceneUnload.completed += (AsyncOperation asyncOp2) => { OnSceneUnloaded(); };
+            switchSceneProgress.SetSceneLoadOperation(sceneUnload);
+            OnSceneSwitchStarted?.Invoke(sceneUnload);
+
+            //Return our scene progress instance
+            return switchSceneProgress;
+        }
+
+        private void OnClientUnloadScene()
+        {
+            if (!SceneIndexToString.TryGetValue(SceneEventData.SceneIndex, out string sceneName) || !RegisteredSceneNames.Contains(sceneName))
+            {
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                {
+                    NetworkLog.LogWarning("Server requested a scene switch to a non-registered scene");
+                }
+
+                return;
+            }
+            s_IsSwitching = true;
+
+            var sceneLoad = SceneManager.UnloadSceneAsync(sceneName);
+
+            sceneLoad.completed += asyncOp2 => OnSceneUnloaded();
+
+            // NSS TODO: Create the unloaded scene notification
+            //OnSceneSwitchStarted?.Invoke(sceneLoad);
+        }
+
+
+        private void OnSceneUnloaded()
+        {
+            using (var buffer = PooledNetworkBuffer.Get())
+            using (var writer = PooledNetworkWriter.Get(buffer))
+            {
+                SceneEventData.SceneEventType = SceneEventData.SceneEventTypes.UNLOAD_COMPLETE;
+                writer.WriteObjectPacked(SceneEventData);
+                m_NetworkManager.MessageSender.Send(m_NetworkManager.ServerClientId, NetworkConstants.SCENE_EVENT, NetworkChannel.Internal, buffer);
+            }
+
+            s_IsSwitching = false;
         }
 
         /// <summary>
@@ -294,7 +377,7 @@ namespace MLAPI.SceneManagement
         /// Client Side: handles both forms of scene loading
         /// </summary>
         /// <param name="objectStream">Stream data associated with the event </param>
-        internal void OnSceneLoadingEvent(Stream objectStream)
+        internal void OnClientSceneLoadingEvent(Stream objectStream)
         {
             SceneEventData.CopyUndreadFromStream(objectStream);
 
@@ -368,7 +451,10 @@ namespace MLAPI.SceneManagement
         private void OnSceneLoaded()
         {
             var nextScene = SceneManager.GetSceneByName(s_NextSceneName);
-            SceneManager.SetActiveScene(nextScene);
+            if (SceneEventData.LoadSceneMode == LoadSceneMode.Single)
+            {
+                SceneManager.SetActiveScene(nextScene);
+            }
 
             //Get all NetworkObjects loaded by the scene
             PopulateScenePlacedObjects(nextScene);
@@ -473,8 +559,6 @@ namespace MLAPI.SceneManagement
         /// </summary>
         private void OnClientLoadedScene()
         {
-            var networkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>();
-
             using (var reader = PooledNetworkReader.Get(SceneEventData.InternalBuffer))
             {
                 var newObjectsCount = reader.ReadUInt32Packed();
@@ -608,7 +692,12 @@ namespace MLAPI.SceneManagement
                 case SceneEventData.SceneEventTypes.SWITCH:
                 case SceneEventData.SceneEventTypes.LOAD:
                     {
-                        OnSceneLoadingEvent(stream);
+                        OnClientSceneLoadingEvent(stream);
+                        break;
+                    }
+                case SceneEventData.SceneEventTypes.UNLOAD:
+                    {
+                        OnClientUnloadScene();
                         break;
                     }
                 default:
@@ -631,6 +720,16 @@ namespace MLAPI.SceneManagement
                 case SceneEventData.SceneEventTypes.SWITCH_COMPLETE:
                     {
                         OnClientSceneLoadingEventCompleted(clientId, SceneEventData.SwitchSceneGuid);
+                        break;
+                    }
+                case SceneEventData.SceneEventTypes.LOAD_COMPLETE:
+                    {
+                        Debug.Log($"[{nameof(SceneEventData.SceneEventTypes.LOAD_COMPLETE)}] Client Id {clientId} finished loading additive scene.");
+                        break;
+                    }
+                case SceneEventData.SceneEventTypes.UNLOAD_COMPLETE:
+                    {
+                        Debug.Log($"[{nameof(SceneEventData.SceneEventTypes.UNLOAD_COMPLETE)}] Client Id {clientId} finished unloading additive scene.");
                         break;
                     }
                 default:
@@ -665,7 +764,7 @@ namespace MLAPI.SceneManagement
                 }
                 else
                 {
-                    Debug.LogError($"Scene Event {nameof(OnSceneLoadingEvent)} was invoked with a null stream!");
+                    Debug.LogError($"Scene Event {nameof(OnClientSceneLoadingEvent)} was invoked with a null stream!");
                     return;
                 }
             }

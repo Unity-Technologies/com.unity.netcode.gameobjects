@@ -99,18 +99,38 @@ namespace TestProject.ManualTests
 
         public event OnSceneSwitchBeginDelegateHandler OnSceneSwitchBegin;
 
+        private bool m_IsReversing;
+
         public void OnSwitchScene()
         {
-            if (m_CurrentSceneIndex < m_SceneToSwitchTo.Count)
+            if (NetworkManager.Singleton && NetworkManager.Singleton.IsListening)
             {
-                if (NetworkManager.Singleton && NetworkManager.Singleton.IsListening)
+                m_ExitingScene = true;
+                ExitingNow = true;
+
+                if (!m_IsReversing)
                 {
                     OnSceneSwitchBegin?.Invoke();
-                    m_ExitingScene = true;
-                    ExitingNow = true;
+
                     m_CurrentSceneSwitchProgress = NetworkManager.Singleton.SceneManager.LoadScene(m_SceneToSwitchTo[m_CurrentSceneIndex]);
                     m_CurrentSceneIndex++;
                     m_CurrentSceneSwitchProgress.OnComplete += CurrentSceneSwitchProgress_OnComplete;
+                    if(m_CurrentSceneIndex == m_SceneToSwitchTo.Count)
+                    {
+                        m_IsReversing = true;
+                        m_CurrentSceneIndex--;
+                    }
+                }
+                else
+                {
+                    m_CurrentSceneSwitchProgress = NetworkManager.Singleton.SceneManager.UnloadScene(m_SceneToSwitchTo[m_CurrentSceneIndex]);
+                    m_CurrentSceneIndex--;
+                    m_CurrentSceneSwitchProgress.OnComplete += CurrentSceneSwitchProgress_OnComplete;
+                    if(m_CurrentSceneIndex < 0)
+                    {
+                        m_IsReversing = false;
+                        m_CurrentSceneIndex = 0;
+                    }
                 }
             }
         }

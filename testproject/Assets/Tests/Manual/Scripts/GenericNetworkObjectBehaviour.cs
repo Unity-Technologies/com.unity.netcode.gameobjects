@@ -21,6 +21,11 @@ namespace TestProject.ManualTests
             m_RigidBody = GetComponent<Rigidbody>();
         }
 
+        public void ShouldMoveRandomly(bool shouldMoveRandomly)
+        {
+            m_MoveRandomly = shouldMoveRandomly;
+        }
+
         /// <summary>
         /// Sets the object's direction and velocity
         /// </summary>

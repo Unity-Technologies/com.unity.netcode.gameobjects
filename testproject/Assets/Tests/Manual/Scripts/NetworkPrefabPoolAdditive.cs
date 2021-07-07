@@ -10,6 +10,7 @@ namespace TestProject.ManualTests
     public class NetworkPrefabPoolAdditive : NetworkBehaviour
     {
         [Header("General Settings")]
+        public bool RandomMovement = true;
         public bool AutoSpawnEnable = true;
         public float InitialSpawnDelay;
         public int SpawnsPerSecond;
@@ -173,11 +174,14 @@ namespace TestProject.ManualTests
                 m_ObjectToSpawn = ClientObjectToPool;
             }
 
-            m_ObjectPool = new List<GameObject>(PoolSize);
-
-            for (int i = 0; i < PoolSize; i++)
+            if (IsServer)
             {
-                AddNewInstance();
+                m_ObjectPool = new List<GameObject>(PoolSize);
+
+                for (int i = 0; i < PoolSize; i++)
+                {
+                    AddNewInstance();
+                }
             }
         }
 
@@ -189,17 +193,27 @@ namespace TestProject.ManualTests
         {
             if (m_ObjectPool != null)
             {
-                foreach (var obj in m_ObjectPool)
+                if (m_IsSpawningObjects)
                 {
-                    if (!obj.activeInHierarchy)
+                    foreach (var obj in m_ObjectPool)
                     {
-                        obj.SetActive(true);
-                        return obj;
+                        if (m_IsSpawningObjects)
+                        {
+                            if (!obj.activeInHierarchy)
+                            {
+                                obj.SetActive(true);
+                                return obj;
+                            }
+                        }
+                        else
+                        {
+                            return null;
+                        }
                     }
+                    var newObj = AddNewInstance();
+                    newObj.SetActive(true);
+                    return newObj;
                 }
-                var newObj = AddNewInstance();
-                newObj.SetActive(true);
-                return newObj;
             }
             return null;
         }
@@ -212,7 +226,14 @@ namespace TestProject.ManualTests
         {
             var obj = Instantiate(m_ObjectToSpawn);
             var no = obj.GetComponent<NetworkObject>();
+            var genericBehaviour = obj.GetComponent<GenericNetworkObjectBehaviour>();
+            if(genericBehaviour)
+            {
+                genericBehaviour.ShouldMoveRandomly(RandomMovement);
+            }
             obj.SetActive(false);
+
+
             m_ObjectPool.Add(obj);
             return obj;
         }
@@ -316,9 +337,13 @@ namespace TestProject.ManualTests
         public NetworkObject HandleNetworkPrefabSpawn(ulong ownerClientId, Vector3 position, Quaternion rotation)
         {
             var obj = m_PrefabPool.GetObject();
-            obj.transform.position = position;
-            obj.transform.rotation = rotation;
-            return obj.GetComponent<NetworkObject>();
+            if (obj != null)
+            {
+                obj.transform.position = position;
+                obj.transform.rotation = rotation;
+                return obj.GetComponent<NetworkObject>();
+            }
+            return null;
         }
         public void HandleNetworkPrefabDestroy(NetworkObject networkObject)
         {

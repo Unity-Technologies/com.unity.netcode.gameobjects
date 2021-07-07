@@ -214,10 +214,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 398d7c0793567354082687193357a99f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  RandomMovement: 0
   AutoSpawnEnable: 1
   InitialSpawnDelay: 0.2
-  SpawnsPerSecond: 3
-  PoolSize: 128
+  SpawnsPerSecond: 1
+  PoolSize: 32
   ObjectSpeed: 8
   EnableHandler: 0
   RegisterUsingNetworkObject: 0

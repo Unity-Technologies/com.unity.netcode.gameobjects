@@ -187,11 +187,14 @@ namespace TestProject.ManualTests
                 m_ObjectToSpawn = ClientObjectToPool;
             }
 
-            m_ObjectPool = new List<GameObject>(PoolSize);
-
-            for (int i = 0; i < PoolSize; i++)
+            if (IsServer)
             {
-                AddNewInstance();
+                m_ObjectPool = new List<GameObject>(PoolSize);
+
+                for (int i = 0; i < PoolSize; i++)
+                {
+                    AddNewInstance();
+                }
             }
         }
 
