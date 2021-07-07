@@ -460,6 +460,19 @@ namespace MLAPI.Spawning
             }
         }
 
+        internal void DespawnAllObjects(bool destroyObject = false)
+        {
+            List<NetworkObject> deleteMe = new List<NetworkObject>();
+            foreach (var spawnedNetObj in SpawnedObjectsList)
+            {
+                deleteMe.Add(spawnedNetObj);
+            }
+
+            foreach (var d in deleteMe)
+            {
+                DespawnObject(d, destroyObject);
+            }
+        }
         internal void DespawnObject(NetworkObject networkObject, bool destroyObject = false)
         {
             if (!networkObject.IsSpawned)

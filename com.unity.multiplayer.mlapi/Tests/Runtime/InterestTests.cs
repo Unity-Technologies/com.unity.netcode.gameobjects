@@ -1,11 +1,14 @@
+using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.TestTools;
 using NUnit.Framework;
 using MLAPI.Connection;
 using MLAPI.Configuration;
 using MLAPI.Interest;
 
-namespace MLAPI.EditorTests
+namespace MLAPI.RuntimeTests
 {
     public class TestInterestSettings : InterestSettings
     {
@@ -14,8 +17,22 @@ namespace MLAPI.EditorTests
 
     public class InterestTests
     {
+        public class OddEvenInterestKernel : InterestKernel
+        {
+            public bool IsOdd = true;
+            public override void QueryFor(in NetworkClient client, in NetworkObject obj, HashSet<NetworkObject> results)
+            {
+                if (obj.NetworkObjectId % 2 == 0 ^ IsOdd)
+                {
+                    results.Add(obj);
+                }
+            }
+        }
+
         public class OddsEvensNode : InterestNode
         {
+
+
             public void OnEnable()
             {
                 m_Odds = ScriptableObject.CreateInstance<InterestNodeStatic>();
@@ -92,14 +109,15 @@ namespace MLAPI.EditorTests
 
         private NetworkManager SetUpNetworkingManager()
         {
-            var o = new GameObject();
-            var nm = (NetworkManager)o.AddComponent(typeof(NetworkManager));
-            nm.NetworkConfig = new NetworkConfig();
-            nm.SetSingleton();
-            var transport = o.AddComponent<DummyTransport>();
-            nm.NetworkConfig.NetworkTransport = transport;
-            nm.StartServer();
-            return nm;
+            if (!MultiInstanceHelpers.Create(0, out NetworkManager server, out NetworkManager[] clients))
+            {
+                Debug.LogError("Failed to create instances");
+                Assert.Fail("Failed to create instances");
+            }
+
+            server.SetSingleton();
+            server.StartServer();
+            return server;
         }
 
         [Test]
@@ -170,6 +188,8 @@ namespace MLAPI.EditorTests
             nc.PlayerObject.NetworkObjectId = 101;
             nm.InterestManager.QueryFor(nc, results);
             Assert.True(results.Count - objectsBeforeAdd == nodes.Length); // now 4, all are odd
+            nm.SpawnManager.DespawnAllObjects();
+            nm.StopServer();
         }
 
         [Test]
@@ -178,10 +198,10 @@ namespace MLAPI.EditorTests
         {
             var nm = SetUpNetworkingManager();
 
-            var naiveRadiusNode = ScriptableObject.CreateInstance<RadiusInterestNode>();
-//            var ris = ScriptableObject.CreateInstance<RadiusInterestStorage>();
-            naiveRadiusNode.Radius = 1.5f;
-//            naiveRadiusNode.InterestNode = ris;
+            InterestNodeStatic naiveRadiusNode = ScriptableObject.CreateInstance<InterestNodeStatic>();
+            var naiveRadiusKernel = ScriptableObject.CreateInstance<RadiusInterestKernel>();
+            naiveRadiusKernel.Radius = 1.5f;
+            naiveRadiusNode.InterestKernel.Add(naiveRadiusKernel);
             var staticNode = ScriptableObject.CreateInstance<InterestNodeStatic>();
 
             var results = new HashSet<NetworkObject>();
@@ -189,6 +209,8 @@ namespace MLAPI.EditorTests
             {
                 ClientId = 1,
             };
+
+            nc.PlayerObject = MakeGameInterestObjectHelper(new Vector3(0.0f, 0.0f, 0.0f), null);
 
             nm.InterestManager.QueryFor(nc, results);
             int objectsBeforeAdd = results.Count;
@@ -205,7 +227,6 @@ namespace MLAPI.EditorTests
             var always = MakeGameInterestObjectHelper(new Vector3(99.0f, 99.0f, 99.0f), staticNode);
             nm.SpawnManager.SpawnNetworkObjectLocally(always);
 
-            nc.PlayerObject = MakeGameInterestObjectHelper(new Vector3(0.0f, 0.0f, 0.0f), null);
             nm.SpawnManager.SpawnNetworkObjectLocally(nc.PlayerObject);
 
             results.Clear();
@@ -229,6 +250,63 @@ namespace MLAPI.EditorTests
             Assert.False(results.Contains(always));
             Assert.False(results.Contains(tooFar));
             Assert.True(hits == 3);
+            nm.SpawnManager.DespawnAllObjects();
+            nm.StopServer();
+        }
+
+        [Test]
+        public void CheckMultipleNodes()
+        {
+            var nm = SetUpNetworkingManager();
+
+            var results = new HashSet<NetworkObject>();
+            var nc = new NetworkClient()
+            {
+                ClientId = 1,
+            };
+
+            nm.InterestManager.QueryFor(nc, results);
+            var objectsBeforeAdd = results.Count;
+
+            var dualNode = ScriptableObject.CreateInstance<InterestNodeStatic>();
+            var oddKernel = ScriptableObject.CreateInstance<OddEvenInterestKernel>();
+            oddKernel.IsOdd = true;
+            var evenKernel = ScriptableObject.CreateInstance<OddEvenInterestKernel>();
+            evenKernel.IsOdd = false;
+            dualNode.InterestKernel.Add(oddKernel);
+            dualNode.InterestKernel.Add(evenKernel);
+
+            var object1 = MakeGameInterestObjectHelper(new Vector3(0.0f, 0.0f, 0.0f), dualNode);
+            nm.SpawnManager.SpawnNetworkObjectLocally(object1);
+
+            var object2 = MakeGameInterestObjectHelper(new Vector3(0.0f, 0.0f, 0.0f), dualNode);
+            nm.SpawnManager.SpawnNetworkObjectLocally(object2);
+
+            nc.PlayerObject = MakeGameInterestObjectHelper(new Vector3(0.0f, 0.0f, 0.0f), dualNode);
+            nm.SpawnManager.SpawnNetworkObjectLocally(nc.PlayerObject);
+
+            results.Clear();
+            nm.InterestManager.QueryFor(nc, results);
+            var hits = results.Count;
+            Assert.True(hits == (3 + objectsBeforeAdd));
+            Assert.True(results.Contains(object1));
+            Assert.True(results.Contains(object2));
+            Assert.True(results.Contains(nc.PlayerObject));
+            nm.SpawnManager.DespawnAllObjects();
+            nm.StopServer();
+        }
+
+        [Test]
+        public void PerfTest()
+        {
+            var clock = new HRTClock();
+//var duration = TimeSpan.FromSeconds(5);
+//var distinctValues = new HashSet<DateTime>();
+//var stopWatch = Stopwatch.StartNew();
+//
+//while (stopWatch.Elapsed < duration)
+//{
+//    distinctValues.Add(clock.UtcNow);
         }
 
         [Test]
@@ -270,6 +348,8 @@ namespace MLAPI.EditorTests
             nm.InterestManager.QueryFor(nc, results);
             hits = results.Count;
             Assert.True(hits == (objectsBeforeAdd));
+            nm.SpawnManager.DespawnAllObjects();
+            nm.StopServer();
         }
 
         [Test]
@@ -293,6 +373,8 @@ namespace MLAPI.EditorTests
 
             Assert.True(checkObj1.SomeSetting == 2);
             Assert.True(checkObj2.SomeSetting == 1);
+            nm.SpawnManager.DespawnAllObjects();
+            nm.StopServer();
         }
     }
 }

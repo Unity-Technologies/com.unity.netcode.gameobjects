@@ -59,7 +59,18 @@ namespace MLAPI
         internal RpcQueueContainer RpcQueueContainer { get; private set; }
         internal NetworkTickSystem NetworkTickSystem { get; private set; }
 
-        internal InterestManager InterestManager { get; private set; }
+        internal InterestManager m_InterestManager;
+        internal InterestManager InterestManager
+        {
+            get
+            {
+                if (m_InterestManager == null)
+                {
+                    m_InterestManager = new InterestManager();
+                }
+                return m_InterestManager;
+            }
+        }
 
         internal SnapshotSystem SnapshotSystem { get; private set; }
 
@@ -354,8 +365,6 @@ namespace MLAPI
             BufferManager = new BufferManager(this);
 
             SceneManager = new NetworkSceneManager(this);
-
-            InterestManager = new InterestManager();
 
             // Only create this if it's not already set (like in test cases)
             MessageHandler ??= CreateMessageHandler();
@@ -815,7 +824,6 @@ namespace MLAPI
             if (InterestManager != null)
             {
                 InterestManager.Dispose();
-                InterestManager = null;
             }
 
 #if !UNITY_2020_2_OR_NEWER

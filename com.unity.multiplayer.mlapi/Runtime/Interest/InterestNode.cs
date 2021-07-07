@@ -14,4 +14,11 @@ namespace MLAPI.Interest
         public abstract void RemoveObject(in NetworkObject obj);
         public abstract void UpdateObject(in NetworkObject obj);
     };
+
+    public abstract class InterestKernel : ScriptableObject
+    {
+        public abstract void QueryFor(in NetworkClient client, in NetworkObject obj, HashSet<NetworkObject> results);
+    }
+
+
 }
