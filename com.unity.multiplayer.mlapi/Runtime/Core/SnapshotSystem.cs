@@ -356,9 +356,7 @@ namespace MLAPI
 
         internal void ReadAcks(NetworkReader reader)
         {
-            short ack = reader.ReadInt16();
-
-
+            ushort ack = reader.ReadUInt16();
         }
 
         /// <summary>
@@ -381,10 +379,17 @@ namespace MLAPI
         }
     }
 
+    internal class ClientData
+    {
+        internal ushort m_SequenceNumber = 0;
+        internal ushort m_LastReceivedSequence = 0;
+    }
+
     public class SnapshotSystem : INetworkUpdateSystem, IDisposable
     {
         private NetworkManager m_NetworkManager = NetworkManager.Singleton;
         private Snapshot m_Snapshot = new Snapshot(NetworkManager.Singleton, false);
+        private Dictionary<ulong, ClientData> m_ClientData = new Dictionary<ulong, ClientData>();
 
         private ushort m_CurrentTick = 0;
 
@@ -445,18 +450,27 @@ namespace MLAPI
         /// <param name="clientId">The client index to send to</param>
         private void SendSnapshot(ulong clientId)
         {
+            if (!m_ClientData.ContainsKey(clientId))
+            {
+                m_ClientData.Add(clientId, new ClientData());
+            }
+
             // Send the entry index and the buffer where the variables are serialized
             using (var buffer = PooledNetworkBuffer.Get())
             {
+                var sequence = m_ClientData[clientId].m_SequenceNumber;
+                m_ClientData[clientId].m_SequenceNumber++;
+
                 using (var writer = PooledNetworkWriter.Get(buffer))
                 {
                     writer.WriteUInt16(m_CurrentTick);
+                    writer.WriteUInt16(sequence);
                 }
 
                 WriteBuffer(buffer);
                 WriteIndex(buffer);
                 WriteSpawns(buffer);
-                WriteAcks(buffer);
+                WriteAcks(buffer, clientId);
 
                 m_NetworkManager.MessageSender.Send(clientId, NetworkConstants.SNAPSHOT_DATA,
                     NetworkChannel.SnapshotExchange, buffer);
@@ -491,11 +505,11 @@ namespace MLAPI
             }
         }
 
-        private void WriteAcks(NetworkBuffer buffer)
+        private void WriteAcks(NetworkBuffer buffer, ulong clientId)
         {
             using (var writer = PooledNetworkWriter.Get(buffer))
             {
-                writer.WriteInt16((short)0);
+                writer.WriteUInt16(m_ClientData[clientId].m_LastReceivedSequence);
             }
         }
 
@@ -576,9 +590,18 @@ namespace MLAPI
         {
             ushort snapshotTick = default;
 
+            if (!m_ClientData.ContainsKey(clientId))
+            {
+                m_ClientData.Add(clientId, new ClientData());
+            }
+
             using (var reader = PooledNetworkReader.Get(snapshotStream))
             {
                 snapshotTick = reader.ReadUInt16();
+                var sequence = reader.ReadUInt16();
+
+                // todo: check we didn't miss any and deal with gaps
+                m_ClientData[clientId].m_LastReceivedSequence = sequence;
 
                 m_Snapshot.ReadBuffer(reader, snapshotStream);
                 m_Snapshot.ReadIndex(reader);
