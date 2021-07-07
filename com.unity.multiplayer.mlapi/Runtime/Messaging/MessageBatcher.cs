@@ -215,7 +215,7 @@ namespace MLAPI.Messaging
                     copy.Position = 0;
                     Buffer.BlockCopy(messageBuffer.GetBuffer(), (int)position, copy.GetBuffer(), 0, messageSize);
 
-                    MessageQueueContainer.MessageType messageType = (MessageQueueContainer.MessageType) copy.ReadByte();
+                    var messageType = (MessageQueueContainer.MessageType)copy.ReadByte();
                     receiveCallback(copy, messageType, clientId, receiveTime, receiveChannel);
 
                     // seek over the message

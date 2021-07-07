@@ -1,13 +1,11 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq;
-using MLAPI.Configuration;
+using MLAPI.Logging;
+using MLAPI.Profiling;
 using MLAPI.Serialization;
 using MLAPI.Serialization.Pooled;
-using MLAPI.Profiling;
 using MLAPI.Transports;
-using MLAPI.Logging;
 using UnityEngine;
 
 namespace MLAPI.Messaging
@@ -111,17 +109,18 @@ namespace MLAPI.Messaging
         /// <param name="clientIds">The destinations for this message</param>
         /// <param name="updateStage">The stage at which the message will be processed on the receiving side</param>
         /// <returns></returns>
-        internal InternalCommandContext? EnterInternalCommandContext(MessageQueueContainer.MessageType messageType, NetworkChannel transportChannel, ulong[] clientIds, NetworkUpdateStage updateStage)
+        internal InternalCommandContext? EnterInternalCommandContext(MessageType messageType, NetworkChannel transportChannel, ulong[] clientIds, NetworkUpdateStage updateStage)
         {
             PooledNetworkWriter writer;
             if (updateStage == NetworkUpdateStage.Initialization)
             {
+                NetworkLog.LogWarning($"Trying to send a message of type {messageType} to be executed during Initialization stage. Changing to EarlyUpdate.");
                 updateStage = NetworkUpdateStage.EarlyUpdate;
             }
 
             if (NetworkManager.IsServer)
             {
-                clientIds = clientIds.Where((id) => id != NetworkManager.ServerClientId).ToArray();
+                clientIds = clientIds.Where(id => id != NetworkManager.ServerClientId).ToArray();
             }
 
             if (clientIds.Length == 0)
@@ -207,13 +206,13 @@ namespace MLAPI.Messaging
 
             if (!m_QueueHistory.ContainsKey(queueType))
             {
-                UnityEngine.Debug.LogError($"You must initialize the {nameof(MessageQueueContainer)} before using MLAPI!");
+                Debug.LogError($"You must initialize the {nameof(MessageQueueContainer)} before using MLAPI!");
                 return;
             }
 
             if (!m_QueueHistory[queueType].ContainsKey(streamBufferIndex))
             {
-                UnityEngine.Debug.LogError($"{nameof(MessageQueueContainer)} {queueType} queue stream buffer index out of range! [{streamBufferIndex}]");
+                Debug.LogError($"{nameof(MessageQueueContainer)} {queueType} queue stream buffer index out of range! [{streamBufferIndex}]");
                 return;
             }
 
@@ -307,7 +306,7 @@ namespace MLAPI.Messaging
         /// <param name="message">the message being received</param>
         internal void AddQueueItemToInboundFrame(MessageType qItemType, float timeStamp, ulong sourceNetworkId, NetworkBuffer message, NetworkChannel receiveChannel)
         {
-            NetworkUpdateStage updateStage = (NetworkUpdateStage)message.ReadByte();
+            var updateStage = (NetworkUpdateStage)message.ReadByte();
 
             var messageFrameItem = GetQueueHistoryFrame(MessageQueueHistoryFrame.QueueFrameType.Inbound, updateStage);
             messageFrameItem.IsDirty = true;
@@ -345,7 +344,7 @@ namespace MLAPI.Messaging
             var loopbackHistoryframe = GetQueueHistoryFrame(MessageQueueHistoryFrame.QueueFrameType.Inbound, updateStage, true);
 
             //Get the current frame's outbound queue history frame
-            var messageQueueHistoryItem = GetQueueHistoryFrame(MessageQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate, false);
+            var messageQueueHistoryItem = GetQueueHistoryFrame(MessageQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
 
             if (messageQueueHistoryItem != null)
             {
@@ -353,7 +352,7 @@ namespace MLAPI.Messaging
             }
             else
             {
-                UnityEngine.Debug.LogError($"Could not find the outbound {nameof(MessageQueueHistoryFrame)}!");
+                Debug.LogError($"Could not find the outbound {nameof(MessageQueueHistoryFrame)}!");
             }
         }
 
@@ -367,7 +366,7 @@ namespace MLAPI.Messaging
         /// <returns></returns>
         public MessageQueueHistoryFrame GetLoopBackHistoryFrame(MessageQueueHistoryFrame.QueueFrameType queueFrameType, NetworkUpdateStage updateStage)
         {
-            return GetQueueHistoryFrame(queueFrameType, updateStage, false);
+            return GetQueueHistoryFrame(queueFrameType, updateStage);
         }
 
         /// <summary>
@@ -474,7 +473,7 @@ namespace MLAPI.Messaging
             var pbWriter = (PooledNetworkWriter)writer;
             if (pbWriter != messageQueueHistoryItem.QueueWriter)
             {
-                UnityEngine.Debug.LogError($"{nameof(MessageQueueContainer)} {queueFrameType} passed writer is not the same as the current {nameof(PooledNetworkWriter)} for the {queueFrameType}!");
+                Debug.LogError($"{nameof(MessageQueueContainer)} {queueFrameType} passed writer is not the same as the current {nameof(PooledNetworkWriter)} for the {queueFrameType}!");
             }
 
             //The total size of the frame is the last known position of the stream
@@ -495,7 +494,7 @@ namespace MLAPI.Messaging
             }
 
             //subtracting 8 byte to account for the value of the size of the RPC  (why the 8 above in
-            long messageSize = (long)(messageQueueHistoryItem.TotalSize - (messageQueueHistoryItem.GetCurrentMarkedPosition() + messageOffset));
+            long messageSize = messageQueueHistoryItem.TotalSize - (messageQueueHistoryItem.GetCurrentMarkedPosition() + messageOffset);
 
             if (messageSize > 0)
             {
@@ -504,7 +503,7 @@ namespace MLAPI.Messaging
             }
             else
             {
-                UnityEngine.Debug.LogWarning("MSGSize of < zero detected!!  Setting message size to zero!");
+                Debug.LogWarning("MSGSize of < zero detected!!  Setting message size to zero!");
                 messageQueueHistoryItem.QueueWriter.WriteInt64(0);
             }
 
@@ -544,7 +543,7 @@ namespace MLAPI.Messaging
                 }
                 else
                 {
-                    UnityEngine.Debug.LogWarning($"{nameof(messageSize)} < zero detected! Setting message size to zero!");
+                    Debug.LogWarning($"{nameof(messageSize)} < zero detected! Setting message size to zero!");
                     //Write the actual size of the RPC message
                     loopBackHistoryFrame.QueueWriter.WriteInt64(0);
                 }
@@ -587,19 +586,19 @@ namespace MLAPI.Messaging
 
             if (!m_QueueHistory.ContainsKey(frameType))
             {
-                UnityEngine.Debug.LogError($"{nameof(MessageQueueHistoryFrame)} {nameof(MessageQueueHistoryFrame.QueueFrameType)} {frameType} does not exist!");
+                Debug.LogError($"{nameof(MessageQueueHistoryFrame)} {nameof(MessageQueueHistoryFrame.QueueFrameType)} {frameType} does not exist!");
                 return null;
             }
 
             if (!m_QueueHistory[frameType].ContainsKey(streamBufferIndex))
             {
-                UnityEngine.Debug.LogError($"{nameof(MessageQueueContainer)} {frameType} queue stream buffer index out of range! [{streamBufferIndex}]");
+                Debug.LogError($"{nameof(MessageQueueContainer)} {frameType} queue stream buffer index out of range! [{streamBufferIndex}]");
                 return null;
             }
 
             if (!m_QueueHistory[frameType][streamBufferIndex].ContainsKey(updateStage))
             {
-                UnityEngine.Debug.LogError($"{nameof(MessageQueueContainer)} {updateStage} update type does not exist!");
+                Debug.LogError($"{nameof(MessageQueueContainer)} {updateStage} update type does not exist!");
                 return null;
             }
 

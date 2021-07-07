@@ -134,7 +134,7 @@ namespace MLAPI.Messaging
             }
             else
             {
-                UnityEngine.Debug.LogWarning($"{nameof(m_CurrentItem)}.{nameof(MessageFrameItem.StreamSize)} exceeds allowed size ({m_MaxStreamBounds} vs {m_CurrentItem.StreamSize})! Exiting from the current MessageQueue enumeration loop!");
+                Debug.LogWarning($"{nameof(m_CurrentItem)}.{nameof(MessageFrameItem.StreamSize)} exceeds allowed size ({m_MaxStreamBounds} vs {m_CurrentItem.StreamSize})! Exiting from the current MessageQueue enumeration loop!");
                 m_CurrentItem.MessageType = MessageQueueContainer.MessageType.None;
             }
 

@@ -1217,8 +1217,7 @@ namespace MLAPI
                 }
                 else
                 {
-                    MessageQueueContainer.MessageType messageType =
-                        (MessageQueueContainer.MessageType) messageStream.ReadByte();
+                    var messageType = (MessageQueueContainer.MessageType)messageStream.ReadByte();
                     MessageHandler.MessageReceiveQueueItem(clientId, messageStream, receiveTime, messageType, networkChannel);
                 }
 
