@@ -26,9 +26,6 @@ namespace MLAPI.Metrics
         private readonly EventMetric<ObjectDestroyedEvent> m_ObjectDestroySentEvent = new EventMetric<ObjectDestroyedEvent>(MetricNames.ObjectDestroyedSent);
         private readonly EventMetric<ObjectDestroyedEvent> m_ObjectDestroyReceivedEvent = new EventMetric<ObjectDestroyedEvent>(MetricNames.ObjectDestroyedReceived);
 
-        private readonly EventMetric<MultipleObjectsSpawnedEvent> m_MultipleObjectsSpawnedSentEvent = new EventMetric<MultipleObjectsSpawnedEvent>(MetricNames.MultipleObjectsSpawnedSent);
-        private readonly EventMetric<MultipleObjectsDestroyedEvent> m_MultipleObjectsDestroyedSentEvent = new EventMetric<MultipleObjectsDestroyedEvent>(MetricNames.MultipleObjectDestroyedSent);
-
         private Dictionary<ulong, NetworkObjectIdentifier> m_NetworkGameObjects = new Dictionary<ulong, NetworkObjectIdentifier>();
 
         public NetworkMetrics(NetworkManager networkManager)
@@ -40,8 +37,6 @@ namespace MLAPI.Metrics
                 .WithMetricEvents(m_NetworkVariableDeltaSentEvent, m_NetworkVariableDeltaReceivedEvent)
                 .WithMetricEvents(m_ObjectSpawnSentEvent, m_ObjectSpawnReceivedEvent)
                 .WithMetricEvents(m_ObjectDestroySentEvent, m_ObjectDestroyReceivedEvent)
-                .WithMetricEvents(m_MultipleObjectsSpawnedSentEvent)
-                .WithMetricEvents(m_MultipleObjectsDestroyedSentEvent)
                 .Build();
 
             Dispatcher.RegisterObserver(MLAPIObserver.Observer);
@@ -132,26 +127,6 @@ namespace MLAPI.Metrics
         public void TrackObjectDestroyReceived(ulong senderClientId, ulong networkObjectId, string gameObjectName, ulong bytesCount)
         {
             m_ObjectDestroyReceivedEvent.Mark(new ObjectDestroyedEvent(new ConnectionInfo(senderClientId), new NetworkObjectIdentifier(gameObjectName, networkObjectId), bytesCount));
-        }
-
-        public void TrackMultipleObjectSpawnSent(ulong receiverClientId, Dictionary<ulong, string> networkObjectIdToName, ulong bytesCount)
-        {
-            var networkIds = networkObjectIdToName.Select(idToName => new NetworkObjectIdentifier(idToName.Value, idToName.Key)).ToList();
-            m_MultipleObjectsSpawnedSentEvent.Mark(new MultipleObjectsSpawnedEvent(new ConnectionInfo(receiverClientId), networkIds, bytesCount));
-        }
-
-        public void TrackMultipleObjectDestroySent(ulong receiverClientId, Dictionary<ulong, string> networkObjectIdToName, ulong bytesCount)
-        {
-            var networkIds = networkObjectIdToName.Select(idToName => new NetworkObjectIdentifier(idToName.Value, idToName.Key)).ToList();
-            m_MultipleObjectsDestroyedSentEvent.Mark(new MultipleObjectsDestroyedEvent(new ConnectionInfo(receiverClientId), networkIds, bytesCount));
-        }
-
-        public void TrackMultipleObjectDestroySent(IReadOnlyCollection<ulong> receiverClientIds, Dictionary<ulong, string> networkObjectIdToName, ulong bytesCount)
-        {
-            foreach (var receiverClientId in receiverClientIds)
-            {
-                TrackMultipleObjectDestroySent(receiverClientId, networkObjectIdToName, bytesCount);
-            }
         }
 
         public void DispatchFrame()

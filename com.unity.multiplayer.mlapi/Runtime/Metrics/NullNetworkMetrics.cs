@@ -60,18 +60,6 @@ namespace MLAPI.Metrics
         {
         }
 
-        public void TrackMultipleObjectSpawnSent(ulong receiverClientId, Dictionary<ulong, string> networkObjectIdToName, ulong bytesCount)
-        {
-        }
-
-        public void TrackMultipleObjectDestroySent(ulong receiverClientId, Dictionary<ulong, string> networkObjectIdToName, ulong bytesCount)
-        {
-        }
-
-        public void TrackMultipleObjectDestroySent(IReadOnlyCollection<ulong> receiverClientIds, Dictionary<ulong, string> networkObjectIdToName, ulong bytesCount)
-        {
-        }
-
         public void DispatchFrame()
         {
         }

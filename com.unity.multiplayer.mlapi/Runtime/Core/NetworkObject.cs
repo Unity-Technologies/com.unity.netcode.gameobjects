@@ -286,25 +286,23 @@ namespace MLAPI
                     throw new ArgumentNullException("All " + nameof(NetworkObject) + "s must belong to the same " + nameof(NetworkManager));
                 }
             }
-            var networkObjectIdToName = new Dictionary<ulong, string>();
             using (var buffer = PooledNetworkBuffer.Get())
             using (var writer = PooledNetworkWriter.Get(buffer))
             {
                 writer.WriteUInt16Packed((ushort)networkObjects.Count);
-
+                long prevLength = 0;
                 for (int i = 0; i < networkObjects.Count; i++)
                 {
                     // Send spawn call
                     networkObjects[i].Observers.Add(clientId);
-                    networkObjectIdToName.Add(networkObjects[i].NetworkObjectId, networkObjects[i].name);
 
                     networkManager.SpawnManager.WriteSpawnCallForObject(buffer, clientId, networkObjects[i], payload);
+                    networkManager.NetworkMetrics.TrackObjectSpawnSent(clientId, networkObjects[i].NetworkObjectId, networkObjects[i].name, (ulong)(buffer.Length - prevLength));
+                    prevLength = buffer.Length;
                 }
 
                 networkManager.MessageSender.Send(clientId, NetworkConstants.ADD_OBJECTS, NetworkChannel.Internal, buffer);
-                networkManager.NetworkMetrics.TrackMultipleObjectSpawnSent(clientId, networkObjectIdToName, (ulong) buffer.Length);
             }
-            // TODO: add metric for spawn objects here
         }
 
         /// <summary>
@@ -394,7 +392,7 @@ namespace MLAPI
             {
                 writer.WriteUInt16Packed((ushort)networkObjects.Count);
 
-                var networkObjectIdToName = new Dictionary<ulong, string>();
+                long prevLength = 0;
 
                 for (int i = 0; i < networkObjects.Count; i++)
                 {
@@ -402,13 +400,12 @@ namespace MLAPI
                     networkObjects[i].Observers.Remove(clientId);
 
                     writer.WriteUInt64Packed(networkObjects[i].NetworkObjectId);
-                    networkObjectIdToName.Add(networkObjects[i].NetworkObjectId, networkObjects[i].name);
+                    networkManager.NetworkMetrics.TrackObjectDestroySent(clientId, networkObjects[i].NetworkObjectId, networkObjects[i].name, (ulong)(buffer.Length - prevLength));
+                    prevLength = buffer.Length;
                 }
 
                 networkManager.MessageSender.Send(clientId, NetworkConstants.DESTROY_OBJECTS, NetworkChannel.Internal, buffer);
-                networkManager.NetworkMetrics.TrackMultipleObjectDestroySent(clientId, networkObjectIdToName, (ulong) buffer.Length);
             }
-                // TODO: add metric for destroy objects here
         }
 
         private void OnDestroy()
