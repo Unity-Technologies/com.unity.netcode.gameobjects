@@ -20,7 +20,7 @@ namespace MLAPI.MultiprocessRuntimeTests
 
         public const string BuildInfoFileName = "buildInfo.txt";
 
-        public static string BuildPath => Path.Combine(Path.GetDirectoryName(Application.dataPath), "Builds/MultiprocessTestBuild");
+    public static string BuildPath => Path.Combine(Path.GetDirectoryName(Application.dataPath), "Builds/MultiprocessTests/MultiprocessTestBuild");
 
 
 #if UNITY_EDITOR
@@ -30,7 +30,7 @@ namespace MLAPI.MultiprocessRuntimeTests
         var report = BuildPlayer();
         if (report.summary.result != BuildResult.Succeeded)
             {
-            throw new Exception($"Build failed! {report.summary.totalErrors} errors, {report.summary}");
+            throw new Exception($"Build failed! {report.summary.totalErrors} errors");
             }
         }
 
@@ -40,7 +40,7 @@ namespace MLAPI.MultiprocessRuntimeTests
         var report = BuildPlayer(true);
         if (report.summary.result != BuildResult.Succeeded)
             {
-            throw new Exception($"Build failed! {report.summary.totalErrors} errors, {report.summary}");
+            throw new Exception($"Build failed! {report.summary.totalErrors} errors");
             }
         }
 
