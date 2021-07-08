@@ -37,6 +37,7 @@ Performance tests should only be run from external processes (not from editor). 
 ## How it's done
 ### Multiple processes orchestration
 todo 
+TODO add diagrams for clients vs server and for automation bokken plans
 #### Local orchestration
 #### Bokken orchestration
 ### CI
