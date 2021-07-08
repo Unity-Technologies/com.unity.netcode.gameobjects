@@ -15,7 +15,8 @@ public static class BuildMultiprocessTestPlayer
     public const string MultiprocessBaseMenuName = "MLAPI/Multiprocess Test";
     public const string BuildAndExecuteMenuName = MultiprocessBaseMenuName + "/Build Test Player #t";
     public const string MainSceneName = "MultiprocessTestScene";
-    public static string BuildPath => Path.Combine(Path.GetDirectoryName(Application.dataPath), "Builds/MultiprocessTests/MultiprocessTestBuild");
+    private static string BuildPathDirectory => Path.Combine(Path.GetDirectoryName(Application.dataPath), "Builds","MultiprocessTests");
+    public static string BuildPath => Path.Combine(BuildPathDirectory, "MultiprocessTestPlayer");
 
 #if UNITY_EDITOR
     [MenuItem(BuildAndExecuteMenuName)]
@@ -38,37 +39,16 @@ public static class BuildMultiprocessTestPlayer
         }
     }
 
-    [MenuItem(MultiprocessBaseMenuName+"/Delete Test Build")]
+    [MenuItem(MultiprocessBaseMenuName + "/Delete Test Build")]
     public static void DeleteBuild()
     {
-        switch (Application.platform)
+        if (Directory.Exists(BuildPathDirectory))
         {
-            case RuntimePlatform.WindowsPlayer:
-            case RuntimePlatform.WindowsEditor:
-                var exePath = $"{BuildPath}.exe";
-                if (File.Exists(exePath))
-                {
-                    File.Delete(exePath);
-                }
-                else
-                {
-                    Debug.Log($"exe {exePath} doesn't exist");
-                }
-                break;
-            case RuntimePlatform.OSXPlayer:
-            case RuntimePlatform.OSXEditor:
-                var appPath = BuildPath + ".app";
-                if (Directory.Exists(appPath))
-                {
-                    Directory.Delete(appPath, recursive: true);
-                }
-                else
-                {
-                    Debug.Log($"[{nameof(BuildMultiprocessTestPlayer)}] MacOS build does not exist ({appPath})");
-                }
-                break;
-            default:
-                throw new NotImplementedException();
+            Directory.Delete(BuildPathDirectory, recursive: true);
+        }
+        else
+        {
+            Debug.Log($"[{nameof(BuildMultiprocessTestPlayer)}] build directory does not exist ({BuildPathDirectory}) not deleting anything");
         }
     }
 
@@ -100,6 +80,7 @@ public static class BuildMultiprocessTestPlayer
         {
             buildPathToUse += ".exe";
         }
+        Debug.Log($"Starting multiprocess player build using path {buildPathToUse}");
 
         buildOptions &= ~BuildOptions.AutoRunPlayer;
         var buildReport = BuildPipeline.BuildPlayer(
@@ -108,6 +89,7 @@ public static class BuildMultiprocessTestPlayer
             EditorUserBuildSettings.activeBuildTarget,
             buildOptions);
 
+        Debug.Log($"done building");
         return buildReport;
     }
 #endif
