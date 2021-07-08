@@ -9,6 +9,29 @@ namespace MLAPI.EditorTests
     public class NetworkSerializerTests
     {
         [Test]
+        public void SerializeUnspawnedNetworkObject()
+        {
+            var gameObject = new GameObject(nameof(SerializeUnspawnedNetworkObject));
+            var networkObject = gameObject.AddComponent<NetworkObject>();
+
+            try
+            {
+                using (var outStream = PooledNetworkBuffer.Get())
+                using (var outWriter = PooledNetworkWriter.Get(outStream))
+                {
+                    outWriter.WriteObjectPacked(networkObject);
+                }
+
+                // we expect the exception below
+                Assert.Fail();
+            }
+            catch(ArgumentException exception)
+            {
+                Assert.True(exception.Message.IndexOf("NetworkWriter cannot write NetworkObject types that are not spawned") != -1);
+            }
+        }
+
+        [Test]
         public void SerializeBool()
         {
             using (var outStream = PooledNetworkBuffer.Get())
