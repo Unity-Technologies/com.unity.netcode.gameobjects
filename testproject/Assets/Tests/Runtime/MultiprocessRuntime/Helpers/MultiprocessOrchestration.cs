@@ -13,7 +13,7 @@ public class MultiprocessOrchestration
 
     public static void StartWorkerNode()
     {
-        var workerNode = new Process();
+        var workerProcess = new Process();
 
         //TODO this should be replaced eventually by proper orchestration for all supported platforms
         // Starting new local processes is a solution to help run perf tests locally. CI should have multi machine orchestration to
@@ -26,11 +26,11 @@ public class MultiprocessOrchestration
             {
                 case RuntimePlatform.OSXPlayer:
                 case RuntimePlatform.OSXEditor:
-                    workerNode.StartInfo.FileName = $"{buildInfo}.app/Contents/MacOS/testproject";
+                    workerProcess.StartInfo.FileName = $"{buildInfo}.app/Contents/MacOS/testproject";
                     break;
                 case RuntimePlatform.WindowsPlayer:
                 case RuntimePlatform.WindowsEditor:
-                    workerNode.StartInfo.FileName = $"{buildInfo}.exe";
+                    workerProcess.StartInfo.FileName = $"{buildInfo}.exe";
                     break;
                 default:
                     throw new NotImplementedException($"{nameof(StartWorkerNode)}: Current platform is not supported");
@@ -38,21 +38,21 @@ public class MultiprocessOrchestration
         }
         catch (FileNotFoundException)
         {
-            Debug.LogError($"Couldn't find build info file. {buildInstructions}");
+            Debug.LogError($"Could not find build info file. {buildInstructions}");
             throw;
         }
 
-        workerNode.StartInfo.UseShellExecute = false;
-        workerNode.StartInfo.RedirectStandardError = true;
-        workerNode.StartInfo.RedirectStandardOutput = true;
-        workerNode.StartInfo.Arguments = $"{IsWorkerArg} -popupwindow -screen-width 100 -screen-height 100";
+        workerProcess.StartInfo.UseShellExecute = false;
+        workerProcess.StartInfo.RedirectStandardError = true;
+        workerProcess.StartInfo.RedirectStandardOutput = true;
+        workerProcess.StartInfo.Arguments = $"{IsWorkerArg} -popupwindow -screen-width 100 -screen-height 100";
         // workerNode.StartInfo.Arguments += " -deepprofiling"; // enable for deep profiling
         try
         {
-            var newProcessStarted = workerNode.Start();
+            var newProcessStarted = workerProcess.Start();
             if (!newProcessStarted)
             {
-                throw new Exception("Failed to start process!");
+                throw new Exception("Failed to start worker process!");
             }
         }
         catch (Win32Exception e)

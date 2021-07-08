@@ -20,7 +20,7 @@ public static class BuildMultiprocessTestPlayer
 
 #if UNITY_EDITOR
     [MenuItem(BuildAndExecuteMenuName)]
-    public static void BuildNoDebug()
+    public static void BuildRelease()
     {
         var report = BuildPlayer();
         if (report.summary.result != BuildResult.Succeeded)
@@ -29,7 +29,7 @@ public static class BuildMultiprocessTestPlayer
         }
     }
 
-    [MenuItem(MultiprocessBaseMenuName + "/Build Test Player in debug mode")]
+    [MenuItem(MultiprocessBaseMenuName + "/Build Test Player (Debug)")]
     public static void BuildDebug()
     {
         var report = BuildPlayer(true);
@@ -89,7 +89,7 @@ public static class BuildMultiprocessTestPlayer
             EditorUserBuildSettings.activeBuildTarget,
             buildOptions);
 
-        Debug.Log($"done building");
+        Debug.Log("Build finished");
         return buildReport;
     }
 #endif
