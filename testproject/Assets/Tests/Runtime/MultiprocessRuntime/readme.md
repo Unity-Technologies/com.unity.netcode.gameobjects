@@ -172,14 +172,16 @@ namespace MLAPI.MultiprocessRuntimeTests
 ```
 
 
-## How to run a test locally
-Test players need to be built first to test locally. Integration with CI should do this automatically.
+## How to run a test
+**Local**: Test players need to be built first to test locally. 
+
+**Automated**: Integration with CI should do this automatically.
 
 ![](readme-ressources/Building-Player.jpg)
 
-Then run the tests.
+Then run the tests from Unity's test runner.
 
-Performance tests should only be run from external processes (not from editor). This way the server code will run in a build, just as much as client code.
+Note that performance tests should be run from external processes (not from editor). This way the server code will run in a build, just as much as client code, for more realistic test results.
 
 ![](readme-ressources/Multiprocess.jpg)
 
