@@ -12,9 +12,9 @@ using UnityEngine;
 /// </summary>
 public static class BuildMultiprocessTestPlayer
 {
-    public const string MultiprocessBaseMenuName = "MLAPI Multiprocess Test";
+    public const string MultiprocessBaseMenuName = "MLAPI/Multiprocess Test";
     public const string BuildAndExecuteMenuName = MultiprocessBaseMenuName + "/Build Test Player #t";
-    public const string MainSceneName = "MultiprocessTestingScene";
+    public const string MainSceneName = "MultiprocessTestScene";
     public static string BuildPath => Path.Combine(Path.GetDirectoryName(Application.dataPath), "Builds/MultiprocessTestBuild");
 
 #if UNITY_EDITOR
@@ -57,14 +57,14 @@ public static class BuildMultiprocessTestPlayer
                 break;
             case RuntimePlatform.OSXPlayer:
             case RuntimePlatform.OSXEditor:
-                var toDelete = BuildPath + ".app";
-                if (Directory.Exists(toDelete))
+                var appPath = BuildPath + ".app";
+                if (Directory.Exists(appPath))
                 {
-                    Directory.Delete(toDelete, recursive: true);
+                    Directory.Delete(appPath, recursive: true);
                 }
                 else
                 {
-                    Debug.Log($"directory {toDelete} doesn't exist");
+                    Debug.Log($"[{nameof(BuildMultiprocessTestPlayer)}] MacOS build does not exist ({appPath})");
                 }
                 break;
             default:
