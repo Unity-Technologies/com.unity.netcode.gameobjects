@@ -14,7 +14,7 @@ There's a few steps to write a multiprocess test
 1. Your test class needs to inherit from `BaseMultiprocessTests`
 2. Each test method needs the `MultiprocessContextBasedTest` attribute
 3. Each test method needs to run `InitContextSteps();`
-4. Each context based step needs to use 
+4. Each context based step can use
 ```C#
 yield return new ExecuteStepInContext(StepExecutionContext.Clients, stepToExecute: nbObjectsBytes => {
     // Something here
@@ -38,7 +38,33 @@ A test method would look like
         });
     }
 ```
-5. Your test code shouldn't execute outside of these steps (as that test method can be executed multiple times, once for step registration and once for the actual test run for example)
+Your test code shouldn't execute outside of these steps (as that test method can be executed multiple times, once for step registration and once for the actual test run for example)
+
+Another way to write a multiprocess test without context based steps is to use TestCoordinator directly.
+```C#
+    private static void ExecuteSimpleCoordinatorTest()
+    {
+        TestCoordinator.Instance.WriteTestResultsServerRpc(float.PositiveInfinity);
+    }
+
+    [UnityTest]
+    public IEnumerator CheckTestCoordinator()
+    {
+        // Call the client side method
+        TestCoordinator.Instance.InvokeFromMethodActionRpc(ExecuteSimpleCoordinatorTest);
+
+        var nbResults = 0;
+        for (int i = 0; i < NbWorkers; i++) // wait and test for the two clients
+        {
+            yield return new WaitUntil(TestCoordinator.ResultIsSet());
+
+            var (clientId, result) = TestCoordinator.ConsumeCurrentResult().Take(1).Single();
+            Assert.Greater(result, 0f);
+            nbResults++;
+        }
+        Assert.That(nbResults, Is.EqualTo(NbWorkers));
+    }
+```
 
 If you want to pass in dynamic test parameters (for example nunit `Values`), you need to pass them as a `byte[]` parameter to your step, since remote execution won't have context capture from the test execution and you won't see the test's parameters.
 
@@ -162,8 +188,10 @@ Performance tests should only be run from external processes (not from editor). 
 The test runner executes the main node's tests. The tests are in charge of launching their needed workers.
 With the bokken integration, we'll need to be careful about ressource contention at Unity, these tests could be heavy on ressources.
 Tests when launched locally will simply create new OS processes for each worker players.
+
 ![](readme-ressources/OrchestrationOverview.jpg)
-#### Bokken orchestration
+*Note that this diagram is still WIP*
+### Bokken orchestration
 todo
 ### CI
 todo
