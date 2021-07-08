@@ -15,7 +15,7 @@ public static class BuildMultiprocessTestPlayer
     public const string MultiprocessBaseMenuName = "MLAPI/Multiprocess Test";
     public const string BuildAndExecuteMenuName = MultiprocessBaseMenuName + "/Build Test Player #t";
     public const string MainSceneName = "MultiprocessTestScene";
-    public static string BuildPath => Path.Combine(Path.GetDirectoryName(Application.dataPath), "Builds/MultiprocessTestBuild");
+    public static string BuildPath => Path.Combine(Path.GetDirectoryName(Application.dataPath), "Builds/MultiprocessTests/MultiprocessTestBuild");
 
 #if UNITY_EDITOR
     [MenuItem(BuildAndExecuteMenuName)]
@@ -24,7 +24,7 @@ public static class BuildMultiprocessTestPlayer
         var report = BuildPlayer();
         if (report.summary.result != BuildResult.Succeeded)
         {
-            throw new Exception($"Build failed! {report.summary.totalErrors} errors, {report.summary}");
+            throw new Exception($"Build failed! {report.summary.totalErrors} errors");
         }
     }
 
@@ -34,7 +34,7 @@ public static class BuildMultiprocessTestPlayer
         var report = BuildPlayer(true);
         if (report.summary.result != BuildResult.Succeeded)
         {
-            throw new Exception($"Build failed! {report.summary.totalErrors} errors, {report.summary}");
+            throw new Exception($"Build failed! {report.summary.totalErrors} errors");
         }
     }
 
