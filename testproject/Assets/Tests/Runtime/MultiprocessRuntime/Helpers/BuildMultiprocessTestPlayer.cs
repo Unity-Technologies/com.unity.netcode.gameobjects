@@ -77,7 +77,7 @@ public static class BuildMultiprocessTestPlayer
     /// reporting. We only want to main node to do that, worker nodes should be dumb
     /// </summary>
     /// <returns></returns>
-    public static BuildReport BuildPlayer(bool isDebug = false)
+    private static BuildReport BuildPlayer(bool isDebug = false)
     {
         // Save standalone build path to file so we can read it from standalone tests (that are not running from editor)
         File.WriteAllText(Path.Combine(Application.streamingAssetsPath, MultiprocessOrchestration.BuildInfoFileName), BuildPath);
