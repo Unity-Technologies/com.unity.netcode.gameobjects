@@ -25,7 +25,7 @@ namespace MLAPI.MultiprocessRuntimeTests
 
 #if UNITY_EDITOR
     [MenuItem(BuildAndExecuteMenuName)]
-        public static void BuildNoDebug()
+    public static void BuildRelease()
         {
         var report = BuildPlayer();
         if (report.summary.result != BuildResult.Succeeded)
@@ -34,7 +34,7 @@ namespace MLAPI.MultiprocessRuntimeTests
             }
         }
 
-    [MenuItem(MultiprocessBaseMenuName+"/Build Test Player in debug mode")]
+    [MenuItem(MultiprocessBaseMenuName + "/Build Test Player (Debug)")]
         public static void BuildDebug()
         {
         var report = BuildPlayer(true);
@@ -99,7 +99,7 @@ namespace MLAPI.MultiprocessRuntimeTests
                 EditorUserBuildSettings.activeBuildTarget,
                 buildOptions);
 
-        Debug.Log($"done building");
+        Debug.Log("Build finished");
         return buildReport;
         }
 #endif
