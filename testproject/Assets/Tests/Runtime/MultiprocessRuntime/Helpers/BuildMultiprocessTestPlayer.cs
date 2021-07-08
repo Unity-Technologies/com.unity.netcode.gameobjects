@@ -15,8 +15,8 @@ public static class BuildMultiprocessTestPlayer
     public const string MultiprocessBaseMenuName = "MLAPI/Multiprocess Test";
     public const string BuildAndExecuteMenuName = MultiprocessBaseMenuName + "/Build Test Player #t";
     public const string MainSceneName = "MultiprocessTestScene";
-    public static string BuildPathDirectory => Path.Combine(Path.GetDirectoryName(Application.dataPath), "Builds/MultiprocessTests");
-    public static string BuildPath => Path.Combine(BuildPathDirectory, "/MultiprocessTestBuild");
+    private static string BuildPathDirectory => Path.Combine(Path.GetDirectoryName(Application.dataPath), "Builds","MultiprocessTests");
+    public static string BuildPath => Path.Combine(BuildPathDirectory, "MultiprocessTestPlayer");
 
 #if UNITY_EDITOR
     [MenuItem(BuildAndExecuteMenuName)]
@@ -80,6 +80,7 @@ public static class BuildMultiprocessTestPlayer
         {
             buildPathToUse += ".exe";
         }
+        Debug.Log($"Starting multiprocess player build using path {buildPathToUse}");
 
         buildOptions &= ~BuildOptions.AutoRunPlayer;
         var buildReport = BuildPipeline.BuildPlayer(
@@ -88,6 +89,7 @@ public static class BuildMultiprocessTestPlayer
             EditorUserBuildSettings.activeBuildTarget,
             buildOptions);
 
+        Debug.Log($"done building");
         return buildReport;
     }
 #endif
