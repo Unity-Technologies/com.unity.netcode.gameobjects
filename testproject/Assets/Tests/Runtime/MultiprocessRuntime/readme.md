@@ -175,13 +175,13 @@ namespace MLAPI.MultiprocessRuntimeTests
 ## How to run a test locally
 Test players need to be built first to test locally. Integration with CI should do this automatically.
 
-![](readme-ressources/Building-Player.png)
+![](readme-ressources/Building-Player.jpg)
 
 Then run the tests.
 
 Performance tests should only be run from external processes (not from editor). This way the server code will run in a build, just as much as client code.
 
-![](readme-ressources/Multiprocess.png)
+![](readme-ressources/Multiprocess.jpg)
 
 ## How it's done
 ### Multiple processes orchestration
