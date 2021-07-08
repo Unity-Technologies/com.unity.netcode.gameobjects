@@ -683,7 +683,7 @@ MonoBehaviour:
     ProtocolVersion: 0
     NetworkTransport: {fileID: 1674777073}
     RegisteredScenes:
-    - MultiprocessTestingScene
+    - MultiprocessTestScene
     - SampleScene
     AllowRuntimeSceneChanges: 0
     PlayerPrefab: {fileID: 4700706668509470175, guid: 7eeaaf9e50c0afc4dab93584a54fb0d6,
