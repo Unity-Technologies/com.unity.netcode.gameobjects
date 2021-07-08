@@ -12,29 +12,29 @@ using UnityEngine;
 /// </summary>
 public static class BuildMultiprocessTestPlayer
 {
-    public const string MultiprocessBaseMenuName = "MLAPI Multiprocess Test";
-    public const string BuildAndExecuteMenuName = MultiprocessBaseMenuName + "/Build - Execute multiprocess tests #%t";
-    public const string MainSceneName = "MultiprocessTestingScene";
+    public const string MultiprocessBaseMenuName = "MLAPI/Multiprocess Test";
+    public const string BuildAndExecuteMenuName = MultiprocessBaseMenuName + "/Build Test Player #t";
+    public const string MainSceneName = "MultiprocessTestScene";
     public static string BuildPath => Path.Combine(Path.GetDirectoryName(Application.dataPath), "Builds/MultiprocessTestBuild");
 
 #if UNITY_EDITOR
-    [MenuItem(MultiprocessBaseMenuName+"/Build Test Player #t")]
+    [MenuItem(BuildAndExecuteMenuName)]
     public static void BuildNoDebug()
     {
-        var success = Build();
-        if (!success)
+        var report = BuildPlayer();
+        if (report.summary.result != BuildResult.Succeeded)
         {
-            throw new Exception("Build failed!");
+            throw new Exception($"Build failed! {report.summary.totalErrors} errors, {report.summary}");
         }
     }
 
-    [MenuItem(MultiprocessBaseMenuName+"/Build Test Player in debug mode")]
+    [MenuItem(MultiprocessBaseMenuName + "/Build Test Player in debug mode")]
     public static void BuildDebug()
     {
-        var success = Build(true);
-        if (!success)
+        var report = BuildPlayer(true);
+        if (report.summary.result != BuildResult.Succeeded)
         {
-            throw new Exception("Build failed!");
+            throw new Exception($"Build failed! {report.summary.totalErrors} errors, {report.summary}");
         }
     }
 
@@ -57,14 +57,14 @@ public static class BuildMultiprocessTestPlayer
                 break;
             case RuntimePlatform.OSXPlayer:
             case RuntimePlatform.OSXEditor:
-                var toDelete = BuildPath + ".app";
-                if (Directory.Exists(toDelete))
+                var appPath = BuildPath + ".app";
+                if (Directory.Exists(appPath))
                 {
-                    Directory.Delete(toDelete, recursive: true);
+                    Directory.Delete(appPath, recursive: true);
                 }
                 else
                 {
-                    Debug.Log($"directory {toDelete} doesn't exist");
+                    Debug.Log($"[{nameof(BuildMultiprocessTestPlayer)}] MacOS build does not exist ({appPath})");
                 }
                 break;
             default:
@@ -77,7 +77,7 @@ public static class BuildMultiprocessTestPlayer
     /// reporting. We only want to main node to do that, worker nodes should be dumb
     /// </summary>
     /// <returns></returns>
-    public static bool Build(bool isDebug = false)
+    private static BuildReport BuildPlayer(bool isDebug = false)
     {
         // Save standalone build path to file so we can read it from standalone tests (that are not running from editor)
         File.WriteAllText(Path.Combine(Application.streamingAssetsPath, MultiprocessOrchestration.BuildInfoFileName), BuildPath);
@@ -108,7 +108,7 @@ public static class BuildMultiprocessTestPlayer
             EditorUserBuildSettings.activeBuildTarget,
             buildOptions);
 
-        return buildReport.summary.result == BuildResult.Succeeded;
+        return buildReport;
     }
 #endif
 }
