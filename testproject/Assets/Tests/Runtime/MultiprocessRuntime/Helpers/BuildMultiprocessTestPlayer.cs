@@ -20,8 +20,8 @@ namespace MLAPI.MultiprocessRuntimeTests
 
         public const string BuildInfoFileName = "buildInfo.txt";
 
-    public static string BuildPath => Path.Combine(Path.GetDirectoryName(Application.dataPath), "Builds/MultiprocessTests/MultiprocessTestBuild");
-
+    private static string BuildPathDirectory => Path.Combine(Path.GetDirectoryName(Application.dataPath), "Builds","MultiprocessTests");
+    public static string BuildPath => Path.Combine(BuildPathDirectory, "MultiprocessTestPlayer");
 
 #if UNITY_EDITOR
     [MenuItem(BuildAndExecuteMenuName)]
@@ -44,39 +44,18 @@ namespace MLAPI.MultiprocessRuntimeTests
             }
         }
 
-        [MenuItem(MultiprocessBaseMenuName + "/Delete Test Build")]
+    [MenuItem(MultiprocessBaseMenuName+"/Delete Test Build")]
         public static void DeleteBuild()
         {
-            switch (Application.platform)
-            {
-                case RuntimePlatform.WindowsPlayer:
-                case RuntimePlatform.WindowsEditor:
-                    var exePath = $"{BuildPath}.exe";
-                    if (File.Exists(exePath))
-                    {
-                        File.Delete(exePath);
-                    }
-                    else
-                    {
-                        Debug.Log($"exe {exePath} doesn't exist");
-                    }
 
-                    break;
-                case RuntimePlatform.OSXPlayer:
-                case RuntimePlatform.OSXEditor:
-                var appPath = BuildPath + ".app";
-                if (Directory.Exists(appPath))
-                    {
-                    Directory.Delete(appPath, recursive: true);
-                    }
-                    else
-                    {
-                    Debug.Log($"[{nameof(BuildMultiprocessTestPlayer)}] MacOS build does not exist ({appPath})");
-                    }
+        if (Directory.Exists(BuildPathDirectory))
+                {
+            Directory.Delete(BuildPathDirectory, recursive: true);
+                }
+                else
+                {
+            Debug.Log($"[{nameof(BuildMultiprocessTestPlayer)}] build directory does not exist ({BuildPathDirectory}) not deleting anything");
 
-                    break;
-                default:
-                    throw new NotImplementedException();
             }
         }
 
@@ -111,6 +90,7 @@ namespace MLAPI.MultiprocessRuntimeTests
             {
                 buildPathToUse += ".exe";
             }
+        Debug.Log($"Starting multiprocess player build using path {buildPathToUse}");
 
             buildOptions &= ~BuildOptions.AutoRunPlayer;
             var buildReport = BuildPipeline.BuildPlayer(
@@ -119,6 +99,7 @@ namespace MLAPI.MultiprocessRuntimeTests
                 EditorUserBuildSettings.activeBuildTarget,
                 buildOptions);
 
+        Debug.Log($"done building");
         return buildReport;
         }
 #endif
