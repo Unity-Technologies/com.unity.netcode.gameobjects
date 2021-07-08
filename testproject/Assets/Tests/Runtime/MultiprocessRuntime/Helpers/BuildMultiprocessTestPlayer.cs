@@ -57,14 +57,14 @@ public static class BuildMultiprocessTestPlayer
                 break;
             case RuntimePlatform.OSXPlayer:
             case RuntimePlatform.OSXEditor:
-                var toDelete = BuildPath + ".app";
-                if (Directory.Exists(toDelete))
+                var appPath = BuildPath + ".app";
+                if (Directory.Exists(appPath))
                 {
-                    Directory.Delete(toDelete, recursive: true);
+                    Directory.Delete(appPath, recursive: true);
                 }
                 else
                 {
-                    Debug.Log($"directory {toDelete} doesn't exist");
+                    Debug.Log($"[{nameof(BuildMultiprocessTestPlayer)}] MacOS build does not exist ({appPath})");
                 }
                 break;
             default:
