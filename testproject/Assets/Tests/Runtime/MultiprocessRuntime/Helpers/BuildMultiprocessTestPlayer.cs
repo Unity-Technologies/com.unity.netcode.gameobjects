@@ -12,7 +12,7 @@ using UnityEngine;
 /// </summary>
 public static class BuildMultiprocessTestPlayer
 {
-    public const string MultiprocessBaseMenuName = "MLAPI Multiprocess Test";
+    public const string MultiprocessBaseMenuName = "MLAPI/Multiprocess Test";
     public const string BuildAndExecuteMenuName = MultiprocessBaseMenuName + "/Build - Execute multiprocess tests #%t";
     public const string MainSceneName = "MultiprocessTestingScene";
     public static string BuildPath => Path.Combine(Path.GetDirectoryName(Application.dataPath), "Builds/MultiprocessTestBuild");
