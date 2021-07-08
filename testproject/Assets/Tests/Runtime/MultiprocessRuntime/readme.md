@@ -192,7 +192,7 @@ With the bokken integration, we'll need to be careful about ressource contention
 Tests when launched locally will simply create new OS processes for each worker players.
 
 ![](readme-ressources/OrchestrationOverview.jpg)
-*Note that this diagram is still WIP*
+*Note that this diagram is still WIP for the CI part*
 ### Bokken orchestration
 todo
 ### CI
