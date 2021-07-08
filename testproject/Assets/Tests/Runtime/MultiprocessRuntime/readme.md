@@ -66,8 +66,7 @@ Another way to write a multiprocess test without context based steps is to use T
     }
 ```
 
-If you want to pass in dynamic test parameters (for example nunit `Values`), you need to pass them as a `byte[]` parameter to your step, since remote execution won't have context capture from the test execution and you won't see the test's parameters.
-
+Here's a complete set of examples using the API
 
 ```C#
 using //...
@@ -97,6 +96,7 @@ namespace MLAPI.MultiprocessRuntimeTests
                 Assert.That(1, Is.EqualTo(1));
                 throw new Exception("asdf"); // this client side exception will be communicated to the coordinator, making the test fail
             });
+
             yield return new ExecuteStepInContext(StepExecutionContext.Clients, bytes =>
             {
                 // To write results to the test runner, call this method:
@@ -120,7 +120,6 @@ namespace MLAPI.MultiprocessRuntimeTests
                 }
             });
 
-
             int someValue = 456; // one caveat to executeStepInContext is contrary to instinct, this is not shared between server and client execution.
             // to send that value to clients, "paramToPass" needs to be used
             yield return new ExecuteStepInContext(StepExecutionContext.Clients, bytes =>
@@ -139,6 +138,7 @@ namespace MLAPI.MultiprocessRuntimeTests
                 }
                 NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate += Update;
             }, waitMultipleUpdates: true); // this keeps waiting "are you done? are you done? are you done?" and relies on the clients calling the "ClientFinishedServerRpc"
+            
             yield return new ExecuteStepInContext(StepExecutionContext.Clients, bytes =>
             {
                 int cpt = 0;
