@@ -25,7 +25,7 @@ namespace MLAPI.EditorTests
                 // we expect the exception below
                 Assert.Fail();
             }
-            catch(System.ArgumentException exception)
+            catch(ArgumentException exception)
             {
                 Assert.True(exception.Message.IndexOf("NetworkWriter cannot write NetworkObject types that are not spawned") != -1);
             }
