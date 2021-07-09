@@ -15,6 +15,7 @@ namespace MLAPI.MultiprocessRuntimeTests
 {
     public class NetworkVariablePerformanceTests : BaseMultiprocessTests
     {
+        public int somethingInvalid = 1;
         protected override int WorkerCount { get; } = 1;
         private const int k_MaxObjectsToSpawn = 10000;
         private List<OneNetVar> m_ServerSpawnedObjects = new List<OneNetVar>();
