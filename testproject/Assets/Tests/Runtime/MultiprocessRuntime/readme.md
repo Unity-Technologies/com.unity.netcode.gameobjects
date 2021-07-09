@@ -53,16 +53,17 @@ Another way to write a multiprocess test without context based steps is to use T
         // Call the client side method
         TestCoordinator.Instance.InvokeFromMethodActionRpc(ExecuteSimpleCoordinatorTest);
 
-        var nbResults = 0;
-        for (int i = 0; i < NbWorkers; i++) // wait and test for the two clients
+        var resultCount = 0;
+        for (int i = 0; i < WorkerCount; i++) // wait and test for the two clients
         {
             yield return new WaitUntil(TestCoordinator.ResultIsSet());
 
             var (clientId, result) = TestCoordinator.ConsumeCurrentResult().Take(1).Single();
             Assert.Greater(result, 0f);
-            nbResults++;
+            resultCount++;
         }
-        Assert.That(nbResults, Is.EqualTo(NbWorkers));
+
+        Assert.That(resultCount, Is.EqualTo(WorkerCount));
     }
 ```
 
