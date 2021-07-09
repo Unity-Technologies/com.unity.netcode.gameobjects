@@ -370,6 +370,7 @@ namespace MLAPI.SceneManagement
             AsyncOperation sceneLoad = SceneManager.LoadSceneAsync(sceneName, loadSceneMode);
             sceneLoad.completed += (AsyncOperation asyncOp2) => { OnSceneLoaded(); };
             switchSceneProgress.SetSceneLoadOperation(sceneLoad);
+            // NSS TODO: Make a single unified notification callback
             OnSceneSwitchStarted?.Invoke(sceneLoad);
         }
 
@@ -379,7 +380,7 @@ namespace MLAPI.SceneManagement
         /// <param name="objectStream">Stream data associated with the event </param>
         internal void OnClientSceneLoadingEvent(Stream objectStream)
         {
-            SceneEventData.CopyUndreadFromStream(objectStream);
+            SceneEventData.CopyUnreadFromStream(objectStream);
 
             if (!SceneIndexToString.TryGetValue(SceneEventData.SceneIndex, out string sceneName) || !RegisteredSceneNames.Contains(sceneName))
             {
@@ -751,8 +752,11 @@ namespace MLAPI.SceneManagement
             {
                 if (stream != null)
                 {
-                    var reader = NetworkReaderPool.GetReader(stream);
-                    SceneEventData = (SceneEventData)reader.ReadObjectPacked(typeof(SceneEventData));
+                    using (var reader = NetworkReaderPool.GetReader(stream))
+                    {
+                        SceneEventData = (SceneEventData)reader.ReadObjectPacked(typeof(SceneEventData));
+                    }
+
                     if (SceneEventData.IsSceneEventClientSide())
                     {
                         HandleClientSceneEvent(stream);
@@ -880,7 +884,7 @@ namespace MLAPI.SceneManagement
         /// Used to store data during an asynchronous scene loading event
         /// </summary>
         /// <param name="stream"></param>
-        internal void CopyUndreadFromStream(Stream stream)
+        internal void CopyUnreadFromStream(Stream stream)
         {
             InternalBuffer.Position = 0;
             InternalBuffer.CopyUnreadFrom(stream);
