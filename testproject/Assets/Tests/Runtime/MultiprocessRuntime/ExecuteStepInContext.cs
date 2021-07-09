@@ -31,7 +31,7 @@ public class ExecuteStepInContext : CustomYieldInstruction
     {
         public IEnumerator BeforeTest(ITest test)
         {
-            yield return new WaitUntil(() => TestCoordinator.Instance != null && hasRegistered);
+            yield return new WaitUntil(() => TestCoordinator.Instance != null && HasRegistered);
         }
 
         public IEnumerator AfterTest(ITest test)
@@ -42,11 +42,11 @@ public class ExecuteStepInContext : CustomYieldInstruction
 
     private StepExecutionContext m_ActionContext;
     private Action<byte[]> m_StepToExecute;
-    private string m_CurrentActionID;
+    private string m_CurrentActionId;
 
     // as a remote worker, I store all available actions so I can execute them when triggered from RPCs
-    public static Dictionary<string, ExecuteStepInContext> allActions = new Dictionary<string, ExecuteStepInContext>();
-    private static Dictionary<string, int> s_MethodIDCounter = new Dictionary<string, int>();
+    public static Dictionary<string, ExecuteStepInContext> AllActions = new Dictionary<string, ExecuteStepInContext>();
+    private static Dictionary<string, int> s_MethodIdCounter = new Dictionary<string, int>();
 
     private NetworkManager m_NetworkManager;
     private bool m_IsRegistering;
@@ -58,11 +58,11 @@ public class ExecuteStepInContext : CustomYieldInstruction
 
     private float m_StartTime;
     private bool isTimingOut => Time.time - m_StartTime > TestCoordinator.MaxWaitTimeoutSec;
-    private bool ShouldExecuteLocally => (m_ActionContext == StepExecutionContext.Server && m_NetworkManager.IsServer) || (m_ActionContext == StepExecutionContext.Clients && !m_NetworkManager.IsServer);
+    private bool shouldExecuteLocally => (m_ActionContext == StepExecutionContext.Server && m_NetworkManager.IsServer) || (m_ActionContext == StepExecutionContext.Clients && !m_NetworkManager.IsServer);
 
-    public static bool isRegistering;
-    public static bool hasRegistered;
-    private static List<object> m_AllClientTestInstances = new List<object>(); // to keep an instance for each tests, so captured context in each step is kept
+    public static bool IsRegistering;
+    public static bool HasRegistered;
+    private static List<object> s_AllClientTestInstances = new List<object>(); // to keep an instance for each tests, so captured context in each step is kept
 
     /// <summary>
     /// This MUST be called at the beginning of each test in order to use context based steps.
@@ -70,11 +70,11 @@ public class ExecuteStepInContext : CustomYieldInstruction
     /// even with the same method name and different parameters).
     /// This relies on the name to be unique for each generated IEnumerator state machines
     /// </summary>
-    public static void InitContextSteps()
+    public static void InitializeContextSteps()
     {
         var callerMethod = new StackFrame(1).GetMethod();
         var methodIdentifier = GetMethodIdentifier(callerMethod); // since this is called from IEnumerator, this should be a generated class, making it unique
-        s_MethodIDCounter[methodIdentifier] = 0;
+        s_MethodIdCounter[methodIdentifier] = 0;
     }
 
     private static string GetMethodIdentifier(MethodBase callerMethod)
@@ -85,11 +85,11 @@ public class ExecuteStepInContext : CustomYieldInstruction
     internal static void InitializeAllSteps()
     {
         // registering magically all context based steps
-        isRegistering = true;
+        IsRegistering = true;
         var registeredMethods = typeof(TestCoordinator).Assembly.GetTypes().SelectMany(t => t.GetMethods())
-            .Where(m => m.GetCustomAttributes(typeof(ExecuteStepInContext.MultiprocessContextBasedTestAttribute), true).Length > 0)
+            .Where(m => m.GetCustomAttributes(typeof(MultiprocessContextBasedTestAttribute), true).Length > 0)
             .ToArray();
-        HashSet<Type> typesWithContextMethods = new HashSet<Type>();
+        var typesWithContextMethods = new HashSet<Type>();
         foreach (var method in registeredMethods)
         {
             typesWithContextMethods.Add(method.ReflectedType);
@@ -97,10 +97,10 @@ public class ExecuteStepInContext : CustomYieldInstruction
 
         if (registeredMethods.Length == 0)
         {
-            throw new Exception("Couldn't find any registered methods for multiprocess testing. Is TestCoordinator in same assembly as test methods?");
+            throw new Exception($"Couldn't find any registered methods for multiprocess testing. Is {nameof(TestCoordinator)} in same assembly as test methods?");
         }
 
-        object[] GetParameterValuesToPass(ParameterInfo[] parameterInfo)
+        object[] GetParameterValuesToPassFunc(ParameterInfo[] parameterInfo)
         {
             object[] parametersToReturn = new object[parameterInfo.Length];
             for (int i = 0; i < parameterInfo.Length; i++)
@@ -123,16 +123,16 @@ public class ExecuteStepInContext : CustomYieldInstruction
             var allConstructors = contextType.GetConstructors();
             if (allConstructors.Length > 1)
             {
-                throw new NotImplementedException("Case not implemented where test has more than one contructor");
+                throw new NotImplementedException("Case not implemented where test has more than one constructor");
             }
 
-            var instance = Activator.CreateInstance(contextType, allConstructors.Length > 0 ? GetParameterValuesToPass(allConstructors[0].GetParameters()) : null);
-            m_AllClientTestInstances.Add(instance); // keeping that instance so tests can use captured local attributes
+            var instance = Activator.CreateInstance(contextType, allConstructors.Length > 0 ? GetParameterValuesToPassFunc(allConstructors[0].GetParameters()) : null);
+            s_AllClientTestInstances.Add(instance); // keeping that instance so tests can use captured local attributes
 
-            List<MethodInfo> typeMethodsWithContextSteps = new List<MethodInfo>();
+            var typeMethodsWithContextSteps = new List<MethodInfo>();
             foreach (var method in contextType.GetMethods())
             {
-                if (method.GetCustomAttributes(typeof(ExecuteStepInContext.MultiprocessContextBasedTestAttribute), true).Length > 0)
+                if (method.GetCustomAttributes(typeof(MultiprocessContextBasedTestAttribute), true).Length > 0)
                 {
                     typeMethodsWithContextSteps.Add(method);
                 }
@@ -140,14 +140,14 @@ public class ExecuteStepInContext : CustomYieldInstruction
 
             foreach (var method in typeMethodsWithContextSteps)
             {
-                var parametersToPass = GetParameterValuesToPass(method.GetParameters());
+                var parametersToPass = GetParameterValuesToPassFunc(method.GetParameters());
                 var enumerator = (IEnumerator)method.Invoke(instance, parametersToPass.ToArray());
                 while (enumerator.MoveNext()) { }
             }
         }
 
-        isRegistering = false;
-        hasRegistered = true;
+        IsRegistering = false;
+        HasRegistered = true;
     }
 
     /// <summary>
@@ -164,7 +164,7 @@ public class ExecuteStepInContext : CustomYieldInstruction
     public ExecuteStepInContext(StepExecutionContext actionContext, Action<byte[]> stepToExecute, bool ignoreTimeoutException = false, byte[] paramToPass = default, NetworkManager networkManager = null, bool waitMultipleUpdates = false, Func<bool> additionalIsFinishedWaiter = null)
     {
         m_StartTime = Time.time;
-        m_IsRegistering = isRegistering;
+        m_IsRegistering = IsRegistering;
         m_ActionContext = actionContext;
         m_StepToExecute = stepToExecute;
         m_WaitMultipleUpdates = waitMultipleUpdates;
@@ -185,22 +185,22 @@ public class ExecuteStepInContext : CustomYieldInstruction
         var callerMethod = new StackFrame(1).GetMethod(); // one skip frame for current method
 
         var methodId = GetMethodIdentifier(callerMethod); // assumes called from IEnumerator MoveNext, which should be the case since we're a CustomYieldInstruction. This will return a generated class name which should be unique
-        if (!s_MethodIDCounter.ContainsKey(methodId))
+        if (!s_MethodIdCounter.ContainsKey(methodId))
         {
-            s_MethodIDCounter[methodId] = 0;
+            s_MethodIdCounter[methodId] = 0;
         }
 
-        string currentActionID = $"{methodId}-{s_MethodIDCounter[methodId]++}";
-        m_CurrentActionID = currentActionID;
+        string currentActionId = $"{methodId}-{s_MethodIdCounter[methodId]++}";
+        m_CurrentActionId = currentActionId;
 
         if (m_IsRegistering)
         {
-            Assert.That(allActions, Does.Not.Contain(currentActionID)); // sanity check
-            allActions[currentActionID] = this;
+            Assert.That(AllActions, Does.Not.Contain(currentActionId)); // sanity check
+            AllActions[currentActionId] = this;
         }
         else
         {
-            if (ShouldExecuteLocally)
+            if (shouldExecuteLocally)
             {
                 m_StepToExecute.Invoke(paramToPass);
             }
@@ -208,7 +208,7 @@ public class ExecuteStepInContext : CustomYieldInstruction
             {
                 if (networkManager.IsServer)
                 {
-                    TestCoordinator.Instance.TriggerActionIDClientRpc(currentActionID, paramToPass,
+                    TestCoordinator.Instance.TriggerActionIdClientRpc(currentActionId, paramToPass,
                         clientRpcParams: new ClientRpcParams
                         {
                             Send = new ClientRpcSendParams { TargetClientIds = TestCoordinator.AllClientIdsExceptMine.ToArray() }
@@ -250,11 +250,11 @@ public class ExecuteStepInContext : CustomYieldInstruction
             {
                 if (m_IgnoreTimeoutException)
                 {
-                    Debug.LogWarning($"Timeout ignored for action ID {m_CurrentActionID}");
+                    Debug.LogWarning($"Timeout ignored for action ID {m_CurrentActionId}");
                     return false;
                 }
 
-                throw new Exception($"timeout for Context Step with action ID {m_CurrentActionID}");
+                throw new Exception($"timeout for Context Step with action ID {m_CurrentActionId}");
             }
 
             if (m_AdditionalIsFinishedWaiter != null)
@@ -266,7 +266,7 @@ public class ExecuteStepInContext : CustomYieldInstruction
                 }
             }
 
-            if (m_IsRegistering || ShouldExecuteLocally || m_ClientIsFinishedChecks == null)
+            if (m_IsRegistering || shouldExecuteLocally || m_ClientIsFinishedChecks == null)
             {
                 return false;
             }
