@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using MLAPI.MultiprocessRuntimeTests;
+using System.Linq;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
 
@@ -60,5 +61,11 @@ public class MultiprocessOrchestration
             Debug.LogError($"Error starting player, {buildInstructions}, {e.Message} {e.Data} {e.ErrorCode}");
             throw;
         }
+    }
+
+    // todo remove this once we have proper automation
+    public static bool IsUsingUTR()
+    {
+        return Environment.GetCommandLineArgs().Contains("-automated");
     }
 }
