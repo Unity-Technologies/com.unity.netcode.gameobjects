@@ -99,6 +99,11 @@ namespace MLAPI
             {
                 rpcQueueContainer.EndAddQueueItemToFrame(serializer.Writer, RpcQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
             }
+
+            if (NetworkManager.__rpc_name_table.TryGetValue(rpcMethodId, out var rpcMethodName))
+            {
+                NetworkManager.NetworkMetrics.TrackRpcSent(NetworkManager.ServerClientId, NetworkObjectId, rpcMethodName, (ulong)serializer.Writer.GetStream().Length);
+            }
         }
 
 #pragma warning disable IDE1006 // disable naming rule violation check
@@ -196,6 +201,12 @@ namespace MLAPI
                 if (containsServerClientId && clientIds.Length == 1)
                 {
                     rpcQueueContainer.EndAddQueueItemToFrame(serializer.Writer, RpcQueueHistoryFrame.QueueFrameType.Inbound, clientRpcParams.Send.UpdateStage);
+
+                    if (NetworkManager.__rpc_name_table.TryGetValue(rpcMethodId, out var rpcMethodName))
+                    {
+                        NetworkManager.NetworkMetrics.TrackRpcSent(clientIds, NetworkObjectId, rpcMethodName, (ulong)serializer.Writer.GetStream().Length);
+                    }
+
                     return;
                 }
             }
