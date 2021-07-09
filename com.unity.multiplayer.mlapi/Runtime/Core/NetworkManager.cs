@@ -1638,26 +1638,21 @@ namespace MLAPI
                     ConnectedClients[ownerClientId].PlayerObject = networkObject;
                 }
 
-                m_ObservedObjects.Clear();
+                //m_ObservedObjects.Clear();
 
-                foreach (var sobj in SpawnManager.SpawnedObjectsList)
-                {
-                    if (ownerClientId == ServerClientId || sobj.CheckObjectVisibility == null || sobj.CheckObjectVisibility(ownerClientId))
-                    {
-                        m_ObservedObjects.Add(sobj);
-                        sobj.Observers.Add(ownerClientId);
-                    }
-                }
+                //foreach (var sobj in SpawnManager.SpawnedObjectsList)
+                //{
+                //    if (ownerClientId == ServerClientId || sobj.CheckObjectVisibility == null || sobj.CheckObjectVisibility(ownerClientId))
+                //    {
+                //        m_ObservedObjects.Add(sobj);
+                //        sobj.Observers.Add(ownerClientId);
+                //    }
+                //}
+
+
 
                 if (ownerClientId != ServerClientId)
                 {
-
-                    // Testing purposes currently
-                    if (NetworkConfig.EnableSceneManagement)
-                    {
-                        SceneManager.SynchronizeNetworkObjects(ownerClientId);
-                    }
-
                     // Don't send any data over the wire if the host "connected"
                     using (var buffer = PooledNetworkBuffer.Get())
                     using (var writer = PooledNetworkWriter.Get(buffer))
@@ -1681,6 +1676,12 @@ namespace MLAPI
                         MessageSender.Send(ownerClientId, NetworkConstants.CONNECTION_APPROVED, NetworkChannel.Internal, buffer);
                     }
 
+                    // Now send the client synchronization scene event
+                    if (NetworkConfig.EnableSceneManagement)
+                    {
+                        SceneManager.SynchronizeNetworkObjects(ownerClientId);
+                    }
+
                 }
 
                 OnClientConnectedCallback?.Invoke(ownerClientId);
@@ -1690,57 +1691,57 @@ namespace MLAPI
                     return;
                 }
 
-                // Inform old clients of the new player
-                //foreach (KeyValuePair<ulong, NetworkClient> clientPair in ConnectedClients)
-                //{
-                //    if (clientPair.Key == ownerClientId ||
-                //        ConnectedClients[ownerClientId].PlayerObject == null ||
-                //        !ConnectedClients[ownerClientId].PlayerObject.Observers.Contains(clientPair.Key))
-                //    {
-                //        continue; //The new client.
-                //    }
+                //Inform old clients of the new player
+                foreach (KeyValuePair<ulong, NetworkClient> clientPair in ConnectedClients)
+                {
+                    if (clientPair.Key == ownerClientId ||
+                        ConnectedClients[ownerClientId].PlayerObject == null ||
+                        !ConnectedClients[ownerClientId].PlayerObject.Observers.Contains(clientPair.Key))
+                    {
+                        continue; //The new client.
+                    }
 
-                //    using (var buffer = PooledNetworkBuffer.Get())
-                //    using (var writer = PooledNetworkWriter.Get(buffer))
-                //    {
-                //        writer.WriteBool(true);
-                //        writer.WriteUInt64Packed(ConnectedClients[ownerClientId].PlayerObject.NetworkObjectId);
-                //        writer.WriteUInt64Packed(ownerClientId);
+                    using (var buffer = PooledNetworkBuffer.Get())
+                    using (var writer = PooledNetworkWriter.Get(buffer))
+                    {
+                        writer.WriteBool(true);
+                        writer.WriteUInt64Packed(ConnectedClients[ownerClientId].PlayerObject.NetworkObjectId);
+                        writer.WriteUInt64Packed(ownerClientId);
 
-                //        //Does not have a parent
-                //        writer.WriteBool(false);
+                        //Does not have a parent
+                        writer.WriteBool(false);
 
-                //        // This is not a scene object
-                //        writer.WriteBool(false);
+                        // This is not a scene object
+                        writer.WriteBool(false);
 
-                //        writer.WriteUInt32Packed(playerPrefabHash ?? NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash);
+                        writer.WriteUInt32Packed(playerPrefabHash ?? NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash);
 
-                //        if (ConnectedClients[ownerClientId].PlayerObject.IncludeTransformWhenSpawning == null || ConnectedClients[ownerClientId].PlayerObject.IncludeTransformWhenSpawning(ownerClientId))
-                //        {
-                //            writer.WriteBool(true);
-                //            writer.WriteSinglePacked(ConnectedClients[ownerClientId].PlayerObject.transform.position.x);
-                //            writer.WriteSinglePacked(ConnectedClients[ownerClientId].PlayerObject.transform.position.y);
-                //            writer.WriteSinglePacked(ConnectedClients[ownerClientId].PlayerObject.transform.position.z);
+                        if (ConnectedClients[ownerClientId].PlayerObject.IncludeTransformWhenSpawning == null || ConnectedClients[ownerClientId].PlayerObject.IncludeTransformWhenSpawning(ownerClientId))
+                        {
+                            writer.WriteBool(true);
+                            writer.WriteSinglePacked(ConnectedClients[ownerClientId].PlayerObject.transform.position.x);
+                            writer.WriteSinglePacked(ConnectedClients[ownerClientId].PlayerObject.transform.position.y);
+                            writer.WriteSinglePacked(ConnectedClients[ownerClientId].PlayerObject.transform.position.z);
 
-                //            writer.WriteSinglePacked(ConnectedClients[ownerClientId].PlayerObject.transform.rotation.eulerAngles.x);
-                //            writer.WriteSinglePacked(ConnectedClients[ownerClientId].PlayerObject.transform.rotation.eulerAngles.y);
-                //            writer.WriteSinglePacked(ConnectedClients[ownerClientId].PlayerObject.transform.rotation.eulerAngles.z);
-                //        }
-                //        else
-                //        {
-                //            writer.WriteBool(false);
-                //        }
+                            writer.WriteSinglePacked(ConnectedClients[ownerClientId].PlayerObject.transform.rotation.eulerAngles.x);
+                            writer.WriteSinglePacked(ConnectedClients[ownerClientId].PlayerObject.transform.rotation.eulerAngles.y);
+                            writer.WriteSinglePacked(ConnectedClients[ownerClientId].PlayerObject.transform.rotation.eulerAngles.z);
+                        }
+                        else
+                        {
+                            writer.WriteBool(false);
+                        }
 
-                //        writer.WriteBool(false); //No payload data
+                        writer.WriteBool(false); //No payload data
 
-                //        if (NetworkConfig.EnableNetworkVariable)
-                //        {
-                //            ConnectedClients[ownerClientId].PlayerObject.WriteNetworkVariableData(buffer, clientPair.Key);
-                //        }
+                        if (NetworkConfig.EnableNetworkVariable)
+                        {
+                            ConnectedClients[ownerClientId].PlayerObject.WriteNetworkVariableData(buffer, clientPair.Key);
+                        }
 
-                //        MessageSender.Send(clientPair.Key, NetworkConstants.ADD_OBJECT, NetworkChannel.Internal, buffer);
-                //    }
-                //}
+                        MessageSender.Send(clientPair.Key, NetworkConstants.ADD_OBJECT, NetworkChannel.Internal, buffer);
+                    }
+                }
             }
             else
             {

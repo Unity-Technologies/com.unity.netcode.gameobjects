@@ -70,11 +70,11 @@ namespace MLAPI.Messaging
                 uint sceneIndex = 0;
                 var sceneSwitchProgressGuid = new Guid();
 
-                if (NetworkManager.NetworkConfig.EnableSceneManagement)
-                {
-                    sceneIndex = reader.ReadUInt32Packed();
-                    sceneSwitchProgressGuid = new Guid(reader.ReadByteArray());
-                }
+                //if (NetworkManager.NetworkConfig.EnableSceneManagement)
+                //{
+                //    sceneIndex = reader.ReadUInt32Packed();
+                //    sceneSwitchProgressGuid = new Guid(reader.ReadByteArray());
+                //}
 
                 //bool sceneSwitch = NetworkManager.NetworkConfig.EnableSceneManagement && NetworkManager.SceneManager.HasSceneMismatch(sceneIndex);
 

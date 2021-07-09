@@ -633,7 +633,6 @@ namespace MLAPI.SceneManagement
             ClientSynchEventData.LoadSceneMode = LoadSceneMode.Single;
             var activeScene = SceneManager.GetActiveScene();
             ClientSynchEventData.SceneEventType = SceneEventData.SceneEventTypes.SYNC;
-            //var networkObjectsFound = UnityEngine.Object.FindObjectsOfType<NetworkObject>();
 
             for (int i = 0; i < SceneManager.sceneCount; i++)
             {
@@ -717,7 +716,7 @@ namespace MLAPI.SceneManagement
                 return;
             }
 
-            if ((sceneIndex == SceneEventData.SceneIndex ? SceneEventData.LoadSceneMode : LoadSceneMode.Additive) == LoadSceneMode.Single)
+            if ( (sceneIndex == SceneEventData.SceneIndex ? SceneEventData.LoadSceneMode : LoadSceneMode.Additive) == LoadSceneMode.Single)
             {
                 SceneManager.SetActiveScene(nextScene);
             }
@@ -727,7 +726,12 @@ namespace MLAPI.SceneManagement
 
             SceneEventData.SynchronizeSceneNetworkObjects(sceneIndex, m_NetworkManager);
 
-            if(!SceneEventData.IsDoneWithSynchronization())
+            if ((sceneIndex == SceneEventData.SceneIndex ? SceneEventData.LoadSceneMode : LoadSceneMode.Additive) == LoadSceneMode.Single)
+            {
+                MoveObjectsToScene(nextScene);
+            }
+
+            if (!SceneEventData.IsDoneWithSynchronization())
             {
                 HandleClientSceneEvent(null);
             }
@@ -900,29 +904,7 @@ namespace MLAPI.SceneManagement
                     }
                 case SceneEventData.SceneEventTypes.SYNC_COMPLETE:
                     {
-                        //using (var buffer = PooledNetworkBuffer.Get())
-                        //using (var writer = PooledNetworkWriter.Get(buffer))
-                        //{
-                        //    writer.WriteUInt64Packed(ownerClientId);
-
-                        //    if (NetworkConfig.EnableSceneManagement)
-                        //    {
-                        //        writer.WriteUInt32Packed(NetworkSceneManager.CurrentSceneIndex);
-                        //        writer.WriteByteArray(NetworkSceneManager.CurrentSceneSwitchProgressGuid.ToByteArray());
-                        //    }
-
-                        //    writer.WriteSinglePacked(Time.realtimeSinceStartup);
-                        //    writer.WriteUInt32Packed((uint)m_ObservedObjects.Count);
-
-                        //    for (int i = 0; i < m_ObservedObjects.Count; i++)
-                        //    {
-                        //        m_ObservedObjects[i].SerializeSceneObject(writer, ownerClientId);
-                        //    }
-
-                        //    MessageSender.Send(ownerClientId, NetworkConstants.CONNECTION_APPROVED, NetworkChannel.Internal, buffer);
-                        //}
-
-                        m_NetworkManager.NotifyPlayerConnected(clientId, m_NetworkManager.NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash);
+                        //m_NetworkManager.NotifyPlayerConnected(clientId, m_NetworkManager.NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash);
                         break;
                     }
                 default:
@@ -1087,16 +1069,17 @@ namespace MLAPI.SceneManagement
                         writer.WriteUInt32Packed((uint)keypair.Value.Count);
                         var positionStart = writer.GetStream().Position;
                         // Size Place Holder
-                        writer.WriteUInt64(0);
+                        writer.WriteUInt64Packed(0);
                         foreach (var networkObject in keypair.Value)
                         {
+                            msg += $"Included: {networkObject.name} \n";
                             networkObject.SerializeSceneObject(writer, TargetClientId);
                         }
                         var positionEnd = writer.GetStream().Position;
-                        var bytesWritten = (ulong)(positionEnd - positionStart);
+                        var bytesWritten = (ulong)(positionEnd - (positionStart + sizeof(ulong)));
                         writer.GetStream().Position = positionStart;
                         // Write the total size written to the stream by NetworkObjects being serialized
-                        writer.WriteUInt64(bytesWritten);
+                        writer.WriteUInt64Packed(bytesWritten);
                         writer.GetStream().Position = positionEnd;
                         msg += $"Wrote [{bytesWritten}] bytes of NetworkObject data.\n";
                     }
@@ -1171,7 +1154,7 @@ namespace MLAPI.SceneManagement
                             m_SceneNetworkObjectDataOffsets.Add(key, InternalBuffer.Position);
                             writer.WriteUInt32Packed(count);
                             var networkObjectsBuffer = reader.ReadByteArray(null, (long)bytesToRead);
-                            writer.WriteByteArray(networkObjectsBuffer);
+                            writer.WriteByteArray(networkObjectsBuffer, (long)bytesToRead);
                         }
                     }
                 }
