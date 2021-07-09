@@ -21,7 +21,7 @@ public class MultiprocessOrchestration
         try
         {
 
-            var buildPath = BuildMultiprocessTestPlayer.ReadBuildInfo().buildPath;
+            var buildPath = BuildMultiprocessTestPlayer.ReadBuildInfo().BuildPath;
             switch (Application.platform)
             {
                 case RuntimePlatform.OSXPlayer:

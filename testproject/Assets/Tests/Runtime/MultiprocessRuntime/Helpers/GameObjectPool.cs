@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using UnityEngine;
 using Object = UnityEngine.Object;
 
 namespace MLAPI.MultiprocessRuntimeTests
@@ -15,7 +14,7 @@ namespace MLAPI.MultiprocessRuntimeTests
         private Stack<int> m_FreeIndexes;
         private Dictionary<T, int> m_ReverseLookup = new Dictionary<T, int>();
 
-        public void Init(int originalCount, T prefabToSpawn)
+        public void Initialize(int originalCount, T prefabToSpawn)
         {
             m_AllGameObject = new List<T>(originalCount);
             m_FreeIndexes = new Stack<int>(originalCount);
