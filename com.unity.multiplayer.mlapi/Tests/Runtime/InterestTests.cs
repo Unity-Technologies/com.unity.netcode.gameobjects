@@ -17,6 +17,21 @@ namespace MLAPI.RuntimeTests
 
     public class InterestTests
     {
+        [SetUp]
+        public void Setup()
+        {
+            // Create, instantiate, and host
+            NetworkManagerHelper.StartNetworkManager(out NetworkManager networkManager,
+                NetworkManagerHelper.NetworkManagerOperatingMode.Server);
+        }
+
+        [TearDown]
+        public void TearDown()
+        {
+            // Stop, shutdown, and destroy
+            NetworkManagerHelper.ShutdownNetworkManager();
+        }
+
         public class OddEvenInterestKernel : InterestKernel
         {
             public bool IsOdd = true;
@@ -31,8 +46,6 @@ namespace MLAPI.RuntimeTests
 
         public class OddsEvensNode : InterestNode
         {
-
-
             public void OnEnable()
             {
                 m_Odds = ScriptableObject.CreateInstance<InterestNodeStatic>();
@@ -87,17 +100,32 @@ namespace MLAPI.RuntimeTests
             private InterestNodeStatic m_Evens;
         }
 
-        private NetworkObject MakeGameObjectHelper()
+//        private NetworkObject MakeGameObjectHelper()
+//        {
+//            var o = new GameObject();
+//            var no = (NetworkObject)o.AddComponent(typeof(NetworkObject));
+//            return no;
+//        }
+
+        private (NetworkObject, Guid) MakeGameInternalObjectHelper(Vector3 coords, InterestNode comn, string name = "")
         {
-            var o = new GameObject();
-            var no = (NetworkObject)o.AddComponent(typeof(NetworkObject));
-            return no;
+            Guid objGuid = NetworkManagerHelper.AddGameNetworkObject(name);
+            NetworkObject no = (NetworkObject)NetworkManagerHelper.InstantiatedNetworkObjects[objGuid];
+
+            if (comn != null)
+            {
+                no.InterestNodes.Add(comn);
+                no.transform.position = coords;
+            }
+
+            return (no, objGuid);
         }
 
-        private NetworkObject MakeGameInterestObjectHelper(Vector3 coords, InterestNode comn)
+        private NetworkObject MakeGameInterestObjectHelper(Vector3 coords, InterestNode comn, string name = "")
         {
-            var o = new GameObject();
-            var no = MakeGameObjectHelper();
+            Guid objGuid = NetworkManagerHelper.AddGameNetworkObject(name);
+            NetworkObject no = (NetworkObject)NetworkManagerHelper.InstantiatedNetworkObjects[objGuid];
+
             if (comn != null)
             {
                 no.InterestNodes.Add(comn);
@@ -124,8 +152,6 @@ namespace MLAPI.RuntimeTests
         // Start is called before the first frame update
         public void InterestCustomStorageTests()
         {
-            var nm = SetUpNetworkingManager();
-
             var oddsEvensNode = ScriptableObject.CreateInstance<OddsEvensNode>();
 
             var results = new HashSet<NetworkObject>();
@@ -133,28 +159,30 @@ namespace MLAPI.RuntimeTests
             {
                 ClientId = 1,
             };
-            nm.InterestManager.QueryFor(nc, results);
+            NetworkManager.Singleton.InterestManager.QueryFor(nc, results);
             var objectsBeforeAdd = results.Count;
 
             var numNodes = 4;
             var nodes = new NetworkObject[4];
             for (var i = 0; i < numNodes; i++)
             {
-                nodes[i] = MakeGameInterestObjectHelper(new Vector3(0.0f, 0.0f, 0.0f), oddsEvensNode);
+                var (thisObj, thisGuid)  = MakeGameInternalObjectHelper(new Vector3(0.0f, 0.0f, 0.0f), oddsEvensNode);
+                nodes[i] = thisObj;
                 nodes[i].NetworkObjectId = (ulong)(i + 100);
-                nm.SpawnManager.SpawnNetworkObjectLocally(nodes[i]);
+                NetworkManagerHelper.SpawnNetworkObject(thisGuid);
             }
 
-            nc.PlayerObject = MakeGameInterestObjectHelper(new Vector3(0.0f, 0.0f, 0.0f), null);
+            var (obj, guid) = MakeGameInternalObjectHelper(new Vector3(0.0f, 0.0f, 0.0f), null);
+            nc.PlayerObject = obj;
 
             results.Clear();
             nc.PlayerObject.NetworkObjectId = 100;
-            nm.InterestManager.QueryFor(nc, results);
+            NetworkManager.Singleton.InterestManager.QueryFor(nc, results);
             Assert.True(results.Count - objectsBeforeAdd == numNodes / 2);
 
             results.Clear();
             nc.PlayerObject.NetworkObjectId = 101;
-            nm.InterestManager.QueryFor(nc, results);
+            NetworkManager.Singleton.InterestManager.QueryFor(nc, results);
             Assert.True(results.Count - objectsBeforeAdd == numNodes / 2);
 
             // now re-number the nodes
@@ -165,12 +193,12 @@ namespace MLAPI.RuntimeTests
 
             results.Clear();
             nc.PlayerObject.NetworkObjectId = 100;
-            nm.InterestManager.QueryFor(nc, results);
+            NetworkManager.Singleton.InterestManager.QueryFor(nc, results);
             Assert.True(results.Count - objectsBeforeAdd == numNodes / 2); // should be unchanged
 
             results.Clear();
             nc.PlayerObject.NetworkObjectId = 101;
-            nm.InterestManager.QueryFor(nc, results);
+            NetworkManager.Singleton.InterestManager.QueryFor(nc, results);
             Assert.True(results.Count - objectsBeforeAdd == numNodes / 2); // should be unchanged
 
             // now update the nodes
@@ -181,23 +209,20 @@ namespace MLAPI.RuntimeTests
 
             results.Clear();
             nc.PlayerObject.NetworkObjectId = 100;
-            nm.InterestManager.QueryFor(nc, results);
+            NetworkManager.Singleton.InterestManager.QueryFor(nc, results);
             Assert.True(results.Count - objectsBeforeAdd == 0); // now zero, all are odd
 
             results.Clear();
             nc.PlayerObject.NetworkObjectId = 101;
-            nm.InterestManager.QueryFor(nc, results);
+            NetworkManager.Singleton.InterestManager.QueryFor(nc, results);
             Assert.True(results.Count - objectsBeforeAdd == nodes.Length); // now 4, all are odd
-            nm.SpawnManager.DespawnAllObjects();
-            nm.StopServer();
         }
+
 
         [Test]
         // Start is called before the first frame update
         public void InterestRadiusCheck()
         {
-            var nm = SetUpNetworkingManager();
-
             InterestNodeStatic naiveRadiusNode = ScriptableObject.CreateInstance<InterestNodeStatic>();
             var naiveRadiusKernel = ScriptableObject.CreateInstance<RadiusInterestKernel>();
             naiveRadiusKernel.Radius = 1.5f;
@@ -210,54 +235,53 @@ namespace MLAPI.RuntimeTests
                 ClientId = 1,
             };
 
-            nc.PlayerObject = MakeGameInterestObjectHelper(new Vector3(0.0f, 0.0f, 0.0f), null);
+            var (playerObj, playerGuid) = MakeGameInternalObjectHelper(new Vector3(0.0f, 0.0f, 0.0f), null);
+            nc.PlayerObject = playerObj;
 
-            nm.InterestManager.QueryFor(nc, results);
+            NetworkManager.Singleton.InterestManager.QueryFor(nc, results);
             int objectsBeforeAdd = results.Count;
 
-            var ok1 = MakeGameInterestObjectHelper(new Vector3(0.5f, 0.0f, 0.0f), naiveRadiusNode);
-            nm.SpawnManager.SpawnNetworkObjectLocally(ok1);
+            var (ok1Obj, ok1Guid) = MakeGameInternalObjectHelper(new Vector3(0.5f, 0.0f, 0.0f), naiveRadiusNode);
+            NetworkManagerHelper.SpawnNetworkObject(ok1Guid);
 
-            var ok2 = MakeGameInterestObjectHelper(new Vector3(1.0f, 0.0f, 0.0f), naiveRadiusNode);
-            nm.SpawnManager.SpawnNetworkObjectLocally(ok2);
+            var (ok2Obj, ok2Guid) = MakeGameInternalObjectHelper(new Vector3(1.0f, 0.0f, 0.0f), naiveRadiusNode);
+            NetworkManagerHelper.SpawnNetworkObject(ok2Guid);
 
-            var tooFar = MakeGameInterestObjectHelper(new Vector3(3.0f, 0.0f, 0.0f), naiveRadiusNode);
-            nm.SpawnManager.SpawnNetworkObjectLocally(tooFar);
+            var (tooFarObj, tooFarGuid) = MakeGameInternalObjectHelper(new Vector3(3.0f, 0.0f, 0.0f), naiveRadiusNode);
+            NetworkManagerHelper.SpawnNetworkObject(tooFarGuid);
 
-            var always = MakeGameInterestObjectHelper(new Vector3(99.0f, 99.0f, 99.0f), staticNode);
-            nm.SpawnManager.SpawnNetworkObjectLocally(always);
+            var (alwaysObj, alwaysGuid)  = MakeGameInternalObjectHelper(new Vector3(99.0f, 99.0f, 99.0f), staticNode);
+            NetworkManagerHelper.SpawnNetworkObject(alwaysGuid);
 
-            nm.SpawnManager.SpawnNetworkObjectLocally(nc.PlayerObject);
+            NetworkManagerHelper.SpawnNetworkObject(playerGuid);
 
             results.Clear();
-            nm.InterestManager.QueryFor(nc, results);
+            NetworkManager.Singleton.InterestManager.QueryFor(nc, results);
             var hits = results.Count - objectsBeforeAdd;
-            Assert.True(results.Contains(ok1));
-            Assert.True(results.Contains(ok2));
+            Assert.True(results.Contains(ok1Obj));
+            Assert.True(results.Contains(ok2Obj));
             Assert.True(results.Contains(nc.PlayerObject));
-            Assert.True(results.Contains(always));
-            Assert.False(results.Contains(tooFar));
+            Assert.True(results.Contains(alwaysObj));
+            Assert.False(results.Contains(tooFarObj));
             Assert.True(hits == 4);
 
             // remove an object, should not be in replication manager
-            nm.SpawnManager.DespawnObject(always);
+            NetworkManagerHelper.DespawnNetworkObject(alwaysGuid);
             results.Clear();
-            nm.InterestManager.QueryFor(nc, results);
+            NetworkManager.Singleton.InterestManager.QueryFor(nc, results);
             hits = results.Count - objectsBeforeAdd;
-            Assert.True(results.Contains(ok1));
-            Assert.True(results.Contains(ok2));
+            Assert.True(results.Contains(ok1Obj));
+            Assert.True(results.Contains(ok2Obj));
             Assert.True(results.Contains(nc.PlayerObject));
-            Assert.False(results.Contains(always));
-            Assert.False(results.Contains(tooFar));
+            Assert.False(results.Contains(alwaysObj));
+            Assert.False(results.Contains(tooFarObj));
             Assert.True(hits == 3);
-            nm.SpawnManager.DespawnAllObjects();
-            nm.StopServer();
         }
 
         [Test]
         public void CheckMultipleNodes()
         {
-            var nm = SetUpNetworkingManager();
+            SetUpNetworkingManager();
 
             var results = new HashSet<NetworkObject>();
             var nc = new NetworkClient()
@@ -265,7 +289,7 @@ namespace MLAPI.RuntimeTests
                 ClientId = 1,
             };
 
-            nm.InterestManager.QueryFor(nc, results);
+            NetworkManager.Singleton.InterestManager.QueryFor(nc, results);
             var objectsBeforeAdd = results.Count;
 
             var dualNode = ScriptableObject.CreateInstance<InterestNodeStatic>();
@@ -276,26 +300,26 @@ namespace MLAPI.RuntimeTests
             dualNode.InterestKernel.Add(oddKernel);
             dualNode.InterestKernel.Add(evenKernel);
 
-            var object1 = MakeGameInterestObjectHelper(new Vector3(0.0f, 0.0f, 0.0f), dualNode);
-            nm.SpawnManager.SpawnNetworkObjectLocally(object1);
+            var (object1, object1Guid) = MakeGameInternalObjectHelper(new Vector3(0.0f, 0.0f, 0.0f), dualNode);
+            NetworkManagerHelper.SpawnNetworkObject(object1Guid);
 
-            var object2 = MakeGameInterestObjectHelper(new Vector3(0.0f, 0.0f, 0.0f), dualNode);
-            nm.SpawnManager.SpawnNetworkObjectLocally(object2);
+            var (object2, object2Guid) = MakeGameInternalObjectHelper(new Vector3(0.0f, 0.0f, 0.0f), dualNode);
+            NetworkManagerHelper.SpawnNetworkObject(object2Guid);
 
-            nc.PlayerObject = MakeGameInterestObjectHelper(new Vector3(0.0f, 0.0f, 0.0f), dualNode);
-            nm.SpawnManager.SpawnNetworkObjectLocally(nc.PlayerObject);
+            var (playerObject, playerObjGuid) = MakeGameInternalObjectHelper(new Vector3(0.0f, 0.0f, 0.0f), dualNode);
+            nc.PlayerObject = playerObject;
+            NetworkManagerHelper.SpawnNetworkObject(playerObjGuid);
 
             results.Clear();
-            nm.InterestManager.QueryFor(nc, results);
+            NetworkManager.Singleton.InterestManager.QueryFor(nc, results);
             var hits = results.Count;
             Assert.True(hits == (3 + objectsBeforeAdd));
             Assert.True(results.Contains(object1));
             Assert.True(results.Contains(object2));
             Assert.True(results.Contains(nc.PlayerObject));
-            nm.SpawnManager.DespawnAllObjects();
-            nm.StopServer();
         }
 
+/*
         [Test]
         public void PerfTest()
         {
@@ -308,32 +332,32 @@ namespace MLAPI.RuntimeTests
 //{
 //    distinctValues.Add(clock.UtcNow);
         }
+        */
 
         [Test]
         public void CheckPlainReplication()
         {
-            var nm = SetUpNetworkingManager();
-
             var results = new HashSet<NetworkObject>();
             var nc = new NetworkClient()
             {
                 ClientId = 1,
             };
 
-            nm.InterestManager.QueryFor(nc, results);
+            NetworkManager.Singleton.InterestManager.QueryFor(nc, results);
             var objectsBeforeAdd = results.Count;
 
-            var object1 = MakeGameInterestObjectHelper(new Vector3(2.0f, 0.0f, 0.0f), null);
-            nm.SpawnManager.SpawnNetworkObjectLocally(object1);
+            var (object1, object1Guid) = MakeGameInternalObjectHelper(new Vector3(2.0f, 0.0f, 0.0f), null);
+            NetworkManagerHelper.SpawnNetworkObject(object1Guid);
 
-            var object2 = MakeGameInterestObjectHelper(new Vector3(2.0f, 0.0f, 0.0f), null);
-            nm.SpawnManager.SpawnNetworkObjectLocally(object2);
+            var (object2, object2Guid) = MakeGameInternalObjectHelper(new Vector3(2.0f, 0.0f, 0.0f), null);
+            NetworkManagerHelper.SpawnNetworkObject(object2Guid);
 
-            nc.PlayerObject = MakeGameInterestObjectHelper(new Vector3(0.0f, 0.0f, 0.0f), null);
-            nm.SpawnManager.SpawnNetworkObjectLocally(nc.PlayerObject);
+            var (playerObj, playerObjGuid) = MakeGameInternalObjectHelper(new Vector3(0.0f, 0.0f, 0.0f), null);
+            nc.PlayerObject = playerObj;
+            NetworkManagerHelper.SpawnNetworkObject(playerObjGuid);
 
             results.Clear();
-            nm.InterestManager.QueryFor(nc, results);
+            NetworkManager.Singleton.InterestManager.QueryFor(nc, results);
             var hits = results.Count;
             Assert.True(hits == (3 + objectsBeforeAdd));
             Assert.True(results.Contains(object1));
@@ -341,40 +365,35 @@ namespace MLAPI.RuntimeTests
             Assert.True(results.Contains(nc.PlayerObject));
 
             // remove an object, should not be in replication manager
-            nm.SpawnManager.DespawnObject(object1);
-            nm.SpawnManager.DespawnObject(object2);
-            nm.SpawnManager.DespawnObject(nc.PlayerObject);
+            NetworkManagerHelper.DespawnNetworkObject(object1Guid);
+            NetworkManagerHelper.DespawnNetworkObject(object2Guid);
+            NetworkManagerHelper.DespawnNetworkObject(playerObjGuid);
             results.Clear();
-            nm.InterestManager.QueryFor(nc, results);
+            NetworkManager.Singleton.InterestManager.QueryFor(nc, results);
             hits = results.Count;
             Assert.True(hits == (objectsBeforeAdd));
-            nm.SpawnManager.DespawnAllObjects();
-            nm.StopServer();
         }
 
         [Test]
         public void TestInterestSettings()
         {
-            var nm = SetUpNetworkingManager();
             var rootSettings = ScriptableObject.CreateInstance<TestInterestSettings>();
             rootSettings.SomeSetting = 1;
-            nm.InterestSettings = rootSettings;
+            NetworkManager.Singleton.InterestSettings = rootSettings;
 
             var objSettings = ScriptableObject.CreateInstance<TestInterestSettings>();
             objSettings.SomeSetting = 2;
-            var object1 = MakeGameInterestObjectHelper(new Vector3(0.0f, 0.0f, 0.0f), null);
-            object1.InterestSettings = objSettings;
+            var (object1Obj, object1Guid) = MakeGameInternalObjectHelper(new Vector3(0.0f, 0.0f, 0.0f), null);
+            object1Obj.InterestSettings = objSettings;
 
             // no override settings, should receive from NetworkManager
-            var object2 = MakeGameInterestObjectHelper(new Vector3(0.0f, 0.0f, 0.0f), null);
+            var (object2Obj, object2Guid) = MakeGameInternalObjectHelper(new Vector3(0.0f, 0.0f, 0.0f), null);
 
-            var checkObj1 = (TestInterestSettings)object1.InterestSettings;
-            var checkObj2 = (TestInterestSettings)object2.InterestSettings;
+            var checkObj1 = (TestInterestSettings)object1Obj.InterestSettings;
+            var checkObj2 = (TestInterestSettings)object2Obj.InterestSettings;
 
             Assert.True(checkObj1.SomeSetting == 2);
             Assert.True(checkObj2.SomeSetting == 1);
-            nm.SpawnManager.DespawnAllObjects();
-            nm.StopServer();
         }
     }
 }
