@@ -9,19 +9,22 @@ namespace MLAPI.MultiprocessRuntimeTests
 {
     public class MultiprocessTestsAttribute : CategoryAttribute
     {
-        public const string multiprocessCategoryName = "Multiprocess";
-        public MultiprocessTestsAttribute() : base(multiprocessCategoryName){}
+        public const string MultiprocessCategoryName = "Multiprocess";
+        public MultiprocessTestsAttribute() : base(MultiprocessCategoryName) { }
     }
 
     [MultiprocessTests]
     public abstract class BaseMultiprocessTests
     {
-
         protected virtual bool m_IsPerformanceTest => true;
 
         private bool ShouldIgnoreTests => m_IsPerformanceTest && Application.isEditor;
 
-        protected abstract int NbWorkers { get; }
+        /// <summary>
+        /// Implement this to specify the amount of workers to spawn from your main test runner
+        /// TODO there's a good chance this will be refactored with something fancier once we start integrating with bokken
+        /// </summary>
+        protected abstract int WorkerCount { get; }
 
         [OneTimeSetUp]
         public virtual void SetupTestSuite()
@@ -34,7 +37,7 @@ namespace MLAPI.MultiprocessRuntimeTests
             SceneManager.LoadScene(BuildMultiprocessTestPlayer.MainSceneName, LoadSceneMode.Single);
             SceneManager.sceneLoaded += OnSceneLoaded;
 
-            for (int i = 0; i < NbWorkers; i++)
+            for (int i = 0; i < WorkerCount; i++)
             {
                 MultiprocessOrchestration.StartWorkerNode(); // will automatically start built player as clients
             }
@@ -52,15 +55,16 @@ namespace MLAPI.MultiprocessRuntimeTests
             yield return new WaitUntil(() => NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer);
 
             var startTime = Time.time;
-            while (NetworkManager.Singleton.ConnectedClients.Count <= NbWorkers)
+            while (NetworkManager.Singleton.ConnectedClients.Count <= WorkerCount)
             {
                 yield return new WaitForSeconds(0.2f);
 
-                if (Time.time - startTime > TestCoordinator.maxWaitTimeout)
+                if (Time.time - startTime > TestCoordinator.MaxWaitTimeoutSec)
                 {
-                    throw new Exception($"waiting too long to see clients to connect, got {NetworkManager.Singleton.ConnectedClients.Count - 1} clients, but was expecting {NbWorkers}, failing");
+                    throw new Exception($"waiting too long to see clients to connect, got {NetworkManager.Singleton.ConnectedClients.Count - 1} clients, but was expecting {WorkerCount}, failing");
                 }
             }
+
             TestCoordinator.Instance.KeepAliveClientRpc();
         }
 

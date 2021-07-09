@@ -20,7 +20,7 @@ namespace MLAPI.MultiprocessRuntimeTests
 
         public const string BuildInfoFileName = "buildInfo.txt";
 
-    private static string BuildPathDirectory => Path.Combine(Path.GetDirectoryName(Application.dataPath), "Builds","MultiprocessTests");
+    private static string BuildPathDirectory => Path.Combine(Path.GetDirectoryName(Application.dataPath), "Builds", "MultiprocessTests");
     public static string BuildPath => Path.Combine(BuildPathDirectory, "MultiprocessTestPlayer");
 
 #if UNITY_EDITOR
