@@ -13,19 +13,19 @@ There's a few steps to write a multiprocess test
 
 1. Your test class needs to inherit from `BaseMultiprocessTests`
 2. Each test method needs the `MultiprocessContextBasedTest` attribute
-3. Each test method needs to run `InitContextSteps();`
+3. Each test method needs to run `InitializeContextSteps();`
 4. Each context based step can use
-```C#
+```cs
 yield return new ExecuteStepInContext(StepExecutionContext.Clients, stepToExecute: nbObjectsBytes => {
     // Something here
 });
 ```
 A test method would look like
-```C#
+```cs
     [UnityTest, MultiprocessContextBasedTest]
     public IEnumerator MyTest()
     {
-        InitContextSteps(); // the only call that should be made outside of context based tests
+        InitializeContextSteps(); // the only call that should be made outside of context based tests
         yield return new ExecuteStepInContext(StepExecutionContext.Server, bytes =>
         {
             Debug.Log("server stuff");
@@ -41,7 +41,7 @@ A test method would look like
 Your test code shouldn't execute outside of these steps (as that test method can be executed multiple times, once for step registration and once for the actual test run for example)
 
 Another way to write a multiprocess test without context based steps is to use TestCoordinator directly.
-```C#
+```cs
     private static void ExecuteSimpleCoordinatorTest()
     {
         TestCoordinator.Instance.WriteTestResultsServerRpc(float.PositiveInfinity);
@@ -68,21 +68,28 @@ Another way to write a multiprocess test without context based steps is to use T
 
 Here's a complete set of examples using the API
 
-```C#
-using //...
+```cs
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using NUnit.Framework;
+using Unity.PerformanceTesting;
+using UnityEngine;
+using UnityEngine.Profiling;
+using UnityEngine.TestTools;
 using static ExecuteStepInContext;
 
 namespace MLAPI.MultiprocessRuntimeTests
 {
     public class DemoProcessTest : BaseMultiprocessTests
     {
-        protected override int NbWorkers { get; } = 2; // spawns 2 clients connecting to the test runner
+        protected override int WorkerCount { get; } = 2; // spawns 2 clients connecting to the test runner
         protected override bool m_IsPerformanceTest { get; } = false; // specifies whether this should execute from editor or not
 
         [UnityTest, MultiprocessContextBasedTest] // attribute necessary for context based step execution
         public IEnumerator MyTest()
         {
-            InitContextSteps(); // necessary to initialize context based steps
+            InitializeContextSteps(); // necessary to initialize context based steps
 
             // These steps execute sequentially.
             yield return new ExecuteStepInContext(StepExecutionContext.Server, bytes =>
@@ -138,7 +145,7 @@ namespace MLAPI.MultiprocessRuntimeTests
                 }
                 NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate += Update;
             }, waitMultipleUpdates: true); // this keeps waiting "are you done? are you done? are you done?" and relies on the clients calling the "ClientFinishedServerRpc"
-            
+
             yield return new ExecuteStepInContext(StepExecutionContext.Clients, bytes =>
             {
                 int cpt = 0;
@@ -168,6 +175,7 @@ namespace MLAPI.MultiprocessRuntimeTests
         }
     }
 }
+
 
 ```
 
