@@ -159,20 +159,6 @@ namespace MLAPI.RuntimeTests
         }
 
         /// <summary>
-        /// Spawn the NetworkObject, so Rpcs can flow
-        /// </summary>
-        /// <param name="gameObjectIdentifier">ID returned to reference the game object</param>
-        public static void DespawnNetworkObject(Guid gameObjectIdentifier)
-        {
-            Assert.IsTrue(InstantiatedNetworkObjects.ContainsKey(gameObjectIdentifier));
-            if (InstantiatedNetworkObjects[gameObjectIdentifier].IsSpawned)
-            {
-                InstantiatedNetworkObjects[gameObjectIdentifier].Despawn();
-                // should remove from table?
-            }
-        }
-
-        /// <summary>
         /// Starts the NetworkManager in the current mode specified by managerMode
         /// </summary>
         /// <param name="managerMode">the mode to start the NetworkManager as</param>
@@ -205,7 +191,7 @@ namespace MLAPI.RuntimeTests
             if (CurrentNetworkManagerMode != NetworkManagerOperatingMode.None)
             {
                 // With some unit tests the Singleton can still be from a previous unit test
-                // depending upon the order of operations that occurred.
+                // depending upon the order of operations that occurred. 
                 if (NetworkManager.Singleton != NetworkManagerObject)
                 {
                     NetworkManagerObject.SetSingleton();

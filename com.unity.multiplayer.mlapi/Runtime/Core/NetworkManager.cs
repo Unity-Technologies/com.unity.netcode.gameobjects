@@ -58,20 +58,7 @@ namespace MLAPI
 
         internal RpcQueueContainer RpcQueueContainer { get; private set; }
         internal NetworkTickSystem NetworkTickSystem { get; private set; }
-
-        internal InterestManager m_InterestManager;
-        internal InterestManager InterestManager
-        {
-            get
-            {
-                if (m_InterestManager == null)
-                {
-                    m_InterestManager = new InterestManager();
-                }
-                return m_InterestManager;
-            }
-        }
-
+        internal InterestManager InterestManager { get; private set; }
         internal SnapshotSystem SnapshotSystem { get; private set; }
 
         private NetworkPrefabHandler m_PrefabHandler;
@@ -406,6 +393,7 @@ namespace MLAPI
                 RpcQueueContainer.Dispose();
                 RpcQueueContainer = null;
             }
+            InterestManager = new InterestManager();
 
             // The RpcQueueContainer must be initialized within the Init method ONLY
             // It should ONLY be shutdown and destroyed in the Shutdown method (other than just above)
@@ -824,6 +812,7 @@ namespace MLAPI
             if (InterestManager != null)
             {
                 InterestManager.Dispose();
+                InterestManager = null;
             }
 
 #if !UNITY_2020_2_OR_NEWER
@@ -1563,10 +1552,11 @@ namespace MLAPI
                     }
 
                     // TODO: Could(should?) be replaced with more memory per client, by storing the visiblity
-//                    foreach (var sobj in SpawnManager.SpawnedObjectsList)
-//                    {
-//                        sobj.Observers.Remove(clientId);
-//                    }
+
+                    foreach (var sobj in SpawnManager.SpawnedObjectsList)
+                    {
+                        sobj.Observers.Remove(clientId);
+                    }
                 }
 
                 for (int i = 0; i < ConnectedClientsList.Count; i++)
@@ -1633,12 +1623,13 @@ namespace MLAPI
                 }
 
                 m_ObservedObjects.Clear();
+
                 foreach (var sobj in SpawnManager.SpawnedObjectsList)
                 {
                     if (ownerClientId == ServerClientId || sobj.CheckObjectVisibility == null || sobj.CheckObjectVisibility(ownerClientId))
                     {
-                        m_ObservedObjects.Add(sobj); //??
-//                        sobj.Observers.Add(ownerClientId);
+                        m_ObservedObjects.Add(sobj);
+                        sobj.Observers.Add(ownerClientId);
                     }
                 }
 
@@ -1679,8 +1670,8 @@ namespace MLAPI
                 foreach (KeyValuePair<ulong, NetworkClient> clientPair in ConnectedClients)
                 {
                     if (clientPair.Key == ownerClientId ||
-                        ConnectedClients[ownerClientId].PlayerObject == null) // ||
-//kk                        !ConnectedClients[ownerClientId].PlayerObject.Observers.Contains(clientPair.Key))
+                        ConnectedClients[ownerClientId].PlayerObject == null ||
+                        !ConnectedClients[ownerClientId].PlayerObject.Observers.Contains(clientPair.Key))
                     {
                         continue; //The new client.
                     }

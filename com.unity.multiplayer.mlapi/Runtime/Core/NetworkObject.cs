@@ -208,21 +208,21 @@ namespace MLAPI
             set => InterestSettingsOverride = value;
         }
 
-//        internal readonly HashSet<ulong> Observers = new HashSet<ulong>();
+        internal readonly HashSet<ulong> Observers = new HashSet<ulong>();
 
         /// <summary>
         /// Returns Observers enumerator
         /// </summary>
         /// <returns>Observers enumerator</returns>
- //       public HashSet<ulong>.Enumerator GetObservers()
- //       {
- //           if (!IsSpawned)
- //           {
- //               throw new SpawnStateException("Object is not spawned");
- //           }
+        public HashSet<ulong>.Enumerator GetObservers()
+        {
+            if (!IsSpawned)
+            {
+                throw new SpawnStateException("Object is not spawned");
+            }
 
- //           return Observers.GetEnumerator();
- //       }
+            return Observers.GetEnumerator();
+        }
 
 
         /// <summary>
@@ -230,16 +230,16 @@ namespace MLAPI
         /// </summary>
         /// <param name="clientId">The clientId of the client</param>
         /// <returns>True if the client knows about the object</returns>
-//        public bool IsNetworkVisibleTo(ulong clientId)
-//        {
-//            if (!IsSpawned)
-//            {
-//                throw new SpawnStateException("Object is not spawned");
-//            }
-//
-//            return Observers.Contains(clientId);
-//        }
-//
+        public bool IsNetworkVisibleTo(ulong clientId)
+        {
+            if (!IsSpawned)
+            {
+                throw new SpawnStateException("Object is not spawned");
+            }
+
+            return Observers.Contains(clientId);
+        }
+
         private void Awake()
         {
             SetCachedParent(transform.parent);
@@ -250,28 +250,28 @@ namespace MLAPI
         /// </summary>
         /// <param name="clientId">The client to show the object to</param>
         /// <param name="payload">An optional payload to send as part of the spawn</param>
-//        public void NetworkShow(ulong clientId, Stream payload = null)
-//        {
-//            if (!IsSpawned)
-//            {
-//                throw new SpawnStateException("Object is not spawned");
-//            }
-//
-//            if (!NetworkManager.IsServer)
-//            {
-//                throw new NotServerException("Only server can change visibility");
-//            }
-//
-//            if (Observers.Contains(clientId))
-//            {
-//                throw new VisibilityChangeException("The object is already visible");
-//            }
-//
-//            // Send spawn call
-//            Observers.Add(clientId);
-//
-//            NetworkManager.SpawnManager.SendSpawnCallForObject(clientId, this, payload);
-//        }
+        public void NetworkShow(ulong clientId, Stream payload = null)
+        {
+            if (!IsSpawned)
+            {
+                throw new SpawnStateException("Object is not spawned");
+            }
+
+            if (!NetworkManager.IsServer)
+            {
+                throw new NotServerException("Only server can change visibility");
+            }
+
+            if (Observers.Contains(clientId))
+            {
+                throw new VisibilityChangeException("The object is already visible");
+            }
+
+            // Send spawn call
+            Observers.Add(clientId);
+
+            NetworkManager.SpawnManager.SendSpawnCallForObject(clientId, this, payload);
+        }
 
         /// <summary>
         /// Shows a list of previously hidden objects to a client
@@ -279,155 +279,155 @@ namespace MLAPI
         /// <param name="networkObjects">The objects to show</param>
         /// <param name="clientId">The client to show the objects to</param>
         /// <param name="payload">An optional payload to send as part of the spawns</param>
-//        public static void NetworkShow(List<NetworkObject> networkObjects, ulong clientId, Stream payload = null)
-//        {
-//            if (networkObjects == null || networkObjects.Count == 0)
-//            {
-//                throw new ArgumentNullException("At least one " + nameof(NetworkObject) + " has to be provided");
-//            }
-//
-//            NetworkManager networkManager = networkObjects[0].NetworkManager;
-//
-//            if (!networkManager.IsServer)
-//            {
-//                throw new NotServerException("Only server can change visibility");
-//            }
-//
-//
-//            // Do the safety loop first to prevent putting the MLAPI in an invalid state.
-//            for (int i = 0; i < networkObjects.Count; i++)
-//            {
-//                if (!networkObjects[i].IsSpawned)
-//                {
-//                    throw new SpawnStateException("Object is not spawned");
-//                }
-//
-//                if (networkObjects[i].Observers.Contains(clientId))
-//                {
-//                    throw new VisibilityChangeException($"{nameof(NetworkObject)} with NetworkId: {networkObjects[i].NetworkObjectId} is already visible");
-//                }
-//
-//                if (networkObjects[i].NetworkManager != networkManager)
-//                {
-//                    throw new ArgumentNullException("All " + nameof(NetworkObject) + "s must belong to the same " + nameof(NetworkManager));
-//                }
-//            }
-//
-//            using (var buffer = PooledNetworkBuffer.Get())
-//            using (var writer = PooledNetworkWriter.Get(buffer))
-//            {
-//                writer.WriteUInt16Packed((ushort)networkObjects.Count);
-//
-//                for (int i = 0; i < networkObjects.Count; i++)
-//                {
-//                    // Send spawn call
-//                    networkObjects[i].Observers.Add(clientId);
-//
-//                    networkManager.SpawnManager.WriteSpawnCallForObject(buffer, clientId, networkObjects[i], payload);
-//                }
-//
-//                networkManager.MessageSender.Send(clientId, NetworkConstants.ADD_OBJECTS, NetworkChannel.Internal, buffer);
-//            }
-//        }
+        public static void NetworkShow(List<NetworkObject> networkObjects, ulong clientId, Stream payload = null)
+        {
+            if (networkObjects == null || networkObjects.Count == 0)
+            {
+                throw new ArgumentNullException("At least one " + nameof(NetworkObject) + " has to be provided");
+            }
+
+            NetworkManager networkManager = networkObjects[0].NetworkManager;
+
+            if (!networkManager.IsServer)
+            {
+                throw new NotServerException("Only server can change visibility");
+            }
+
+
+            // Do the safety loop first to prevent putting the MLAPI in an invalid state.
+            for (int i = 0; i < networkObjects.Count; i++)
+            {
+                if (!networkObjects[i].IsSpawned)
+                {
+                    throw new SpawnStateException("Object is not spawned");
+                }
+
+                if (networkObjects[i].Observers.Contains(clientId))
+                {
+                    throw new VisibilityChangeException($"{nameof(NetworkObject)} with NetworkId: {networkObjects[i].NetworkObjectId} is already visible");
+                }
+
+                if (networkObjects[i].NetworkManager != networkManager)
+                {
+                    throw new ArgumentNullException("All " + nameof(NetworkObject) + "s must belong to the same " + nameof(NetworkManager));
+                }
+            }
+
+            using (var buffer = PooledNetworkBuffer.Get())
+            using (var writer = PooledNetworkWriter.Get(buffer))
+            {
+                writer.WriteUInt16Packed((ushort)networkObjects.Count);
+
+                for (int i = 0; i < networkObjects.Count; i++)
+                {
+                    // Send spawn call
+                    networkObjects[i].Observers.Add(clientId);
+
+                    networkManager.SpawnManager.WriteSpawnCallForObject(buffer, clientId, networkObjects[i], payload);
+                }
+
+                networkManager.MessageSender.Send(clientId, NetworkConstants.ADD_OBJECTS, NetworkChannel.Internal, buffer);
+            }
+        }
 
         /// <summary>
         /// Hides a object from a specific client
         /// </summary>
         /// <param name="clientId">The client to hide the object for</param>
-//        public void NetworkHide(ulong clientId)
-//        {
-//            if (!IsSpawned)
-//            {
-//                throw new SpawnStateException("Object is not spawned");
-//            }
-//
-//            if (!NetworkManager.IsServer)
-//            {
-//                throw new NotServerException("Only server can change visibility");
-//            }
-//
-//            if (!Observers.Contains(clientId))
-//            {
-//                throw new VisibilityChangeException("The object is already hidden");
-//            }
-//
-//            if (clientId == NetworkManager.ServerClientId)
-//            {
-//                throw new VisibilityChangeException("Cannot hide an object from the server");
-//            }
-//
-//
-//            // Send destroy call
-//            Observers.Remove(clientId);
-//
-//            using (var buffer = PooledNetworkBuffer.Get())
-//            using (var writer = PooledNetworkWriter.Get(buffer))
-//            {
-//                writer.WriteUInt64Packed(NetworkObjectId);
-//
-//                NetworkManager.MessageSender.Send(clientId, NetworkConstants.DESTROY_OBJECT, NetworkChannel.Internal, buffer);
-//            }
-//        }
+        public void NetworkHide(ulong clientId)
+        {
+            if (!IsSpawned)
+            {
+                throw new SpawnStateException("Object is not spawned");
+            }
+
+            if (!NetworkManager.IsServer)
+            {
+                throw new NotServerException("Only server can change visibility");
+            }
+
+            if (!Observers.Contains(clientId))
+            {
+                throw new VisibilityChangeException("The object is already hidden");
+            }
+
+            if (clientId == NetworkManager.ServerClientId)
+            {
+                throw new VisibilityChangeException("Cannot hide an object from the server");
+            }
+
+
+            // Send destroy call
+            Observers.Remove(clientId);
+
+            using (var buffer = PooledNetworkBuffer.Get())
+            using (var writer = PooledNetworkWriter.Get(buffer))
+            {
+                writer.WriteUInt64Packed(NetworkObjectId);
+
+                NetworkManager.MessageSender.Send(clientId, NetworkConstants.DESTROY_OBJECT, NetworkChannel.Internal, buffer);
+            }
+        }
 
         /// <summary>
         /// Hides a list of objects from a client
         /// </summary>
         /// <param name="networkObjects">The objects to hide</param>
         /// <param name="clientId">The client to hide the objects from</param>
-//        public static void NetworkHide(List<NetworkObject> networkObjects, ulong clientId)
-//        {
-//            if (networkObjects == null || networkObjects.Count == 0)
-//            {
-//                throw new ArgumentNullException("At least one " + nameof(NetworkObject) + " has to be provided");
-//            }
-//
-//            NetworkManager networkManager = networkObjects[0].NetworkManager;
-//
-//            if (!networkManager.IsServer)
-//            {
-//                throw new NotServerException("Only server can change visibility");
-//            }
-//
-//            if (clientId == networkManager.ServerClientId)
-//            {
-//                throw new VisibilityChangeException("Cannot hide an object from the server");
-//            }
-//
-//            // Do the safety loop first to prevent putting the MLAPI in an invalid state.
-//            for (int i = 0; i < networkObjects.Count; i++)
-//            {
-//                if (!networkObjects[i].IsSpawned)
-//                {
-//                    throw new SpawnStateException("Object is not spawned");
-//                }
-//
-//                if (!networkObjects[i].Observers.Contains(clientId))
-//                {
-//                    throw new VisibilityChangeException($"{nameof(NetworkObject)} with {nameof(NetworkObjectId)}: {networkObjects[i].NetworkObjectId} is already hidden");
-//                }
-//
-//                if (networkObjects[i].NetworkManager != networkManager)
-//                {
-//                    throw new ArgumentNullException("All " + nameof(NetworkObject) + "s must belong to the same " + nameof(NetworkManager));
-//                }
-//            }
-//
-//            using (var buffer = PooledNetworkBuffer.Get())
-//            using (var writer = PooledNetworkWriter.Get(buffer))
-//            {
-//                writer.WriteUInt16Packed((ushort)networkObjects.Count);
-//
-//                for (int i = 0; i < networkObjects.Count; i++)
-//                {
-//                    // Send destroy call
-//                    networkObjects[i].Observers.Remove(clientId);
-//
-//                    writer.WriteUInt64Packed(networkObjects[i].NetworkObjectId);
-//                }
-//
-//                networkManager.MessageSender.Send(clientId, NetworkConstants.DESTROY_OBJECTS, NetworkChannel.Internal, buffer);
-//            }
-//        }
+        public static void NetworkHide(List<NetworkObject> networkObjects, ulong clientId)
+        {
+            if (networkObjects == null || networkObjects.Count == 0)
+            {
+                throw new ArgumentNullException("At least one " + nameof(NetworkObject) + " has to be provided");
+            }
+
+            NetworkManager networkManager = networkObjects[0].NetworkManager;
+
+            if (!networkManager.IsServer)
+            {
+                throw new NotServerException("Only server can change visibility");
+            }
+
+            if (clientId == networkManager.ServerClientId)
+            {
+                throw new VisibilityChangeException("Cannot hide an object from the server");
+            }
+
+            // Do the safety loop first to prevent putting the MLAPI in an invalid state.
+            for (int i = 0; i < networkObjects.Count; i++)
+            {
+                if (!networkObjects[i].IsSpawned)
+                {
+                    throw new SpawnStateException("Object is not spawned");
+                }
+
+                if (!networkObjects[i].Observers.Contains(clientId))
+                {
+                    throw new VisibilityChangeException($"{nameof(NetworkObject)} with {nameof(NetworkObjectId)}: {networkObjects[i].NetworkObjectId} is already hidden");
+                }
+
+                if (networkObjects[i].NetworkManager != networkManager)
+                {
+                    throw new ArgumentNullException("All " + nameof(NetworkObject) + "s must belong to the same " + nameof(NetworkManager));
+                }
+            }
+
+            using (var buffer = PooledNetworkBuffer.Get())
+            using (var writer = PooledNetworkWriter.Get(buffer))
+            {
+                writer.WriteUInt16Packed((ushort)networkObjects.Count);
+
+                for (int i = 0; i < networkObjects.Count; i++)
+                {
+                    // Send destroy call
+                    networkObjects[i].Observers.Remove(clientId);
+
+                    writer.WriteUInt64Packed(networkObjects[i].NetworkObjectId);
+                }
+
+                networkManager.MessageSender.Send(clientId, NetworkConstants.DESTROY_OBJECTS, NetworkChannel.Internal, buffer);
+            }
+        }
 
         private void OnDestroy()
         {
@@ -459,7 +459,7 @@ namespace MLAPI
 
             for (int i = 0; i < NetworkManager.ConnectedClientsList.Count; i++)
             {
-//                if (Observers.Contains(NetworkManager.ConnectedClientsList[i].ClientId))
+                if (Observers.Contains(NetworkManager.ConnectedClientsList[i].ClientId))
                 {
                     NetworkManager.SpawnManager.SendSpawnCallForObject(NetworkManager.ConnectedClientsList[i].ClientId, this, spawnPayload);
                 }
@@ -505,6 +505,7 @@ namespace MLAPI
         {
             NetworkManager.SpawnManager.DespawnObject(this, destroy);
         }
+
 
         /// <summary>
         /// Removes all ownership of an object from any client. Can only be called from server
@@ -712,7 +713,7 @@ namespace MLAPI
                 for (int i = 0; i < NetworkManager.ConnectedClientsList.Count; i++)
                 {
                     var targetClientId = NetworkManager.ConnectedClientsList[i].ClientId;
-//                    if (Observers.Contains(targetClientId))
+                    if (Observers.Contains(targetClientId))
                     {
                         NetworkManager.MessageSender.Send(targetClientId, NetworkConstants.PARENT_SYNC, NetworkChannel.Internal, buffer);
                     }
