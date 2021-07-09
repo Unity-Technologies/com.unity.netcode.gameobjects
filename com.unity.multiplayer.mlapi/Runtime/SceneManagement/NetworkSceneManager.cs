@@ -90,28 +90,56 @@ namespace MLAPI.SceneManagement
 
         internal SceneEventData SceneEventData;
 
+        internal SceneEventData ClientSynchEventData; // For approval/late joining purposes
+
         private NetworkManager m_NetworkManager { get; }
 
         internal NetworkSceneManager(NetworkManager networkManager)
         {
             m_NetworkManager = networkManager;
             SceneEventData = new SceneEventData();
+            ClientSynchEventData = new SceneEventData();
         }
 
         internal void SetCurrentSceneIndex()
         {
-            if (!SceneNameToIndex.TryGetValue(SceneManager.GetActiveScene().name, out CurrentSceneIndex))
+            var sceneIndex = GetMLAPISceneIndex(SceneManager.GetActiveScene());
+            if (sceneIndex != uint.MaxValue)
+            {
+                CurrentActiveSceneIndex = CurrentSceneIndex = sceneIndex;
+            }
+        }
+
+
+        private uint GetMLAPISceneIndex(Scene scene)
+        {
+            uint index = 0;
+            if (!SceneNameToIndex.TryGetValue(scene.name, out index))
             {
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                 {
-                    NetworkLog.LogWarning($"The current scene ({SceneManager.GetActiveScene().name}) is not regisered as a network scene.");
+                    NetworkLog.LogWarning($"The current scene ({scene.name}) is not registered as a network scene.");
                 }
-
-                return;
+                //MaxValue denotes an error
+                return uint.MaxValue;
             }
-
-            CurrentActiveSceneIndex = CurrentSceneIndex;
+            return index;
         }
+
+
+        private string GetMLAPISceneNameFromIndex(uint sceneIndex)
+        {
+            var sceneName = string.Empty;
+            if (!SceneIndexToString.TryGetValue(sceneIndex, out sceneName))
+            {
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                {
+                    NetworkLog.LogWarning($"The current scene index ({sceneIndex}) is not registered as a network scene.");
+                }
+            }
+            return sceneName;
+        }
+
 
         internal uint CurrentActiveSceneIndex { get; private set; } = 0;
 
@@ -219,7 +247,7 @@ namespace MLAPI.SceneManagement
                 return null;
             }
 
-            var switchSceneProgress = ValidateServerSceneEvent(sceneName,true);
+            var switchSceneProgress = ValidateServerSceneEvent(sceneName, true);
             if (switchSceneProgress == null)
             {
                 return null;
@@ -342,7 +370,7 @@ namespace MLAPI.SceneManagement
             SceneEventData.SceneEventType = SceneEventData.SceneEventTypes.SWITCH;
             SceneEventData.SceneIndex = SceneNameToIndex[sceneName];
 
-            // NSS TODO: remove this completely once done with the transition
+            // NSS TODO: remove this completely once done with the transition?
             SceneEventData.LoadSceneMode = LoadSceneMode.Single;
 
             // Destroy current scene objects before switching.
@@ -426,7 +454,7 @@ namespace MLAPI.SceneManagement
 
             if (SceneManager.GetActiveScene().name == sceneName)
             {
-                return; //This scene is already loaded. This usually happends at first load
+                return; //This scene is already loaded. This usually happens at first load
             }
 
             s_NextSceneName = sceneName;
@@ -584,6 +612,138 @@ namespace MLAPI.SceneManagement
 
 
 
+
+
+        private readonly List<NetworkObject> m_ObservedObjects = new List<NetworkObject>();
+        internal void SynchronizeNetworkObjects(ulong ownerClientId)
+        {
+            m_ObservedObjects.Clear();
+
+            foreach (var sobj in m_NetworkManager.SpawnManager.SpawnedObjectsList)
+            {
+                if (sobj.CheckObjectVisibility == null || sobj.CheckObjectVisibility(ownerClientId))
+                {
+                    m_ObservedObjects.Add(sobj);
+                    sobj.Observers.Add(ownerClientId);
+                }
+            }
+
+            ClientSynchEventData.InitializeForSynch();
+            ClientSynchEventData.LoadSceneMode = LoadSceneMode.Single;
+            var activeScene = SceneManager.GetActiveScene();
+            ClientSynchEventData.SceneEventType = SceneEventData.SceneEventTypes.SYNC;
+            //var networkObjectsFound = UnityEngine.Object.FindObjectsOfType<NetworkObject>();
+
+            for (int i = 0; i < SceneManager.sceneCount; i++)
+            {
+                var scene = SceneManager.GetSceneAt(i);
+                uint malpiSceneIndex = GetMLAPISceneIndex(scene);
+
+                // This would depend upon whether we are additive or note
+                if (activeScene == scene)
+                {
+                    ClientSynchEventData.SceneIndex = malpiSceneIndex;
+                }
+                else
+                {
+                    if (!ClientSynchEventData.AdditiveScenes.Contains(malpiSceneIndex))
+                    {
+                        ClientSynchEventData.AdditiveScenes.Add(malpiSceneIndex);
+                    }
+                }
+
+                foreach (var networkObject in m_ObservedObjects)
+                {
+                    if (networkObject.gameObject.scene != scene)
+                    {
+                        continue;
+                    }
+                    ClientSynchEventData.AddNetworkObjectForSynch(malpiSceneIndex, networkObject);
+                }
+            }
+
+            // Send the scene event
+            using (var buffer = PooledNetworkBuffer.Get())
+            using (var writer = PooledNetworkWriter.Get(buffer))
+            {
+                writer.WriteObjectPacked(ClientSynchEventData);
+                m_NetworkManager.MessageSender.Send(ownerClientId, NetworkConstants.SCENE_EVENT, NetworkChannel.Internal, buffer);
+            }
+
+        }
+
+        private void OnClientBeginSynch(uint sceneIndex)
+        {
+
+            if (!SceneIndexToString.TryGetValue(sceneIndex, out string sceneName) || !RegisteredSceneNames.Contains(sceneName))
+            {
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                {
+                    NetworkLog.LogWarning("Server requested a scene switch to a non-registered scene");
+                }
+
+                return;
+            }
+
+
+            var activeScene = SceneManager.GetActiveScene();
+
+            IsSpawnedObjectsPendingInDontDestroyOnLoad = true;
+
+            if (sceneName != activeScene.name)
+            {
+                //if (SceneEventData.LoadSceneMode == LoadSceneMode.Single)
+                //{
+                //    // Move ALL NetworkObjects to the temp scene
+                //    MoveObjectsToDontDestroyOnLoad();
+                //}
+                var sceneLoad = SceneManager.LoadSceneAsync(sceneName, sceneIndex == SceneEventData.SceneIndex ? SceneEventData.LoadSceneMode:LoadSceneMode.Additive);
+                s_NextSceneName = sceneName;
+                sceneLoad.completed += asyncOp2 => ClientLoadedSynchronization(sceneIndex);
+            }
+            else
+            {
+                ClientLoadedSynchronization(sceneIndex);
+            }
+        }
+
+
+        private void ClientLoadedSynchronization(uint sceneIndex)
+        {
+            var nextScene = SceneManager.GetSceneByName(GetMLAPISceneNameFromIndex(sceneIndex));
+            if(nextScene == null)
+            {
+                return;
+            }
+
+            if ((sceneIndex == SceneEventData.SceneIndex ? SceneEventData.LoadSceneMode : LoadSceneMode.Additive) == LoadSceneMode.Single)
+            {
+                SceneManager.SetActiveScene(nextScene);
+            }
+
+            //Get all NetworkObjects loaded by the scene
+            PopulateScenePlacedObjects(nextScene);
+
+            SceneEventData.SynchronizeSceneNetworkObjects(sceneIndex, m_NetworkManager);
+
+            if(!SceneEventData.IsDoneWithSynchronization())
+            {
+                HandleClientSceneEvent(null);
+            }
+            else
+            {
+                m_NetworkManager.IsConnectedClient = true;
+                m_NetworkManager.InvokeOnClientConnectedCallback(m_NetworkManager.LocalClientId);
+                using (var buffer = PooledNetworkBuffer.Get())
+                using (var writer = PooledNetworkWriter.Get(buffer))
+                {
+                    SceneEventData.SceneEventType = SceneEventData.SceneEventTypes.SYNC_COMPLETE;
+                    writer.WriteObjectPacked(SceneEventData);
+                    m_NetworkManager.MessageSender.Send(m_NetworkManager.ServerClientId, NetworkConstants.SCENE_EVENT, NetworkChannel.Internal, buffer);
+                }
+            }
+        }
+
         internal bool HasSceneMismatch(uint sceneIndex) => SceneManager.GetActiveScene().name != SceneIndexToString[sceneIndex];
 
         // Called on server
@@ -700,6 +860,11 @@ namespace MLAPI.SceneManagement
                         OnClientUnloadScene();
                         break;
                     }
+                case SceneEventData.SceneEventTypes.SYNC:
+                    {
+                        OnClientBeginSynch(SceneEventData.GetNextSceneSynchronizationIndex());
+                        break;
+                    }
                 default:
                     {
                         Debug.LogWarning($"{SceneEventData.SceneEventType} is not currently supported!");
@@ -730,6 +895,33 @@ namespace MLAPI.SceneManagement
                 case SceneEventData.SceneEventTypes.UNLOAD_COMPLETE:
                     {
                         Debug.Log($"[{nameof(SceneEventData.SceneEventTypes.UNLOAD_COMPLETE)}] Client Id {clientId} finished unloading additive scene.");
+                        break;
+                    }
+                case SceneEventData.SceneEventTypes.SYNC_COMPLETE:
+                    {
+                        //using (var buffer = PooledNetworkBuffer.Get())
+                        //using (var writer = PooledNetworkWriter.Get(buffer))
+                        //{
+                        //    writer.WriteUInt64Packed(ownerClientId);
+
+                        //    if (NetworkConfig.EnableSceneManagement)
+                        //    {
+                        //        writer.WriteUInt32Packed(NetworkSceneManager.CurrentSceneIndex);
+                        //        writer.WriteByteArray(NetworkSceneManager.CurrentSceneSwitchProgressGuid.ToByteArray());
+                        //    }
+
+                        //    writer.WriteSinglePacked(Time.realtimeSinceStartup);
+                        //    writer.WriteUInt32Packed((uint)m_ObservedObjects.Count);
+
+                        //    for (int i = 0; i < m_ObservedObjects.Count; i++)
+                        //    {
+                        //        m_ObservedObjects[i].SerializeSceneObject(writer, ownerClientId);
+                        //    }
+
+                        //    MessageSender.Send(ownerClientId, NetworkConstants.CONNECTION_APPROVED, NetworkChannel.Internal, buffer);
+                        //}
+
+                        m_NetworkManager.NotifyPlayerConnected(clientId, m_NetworkManager.NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash);
                         break;
                     }
                 default:
@@ -780,21 +972,64 @@ namespace MLAPI.SceneManagement
     {
         public enum SceneEventTypes
         {
-            SWITCH,             //Server to client
-            LOAD,               //Server to client
-            UNLOAD,             //Server to client
+            SWITCH,             //Server to client full scene switch (i.e. single mode and destroy everything)
+            LOAD,               //Server to client load additive scene
+            UNLOAD,             //Server to client unload additive scene
+            SYNC,               //Server to client late join approval synchronization
             SWITCH_COMPLETE,    //Client to server
             LOAD_COMPLETE,      //Client to server
-            UNLOAD_COMPLETE     //Client to server
+            UNLOAD_COMPLETE,    //Client to server
+            SYNC_COMPLETE,      //Client to server
         }
 
         public SceneEventTypes SceneEventType;
         public LoadSceneMode LoadSceneMode;
         public Guid SwitchSceneGuid;
+
+        public List<uint> AdditiveScenes;
+
         public uint SceneIndex;
+        public ulong TargetClientId;
 
-
+        private Dictionary<uint, List<NetworkObject>> m_SceneNetworkObjects;
+        private Dictionary<uint, long> m_SceneNetworkObjectDataOffsets;
         internal PooledNetworkBuffer InternalBuffer;
+
+        public void InitializeForSynch()
+        {
+            if(m_SceneNetworkObjects == null)
+            {
+                m_SceneNetworkObjects = new Dictionary<uint, List<NetworkObject>>();
+            }
+            else
+            {
+                m_SceneNetworkObjects.Clear();
+            }
+        }
+
+        public uint GetNextSceneSynchronizationIndex()
+        {
+            if(m_SceneNetworkObjectDataOffsets.ContainsKey(SceneIndex))
+            {
+                return SceneIndex;
+            }
+            return m_SceneNetworkObjectDataOffsets.First().Key;
+        }
+
+        public bool IsDoneWithSynchronization()
+        {
+            return (m_SceneNetworkObjectDataOffsets.Count == 0);
+        }
+
+        public void AddNetworkObjectForSynch(uint sceneIndex, NetworkObject networkObject)
+        {
+            if(!m_SceneNetworkObjects.ContainsKey(sceneIndex))
+            {
+                m_SceneNetworkObjects.Add(sceneIndex, new List<NetworkObject>());
+            }
+
+            m_SceneNetworkObjects[sceneIndex].Add(networkObject);
+        }
 
         /// <summary>
         /// Determines if the scene event type was intended for the client ( or server )
@@ -807,9 +1042,10 @@ namespace MLAPI.SceneManagement
                 case SceneEventTypes.LOAD:
                 case SceneEventTypes.SWITCH:
                 case SceneEventTypes.UNLOAD:
-                    {
-                        return true;
-                    }
+                case SceneEventTypes.SYNC:
+                {
+                    return true;
+                }
             }
             return false;
         }
@@ -821,9 +1057,49 @@ namespace MLAPI.SceneManagement
         private void OnWrite(NetworkWriter writer)
         {
             writer.WriteByte((byte)SceneEventType);
+
+
             writer.WriteByte((byte)LoadSceneMode);
-            writer.WriteByteArray(SwitchSceneGuid.ToByteArray());
+            if (SceneEventType != SceneEventTypes.SYNC)
+            {
+                writer.WriteByteArray(SwitchSceneGuid.ToByteArray());
+            }
+
             writer.WriteUInt32Packed(SceneIndex);
+
+            if (SceneEventType == SceneEventTypes.SYNC)
+            {
+                writer.WriteArrayPacked(AdditiveScenes.ToArray());
+                Debug.Log($"Wrote:{AdditiveScenes.Count} additive scenes to be loaded.");
+                writer.WriteInt32Packed(m_SceneNetworkObjects.Count());
+
+                if (m_SceneNetworkObjects.Count() > 0)
+                {
+                    string msg = "Scene Associated NetworkObjects Write:\n";
+                    foreach (var keypair in m_SceneNetworkObjects)
+                    {
+                        writer.WriteUInt32Packed(keypair.Key);
+                        msg += $"Scene ID [{keypair.Key}] NumNetworkObjects:[{keypair.Value.Count}]\n";
+                        writer.WriteUInt32Packed((uint)keypair.Value.Count);
+                        var positionStart = writer.GetStream().Position;
+                        // Size Place Holder
+                        writer.WriteUInt64(0);
+                        foreach (var networkObject in keypair.Value)
+                        {
+                            networkObject.SerializeSceneObject(writer, TargetClientId);
+                        }
+                        var positionEnd = writer.GetStream().Position;
+                        var bytesWritten = (ulong)(positionEnd - positionStart);
+                        writer.GetStream().Position = positionStart;
+                        // Write the total size written to the stream by NetworkObjects being serialized
+                        writer.WriteUInt64(bytesWritten);
+                        writer.GetStream().Position = positionEnd;
+                        msg += $"Wrote [{bytesWritten}] bytes of NetworkObject data.\n";
+                    }
+
+                    Debug.Log(msg);
+                }
+            }
         }
 
         /// <summary>
@@ -854,10 +1130,71 @@ namespace MLAPI.SceneManagement
                 Debug.LogError($"Serialization Read Error: {nameof(LoadSceneMode)} vale {loadSceneModeValue} is not within the range of the defined {nameof(LoadSceneMode)} enumerator!");
             }
 
-            SwitchSceneGuid = new Guid(reader.ReadByteArray());
+            if (SceneEventType != SceneEventTypes.SYNC)
+            {
+                SwitchSceneGuid = new Guid(reader.ReadByteArray());
+            }
 
             SceneIndex = reader.ReadUInt32Packed();
 
+            if (SceneEventType == SceneEventTypes.SYNC)
+            {
+                var array = reader.ReadUIntArrayPacked();
+                AdditiveScenes = new List<uint>(array);
+                var keyPairCount = reader.ReadInt32Packed();
+
+                if (keyPairCount > 0)
+                {
+                    if (m_SceneNetworkObjectDataOffsets == null)
+                    {
+                        m_SceneNetworkObjectDataOffsets = new Dictionary<uint, long>();
+                    }
+                    else
+                    {
+                        m_SceneNetworkObjectDataOffsets.Clear();
+                    }
+
+                    InternalBuffer.Position = 0;
+
+                    using (var writer = PooledNetworkWriter.Get(InternalBuffer))
+                    {
+                        for (int i = 0; i < keyPairCount; i++)
+                        {
+                            var key = reader.ReadUInt32Packed();
+                            var count = reader.ReadUInt32Packed();
+                            var bytesToRead = reader.ReadUInt64Packed();  // So we know how much to read
+                            // We store off the current position of the stream as it pertains to the scene relative NetworkObjects
+                            m_SceneNetworkObjectDataOffsets.Add(key, InternalBuffer.Position);
+                            writer.WriteUInt32Packed(count);
+                            var networkObjectsBuffer = reader.ReadByteArray(null, (long)bytesToRead);
+                            writer.WriteByteArray(networkObjectsBuffer);
+                        }
+                    }
+                }
+            }
+        }
+
+        public void SynchronizeSceneNetworkObjects(uint sceneId, NetworkManager networkManager)
+        {
+            if (m_SceneNetworkObjectDataOffsets.ContainsKey(sceneId))
+            {
+                // Point to the appropriate offset
+                InternalBuffer.Position = m_SceneNetworkObjectDataOffsets[sceneId];
+
+                using (var reader = PooledNetworkReader.Get(InternalBuffer))
+                {
+                    // Process all NetworkObjects for this scene
+                    var newObjectsCount = reader.ReadUInt32Packed();
+
+                    for (int i = 0; i < newObjectsCount; i++)
+                    {
+                        NetworkObject.DeserializeSceneObject(InternalBuffer as NetworkBuffer, reader, networkManager);
+                    }
+                }
+
+                // Remove this entry
+                m_SceneNetworkObjectDataOffsets.Remove(sceneId);
+            }
         }
 
         /// <summary>
@@ -902,6 +1239,8 @@ namespace MLAPI.SceneManagement
         public SceneEventData()
         {
             InternalBuffer = NetworkBufferPool.GetBuffer();
+            AdditiveScenes = new List<uint>();
+
         }
     }
 }

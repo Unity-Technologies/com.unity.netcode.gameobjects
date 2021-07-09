@@ -76,7 +76,7 @@ namespace MLAPI.Messaging
                     sceneSwitchProgressGuid = new Guid(reader.ReadByteArray());
                 }
 
-                bool sceneSwitch = NetworkManager.NetworkConfig.EnableSceneManagement && NetworkManager.SceneManager.HasSceneMismatch(sceneIndex);
+                //bool sceneSwitch = NetworkManager.NetworkConfig.EnableSceneManagement && NetworkManager.SceneManager.HasSceneMismatch(sceneIndex);
 
                 float netTime = reader.ReadSinglePacked();
                 NetworkManager.UpdateNetworkTime(clientId, netTime, receiveTime, true);
@@ -84,54 +84,54 @@ namespace MLAPI.Messaging
                 NetworkManager.ConnectedClients.Add(NetworkManager.LocalClientId, new NetworkClient { ClientId = NetworkManager.LocalClientId });
 
 
-                void DelayedSpawnAction(Stream continuationStream)
-                {
+                //void DelayedSpawnAction(Stream continuationStream)
+                //{
 
-                    using (var continuationReader = PooledNetworkReader.Get(continuationStream))
-                    {
-                        if (!NetworkManager.NetworkConfig.EnableSceneManagement)
-                        {
-                            NetworkManager.SpawnManager.DestroySceneObjects();
-                        }
-                        else
-                        {
-                            NetworkManager.SceneManager.PopulateScenePlacedObjects(SceneManager.GetActiveScene());
-                        }
+                //    using (var continuationReader = PooledNetworkReader.Get(continuationStream))
+                //    {
+                //        if (!NetworkManager.NetworkConfig.EnableSceneManagement)
+                //        {
+                //            NetworkManager.SpawnManager.DestroySceneObjects();
+                //        }
+                //        else
+                //        {
+                //            NetworkManager.SceneManager.PopulateScenePlacedObjects(SceneManager.GetActiveScene());
+                //        }
 
-                        var objectCount = continuationReader.ReadUInt32Packed();
-                        for (int i = 0; i < objectCount; i++)
-                        {
-                            NetworkObject.DeserializeSceneObject(continuationStream as NetworkBuffer, continuationReader, m_NetworkManager);
-                        }
+                //        var objectCount = continuationReader.ReadUInt32Packed();
+                //        for (int i = 0; i < objectCount; i++)
+                //        {
+                //            NetworkObject.DeserializeSceneObject(continuationStream as NetworkBuffer, continuationReader, m_NetworkManager);
+                //        }
 
-                        NetworkManager.IsConnectedClient = true;
-                        NetworkManager.InvokeOnClientConnectedCallback(NetworkManager.LocalClientId);
-                    }
-                }
+                //        NetworkManager.IsConnectedClient = true;
+                //        NetworkManager.InvokeOnClientConnectedCallback(NetworkManager.LocalClientId);
+                //    }
+                //}
 
-                if (sceneSwitch)
-                {
-                    UnityAction<Scene, Scene> onSceneLoaded = null;
+                //if (sceneSwitch)
+                //{
+                //    UnityAction<Scene, Scene> onSceneLoaded = null;
 
-                    var continuationBuffer = new NetworkBuffer();
-                    continuationBuffer.CopyUnreadFrom(stream);
-                    continuationBuffer.Position = 0;
+                //    var continuationBuffer = new NetworkBuffer();
+                //    continuationBuffer.CopyUnreadFrom(stream);
+                //    continuationBuffer.Position = 0;
 
-                    void OnSceneLoadComplete()
-                    {
-                        SceneManager.activeSceneChanged -= onSceneLoaded;
-                        NetworkSceneManager.IsSpawnedObjectsPendingInDontDestroyOnLoad = false;
-                        DelayedSpawnAction(continuationBuffer);
-                    }
+                //    void OnSceneLoadComplete()
+                //    {
+                //        SceneManager.activeSceneChanged -= onSceneLoaded;
+                //        NetworkSceneManager.IsSpawnedObjectsPendingInDontDestroyOnLoad = false;
+                //        DelayedSpawnAction(continuationBuffer);
+                //    }
 
-                    onSceneLoaded = (oldScene, newScene) => { OnSceneLoadComplete(); };
-                    SceneManager.activeSceneChanged += onSceneLoaded;
-                    m_NetworkManager.SceneManager.OnFirstSceneSwitchSync(sceneIndex, sceneSwitchProgressGuid);
-                }
-                else
-                {
-                    DelayedSpawnAction(stream);
-                }
+                //    onSceneLoaded = (oldScene, newScene) => { OnSceneLoadComplete(); };
+                //    SceneManager.activeSceneChanged += onSceneLoaded;
+                //    m_NetworkManager.SceneManager.OnFirstSceneSwitchSync(sceneIndex, sceneSwitchProgressGuid);
+                //}
+                //else
+                //{
+                //    DelayedSpawnAction(stream);
+                //}
             }
         }
 
