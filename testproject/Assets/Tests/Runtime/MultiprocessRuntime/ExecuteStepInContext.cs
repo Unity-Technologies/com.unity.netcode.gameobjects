@@ -57,7 +57,7 @@ public class ExecuteStepInContext : CustomYieldInstruction
     private bool m_IgnoreTimeoutException;
 
     private float m_StartTime;
-    private bool isTimingOut => Time.time - m_StartTime > TestCoordinator.maxWaitTimeout;
+    private bool isTimingOut => Time.time - m_StartTime > TestCoordinator.MaxWaitTimeoutSec;
     private bool ShouldExecuteLocally => (m_ActionContext == StepExecutionContext.Server && m_NetworkManager.IsServer) || (m_ActionContext == StepExecutionContext.Clients && !m_NetworkManager.IsServer);
 
     public static bool isRegistering;

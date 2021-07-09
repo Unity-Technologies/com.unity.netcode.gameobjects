@@ -20,7 +20,7 @@ namespace MLAPI.MultiprocessRuntimeTests
         {
             m_NbWorkersToTest = nbWorkersToTest;
         }
-        protected override int NbWorkers => m_NbWorkersToTest;
+        protected override int WorkerCount => m_NbWorkersToTest;
         protected override bool m_IsPerformanceTest => false;
 
         [UnityTest, MultiprocessContextBasedTest]
@@ -214,7 +214,7 @@ namespace MLAPI.MultiprocessRuntimeTests
                     Assert.AreEqual(12345, res.result);
                 }
 
-                Assert.That(resultCountFromWorkers, Is.EqualTo(NbWorkers));
+                Assert.That(resultCountFromWorkers, Is.EqualTo(WorkerCount));
             });
 
             const int timeToWait = 4;
