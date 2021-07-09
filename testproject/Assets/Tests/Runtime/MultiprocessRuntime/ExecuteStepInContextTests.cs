@@ -15,20 +15,22 @@ namespace MLAPI.MultiprocessRuntimeTests
     [TestFixture(2)]
     public class ExecuteStepInContextTests : BaseMultiprocessTests
     {
-        private int m_NbWorkersToTest;
-        public ExecuteStepInContextTests(int nbWorkersToTest)
+        private int m_WorkerCountToTest;
+
+        public ExecuteStepInContextTests(int workerCountToTest)
         {
-            m_NbWorkersToTest = nbWorkersToTest;
+            m_WorkerCountToTest = workerCountToTest;
         }
-        protected override int NbWorkers => m_NbWorkersToTest;
+
+        protected override int WorkerCount => m_WorkerCountToTest;
         protected override bool m_IsPerformanceTest => false;
 
         [UnityTest, MultiprocessContextBasedTest]
-        public IEnumerator TestWithSameName([Values(1)]int a)
+        public IEnumerator TestWithSameName([Values(1)] int a)
         {
             // ExecuteStepInContext bases itself on method name to identify steps. We need to make sure that methods with
             // same names, but different signatures behave correctly
-            InitContextSteps();
+            InitializeContextSteps();
             yield return new ExecuteStepInContext(StepExecutionContext.Server, bytes =>
             {
                 Assert.That(a, Is.EqualTo(1));
@@ -40,9 +42,9 @@ namespace MLAPI.MultiprocessRuntimeTests
         }
 
         [UnityTest, MultiprocessContextBasedTest]
-        public IEnumerator TestWithSameName([Values(2)]int a, [Values(3)]int b)
+        public IEnumerator TestWithSameName([Values(2)] int a, [Values(3)] int b)
         {
-            InitContextSteps();
+            InitializeContextSteps();
             yield return new ExecuteStepInContext(StepExecutionContext.Server, bytes =>
             {
                 Assert.That(b, Is.EqualTo(3));
@@ -56,7 +58,7 @@ namespace MLAPI.MultiprocessRuntimeTests
         [UnityTest, MultiprocessContextBasedTest]
         public IEnumerator TestWithParameters([Values(1, 2, 3)] int a)
         {
-            InitContextSteps();
+            InitializeContextSteps();
 
             yield return new ExecuteStepInContext(StepExecutionContext.Server, bytes =>
             {
@@ -78,7 +80,7 @@ namespace MLAPI.MultiprocessRuntimeTests
         [TestCase(3, 4, ExpectedResult = null)]
         public IEnumerator TestWithParameters(int a, int b)
         {
-            InitContextSteps();
+            InitializeContextSteps();
 
             yield return new ExecuteStepInContext(StepExecutionContext.Server, bytes =>
             {
@@ -99,7 +101,7 @@ namespace MLAPI.MultiprocessRuntimeTests
         [UnityTest, MultiprocessContextBasedTest]
         public IEnumerator TestExceptionClientSide()
         {
-            InitContextSteps();
+            InitializeContextSteps();
 
             const string exceptionMessageToTest = "This is an exception for TestCoordinator that's expected";
             yield return new ExecuteStepInContext(StepExecutionContext.Clients, _ =>
@@ -108,7 +110,7 @@ namespace MLAPI.MultiprocessRuntimeTests
             }, ignoreTimeoutException: true);
             yield return new ExecuteStepInContext(StepExecutionContext.Server, _ =>
             {
-                for (int i = 0; i < m_NbWorkersToTest; i++)
+                for (int i = 0; i < m_WorkerCountToTest; i++)
                 {
                     LogAssert.Expect(LogType.Error, new Regex($".*{exceptionMessageToTest}.*"));
                 }
@@ -117,17 +119,17 @@ namespace MLAPI.MultiprocessRuntimeTests
             const string exceptionUpdateMessageToTest = "This is an exception for update loop client side that's expected";
             yield return new ExecuteStepInContext(StepExecutionContext.Clients, _ =>
             {
-                void Update(float __)
+                void UpdateFunc(float _)
                 {
-                    NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate -= Update;
+                    NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate -= UpdateFunc;
                     throw new Exception(exceptionUpdateMessageToTest);
                 }
-                NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate += Update;
 
+                NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate += UpdateFunc;
             }, ignoreTimeoutException: true);
             yield return new ExecuteStepInContext(StepExecutionContext.Server, _ =>
             {
-                for (int i = 0; i < m_NbWorkersToTest; i++)
+                for (int i = 0; i < m_WorkerCountToTest; i++)
                 {
                     LogAssert.Expect(LogType.Error, new Regex($".*{exceptionUpdateMessageToTest}.*"));
                 }
@@ -137,45 +139,47 @@ namespace MLAPI.MultiprocessRuntimeTests
         [UnityTest, MultiprocessContextBasedTest]
         public IEnumerator ContextTestWithAdditionalWait()
         {
-            InitContextSteps();
+            InitializeContextSteps();
 
             const int maxValue = 10;
             yield return new ExecuteStepInContext(StepExecutionContext.Clients, _ =>
             {
                 int count = 0;
 
-                void Update(float __)
+                void UpdateFunc(float _)
                 {
                     TestCoordinator.Instance.WriteTestResultsServerRpc(count++);
                     if (count > maxValue)
                     {
-                        NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate -= Update;
+                        NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate -= UpdateFunc;
                     }
                 }
 
-                NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate += Update;
+                NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate += UpdateFunc;
             }, additionalIsFinishedWaiter: () =>
             {
                 int nbFinished = 0;
-                for (int i = 0; i < m_NbWorkersToTest; i++)
+                for (int i = 0; i < m_WorkerCountToTest; i++)
                 {
                     if (TestCoordinator.PeekLatestResult(TestCoordinator.AllClientIdsExceptMine[i]) == maxValue)
                     {
                         nbFinished++;
                     }
                 }
-                return nbFinished == m_NbWorkersToTest;
+
+                return nbFinished == m_WorkerCountToTest;
             });
             yield return new ExecuteStepInContext(StepExecutionContext.Server, _ =>
             {
-                Assert.That(TestCoordinator.AllClientIdsExceptMine.Count, Is.EqualTo(m_NbWorkersToTest));
-                foreach (var clientID in TestCoordinator.AllClientIdsExceptMine)
+                Assert.That(TestCoordinator.AllClientIdsExceptMine.Count, Is.EqualTo(m_WorkerCountToTest));
+                foreach (var clientId in TestCoordinator.AllClientIdsExceptMine)
                 {
                     var current = 0;
-                    foreach (var res in TestCoordinator.ConsumeCurrentResult(clientID))
+                    foreach (var res in TestCoordinator.ConsumeCurrentResult(clientId))
                     {
                         Assert.That(res, Is.EqualTo(current++));
                     }
+
                     Assert.That(current - 1, Is.EqualTo(maxValue));
                 }
             });
@@ -184,7 +188,7 @@ namespace MLAPI.MultiprocessRuntimeTests
         [UnityTest, MultiprocessContextBasedTest]
         public IEnumerator TestExecuteInContext()
         {
-            InitContextSteps();
+            InitializeContextSteps();
 
             int stepCountExecuted = 0;
             yield return new ExecuteStepInContext(StepExecutionContext.Server, args =>
@@ -214,24 +218,24 @@ namespace MLAPI.MultiprocessRuntimeTests
                     Assert.AreEqual(12345, res.result);
                 }
 
-                Assert.That(resultCountFromWorkers, Is.EqualTo(NbWorkers));
+                Assert.That(resultCountFromWorkers, Is.EqualTo(WorkerCount));
             });
 
             const int timeToWait = 4;
             yield return new ExecuteStepInContext(StepExecutionContext.Clients, _ =>
             {
-                void Update(float __)
+                void UpdateFunc(float _)
                 {
                     if (Time.time > timeToWait)
                     {
-                        NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate -= Update;
+                        NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate -= UpdateFunc;
                         TestCoordinator.Instance.WriteTestResultsServerRpc(Time.time);
 
                         TestCoordinator.Instance.ClientFinishedServerRpc(); // since finishOnInvoke is false, we need to do this manually
                     }
                 }
 
-                NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate += Update;
+                NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate += UpdateFunc;
             }, waitMultipleUpdates: true); // waits multiple frames before allowing the next action to continue.
 
             yield return new ExecuteStepInContext(StepExecutionContext.Server, args =>
@@ -247,7 +251,7 @@ namespace MLAPI.MultiprocessRuntimeTests
                 Assert.Greater(count, 0);
             });
 
-            if (!isRegistering)
+            if (!IsRegistering)
             {
                 Assert.AreEqual(3, stepCountExecuted);
             }

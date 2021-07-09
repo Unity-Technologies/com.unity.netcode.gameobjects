@@ -6,7 +6,7 @@ using UnityEngine;
 public class PrefabReference : MonoBehaviour
 {
     [SerializeField]
-    public GameObject referencedPrefab;
+    public GameObject ReferencedPrefab;
 
     public static PrefabReference Instance { get; private set; }
 
@@ -17,6 +17,7 @@ public class PrefabReference : MonoBehaviour
             Destroy(gameObject);
             return;
         }
+
         Instance = this;
     }
 }

@@ -15,7 +15,7 @@ namespace MLAPI.MultiprocessRuntimeTests
 {
     public class NetworkVariablePerformanceTests : BaseMultiprocessTests
     {
-        protected override int NbWorkers { get; } = 1;
+        protected override int WorkerCount { get; } = 1;
         private const int k_MaxObjectsToSpawn = 10000;
         private List<OneNetVar> m_ServerSpawnedObjects = new List<OneNetVar>();
         private static GameObjectPool<OneNetVar> s_ServerObjectPool;
@@ -25,21 +25,21 @@ namespace MLAPI.MultiprocessRuntimeTests
 
         private class OneNetVar : NetworkBehaviour
         {
-            public static int nbInstances;
-            public NetworkVariableInt oneInt = new NetworkVariableInt();
+            public static int InstanceCount;
+            public NetworkVariableInt OneInt = new NetworkVariableInt();
 
-            public void Init()
+            public void Initialize()
             {
-                nbInstances++;
+                InstanceCount++;
                 if (IsServer)
                 {
-                    oneInt.Value = 1;
+                    OneInt.Value = 1;
                 }
             }
 
             public static void Stop()
             {
-                nbInstances--;
+                InstanceCount--;
             }
         }
 
@@ -54,14 +54,14 @@ namespace MLAPI.MultiprocessRuntimeTests
         {
             InitPrefab();
             s_ServerObjectPool = new GameObjectPool<OneNetVar>();
-            s_ServerObjectPool.Init(k_MaxObjectsToSpawn, m_PrefabToSpawn);
+            s_ServerObjectPool.Initialize(k_MaxObjectsToSpawn, m_PrefabToSpawn);
         }
 
         private void InitPrefab()
         {
             if (m_PrefabToSpawn == null)
             {
-                var prefabCopy = Object.Instantiate(PrefabReference.Instance.referencedPrefab);
+                var prefabCopy = Object.Instantiate(PrefabReference.Instance.ReferencedPrefab);
                 m_PrefabToSpawn = prefabCopy.AddComponent<OneNetVar>();
             }
         }
@@ -69,9 +69,9 @@ namespace MLAPI.MultiprocessRuntimeTests
         [UnityTest, Performance, MultiprocessContextBasedTest]
         public IEnumerator TestSpawningManyObjects([Values(1, 2, 1000, 2000, 10000)] int nbObjects)
         {
-            InitContextSteps();
+            InitializeContextSteps();
 
-            if (!isRegistering && TestCoordinator.Instance.NetworkManager.IsServer && BuildMultiprocessTestPlayer.ReadBuildInfo().isDebug)
+            if (!IsRegistering && TestCoordinator.Instance.NetworkManager.IsServer && BuildMultiprocessTestPlayer.ReadBuildInfo().IsDebug)
             {
                 // build test player in debug mode to enable this
                 var timeToWait = 20;
@@ -97,7 +97,7 @@ namespace MLAPI.MultiprocessRuntimeTests
                 // add client side reporter for later spawn steps
                 void Update(float deltaTime)
                 {
-                    var count = OneNetVar.nbInstances;
+                    var count = OneNetVar.InstanceCount;
                     if (count > 0)
                     {
                         TestCoordinator.Instance.WriteTestResultsServerRpc(count);
@@ -121,7 +121,7 @@ namespace MLAPI.MultiprocessRuntimeTests
                     // spawn prefabs for test
                     var totalAllocSampleGroup = new SampleGroup("GC Alloc", SampleUnit.Kilobyte);
                     var beforeAllocatedMemory = Profiler.GetTotalAllocatedMemoryLong();
-                    Measure.Custom(totalAllocSampleGroup, beforeAllocatedMemory / 1024);
+                    Measure.Custom(totalAllocSampleGroup, beforeAllocatedMemory / 1024f);
                     for (int i = 0; i < nbObjects; i++)
                     {
                         var spawnedObject = s_ServerObjectPool.Get();
@@ -131,16 +131,15 @@ namespace MLAPI.MultiprocessRuntimeTests
                     }
 
                     var afterAllocatedMemory = Profiler.GetTotalAllocatedMemoryLong();
-                    Measure.Custom(totalAllocSampleGroup, afterAllocatedMemory / 1024);
+                    Measure.Custom(totalAllocSampleGroup, afterAllocatedMemory / 1024f);
                     var diffAllocSampleGroup = new SampleGroup("GC Alloc diff for Spawn Server side", SampleUnit.Byte);
                     Measure.Custom(diffAllocSampleGroup, afterAllocatedMemory - beforeAllocatedMemory);
-
                 }
             }, additionalIsFinishedWaiter: () =>
             {
                 // wait for spawn results coming from clients
                 int finishedCount = 0;
-                if (TestCoordinator.AllClientIdsWithResults.Count != NbWorkers)
+                if (TestCoordinator.AllClientIdsWithResults.Count != WorkerCount)
                 {
                     return false;
                 }
@@ -154,9 +153,10 @@ namespace MLAPI.MultiprocessRuntimeTests
                     }
                 }
 
-                return finishedCount == NbWorkers;
+                return finishedCount == WorkerCount;
             });
-            float serverLastResult = 0;
+
+            var serverLastResult = 0f;
             yield return new ExecuteStepInContext(StepExecutionContext.Server, bytes =>
             {
                 // add measurements
@@ -169,30 +169,28 @@ namespace MLAPI.MultiprocessRuntimeTests
                     Assert.That(lastResult, Is.EqualTo(nbObjects));
                 }
 
-                Assert.That(TestCoordinator.AllClientIdsWithResults.Count, Is.EqualTo(NbWorkers));
+                Assert.That(TestCoordinator.AllClientIdsWithResults.Count, Is.EqualTo(WorkerCount));
                 foreach (var (clientId, result) in TestCoordinator.ConsumeCurrentResult())
                 {
                     Measure.Custom(allocated, result);
                     serverLastResult = result;
                 }
-
             });
             yield return new ExecuteStepInContext(StepExecutionContext.Clients, nbObjectsBytes =>
             {
                 var nbObjectsParam = BitConverter.ToInt32(nbObjectsBytes, 0);
-                Assert.That(GameObject.FindObjectsOfType(typeof(OneNetVar)).Length, Is.EqualTo(nbObjectsParam + 1), "Wrong number of spawned objects client side"); // +1 for the prefab to spawn
+                Assert.That(Object.FindObjectsOfType(typeof(OneNetVar)).Length, Is.EqualTo(nbObjectsParam + 1), "Wrong number of spawned objects client side"); // +1 for the prefab to spawn
             }, paramToPass: BitConverter.GetBytes(nbObjects));
             yield return new ExecuteStepInContext(StepExecutionContext.Server, bytes =>
             {
                 Debug.Log($"finished with test for {nbObjects} expected objects and got {serverLastResult} objects");
             });
-
         }
 
         [UnityTearDown, MultiprocessContextBasedTest]
         public IEnumerator UnityTeardown()
         {
-            InitContextSteps();
+            InitializeContextSteps();
 
             yield return new ExecuteStepInContext(StepExecutionContext.Server, bytes =>
             {
@@ -212,7 +210,7 @@ namespace MLAPI.MultiprocessRuntimeTests
 
                 void UpdateWaitForAllOneNetVarToDespawn(float deltaTime)
                 {
-                    if (OneNetVar.nbInstances == 0)
+                    if (OneNetVar.InstanceCount == 0)
                     {
                         NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate -= UpdateWaitForAllOneNetVarToDespawn;
                         TestCoordinator.Instance.ClientFinishedServerRpc();
@@ -239,7 +237,7 @@ namespace MLAPI.MultiprocessRuntimeTests
 
         private static void SetupSpawnedObject(OneNetVar spawnedObject)
         {
-            spawnedObject.Init();
+            spawnedObject.Initialize();
         }
 
         private static void StopSpawnedObject(OneNetVar destroyedObject)

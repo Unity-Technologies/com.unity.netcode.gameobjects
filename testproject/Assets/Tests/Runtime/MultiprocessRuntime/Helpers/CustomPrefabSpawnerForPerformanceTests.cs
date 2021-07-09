@@ -1,6 +1,4 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using MLAPI.Spawning;
 
@@ -15,7 +13,7 @@ namespace MLAPI.MultiprocessRuntimeTests
         public CustomPrefabSpawnerForPerformanceTests(T prefabToSpawn, int maxObjectsToSpawn, Action<T> setupSpawnedObject, Action<T> onRelease)
         {
             m_ObjectPool = new GameObjectPool<T>();
-            m_ObjectPool.Init(maxObjectsToSpawn, prefabToSpawn);
+            m_ObjectPool.Initialize(maxObjectsToSpawn, prefabToSpawn);
             m_SetupSpawnedObject = setupSpawnedObject;
             m_OnRelease = onRelease;
         }
