@@ -1,17 +1,11 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using MLAPI;
-using MLAPI.Configuration;
-using MLAPI.Logging;
 using MLAPI.Messaging;
 using NUnit.Framework;
-using NUnit.Framework.Interfaces;
 using UnityEngine;
-using UnityEngine.TestTools;
 using Debug = UnityEngine.Debug;
 
 /// <summary>
@@ -27,11 +21,10 @@ using Debug = UnityEngine.Debug;
 [RequireComponent(typeof(NetworkObject))]
 public class TestCoordinator : NetworkBehaviour
 {
-    public const int perTestTimeout = 5 * 60; // seconds
+    public const int PerTestTimeoutSec = 5 * 60; // seconds
 
-    public const float maxWaitTimeout = 20;
+    public const float MaxWaitTimeoutSec = 20;
     private const char k_MethodFullNameSplitChar = '@';
-
 
     private bool m_ShouldShutdown;
     private float m_TimeSinceLastConnected;
@@ -49,7 +42,7 @@ public class TestCoordinator : NetworkBehaviour
     {
         if (Instance != null)
         {
-            Debug.LogError("Multiple test coordinator! destroying self");
+            Debug.LogError("Multiple test coordinator, destroying this instance");
             Destroy(gameObject);
             return;
         }
@@ -73,16 +66,17 @@ public class TestCoordinator : NetworkBehaviour
 
     public void Update()
     {
-        if (Time.time - m_TimeSinceLastKeepAlive > perTestTimeout)
+        if (Time.time - m_TimeSinceLastKeepAlive > PerTestTimeoutSec)
         {
             QuitApplication();
             Assert.Fail("Stayed idle too long");
         }
+
         if ((IsServer && NetworkManager.Singleton.IsListening) || (IsClient && NetworkManager.Singleton.IsConnectedClient))
         {
             m_TimeSinceLastConnected = Time.time;
         }
-        else if (Time.time - m_TimeSinceLastConnected > maxWaitTimeout || m_ShouldShutdown)
+        else if (Time.time - m_TimeSinceLastConnected > MaxWaitTimeoutSec || m_ShouldShutdown)
         {
             // Make sure we don't have zombie processes
             Debug.Log($"quitting application, shouldShutdown set to {m_ShouldShutdown}, is listening {NetworkManager.Singleton.IsListening}, is connected client {NetworkManager.Singleton.IsConnectedClient}");
@@ -182,7 +176,7 @@ public class TestCoordinator : NetworkBehaviour
         var startWaitTime = Time.time;
         return () =>
         {
-            if (Time.time - startWaitTime > maxWaitTimeout)
+            if (Time.time - startWaitTime > MaxWaitTimeoutSec)
             {
                 if (useTimeoutException)
                 {
@@ -209,7 +203,7 @@ public class TestCoordinator : NetworkBehaviour
         var startWaitTime = Time.time;
         return () =>
         {
-            if (Time.time - startWaitTime > maxWaitTimeout)
+            if (Time.time - startWaitTime > MaxWaitTimeoutSec)
             {
                 if (useTimeoutException)
                 {

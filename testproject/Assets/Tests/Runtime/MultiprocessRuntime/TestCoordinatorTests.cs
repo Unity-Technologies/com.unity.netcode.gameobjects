@@ -1,4 +1,3 @@
-using System;
 using System.Collections;
 using System.Linq;
 using NUnit.Framework;
@@ -11,14 +10,14 @@ namespace MLAPI.MultiprocessRuntimeTests
     [TestFixture(2)]
     public class TestCoordinatorTests : BaseMultiprocessTests
     {
-        private int m_NbWorkers;
-        protected override int NbWorkers => m_NbWorkers;
+        private int m_WorkerCount;
+        protected override int WorkerCount => m_WorkerCount;
 
         protected override bool m_IsPerformanceTest => false;
 
-        public TestCoordinatorTests(int nbWorkers)
+        public TestCoordinatorTests(int workerCount)
         {
-            m_NbWorkers = nbWorkers;
+            m_WorkerCount = workerCount;
         }
 
         private static void ExecuteSimpleCoordinatorTest()
@@ -39,7 +38,7 @@ namespace MLAPI.MultiprocessRuntimeTests
             TestCoordinator.Instance.InvokeFromMethodActionRpc(ExecuteSimpleCoordinatorTest);
 
             var nbResults = 0;
-            for (int i = 0; i < NbWorkers; i++) // wait and test for the two clients
+            for (int i = 0; i < WorkerCount; i++) // wait and test for the two clients
             {
                 yield return new WaitUntil(TestCoordinator.ResultIsSet());
 
@@ -47,7 +46,7 @@ namespace MLAPI.MultiprocessRuntimeTests
                 Assert.Greater(result, 0f);
                 nbResults++;
             }
-            Assert.That(nbResults, Is.EqualTo(NbWorkers));
+            Assert.That(nbResults, Is.EqualTo(WorkerCount));
         }
 
         [UnityTest]
@@ -56,7 +55,7 @@ namespace MLAPI.MultiprocessRuntimeTests
             TestCoordinator.Instance.InvokeFromMethodActionRpc(ExecuteWithArgs, 99);
             var nbResults = 0;
 
-            for (int i = 0; i < NbWorkers; i++) // wait and test for the two clients
+            for (int i = 0; i < WorkerCount; i++) // wait and test for the two clients
             {
                 yield return new WaitUntil(TestCoordinator.ResultIsSet());
 
@@ -64,7 +63,7 @@ namespace MLAPI.MultiprocessRuntimeTests
                 Assert.That(result, Is.EqualTo(99));
                 nbResults++;
             }
-            Assert.That(nbResults, Is.EqualTo(NbWorkers));
+            Assert.That(nbResults, Is.EqualTo(WorkerCount));
         }
     }
 }
