@@ -18,7 +18,7 @@ namespace MLAPI.MultiprocessRuntimeTests
     {
         protected virtual bool m_IsPerformanceTest => true;
 
-        private bool ShouldIgnoreTests => m_IsPerformanceTest && Application.isEditor;
+        private bool ShouldIgnoreTests => m_IsPerformanceTest && Application.isEditor || MultiprocessOrchestration.IsUsingUTR(); // todo remove UTR check once we have proper automation
 
         /// <summary>
         /// Implement this to specify the amount of workers to spawn from your main test runner
