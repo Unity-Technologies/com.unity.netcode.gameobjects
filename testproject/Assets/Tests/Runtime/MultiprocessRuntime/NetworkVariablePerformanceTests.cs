@@ -15,7 +15,7 @@ namespace MLAPI.MultiprocessRuntimeTests
 {
     public class NetworkVariablePerformanceTests : BaseMultiprocessTests
     {
-        protected override int NbWorkers { get; } = 1;
+        protected override int WorkerCount { get; } = 1;
         private const int k_MaxObjectsToSpawn = 10000;
         private List<OneNetVar> m_ServerSpawnedObjects = new List<OneNetVar>();
         private static GameObjectPool<OneNetVar> s_ServerObjectPool;
@@ -140,7 +140,7 @@ namespace MLAPI.MultiprocessRuntimeTests
             {
                 // wait for spawn results coming from clients
                 int finishedCount = 0;
-                if (TestCoordinator.AllClientIdsWithResults.Count != NbWorkers)
+                if (TestCoordinator.AllClientIdsWithResults.Count != WorkerCount)
                 {
                     return false;
                 }
@@ -154,7 +154,7 @@ namespace MLAPI.MultiprocessRuntimeTests
                     }
                 }
 
-                return finishedCount == NbWorkers;
+                return finishedCount == WorkerCount;
             });
             float serverLastResult = 0;
             yield return new ExecuteStepInContext(StepExecutionContext.Server, bytes =>
@@ -169,7 +169,7 @@ namespace MLAPI.MultiprocessRuntimeTests
                     Assert.That(lastResult, Is.EqualTo(nbObjects));
                 }
 
-                Assert.That(TestCoordinator.AllClientIdsWithResults.Count, Is.EqualTo(NbWorkers));
+                Assert.That(TestCoordinator.AllClientIdsWithResults.Count, Is.EqualTo(WorkerCount));
                 foreach (var (clientId, result) in TestCoordinator.ConsumeCurrentResult())
                 {
                     Measure.Custom(allocated, result);
