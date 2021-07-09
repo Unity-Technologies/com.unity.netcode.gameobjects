@@ -143,9 +143,9 @@ public class TestCoordinator : NetworkBehaviour
         }
     }
 
-    public static IEnumerable<float> ConsumeCurrentResult(ulong clientID)
+    public static IEnumerable<float> ConsumeCurrentResult(ulong clientId)
     {
-        var allResults = Instance.m_TestResultsLocal[clientID];
+        var allResults = Instance.m_TestResultsLocal[clientId];
         while (allResults.Count > 0)
         {
             var toReturn = allResults[0];
@@ -245,9 +245,9 @@ public class TestCoordinator : NetworkBehaviour
     }
 
     [ClientRpc]
-    public void TriggerActionIDClientRpc(string actionID, byte[] args, ClientRpcParams clientRpcParams = default)
+    public void TriggerActionIdClientRpc(string actionId, byte[] args, ClientRpcParams clientRpcParams = default)
     {
-        Debug.Log($"received RPC from server, client side triggering action ID {actionID}");
+        Debug.Log($"received RPC from server, client side triggering action ID {actionId}");
         try
         {
             ExecuteStepInContext.allActions[actionID].Invoke(args);
