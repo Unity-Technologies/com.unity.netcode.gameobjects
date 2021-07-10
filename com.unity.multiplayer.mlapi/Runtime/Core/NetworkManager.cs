@@ -823,11 +823,13 @@ namespace MLAPI
                 NetworkTickSystem.Dispose();
                 NetworkTickSystem = null;
             }
-
+            // NSS TODO: Remove this once MTT-860 is addressed or before PR
 #if !UNITY_2020_2_OR_NEWER
-            NetworkProfiler.Stop();
+            if (IsListening)
+            {
+                NetworkProfiler.Stop();
+            }
 #endif
-            IsListening = false;
             IsServer = false;
             IsClient = false;
             NetworkConfig.NetworkTransport.OnTransportEvent -= HandleRawTransportPoll;
@@ -870,8 +872,14 @@ namespace MLAPI
                 BehaviourUpdater = null;
             }
 
-            //The Transport is set during Init time, thus it is possible for the Transport to be null
-            NetworkConfig?.NetworkTransport?.Shutdown();
+            // NSS TODO: Remove this once MTT-860 is addressed or before PR
+            if (IsListening)
+            {
+                //The Transport is set during initialization, thus it is possible for the Transport to be null
+                NetworkConfig?.NetworkTransport?.Shutdown();
+            }
+
+            IsListening = false;
         }
 
         // INetworkUpdateSystem
@@ -1649,8 +1657,6 @@ namespace MLAPI
                 //    }
                 //}
 
-
-
                 if (ownerClientId != ServerClientId)
                 {
                     // Don't send any data over the wire if the host "connected"
@@ -1677,6 +1683,9 @@ namespace MLAPI
                     }
 
                     // Now send the client synchronization scene event
+                    // NSS TODO: This might be something we want to be optional and can be "user controlled"
+                    // as well we might want to have the client receive the approved connection and then request to be synchronized which
+                    // would kick this process off.
                     if (NetworkConfig.EnableSceneManagement)
                     {
                         SceneManager.SynchronizeNetworkObjects(ownerClientId);
@@ -1691,6 +1700,7 @@ namespace MLAPI
                     return;
                 }
 
+                // NSS TODO: We might want to delay this notification until the client is completely synchronized
                 //Inform old clients of the new player
                 foreach (KeyValuePair<ulong, NetworkClient> clientPair in ConnectedClients)
                 {

@@ -612,10 +612,12 @@ namespace MLAPI.SceneManagement
         }
 
 
-
-
-
         private readonly List<NetworkObject> m_ObservedObjects = new List<NetworkObject>();
+
+        /// <summary>
+        /// Server Side: This is used for late joining players and players that have just had their connection approved
+        /// </summary>
+        /// <param name="ownerClientId"></param>
         internal void SynchronizeNetworkObjects(ulong ownerClientId)
         {
             m_ObservedObjects.Clear();
@@ -643,13 +645,6 @@ namespace MLAPI.SceneManagement
                 if (activeScene == scene)
                 {
                     ClientSynchEventData.SceneIndex = malpiSceneIndex;
-                }
-                else
-                {
-                    if (!ClientSynchEventData.AdditiveScenes.Contains(malpiSceneIndex))
-                    {
-                        ClientSynchEventData.AdditiveScenes.Add(malpiSceneIndex);
-                    }
                 }
 
                 foreach (var networkObject in m_ObservedObjects)
@@ -685,18 +680,10 @@ namespace MLAPI.SceneManagement
                 return;
             }
 
-
             var activeScene = SceneManager.GetActiveScene();
-
-            IsSpawnedObjectsPendingInDontDestroyOnLoad = true;
 
             if (sceneName != activeScene.name)
             {
-                //if (SceneEventData.LoadSceneMode == LoadSceneMode.Single)
-                //{
-                //    // Move ALL NetworkObjects to the temp scene
-                //    MoveObjectsToDontDestroyOnLoad();
-                //}
                 var sceneLoad = SceneManager.LoadSceneAsync(sceneName, sceneIndex == SceneEventData.SceneIndex ? SceneEventData.LoadSceneMode:LoadSceneMode.Additive);
                 s_NextSceneName = sceneName;
                 sceneLoad.completed += asyncOp2 => ClientLoadedSynchronization(sceneIndex);
@@ -972,8 +959,6 @@ namespace MLAPI.SceneManagement
         public LoadSceneMode LoadSceneMode;
         public Guid SwitchSceneGuid;
 
-        public List<uint> AdditiveScenes;
-
         public uint SceneIndex;
         public ulong TargetClientId;
 
@@ -1055,8 +1040,6 @@ namespace MLAPI.SceneManagement
 
             if (SceneEventType == SceneEventTypes.SYNC)
             {
-                writer.WriteArrayPacked(AdditiveScenes.ToArray());
-                Debug.Log($"Wrote:{AdditiveScenes.Count} additive scenes to be loaded.");
                 writer.WriteInt32Packed(m_SceneNetworkObjects.Count());
 
                 if (m_SceneNetworkObjects.Count() > 0)
@@ -1066,22 +1049,27 @@ namespace MLAPI.SceneManagement
                     {
                         writer.WriteUInt32Packed(keypair.Key);
                         msg += $"Scene ID [{keypair.Key}] NumNetworkObjects:[{keypair.Value.Count}]\n";
-                        writer.WriteUInt32Packed((uint)keypair.Value.Count);
+                        writer.WriteInt32Packed(keypair.Value.Count);
                         var positionStart = writer.GetStream().Position;
-                        // Size Place Holder
-                        writer.WriteUInt64Packed(0);
+                        // Size Place Holder (For offset purposes, needs to not be packed)
+                        writer.WriteUInt32(0);
+                        var totalBytes = 0;
                         foreach (var networkObject in keypair.Value)
                         {
-                            msg += $"Included: {networkObject.name} \n";
+                            var noStart = writer.GetStream().Position;
+
                             networkObject.SerializeSceneObject(writer, TargetClientId);
+                            var noStop = writer.GetStream().Position;
+                            totalBytes += (int)(noStop - noStart);
+                            msg += $"Included: {networkObject.name} Bytes: {totalBytes} \n";
                         }
                         var positionEnd = writer.GetStream().Position;
-                        var bytesWritten = (ulong)(positionEnd - (positionStart + sizeof(ulong)));
+                        var bytesWritten = (uint)(positionEnd - (positionStart + sizeof(uint)));
                         writer.GetStream().Position = positionStart;
                         // Write the total size written to the stream by NetworkObjects being serialized
-                        writer.WriteUInt64Packed(bytesWritten);
+                        writer.WriteUInt32(bytesWritten);
                         writer.GetStream().Position = positionEnd;
-                        msg += $"Wrote [{bytesWritten}] bytes of NetworkObject data.\n";
+                        msg += $"Wrote [{bytesWritten}] bytes of NetworkObject data. Verification: {totalBytes}\n";
                     }
 
                     Debug.Log(msg);
@@ -1126,8 +1114,6 @@ namespace MLAPI.SceneManagement
 
             if (SceneEventType == SceneEventTypes.SYNC)
             {
-                var array = reader.ReadUIntArrayPacked();
-                AdditiveScenes = new List<uint>(array);
                 var keyPairCount = reader.ReadInt32Packed();
 
                 if (keyPairCount > 0)
@@ -1148,13 +1134,13 @@ namespace MLAPI.SceneManagement
                         for (int i = 0; i < keyPairCount; i++)
                         {
                             var key = reader.ReadUInt32Packed();
-                            var count = reader.ReadUInt32Packed();
-                            var bytesToRead = reader.ReadUInt64Packed();  // So we know how much to read
+                            var count = reader.ReadInt32Packed();
+                            // how many bytes to read for this scene set
+                            var bytesToRead = (ulong)reader.ReadUInt32();
                             // We store off the current position of the stream as it pertains to the scene relative NetworkObjects
                             m_SceneNetworkObjectDataOffsets.Add(key, InternalBuffer.Position);
-                            writer.WriteUInt32Packed(count);
-                            var networkObjectsBuffer = reader.ReadByteArray(null, (long)bytesToRead);
-                            writer.WriteByteArray(networkObjectsBuffer, (long)bytesToRead);
+                            writer.WriteInt32Packed(count);
+                            writer.ReadAndWrite(reader, (long)bytesToRead);
                         }
                     }
                 }
@@ -1171,15 +1157,15 @@ namespace MLAPI.SceneManagement
                 using (var reader = PooledNetworkReader.Get(InternalBuffer))
                 {
                     // Process all NetworkObjects for this scene
-                    var newObjectsCount = reader.ReadUInt32Packed();
+                    var newObjectsCount = reader.ReadInt32Packed();
 
                     for (int i = 0; i < newObjectsCount; i++)
                     {
-                        NetworkObject.DeserializeSceneObject(InternalBuffer as NetworkBuffer, reader, networkManager);
+                        NetworkObject.DeserializeSceneObject(InternalBuffer, reader, networkManager);
                     }
                 }
 
-                // Remove this entry
+                // Remove each entry after it is processed so we know when we are done
                 m_SceneNetworkObjectDataOffsets.Remove(sceneId);
             }
         }
@@ -1226,8 +1212,6 @@ namespace MLAPI.SceneManagement
         public SceneEventData()
         {
             InternalBuffer = NetworkBufferPool.GetBuffer();
-            AdditiveScenes = new List<uint>();
-
         }
     }
 }
