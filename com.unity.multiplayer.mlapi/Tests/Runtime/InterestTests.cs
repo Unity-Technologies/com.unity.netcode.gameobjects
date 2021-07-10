@@ -8,6 +8,7 @@ using NUnit.Framework;
 using MLAPI.Connection;
 using MLAPI.Configuration;
 using MLAPI.Interest;
+using Debug = UnityEngine.Debug;
 
 namespace MLAPI.RuntimeTests
 {
@@ -306,19 +307,60 @@ namespace MLAPI.RuntimeTests
             var distinctValues = new HashSet<DateTime>();
             var stopWatch = Stopwatch.StartNew();
 
-            var t1 = clock.UtcNow;
-            while (stopWatch.Elapsed < duration)
+            var results = new HashSet<NetworkObject>();
+            var nc = new NetworkClient()
             {
-                distinctValues.Add(clock.UtcNow);
+                ClientId = 1,
+            };
+
+            var t = clock.UtcNow;
+            for (var z = 0; z < 10000; z++)
+            {
+                NetworkManager.Singleton.InterestManager.QueryFor(nc, results);
             }
 
-            var t_elapsed = clock.UtcNow - t1;
-            // Accuracy: 0.000279 ms
-            UnityEngine.Debug.Log("Samples: " + distinctValues.Count);
-            UnityEngine.Debug.Log($"Accuracy: {stopWatch.Elapsed.TotalMilliseconds / distinctValues.Count:0.000000} ms");
-            UnityEngine.Debug.Log($"T unity: {t_elapsed} ms");
-        }
+            var tElapsed = clock.UtcNow - t;
+            Debug.Log($"Time: {tElapsed} ms");
 
+            var objectsBeforeAdd = results.Count;
+
+            var objsToMakePerNode = 10;
+            var nodesToMake = 100;
+            var objsToMake = objsToMakePerNode * nodesToMake;
+            List<InterestNode> nodes = new List<InterestNode>();
+            List<NetworkObject> objs = new List<NetworkObject>();
+
+            for (var i = 0; i < nodesToMake; ++i)
+            {
+                nodes.Add(ScriptableObject.CreateInstance<InterestNodeStatic>());
+                for (var j = 0; j < objsToMakePerNode; j++)
+                {
+                    var (obj, guid) = MakeGameInterestObjectHelper(nodes[i]);
+                    NetworkManagerHelper.SpawnNetworkObject(guid);
+                    objs.Add(obj);
+                }
+            }
+
+            var (playerObj, playerObjGuid) = MakeGameInterestObjectHelper();
+            nc.PlayerObject = playerObj;
+            NetworkManagerHelper.SpawnNetworkObject(playerObjGuid);
+
+            results.Clear();
+            NetworkManager.Singleton.InterestManager.QueryFor(nc, results);
+
+            // reality check
+            var hits = results.Count;
+            Debug.Log(hits);
+            Assert.True(hits == objsToMake + objectsBeforeAdd + 1);
+
+            // each of the nodes should have returned objsToMakePerNode
+            for (var i = 0; i < nodesToMake; ++i)
+            {
+                var nodeResults = new HashSet<NetworkObject>();
+                nodes[i].QueryFor(nc, nodeResults);
+                Assert.True(nodeResults.Count == objsToMakePerNode);
+            }
+        }
 
         [Test]
         public void CheckPlainReplication()
