@@ -7,6 +7,7 @@ namespace MLAPI.Connection
     /// </summary>
     public class NetworkClient
     {
+        public bool IsReadyToReceiveMessages;
         /// <summary>
         /// The ClientId of the NetworkClient
         /// </summary>

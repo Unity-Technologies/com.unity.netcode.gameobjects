@@ -250,8 +250,9 @@ MonoBehaviour:
   SpawnsPerSecond: 1
   PoolSize: 32
   ObjectSpeed: 8
-  EnableHandler: 0
+  EnableHandler: 1
   RegisterUsingNetworkObject: 0
-  ServerObjectToPool: {fileID: 7900845470658144705, guid: 9f2cc6554ae21e3498fb4cc28a07108d,
+  ServerObjectToPool: {fileID: 5054079819822531224, guid: e04a7aaf01a4ad145a945161a18bf49c,
     type: 3}
-  ClientObjectToPool: {fileID: 0}
+  ClientObjectToPool: {fileID: 7900845470658144705, guid: 9f2cc6554ae21e3498fb4cc28a07108d,
+    type: 3}

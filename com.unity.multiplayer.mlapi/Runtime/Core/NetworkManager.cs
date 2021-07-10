@@ -79,6 +79,35 @@ namespace MLAPI
         }
 
         /// <summary>
+        /// Returns the GameObject to use as the override as could be defined within the NetworkPrefab list
+        /// Note: This should be used to create GameObject pools (with NetworkObject components) under the
+        /// scenario where a Host is being used as the Host spawns everything locally and as such the override
+        /// will not be applied during the typical client side invocation of CreateLocalNetworkObject for the
+        /// CREATE_OBECT command.
+        /// </summary>
+        /// <param name="networkObject"></param>
+        /// <returns></returns>
+        public GameObject GetNetworkPrefabOverride(GameObject gameObject)
+        {
+            var networkObject = gameObject.GetComponent<NetworkObject>();
+            if (networkObject != null)
+            {
+                if (NetworkConfig.NetworkPrefabOverrideLinks.ContainsKey(networkObject.GlobalObjectIdHash))
+                {
+                    switch (NetworkConfig.NetworkPrefabOverrideLinks[networkObject.GlobalObjectIdHash].Override)
+                    {
+                        case NetworkPrefabOverride.Hash:
+                        case NetworkPrefabOverride.Prefab:
+                            {
+                                return NetworkConfig.NetworkPrefabOverrideLinks[networkObject.GlobalObjectIdHash].OverridingTargetPrefab;
+                            }
+                    }
+                }
+            }
+            return gameObject;
+        }
+
+        /// <summary>
         /// A synchronized time, represents the time in seconds since the server application started. Is replicated across all clients
         /// </summary>
         public float NetworkTime => Time.unscaledTime + m_CurrentNetworkTimeOffset;
@@ -427,8 +456,6 @@ namespace MLAPI
                     SceneManager.SceneIndexToString.Add((uint)i, NetworkConfig.RegisteredScenes[i]);
                     SceneManager.SceneNameToIndex.Add(NetworkConfig.RegisteredScenes[i], (uint)i);
                 }
-
-                SceneManager.SetCurrentSceneIndex();
             }
 
             // This is used to remove entries not needed or invalid
@@ -1619,8 +1646,15 @@ namespace MLAPI
 #endif
         }
 
-        private readonly List<NetworkObject> m_ObservedObjects = new List<NetworkObject>();
-
+        /// <summary>
+        /// Server Side: Handles the approval of a client
+        /// </summary>
+        /// <param name="ownerClientId"></param>
+        /// <param name="createPlayerObject"></param>
+        /// <param name="playerPrefabHash"></param>
+        /// <param name="approved"></param>
+        /// <param name="position"></param>
+        /// <param name="rotation"></param>
         internal void HandleApproval(ulong ownerClientId, bool createPlayerObject, uint? playerPrefabHash, bool approved, Vector3? position, Quaternion? rotation)
         {
             if (approved)
@@ -1646,51 +1680,27 @@ namespace MLAPI
                     ConnectedClients[ownerClientId].PlayerObject = networkObject;
                 }
 
-                //m_ObservedObjects.Clear();
-
-                //foreach (var sobj in SpawnManager.SpawnedObjectsList)
-                //{
-                //    if (ownerClientId == ServerClientId || sobj.CheckObjectVisibility == null || sobj.CheckObjectVisibility(ownerClientId))
-                //    {
-                //        m_ObservedObjects.Add(sobj);
-                //        sobj.Observers.Add(ownerClientId);
-                //    }
-                //}
-
+                // Don't send the CONNECTION_APPROVED message if this is the host that connected locally
                 if (ownerClientId != ServerClientId)
                 {
-                    // Don't send any data over the wire if the host "connected"
+
                     using (var buffer = PooledNetworkBuffer.Get())
                     using (var writer = PooledNetworkWriter.Get(buffer))
                     {
                         writer.WriteUInt64Packed(ownerClientId);
-
-                        //if (NetworkConfig.EnableSceneManagement)
-                        //{
-                        //    writer.WriteUInt32Packed(NetworkSceneManager.CurrentSceneIndex);
-                        //    writer.WriteByteArray(NetworkSceneManager.CurrentSceneSwitchProgressGuid.ToByteArray());
-                        //}
-
                         writer.WriteSinglePacked(Time.realtimeSinceStartup);
-                        //writer.WriteUInt32Packed((uint)m_ObservedObjects.Count);
-
-                        //for (int i = 0; i < m_ObservedObjects.Count; i++)
-                        //{
-                        //    m_ObservedObjects[i].SerializeSceneObject(writer, ownerClientId);
-                        //}
-
                         MessageSender.Send(ownerClientId, NetworkConstants.CONNECTION_APPROVED, NetworkChannel.Internal, buffer);
                     }
 
-                    // Now send the client synchronization scene event
-                    // NSS TODO: This might be something we want to be optional and can be "user controlled"
-                    // as well we might want to have the client receive the approved connection and then request to be synchronized which
-                    // would kick this process off.
+                    // Now inform the newly joined client of the scenes to be loaded as well as synchronize it with all relevant in-scene and dynamically spawned NetworkObjects
                     if (NetworkConfig.EnableSceneManagement)
                     {
                         SceneManager.SynchronizeNetworkObjects(ownerClientId);
                     }
-
+                }
+                else
+                {
+                    ConnectedClients[ownerClientId].IsReadyToReceiveMessages = true;
                 }
 
                 OnClientConnectedCallback?.Invoke(ownerClientId);
@@ -1700,58 +1710,8 @@ namespace MLAPI
                     return;
                 }
 
-                // NSS TODO: We might want to delay this notification until the client is completely synchronized
-                //Inform old clients of the new player
-                foreach (KeyValuePair<ulong, NetworkClient> clientPair in ConnectedClients)
-                {
-                    if (clientPair.Key == ownerClientId ||
-                        ConnectedClients[ownerClientId].PlayerObject == null ||
-                        !ConnectedClients[ownerClientId].PlayerObject.Observers.Contains(clientPair.Key))
-                    {
-                        continue; //The new client.
-                    }
-
-                    using (var buffer = PooledNetworkBuffer.Get())
-                    using (var writer = PooledNetworkWriter.Get(buffer))
-                    {
-                        writer.WriteBool(true);
-                        writer.WriteUInt64Packed(ConnectedClients[ownerClientId].PlayerObject.NetworkObjectId);
-                        writer.WriteUInt64Packed(ownerClientId);
-
-                        //Does not have a parent
-                        writer.WriteBool(false);
-
-                        // This is not a scene object
-                        writer.WriteBool(false);
-
-                        writer.WriteUInt32Packed(playerPrefabHash ?? NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash);
-
-                        if (ConnectedClients[ownerClientId].PlayerObject.IncludeTransformWhenSpawning == null || ConnectedClients[ownerClientId].PlayerObject.IncludeTransformWhenSpawning(ownerClientId))
-                        {
-                            writer.WriteBool(true);
-                            writer.WriteSinglePacked(ConnectedClients[ownerClientId].PlayerObject.transform.position.x);
-                            writer.WriteSinglePacked(ConnectedClients[ownerClientId].PlayerObject.transform.position.y);
-                            writer.WriteSinglePacked(ConnectedClients[ownerClientId].PlayerObject.transform.position.z);
-
-                            writer.WriteSinglePacked(ConnectedClients[ownerClientId].PlayerObject.transform.rotation.eulerAngles.x);
-                            writer.WriteSinglePacked(ConnectedClients[ownerClientId].PlayerObject.transform.rotation.eulerAngles.y);
-                            writer.WriteSinglePacked(ConnectedClients[ownerClientId].PlayerObject.transform.rotation.eulerAngles.z);
-                        }
-                        else
-                        {
-                            writer.WriteBool(false);
-                        }
-
-                        writer.WriteBool(false); //No payload data
-
-                        if (NetworkConfig.EnableNetworkVariable)
-                        {
-                            ConnectedClients[ownerClientId].PlayerObject.WriteNetworkVariableData(buffer, clientPair.Key);
-                        }
-
-                        MessageSender.Send(clientPair.Key, NetworkConstants.ADD_OBJECT, NetworkChannel.Internal, buffer);
-                    }
-                }
+                // Separating this into a contained function call for potential further future separation of when this notification is sent.
+                NotifyPlayerConnected(ownerClientId, playerPrefabHash ?? NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash);
             }
             else
             {
@@ -1760,7 +1720,11 @@ namespace MLAPI
             }
         }
 
-
+        /// <summary>
+        /// Notifies all existing clients that a new player has joined
+        /// </summary>
+        /// <param name="clientId">new player client identifier</param>
+        /// <param name="playerPrefabHash">the prefab GlobalObjectIdHash value for this player</param>
         internal void NotifyPlayerConnected(ulong clientId, uint playerPrefabHash)
         {
             foreach (KeyValuePair<ulong, NetworkClient> clientPair in ConnectedClients)

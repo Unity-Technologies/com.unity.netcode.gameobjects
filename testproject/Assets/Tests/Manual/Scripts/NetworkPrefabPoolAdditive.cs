@@ -168,13 +168,21 @@ namespace TestProject.ManualTests
         /// </summary>
         public void InitializeObjectPool()
         {
+            // Start by defining the server only network prefab for pooling
             m_ObjectToSpawn = ServerObjectToPool;
-            if (!IsServer && EnableHandler)
+
+            // If we are a host, then we have to get the NetworkPrefab Override (if one exists)
+            if (IsHost && !EnableHandler)
+            {
+                m_ObjectToSpawn = NetworkManager.GetNetworkPrefabOverride(m_ObjectToSpawn);
+            }
+            // If we are a client and we are using the custom prefab override handler, then we need to use that for our pool
+            else if (IsClient && EnableHandler)
             {
                 m_ObjectToSpawn = ClientObjectToPool;
             }
 
-            if (IsServer)
+            if (EnableHandler || IsServer)
             {
                 m_ObjectPool = new List<GameObject>(PoolSize);
 
@@ -193,27 +201,17 @@ namespace TestProject.ManualTests
         {
             if (m_ObjectPool != null)
             {
-                if (m_IsSpawningObjects)
+                foreach (var obj in m_ObjectPool)
                 {
-                    foreach (var obj in m_ObjectPool)
+                    if (!obj.activeInHierarchy)
                     {
-                        if (m_IsSpawningObjects)
-                        {
-                            if (!obj.activeInHierarchy)
-                            {
-                                obj.SetActive(true);
-                                return obj;
-                            }
-                        }
-                        else
-                        {
-                            return null;
-                        }
+                        obj.SetActive(true);
+                        return obj;
                     }
-                    var newObj = AddNewInstance();
-                    newObj.SetActive(true);
-                    return newObj;
                 }
+                var newObj = AddNewInstance();
+                newObj.SetActive(true);
+                return newObj;
             }
             return null;
         }

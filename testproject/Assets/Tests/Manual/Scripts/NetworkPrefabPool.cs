@@ -108,7 +108,14 @@ namespace TestProject.ManualTests
             if (SwitchScene)
             {
                 SwitchScene.OnSceneSwitchBegin -= OnSceneSwitchBegin;
+
+                SwitchScene.OnSceneSwitchCompleted -= SwitchScene_OnSceneSwitchCompleted;
             }
+        }
+
+        private void SwitchScene_OnSceneSwitchCompleted()
+        {
+            InitializeObjectPool();
         }
 
         // Start is called before the first frame update
@@ -122,6 +129,7 @@ namespace TestProject.ManualTests
             if (SwitchScene)
             {
                 SwitchScene.OnSceneSwitchBegin += OnSceneSwitchBegin;
+                SwitchScene.OnSceneSwitchCompleted += SwitchScene_OnSceneSwitchCompleted;
             }
 
             //Call this again in case we didn't have access to the NetworkManager already (i.e. first scene loaded)
@@ -180,14 +188,21 @@ namespace TestProject.ManualTests
         /// </summary>
         public void InitializeObjectPool()
         {
-
+            // Start by defining the server only network prefab for pooling
             m_ObjectToSpawn = ServerObjectToPool;
-            if (!IsServer && EnableHandler)
+
+            // If we are a host, then we have to get the NetworkPrefab Override (if one exists)
+            if (IsHost && !EnableHandler)
+            {
+                m_ObjectToSpawn = NetworkManager.GetNetworkPrefabOverride(ServerObjectToPool);
+            }
+            // If we are a client and we are using the custom prefab override handler, then we need to use that for our pool
+            else if (IsClient && EnableHandler)
             {
                 m_ObjectToSpawn = ClientObjectToPool;
             }
 
-            if (IsServer)
+            if (EnableHandler || IsServer)
             {
                 m_ObjectPool = new List<GameObject>(PoolSize);
 
@@ -343,9 +358,13 @@ namespace TestProject.ManualTests
         public NetworkObject HandleNetworkPrefabSpawn(ulong ownerClientId, Vector3 position, Quaternion rotation)
         {
             var obj = m_PrefabPool.GetObject();
-            obj.transform.position = position;
-            obj.transform.rotation = rotation;
-            return obj.GetComponent<NetworkObject>();
+            if (obj != null)
+            {
+                obj.transform.position = position;
+                obj.transform.rotation = rotation;
+                return obj.GetComponent<NetworkObject>();
+            }
+            return null;
         }
         public void HandleNetworkPrefabDestroy(NetworkObject networkObject)
         {
