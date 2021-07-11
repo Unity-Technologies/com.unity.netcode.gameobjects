@@ -246,11 +246,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   RandomMovement: 0
   AutoSpawnEnable: 1
+  SpawnInSourceScene: 1
   InitialSpawnDelay: 0.2
   SpawnsPerSecond: 1
   PoolSize: 32
   ObjectSpeed: 8
-  EnableHandler: 0
+  EnableHandler: 1
   RegisterUsingNetworkObject: 0
   ServerObjectToPool: {fileID: 1086419352113069865, guid: 8a415e2c2210434458836779302bc4d3,
     type: 3}

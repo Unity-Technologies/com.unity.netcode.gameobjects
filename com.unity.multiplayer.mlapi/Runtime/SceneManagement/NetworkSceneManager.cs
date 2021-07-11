@@ -28,6 +28,8 @@ namespace MLAPI.SceneManagement
         /// </summary>
         public delegate void SceneSwitchStartedDelegate(AsyncOperation operation);
 
+        public delegate void AdditiveSceneEventDelegate(AsyncOperation operation, string sceneName, bool isLoading);
+
         /// <summary>
         /// Delegate for when a client has reported to the server that it has completed scene transition
         /// <see cref='OnNotifyServerClientLoadedScene'/>
@@ -50,6 +52,8 @@ namespace MLAPI.SceneManagement
         /// Event that is invoked when the scene is switched
         /// </summary>
         public event SceneSwitchedDelegate OnSceneSwitched;
+
+        public event AdditiveSceneEventDelegate OnAdditiveSceneEvent;
 
         /// <summary>
         /// Event that is invoked when a local scene switch has started
@@ -105,7 +109,7 @@ namespace MLAPI.SceneManagement
         /// </summary>
         /// <param name="scene"></param>
         /// <returns>MLAPI Scene Index</returns>
-        private uint GetMLAPISceneIndexFromScene(Scene scene)
+        internal uint GetMLAPISceneIndexFromScene(Scene scene)
         {
             uint index = 0;
             if (!SceneNameToIndex.TryGetValue(scene.name, out index))
@@ -126,7 +130,7 @@ namespace MLAPI.SceneManagement
         /// </summary>
         /// <param name="sceneIndex">MLAPI Scene Index</param>
         /// <returns>scene name</returns>
-        private string GetSceneNameFromMLAPISceneIndex(uint sceneIndex)
+        internal string GetSceneNameFromMLAPISceneIndex(uint sceneIndex)
         {
             var sceneName = string.Empty;
             if (!SceneIndexToString.TryGetValue(sceneIndex, out sceneName))
@@ -276,7 +280,8 @@ namespace MLAPI.SceneManagement
             AsyncOperation sceneUnload = SceneManager.UnloadSceneAsync(sceneToUnload);
             sceneUnload.completed += (AsyncOperation asyncOp2) => { OnSceneUnloaded(); };
             switchSceneProgress.SetSceneLoadOperation(sceneUnload);
-            OnSceneSwitchStarted?.Invoke(sceneUnload);
+
+            OnAdditiveSceneEvent?.Invoke(sceneUnload, sceneName, false);
 
             //Return our scene progress instance
             return switchSceneProgress;
@@ -411,7 +416,14 @@ namespace MLAPI.SceneManagement
             sceneLoad.completed += (AsyncOperation asyncOp2) => { OnSceneLoaded(sceneName); };
             switchSceneProgress.SetSceneLoadOperation(sceneLoad);
             // NSS TODO: Make a single unified notification callback
-            OnSceneSwitchStarted?.Invoke(sceneLoad);
+            if (loadSceneMode == LoadSceneMode.Single)
+            {
+                OnSceneSwitchStarted?.Invoke(sceneLoad);
+            }
+            else
+            {
+                OnAdditiveSceneEvent?.Invoke(sceneLoad, sceneName, true);
+            }
         }
 
         /// <summary>
@@ -577,6 +589,7 @@ namespace MLAPI.SceneManagement
             OnSceneSwitched?.Invoke();
         }
 
+
         /// <summary>
         /// Server Side Only:
         /// This is used for late joining players and players that have just had their connection approved
@@ -595,7 +608,7 @@ namespace MLAPI.SceneManagement
                 }
             }
 
-            ClientSynchEventData.InitializeForSynch();
+            ClientSynchEventData.InitializeForSynch(m_NetworkManager);
             ClientSynchEventData.LoadSceneMode = LoadSceneMode.Single;
             var activeScene = SceneManager.GetActiveScene();
             ClientSynchEventData.SceneEventType = SceneEventData.SceneEventTypes.SYNC;

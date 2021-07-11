@@ -197,13 +197,27 @@ namespace TestProject.ManualTests
                 m_ObjectToSpawn = NetworkManager.GetNetworkPrefabOverride(ServerObjectToPool);
             }
             // If we are a client and we are using the custom prefab override handler, then we need to use that for our pool
-            else if (IsClient && EnableHandler)
+            // This also checks to see if the ClientObjectToPool is set, if not then we are just using the custom prefab override handler
+            // to assure the client-side uses the NetworkObject pool as opposed to always spawning and destroying NetworkObjects.
+            else if (IsClient && EnableHandler && ClientObjectToPool != null)
             {
                 m_ObjectToSpawn = ClientObjectToPool;
             }
 
+            // If we are enabling the handler, then we can control which NetworkObject will be used for spawning.
+            // If we are the server but do not have a handler, then we use a less efficient server-side only pool (clients will instantiate and destroy on their side)
             if (EnableHandler || IsServer)
             {
+                // In order to account for any NetworkPrefab override defined within the NetworkManager, we do one last check to assure we are creating a pool
+                // of the right NetworkPrefab objects, otherwise GetNetworkPrefabOverride will return back the same m_ObjectToSpawn
+                // NOTE: We filter out the case where we are a server, as the server will send the original NetworkPrefab GlobalObjectIdHash.
+                // If we enable this for dedicated server, then the server would spawn the override prefab which will cause the client to create a pool that is
+                // never used and the client(s) will spawn and destroy GameObjects outside of the pool.
+                if (EnableHandler && IsClient)
+                {
+                    m_ObjectToSpawn = NetworkManager.GetNetworkPrefabOverride(m_ObjectToSpawn);
+                }
+
                 m_ObjectPool = new List<GameObject>(PoolSize);
 
                 for (int i = 0; i < PoolSize; i++)
@@ -250,7 +264,7 @@ namespace TestProject.ManualTests
         }
 
         /// <summary>
-        /// Starts the
+        /// Starts spawning
         /// </summary>
         private void StartSpawningBoxes()
         {

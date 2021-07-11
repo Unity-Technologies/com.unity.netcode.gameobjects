@@ -36,6 +36,8 @@ namespace MLAPI.SceneManagement
         private Dictionary<uint, long> m_SceneNetworkObjectDataOffsets;
         internal PooledNetworkBuffer InternalBuffer;
 
+        private NetworkManager m_NetworkManager;
+
         /// <summary>
         /// Client Side:
         /// Gets the next scene index to be loaded for approval and/or late joining
@@ -64,8 +66,9 @@ namespace MLAPI.SceneManagement
         /// Server Side:
         /// Called just before the synchronization process
         /// </summary>
-        public void InitializeForSynch()
+        public void InitializeForSynch(NetworkManager networkManager)
         {
+            m_NetworkManager = networkManager;
             if (m_SceneNetworkObjects == null)
             {
                 m_SceneNetworkObjects = new Dictionary<uint, List<NetworkObject>>();
@@ -112,6 +115,31 @@ namespace MLAPI.SceneManagement
         }
 
         /// <summary>
+        /// Sorts the NetworkObjects to assure proper order of operations for custom Network Prefab handlers
+        /// that implement the INetworkPrefabInstanceHandler interface.
+        /// </summary>
+        /// <param name="first"></param>
+        /// <param name="second"></param>
+        /// <returns></returns>
+        private int SortNetworkObjects(NetworkObject first, NetworkObject second)
+        {
+            var doesFirstHaveHandler = m_NetworkManager.PrefabHandler.ContainsHandler(first);
+            var doesSecondHaveHandler = m_NetworkManager.PrefabHandler.ContainsHandler(second);
+            if (doesFirstHaveHandler != doesSecondHaveHandler)
+            {
+                if (doesFirstHaveHandler)
+                {
+                    return 1;
+                }
+                else
+                {
+                    return -1;
+                }
+            }
+            return 0;
+        }
+
+        /// <summary>
         /// Serializes this class instance
         /// </summary>
         /// <param name="writer"></param>
@@ -144,6 +172,12 @@ namespace MLAPI.SceneManagement
                         // Size Place Holder (For offset purposes, needs to not be packed)
                         writer.WriteUInt32(0);
                         var totalBytes = 0;
+
+                        // Sort NetworkObjects so any NetworkObjects with a PrefabHandler are sorted to be after all other NetworkObjects
+                        // This will assure the INetworkPrefabInstanceHandler instance is registered before we try to spawn the NetworkObjects
+                        // on the client side.
+                        keypair.Value.Sort(SortNetworkObjects);
+
                         foreach (var networkObject in keypair.Value)
                         {
                             var noStart = writer.GetStream().Position;
