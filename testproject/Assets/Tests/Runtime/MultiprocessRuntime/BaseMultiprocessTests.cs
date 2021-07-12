@@ -19,7 +19,7 @@ namespace MLAPI.MultiprocessRuntimeTests
     {
         protected virtual bool IsPerformanceTest => true;
 
-        private const string k_MainSceneName = "SampleScene";
+        private const string k_GlobalEmptySceneName = "EmptyScene";
 
         private bool m_SceneHasLoaded;
 
@@ -91,8 +91,8 @@ namespace MLAPI.MultiprocessRuntimeTests
             {
                 TestCoordinator.Instance.CloseRemoteClientRpc();
                 NetworkManager.Singleton.StopHost();
-                SceneManager.LoadScene(k_MainSceneName);
-                Object.Destroy(NetworkManager.Singleton.gameObject);
+                Object.Destroy(NetworkManager.Singleton.gameObject); // making sure we clear everything before reloading our scene
+                SceneManager.LoadScene(k_GlobalEmptySceneName); // using empty scene to clear our state
             }
         }
     }
