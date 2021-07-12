@@ -31,6 +31,7 @@ namespace TestProject.RuntimeTests
 
             // Load the first scene with the predefined NetworkManager
             m_TargetSceneNameToLoad = "SceneTransitioningTest";
+
             SceneManager.sceneLoaded += SceneManager_sceneLoaded;
             SceneManager.LoadScene(m_TargetSceneNameToLoad, LoadSceneMode.Additive);
 
@@ -100,7 +101,7 @@ namespace TestProject.RuntimeTests
             m_SceneLoaded = false;
 
             // Wait for the scene to load
-            timeOut = Time.realtimeSinceStartup + 5;
+            timeOut = Time.realtimeSinceStartup + 30;
             m_TimedOut = false;
             while (!m_SceneLoaded)
             {
@@ -208,6 +209,20 @@ namespace TestProject.RuntimeTests
                 m_SceneLoaded = true;
                 m_LoadedScene = scene;
             }
+        }
+
+        [UnitySetUp]
+        private IEnumerator SetUp()
+        {
+            MLAPI.SceneManagement.NetworkSceneManager.IsRunningUnitTest = true;
+            yield return null;
+        }
+
+        [UnityTearDown]
+        private IEnumerator TearDown()
+        {
+            MLAPI.SceneManagement.NetworkSceneManager.IsRunningUnitTest = false;
+            yield return null;
         }
     }
 }
