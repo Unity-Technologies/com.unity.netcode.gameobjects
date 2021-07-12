@@ -105,12 +105,10 @@ namespace TestProject.ManualTests
             {
                 NetworkManager.SceneManager.OnSceneSwitchStarted -= OnSceneSwitchStarted;
             }
-            if (!IsServer)
-            {
-                StopCoroutine(SpawnObjects());
-                DeRegisterCustomPrefabHandler();
-                CleanNetworkObjects();
-            }
+
+            StopCoroutine(SpawnObjects());
+            DeRegisterCustomPrefabHandler();
+            CleanNetworkObjects();
         }
 
         /// <summary>
@@ -128,26 +126,32 @@ namespace TestProject.ManualTests
             {
                 foreach (var obj in m_ObjectPool)
                 {
-                    var networkObject = obj.GetComponent<NetworkObject>();
-                    var genericBehaviour = obj.GetComponent<GenericNetworkObjectBehaviour>();
-                    genericBehaviour.IsRegisteredPoolObject = false;
-                    genericBehaviour.IsRemovedFromPool = true;
-                    if (IsServer)
+                    if (obj != null)
                     {
-                        if (networkObject.IsSpawned)
+                        var networkObject = obj.GetComponent<NetworkObject>();
+                        var genericBehaviour = obj.GetComponent<GenericNetworkObjectBehaviour>();
+                        if (genericBehaviour != null)
                         {
-                            networkObject.Despawn(true);
-                        }
-                        else
-                        {
-                            DestroyImmediate(obj);
-                        }
-                    }
-                    else //Client
-                    {
-                        if (!networkObject.IsSpawned)
-                        {
-                            DestroyImmediate(obj);
+                            genericBehaviour.IsRegisteredPoolObject = false;
+                            genericBehaviour.IsRemovedFromPool = true;
+                            if (IsServer)
+                            {
+                                if (networkObject.IsSpawned)
+                                {
+                                    networkObject.Despawn(true);
+                                }
+                                else
+                                {
+                                    DestroyImmediate(obj);
+                                }
+                            }
+                            else //Client
+                            {
+                                if (!networkObject.IsSpawned)
+                                {
+                                    DestroyImmediate(obj);
+                                }
+                            }
                         }
                     }
                 }
@@ -182,9 +186,7 @@ namespace TestProject.ManualTests
         {
             if (IsServer)
             {
-                StopCoroutine(SpawnObjects());
-                DeRegisterCustomPrefabHandler();
-                CleanNetworkObjects();
+
             }
         }
 
