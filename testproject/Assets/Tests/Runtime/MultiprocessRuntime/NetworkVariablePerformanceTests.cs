@@ -53,12 +53,12 @@ namespace MLAPI.MultiprocessRuntimeTests
 
         private void OnSceneLoadedInitSetupSuite(Scene scene, LoadSceneMode loadSceneMode)
         {
-            InitPrefab();
+            InitializePrefab();
             s_ServerObjectPool = new GameObjectPool<OneNetVar>();
             s_ServerObjectPool.Initialize(k_MaxObjectsToSpawn, m_PrefabToSpawn);
         }
 
-        private void InitPrefab()
+        private void InitializePrefab()
         {
             if (m_PrefabToSpawn == null)
             {
@@ -88,7 +88,7 @@ namespace MLAPI.MultiprocessRuntimeTests
             yield return new ExecuteStepInContext(StepExecutionContext.Clients, stepToExecute: nbObjectsBytes =>
             {
                 // setup clients
-                InitPrefab();
+                InitializePrefab();
                 var targetCount = BitConverter.ToInt32(nbObjectsBytes, 0);
 
                 m_ClientPrefabHandler = new CustomPrefabSpawnerForPerformanceTests<OneNetVar>(m_PrefabToSpawn, k_MaxObjectsToSpawn, SetupSpawnedObject, StopSpawnedObject);
@@ -96,7 +96,7 @@ namespace MLAPI.MultiprocessRuntimeTests
                 Assert.That(hasAddedHandler);
 
                 // add client side reporter for later spawn steps
-                void Update(float deltaTime)
+                void UpdateFunc(float deltaTime)
                 {
                     var count = OneNetVar.InstanceCount;
                     if (count > 0)
@@ -106,12 +106,12 @@ namespace MLAPI.MultiprocessRuntimeTests
                         if (count >= targetCount)
                         {
                             // we got what we want, don't update results any longer
-                            NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate -= Update;
+                            NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate -= UpdateFunc;
                         }
                     }
                 }
 
-                NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate += Update;
+                NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate += UpdateFunc;
             }, paramToPass: BitConverter.GetBytes(nbObjects));
 
             yield return new ExecuteStepInContext(StepExecutionContext.Server, _ =>
@@ -209,16 +209,16 @@ namespace MLAPI.MultiprocessRuntimeTests
             {
                 NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate = null; // todo move access to callbackcomponent to singleton
 
-                void UpdateWaitForAllOneNetVarToDespawn(float deltaTime)
+                void UpdateWaitForAllOneNetVarToDespawnFunc(float deltaTime)
                 {
                     if (OneNetVar.InstanceCount == 0)
                     {
-                        NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate -= UpdateWaitForAllOneNetVarToDespawn;
+                        NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate -= UpdateWaitForAllOneNetVarToDespawnFunc;
                         TestCoordinator.Instance.ClientFinishedServerRpc();
                     }
                 }
 
-                NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate += UpdateWaitForAllOneNetVarToDespawn;
+                NetworkManager.Singleton.gameObject.GetComponent<CallbackComponent>().OnUpdate += UpdateWaitForAllOneNetVarToDespawnFunc;
             }, waitMultipleUpdates: true, ignoreTimeoutException: true); // ignoring timeout since you don't want to hide any issues in the main tests
 
             yield return new ExecuteStepInContext(StepExecutionContext.Clients, _ =>
