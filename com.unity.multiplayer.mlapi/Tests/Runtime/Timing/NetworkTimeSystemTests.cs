@@ -47,6 +47,7 @@ namespace MLAPI.RuntimeTests.Timing
                 yield return null;
                 Assert.AreEqual(Mathf.FloorToInt((tickSystem.LocalTime.TimeAsFloat / delta)), NetworkManager.Singleton.LocalTime.Tick);
                 Assert.AreEqual(Mathf.FloorToInt((tickSystem.ServerTime.TimeAsFloat / delta)), NetworkManager.Singleton.ServerTime.Tick);
+                Assert.True(Mathf.Approximately((float)NetworkManager.Singleton.LocalTime.Time, (float)NetworkManager.Singleton.ServerTime.Time));
             }
         }
 
@@ -120,6 +121,7 @@ namespace MLAPI.RuntimeTests.Timing
             m_LocalTimePreviousFixedUpdate = time;
 
             Assert.AreEqual(Time.fixedDeltaTime, time.FixedDeltaTime);
+            Assert.True(Mathf.Approximately((float)NetworkManager.Singleton.LocalTime.Time, (float)NetworkManager.Singleton.ServerTime.Time));
 
             m_LastFixedUpdateTick++;
         }

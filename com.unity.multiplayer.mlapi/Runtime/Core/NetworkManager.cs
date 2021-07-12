@@ -395,7 +395,7 @@ namespace MLAPI
 
             if (server)
             {
-                NetworkTimeSystem = new NetworkTimeSystem(0, 0, 0.2);
+                NetworkTimeSystem = NetworkTimeSystem.ServerTimeSystem();
             }
             else
             {

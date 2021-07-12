@@ -81,14 +81,14 @@ namespace MLAPI.Messaging
 
                 int tick = reader.ReadInt32Packed();
                 var time = new NetworkTime(NetworkManager.NetworkTickSystem.TickRate, tick);
-                NetworkManager.NetworkTimeSystem.Sync(time.Time, 0.15f); // Start with a constant RTT of 150 until we receive values from the transport.
+                NetworkManager.NetworkTimeSystem.Initialize(time.Time, 0.15f); // Start with a constant RTT of 150 until we receive values from the transport.
 
                 NetworkManager.ConnectedClients.Add(NetworkManager.LocalClientId, new NetworkClient { ClientId = NetworkManager.LocalClientId });
 
 
                 void DelayedSpawnAction(Stream continuationStream)
                 {
-                    
+
                     using (var continuationReader = PooledNetworkReader.Get(continuationStream))
                     {
                         if (!NetworkManager.NetworkConfig.EnableSceneManagement)

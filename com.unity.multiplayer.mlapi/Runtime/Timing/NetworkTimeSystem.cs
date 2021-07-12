@@ -56,11 +56,21 @@ namespace MLAPI.Timing
             AdjustmentRatio = adjustmentRatio;
         }
 
+        /// <summary>
+        /// Creates a new instance of the <see cref="NetworkTimeSystem"/> class for a server instance.
+        /// The server will not apply any buffer values which ensures that local time equals server time.
+        /// </summary>
+        /// <returns>The instance.</returns>
         public static NetworkTimeSystem ServerTimeSystem()
         {
-            return new NetworkTimeSystem(0, 0, 0);
+            return new NetworkTimeSystem(0, 0, double.MaxValue);
         }
 
+        /// <summary>
+        /// Advances the time system by a certain amount of time. Should be called once per frame with Time.deltaTime or similar.
+        /// </summary>
+        /// <param name="deltaTime">The amount of time to advance. The delta time which passed since Advance was last called.</param>
+        /// <returns></returns>
         public bool Advance(double deltaTime)
         {
             m_Time += deltaTime;
