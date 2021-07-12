@@ -23,7 +23,6 @@ namespace MLAPI.RuntimeTests.Metrics.RPC
         {
             if (!MultiInstanceHelpers.Create(1, out m_Server, out NetworkManager[] clients))
             {
-                Debug.LogError("Failed to create instances");
                 Assert.Fail("Failed to create instances");
             }
 
@@ -40,7 +39,6 @@ namespace MLAPI.RuntimeTests.Metrics.RPC
 
             if (!MultiInstanceHelpers.Start(true, m_Server, clients))
             {
-                Debug.LogError("Failed to start instances");
                 Assert.Fail("Failed to start instances");
             }
 
@@ -51,12 +49,10 @@ namespace MLAPI.RuntimeTests.Metrics.RPC
             m_ServerMetrics = m_Server.NetworkMetrics as NetworkMetrics;
         }
 
-        [UnityTearDown]
-        public IEnumerator TearDown()
+        [TearDown]
+        public void TearDown()
         {
             MultiInstanceHelpers.Destroy();
-
-            yield return null;
         }
 
         [UnityTest]

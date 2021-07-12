@@ -23,7 +23,7 @@ namespace MLAPI.RuntimeTests.Metrics.NetworkVariables
                 Debug.LogError("Failed to create instances");
                 Assert.Fail("Failed to create instances");
             }
-            
+
             var playerPrefab = new GameObject("Player");
             var networkObject = playerPrefab.AddComponent<NetworkObject>();
             playerPrefab.AddComponent<NetworkVariableComponent>();

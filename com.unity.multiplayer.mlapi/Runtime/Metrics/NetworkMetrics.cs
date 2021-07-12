@@ -134,12 +134,12 @@ namespace MLAPI.Metrics
 
         public void TrackRpcSent(ulong receiverClientId, ulong networkObjectId, string rpcName, ulong bytesCount)
         {
-            if (!m_NetworkGameObjects.ContainsKey(networkObjectId))
+            if (!m_NetworkGameObjects.TryGetValue(networkObjectId, out var networkObjectIdentifier))
             {
-                m_NetworkGameObjects[networkObjectId] = new NetworkObjectIdentifier($"NetworkGameObject_{networkObjectId}", networkObjectId);
+                networkObjectIdentifier = new NetworkObjectIdentifier("", networkObjectId);
             }
 
-            m_RpcSentEvent.Mark(new RpcEvent(new ConnectionInfo(receiverClientId), m_NetworkGameObjects[networkObjectId], rpcName, bytesCount));
+            m_RpcSentEvent.Mark(new RpcEvent(new ConnectionInfo(receiverClientId), networkObjectIdentifier, rpcName, bytesCount));
         }
 
         public void TrackRpcSent(ulong[] receiverClientIds, ulong networkObjectId, string rpcName, ulong bytesCount)
@@ -152,12 +152,12 @@ namespace MLAPI.Metrics
 
         public void TrackRpcReceived(ulong senderClientId, ulong networkObjectId, string rpcName, ulong bytesCount)
         {
-            if (!m_NetworkGameObjects.ContainsKey(networkObjectId))
+            if (!m_NetworkGameObjects.TryGetValue(networkObjectId, out var networkObjectIdentifier))
             {
-                m_NetworkGameObjects[networkObjectId] = new NetworkObjectIdentifier($"NetworkGameObject_{networkObjectId}", networkObjectId);
+                networkObjectIdentifier = new NetworkObjectIdentifier("", networkObjectId);
             }
 
-            m_RpcReceivedEvent.Mark(new RpcEvent(new ConnectionInfo(senderClientId), m_NetworkGameObjects[networkObjectId], rpcName, bytesCount));
+            m_RpcReceivedEvent.Mark(new RpcEvent(new ConnectionInfo(senderClientId), networkObjectIdentifier, rpcName, bytesCount));
         }
 
         public void DispatchFrame()
