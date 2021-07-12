@@ -4,6 +4,7 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
+using Object = UnityEngine.Object;
 
 namespace MLAPI.MultiprocessRuntimeTests
 {
@@ -16,9 +17,13 @@ namespace MLAPI.MultiprocessRuntimeTests
     [MultiprocessTests]
     public abstract class BaseMultiprocessTests
     {
-        protected virtual bool m_IsPerformanceTest => true;
+        protected virtual bool IsPerformanceTest => true;
 
-        private bool ShouldIgnoreTests => m_IsPerformanceTest && Application.isEditor || MultiprocessOrchestration.IsUsingUTR(); // todo remove UTR check once we have proper automation
+        private const string k_MainSceneName = "SampleScene";
+
+        private bool m_SceneHasLoaded;
+
+        protected bool ShouldIgnoreTests => IsPerformanceTest && Application.isEditor || MultiprocessOrchestration.IsUsingUTR(); // todo remove UTR check once we have proper automation
 
         /// <summary>
         /// Implement this to specify the amount of workers to spawn from your main test runner
@@ -36,23 +41,25 @@ namespace MLAPI.MultiprocessRuntimeTests
 
             SceneManager.LoadScene(BuildMultiprocessTestPlayer.MainSceneName, LoadSceneMode.Single);
             SceneManager.sceneLoaded += OnSceneLoaded;
+        }
 
+        private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+            SceneManager.sceneLoaded -= OnSceneLoaded;
+
+            NetworkManager.Singleton.StartHost();
             for (int i = 0; i < WorkerCount; i++)
             {
                 MultiprocessOrchestration.StartWorkerNode(); // will automatically start built player as clients
             }
-        }
 
-        private static void OnSceneLoaded(Scene scene, LoadSceneMode mode)
-        {
-            SceneManager.sceneLoaded -= OnSceneLoaded;
-            NetworkManager.Singleton.StartHost();
+            m_SceneHasLoaded = true;
         }
 
         [UnitySetUp]
         public virtual IEnumerator Setup()
         {
-            yield return new WaitUntil(() => NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer);
+            yield return new WaitUntil(() => NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer && m_SceneHasLoaded);
 
             var startTime = Time.time;
             while (NetworkManager.Singleton.ConnectedClients.Count <= WorkerCount)
@@ -84,6 +91,8 @@ namespace MLAPI.MultiprocessRuntimeTests
             {
                 TestCoordinator.Instance.CloseRemoteClientRpc();
                 NetworkManager.Singleton.StopHost();
+                SceneManager.LoadScene(k_MainSceneName);
+                Object.Destroy(NetworkManager.Singleton.gameObject);
             }
         }
     }
