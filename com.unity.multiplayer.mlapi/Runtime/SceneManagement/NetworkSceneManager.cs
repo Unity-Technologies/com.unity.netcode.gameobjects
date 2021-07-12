@@ -261,7 +261,7 @@ namespace MLAPI.SceneManagement
             }
 
             SceneEventData.SwitchSceneGuid = switchSceneProgress.Guid;
-            SceneEventData.SceneEventType = SceneEventData.SceneEventTypes.UNLOAD;
+            SceneEventData.SceneEventType = SceneEventData.SceneEventTypes.EventUnload;
             SceneEventData.SceneIndex = SceneNameToIndex[sceneName];
 
             for (int j = 0; j < m_NetworkManager.ConnectedClientsList.Count; j++)
@@ -324,7 +324,7 @@ namespace MLAPI.SceneManagement
             using (var buffer = PooledNetworkBuffer.Get())
             using (var writer = PooledNetworkWriter.Get(buffer))
             {
-                SceneEventData.SceneEventType = SceneEventData.SceneEventTypes.UNLOAD_COMPLETE;
+                SceneEventData.SceneEventType = SceneEventData.SceneEventTypes.Event_Unload_Complete;
                 writer.WriteObjectPacked(SceneEventData);
                 m_NetworkManager.MessageSender.Send(m_NetworkManager.ServerClientId, NetworkConstants.SCENE_EVENT, NetworkChannel.Internal, buffer);
             }
@@ -351,7 +351,7 @@ namespace MLAPI.SceneManagement
             }
 
             SceneEventData.SwitchSceneGuid = switchSceneProgress.Guid;
-            SceneEventData.SceneEventType = SceneEventData.SceneEventTypes.LOAD;
+            SceneEventData.SceneEventType = SceneEventData.SceneEventTypes.EventLoad;
             SceneEventData.SceneIndex = SceneNameToIndex[sceneName];
 
             // NSS TODO: remove this completely once done with the transition
@@ -387,7 +387,7 @@ namespace MLAPI.SceneManagement
             }
 
             SceneEventData.SwitchSceneGuid = switchSceneProgress.Guid;
-            SceneEventData.SceneEventType = SceneEventData.SceneEventTypes.SWITCH;
+            SceneEventData.SceneEventType = SceneEventData.SceneEventTypes.EventSwitch;
             SceneEventData.SceneIndex = SceneNameToIndex[sceneName];
 
             SceneEventData.LoadSceneMode = IsRunningUnitTest ? loadSceneMode : LoadSceneMode.Single;
@@ -420,7 +420,7 @@ namespace MLAPI.SceneManagement
 
 
 
-            if (SceneEventData.SceneEventType == SceneEventData.SceneEventTypes.SWITCH)
+            if (SceneEventData.SceneEventType == SceneEventData.SceneEventTypes.EventSwitch)
             {
                 foreach (var additiveSceneName in m_AdditiveScenesLoaded)
                 {
@@ -513,7 +513,7 @@ namespace MLAPI.SceneManagement
         private void OnSceneLoaded(string sceneName)
         {
             var nextScene = SceneManager.GetSceneByName(sceneName);
-            if (SceneEventData.SceneEventType == SceneEventData.SceneEventTypes.SWITCH)
+            if (SceneEventData.SceneEventType == SceneEventData.SceneEventTypes.EventSwitch)
             {
                 SceneManager.SetActiveScene(nextScene);
             }
@@ -521,7 +521,7 @@ namespace MLAPI.SceneManagement
             //Get all NetworkObjects loaded by the scene
             PopulateScenePlacedObjects(nextScene);
 
-            if (SceneEventData.SceneEventType == SceneEventData.SceneEventTypes.SWITCH)
+            if (SceneEventData.SceneEventType == SceneEventData.SceneEventTypes.EventSwitch)
             {
                 // Move all objects to the new scene
                 MoveObjectsToScene(nextScene);
@@ -623,7 +623,7 @@ namespace MLAPI.SceneManagement
             using (var buffer = PooledNetworkBuffer.Get())
             using (var writer = PooledNetworkWriter.Get(buffer))
             {
-                SceneEventData.SceneEventType = SceneEventData.SceneEventType == SceneEventData.SceneEventTypes.SWITCH ? SceneEventData.SceneEventTypes.SWITCH_COMPLETE : SceneEventData.SceneEventTypes.LOAD_COMPLETE;
+                SceneEventData.SceneEventType = SceneEventData.SceneEventType == SceneEventData.SceneEventTypes.EventSwitch ? SceneEventData.SceneEventTypes.Event_Switch_Complete : SceneEventData.SceneEventTypes.Event_Load_Complete;
                 writer.WriteObjectPacked(SceneEventData);
                 m_NetworkManager.MessageSender.Send(m_NetworkManager.ServerClientId, NetworkConstants.SCENE_EVENT, NetworkChannel.Internal, buffer);
             }
@@ -655,7 +655,7 @@ namespace MLAPI.SceneManagement
             ClientSynchEventData.InitializeForSynch(m_NetworkManager);
             ClientSynchEventData.LoadSceneMode = LoadSceneMode.Single;
             var activeScene = SceneManager.GetActiveScene();
-            ClientSynchEventData.SceneEventType = SceneEventData.SceneEventTypes.SYNC;
+            ClientSynchEventData.SceneEventType = SceneEventData.SceneEventTypes.EventSync;
 
             for (int i = 0; i < SceneManager.sceneCount; i++)
             {
@@ -860,18 +860,18 @@ namespace MLAPI.SceneManagement
             switch (SceneEventData.SceneEventType)
             {
                 // Both events are basically the same with some minor differences
-                case SceneEventData.SceneEventTypes.SWITCH:
-                case SceneEventData.SceneEventTypes.LOAD:
+                case SceneEventData.SceneEventTypes.EventSwitch:
+                case SceneEventData.SceneEventTypes.EventLoad:
                     {
                         OnClientSceneLoadingEvent(stream);
                         break;
                     }
-                case SceneEventData.SceneEventTypes.UNLOAD:
+                case SceneEventData.SceneEventTypes.EventUnload:
                     {
                         OnClientUnloadScene();
                         break;
                     }
-                case SceneEventData.SceneEventTypes.SYNC:
+                case SceneEventData.SceneEventTypes.EventSync:
                     {
                         if (!SceneEventData.IsDoneWithSynchronization())
                         {
@@ -885,7 +885,7 @@ namespace MLAPI.SceneManagement
                             using (var buffer = PooledNetworkBuffer.Get())
                             using (var writer = PooledNetworkWriter.Get(buffer))
                             {
-                                SceneEventData.SceneEventType = SceneEventData.SceneEventTypes.SYNC_COMPLETE;
+                                SceneEventData.SceneEventType = SceneEventData.SceneEventTypes.Event_Sync_Complete;
                                 writer.WriteObjectPacked(SceneEventData);
                                 m_NetworkManager.MessageSender.Send(m_NetworkManager.ServerClientId, NetworkConstants.SCENE_EVENT, NetworkChannel.Internal, buffer);
                             }
@@ -909,22 +909,22 @@ namespace MLAPI.SceneManagement
         {
             switch (SceneEventData.SceneEventType)
             {
-                case SceneEventData.SceneEventTypes.SWITCH_COMPLETE:
+                case SceneEventData.SceneEventTypes.Event_Switch_Complete:
                     {
                         OnClientSceneLoadingEventCompleted(clientId, SceneEventData.SwitchSceneGuid);
                         break;
                     }
-                case SceneEventData.SceneEventTypes.LOAD_COMPLETE:
+                case SceneEventData.SceneEventTypes.Event_Load_Complete:
                     {
-                        Debug.Log($"[{nameof(SceneEventData.SceneEventTypes.LOAD_COMPLETE)}] Client Id {clientId} finished loading additive scene.");
+                        Debug.Log($"[{nameof(SceneEventData.SceneEventTypes.Event_Load_Complete)}] Client Id {clientId} finished loading additive scene.");
                         break;
                     }
-                case SceneEventData.SceneEventTypes.UNLOAD_COMPLETE:
+                case SceneEventData.SceneEventTypes.Event_Unload_Complete:
                     {
-                        Debug.Log($"[{nameof(SceneEventData.SceneEventTypes.UNLOAD_COMPLETE)}] Client Id {clientId} finished unloading additive scene.");
+                        Debug.Log($"[{nameof(SceneEventData.SceneEventTypes.Event_Unload_Complete)}] Client Id {clientId} finished unloading additive scene.");
                         break;
                     }
-                case SceneEventData.SceneEventTypes.SYNC_COMPLETE:
+                case SceneEventData.SceneEventTypes.Event_Sync_Complete:
                     {
                         // NSS TOOD: The scene event local notification needs to be called
                         //m_NetworkManager.NotifyPlayerConnected(clientId);

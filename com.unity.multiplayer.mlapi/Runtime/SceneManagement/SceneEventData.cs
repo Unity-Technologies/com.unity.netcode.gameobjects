@@ -15,14 +15,14 @@ namespace MLAPI.SceneManagement
     {
         public enum SceneEventTypes
         {
-            SWITCH,             //Server to client full scene switch (i.e. single mode and destroy everything)
-            LOAD,               //Server to client load additive scene
-            UNLOAD,             //Server to client unload additive scene
-            SYNC,               //Server to client late join approval synchronization
-            SWITCH_COMPLETE,    //Client to server
-            LOAD_COMPLETE,      //Client to server
-            UNLOAD_COMPLETE,    //Client to server
-            SYNC_COMPLETE,      //Client to server
+            EventSwitch,             //Server to client full scene switch (i.e. single mode and destroy everything)
+            EventLoad,               //Server to client load additive scene
+            EventUnload,             //Server to client unload additive scene
+            EventSync,               //Server to client late join approval synchronization
+            Event_Switch_Complete,    //Client to server
+            Event_Load_Complete,      //Client to server
+            Event_Unload_Complete,    //Client to server
+            Event_Sync_Complete,      //Client to server
         }
 
         public SceneEventTypes SceneEventType;
@@ -103,10 +103,10 @@ namespace MLAPI.SceneManagement
         {
             switch (SceneEventType)
             {
-                case SceneEventTypes.LOAD:
-                case SceneEventTypes.SWITCH:
-                case SceneEventTypes.UNLOAD:
-                case SceneEventTypes.SYNC:
+                case SceneEventTypes.EventLoad:
+                case SceneEventTypes.EventSwitch:
+                case SceneEventTypes.EventUnload:
+                case SceneEventTypes.EventSync:
                     {
                         return true;
                     }
@@ -149,14 +149,14 @@ namespace MLAPI.SceneManagement
 
             writer.WriteByte((byte)LoadSceneMode);
 
-            if (SceneEventType != SceneEventTypes.SYNC)
+            if (SceneEventType != SceneEventTypes.EventSync)
             {
                 writer.WriteByteArray(SwitchSceneGuid.ToByteArray());
             }
 
             writer.WriteUInt32Packed(SceneIndex);
 
-            if (SceneEventType == SceneEventTypes.SYNC)
+            if (SceneEventType == SceneEventTypes.EventSync)
             {
                 writer.WriteInt32Packed(m_SceneNetworkObjects.Count());
 
@@ -231,14 +231,14 @@ namespace MLAPI.SceneManagement
                 // NSS TODO: Add to proposal's MTT discussion topics: Should we assert here?
             }
 
-            if (SceneEventType != SceneEventTypes.SYNC)
+            if (SceneEventType != SceneEventTypes.EventSync)
             {
                 SwitchSceneGuid = new Guid(reader.ReadByteArray());
             }
 
             SceneIndex = reader.ReadUInt32Packed();
 
-            if (SceneEventType == SceneEventTypes.SYNC)
+            if (SceneEventType == SceneEventTypes.EventSync)
             {
                 var keyPairCount = reader.ReadInt32Packed();
 
