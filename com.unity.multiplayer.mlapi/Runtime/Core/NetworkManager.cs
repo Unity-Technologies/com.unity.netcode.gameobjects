@@ -393,7 +393,15 @@ namespace MLAPI
                 NetworkTickSystem = null;
             }
 
-            NetworkTimeSystem = new NetworkTimeSystem(0.05, 0.05, 0.2);
+            if (server)
+            {
+                NetworkTimeSystem = new NetworkTimeSystem(0, 0, 0.2);
+            }
+            else
+            {
+                NetworkTimeSystem = new NetworkTimeSystem(1d / NetworkConfig.TickRate, 1d / NetworkConfig.TickRate, 0.2);
+            }
+
             NetworkTickSystem = new NetworkTickSystem(NetworkConfig.TickRate, 0, 0);
             NetworkTickSystem.Tick += OnNetworkManagerTick;
 
