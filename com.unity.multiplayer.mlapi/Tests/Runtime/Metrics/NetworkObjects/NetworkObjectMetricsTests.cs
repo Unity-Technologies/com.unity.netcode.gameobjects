@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using MLAPI.Metrics;
 using NUnit.Framework;
@@ -143,6 +144,81 @@ namespace MLAPI.RuntimeTests.Metrics.NetworkObjects
             Assert.AreEqual(m_NewNetworkObject.NetworkObjectId, objectDestroyed.NetworkId.NetworkId);
             // Bug: Currently the object name is always "Player Clone"
             // Assert.AreEqual(m_NewNetworkObjectName, objectDestroyed.NetworkId.Name);
+        }
+
+        [UnityTest]
+        public IEnumerator TrackMultipleNetworkObjectDestroySentMetric()
+        {
+            m_NewNetworkObject.Spawn();
+
+            // Spawn another network object so we can hide multiple.
+            var gameObject = new GameObject(m_NewNetworkObjectName);
+            var anotherNetworkObject = gameObject.AddComponent<NetworkObject>();
+            anotherNetworkObject.NetworkManagerOwner = m_Server;
+            anotherNetworkObject.Spawn();
+
+            var waitForMetricEvent = new WaitForMetricValues<ObjectDestroyedEvent>(m_ServerMetrics.Dispatcher, MetricNames.ObjectDestroyedSent);
+            yield return waitForMetricEvent.WaitForAFewFrames();
+
+            NetworkObject.NetworkHide(new List<NetworkObject>{m_NewNetworkObject, anotherNetworkObject}, m_Client.LocalClientId);
+
+            yield return waitForMetricEvent.Wait(60);
+
+            var objectDestroyedSentMetricValues = waitForMetricEvent.EnsureMetricValuesHaveBeenFound();
+            // As there's a client and server, this event is emitted twice.
+            Assert.AreEqual(2, objectDestroyedSentMetricValues.Count);
+
+            var networkIDFound = true;
+            var networkNameFound = true;
+            // not sure that we can guarantee the order of these so just ensure the data is in the received metrics.
+            foreach (var metricValue in objectDestroyedSentMetricValues)
+            {
+                Assert.AreEqual(m_Client.LocalClientId, metricValue.Connection.Id);
+                networkIDFound &= metricValue.NetworkId.NetworkId == m_NewNetworkObject.NetworkObjectId || metricValue.NetworkId.NetworkId == anotherNetworkObject.NetworkObjectId;
+                networkNameFound &= metricValue.NetworkId.Name == m_NewNetworkObject.name || metricValue.NetworkId.Name == anotherNetworkObject.name;
+            }
+            Assert.IsTrue(networkIDFound);
+            Assert.IsTrue(networkNameFound);
+        }
+
+        [UnityTest]
+        public IEnumerator TrackMultipleNetworkObjectSpawnSentMetric()
+        {
+            m_NewNetworkObject.Spawn();
+
+            // Spawn another network object so we can hide multiple.
+            var gameObject = new GameObject(m_NewNetworkObjectName);
+            var anotherNetworkObject = gameObject.AddComponent<NetworkObject>();
+            anotherNetworkObject.NetworkManagerOwner = m_Server;
+            anotherNetworkObject.Spawn();
+
+            var waitForMetricEvent = new WaitForMetricValues<ObjectSpawnedEvent>(m_ServerMetrics.Dispatcher, MetricNames.ObjectSpawnedSent);
+            yield return waitForMetricEvent.WaitForAFewFrames();
+
+            NetworkObject.NetworkHide(new List<NetworkObject>{m_NewNetworkObject, anotherNetworkObject}, m_Client.LocalClientId);
+
+            yield return waitForMetricEvent.WaitForAFewFrames();
+
+            NetworkObject.NetworkShow(new List<NetworkObject>{m_NewNetworkObject, anotherNetworkObject}, m_Client.LocalClientId);
+
+            yield return waitForMetricEvent.Wait(60);
+
+            var objectSpawnedSentMetricValues = waitForMetricEvent.EnsureMetricValuesHaveBeenFound();
+            // As there's a client and server, this event is emitted twice.
+            Assert.AreEqual(2, objectSpawnedSentMetricValues.Count);
+
+            var networkIDFound = true;
+            var networkNameFound = true;
+            // not sure that we can guarantee the order of these so just ensure the data is in the received metrics.
+            foreach (var metricValue in objectSpawnedSentMetricValues)
+            {
+                Assert.AreEqual(m_Client.LocalClientId, metricValue.Connection.Id);
+                networkIDFound &= metricValue.NetworkId.NetworkId == m_NewNetworkObject.NetworkObjectId || metricValue.NetworkId.NetworkId == anotherNetworkObject.NetworkObjectId;
+                networkNameFound &= metricValue.NetworkId.Name == m_NewNetworkObject.name || metricValue.NetworkId.Name == anotherNetworkObject.name;
+            }
+
+            Assert.IsTrue(networkIDFound);
+            Assert.IsTrue(networkNameFound);
         }
     }
 }
