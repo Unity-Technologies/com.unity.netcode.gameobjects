@@ -75,6 +75,8 @@ namespace TestProject.RuntimeTests
 
             m_NetworkManager = gameObject.GetComponent<NetworkManager>();
 
+
+
             Assert.IsNotNull(m_NetworkManager);
 
             // Start in host mode
@@ -146,12 +148,16 @@ namespace TestProject.RuntimeTests
                     break;
                 }
             }
-
+            Assert.IsFalse(m_TimedOut);
             // We are now done with the NetworkSceneManager switch scene test so stop the host
             m_NetworkManager.StopHost();
 
             // Set the original Test Runner Scene to be the active scene
             SceneManager.SetActiveScene(originalScene);
+
+            m_NetworkManager.DontDestroy = false;
+            SceneManager.MoveGameObjectToScene(m_NetworkManager.gameObject, originalScene);
+
 
             // Unload the previously active scene
             SceneManager.UnloadSceneAsync(primaryScene).completed += UnloadAsync_completed;
@@ -167,6 +173,8 @@ namespace TestProject.RuntimeTests
                     break;
                 }
             }
+            Object.DestroyImmediate(m_NetworkManager.gameObject);
+            Assert.IsFalse(m_TimedOut);
             // Done!
         }
 
@@ -222,6 +230,8 @@ namespace TestProject.RuntimeTests
         private IEnumerator TearDown()
         {
             MLAPI.SceneManagement.NetworkSceneManager.IsRunningUnitTest = false;
+
+
             yield return null;
         }
     }
