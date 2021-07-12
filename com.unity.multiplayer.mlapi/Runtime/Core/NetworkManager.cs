@@ -1261,64 +1261,64 @@ namespace MLAPI
 
                         break;
                     case NetworkConstants.SERVER_RPC:
-                    {
-                        if (IsServer)
                         {
-                            if (RpcQueueContainer.IsUsingBatching())
+                            if (IsServer)
                             {
-                                m_RpcBatcher.ReceiveItems(messageStream, ReceiveCallback, RpcQueueContainer.QueueItemType.ServerRpc, clientId, receiveTime);
-                                ProfilerStatManager.RpcBatchesRcvd.Record();
-                                PerformanceDataManager.Increment(ProfilerConstants.RpcBatchesReceived);
+                                if (RpcQueueContainer.IsUsingBatching())
+                                {
+                                    m_RpcBatcher.ReceiveItems(messageStream, ReceiveCallback, RpcQueueContainer.QueueItemType.ServerRpc, clientId, receiveTime);
+                                    ProfilerStatManager.RpcBatchesRcvd.Record();
+                                    PerformanceDataManager.Increment(ProfilerConstants.RpcBatchesReceived);
+                                }
+                                else
+                                {
+                                    MessageHandler.RpcReceiveQueueItem(clientId, messageStream, receiveTime, RpcQueueContainer.QueueItemType.ServerRpc);
+                                }
                             }
-                            else
-                            {
-                                MessageHandler.RpcReceiveQueueItem(clientId, messageStream, receiveTime, RpcQueueContainer.QueueItemType.ServerRpc);
-                            }
-                        }
 
-                        break;
-                    }
+                            break;
+                        }
                     case NetworkConstants.CLIENT_RPC:
-                    {
-                        if (IsClient)
                         {
-                            if (RpcQueueContainer.IsUsingBatching())
+                            if (IsClient)
                             {
-                                m_RpcBatcher.ReceiveItems(messageStream, ReceiveCallback, RpcQueueContainer.QueueItemType.ClientRpc, clientId, receiveTime);
-                                ProfilerStatManager.RpcBatchesRcvd.Record();
-                                PerformanceDataManager.Increment(ProfilerConstants.RpcBatchesReceived);
+                                if (RpcQueueContainer.IsUsingBatching())
+                                {
+                                    m_RpcBatcher.ReceiveItems(messageStream, ReceiveCallback, RpcQueueContainer.QueueItemType.ClientRpc, clientId, receiveTime);
+                                    ProfilerStatManager.RpcBatchesRcvd.Record();
+                                    PerformanceDataManager.Increment(ProfilerConstants.RpcBatchesReceived);
+                                }
+                                else
+                                {
+                                    MessageHandler.RpcReceiveQueueItem(clientId, messageStream, receiveTime, RpcQueueContainer.QueueItemType.ClientRpc);
+                                }
                             }
-                            else
-                            {
-                                MessageHandler.RpcReceiveQueueItem(clientId, messageStream, receiveTime, RpcQueueContainer.QueueItemType.ClientRpc);
-                            }
-                        }
 
-                        break;
-                    }
+                            break;
+                        }
                     case NetworkConstants.PARENT_SYNC:
-                    {
-                        if (IsClient)
                         {
-                            using (var reader = PooledNetworkReader.Get(messageStream))
+                            if (IsClient)
                             {
-                                var networkObjectId = reader.ReadUInt64Packed();
-                                var (isReparented, latestParent) = NetworkObject.ReadNetworkParenting(reader);
-                                if (SpawnManager.SpawnedObjects.ContainsKey(networkObjectId))
+                                using (var reader = PooledNetworkReader.Get(messageStream))
                                 {
-                                    var networkObject = SpawnManager.SpawnedObjects[networkObjectId];
-                                    networkObject.SetNetworkParenting(isReparented, latestParent);
-                                    networkObject.ApplyNetworkParenting();
-                                }
-                                else if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
-                                {
-                                    NetworkLog.LogWarning($"Read {nameof(NetworkConstants.PARENT_SYNC)} for {nameof(NetworkObject)} #{networkObjectId} but could not find it in the {nameof(SpawnManager.SpawnedObjects)}");
+                                    var networkObjectId = reader.ReadUInt64Packed();
+                                    var (isReparented, latestParent) = NetworkObject.ReadNetworkParenting(reader);
+                                    if (SpawnManager.SpawnedObjects.ContainsKey(networkObjectId))
+                                    {
+                                        var networkObject = SpawnManager.SpawnedObjects[networkObjectId];
+                                        networkObject.SetNetworkParenting(isReparented, latestParent);
+                                        networkObject.ApplyNetworkParenting();
+                                    }
+                                    else if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+                                    {
+                                        NetworkLog.LogWarning($"Read {nameof(NetworkConstants.PARENT_SYNC)} for {nameof(NetworkObject)} #{networkObjectId} but could not find it in the {nameof(SpawnManager.SpawnedObjects)}");
+                                    }
                                 }
                             }
-                        }
 
-                        break;
-                    }
+                            break;
+                        }
                     default:
                         if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
                         {
@@ -1336,6 +1336,7 @@ namespace MLAPI
             s_HandleIncomingData.End();
 #endif
         }
+
 
         private void ReceiveCallback(NetworkBuffer messageBuffer, RpcQueueContainer.QueueItemType messageType, ulong clientId, float receiveTime)
         {
