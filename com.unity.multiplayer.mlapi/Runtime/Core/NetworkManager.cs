@@ -84,9 +84,6 @@ namespace MLAPI
 
         public NetworkTime ServerTime => NetworkTickSystem?.ServerTime ?? default;
 
-        //private float m_NetworkTimeOffset;
-        private float m_CurrentNetworkTimeOffset;
-
         /// <summary>
         /// Gets or sets if the NetworkManager should be marked as DontDestroyOnLoad
         /// </summary>
@@ -350,7 +347,6 @@ namespace MLAPI
             }
 
             LocalClientId = 0;
-            m_CurrentNetworkTimeOffset = 0f;
             PendingClients.Clear();
             ConnectedClients.Clear();
             ConnectedClientsList.Clear();
