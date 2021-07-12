@@ -72,6 +72,34 @@ namespace TestProject.ManualTests
             }
         }
 
+        public bool IsRegisteredPoolObject;
+
+        public bool IsRemovedFromPool;
+
+        public bool DetectedMissedDespawn;
+
+        public float TimeToWaitUntilDestroy;
+
+        private void LateUpdate()
+        {
+            if (!IsOwner && !NetworkObject.IsSpawned && !IsRegisteredPoolObject && !IsRemovedFromPool)
+            {
+                if (!DetectedMissedDespawn)
+                {
+                    DetectedMissedDespawn = true;
+                    TimeToWaitUntilDestroy = Time.realtimeSinceStartup + 1.0f;
+                }
+                else if (TimeToWaitUntilDestroy < Time.realtimeSinceStartup)
+                {
+                    Destroy(gameObject);
+                }
+            }
+            else if (!IsOwner && IsRegisteredPoolObject && DetectedMissedDespawn)
+            {
+                DetectedMissedDespawn = false;
+            }
+        }
+
 
         private void OnTriggerEnter(Collider other)
         {
@@ -83,8 +111,11 @@ namespace TestProject.ManualTests
                 }
                 else
                 {
-                    NetworkObject.Despawn();
-                    NetworkObject.gameObject.SetActive(false);
+                    NetworkObject.Despawn(IsRemovedFromPool);
+                    if (!IsRemovedFromPool)
+                    {
+                        NetworkObject.gameObject.SetActive(false);
+                    }
                 }
             }
         }

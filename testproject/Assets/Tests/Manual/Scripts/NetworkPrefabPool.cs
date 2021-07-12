@@ -56,6 +56,7 @@ namespace TestProject.ManualTests
 
             //This registers early under the condition of a scene transition
             RegisterCustomPrefabHandler();
+
         }
 
         /// <summary>
@@ -85,38 +86,75 @@ namespace TestProject.ManualTests
             }
         }
 
-        /// <summary>
-        /// When disabled, stop spawning objects
-        /// </summary>
+        private void DeRegisterCustomPrefabHandler()
+        {
+            // Register the custom spawn handler?
+            if (EnableHandler && NetworkManager && NetworkManager.PrefabHandler != null && m_MyCustomPrefabSpawnHandler != null)
+            {
+                NetworkManager.PrefabHandler.RemoveHandler(ServerObjectToPool);
+                if (IsClient && m_ObjectToSpawn != null)
+                {
+                    NetworkManager.PrefabHandler.RemoveHandler(m_ObjectToSpawn);
+                }
+            }
+        }
+
         private void OnDisable()
         {
-            m_IsSpawningObjects = false;
-            if (NetworkManager.Singleton && EnableHandler && m_MyCustomPrefabSpawnHandler != null)
+            if (NetworkManager != null && NetworkManager.SceneManager != null)
             {
-                var no = ServerObjectToPool.GetComponent<NetworkObject>();
-                NetworkManager.Singleton.PrefabHandler.RemoveHandler(no);
-                m_MyCustomPrefabSpawnHandler = null;
+                NetworkManager.SceneManager.OnSceneSwitchStarted -= OnSceneSwitchStarted;
+            }
+            if (!IsServer)
+            {
+                StopCoroutine(SpawnObjects());
+                DeRegisterCustomPrefabHandler();
+                CleanNetworkObjects();
             }
         }
 
         /// <summary>
         /// General clean up
-        /// The custom prefab handler is de-registered here
+        /// The custom prefab handler is unregistered here
         /// </summary>
         private void OnDestroy()
         {
-            if (SwitchScene)
-            {
-                SwitchScene.OnSceneSwitchBegin -= OnSceneSwitchBegin;
 
-                SwitchScene.OnSceneSwitchCompleted -= SwitchScene_OnSceneSwitchCompleted;
+        }
+
+        private void CleanNetworkObjects()
+        {
+            if (m_ObjectPool != null)
+            {
+                foreach (var obj in m_ObjectPool)
+                {
+                    var networkObject = obj.GetComponent<NetworkObject>();
+                    var genericBehaviour = obj.GetComponent<GenericNetworkObjectBehaviour>();
+                    genericBehaviour.IsRegisteredPoolObject = false;
+                    genericBehaviour.IsRemovedFromPool = true;
+                    if (IsServer)
+                    {
+                        if (networkObject.IsSpawned)
+                        {
+                            networkObject.Despawn(true);
+                        }
+                        else
+                        {
+                            DestroyImmediate(obj);
+                        }
+                    }
+                    else //Client
+                    {
+                        if (!networkObject.IsSpawned)
+                        {
+                            DestroyImmediate(obj);
+                        }
+                    }
+                }
+                m_ObjectPool.Clear();
             }
         }
 
-        private void SwitchScene_OnSceneSwitchCompleted()
-        {
-            InitializeObjectPool();
-        }
 
         // Start is called before the first frame update
         private void Start()
@@ -126,10 +164,9 @@ namespace TestProject.ManualTests
                 SpawnSliderValueText.text = SpawnsPerSecond.ToString();
             }
 
-            if (SwitchScene)
+            if (NetworkManager.SceneManager != null && IsServer)
             {
-                SwitchScene.OnSceneSwitchBegin += OnSceneSwitchBegin;
-                SwitchScene.OnSceneSwitchCompleted += SwitchScene_OnSceneSwitchCompleted;
+                NetworkManager.SceneManager.OnSceneSwitchStarted += OnSceneSwitchStarted;
             }
 
             //Call this again in case we didn't have access to the NetworkManager already (i.e. first scene loaded)
@@ -141,25 +178,13 @@ namespace TestProject.ManualTests
         /// Detect when we are switching scenes in order
         /// to assure we stop spawning objects
         /// </summary>
-        private void OnSceneSwitchBegin()
+        private void OnSceneSwitchStarted(AsyncOperation operation)
         {
             if (IsServer)
             {
                 StopCoroutine(SpawnObjects());
-
-                if (m_ObjectPool != null)
-                {
-                    foreach (var obj in m_ObjectPool)
-                    {
-                        var networkObject = obj.GetComponent<NetworkObject>();
-                        if (networkObject.IsSpawned)
-                        {
-                            networkObject.Despawn();
-                        }
-                        Destroy(obj);
-                    }
-                    m_ObjectPool.Clear();
-                }
+                DeRegisterCustomPrefabHandler();
+                CleanNetworkObjects();
             }
         }
 
@@ -180,6 +205,10 @@ namespace TestProject.ManualTests
                     UpdateSpawnsPerSecond();
                 }
             }
+            else
+            {
+                NetworkManager.SceneManager.OnSceneSwitchStarted += OnSceneSwitchStarted;
+            }
         }
 
         /// <summary>
@@ -194,7 +223,7 @@ namespace TestProject.ManualTests
             // If we are a host, then we have to get the NetworkPrefab Override (if one exists)
             if (IsHost && !EnableHandler)
             {
-                m_ObjectToSpawn = NetworkManager.GetNetworkPrefabOverride(ServerObjectToPool);
+                m_ObjectToSpawn = NetworkManager.GetNetworkPrefabOverride(m_ObjectToSpawn);
             }
             // If we are a client and we are using the custom prefab override handler, then we need to use that for our pool
             // This also checks to see if the ClientObjectToPool is set, if not then we are just using the custom prefab override handler
@@ -216,6 +245,7 @@ namespace TestProject.ManualTests
                 if (EnableHandler && IsClient)
                 {
                     m_ObjectToSpawn = NetworkManager.GetNetworkPrefabOverride(m_ObjectToSpawn);
+                    NetworkManager.PrefabHandler.AddHandler(m_ObjectToSpawn, m_MyCustomPrefabSpawnHandler);
                 }
 
                 m_ObjectPool = new List<GameObject>(PoolSize);
@@ -258,6 +288,11 @@ namespace TestProject.ManualTests
         {
             var obj = Instantiate(m_ObjectToSpawn);
             var no = obj.GetComponent<NetworkObject>();
+            var genericBehaviour = obj.GetComponent<GenericNetworkObjectBehaviour>();
+            if (genericBehaviour)
+            {
+                genericBehaviour.IsRegisteredPoolObject = true;
+            }
             obj.SetActive(false);
             m_ObjectPool.Add(obj);
             return obj;
@@ -382,8 +417,16 @@ namespace TestProject.ManualTests
         }
         public void HandleNetworkPrefabDestroy(NetworkObject networkObject)
         {
-            networkObject.transform.position = Vector3.zero;
-            networkObject.gameObject.SetActive(false);
+            var genericBehaviour = networkObject.gameObject.GetComponent<GenericNetworkObjectBehaviour>();
+            if (genericBehaviour.IsRegisteredPoolObject)
+            {
+                networkObject.transform.position = Vector3.zero;
+                networkObject.gameObject.SetActive(false);
+            }
+            else if (genericBehaviour.IsRemovedFromPool)
+            {
+                Object.DestroyImmediate(networkObject.gameObject);
+            }
         }
 
         public MyCustomPrefabSpawnHandler(NetworkPrefabPool objectPool)

@@ -280,7 +280,10 @@ namespace MLAPI.SceneManagement
             AsyncOperation sceneUnload = SceneManager.UnloadSceneAsync(sceneToUnload);
             sceneUnload.completed += (AsyncOperation asyncOp2) => { OnSceneUnloaded(); };
             switchSceneProgress.SetSceneLoadOperation(sceneUnload);
-
+            if(m_AdditiveScenesLoaded.Contains(sceneName))
+            {
+                m_AdditiveScenesLoaded.Remove(sceneName);
+            }
             OnAdditiveSceneEvent?.Invoke(sceneUnload, sceneName, false);
 
             //Return our scene progress instance
@@ -300,12 +303,16 @@ namespace MLAPI.SceneManagement
             }
             s_IsSceneEventActive = true;
 
-            var sceneLoad = SceneManager.UnloadSceneAsync(sceneName);
+            var sceneUnload = SceneManager.UnloadSceneAsync(sceneName);
 
-            sceneLoad.completed += asyncOp2 => OnSceneUnloaded();
+            if (m_AdditiveScenesLoaded.Contains(sceneName))
+            {
+                m_AdditiveScenesLoaded.Remove(sceneName);
+            }
 
-            // NSS TODO: Create the unloaded scene notification
-            //OnSceneSwitchStarted?.Invoke(sceneLoad);
+            sceneUnload.completed += asyncOp2 => OnSceneUnloaded();
+
+            OnAdditiveSceneEvent?.Invoke(sceneUnload, sceneName, false);
         }
 
         /// <summary>
@@ -323,6 +330,9 @@ namespace MLAPI.SceneManagement
 
             s_IsSceneEventActive = false;
         }
+
+
+        private List<string> m_AdditiveScenesLoaded = new List<string>();
 
         /// <summary>
         /// Additively loads the scene
@@ -418,10 +428,25 @@ namespace MLAPI.SceneManagement
             // NSS TODO: Make a single unified notification callback
             if (loadSceneMode == LoadSceneMode.Single)
             {
+                foreach (var additiveSceneName in m_AdditiveScenesLoaded)
+                {
+                    SceneManager.UnloadSceneAsync(additiveSceneName);
+                }
+                m_AdditiveScenesLoaded.Clear();
+
                 OnSceneSwitchStarted?.Invoke(sceneLoad);
             }
             else
             {
+                if(!m_AdditiveScenesLoaded.Contains(sceneName))
+                {
+                    m_AdditiveScenesLoaded.Add(sceneName);
+                }
+                else
+                {
+                    throw new Exception($"{sceneName} is being loaded twice?!");
+                }
+
                 OnAdditiveSceneEvent?.Invoke(sceneLoad, sceneName, true);
             }
         }
@@ -444,10 +469,28 @@ namespace MLAPI.SceneManagement
                 return;
             }
 
+
             if (SceneEventData.LoadSceneMode == LoadSceneMode.Single)
             {
+                foreach(var additiveSceneName in m_AdditiveScenesLoaded)
+                {
+                    SceneManager.UnloadSceneAsync(additiveSceneName);
+                }
+                m_AdditiveScenesLoaded.Clear();
+
                 // Move ALL NetworkObjects to the temp scene
                 MoveObjectsToDontDestroyOnLoad();
+            }
+            else
+            {
+                if (!m_AdditiveScenesLoaded.Contains(sceneName))
+                {
+                    m_AdditiveScenesLoaded.Add(sceneName);
+                }
+                else
+                {
+                    throw new Exception($"{sceneName} is being loaded twice?!");
+                }
             }
 
             // NSS TODO: This either needs a better name or there has to be a better way of detecting this condition
@@ -459,7 +502,15 @@ namespace MLAPI.SceneManagement
 
             var sceneLoad = SceneManager.LoadSceneAsync(sceneName, SceneEventData.LoadSceneMode);
             sceneLoad.completed += asyncOp2 => OnSceneLoaded(sceneName);
-            OnSceneSwitchStarted?.Invoke(sceneLoad);
+
+            if (SceneEventData.LoadSceneMode == LoadSceneMode.Single)
+            {
+                OnSceneSwitchStarted?.Invoke(sceneLoad);
+            }
+            else
+            {
+                OnAdditiveSceneEvent?.Invoke(sceneLoad, sceneName, true);
+            }
         }
 
         /// <summary>
@@ -628,7 +679,11 @@ namespace MLAPI.SceneManagement
                 {
                     if (networkObject.gameObject.scene != scene)
                     {
-                        continue;
+                        // If it is not associated with an additive scene or if the additive scene is not the current scene we are processing then continue
+                        if (networkObject.SourceAdditiveScene == null || networkObject.SourceAdditiveScene != scene)
+                        {
+                            continue;
+                        }
                     }
                     ClientSynchEventData.AddNetworkObjectForSynch(malpiSceneIndex, networkObject);
                 }
@@ -904,10 +959,9 @@ namespace MLAPI.SceneManagement
             {
                 if (stream != null)
                 {
-                    using (var reader = NetworkReaderPool.GetReader(stream))
-                    {
-                        SceneEventData = (SceneEventData)reader.ReadObjectPacked(typeof(SceneEventData));
-                    }
+                    var reader = NetworkReaderPool.GetReader(stream);
+                    SceneEventData = (SceneEventData)reader.ReadObjectPacked(typeof(SceneEventData));
+                    NetworkReaderPool.PutBackInPool(reader);
 
                     if (SceneEventData.IsSceneEventClientSide())
                     {

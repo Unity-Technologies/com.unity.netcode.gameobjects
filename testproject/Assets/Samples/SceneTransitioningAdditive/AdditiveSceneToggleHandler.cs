@@ -42,13 +42,26 @@ namespace TestProject.ManualTests
         {
             m_ToggleObject = gameObject.GetComponentInChildren<Toggle>();
             StartCoroutine(CheckForVisibility());
+
+            //NetworkManager.SceneManager.OnSceneSwitchStarted += SceneManager_OnSceneSwitchStarted;
         }
+
+        //private void SceneManager_OnSceneSwitchStarted(AsyncOperation operation)
+        //{
+        //    if (m_ToggleObject)
+        //    {
+        //        if (m_ToggleObject.isOn)
+        //        {
+        //            m_CurrentSceneSwitchProgress = NetworkManager.Singleton.SceneManager.UnloadScene(m_SceneToLoad);
+        //        }
+        //    }
+        //}
 
         private bool m_ExitingScene;
         private void OnDestroy()
         {
             m_ExitingScene = true;
-            StopAllCoroutines();
+            StopCoroutine(CheckForVisibility());
         }
 
         private IEnumerator CheckForVisibility()
