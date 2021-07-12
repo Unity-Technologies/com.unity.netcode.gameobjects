@@ -14,7 +14,6 @@ using MLAPI.Reflection;
 using MLAPI.Serialization;
 using MLAPI.Serialization.Pooled;
 using MLAPI.Transports;
-using Unity.Profiling;
 
 namespace MLAPI
 {
@@ -348,7 +347,6 @@ namespace MLAPI
         private readonly List<NetworkChannel> m_ChannelsForNetworkVariableGroups = new List<NetworkChannel>();
         internal readonly List<INetworkVariable> NetworkVariableFields = new List<INetworkVariable>();
 
-        private static HashSet<NetworkObject> s_Touched = new HashSet<NetworkObject>();
         private static Dictionary<Type, FieldInfo[]> s_FieldTypes = new Dictionary<Type, FieldInfo[]>();
 
         private static FieldInfo[] GetFieldInfoForType(Type type)
@@ -440,74 +438,6 @@ namespace MLAPI
                 }
             }
         }
-
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-        private static ProfilerMarker s_NetworkBehaviourUpdate = new ProfilerMarker($"{nameof(NetworkBehaviour)}.{nameof(NetworkBehaviourUpdate)}");
-#endif
-
-        internal static void NetworkBehaviourUpdate(NetworkManager networkManager)
-        {
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            s_NetworkBehaviourUpdate.Begin();
-#endif
-            try
-            {
-                if (networkManager.IsServer)
-                {
-                    s_Touched.Clear();
-                    for (int i = 0; i < networkManager.ConnectedClientsList.Count; i++)
-                    {
-                        var client = networkManager.ConnectedClientsList[i];
-                        var spawnedObjs = networkManager.SpawnManager.SpawnedObjectsList;
-                        s_Touched.UnionWith(spawnedObjs);
-                        foreach (var sobj in spawnedObjs)
-                        {
-                            // Sync just the variables for just the objects this client sees
-                            for (int k = 0; k < sobj.ChildNetworkBehaviours.Count; k++)
-                            {
-                                sobj.ChildNetworkBehaviours[k].VariableUpdate(client.ClientId);
-                            }
-                        }
-                    }
-
-                    // Now, reset all the no-longer-dirty variables
-                    foreach (var sobj in s_Touched)
-                    {
-                        for (int k = 0; k < sobj.ChildNetworkBehaviours.Count; k++)
-                        {
-                            sobj.ChildNetworkBehaviours[k].PostNetworkVariableWrite();
-                        }
-                    }
-                }
-                else
-                {
-                    // when client updates the sever, it tells it about all its objects
-                    foreach (var sobj in networkManager.SpawnManager.SpawnedObjectsList)
-                    {
-                        for (int k = 0; k < sobj.ChildNetworkBehaviours.Count; k++)
-                        {
-                            sobj.ChildNetworkBehaviours[k].VariableUpdate(networkManager.ServerClientId);
-                        }
-                    }
-
-                    // Now, reset all the no-longer-dirty variables
-                    foreach (var sobj in networkManager.SpawnManager.SpawnedObjectsList)
-                    {
-                        for (int k = 0; k < sobj.ChildNetworkBehaviours.Count; k++)
-                        {
-                            sobj.ChildNetworkBehaviours[k].PostNetworkVariableWrite();
-                        }
-                    }
-                }
-            }
-            finally
-            {
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-                s_NetworkBehaviourUpdate.End();
-#endif
-            }
-        }
-
 
         internal void PreNetworkVariableWrite()
         {

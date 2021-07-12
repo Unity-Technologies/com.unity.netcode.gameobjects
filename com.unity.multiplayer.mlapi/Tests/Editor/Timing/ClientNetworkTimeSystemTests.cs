@@ -161,7 +161,7 @@ namespace MLAPI.EditorTests.Timing
 
             receivedServerTime += 1 / 60d;
             timeSystem.Sync(receivedServerTime, 0.5);
-            bool reset = timeSystem.AdvanceTime(1 / 60d);
+            bool reset = timeSystem.Advance(1 / 60d);
             Assert.IsTrue(reset);
 
             TimingTestHelper.ApplySteps(timeSystem, tickSystem, steps, delegate (int step, bool reset)

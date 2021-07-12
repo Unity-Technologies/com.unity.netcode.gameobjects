@@ -88,6 +88,7 @@ namespace MLAPI.Messaging
 
                 void DelayedSpawnAction(Stream continuationStream)
                 {
+                    
                     using (var continuationReader = PooledNetworkReader.Get(continuationStream))
                     {
                         if (!NetworkManager.NetworkConfig.EnableSceneManagement)
@@ -96,7 +97,7 @@ namespace MLAPI.Messaging
                         }
                         else
                         {
-                            NetworkManager.SpawnManager.ClientCollectSoftSyncSceneObjectSweep(null);
+                            NetworkManager.SceneManager.PopulateScenePlacedObjects();
                         }
 
                         var objectCount = continuationReader.ReadUInt32Packed();
@@ -105,7 +106,6 @@ namespace MLAPI.Messaging
                             NetworkObject.DeserializeSceneObject(continuationStream as NetworkBuffer, continuationReader, m_NetworkManager);
                         }
 
-                        NetworkManager.SpawnManager.CleanDiffedSceneObjects();
                         NetworkManager.IsConnectedClient = true;
                         NetworkManager.InvokeOnClientConnectedCallback(NetworkManager.LocalClientId);
                     }
@@ -318,7 +318,7 @@ namespace MLAPI.Messaging
                 }
                 else
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
                     {
                         NetworkLog.LogWarning($"{nameof(NetworkConstants.NETWORK_VARIABLE_DELTA)} message received for a non-existent object with {nameof(networkObjectId)}: {networkObjectId}. This delta will be buffered and might be recovered.");
                     }

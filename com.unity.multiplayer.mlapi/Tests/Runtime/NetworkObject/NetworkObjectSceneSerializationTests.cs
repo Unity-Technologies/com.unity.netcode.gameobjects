@@ -84,8 +84,8 @@ namespace MLAPI.RuntimeTests
                     // Serialize the valid NetworkObject
                     networkObject.SerializeSceneObject(writer, 0);
 
-                    // Add this valid NetworkObject into the PendinigSoftSyncObjects list
-                    NetworkManagerHelper.NetworkManagerObject.SpawnManager.PendingSoftSyncObjects.Add(networkObject.GlobalObjectIdHash, networkObject);
+                    // Add this valid NetworkObject into the ScenePlacedObjects list
+                    NetworkManagerHelper.NetworkManagerObject.SceneManager.ScenePlacedObjects.Add(networkObject.GlobalObjectIdHash, networkObject);
                 }
             }
 

@@ -61,7 +61,7 @@ namespace MLAPI.Timing
             return new NetworkTimeSystem(0, 0, 0);
         }
 
-        public bool AdvanceTime(double deltaTime)
+        public bool Advance(double deltaTime)
         {
             m_Time += deltaTime;
 
@@ -87,13 +87,11 @@ namespace MLAPI.Timing
         public void Initialize(double serverTime, double rtt)
         {
             Sync(serverTime, rtt);
-            AdvanceTime(0);
+            Advance(0);
         }
 
         public void Sync(double serverTime, double rtt)
         {
-            //Debug.Log($"desiredLocalOff {m_DesiredLocalTimeOffset} currentLocalOff {m_CurrentLocalTimeOffset}");
-
             var timeDif = serverTime - m_Time;
 
             m_DesiredServerTimeOffset = timeDif - ServerBuffer;

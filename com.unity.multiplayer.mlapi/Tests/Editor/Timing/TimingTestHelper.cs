@@ -38,7 +38,7 @@ namespace MLAPI.EditorTests.Timing
             for (var i = 0; i < steps.Count; i++)
             {
                 var step = steps[i];
-                timeSystem.AdvanceTime(step);
+                timeSystem.Advance(step);
                 tickSystem.UpdateTick(timeSystem.LocalTime, timeSystem.ServerTime);
                 if (stepCheck != null)
                 {
@@ -52,7 +52,7 @@ namespace MLAPI.EditorTests.Timing
             for (var i = 0; i < steps.Count; i++)
             {
                 var step = steps[i];
-                var reset = timeSystem.AdvanceTime(step);
+                var reset = timeSystem.Advance(step);
                 tickSystem.UpdateTick(timeSystem.LocalTime, timeSystem.ServerTime);
                 if (stepCheck != null)
                 {
