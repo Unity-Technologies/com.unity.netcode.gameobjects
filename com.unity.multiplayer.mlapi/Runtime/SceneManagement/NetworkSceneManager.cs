@@ -660,8 +660,13 @@ namespace MLAPI.SceneManagement
             for (int i = 0; i < SceneManager.sceneCount; i++)
             {
                 var scene = SceneManager.GetSceneAt(i);
-                uint malpiSceneIndex = GetMLAPISceneIndexFromScene(scene);
 
+                var malpiSceneIndex = GetMLAPISceneIndexFromScene(scene);
+
+                if( malpiSceneIndex == uint.MaxValue)
+                {
+                    continue;
+                }
                 // This would depend upon whether we are additive or note
                 if (activeScene == scene)
                 {
@@ -746,12 +751,6 @@ namespace MLAPI.SceneManagement
 
             // Synchronize the NetworkObjects for this scene
             SceneEventData.SynchronizeSceneNetworkObjects(sceneIndex, m_NetworkManager);
-
-            // If this was the base scene (i.e. active scene) then move all NetworkObjects to this scene (if they were moved out)
-            if ((sceneIndex == SceneEventData.SceneIndex ? SceneEventData.LoadSceneMode : LoadSceneMode.Additive) == LoadSceneMode.Single)
-            {
-                MoveObjectsToScene(nextScene);
-            }
 
             // Check to see if we still have scenes to load and synchronize with
             HandleClientSceneEvent(null);
