@@ -576,7 +576,7 @@ namespace MLAPI.NetworkVariable.Collections
             get
             {
                 // todo: implement proper network tick for NetworkSet
-                return NetworkTimeSystem.NoTick;
+                return NetworkTickSystem.NoTick;
             }
         }
 

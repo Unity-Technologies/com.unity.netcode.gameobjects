@@ -5,199 +5,99 @@ namespace MLAPI.Timing
 {
     /// <summary>
     /// <see cref="NetworkTimeSystem"/> is a standalone system which can be used to run a network time simulation.
-    /// The network time system maintains both a local and a server time and also invokes events for each fixed tick which passes.
+    /// The network time system maintains both a local and a server time. The local time is based on
     /// </summary>
-    public class NetworkTimeSystem : INetworkUpdateSystem, INetworkStats, IDisposable
+    public class NetworkTimeSystem
     {
-        private INetworkTimeProvider m_NetworkTimeProvider;
-        private int m_TickRate;
+        private double m_Time;
 
-        // when null the time system will not tick automatically in any update stage and must be manually advanced.
-        private NetworkUpdateStage? m_UpdateStage;
+        private double m_CurrentLocalTimeOffset;
 
-        private NetworkTime m_LocalTime;
-        private NetworkTime m_ServerTime;
+        private double m_DesiredLocalTimeOffset;
 
-        /// <summary>
-        /// Special value to indicate "No tick information"
-        /// </summary>
-        public const int NoTick = int.MinValue;
+        private double m_CurrentServerTimeOffset;
+
+        private double m_DesiredServerTimeOffset;
 
         /// <summary>
-        /// The current local time. This is the time at which predicted or client authoritative objects move. This value is accurate when called in Update or NetworkFixedUpdate but does not work correctly for FixedUpdate.
+        /// Gets or sets the amount of time in seconds the server should buffer incoming client messages.
+        /// This increases the difference between local and server time so that messages arrive earlier on the server.
         /// </summary>
-        public NetworkTime LocalTime => m_LocalTime;
+        public double LocalBuffer { get; set; }
 
         /// <summary>
-        /// The current server time. This value is mostly used for internal purposes and to interpolate state received from the server. This value is accurate when called in Update or NetworkFixedUpdate but does not work correctly for FixedUpdate.
+        /// Gets or sets the amount of the time in seconds the client should buffer incoming messages from the server. This increases server time.
+        /// A higher value increases latency but makes the game look more smooth in bad networking conditions.
         /// </summary>
-        public NetworkTime ServerTime => m_ServerTime;
+        public double ServerBuffer { get; set; }
 
         /// <summary>
-        /// The TickRate of the time system. This is used to decide how often a fixed network tick is run.
+        /// Gets or sets a threshold in seconds used to force a hard catchup of network time.
         /// </summary>
-        public int TickRate => m_TickRate;
+        public double HardResetThreshold { get; set; }
 
         /// <summary>
-        /// The time provider used
+        /// Gets or sets the ratio at which the NetworkTimeSystem speeds up or slows down time.
         /// </summary>
-        public INetworkTimeProvider NetworkTimeProvider => m_NetworkTimeProvider;
+        public double AdjustmentRatio { get; set; }
 
-        /// <summary>
-        /// Delegate for invoking an event whenever a network tick passes
-        /// </summary>
-        /// <param name="time">The local time for the tick.</param>
-        public delegate void NetworkTickDelegate(NetworkTime time);
+        public double LocalTime => m_Time + m_CurrentLocalTimeOffset;
 
-        /// <summary>
-        /// Gets invoked before every network tick.
-        /// </summary>
-        public event NetworkTickDelegate NetworkTick = null;
+        public double ServerTime => m_Time + m_CurrentServerTimeOffset;
 
-        /// <summary>
-        /// Gets invoked during every network tick. Used by internal components like <see cref="NetworkManager"/>
-        /// </summary>
-        internal event NetworkTickDelegate NetworkTickInternal = null;
+        //TODO This is used as a workaround to pass this back into the sync function will be removed once we get correct value.
+        internal double TimeSystemInternalTime => m_Time;
 
-        /// <summary>
-        /// Creates a new instance of the <see cref="NetworkTimeSystem"/> class.
-        /// </summary>
-        /// <param name="tickRate">The tickrate.</param>
-        /// <param name="isServer">true if the system will be used for a server or host.</param>
-        /// <param name="networkManager">The networkManager to extract the RTT from. Will be removed in the future to reduce dependencies.</param>
-        internal NetworkTimeSystem(int tickRate, bool isServer, NetworkManager networkManager, NetworkUpdateStage? networkUpdateStage = null)
+        public NetworkTimeSystem(double localBuffer, double serverBuffer, double hardResetThreshold, double adjustmentRatio = 0.01d)
         {
-            m_NetworkManager = networkManager;
-            Init(tickRate, isServer, this, networkUpdateStage);
+            LocalBuffer = localBuffer;
+            ServerBuffer = serverBuffer;
+            HardResetThreshold = hardResetThreshold;
+            AdjustmentRatio = adjustmentRatio;
         }
 
-        /// <summary>
-        /// Creates a new instance of the <see cref="NetworkTimeSystem"/> class.
-        /// </summary>
-        /// <param name="tickRate">The tickrate.</param>
-        /// <param name="isServer">true if the system will be used for a server or host.</param>
-        /// <param name="networkStats">The network stats source for RTT and other network information used to drive the time system.</param>
-        public NetworkTimeSystem(int tickRate, bool isServer, INetworkStats networkStats, NetworkUpdateStage? networkUpdateStage = null)
+        public static NetworkTimeSystem ServerTimeSystem()
         {
-            Init(tickRate, isServer, networkStats, networkUpdateStage);
+            return new NetworkTimeSystem(0, 0, 0);
         }
 
-        // This should just be a constructor but isn't because of c# limited constructor overriding support.
-        private void Init(int tickRate, bool isServer, INetworkStats networkStats, NetworkUpdateStage? networkUpdateStage)
+        public bool AdvanceTime(double deltaTime)
         {
-            m_UpdateStage = networkUpdateStage;
-            if (networkUpdateStage.HasValue)
+            m_Time += deltaTime;
+
+            if (Math.Abs(m_DesiredLocalTimeOffset - m_CurrentLocalTimeOffset) > HardResetThreshold || Math.Abs(m_DesiredServerTimeOffset - m_CurrentServerTimeOffset) > HardResetThreshold)
             {
-                this.RegisterNetworkUpdate(networkUpdateStage.Value);
+                m_Time += m_DesiredServerTimeOffset;
+
+                m_DesiredLocalTimeOffset -= m_DesiredServerTimeOffset;
+                m_CurrentLocalTimeOffset = m_DesiredLocalTimeOffset;
+
+                m_DesiredServerTimeOffset = 0;
+                m_CurrentServerTimeOffset = 0;
+
+                return true;
             }
 
-            m_TickRate = tickRate;
+            m_CurrentLocalTimeOffset += deltaTime * (m_DesiredLocalTimeOffset > m_CurrentLocalTimeOffset ? AdjustmentRatio : -AdjustmentRatio);
+            m_CurrentServerTimeOffset += deltaTime * (m_DesiredServerTimeOffset > m_CurrentServerTimeOffset ? AdjustmentRatio : -AdjustmentRatio);
 
-            if (isServer)
-            {
-                m_NetworkTimeProvider = new ServerNetworkTimeProvider();
-            }
-            else
-            {
-                m_NetworkTimeProvider = new ClientNetworkTimeProvider(networkStats, tickRate);
-            }
-
-            m_LocalTime = new NetworkTime(tickRate);
-            m_ServerTime = new NetworkTime(tickRate);
+            return false;
         }
 
-        /// <summary>
-        /// Called each network loop update during the <see cref="NetworkUpdateStage.PreUpdate"/> to advance the network time.
-        /// </summary>
-        /// <param name="deltaTime">The delta time used to advance time. During normal use this is <see cref="Time.deltaTime"/>.</param>
-        public void AdvanceNetworkTime(float deltaTime)
+        public void Initialize(double serverTime, double rtt)
         {
-            // store old local tick to know how many fixed ticks passed
-            var previousLocalTick = LocalTime.Tick;
-
-            m_NetworkTimeProvider.AdvanceTime(ref m_LocalTime, ref m_ServerTime, deltaTime);
-
-            // cache times here so that we can adjust them to temporary values while simulating ticks.
-            var cacheLocalTime = m_LocalTime;
-            var cacheServerTime = m_ServerTime;
-
-            var currentLocalTick = LocalTime.Tick;
-            var localToServerDifference = currentLocalTick - ServerTime.Tick;
-
-            for (int i = previousLocalTick + 1; i <= currentLocalTick; i++)
-            {
-                // TODO this is temporary code to just make this run somehow will be removed once we have snapshot ack
-                m_LastReceivedServerSnapshotTick = new NetworkTime(TickRate, m_LastReceivedServerSnapshotTick.Tick + 1);
-
-                // set exposed time values to correct fixed values
-                m_LocalTime = new NetworkTime(TickRate, i);
-                m_ServerTime = new NetworkTime(TickRate, i - localToServerDifference);
-
-                NetworkTick?.Invoke(m_LocalTime);
-                NetworkTickInternal?.Invoke(m_ServerTime);
-            }
-
-            // Set exposed time to values from tick system
-            m_LocalTime = cacheLocalTime;
-            m_ServerTime = cacheServerTime;
+            Sync(serverTime, rtt);
+            AdvanceTime(0);
         }
 
-        /// <summary>
-        /// Called on the client in the initial spawn packet to initialize the time with the correct server value.
-        /// </summary>
-        /// <param name="serverTick">The server tick at initialization time</param>
-        public void InitializeClient(int serverTick)
+        public void Sync(double serverTime, double rtt)
         {
-            m_LastReceivedServerSnapshotTick = new NetworkTime(TickRate, serverTick);
+            //Debug.Log($"desiredLocalOff {m_DesiredLocalTimeOffset} currentLocalOff {m_CurrentLocalTimeOffset}");
 
-            m_ServerTime = new NetworkTime(TickRate, serverTick);
+            var timeDif = serverTime - m_Time;
 
-            // This should be overriden by the time provider but setting it in case it's not
-            m_LocalTime = new NetworkTime(TickRate, serverTick);
-
-            m_NetworkTimeProvider.InitializeClient(ref m_LocalTime, ref m_ServerTime);
-        }
-
-        // TODO this is temporary until we have a better way to measure RTT. Most likely a separate stats class will be used to track this.
-        #region NetworkStats
-
-        private NetworkManager m_NetworkManager;
-
-        private NetworkTime m_LastReceivedServerSnapshotTick;
-
-        /// <inheritdoc/>
-        public float Rtt
-        {
-            get
-            {
-                if (m_NetworkManager.IsServer)
-                {
-                    return 0f;
-                }
-
-                return m_NetworkManager.NetworkConfig.NetworkTransport.GetCurrentRtt(m_NetworkManager.ServerClientId) / 1000f;
-            }
-        }
-
-        /// <inheritdoc/>
-        public NetworkTime LastReceivedSnapshotTick => m_LastReceivedServerSnapshotTick;
-
-        #endregion
-
-        public void NetworkUpdate(NetworkUpdateStage updateStage)
-        {
-            if (updateStage == m_UpdateStage)
-            {
-                AdvanceNetworkTime(Time.deltaTime);
-            }
-        }
-
-        public void Dispose()
-        {
-            if (m_UpdateStage.HasValue)
-            {
-                this.UnregisterNetworkUpdate(m_UpdateStage.Value);
-            }
+            m_DesiredServerTimeOffset = timeDif - ServerBuffer;
+            m_DesiredLocalTimeOffset = timeDif + rtt + LocalBuffer;
         }
     }
 }

@@ -39,14 +39,14 @@ namespace MLAPI.RuntimeTests.Timing
         [UnityTest]
         public IEnumerator CorrectAmountTicksTest()
         {
-            var timeSystem = NetworkManager.Singleton.NetworkTimeSystem;
-            var delta = timeSystem.LocalTime.FixedDeltaTime;
+            var tickSystem = NetworkManager.Singleton.NetworkTickSystem;
+            var delta = tickSystem.LocalTime.FixedDeltaTime;
 
-            while (timeSystem.LocalTime.Time < 3f)
+            while (tickSystem.LocalTime.Time < 3f)
             {
                 yield return null;
-                Assert.AreEqual(Mathf.FloorToInt((timeSystem.LocalTime.TimeAsFloat / delta)), NetworkManager.Singleton.LocalTime.Tick);
-                Assert.AreEqual(Mathf.FloorToInt((timeSystem.ServerTime.TimeAsFloat / delta)), NetworkManager.Singleton.ServerTime.Tick);
+                Assert.AreEqual(Mathf.FloorToInt((tickSystem.LocalTime.TimeAsFloat / delta)), NetworkManager.Singleton.LocalTime.Tick);
+                Assert.AreEqual(Mathf.FloorToInt((tickSystem.ServerTime.TimeAsFloat / delta)), NetworkManager.Singleton.ServerTime.Tick);
             }
         }
 
@@ -109,7 +109,6 @@ namespace MLAPI.RuntimeTests.Timing
                 // offset of  1 is ok, this happens due to different tick duration offsets
                 Assert.True(Mathf.Abs(serverTime.Tick - m_TickOffset - m_LastFixedUpdateTick) <= 1);
             }
-
 
             m_LocalTimePreviousUpdate = localTime;
         }

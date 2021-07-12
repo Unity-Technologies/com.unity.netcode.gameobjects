@@ -33,12 +33,13 @@ namespace MLAPI.EditorTests.Timing
 
         public delegate void StepCheckResetDelegate(int step, bool reset);
 
-        public static void ApplySteps(INetworkTimeProvider timeProvider, List<float> steps, ref NetworkTime localTime, ref NetworkTime serverTime, StepCheckDelegate stepCheck = null)
+        public static void ApplySteps(NetworkTimeSystem timeSystem, NetworkTickSystem tickSystem, List<float> steps, StepCheckDelegate stepCheck = null)
         {
             for (var i = 0; i < steps.Count; i++)
             {
                 var step = steps[i];
-                timeProvider.AdvanceTime(ref localTime, ref serverTime, step);
+                timeSystem.AdvanceTime(step);
+                tickSystem.UpdateTick(timeSystem.LocalTime, timeSystem.ServerTime);
                 if (stepCheck != null)
                 {
                     stepCheck(i);
@@ -46,12 +47,13 @@ namespace MLAPI.EditorTests.Timing
             }
         }
 
-        public static void ApplySteps(INetworkTimeProvider timeProvider, List<float> steps, ref NetworkTime localTime, ref NetworkTime serverTime, StepCheckResetDelegate stepCheck = null)
+        public static void ApplySteps(NetworkTimeSystem timeSystem, NetworkTickSystem tickSystem, List<float> steps, StepCheckResetDelegate stepCheck = null)
         {
             for (var i = 0; i < steps.Count; i++)
             {
                 var step = steps[i];
-                var reset = timeProvider.AdvanceTime(ref localTime, ref serverTime, step);
+                var reset = timeSystem.AdvanceTime(step);
+                tickSystem.UpdateTick(timeSystem.LocalTime, timeSystem.ServerTime);
                 if (stepCheck != null)
                 {
                     stepCheck(i, reset);
@@ -59,13 +61,5 @@ namespace MLAPI.EditorTests.Timing
             }
         }
     }
-
-    public class DummyNetworkStats : INetworkStats
-    {
-        public float Rtt { get; set; }
-
-        public NetworkTime LastReceivedSnapshotTick { get; set; }
-    }
-
 }
 

@@ -12,6 +12,7 @@ using MLAPI.Configuration;
 using MLAPI.Messaging.Buffering;
 using MLAPI.Profiling;
 using MLAPI.Serialization;
+using MLAPI.Timing;
 
 namespace MLAPI.Messaging
 {
@@ -79,7 +80,8 @@ namespace MLAPI.Messaging
                 bool sceneSwitch = NetworkManager.NetworkConfig.EnableSceneManagement && NetworkManager.SceneManager.HasSceneMismatch(sceneIndex);
 
                 int tick = reader.ReadInt32Packed();
-                NetworkManager.NetworkTimeSystem.InitializeClient(tick);
+                var time = new NetworkTime(NetworkManager.NetworkTickSystem.TickRate, tick);
+                NetworkManager.NetworkTimeSystem.Sync(time.Time, 0.15f); // Start with a constant RTT of 150 until we receive values from the transport.
 
                 NetworkManager.ConnectedClients.Add(NetworkManager.LocalClientId, new NetworkClient { ClientId = NetworkManager.LocalClientId });
 

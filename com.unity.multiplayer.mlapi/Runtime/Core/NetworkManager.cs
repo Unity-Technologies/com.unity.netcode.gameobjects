@@ -41,9 +41,7 @@ namespace MLAPI
 #pragma warning restore IDE1006 // restore naming rule violation check
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-        private static ProfilerMarker s_EventTick = new ProfilerMarker($"{nameof(NetworkManager)}.EventTick");
-        private static ProfilerMarker s_ReceiveTick = new ProfilerMarker($"{nameof(NetworkManager)}.ReceiveTick");
-        private static ProfilerMarker s_SyncTime = new ProfilerMarker($"{nameof(NetworkManager)}.SyncTime");
+        private static ProfilerMarker s_TransportPoll = new ProfilerMarker($"{nameof(NetworkManager)}.TransportPoll");
         private static ProfilerMarker s_TransportConnect = new ProfilerMarker($"{nameof(NetworkManager)}.TransportConnect");
         private static ProfilerMarker s_HandleIncomingData = new ProfilerMarker($"{nameof(NetworkManager)}.{nameof(HandleIncomingData)}");
         private static ProfilerMarker s_TransportDisconnect = new ProfilerMarker($"{nameof(NetworkManager)}.TransportDisconnect");
@@ -76,9 +74,11 @@ namespace MLAPI
 
         public NetworkTimeSystem NetworkTimeSystem { get; private set; }
 
-        public NetworkTime LocalTime => NetworkTimeSystem?.LocalTime ?? new NetworkTime();
+        public NetworkTickSystem NetworkTickSystem { get; private set; }
 
-        public NetworkTime ServerTime => NetworkTimeSystem?.ServerTime ?? new NetworkTime();
+        public NetworkTime LocalTime => NetworkTickSystem?.LocalTime ?? default;
+
+        public NetworkTime ServerTime => NetworkTickSystem?.ServerTime ?? default;
 
         //private float m_NetworkTimeOffset;
         private float m_CurrentNetworkTimeOffset;
@@ -371,16 +371,16 @@ namespace MLAPI
 
             SnapshotSystem = new SnapshotSystem();
 
-            //This 'if' should never enter
-            if (NetworkTimeSystem != null)
+            if (NetworkTickSystem != null)
             {
-                NetworkTimeSystem.NetworkTickInternal -= OnNetworkTick;
-                NetworkTimeSystem.Dispose();
-                NetworkTimeSystem = null;
+                NetworkTickSystem.Tick -= OnNetworkManagerTick;
+                NetworkTickSystem = null;
             }
 
-            NetworkTimeSystem = new NetworkTimeSystem(NetworkConfig.TickRate, server, this, NetworkUpdateStage.PreUpdate);
-            NetworkTimeSystem.NetworkTickInternal += OnNetworkTick;
+
+            NetworkTimeSystem = new NetworkTimeSystem(0.05, 0.05, 0.2);
+            NetworkTickSystem = new NetworkTickSystem(NetworkConfig.TickRate, 0, 0);
+            NetworkTickSystem.Tick += OnNetworkManagerTick;
 
 
             // This should never happen, but in the event that it does there should be (at a minimum) a unity error logged.
@@ -800,6 +800,12 @@ namespace MLAPI
                 SnapshotSystem = null;
             }
 
+            if (NetworkTickSystem != null)
+            {
+                NetworkTickSystem.Tick -= OnNetworkManagerTick;
+                NetworkTickSystem = null;
+            }
+
 #if !UNITY_2020_2_OR_NEWER
             NetworkProfiler.Stop();
 #endif
@@ -841,13 +847,6 @@ namespace MLAPI
                 CustomMessagingManager = null;
             }
 
-            if (NetworkTimeSystem != null)
-            {
-                NetworkTimeSystem.NetworkTickInternal -= OnNetworkTick;
-                NetworkTimeSystem.Dispose();
-                NetworkTimeSystem = null;
-            }
-
             //The Transport is set during Init time, thus it is possible for the Transport to be null
             NetworkConfig?.NetworkTransport?.Shutdown();
         }
@@ -860,11 +859,11 @@ namespace MLAPI
                 case NetworkUpdateStage.EarlyUpdate:
                     OnNetworkEarlyUpdate();
                     break;
+                case NetworkUpdateStage.PreUpdate:
+                    OnNetworkPreUpdate();
+                    break;
             }
         }
-
-        //   private float m_LastEventTickTime;
-        private float m_LastTimeSyncTime;
 
         private void OnNetworkEarlyUpdate()
         {
@@ -877,7 +876,7 @@ namespace MLAPI
                 ProfilerStatManager.RcvTickRate.Record();
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-                s_ReceiveTick.Begin();
+                s_TransportPoll.Begin();
 #endif
                 var isLoopBack = false;
 
@@ -904,9 +903,17 @@ namespace MLAPI
 #endif
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-                s_ReceiveTick.End();
+                s_TransportPoll.End();
 #endif
             }
+        }
+
+        private void OnNetworkPreUpdate()
+        {
+            // TODO this is a workaround until we have a good way to pass time received from the server + RTT to the time system.
+            NetworkTimeSystem.Sync(NetworkTimeSystem.TimeSystemInternalTime + Time.deltaTime, NetworkConfig.NetworkTransport.GetCurrentRtt(ServerClientId) / 1000d);
+            NetworkTimeSystem.AdvanceTime(Time.deltaTime);
+            NetworkTickSystem.UpdateTick(NetworkTimeSystem.LocalTime, NetworkTimeSystem.ServerTime);
         }
 
         /// <summary>
@@ -915,15 +922,8 @@ namespace MLAPI
         /// - call NetworkFixedUpdate on all NetworkBehaviours in prediction/client authority mode
         /// - create a snapshot from resulting state
         /// </summary>
-        private void OnNetworkTick(NetworkTime localTime)
+        private void OnNetworkManagerTick()
         {
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            s_EventTick.Begin();
-#endif
-#if UNITY_EDITOR && !UNITY_2020_2_OR_NEWER
-            NetworkProfiler.StartTick(TickType.Event);
-#endif
-
             if (NetworkConfig.EnableNetworkVariable)
             {
                 // Do NetworkVariable updates
@@ -934,14 +934,6 @@ namespace MLAPI
             {
                 BufferManager.CleanBuffer();
             }
-
-
-#if UNITY_EDITOR && !UNITY_2020_2_OR_NEWER
-            NetworkProfiler.EndTick();
-#endif
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            s_EventTick.End();
-#endif
         }
 
         private void SendConnectionRequest()
@@ -1558,7 +1550,7 @@ namespace MLAPI
                             writer.WriteByteArray(NetworkSceneManager.CurrentSceneSwitchProgressGuid.ToByteArray());
                         }
 
-                        writer.WriteInt32Packed(NetworkTimeSystem.LocalTime.Tick);
+                        writer.WriteInt32Packed(LocalTime.Tick);
                         writer.WriteUInt32Packed((uint)m_ObservedObjects.Count);
 
                         for (int i = 0; i < m_ObservedObjects.Count; i++)

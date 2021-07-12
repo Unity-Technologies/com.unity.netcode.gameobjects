@@ -601,7 +601,7 @@ namespace MLAPI.NetworkVariable.Collections
             get
             {
                 // todo: implement proper network tick for NetworkList
-                return NetworkTimeSystem.NoTick;
+                return NetworkTickSystem.NoTick;
             }
         }
 

@@ -353,7 +353,7 @@ namespace MLAPI
                     m_Snapshot.AllocateEntry(ref m_Snapshot.Entries[pos], varBuffer.Length);
                 }
 
-                m_Snapshot.Entries[pos].TickWritten = m_NetworkManager.NetworkTimeSystem.LocalTime.Tick;
+                m_Snapshot.Entries[pos].TickWritten = m_NetworkManager.NetworkTickSystem.LocalTime.Tick;
                 // Copy the serialized NetworkVariable into our buffer
                 Buffer.BlockCopy(varBuffer.GetBuffer(), 0, m_Snapshot.Buffer, m_Snapshot.Entries[pos].Position, (int)varBuffer.Length);
             }
