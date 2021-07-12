@@ -1698,10 +1698,6 @@ namespace MLAPI
                         SceneManager.SynchronizeNetworkObjects(ownerClientId);
                     }
                 }
-                else
-                {
-                    ConnectedClients[ownerClientId].IsReadyToReceiveMessages = true;
-                }
 
                 OnClientConnectedCallback?.Invoke(ownerClientId);
 

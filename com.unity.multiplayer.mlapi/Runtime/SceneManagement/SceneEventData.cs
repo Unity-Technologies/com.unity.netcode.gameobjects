@@ -242,16 +242,14 @@ namespace MLAPI.SceneManagement
             {
                 var keyPairCount = reader.ReadInt32Packed();
 
+                if (m_SceneNetworkObjectDataOffsets == null)
+                {
+                    m_SceneNetworkObjectDataOffsets = new Dictionary<uint, long>();
+                }
+
                 if (keyPairCount > 0)
                 {
-                    if (m_SceneNetworkObjectDataOffsets == null)
-                    {
-                        m_SceneNetworkObjectDataOffsets = new Dictionary<uint, long>();
-                    }
-                    else
-                    {
-                        m_SceneNetworkObjectDataOffsets.Clear();
-                    }
+                    m_SceneNetworkObjectDataOffsets.Clear();
 
                     InternalBuffer.Position = 0;
 

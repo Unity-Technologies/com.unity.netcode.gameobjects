@@ -386,14 +386,6 @@ namespace MLAPI.SceneManagement
                 return null;
             }
 
-            foreach (var client in m_NetworkManager.ConnectedClientsList)
-            {
-                if (client.ClientId != m_NetworkManager.ServerClientId)
-                {
-                    client.IsReadyToReceiveMessages = false;
-                }
-            }
-
             SceneEventData.SwitchSceneGuid = switchSceneProgress.Guid;
             SceneEventData.SceneEventType = SceneEventData.SceneEventTypes.SWITCH;
             SceneEventData.SceneIndex = SceneNameToIndex[sceneName];
@@ -762,23 +754,7 @@ namespace MLAPI.SceneManagement
             }
 
             // Check to see if we still have scenes to load and synchronize with
-            if (!SceneEventData.IsDoneWithSynchronization())
-            {
-                HandleClientSceneEvent(null);
-            }
-            else
-            {
-                // All scenes are synchronized, let the server know we are done synchronizing
-                m_NetworkManager.IsConnectedClient = true;
-                m_NetworkManager.InvokeOnClientConnectedCallback(m_NetworkManager.LocalClientId);
-                using (var buffer = PooledNetworkBuffer.Get())
-                using (var writer = PooledNetworkWriter.Get(buffer))
-                {
-                    SceneEventData.SceneEventType = SceneEventData.SceneEventTypes.SYNC_COMPLETE;
-                    writer.WriteObjectPacked(SceneEventData);
-                    m_NetworkManager.MessageSender.Send(m_NetworkManager.ServerClientId, NetworkConstants.SCENE_EVENT, NetworkChannel.Internal, buffer);
-                }
-            }
+            HandleClientSceneEvent(null);
         }
 
         internal bool HasSceneMismatch(uint sceneIndex) => SceneManager.GetActiveScene().name != SceneIndexToString[sceneIndex];
@@ -898,7 +874,23 @@ namespace MLAPI.SceneManagement
                     }
                 case SceneEventData.SceneEventTypes.SYNC:
                     {
-                        OnClientBeginSynch(SceneEventData.GetNextSceneSynchronizationIndex());
+                        if (!SceneEventData.IsDoneWithSynchronization())
+                        {
+                            OnClientBeginSynch(SceneEventData.GetNextSceneSynchronizationIndex());
+                        }
+                        else
+                        {
+                            // All scenes are synchronized, let the server know we are done synchronizing
+                            m_NetworkManager.IsConnectedClient = true;
+                            m_NetworkManager.InvokeOnClientConnectedCallback(m_NetworkManager.LocalClientId);
+                            using (var buffer = PooledNetworkBuffer.Get())
+                            using (var writer = PooledNetworkWriter.Get(buffer))
+                            {
+                                SceneEventData.SceneEventType = SceneEventData.SceneEventTypes.SYNC_COMPLETE;
+                                writer.WriteObjectPacked(SceneEventData);
+                                m_NetworkManager.MessageSender.Send(m_NetworkManager.ServerClientId, NetworkConstants.SCENE_EVENT, NetworkChannel.Internal, buffer);
+                            }
+                        }
                         break;
                     }
                 default:
@@ -921,7 +913,6 @@ namespace MLAPI.SceneManagement
                 case SceneEventData.SceneEventTypes.SWITCH_COMPLETE:
                     {
                         OnClientSceneLoadingEventCompleted(clientId, SceneEventData.SwitchSceneGuid);
-                        m_NetworkManager.ConnectedClients[clientId].IsReadyToReceiveMessages = true;
                         break;
                     }
                 case SceneEventData.SceneEventTypes.LOAD_COMPLETE:
@@ -936,7 +927,6 @@ namespace MLAPI.SceneManagement
                     }
                 case SceneEventData.SceneEventTypes.SYNC_COMPLETE:
                     {
-                        m_NetworkManager.ConnectedClients[clientId].IsReadyToReceiveMessages = true;
                         // NSS TOOD: The scene event local notification needs to be called
                         //m_NetworkManager.NotifyPlayerConnected(clientId);
                         break;

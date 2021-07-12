@@ -362,11 +362,6 @@ namespace MLAPI.Spawning
                 return;
             }
 
-            if (!NetworkManager.ConnectedClients[clientId].IsReadyToReceiveMessages)
-            {
-                return;
-            }
-
             var rpcQueueContainer = NetworkManager.RpcQueueContainer;
 
             var buffer = PooledNetworkBuffer.Get();
