@@ -24,6 +24,8 @@ namespace MLAPI.Metrics
         private readonly EventMetric<ObjectSpawnedEvent> m_ObjectSpawnReceivedEvent = new EventMetric<ObjectSpawnedEvent>(MetricNames.ObjectSpawnedReceived);
         private readonly EventMetric<ObjectDestroyedEvent> m_ObjectDestroySentEvent = new EventMetric<ObjectDestroyedEvent>(MetricNames.ObjectDestroyedSent);
         private readonly EventMetric<ObjectDestroyedEvent> m_ObjectDestroyReceivedEvent = new EventMetric<ObjectDestroyedEvent>(MetricNames.ObjectDestroyedReceived);
+        private readonly EventMetric<ServerLogEvent> m_ServerLogSentEvent = new EventMetric<ServerLogEvent>(MetricNames.ServerLogSent);
+        private readonly EventMetric<ServerLogEvent> m_ServerLogReceivedEvent = new EventMetric<ServerLogEvent>(MetricNames.ServerLogReceived);
 
         private Dictionary<ulong, NetworkObjectIdentifier> m_NetworkGameObjects = new Dictionary<ulong, NetworkObjectIdentifier>();
 
@@ -36,6 +38,7 @@ namespace MLAPI.Metrics
                 .WithMetricEvents(m_NetworkVariableDeltaSentEvent, m_NetworkVariableDeltaReceivedEvent)
                 .WithMetricEvents(m_ObjectSpawnSentEvent, m_ObjectSpawnReceivedEvent)
                 .WithMetricEvents(m_ObjectDestroySentEvent, m_ObjectDestroyReceivedEvent)
+                .WithMetricEvents(m_ServerLogSentEvent, m_ServerLogReceivedEvent)
                 .Build();
 
             Dispatcher.RegisterObserver(MLAPIObserver.Observer);
@@ -126,6 +129,16 @@ namespace MLAPI.Metrics
         public void TrackObjectDestroyReceived(ulong senderClientId, ulong networkObjectId, string gameObjectName, ulong bytesCount)
         {
             m_ObjectDestroyReceivedEvent.Mark(new ObjectDestroyedEvent(new ConnectionInfo(senderClientId), new NetworkObjectIdentifier(gameObjectName, networkObjectId), bytesCount));
+        }
+
+        public void TrackServerLogSent(ulong receiverClientId, uint logType, ulong bytesCount)
+        {
+            m_ServerLogSentEvent.Mark(new ServerLogEvent(new ConnectionInfo(receiverClientId), (LogLevel)logType, bytesCount));
+        }
+
+        public void TrackServerLogReceived(ulong senderClientId, uint logType, ulong bytesCount)
+        {
+            m_ServerLogReceivedEvent.Mark(new ServerLogEvent(new ConnectionInfo(senderClientId), (LogLevel)logType, bytesCount));
         }
 
         public void DispatchFrame()

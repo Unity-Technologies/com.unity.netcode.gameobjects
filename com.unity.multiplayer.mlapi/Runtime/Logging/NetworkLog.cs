@@ -67,6 +67,7 @@ namespace MLAPI.Logging
                     writer.WriteStringPacked(message);
 
                     NetworkManager.Singleton.MessageSender.Send(NetworkManager.Singleton.ServerClientId, NetworkConstants.SERVER_LOG, NetworkChannel.Internal, buffer);
+                    NetworkManager.Singleton.NetworkMetrics.TrackServerLogSent(NetworkManager.Singleton.ServerClientId, (uint)logType, (ulong)buffer.Length);
                 }
             }
         }
