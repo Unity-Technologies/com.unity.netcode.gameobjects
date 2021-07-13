@@ -18,7 +18,7 @@ namespace MLAPI.MultiprocessRuntimeTests
         public const string BuildAndExecuteMenuName = MultiprocessBaseMenuName + "/Build Test Player #t";
         public const string MainSceneName = "MultiprocessTestScene";
 
-        public const string BuildInfoFileName = "buildInfo.txt";
+        public const string BuildInfoFileName = "buildInfo.json";
 
         private static string BuildPathDirectory => Path.Combine(Path.GetDirectoryName(Application.dataPath), "Builds", "MultiprocessTests");
         public static string BuildPath => Path.Combine(BuildPathDirectory, "MultiprocessTestPlayer");
