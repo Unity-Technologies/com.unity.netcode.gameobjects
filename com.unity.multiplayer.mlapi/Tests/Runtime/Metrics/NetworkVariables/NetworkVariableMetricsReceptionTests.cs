@@ -2,8 +2,7 @@ using System.Collections;
 using System.Linq;
 using MLAPI.Metrics;
 using NUnit.Framework;
-using Unity.Multiplayer.NetworkProfiler;
-using Unity.Multiplayer.NetworkProfiler.Models;
+using Unity.Multiplayer.MetricTypes;
 using UnityEngine;
 using UnityEngine.TestTools;
 
@@ -23,7 +22,7 @@ namespace MLAPI.RuntimeTests.Metrics.NetworkVariables
                 Debug.LogError("Failed to create instances");
                 Assert.Fail("Failed to create instances");
             }
-            
+
             var playerPrefab = new GameObject("Player");
             var networkObject = playerPrefab.AddComponent<NetworkObject>();
             playerPrefab.AddComponent<NetworkVariableComponent>();

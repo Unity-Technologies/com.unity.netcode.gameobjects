@@ -1,10 +1,10 @@
 #if MULTIPLAYER_TOOLS
 
 using System.Collections.Generic;
+using Unity.Multiplayer.MetricTypes;
 using Unity.Multiplayer.NetStats.Dispatch;
 using Unity.Multiplayer.NetStats.Metrics;
-using Unity.Multiplayer.NetworkProfiler;
-using Unity.Multiplayer.NetworkProfiler.Models;
+using Unity.Multiplayer.NetStatsReporting;
 
 namespace MLAPI.Metrics
 {
@@ -142,12 +142,7 @@ namespace MLAPI.Metrics
 
     public class MLAPIObserver
     {
-        public static IMetricObserver Observer { get; }
-
-        static MLAPIObserver()
-        {
-            Observer = new NetStatObserver();
-        }
+        public static IMetricObserver Observer { get; } = MetricObserverFactory.Construct();
     }
 }
 

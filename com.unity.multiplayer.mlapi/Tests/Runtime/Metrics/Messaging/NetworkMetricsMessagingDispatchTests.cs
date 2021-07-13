@@ -6,8 +6,7 @@ using System.Linq;
 using MLAPI.Metrics;
 using MLAPI.Serialization;
 using NUnit.Framework;
-using Unity.Multiplayer.NetworkProfiler;
-using Unity.Multiplayer.NetworkProfiler.Models;
+using Unity.Multiplayer.MetricTypes;
 using UnityEngine.TestTools;
 
 namespace MLAPI.RuntimeTests.Metrics.Messaging
@@ -53,7 +52,7 @@ namespace MLAPI.RuntimeTests.Metrics.Messaging
         public IEnumerator TrackNamedMessageSentMetricToMultipleClients()
         {
             var messageName = Guid.NewGuid().ToString();
-            
+
             var waitForMetricValues = new WaitForMetricValues<NamedMessageEvent>(m_NetworkMetrics.Dispatcher, MetricNames.NamedMessageSent);
             m_NetworkManager.CustomMessagingManager.SendNamedMessage(messageName, new List<ulong> { 100, 200, 300 }, Stream.Null);
 
@@ -73,7 +72,7 @@ namespace MLAPI.RuntimeTests.Metrics.Messaging
         public IEnumerator TrackUnnamedMessageSentMetric()
         {
             var clientId = 100UL;
-            
+
             var waitForMetricValues = new WaitForMetricValues<UnnamedMessageEvent>(m_NetworkMetrics.Dispatcher, MetricNames.UnnamedMessageSent);
             m_NetworkManager.CustomMessagingManager.SendUnnamedMessage(clientId, new NetworkBuffer());
 
