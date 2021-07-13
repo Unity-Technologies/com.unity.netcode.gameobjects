@@ -6,15 +6,15 @@ namespace MLAPI.Interest
 {
     public class InterestNodeStatic : InterestNode
     {
-        public List<InterestKernel> InterestKernel = new List<InterestKernel>();
+        public List<InterestKernel> InterestKernels = new List<InterestKernel>();
+
+        // these are the objects under my purview
+        protected HashSet<NetworkObject> ManagedObjects;
 
         public void OnEnable()
         {
             ManagedObjects = new HashSet<NetworkObject>();
         }
-
-        // these are the objects under my purview
-        protected HashSet<NetworkObject> ManagedObjects;
 
         public override void AddObject(in NetworkObject obj)
         {
@@ -28,11 +28,11 @@ namespace MLAPI.Interest
 
         public override void QueryFor(in NetworkClient client, HashSet<NetworkObject> results)
         {
-            if (InterestKernel.Count > 0)
+            if (InterestKernels.Count > 0)
             {
                 foreach (var obj in ManagedObjects)
                 {
-                    foreach (var ik in InterestKernel)
+                    foreach (var ik in InterestKernels)
                     {
                         ik.QueryFor(client, obj, results);
                     }

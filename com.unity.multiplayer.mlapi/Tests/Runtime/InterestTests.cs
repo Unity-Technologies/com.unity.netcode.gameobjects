@@ -207,7 +207,7 @@ namespace MLAPI.RuntimeTests
             InterestNodeStatic naiveRadiusNode = ScriptableObject.CreateInstance<InterestNodeStatic>();
             var naiveRadiusKernel = ScriptableObject.CreateInstance<RadiusInterestKernel>();
             naiveRadiusKernel.Radius = 1.5f;
-            naiveRadiusNode.InterestKernel.Add(naiveRadiusKernel);
+            naiveRadiusNode.InterestKernels.Add(naiveRadiusKernel);
             var staticNode = ScriptableObject.CreateInstance<InterestNodeStatic>();
 
             var results = new HashSet<NetworkObject>();
@@ -276,8 +276,8 @@ namespace MLAPI.RuntimeTests
             oddKernel.IsOdd = true;
             var evenKernel = ScriptableObject.CreateInstance<OddEvenInterestKernel>();
             evenKernel.IsOdd = false;
-            dualNode.InterestKernel.Add(oddKernel);
-            dualNode.InterestKernel.Add(evenKernel);
+            dualNode.InterestKernels.Add(oddKernel);
+            dualNode.InterestKernels.Add(evenKernel);
 
             var (object1, object1Guid) = MakeGameInterestObjectHelper(dualNode);
             NetworkManagerHelper.SpawnNetworkObject(object1Guid);

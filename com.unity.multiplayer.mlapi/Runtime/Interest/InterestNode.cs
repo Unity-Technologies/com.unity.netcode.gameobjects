@@ -19,6 +19,4 @@ namespace MLAPI.Interest
     {
         public abstract void QueryFor(in NetworkClient client, in NetworkObject obj, HashSet<NetworkObject> results);
     }
-
-
 }
