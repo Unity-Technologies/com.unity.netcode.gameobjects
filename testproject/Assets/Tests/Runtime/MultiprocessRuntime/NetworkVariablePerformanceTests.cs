@@ -21,7 +21,7 @@ namespace MLAPI.MultiprocessRuntimeTests
         private static GameObjectPool<OneNetVar> s_ServerObjectPool;
         private CustomPrefabSpawnerForPerformanceTests<OneNetVar> m_ClientPrefabHandler;
         private OneNetVar m_PrefabToSpawn;
-        protected override bool m_IsPerformanceTest => true;
+        protected override bool IsPerformanceTest => true;
 
         private class OneNetVar : NetworkBehaviour
         {
@@ -52,6 +52,7 @@ namespace MLAPI.MultiprocessRuntimeTests
 
         private void OnSceneLoadedInitSetupSuite(Scene scene, LoadSceneMode loadSceneMode)
         {
+            SceneManager.sceneLoaded -= OnSceneLoadedInitSetupSuite;
             InitializePrefab();
             s_ServerObjectPool = new GameObjectPool<OneNetVar>();
             s_ServerObjectPool.Initialize(k_MaxObjectsToSpawn, m_PrefabToSpawn);
@@ -231,8 +232,10 @@ namespace MLAPI.MultiprocessRuntimeTests
         public override void TeardownSuite()
         {
             base.TeardownSuite();
-            s_ServerObjectPool.Dispose();
-            SceneManager.sceneLoaded -= OnSceneLoadedInitSetupSuite;
+            if (!ShouldIgnoreTests)
+            {
+                s_ServerObjectPool.Dispose();
+            }
         }
 
         private static void SetupSpawnedObject(OneNetVar spawnedObject)

@@ -658,7 +658,7 @@ GameObject:
   - component: {fileID: 1211923377}
   - component: {fileID: 1211923378}
   m_Layer: 0
-  m_Name: NetworkManager
+  m_Name: NetworkManager-Multiprocess
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
