@@ -243,7 +243,6 @@ namespace MLAPI
                 throw new VisibilityChangeException("The object is already visible");
             }
 
-            // Send spawn call
             Observers.Add(clientId);
 
             NetworkManager.SpawnManager.SendSpawnCallForObject(clientId, this, payload);
@@ -305,7 +304,6 @@ namespace MLAPI
 
                     for (int i = 0; i < networkObjects.Count; i++)
                     {
-                        // Send spawn call
                         networkObjects[i].Observers.Add(clientId);
 
                         networkManager.SpawnManager.WriteSpawnCallForObject(icontext.NetworkWriter, clientId,

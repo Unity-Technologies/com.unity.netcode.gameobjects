@@ -195,7 +195,7 @@ namespace MLAPI
             {
                 using (var icontext = (InternalCommandContext) context)
                 {
-                    var buffer = icontext.NetworkWriter.GetStream() as NetworkBuffer;
+                    var buffer = (NetworkBuffer)icontext.NetworkWriter.GetStream();
                     WriteIndex(buffer);
                     WriteBuffer(buffer);
                 }

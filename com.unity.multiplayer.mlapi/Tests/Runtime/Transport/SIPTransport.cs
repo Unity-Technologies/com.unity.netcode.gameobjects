@@ -229,7 +229,7 @@ public class SIPTransport : NetworkTransport
             // Create copy since MLAPI wants the byte array back straight after the method call.
             // Hard on GC.
             byte[] copy = new byte[data.Count];
-             Buffer.BlockCopy(data.Array, data.Offset, copy, 0, data.Count);
+            Buffer.BlockCopy(data.Array, data.Offset, copy, 0, data.Count);
 
             if (!m_Peers.ContainsKey(clientId))
             {

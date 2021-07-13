@@ -31,6 +31,19 @@ namespace MLAPI
             Client = 2
         }
 
+        private static void SetUpdateStage<T>(ref T param) where T: IHasUpdateStage
+        {
+            if (param.UpdateStage == NetworkUpdateStage.Unset)
+            {
+                param.UpdateStage = NetworkUpdateLoop.UpdateStage;
+
+                if (param.UpdateStage == NetworkUpdateStage.Initialization)
+                {
+                    param.UpdateStage = NetworkUpdateStage.EarlyUpdate;
+                }
+            }
+        }
+
 #pragma warning disable 414 // disable assigned but its value is never used
 #pragma warning disable IDE1006 // disable naming rule violation check
         [NonSerialized]
@@ -46,15 +59,7 @@ namespace MLAPI
         {
             PooledNetworkWriter writer;
 
-            if (serverRpcParams.Send.UpdateStage == NetworkUpdateStage.Unset)
-            {
-                serverRpcParams.Send.UpdateStage = NetworkUpdateLoop.UpdateStage;
-
-                if (serverRpcParams.Send.UpdateStage == NetworkUpdateStage.Initialization)
-                {
-                    serverRpcParams.Send.UpdateStage = NetworkUpdateStage.EarlyUpdate;
-                }
-            }
+            SetUpdateStage(ref serverRpcParams.Send);
 
             if (serverRpcParams.Send.UpdateStage == NetworkUpdateStage.Initialization)
             {
@@ -98,15 +103,7 @@ namespace MLAPI
                 return;
             }
 
-            if (serverRpcParams.Send.UpdateStage == NetworkUpdateStage.Unset)
-            {
-                serverRpcParams.Send.UpdateStage = NetworkUpdateLoop.UpdateStage;
-
-                if (serverRpcParams.Send.UpdateStage == NetworkUpdateStage.Initialization)
-                {
-                    serverRpcParams.Send.UpdateStage = NetworkUpdateStage.EarlyUpdate;
-                }
-            }
+            SetUpdateStage(ref serverRpcParams.Send);
 
             var messageQueueContainer = NetworkManager.MessageQueueContainer;
             if (IsHost)
@@ -126,15 +123,7 @@ namespace MLAPI
         {
             PooledNetworkWriter writer;
 
-            if (clientRpcParams.Send.UpdateStage == NetworkUpdateStage.Unset)
-            {
-                clientRpcParams.Send.UpdateStage = NetworkUpdateLoop.UpdateStage;
-
-                if (clientRpcParams.Send.UpdateStage == NetworkUpdateStage.Initialization)
-                {
-                    clientRpcParams.Send.UpdateStage = NetworkUpdateStage.EarlyUpdate;
-                }
-            }
+            SetUpdateStage(ref clientRpcParams.Send);
 
             if (clientRpcParams.Send.UpdateStage == NetworkUpdateStage.Initialization)
             {
@@ -158,6 +147,7 @@ namespace MLAPI
             //Is part of a patch-fix to handle looping back RPCs into the next frame's inbound queue.
             //!!! This code is temporary and will change (soon) when NetworkSerializer can be configured for mutliple NetworkWriters!!!
             var containsServerClientId = clientIds.Contains(NetworkManager.ServerClientId);
+            bool addHeader = true;
             if (IsHost && containsServerClientId)
             {
                 //Always write to the next frame's inbound queue
@@ -173,18 +163,23 @@ namespace MLAPI
                     //Switch to the outbound queue
                     writer = messageQueueContainer.BeginAddQueueItemToFrame(MessageQueueContainer.MessageType.ClientRpc, Time.realtimeSinceStartup, transportChannel, NetworkObjectId,
                         clientIds, MessageQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
-                    writer.WriteByte((byte)MessageQueueContainer.MessageType.ClientRpc);
-                    writer.WriteByte((byte)clientRpcParams.Send.UpdateStage); // NetworkUpdateStage
+                }
+                else
+                {
+                    addHeader = false;
                 }
             }
             else
             {
                 writer = messageQueueContainer.BeginAddQueueItemToFrame(MessageQueueContainer.MessageType.ClientRpc, Time.realtimeSinceStartup, transportChannel, NetworkObjectId,
                     clientIds, MessageQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
+            }
+
+            if (addHeader)
+            {
                 writer.WriteByte((byte)MessageQueueContainer.MessageType.ClientRpc);
                 writer.WriteByte((byte)clientRpcParams.Send.UpdateStage); // NetworkUpdateStage
             }
-
             writer.WriteUInt64Packed(NetworkObjectId); // NetworkObjectId
             writer.WriteUInt16Packed(NetworkBehaviourId); // NetworkBehaviourId
             writer.WriteUInt32Packed(rpcMethodId); // NetworkRpcMethodId
@@ -203,15 +198,7 @@ namespace MLAPI
                 return;
             }
 
-            if (clientRpcParams.Send.UpdateStage == NetworkUpdateStage.Unset)
-            {
-                clientRpcParams.Send.UpdateStage = NetworkUpdateLoop.UpdateStage;
-
-                if (clientRpcParams.Send.UpdateStage == NetworkUpdateStage.Initialization)
-                {
-                    clientRpcParams.Send.UpdateStage = NetworkUpdateStage.EarlyUpdate;
-                }
-            }
+            SetUpdateStage(ref clientRpcParams.Send);
 
             var messageQueueContainer = NetworkManager.MessageQueueContainer;
 
