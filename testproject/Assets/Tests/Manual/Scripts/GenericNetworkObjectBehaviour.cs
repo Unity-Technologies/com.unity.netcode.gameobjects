@@ -82,24 +82,30 @@ namespace TestProject.ManualTests
 
         private void LateUpdate()
         {
-            if (!IsOwner && !NetworkObject.IsSpawned && !IsRegisteredPoolObject && !IsRemovedFromPool)
+            if (!IsOwner)
             {
-                if (!DetectedMissedDespawn)
+                if (!NetworkObject.IsSpawned)
                 {
-                    DetectedMissedDespawn = true;
-                    TimeToWaitUntilDestroy = Time.realtimeSinceStartup + 1.0f;
+                    if (IsRegisteredPoolObject && !IsRemovedFromPool)
+                    {
+                        if (!DetectedMissedDespawn)
+                        {
+                            DetectedMissedDespawn = true;
+                            TimeToWaitUntilDestroy = Time.realtimeSinceStartup + 1.0f;
+                        }
+                        else if (TimeToWaitUntilDestroy < Time.realtimeSinceStartup)
+                        {
+                            Debug.Log($"Destroying {gameObject.name} via {nameof(GenericNetworkObjectBehaviour)}.");
+                            Destroy(gameObject);
+                        }
+                    }
                 }
-                else if (TimeToWaitUntilDestroy < Time.realtimeSinceStartup)
+                else if (IsRegisteredPoolObject && DetectedMissedDespawn)
                 {
-                    Destroy(gameObject);
+                    DetectedMissedDespawn = false;
                 }
-            }
-            else if (!IsOwner && IsRegisteredPoolObject && DetectedMissedDespawn)
-            {
-                DetectedMissedDespawn = false;
             }
         }
-
 
         private void OnTriggerEnter(Collider other)
         {

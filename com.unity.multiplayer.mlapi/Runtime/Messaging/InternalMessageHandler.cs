@@ -147,6 +147,12 @@ namespace MLAPI.Messaging
             }
         }
 
+
+        public void HandleSceneEvent(ulong clientId, Stream stream)
+        {
+            NetworkManager.SceneManager.HandleSceneEvent(clientId, stream);
+        }
+
         public void HandleSwitchScene(ulong clientId, Stream stream)
         {
             Debug.LogError("HandleSwitchScene is no longer supported!\n");

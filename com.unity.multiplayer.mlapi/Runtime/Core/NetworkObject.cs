@@ -179,19 +179,6 @@ namespace MLAPI
         /// </summary>
         public bool DontDestroyWithOwner;
 
-        internal Scene SourceAdditiveScene;
-
-        /// <summary>
-        /// Proposed Solution for custom Network Prefab Handlers and client late-join synchronization
-        /// This will provide the users with a way to associate a NetworkObject with a "source scene" in order
-        /// to make sure the NetworkObjects are synchronized when the additive source scene is loaded and not before
-        /// </summary>
-        /// <param name="scene"></param>
-        public void SetSourceAdditiveScene(Scene scene)
-        {
-            SourceAdditiveScene = scene;
-        }
-
         /// <summary>
         /// Whether or not to enable automatic NetworkObject parent synchronization.
         /// </summary>

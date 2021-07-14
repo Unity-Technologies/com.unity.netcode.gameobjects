@@ -780,6 +780,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 475de064003ff104fb88b1fbccd0f417, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  m_ActivateOnLoad: 1
   m_SceneToLoad: AdditiveScene4
   m_SceneAsset: {fileID: 102900000, guid: dc7e17c86f5ca81478043be306027c13, type: 3}
 --- !u!1 &300124661
@@ -1366,6 +1367,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 475de064003ff104fb88b1fbccd0f417, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  m_ActivateOnLoad: 1
   m_SceneToLoad: AdditiveScene3
   m_SceneAsset: {fileID: 102900000, guid: 7da3dd618f5b5a34db1f6d3c9511e221, type: 3}
 --- !u!850595691 &903034822

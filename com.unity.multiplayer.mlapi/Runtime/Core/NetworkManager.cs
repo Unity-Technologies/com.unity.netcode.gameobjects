@@ -1281,25 +1281,9 @@ namespace MLAPI
                         }
 
                         break;
-                    //case NetworkConstants.SWITCH_SCENE:
-                    //    {
-                    //        if (IsClient)
-                    //        {
-                    //            MessageHandler.HandleSwitchScene(clientId, messageStream);
-
-                    //        }
-                    //        break;
-                    //    }
                     case NetworkConstants.SCENE_EVENT:
                         {
-                            if (SceneManager != null)
-                            {
-                                SceneManager.HandleSceneEvent(clientId, messageStream);
-                            }
-                            else
-                            {
-                                Debug.LogError($"Received {nameof(NetworkConstants.SCENE_EVENT)} but {nameof(SceneManager)} is null!");
-                            }
+                            MessageHandler.HandleSceneEvent(clientId, messageStream);
                             break;
                         }
                     case NetworkConstants.CHANGE_OWNER:
@@ -1358,7 +1342,6 @@ namespace MLAPI
                         {
                             MessageHandler.HandleNetworkLog(clientId, messageStream);
                         }
-
                         break;
                     case NetworkConstants.SERVER_RPC:
                         {

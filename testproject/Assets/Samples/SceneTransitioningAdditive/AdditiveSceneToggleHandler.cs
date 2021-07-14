@@ -12,13 +12,16 @@ namespace TestProject.ManualTests
 {
     public class AdditiveSceneToggleHandler : NetworkBehaviour
     {
-        public static bool ExitingNow { get; internal set; }
+        [SerializeField]
+        private bool m_ActivateOnLoad = false;
 
         private Toggle m_ToggleObject;
 
         [HideInInspector]
         [SerializeField]
         private string m_SceneToLoad;
+
+
 
 #if UNITY_EDITOR
         [SerializeField]
@@ -31,31 +34,12 @@ namespace TestProject.ManualTests
             }
         }
 #endif
-        private int m_CurrentSceneIndex;
-
-        private void Awake()
-        {
-            ExitingNow = false;
-        }
 
         private void Start()
         {
             m_ToggleObject = gameObject.GetComponentInChildren<Toggle>();
             StartCoroutine(CheckForVisibility());
-
-            //NetworkManager.SceneManager.OnSceneSwitchStarted += SceneManager_OnSceneSwitchStarted;
         }
-
-        //private void SceneManager_OnSceneSwitchStarted(AsyncOperation operation)
-        //{
-        //    if (m_ToggleObject)
-        //    {
-        //        if (m_ToggleObject.isOn)
-        //        {
-        //            m_CurrentSceneSwitchProgress = NetworkManager.Singleton.SceneManager.UnloadScene(m_SceneToLoad);
-        //        }
-        //    }
-        //}
 
         private bool m_ExitingScene;
         private void OnDestroy()
@@ -68,44 +52,47 @@ namespace TestProject.ManualTests
         {
             while (!m_ExitingScene)
             {
-                if (NetworkManager.Singleton && NetworkManager.Singleton.IsListening && NetworkManager.Singleton.IsServer)
+                if (NetworkManager.Singleton && NetworkManager.Singleton.IsListening )
                 {
                     if (m_ToggleObject)
                     {
-                        m_ToggleObject.gameObject.SetActive(true);
+                        if(NetworkManager.Singleton.IsServer)
+                        {
+                            m_ToggleObject.gameObject.SetActive(true);
+                            if (m_ActivateOnLoad)
+                            {
+                                StartCoroutine(DelayedActivate());
+                            }
+                        }
+                        else
+                        {
+                            m_ToggleObject.gameObject.SetActive(false);
+                        }
                     }
+                    break;
                 }
                 else
                 {
-                    if (m_ToggleObject)
+                    if (m_ToggleObject && m_ToggleObject.gameObject.activeInHierarchy)
                     {
                         m_ToggleObject.gameObject.SetActive(false);
                     }
                 }
 
-                yield return new WaitForSeconds(0.5f);
+                yield return new WaitForSeconds(0.1f);
             }
 
             yield return null;
         }
 
-        public override void OnNetworkSpawn()
+        private IEnumerator DelayedActivate()
         {
-            if (NetworkManager.Singleton && NetworkManager.Singleton.IsListening && NetworkManager.Singleton.IsServer)
+            yield return new WaitForSeconds(0.5f);
+            if (m_ToggleObject)
             {
-                if (m_ToggleObject)
-                {
-                    m_ToggleObject.gameObject.SetActive(true);
-                }
+                m_ToggleObject.isOn = true;
             }
-            else
-            {
-                if (m_ToggleObject)
-                {
-                    m_ToggleObject.gameObject.SetActive(false);
-                }
-            }
-            base.OnNetworkSpawn();
+            yield return null;
         }
 
         private SceneSwitchProgress m_CurrentSceneSwitchProgress;
@@ -117,17 +104,36 @@ namespace TestProject.ManualTests
             {
                 if (m_ToggleObject)
                 {
-                    if(m_ToggleObject.isOn)
-                    {
-                        m_CurrentSceneSwitchProgress = NetworkManager.Singleton.SceneManager.LoadScene(m_SceneToLoad);
-                    }
-                    else
-                    {
-                        m_CurrentSceneSwitchProgress = NetworkManager.Singleton.SceneManager.UnloadScene(m_SceneToLoad);
-                    }
+                    m_ToggleObject.enabled = false;
+                    StartCoroutine(SceneEventCoroutine(m_ToggleObject.isOn));
                 }
             }
         }
+
+        private IEnumerator SceneEventCoroutine(bool isLoading)
+        {
+            while (m_CurrentSceneSwitchProgress == null)
+            {
+                if (isLoading)
+                {
+                    m_CurrentSceneSwitchProgress = NetworkManager.Singleton.SceneManager.LoadScene(m_SceneToLoad);
+                }
+                else
+                {
+                    m_CurrentSceneSwitchProgress = NetworkManager.Singleton.SceneManager.UnloadScene(m_SceneToLoad);
+                }
+                if (m_CurrentSceneSwitchProgress == null)
+                {
+                    yield return new WaitForSeconds(0.25f);
+                }
+            }
+            m_ToggleObject.isOn = isLoading;
+            m_ToggleObject.enabled = true;
+            m_CurrentSceneSwitchProgress = null;
+            yield return null;
+        }
+
+
 
         public delegate void OnSceneSwitchCompletedDelegateHandler();
 

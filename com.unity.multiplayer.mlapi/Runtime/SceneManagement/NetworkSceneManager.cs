@@ -165,7 +165,6 @@ namespace MLAPI.SceneManagement
         /// <summary>
         /// Validates the new scene event request by the server-side code.
         /// This also initializes some commonly shared values as well as switchSceneProgress
-        /// NSS TODO: Should switchSceneProgress
         /// </summary>
         /// <param name="sceneName"></param>
         /// <returns>SceneSwitchProgress (if null it failed)</returns>
@@ -207,16 +206,15 @@ namespace MLAPI.SceneManagement
 
             if (!isUnloading)
             {
-                // NSS TODO: This either needs a better name or there has to be a better way of detecting this condition
-                // The Condition: While a scene is asynchronously loaded, if any new NetworkObjects are spawned they need to be moved into the do not destroy temporary scene
+                // The Condition: While a scene is asynchronously loaded in single loading scene mode, if any new NetworkObjects are spawned they need to be moved into the do not destroy temporary scene
                 // When it is set: Just before starting the asynchronous loading call
-                // When it is unset:
-                // after the scene has loaded, the PopulateScenePlacedObjects is called, and all NetworkObjects in the do not destroy temporary scene are moved into the active scene
+                // When it is unset: After the scene has loaded, the PopulateScenePlacedObjects is called, and all NetworkObjects in the do not destroy temporary scene are moved into the active scene
                 IsSpawnedObjectsPendingInDontDestroyOnLoad = true;
             }
 
             s_IsSceneEventActive = true;
 
+            // NSS TODO: switchSceneProgress needs to be re-factored
             switchSceneProgress.OnClientLoadedScene += clientId => { OnNotifyServerClientLoadedScene?.Invoke(switchSceneProgress, clientId); };
             switchSceneProgress.OnComplete += timedOut =>
             {
@@ -231,7 +229,6 @@ namespace MLAPI.SceneManagement
                     writer.WriteULongArray(doneClientIds, doneClientIds.Length);
                     writer.WriteULongArray(timedOutClientIds, timedOutClientIds.Length);
 
-                    // NSS TODO: This will need to be modified for loading and unloading
                     m_NetworkManager.MessageSender.Send(NetworkManager.Singleton.ServerClientId, NetworkConstants.ALL_CLIENTS_LOADED_SCENE, NetworkChannel.Internal, buffer);
                 }
             };
@@ -281,9 +278,9 @@ namespace MLAPI.SceneManagement
             AsyncOperation sceneUnload = SceneManager.UnloadSceneAsync(sceneToUnload);
             sceneUnload.completed += (AsyncOperation asyncOp2) => { OnSceneUnloaded(); };
             switchSceneProgress.SetSceneLoadOperation(sceneUnload);
-            if(m_AdditiveScenesLoaded.Contains(sceneName))
+            if(m_ScenesLoaded.Contains(sceneName))
             {
-                m_AdditiveScenesLoaded.Remove(sceneName);
+                m_ScenesLoaded.Remove(sceneName);
             }
             OnAdditiveSceneEvent?.Invoke(sceneUnload, sceneName, false);
 
@@ -306,9 +303,9 @@ namespace MLAPI.SceneManagement
 
             var sceneUnload = SceneManager.UnloadSceneAsync(sceneName);
 
-            if (m_AdditiveScenesLoaded.Contains(sceneName))
+            if (m_ScenesLoaded.Contains(sceneName))
             {
-                m_AdditiveScenesLoaded.Remove(sceneName);
+                m_ScenesLoaded.Remove(sceneName);
             }
 
             sceneUnload.completed += asyncOp2 => OnSceneUnloaded();
@@ -333,7 +330,7 @@ namespace MLAPI.SceneManagement
         }
 
 
-        private List<string> m_AdditiveScenesLoaded = new List<string>();
+        private List<string> m_ScenesLoaded = new List<string>();
 
         /// <summary>
         /// Additively loads the scene
@@ -342,7 +339,7 @@ namespace MLAPI.SceneManagement
         /// NSS TODO: This could probably stand to have some form of "scene event status" class/structure that will
         /// include any error types/messages and the SceneSwitchProgress class associated with the status (if success)
         /// <returns>SceneSwitchProgress  (if null this call failed)</returns>
-        public SceneSwitchProgress LoadScene(string sceneName)
+        public SceneSwitchProgress LoadScene(string sceneName, LoadSceneMode loadSceneMode = LoadSceneMode.Additive, SceneEventData.SceneEventTypes eventType = SceneEventData.SceneEventTypes.EventLoad)
         {
             var switchSceneProgress = ValidateServerSceneEvent(sceneName);
             if (switchSceneProgress == null)
@@ -351,14 +348,21 @@ namespace MLAPI.SceneManagement
             }
 
             SceneEventData.SwitchSceneGuid = switchSceneProgress.Guid;
-            SceneEventData.SceneEventType = SceneEventData.SceneEventTypes.EventLoad;
+            SceneEventData.SceneEventType = eventType;
             SceneEventData.SceneIndex = SceneNameToIndex[sceneName];
+            SceneEventData.LoadSceneMode = loadSceneMode;
 
-            // NSS TODO: remove this completely once done with the transition
-            SceneEventData.LoadSceneMode = LoadSceneMode.Additive;
+            if (SceneEventData.LoadSceneMode == LoadSceneMode.Single)
+            {
+                // Destroy current scene objects before switching.
+                m_NetworkManager.SpawnManager.ServerDestroySpawnedSceneObjects();
+
+                // Preserve the objects that should not be destroyed during the scene event
+                MoveObjectsToDontDestroyOnLoad();
+            }
 
             // Begin the scene event
-            OnBeginSceneEvent(sceneName, switchSceneProgress, LoadSceneMode.Additive);
+            OnBeginSceneEvent(sceneName, switchSceneProgress, loadSceneMode);
 
             //Return our scene progress instance
             return switchSceneProgress;
@@ -369,40 +373,12 @@ namespace MLAPI.SceneManagement
         /// </summary>
         /// <param name="sceneName">The name of the scene to switch to</param>
         /// <param name="loadSceneMode">The mode to load the scene (Additive vs Single)</param>
-        /// NSS TODO: This could probably stand to have some form of "scene event status" class/structure that will
-        /// include any error types/messages and the SceneSwitchProgress class associated with the status (if success)
+        /// NSS TODO: This is a topic for MTT discussion.  Do we want to keep this divergence from Unity's SceneManager API?
+        /// It is proposed we completely remove this call or mark it as deprecated with message to use Load and Unload
         /// <returns>SceneSwitchProgress</returns>
         public SceneSwitchProgress SwitchScene(string sceneName, LoadSceneMode loadSceneMode = LoadSceneMode.Single)
         {
-            // NSS TODO: Remove this once the LoadScene method is completed and all areas in the code that use the loadSceneMode parameter are updated
-            if (loadSceneMode == LoadSceneMode.Additive && !IsRunningUnitTest)
-            {
-                return LoadScene(sceneName);
-            }
-
-            var switchSceneProgress = ValidateServerSceneEvent(sceneName);
-            if (switchSceneProgress == null)
-            {
-                return null;
-            }
-
-            SceneEventData.SwitchSceneGuid = switchSceneProgress.Guid;
-            SceneEventData.SceneEventType = SceneEventData.SceneEventTypes.EventSwitch;
-            SceneEventData.SceneIndex = SceneNameToIndex[sceneName];
-
-            SceneEventData.LoadSceneMode = IsRunningUnitTest ? loadSceneMode : LoadSceneMode.Single;
-
-            // Destroy current scene objects before switching.
-            m_NetworkManager.SpawnManager.ServerDestroySpawnedSceneObjects();
-
-            // Preserve the objects that should not be destroyed during the scene event
-            MoveObjectsToDontDestroyOnLoad();
-
-            // Begin the scene event
-            OnBeginSceneEvent(sceneName, switchSceneProgress, SceneEventData.LoadSceneMode);
-
-            //Return our scene progress instance
-            return switchSceneProgress;
+            return LoadScene(sceneName, loadSceneMode, SceneEventData.SceneEventTypes.EventSwitch);
         }
 
         /// <summary>
@@ -414,27 +390,32 @@ namespace MLAPI.SceneManagement
         private void OnBeginSceneEvent(string sceneName, SceneSwitchProgress switchSceneProgress, LoadSceneMode loadSceneMode)
         {
             // start loading the scene
+            // NSS TODO: This is a temporary place holder check to make sure we don't try to unload a scene loaded in single mode.
+            var currentActiveScene = SceneManager.GetActiveScene();
             AsyncOperation sceneLoad = SceneManager.LoadSceneAsync(sceneName, loadSceneMode);
             sceneLoad.completed += (AsyncOperation asyncOp2) => { OnSceneLoaded(sceneName); };
             switchSceneProgress.SetSceneLoadOperation(sceneLoad);
 
 
 
-            if (SceneEventData.SceneEventType == SceneEventData.SceneEventTypes.EventSwitch)
+            if (SceneEventData.LoadSceneMode == LoadSceneMode.Single)
             {
-                foreach (var additiveSceneName in m_AdditiveScenesLoaded)
+                foreach (var additiveSceneName in m_ScenesLoaded)
                 {
-                    SceneManager.UnloadSceneAsync(additiveSceneName);
+                    if(currentActiveScene.name != additiveSceneName)
+                    {
+                        SceneManager.UnloadSceneAsync(additiveSceneName);
+                    }
                 }
-                m_AdditiveScenesLoaded.Clear();
+                m_ScenesLoaded.Clear();
                 // NSS TODO: Make a single unified notification callback
                 OnSceneSwitchStarted?.Invoke(sceneLoad);
             }
             else
             {
-                if(!m_AdditiveScenesLoaded.Contains(sceneName))
+                if(!m_ScenesLoaded.Contains(sceneName))
                 {
-                    m_AdditiveScenesLoaded.Add(sceneName);
+                    m_ScenesLoaded.Add(sceneName);
                 }
                 else
                 {
@@ -463,23 +444,28 @@ namespace MLAPI.SceneManagement
                 return;
             }
 
-
+            // NSS TODO: This is a temporary place holder check to make sure we don't try to unload a scene loaded in single mode.
+            var currentActiveScene = SceneManager.GetActiveScene();
             if (SceneEventData.LoadSceneMode == LoadSceneMode.Single)
             {
-                foreach(var additiveSceneName in m_AdditiveScenesLoaded)
+                foreach(var loadedSceneName in m_ScenesLoaded)
                 {
-                    SceneManager.UnloadSceneAsync(additiveSceneName);
+                    if(currentActiveScene.name != loadedSceneName)
+                    {
+                        SceneManager.UnloadSceneAsync(loadedSceneName);
+                    }
+
                 }
-                m_AdditiveScenesLoaded.Clear();
+                m_ScenesLoaded.Clear();
 
                 // Move ALL NetworkObjects to the temp scene
                 MoveObjectsToDontDestroyOnLoad();
             }
             else
             {
-                if (!m_AdditiveScenesLoaded.Contains(sceneName))
+                if (!m_ScenesLoaded.Contains(sceneName))
                 {
-                    m_AdditiveScenesLoaded.Add(sceneName);
+                    m_ScenesLoaded.Add(sceneName);
                 }
                 else
                 {
@@ -487,12 +473,13 @@ namespace MLAPI.SceneManagement
                 }
             }
 
-            // NSS TODO: This either needs a better name or there has to be a better way of detecting this condition
-            // The Condition: While a scene is asynchronously loaded, if any new NetworkObjects are spawned they need to be moved into the do not destroy temporary scene
+            // The Condition: While a scene is asynchronously loaded in single loading scene mode, if any new NetworkObjects are spawned they need to be moved into the do not destroy temporary scene
             // When it is set: Just before starting the asynchronous loading call
-            // When it is unset:
-            // after the scene has loaded, the PopulateScenePlacedObjects is called, and all NetworkObjects in the do not destroy temporary scene are moved into the active scene
-            IsSpawnedObjectsPendingInDontDestroyOnLoad = true;
+            // When it is unset: After the scene has loaded, the PopulateScenePlacedObjects is called, and all NetworkObjects in the do not destroy temporary scene are moved into the active scene
+            if (SceneEventData.LoadSceneMode == LoadSceneMode.Single)
+            {
+                IsSpawnedObjectsPendingInDontDestroyOnLoad = true;
+            }
 
             var sceneLoad = SceneManager.LoadSceneAsync(sceneName, SceneEventData.LoadSceneMode);
             sceneLoad.completed += asyncOp2 => OnSceneLoaded(sceneName);
@@ -513,25 +500,25 @@ namespace MLAPI.SceneManagement
         private void OnSceneLoaded(string sceneName)
         {
             var nextScene = SceneManager.GetSceneByName(sceneName);
-            if (SceneEventData.SceneEventType == SceneEventData.SceneEventTypes.EventSwitch)
+            if (SceneEventData.LoadSceneMode == LoadSceneMode.Single)
             {
                 SceneManager.SetActiveScene(nextScene);
+                m_ScenesLoaded.Add(sceneName);
             }
 
             //Get all NetworkObjects loaded by the scene
             PopulateScenePlacedObjects(nextScene);
 
-            if (SceneEventData.SceneEventType == SceneEventData.SceneEventTypes.EventSwitch)
+            if (SceneEventData.LoadSceneMode == LoadSceneMode.Single)
             {
                 // Move all objects to the new scene
                 MoveObjectsToScene(nextScene);
+
             }
 
-            // NSS TODO: This either needs a better name or there has to be a better way of detecting this condition
-            // The Condition: While a scene is asynchronously loaded, if any new NetworkObjects are spawned they need to be moved into the do not destroy temporary scene
+            // The Condition: While a scene is asynchronously loaded in single loading scene mode, if any new NetworkObjects are spawned they need to be moved into the do not destroy temporary scene
             // When it is set: Just before starting the asynchronous loading call
-            // When it is unset:
-            // after the scene has loaded, the PopulateScenePlacedObjects is called, and all NetworkObjects in the do not destroy temporary scene are moved into the active scene
+            // When it is unset: After the scene has loaded, the PopulateScenePlacedObjects is called, and all NetworkObjects in the do not destroy temporary scene are moved into the active scene
             IsSpawnedObjectsPendingInDontDestroyOnLoad = false;
 
             if (m_NetworkManager.IsServer)
@@ -623,7 +610,8 @@ namespace MLAPI.SceneManagement
             using (var buffer = PooledNetworkBuffer.Get())
             using (var writer = PooledNetworkWriter.Get(buffer))
             {
-                SceneEventData.SceneEventType = SceneEventData.SceneEventType == SceneEventData.SceneEventTypes.EventSwitch ? SceneEventData.SceneEventTypes.Event_Switch_Complete : SceneEventData.SceneEventTypes.Event_Load_Complete;
+                // NSS TODO: This is part of decoupling the concept of "scene switching" and just distinguishing between single and additive scene loading modes
+                SceneEventData.SceneEventType = SceneEventData.LoadSceneMode == LoadSceneMode.Single ? SceneEventData.SceneEventTypes.Event_Switch_Complete : SceneEventData.SceneEventTypes.Event_Load_Complete;
                 writer.WriteObjectPacked(SceneEventData);
                 m_NetworkManager.MessageSender.Send(m_NetworkManager.ServerClientId, NetworkConstants.SCENE_EVENT, NetworkChannel.Internal, buffer);
             }
@@ -677,11 +665,7 @@ namespace MLAPI.SceneManagement
                 {
                     if (networkObject.gameObject.scene != scene)
                     {
-                        // If it is not associated with an additive scene or if the additive scene is not the current scene we are processing then continue
-                        if (networkObject.SourceAdditiveScene == null || networkObject.SourceAdditiveScene != scene)
-                        {
-                            continue;
-                        }
+                        continue;
                     }
                     ClientSynchEventData.AddNetworkObjectForSynch(malpiSceneIndex, networkObject);
                 }
@@ -718,6 +702,7 @@ namespace MLAPI.SceneManagement
 
             if (sceneName != activeScene.name)
             {
+                // NSS TODO: Add to proposal's MTT discussion topics: Should we cover switching the active scene for V1.0.0?
                 var sceneLoad = SceneManager.LoadSceneAsync(sceneName, sceneIndex == SceneEventData.SceneIndex ? SceneEventData.LoadSceneMode : LoadSceneMode.Additive);
                 sceneLoad.completed += asyncOp2 => ClientLoadedSynchronization(sceneIndex);
             }
@@ -737,6 +722,7 @@ namespace MLAPI.SceneManagement
             var nextScene = SceneManager.GetSceneByName(GetSceneNameFromMLAPISceneIndex(sceneIndex));
             if (nextScene == null)
             {
+                Debug.LogError($"Client was trying to load {sceneIndex} which does not appear to be a valid registered scene index!");
                 return;
             }
 
@@ -916,6 +902,7 @@ namespace MLAPI.SceneManagement
                     }
                 case SceneEventData.SceneEventTypes.Event_Load_Complete:
                     {
+
                         Debug.Log($"[{nameof(SceneEventData.SceneEventTypes.Event_Load_Complete)}] Client Id {clientId} finished loading additive scene.");
                         break;
                     }

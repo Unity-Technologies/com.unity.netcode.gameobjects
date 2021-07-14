@@ -24,9 +24,7 @@ namespace MLAPI.Configuration
         internal const byte SNAPSHOT_DATA = 25;
         internal const byte SERVER_RPC = 30;
         internal const byte CLIENT_RPC = 31;
-        internal const byte SWITCH_SCENE = 32;
         internal const byte SCENE_EVENT = 33;
-        internal const byte SCENE_EVENT_NOTIFICATION = 34;
         internal const byte CLIENT_SWITCH_SCENE_COMPLETED = 35;
         internal const byte INVALID = 36;
 
@@ -64,8 +62,7 @@ namespace MLAPI.Configuration
             "",
             "SERVER_RPC",
             "CLIENT_RPC",
-            "SWITCH_SCENE",
-            "SCENE_EVENT",              // New Scene Event command (to replace and add Switch, Load, and Unload with sub-commands and additional information to define the scene event)
+            "SCENE_EVENT",              // New Scene Event command
             "INVALID" // 36
         };
     }

@@ -15,14 +15,16 @@ namespace MLAPI.SceneManagement
     {
         public enum SceneEventTypes
         {
-            EventSwitch,             //Server to client full scene switch (i.e. single mode and destroy everything)
-            EventLoad,               //Server to client load additive scene
-            EventUnload,             //Server to client unload additive scene
-            EventSync,               //Server to client late join approval synchronization
-            Event_Switch_Complete,    //Client to server
-            Event_Load_Complete,      //Client to server
-            Event_Unload_Complete,    //Client to server
-            Event_Sync_Complete,      //Client to server
+            EventSwitch,                //Server to client full scene switch (i.e. single mode and destroy everything)
+            EventLoad,                  //Server to client load additive scene
+            EventUnload,                //Server to client unload additive scene
+            EventSetActive,             //Server to client make scene active
+            EventSync,                  //Server to client late join approval synchronization
+            Event_Switch_Complete,      //Client to server
+            Event_Load_Complete,        //Client to server
+            Event_Unload_Complete,      //Client to server
+            Event_SetActiveComplete,    //Client to server
+            Event_Sync_Complete,        //Client to server
         }
 
         public SceneEventTypes SceneEventType;
