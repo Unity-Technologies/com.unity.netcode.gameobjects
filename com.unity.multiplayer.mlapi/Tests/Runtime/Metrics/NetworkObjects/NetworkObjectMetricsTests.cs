@@ -4,8 +4,7 @@ using System.Linq;
 using MLAPI.Configuration;
 using MLAPI.Metrics;
 using NUnit.Framework;
-using Unity.Multiplayer.NetworkProfiler;
-using Unity.Multiplayer.NetworkProfiler.Models;
+using Unity.Multiplayer.MetricTypes;
 using UnityEngine;
 using UnityEngine.TestTools;
 
