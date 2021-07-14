@@ -661,7 +661,7 @@ GameObject:
   - component: {fileID: 1211923377}
   - component: {fileID: 1211923378}
   m_Layer: 0
-  m_Name: NetworkManager
+  m_Name: NetworkManager-Multiprocess
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -749,6 +749,8 @@ MonoBehaviour:
   m_Script: {fileID: 0}
   m_Name: 
   m_EditorClassIdentifier: 
+  ReferencedPrefab: {fileID: 5637023994061915634, guid: b0952a471c5a147cb92f6afcdb648f8a,
+    type: 3}
 --- !u!114 &1211923378
 MonoBehaviour:
   m_ObjectHideFlags: 0

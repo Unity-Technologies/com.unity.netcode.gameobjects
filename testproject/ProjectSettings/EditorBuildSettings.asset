@@ -64,4 +64,7 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/MultiprocessTestScene.unity
     guid: 76743cb7b342c49279327834918a9c6e
+  - enabled: 1
+    path: Assets/Scenes/EmptyScene.unity
+    guid: a2545a872c007404fbb6b0393ab74974
   m_configObjects: {}

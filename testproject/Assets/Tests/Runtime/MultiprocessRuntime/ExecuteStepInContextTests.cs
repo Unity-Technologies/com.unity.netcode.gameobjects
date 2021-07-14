@@ -23,7 +23,7 @@ namespace MLAPI.MultiprocessRuntimeTests
         }
 
         protected override int WorkerCount => m_WorkerCountToTest;
-        protected override bool m_IsPerformanceTest => false;
+        protected override bool IsPerformanceTest => false;
 
         [UnityTest, MultiprocessContextBasedTest]
         public IEnumerator TestWithSameName([Values(1)] int a)

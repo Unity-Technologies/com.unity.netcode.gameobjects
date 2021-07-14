@@ -13,7 +13,7 @@ namespace MLAPI.MultiprocessRuntimeTests
         private int m_WorkerCount;
         protected override int WorkerCount => m_WorkerCount;
 
-        protected override bool m_IsPerformanceTest => false;
+        protected override bool IsPerformanceTest => false;
 
         public TestCoordinatorTests(int workerCount)
         {
