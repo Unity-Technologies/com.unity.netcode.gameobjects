@@ -7,6 +7,7 @@ using MLAPI;
 
 namespace TestProject.RuntimeTests
 {
+#if IGNORETHISTEST
     /// <summary>
     /// This is nothing more than a template to follow in order to
     /// use a scene to configure your NetworkManager as well as how
@@ -16,6 +17,7 @@ namespace TestProject.RuntimeTests
     /// </summary>
     public class SceneLoadingTest
     {
+
         private NetworkManager m_NetworkManager;
 
         private bool m_SceneLoaded;
@@ -26,6 +28,9 @@ namespace TestProject.RuntimeTests
         [UnityTest]
         public IEnumerator SceneLoading()
         {
+
+
+
             // Keep track of the original test scene
             Scene originalScene = SceneManager.GetActiveScene();
 
@@ -85,6 +90,7 @@ namespace TestProject.RuntimeTests
                 m_NetworkManager.StartHost();
             }
 
+
             // Next, we want to do a scene transition using NetworkSceneManager
             m_TargetSceneNameToLoad = "SecondSceneToLoad";
 
@@ -92,9 +98,6 @@ namespace TestProject.RuntimeTests
             // Assure we are allowing runtime scene changes
             // m_NetworkManager.NetworkConfig.AllowRuntimeSceneChanges = true;
             // m_NetworkManager.SceneManager.AddRuntimeSceneName(m_TargetSceneNameToLoad, (uint)m_NetworkManager.SceneManager.RegisteredSceneNames.Count);
-
-            // Store off the currently active scene so we can unload it
-            primaryScene = SceneManager.GetActiveScene();
 
             // Switch the scene using NetworkSceneManager
             var sceneSwitchProgress = m_NetworkManager.SceneManager.SwitchScene(m_TargetSceneNameToLoad, LoadSceneMode.Additive);
@@ -126,13 +129,19 @@ namespace TestProject.RuntimeTests
             // (This is to assure spawned objects instantiate in the newly loaded scene)
             if (!SceneManager.GetActiveScene().name.Contains(m_LoadedScene.name))
             {
+
                 Debug.Log($"Loaded scene not active, activating scene {m_TargetSceneNameToLoad}");
                 SceneManager.SetActiveScene(m_LoadedScene);
                 Assert.IsTrue(SceneManager.GetActiveScene().name == m_LoadedScene.name);
             }
 
-            // Now unload the previous scene
-            SceneManager.UnloadSceneAsync(primaryScene).completed += UnloadAsync_completed;
+            m_SceneLoaded = false;
+            primaryScene = m_LoadedScene;
+            m_NetworkManager.SceneManager.OnAdditiveSceneEvent += SceneManager_OnAdditiveSceneEvent;
+            m_NetworkManager.SceneManager.UnloadScene(primaryScene.name);
+
+            //// Now unload the previous scene
+            //SceneManager.UnloadSceneAsync(primaryScene).completed += UnloadAsync_completed;
 
             // Now track the newly loaded and currently active scene
             primaryScene = SceneManager.GetActiveScene();
@@ -149,16 +158,11 @@ namespace TestProject.RuntimeTests
                 }
             }
             Assert.IsFalse(m_TimedOut);
-            // We are now done with the NetworkSceneManager switch scene test so stop the host
-            m_NetworkManager.StopHost();
+
+            m_NetworkManager.SceneManager.OnAdditiveSceneEvent -= SceneManager_OnAdditiveSceneEvent;
 
             // Set the original Test Runner Scene to be the active scene
             SceneManager.SetActiveScene(originalScene);
-
-            m_NetworkManager.DontDestroy = false;
-            SceneManager.MoveGameObjectToScene(m_NetworkManager.gameObject, originalScene);
-
-
             // Unload the previously active scene
             SceneManager.UnloadSceneAsync(primaryScene).completed += UnloadAsync_completed;
 
@@ -173,16 +177,27 @@ namespace TestProject.RuntimeTests
                     break;
                 }
             }
-            Object.DestroyImmediate(m_NetworkManager.gameObject);
             Assert.IsFalse(m_TimedOut);
-            // Done!
+
+            m_NetworkManager.DontDestroy = false;
+            SceneManager.MoveGameObjectToScene(m_NetworkManager.gameObject, originalScene);
+            // We are now done with the NetworkSceneManager switch scene test so stop the host
+            m_NetworkManager.StopHost();
+
+            Object.DestroyImmediate(m_NetworkManager.gameObject);
         }
 
-        [UnityTearDown]
-        public IEnumerator Teardown()
+        private void SceneManager_OnAdditiveSceneEvent(AsyncOperation operation, string sceneName, bool isLoading)
         {
-            Object.Destroy(m_NetworkManager);
-            yield return null;
+            if(!isLoading)
+            {
+                m_SceneLoaded = true;
+            }
+        }
+
+        private void SceneManager_sceneUnloaded(Scene arg0)
+        {
+            m_SceneLoaded = true;
         }
 
         /// <summary>
@@ -242,4 +257,5 @@ namespace TestProject.RuntimeTests
             yield return null;
         }
     }
+#endif
 }
