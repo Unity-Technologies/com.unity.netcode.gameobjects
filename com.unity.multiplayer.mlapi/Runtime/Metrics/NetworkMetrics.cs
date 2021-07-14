@@ -1,3 +1,4 @@
+#if MULTIPLAYER_TOOLS
 using System.Collections.Generic;
 using Unity.Multiplayer.NetStats.Dispatch;
 using Unity.Multiplayer.NetStats.Metrics;
@@ -6,7 +7,6 @@ using Unity.Multiplayer.NetworkProfiler.Models;
 
 namespace MLAPI.Metrics
 {
-#if MULTIPLAYER_TOOLS
     public class NetworkMetrics : INetworkMetrics
     {
         private readonly NetworkManager m_NetworkManager;
@@ -193,5 +193,5 @@ namespace MLAPI.Metrics
             Observer = new NetStatObserver();
         }
     }
-#endif
 }
+#endif
