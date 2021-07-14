@@ -4,6 +4,7 @@ using UnityEngine;
 
 namespace MLAPI.Interest
 {
+    [CreateAssetMenu(fileName = "StaticInterestNode", menuName = "Interest/Nodes/Static", order = 1)]
     public class InterestNodeStatic : InterestNode
     {
         public List<InterestKernel> InterestKernels = new List<InterestKernel>();

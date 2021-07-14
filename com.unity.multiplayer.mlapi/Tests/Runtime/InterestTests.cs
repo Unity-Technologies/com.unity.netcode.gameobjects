@@ -46,61 +46,61 @@ namespace MLAPI.RuntimeTests
             }
         }
 
-        public class OddsEvensNode : InterestNode
+    public class OddsEvensNode : InterestNode
+    {
+        public void OnEnable()
         {
-            public void OnEnable()
-            {
-                m_Odds = CreateInstance<InterestNodeStatic>();
-                m_Evens = CreateInstance<InterestNodeStatic>();
-            }
+            m_Odds = CreateInstance<InterestNodeStatic>();
+            m_Evens = CreateInstance<InterestNodeStatic>();
+        }
 
-            public override void AddObject(in NetworkObject obj)
+        public override void AddObject(in NetworkObject obj)
+        {
+            if (obj.NetworkObjectId % 2 == 0)
             {
-                if (obj.NetworkObjectId % 2 == 0)
-                {
-                    m_Evens.AddObject(obj);
-                }
-                else
-                {
-                    m_Odds.AddObject(obj);
-                }
+                m_Evens.AddObject(obj);
             }
-
-            public override void RemoveObject(in NetworkObject obj)
+            else
             {
-                if (obj.NetworkObjectId % 2 == 0)
-                {
-                    m_Evens.RemoveObject(obj);
-                }
-                else
-                {
-                    m_Odds.RemoveObject(obj);
-                }
+                m_Odds.AddObject(obj);
             }
+        }
 
-            public override void QueryFor(in NetworkClient client, HashSet<NetworkObject> results)
+        public override void RemoveObject(in NetworkObject obj)
+        {
+            if (obj.NetworkObjectId % 2 == 0)
             {
-                // if a client with an odd NetworkObjectID queries, we return objects with odd NetworkObjectIDs
-                if (client.PlayerObject.NetworkObjectId % 2 == 0)
-                {
-                    m_Evens.QueryFor(client, results);
-                }
-                else
-                {
-                    m_Odds.QueryFor(client, results);
-                }
+                m_Evens.RemoveObject(obj);
             }
-
-            public override void UpdateObject(in NetworkObject obj)
+            else
             {
                 m_Odds.RemoveObject(obj);
-                m_Evens.RemoveObject(obj);
-                AddObject(obj);
             }
-
-            private InterestNodeStatic m_Odds;
-            private InterestNodeStatic m_Evens;
         }
+
+        public override void QueryFor(in NetworkClient client, HashSet<NetworkObject> results)
+        {
+            // if a client with an odd NetworkObjectID queries, we return objects with odd NetworkObjectIDs
+            if (client.PlayerObject.NetworkObjectId % 2 == 0)
+            {
+                m_Evens.QueryFor(client, results);
+            }
+            else
+            {
+                m_Odds.QueryFor(client, results);
+            }
+        }
+
+        public override void UpdateObject(in NetworkObject obj)
+        {
+            m_Odds.RemoveObject(obj);
+            m_Evens.RemoveObject(obj);
+            AddObject(obj);
+        }
+
+        private InterestNodeStatic m_Odds;
+        private InterestNodeStatic m_Evens;
+    }
 
         private (NetworkObject, Guid) MakeGameInterestObjectHelper(InterestNode comn = null)
         {
