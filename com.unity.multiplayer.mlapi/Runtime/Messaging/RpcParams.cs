@@ -11,23 +11,23 @@ namespace MLAPI.Messaging
 
     public struct ServerRpcSendParams: IHasUpdateStage
     {
-        private NetworkUpdateStage _updateStage;
+        private NetworkUpdateStage m_UpdateStage;
 
         public NetworkUpdateStage UpdateStage
         {
-            get => _updateStage;
-            set => _updateStage = value;
+            get => m_UpdateStage;
+            set => m_UpdateStage = value;
         }
     }
 
     public struct ServerRpcReceiveParams: IHasUpdateStage
     {
-        private NetworkUpdateStage _updateStage;
+        private NetworkUpdateStage m_UpdateStage;
 
         public NetworkUpdateStage UpdateStage
         {
-            get => _updateStage;
-            set => _updateStage = value;
+            get => m_UpdateStage;
+            set => m_UpdateStage = value;
         }
         public ulong SenderClientId;
     }
@@ -40,24 +40,24 @@ namespace MLAPI.Messaging
 
     public struct ClientRpcSendParams: IHasUpdateStage
     {
-        private NetworkUpdateStage _updateStage;
+        private NetworkUpdateStage m_UpdateStage;
 
         public NetworkUpdateStage UpdateStage
         {
-            get => _updateStage;
-            set => _updateStage = value;
+            get => m_UpdateStage;
+            set => m_UpdateStage = value;
         }
         public ulong[] TargetClientIds;
     }
 
     public struct ClientRpcReceiveParams: IHasUpdateStage
     {
-        private NetworkUpdateStage _updateStage;
+        private NetworkUpdateStage m_UpdateStage;
 
         public NetworkUpdateStage UpdateStage
         {
-            get => _updateStage;
-            set => _updateStage = value;
+            get => m_UpdateStage;
+            set => m_UpdateStage = value;
         }
     }
 
