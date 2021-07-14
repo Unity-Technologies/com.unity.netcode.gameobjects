@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using MLAPI.Configuration;
 using MLAPI.Metrics;
 using NUnit.Framework;
 using Unity.Multiplayer.NetworkProfiler;
@@ -20,7 +21,7 @@ namespace MLAPI.RuntimeTests.Metrics.NetworkObjects
         private NetworkObject m_NewNetworkObject;
         private const string m_NewNetworkObjectName = "TestNetworkObjectToSpawn";
 
-            [UnitySetUp]
+        [UnitySetUp]
         public IEnumerator SetUp()
         {
             if (!MultiInstanceHelpers.Create(1, out m_Server, out var clients))
@@ -36,9 +37,17 @@ namespace MLAPI.RuntimeTests.Metrics.NetworkObjects
 
             m_Server.NetworkConfig.PlayerPrefab = playerPrefab;
 
+            var gameObject = new GameObject(m_NewNetworkObjectName);
+            m_NewNetworkObject = gameObject.AddComponent<NetworkObject>();
+            m_NewNetworkObject.NetworkManagerOwner = m_Server;
+            MultiInstanceHelpers.MakeNetworkedObjectTestPrefab(m_NewNetworkObject);
+            var networkPrefab = new NetworkPrefab {Prefab = gameObject};
+            m_Server.NetworkConfig.NetworkPrefabs.Add(networkPrefab);
+
             foreach (var client in clients)
             {
                 client.NetworkConfig.PlayerPrefab = playerPrefab;
+                client.NetworkConfig.NetworkPrefabs.Add(networkPrefab);
             }
 
             if (!MultiInstanceHelpers.Start(true, m_Server, clients))
@@ -47,16 +56,14 @@ namespace MLAPI.RuntimeTests.Metrics.NetworkObjects
                 Assert.Fail("Failed to start instances");
             }
 
+            m_Client = clients.First();
+
             yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(clients));
             yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientConnectedToServer(m_Server));
 
-            m_Client = clients.First();
             m_ClientMetrics = m_Client.NetworkMetrics as NetworkMetrics;
             m_ServerMetrics = m_Server.NetworkMetrics as NetworkMetrics;
 
-            var gameObject = new GameObject(m_NewNetworkObjectName);
-            m_NewNetworkObject = gameObject.AddComponent<NetworkObject>();
-            m_NewNetworkObject.NetworkManagerOwner = m_Server;
         }
 
         [UnityTearDown]
@@ -99,8 +106,7 @@ namespace MLAPI.RuntimeTests.Metrics.NetworkObjects
             var objectSpawned = objectSpawnedReceivedMetricValues.First();
             Assert.AreEqual(m_Server.LocalClientId, objectSpawned.Connection.Id);
             Assert.AreEqual(m_NewNetworkObject.NetworkObjectId, objectSpawned.NetworkId.NetworkId);
-            // Bug: this should not be the name of the network object
-            // Assert.AreEqual("Player(Clone)", objectSpawned.NetworkId.Name); // What?
+            Assert.AreEqual($"{m_NewNetworkObjectName}(Clone)", objectSpawned.NetworkId.Name);
         }
 
         [UnityTest]
@@ -142,8 +148,7 @@ namespace MLAPI.RuntimeTests.Metrics.NetworkObjects
             var objectDestroyed = objectDestroyedReceivedMetricValues.First();
             Assert.AreEqual(m_Server.LocalClientId, objectDestroyed.Connection.Id);
             Assert.AreEqual(m_NewNetworkObject.NetworkObjectId, objectDestroyed.NetworkId.NetworkId);
-            // Bug: Currently the object name is always "Player Clone"
-            // Assert.AreEqual(m_NewNetworkObjectName, objectDestroyed.NetworkId.Name);
+            Assert.AreEqual($"{m_NewNetworkObjectName}(Clone)", objectDestroyed.NetworkId.Name);
         }
 
         [UnityTest]
