@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using MLAPI.Logging;
 
 namespace MLAPI.Metrics
 {
@@ -32,6 +31,12 @@ namespace MLAPI.Metrics
         void TrackObjectDestroySent(IReadOnlyCollection<ulong> receiverClientIds, ulong networkObjectId, string gameObjectName, ulong bytesCount);
 
         void TrackObjectDestroyReceived(ulong senderClientId, ulong networkObjectId, string gameObjectName, ulong bytesCount);
+
+        void TrackRpcSent(ulong receiverClientId, ulong networkObjectId, string rpcName, ulong bytesCount);
+
+        void TrackRpcSent(ulong[] receiverClientIds, ulong networkObjectId, string rpcName, ulong bytesCount);
+
+        void TrackRpcReceived(ulong senderClientId, ulong networkObjectId, string rpcName, ulong bytesCount);
 
         void TrackServerLogSent(ulong receiverClientId, uint logType, ulong bytesCount);
 
