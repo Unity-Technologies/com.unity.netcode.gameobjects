@@ -149,7 +149,7 @@ namespace MLAPI.Messaging
                                 ProfilerStatManager.RpcsSent.Record(queueItem.ClientNetworkIds.Length);
                                 break;
                             }
-
+                            // todo: are we sure we want to record those sends in non-listening mode ?
                             PerformanceDataManager.Increment(ProfilerConstants.RpcSent, queueItem.ClientNetworkIds.Length);
                             ProfilerStatManager.RpcsSent.Record(queueItem.ClientNetworkIds.Length);
                             break;
@@ -167,7 +167,7 @@ namespace MLAPI.Messaging
                                 ProfilerStatManager.RpcsSent.Record(queueItem.ClientNetworkIds.Length);
                                 break;
                             }
-
+                            // todo: are we sure we want to record those sends in non-listening mode ?
                             PerformanceDataManager.Increment(ProfilerConstants.RpcSent, queueItem.ClientNetworkIds.Length);
                             ProfilerStatManager.RpcsSent.Record(queueItem.ClientNetworkIds.Length);
                             break;
