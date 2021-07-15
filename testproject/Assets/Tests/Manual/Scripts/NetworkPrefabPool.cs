@@ -289,11 +289,21 @@ namespace TestProject.ManualTests
         private GameObject AddNewInstance()
         {
             var obj = Instantiate(m_ObjectToSpawn);
-            var no = obj.GetComponent<NetworkObject>();
             var genericBehaviour = obj.GetComponent<GenericNetworkObjectBehaviour>();
             if (genericBehaviour)
             {
                 genericBehaviour.IsRegisteredPoolObject = true;
+            }
+            else
+            {
+                // If your spawn generator is not in the target active scene, then to properly synchronize your NetworkObjects
+                // for late joining players you **must** set the scene that the NetworkObject depends on
+                // (i.e. NetworkObjet pool with custom Network Prefab Handler)
+                if (gameObject.scene != UnityEngine.SceneManagement.SceneManager.GetActiveScene())
+                {
+                    var networkObject = obj.GetComponent<NetworkObject>();
+                    networkObject.SetSceneAsDependency(gameObject.scene.name);
+                }
             }
             obj.SetActive(false);
             m_ObjectPool.Add(obj);
@@ -425,9 +435,9 @@ namespace TestProject.ManualTests
                 networkObject.transform.position = Vector3.zero;
                 networkObject.gameObject.SetActive(false);
             }
-            else if (genericBehaviour.IsRemovedFromPool)
+            else
             {
-                Object.DestroyImmediate(networkObject.gameObject);
+                Debug.Log($"NetworkObject {networkObject.name}:{networkObject.NetworkObjectId} is not registered...");
             }
         }
 

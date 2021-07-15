@@ -63,49 +63,22 @@ namespace TestProject.ManualTests
                     {
                         Debug.LogWarning($"{nameof(GenericNetworkObjectBehaviour)} id {NetworkObject.NetworkObjectId} is not active and enabled but game object is still active!");
                     }
-
-                    if (NetworkObject != null && !NetworkObject.IsSpawned)
-                    {
-                        Debug.LogWarning($"{nameof(GenericNetworkObjectBehaviour)} id {NetworkObject.NetworkObjectId} is not spawned but still active and enabled");
-                    }
                 }
             }
         }
 
+        /// <summary>
+        /// Tells us that we are registered with a NetworkPefab pool
+        /// This is primarily for late joining clients and object synchronization.
+        /// </summary>
         public bool IsRegisteredPoolObject;
 
+        /// <summary>
+        /// This tells us that the NetworkObject has been removed from a pool
+        /// This is primarily to handle NetworkPrefab pool that was loaded in an additive scene and the
+        /// additive scene was unloaded but the NetworkObject persisted (i.e. was spawned in a different scene)
+        /// </summary>
         public bool IsRemovedFromPool;
-
-        public bool DetectedMissedDespawn;
-
-        public float TimeToWaitUntilDestroy;
-
-        private void LateUpdate()
-        {
-            if (!IsOwner)
-            {
-                if (!NetworkObject.IsSpawned)
-                {
-                    if (IsRegisteredPoolObject && !IsRemovedFromPool)
-                    {
-                        if (!DetectedMissedDespawn)
-                        {
-                            DetectedMissedDespawn = true;
-                            TimeToWaitUntilDestroy = Time.realtimeSinceStartup + 1.0f;
-                        }
-                        else if (TimeToWaitUntilDestroy < Time.realtimeSinceStartup)
-                        {
-                            Debug.Log($"Destroying {gameObject.name} via {nameof(GenericNetworkObjectBehaviour)}.");
-                            Destroy(gameObject);
-                        }
-                    }
-                }
-                else if (IsRegisteredPoolObject && DetectedMissedDespawn)
-                {
-                    DetectedMissedDespawn = false;
-                }
-            }
-        }
 
         private void OnTriggerEnter(Collider other)
         {

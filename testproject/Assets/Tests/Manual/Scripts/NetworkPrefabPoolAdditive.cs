@@ -284,7 +284,6 @@ namespace TestProject.ManualTests
         private GameObject AddNewInstance()
         {
             var obj = Instantiate(m_ObjectToSpawn);
-            var no = obj.GetComponent<NetworkObject>();
             var genericBehaviour = obj.GetComponent<GenericNetworkObjectBehaviour>();
             if (genericBehaviour)
             {
@@ -295,7 +294,20 @@ namespace TestProject.ManualTests
             // Example of how to keep your pooled NetworkObjects in the same scene as your spawn generator (additive scenes only)
             if (SpawnInSourceScene && gameObject.scene != null)
             {
+                // If you move your NetworkObject into the same scene as the spawn generator, then you do not need to worry
+                // about setting the NetworkObject's scene dependency.
                 SceneManager.MoveGameObjectToScene(obj, gameObject.scene);
+            }
+            else // Otherwise, instantiate in the currently active scene
+            {
+                // If your spawn generator is not in the target active scene, then to properly synchronize your NetworkObjects
+                // for late joining players you **must** set the scene that the NetworkObject depends on
+                // (i.e. NetworkObjet pool with custom Network Prefab Handler)
+                if (gameObject.scene != SceneManager.GetActiveScene())
+                {
+                    var networkObject = obj.GetComponent<NetworkObject>();
+                    networkObject.SetSceneAsDependency(gameObject.scene.name);
+                }
             }
 
             obj.SetActive(false);
@@ -422,7 +434,7 @@ namespace TestProject.ManualTests
             }
             else
             {
-                Object.DestroyImmediate(networkObject.gameObject);
+                Debug.Log($"NetworkObject {networkObject.name}:{networkObject.NetworkObjectId} is not registered...");
             }
         }
 

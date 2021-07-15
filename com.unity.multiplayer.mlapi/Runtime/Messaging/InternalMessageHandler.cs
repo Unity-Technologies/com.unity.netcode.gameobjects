@@ -147,36 +147,16 @@ namespace MLAPI.Messaging
             }
         }
 
-
+        /// <summary>
+        /// Called for all Scene Management related events
+        /// </summary>
+        /// <param name="clientId"></param>
+        /// <param name="stream"></param>
         public void HandleSceneEvent(ulong clientId, Stream stream)
         {
             NetworkManager.SceneManager.HandleSceneEvent(clientId, stream);
         }
 
-        public void HandleSwitchScene(ulong clientId, Stream stream)
-        {
-            Debug.LogError("HandleSwitchScene is no longer supported!\n");
-            //m_NetworkManager.SceneManager.OnSceneSwitch(stream);
-            //using (var reader = PooledNetworkReader.Get(stream))
-            //{
-            //    uint sceneIndex = reader.ReadUInt32Packed();
-            //    var switchSceneGuid = new Guid(reader.ReadByteArray());
-            //    var isAdditivelyLoadedScene = reader.ReadBool();
-            //    var objectBuffer = new NetworkBuffer();
-            //    objectBuffer.CopyUnreadFrom(stream);
-            //    objectBuffer.Position = 0;
-
-            //    m_NetworkManager.SceneManager.OnSceneSwitch(sceneIndex, switchSceneGuid, objectBuffer, isAdditivelyLoadedScene ? LoadSceneMode.Additive:LoadSceneMode.Single);
-            //}
-        }
-
-        public void HandleClientSwitchSceneCompleted(ulong clientId, Stream stream)
-        {
-            using (var reader = PooledNetworkReader.Get(stream))
-            {
-                m_NetworkManager.SceneManager.OnClientSceneLoadingEventCompleted(clientId, new Guid(reader.ReadByteArray()));
-            }
-        }
 
         public void HandleChangeOwner(ulong clientId, Stream stream)
         {

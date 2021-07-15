@@ -11,16 +11,15 @@ using MLAPI.Serialization;
 namespace MLAPI.SceneManagement
 {
     [Serializable]
-    public class SceneEventData : INetworkSerializable, IDisposable
+    public class SceneEventData : IDisposable
     {
         public enum SceneEventTypes
         {
-            EventSwitch,                //Server to client full scene switch (i.e. single mode and destroy everything)
-            EventLoad,                  //Server to client load additive scene
-            EventUnload,                //Server to client unload additive scene
-            EventSetActive,             //Server to client make scene active
-            EventSync,                  //Server to client late join approval synchronization
-            Event_Switch_Complete,      //Client to server
+            Event_Load,                 //Server to client load additive scene
+            Event_Unload,               //Server to client unload additive scene
+            Event_SetActive,            //Server to client make scene active
+            Event_Sync,                 //Server to client late join approval synchronization
+            Event_ReSync,               //Server to client update of objects that were destroyed during sync
             Event_Load_Complete,        //Client to server
             Event_Unload_Complete,      //Client to server
             Event_SetActiveComplete,    //Client to server
@@ -36,6 +35,23 @@ namespace MLAPI.SceneManagement
 
         private Dictionary<uint, List<NetworkObject>> m_SceneNetworkObjects;
         private Dictionary<uint, long> m_SceneNetworkObjectDataOffsets;
+
+        /// <summary>
+        /// Client or Server Side:
+        /// Client side: Generates a list of all NetworkObjects by their NetworkObjectId that was spawned during th synchronization process
+        /// Server side: Compares list from client to make sure client didn't drop a message about a NetworkObject being despawned while it
+        /// was synchronizing (if so server will send another message back to the client informing the client of NetworkObjects to remove)
+        /// spawned during an initial synchronization.
+        /// </summary>
+        private List<NetworkObject> m_NetworkObjectsSync = new List<NetworkObject>();
+
+        /// <summary>
+        /// Server Side Re-Synchronization:
+        /// If there happens to be NetworkObjects in the final Event_Sync_Complete message that are no longer spawned,
+        /// the server will compile a list and send back an Event_ReSync message to the client.
+        /// </summary>
+        private List<ulong> m_NetworkObjectsToBeRemoved = new List<ulong>();
+
         internal PooledNetworkBuffer InternalBuffer;
 
         private NetworkManager m_NetworkManager;
@@ -68,9 +84,8 @@ namespace MLAPI.SceneManagement
         /// Server Side:
         /// Called just before the synchronization process
         /// </summary>
-        public void InitializeForSynch(NetworkManager networkManager)
+        public void InitializeForSynch()
         {
-            m_NetworkManager = networkManager;
             if (m_SceneNetworkObjects == null)
             {
                 m_SceneNetworkObjects = new Dictionary<uint, List<NetworkObject>>();
@@ -105,10 +120,10 @@ namespace MLAPI.SceneManagement
         {
             switch (SceneEventType)
             {
-                case SceneEventTypes.EventLoad:
-                case SceneEventTypes.EventSwitch:
-                case SceneEventTypes.EventUnload:
-                case SceneEventTypes.EventSync:
+                case SceneEventTypes.Event_Load:
+                case SceneEventTypes.Event_Unload:
+                case SceneEventTypes.Event_Sync:
+                case SceneEventTypes.Event_ReSync:
                     {
                         return true;
                     }
@@ -142,23 +157,23 @@ namespace MLAPI.SceneManagement
         }
 
         /// <summary>
-        /// Serializes this class instance
+        /// Serializes data based on the SceneEvent type.
         /// </summary>
         /// <param name="writer"></param>
-        private void OnWrite(NetworkWriter writer)
+        public void OnWrite(NetworkWriter writer)
         {
             writer.WriteByte((byte)SceneEventType);
 
             writer.WriteByte((byte)LoadSceneMode);
 
-            if (SceneEventType != SceneEventTypes.EventSync)
+            if (SceneEventType != SceneEventTypes.Event_Sync)
             {
                 writer.WriteByteArray(SwitchSceneGuid.ToByteArray());
             }
 
             writer.WriteUInt32Packed(SceneIndex);
 
-            if (SceneEventType == SceneEventTypes.EventSync)
+            if (SceneEventType == SceneEventTypes.Event_Sync)
             {
                 writer.WriteInt32Packed(m_SceneNetworkObjects.Count());
 
@@ -201,13 +216,23 @@ namespace MLAPI.SceneManagement
                     Debug.Log(msg);
                 }
             }
+
+            if (SceneEventType == SceneEventTypes.Event_Sync_Complete)
+            {
+                WriteClientSynchronizationResults(writer);
+            }
+
+            if (SceneEventType == SceneEventTypes.Event_ReSync)
+            {
+                WriteClientReSynchronizationData(writer);
+            }
         }
 
         /// <summary>
-        /// Deserialize this class instance
+        /// Deserialize data based on the SceneEvent type.
         /// </summary>
         /// <param name="reader"></param>
-        private void OnRead(NetworkReader reader)
+        public void OnRead(NetworkReader reader)
         {
             var sceneEventTypeValue = reader.ReadByte();
 
@@ -233,15 +258,16 @@ namespace MLAPI.SceneManagement
                 // NSS TODO: Add to proposal's MTT discussion topics: Should we assert here?
             }
 
-            if (SceneEventType != SceneEventTypes.EventSync)
+            if (SceneEventType != SceneEventTypes.Event_Sync)
             {
                 SwitchSceneGuid = new Guid(reader.ReadByteArray());
             }
 
             SceneIndex = reader.ReadUInt32Packed();
 
-            if (SceneEventType == SceneEventTypes.EventSync)
+            if (SceneEventType == SceneEventTypes.Event_Sync)
             {
+                m_NetworkObjectsSync.Clear();
                 var keyPairCount = reader.ReadInt32Packed();
 
                 if (m_SceneNetworkObjectDataOffsets == null)
@@ -271,8 +297,134 @@ namespace MLAPI.SceneManagement
                     }
                 }
             }
+
+            if (SceneEventType == SceneEventTypes.Event_Sync_Complete)
+            {
+                CheckClientSynchronizationResults(reader);
+            }
+
+            if (SceneEventType == SceneEventTypes.Event_ReSync)
+            {
+                ReadClientReSynchronizationData(reader);
+            }
         }
 
+        /// <summary>
+        /// Client Side:
+        /// If there happens to be NetworkObjects in the final Event_Sync_Complete message that are no longer spawned,
+        /// the server will compile a list and send back an Event_ReSync message to the client.
+        /// </summary>
+        /// <param name="reader"></param>
+        internal void ReadClientReSynchronizationData(NetworkReader reader)
+        {
+            var networkObjectsToRemove = reader.ReadULongArrayPacked();
+
+            if(networkObjectsToRemove.Length > 0)
+            {
+                Debug.Log($"Client {NetworkManager.Singleton.LocalClientId} is being re-synchronized.");
+                var networkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>();
+                var networkObjectIdToNetworkObject = new Dictionary<ulong, NetworkObject>();
+                foreach(var networkObject in networkObjects)
+                {
+                    if(!networkObjectIdToNetworkObject.ContainsKey(networkObject.NetworkObjectId))
+                    {
+                        networkObjectIdToNetworkObject.Add(networkObject.NetworkObjectId, networkObject);
+                    }
+                }
+
+                foreach(var networkObjectId in networkObjectsToRemove)
+                {
+                    if (networkObjectIdToNetworkObject.ContainsKey(networkObjectId))
+                    {
+                        var networkObject = networkObjectIdToNetworkObject[networkObjectId];
+                        networkObjectIdToNetworkObject.Remove(networkObjectId);
+
+                        networkObject.IsSpawned = false;
+                        if (m_NetworkManager.PrefabHandler.ContainsHandler(networkObject))
+                        {
+                            Debug.Log($"NetworkObjectId {networkObjectId} marked as not spawned and is being destroyed via prefab handler.");
+                            NetworkManager.Singleton.PrefabHandler.HandleNetworkPrefabDestroy(networkObject);
+                        }
+                        else
+                        {
+                            Debug.Log($"NetworkObjectId {networkObjectId} marked as not spawned and is being destroyed immediately.");
+                            UnityEngine.Object.DestroyImmediate(networkObject.gameObject);
+                        }
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Server Side:
+        /// If there happens to be NetworkObjects in the final Event_Sync_Complete message that are no longer spawned,
+        /// the server will compile a list and send back an Event_ReSync message to the client.
+        /// </summary>
+        /// <param name="writer"></param>
+        internal void WriteClientReSynchronizationData(NetworkWriter writer)
+        {
+            //Write how many objects need to be removed
+            writer.WriteULongArrayPacked(m_NetworkObjectsToBeRemoved.ToArray());
+        }
+
+        /// <summary>
+        /// Server Side:
+        /// Determines if the client needs to be slightly re-synchronized if during the deserialization
+        /// process the server finds NetworkObjects that the client still thinks are spawned.
+        /// </summary>
+        /// <returns></returns>
+        public bool ClientNeedsReSynchronization()
+        {
+            return (m_NetworkObjectsToBeRemoved.Count > 0);
+        }
+
+        /// <summary>
+        /// Server Side:
+        /// Determines if the client needs to be re-synchronized if during the deserialization
+        /// process the server finds NetworkObjects that the client still thinks are spawned but
+        /// have since been despawned.
+        /// </summary>
+        /// <param name="reader"></param>
+        internal void CheckClientSynchronizationResults(NetworkReader reader)
+        {
+            m_NetworkObjectsToBeRemoved.Clear();
+            var networkObjectIdCount = reader.ReadUInt32Packed();
+            for(int i = 0; i < networkObjectIdCount; i++)
+            {
+                var networkObjectId = (ulong)reader.ReadUInt32Packed();
+                if(!m_NetworkManager.SpawnManager.SpawnedObjects.ContainsKey(networkObjectId))
+                {
+                    m_NetworkObjectsToBeRemoved.Add(networkObjectId);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Client Side:
+        /// During the deserialization process of the servers Event_Sync, the client builds a list of
+        /// all NetworkObjectIds that were spawned.  Upon responding to the server with the Event_Sync_Complete
+        /// this list is included for the server to review to determine if the client needs a minor resynchronization
+        /// of NetworkObjects that might have been despawned while the client was processing the Event_Sync.
+        /// </summary>
+        /// <param name="writer"></param>
+        internal void WriteClientSynchronizationResults(NetworkWriter writer)
+        {
+            //Write how many objects were spawned
+            writer.WriteUInt32Packed((uint)m_NetworkObjectsSync.Count);
+            foreach (var networkObject in m_NetworkObjectsSync)
+            {
+                writer.WriteUInt32Packed((uint)networkObject.NetworkObjectId);
+            }
+        }
+
+        /// <summary>
+        /// Client Side:
+        /// During the processing of a server sent Event_Sync, this method will be called for each scene once
+        /// it is finished loading.  The client will also build a list of NetworkObjects that it spawned during
+        /// this process which will be used as part of the Event_Sync_Complete response.
+        /// </summary>
+        /// <param name="sceneId"></param>
+        /// <param name="networkManager"></param>
         public void SynchronizeSceneNetworkObjects(uint sceneId, NetworkManager networkManager)
         {
             if (m_SceneNetworkObjectDataOffsets.ContainsKey(sceneId))
@@ -287,28 +439,16 @@ namespace MLAPI.SceneManagement
 
                     for (int i = 0; i < newObjectsCount; i++)
                     {
-                        NetworkObject.DeserializeSceneObject(InternalBuffer, reader, networkManager);
+                        var spawnedNetworkObject = NetworkObject.DeserializeSceneObject(InternalBuffer, reader, networkManager);
+                        if(!m_NetworkObjectsSync.Contains(spawnedNetworkObject))
+                        {
+                            m_NetworkObjectsSync.Add(spawnedNetworkObject);
+                        }
                     }
                 }
 
                 // Remove each entry after it is processed so we know when we are done
                 m_SceneNetworkObjectDataOffsets.Remove(sceneId);
-            }
-        }
-
-        /// <summary>
-        /// INetworkSerializable implementation method for SceneEventData
-        /// </summary>
-        /// <param name="serializer">serializer passed in during serialization</param>
-        public void NetworkSerialize(NetworkSerializer serializer)
-        {
-            if (serializer.IsReading)
-            {
-                OnRead(serializer.Reader);
-            }
-            else
-            {
-                OnWrite(serializer.Writer);
             }
         }
 
@@ -338,8 +478,9 @@ namespace MLAPI.SceneManagement
         /// <summary>
         /// Constructor
         /// </summary>
-        public SceneEventData()
+        public SceneEventData(NetworkManager networkManager)
         {
+            m_NetworkManager = networkManager;
             InternalBuffer = NetworkBufferPool.GetBuffer();
         }
     }

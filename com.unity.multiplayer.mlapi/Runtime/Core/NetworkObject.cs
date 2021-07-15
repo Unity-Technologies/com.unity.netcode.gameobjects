@@ -152,6 +152,27 @@ namespace MLAPI
         public bool DestroyWithScene { get; internal set; }
 
         /// <summary>
+        /// Used for late-joining client synchronization purposes.
+        /// The scene that has dependencies to this NetworkObject
+        /// If not set then it is ignored.
+        /// (see NetworkObject.SetSceneAsDependency for more information)
+        /// </summary>
+        public string DependentSceneName { get; internal set; }
+
+        /// <summary>
+        /// For late-joining client synchronization and additive scene(s) purposes
+        /// This provides the ability to associate a NetworkObject with a scene that is not
+        /// currently spawned in but may have dependencies within the dependent scene
+        /// Example: NetworkObject pool generator with custom Network Prefab override handler
+        /// needs to initialize before this NetworkObject is spawned.
+        /// </summary>
+        /// <param name="sceneName">scene that has dependencies to the NetworkObject</param>
+        public void SetSceneAsDependency(string sceneName)
+        {
+            DependentSceneName = sceneName;
+        }
+
+        /// <summary>
         /// Delegate type for checking visibility
         /// </summary>
         /// <param name="clientId">The clientId to check visibility for</param>

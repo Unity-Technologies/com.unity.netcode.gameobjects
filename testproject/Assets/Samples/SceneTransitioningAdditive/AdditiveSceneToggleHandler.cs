@@ -116,7 +116,7 @@ namespace TestProject.ManualTests
             {
                 if (isLoading)
                 {
-                    m_CurrentSceneSwitchProgress = NetworkManager.Singleton.SceneManager.LoadScene(m_SceneToLoad);
+                    m_CurrentSceneSwitchProgress = NetworkManager.Singleton.SceneManager.LoadScene(m_SceneToLoad,UnityEngine.SceneManagement.LoadSceneMode.Additive);
                 }
                 else
                 {

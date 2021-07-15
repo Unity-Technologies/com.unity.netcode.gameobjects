@@ -780,6 +780,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 475de064003ff104fb88b1fbccd0f417, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  m_ActivateOnLoad: 0
   m_SceneToLoad: AdditiveScene2
   m_SceneAsset: {fileID: 102900000, guid: c6a3d883c8253ee43bca4f2b03797d7b, type: 3}
 --- !u!1 &300124661
@@ -1366,6 +1367,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 475de064003ff104fb88b1fbccd0f417, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  m_ActivateOnLoad: 0
   m_SceneToLoad: AdditiveScene1
   m_SceneAsset: {fileID: 102900000, guid: 41a0239b0c49e2047b7063c822f0df8a, type: 3}
 --- !u!850595691 &903034822
@@ -1552,7 +1554,7 @@ MonoBehaviour:
     EnsureNetworkVariableLengthSafety: 0
     EnableSceneManagement: 1
     ForceSamePrefabs: 1
-    RecycleNetworkIds: 1
+    RecycleNetworkIds: 0
     NetworkIdRecycleDelay: 120
     RpcHashSize: 0
     LoadSceneTimeOut: 120
