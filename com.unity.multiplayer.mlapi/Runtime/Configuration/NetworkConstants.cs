@@ -23,6 +23,7 @@ namespace MLAPI.Configuration
         internal const byte NAMED_MESSAGE = 22;
         internal const byte SERVER_LOG = 23;
         internal const byte SNAPSHOT_DATA = 25;
+        internal const byte SNAPSHOT_ACK = 26;
         internal const byte SERVER_RPC = 30;
         internal const byte CLIENT_RPC = 31;
         internal const byte INVALID = 32;
@@ -55,7 +56,7 @@ namespace MLAPI.Configuration
             "SERVER_LOG",
             "",
             "SNAPSHOT_DATA",
-            "",
+            "SNAPSHOT_ACK",
             "",
             "",
             "",
