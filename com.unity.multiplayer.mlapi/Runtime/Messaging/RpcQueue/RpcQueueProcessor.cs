@@ -290,7 +290,7 @@ namespace MLAPI.Messaging
         {
             m_RpcQueueContainer = rpcQueueContainer;
             m_NetworkManager = networkManager;
-            m_RpcBatcher = new RpcBatcher(networkManager);
+            m_RpcBatcher = new RpcBatcher();
         }
     }
 }
