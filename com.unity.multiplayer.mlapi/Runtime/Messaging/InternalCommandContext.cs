@@ -11,16 +11,16 @@ namespace MLAPI.Messaging
     {
         public PooledNetworkWriter NetworkWriter;
 
-        private ulong[] ClientIds;
-        private NetworkUpdateStage UpdateStage;
-        private MessageQueueContainer Owner;
+        private ulong[] m_ClientIds;
+        private NetworkUpdateStage m_UpdateStage;
+        private MessageQueueContainer m_Owner;
 
         public InternalCommandContext(PooledNetworkWriter writer, ulong[] clientIds, NetworkUpdateStage updateStage, MessageQueueContainer owner)
         {
             NetworkWriter = writer;
-            ClientIds = clientIds;
-            UpdateStage = updateStage;
-            Owner = owner;
+            m_ClientIds = clientIds;
+            m_UpdateStage = updateStage;
+            m_Owner = owner;
         }
 
         public void Dispose()
@@ -30,17 +30,17 @@ namespace MLAPI.Messaging
 
         public void Finalize()
         {
-            if (Owner.NetworkManager.IsHost)
+            if (m_Owner.NetworkManager.IsHost)
             {
-                var containsServerClientId = ClientIds.Contains(Owner.NetworkManager.ServerClientId);
-                if (containsServerClientId && ClientIds.Length == 1)
+                var containsServerClientId = m_ClientIds.Contains(m_Owner.NetworkManager.ServerClientId);
+                if (containsServerClientId && m_ClientIds.Length == 1)
                 {
-                    Owner.EndAddQueueItemToFrame(NetworkWriter, MessageQueueHistoryFrame.QueueFrameType.Inbound, UpdateStage);
+                    m_Owner.EndAddQueueItemToFrame(NetworkWriter, MessageQueueHistoryFrame.QueueFrameType.Inbound, m_UpdateStage);
                     return;
                 }
             }
 
-            Owner.EndAddQueueItemToFrame(NetworkWriter, MessageQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
+            m_Owner.EndAddQueueItemToFrame(NetworkWriter, MessageQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
         }
     }
 }
