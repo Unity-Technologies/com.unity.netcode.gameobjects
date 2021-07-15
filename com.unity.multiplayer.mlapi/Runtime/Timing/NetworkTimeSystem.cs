@@ -96,12 +96,22 @@ namespace MLAPI.Timing
             return false;
         }
 
+        /// <summary>
+        /// Resets the time system to a time based on the given network parameters.
+        /// </summary>
+        /// <param name="serverTimeSec">The most recent server time value received in seconds.</param>
+        /// <param name="rttSec">The current RTT in seconds. Can be an averaged or a raw value.</param>
         public void Reset(double serverTimeSec, double rttSec)
         {
             Sync(serverTimeSec, rttSec);
             Advance(0);
         }
 
+        /// <summary>
+        /// Synchronizes the time system with up-to-date network statistics but does not change any time values or advance the time.
+        /// </summary>
+        /// <param name="serverTimeSec">The most recent server time value received in seconds.</param>
+        /// <param name="rttSec">The current RTT in seconds. Can be an averaged or a raw value.</param>
         public void Sync(double serverTimeSec, double rttSec)
         {
             var timeDif = serverTimeSec - m_TimeSec;
