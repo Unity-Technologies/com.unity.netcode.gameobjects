@@ -46,6 +46,8 @@ namespace MLAPI.Timing
         public double ServerTime => m_TimeSec + m_CurrentServerTimeOffset;
 
         //TODO This is used as a workaround to pass this back into the sync function will be removed once we get correct value.
+        // Once we have a sequence-ack algorithm we get access to the last received tick time instead.
+        // See NetworkManager.OnNetworkPreUpdate where this is used. Because we don't receive time sync messages from the server yet we just manually fake a time advancement by adding delta time to our existing time.
         internal double TimeSystemInternalTime => m_TimeSec;
 
         public NetworkTimeSystem(double localBufferSec, double serverBufferSec, double hardResetThresholdSec, double adjustmentRatio = 0.01d)
