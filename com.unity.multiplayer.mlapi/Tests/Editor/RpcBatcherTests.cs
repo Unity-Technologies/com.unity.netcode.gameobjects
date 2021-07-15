@@ -29,8 +29,8 @@ namespace MLAPI.EditorTests
                     MessageType = i % 2 == 0 ? MessageQueueContainer.MessageType.ServerRpc : MessageQueueContainer.MessageType.ClientRpc,
                     MessageData = new ArraySegment<byte>(randomData, 0, randomData.Length)
                 };
-                sendBatcher.QueueItem(queueItem);
-                sendBatcher.SendItems(k_BatchThreshold,
+                sendBatcher.QueueItem(queueItem,
+                    k_BatchThreshold,
                     (networkId, sendStream) =>
                     {
                         var queueStream = new NetworkBuffer();
@@ -78,8 +78,8 @@ namespace MLAPI.EditorTests
                     MessageType = i % 2 == 0 ? MessageQueueContainer.MessageType.ServerRpc : MessageQueueContainer.MessageType.ClientRpc,
                     MessageData = new ArraySegment<byte>(randomData, 0, randomData.Length)
                 };
-                sendBatcher.QueueItem(queueItem);
-                sendBatcher.SendItems(k_BatchThreshold,
+                sendBatcher.QueueItem(queueItem,
+                    k_BatchThreshold,
                     (networkId, sendStream) =>
                     {
                         var queueStream = new NetworkBuffer();

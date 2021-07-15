@@ -119,7 +119,7 @@ namespace MLAPI.Messaging
         /// Add a FrameQueueItem to be sent
         /// </summary>queueItem
         /// <param name="item">the threshold in bytes</param>
-        public void QueueItem(in MessageFrameItem item)
+        public void QueueItem(in MessageFrameItem item, int automaticSendThresholdBytes, SendCallbackType sendCallback)
         {
             FillTargetList(item, ref m_TargetList);
 
@@ -139,6 +139,20 @@ namespace MLAPI.Messaging
                     sendStream.IsEmpty = false;
                     sendStream.NetworkChannel = item.NetworkChannel;
                 }
+                // If the item is a different channel we have to flush and change channels.
+                // This isn't great if channels are interleaved, but having a different stream
+                // per channel would create ordering issues.
+                else if (sendStream.NetworkChannel != item.NetworkChannel)
+                {
+                    sendCallback(clientId, sendStream);
+                    // clear the batch that was sent from the SendDict
+                    sendStream.Buffer.SetLength(0);
+                    sendStream.Buffer.Position = 0;
+                    ProfilerStatManager.MessageBatchesSent.Record();
+                    PerformanceDataManager.Increment(ProfilerConstants.MessageBatchesSent);
+
+                    sendStream.NetworkChannel = item.NetworkChannel;
+                }
 
                 // write the amounts of bytes that are coming up
                 PushLength(item.MessageData.Count, ref sendStream.Writer);
@@ -150,6 +164,18 @@ namespace MLAPI.Messaging
                 ProfilerStatManager.MessagesSent.Record();
                 PerformanceDataManager.Increment(ProfilerConstants.ByteSent, item.MessageData.Count);
                 PerformanceDataManager.Increment(ProfilerConstants.MessagesSent);
+
+
+                if (sendStream.Buffer.Length >= automaticSendThresholdBytes)
+                {
+                    sendCallback(clientId, sendStream);
+                    // clear the batch that was sent from the SendDict
+                    sendStream.Buffer.SetLength(0);
+                    sendStream.Buffer.Position = 0;
+                    sendStream.IsEmpty = true;
+                    ProfilerStatManager.MessageBatchesSent.Record();
+                    PerformanceDataManager.Increment(ProfilerConstants.MessageBatchesSent);
+                }
             }
         }
 

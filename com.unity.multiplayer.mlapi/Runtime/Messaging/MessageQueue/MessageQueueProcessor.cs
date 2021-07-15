@@ -268,18 +268,13 @@ namespace MLAPI.Messaging
                     while (currentQueueItem.MessageType != MessageQueueContainer.MessageType.None)
                     {
                         advanceFrameHistory = true;
-                        if (m_MessageQueueContainer.IsUsingBatching())
+                        if (isListening)
                         {
-                            m_MessageBatcher.QueueItem(currentQueueItem);
-
-                            if (isListening)
+                            if (m_MessageQueueContainer.IsUsingBatching())
                             {
-                                m_MessageBatcher.SendItems(k_BatchThreshold, SendCallback);
+                                m_MessageBatcher.QueueItem(currentQueueItem, k_BatchThreshold, SendCallback);
                             }
-                        }
-                        else
-                        {
-                            if (isListening)
+                            else
                             {
                                 SendFrameQueueItem(currentQueueItem);
                             }
@@ -289,7 +284,7 @@ namespace MLAPI.Messaging
                     }
 
                     //If the size is < m_BatchThreshold then just send the messages
-                    if (advanceFrameHistory && m_MessageQueueContainer.IsUsingBatching())
+                    if (isListening && advanceFrameHistory && m_MessageQueueContainer.IsUsingBatching())
                     {
                         m_MessageBatcher.SendItems(0, SendCallback);
                     }
