@@ -939,6 +939,7 @@ namespace MLAPI
             }
         }
 
+        // TODO Once we have a way to subscribe to NetworkUpdateLoop with order we can move this out of NetworkManager but for now this needs to be here because we need strict ordering.
         private void OnNetworkPreUpdate()
         {
             // TODO this is a workaround until we have a good way to pass time received from the server + RTT to the time system.
