@@ -21,7 +21,7 @@ namespace MLAPI.EditorTests.Timing
             double receivedServerTime = 2;
 
             var timeSystem = new NetworkTimeSystem(0.05d, 0.05d, 0.1d);
-            timeSystem.Initialize(receivedServerTime, 0.15);
+            timeSystem.Reset(receivedServerTime, 0.15);
             var tickSystem = new NetworkTickSystem(60, timeSystem.LocalTime, timeSystem.ServerTime);
 
             Assert.True(timeSystem.LocalTime > 2);
@@ -69,7 +69,7 @@ namespace MLAPI.EditorTests.Timing
             double receivedServerTime = 2;
 
             var timeSystem = new NetworkTimeSystem(0.05d, 0.05d, 0.1d);
-            timeSystem.Initialize(receivedServerTime, 0.15);
+            timeSystem.Reset(receivedServerTime, 0.15);
             var tickSystem = new NetworkTickSystem(60, timeSystem.LocalTime, timeSystem.ServerTime);
 
             var steps = TimingTestHelper.GetRandomTimeSteps(100f, 0.01f, 0.1f, 42);
@@ -139,7 +139,7 @@ namespace MLAPI.EditorTests.Timing
             double receivedServerTime = 2;
 
             var timeSystem = new NetworkTimeSystem(0.05d, 0.05d, 0.1d);
-            timeSystem.Initialize(receivedServerTime, 0.15);
+            timeSystem.Reset(receivedServerTime, 0.15);
             var tickSystem = new NetworkTickSystem(60, timeSystem.LocalTime, timeSystem.ServerTime);
 
             var steps = TimingTestHelper.GetRandomTimeSteps(100f, 0.01f, 0.1f, 42);

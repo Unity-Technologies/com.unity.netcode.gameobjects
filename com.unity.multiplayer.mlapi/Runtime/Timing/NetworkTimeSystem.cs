@@ -96,18 +96,18 @@ namespace MLAPI.Timing
             return false;
         }
 
-        public void Initialize(double serverTime, double rtt)
+        public void Reset(double serverTimeSec, double rttSec)
         {
-            Sync(serverTime, rtt);
+            Sync(serverTimeSec, rttSec);
             Advance(0);
         }
 
-        public void Sync(double serverTime, double rtt)
+        public void Sync(double serverTimeSec, double rttSec)
         {
-            var timeDif = serverTime - m_TimeSec;
+            var timeDif = serverTimeSec - m_TimeSec;
 
             m_DesiredServerTimeOffset = timeDif - serverBufferSec;
-            m_DesiredLocalTimeOffset = timeDif + rtt + localBufferSec;
+            m_DesiredLocalTimeOffset = timeDif + rttSec + localBufferSec;
         }
     }
 }

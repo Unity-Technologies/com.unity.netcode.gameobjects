@@ -81,7 +81,7 @@ namespace MLAPI.Messaging
 
                 int tick = reader.ReadInt32Packed();
                 var time = new NetworkTime(NetworkManager.NetworkTickSystem.TickRate, tick);
-                NetworkManager.NetworkTimeSystem.Initialize(time.Time, 0.15f); // Start with a constant RTT of 150 until we receive values from the transport.
+                NetworkManager.NetworkTimeSystem.Reset(time.Time, 0.15f); // Start with a constant RTT of 150 until we receive values from the transport.
 
                 NetworkManager.ConnectedClients.Add(NetworkManager.LocalClientId, new NetworkClient { ClientId = NetworkManager.LocalClientId });
 

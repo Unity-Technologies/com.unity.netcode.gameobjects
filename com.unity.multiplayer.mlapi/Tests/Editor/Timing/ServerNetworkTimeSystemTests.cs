@@ -21,7 +21,7 @@ namespace MLAPI.EditorTests.Timing
             var serverTimeSystem = NetworkTimeSystem.ServerTimeSystem();
             var serverTickSystem = new NetworkTickSystem(60, 0, 0);
 
-            serverTimeSystem.Initialize(0.5d, 0);
+            serverTimeSystem.Reset(0.5d, 0);
 
             TimingTestHelper.ApplySteps(serverTimeSystem, serverTickSystem, steps, step =>
             {
