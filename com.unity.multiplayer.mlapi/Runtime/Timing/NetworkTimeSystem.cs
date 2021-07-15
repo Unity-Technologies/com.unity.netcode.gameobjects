@@ -9,7 +9,7 @@ namespace MLAPI.Timing
     /// </summary>
     public class NetworkTimeSystem
     {
-        private double m_Time;
+        private double m_TimeSec;
 
         private double m_CurrentLocalTimeOffset;
 
@@ -23,36 +23,36 @@ namespace MLAPI.Timing
         /// Gets or sets the amount of time in seconds the server should buffer incoming client messages.
         /// This increases the difference between local and server time so that messages arrive earlier on the server.
         /// </summary>
-        public double LocalBuffer { get; set; }
+        public double localBufferSec { get; set; }
 
         /// <summary>
         /// Gets or sets the amount of the time in seconds the client should buffer incoming messages from the server. This increases server time.
         /// A higher value increases latency but makes the game look more smooth in bad networking conditions.
         /// </summary>
-        public double ServerBuffer { get; set; }
+        public double serverBufferSec { get; set; }
 
         /// <summary>
         /// Gets or sets a threshold in seconds used to force a hard catchup of network time.
         /// </summary>
-        public double HardResetThreshold { get; set; }
+        public double hardResetThresholdSec { get; set; }
 
         /// <summary>
         /// Gets or sets the ratio at which the NetworkTimeSystem speeds up or slows down time.
         /// </summary>
         public double AdjustmentRatio { get; set; }
 
-        public double LocalTime => m_Time + m_CurrentLocalTimeOffset;
+        public double LocalTime => m_TimeSec + m_CurrentLocalTimeOffset;
 
-        public double ServerTime => m_Time + m_CurrentServerTimeOffset;
+        public double ServerTime => m_TimeSec + m_CurrentServerTimeOffset;
 
         //TODO This is used as a workaround to pass this back into the sync function will be removed once we get correct value.
-        internal double TimeSystemInternalTime => m_Time;
+        internal double TimeSystemInternalTime => m_TimeSec;
 
-        public NetworkTimeSystem(double localBuffer, double serverBuffer, double hardResetThreshold, double adjustmentRatio = 0.01d)
+        public NetworkTimeSystem(double localBufferSec, double serverBufferSec, double hardResetThresholdSec, double adjustmentRatio = 0.01d)
         {
-            LocalBuffer = localBuffer;
-            ServerBuffer = serverBuffer;
-            HardResetThreshold = hardResetThreshold;
+            this.localBufferSec = localBufferSec;
+            this.serverBufferSec = serverBufferSec;
+            this.hardResetThresholdSec = hardResetThresholdSec;
             AdjustmentRatio = adjustmentRatio;
         }
 
@@ -69,15 +69,15 @@ namespace MLAPI.Timing
         /// <summary>
         /// Advances the time system by a certain amount of time. Should be called once per frame with Time.deltaTime or similar.
         /// </summary>
-        /// <param name="deltaTime">The amount of time to advance. The delta time which passed since Advance was last called.</param>
+        /// <param name="deltaTimeSec">The amount of time to advance. The delta time which passed since Advance was last called.</param>
         /// <returns></returns>
-        public bool Advance(double deltaTime)
+        public bool Advance(double deltaTimeSec)
         {
-            m_Time += deltaTime;
+            m_TimeSec += deltaTimeSec;
 
-            if (Math.Abs(m_DesiredLocalTimeOffset - m_CurrentLocalTimeOffset) > HardResetThreshold || Math.Abs(m_DesiredServerTimeOffset - m_CurrentServerTimeOffset) > HardResetThreshold)
+            if (Math.Abs(m_DesiredLocalTimeOffset - m_CurrentLocalTimeOffset) > hardResetThresholdSec || Math.Abs(m_DesiredServerTimeOffset - m_CurrentServerTimeOffset) > hardResetThresholdSec)
             {
-                m_Time += m_DesiredServerTimeOffset;
+                m_TimeSec += m_DesiredServerTimeOffset;
 
                 m_DesiredLocalTimeOffset -= m_DesiredServerTimeOffset;
                 m_CurrentLocalTimeOffset = m_DesiredLocalTimeOffset;
@@ -88,8 +88,8 @@ namespace MLAPI.Timing
                 return true;
             }
 
-            m_CurrentLocalTimeOffset += deltaTime * (m_DesiredLocalTimeOffset > m_CurrentLocalTimeOffset ? AdjustmentRatio : -AdjustmentRatio);
-            m_CurrentServerTimeOffset += deltaTime * (m_DesiredServerTimeOffset > m_CurrentServerTimeOffset ? AdjustmentRatio : -AdjustmentRatio);
+            m_CurrentLocalTimeOffset += deltaTimeSec * (m_DesiredLocalTimeOffset > m_CurrentLocalTimeOffset ? AdjustmentRatio : -AdjustmentRatio);
+            m_CurrentServerTimeOffset += deltaTimeSec * (m_DesiredServerTimeOffset > m_CurrentServerTimeOffset ? AdjustmentRatio : -AdjustmentRatio);
 
             return false;
         }
@@ -102,10 +102,10 @@ namespace MLAPI.Timing
 
         public void Sync(double serverTime, double rtt)
         {
-            var timeDif = serverTime - m_Time;
+            var timeDif = serverTime - m_TimeSec;
 
-            m_DesiredServerTimeOffset = timeDif - ServerBuffer;
-            m_DesiredLocalTimeOffset = timeDif + rtt + LocalBuffer;
+            m_DesiredServerTimeOffset = timeDif - serverBufferSec;
+            m_DesiredLocalTimeOffset = timeDif + rtt + localBufferSec;
         }
     }
 }

@@ -11,7 +11,7 @@ namespace MLAPI.Timing
     /// </summary>
     public struct NetworkTime
     {
-        private double m_Time;
+        private double m_TimeSec;
 
         private int m_TickRate;
         private double m_TickInterval;
@@ -27,12 +27,12 @@ namespace MLAPI.Timing
         /// <summary>
         /// Gets the current time. This is a non fixed time value and similar to <see cref="Time.time"/>
         /// </summary>
-        public double Time => m_Time;
+        public double Time => m_TimeSec;
 
         /// <summary>
         /// Gets the current time as a float.
         /// </summary>
-        public float TimeAsFloat => (float)m_Time;
+        public float TimeAsFloat => (float)m_TimeSec;
 
         /// <summary>
         /// Gets he current fixed network time. This is the time value of the last network tick. Similar to <see cref="Time.fixedTime"/>
@@ -64,7 +64,7 @@ namespace MLAPI.Timing
             m_TickInterval = 1f / m_TickRate; // potential floating point precision issue, could result in different interval on different machines
             m_CachedTickOffset = 0;
             m_CachedTick = 0;
-            m_Time = 0;
+            m_TimeSec = 0;
         }
 
         /// <summary>
@@ -84,11 +84,11 @@ namespace MLAPI.Timing
         /// Creates a new instance of the <see cref="NetworkTime"/> struct.
         /// </summary>
         /// <param name="tickRate">The tickrate.</param>
-        /// <param name="time">The time value as a float.</param>
-        public NetworkTime(int tickRate, double time)
+        /// <param name="timeSec">The time value as a float.</param>
+        public NetworkTime(int tickRate, double timeSec)
             : this(tickRate)
         {
-            this += time;
+            this += timeSec;
         }
 
 
@@ -103,7 +103,7 @@ namespace MLAPI.Timing
 
         private void UpdateCache()
         {
-            double d = m_Time / m_TickInterval;
+            double d = m_TimeSec / m_TickInterval;
             m_CachedTick = (int)d;
             m_CachedTickOffset = ((d - Math.Truncate(d)) * m_TickInterval);
 
@@ -127,7 +127,7 @@ namespace MLAPI.Timing
 
         public static NetworkTime operator +(NetworkTime a, double b)
         {
-            a.m_Time += b;
+            a.m_TimeSec += b;
             a.UpdateCache();
             return a;
         }

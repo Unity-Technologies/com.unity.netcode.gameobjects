@@ -39,26 +39,26 @@ namespace MLAPI.Timing
         /// Creates a new instance of the <see cref="NetworkTickSystem"/> class.
         /// </summary>
         /// <param name="tickRate">The tick rate</param>
-        /// <param name="localTime">The initial local time to start at.</param>
-        /// <param name="serverTime">The initial server time to start at.</param>
-        public NetworkTickSystem(int tickRate, double localTime, double serverTime)
+        /// <param name="localTimeSec">The initial local time to start at.</param>
+        /// <param name="serverTimeSec">The initial server time to start at.</param>
+        public NetworkTickSystem(int tickRate, double localTimeSec, double serverTimeSec)
         {
             TickRate = tickRate;
             Tick = null;
-            LocalTime = new NetworkTime(tickRate, localTime);
-            ServerTime = new NetworkTime(tickRate, serverTime);
+            LocalTime = new NetworkTime(tickRate, localTimeSec);
+            ServerTime = new NetworkTime(tickRate, serverTimeSec);
         }
 
         /// <summary>
         /// Called after advancing the time system to run ticks based on the difference in time.
         /// </summary>
-        public void UpdateTick(double localTime, double serverTime)
+        public void UpdateTick(double localTimeSec, double serverTimeSec)
         {
             // store old local tick to know how many fixed ticks passed
             var previousLocalTick = LocalTime.Tick;
 
-            LocalTime = new NetworkTime(TickRate, localTime);
-            ServerTime = new NetworkTime(TickRate, serverTime);
+            LocalTime = new NetworkTime(TickRate, localTimeSec);
+            ServerTime = new NetworkTime(TickRate, serverTimeSec);
 
             // cache times here so that we can adjust them to temporary values while simulating ticks.
             var cacheLocalTime = LocalTime;
