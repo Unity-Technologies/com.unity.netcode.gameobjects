@@ -56,7 +56,7 @@ namespace MLAPI.Configuration
             "SERVER_LOG",
             "",
             "SNAPSHOT_DATA",
-            "SNAPSHOT_ACK",
+            "",
             "",
             "",
             "",
