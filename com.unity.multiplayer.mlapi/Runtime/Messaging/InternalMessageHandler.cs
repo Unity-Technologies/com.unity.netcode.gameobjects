@@ -398,7 +398,12 @@ namespace MLAPI.Messaging
 
         internal static void HandleSnapshot(ulong clientId, Stream messageStream)
         {
-            NetworkManager.Singleton.SnapshotSystem.ReadSnapshot(messageStream);
+            NetworkManager.Singleton.SnapshotSystem.ReadSnapshot(clientId, messageStream);
+        }
+
+        internal static void HandleAck(ulong clientId, Stream messageStream)
+        {
+            NetworkManager.Singleton.SnapshotSystem.ReadAck(clientId, messageStream);
         }
 
         public void HandleAllClientsSwitchSceneCompleted(ulong clientId, Stream stream)
