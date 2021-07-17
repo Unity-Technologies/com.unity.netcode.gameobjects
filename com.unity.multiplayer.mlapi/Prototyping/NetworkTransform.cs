@@ -69,7 +69,7 @@ namespace MLAPI.Prototyping
         [SerializeField, Range(0, 120), Tooltip("The base amount of sends per seconds to use when range is disabled")]
         public float FixedSendsPerSecond = 30f;
 
-        private NetworkVariable<NetworkState> m_NetworkState = new NetworkVariable<NetworkState>(new NetworkState());
+        private readonly NetworkVariable<NetworkState> m_NetworkState = new NetworkVariable<NetworkState>(new NetworkState());
 
         /// <summary>
         /// Does this instance (client or server) has authority to update transform?
@@ -197,9 +197,16 @@ namespace MLAPI.Prototyping
                 return;
             }
 
-            if (CanUpdateTransform && IsNetworkStateDirty)
+            if (IsNetworkStateDirty)
             {
-                UpdateNetworkState();
+                if (CanUpdateTransform)
+                {
+                    UpdateNetworkState();
+                }
+                else
+                {
+                    ApplyNetworkState(m_NetworkState.Value);
+                }
             }
         }
 
