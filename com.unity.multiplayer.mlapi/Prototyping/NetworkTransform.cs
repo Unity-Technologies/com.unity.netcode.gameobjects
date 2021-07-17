@@ -1,7 +1,9 @@
 using System;
 using MLAPI.NetworkVariable;
+using MLAPI.Serialization;
 using MLAPI.Transports;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace MLAPI.Prototyping
 {
@@ -11,7 +13,162 @@ namespace MLAPI.Prototyping
     [AddComponentMenu("MLAPI/NetworkTransform")]
     public class NetworkTransform : NetworkBehaviour
     {
+        public enum NetworkAuthority
+        {
+            Server = 0,
+            Client,
+            Shared
+        }
+
+        private class NetworkState : INetworkSerializable
+        {
+            public bool InLocalSpace;
+            public Vector3 Position;
+            public Quaternion Rotation;
+            // todo: Scale
+
+            public void NetworkSerialize(NetworkSerializer serializer)
+            {
+                serializer.Serialize(ref InLocalSpace);
+                serializer.Serialize(ref Position);
+                serializer.Serialize(ref Rotation);
+            }
+        }
+
+        [FormerlySerializedAs("TransformAuthority")]
+        public NetworkAuthority Authority = NetworkAuthority.Server;
+        public NetworkChannel Channel = NetworkChannel.NetworkVariable;
+        public bool InLocalSpace = false;
+        public float FixedSendsPerSecond = 30f;
+
+        private NetworkVariable<NetworkState> m_NetworkState = new NetworkVariable<NetworkState>(new NetworkState());
+
+        public bool CanUpdateTransform =>
+            Authority == NetworkAuthority.Client && IsClient && IsOwner ||
+            Authority == NetworkAuthority.Server && IsServer ||
+            Authority == NetworkAuthority.Shared;
+
+        private void UpdateNetVarPerms()
+        {
+            switch (Authority)
+            {
+                default:
+                case NetworkAuthority.Server:
+                    m_NetworkState.Settings.WritePermission = NetworkVariablePermission.ServerOnly;
+                    break;
+                case NetworkAuthority.Client:
+                    m_NetworkState.Settings.WritePermission = NetworkVariablePermission.OwnerOnly;
+                    break;
+                case NetworkAuthority.Shared:
+                    m_NetworkState.Settings.WritePermission = NetworkVariablePermission.Everyone;
+                    break;
+            }
+        }
+
+        private void UpdateNetworkState()
+        {
+            bool isDirty = false;
+            isDirty |= m_NetworkState.Value.InLocalSpace != InLocalSpace;
+            if (InLocalSpace)
+            {
+                isDirty |= m_NetworkState.Value.Position != transform.localPosition;
+                isDirty |= m_NetworkState.Value.Rotation != transform.localRotation;
+            }
+            else
+            {
+                isDirty |= m_NetworkState.Value.Position != transform.position;
+                isDirty |= m_NetworkState.Value.Rotation != transform.rotation;
+            }
+
+            m_NetworkState.Value.InLocalSpace = InLocalSpace;
+            if (InLocalSpace)
+            {
+                m_NetworkState.Value.Position = transform.localPosition;
+                m_NetworkState.Value.Rotation = transform.localRotation;
+            }
+            else
+            {
+                m_NetworkState.Value.Position = transform.position;
+                m_NetworkState.Value.Rotation = transform.rotation;
+            }
+
+            m_NetworkState.SetDirty(isDirty);
+        }
+
+        private void ApplyNetworkState(NetworkState netState)
+        {
+            InLocalSpace = netState.InLocalSpace;
+            if (InLocalSpace)
+            {
+                transform.localPosition = netState.Position;
+                transform.localRotation = netState.Rotation;
+            }
+            else
+            {
+                transform.position = netState.Position;
+                transform.rotation = netState.Rotation;
+            }
+        }
+
+        private void OnNetworkStateChanged(NetworkState oldState, NetworkState newState)
+        {
+            if (Authority == NetworkAuthority.Client && IsClient && IsOwner)
+            {
+                // todo MTT-768 this shouldn't happen anymore with new tick system (tick written will be higher than tick read, so netvar wouldn't change in that case)
+                return;
+            }
+
+            ApplyNetworkState(newState);
+        }
+
+        private void Awake()
+        {
+            UpdateNetVarPerms();
+
+            m_NetworkState.Settings.SendNetworkChannel = Channel;
+            m_NetworkState.Settings.SendTickrate = FixedSendsPerSecond;
+
+            m_NetworkState.OnValueChanged += OnNetworkStateChanged;
+        }
+
+        private void OnDestroy()
+        {
+            m_NetworkState.OnValueChanged -= OnNetworkStateChanged;
+        }
+
+        private void FixedUpdate()
+        {
+            if (!NetworkObject.IsSpawned)
+            {
+                return;
+            }
+
+            if (CanUpdateTransform)
+            {
+                UpdateNetworkState();
+            }
+        }
+
         /// <summary>
+        /// Updates the NetworkTransform's authority model at runtime.
+        /// </summary>
+        public void SetAuthority(NetworkAuthority authority)
+        {
+            Authority = authority;
+            UpdateNetVarPerms();
+            // todo this should be synced with the other side.
+            // let's wait for a more final solution before adding more code here
+        }
+
+        /// <summary>
+        /// Teleports the transform to the given values without interpolating
+        /// </summary>
+        public void Teleport(Vector3 newPosition, Quaternion newRotation, Vector3 newScale)
+        {
+            throw new NotImplementedException(); // TODO MTT-769
+        }
+
+        /* /// <summary>
         /// Server authority only allows the server to update this transform
         /// Client authority only allows the client owner to update this transform
         /// Shared authority allows everyone to update this transform
@@ -328,6 +485,6 @@ namespace MLAPI.Prototyping
         public void Teleport(Vector3 newPosition, Quaternion newRotation, Vector3 newScale)
         {
             throw new NotImplementedException(); // TODO MTT-769
-        }
+        } */
     }
 }

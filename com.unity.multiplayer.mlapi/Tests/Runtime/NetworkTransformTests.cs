@@ -9,7 +9,7 @@ using static MLAPI.Prototyping.NetworkTransform;
 
 namespace MLAPI.RuntimeTests
 {
-    [TestFixture(true)]
+    /* [TestFixture(true)]
     [TestFixture(false)]
     public class NetworkTransformTests : BaseMultiInstanceTest
     {
@@ -147,5 +147,5 @@ namespace MLAPI.RuntimeTests
             yield return base.Teardown();
             UnityEngine.Object.Destroy(m_PlayerPrefab);
         }
-    }
+    } */
 }
