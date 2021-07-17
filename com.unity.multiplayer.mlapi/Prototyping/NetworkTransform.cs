@@ -25,13 +25,14 @@ namespace MLAPI.Prototyping
             public bool InLocalSpace;
             public Vector3 Position;
             public Quaternion Rotation;
-            // todo: Scale
+            // public Vector3 Scale;
 
             public void NetworkSerialize(NetworkSerializer serializer)
             {
                 serializer.Serialize(ref InLocalSpace);
                 serializer.Serialize(ref Position);
                 serializer.Serialize(ref Rotation);
+                // serializer.Serialize(ref Scale);
             }
         }
 
@@ -48,6 +49,80 @@ namespace MLAPI.Prototyping
             Authority == NetworkAuthority.Server && IsServer ||
             Authority == NetworkAuthority.Shared;
 
+        private bool IsNetworkStateDirty
+        {
+            get
+            {
+                bool isDirty = false;
+
+                isDirty |= m_NetworkState.Value.InLocalSpace != InLocalSpace;
+                if (InLocalSpace)
+                {
+                    isDirty |= m_NetworkState.Value.Position != transform.localPosition;
+                    isDirty |= m_NetworkState.Value.Rotation != transform.localRotation;
+                    // isDirty |= m_NetworkState.Value.Scale != transform.localScale;
+                }
+                else
+                {
+                    isDirty |= m_NetworkState.Value.Position != transform.position;
+                    isDirty |= m_NetworkState.Value.Rotation != transform.rotation;
+                    // isDirty |= m_NetworkState.Value.Scale != transform.lossyScale;
+                }
+
+                return isDirty;
+            }
+        }
+
+        private void UpdateNetworkState()
+        {
+            m_NetworkState.Value.InLocalSpace = InLocalSpace;
+            if (InLocalSpace)
+            {
+                m_NetworkState.Value.Position = transform.localPosition;
+                m_NetworkState.Value.Rotation = transform.localRotation;
+                // m_NetworkState.Value.Scale = transform.localScale;
+            }
+            else
+            {
+                m_NetworkState.Value.Position = transform.position;
+                m_NetworkState.Value.Rotation = transform.rotation;
+                // m_NetworkState.Value.Scale = transform.lossyScale;
+            }
+
+            m_NetworkState.SetDirty(true);
+        }
+
+        private void ApplyNetworkState(NetworkState netState)
+        {
+            InLocalSpace = netState.InLocalSpace;
+            if (InLocalSpace)
+            {
+                transform.localPosition = netState.Position;
+                transform.localRotation = netState.Rotation;
+                // transform.localScale = netState.Scale;
+            }
+            else
+            {
+                transform.position = netState.Position;
+                transform.rotation = netState.Rotation;
+                // transform.lossyScale = netState.Scale;
+                /* transform.localScale = Vector3.one;
+                var lossyScale = transform.lossyScale;
+                transform.localScale = new Vector3(netState.Scale.x / lossyScale.x, netState.Scale.y / lossyScale.y, netState.Scale.z / lossyScale.z); */
+            }
+        }
+
+        private void OnNetworkStateChanged(NetworkState oldState, NetworkState newState)
+        {
+            if (Authority == NetworkAuthority.Client && IsClient && IsOwner)
+            {
+                // todo MTT-768 this shouldn't happen anymore with new tick system (tick written will be higher than tick read, so netvar wouldn't change in that case)
+                return;
+            }
+
+            ApplyNetworkState(newState);
+        }
+
         private void UpdateNetVarPerms()
         {
             switch (Authority)
@@ -63,62 +138,6 @@ namespace MLAPI.Prototyping
                     m_NetworkState.Settings.WritePermission = NetworkVariablePermission.Everyone;
                     break;
             }
-        }
-
-        private void UpdateNetworkState()
-        {
-            bool isDirty = false;
-            isDirty |= m_NetworkState.Value.InLocalSpace != InLocalSpace;
-            if (InLocalSpace)
-            {
-                isDirty |= m_NetworkState.Value.Position != transform.localPosition;
-                isDirty |= m_NetworkState.Value.Rotation != transform.localRotation;
-            }
-            else
-            {
-                isDirty |= m_NetworkState.Value.Position != transform.position;
-                isDirty |= m_NetworkState.Value.Rotation != transform.rotation;
-            }
-
-            m_NetworkState.Value.InLocalSpace = InLocalSpace;
-            if (InLocalSpace)
-            {
-                m_NetworkState.Value.Position = transform.localPosition;
-                m_NetworkState.Value.Rotation = transform.localRotation;
-            }
-            else
-            {
-                m_NetworkState.Value.Position = transform.position;
-                m_NetworkState.Value.Rotation = transform.rotation;
-            }
-
-            m_NetworkState.SetDirty(isDirty);
-        }
-
-        private void ApplyNetworkState(NetworkState netState)
-        {
-            InLocalSpace = netState.InLocalSpace;
-            if (InLocalSpace)
-            {
-                transform.localPosition = netState.Position;
-                transform.localRotation = netState.Rotation;
-            }
-            else
-            {
-                transform.position = netState.Position;
-                transform.rotation = netState.Rotation;
-            }
-        }
-
-        private void OnNetworkStateChanged(NetworkState oldState, NetworkState newState)
-        {
-            if (Authority == NetworkAuthority.Client && IsClient && IsOwner)
-            {
-                // todo MTT-768 this shouldn't happen anymore with new tick system (tick written will be higher than tick read, so netvar wouldn't change in that case)
-                return;
-            }
-
-            ApplyNetworkState(newState);
         }
 
         private void Awake()
@@ -143,7 +162,7 @@ namespace MLAPI.Prototyping
                 return;
             }
 
-            if (CanUpdateTransform)
+            if (CanUpdateTransform && IsNetworkStateDirty)
             {
                 UpdateNetworkState();
             }
