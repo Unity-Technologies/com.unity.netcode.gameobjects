@@ -25,14 +25,14 @@ namespace MLAPI.Prototyping
             public bool InLocalSpace;
             public Vector3 Position;
             public Quaternion Rotation;
-            // public Vector3 Scale;
+            public Vector3 Scale;
 
             public void NetworkSerialize(NetworkSerializer serializer)
             {
                 serializer.Serialize(ref InLocalSpace);
                 serializer.Serialize(ref Position);
                 serializer.Serialize(ref Rotation);
-                // serializer.Serialize(ref Scale);
+                serializer.Serialize(ref Scale);
             }
         }
 
@@ -60,13 +60,13 @@ namespace MLAPI.Prototyping
                 {
                     isDirty |= m_NetworkState.Value.Position != transform.localPosition;
                     isDirty |= m_NetworkState.Value.Rotation != transform.localRotation;
-                    // isDirty |= m_NetworkState.Value.Scale != transform.localScale;
+                    isDirty |= m_NetworkState.Value.Scale != transform.localScale;
                 }
                 else
                 {
                     isDirty |= m_NetworkState.Value.Position != transform.position;
                     isDirty |= m_NetworkState.Value.Rotation != transform.rotation;
-                    // isDirty |= m_NetworkState.Value.Scale != transform.lossyScale;
+                    isDirty |= m_NetworkState.Value.Scale != transform.lossyScale;
                 }
 
                 return isDirty;
@@ -80,13 +80,13 @@ namespace MLAPI.Prototyping
             {
                 m_NetworkState.Value.Position = transform.localPosition;
                 m_NetworkState.Value.Rotation = transform.localRotation;
-                // m_NetworkState.Value.Scale = transform.localScale;
+                m_NetworkState.Value.Scale = transform.localScale;
             }
             else
             {
                 m_NetworkState.Value.Position = transform.position;
                 m_NetworkState.Value.Rotation = transform.rotation;
-                // m_NetworkState.Value.Scale = transform.lossyScale;
+                m_NetworkState.Value.Scale = transform.lossyScale;
             }
 
             m_NetworkState.SetDirty(true);
@@ -99,21 +99,26 @@ namespace MLAPI.Prototyping
             {
                 transform.localPosition = netState.Position;
                 transform.localRotation = netState.Rotation;
-                // transform.localScale = netState.Scale;
+                transform.localScale = netState.Scale;
             }
             else
             {
                 transform.position = netState.Position;
                 transform.rotation = netState.Rotation;
                 // transform.lossyScale = netState.Scale;
-                /* transform.localScale = Vector3.one;
+                transform.localScale = Vector3.one;
                 var lossyScale = transform.lossyScale;
-                transform.localScale = new Vector3(netState.Scale.x / lossyScale.x, netState.Scale.y / lossyScale.y, netState.Scale.z / lossyScale.z); */
+                transform.localScale = new Vector3(netState.Scale.x / lossyScale.x, netState.Scale.y / lossyScale.y, netState.Scale.z / lossyScale.z);
             }
         }
 
         private void OnNetworkStateChanged(NetworkState oldState, NetworkState newState)
         {
+            if (!NetworkObject.IsSpawned)
+            {
+                return;
+            }
+
             if (Authority == NetworkAuthority.Client && IsClient && IsOwner)
             {
                 // todo MTT-768 this shouldn't happen anymore with new tick system (tick written will be higher than tick read, so netvar wouldn't change in that case)
