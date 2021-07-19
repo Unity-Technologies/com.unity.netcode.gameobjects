@@ -72,6 +72,14 @@ namespace MLAPI.Metrics
         {
         }
 
+        public void TrackServerLogSent(ulong receiverClientId, uint logType, ulong bytesCount)
+        {
+        }
+
+        public void TrackServerLogReceived(ulong senderClientId, uint logType, ulong bytesCount)
+        {
+        }
+
         public void DispatchFrame()
         {
         }
