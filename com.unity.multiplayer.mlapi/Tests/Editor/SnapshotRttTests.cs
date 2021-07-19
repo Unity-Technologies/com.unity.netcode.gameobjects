@@ -12,7 +12,7 @@ namespace MLAPI.EditorTests
         public void TestBasicRtt()
         {
             var snapshot = new SnapshotSystem();
-            var client1 = snapshot.Rtt(0);
+            var client1 = snapshot.GetConnectionRtt(0);
 
             client1.NotifySend(0, 0.0);
             client1.NotifySend(1, 10.0);
@@ -43,9 +43,9 @@ namespace MLAPI.EditorTests
         public void TestEdgeCasesRtt()
         {
             var snapshot = new SnapshotSystem();
-            var client1 = snapshot.Rtt(0);
-            var iterationCount = 200;
-            var extraCount = 100;
+            var client1 = snapshot.GetConnectionRtt(0);
+            var iterationCount = ConnectionRtt.RingSize * 3;
+            var extraCount = ConnectionRtt.RingSize * 2;
 
             // feed in some messages
             for (var iteration = 0; iteration < iterationCount; iteration++)

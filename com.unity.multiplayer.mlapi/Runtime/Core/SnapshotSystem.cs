@@ -277,7 +277,7 @@ namespace MLAPI
 
         private ushort m_CurrentTick = 0;
 
-        internal ConnectionRtt Rtt(ulong clientId)
+        internal ConnectionRtt GetConnectionRtt(ulong clientId)
         {
             if (!m_ClientRtts.ContainsKey(clientId))
             {

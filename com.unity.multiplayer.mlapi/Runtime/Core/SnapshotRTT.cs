@@ -5,8 +5,8 @@ namespace MLAPI
 {
     internal class ConnectionRtt
     {
-        private const int k_RttSize = 5; // number of RTT to keep an average of (plus one)
-        private const int k_RingSize = 64; // number of slots to use for RTT computations (max number of in-flight packets)
+        internal const int RttSize = 5; // number of RTT to keep an average of (plus one)
+        internal const int RingSize = 64; // number of slots to use for RTT computations (max number of in-flight packets)
 
         private double[] m_RttSendTimes; // times at which packet were sent for RTT computations
         private int[] m_SendSequence; // tick, or other key, at which packets were sent (to allow matching)
@@ -27,9 +27,9 @@ namespace MLAPI
         }
         public ConnectionRtt()
         {
-            m_RttSendTimes = new double[k_RingSize];
-            m_SendSequence = new int[k_RingSize];
-            m_MeasuredLatencies = new double[k_RingSize];
+            m_RttSendTimes = new double[RingSize];
+            m_SendSequence = new int[RingSize];
+            m_MeasuredLatencies = new double[RingSize];
         }
 
         /// <summary>
@@ -49,14 +49,14 @@ namespace MLAPI
                 ret.SampleCount++;
                 ret.BestSec = Math.Min(ret.BestSec, m_MeasuredLatencies[index]);
                 ret.WorstSec = Math.Max(ret.WorstSec, m_MeasuredLatencies[index]);
-                index = (index + 1) % k_RttSize;
+                index = (index + 1) % RttSize;
             }
 
             if (ret.SampleCount != 0)
             {
                 ret.AverageSec = total / ret.SampleCount;
                 // the latest RTT is one before m_LatenciesEnd
-                ret.LastSec = m_MeasuredLatencies[(m_LatenciesEnd + (k_RingSize - 1)) % k_RingSize];
+                ret.LastSec = m_MeasuredLatencies[(m_LatenciesEnd + (RingSize - 1)) % RingSize];
             }
             else
             {
@@ -72,23 +72,23 @@ namespace MLAPI
 
         internal void NotifySend(int sequence, double timeSec)
         {
-            m_RttSendTimes[sequence % k_RingSize] = timeSec;
-            m_SendSequence[sequence % k_RingSize] = sequence;
+            m_RttSendTimes[sequence % RingSize] = timeSec;
+            m_SendSequence[sequence % RingSize] = sequence;
         }
 
         internal void NotifyAck(int sequence, double timeSec)
         {
             // if the same slot was not used by a later send
-            if (m_SendSequence[sequence % k_RingSize] == sequence)
+            if (m_SendSequence[sequence % RingSize] == sequence)
             {
-                double latency = timeSec - m_RttSendTimes[sequence % k_RingSize];
+                double latency = timeSec - m_RttSendTimes[sequence % RingSize];
 
                 m_MeasuredLatencies[m_LatenciesEnd] = latency;
-                m_LatenciesEnd = (m_LatenciesEnd + 1) % k_RttSize;
+                m_LatenciesEnd = (m_LatenciesEnd + 1) % RttSize;
 
                 if (m_LatenciesEnd == m_LatenciesBegin)
                 {
-                    m_LatenciesBegin = (m_LatenciesBegin + 1) % k_RttSize;
+                    m_LatenciesBegin = (m_LatenciesBegin + 1) % RttSize;
                 }
             }
         }
