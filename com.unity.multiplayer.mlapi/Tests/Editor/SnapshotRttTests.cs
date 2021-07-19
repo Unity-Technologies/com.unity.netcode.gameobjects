@@ -6,6 +6,8 @@ namespace MLAPI.EditorTests
 {
     public class SnapshotRttTests
     {
+        private const double k_Epsilon = 0.0001;
+
         [Test]
         public void TestBasicRtt()
         {
@@ -24,19 +26,17 @@ namespace MLAPI.EditorTests
             client1.NotifyAck(4, 38.0);
             client1.NotifyAck(3, 40.0);
 
-            double epsilon = 0.0001;
-
             ConnectionRtt.Rtt ret = client1.GetRtt();
-            Assert.True(ret.AverageSec < 7.0 + epsilon);
-            Assert.True(ret.AverageSec > 7.0 - epsilon);
-            Assert.True(ret.WorstSec < 10.0 + epsilon);
-            Assert.True(ret.WorstSec > 10.0 - epsilon);
-            Assert.True(ret.BestSec < 5.0 + epsilon);
-            Assert.True(ret.BestSec > 5.0 - epsilon);
+            Assert.True(ret.AverageSec < 7.0 + k_Epsilon);
+            Assert.True(ret.AverageSec > 7.0 - k_Epsilon);
+            Assert.True(ret.WorstSec < 10.0 + k_Epsilon);
+            Assert.True(ret.WorstSec > 10.0 - k_Epsilon);
+            Assert.True(ret.BestSec < 5.0 + k_Epsilon);
+            Assert.True(ret.BestSec > 5.0 - k_Epsilon);
 
             // note: `last` latency is latest received Ack, not latest sent sequence.
-            Assert.True(ret.LastSec < 10.0 + epsilon);
-            Assert.True(ret.LastSec > 10.0 - epsilon);
+            Assert.True(ret.LastSec < 10.0 + k_Epsilon);
+            Assert.True(ret.LastSec > 10.0 - k_Epsilon);
         }
 
         [Test]
@@ -63,15 +63,13 @@ namespace MLAPI.EditorTests
                 client1.NotifyAck(iteration, 42.0);
             }
 
-            double epsilon = 0.0001;
-
             ConnectionRtt.Rtt ret = client1.GetRtt();
-            Assert.True(ret.AverageSec < 7.0 + epsilon);
-            Assert.True(ret.AverageSec > 7.0 - epsilon);
-            Assert.True(ret.WorstSec < 7.0 + epsilon);
-            Assert.True(ret.WorstSec > 7.0 - epsilon);
-            Assert.True(ret.BestSec < 7.0 + epsilon);
-            Assert.True(ret.BestSec > 7.0 - epsilon);
+            Assert.True(ret.AverageSec < 7.0 + k_Epsilon);
+            Assert.True(ret.AverageSec > 7.0 - k_Epsilon);
+            Assert.True(ret.WorstSec < 7.0 + k_Epsilon);
+            Assert.True(ret.WorstSec > 7.0 - k_Epsilon);
+            Assert.True(ret.BestSec < 7.0 + k_Epsilon);
+            Assert.True(ret.BestSec > 7.0 - k_Epsilon);
         }
     }
 }
