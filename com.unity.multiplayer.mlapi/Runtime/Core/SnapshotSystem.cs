@@ -2,13 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using MLAPI.Configuration;
-using MLAPI.Messaging;
 using MLAPI.NetworkVariable;
 using MLAPI.Serialization;
 using MLAPI.Serialization.Pooled;
 using MLAPI.Transports;
 using UnityEngine;
-using UnityEngine.UIElements;
 
 namespace MLAPI
 {
@@ -20,6 +18,7 @@ namespace MLAPI
         public ulong NetworkObjectId; // the NetworkObjectId of the owning GameObject
         public ushort BehaviourIndex; // the index of the behaviour in this GameObject
         public ushort VariableIndex; // the index of the variable in this NetworkBehaviour
+        public ushort TickWritten; // the network tick at which this variable was set
     }
 
     // Index for a NetworkVariable in our table of variables
@@ -27,9 +26,8 @@ namespace MLAPI
     internal struct Entry
     {
         public VariableKey Key;
-        public ushort TickWritten; // the network tick at which this variable was set
         public ushort Position; // the offset in our Buffer
-        public ushort Length; // the length of the data in Buffer
+        public ushort Length; // the Length of the data in Buffer
         public bool Fresh; // indicates entries that were just received
 
         public const int NotFound = -1;
@@ -43,23 +41,38 @@ namespace MLAPI
     internal class Snapshot
     {
         // todo --M1-- functionality to grow these will be needed in a later milestone
-        private const int k_MaxVariables = 64;
-        private const int k_BufferSize = 20000;
+        private const int k_MaxVariables = 2000;
+        private const int k_BufferSize = 30000;
 
         public byte[] Buffer = new byte[k_BufferSize];
-        public int FreeMemoryPosition = 0;
+        internal IndexAllocator Allocator;
 
         public Entry[] Entries = new Entry[k_MaxVariables];
         public int LastEntry = 0;
         public MemoryStream Stream;
 
+        private NetworkManager m_NetworkManager;
+        private bool m_TickIndex;
+
         /// <summary>
         /// Constructor
         /// Allocated a MemoryStream to be reused for this Snapshot
         /// </summary>
-        public Snapshot()
+        /// <param name="networkManager">The NetworkManaher this Snapshot uses. Needed upon receive to set Variables</param>
+        /// <param name="tickIndex">Whether this Snapshot uses the tick as an index</param>
+        public Snapshot(NetworkManager networkManager, bool tickIndex)
         {
             Stream = new MemoryStream(Buffer, 0, k_BufferSize);
+            // we ask for twice as many slots because there could end up being one free spot between each pair of slot used
+            Allocator = new IndexAllocator(k_BufferSize, k_MaxVariables * 2);
+            m_NetworkManager = networkManager;
+            m_TickIndex = tickIndex;
+        }
+
+        public void Clear()
+        {
+            LastEntry = 0;
+            Allocator.Reset();
         }
 
         // todo --M1--
@@ -70,11 +83,13 @@ namespace MLAPI
         /// <param name="key">The key we're looking for</param>
         public int Find(VariableKey key)
         {
+            // todo: Add a IEquatable interface for VariableKey. Rely on that instead.
             for (int i = 0; i < LastEntry; i++)
             {
                 if (Entries[i].Key.NetworkObjectId == key.NetworkObjectId &&
                     Entries[i].Key.BehaviourIndex == key.BehaviourIndex &&
-                    Entries[i].Key.VariableIndex == key.VariableIndex)
+                    Entries[i].Key.VariableIndex == key.VariableIndex &&
+                    (!m_TickIndex || (Entries[i].Key.TickWritten == key.TickWritten)))
                 {
                     return i;
                 }
@@ -86,16 +101,12 @@ namespace MLAPI
         /// <summary>
         /// Adds an entry in the table for a new key
         /// </summary>
-        // todo: change the params to take a Key instead
-        public int AddEntry(ulong networkObjectId, int behaviourIndex, int variableIndex)
+        public int AddEntry(in VariableKey k)
         {
             var pos = LastEntry++;
             var entry = Entries[pos];
 
-            entry.Key.NetworkObjectId = networkObjectId;
-            entry.Key.BehaviourIndex = (ushort)behaviourIndex;
-            entry.Key.VariableIndex = (ushort)variableIndex;
-            entry.TickWritten = 0;
+            entry.Key = k;
             entry.Position = 0;
             entry.Length = 0;
             entry.Fresh = false;
@@ -105,28 +116,176 @@ namespace MLAPI
         }
 
         /// <summary>
+        /// Write an Entry to send
+        /// Must match ReadEntry
+        /// </summary>
+        /// <param name="writer">The writer to write the entry to</param>
+        internal void WriteEntry(NetworkWriter writer, in Entry entry)
+        {
+            //todo: major refactor.
+            // use blittable types and copy variable in memory locally
+            // only serialize when put on the wire for network transfer
+            writer.WriteUInt64(entry.Key.NetworkObjectId);
+            writer.WriteUInt16(entry.Key.BehaviourIndex);
+            writer.WriteUInt16(entry.Key.VariableIndex);
+            writer.WriteUInt16(entry.Key.TickWritten);
+            writer.WriteUInt16(entry.Position);
+            writer.WriteUInt16(entry.Length);
+        }
+
+        /// <summary>
+        /// Read a received Entry
+        /// Must match WriteEntry
+        /// </summary>
+        /// <param name="reader">The readed to read the entry from</param>
+        internal Entry ReadEntry(NetworkReader reader)
+        {
+            Entry entry;
+            entry.Key.NetworkObjectId = reader.ReadUInt64();
+            entry.Key.BehaviourIndex = reader.ReadUInt16();
+            entry.Key.VariableIndex = reader.ReadUInt16();
+            entry.Key.TickWritten = reader.ReadUInt16();
+            entry.Position = reader.ReadUInt16();
+            entry.Length = reader.ReadUInt16();
+            entry.Fresh = false;
+
+            return entry;
+        }
+
+        /// <summary>
         /// Allocate memory from the buffer for the Entry and update it to point to the right location
         /// </summary>
         /// <param name="entry">The entry to allocate for</param>
         /// <param name="size">The need size in bytes</param>
-        public void AllocateEntry(ref Entry entry, long size)
+        public void AllocateEntry(ref Entry entry, int index, int size)
         {
             // todo --M1--
             // this will change once we start reusing the snapshot buffer memory
             // todo: deal with free space
             // todo: deal with full buffer
 
-            entry.Position = (ushort)FreeMemoryPosition;
+            if (entry.Length > 0)
+            {
+                Allocator.Deallocate(index);
+            }
+
+            int pos;
+            bool ret = Allocator.Allocate(index, size, out pos);
+
+            if (!ret)
+            {
+                //todo: error handling
+            }
+
+            entry.Position = (ushort)pos;
             entry.Length = (ushort)size;
-            FreeMemoryPosition += (int)size;
+        }
+
+        /// <summary>
+        /// Read the buffer part of a snapshot
+        /// Must match WriteBuffer
+        /// The stream is actually a memory stream and we seek to each variable position as we deserialize them
+        /// </summary>
+        /// <param name="reader">The NetworkReader to read our buffer of variables from</param>
+        /// <param name="snapshotStream">The stream to read our buffer of variables from</param>
+        internal void ReadBuffer(NetworkReader reader, Stream snapshotStream)
+        {
+            int snapshotSize = reader.ReadUInt16();
+
+            snapshotStream.Read(Buffer, 0, snapshotSize);
+
+            for (var i = 0; i < LastEntry; i++)
+            {
+                if (Entries[i].Fresh && Entries[i].Key.TickWritten > 0)
+                {
+                    // todo: there might be a race condition here with object reuse. To investigate.
+                    var networkVariable = FindNetworkVar(Entries[i].Key);
+
+                    if (networkVariable != null)
+                    {
+                        Stream.Seek(Entries[i].Position, SeekOrigin.Begin);
+
+                        // todo: consider refactoring out in its own function to accomodate
+                        // other ways to (de)serialize
+                        // todo --M1--
+                        // Review whether tick still belong in netvar or in the snapshot table.
+                        networkVariable.ReadDelta(Stream, m_NetworkManager.IsServer);
+                    }
+                }
+
+                Entries[i].Fresh = false;
+            }
+        }
+
+        /// <summary>
+        /// Read the snapshot index from a buffer
+        /// Stores the entry. Allocates memory if needed. The actual buffer will be read later
+        /// </summary>
+        /// <param name="reader">The reader to read the index from</param>
+        internal void ReadIndex(NetworkReader reader)
+        {
+            Entry entry;
+            short entries = reader.ReadInt16();
+
+            for (var i = 0; i < entries; i++)
+            {
+                entry = ReadEntry(reader);
+                entry.Fresh = true;
+
+                int pos = Find(entry.Key);
+                if (pos == Entry.NotFound)
+                {
+                    pos = AddEntry(entry.Key);
+                }
+
+                // if we need to allocate more memory (the variable grew in size)
+                if (Entries[pos].Length < entry.Length)
+                {
+                    AllocateEntry(ref entry, pos, entry.Length);
+                }
+
+                Entries[pos] = entry;
+            }
+        }
+
+        /// <summary>
+        /// Helper function to find the NetworkVariable object from a key
+        /// This will look into all spawned objects
+        /// </summary>
+        /// <param name="key">The key to search for</param>
+        private INetworkVariable FindNetworkVar(VariableKey key)
+        {
+            var spawnedObjects = m_NetworkManager.SpawnManager.SpawnedObjects;
+
+            if (spawnedObjects.ContainsKey(key.NetworkObjectId))
+            {
+                var behaviour = spawnedObjects[key.NetworkObjectId]
+                    .GetNetworkBehaviourAtOrderIndex(key.BehaviourIndex);
+                return behaviour.NetworkVariableFields[key.VariableIndex];
+            }
+
+            return null;
         }
     }
 
     public class SnapshotSystem : INetworkUpdateSystem, IDisposable
     {
-        private Snapshot m_Snapshot = new Snapshot();
-        private Snapshot m_ReceivedSnapshot = new Snapshot();
         private NetworkManager m_NetworkManager = NetworkManager.Singleton;
+        private Snapshot m_Snapshot = new Snapshot(NetworkManager.Singleton, false);
+        private Dictionary<ulong, Snapshot> m_ClientReceivedSnapshot = new Dictionary<ulong, Snapshot>();
+        private Dictionary<ulong, ConnectionRtt> m_ClientRtts = new Dictionary<ulong, ConnectionRtt>();
+
+        private ushort m_CurrentTick = 0;
+
+        internal ConnectionRtt GetConnectionRtt(ulong clientId)
+        {
+            if (!m_ClientRtts.ContainsKey(clientId))
+            {
+                m_ClientRtts.Add(clientId, new ConnectionRtt());
+            }
+
+            return m_ClientRtts[clientId];
+        }
 
         /// <summary>
         /// Constructor
@@ -155,21 +314,37 @@ namespace MLAPI
 
             if (updateStage == NetworkUpdateStage.EarlyUpdate)
             {
-                if (m_NetworkManager.IsServer)
-                {
-                    for (int i = 0; i < m_NetworkManager.ConnectedClientsList.Count; i++)
-                    {
-                        var clientId = m_NetworkManager.ConnectedClientsList[i].ClientId;
-                        SendSnapshot(clientId);
-                    }
-                }
-                else if (m_NetworkManager.IsConnectedClient)
-                {
-                    SendSnapshot(m_NetworkManager.ServerClientId);
-                }
+                var tick = m_NetworkManager.NetworkTickSystem.GetTick();
 
-                // DebugDisplayStore(m_Snapshot, "Entries");
-                // DebugDisplayStore(m_ReceivedSnapshot, "Received Entries");
+                if (tick != m_CurrentTick)
+                {
+                    m_CurrentTick = tick;
+                    if (m_NetworkManager.IsServer)
+                    {
+                        for (int i = 0; i < m_NetworkManager.ConnectedClientsList.Count; i++)
+                        {
+                            var clientId = m_NetworkManager.ConnectedClientsList[i].ClientId;
+                            SendSnapshot(clientId);
+                        }
+                    }
+                    else if (m_NetworkManager.IsConnectedClient)
+                    {
+                        SendSnapshot(m_NetworkManager.ServerClientId);
+                    }
+
+                    //m_Snapshot.Allocator.DebugDisplay();
+                    /*
+                    DebugDisplayStore(m_Snapshot, "Entries");
+
+                    foreach(var item in m_ClientReceivedSnapshot)
+                    {
+                        DebugDisplayStore(item.Value, "Received Entries " + item.Key);
+                    }
+                    */
+                    // todo: --M1b--
+                    // for now we clear our send snapshot because we don't have per-client partial sends
+                    m_Snapshot.Clear();
+                }
             }
         }
 
@@ -185,12 +360,16 @@ namespace MLAPI
             // Send the entry index and the buffer where the variables are serialized
             using (var buffer = PooledNetworkBuffer.Get())
             {
+                using (var writer = PooledNetworkWriter.Get(buffer))
+                {
+                    writer.WriteUInt16(m_CurrentTick);
+                }
+
                 WriteIndex(buffer);
                 WriteBuffer(buffer);
 
                 m_NetworkManager.MessageSender.Send(clientId, NetworkConstants.SNAPSHOT_DATA,
                     NetworkChannel.SnapshotExchange, buffer);
-                buffer.Dispose();
             }
         }
 
@@ -205,75 +384,9 @@ namespace MLAPI
                 writer.WriteInt16((short)m_Snapshot.LastEntry);
                 for (var i = 0; i < m_Snapshot.LastEntry; i++)
                 {
-                    WriteEntry(writer, in m_Snapshot.Entries[i]);
+                    m_Snapshot.WriteEntry(writer, in m_Snapshot.Entries[i]);
                 }
             }
-        }
-
-        /// <summary>
-        /// Read the snapshot index from a buffer
-        /// Stores the entry. Allocates memory if needed. The actual buffer will be read later
-        /// </summary>
-        /// <param name="reader">The reader to read the index from</param>
-        private void ReadIndex(NetworkReader reader)
-        {
-            Entry entry;
-            short entries = reader.ReadInt16();
-
-            for (var i = 0; i < entries; i++)
-            {
-                entry = ReadEntry(reader);
-                entry.Fresh = true;
-
-                int pos = m_ReceivedSnapshot.Find(entry.Key);
-                if (pos == Entry.NotFound)
-                {
-                    pos = m_ReceivedSnapshot.AddEntry(entry.Key.NetworkObjectId, entry.Key.BehaviourIndex,
-                        entry.Key.VariableIndex);
-                }
-
-                // if we need to allocate more memory (the variable grew in size)
-                if (m_ReceivedSnapshot.Entries[pos].Length < entry.Length)
-                {
-                    m_ReceivedSnapshot.AllocateEntry(ref entry, entry.Length);
-                }
-
-                m_ReceivedSnapshot.Entries[pos] = entry;
-            }
-        }
-
-        /// <summary>
-        /// Write an Entry to send
-        /// Must match ReadEntry
-        /// </summary>
-        /// <param name="writer">The writer to write the entry to</param>
-        private void WriteEntry(NetworkWriter writer, in Entry entry)
-        {
-            writer.WriteUInt64(entry.Key.NetworkObjectId);
-            writer.WriteUInt16(entry.Key.BehaviourIndex);
-            writer.WriteUInt16(entry.Key.VariableIndex);
-            writer.WriteUInt16(entry.TickWritten);
-            writer.WriteUInt16(entry.Position);
-            writer.WriteUInt16(entry.Length);
-        }
-
-        /// <summary>
-        /// Read a received Entry
-        /// Must match WriteEntry
-        /// </summary>
-        /// <param name="reader">The readed to read the entry from</param>
-        private Entry ReadEntry(NetworkReader reader)
-        {
-            Entry entry;
-            entry.Key.NetworkObjectId = reader.ReadUInt64();
-            entry.Key.BehaviourIndex = reader.ReadUInt16();
-            entry.Key.VariableIndex = reader.ReadUInt16();
-            entry.TickWritten = reader.ReadUInt16();
-            entry.Position = reader.ReadUInt16();
-            entry.Length = reader.ReadUInt16();
-            entry.Fresh = false;
-
-            return entry;
         }
 
         /// <summary>
@@ -285,43 +398,13 @@ namespace MLAPI
         {
             using (var writer = PooledNetworkWriter.Get(buffer))
             {
-                writer.WriteUInt16((ushort)m_Snapshot.FreeMemoryPosition);
+                writer.WriteUInt16((ushort)m_Snapshot.Allocator.Range);
             }
 
             // todo --M1--
             // // this sends the whole buffer
             // we'll need to build a per-client list
-            buffer.Write(m_Snapshot.Buffer, 0, m_Snapshot.FreeMemoryPosition);
-        }
-
-        /// <summary>
-        /// Read the buffer part of a snapshot
-        /// Must match WriteBuffer
-        /// The stream is actually a memory stream and we seek to each variable position as we deserialize them
-        /// </summary>
-        /// <param name="reader">The NetworkReader to read our buffer of variables from</param>
-        /// <param name="snapshotStream">The stream to read our buffer of variables from</param>
-        private void ReadBuffer(NetworkReader reader, Stream snapshotStream)
-        {
-            int snapshotSize = reader.ReadUInt16();
-
-            snapshotStream.Read(m_ReceivedSnapshot.Buffer, 0, snapshotSize);
-
-            for (var i = 0; i < m_ReceivedSnapshot.LastEntry; i++)
-            {
-                if (m_ReceivedSnapshot.Entries[i].Fresh && m_ReceivedSnapshot.Entries[i].TickWritten > 0)
-                {
-                    var nv = FindNetworkVar(m_ReceivedSnapshot.Entries[i].Key);
-
-                    m_ReceivedSnapshot.Stream.Seek(m_ReceivedSnapshot.Entries[i].Position, SeekOrigin.Begin);
-
-                    // todo --M1--
-                    // Review whether tick still belong in netvar or in the snapshot table.
-                    nv.ReadDelta(m_ReceivedSnapshot.Stream, m_NetworkManager.IsServer);
-                }
-
-                m_ReceivedSnapshot.Entries[i].Fresh = false;
-            }
+            buffer.Write(m_Snapshot.Buffer, 0, m_Snapshot.Allocator.Range);
         }
 
         // todo: consider using a Key, instead of 3 ints, if it can be exposed
@@ -336,60 +419,88 @@ namespace MLAPI
             k.NetworkObjectId = networkObjectId;
             k.BehaviourIndex = (ushort)behaviourIndex;
             k.VariableIndex = (ushort)variableIndex;
+            k.TickWritten = m_NetworkManager.NetworkTickSystem.GetTick();
 
             int pos = m_Snapshot.Find(k);
             if (pos == Entry.NotFound)
             {
-                pos = m_Snapshot.AddEntry(networkObjectId, behaviourIndex, variableIndex);
+                pos = m_Snapshot.AddEntry(k);
             }
 
-            // write var into buffer, possibly adjusting entry's position and length
+            WriteVariableToSnapshot(m_Snapshot, networkVariable, pos);
+        }
+
+        private void WriteVariableToSnapshot(Snapshot snapshot, INetworkVariable networkVariable, int index)
+        {
+            // write var into buffer, possibly adjusting entry's position and Length
             using (var varBuffer = PooledNetworkBuffer.Get())
             {
                 networkVariable.WriteDelta(varBuffer);
-                if (varBuffer.Length > m_Snapshot.Entries[pos].Length)
+                if (varBuffer.Length > snapshot.Entries[index].Length)
                 {
                     // allocate this Entry's buffer
-                    m_Snapshot.AllocateEntry(ref m_Snapshot.Entries[pos], varBuffer.Length);
+                    snapshot.AllocateEntry(ref snapshot.Entries[index], index, (int)varBuffer.Length);
                 }
 
-                m_Snapshot.Entries[pos].TickWritten = m_NetworkManager.NetworkTickSystem.GetTick();
                 // Copy the serialized NetworkVariable into our buffer
-                Buffer.BlockCopy(varBuffer.GetBuffer(), 0, m_Snapshot.Buffer, m_Snapshot.Entries[pos].Position, (int)varBuffer.Length);
+                Buffer.BlockCopy(varBuffer.GetBuffer(), 0, snapshot.Buffer, snapshot.Entries[index].Position, (int)varBuffer.Length);
             }
         }
+
 
         /// <summary>
         /// Entry point when a Snapshot is received
         /// This is where we read and store the received snapshot
         /// </summary>
+        /// <param name="clientId">
         /// <param name="snapshotStream">The stream to read from</param>
-        public void ReadSnapshot(Stream snapshotStream)
+        public void ReadSnapshot(ulong clientId, Stream snapshotStream)
+        {
+            ushort snapshotTick = default;
+
+            using (var reader = PooledNetworkReader.Get(snapshotStream))
+            {
+                snapshotTick = reader.ReadUInt16();
+
+                if (!m_ClientReceivedSnapshot.ContainsKey(clientId))
+                {
+                    m_ClientReceivedSnapshot[clientId] = new Snapshot(m_NetworkManager, false);
+                }
+                var snapshot = m_ClientReceivedSnapshot[clientId];
+
+                // todo --M1b-- temporary, clear before receive.
+                snapshot.Clear();
+
+                snapshot.ReadIndex(reader);
+                snapshot.ReadBuffer(reader, snapshotStream);
+            }
+
+            SendAck(clientId, snapshotTick);
+        }
+
+        public void ReadAck(ulong clientId, Stream snapshotStream)
         {
             using (var reader = PooledNetworkReader.Get(snapshotStream))
             {
-                ReadIndex(reader);
-                ReadBuffer(reader, snapshotStream);
+                var ackTick = reader.ReadUInt16();
+                //Debug.Log(string.Format("Receive ack {0} from client {1}", ackTick, clientId));
             }
         }
 
-        /// <summary>
-        /// Helper function to find the NetworkVariable object from a key
-        /// This will look into all spawned objects
-        /// </summary>
-        /// <param name="key">The key to search for</param>
-        private INetworkVariable FindNetworkVar(VariableKey key)
+        public void SendAck(ulong clientId, ushort tick)
         {
-            var spawnedObjects = m_NetworkManager.SpawnManager.SpawnedObjects;
-
-            if (spawnedObjects.ContainsKey(key.NetworkObjectId))
+            using (var buffer = PooledNetworkBuffer.Get())
             {
-                var behaviour = spawnedObjects[key.NetworkObjectId]
-                    .GetNetworkBehaviourAtOrderIndex(key.BehaviourIndex);
-                return behaviour.NetworkVariableFields[key.VariableIndex];
+                using (var writer = PooledNetworkWriter.Get(buffer))
+                {
+                    writer.WriteUInt16(tick);
+                }
+
+                m_NetworkManager.MessageSender.Send(clientId, NetworkConstants.SNAPSHOT_ACK,
+                    NetworkChannel.SnapshotExchange, buffer);
+                buffer.Dispose();
             }
 
-            return null;
         }
 
         // todo --M1--
@@ -400,8 +511,8 @@ namespace MLAPI
             string table = "=== Snapshot table === " + name + " ===\n";
             for (int i = 0; i < block.LastEntry; i++)
             {
-                table += string.Format("NetworkObject {0}:{1}:{2} range [{3}, {4}] ", block.Entries[i].Key.NetworkObjectId, block.Entries[i].Key.BehaviourIndex,
-                    block.Entries[i].Key.VariableIndex, block.Entries[i].Position, block.Entries[i].Position + block.Entries[i].Length);
+                table += string.Format("NetworkVariable {0}:{1}:{2} written {5}, range [{3}, {4}] ", block.Entries[i].Key.NetworkObjectId, block.Entries[i].Key.BehaviourIndex,
+                    block.Entries[i].Key.VariableIndex, block.Entries[i].Position, block.Entries[i].Position + block.Entries[i].Length, block.Entries[i].Key.TickWritten);
 
                 for (int j = 0; j < block.Entries[i].Length && j < 4; j++)
                 {
