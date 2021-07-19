@@ -1,5 +1,4 @@
 using MLAPI.Configuration;
-using MLAPI.Messaging;
 using MLAPI.Serialization.Pooled;
 using MLAPI.Transports;
 using UnityEngine;

@@ -382,7 +382,7 @@ namespace MLAPI.Messaging
             {
                 var length = stream.Length;
                 var logType = (NetworkLog.LogType)reader.ReadByte();
-                NetworkManager.Singleton.NetworkMetrics.TrackServerLogReceived(clientId, (uint)logType, (ulong)length);
+                m_NetworkManager.NetworkMetrics.TrackServerLogReceived(clientId, (uint)logType, (ulong)length);
                 string message = reader.ReadStringPacked();
 
                 switch (logType)
