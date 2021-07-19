@@ -3,22 +3,32 @@ using UnityEngine;
 
 namespace MLAPI
 {
-    internal class ClientRtt
+    internal class ConnectionRtt
     {
+        private const int k_RttSize = 5; // number of RTT to keep an average of (plus one)
+        private const int k_RingSize = 64; // number of slots to use for RTT computations (max number of in-flight packets)
+
+        private double[] m_RttSendTimes; // times at which packet were sent for RTT computations
+        private int[] m_SendSequence; // tick, or other key, at which packets were sent (to allow matching)
+        private double[] m_MeasuredLatencies; // measured latencies (ring buffer)
+        private int m_LatenciesBegin = 0; // ring buffer begin
+        private int m_LatenciesEnd = 0; // ring buffer end
+
         /// <summary>
         /// Round-trip-time data
         /// </summary>
         public struct Rtt
         {
-            public double Best;
-            public double Average;
-            public double Worst;
-            public int SampleCount;
+            public double BestSec; // best RTT
+            public double AverageSec; // average RTT
+            public double WorstSec; // worst RTT
+            public double LastSec; // latest ack'ed RTT
+            public int SampleCount; // number of contributing samples
         }
-        public ClientRtt()
+        public ConnectionRtt()
         {
             m_RttSendTimes = new double[k_RingSize];
-            m_SendKey = new int[k_RingSize];
+            m_SendSequence = new int[k_RingSize];
             m_MeasuredLatencies = new double[k_RingSize];
         }
 
@@ -30,46 +40,49 @@ namespace MLAPI
             var ret = new Rtt(); // is this a memory alloc ? How do I get a stack alloc ?
             var index = m_LatenciesBegin;
             double total = 0.0;
-            ret.Best = m_MeasuredLatencies[m_LatenciesBegin];
-            ret.Worst = m_MeasuredLatencies[m_LatenciesBegin];
+            ret.BestSec = m_MeasuredLatencies[m_LatenciesBegin];
+            ret.WorstSec = m_MeasuredLatencies[m_LatenciesBegin];
 
             while (index != m_LatenciesEnd)
             {
                 total += m_MeasuredLatencies[index];
                 ret.SampleCount++;
-                ret.Best = Math.Min(ret.Best, m_MeasuredLatencies[index]);
-                ret.Worst = Math.Max(ret.Worst, m_MeasuredLatencies[index]);
+                ret.BestSec = Math.Min(ret.BestSec, m_MeasuredLatencies[index]);
+                ret.WorstSec = Math.Max(ret.WorstSec, m_MeasuredLatencies[index]);
                 index = (index + 1) % k_RttSize;
             }
 
             if (ret.SampleCount != 0)
             {
-                ret.Average = total / ret.SampleCount;
+                ret.AverageSec = total / ret.SampleCount;
+                // the latest RTT is one before m_LatenciesEnd
+                ret.LastSec = m_MeasuredLatencies[(m_LatenciesEnd + (k_RingSize - 1)) % k_RingSize];
             }
             else
             {
-                ret.Average = 0;
-                ret.Best = 0;
-                ret.Worst = 0;
+                ret.AverageSec = 0;
+                ret.BestSec = 0;
+                ret.WorstSec = 0;
                 ret.SampleCount = 0;
+                ret.LastSec = 0;
             }
 
             return ret;
         }
 
-        internal void NotifySend(int key, double when)
+        internal void NotifySend(int sequence, double timeSec)
         {
-            m_RttSendTimes[key % k_RingSize] = when;
-            m_SendKey[key % k_RingSize] = key;
+            m_RttSendTimes[sequence % k_RingSize] = timeSec;
+            m_SendSequence[sequence % k_RingSize] = sequence;
         }
 
-        internal void NotifyAck(int key, double when)
+        internal void NotifyAck(int sequence, double timeSec)
         {
             // if the same slot was not used by a later send
-            if (m_SendKey[key % k_RingSize] == key)
+            if (m_SendSequence[sequence % k_RingSize] == sequence)
             {
-                double latency = when - m_RttSendTimes[key % k_RingSize];
-                Debug.Log(string.Format("Measured latency of {0}", latency));
+                double latency = timeSec - m_RttSendTimes[sequence % k_RingSize];
+
                 m_MeasuredLatencies[m_LatenciesEnd] = latency;
                 m_LatenciesEnd = (m_LatenciesEnd + 1) % k_RttSize;
 
@@ -79,16 +92,5 @@ namespace MLAPI
                 }
             }
         }
-
-        private const int k_RttSize = 5; // number of RTT to keep an average of (plus one)
-
-        private const int
-            k_RingSize = 64; // number of slots to use for RTT computations (max number of in-flight packets)
-
-        private double[] m_RttSendTimes; // times at which packet were sent for RTT computations
-        private int[] m_SendKey; // tick (or other key) at which packets were sent (to allow matching)
-        private double[] m_MeasuredLatencies; // measured latencies (ring buffer)
-        private int m_LatenciesBegin = 0; // ring buffer begin
-        private int m_LatenciesEnd = 0; // ring buffer end
     }
 }

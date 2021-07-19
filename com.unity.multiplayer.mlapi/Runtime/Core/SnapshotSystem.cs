@@ -273,15 +273,15 @@ namespace MLAPI
         private NetworkManager m_NetworkManager = NetworkManager.Singleton;
         private Snapshot m_Snapshot = new Snapshot(NetworkManager.Singleton, false);
         private Dictionary<ulong, Snapshot> m_ClientReceivedSnapshot = new Dictionary<ulong, Snapshot>();
-        private Dictionary<ulong, ClientRtt> m_ClientRtts = new Dictionary<ulong, ClientRtt>();
+        private Dictionary<ulong, ConnectionRtt> m_ClientRtts = new Dictionary<ulong, ConnectionRtt>();
 
         private ushort m_CurrentTick = 0;
 
-        internal ClientRtt Rtt(ulong clientId)
+        internal ConnectionRtt Rtt(ulong clientId)
         {
             if (!m_ClientRtts.ContainsKey(clientId))
             {
-                m_ClientRtts.Add(clientId, new ClientRtt());
+                m_ClientRtts.Add(clientId, new ConnectionRtt());
             }
 
             return m_ClientRtts[clientId];
