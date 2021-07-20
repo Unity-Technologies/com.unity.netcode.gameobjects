@@ -169,6 +169,13 @@ namespace TestProject.RuntimeTests
             // Done!
         }
 
+        [UnityTearDown]
+        public IEnumerator Teardown()
+        {
+            Object.Destroy(m_NetworkManager);
+            yield return null;
+        }
+
         /// <summary>
         /// Checks to make sure the scene unloaded
         /// </summary>

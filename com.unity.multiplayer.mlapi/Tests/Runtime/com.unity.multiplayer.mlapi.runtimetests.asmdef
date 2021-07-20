@@ -2,11 +2,14 @@
     "name": "Unity.Multiplayer.MLAPI.RuntimeTests",
     "references": [
         "Unity.Multiplayer.MLAPI.Runtime",
-        "Unity.Multiplayer.MLAPI.Editor"
+        "Unity.Multiplayer.MLAPI.Editor",
+        "Unity.Multiplayer.MLAPI.Prototyping"
     ],
     "optionalUnityReferences": [
         "TestAssemblies"
     ],
-    "includePlatforms": [],
-    "excludePlatforms": []
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS",
+        "UNITY_EDITOR"
+    ]
 }
