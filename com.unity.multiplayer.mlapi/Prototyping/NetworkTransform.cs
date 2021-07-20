@@ -3,7 +3,6 @@ using MLAPI.NetworkVariable;
 using MLAPI.Serialization;
 using MLAPI.Transports;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace MLAPI.Prototyping
 {
