@@ -252,6 +252,13 @@ namespace MLAPI
         [HideInInspector]
         public NetworkConfig NetworkConfig;
 
+        [HideInInspector]
+        [SerializeField]
+        internal ScenesInBuild ScenesInBuild;
+
+        [HideInInspector]
+        [SerializeField]
+        internal string DefaultScenesInBuildAssetNameAndPath = "Assets/ScenesInBuildList.asset";
         /// <summary>
         /// The current host name we are connected to, used to validate certificate
         /// </summary>
@@ -259,13 +266,30 @@ namespace MLAPI
 
         internal static event Action OnSingletonReady;
 
+
+
 #if UNITY_EDITOR
+        internal void PopulateScenesInBuild()
+        {
+            if (ScenesInBuild == null)
+            {
+                ScenesInBuild = ScenesInBuild.InitializeScenesInBuild(this);
+                ScenesInBuild.PopulateScenesInBuild();
+            }
+            else
+            {
+                ScenesInBuild.PopulateScenesInBuild();
+            }
+        }
+
         private void OnValidate()
         {
             if (NetworkConfig == null)
             {
                 return; // May occur when the component is added
             }
+
+            PopulateScenesInBuild();
 
             if (GetComponentInChildren<NetworkObject>() != null)
             {
@@ -274,9 +298,6 @@ namespace MLAPI
                     NetworkLog.LogWarning($"{nameof(NetworkManager)} cannot be a {nameof(NetworkObject)}.");
                 }
             }
-
-
-
 
             var activeScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
 

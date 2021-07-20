@@ -19,11 +19,15 @@ namespace MLAPI.EditorTests
         [Test]
         public void MessageHandlerReceivedMessageServerClient()
         {
+            ScenesInBuild.IsTesting = true;
             // Init
             var gameObject = new GameObject(nameof(MessageHandlerReceivedMessageServerClient));
             var networkManager = gameObject.AddComponent<NetworkManager>();
             var transport = gameObject.AddComponent<DummyTransport>();
 
+            networkManager.PopulateScenesInBuild();
+            networkManager.ScenesInBuild.Scenes.Add(SceneManager.GetActiveScene().name);
+            networkManager.NetworkConfig = new NetworkConfig();
             // Set dummy transport that does nothing
             networkManager.NetworkConfig.NetworkTransport = transport;
 
@@ -246,6 +250,8 @@ namespace MLAPI.EditorTests
 
                 // Full cleanup
                 networkManager.StopClient();
+
+                ScenesInBuild.IsTesting = false;
             }
 
             // Ensure no missmatches with expectations

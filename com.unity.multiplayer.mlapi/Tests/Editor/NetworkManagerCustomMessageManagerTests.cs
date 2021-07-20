@@ -16,6 +16,9 @@ namespace MLAPI.EditorTests
             var networkManager = gameObject.AddComponent<NetworkManager>();
             var transport = gameObject.AddComponent<DummyTransport>();
 
+            networkManager.PopulateScenesInBuild();
+            networkManager.ScenesInBuild.Scenes.Add(SceneManager.GetActiveScene().name);
+            networkManager.NetworkConfig = new NetworkConfig();
             // Set dummy transport that does nothing
             networkManager.NetworkConfig.NetworkTransport = transport;
 

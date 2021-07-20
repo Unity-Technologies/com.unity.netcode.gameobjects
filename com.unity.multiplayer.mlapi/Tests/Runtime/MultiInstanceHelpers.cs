@@ -29,7 +29,7 @@ namespace MLAPI.RuntimeTests
         public static bool Create(int clientCount, out NetworkManager server, out NetworkManager[] clients, int targetFrameRate = 60)
         {
             s_NetworkManagerInstances = new List<NetworkManager>();
-
+            ScenesInBuild.IsTesting = true;
             CreateNewClients(clientCount, out clients);
 
             {
@@ -46,6 +46,8 @@ namespace MLAPI.RuntimeTests
                     // Set transport
                     NetworkTransport = go.AddComponent<SIPTransport>()
                 };
+                server.PopulateScenesInBuild();
+                server.ScenesInBuild.Scenes.Add(SceneManager.GetActiveScene().name);
             }
 
             s_OriginalTargetFrameRate = Application.targetFrameRate;
@@ -63,7 +65,7 @@ namespace MLAPI.RuntimeTests
         public static bool CreateNewClients(int clientCount, out NetworkManager[] clients)
         {
             clients = new NetworkManager[clientCount];
-
+            var activeSceneName = SceneManager.GetActiveScene().name;
             for (int i = 0; i < clientCount; i++)
             {
                 // Create gameObject
@@ -77,6 +79,13 @@ namespace MLAPI.RuntimeTests
                     // Set transport
                     NetworkTransport = go.AddComponent<SIPTransport>()
                 };
+
+                clients[i].PopulateScenesInBuild();
+
+                if (!clients[i].ScenesInBuild.Scenes.Contains(activeSceneName))
+                {
+                    clients[i].ScenesInBuild.Scenes.Add(activeSceneName);
+                }
             }
 
             s_NetworkManagerInstances.AddRange(clients);
