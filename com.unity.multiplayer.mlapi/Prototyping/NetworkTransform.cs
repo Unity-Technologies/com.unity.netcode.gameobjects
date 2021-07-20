@@ -145,6 +145,7 @@ namespace MLAPI.Prototyping
         {
             if (!NetworkObject.IsSpawned)
             {
+                // todo should never happen but yet it does! maybe revisit/dig after NetVar updates and snapshot system lands?
                 return;
             }
 
