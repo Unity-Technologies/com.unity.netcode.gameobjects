@@ -48,12 +48,14 @@ namespace MLAPI.Transports
         private byte[] m_MessageBuffer;
         private string m_RelayJoinCode;
         private ulong m_ServerClientId;
-        
+
         public override ulong ServerClientId => m_ServerClientId;
 
         public string RelayJoinCode => m_RelayJoinCode;
 
         public ProtocolType Protocol => m_ProtocolType;
+
+        NetworkPipeline unreliableFragmentedPipeline;
 
         private void InitDriver()
         {
@@ -61,6 +63,9 @@ namespace MLAPI.Transports
                 m_Driver = new NetworkDriver(new BaselibNetworkInterface(), new RelayNetworkProtocol(), m_NetworkParameters.ToArray());
             else
                 m_Driver = NetworkDriver.Create();
+
+            unreliableFragmentedPipeline = m_Driver.CreatePipeline(
+                    typeof(FragmentationPipelineStage));
         }
 
         private void DisposeDriver()
@@ -116,7 +121,7 @@ namespace MLAPI.Transports
 
                 while(!joinTask.IsCompleted)
                     yield return null;
-                
+
                 if (joinTask.IsFaulted)
                 {
                     Debug.LogError("Join Relay request failed");
@@ -274,7 +279,7 @@ namespace MLAPI.Transports
             relayServerData.ComputeNewNonce();
 
             m_NetworkParameters.Add(new RelayNetworkParameter{ ServerData = relayServerData });
-            
+
             yield return ServerBindAndListen(task, NetworkEndPoint.AnyIpv4);
 #endif
         }
@@ -421,7 +426,11 @@ namespace MLAPI.Transports
             var size = data.Count + 5;
 
             // Debug.Log($"Sending: {String.Join(", ", data.Skip(data.Offset).Take(data.Count).Select(x => string.Format("{0:x}", x)))}");
-            if (m_Driver.BeginSend(ParseClientId(clientId), out var writer, size) == 0)
+            var defaultPipeline = NetworkPipeline.Null;
+            if (data.Count >= NetworkParameterConstants.MTU)
+                defaultPipeline = unreliableFragmentedPipeline;
+
+            if (m_Driver.BeginSend(defaultPipeline, ParseClientId(clientId), out var writer, size) == 0)
             {
                 writer.WriteByte((byte)networkChannel);
                 writer.WriteInt(data.Count);
