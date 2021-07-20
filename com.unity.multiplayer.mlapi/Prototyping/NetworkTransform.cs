@@ -45,7 +45,7 @@ namespace MLAPI.Prototyping
         /// TODO this will need refactoring
         /// Specifies who can update this transform
         /// </summary>
-        [FormerlySerializedAs("TransformAuthority"), Tooltip("Defines who can update this transform")]
+        [Tooltip("Defines who can update this transform")]
         public NetworkAuthority Authority = NetworkAuthority.Server;
 
         /// <summary>
