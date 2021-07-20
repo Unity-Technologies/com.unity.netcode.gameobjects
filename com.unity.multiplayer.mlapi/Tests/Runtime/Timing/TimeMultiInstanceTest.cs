@@ -47,8 +47,6 @@ namespace MLAPI.RuntimeTests.Timing
         [TestCase(60, 10, ExpectedResult = null)]
         public IEnumerator TestTimeMultiInstance(int targetFrameRate, int tickRate)
         {
-            yield return WaitForFrames(200);
-
             yield return StartSomeClientsAndServerWithPlayersCustom(true, NbClients, targetFrameRate, tickRate);
 
             double frameInterval = 1d / targetFrameRate;

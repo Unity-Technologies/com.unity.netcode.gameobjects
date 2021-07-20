@@ -107,9 +107,9 @@ namespace MLAPI.RuntimeTests
         /// </summary>
         public static void Destroy()
         {
-            if (!s_IsStarted)
+            if (s_IsStarted == false)
             {
-                throw new InvalidOperationException("MultiInstanceHelper is not started");
+                return;
             }
 
             s_IsStarted = false;

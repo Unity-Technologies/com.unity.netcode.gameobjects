@@ -12,6 +12,8 @@ namespace MLAPI.RuntimeTests.Timing
     /// </summary>
     public class NetworkTimeSystemTests
     {
+        private MonoBehaviourTest<PlayerLoopTimeTestComponent> m_MonoBehaviourTest; // cache for teardown
+
         [SetUp]
         public void Setup()
         {
@@ -26,9 +28,9 @@ namespace MLAPI.RuntimeTests.Timing
         [UnityTest]
         public IEnumerator PlayerLoopTimeTest()
         {
-            var test = new MonoBehaviourTest<PlayerLoopTimeTestComponent>();
+            m_MonoBehaviourTest = new MonoBehaviourTest<PlayerLoopTimeTestComponent>();
 
-            yield return test;
+            yield return m_MonoBehaviourTest;
         }
 
         /// <summary>
@@ -56,6 +58,11 @@ namespace MLAPI.RuntimeTests.Timing
         {
             // Stop, shutdown, and destroy
             NetworkManagerHelper.ShutdownNetworkManager();
+
+            if (m_MonoBehaviourTest != null)
+            {
+                Object.DestroyImmediate(m_MonoBehaviourTest.gameObject);
+            }
         }
 
     }
