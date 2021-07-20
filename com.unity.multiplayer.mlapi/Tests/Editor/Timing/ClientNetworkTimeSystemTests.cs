@@ -30,7 +30,7 @@ namespace MLAPI.EditorTests.Timing
             var rttSteps = TimingTestHelper.GetRandomTimeSteps(1000f, 0.095f, 0.105f, 42); // 10ms jitter
 
             // run for a while so that we reach regular RTT offset
-            TimingTestHelper.ApplySteps(timeSystem, tickSystem, steps, delegate(int step)
+            TimingTestHelper.ApplySteps(timeSystem, tickSystem, steps, delegate (int step)
             {
                 // sync network stats
                 receivedServerTime += steps[step];
@@ -43,7 +43,7 @@ namespace MLAPI.EditorTests.Timing
             Assert.IsTrue(Math.Abs(offsetToTarget) < k_AcceptableRttOffset);
 
             // run again, test that we never need to speed up or slow down under stable RTT
-            TimingTestHelper.ApplySteps(timeSystem, tickSystem, steps, delegate(int step)
+            TimingTestHelper.ApplySteps(timeSystem, tickSystem, steps, delegate (int step)
             {
                 // sync network stats
                 receivedServerTime += steps[step];
@@ -86,16 +86,16 @@ namespace MLAPI.EditorTests.Timing
             // increase RTT to ~200ms from ~100ms
             var rttSteps2 = TimingTestHelper.GetRandomTimeSteps(1000f, 0.195f, 0.205f, 42);
 
-            double unscaledLocalTime =  timeSystem.LocalTime;
+            double unscaledLocalTime = timeSystem.LocalTime;
             double unscaledServerTime = timeSystem.ServerTime;
-            TimingTestHelper.ApplySteps(timeSystem, tickSystem,steps, delegate (int step)
-            {
+            TimingTestHelper.ApplySteps(timeSystem, tickSystem, steps, delegate (int step)
+             {
                 // sync network stats
                 unscaledLocalTime += steps[step];
-                unscaledServerTime += steps[step];
-                receivedServerTime += steps[step];
-                timeSystem.Sync(receivedServerTime, rttSteps2[step]);
-            });
+                 unscaledServerTime += steps[step];
+                 receivedServerTime += steps[step];
+                 timeSystem.Sync(receivedServerTime, rttSteps2[step]);
+             });
 
             var totalLocalSpeedUpTime = timeSystem.LocalTime - unscaledLocalTime;
             var totalServerSpeedUpTime = timeSystem.ServerTime - unscaledServerTime;
@@ -107,7 +107,7 @@ namespace MLAPI.EditorTests.Timing
 
 
             // run again with RTT ~100ms and see whether we slow down by -0.1f
-            unscaledLocalTime =  timeSystem.LocalTime;
+            unscaledLocalTime = timeSystem.LocalTime;
             unscaledServerTime = timeSystem.ServerTime;
 
             TimingTestHelper.ApplySteps(timeSystem, tickSystem, steps, delegate (int step)

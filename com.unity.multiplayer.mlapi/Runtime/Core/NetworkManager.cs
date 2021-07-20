@@ -311,14 +311,14 @@ namespace MLAPI
                         switch (networkPrefab.Override)
                         {
                             case NetworkPrefabOverride.Prefab:
-                            {
-                                if (networkPrefab.SourcePrefabToOverride == null && networkPrefab.Prefab != null)
                                 {
-                                    networkPrefab.SourcePrefabToOverride = networkPrefab.Prefab;
-                                }
+                                    if (networkPrefab.SourcePrefabToOverride == null && networkPrefab.Prefab != null)
+                                    {
+                                        networkPrefab.SourcePrefabToOverride = networkPrefab.Prefab;
+                                    }
 
-                                globalObjectIdHash = networkPrefab.SourcePrefabToOverride.GetComponent<NetworkObject>().GlobalObjectIdHash;
-                            }
+                                    globalObjectIdHash = networkPrefab.SourcePrefabToOverride.GetComponent<NetworkObject>().GlobalObjectIdHash;
+                                }
                                 break;
                             case NetworkPrefabOverride.Hash:
                                 globalObjectIdHash = networkPrefab.SourceHashToOverride;
@@ -1073,15 +1073,15 @@ namespace MLAPI
 #endif
                     break;
                 case NetworkEvent.Data:
-                {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
                     {
-                        NetworkLog.LogInfo($"Incoming Data From {clientId}: {payload.Count} bytes");
-                    }
+                        if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+                        {
+                            NetworkLog.LogInfo($"Incoming Data From {clientId}: {payload.Count} bytes");
+                        }
 
-                    HandleIncomingData(clientId, networkChannel, payload, receiveTime, true);
-                    break;
-                }
+                        HandleIncomingData(clientId, networkChannel, payload, receiveTime, true);
+                        break;
+                    }
                 case NetworkEvent.Disconnect:
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                     s_TransportDisconnect.Begin();

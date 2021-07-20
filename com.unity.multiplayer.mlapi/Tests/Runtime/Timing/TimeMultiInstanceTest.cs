@@ -153,7 +153,7 @@ namespace MLAPI.RuntimeTests.Timing
         private readonly struct NetworkTimeState : IEquatable<NetworkTimeState>
         {
             public NetworkTime LocalTime { get; }
-            public NetworkTime ServerTime { get;}
+            public NetworkTime ServerTime { get; }
 
             public NetworkTimeState(NetworkManager manager)
             {

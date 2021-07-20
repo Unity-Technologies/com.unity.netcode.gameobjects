@@ -6,7 +6,7 @@ namespace MLAPI
     public class NetworkBehaviourUpdater
     {
         private HashSet<NetworkObject> m_Touched = new HashSet<NetworkObject>();
-        
+
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
         private ProfilerMarker m_NetworkBehaviourUpdate = new ProfilerMarker($"{nameof(NetworkBehaviour)}.{nameof(NetworkBehaviourUpdate)}");
 #endif
