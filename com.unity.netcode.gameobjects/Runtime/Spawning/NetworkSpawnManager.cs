@@ -475,7 +475,7 @@ namespace Unity.Netcode
 
             networkObject.InvokeBehaviourNetworkSpawn();
 		#if INTEREST_SYSTEM
-			NetworkManager.InterestManager.AddObject(networkObject);
+			NetworkManager.InterestManager.AddObject(networkObject, networkObject.InterestNodes);
 		#endif
 
             // This must happen after InvokeBehaviourNetworkSpawn, otherwise ClientRPCs and other messages can be
@@ -753,7 +753,7 @@ namespace Unity.Netcode
          #if INTEREST_SYSTEM
             var gobj = networkObject.gameObject;
             NetworkObject no = gobj.GetComponent<NetworkObject>();
-            NetworkManager.InterestManager.RemoveObject(no);
+            NetworkManager.InterestManager.RemoveObject(no, no.InterestNodes);
          #else
             if (SpawnedObjects.Remove(networkObject.NetworkObjectId))
             {

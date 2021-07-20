@@ -54,7 +54,7 @@ namespace Unity.Netcode
             return $"{nameof(NetworkPrefab)} \"{networkPrefab.Prefab.gameObject.name}\"";
         }
 
-        internal InterestManager InterestManager { get; private set; }
+        internal InterestManager<NetworkClient, NetworkObject> InterestManager { get; private set; }
         internal SnapshotSystem SnapshotSystem { get; private set; }
         internal NetworkBehaviourUpdater BehaviourUpdater { get; private set; }
 
@@ -570,7 +570,7 @@ namespace Unity.Netcode
 
             SnapshotSystem = new SnapshotSystem(this, NetworkConfig, NetworkTickSystem);
 
-            InterestManager = new InterestManager();
+            InterestManager = new InterestManager<NetworkClient, NetworkObject>();
             this.RegisterNetworkUpdate(NetworkUpdateStage.PreUpdate);
 
             // This is used to remove entries not needed or invalid
