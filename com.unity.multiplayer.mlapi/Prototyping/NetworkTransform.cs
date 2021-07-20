@@ -213,7 +213,7 @@ namespace MLAPI.Prototyping
         /// <summary>
         /// Updates the NetworkTransform's authority model at runtime
         /// </summary>
-        public void SetAuthority(NetworkAuthority authority)
+        internal void SetAuthority(NetworkAuthority authority)
         {
             Authority = authority;
             UpdateNetVarPerms();
