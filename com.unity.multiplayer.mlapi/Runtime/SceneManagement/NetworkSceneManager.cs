@@ -86,6 +86,8 @@ namespace MLAPI.SceneManagement
         // Used for observed object synchronization
         private readonly List<NetworkObject> m_ObservedObjects = new List<NetworkObject>();
 
+        private List<string> m_ScenesLoaded = new List<string>();
+
         private static bool s_IsSceneEventActive = false;
         internal static bool IsSpawnedObjectsPendingInDontDestroyOnLoad = false;
         internal static bool IsRunningUnitTest = false;
@@ -328,11 +330,8 @@ namespace MLAPI.SceneManagement
             s_IsSceneEventActive = false;
         }
 
-
-        private List<string> m_ScenesLoaded = new List<string>();
-
         /// <summary>
-        /// Additively loads the scene
+        /// Loads the scene name in question as either additive or single.
         /// </summary>
         /// <param name="sceneName"></param>
         /// NSS TODO: This could probably stand to have some form of "scene event status" class/structure that will
@@ -619,7 +618,6 @@ namespace MLAPI.SceneManagement
             OnSceneSwitched?.Invoke();
         }
 
-
         /// <summary>
         /// Server Side Only:
         /// This is used for late joining players and players that have just had their connection approved
@@ -692,7 +690,7 @@ namespace MLAPI.SceneManagement
         /// is already loaded.
         /// </summary>
         /// <param name="sceneIndex">MLAPI sceneIndex to load</param>
-        private void OnClientBeginSynch(uint sceneIndex)
+        private void OnClientBeginSync(uint sceneIndex)
         {
             if (!SceneIndexToString.TryGetValue(sceneIndex, out string sceneName) || !RegisteredSceneNames.Contains(sceneName))
             {
@@ -748,6 +746,7 @@ namespace MLAPI.SceneManagement
             HandleClientSceneEvent(null);
         }
 
+        #region General Methods
         internal bool HasSceneMismatch(uint sceneIndex) => SceneManager.GetActiveScene().name != SceneIndexToString[sceneIndex];
 
         internal void RemoveClientFromSceneSwitchProgresses(ulong clientId)
@@ -842,6 +841,7 @@ namespace MLAPI.SceneManagement
                 SceneSwitchProgresses[switchSceneGuid].AddClientAsDone(clientId);
             }
         }
+        #endregion
 
         /// <summary>
         /// Client Side: Handles incoming SCENE_EVENT messages
@@ -867,7 +867,7 @@ namespace MLAPI.SceneManagement
                     {
                         if (!SceneEventData.IsDoneWithSynchronization())
                         {
-                            OnClientBeginSynch(SceneEventData.GetNextSceneSynchronizationIndex());
+                            OnClientBeginSync(SceneEventData.GetNextSceneSynchronizationIndex());
                         }
                         else
                         {
