@@ -64,7 +64,7 @@ namespace MLAPI.Configuration
         /// The tickrate of network ticks. This value controls how often MLAPI runs user code and sends out data.
         /// </summary>
         [Tooltip("The tickrate. This value controls how often MLAPI runs user code and sends out data. The value is in 'ticks per seconds' which means a value of 50 will result in 50 ticks being executed per second or a fixed delta time of 0.02.")]
-        public int TickRate = 60;
+        public int TickRate = 30;
 
         /// <summary>
         /// The amount of seconds to wait for handshake to complete before timing out a client
