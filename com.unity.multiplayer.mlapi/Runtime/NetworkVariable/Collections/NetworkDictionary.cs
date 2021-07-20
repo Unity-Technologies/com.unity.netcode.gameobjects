@@ -396,7 +396,7 @@ namespace MLAPI.NetworkVariable.Collections
                 return false;
             }
 
-            if (m_NetworkBehaviour.NetworkManager.LocalTime.FixedTime - LastSyncedTime.FixedTime >= (1f / Settings.SendTickrate))
+            if (m_NetworkBehaviour.NetworkManager.LocalTime.FixedTime - LastSyncedTime.FixedTime >= (1.0 / Settings.SendTickrate))
             {
                 return true;
             }
