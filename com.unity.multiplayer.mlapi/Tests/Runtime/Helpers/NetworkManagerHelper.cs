@@ -74,19 +74,6 @@ namespace MLAPI.RuntimeTests
 
                 var unetTransport = NetworkManagerGameObject.AddComponent<UNetTransport>();
 
-                if (networkConfig == null)
-                {
-                    networkConfig = new NetworkConfig
-                    {
-                        EnableSceneManagement = false,
-                        RegisteredScenes = new List<string>() { SceneManager.GetActiveScene().name }
-                    };
-                }
-                else
-                {
-                    networkConfig.RegisteredScenes.Add(SceneManager.GetActiveScene().name);
-                }
-
                 NetworkManagerObject.NetworkConfig = networkConfig;
 
                 unetTransport.ConnectAddress = "127.0.0.1";
@@ -191,7 +178,7 @@ namespace MLAPI.RuntimeTests
             if (CurrentNetworkManagerMode != NetworkManagerOperatingMode.None)
             {
                 // With some unit tests the Singleton can still be from a previous unit test
-                // depending upon the order of operations that occurred. 
+                // depending upon the order of operations that occurred.
                 if (NetworkManager.Singleton != NetworkManagerObject)
                 {
                     NetworkManagerObject.SetSingleton();

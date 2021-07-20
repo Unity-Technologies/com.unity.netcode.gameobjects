@@ -30,11 +30,11 @@ namespace MLAPI.SceneManagement
         public LoadSceneMode LoadSceneMode;
         public Guid SwitchSceneGuid;
 
-        public uint SceneIndex;
+        public int SceneIndex;
         public ulong TargetClientId;
 
-        private Dictionary<uint, List<NetworkObject>> m_SceneNetworkObjects;
-        private Dictionary<uint, long> m_SceneNetworkObjectDataOffsets;
+        private Dictionary<int, List<NetworkObject>> m_SceneNetworkObjects;
+        private Dictionary<int, long> m_SceneNetworkObjectDataOffsets;
 
         /// <summary>
         /// Client or Server Side:
@@ -61,7 +61,7 @@ namespace MLAPI.SceneManagement
         /// Gets the next scene index to be loaded for approval and/or late joining
         /// </summary>
         /// <returns></returns>
-        public uint GetNextSceneSynchronizationIndex()
+        public int GetNextSceneSynchronizationIndex()
         {
             if (m_SceneNetworkObjectDataOffsets.ContainsKey(SceneIndex))
             {
@@ -88,7 +88,7 @@ namespace MLAPI.SceneManagement
         {
             if (m_SceneNetworkObjects == null)
             {
-                m_SceneNetworkObjects = new Dictionary<uint, List<NetworkObject>>();
+                m_SceneNetworkObjects = new Dictionary<int, List<NetworkObject>>();
             }
             else
             {
@@ -102,7 +102,7 @@ namespace MLAPI.SceneManagement
         /// </summary>
         /// <param name="sceneIndex"></param>
         /// <param name="networkObject"></param>
-        public void AddNetworkObjectForSynch(uint sceneIndex, NetworkObject networkObject)
+        public void AddNetworkObjectForSynch(int sceneIndex, NetworkObject networkObject)
         {
             if (!m_SceneNetworkObjects.ContainsKey(sceneIndex))
             {
@@ -171,7 +171,7 @@ namespace MLAPI.SceneManagement
                 writer.WriteByteArray(SwitchSceneGuid.ToByteArray());
             }
 
-            writer.WriteUInt32Packed(SceneIndex);
+            writer.WriteInt32Packed(SceneIndex);
 
             if (SceneEventType == SceneEventTypes.Event_Sync)
             {
@@ -182,7 +182,7 @@ namespace MLAPI.SceneManagement
                     string msg = "Scene Associated NetworkObjects Write:\n";
                     foreach (var keypair in m_SceneNetworkObjects)
                     {
-                        writer.WriteUInt32Packed(keypair.Key);
+                        writer.WriteInt32Packed(keypair.Key);
                         msg += $"Scene ID [{keypair.Key}] NumNetworkObjects:[{keypair.Value.Count}]\n";
                         writer.WriteInt32Packed(keypair.Value.Count);
                         var positionStart = writer.GetStream().Position;
@@ -263,7 +263,7 @@ namespace MLAPI.SceneManagement
                 SwitchSceneGuid = new Guid(reader.ReadByteArray());
             }
 
-            SceneIndex = reader.ReadUInt32Packed();
+            SceneIndex = reader.ReadInt32Packed();
 
             if (SceneEventType == SceneEventTypes.Event_Sync)
             {
@@ -272,7 +272,7 @@ namespace MLAPI.SceneManagement
 
                 if (m_SceneNetworkObjectDataOffsets == null)
                 {
-                    m_SceneNetworkObjectDataOffsets = new Dictionary<uint, long>();
+                    m_SceneNetworkObjectDataOffsets = new Dictionary<int, long>();
                 }
 
                 if (keyPairCount > 0)
@@ -285,7 +285,7 @@ namespace MLAPI.SceneManagement
                     {
                         for (int i = 0; i < keyPairCount; i++)
                         {
-                            var key = reader.ReadUInt32Packed();
+                            var key = reader.ReadInt32Packed();
                             var count = reader.ReadInt32Packed();
                             // how many bytes to read for this scene set
                             var bytesToRead = (ulong)reader.ReadUInt32();
@@ -425,7 +425,7 @@ namespace MLAPI.SceneManagement
         /// </summary>
         /// <param name="sceneId"></param>
         /// <param name="networkManager"></param>
-        public void SynchronizeSceneNetworkObjects(uint sceneId, NetworkManager networkManager)
+        public void SynchronizeSceneNetworkObjects(int sceneId, NetworkManager networkManager)
         {
             if (m_SceneNetworkObjectDataOffsets.ContainsKey(sceneId))
             {

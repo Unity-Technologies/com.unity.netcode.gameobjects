@@ -275,23 +275,8 @@ namespace MLAPI
                 }
             }
 
-            if (NetworkConfig.EnableSceneManagement)
-            {
-                if(NetworkConfig.RegisteredSceneAssets.Count > 0)
-                {
-                    foreach(var sceneAsset in NetworkConfig.RegisteredSceneAssets)
-                    {
-                        if(NetworkConfig.RegisteredScenes == null)
-                        {
-                            NetworkConfig.RegisteredScenes = new List<string>();
-                        }
-                        if(!NetworkConfig.RegisteredScenes.Contains(sceneAsset.name))
-                        {
-                            NetworkConfig.RegisteredScenes.Add(sceneAsset.name);
-                        }
-                    }
-                }
-            }
+
+
 
             var activeScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
 
@@ -445,18 +430,6 @@ namespace MLAPI
             // Register INetworkUpdateSystem (always register this after rpcQueueContainer has been instantiated)
             this.RegisterNetworkUpdate(NetworkUpdateStage.EarlyUpdate);
             this.RegisterNetworkUpdate(NetworkUpdateStage.PreUpdate);
-
-            if (NetworkConfig.EnableSceneManagement)
-            {
-                NetworkConfig.RegisteredScenes.Sort(StringComparer.Ordinal);
-
-                for (int i = 0; i < NetworkConfig.RegisteredScenes.Count; i++)
-                {
-                    SceneManager.RegisteredSceneNames.Add(NetworkConfig.RegisteredScenes[i]);
-                    SceneManager.SceneIndexToString.Add((uint)i, NetworkConfig.RegisteredScenes[i]);
-                    SceneManager.SceneNameToIndex.Add(NetworkConfig.RegisteredScenes[i], (uint)i);
-                }
-            }
 
             // This is used to remove entries not needed or invalid
             var removeEmptyPrefabs = new List<int>();

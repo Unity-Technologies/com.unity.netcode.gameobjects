@@ -43,8 +43,6 @@ namespace MLAPI.RuntimeTests
                 // Set the NetworkConfig
                 server.NetworkConfig = new NetworkConfig()
                 {
-                    // Set the current scene to prevent unexpected log messages which would trigger a failure
-                    RegisteredScenes = new List<string>() { SceneManager.GetActiveScene().name },
                     // Set transport
                     NetworkTransport = go.AddComponent<SIPTransport>()
                 };
@@ -76,8 +74,6 @@ namespace MLAPI.RuntimeTests
                 // Set the NetworkConfig
                 clients[i].NetworkConfig = new NetworkConfig()
                 {
-                    // Set the current scene to prevent unexpected log messages which would trigger a failure
-                    RegisteredScenes = new List<string>() { SceneManager.GetActiveScene().name },
                     // Set transport
                     NetworkTransport = go.AddComponent<SIPTransport>()
                 };

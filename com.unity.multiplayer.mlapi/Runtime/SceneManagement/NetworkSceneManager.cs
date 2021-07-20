@@ -100,11 +100,19 @@ namespace MLAPI.SceneManagement
 
         private NetworkManager m_NetworkManager { get; }
 
+        internal Dictionary<string, int> SceneNameToBuildIndex;
+
         internal NetworkSceneManager(NetworkManager networkManager)
         {
             m_NetworkManager = networkManager;
             SceneEventData = new SceneEventData(networkManager);
             ClientSynchEventData = new SceneEventData(networkManager);
+
+            for (int i = 0; i < SceneManager.sceneCountInBuildSettings; i++)
+            {
+                var scene = SceneManager.GetSceneByBuildIndex(i);
+                SceneNameToBuildIndex.Add(scene.name, i);
+            }
         }
 
         /// <summary>
@@ -146,22 +154,25 @@ namespace MLAPI.SceneManagement
             return sceneName;
         }
 
-        /// <summary>
-        /// Adds a scene during runtime.
-        /// The index is REQUIRED to be unique AND the same across all instances.
-        /// </summary>
-        /// <param name="sceneName">Scene name.</param>
-        /// <param name="index">Index.</param>
-        public void AddRuntimeSceneName(string sceneName, uint index)
+        internal bool IsSceneNameValid(string sceneName)
         {
-            if (!m_NetworkManager.NetworkConfig.AllowRuntimeSceneChanges)
-            {
-                throw new NetworkConfigurationException($"Cannot change the scene configuration when {nameof(NetworkConfig.AllowRuntimeSceneChanges)} is false");
-            }
+            return SceneNameToBuildIndex.ContainsKey(sceneName);
+        }
 
-            RegisteredSceneNames.Add(sceneName);
-            SceneIndexToString.Add(index, sceneName);
-            SceneNameToIndex.Add(sceneName, index);
+        internal int GetBuildIndexFromSceneName(string sceneName)
+        {
+            if(IsSceneNameValid(sceneName))
+            {
+                return SceneNameToBuildIndex[sceneName];
+            }
+            return -1;
+        }
+
+        internal bool IsSceneIndexValid(int index)
+        {
+            var scene = SceneManager.GetSceneByBuildIndex(index);
+            return scene.IsValid();
+
         }
 
         /// <summary>
@@ -193,7 +204,7 @@ namespace MLAPI.SceneManagement
                 return null;
             }
 
-            if (!RegisteredSceneNames.Contains(sceneName))
+            if (!IsSceneNameValid(sceneName))
             {
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                 {
@@ -247,7 +258,7 @@ namespace MLAPI.SceneManagement
         {
             // Make sure the scene is actually loaded
             var sceneToUnload = SceneManager.GetSceneByName(sceneName);
-            if (sceneToUnload == null)
+            if (!sceneToUnload.isLoaded)
             {
                 Debug.LogWarning($"{nameof(UnloadScene)} was called, but the scene {sceneName} is not currently loaded!");
                 return null;
@@ -261,7 +272,7 @@ namespace MLAPI.SceneManagement
 
             SceneEventData.SwitchSceneGuid = switchSceneProgress.Guid;
             SceneEventData.SceneEventType = SceneEventData.SceneEventTypes.Event_Unload;
-            SceneEventData.SceneIndex = SceneNameToIndex[sceneName];
+            SceneEventData.SceneIndex = sceneToUnload.buildIndex;
 
             for (int j = 0; j < m_NetworkManager.ConnectedClientsList.Count; j++)
             {
@@ -291,27 +302,29 @@ namespace MLAPI.SceneManagement
 
         private void OnClientUnloadScene()
         {
-            if (!SceneIndexToString.TryGetValue(SceneEventData.SceneIndex, out string sceneName) || !RegisteredSceneNames.Contains(sceneName))
+            if (!IsSceneIndexValid(SceneEventData.SceneIndex))
             {
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                 {
-                    NetworkLog.LogWarning("Server requested a scene switch to a non-registered scene");
+                    NetworkLog.LogWarning("Server requested a scene switch to a non-existing scene");
                 }
 
                 return;
             }
+
+            var scene = SceneManager.GetSceneByBuildIndex(SceneEventData.SceneIndex);
             s_IsSceneEventActive = true;
 
-            var sceneUnload = SceneManager.UnloadSceneAsync(sceneName);
+            var sceneUnload = SceneManager.UnloadSceneAsync(SceneEventData.SceneIndex);
 
-            if (m_ScenesLoaded.Contains(sceneName))
+            if (m_ScenesLoaded.Contains(scene.name))
             {
-                m_ScenesLoaded.Remove(sceneName);
+                m_ScenesLoaded.Remove(scene.name);
             }
 
             sceneUnload.completed += asyncOp2 => OnSceneUnloaded();
 
-            OnAdditiveSceneEvent?.Invoke(sceneUnload, sceneName, false);
+            OnAdditiveSceneEvent?.Invoke(sceneUnload, scene.name, false);
         }
 
         /// <summary>
@@ -347,7 +360,7 @@ namespace MLAPI.SceneManagement
 
             SceneEventData.SwitchSceneGuid = switchSceneProgress.Guid;
             SceneEventData.SceneEventType = SceneEventData.SceneEventTypes.Event_Load;
-            SceneEventData.SceneIndex = SceneNameToIndex[sceneName];
+            SceneEventData.SceneIndex = GetBuildIndexFromSceneName(sceneName);
             SceneEventData.LoadSceneMode = loadSceneMode;
 
             if (SceneEventData.LoadSceneMode == LoadSceneMode.Single)
@@ -430,9 +443,7 @@ namespace MLAPI.SceneManagement
         /// <param name="objectStream">Stream data associated with the event </param>
         internal void OnClientSceneLoadingEvent(Stream objectStream)
         {
-            SceneEventData.CopyUnreadFromStream(objectStream);
-
-            if (!SceneIndexToString.TryGetValue(SceneEventData.SceneIndex, out string sceneName) || !RegisteredSceneNames.Contains(sceneName))
+            if (!IsSceneIndexValid(SceneEventData.SceneIndex))
             {
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                 {
@@ -441,6 +452,11 @@ namespace MLAPI.SceneManagement
 
                 return;
             }
+            var scene = SceneManager.GetSceneByBuildIndex(SceneEventData.SceneIndex);
+
+            SceneEventData.CopyUnreadFromStream(objectStream);
+
+
 
             // NSS TODO: This is a temporary place holder check to make sure we don't try to unload a scene loaded in single mode.
             var currentActiveScene = SceneManager.GetActiveScene();
@@ -461,13 +477,13 @@ namespace MLAPI.SceneManagement
             }
             else
             {
-                if (!m_ScenesLoaded.Contains(sceneName))
+                if (!m_ScenesLoaded.Contains(scene.name))
                 {
-                    m_ScenesLoaded.Add(sceneName);
+                    m_ScenesLoaded.Add(scene.name);
                 }
                 else
                 {
-                    throw new Exception($"{sceneName} is being loaded twice?!");
+                    throw new Exception($"{scene.name} is being loaded twice?!");
                 }
             }
 
@@ -479,8 +495,8 @@ namespace MLAPI.SceneManagement
                 IsSpawnedObjectsPendingInDontDestroyOnLoad = true;
             }
 
-            var sceneLoad = SceneManager.LoadSceneAsync(sceneName, SceneEventData.LoadSceneMode);
-            sceneLoad.completed += asyncOp2 => OnSceneLoaded(sceneName);
+            var sceneLoad = SceneManager.LoadSceneAsync(scene.name, SceneEventData.LoadSceneMode);
+            sceneLoad.completed += asyncOp2 => OnSceneLoaded(scene.name);
 
             if (SceneEventData.LoadSceneMode == LoadSceneMode.Single)
             {
@@ -488,7 +504,7 @@ namespace MLAPI.SceneManagement
             }
             else
             {
-                OnAdditiveSceneEvent?.Invoke(sceneLoad, sceneName, true);
+                OnAdditiveSceneEvent?.Invoke(sceneLoad, scene.name, true);
             }
         }
 
@@ -645,16 +661,10 @@ namespace MLAPI.SceneManagement
             {
                 var scene = SceneManager.GetSceneAt(i);
 
-                var malpiSceneIndex = GetMLAPISceneIndexFromScene(scene);
-
-                if( malpiSceneIndex == uint.MaxValue)
-                {
-                    continue;
-                }
                 // This would depend upon whether we are additive or note
                 if (activeScene == scene)
                 {
-                    ClientSynchEventData.SceneIndex = malpiSceneIndex;
+                    ClientSynchEventData.SceneIndex = scene.buildIndex;
                 }
 
                 // Separate NetworkObjects by scene
@@ -670,7 +680,7 @@ namespace MLAPI.SceneManagement
                     {
                         continue;
                     }
-                    ClientSynchEventData.AddNetworkObjectForSynch(malpiSceneIndex, networkObject);
+                    ClientSynchEventData.AddNetworkObjectForSynch(scene.buildIndex, networkObject);
                 }
             }
 
@@ -690,9 +700,9 @@ namespace MLAPI.SceneManagement
         /// is already loaded.
         /// </summary>
         /// <param name="sceneIndex">MLAPI sceneIndex to load</param>
-        private void OnClientBeginSync(uint sceneIndex)
+        private void OnClientBeginSync(int sceneIndex)
         {
-            if (!SceneIndexToString.TryGetValue(sceneIndex, out string sceneName) || !RegisteredSceneNames.Contains(sceneName))
+            if (!IsSceneIndexValid(sceneIndex))
             {
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                 {
@@ -701,13 +711,13 @@ namespace MLAPI.SceneManagement
 
                 return;
             }
-
+            var scene = SceneManager.GetSceneByBuildIndex(sceneIndex);
             var activeScene = SceneManager.GetActiveScene();
 
-            if (sceneName != activeScene.name)
+            if (scene.name != activeScene.name)
             {
                 // NSS TODO: Add to proposal's MTT discussion topics: Should we cover switching the active scene for V1.0.0?
-                var sceneLoad = SceneManager.LoadSceneAsync(sceneName, sceneIndex == SceneEventData.SceneIndex ? SceneEventData.LoadSceneMode : LoadSceneMode.Additive);
+                var sceneLoad = SceneManager.LoadSceneAsync(scene.name, sceneIndex == SceneEventData.SceneIndex ? SceneEventData.LoadSceneMode : LoadSceneMode.Additive);
                 sceneLoad.completed += asyncOp2 => ClientLoadedSynchronization(sceneIndex);
             }
             else
@@ -721,9 +731,9 @@ namespace MLAPI.SceneManagement
         /// This handles all of the in-scene and dynamically spawned NetworkObject synchronization
         /// </summary>
         /// <param name="sceneIndex">MLAPI scene index that was loaded</param>
-        private void ClientLoadedSynchronization(uint sceneIndex)
+        private void ClientLoadedSynchronization(int sceneIndex)
         {
-            var nextScene = SceneManager.GetSceneByName(GetSceneNameFromMLAPISceneIndex(sceneIndex));
+            var nextScene = SceneManager.GetSceneByBuildIndex(sceneIndex);
             if (nextScene == null)
             {
                 Debug.LogError($"Client was trying to load {sceneIndex} which does not appear to be a valid registered scene index!");
