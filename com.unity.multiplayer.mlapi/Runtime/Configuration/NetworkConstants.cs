@@ -15,6 +15,7 @@ namespace MLAPI.Configuration
         internal const byte CLIENT_SWITCH_SCENE_COMPLETED = 8;
         internal const byte CHANGE_OWNER = 9;
         internal const byte ADD_OBJECTS = 10;
+        internal const byte TIME_SYNC = 11;
         internal const byte NETWORK_VARIABLE_DELTA = 12;
         internal const byte ALL_CLIENTS_LOADED_SCENE = 14;
         internal const byte PARENT_SYNC = 16;
@@ -40,7 +41,7 @@ namespace MLAPI.Configuration
             "SWITCH_SCENE",
             "CLIENT_SWITCH_SCENE_COMPLETED",
             "CHANGE_OWNER",
-            "ADD_OBJECTS",
+            "TIME_SYNC",
             "",
             "NETWORK_VARIABLE_DELTA",
             "",

@@ -43,6 +43,7 @@ namespace MLAPI
 #pragma warning restore IDE1006 // restore naming rule violation check
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
+        private static ProfilerMarker s_SyncTime = new ProfilerMarker($"{nameof(NetworkManager)}.SyncTime");
         private static ProfilerMarker s_TransportPoll = new ProfilerMarker($"{nameof(NetworkManager)}.TransportPoll");
         private static ProfilerMarker s_TransportConnect = new ProfilerMarker($"{nameof(NetworkManager)}.TransportConnect");
         private static ProfilerMarker s_HandleIncomingData = new ProfilerMarker($"{nameof(NetworkManager)}.{nameof(HandleIncomingData)}");
@@ -55,6 +56,8 @@ namespace MLAPI
         // The booleans allow iterative development and testing in the meantime
         internal static bool UseClassicDelta = true;
         internal static bool UseSnapshot = false;
+
+        private const int k_TimeSyncFrequency = 30; // sync every 30 ticks, TODO will be removed once timesync is done via snapshots
 
         internal RpcQueueContainer RpcQueueContainer { get; private set; }
 
@@ -942,10 +945,14 @@ namespace MLAPI
         // TODO Once we have a way to subscribe to NetworkUpdateLoop with order we can move this out of NetworkManager but for now this needs to be here because we need strict ordering.
         private void OnNetworkPreUpdate()
         {
-            // TODO this is a workaround until we have a good way to pass time received from the server + RTT to the time system.
-            NetworkTimeSystem.Sync(NetworkTimeSystem.TimeSystemInternalTime + Time.deltaTime, NetworkConfig.NetworkTransport.GetCurrentRtt(ServerClientId) / 1000d);
+            // Only update RTT here, server time is updated by time sync messages
             NetworkTimeSystem.Advance(Time.deltaTime);
             NetworkTickSystem.UpdateTick(NetworkTimeSystem.LocalTime, NetworkTimeSystem.ServerTime);
+
+            if (IsServer == false)
+            {
+                NetworkTimeSystem.Sync(NetworkTimeSystem.LastSyncedServerTimeSec + Time.deltaTime, NetworkConfig.NetworkTransport.GetCurrentRtt(ServerClientId) / 1000d);
+            }
         }
 
         /// <summary>
@@ -966,6 +973,11 @@ namespace MLAPI
             if (!IsServer && NetworkConfig.EnableMessageBuffering)
             {
                 BufferManager.CleanBuffer();
+            }
+
+            if (IsServer && NetworkTickSystem.ServerTime.Tick % k_TimeSyncFrequency == 0)
+            {
+                SyncTime();
             }
         }
 
@@ -1228,6 +1240,13 @@ namespace MLAPI
                         if (IsClient)
                         {
                             MessageHandler.HandleDestroyObjects(clientId, messageStream);
+                        }
+
+                        break;
+                    case NetworkConstants.TIME_SYNC:
+                        if (IsClient)
+                        {
+                            MessageHandler.HandleTimeSync(clientId, messageStream);
                         }
 
                         break;
@@ -1537,6 +1556,27 @@ namespace MLAPI
 
                 ConnectedClients.Remove(clientId);
             }
+        }
+
+        private void SyncTime()
+        {
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            s_SyncTime.Begin();
+#endif
+            if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+            {
+                NetworkLog.LogInfo("Syncing Time To Clients");
+            }
+
+            using (var buffer = PooledNetworkBuffer.Get())
+            using (var writer = PooledNetworkWriter.Get(buffer))
+            {
+                writer.WriteInt32Packed(NetworkTickSystem.ServerTime.Tick);
+                MessageSender.Send(NetworkConstants.TIME_SYNC, NetworkChannel.SyncChannel, buffer);
+            }
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            s_SyncTime.End();
+#endif
         }
 
         private readonly List<NetworkObject> m_ObservedObjects = new List<NetworkObject>();

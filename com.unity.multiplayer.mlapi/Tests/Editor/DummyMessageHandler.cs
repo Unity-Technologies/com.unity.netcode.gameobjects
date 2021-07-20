@@ -28,7 +28,7 @@ namespace MLAPI.EditorTests
 
         public void HandleDestroyObjects(ulong clientId, Stream stream) => VerifyCalled(nameof(HandleDestroyObjects));
 
-        public void HandleTimeSync(ulong clientId, Stream stream, float receiveTime) => VerifyCalled(nameof(HandleTimeSync));
+        public void HandleTimeSync(ulong clientId, Stream stream) => VerifyCalled(nameof(HandleTimeSync));
 
         public void HandleNetworkVariableDelta(ulong clientId, Stream stream, Action<ulong, PreBufferPreset> bufferCallback, PreBufferPreset bufferPreset) => VerifyCalled(nameof(HandleNetworkVariableDelta));
 

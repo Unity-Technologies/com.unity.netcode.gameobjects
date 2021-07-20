@@ -23,18 +23,18 @@ namespace MLAPI.Timing
         /// Gets or sets the amount of time in seconds the server should buffer incoming client messages.
         /// This increases the difference between local and server time so that messages arrive earlier on the server.
         /// </summary>
-        public double localBufferSec { get; set; }
+        public double LocalBufferSec { get; set; }
 
         /// <summary>
         /// Gets or sets the amount of the time in seconds the client should buffer incoming messages from the server. This increases server time.
         /// A higher value increases latency but makes the game look more smooth in bad networking conditions.
         /// </summary>
-        public double serverBufferSec { get; set; }
+        public double ServerBufferSec { get; set; }
 
         /// <summary>
         /// Gets or sets a threshold in seconds used to force a hard catchup of network time.
         /// </summary>
-        public double hardResetThresholdSec { get; set; }
+        public double HardResetThresholdSec { get; set; }
 
         /// <summary>
         /// Gets or sets the ratio at which the NetworkTimeSystem speeds up or slows down time.
@@ -45,16 +45,15 @@ namespace MLAPI.Timing
 
         public double ServerTime => m_TimeSec + m_CurrentServerTimeOffset;
 
-        //TODO This is used as a workaround to pass this back into the sync function will be removed once we get correct value.
-        // Once we have a sequence-ack algorithm we get access to the last received tick time instead.
-        // See NetworkManager.OnNetworkPreUpdate where this is used. Because we don't receive time sync messages from the server yet we just manually fake a time advancement by adding delta time to our existing time.
-        internal double TimeSystemInternalTime => m_TimeSec;
+        internal double LastSyncedServerTimeSec { get; private set; }
+
+        internal double LastSyncedRttSec { get; private set; }
 
         public NetworkTimeSystem(double localBufferSec, double serverBufferSec, double hardResetThresholdSec, double adjustmentRatio = 0.01d)
         {
-            this.localBufferSec = localBufferSec;
-            this.serverBufferSec = serverBufferSec;
-            this.hardResetThresholdSec = hardResetThresholdSec;
+            LocalBufferSec = localBufferSec;
+            ServerBufferSec = serverBufferSec;
+            HardResetThresholdSec = hardResetThresholdSec;
             AdjustmentRatio = adjustmentRatio;
         }
 
@@ -77,7 +76,7 @@ namespace MLAPI.Timing
         {
             m_TimeSec += deltaTimeSec;
 
-            if (Math.Abs(m_DesiredLocalTimeOffset - m_CurrentLocalTimeOffset) > hardResetThresholdSec || Math.Abs(m_DesiredServerTimeOffset - m_CurrentServerTimeOffset) > hardResetThresholdSec)
+            if (Math.Abs(m_DesiredLocalTimeOffset - m_CurrentLocalTimeOffset) > HardResetThresholdSec || Math.Abs(m_DesiredServerTimeOffset - m_CurrentServerTimeOffset) > HardResetThresholdSec)
             {
                 m_TimeSec += m_DesiredServerTimeOffset;
 
@@ -114,10 +113,13 @@ namespace MLAPI.Timing
         /// <param name="rttSec">The current RTT in seconds. Can be an averaged or a raw value.</param>
         public void Sync(double serverTimeSec, double rttSec)
         {
+            LastSyncedRttSec = rttSec;
+            LastSyncedServerTimeSec = serverTimeSec;
+
             var timeDif = serverTimeSec - m_TimeSec;
 
-            m_DesiredServerTimeOffset = timeDif - serverBufferSec;
-            m_DesiredLocalTimeOffset = timeDif + rttSec + localBufferSec;
+            m_DesiredServerTimeOffset = timeDif - ServerBufferSec;
+            m_DesiredLocalTimeOffset = timeDif + rttSec + LocalBufferSec;
         }
     }
 }

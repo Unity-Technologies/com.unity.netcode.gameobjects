@@ -13,6 +13,7 @@ using MLAPI.Messaging.Buffering;
 using MLAPI.Profiling;
 using MLAPI.Serialization;
 using MLAPI.Timing;
+using UnityEngine.Assertions;
 
 namespace MLAPI.Messaging
 {
@@ -273,6 +274,19 @@ namespace MLAPI.Messaging
                 {
                     HandleDestroyObject(clientId, stream);
                 }
+            }
+        }
+
+        public void HandleTimeSync(ulong clientId, Stream stream)
+        {
+
+            Assert.IsTrue(clientId == NetworkManager.ServerClientId);
+
+            using (var reader = PooledNetworkReader.Get(stream))
+            {
+                int tick = reader.ReadInt32Packed();
+                var time = new NetworkTime(NetworkManager.NetworkTickSystem.TickRate, tick);
+                NetworkManager.NetworkTimeSystem.Sync(time.Time, NetworkManager.NetworkConfig.NetworkTransport.GetCurrentRtt(clientId) / 1000d);
             }
         }
 

@@ -16,6 +16,7 @@ namespace MLAPI.Messaging
         void HandleChangeOwner(ulong clientId, Stream stream);
         void HandleAddObjects(ulong clientId, Stream stream);
         void HandleDestroyObjects(ulong clientId, Stream stream);
+        void HandleTimeSync(ulong clientId, Stream stream);
         void HandleNetworkVariableDelta(ulong clientId, Stream stream, Action<ulong, PreBufferPreset> bufferCallback, PreBufferPreset bufferPreset);
         void RpcReceiveQueueItem(ulong clientId, Stream stream, float receiveTime, RpcQueueContainer.QueueItemType queueItemType);
         void HandleUnnamedMessage(ulong clientId, Stream stream);
