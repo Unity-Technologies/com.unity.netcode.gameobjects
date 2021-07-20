@@ -2,14 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using MLAPI.Configuration;
-using MLAPI.Messaging;
 using MLAPI.NetworkVariable;
 using MLAPI.Serialization;
 using MLAPI.Serialization.Pooled;
 using MLAPI.Timing;
 using MLAPI.Transports;
 using UnityEngine;
-using UnityEngine.UIElements;
 
 namespace MLAPI
 {
@@ -276,8 +274,19 @@ namespace MLAPI
         private NetworkManager m_NetworkManager = NetworkManager.Singleton;
         private Snapshot m_Snapshot = new Snapshot(NetworkManager.Singleton, false);
         private Dictionary<ulong, Snapshot> m_ClientReceivedSnapshot = new Dictionary<ulong, Snapshot>();
+        private Dictionary<ulong, ConnectionRtt> m_ClientRtts = new Dictionary<ulong, ConnectionRtt>();
 
         private int m_CurrentTick = NetworkTickSystem.NoTick;
+
+        internal ConnectionRtt GetConnectionRtt(ulong clientId)
+        {
+            if (!m_ClientRtts.ContainsKey(clientId))
+            {
+                m_ClientRtts.Add(clientId, new ConnectionRtt());
+            }
+
+            return m_ClientRtts[clientId];
+        }
 
         /// <summary>
         /// Constructor
