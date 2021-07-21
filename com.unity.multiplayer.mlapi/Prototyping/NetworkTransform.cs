@@ -68,6 +68,7 @@ namespace MLAPI.Prototyping
         [SerializeField, Range(0, 120), Tooltip("The base amount of sends per seconds to use when range is disabled")]
         public float FixedSendsPerSecond = 30f;
 
+        private Transform m_Transform; // cache the transform component to reduce unnecessary bounce between managed and native
         private readonly NetworkVariable<NetworkState> m_NetworkState = new NetworkVariable<NetworkState>(new NetworkState());
 
         /// <summary>
@@ -87,15 +88,15 @@ namespace MLAPI.Prototyping
                 isDirty |= m_NetworkState.Value.InLocalSpace != InLocalSpace;
                 if (InLocalSpace)
                 {
-                    isDirty |= m_NetworkState.Value.Position != transform.localPosition;
-                    isDirty |= m_NetworkState.Value.Rotation != transform.localRotation;
-                    isDirty |= m_NetworkState.Value.Scale != transform.localScale;
+                    isDirty |= m_NetworkState.Value.Position != m_Transform.localPosition;
+                    isDirty |= m_NetworkState.Value.Rotation != m_Transform.localRotation;
+                    isDirty |= m_NetworkState.Value.Scale != m_Transform.localScale;
                 }
                 else
                 {
-                    isDirty |= m_NetworkState.Value.Position != transform.position;
-                    isDirty |= m_NetworkState.Value.Rotation != transform.rotation;
-                    isDirty |= m_NetworkState.Value.Scale != transform.lossyScale;
+                    isDirty |= m_NetworkState.Value.Position != m_Transform.position;
+                    isDirty |= m_NetworkState.Value.Rotation != m_Transform.rotation;
+                    isDirty |= m_NetworkState.Value.Scale != m_Transform.lossyScale;
                 }
 
                 return isDirty;
@@ -107,15 +108,15 @@ namespace MLAPI.Prototyping
             m_NetworkState.Value.InLocalSpace = InLocalSpace;
             if (InLocalSpace)
             {
-                m_NetworkState.Value.Position = transform.localPosition;
-                m_NetworkState.Value.Rotation = transform.localRotation;
-                m_NetworkState.Value.Scale = transform.localScale;
+                m_NetworkState.Value.Position = m_Transform.localPosition;
+                m_NetworkState.Value.Rotation = m_Transform.localRotation;
+                m_NetworkState.Value.Scale = m_Transform.localScale;
             }
             else
             {
-                m_NetworkState.Value.Position = transform.position;
-                m_NetworkState.Value.Rotation = transform.rotation;
-                m_NetworkState.Value.Scale = transform.lossyScale;
+                m_NetworkState.Value.Position = m_Transform.position;
+                m_NetworkState.Value.Rotation = m_Transform.rotation;
+                m_NetworkState.Value.Scale = m_Transform.lossyScale;
             }
 
             m_NetworkState.SetDirty(true);
@@ -126,18 +127,17 @@ namespace MLAPI.Prototyping
             InLocalSpace = netState.InLocalSpace;
             if (InLocalSpace)
             {
-                transform.localPosition = netState.Position;
-                transform.localRotation = netState.Rotation;
-                transform.localScale = netState.Scale;
+                m_Transform.localPosition = netState.Position;
+                m_Transform.localRotation = netState.Rotation;
+                m_Transform.localScale = netState.Scale;
             }
             else
             {
-                transform.position = netState.Position;
-                transform.rotation = netState.Rotation;
-                // transform.lossyScale = netState.Scale;
-                transform.localScale = Vector3.one;
-                var lossyScale = transform.lossyScale;
-                transform.localScale = new Vector3(netState.Scale.x / lossyScale.x, netState.Scale.y / lossyScale.y, netState.Scale.z / lossyScale.z);
+                m_Transform.position = netState.Position;
+                m_Transform.rotation = netState.Rotation;
+                m_Transform.localScale = Vector3.one;
+                var lossyScale = m_Transform.lossyScale;
+                m_Transform.localScale = new Vector3(netState.Scale.x / lossyScale.x, netState.Scale.y / lossyScale.y, netState.Scale.z / lossyScale.z);
             }
         }
 
@@ -145,7 +145,7 @@ namespace MLAPI.Prototyping
         {
             if (!NetworkObject.IsSpawned)
             {
-                // todo should never happen but yet it does! maybe revisit/dig after NetVar updates and snapshot system lands?
+                // todo MTT-849 should never happen but yet it does! maybe revisit/dig after NetVar updates and snapshot system lands?
                 return;
             }
 
@@ -163,6 +163,7 @@ namespace MLAPI.Prototyping
             switch (Authority)
             {
                 default:
+                    throw new NotImplementedException($"Authority: {Authority} is not handled");
                 case NetworkAuthority.Server:
                     m_NetworkState.Settings.WritePermission = NetworkVariablePermission.ServerOnly;
                     break;
@@ -177,6 +178,8 @@ namespace MLAPI.Prototyping
 
         private void Awake()
         {
+            m_Transform = transform;
+
             UpdateNetVarPerms();
 
             m_NetworkState.Settings.SendNetworkChannel = Channel;
