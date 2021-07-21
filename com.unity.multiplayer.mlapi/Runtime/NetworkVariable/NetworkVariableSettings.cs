@@ -34,7 +34,7 @@ namespace MLAPI.NetworkVariable
         /// A value of 0 will cause the variable to sync as soon as possible after being changed.
         /// A value of less than 0 will cause the variable to sync only at once at spawn and not update again.
         /// </summary>
-        public float SendTickrate = 0;
+        public double SendTickrate = 0;
 
         /// <summary>
         /// The name of the channel to use for this variable.

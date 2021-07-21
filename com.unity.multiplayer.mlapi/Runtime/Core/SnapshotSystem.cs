@@ -5,6 +5,7 @@ using MLAPI.Configuration;
 using MLAPI.NetworkVariable;
 using MLAPI.Serialization;
 using MLAPI.Serialization.Pooled;
+using MLAPI.Timing;
 using MLAPI.Transports;
 using UnityEngine;
 
@@ -18,7 +19,7 @@ namespace MLAPI
         public ulong NetworkObjectId; // the NetworkObjectId of the owning GameObject
         public ushort BehaviourIndex; // the index of the behaviour in this GameObject
         public ushort VariableIndex; // the index of the variable in this NetworkBehaviour
-        public ushort TickWritten; // the network tick at which this variable was set
+        public int TickWritten; // the network tick at which this variable was set
     }
 
     // Index for a NetworkVariable in our table of variables
@@ -128,7 +129,7 @@ namespace MLAPI
             writer.WriteUInt64(entry.Key.NetworkObjectId);
             writer.WriteUInt16(entry.Key.BehaviourIndex);
             writer.WriteUInt16(entry.Key.VariableIndex);
-            writer.WriteUInt16(entry.Key.TickWritten);
+            writer.WriteInt32Packed(entry.Key.TickWritten);
             writer.WriteUInt16(entry.Position);
             writer.WriteUInt16(entry.Length);
         }
@@ -144,7 +145,7 @@ namespace MLAPI
             entry.Key.NetworkObjectId = reader.ReadUInt64();
             entry.Key.BehaviourIndex = reader.ReadUInt16();
             entry.Key.VariableIndex = reader.ReadUInt16();
-            entry.Key.TickWritten = reader.ReadUInt16();
+            entry.Key.TickWritten = reader.ReadInt32Packed();
             entry.Position = reader.ReadUInt16();
             entry.Length = reader.ReadUInt16();
             entry.Fresh = false;
@@ -275,7 +276,7 @@ namespace MLAPI
         private Dictionary<ulong, Snapshot> m_ClientReceivedSnapshot = new Dictionary<ulong, Snapshot>();
         private Dictionary<ulong, ConnectionRtt> m_ClientRtts = new Dictionary<ulong, ConnectionRtt>();
 
-        private ushort m_CurrentTick = 0;
+        private int m_CurrentTick = NetworkTickSystem.NoTick;
 
         internal ConnectionRtt GetConnectionRtt(ulong clientId)
         {
@@ -314,7 +315,7 @@ namespace MLAPI
 
             if (updateStage == NetworkUpdateStage.EarlyUpdate)
             {
-                var tick = m_NetworkManager.NetworkTickSystem.GetTick();
+                var tick = m_NetworkManager.NetworkTickSystem.LocalTime.Tick;
 
                 if (tick != m_CurrentTick)
                 {
@@ -362,7 +363,7 @@ namespace MLAPI
             {
                 using (var writer = PooledNetworkWriter.Get(buffer))
                 {
-                    writer.WriteUInt16(m_CurrentTick);
+                    writer.WriteInt32Packed(m_CurrentTick);
                 }
 
                 WriteIndex(buffer);
@@ -419,7 +420,7 @@ namespace MLAPI
             k.NetworkObjectId = networkObjectId;
             k.BehaviourIndex = (ushort)behaviourIndex;
             k.VariableIndex = (ushort)variableIndex;
-            k.TickWritten = m_NetworkManager.NetworkTickSystem.GetTick();
+            k.TickWritten = m_NetworkManager.NetworkTickSystem.LocalTime.Tick;
 
             int pos = m_Snapshot.Find(k);
             if (pos == Entry.NotFound)
@@ -456,11 +457,11 @@ namespace MLAPI
         /// <param name="snapshotStream">The stream to read from</param>
         public void ReadSnapshot(ulong clientId, Stream snapshotStream)
         {
-            ushort snapshotTick = default;
+            int snapshotTick = default;
 
             using (var reader = PooledNetworkReader.Get(snapshotStream))
             {
-                snapshotTick = reader.ReadUInt16();
+                snapshotTick = reader.ReadInt32Packed();
 
                 if (!m_ClientReceivedSnapshot.ContainsKey(clientId))
                 {
@@ -482,18 +483,18 @@ namespace MLAPI
         {
             using (var reader = PooledNetworkReader.Get(snapshotStream))
             {
-                var ackTick = reader.ReadUInt16();
+                var ackTick = reader.ReadInt32Packed();
                 //Debug.Log(string.Format("Receive ack {0} from client {1}", ackTick, clientId));
             }
         }
 
-        public void SendAck(ulong clientId, ushort tick)
+        public void SendAck(ulong clientId, int tick)
         {
             using (var buffer = PooledNetworkBuffer.Get())
             {
                 using (var writer = PooledNetworkWriter.Get(buffer))
                 {
-                    writer.WriteUInt16(tick);
+                    writer.WriteInt32Packed(tick);
                 }
 
                 m_NetworkManager.MessageSender.Send(clientId, NetworkConstants.SNAPSHOT_ACK,

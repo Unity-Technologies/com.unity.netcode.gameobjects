@@ -31,7 +31,6 @@ namespace MLAPI.RuntimeTests
         ///    for each, update netvar
         ///    for each check value changed
         ///    check that all network variables are no longer dirty after update
-        ///    test execute network behaviour more than once per tick (should not execute)
         /// </summary>
         /// <param name="nbClients"></param>
         /// <param name="useHost"></param>
@@ -119,9 +118,6 @@ namespace MLAPI.RuntimeTests
                 Assert.That(netVar.IsDirty, Is.True);
             }
 
-            // reset CurrentTick to zero so we can call NetworkBehaviourUpdate here, else since it's called during previous wait, we can never call it
-            // manually (as it would be calling it twice per frame)
-            m_ServerNetworkManager.BehaviourUpdater.CurrentTick = 0;
             m_ServerNetworkManager.BehaviourUpdater.NetworkBehaviourUpdate(m_ServerNetworkManager);
 
             // make sure we're not dirty anymore and that clients will receive that new value
@@ -154,14 +150,6 @@ namespace MLAPI.RuntimeTests
                     }
                 }
                 Assert.That(nbVarsCheckedClientSide, Is.EqualTo(m_ClientNetworkManagers.Length > 0 ? serverNetVarCount : 0));
-            }
-
-            if (serverNetVarCount > 0 && nbClients > 0) // check for nb clients, this is a useless test if not clients, netvars remain dirty always
-            {
-                m_ServerNetworkManager.BehaviourUpdater.NetworkBehaviourUpdate(m_ServerNetworkManager);
-                serverNetVarsToUpdate[0].Value = -1;
-                m_ServerNetworkManager.BehaviourUpdater.NetworkBehaviourUpdate(m_ServerNetworkManager);
-                Assert.That(serverNetVarsToUpdate[0].IsDirty, Is.True); // check that network behaviour updater can only be called once per frame
             }
         }
     }
