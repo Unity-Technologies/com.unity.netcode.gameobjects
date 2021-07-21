@@ -108,7 +108,7 @@ namespace TestProject.ManualTests
 
         private void ValueChanged(int before, int after)
         {
-            if (!IsOwner && !IsServer && m_TestVar.Value == k_EndValue)
+            if (!IsOwner && !IsServer && m_TestVar.Value >= k_EndValue)
             {
                 // Let's be reasonable and allow a 5 tick difference
                 // that could be due to timing difference, lag, queueing
@@ -139,7 +139,7 @@ namespace TestProject.ManualTests
                 }
             }
 
-            if (m_TestVar.Value == k_EndValue)
+            if (m_TestVar.Value >= k_EndValue)
             {
                 enabled = false;
             }
