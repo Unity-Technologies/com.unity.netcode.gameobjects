@@ -214,11 +214,14 @@ namespace MLAPI.Prototyping
             {
                 UpdateNetworkState();
             }
-            else if (IsNetworkStateDirty(m_PrevNetworkState))
+            else
             {
-                ApplyNetworkState(m_NetworkState.Value);
+                if (IsNetworkStateDirty(m_PrevNetworkState))
+                {
+                    Debug.LogWarning("A local change without authority detected, revert back to latest network state!");
+                }
 
-                Debug.LogWarning("A local change without authority detected, revert back to latest network state!");
+                ApplyNetworkState(m_NetworkState.Value);
             }
         }
 
