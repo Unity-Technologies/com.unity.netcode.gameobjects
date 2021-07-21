@@ -224,7 +224,7 @@ namespace MLAPI
         /// </summary>
         public string ConnectedHostname { get; private set; }
 
-        public INetworkMetrics NetworkMetrics { get; private set; }
+        internal INetworkMetrics NetworkMetrics { get; private set; }
 
         internal static event Action OnSingletonReady;
 
@@ -350,19 +350,6 @@ namespace MLAPI
             BufferManager = new BufferManager(this);
 
             SceneManager = new NetworkSceneManager(this);
-
-            m_RpcBatcher = new RpcBatcher(this);
-
-            if (MessageHandler == null)
-            {
-                IInternalMessageHandler messageHandler = new InternalMessageHandler(this);
-
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-                messageHandler = new InternalMessageHandlerProfilingDecorator(messageHandler);
-#endif
-                // Only create this if it's not already set (like in test cases)
-                MessageHandler = messageHandler;
-            }
 
             // Only create this if it's not already set (like in test cases)
             MessageHandler ??= CreateMessageHandler();
@@ -1153,7 +1140,7 @@ namespace MLAPI
         }
 
         private readonly NetworkBuffer m_InputBufferWrapper = new NetworkBuffer(new byte[0]);
-        private RpcBatcher m_RpcBatcher;
+        private readonly RpcBatcher m_RpcBatcher = new RpcBatcher();
 
         internal void HandleIncomingData(ulong clientId, NetworkChannel networkChannel, ArraySegment<byte> data, float receiveTime, bool allowBuffer)
         {

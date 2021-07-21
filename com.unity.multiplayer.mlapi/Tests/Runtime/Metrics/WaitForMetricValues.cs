@@ -10,10 +10,12 @@ namespace MLAPI.RuntimeTests.Metrics
 {
     public class WaitForMetricValues<TMetric> : IMetricObserver
     {
-        private readonly string m_MetricName;
-        private bool m_Found = false;
-        private uint m_NbFrames = 0;
-        private IReadOnlyCollection<TMetric> m_Values;
+        readonly string m_MetricName;
+        bool m_Found;
+        bool m_HasError;
+        string m_Error;
+        uint m_NbFrames = 0;
+        IReadOnlyCollection<TMetric> m_Values;
 
         public WaitForMetricValues(IMetricDispatcher dispatcher, string metricName)
         {
@@ -22,18 +24,18 @@ namespace MLAPI.RuntimeTests.Metrics
             dispatcher.RegisterObserver(this);
         }
 
-        public IEnumerator WaitForMetricsDispatch()
+        public IEnumerator WaitForMetricsReceived()
         {
-            yield return Wait(2);
+            yield return WaitForFrames(60);
         }
 
-        public IEnumerator WaitForAFewFrames()
+        public IReadOnlyCollection<TMetric> AssertMetricValuesHaveBeenFound() 
         {
-            yield return Wait(20);
-        }
+            if (m_HasError)
+            {
+                Assert.Fail(m_Error);
+            }
 
-        public IReadOnlyCollection<TMetric> EnsureMetricValuesHaveBeenFound()
-        {
             if (!m_Found)
             {
                 Assert.Fail($"Found no matching values for metric of type '{typeof(TMetric).Name}', with name '{m_MetricName}' during '{m_NbFrames}' frames.");
@@ -44,16 +46,28 @@ namespace MLAPI.RuntimeTests.Metrics
 
         public void Observe(MetricCollection collection)
         {
-            if (m_Found)
+            if (m_Found || m_HasError)
             {
                 return;
             }
 
             var metric = collection.Metrics.SingleOrDefault(x => x.Name == m_MetricName);
-            Assert.NotNull(metric);
+            if (metric == default)
+            {
+                m_HasError = true;
+                m_Error = $"Metric collection does not contain metric named '{m_MetricName}'.";
+
+                return;
+            }
 
             var typedMetric = metric as IEventMetric<TMetric>;
-            Assert.NotNull(typedMetric);
+            if (typedMetric == default)
+            {
+                m_HasError = true;
+                m_Error = $"Metric collection contains a metric of type '{metric.GetType().Name}' for name '{m_MetricName}', but was expecting '{typeof(TMetric).Name}'.";
+
+                return;
+            }
 
             if (typedMetric.Values.Any())
             {
@@ -62,7 +76,7 @@ namespace MLAPI.RuntimeTests.Metrics
             }
         }
 
-        public IEnumerator Wait(uint maxNbFrames)
+        private IEnumerator WaitForFrames(uint maxNbFrames)
         {
             while (!m_Found && m_NbFrames < maxNbFrames)
             {
