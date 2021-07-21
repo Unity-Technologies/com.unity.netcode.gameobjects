@@ -721,7 +721,8 @@ namespace MLAPI.SceneManagement
             if (sceneName != activeScene.name)
             {
                 // NSS TODO: Add to proposal's MTT discussion topics: Should we cover switching the active scene for V1.0.0?
-                var sceneLoad = SceneManager.LoadSceneAsync(sceneName, sceneIndex == SceneEventData.SceneIndex ? SceneEventData.LoadSceneMode : LoadSceneMode.Additive);
+                var loadSceneMode = sceneIndex == SceneEventData.SceneIndex ? SceneEventData.LoadSceneMode : LoadSceneMode.Additive;
+                var sceneLoad = SceneManager.LoadSceneAsync(sceneName, loadSceneMode);
                 sceneLoad.completed += asyncOp2 => ClientLoadedSynchronization(sceneName, sceneIndex);
             }
             else

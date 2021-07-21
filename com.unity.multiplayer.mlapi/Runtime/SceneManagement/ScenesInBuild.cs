@@ -16,6 +16,8 @@ namespace MLAPI
         [SerializeField]
         internal List<string> Scenes;
 
+
+
 #if UNITY_EDITOR
         internal static ScenesInBuild InitializeScenesInBuild(NetworkManager networkManager)
         {
@@ -65,7 +67,10 @@ namespace MLAPI
 
         private void OnValidate()
         {
-            PopulateScenesInBuild();
+            if (!EditorApplication.isPlayingOrWillChangePlaymode && !EditorApplication.isPlaying)
+            {
+                PopulateScenesInBuild();
+            }
         }
 #endif
     }

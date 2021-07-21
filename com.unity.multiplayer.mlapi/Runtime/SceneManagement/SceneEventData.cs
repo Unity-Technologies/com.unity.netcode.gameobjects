@@ -343,6 +343,16 @@ namespace MLAPI.SceneManagement
                         if (m_NetworkManager.PrefabHandler.ContainsHandler(networkObject))
                         {
                             Debug.Log($"NetworkObjectId {networkObjectId} marked as not spawned and is being destroyed via prefab handler.");
+                            // Since this is the client side and we have missed the delete message, until the Snapshot system is in place for spawn and despawn handling
+                            // we have to remove this from the list of spawned objects manually
+                            if(m_NetworkManager.SpawnManager.SpawnedObjects.ContainsKey(networkObjectId))
+                            {
+                                m_NetworkManager.SpawnManager.SpawnedObjects.Remove(networkObjectId);
+                            }
+                            if(m_NetworkManager.SpawnManager.SpawnedObjectsList.Contains(networkObject))
+                            {
+                                m_NetworkManager.SpawnManager.SpawnedObjectsList.Remove(networkObject);
+                            }
                             NetworkManager.Singleton.PrefabHandler.HandleNetworkPrefabDestroy(networkObject);
                         }
                         else
