@@ -185,13 +185,13 @@ namespace MLAPI.SceneManagement
                     new[] {NetworkManager.Singleton.ServerClientId}, NetworkUpdateLoop.UpdateStage);
                 if (context != null)
                 {
-                    using (var icontext = (InternalCommandContext) context)
+                    using (var nonNullContext = (InternalCommandContext) context)
                     {
                         var doneClientIds = switchSceneProgress.DoneClients.ToArray();
                         var timedOutClientIds = m_NetworkManager.ConnectedClients.Keys.Except(doneClientIds).ToArray();
 
-                        icontext.NetworkWriter.WriteULongArray(doneClientIds, doneClientIds.Length);
-                        icontext.NetworkWriter.WriteULongArray(timedOutClientIds, timedOutClientIds.Length);
+                        nonNullContext.NetworkWriter.WriteULongArray(doneClientIds, doneClientIds.Length);
+                        nonNullContext.NetworkWriter.WriteULongArray(timedOutClientIds, timedOutClientIds.Length);
                     }
                 }
             };
@@ -270,9 +270,9 @@ namespace MLAPI.SceneManagement
                 new[] {m_NetworkManager.ServerClientId}, NetworkUpdateLoop.UpdateStage);
             if (context != null)
             {
-                using (var icontext = (InternalCommandContext) context)
+                using (var nonNullContext = (InternalCommandContext) context)
                 {
-                    icontext.NetworkWriter.WriteByteArray(switchSceneGuid.ToByteArray());
+                    nonNullContext.NetworkWriter.WriteByteArray(switchSceneGuid.ToByteArray());
                 }
             }
 
@@ -359,10 +359,10 @@ namespace MLAPI.SceneManagement
                         new[] {m_NetworkManager.ConnectedClientsList[j].ClientId}, NetworkUpdateLoop.UpdateStage);
                     if (context != null)
                     {
-                        using (var icontext = (InternalCommandContext)context)
+                        using (var nonNullContext = (InternalCommandContext)context)
                         {
-                            icontext.NetworkWriter.WriteUInt32Packed(CurrentActiveSceneIndex);
-                            icontext.NetworkWriter.WriteByteArray(switchSceneGuid.ToByteArray());
+                            nonNullContext.NetworkWriter.WriteUInt32Packed(CurrentActiveSceneIndex);
+                            nonNullContext.NetworkWriter.WriteByteArray(switchSceneGuid.ToByteArray());
 
                             uint sceneObjectsToSpawn = 0;
 
@@ -375,12 +375,12 @@ namespace MLAPI.SceneManagement
                             }
 
                             // Write number of scene objects to spawn
-                            icontext.NetworkWriter.WriteUInt32Packed(sceneObjectsToSpawn);
+                            nonNullContext.NetworkWriter.WriteUInt32Packed(sceneObjectsToSpawn);
                             foreach (var keyValuePair in ScenePlacedObjects)
                             {
                                 if (keyValuePair.Value.Observers.Contains(m_NetworkManager.ConnectedClientsList[j].ClientId))
                                 {
-                                    keyValuePair.Value.SerializeSceneObject(icontext.NetworkWriter, m_NetworkManager.ConnectedClientsList[j].ClientId);
+                                    keyValuePair.Value.SerializeSceneObject(nonNullContext.NetworkWriter, m_NetworkManager.ConnectedClientsList[j].ClientId);
                                 }
                             }
                         }
@@ -418,9 +418,9 @@ namespace MLAPI.SceneManagement
                 new[] {m_NetworkManager.ServerClientId}, NetworkUpdateLoop.UpdateStage);
             if (context != null)
             {
-                using (var icontext = (InternalCommandContext) context)
+                using (var nonNullContext = (InternalCommandContext) context)
                 {
-                    icontext.NetworkWriter.WriteByteArray(switchSceneGuid.ToByteArray());
+                    nonNullContext.NetworkWriter.WriteByteArray(switchSceneGuid.ToByteArray());
                 }
             }
 

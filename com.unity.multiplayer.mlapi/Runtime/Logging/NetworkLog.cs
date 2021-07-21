@@ -65,10 +65,10 @@ namespace MLAPI.Logging
                     new[] {NetworkManager.Singleton.ServerClientId}, NetworkUpdateLoop.UpdateStage);
                 if (context != null)
                 {
-                    using (var icontext = (InternalCommandContext) context)
+                    using (var nonNullContext = (InternalCommandContext) context)
                     {
-                        icontext.NetworkWriter.WriteByte((byte) logType);
-                        icontext.NetworkWriter.WriteStringPacked(message);
+                        nonNullContext.NetworkWriter.WriteByte((byte) logType);
+                        nonNullContext.NetworkWriter.WriteStringPacked(message);
                     }
                 }
             }

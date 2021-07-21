@@ -115,10 +115,10 @@ namespace MLAPI.Spawning
                 NetworkManager.ConnectedClientsIds, NetworkUpdateLoop.UpdateStage);
             if (context != null)
             {
-                using (var icontext = (InternalCommandContext) context)
+                using (var nonNullContext = (InternalCommandContext) context)
                 {
-                    icontext.NetworkWriter.WriteUInt64Packed(networkObject.NetworkObjectId);
-                    icontext.NetworkWriter.WriteUInt64Packed(networkObject.OwnerClientId);
+                    nonNullContext.NetworkWriter.WriteUInt64Packed(networkObject.NetworkObjectId);
+                    nonNullContext.NetworkWriter.WriteUInt64Packed(networkObject.OwnerClientId);
                 }
             }
         }
@@ -157,10 +157,10 @@ namespace MLAPI.Spawning
                 clientIds, NetworkUpdateLoop.UpdateStage);
             if (context != null)
             {
-                using (var icontext = (InternalCommandContext) context)
+                using (var nonNullContext = (InternalCommandContext) context)
                 {
-                    icontext.NetworkWriter.WriteUInt64Packed(networkObject.NetworkObjectId);
-                    icontext.NetworkWriter.WriteUInt64Packed(clientId);
+                    nonNullContext.NetworkWriter.WriteUInt64Packed(networkObject.NetworkObjectId);
+                    nonNullContext.NetworkWriter.WriteUInt64Packed(clientId);
                 }
             }
         }
@@ -385,9 +385,9 @@ namespace MLAPI.Spawning
                 clientIds, NetworkUpdateLoop.UpdateStage);
             if (context != null)
             {
-                using (var icontext = (InternalCommandContext) context)
+                using (var nonNullContext = (InternalCommandContext) context)
                 {
-                    WriteSpawnCallForObject(icontext.NetworkWriter, clientId, networkObject, payload);
+                    WriteSpawnCallForObject(nonNullContext.NetworkWriter, clientId, networkObject, payload);
                 }
             }
         }
@@ -664,9 +664,9 @@ namespace MLAPI.Spawning
                                 clientIds, NetworkUpdateLoop.UpdateStage);
                             if (context != null)
                             {
-                                using (var icontext = (InternalCommandContext) context)
+                                using (var nonNullContext = (InternalCommandContext) context)
                                 {
-                                    icontext.NetworkWriter.WriteUInt64Packed(networkObject.NetworkObjectId);
+                                    nonNullContext.NetworkWriter.WriteUInt64Packed(networkObject.NetworkObjectId);
                                 }
                             }
                         }

@@ -589,9 +589,9 @@ namespace MLAPI
                                     new[] {clientId}, NetworkUpdateLoop.UpdateStage);
                                 if (context != null)
                                 {
-                                    using (var icontext = (InternalCommandContext)context)
+                                    using (var nonNullContext = (InternalCommandContext)context)
                                     {
-                                        icontext.NetworkWriter.WriteBytes(buffer.GetBuffer(), buffer.Length);
+                                        nonNullContext.NetworkWriter.WriteBytes(buffer.GetBuffer(), buffer.Length);
                                     }
                                 }
                             }

@@ -1050,13 +1050,13 @@ namespace MLAPI
                 clientIds, NetworkUpdateStage.EarlyUpdate);
             if (context != null)
             {
-                using (var icontext = (InternalCommandContext) context)
+                using (var nonNullContext = (InternalCommandContext) context)
                 {
-                    icontext.NetworkWriter.WriteUInt64Packed(NetworkConfig.GetConfig());
+                    nonNullContext.NetworkWriter.WriteUInt64Packed(NetworkConfig.GetConfig());
 
                     if (NetworkConfig.ConnectionApproval)
                     {
-                        icontext.NetworkWriter.WriteByteArray(NetworkConfig.ConnectionData);
+                        nonNullContext.NetworkWriter.WriteByteArray(NetworkConfig.ConnectionData);
                     }
                 }
             }
@@ -1406,9 +1406,9 @@ namespace MLAPI
                 clientIds, NetworkUpdateStage.EarlyUpdate);
             if (context != null)
             {
-                using (var icontext = (InternalCommandContext) context)
+                using (var nonNullContext = (InternalCommandContext) context)
                 {
-                    icontext.NetworkWriter.WriteSinglePacked(Time.realtimeSinceStartup);
+                    nonNullContext.NetworkWriter.WriteSinglePacked(Time.realtimeSinceStartup);
                 }
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
@@ -1465,23 +1465,23 @@ namespace MLAPI
 
                     if (context != null)
                     {
-                        using (var icontext = (InternalCommandContext) context)
+                        using (var nonNullContext = (InternalCommandContext) context)
                         {
-                            icontext.NetworkWriter.WriteUInt64Packed(ownerClientId);
+                            nonNullContext.NetworkWriter.WriteUInt64Packed(ownerClientId);
 
                             if (NetworkConfig.EnableSceneManagement)
                             {
-                                icontext.NetworkWriter.WriteUInt32Packed(NetworkSceneManager.CurrentSceneIndex);
-                                icontext.NetworkWriter.WriteByteArray(NetworkSceneManager.CurrentSceneSwitchProgressGuid
+                                nonNullContext.NetworkWriter.WriteUInt32Packed(NetworkSceneManager.CurrentSceneIndex);
+                                nonNullContext.NetworkWriter.WriteByteArray(NetworkSceneManager.CurrentSceneSwitchProgressGuid
                                     .ToByteArray());
                             }
 
-                            icontext.NetworkWriter.WriteSinglePacked(Time.realtimeSinceStartup);
-                            icontext.NetworkWriter.WriteUInt32Packed((uint) m_ObservedObjects.Count);
+                            nonNullContext.NetworkWriter.WriteSinglePacked(Time.realtimeSinceStartup);
+                            nonNullContext.NetworkWriter.WriteUInt32Packed((uint) m_ObservedObjects.Count);
 
                             for (int i = 0; i < m_ObservedObjects.Count; i++)
                             {
-                                m_ObservedObjects[i].SerializeSceneObject(icontext.NetworkWriter, ownerClientId);
+                                m_ObservedObjects[i].SerializeSceneObject(nonNullContext.NetworkWriter, ownerClientId);
                             }
                         }
                     }
@@ -1510,41 +1510,41 @@ namespace MLAPI
                         new[] {clientPair.Key}, NetworkUpdateLoop.UpdateStage);
                     if (context != null)
                     {
-                        using (var icontext = (InternalCommandContext)context)
+                        using (var nonNullContext = (InternalCommandContext)context)
                         {
-                            icontext.NetworkWriter.WriteBool(true);
-                            icontext.NetworkWriter.WriteUInt64Packed(ConnectedClients[ownerClientId].PlayerObject.NetworkObjectId);
-                            icontext.NetworkWriter.WriteUInt64Packed(ownerClientId);
+                            nonNullContext.NetworkWriter.WriteBool(true);
+                            nonNullContext.NetworkWriter.WriteUInt64Packed(ConnectedClients[ownerClientId].PlayerObject.NetworkObjectId);
+                            nonNullContext.NetworkWriter.WriteUInt64Packed(ownerClientId);
 
                             //Does not have a parent
-                            icontext.NetworkWriter.WriteBool(false);
+                            nonNullContext.NetworkWriter.WriteBool(false);
 
                             // This is not a scene object
-                            icontext.NetworkWriter.WriteBool(false);
+                            nonNullContext.NetworkWriter.WriteBool(false);
 
-                            icontext.NetworkWriter.WriteUInt32Packed(playerPrefabHash ?? NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash);
+                            nonNullContext.NetworkWriter.WriteUInt32Packed(playerPrefabHash ?? NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash);
 
                             if (ConnectedClients[ownerClientId].PlayerObject.IncludeTransformWhenSpawning == null || ConnectedClients[ownerClientId].PlayerObject.IncludeTransformWhenSpawning(ownerClientId))
                             {
-                                icontext.NetworkWriter.WriteBool(true);
-                                icontext.NetworkWriter.WriteSinglePacked(ConnectedClients[ownerClientId].PlayerObject.transform.position.x);
-                                icontext.NetworkWriter.WriteSinglePacked(ConnectedClients[ownerClientId].PlayerObject.transform.position.y);
-                                icontext.NetworkWriter.WriteSinglePacked(ConnectedClients[ownerClientId].PlayerObject.transform.position.z);
+                                nonNullContext.NetworkWriter.WriteBool(true);
+                                nonNullContext.NetworkWriter.WriteSinglePacked(ConnectedClients[ownerClientId].PlayerObject.transform.position.x);
+                                nonNullContext.NetworkWriter.WriteSinglePacked(ConnectedClients[ownerClientId].PlayerObject.transform.position.y);
+                                nonNullContext.NetworkWriter.WriteSinglePacked(ConnectedClients[ownerClientId].PlayerObject.transform.position.z);
 
-                                icontext.NetworkWriter.WriteSinglePacked(ConnectedClients[ownerClientId].PlayerObject.transform.rotation.eulerAngles.x);
-                                icontext.NetworkWriter.WriteSinglePacked(ConnectedClients[ownerClientId].PlayerObject.transform.rotation.eulerAngles.y);
-                                icontext.NetworkWriter.WriteSinglePacked(ConnectedClients[ownerClientId].PlayerObject.transform.rotation.eulerAngles.z);
+                                nonNullContext.NetworkWriter.WriteSinglePacked(ConnectedClients[ownerClientId].PlayerObject.transform.rotation.eulerAngles.x);
+                                nonNullContext.NetworkWriter.WriteSinglePacked(ConnectedClients[ownerClientId].PlayerObject.transform.rotation.eulerAngles.y);
+                                nonNullContext.NetworkWriter.WriteSinglePacked(ConnectedClients[ownerClientId].PlayerObject.transform.rotation.eulerAngles.z);
                             }
                             else
                             {
-                                icontext.NetworkWriter.WriteBool(false);
+                                nonNullContext.NetworkWriter.WriteBool(false);
                             }
 
-                            icontext.NetworkWriter.WriteBool(false); //No payload data
+                            nonNullContext.NetworkWriter.WriteBool(false); //No payload data
 
                             if (NetworkConfig.EnableNetworkVariable)
                             {
-                                ConnectedClients[ownerClientId].PlayerObject.WriteNetworkVariableData(icontext.NetworkWriter.GetStream(), clientPair.Key);
+                                ConnectedClients[ownerClientId].PlayerObject.WriteNetworkVariableData(nonNullContext.NetworkWriter.GetStream(), clientPair.Key);
                             }
                         }
                     }

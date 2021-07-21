@@ -190,9 +190,9 @@ namespace MLAPI
 
             if (context != null)
             {
-                using (var icontext = (InternalCommandContext) context)
+                using (var nonNullContext = (InternalCommandContext) context)
                 {
-                    var buffer = (NetworkBuffer)icontext.NetworkWriter.GetStream();
+                    var buffer = (NetworkBuffer)nonNullContext.NetworkWriter.GetStream();
                     WriteIndex(buffer);
                     WriteBuffer(buffer);
                 }

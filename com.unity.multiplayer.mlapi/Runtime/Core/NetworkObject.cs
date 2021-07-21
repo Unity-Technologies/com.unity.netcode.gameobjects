@@ -295,15 +295,15 @@ namespace MLAPI
 
             if (context != null)
             {
-                using (var icontext = (InternalCommandContext) context)
+                using (var nonNullContext = (InternalCommandContext) context)
                 {
-                    icontext.NetworkWriter.WriteUInt16Packed((ushort) networkObjects.Count);
+                    nonNullContext.NetworkWriter.WriteUInt16Packed((ushort) networkObjects.Count);
 
                     for (int i = 0; i < networkObjects.Count; i++)
                     {
                         networkObjects[i].Observers.Add(clientId);
 
-                        networkManager.SpawnManager.WriteSpawnCallForObject(icontext.NetworkWriter, clientId,
+                        networkManager.SpawnManager.WriteSpawnCallForObject(nonNullContext.NetworkWriter, clientId,
                             networkObjects[i], payload);
                     }
                 }
@@ -345,9 +345,9 @@ namespace MLAPI
                 new[] {clientId}, NetworkUpdateLoop.UpdateStage);
             if (context != null)
             {
-                using (var icontext = (InternalCommandContext) context)
+                using (var nonNullContext = (InternalCommandContext) context)
                 {
-                    icontext.NetworkWriter.WriteUInt64Packed(NetworkObjectId);
+                    nonNullContext.NetworkWriter.WriteUInt64Packed(NetworkObjectId);
                 }
             }
         }
@@ -400,16 +400,16 @@ namespace MLAPI
                 new[] {clientId}, NetworkUpdateLoop.UpdateStage);
             if (context != null)
             {
-                using (var icontext = (InternalCommandContext) context)
+                using (var nonNullContext = (InternalCommandContext) context)
                 {
-                    icontext.NetworkWriter.WriteUInt16Packed((ushort) networkObjects.Count);
+                    nonNullContext.NetworkWriter.WriteUInt16Packed((ushort) networkObjects.Count);
 
                     for (int i = 0; i < networkObjects.Count; i++)
                     {
                         // Send destroy call
                         networkObjects[i].Observers.Remove(clientId);
 
-                        icontext.NetworkWriter.WriteUInt64Packed(networkObjects[i].NetworkObjectId);
+                        nonNullContext.NetworkWriter.WriteUInt64Packed(networkObjects[i].NetworkObjectId);
                     }
                 }
             }
@@ -695,10 +695,10 @@ namespace MLAPI
 
             if (context != null)
             {
-                using (var icontext = (InternalCommandContext) context)
+                using (var nonNullContext = (InternalCommandContext) context)
                 {
-                    icontext.NetworkWriter.WriteUInt64Packed(NetworkObjectId);
-                    WriteNetworkParenting(icontext.NetworkWriter, m_IsReparented, m_LatestParent);
+                    nonNullContext.NetworkWriter.WriteUInt64Packed(NetworkObjectId);
+                    WriteNetworkParenting(nonNullContext.NetworkWriter, m_IsReparented, m_LatestParent);
                 }
             }
         }

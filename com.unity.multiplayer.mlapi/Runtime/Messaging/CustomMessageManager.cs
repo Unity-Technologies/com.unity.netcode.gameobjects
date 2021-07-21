@@ -60,9 +60,9 @@ namespace MLAPI.Messaging
                 clientIds.ToArray(), NetworkUpdateLoop.UpdateStage);
             if (context != null)
             {
-                using (var icontext = (InternalCommandContext) context)
+                using (var nonNullContext = (InternalCommandContext) context)
                 {
-                    icontext.NetworkWriter.WriteBytes(buffer.GetBuffer(), buffer.Length);
+                    nonNullContext.NetworkWriter.WriteBytes(buffer.GetBuffer(), buffer.Length);
                 }
             }
 
@@ -83,9 +83,9 @@ namespace MLAPI.Messaging
                 new[] {clientId}, NetworkUpdateLoop.UpdateStage);
             if (context != null)
             {
-                using (var icontext = (InternalCommandContext) context)
+                using (var nonNullContext = (InternalCommandContext) context)
                 {
-                    icontext.NetworkWriter.WriteBytes(buffer.GetBuffer(), buffer.Length);
+                    nonNullContext.NetworkWriter.WriteBytes(buffer.GetBuffer(), buffer.Length);
                 }
             }
         }
@@ -181,11 +181,11 @@ namespace MLAPI.Messaging
                 new[] {clientId}, NetworkUpdateLoop.UpdateStage);
             if (context != null)
             {
-                using (var icontext = (InternalCommandContext) context)
+                using (var nonNullContext = (InternalCommandContext) context)
                 {
-                    icontext.NetworkWriter.WriteUInt64Packed(hash);
+                    nonNullContext.NetworkWriter.WriteUInt64Packed(hash);
 
-                    stream.CopyTo(icontext.NetworkWriter.GetStream());
+                    stream.CopyTo(nonNullContext.NetworkWriter.GetStream());
                 }
             }
             PerformanceDataManager.Increment(ProfilerConstants.NamedMessageSent);
@@ -226,11 +226,11 @@ namespace MLAPI.Messaging
                 clientIds.ToArray(), NetworkUpdateLoop.UpdateStage);
             if (context != null)
             {
-                using (var icontext = (InternalCommandContext) context)
+                using (var nonNullContext = (InternalCommandContext) context)
                 {
-                    icontext.NetworkWriter.WriteUInt64Packed(hash);
+                    nonNullContext.NetworkWriter.WriteUInt64Packed(hash);
 
-                    stream.CopyTo(icontext.NetworkWriter.GetStream());
+                    stream.CopyTo(nonNullContext.NetworkWriter.GetStream());
                 }
             }
             PerformanceDataManager.Increment(ProfilerConstants.NamedMessageSent);
