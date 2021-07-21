@@ -434,7 +434,8 @@ namespace TestProject.ManualTests
             }
             else
             {
-                Debug.Log($"NetworkObject {networkObject.name}:{networkObject.NetworkObjectId} is not registered...");
+                Debug.Log($"NetworkObject {networkObject.name}:{networkObject.NetworkObjectId} is not registered and will be destroyed immediately");
+                Object.DestroyImmediate(networkObject.gameObject);
             }
         }
 
