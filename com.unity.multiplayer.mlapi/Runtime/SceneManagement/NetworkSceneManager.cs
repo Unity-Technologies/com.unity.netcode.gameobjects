@@ -294,7 +294,7 @@ namespace MLAPI.SceneManagement
             AsyncOperation sceneUnload = SceneManager.UnloadSceneAsync(sceneToUnload);
             sceneUnload.completed += (AsyncOperation asyncOp2) => { OnSceneUnloaded(sceneName); };
             switchSceneProgress.SetSceneLoadOperation(sceneUnload);
-            if(m_ScenesLoaded.Contains(sceneName))
+            if (m_ScenesLoaded.Contains(sceneName))
             {
                 m_ScenesLoaded.Remove(sceneName);
             }
@@ -416,7 +416,7 @@ namespace MLAPI.SceneManagement
             {
                 foreach (var additiveSceneName in m_ScenesLoaded)
                 {
-                    if(currentActiveScene.name != additiveSceneName)
+                    if (currentActiveScene.name != additiveSceneName)
                     {
                         SceneManager.UnloadSceneAsync(additiveSceneName);
                     }
@@ -427,7 +427,7 @@ namespace MLAPI.SceneManagement
             }
             else
             {
-                if(!m_ScenesLoaded.Contains(sceneName))
+                if (!m_ScenesLoaded.Contains(sceneName))
                 {
                     m_ScenesLoaded.Add(sceneName);
                 }
@@ -466,9 +466,9 @@ namespace MLAPI.SceneManagement
             var currentActiveScene = SceneManager.GetActiveScene();
             if (SceneEventData.LoadSceneMode == LoadSceneMode.Single)
             {
-                foreach(var loadedSceneName in m_ScenesLoaded)
+                foreach (var loadedSceneName in m_ScenesLoaded)
                 {
-                    if(currentActiveScene.name != loadedSceneName)
+                    if (currentActiveScene.name != loadedSceneName)
                     {
                         SceneManager.UnloadSceneAsync(loadedSceneName);
                     }
@@ -941,7 +941,7 @@ namespace MLAPI.SceneManagement
                     }
                 case SceneEventData.SceneEventTypes.Event_Sync_Complete:
                     {
-                        if(SceneEventData.ClientNeedsReSynchronization())
+                        if (SceneEventData.ClientNeedsReSynchronization())
                         {
                             Debug.Log($"Re-Synchronizing client {clientId} for missed destroyed NetworkObjects.");
                             using (var buffer = PooledNetworkBuffer.Get())
