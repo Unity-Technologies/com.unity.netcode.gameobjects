@@ -40,6 +40,14 @@ namespace MLAPI.Metrics
         {
         }
 
+        public void TrackOwnershipChangeSent(ulong receiverClientId, ulong networkObjectId, string gameObjectName, ulong bytesCount)
+        {
+        }
+
+        public void TrackOwnershipChangeReceived(ulong senderClientId, ulong networkObjectId, string gameObjectName, ulong bytesCount)
+        {
+        }
+
         public void TrackObjectSpawnSent(ulong receiverClientId, ulong networkObjectId, string gameObjectName, ulong bytesCount)
         {
         }
