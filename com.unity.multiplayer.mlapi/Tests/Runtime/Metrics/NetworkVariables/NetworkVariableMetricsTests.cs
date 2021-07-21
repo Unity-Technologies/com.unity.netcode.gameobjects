@@ -64,7 +64,7 @@ namespace MLAPI.RuntimeTests.Metrics.NetworkVariables
         {
             var waitForMetricValues = new WaitForMetricValues<NetworkVariableEvent>(m_ServerMetrics.Dispatcher, MetricNames.NetworkVariableDeltaSent);
 
-            yield return waitForMetricValues.WaitForAFewFrames();
+            yield return waitForMetricValues.WaitForMetricsReceived();
 
             var metricValues = waitForMetricValues.AssertMetricValuesHaveBeenFound();
 
@@ -78,7 +78,7 @@ namespace MLAPI.RuntimeTests.Metrics.NetworkVariables
         {
             var waitForMetricValues = new WaitForMetricValues<NetworkVariableEvent>(m_ClientMetrics.Dispatcher, MetricNames.NetworkVariableDeltaReceived);
 
-            yield return waitForMetricValues.WaitForAFewFrames();
+            yield return waitForMetricValues.WaitForMetricsReceived();
 
             var metricValues = waitForMetricValues.AssertMetricValuesHaveBeenFound();
             Assert.AreEqual(2, metricValues.Count); // We have an instance each of the player prefabs

@@ -24,9 +24,9 @@ namespace MLAPI.RuntimeTests.Metrics
             dispatcher.RegisterObserver(this);
         }
 
-        public IEnumerator WaitForAFewFrames()
+        public IEnumerator WaitForMetricsReceived()
         {
-            yield return Wait(60);
+            yield return WaitForFrames(60);
         }
 
         public IReadOnlyCollection<TMetric> AssertMetricValuesHaveBeenFound() 
@@ -76,7 +76,7 @@ namespace MLAPI.RuntimeTests.Metrics
             }
         }
 
-        private IEnumerator Wait(uint maxNbFrames)
+        private IEnumerator WaitForFrames(uint maxNbFrames)
         {
             while (!m_Found && m_NbFrames < maxNbFrames)
             {

@@ -60,7 +60,7 @@ namespace MLAPI.RuntimeTests.Metrics
             var waitForMetricValues = new WaitForMetricValues<NamedMessageEvent>(m_ServerMetrics.Dispatcher, MetricNames.NamedMessageSent);
             m_Server.CustomMessagingManager.SendNamedMessage(messageName, m_FirstClient.LocalClientId, Stream.Null);
 
-            yield return waitForMetricValues.WaitForAFewFrames();
+            yield return waitForMetricValues.WaitForMetricsReceived();
 
             var namedMessageSentMetricValues = waitForMetricValues.AssertMetricValuesHaveBeenFound();
             Assert.AreEqual(1, namedMessageSentMetricValues.Count);
@@ -78,7 +78,7 @@ namespace MLAPI.RuntimeTests.Metrics
             var waitForMetricValues = new WaitForMetricValues<NamedMessageEvent>(m_ServerMetrics.Dispatcher, MetricNames.NamedMessageSent);
             m_Server.CustomMessagingManager.SendNamedMessage(messageName, new List<ulong> { m_FirstClient.LocalClientId, m_SecondClient.LocalClientId }, Stream.Null);
 
-            yield return waitForMetricValues.WaitForAFewFrames();
+            yield return waitForMetricValues.WaitForMetricsReceived();
 
             var namedMessageSentMetricValues = waitForMetricValues.AssertMetricValuesHaveBeenFound();
             Assert.AreEqual(2, namedMessageSentMetricValues.Count);
@@ -95,7 +95,7 @@ namespace MLAPI.RuntimeTests.Metrics
             var waitForMetricValues = new WaitForMetricValues<UnnamedMessageEvent>(m_ServerMetrics.Dispatcher, MetricNames.UnnamedMessageSent);
             m_Server.CustomMessagingManager.SendUnnamedMessage(m_FirstClient.LocalClientId, new NetworkBuffer());
 
-            yield return waitForMetricValues.WaitForAFewFrames();
+            yield return waitForMetricValues.WaitForMetricsReceived();
 
             var unnamedMessageSentMetricValues = waitForMetricValues.AssertMetricValuesHaveBeenFound();
             Assert.AreEqual(1, unnamedMessageSentMetricValues.Count);
@@ -110,7 +110,7 @@ namespace MLAPI.RuntimeTests.Metrics
             var waitForMetricValues = new WaitForMetricValues<UnnamedMessageEvent>(m_ServerMetrics.Dispatcher, MetricNames.UnnamedMessageSent);
             m_Server.CustomMessagingManager.SendUnnamedMessage(new List<ulong> { m_FirstClient.LocalClientId, m_SecondClient.LocalClientId }, new NetworkBuffer());
 
-            yield return waitForMetricValues.WaitForAFewFrames();
+            yield return waitForMetricValues.WaitForMetricsReceived();
 
             var unnamedMessageSentMetricValues = waitForMetricValues.AssertMetricValuesHaveBeenFound();
             Assert.AreEqual(2, unnamedMessageSentMetricValues.Count);
@@ -134,7 +134,7 @@ namespace MLAPI.RuntimeTests.Metrics
 
             m_Server.CustomMessagingManager.SendNamedMessage(messageName, m_FirstClient.LocalClientId, Stream.Null);
 
-            yield return waitForMetricValues.WaitForAFewFrames();
+            yield return waitForMetricValues.WaitForMetricsReceived();
 
             var namedMessageReceivedValues = waitForMetricValues.AssertMetricValuesHaveBeenFound();
             Assert.AreEqual(1, namedMessageReceivedValues.Count);
@@ -151,7 +151,7 @@ namespace MLAPI.RuntimeTests.Metrics
 
             m_Server.CustomMessagingManager.SendUnnamedMessage(m_FirstClient.LocalClientId, new NetworkBuffer());
 
-            yield return waitForMetricValues.WaitForAFewFrames();
+            yield return waitForMetricValues.WaitForMetricsReceived();
 
             var unnamedMessageReceivedValues = waitForMetricValues.AssertMetricValuesHaveBeenFound();
             Assert.AreEqual(1, unnamedMessageReceivedValues.Count);
