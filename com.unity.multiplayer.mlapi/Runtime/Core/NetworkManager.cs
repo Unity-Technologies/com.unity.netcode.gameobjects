@@ -390,12 +390,6 @@ namespace MLAPI
 
             SnapshotSystem = new SnapshotSystem();
 
-            if (NetworkTickSystem != null)
-            {
-                NetworkTickSystem.Tick -= OnNetworkManagerTick;
-                NetworkTickSystem = null;
-            }
-
             if (server)
             {
                 NetworkTimeSystem = NetworkTimeSystem.ServerTimeSystem();
