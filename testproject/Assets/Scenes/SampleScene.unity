@@ -535,7 +535,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Authority: 0
   Channel: 10
-  InLocalSpace: 0
+  InLocalSpace: 1
   FixedSendsPerSecond: 30
 --- !u!1 &403665142
 GameObject:
@@ -2248,7 +2248,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Authority: 2
   Channel: 10
-  InLocalSpace: 0
+  InLocalSpace: 1
   FixedSendsPerSecond: 30
 --- !u!114 &1397037319
 MonoBehaviour:
@@ -2505,7 +2505,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Authority: 1
   Channel: 10
-  InLocalSpace: 0
+  InLocalSpace: 1
   FixedSendsPerSecond: 30
 --- !u!114 &1402467446
 MonoBehaviour:
