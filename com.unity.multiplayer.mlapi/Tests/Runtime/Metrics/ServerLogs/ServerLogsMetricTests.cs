@@ -1,10 +1,9 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Linq;
 using MLAPI.Logging;
 using MLAPI.Metrics;
 using NUnit.Framework;
-using Unity.Multiplayer.NetworkProfiler;
-using Unity.Multiplayer.NetworkProfiler.Models;
+using Unity.Multiplayer.MetricTypes;
 using UnityEngine;
 using UnityEngine.TestTools;
 
@@ -62,24 +61,33 @@ namespace MLAPI.RuntimeTests.Metrics.ServerLogs
         }
 
         [UnityTest]
-        public IEnumerator TrackServerLogSentAndReceivedMetric()
+        public IEnumerator TrackServerLogSentMetric()
         {
             var waitForSentMetric = new WaitForMetricValues<ServerLogEvent>(m_ClientMetrics.Dispatcher, MetricNames.ServerLogSent);
-            var waitForReceivedMetric = new WaitForMetricValues<ServerLogEvent>(m_ClientMetrics.Dispatcher, MetricNames.ServerLogReceived);
+
             NetworkLog.LogWarningServer("log message");
 
-            yield return waitForSentMetric.WaitForAFewFrames();
-            yield return waitForReceivedMetric.WaitForAFewFrames();
+            yield return waitForSentMetric.WaitForMetricsReceived();
 
-            var sentMetrics = waitForSentMetric.EnsureMetricValuesHaveBeenFound();
+            var sentMetrics = waitForSentMetric.AssertMetricValuesHaveBeenFound();
             Assert.AreEqual(1, sentMetrics.Count);
-
-            var receivedMetrics = waitForReceivedMetric.EnsureMetricValuesHaveBeenFound();
-            Assert.AreEqual(1, receivedMetrics.Count);
 
             var sentMetric = sentMetrics.First();
             Assert.AreEqual(m_Server.LocalClientId, sentMetric.Connection.Id);
             Assert.AreEqual((uint)NetworkLog.LogType.Warning, (uint)sentMetric.LogLevel);
+        }
+
+        [UnityTest]
+        public IEnumerator TrackServerLogReceivedMetric()
+        {
+            var waitForReceivedMetric = new WaitForMetricValues<ServerLogEvent>(m_ClientMetrics.Dispatcher, MetricNames.ServerLogReceived);
+
+            NetworkLog.LogWarningServer("log message");
+
+            yield return waitForReceivedMetric.WaitForMetricsReceived();
+
+            var receivedMetrics = waitForReceivedMetric.AssertMetricValuesHaveBeenFound();
+            Assert.AreEqual(1, receivedMetrics.Count);
 
             var receivedMetric = receivedMetrics.First();
             Assert.AreEqual(m_Client.LocalClientId, receivedMetric.Connection.Id);
