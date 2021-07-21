@@ -46,7 +46,7 @@ namespace MLAPI.RuntimeTests
                     // Set transport
                     NetworkTransport = go.AddComponent<SIPTransport>()
                 };
-                server.PopulateScenesInBuild();
+                server.PopulateScenesInBuild(true);
                 server.ScenesInBuild.Scenes.Add(SceneManager.GetActiveScene().name);
             }
 
@@ -80,7 +80,7 @@ namespace MLAPI.RuntimeTests
                     NetworkTransport = go.AddComponent<SIPTransport>()
                 };
 
-                clients[i].PopulateScenesInBuild();
+                clients[i].PopulateScenesInBuild(true);
 
                 if (!clients[i].ScenesInBuild.Scenes.Contains(activeSceneName))
                 {

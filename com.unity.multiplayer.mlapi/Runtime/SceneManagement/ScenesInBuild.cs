@@ -68,7 +68,7 @@ namespace MLAPI
 
         private void OnValidate()
         {
-            if (!EditorApplication.isPlayingOrWillChangePlaymode && !EditorApplication.isPlaying && !EditorApplication.isUpdating)
+            if (!EditorApplication.isPlayingOrWillChangePlaymode && !EditorApplication.isPlaying && !EditorApplication.isUpdating || IsTesting)
             {
                 PopulateScenesInBuild();
             }

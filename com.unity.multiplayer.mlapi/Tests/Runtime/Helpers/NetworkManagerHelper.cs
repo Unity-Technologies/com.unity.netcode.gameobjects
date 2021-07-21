@@ -82,7 +82,7 @@ namespace MLAPI.RuntimeTests
                     };
                 }
 
-                NetworkManagerObject.PopulateScenesInBuild();
+                NetworkManagerObject.PopulateScenesInBuild(true);
                 NetworkManagerObject.ScenesInBuild.Scenes.Add(SceneManager.GetActiveScene().name);
 
                 NetworkManagerObject.NetworkConfig = networkConfig;
