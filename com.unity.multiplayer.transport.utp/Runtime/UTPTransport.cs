@@ -286,6 +286,23 @@ namespace MLAPI.Transports
 #endif
         }
 
+        private bool AcceptConnection()
+        {
+            var connection = m_Driver.Accept();
+
+            if (connection != default(NetworkConnection))
+            {
+                InvokeOnTransportEvent(NetworkEvent.Connect,
+                    ParseClientId(connection),
+                    NetworkChannel.Internal,
+                    default(ArraySegment<byte>),
+                    Time.realtimeSinceStartup);
+                return true;
+            }
+
+            return false;
+        }
+
         private bool ProcessEvent()
         {
             var eventType = m_Driver.PopEvent(out var networkConnection, out var reader);
@@ -344,6 +361,7 @@ namespace MLAPI.Transports
             if (m_Driver.IsCreated)
             {
                 m_Driver.ScheduleUpdate().Complete();
+                while(AcceptConnection() && m_Driver.IsCreated);
                 while(ProcessEvent() && m_Driver.IsCreated);
             }
 
