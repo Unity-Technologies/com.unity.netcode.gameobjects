@@ -57,7 +57,7 @@ namespace MLAPI
         internal static bool UseClassicDelta = true;
         internal static bool UseSnapshot = false;
 
-        private const double k_TimeSyncFrequency = 1d; // sync every second, TODO will be removed once timesync is done via snapshots
+        private const double k_TimeSyncFrequency = 1.0d; // sync every second, TODO will be removed once timesync is done via snapshots
 
         internal RpcQueueContainer RpcQueueContainer { get; private set; }
 
@@ -969,7 +969,7 @@ namespace MLAPI
                 BufferManager.CleanBuffer();
             }
 
-            int timeSyncFrequencyTicks = (int)(k_TimeSyncFrequency / NetworkConfig.TickRate);
+            int timeSyncFrequencyTicks = (int)(k_TimeSyncFrequency * NetworkConfig.TickRate);
             if (IsServer && NetworkTickSystem.ServerTime.Tick % timeSyncFrequencyTicks == 0)
             {
                 SyncTime();
