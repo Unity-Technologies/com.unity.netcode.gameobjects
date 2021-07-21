@@ -38,7 +38,8 @@ namespace MLAPI.EditorTests.Timing
             });
 
             // check how we close we are to target time.
-            var offsetToTarget = (timeSystem.LocalTime - timeSystem.ServerTime) - 0.1f - timeSystem.ServerBufferSec - timeSystem.LocalBufferSec;
+            var expectedRtt = 0.1d;
+            var offsetToTarget = (timeSystem.LocalTime - timeSystem.ServerTime) - expectedRtt - timeSystem.ServerBufferSec - timeSystem.LocalBufferSec;
             Debug.Log($"offset to target time after running for a while: {offsetToTarget}");
             Assert.IsTrue(Math.Abs(offsetToTarget) < k_AcceptableRttOffset);
 
@@ -51,7 +52,7 @@ namespace MLAPI.EditorTests.Timing
             });
 
             // check again to ensure we are still close to the target
-            var newOffsetToTarget = (timeSystem.LocalTime - timeSystem.ServerTime) - 0.1f - timeSystem.ServerBufferSec - timeSystem.LocalBufferSec;
+            var newOffsetToTarget = (timeSystem.LocalTime - timeSystem.ServerTime) - expectedRtt - timeSystem.ServerBufferSec - timeSystem.LocalBufferSec;
             Debug.Log($"offset to target time after running longer: {newOffsetToTarget}");
             Assert.IsTrue(Math.Abs(newOffsetToTarget) < k_AcceptableRttOffset);
 
@@ -173,7 +174,8 @@ namespace MLAPI.EditorTests.Timing
                 timeSystem.Sync(receivedServerTime, rttSteps2[step]);
 
                 // after hard reset time should stay close to rtt
-                Assert.IsTrue(Math.Abs((timeSystem.LocalTime - timeSystem.ServerTime) - 0.5 - timeSystem.ServerBufferSec - timeSystem.LocalBufferSec) < k_AcceptableRttOffset);
+                var expectedRtt = 0.5d;
+                Assert.IsTrue(Math.Abs((timeSystem.LocalTime - timeSystem.ServerTime) - expectedRtt - timeSystem.ServerBufferSec - timeSystem.LocalBufferSec) < k_AcceptableRttOffset);
 
             });
         }
