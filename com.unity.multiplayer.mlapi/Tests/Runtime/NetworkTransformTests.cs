@@ -137,6 +137,7 @@ namespace MLAPI.RuntimeTests
 
             yield return new WaitForFixedUpdate();
 
+            LogAssert.Expect(LogType.Warning, new Regex(".*[Aa]uthority.*"));
             Assert.AreEqual(Vector3.zero, otherSideNetworkTransform.transform.position, "got authority error, but other side still moved!");
         }
 
