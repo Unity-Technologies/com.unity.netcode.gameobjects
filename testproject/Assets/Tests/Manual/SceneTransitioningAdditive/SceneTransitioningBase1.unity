@@ -1468,25 +1468,6 @@ MonoBehaviour:
   NetworkConfig:
     ProtocolVersion: 0
     NetworkTransport: {fileID: 1024114719}
-    RegisteredScenes:
-    - SceneTransitioningBase
-    - SecondSceneAdditive
-    - ThirdSceneAdditive
-    - AdditiveSceneOne
-    - AdditiveSceneTwo
-    - SceneTransitioningBase1
-    - AdditiveScene1
-    - AdditiveScene2
-    - SceneTransitioningBase2
-    - AdditiveScene3
-    - AdditiveScene4
-    RegisteredSceneAssets:
-    - {fileID: 102900000, guid: 780f96a61e8ac8e41b638ae8ec3a3236, type: 3}
-    - {fileID: 102900000, guid: 9e437cc704801bc47add735d743985f5, type: 3}
-    - {fileID: 102900000, guid: 41a0239b0c49e2047b7063c822f0df8a, type: 3}
-    - {fileID: 102900000, guid: c6a3d883c8253ee43bca4f2b03797d7b, type: 3}
-    - {fileID: 102900000, guid: 7da3dd618f5b5a34db1f6d3c9511e221, type: 3}
-    - {fileID: 102900000, guid: dc7e17c86f5ca81478043be306027c13, type: 3}
     AllowRuntimeSceneChanges: 0
     PlayerPrefab: {fileID: 4079352819444256614, guid: c16f03336b6104576a565ef79ad643c0,
       type: 3}
@@ -1561,6 +1542,8 @@ MonoBehaviour:
     EnableMessageBuffering: 1
     MessageBufferTimeout: 20
     EnableNetworkLogs: 1
+  ScenesInBuild: {fileID: 11400000, guid: 477a101a7b312d94fb9527c0363e4101, type: 2}
+  DefaultScenesInBuildAssetNameAndPath: Assets/ScenesInBuildList.asset
 --- !u!114 &1024114719
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3505,6 +3488,46 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: ExitButton
+      objectReference: {fileID: 0}
+    - target: {fileID: 2848221157716786269, guid: 3200770c16e3b2b4ebe7f604154faac7,
+        type: 3}
+      propertyPath: m_Text
+      value: X
+      objectReference: {fileID: 0}
+    - target: {fileID: 2848221157716786269, guid: 3200770c16e3b2b4ebe7f604154faac7,
+        type: 3}
+      propertyPath: m_FontData.m_Font
+      value: 
+      objectReference: {fileID: 10102, guid: 0000000000000000e000000000000000, type: 0}
+    - target: {fileID: 2848221157716786269, guid: 3200770c16e3b2b4ebe7f604154faac7,
+        type: 3}
+      propertyPath: m_FontData.m_MaxSize
+      value: 40
+      objectReference: {fileID: 0}
+    - target: {fileID: 2848221157716786269, guid: 3200770c16e3b2b4ebe7f604154faac7,
+        type: 3}
+      propertyPath: m_FontData.m_MinSize
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 2848221157716786269, guid: 3200770c16e3b2b4ebe7f604154faac7,
+        type: 3}
+      propertyPath: m_FontData.m_FontSize
+      value: 14
+      objectReference: {fileID: 0}
+    - target: {fileID: 2848221157716786269, guid: 3200770c16e3b2b4ebe7f604154faac7,
+        type: 3}
+      propertyPath: m_FontData.m_RichText
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2848221157716786269, guid: 3200770c16e3b2b4ebe7f604154faac7,
+        type: 3}
+      propertyPath: m_FontData.m_Alignment
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 2848221157716786269, guid: 3200770c16e3b2b4ebe7f604154faac7,
+        type: 3}
+      propertyPath: m_FontData.m_LineSpacing
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5266522511616468950, guid: 3200770c16e3b2b4ebe7f604154faac7,
         type: 3}

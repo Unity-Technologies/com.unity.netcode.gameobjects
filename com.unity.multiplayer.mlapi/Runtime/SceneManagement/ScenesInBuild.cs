@@ -63,11 +63,12 @@ namespace MLAPI
                 var sceneAsset = AssetDatabase.LoadAssetAtPath<SceneAsset>(scene.path);
                 Scenes.Add(sceneAsset.name);
             }
+            AssetDatabase.SaveAssets();
         }
 
         private void OnValidate()
         {
-            if (!EditorApplication.isPlayingOrWillChangePlaymode && !EditorApplication.isPlaying)
+            if (!EditorApplication.isPlayingOrWillChangePlaymode && !EditorApplication.isPlaying && !EditorApplication.isUpdating)
             {
                 PopulateScenesInBuild();
             }

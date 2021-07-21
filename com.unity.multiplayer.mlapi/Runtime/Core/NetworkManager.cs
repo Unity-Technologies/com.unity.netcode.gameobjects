@@ -271,7 +271,7 @@ namespace MLAPI
 #if UNITY_EDITOR
         internal void PopulateScenesInBuild()
         {
-            if (!EditorApplication.isPlayingOrWillChangePlaymode && !EditorApplication.isPlaying)
+            if (!EditorApplication.isPlayingOrWillChangePlaymode && !EditorApplication.isPlaying && !EditorApplication.isUpdating)
             {
                 if (ScenesInBuild == null)
                 {
