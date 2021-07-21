@@ -70,6 +70,7 @@ namespace MLAPI.Prototyping
 
         private Transform m_Transform; // cache the transform component to reduce unnecessary bounce between managed and native
         private readonly NetworkVariable<NetworkState> m_NetworkState = new NetworkVariable<NetworkState>(new NetworkState());
+        private NetworkState m_PrevNetworkState;
 
         /// <summary>
         /// Does this instance (client or server) has authority to update transform?
@@ -79,28 +80,30 @@ namespace MLAPI.Prototyping
             Authority == NetworkAuthority.Server && IsServer ||
             Authority == NetworkAuthority.Shared;
 
-        private bool IsNetworkStateDirty
+        private bool IsNetworkStateDirty(NetworkState networkState)
         {
-            get
+            if (networkState == null)
             {
-                bool isDirty = false;
-
-                isDirty |= m_NetworkState.Value.InLocalSpace != InLocalSpace;
-                if (InLocalSpace)
-                {
-                    isDirty |= m_NetworkState.Value.Position != m_Transform.localPosition;
-                    isDirty |= m_NetworkState.Value.Rotation != m_Transform.localRotation;
-                    isDirty |= m_NetworkState.Value.Scale != m_Transform.localScale;
-                }
-                else
-                {
-                    isDirty |= m_NetworkState.Value.Position != m_Transform.position;
-                    isDirty |= m_NetworkState.Value.Rotation != m_Transform.rotation;
-                    isDirty |= m_NetworkState.Value.Scale != m_Transform.lossyScale;
-                }
-
-                return isDirty;
+                return false;
             }
+
+            bool isDirty = false;
+
+            isDirty |= networkState.InLocalSpace != InLocalSpace;
+            if (InLocalSpace)
+            {
+                isDirty |= networkState.Position != m_Transform.localPosition;
+                isDirty |= networkState.Rotation != m_Transform.localRotation;
+                isDirty |= networkState.Scale != m_Transform.localScale;
+            }
+            else
+            {
+                isDirty |= networkState.Position != m_Transform.position;
+                isDirty |= networkState.Rotation != m_Transform.rotation;
+                isDirty |= networkState.Scale != m_Transform.lossyScale;
+            }
+
+            return isDirty;
         }
 
         private void UpdateNetworkState()
@@ -139,6 +142,8 @@ namespace MLAPI.Prototyping
                 var lossyScale = m_Transform.lossyScale;
                 m_Transform.localScale = new Vector3(netState.Scale.x / lossyScale.x, netState.Scale.y / lossyScale.y, netState.Scale.z / lossyScale.z);
             }
+
+            m_PrevNetworkState = netState;
         }
 
         private void OnNetworkStateChanged(NetworkState oldState, NetworkState newState)
@@ -188,6 +193,11 @@ namespace MLAPI.Prototyping
             m_NetworkState.OnValueChanged += OnNetworkStateChanged;
         }
 
+        public override void OnNetworkSpawn()
+        {
+            m_PrevNetworkState = null;
+        }
+
         private void OnDestroy()
         {
             m_NetworkState.OnValueChanged -= OnNetworkStateChanged;
@@ -200,16 +210,15 @@ namespace MLAPI.Prototyping
                 return;
             }
 
-            if (IsNetworkStateDirty)
+            if (CanUpdateTransform && IsNetworkStateDirty(m_NetworkState.Value))
             {
-                if (CanUpdateTransform)
-                {
-                    UpdateNetworkState();
-                }
-                else
-                {
-                    ApplyNetworkState(m_NetworkState.Value);
-                }
+                UpdateNetworkState();
+            }
+            else if (IsNetworkStateDirty(m_PrevNetworkState))
+            {
+                ApplyNetworkState(m_NetworkState.Value);
+
+                Debug.LogWarning("A local change without authority detected, revert back to latest network state!");
             }
         }
 
