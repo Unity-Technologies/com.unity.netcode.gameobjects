@@ -48,6 +48,46 @@ namespace MLAPI.Metrics
         {
         }
 
+        public void TrackObjectSpawnSent(ulong receiverClientId, ulong networkObjectId, string gameObjectName, ulong bytesCount)
+        {
+        }
+
+        public void TrackObjectSpawnReceived(ulong senderClientId, ulong networkObjectId, string gameObjectName, ulong bytesCount)
+        {
+        }
+
+        public void TrackObjectDestroySent(ulong senderClientId, ulong networkObjectId, string gameObjectName, ulong bytesCount)
+        {
+        }
+
+        public void TrackObjectDestroySent(IReadOnlyCollection<ulong> receiverClientIds, ulong networkObjectId, string gameObjectName, ulong bytesCount)
+        {
+        }
+
+        public void TrackObjectDestroyReceived(ulong senderClientId, ulong networkObjectId, string gameObjectName, ulong bytesCount)
+        {
+        }
+
+        public void TrackRpcSent(ulong receiverClientId, ulong networkObjectId, string rpcName, ulong bytesCount)
+        {
+        }
+
+        public void TrackRpcSent(ulong[] receiverClientIds, ulong networkObjectId, string rpcName, ulong bytesCount)
+        {
+        }
+
+        public void TrackRpcReceived(ulong senderClientId, ulong networkObjectId, string rpcName, ulong bytesCount)
+        {
+        }
+
+        public void TrackServerLogSent(ulong receiverClientId, uint logType, ulong bytesCount)
+        {
+        }
+
+        public void TrackServerLogReceived(ulong senderClientId, uint logType, ulong bytesCount)
+        {
+        }
+
         public void DispatchFrame()
         {
         }

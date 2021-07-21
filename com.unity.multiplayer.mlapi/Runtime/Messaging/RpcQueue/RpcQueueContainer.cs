@@ -433,7 +433,7 @@ namespace MLAPI.Messaging
         /// <param name="writer">NetworkWriter that was used</param>
         /// <param name="queueFrameType">type of the queue frame that was used</param>
         /// <param name="updateStage">stage the RPC is going to be invoked</param>
-        public void EndAddQueueItemToFrame(NetworkWriter writer, RpcQueueHistoryFrame.QueueFrameType queueFrameType, NetworkUpdateStage updateStage)
+        public long EndAddQueueItemToFrame(NetworkWriter writer, RpcQueueHistoryFrame.QueueFrameType queueFrameType, NetworkUpdateStage updateStage)
         {
             bool getNextFrame = NetworkManager.IsHost && queueFrameType == RpcQueueHistoryFrame.QueueFrameType.Inbound;
 
@@ -525,6 +525,8 @@ namespace MLAPI.Messaging
 
             //Add the packed size to the offsets for parsing over various entries
             rpcQueueHistoryItem.QueueItemOffsets.Add((uint)rpcQueueHistoryItem.QueueBuffer.Position);
+
+            return messageSize;
         }
 
         /// <summary>

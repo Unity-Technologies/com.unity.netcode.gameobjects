@@ -1,19 +1,21 @@
 using System.Collections;
 using System.Linq;
+using MLAPI.Logging;
 using MLAPI.Metrics;
 using NUnit.Framework;
-using Unity.Multiplayer.NetworkProfiler;
-using Unity.Multiplayer.NetworkProfiler.Models;
+using Unity.Multiplayer.MetricTypes;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace MLAPI.RuntimeTests.Metrics.NetworkVariables
+namespace MLAPI.RuntimeTests.Metrics.ServerLogs
 {
-    public class NetworkVariableMetricsReceptionTests
+    public class ServerLogsMetricTests
     {
         NetworkManager m_Server;
         NetworkManager m_Client;
         NetworkMetrics m_ClientMetrics;
+        NetworkMetrics m_ServerMetrics;
+
 
         [UnitySetUp]
         public IEnumerator SetUp()
@@ -23,10 +25,9 @@ namespace MLAPI.RuntimeTests.Metrics.NetworkVariables
                 Debug.LogError("Failed to create instances");
                 Assert.Fail("Failed to create instances");
             }
-            
+
             var playerPrefab = new GameObject("Player");
             var networkObject = playerPrefab.AddComponent<NetworkObject>();
-            playerPrefab.AddComponent<NetworkVariableComponent>();
 
             MultiInstanceHelpers.MakeNetworkedObjectTestPrefab(networkObject);
 
@@ -48,6 +49,7 @@ namespace MLAPI.RuntimeTests.Metrics.NetworkVariables
 
             m_Client = clients.First();
             m_ClientMetrics = m_Client.NetworkMetrics as NetworkMetrics;
+            m_ServerMetrics = m_Server.NetworkMetrics as NetworkMetrics;
         }
 
         [UnityTearDown]
@@ -59,20 +61,37 @@ namespace MLAPI.RuntimeTests.Metrics.NetworkVariables
         }
 
         [UnityTest]
-        public IEnumerator TrackNetworkVariableDeltaReceivedMetric()
+        public IEnumerator TrackServerLogSentMetric()
         {
-            var waitForMetricValues = new WaitForMetricValues<NetworkVariableEvent>(m_ClientMetrics.Dispatcher, MetricNames.NetworkVariableDeltaReceived);
+            var waitForSentMetric = new WaitForMetricValues<ServerLogEvent>(m_ClientMetrics.Dispatcher, MetricNames.ServerLogSent);
 
-            yield return waitForMetricValues.WaitForAFewFrames();
+            NetworkLog.LogWarningServer("log message");
 
-            var metricValues = waitForMetricValues.EnsureMetricValuesHaveBeenFound();
-            Assert.AreEqual(2, metricValues.Count); // We have an instance each of the player prefabs
+            yield return waitForSentMetric.WaitForMetricsReceived();
 
-            var first = metricValues.First();
-            Assert.AreEqual(nameof(NetworkVariableComponent.MyNetworkVariable), first.Name);
+            var sentMetrics = waitForSentMetric.AssertMetricValuesHaveBeenFound();
+            Assert.AreEqual(1, sentMetrics.Count);
 
-            var last = metricValues.Last();
-            Assert.AreEqual(nameof(NetworkVariableComponent.MyNetworkVariable), last.Name);
+            var sentMetric = sentMetrics.First();
+            Assert.AreEqual(m_Server.LocalClientId, sentMetric.Connection.Id);
+            Assert.AreEqual((uint)NetworkLog.LogType.Warning, (uint)sentMetric.LogLevel);
+        }
+
+        [UnityTest]
+        public IEnumerator TrackServerLogReceivedMetric()
+        {
+            var waitForReceivedMetric = new WaitForMetricValues<ServerLogEvent>(m_ClientMetrics.Dispatcher, MetricNames.ServerLogReceived);
+
+            NetworkLog.LogWarningServer("log message");
+
+            yield return waitForReceivedMetric.WaitForMetricsReceived();
+
+            var receivedMetrics = waitForReceivedMetric.AssertMetricValuesHaveBeenFound();
+            Assert.AreEqual(1, receivedMetrics.Count);
+
+            var receivedMetric = receivedMetrics.First();
+            Assert.AreEqual(m_Client.LocalClientId, receivedMetric.Connection.Id);
+            Assert.AreEqual((uint)NetworkLog.LogType.Warning, (uint)receivedMetric.LogLevel);
         }
     }
 }

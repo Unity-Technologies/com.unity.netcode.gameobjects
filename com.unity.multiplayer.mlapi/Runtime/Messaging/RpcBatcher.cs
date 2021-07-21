@@ -35,13 +35,6 @@ namespace MLAPI.Messaging
         // Used to mark longer lengths. Works because we can't have zero-sized messages
         private const byte k_LongLenMarker = 0;
 
-        private readonly NetworkManager m_NetworkManager;
-
-        public RpcBatcher(NetworkManager networkManager)
-        {
-            m_NetworkManager = networkManager;
-        }
-
         private void PushLength(int length, ref PooledNetworkWriter writer)
         {
             // If length is single byte we write it

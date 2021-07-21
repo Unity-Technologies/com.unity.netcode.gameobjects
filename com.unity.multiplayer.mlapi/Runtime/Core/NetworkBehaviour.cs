@@ -14,7 +14,6 @@ using MLAPI.Serialization;
 using MLAPI.Serialization.Pooled;
 using MLAPI.Transports;
 using Unity.Profiling;
-using Debug = UnityEngine.Debug;
 
 namespace MLAPI
 {
@@ -91,13 +90,19 @@ namespace MLAPI
             }
 
             var rpcQueueContainer = NetworkManager.RpcQueueContainer;
+            var rpcMessageSize = 0L;
             if (IsHost)
             {
-                rpcQueueContainer.EndAddQueueItemToFrame(serializer.Writer, RpcQueueHistoryFrame.QueueFrameType.Inbound, serverRpcParams.Send.UpdateStage);
+                rpcMessageSize = rpcQueueContainer.EndAddQueueItemToFrame(serializer.Writer, RpcQueueHistoryFrame.QueueFrameType.Inbound, serverRpcParams.Send.UpdateStage);
             }
             else
             {
-                rpcQueueContainer.EndAddQueueItemToFrame(serializer.Writer, RpcQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
+                rpcMessageSize = rpcQueueContainer.EndAddQueueItemToFrame(serializer.Writer, RpcQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
+            }
+
+            if (NetworkManager.__rpc_name_table.TryGetValue(rpcMethodId, out var rpcMethodName))
+            {
+                NetworkManager.NetworkMetrics.TrackRpcSent(NetworkManager.ServerClientId, NetworkObjectId, rpcMethodName, (ulong)rpcMessageSize);
             }
         }
 
@@ -183,7 +188,8 @@ namespace MLAPI
             }
 
             var rpcQueueContainer = NetworkManager.RpcQueueContainer;
-
+            var messageSize = 0L;
+            string rpcMethodName;
             if (IsHost)
             {
                 ulong[] clientIds = clientRpcParams.Send.TargetClientIds ?? NetworkManager.ConnectedClientsList.Select(c => c.ClientId).ToArray();
@@ -195,12 +201,23 @@ namespace MLAPI
                 var containsServerClientId = clientIds.Contains(NetworkManager.ServerClientId);
                 if (containsServerClientId && clientIds.Length == 1)
                 {
-                    rpcQueueContainer.EndAddQueueItemToFrame(serializer.Writer, RpcQueueHistoryFrame.QueueFrameType.Inbound, clientRpcParams.Send.UpdateStage);
+                    messageSize = rpcQueueContainer.EndAddQueueItemToFrame(serializer.Writer, RpcQueueHistoryFrame.QueueFrameType.Inbound, clientRpcParams.Send.UpdateStage);
+
+                    if (NetworkManager.__rpc_name_table.TryGetValue(rpcMethodId, out rpcMethodName))
+                    {
+                        NetworkManager.NetworkMetrics.TrackRpcSent(clientIds, NetworkObjectId, rpcMethodName, (ulong)messageSize);
+                    }
+
                     return;
                 }
             }
 
-            rpcQueueContainer.EndAddQueueItemToFrame(serializer.Writer, RpcQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
+            messageSize = rpcQueueContainer.EndAddQueueItemToFrame(serializer.Writer, RpcQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
+
+            if (NetworkManager.__rpc_name_table.TryGetValue(rpcMethodId, out rpcMethodName))
+            {
+                NetworkManager.NetworkMetrics.TrackRpcSent(NetworkManager.ServerClientId, NetworkObjectId, rpcMethodName, (ulong)messageSize);
+            }
         }
 
         /// <summary>
@@ -342,6 +359,11 @@ namespace MLAPI
         /// Gets called when we loose ownership of this object
         /// </summary>
         public virtual void OnLostOwnership() { }
+
+        /// <summary>
+        /// Gets called when the parent NetworkObject of this NetworkBehaviour's NetworkObject has changed
+        /// </summary>
+        public virtual void OnNetworkObjectParentChanged(NetworkObject parentNetworkObject) { }
 
         private bool m_VarInit = false;
 
