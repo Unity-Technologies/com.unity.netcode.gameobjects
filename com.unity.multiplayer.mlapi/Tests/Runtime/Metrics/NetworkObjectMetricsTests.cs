@@ -8,7 +8,7 @@ using Unity.Multiplayer.MetricTypes;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace MLAPI.RuntimeTests.Metrics.NetworkObjects
+namespace MLAPI.RuntimeTests.Metrics
 {
     public class NetworkObjectMetricsTests
     {
@@ -82,7 +82,7 @@ namespace MLAPI.RuntimeTests.Metrics.NetworkObjects
 
             yield return waitForMetricEvent.WaitForAFewFrames();
 
-            var objectSpawnedSentMetricValues = waitForMetricEvent.EnsureMetricValuesHaveBeenFound();
+            var objectSpawnedSentMetricValues = waitForMetricEvent.AssertMetricValuesHaveBeenFound();
             Assert.AreEqual(1, objectSpawnedSentMetricValues.Count);
 
             var objectSpawned = objectSpawnedSentMetricValues.First();
@@ -99,7 +99,7 @@ namespace MLAPI.RuntimeTests.Metrics.NetworkObjects
 
             yield return waitForMetricEvent.WaitForAFewFrames();
 
-            var objectSpawnedReceivedMetricValues = waitForMetricEvent.EnsureMetricValuesHaveBeenFound();
+            var objectSpawnedReceivedMetricValues = waitForMetricEvent.AssertMetricValuesHaveBeenFound();
             Assert.AreEqual(1, objectSpawnedReceivedMetricValues.Count);
 
             var objectSpawned = objectSpawnedReceivedMetricValues.First();
@@ -113,15 +113,15 @@ namespace MLAPI.RuntimeTests.Metrics.NetworkObjects
         {
             m_NewNetworkObject.Spawn();
 
+            yield return new WaitForSeconds(0.2f);
+
             var waitForMetricEvent = new WaitForMetricValues<ObjectDestroyedEvent>(m_ServerMetrics.Dispatcher, MetricNames.ObjectDestroyedSent);
-            // TODO: is there a better way of waiting here?
-            yield return waitForMetricEvent.WaitForAFewFrames();
 
             m_Server.SpawnManager.OnDespawnObject(m_NewNetworkObject, true);
 
             yield return waitForMetricEvent.WaitForAFewFrames();
 
-            var objectDestroyedSentMetricValues = waitForMetricEvent.EnsureMetricValuesHaveBeenFound();
+            var objectDestroyedSentMetricValues = waitForMetricEvent.AssertMetricValuesHaveBeenFound();
             // As there's a client and server, this event is emitted twice.
             Assert.AreEqual(2, objectDestroyedSentMetricValues.Count);
 
@@ -134,14 +134,16 @@ namespace MLAPI.RuntimeTests.Metrics.NetworkObjects
         public IEnumerator TrackNetworkObjectDestroyReceivedMetric()
         {
             m_NewNetworkObject.Spawn();
-            var waitForMetricEvent = new WaitForMetricValues<ObjectDestroyedEvent>(m_ClientMetrics.Dispatcher, MetricNames.ObjectDestroyedReceived);
 
+            yield return new WaitForSeconds(0.2f);
+
+            var waitForMetricEvent = new WaitForMetricValues<ObjectDestroyedEvent>(m_ClientMetrics.Dispatcher, MetricNames.ObjectDestroyedReceived);
+            
+            m_Server.SpawnManager.OnDespawnObject(m_NewNetworkObject, true);
+            
             yield return waitForMetricEvent.WaitForAFewFrames();
 
-            m_Server.SpawnManager.OnDespawnObject(m_NewNetworkObject, true);
-            yield return waitForMetricEvent.Wait(60);
-
-            var objectDestroyedReceivedMetricValues = waitForMetricEvent.EnsureMetricValuesHaveBeenFound();
+            var objectDestroyedReceivedMetricValues = waitForMetricEvent.AssertMetricValuesHaveBeenFound();
             Assert.AreEqual(1, objectDestroyedReceivedMetricValues.Count);
 
             var objectDestroyed = objectDestroyedReceivedMetricValues.First();
@@ -161,14 +163,15 @@ namespace MLAPI.RuntimeTests.Metrics.NetworkObjects
             anotherNetworkObject.NetworkManagerOwner = m_Server;
             anotherNetworkObject.Spawn();
 
+            yield return new WaitForSeconds(0.2f);
+
             var waitForMetricEvent = new WaitForMetricValues<ObjectDestroyedEvent>(m_ServerMetrics.Dispatcher, MetricNames.ObjectDestroyedSent);
-            yield return waitForMetricEvent.WaitForAFewFrames();
 
             NetworkObject.NetworkHide(new List<NetworkObject>{m_NewNetworkObject, anotherNetworkObject}, m_Client.LocalClientId);
 
-            yield return waitForMetricEvent.Wait(60);
+            yield return waitForMetricEvent.WaitForAFewFrames();
 
-            var objectDestroyedSentMetricValues = waitForMetricEvent.EnsureMetricValuesHaveBeenFound();
+            var objectDestroyedSentMetricValues = waitForMetricEvent.AssertMetricValuesHaveBeenFound();
             // As there's a client and server, this event is emitted twice.
             Assert.AreEqual(2, objectDestroyedSentMetricValues.Count);
 
@@ -196,18 +199,19 @@ namespace MLAPI.RuntimeTests.Metrics.NetworkObjects
             anotherNetworkObject.NetworkManagerOwner = m_Server;
             anotherNetworkObject.Spawn();
 
-            var waitForMetricEvent = new WaitForMetricValues<ObjectSpawnedEvent>(m_ServerMetrics.Dispatcher, MetricNames.ObjectSpawnedSent);
-            yield return waitForMetricEvent.WaitForAFewFrames();
+            yield return new WaitForSeconds(0.2f);
 
             NetworkObject.NetworkHide(new List<NetworkObject>{m_NewNetworkObject, anotherNetworkObject}, m_Client.LocalClientId);
 
-            yield return waitForMetricEvent.WaitForAFewFrames();
+            yield return new WaitForSeconds(0.2f);
+
+            var waitForMetricEvent = new WaitForMetricValues<ObjectSpawnedEvent>(m_ServerMetrics.Dispatcher, MetricNames.ObjectSpawnedSent);
 
             NetworkObject.NetworkShow(new List<NetworkObject>{m_NewNetworkObject, anotherNetworkObject}, m_Client.LocalClientId);
 
-            yield return waitForMetricEvent.Wait(60);
+            yield return waitForMetricEvent.WaitForAFewFrames();
 
-            var objectSpawnedSentMetricValues = waitForMetricEvent.EnsureMetricValuesHaveBeenFound();
+            var objectSpawnedSentMetricValues = waitForMetricEvent.AssertMetricValuesHaveBeenFound();
             // As there's a client and server, this event is emitted twice.
             Assert.AreEqual(2, objectSpawnedSentMetricValues.Count);
 

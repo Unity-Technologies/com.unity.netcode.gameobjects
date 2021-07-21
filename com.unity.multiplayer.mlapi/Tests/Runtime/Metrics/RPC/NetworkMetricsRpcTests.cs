@@ -77,7 +77,7 @@ namespace MLAPI.RuntimeTests.Metrics.RPC
             // Client Check
             yield return waitForClientMetricsValues.WaitForAFewFrames();
 
-            var clientMetricSentValues = waitForClientMetricsValues.EnsureMetricValuesHaveBeenFound();
+            var clientMetricSentValues = waitForClientMetricsValues.AssertMetricValuesHaveBeenFound();
             Assert.AreEqual(1, clientMetricSentValues.Count);
 
             var clientMetric = clientMetricSentValues.First();
@@ -87,7 +87,7 @@ namespace MLAPI.RuntimeTests.Metrics.RPC
             // Server Check
             yield return waitForServerMetricsValues.WaitForAFewFrames();
 
-            var serverMetricReceivedValues = waitForServerMetricsValues.EnsureMetricValuesHaveBeenFound();
+            var serverMetricReceivedValues = waitForServerMetricsValues.AssertMetricValuesHaveBeenFound();
             Assert.AreEqual(1, serverMetricReceivedValues.Count);
 
             var serverMetric = serverMetricReceivedValues.First();
@@ -124,7 +124,7 @@ namespace MLAPI.RuntimeTests.Metrics.RPC
 
             yield return waitForServerMetricsValues.WaitForAFewFrames();
 
-            var serverMetricReceivedValues = waitForServerMetricsValues.EnsureMetricValuesHaveBeenFound();
+            var serverMetricReceivedValues = waitForServerMetricsValues.AssertMetricValuesHaveBeenFound();
             Assert.AreEqual(1, serverMetricReceivedValues.Count);
 
             var serverMetric = serverMetricReceivedValues.First();

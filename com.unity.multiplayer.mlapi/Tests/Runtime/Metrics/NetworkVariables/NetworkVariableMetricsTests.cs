@@ -8,9 +8,10 @@ using UnityEngine.TestTools;
 
 namespace MLAPI.RuntimeTests.Metrics.NetworkVariables
 {
-    public class NetworkVariableMetricsReceptionTests
+    public class NetworkVariableMetricsTests
     {
         NetworkManager m_Server;
+        NetworkMetrics m_ServerMetrics;
         NetworkManager m_Client;
         NetworkMetrics m_ClientMetrics;
 
@@ -46,6 +47,7 @@ namespace MLAPI.RuntimeTests.Metrics.NetworkVariables
             yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientConnectedToServer(m_Server));
 
             m_Client = clients.First();
+            m_ServerMetrics = m_Server.NetworkMetrics as NetworkMetrics;
             m_ClientMetrics = m_Client.NetworkMetrics as NetworkMetrics;
         }
 
@@ -58,13 +60,27 @@ namespace MLAPI.RuntimeTests.Metrics.NetworkVariables
         }
 
         [UnityTest]
+        public IEnumerator TrackNetworkVariableDeltaSentMetric()
+        {
+            var waitForMetricValues = new WaitForMetricValues<NetworkVariableEvent>(m_ServerMetrics.Dispatcher, MetricNames.NetworkVariableDeltaSent);
+
+            yield return waitForMetricValues.WaitForAFewFrames();
+
+            var metricValues = waitForMetricValues.AssertMetricValuesHaveBeenFound();
+
+            var networkVariableDeltaSent = metricValues.First();
+            Assert.AreEqual(nameof(NetworkVariableComponent.MyNetworkVariable), networkVariableDeltaSent.Name);
+            Assert.AreEqual(m_Server.LocalClientId, networkVariableDeltaSent.Connection.Id);
+        }
+
+        [UnityTest]
         public IEnumerator TrackNetworkVariableDeltaReceivedMetric()
         {
             var waitForMetricValues = new WaitForMetricValues<NetworkVariableEvent>(m_ClientMetrics.Dispatcher, MetricNames.NetworkVariableDeltaReceived);
 
             yield return waitForMetricValues.WaitForAFewFrames();
 
-            var metricValues = waitForMetricValues.EnsureMetricValuesHaveBeenFound();
+            var metricValues = waitForMetricValues.AssertMetricValuesHaveBeenFound();
             Assert.AreEqual(2, metricValues.Count); // We have an instance each of the player prefabs
 
             var first = metricValues.First();
