@@ -319,20 +319,20 @@ namespace MLAPI.SceneManagement
         {
             var networkObjectsToRemove = reader.ReadULongArrayPacked();
 
-            if(networkObjectsToRemove.Length > 0)
+            if (networkObjectsToRemove.Length > 0)
             {
                 Debug.Log($"Client {NetworkManager.Singleton.LocalClientId} is being re-synchronized.");
                 var networkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>();
                 var networkObjectIdToNetworkObject = new Dictionary<ulong, NetworkObject>();
-                foreach(var networkObject in networkObjects)
+                foreach (var networkObject in networkObjects)
                 {
-                    if(!networkObjectIdToNetworkObject.ContainsKey(networkObject.NetworkObjectId))
+                    if (!networkObjectIdToNetworkObject.ContainsKey(networkObject.NetworkObjectId))
                     {
                         networkObjectIdToNetworkObject.Add(networkObject.NetworkObjectId, networkObject);
                     }
                 }
 
-                foreach(var networkObjectId in networkObjectsToRemove)
+                foreach (var networkObjectId in networkObjectsToRemove)
                 {
                     if (networkObjectIdToNetworkObject.ContainsKey(networkObjectId))
                     {
@@ -343,6 +343,17 @@ namespace MLAPI.SceneManagement
                         if (m_NetworkManager.PrefabHandler.ContainsHandler(networkObject))
                         {
                             Debug.Log($"NetworkObjectId {networkObjectId} marked as not spawned and is being destroyed via prefab handler.");
+                            // Since this is the client side and we have missed the delete message, until the Snapshot system is in place for spawn and despawn handling
+                            // we have to remove this from the list of spawned objects manually or when a NetworkObjectId is recycled the client will throw an error
+                            // about the id already being assigned.
+                            if (m_NetworkManager.SpawnManager.SpawnedObjects.ContainsKey(networkObjectId))
+                            {
+                                m_NetworkManager.SpawnManager.SpawnedObjects.Remove(networkObjectId);
+                            }
+                            if (m_NetworkManager.SpawnManager.SpawnedObjectsList.Contains(networkObject))
+                            {
+                                m_NetworkManager.SpawnManager.SpawnedObjectsList.Remove(networkObject);
+                            }
                             NetworkManager.Singleton.PrefabHandler.HandleNetworkPrefabDestroy(networkObject);
                         }
                         else
@@ -389,10 +400,10 @@ namespace MLAPI.SceneManagement
         {
             m_NetworkObjectsToBeRemoved.Clear();
             var networkObjectIdCount = reader.ReadUInt32Packed();
-            for(int i = 0; i < networkObjectIdCount; i++)
+            for (int i = 0; i < networkObjectIdCount; i++)
             {
                 var networkObjectId = (ulong)reader.ReadUInt32Packed();
-                if(!m_NetworkManager.SpawnManager.SpawnedObjects.ContainsKey(networkObjectId))
+                if (!m_NetworkManager.SpawnManager.SpawnedObjects.ContainsKey(networkObjectId))
                 {
                     m_NetworkObjectsToBeRemoved.Add(networkObjectId);
                 }
@@ -440,7 +451,7 @@ namespace MLAPI.SceneManagement
                     for (int i = 0; i < newObjectsCount; i++)
                     {
                         var spawnedNetworkObject = NetworkObject.DeserializeSceneObject(InternalBuffer, reader, networkManager);
-                        if(!m_NetworkObjectsSync.Contains(spawnedNetworkObject))
+                        if (!m_NetworkObjectsSync.Contains(spawnedNetworkObject))
                         {
                             m_NetworkObjectsSync.Add(spawnedNetworkObject);
                         }

@@ -337,7 +337,7 @@ namespace TestProject.ManualTests
                 SpawnSliderValueText.text = SpawnsPerSecond.ToString();
 
                 // Handle case where the initial value is set to zero and so coroutine needs to be started
-                if(SpawnsPerSecond > 0 && !m_IsSpawningObjects)
+                if (SpawnsPerSecond > 0 && !m_IsSpawningObjects)
                 {
                     StartSpawningBoxes();
                 }
