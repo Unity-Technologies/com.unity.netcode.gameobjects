@@ -228,7 +228,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 484425646
+  GlobalObjectIdHash: 4279522617
   AlwaysReplicateAsRoot: 0
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
@@ -246,13 +246,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   RandomMovement: 0
   AutoSpawnEnable: 1
+  SpawnInSourceScene: 1
   InitialSpawnDelay: 0.2
-  SpawnsPerSecond: 1
+  SpawnsPerSecond: 3
   PoolSize: 32
   ObjectSpeed: 8
   EnableHandler: 1
   RegisterUsingNetworkObject: 0
-  ServerObjectToPool: {fileID: 5054079819822531224, guid: e04a7aaf01a4ad145a945161a18bf49c,
+  ServerObjectToPool: {fileID: 5781804285550429985, guid: 27c27433e278c054dbe3bae7d411cfab,
     type: 3}
-  ClientObjectToPool: {fileID: 7900845470658144705, guid: 9f2cc6554ae21e3498fb4cc28a07108d,
+  ClientObjectToPool: {fileID: 238713212259395427, guid: 0aca3eef90d204641888a517edcc951f,
     type: 3}
