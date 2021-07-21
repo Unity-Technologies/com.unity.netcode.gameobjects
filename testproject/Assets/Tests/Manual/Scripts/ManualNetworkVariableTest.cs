@@ -27,17 +27,19 @@ namespace TestProject.ManualTests
 
         // testing NetworkVariable, especially ticks
         private NetworkVariable<int> m_TestVar = new NetworkVariable<int>();
-        private int m_MinDelta = 0;
-        private int m_MaxDelta = 0;
-        private int m_LastRemoteTick = 0;
-        private bool m_Valid = false;
+
         private string m_Problems = string.Empty;
         private int m_Count = 0;
+        private bool m_Started = false;
 
-        private const int k_EndIterations = 1000;
+        private const int k_EndValue = 1000;
 
         private void Start()
         {
+            m_TestList.SetNetworkBehaviour(this);
+            m_TestSet.SetNetworkBehaviour(this);
+            m_TestDictionary.SetNetworkBehaviour(this);
+
             m_TestVar.OnValueChanged += ValueChanged;
             m_TestVar.Settings.WritePermission = NetworkVariablePermission.Everyone;
 
@@ -59,7 +61,11 @@ namespace TestProject.ManualTests
 
         private void FixedUpdate()
         {
-            if (IsOwner)
+            if (!m_Started && NetworkManager.ConnectedClientsList.Count > 0)
+            {
+                m_Started = true;
+            }
+            if (m_Started)
             {
                 m_TestVar.Value = m_TestVar.Value + 1;
                 m_TestList.Add(MyMessage());
@@ -102,48 +108,7 @@ namespace TestProject.ManualTests
 
         private void ValueChanged(int before, int after)
         {
-            if (!IsOwner && !IsServer)
-            {
-                // compute the delta in tick between client and server,
-                // as seen from the client, when it receives a value not from itself
-
-               // MSW: This test relies on the LocalTick variable which was otherwise dormant
-               //  and remove from MLAPI.  
-               //
-               //  I'm assuming This test will be superseded by the snapshot variable sync
-               //
-
-//                if (m_TestVar.LocalTick != NetworkTickSystem.NoTick)
-//                {
-//                    int delta = m_TestVar.LocalTick - m_TestVar.RemoteTick;
-//                    m_Count++;
-//
-//                    if (!m_Valid)
-//                    {
-//                        m_Valid = true;
-//                        m_MinDelta = delta;
-//                        m_MaxDelta = delta;
-//                        m_LastRemoteTick = m_TestVar.RemoteTick;
-//                    }
-//                    else
-//                    {
-//                        m_MinDelta = Math.Min(delta, m_MinDelta);
-//                        m_MaxDelta = Math.Max(delta, m_MaxDelta);
-//
-//                        // tick should not go backward until wrap around (which should be a long time)
-//                        if (m_TestVar.RemoteTick == m_LastRemoteTick)
-//                        {
-//                            m_Problems += "Same remote tick receive twice\n";
-//                        }
-//                        else if (m_TestVar.RemoteTick < m_LastRemoteTick)
-//                        {
-//                            m_Problems += "Ticks went backward\n";
-//                        }
-//                    }
-//                }
-            }
-
-            if (m_Count == k_EndIterations)
+            if (!IsOwner && !IsServer && m_TestVar.Value >= k_EndValue)
             {
                 // Let's be reasonable and allow a 5 tick difference
                 // that could be due to timing difference, lag, queueing
@@ -163,11 +128,6 @@ namespace TestProject.ManualTests
                     m_Problems += "Didn't receive any NetworkDictionary updates from other machines";
                 }
 
-                if (Math.Abs(m_MaxDelta - m_MinDelta) > 5)
-                {
-                    m_Problems += "Delta range: " + m_MinDelta + " + " + m_MaxDelta + "\n";
-                }
-
                 if (m_Problems == "")
                 {
                     Debug.Log("**** TEST PASSED ****");
@@ -177,6 +137,10 @@ namespace TestProject.ManualTests
                     Debug.Log("**** TEST FAILED ****");
                     Debug.Log(m_Problems);
                 }
+            }
+
+            if (m_TestVar.Value >= k_EndValue)
+            {
                 enabled = false;
             }
         }
