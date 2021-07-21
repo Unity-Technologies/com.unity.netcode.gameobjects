@@ -17,9 +17,15 @@ namespace MLAPI.Messaging
     {
         public NetworkUpdateStage UpdateStage;
         public MessageQueueContainer.MessageType MessageType;
-        public ulong NetworkId; //Sender's network Identifier, or recipient identifier for server RPCs
+        /// <summary>
+        /// Sender's network Identifier, or recipient identifier for server RPCs
+        /// </summary>
+        public ulong NetworkId;
         public NetworkChannel NetworkChannel;
-        public ulong[] ClientNetworkIds; //Everything other than server RPCs
+        /// <summary>
+        /// Everything other than server RPCs
+        /// </summary>
+        public ulong[] ClientNetworkIds;
         public long StreamSize;
         public float Timestamp;
         public PooledNetworkWriter NetworkWriter;

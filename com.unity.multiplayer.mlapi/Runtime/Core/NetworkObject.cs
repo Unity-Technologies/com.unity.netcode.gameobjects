@@ -290,11 +290,8 @@ namespace MLAPI
 
 
             var context = networkManager.MessageQueueContainer.EnterInternalCommandContext(
-                MessageQueueContainer.MessageType.CreateObjects,
-                NetworkChannel.Internal,
-                new[] {clientId},
-                NetworkUpdateLoop.UpdateStage
-            );
+                MessageQueueContainer.MessageType.CreateObjects, NetworkChannel.Internal,
+                new[] {clientId}, NetworkUpdateLoop.UpdateStage);
 
             if (context != null)
             {
@@ -344,11 +341,8 @@ namespace MLAPI
             Observers.Remove(clientId);
 
             var context = NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
-                MessageQueueContainer.MessageType.DestroyObject,
-                NetworkChannel.Internal,
-                new[] {clientId},
-                NetworkUpdateLoop.UpdateStage
-            );
+                MessageQueueContainer.MessageType.DestroyObject, NetworkChannel.Internal,
+                new[] {clientId}, NetworkUpdateLoop.UpdateStage);
             if (context != null)
             {
                 using (var icontext = (InternalCommandContext) context)
@@ -402,11 +396,8 @@ namespace MLAPI
             }
 
             var context = networkManager.MessageQueueContainer.EnterInternalCommandContext(
-                MessageQueueContainer.MessageType.DestroyObjects,
-                NetworkChannel.Internal,
-                new[] {clientId},
-                NetworkUpdateLoop.UpdateStage
-            );
+                MessageQueueContainer.MessageType.DestroyObjects, NetworkChannel.Internal,
+                new[] {clientId}, NetworkUpdateLoop.UpdateStage);
             if (context != null)
             {
                 using (var icontext = (InternalCommandContext) context)
@@ -698,11 +689,9 @@ namespace MLAPI
             ApplyNetworkParenting();
 
             var context = NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
-                MessageQueueContainer.MessageType.ParentSync,
-                NetworkChannel.Internal,
+                MessageQueueContainer.MessageType.ParentSync, NetworkChannel.Internal,
                 NetworkManager.ConnectedClientsIds.Where((id) => Observers.Contains(id)).ToArray(),
-                NetworkUpdateLoop.UpdateStage
-            );
+                NetworkUpdateLoop.UpdateStage);
 
             if (context != null)
             {

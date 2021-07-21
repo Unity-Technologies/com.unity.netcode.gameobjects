@@ -10,7 +10,7 @@ using UnityEngine.TestTools;
 
 namespace TestProject.RuntimeTests
 {
-    public class MessageOrdering
+    public class MessageOrderingTests
     {
         private GameObject m_Prefab;
 

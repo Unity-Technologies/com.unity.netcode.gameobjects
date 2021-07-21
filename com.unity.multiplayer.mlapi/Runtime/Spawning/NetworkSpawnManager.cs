@@ -111,11 +111,8 @@ namespace MLAPI.Spawning
             var messageQueueContainer = NetworkManager.MessageQueueContainer;
 
             var context = messageQueueContainer.EnterInternalCommandContext(
-                MessageQueueContainer.MessageType.ChangeOwner,
-                NetworkChannel.Internal,
-                NetworkManager.ConnectedClientsIds,
-                NetworkUpdateLoop.UpdateStage
-            );
+                MessageQueueContainer.MessageType.ChangeOwner, NetworkChannel.Internal,
+                NetworkManager.ConnectedClientsIds, NetworkUpdateLoop.UpdateStage);
             if (context != null)
             {
                 using (var icontext = (InternalCommandContext) context)
@@ -156,11 +153,8 @@ namespace MLAPI.Spawning
             ulong[] clientIds = NetworkManager.ConnectedClientsIds;
             var messageQueueContainer = NetworkManager.MessageQueueContainer;
             var context = messageQueueContainer.EnterInternalCommandContext(
-                MessageQueueContainer.MessageType.ChangeOwner,
-                NetworkChannel.Internal,
-                clientIds,
-                NetworkUpdateLoop.UpdateStage
-            );
+                MessageQueueContainer.MessageType.ChangeOwner, NetworkChannel.Internal,
+                clientIds, NetworkUpdateLoop.UpdateStage);
             if (context != null)
             {
                 using (var icontext = (InternalCommandContext) context)
@@ -387,11 +381,8 @@ namespace MLAPI.Spawning
 
             ulong[] clientIds = NetworkManager.ConnectedClientsIds;
             var context = messageQueueContainer.EnterInternalCommandContext(
-                MessageQueueContainer.MessageType.CreateObject,
-                NetworkChannel.Internal,
-                clientIds,
-                NetworkUpdateLoop.UpdateStage
-            );
+                MessageQueueContainer.MessageType.CreateObject, NetworkChannel.Internal,
+                clientIds, NetworkUpdateLoop.UpdateStage);
             if (context != null)
             {
                 using (var icontext = (InternalCommandContext) context)
@@ -669,11 +660,8 @@ namespace MLAPI.Spawning
 
                             ulong[] clientIds = NetworkManager.ConnectedClientsIds;
                             var context = messageQueueContainer.EnterInternalCommandContext(
-                                MessageQueueContainer.MessageType.DestroyObject,
-                                NetworkChannel.Internal,
-                                clientIds,
-                                NetworkUpdateLoop.UpdateStage
-                            );
+                                MessageQueueContainer.MessageType.DestroyObject, NetworkChannel.Internal,
+                                clientIds, NetworkUpdateLoop.UpdateStage);
                             if (context != null)
                             {
                                 using (var icontext = (InternalCommandContext) context)

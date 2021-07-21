@@ -1046,11 +1046,8 @@ namespace MLAPI
         {
             var clientIds = new[] {ServerClientId};
             var context = MessageQueueContainer.EnterInternalCommandContext(
-                MessageQueueContainer.MessageType.ConnectionRequest,
-                NetworkChannel.Internal,
-                clientIds,
-                NetworkUpdateStage.EarlyUpdate
-            );
+                MessageQueueContainer.MessageType.ConnectionRequest, NetworkChannel.Internal,
+                clientIds, NetworkUpdateStage.EarlyUpdate);
             if (context != null)
             {
                 using (var icontext = (InternalCommandContext) context)
@@ -1405,11 +1402,8 @@ namespace MLAPI
 
             ulong[] clientIds = ConnectedClientsIds;
             var context = MessageQueueContainer.EnterInternalCommandContext(
-                MessageQueueContainer.MessageType.TimeSync,
-                NetworkChannel.SyncChannel,
-                clientIds,
-                NetworkUpdateStage.EarlyUpdate
-            );
+                MessageQueueContainer.MessageType.TimeSync, NetworkChannel.SyncChannel,
+                clientIds, NetworkUpdateStage.EarlyUpdate);
             if (context != null)
             {
                 using (var icontext = (InternalCommandContext) context)
@@ -1466,11 +1460,8 @@ namespace MLAPI
                     ulong[] clientIds = {ownerClientId};
 
                     var context = MessageQueueContainer.EnterInternalCommandContext(
-                        MessageQueueContainer.MessageType.ConnectionApproved,
-                        NetworkChannel.Internal,
-                        clientIds,
-                        NetworkUpdateStage.EarlyUpdate
-                    );
+                        MessageQueueContainer.MessageType.ConnectionApproved, NetworkChannel.Internal,
+                        clientIds, NetworkUpdateStage.EarlyUpdate);
 
                     if (context != null)
                     {
@@ -1515,11 +1506,8 @@ namespace MLAPI
                     }
 
                     var context = MessageQueueContainer.EnterInternalCommandContext(
-                        MessageQueueContainer.MessageType.CreateObject,
-                        NetworkChannel.Internal,
-                        new[] {clientPair.Key},
-                        NetworkUpdateLoop.UpdateStage
-                    );
+                        MessageQueueContainer.MessageType.CreateObject, NetworkChannel.Internal,
+                        new[] {clientPair.Key}, NetworkUpdateLoop.UpdateStage);
                     if (context != null)
                     {
                         using (var icontext = (InternalCommandContext)context)

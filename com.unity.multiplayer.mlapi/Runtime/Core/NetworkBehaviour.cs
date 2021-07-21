@@ -585,11 +585,8 @@ namespace MLAPI
                             if (writtenAny)
                             {
                                 var context = NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
-                                    MessageQueueContainer.MessageType.NetworkVariableDelta,
-                                    m_ChannelsForNetworkVariableGroups[j],
-                                    new[] {clientId},
-                                    NetworkUpdateLoop.UpdateStage
-                                );
+                                    MessageQueueContainer.MessageType.NetworkVariableDelta, m_ChannelsForNetworkVariableGroups[j],
+                                    new[] {clientId}, NetworkUpdateLoop.UpdateStage);
                                 if (context != null)
                                 {
                                     using (var icontext = (InternalCommandContext)context)

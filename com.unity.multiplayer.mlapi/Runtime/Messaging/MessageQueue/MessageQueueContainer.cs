@@ -530,10 +530,9 @@ namespace MLAPI.Messaging
 
                     //Write message data
                     loopBackHistoryFrame.QueueWriter.WriteBytes(
-                        messageQueueHistoryItem.QueueBuffer.GetBuffer(),
-                        messageSize,
-                        (int)messageQueueHistoryItem.QueueBuffer.Position + 2 // Skip the 2 byte header
-                    );
+                        messageQueueHistoryItem.QueueBuffer.GetBuffer(), messageSize,
+                        // Skip the 2 byte header
+                        (int)messageQueueHistoryItem.QueueBuffer.Position + 2);
 
                     //Set the total size for this stream
                     loopBackHistoryFrame.TotalSize = (uint)loopBackHistoryFrame.QueueBuffer.Position;

@@ -56,11 +56,8 @@ namespace MLAPI.Messaging
             }
 
             var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
-                MessageQueueContainer.MessageType.UnnamedMessage,
-                networkChannel,
-                clientIds.ToArray(),
-                NetworkUpdateLoop.UpdateStage
-            );
+                MessageQueueContainer.MessageType.UnnamedMessage, networkChannel,
+                clientIds.ToArray(), NetworkUpdateLoop.UpdateStage);
             if (context != null)
             {
                 using (var icontext = (InternalCommandContext) context)
@@ -82,11 +79,8 @@ namespace MLAPI.Messaging
         {
 
             var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
-                MessageQueueContainer.MessageType.UnnamedMessage,
-                networkChannel,
-                new[] {clientId},
-                NetworkUpdateLoop.UpdateStage
-            );
+                MessageQueueContainer.MessageType.UnnamedMessage, networkChannel,
+                new[] {clientId}, NetworkUpdateLoop.UpdateStage);
             if (context != null)
             {
                 using (var icontext = (InternalCommandContext) context)
@@ -183,11 +177,8 @@ namespace MLAPI.Messaging
 
 
             var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
-                MessageQueueContainer.MessageType.NamedMessage,
-                networkChannel,
-                new[] {clientId},
-                NetworkUpdateLoop.UpdateStage
-            );
+                MessageQueueContainer.MessageType.NamedMessage, networkChannel,
+                new[] {clientId}, NetworkUpdateLoop.UpdateStage);
             if (context != null)
             {
                 using (var icontext = (InternalCommandContext) context)
@@ -231,11 +222,8 @@ namespace MLAPI.Messaging
             }
 
             var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
-                MessageQueueContainer.MessageType.NamedMessage,
-                networkChannel,
-                clientIds.ToArray(),
-                NetworkUpdateLoop.UpdateStage
-            );
+                MessageQueueContainer.MessageType.NamedMessage, networkChannel,
+                clientIds.ToArray(), NetworkUpdateLoop.UpdateStage);
             if (context != null)
             {
                 using (var icontext = (InternalCommandContext) context)

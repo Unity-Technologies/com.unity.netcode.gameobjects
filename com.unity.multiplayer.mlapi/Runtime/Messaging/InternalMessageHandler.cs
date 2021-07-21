@@ -137,8 +137,7 @@ namespace MLAPI.Messaging
         {
             using (var reader = PooledNetworkReader.Get(stream))
             {
-                var isPlayerObjectI = reader.ReadByte();
-                bool isPlayerObject = isPlayerObjectI != 0;
+                bool isPlayerObject = reader.ReadBool();
                 var networkId = reader.ReadUInt64Packed();
                 var ownerClientId = reader.ReadUInt64Packed();
                 var hasParent = reader.ReadBool();

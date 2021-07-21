@@ -61,11 +61,8 @@ namespace MLAPI.Logging
             if (NetworkManager.Singleton != null && !NetworkManager.Singleton.IsServer && NetworkManager.Singleton.NetworkConfig.EnableNetworkLogs)
             {
                 var context = NetworkManager.Singleton.MessageQueueContainer.EnterInternalCommandContext(
-                    MessageQueueContainer.MessageType.ServerLog,
-                    NetworkChannel.Internal,
-                    new[] {NetworkManager.Singleton.ServerClientId},
-                    NetworkUpdateLoop.UpdateStage
-                );
+                    MessageQueueContainer.MessageType.ServerLog, NetworkChannel.Internal,
+                    new[] {NetworkManager.Singleton.ServerClientId}, NetworkUpdateLoop.UpdateStage);
                 if (context != null)
                 {
                     using (var icontext = (InternalCommandContext) context)

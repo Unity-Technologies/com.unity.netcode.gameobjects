@@ -185,11 +185,8 @@ namespace MLAPI
             // Send the entry index and the buffer where the variables are serialized
 
             var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
-                MessageQueueContainer.MessageType.SnapshotData,
-                NetworkChannel.SnapshotExchange,
-                new[] {clientId},
-                NetworkUpdateLoop.UpdateStage
-            );
+                MessageQueueContainer.MessageType.SnapshotData, NetworkChannel.SnapshotExchange,
+                new[] {clientId}, NetworkUpdateLoop.UpdateStage);
 
             if (context != null)
             {
