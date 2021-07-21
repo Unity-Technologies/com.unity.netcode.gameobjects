@@ -481,17 +481,20 @@ namespace MLAPI.Transports
 
         public override SocketTasks StartClient()
         {
+            if (m_Driver.IsCreated)
+                return SocketTask.Fault.AsTasks();
+
             var task = SocketTask.Working;
-
             StartCoroutine(ClientBindAndConnect(task));
-
             return task.AsTasks();
         }
 
         public override SocketTasks StartServer()
         {
-            var task = SocketTask.Working;
+            if (m_Driver.IsCreated)
+                return SocketTask.Fault.AsTasks();
 
+            var task = SocketTask.Working;
             switch (m_ProtocolType)
             {
                 case ProtocolType.UnityTransport:
@@ -501,7 +504,6 @@ namespace MLAPI.Transports
                     StartCoroutine(StartRelayServer(task));
                     break;
             }
-
             return task.AsTasks();
         }
     }
