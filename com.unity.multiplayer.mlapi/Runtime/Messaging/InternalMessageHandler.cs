@@ -380,7 +380,9 @@ namespace MLAPI.Messaging
         {
             using (var reader = PooledNetworkReader.Get(stream))
             {
+                var length = stream.Length;
                 var logType = (NetworkLog.LogType)reader.ReadByte();
+                m_NetworkManager.NetworkMetrics.TrackServerLogReceived(clientId, (uint)logType, (ulong)length);
                 string message = reader.ReadStringPacked();
 
                 switch (logType)

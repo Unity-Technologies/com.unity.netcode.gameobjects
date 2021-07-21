@@ -1,5 +1,4 @@
 #if MULTIPLAYER_TOOLS
-
 using System.Collections.Generic;
 using Unity.Multiplayer.MetricTypes;
 using Unity.Multiplayer.NetStats.Dispatch;
@@ -24,6 +23,8 @@ namespace MLAPI.Metrics
         readonly EventMetric<ObjectDestroyedEvent> m_ObjectDestroyReceivedEvent = new EventMetric<ObjectDestroyedEvent>(MetricNames.ObjectDestroyedReceived);
         readonly EventMetric<RpcEvent> m_RpcSentEvent = new EventMetric<RpcEvent>(MetricNames.RpcSent);
         readonly EventMetric<RpcEvent> m_RpcReceivedEvent = new EventMetric<RpcEvent>(MetricNames.RpcReceived);
+        readonly EventMetric<ServerLogEvent> m_ServerLogSentEvent = new EventMetric<ServerLogEvent>(MetricNames.ServerLogSent);
+        readonly EventMetric<ServerLogEvent> m_ServerLogReceivedEvent = new EventMetric<ServerLogEvent>(MetricNames.ServerLogReceived);
 
         readonly Dictionary<ulong, NetworkObjectIdentifier> m_NetworkGameObjects = new Dictionary<ulong, NetworkObjectIdentifier>();
 
@@ -37,6 +38,7 @@ namespace MLAPI.Metrics
                 .WithMetricEvents(m_ObjectSpawnSentEvent, m_ObjectSpawnReceivedEvent)
                 .WithMetricEvents(m_ObjectDestroySentEvent, m_ObjectDestroyReceivedEvent)
                 .WithMetricEvents(m_RpcSentEvent, m_RpcReceivedEvent)
+                .WithMetricEvents(m_ServerLogSentEvent, m_ServerLogReceivedEvent)
                 .Build();
 
             Dispatcher.RegisterObserver(MLAPIObserver.Observer);
@@ -157,6 +159,16 @@ namespace MLAPI.Metrics
             m_RpcReceivedEvent.Mark(new RpcEvent(new ConnectionInfo(senderClientId), networkObjectIdentifier, rpcName, bytesCount));
         }
 
+        public void TrackServerLogSent(ulong receiverClientId, uint logType, ulong bytesCount)
+        {
+            m_ServerLogSentEvent.Mark(new ServerLogEvent(new ConnectionInfo(receiverClientId), (LogLevel)logType, bytesCount));
+        }
+
+        public void TrackServerLogReceived(ulong senderClientId, uint logType, ulong bytesCount)
+        {
+            m_ServerLogReceivedEvent.Mark(new ServerLogEvent(new ConnectionInfo(senderClientId), (LogLevel)logType, bytesCount));
+        }
+
         public void DispatchFrame()
         {
             Dispatcher.Dispatch();
@@ -173,5 +185,4 @@ namespace MLAPI.Metrics
         public static IMetricObserver Observer { get; } = MetricObserverFactory.Construct();
     }
 }
-
 #endif
