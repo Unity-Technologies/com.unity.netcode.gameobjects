@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using MLAPI.Timing;
 using UnityEngine;
 using AsyncOperation = UnityEngine.AsyncOperation;
 
@@ -16,9 +17,9 @@ namespace MLAPI.SceneManagement
         public List<ulong> DoneClients { get; } = new List<ulong>();
 
         /// <summary>
-        /// The NetworkTime time at the moment the scene switch was initiated by the server.
+        /// The NetworkTime at the moment the scene switch was initiated by the server.
         /// </summary>
-        public float TimeAtInitiation { get; }
+        public NetworkTime TimeAtInitiation { get; }
 
         /// <summary>
         /// Delegate type for when the switch scene progress is completed. Either by all clients done loading the scene or by time out.
@@ -61,7 +62,7 @@ namespace MLAPI.SceneManagement
         {
             m_NetworkManager = networkManager;
             m_TimeOutCoroutine = m_NetworkManager.StartCoroutine(m_NetworkManager.TimeOutSwitchSceneProgress(this));
-            TimeAtInitiation = networkManager.NetworkTime;
+            TimeAtInitiation = networkManager.LocalTime;
         }
 
         internal void AddClientAsDone(ulong clientId)

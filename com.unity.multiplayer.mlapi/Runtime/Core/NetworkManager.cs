@@ -16,6 +16,7 @@ using MLAPI.Spawning;
 using MLAPI.Exceptions;
 using MLAPI.Transports.Tasks;
 using MLAPI.Messaging.Buffering;
+using MLAPI.Timing;
 using Unity.Profiling;
 
 namespace MLAPI
@@ -27,10 +28,12 @@ namespace MLAPI
     public class NetworkManager : MonoBehaviour, INetworkUpdateSystem, IProfilableTransportProvider
     {
 #pragma warning disable IDE1006 // disable naming rule violation check
+
         // RuntimeAccessModifiersILPP will make this `public`
         internal static readonly Dictionary<uint, Action<NetworkBehaviour, NetworkSerializer, __RpcParams>> __rpc_func_table = new Dictionary<uint, Action<NetworkBehaviour, NetworkSerializer, __RpcParams>>();
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
+
         // RuntimeAccessModifiersILPP will make this `public`
         internal static readonly Dictionary<uint, string> __rpc_name_table = new Dictionary<uint, string>();
 #else // !(UNITY_EDITOR || DEVELOPMENT_BUILD)
@@ -40,9 +43,8 @@ namespace MLAPI
 #pragma warning restore IDE1006 // restore naming rule violation check
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-        private static ProfilerMarker s_EventTick = new ProfilerMarker($"{nameof(NetworkManager)}.EventTick");
-        private static ProfilerMarker s_ReceiveTick = new ProfilerMarker($"{nameof(NetworkManager)}.ReceiveTick");
         private static ProfilerMarker s_SyncTime = new ProfilerMarker($"{nameof(NetworkManager)}.SyncTime");
+        private static ProfilerMarker s_TransportPoll = new ProfilerMarker($"{nameof(NetworkManager)}.TransportPoll");
         private static ProfilerMarker s_TransportConnect = new ProfilerMarker($"{nameof(NetworkManager)}.TransportConnect");
         private static ProfilerMarker s_HandleIncomingData = new ProfilerMarker($"{nameof(NetworkManager)}.{nameof(HandleIncomingData)}");
         private static ProfilerMarker s_TransportDisconnect = new ProfilerMarker($"{nameof(NetworkManager)}.TransportDisconnect");
@@ -55,13 +57,15 @@ namespace MLAPI
         internal static bool UseClassicDelta = true;
         internal static bool UseSnapshot = false;
 
+        private const double k_TimeSyncFrequency = 1.0d; // sync every second, TODO will be removed once timesync is done via snapshots
+
         internal RpcQueueContainer RpcQueueContainer { get; private set; }
-        internal NetworkTickSystem NetworkTickSystem { get; private set; }
 
         internal SnapshotSystem SnapshotSystem { get; private set; }
         internal NetworkBehaviourUpdater BehaviourUpdater { get; private set; }
 
         private NetworkPrefabHandler m_PrefabHandler;
+
         public NetworkPrefabHandler PrefabHandler
         {
             get
@@ -70,17 +74,18 @@ namespace MLAPI
                 {
                     m_PrefabHandler = new NetworkPrefabHandler();
                 }
+
                 return m_PrefabHandler;
             }
         }
 
-        /// <summary>
-        /// A synchronized time, represents the time in seconds since the server application started. Is replicated across all clients
-        /// </summary>
-        public float NetworkTime => Time.unscaledTime + m_CurrentNetworkTimeOffset;
+        public NetworkTimeSystem NetworkTimeSystem { get; private set; }
 
-        private float m_NetworkTimeOffset;
-        private float m_CurrentNetworkTimeOffset;
+        public NetworkTickSystem NetworkTickSystem { get; private set; }
+
+        public NetworkTime LocalTime => NetworkTickSystem?.LocalTime ?? default;
+
+        public NetworkTime ServerTime => NetworkTickSystem?.ServerTime ?? default;
 
         /// <summary>
         /// Gets or sets if the NetworkManager should be marked as DontDestroyOnLoad
@@ -289,7 +294,7 @@ namespace MLAPI
                     {
                         {
                             var childNetworkObjects = new List<NetworkObject>();
-                            networkPrefab.Prefab.GetComponentsInChildren(/* includeInactive = */ true, childNetworkObjects);
+                            networkPrefab.Prefab.GetComponentsInChildren( /* includeInactive = */ true, childNetworkObjects);
                             if (childNetworkObjects.Count > 1) // total count = 1 root NetworkObject + n child NetworkObjects
                             {
                                 if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
@@ -311,6 +316,7 @@ namespace MLAPI
                                     {
                                         networkPrefab.SourcePrefabToOverride = networkPrefab.Prefab;
                                     }
+
                                     globalObjectIdHash = networkPrefab.SourcePrefabToOverride.GetComponent<NetworkObject>().GlobalObjectIdHash;
                                 }
                                 break;
@@ -344,10 +350,6 @@ namespace MLAPI
             }
 
             LocalClientId = 0;
-            m_NetworkTimeOffset = 0f;
-            m_CurrentNetworkTimeOffset = 0f;
-            m_LastReceiveTickTime = 0f;
-            m_LastReceiveTickTime = 0f;
             PendingClients.Clear();
             ConnectedClients.Clear();
             ConnectedClientsList.Clear();
@@ -388,14 +390,17 @@ namespace MLAPI
 
             SnapshotSystem = new SnapshotSystem();
 
-            //This 'if' should never enter
-            if (NetworkTickSystem != null)
+            if (server)
             {
-                NetworkTickSystem.Dispose();
-                NetworkTickSystem = null;
+                NetworkTimeSystem = NetworkTimeSystem.ServerTimeSystem();
+            }
+            else
+            {
+                NetworkTimeSystem = new NetworkTimeSystem(1.0 / NetworkConfig.TickRate, 1.0 / NetworkConfig.TickRate, 0.2);
             }
 
-            NetworkTickSystem = new NetworkTickSystem(NetworkConfig.NetworkTickIntervalSec);
+            NetworkTickSystem = new NetworkTickSystem(NetworkConfig.TickRate, 0, 0);
+            NetworkTickSystem.Tick += OnNetworkManagerTick;
 
             // This should never happen, but in the event that it does there should be (at a minimum) a unity error logged.
             if (RpcQueueContainer != null)
@@ -517,6 +522,7 @@ namespace MLAPI
             {
                 NetworkConfig.NetworkPrefabs.RemoveAt(removeEmptyPrefabs[i]);
             }
+
             removeEmptyPrefabs.Clear();
 
             NetworkConfig.NetworkTransport.OnTransportEvent += HandleRawTransportPoll;
@@ -616,6 +622,7 @@ namespace MLAPI
             }
 
             var disconnectedIds = new HashSet<ulong>();
+
             //Don't know if I have to disconnect the clients. I'm assuming the NetworkTransport does all the cleaning on shtudown. But this way the clients get a disconnect message from server (so long it does't get lost)
 
             // make sure all RPCs are flushed before transport disconnect clients
@@ -670,6 +677,7 @@ namespace MLAPI
             IsServer = false;
             IsClient = false;
             StopServer();
+
             //We don't stop client since we dont actually have a transport connection to our own host. We just handle host messages directly in the MLAPI
         }
 
@@ -816,7 +824,7 @@ namespace MLAPI
 
             if (NetworkTickSystem != null)
             {
-                NetworkTickSystem.Dispose();
+                NetworkTickSystem.Tick -= OnNetworkManagerTick;
                 NetworkTickSystem = null;
             }
 
@@ -884,10 +892,6 @@ namespace MLAPI
             }
         }
 
-        private float m_LastReceiveTickTime;
-        private float m_LastEventTickTime;
-        private float m_LastTimeSyncTime;
-
         private void OnNetworkEarlyUpdate()
         {
             NotifyProfilerListeners();
@@ -895,120 +899,80 @@ namespace MLAPI
 
             if (IsListening)
             {
-                // Process received data
-                if ((NetworkTime - m_LastReceiveTickTime >= (1f / NetworkConfig.ReceiveTickrate)) || NetworkConfig.ReceiveTickrate <= 0)
-                {
-                    PerformanceDataManager.Increment(ProfilerConstants.ReceiveTickRate);
-                    ProfilerStatManager.RcvTickRate.Record();
+                PerformanceDataManager.Increment(ProfilerConstants.ReceiveTickRate);
+                ProfilerStatManager.RcvTickRate.Record();
+
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-                    s_ReceiveTick.Begin();
+                s_TransportPoll.Begin();
 #endif
-                    var isLoopBack = false;
+                var isLoopBack = false;
 
 #if !UNITY_2020_2_OR_NEWER
                     NetworkProfiler.StartTick(TickType.Receive);
 #endif
 
-                    //If we are in loopback mode, we don't need to touch the transport
-                    if (!isLoopBack)
+                //If we are in loopback mode, we don't need to touch the transport
+                if (!isLoopBack)
+                {
+                    NetworkEvent networkEvent;
+                    int processedEvents = 0;
+                    do
                     {
-                        NetworkEvent networkEvent;
-                        int processedEvents = 0;
-                        do
-                        {
-                            processedEvents++;
-                            networkEvent = NetworkConfig.NetworkTransport.PollEvent(out ulong clientId, out NetworkChannel networkChannel, out ArraySegment<byte> payload, out float receiveTime);
-                            HandleRawTransportPoll(networkEvent, clientId, networkChannel, payload, receiveTime);
+                        processedEvents++;
+                        networkEvent = NetworkConfig.NetworkTransport.PollEvent(out ulong clientId, out NetworkChannel networkChannel, out ArraySegment<byte> payload, out float receiveTime);
+                        HandleRawTransportPoll(networkEvent, clientId, networkChannel, payload, receiveTime);
 
-                            // Only do another iteration if: there are no more messages AND (there is no limit to max events or we have processed less than the maximum)
-                        } while (IsListening && (networkEvent != NetworkEvent.Nothing) && (NetworkConfig.MaxReceiveEventsPerTickRate <= 0 || processedEvents < NetworkConfig.MaxReceiveEventsPerTickRate));
-                    }
-
-                    m_LastReceiveTickTime = NetworkTime;
+                        // Only do another iteration if: there are no more messages AND (there is no limit to max events or we have processed less than the maximum)
+                    } while (IsListening && networkEvent != NetworkEvent.Nothing);
+                }
 
 #if !UNITY_2020_2_OR_NEWER
                     NetworkProfiler.EndTick();
 #endif
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-                    s_ReceiveTick.End();
+                s_TransportPoll.End();
 #endif
-                }
             }
         }
 
+        // TODO Once we have a way to subscribe to NetworkUpdateLoop with order we can move this out of NetworkManager but for now this needs to be here because we need strict ordering.
         private void OnNetworkPreUpdate()
         {
-            if (IsListening)
+            // Only update RTT here, server time is updated by time sync messages
+            NetworkTimeSystem.Advance(Time.deltaTime);
+            NetworkTickSystem.UpdateTick(NetworkTimeSystem.LocalTime, NetworkTimeSystem.ServerTime);
+
+            if (IsServer == false)
             {
-                if (((NetworkTime - m_LastEventTickTime >= (1f / NetworkConfig.EventTickrate))))
-                {
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-                    s_EventTick.Begin();
-#endif
-#if UNITY_EDITOR && !UNITY_2020_2_OR_NEWER
-                    NetworkProfiler.StartTick(TickType.Event);
-#endif
-
-                    if (NetworkConfig.EnableNetworkVariable)
-                    {
-                        // Do NetworkVariable updates
-                        BehaviourUpdater.NetworkBehaviourUpdate(this);
-                    }
-
-                    if (!IsServer && NetworkConfig.EnableMessageBuffering)
-                    {
-                        BufferManager.CleanBuffer();
-                    }
-
-                    if (IsServer)
-                    {
-                        m_LastEventTickTime = NetworkTime;
-                    }
-#if UNITY_EDITOR && !UNITY_2020_2_OR_NEWER
-                    NetworkProfiler.EndTick();
-#endif
-
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-                    s_EventTick.End();
-#endif
-                }
-
-                if (IsServer && NetworkConfig.EnableTimeResync && NetworkTime - m_LastTimeSyncTime >= NetworkConfig.TimeResyncInterval)
-                {
-#if UNITY_EDITOR && !UNITY_2020_2_OR_NEWER
-                    NetworkProfiler.StartTick(TickType.Event);
-#endif
-                    SyncTime();
-                    m_LastTimeSyncTime = NetworkTime;
-#if UNITY_EDITOR && !UNITY_2020_2_OR_NEWER
-                    NetworkProfiler.EndTick();
-#endif
-                }
-
-                if (!Mathf.Approximately(m_NetworkTimeOffset, m_CurrentNetworkTimeOffset))
-                {
-                    // Smear network time adjustments by no more than 200ms per second.  This should help code deal with
-                    // changes more gracefully, since the network time will always flow forward at a reasonable pace.
-                    float maxDelta = Mathf.Max(0.001f, 0.2f * Time.unscaledDeltaTime);
-                    m_CurrentNetworkTimeOffset += Mathf.Clamp(m_NetworkTimeOffset - m_CurrentNetworkTimeOffset, -maxDelta, maxDelta);
-                }
+                NetworkTimeSystem.Sync(NetworkTimeSystem.LastSyncedServerTimeSec + Time.deltaTime, NetworkConfig.NetworkTransport.GetCurrentRtt(ServerClientId) / 1000d);
             }
         }
 
-        internal void UpdateNetworkTime(ulong clientId, float netTime, float receiveTime, bool warp = false)
+        /// <summary>
+        /// This function runs once whenever the local tick is incremented and is responsible for the following (in order):
+        /// - collect commands/inputs and send them to the server (TBD)
+        /// - call NetworkFixedUpdate on all NetworkBehaviours in prediction/client authority mode
+        /// - create a snapshot from resulting state
+        /// </summary>
+        private void OnNetworkManagerTick()
         {
-            float rtt = NetworkConfig.NetworkTransport.GetCurrentRtt(clientId) / 1000f;
-            m_NetworkTimeOffset = netTime - receiveTime + rtt / 2f;
-
-            if (warp)
+            if (NetworkConfig.EnableNetworkVariable)
             {
-                m_CurrentNetworkTimeOffset = m_NetworkTimeOffset;
+                // Do NetworkVariable updates
+                BehaviourUpdater.NetworkBehaviourUpdate(this
+                );
             }
 
-            if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+            if (!IsServer && NetworkConfig.EnableMessageBuffering)
             {
-                NetworkLog.LogInfo($"Received network time {netTime}, RTT to server is {rtt}, {(warp ? "setting" : "smearing")} offset to {m_NetworkTimeOffset} (delta {m_NetworkTimeOffset - m_CurrentNetworkTimeOffset})");
+                BufferManager.CleanBuffer();
+            }
+
+            int timeSyncFrequencyTicks = (int)(k_TimeSyncFrequency * NetworkConfig.TickRate);
+            if (IsServer && NetworkTickSystem.ServerTime.Tick % timeSyncFrequencyTicks == 0)
+            {
+                SyncTime();
             }
         }
 
@@ -1030,10 +994,10 @@ namespace MLAPI
 
         private IEnumerator ApprovalTimeout(ulong clientId)
         {
-            float timeStarted = NetworkTime;
+            NetworkTime timeStarted = LocalTime;
 
             //We yield every frame incase a pending client disconnects and someone else gets its connection id
-            while (NetworkTime - timeStarted < NetworkConfig.ClientConnectionBufferTimeout && PendingClients.ContainsKey(clientId))
+            while ((LocalTime - timeStarted).Time < NetworkConfig.ClientConnectionBufferTimeout && PendingClients.ContainsKey(clientId))
             {
                 yield return null;
             }
@@ -1277,7 +1241,7 @@ namespace MLAPI
                     case NetworkConstants.TIME_SYNC:
                         if (IsClient)
                         {
-                            MessageHandler.HandleTimeSync(clientId, messageStream, receiveTime);
+                            MessageHandler.HandleTimeSync(clientId, messageStream);
                         }
 
                         break;
@@ -1399,6 +1363,7 @@ namespace MLAPI
             s_HandleIncomingData.End();
 #endif
         }
+
 
         private void ReceiveCallback(NetworkBuffer messageBuffer, RpcQueueContainer.QueueItemType messageType, ulong clientId, float receiveTime)
         {
@@ -1601,7 +1566,7 @@ namespace MLAPI
             using (var buffer = PooledNetworkBuffer.Get())
             using (var writer = PooledNetworkWriter.Get(buffer))
             {
-                writer.WriteSinglePacked(Time.realtimeSinceStartup);
+                writer.WriteInt32Packed(NetworkTickSystem.ServerTime.Tick);
                 MessageSender.Send(NetworkConstants.TIME_SYNC, NetworkChannel.SyncChannel, buffer);
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
@@ -1624,9 +1589,6 @@ namespace MLAPI
 
                 PerformanceDataManager.Increment(ProfilerConstants.Connections);
                 ProfilerStatManager.Connections.Record();
-
-                // This packet is unreliable, but if it gets through it should provide a much better sync than the potentially huge approval message.
-                SyncTime();
 
                 if (createPlayerObject)
                 {
@@ -1661,7 +1623,7 @@ namespace MLAPI
                             writer.WriteByteArray(NetworkSceneManager.CurrentSceneSwitchProgressGuid.ToByteArray());
                         }
 
-                        writer.WriteSinglePacked(Time.realtimeSinceStartup);
+                        writer.WriteInt32Packed(LocalTime.Tick);
                         writer.WriteUInt32Packed((uint)m_ObservedObjects.Count);
 
                         for (int i = 0; i < m_ObservedObjects.Count; i++)
