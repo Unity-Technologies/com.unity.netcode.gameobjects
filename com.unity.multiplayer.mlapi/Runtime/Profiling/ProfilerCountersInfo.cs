@@ -51,11 +51,11 @@ namespace MLAPI.Profiling
                 ProfilerMarkerDataUnit.Count, ProfilerCounterOptions.FlushOnEndOfFrame | ProfilerCounterOptions.ResetToZeroOnFlush);
 
         // Queue Stats
-        private static readonly ProfilerCounterValue<int> k_MessagesSentCounterValue =
+        private static readonly ProfilerCounterValue<int> k_RPCsSentCounterValue =
             new ProfilerCounterValue<int>(ProfilerCategory.Network, ProfilerConstants.RpcSent,
                 ProfilerMarkerDataUnit.Count, ProfilerCounterOptions.FlushOnEndOfFrame | ProfilerCounterOptions.ResetToZeroOnFlush);
 
-        private static readonly ProfilerCounterValue<int> k_MessagesReceivedCounterValue =
+        private static readonly ProfilerCounterValue<int> k_RPCsReceivedCounterValue =
             new ProfilerCounterValue<int>(ProfilerCategory.Network, ProfilerConstants.RpcReceived,
                 ProfilerMarkerDataUnit.Count, ProfilerCounterOptions.FlushOnEndOfFrame | ProfilerCounterOptions.ResetToZeroOnFlush);
 
@@ -86,8 +86,8 @@ namespace MLAPI.Profiling
             k_NetworkVarDeltasCounterValue.Value = 0;
             k_NetworkVarUpdatesCounterValue.Value = 0;
 
-            k_MessagesSentCounterValue.Value = 0;
-            k_MessagesReceivedCounterValue.Value = 0;
+            k_RPCsSentCounterValue.Value = 0;
+            k_RPCsReceivedCounterValue.Value = 0;
         }
 
         private static void OnPerformanceTickData(PerformanceTickData tickData)
@@ -107,8 +107,8 @@ namespace MLAPI.Profiling
             UpdateIntCounter(tickData, k_NetworkVarUpdatesCounterValue, ProfilerConstants.NetworkVarUpdates);
 
             // Queue stats
-            UpdateIntCounter(tickData, k_MessagesSentCounterValue, ProfilerConstants.RpcSent);
-            UpdateIntCounter(tickData, k_MessagesReceivedCounterValue, ProfilerConstants.RpcReceived);
+            UpdateIntCounter(tickData, k_RPCsSentCounterValue, ProfilerConstants.RpcSent);
+            UpdateIntCounter(tickData, k_RPCsReceivedCounterValue, ProfilerConstants.RpcReceived);
         }
 
         private static void UpdateIntCounter(PerformanceTickData tickData, ProfilerCounterValue<int> counter, string fieldName)
