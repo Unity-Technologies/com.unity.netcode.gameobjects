@@ -81,7 +81,7 @@ namespace MLAPI.Editor
         private void DrawSceneEntryItem(Rect rect, int index, bool isActive, bool isFocused)
         {
             var sceneEntryItem = m_SceneEntryList.serializedProperty.GetArrayElementAtIndex(index);
-            var sceneSetupItems = sceneEntryItem.FindPropertyRelative(nameof(SceneEntry.m_SavedSceneSetup));
+            var sceneSetupItems = sceneEntryItem.FindPropertyRelative(nameof(SceneEntry.SavedSceneSetup));
             var sceneEntry = m_SceneRegistration.SceneRegistrations[index];
             //sceneEntry.RefreshAdditiveScenes();
             var includeInBuild = sceneEntryItem.FindPropertyRelative(nameof(SceneEntry.IncludeInBuild));
@@ -144,9 +144,9 @@ namespace MLAPI.Editor
             if(sceneEntry != null)
             {
                 var content = string.Empty;
-                if (sceneEntry.m_SavedSceneSetup != null)
+                if (sceneEntry.SavedSceneSetup != null)
                 {
-                    foreach (var contentVal in sceneEntry.m_SavedSceneSetup)
+                    foreach (var contentVal in sceneEntry.SavedSceneSetup)
                     {
                         content += $"{SceneRegistration.GetSceneNameFromPath(contentVal.path)},";
                     }
