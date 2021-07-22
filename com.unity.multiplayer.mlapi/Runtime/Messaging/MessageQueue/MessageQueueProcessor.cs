@@ -99,7 +99,7 @@ namespace MLAPI.Messaging
                     case MessageQueueContainer.MessageType.TimeSync:
                         if (m_NetworkManager.IsClient)
                         {
-                            m_NetworkManager.MessageHandler.HandleTimeSync(item.NetworkId, item.NetworkBuffer, item.Timestamp);
+                            m_NetworkManager.MessageHandler.HandleTimeSync(item.NetworkId, item.NetworkBuffer);
                         }
 
                         break;
@@ -118,7 +118,10 @@ namespace MLAPI.Messaging
 
                         break;
                     case MessageQueueContainer.MessageType.SnapshotData:
-                        m_NetworkManager.MessageHandler.HandleNetworkLog(item.NetworkId, item.NetworkBuffer);
+                        InternalMessageHandler.HandleSnapshot(item.NetworkId, item.NetworkBuffer);
+                        break;
+                    case MessageQueueContainer.MessageType.SnapshotAck:
+                        InternalMessageHandler.HandleAck(item.NetworkId, item.NetworkBuffer);
                         break;
                     case MessageQueueContainer.MessageType.NetworkVariableDelta:
                         m_NetworkManager.MessageHandler.HandleNetworkVariableDelta(item.NetworkId, item.NetworkBuffer);

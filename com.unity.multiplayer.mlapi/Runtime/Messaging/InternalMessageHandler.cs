@@ -11,6 +11,8 @@ using MLAPI.Configuration;
 using MLAPI.Profiling;
 using MLAPI.Serialization;
 using MLAPI.Transports;
+using MLAPI.Timing;
+using UnityEngine.Assertions;
 
 namespace MLAPI.Messaging
 {
@@ -77,8 +79,9 @@ namespace MLAPI.Messaging
 
                 bool sceneSwitch = NetworkManager.NetworkConfig.EnableSceneManagement && NetworkManager.SceneManager.HasSceneMismatch(sceneIndex);
 
-                float netTime = reader.ReadSinglePacked();
-                NetworkManager.UpdateNetworkTime(clientId, netTime, receiveTime, true);
+                int tick = reader.ReadInt32Packed();
+                var time = new NetworkTime(NetworkManager.NetworkTickSystem.TickRate, tick);
+                NetworkManager.NetworkTimeSystem.Reset(time.Time, 0.15f); // Start with a constant RTT of 150 until we receive values from the transport.
 
                 NetworkManager.ConnectedClients.Add(NetworkManager.LocalClientId, new NetworkClient { ClientId = NetworkManager.LocalClientId });
 
@@ -259,12 +262,16 @@ namespace MLAPI.Messaging
             }
         }
 
-        public void HandleTimeSync(ulong clientId, Stream stream, float receiveTime)
+        public void HandleTimeSync(ulong clientId, Stream stream)
         {
+
+            Assert.IsTrue(clientId == NetworkManager.ServerClientId);
+
             using (var reader = PooledNetworkReader.Get(stream))
             {
-                float netTime = reader.ReadSinglePacked();
-                NetworkManager.UpdateNetworkTime(clientId, netTime, receiveTime);
+                int tick = reader.ReadInt32Packed();
+                var time = new NetworkTime(NetworkManager.NetworkTickSystem.TickRate, tick);
+                NetworkManager.NetworkTimeSystem.Sync(time.Time, NetworkManager.NetworkConfig.NetworkTransport.GetCurrentRtt(clientId) / 1000d);
             }
         }
 
@@ -413,7 +420,12 @@ namespace MLAPI.Messaging
 
         internal static void HandleSnapshot(ulong clientId, Stream messageStream)
         {
-            NetworkManager.Singleton.SnapshotSystem.ReadSnapshot(messageStream);
+            NetworkManager.Singleton.SnapshotSystem.ReadSnapshot(clientId, messageStream);
+        }
+
+        internal static void HandleAck(ulong clientId, Stream messageStream)
+        {
+            NetworkManager.Singleton.SnapshotSystem.ReadAck(clientId, messageStream);
         }
 
         public void HandleAllClientsSwitchSceneCompleted(ulong clientId, Stream stream)

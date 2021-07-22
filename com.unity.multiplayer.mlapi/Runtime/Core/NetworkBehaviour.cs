@@ -7,6 +7,7 @@ using System.IO;
 using MLAPI.Configuration;
 using MLAPI.Logging;
 using MLAPI.Messaging;
+using MLAPI.Timing;
 using MLAPI.NetworkVariable;
 using MLAPI.Profiling;
 using MLAPI.Reflection;
@@ -313,7 +314,6 @@ namespace MLAPI
         /// Gets the ClientId that owns the NetworkObject
         /// </summary>
         public ulong OwnerClientId => NetworkObject.OwnerClientId;
-
 
         /// <summary>
         /// Gets called when message handlers are ready to be registered and the network is setup

@@ -1,7 +1,5 @@
 using System.Collections;
 using System.Collections.Generic;
-using MLAPI;
-using MLAPI.RuntimeTests;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -10,6 +8,9 @@ namespace MLAPI.RuntimeTests
 {
     public class NetworkObjectOnSpawnTests : BaseMultiInstanceTest
     {
+        private GameObject m_TestNetworkObjectPrefab;
+        private GameObject m_TestNetworkObjectInstance;
+
         protected override int NbClients => 2;
 
 
@@ -21,15 +22,12 @@ namespace MLAPI.RuntimeTests
         [UnityTest]
         public IEnumerator InstantiateDestroySpawnNotCalled()
         {
-            var gameObject = new GameObject("InstantiateDestroySpawnNotCalled_Object");
-            var networkObject = gameObject.AddComponent<NetworkObject>();
-            var fail = gameObject.AddComponent<FailWhenSpawned>();
+            m_TestNetworkObjectPrefab = new GameObject("InstantiateDestroySpawnNotCalled_Object");
+            var networkObject = m_TestNetworkObjectPrefab.AddComponent<NetworkObject>();
+            var fail = m_TestNetworkObjectPrefab.AddComponent<FailWhenSpawned>();
 
-            yield return null;
-
-            // destroy
-            Object.Destroy(gameObject);
-            
+            // instantiate
+            m_TestNetworkObjectInstance = Object.Instantiate(m_TestNetworkObjectPrefab);
             yield return null;
         }
 
@@ -54,6 +52,22 @@ namespace MLAPI.RuntimeTests
                 // add test component
                 playerPrefab.AddComponent<TrackOnSpawnFunctions>();
             });
+        }
+
+        [UnityTearDown]
+        public override IEnumerator Teardown()
+        {
+            yield return base.Teardown();
+
+            if (m_TestNetworkObjectPrefab != null)
+            {
+                Object.Destroy(m_TestNetworkObjectPrefab);
+            }
+
+            if (m_TestNetworkObjectInstance != null)
+            {
+                Object.Destroy(m_TestNetworkObjectInstance);
+            }
         }
 
         /// <summary>

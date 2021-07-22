@@ -38,6 +38,7 @@ namespace MLAPI.Messaging
             NamedMessage,
             ServerLog,
             SnapshotData,
+            SnapshotAck,
             NetworkVariableDelta,
             SwitchScene,
             ClientSwitchSceneCompleted,

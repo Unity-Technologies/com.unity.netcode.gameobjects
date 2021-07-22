@@ -116,11 +116,11 @@ namespace MLAPI.Profiling
             m_HandleDestroyObjects.End();
         }
 
-        public void HandleTimeSync(ulong clientId, Stream stream, float receiveTime)
+        public void HandleTimeSync(ulong clientId, Stream stream)
         {
             m_HandleTimeSync.Begin();
 
-            m_MessageHandler.HandleTimeSync(clientId, stream, receiveTime);
+            m_MessageHandler.HandleTimeSync(clientId, stream);
 
             m_HandleTimeSync.End();
         }
