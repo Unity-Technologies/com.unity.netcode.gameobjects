@@ -2,7 +2,7 @@
 using System.Collections;
 using System.Linq;
 using MLAPI.Metrics;
-using MLAPI.RuntimeTests.Metrics.NetworkVariables;
+using MLAPI.RuntimeTests.Metrics.Utility;
 using NUnit.Framework;
 using Unity.Multiplayer.MetricTypes;
 using UnityEngine;
@@ -20,37 +20,14 @@ namespace MLAPI.RuntimeTests.Metrics
         [UnitySetUp]
         public IEnumerator SetUp()
         {
-            if (!MultiInstanceHelpers.Create(1, out m_Server, out var clients))
-            {
-                Debug.LogError("Failed to create instances");
-                Assert.Fail("Failed to create instances");
-            }
-            
-            var playerPrefab = new GameObject("Player");
-            var networkObject = playerPrefab.AddComponent<NetworkObject>();
-            playerPrefab.AddComponent<NetworkVariableComponent>();
+            var initializer = new SingleClientMetricTestInitializer(MetricTestInitializer.CreateAndAssignPlayerPrefabs);
 
-            MultiInstanceHelpers.MakeNetworkedObjectTestPrefab(networkObject);
+            yield return initializer.Initialize();
 
-            m_Server.NetworkConfig.PlayerPrefab = playerPrefab;
-
-            foreach (var client in clients)
-            {
-                client.NetworkConfig.PlayerPrefab = playerPrefab;
-            }
-
-            if (!MultiInstanceHelpers.Start(true, m_Server, clients))
-            {
-                Debug.LogError("Failed to start instances");
-                Assert.Fail("Failed to start instances");
-            }
-
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(clients));
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientConnectedToServer(m_Server));
-
-            m_Client = clients.First();
-            m_ServerMetrics = m_Server.NetworkMetrics as NetworkMetrics;
-            m_ClientMetrics = m_Client.NetworkMetrics as NetworkMetrics;
+            m_Server = initializer.Server;
+            m_Client = initializer.Client;
+            m_ServerMetrics = initializer.ServerMetrics;
+            m_ClientMetrics = initializer.ClientMetrics;
         }
 
         [UnityTearDown]

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using MLAPI.Configuration;
 using MLAPI.Metrics;
+using MLAPI.RuntimeTests.Metrics.Utility;
 using NUnit.Framework;
 using Unity.Multiplayer.MetricTypes;
 using UnityEngine;
@@ -23,46 +24,29 @@ namespace MLAPI.RuntimeTests.Metrics
         [UnitySetUp]
         public IEnumerator SetUp()
         {
-            if (!MultiInstanceHelpers.Create(1, out m_Server, out var clients))
+            var initializer = new SingleClientMetricTestInitializer((server, clients) =>
             {
-                Debug.LogError("Failed to create instances");
-                Assert.Fail("Failed to create instances");
-            }
+                MetricTestInitializer.CreateAndAssignPlayerPrefabs(server, clients);
 
-            var playerPrefab = new GameObject("Player");
-            var networkObject = playerPrefab.AddComponent<NetworkObject>();
+                var gameObject = new GameObject(m_NewNetworkObjectName);
+                m_NewNetworkObject = gameObject.AddComponent<NetworkObject>();
+                m_NewNetworkObject.NetworkManagerOwner = server;
+                MultiInstanceHelpers.MakeNetworkedObjectTestPrefab(m_NewNetworkObject);
+                var networkPrefab = new NetworkPrefab { Prefab = gameObject };
+                server.NetworkConfig.NetworkPrefabs.Add(networkPrefab);
 
-            MultiInstanceHelpers.MakeNetworkedObjectTestPrefab(networkObject);
+                foreach (var client in clients)
+                {
+                    client.NetworkConfig.NetworkPrefabs.Add(networkPrefab);
+                }
+            });
 
-            m_Server.NetworkConfig.PlayerPrefab = playerPrefab;
+            yield return initializer.Initialize();
 
-            var gameObject = new GameObject(m_NewNetworkObjectName);
-            m_NewNetworkObject = gameObject.AddComponent<NetworkObject>();
-            m_NewNetworkObject.NetworkManagerOwner = m_Server;
-            MultiInstanceHelpers.MakeNetworkedObjectTestPrefab(m_NewNetworkObject);
-            var networkPrefab = new NetworkPrefab {Prefab = gameObject};
-            m_Server.NetworkConfig.NetworkPrefabs.Add(networkPrefab);
-
-            foreach (var client in clients)
-            {
-                client.NetworkConfig.PlayerPrefab = playerPrefab;
-                client.NetworkConfig.NetworkPrefabs.Add(networkPrefab);
-            }
-
-            if (!MultiInstanceHelpers.Start(true, m_Server, clients))
-            {
-                Debug.LogError("Failed to start instances");
-                Assert.Fail("Failed to start instances");
-            }
-
-            m_Client = clients.First();
-
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(clients));
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientConnectedToServer(m_Server));
-
-            m_ClientMetrics = m_Client.NetworkMetrics as NetworkMetrics;
-            m_ServerMetrics = m_Server.NetworkMetrics as NetworkMetrics;
-
+            m_Server = initializer.Server;
+            m_Client = initializer.Client;
+            m_ClientMetrics = initializer.ClientMetrics;
+            m_ServerMetrics = initializer.ServerMetrics;
         }
 
         [UnityTearDown]

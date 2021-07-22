@@ -1,7 +1,7 @@
-using System;
+﻿using System;
 using MLAPI.Messaging;
 
-namespace MLAPI.RuntimeTests.Metrics.RPC
+namespace MLAPI.RuntimeTests.Metrics.Utility
 {
     public class RpcTestComponent : NetworkBehaviour
     {

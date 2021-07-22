@@ -1,7 +1,7 @@
 ﻿using System;
 using MLAPI.NetworkVariable;
 
-namespace MLAPI.RuntimeTests.Metrics.NetworkVariables
+namespace MLAPI.RuntimeTests.Metrics.Utility
 {
     public class NetworkVariableComponent : NetworkBehaviour
     {
