@@ -439,7 +439,7 @@ namespace MLAPI.SceneManagement
 
         [ReadOnlyProperty]
         [SerializeField]
-        internal List<SceneSetup> m_SavedSceneSetup;
+        internal List<SceneSetup> SavedSceneSetup;
 
         [HideInInspector]
         [SerializeField]
@@ -475,7 +475,7 @@ namespace MLAPI.SceneManagement
             if (Scene != null)
             {
                 var sceneEntryPath = AssetDatabase.GetAssetPath(Scene);
-                foreach (var sceneSetup in m_SavedSceneSetup)
+                foreach (var sceneSetup in SavedSceneSetup)
                 {
                     if (sceneEntryPath != sceneSetup.path)
                     {
@@ -498,7 +498,7 @@ namespace MLAPI.SceneManagement
         private void RebuildSceneSetupToSceneAssetTable()
         {
             m_SceneSetupToSceneAssetTable = new Dictionary<SceneSetup, SceneAsset>();
-            foreach(var sceneSetup in m_SavedSceneSetup)
+            foreach(var sceneSetup in SavedSceneSetup)
             {
                 var sceneAsset = AssetDatabase.LoadAssetAtPath<SceneAsset>(sceneSetup.path);
                 m_SceneSetupToSceneAssetTable.Add(sceneSetup, sceneAsset);
@@ -516,7 +516,7 @@ namespace MLAPI.SceneManagement
 
         internal void RefreshAdditiveScenes()
         {
-            m_SavedSceneSetup = new List<SceneSetup>(EditorSceneManager.GetSceneManagerSetup());
+            SavedSceneSetup = new List<SceneSetup>(EditorSceneManager.GetSceneManagerSetup());
             RebuildSceneSetupToSceneAssetTable();
         }
 
