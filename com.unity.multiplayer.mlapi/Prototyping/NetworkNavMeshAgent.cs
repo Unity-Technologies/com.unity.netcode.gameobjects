@@ -48,7 +48,7 @@ namespace MLAPI.Prototyping
         }
 
         private Vector3 m_LastDestination = Vector3.zero;
-        private float m_LastCorrectionTime = 0f;
+        private double m_LastCorrectionTime = 0d;
 
         private void Update()
         {
@@ -79,7 +79,7 @@ namespace MLAPI.Prototyping
                 }
             }
 
-            if (NetworkManager.NetworkTime - m_LastCorrectionTime >= CorrectionDelay)
+            if (NetworkManager.LocalTime.Time - m_LastCorrectionTime >= CorrectionDelay) // TODO this is not aliased correctly, is this an issue?
             {
                 if (!EnableProximity)
                 {
@@ -99,7 +99,7 @@ namespace MLAPI.Prototyping
                     OnNavMeshCorrectionUpdateClientRpc(m_Agent.velocity, transform.position, new ClientRpcParams { Send = new ClientRpcSendParams { TargetClientIds = proximityClients.ToArray() } });
                 }
 
-                m_LastCorrectionTime = NetworkManager.NetworkTime;
+                m_LastCorrectionTime = NetworkManager.LocalTime.Time;
             }
         }
 

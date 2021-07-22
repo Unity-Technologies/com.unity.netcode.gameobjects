@@ -20,12 +20,15 @@ namespace MLAPI.RuntimeTests
         private static int s_ClientCount;
         private static int s_OriginalTargetFrameRate = -1;
 
+        public static List<NetworkManager> NetworkManagerInstances => s_NetworkManagerInstances;
+
         /// <summary>
         /// Creates NetworkingManagers and configures them for use in a multi instance setting.
         /// </summary>
         /// <param name="clientCount">The amount of clients</param>
         /// <param name="server">The server NetworkManager</param>
         /// <param name="clients">The clients NetworkManagers</param>
+        /// <param name="targetFrameRate">The targetFrameRate of the Unity engine to use while the multi instance helper is running. Will be reset on shutdown.</param>
         public static bool Create(int clientCount, out NetworkManager server, out NetworkManager[] clients, int targetFrameRate = 60)
         {
             s_NetworkManagerInstances = new List<NetworkManager>();
@@ -38,7 +41,7 @@ namespace MLAPI.RuntimeTests
 
                 // Create networkManager component
                 server = go.AddComponent<NetworkManager>();
-                s_NetworkManagerInstances.Insert(0, server);
+                NetworkManagerInstances.Insert(0, server);
 
                 // Set the NetworkConfig
                 server.NetworkConfig = new NetworkConfig()
@@ -83,7 +86,7 @@ namespace MLAPI.RuntimeTests
                 };
             }
 
-            s_NetworkManagerInstances.AddRange(clients);
+            NetworkManagerInstances.AddRange(clients);
             return true;
         }
 
@@ -95,7 +98,7 @@ namespace MLAPI.RuntimeTests
         {
             clientToStop.StopClient();
             Object.Destroy(clientToStop.gameObject);
-            s_NetworkManagerInstances.Remove(clientToStop);
+            NetworkManagerInstances.Remove(clientToStop);
         }
 
         /// <summary>
@@ -104,15 +107,15 @@ namespace MLAPI.RuntimeTests
         /// </summary>
         public static void Destroy()
         {
-            if (!s_IsStarted)
+            if (s_IsStarted == false)
             {
-                throw new InvalidOperationException("MultiInstanceHelper is not started");
+                return;
             }
 
             s_IsStarted = false;
 
             // Shutdown the server which forces clients to disconnect
-            foreach (var networkManager in s_NetworkManagerInstances)
+            foreach (var networkManager in NetworkManagerInstances)
             {
                 if (networkManager.IsServer)
                 {
@@ -121,12 +124,12 @@ namespace MLAPI.RuntimeTests
             }
 
             // Destroy the network manager instances
-            foreach (var networkManager in s_NetworkManagerInstances)
+            foreach (var networkManager in NetworkManagerInstances)
             {
                 Object.Destroy(networkManager.gameObject);
             }
 
-            s_NetworkManagerInstances.Clear();
+            NetworkManagerInstances.Clear();
 
             // Destroy the temporary GameObject used to run co-routines
             if (s_CoroutineRunner != null)
