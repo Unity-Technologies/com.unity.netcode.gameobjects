@@ -1,12 +1,13 @@
 using System.Collections;
 using System.Linq;
 using MLAPI.Metrics;
+using MLAPI.RuntimeTests.Metrics.Utility;
 using NUnit.Framework;
 using Unity.Multiplayer.MetricTypes;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace MLAPI.RuntimeTests.Metrics.RPC
+namespace MLAPI.RuntimeTests.Metrics
 {
     public class NetworkMetricsRpcTests
     {
@@ -18,32 +19,14 @@ namespace MLAPI.RuntimeTests.Metrics.RPC
         [UnitySetUp]
         public IEnumerator SetUp()
         {
-            if (!MultiInstanceHelpers.Create(1, out m_Server, out NetworkManager[] clients))
-            {
-                Assert.Fail("Failed to create instances");
-            }
+            var initializer = new SingleClientMetricTestInitializer(MetricTestInitializer.CreateAndAssignPlayerPrefabs);
 
-            var playerPrefab = new GameObject("Player");
-            NetworkObject networkObject = playerPrefab.AddComponent<NetworkObject>();
-            playerPrefab.AddComponent<RpcTestComponent>();
+            yield return initializer.Initialize();
 
-            MultiInstanceHelpers.MakeNetworkedObjectTestPrefab(networkObject);
-
-            m_Server.NetworkConfig.PlayerPrefab = playerPrefab;
-            m_Client = clients.First();
-
-            m_Client.NetworkConfig.PlayerPrefab = playerPrefab;
-
-            if (!MultiInstanceHelpers.Start(true, m_Server, clients))
-            {
-                Assert.Fail("Failed to start instances");
-            }
-
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(clients));
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientConnectedToServer(m_Server));
-
-            m_ClientMetrics = m_Client.NetworkMetrics as NetworkMetrics;
-            m_ServerMetrics = m_Server.NetworkMetrics as NetworkMetrics;
+            m_Server = initializer.Server;
+            m_Client = initializer.Client;
+            m_ClientMetrics = initializer.ClientMetrics;
+            m_ServerMetrics = initializer.ServerMetrics;
         }
 
         [TearDown]

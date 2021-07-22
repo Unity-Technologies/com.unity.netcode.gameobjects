@@ -2,12 +2,12 @@ using System.Collections;
 using System.Linq;
 using MLAPI.Logging;
 using MLAPI.Metrics;
+using MLAPI.RuntimeTests.Metrics.Utility;
 using NUnit.Framework;
 using Unity.Multiplayer.MetricTypes;
-using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace MLAPI.RuntimeTests.Metrics.ServerLogs
+namespace MLAPI.RuntimeTests.Metrics
 {
     public class ServerLogsMetricTests
     {
@@ -16,40 +16,17 @@ namespace MLAPI.RuntimeTests.Metrics.ServerLogs
         NetworkMetrics m_ClientMetrics;
         NetworkMetrics m_ServerMetrics;
 
-
         [UnitySetUp]
         public IEnumerator SetUp()
         {
-            if (!MultiInstanceHelpers.Create(1, out m_Server, out var clients))
-            {
-                Debug.LogError("Failed to create instances");
-                Assert.Fail("Failed to create instances");
-            }
+            var initializer = new SingleClientMetricTestInitializer();
 
-            var playerPrefab = new GameObject("Player");
-            var networkObject = playerPrefab.AddComponent<NetworkObject>();
+            yield return initializer.Initialize();
 
-            MultiInstanceHelpers.MakeNetworkedObjectTestPrefab(networkObject);
-
-            m_Server.NetworkConfig.PlayerPrefab = playerPrefab;
-
-            foreach (var client in clients)
-            {
-                client.NetworkConfig.PlayerPrefab = playerPrefab;
-            }
-
-            if (!MultiInstanceHelpers.Start(true, m_Server, clients))
-            {
-                Debug.LogError("Failed to start instances");
-                Assert.Fail("Failed to start instances");
-            }
-
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(clients));
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientConnectedToServer(m_Server));
-
-            m_Client = clients.First();
-            m_ClientMetrics = m_Client.NetworkMetrics as NetworkMetrics;
-            m_ServerMetrics = m_Server.NetworkMetrics as NetworkMetrics;
+            m_Server = initializer.Server;
+            m_Client = initializer.Client;
+            m_ClientMetrics = initializer.ClientMetrics;
+            m_ServerMetrics = initializer.ServerMetrics;
         }
 
         [UnityTearDown]
@@ -80,7 +57,7 @@ namespace MLAPI.RuntimeTests.Metrics.ServerLogs
         [UnityTest]
         public IEnumerator TrackServerLogReceivedMetric()
         {
-            var waitForReceivedMetric = new WaitForMetricValues<ServerLogEvent>(m_ClientMetrics.Dispatcher, MetricNames.ServerLogReceived);
+            var waitForReceivedMetric = new WaitForMetricValues<ServerLogEvent>(m_ServerMetrics.Dispatcher, MetricNames.ServerLogReceived);
 
             NetworkLog.LogWarningServer("log message");
 

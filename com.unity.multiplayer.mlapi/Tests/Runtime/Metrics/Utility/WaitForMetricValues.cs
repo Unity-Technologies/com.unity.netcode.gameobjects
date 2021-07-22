@@ -6,7 +6,7 @@ using Unity.Multiplayer.NetStats.Dispatch;
 using Unity.Multiplayer.NetStats.Metrics;
 using UnityEngine;
 
-namespace MLAPI.RuntimeTests.Metrics
+namespace MLAPI.RuntimeTests.Metrics.Utility
 {
     public class WaitForMetricValues<TMetric> : IMetricObserver
     {

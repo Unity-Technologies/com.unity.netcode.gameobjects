@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using MLAPI.Metrics;
+using MLAPI.RuntimeTests.Metrics.Utility;
 using MLAPI.Serialization;
 using NUnit.Framework;
 using Unity.Multiplayer.MetricTypes;
@@ -23,25 +24,15 @@ namespace MLAPI.RuntimeTests.Metrics
         [UnitySetUp]
         public IEnumerator SetUp()
         {
-            if (!MultiInstanceHelpers.Create(2, out m_Server, out var clients))
-            {
-                Debug.LogError("Failed to create instances");
-                Assert.Fail("Failed to create instances");
-            }
+            var initializer = new DualClientMetricTestInitializer();
 
-            if (!MultiInstanceHelpers.Start(true, m_Server, clients))
-            {
-                Debug.LogError("Failed to start instances");
-                Assert.Fail("Failed to start instances");
-            }
+            yield return initializer.Initialize();
 
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(clients));
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientConnectedToServer(m_Server));
-
-            m_FirstClient = clients[0];
-            m_SecondClient = clients[1];
-            m_ServerMetrics = m_Server.NetworkMetrics as NetworkMetrics;
-            m_FirstClientMetrics = m_FirstClient.NetworkMetrics as NetworkMetrics;
+            m_Server = initializer.Server;
+            m_FirstClient = initializer.FirstClient;
+            m_SecondClient = initializer.SecondClient;
+            m_ServerMetrics = initializer.ServerMetrics;
+            m_FirstClientMetrics = initializer.FirstClientMetrics;
         }
 
         [UnityTearDown]
