@@ -19,6 +19,23 @@ namespace MLAPI.SceneManagement
     public class NetworkSceneManager
     {
         /// <summary>
+        /// Delegate declaration for the <see cref="VerifySceneBeforeLoading"/> handler that provides
+        /// an additional level of scene loading security and/or validation to assure the scene being loaded
+        /// is valid scene to be loaded in the LoadSceneMode specified.
+        /// </summary>
+        /// <param name="sceneIndex">Build Settings Scenes in Build List index of the scene</param>
+        /// <param name="sceneName">Name of the scene</param>
+        /// <param name="loadSceneMode">LoadSceneMode the scene is going to be loaded</param>
+        /// <returns>true (valid) or false (not valid)</returns>
+        public delegate bool VerifySceneBeforeLoadingDelegateHandler(int sceneIndex, string sceneName, LoadSceneMode loadSceneMode);
+
+        /// <summary>
+        /// Delegate handler defined by <see cref="VerifySceneBeforeLoadingDelegateHandler"/> that is invoked before the
+        /// server or client loads a scene during an active network session.
+        /// </summary>
+        public VerifySceneBeforeLoadingDelegateHandler VerifySceneBeforeLoading;
+
+        /// <summary>
         /// Delegate for when the scene has been switched
         /// </summary>
         public delegate void SceneSwitchedDelegate();
@@ -77,9 +94,6 @@ namespace MLAPI.SceneManagement
         /// </summary>
         public event NotifyClientAllClientsLoadedSceneDelegate OnNotifyClientAllClientsLoadedScene;
 
-        internal readonly HashSet<string> RegisteredSceneNames = new HashSet<string>();
-        internal readonly Dictionary<string, uint> SceneNameToIndex = new Dictionary<string, uint>();
-        internal readonly Dictionary<uint, string> SceneIndexToString = new Dictionary<uint, string>();
         internal readonly Dictionary<Guid, SceneSwitchProgress> SceneSwitchProgresses = new Dictionary<Guid, SceneSwitchProgress>();
         internal readonly Dictionary<uint, NetworkObject> ScenePlacedObjects = new Dictionary<uint, NetworkObject>();
 
@@ -109,44 +123,10 @@ namespace MLAPI.SceneManagement
         }
 
         /// <summary>
-        /// Returns the MLAPI scene index from a scene
+        /// Verifies the scene name is valid relative to the scenes in build list
         /// </summary>
-        /// <param name="scene"></param>
-        /// <returns>MLAPI Scene Index</returns>
-        internal uint GetMLAPISceneIndexFromScene(Scene scene)
-        {
-            uint index = 0;
-            if (!SceneNameToIndex.TryGetValue(scene.name, out index))
-            {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                {
-                    NetworkLog.LogWarning($"The current scene ({scene.name}) is not registered as a network scene.");
-                }
-                //MaxValue denotes an error
-                return uint.MaxValue;
-            }
-            return index;
-        }
-
-        /// <summary>
-        /// Returns the scene name from the MLAPI scene index
-        /// Note: This is not the same as the Build Settings Scenes in Build index
-        /// </summary>
-        /// <param name="sceneIndex">MLAPI Scene Index</param>
-        /// <returns>scene name</returns>
-        internal string GetSceneNameFromMLAPISceneIndex(uint sceneIndex)
-        {
-            var sceneName = string.Empty;
-            if (!SceneIndexToString.TryGetValue(sceneIndex, out sceneName))
-            {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                {
-                    NetworkLog.LogWarning($"The current scene index ({sceneIndex}) is not registered as a network scene.");
-                }
-            }
-            return sceneName;
-        }
-
+        /// <param name="sceneName"></param>
+        /// <returns>true (Valid) or false (Invalid)</returns>
         internal bool IsSceneNameValid(string sceneName)
         {
             if(m_NetworkManager.ScenesInBuild.Scenes.Contains(sceneName))
@@ -156,6 +136,11 @@ namespace MLAPI.SceneManagement
             return false;
         }
 
+        /// <summary>
+        /// Gets the build Index value for the scene name
+        /// </summary>
+        /// <param name="sceneName">scene name</param>
+        /// <returns>build index</returns>
         internal int GetBuildIndexFromSceneName(string sceneName)
         {
             if(IsSceneNameValid(sceneName))
@@ -165,18 +150,57 @@ namespace MLAPI.SceneManagement
             return -1;
         }
 
-        internal string GetSceneNameFromBuildIndex(int index)
+        /// <summary>
+        /// Gets the scene name from the build index
+        /// </summary>
+        /// <param name="index">build index</param>
+        /// <returns>scene name</returns>
+        internal string GetSceneNameFromBuildIndex(int buildIndex)
         {
-            if(IsSceneIndexValid(index))
+            if(IsSceneIndexValid(buildIndex))
             {
-                return m_NetworkManager.ScenesInBuild.Scenes[index];
+                return m_NetworkManager.ScenesInBuild.Scenes[buildIndex];
             }
-            return null;
+            return string.Empty;
         }
 
+        /// <summary>
+        /// Used to determine if the index value is within the range of valid
+        /// build indices.
+        /// </summary>
+        /// <param name="index">index value to check</param>
+        /// <returns>true (Valid) or false (Invalid)</returns>
         internal bool IsSceneIndexValid(int index)
         {
             return (index >= 0 && index < m_NetworkManager.ScenesInBuild.Scenes.Count);
+        }
+
+        /// <summary>
+        /// If the VerifySceneBeforeLoading delegate handler has been set by the user, this will provides
+        /// an additional level of security and/or validation that the scene being loaded in the specified
+        /// loading mode is "a valid scene to be loaded in the LoadSceneMode specified".
+        /// </summary>
+        /// <param name="sceneIndex">Build Settings Scenes in Build List index of the scene</param>
+        /// <param name="sceneName">Name of the scene</param>
+        /// <param name="loadSceneMode">LoadSceneMode the scene is going to be loaded</param>
+        /// <returns>true (Valid) or false (Invalid)</returns>
+        internal bool ValidateSceneBeforeLoading(int sceneIndex, string sceneName, LoadSceneMode loadSceneMode)
+        {
+            var validated = true;
+            if(VerifySceneBeforeLoading != null)
+            {
+                validated = VerifySceneBeforeLoading.Invoke(sceneIndex, sceneName, loadSceneMode);
+            }
+            if(!validated)
+            {
+                var serverHostorClient = "Client";
+                if(m_NetworkManager.IsServer)
+                {
+                    serverHostorClient = m_NetworkManager.IsHost ? "Host" : "Server";
+                }
+                Debug.LogWarning($"Scene {sceneName} of Scenes in Build Index {SceneEventData.SceneIndex} being loaded in {loadSceneMode.ToString()} mode failed validation on the {serverHostorClient}!");
+            }
+            return validated;
         }
 
         /// <summary>
@@ -257,7 +281,7 @@ namespace MLAPI.SceneManagement
         /// Unloads an additively loaded scene
         /// </summary>
         /// <param name="sceneName">scene name to unload</param>
-        /// <returns></returns>
+        /// <returns><see cref="SceneSwitchProgress"/></returns>
         public SceneSwitchProgress UnloadScene(string sceneName)
         {
             // Make sure the scene is actually loaded
@@ -272,6 +296,18 @@ namespace MLAPI.SceneManagement
             if (switchSceneProgress == null)
             {
                 return null;
+            }
+
+            // Check to see if this is the last scene loaded, and if so notify the user that they should use LoadScene in Single mode instead
+            if (SceneManager.sceneCount == 1 && SceneManager.GetActiveScene().name == sceneName)
+            {
+                Debug.LogError($"You are trying to unload the scene {sceneName} which is the last and only scene loaded! Use {nameof(NetworkSceneManager.LoadScene)} using {nameof(LoadSceneMode)}.{LoadSceneMode.Single} instead!");
+                return null;
+            }
+
+            if (m_ScenesLoaded.Contains(sceneName))
+            {
+                m_ScenesLoaded.Remove(sceneName);
             }
 
             SceneEventData.SwitchSceneGuid = switchSceneProgress.Guid;
@@ -294,16 +330,16 @@ namespace MLAPI.SceneManagement
             AsyncOperation sceneUnload = SceneManager.UnloadSceneAsync(sceneToUnload);
             sceneUnload.completed += (AsyncOperation asyncOp2) => { OnSceneUnloaded(sceneName); };
             switchSceneProgress.SetSceneLoadOperation(sceneUnload);
-            if (m_ScenesLoaded.Contains(sceneName))
-            {
-                m_ScenesLoaded.Remove(sceneName);
-            }
+
             OnAdditiveSceneEvent?.Invoke(sceneUnload, sceneName, false);
 
             //Return our scene progress instance
             return switchSceneProgress;
         }
 
+        /// <summary>
+        /// Invoked when a client receives the Event_Unload
+        /// </summary>
         private void OnClientUnloadScene()
         {
             var sceneName = GetSceneNameFromBuildIndex(SceneEventData.SceneIndex);
@@ -365,6 +401,11 @@ namespace MLAPI.SceneManagement
             SceneEventData.SceneEventType = SceneEventData.SceneEventTypes.Event_Load;
             SceneEventData.SceneIndex = GetBuildIndexFromSceneName(sceneName);
             SceneEventData.LoadSceneMode = loadSceneMode;
+
+            if (!ValidateSceneBeforeLoading(SceneEventData.SceneIndex, sceneName, loadSceneMode))
+            {
+                return null;
+            }
 
             if (SceneEventData.LoadSceneMode == LoadSceneMode.Single)
             {
@@ -458,6 +499,11 @@ namespace MLAPI.SceneManagement
                 return;
             }
 
+            if (!ValidateSceneBeforeLoading(SceneEventData.SceneIndex, sceneName, SceneEventData.LoadSceneMode))
+            {
+                return;
+            }
+
             SceneEventData.CopyUnreadFromStream(objectStream);
 
 
@@ -472,7 +518,6 @@ namespace MLAPI.SceneManagement
                     {
                         SceneManager.UnloadSceneAsync(loadedSceneName);
                     }
-
                 }
                 m_ScenesLoaded.Clear();
 
@@ -713,15 +758,20 @@ namespace MLAPI.SceneManagement
                 {
                     NetworkLog.LogWarning("Server requested a scene switch to a non-registered scene");
                 }
-
                 return;
             }
+
+            var loadSceneMode = sceneIndex == SceneEventData.SceneIndex ? SceneEventData.LoadSceneMode : LoadSceneMode.Additive;
+
+            if (!ValidateSceneBeforeLoading(SceneEventData.SceneIndex, sceneName, loadSceneMode))
+            {
+                return;
+            }
+
             var activeScene = SceneManager.GetActiveScene();
 
             if (sceneName != activeScene.name)
             {
-                // NSS TODO: Add to proposal's MTT discussion topics: Should we cover switching the active scene for V1.0.0?
-                var loadSceneMode = sceneIndex == SceneEventData.SceneIndex ? SceneEventData.LoadSceneMode : LoadSceneMode.Additive;
                 var sceneLoad = SceneManager.LoadSceneAsync(sceneName, loadSceneMode);
                 sceneLoad.completed += asyncOp2 => ClientLoadedSynchronization(sceneName, sceneIndex);
             }
@@ -746,7 +796,6 @@ namespace MLAPI.SceneManagement
                 return;
             }
 
-            // NSS TODO: Add to proposal's MTT discussion topics: Should we cover switching the active scene for V1.0.0?
             if ((sceneIndex == SceneEventData.SceneIndex ? SceneEventData.LoadSceneMode : LoadSceneMode.Additive) == LoadSceneMode.Single)
             {
                 SceneManager.SetActiveScene(nextScene);
@@ -763,7 +812,7 @@ namespace MLAPI.SceneManagement
         }
 
         #region General Methods
-        internal bool HasSceneMismatch(uint sceneIndex) => SceneManager.GetActiveScene().name != SceneIndexToString[sceneIndex];
+        internal bool HasSceneMismatch(uint sceneIndex) => SceneManager.GetActiveScene().name != GetSceneNameFromBuildIndex((int)sceneIndex);
 
         internal void RemoveClientFromSceneSwitchProgresses(ulong clientId)
         {

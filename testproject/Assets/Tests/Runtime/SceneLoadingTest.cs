@@ -96,7 +96,6 @@ namespace TestProject.RuntimeTests
 
             // Reference code for adding scenes not included in build settings:
             // Assure we are allowing runtime scene changes
-            // m_NetworkManager.NetworkConfig.AllowRuntimeSceneChanges = true;
             // m_NetworkManager.SceneManager.AddRuntimeSceneName(m_TargetSceneNameToLoad, (uint)m_NetworkManager.SceneManager.RegisteredSceneNames.Count);
 
             // Switch the scene using NetworkSceneManager

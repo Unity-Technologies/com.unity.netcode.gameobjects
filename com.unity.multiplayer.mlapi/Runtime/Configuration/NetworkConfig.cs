@@ -32,14 +32,6 @@ namespace MLAPI.Configuration
         public NetworkTransport NetworkTransport = null;
 
         /// <summary>
-        /// Whether or not runtime scene changes should be allowed and expected.
-        /// If this is true, clients with different initial configurations will not work together.
-        /// </summary>
-        [Tooltip("Whether or not runtime scene changes should be allowed and expected.\n " +
-                 "If this is true, clients with different initial configurations will not work together.")]
-        public bool AllowRuntimeSceneChanges = false;
-
-        /// <summary>
         /// The default player prefab
         /// </summary>
         [Tooltip("When set, NetworkManager will automatically create and spawn the assigned player prefab. This can be overridden by adding it to the NetworkPrefabs list and selecting override.")]
@@ -206,7 +198,6 @@ namespace MLAPI.Configuration
                 writer.WriteBool(RecycleNetworkIds);
                 writer.WriteSinglePacked(NetworkIdRecycleDelay);
                 writer.WriteBool(EnableNetworkVariable);
-                writer.WriteBool(AllowRuntimeSceneChanges);
                 writer.WriteBool(EnableNetworkLogs);
                 buffer.PadBuffer();
 
@@ -243,7 +234,6 @@ namespace MLAPI.Configuration
                 config.RecycleNetworkIds = reader.ReadBool();
                 config.NetworkIdRecycleDelay = reader.ReadSinglePacked();
                 config.EnableNetworkVariable = reader.ReadBool();
-                config.AllowRuntimeSceneChanges = reader.ReadBool();
                 config.EnableNetworkLogs = reader.ReadBool();
             }
         }

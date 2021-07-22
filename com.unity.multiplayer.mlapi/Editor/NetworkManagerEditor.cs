@@ -23,7 +23,6 @@ namespace MLAPI.Editor
         // NetworkConfig fields
         private SerializedProperty m_PlayerPrefabProperty;
         private SerializedProperty m_ProtocolVersionProperty;
-        private SerializedProperty m_AllowRuntimeSceneChangesProperty;
         private SerializedProperty m_NetworkTransportProperty;
         private SerializedProperty m_ReceiveTickrateProperty;
         private SerializedProperty m_NetworkTickIntervalSecProperty;
@@ -99,8 +98,7 @@ namespace MLAPI.Editor
 
             // NetworkConfig properties
             m_PlayerPrefabProperty = m_NetworkConfigProperty.FindPropertyRelative(nameof(NetworkConfig.PlayerPrefab));
-            m_ProtocolVersionProperty = m_NetworkConfigProperty.FindPropertyRelative("ProtocolVersion");
-            m_AllowRuntimeSceneChangesProperty = m_NetworkConfigProperty.FindPropertyRelative("AllowRuntimeSceneChanges");
+            m_ProtocolVersionProperty = m_NetworkConfigProperty.FindPropertyRelative("ProtocolVersion");            
             m_NetworkTransportProperty = m_NetworkConfigProperty.FindPropertyRelative("NetworkTransport");
             m_ReceiveTickrateProperty = m_NetworkConfigProperty.FindPropertyRelative("ReceiveTickrate");
             m_NetworkTickIntervalSecProperty = m_NetworkConfigProperty.FindPropertyRelative("NetworkTickIntervalSec");
@@ -136,7 +134,6 @@ namespace MLAPI.Editor
             // NetworkConfig properties
             m_PlayerPrefabProperty = m_NetworkConfigProperty.FindPropertyRelative(nameof(NetworkConfig.PlayerPrefab));
             m_ProtocolVersionProperty = m_NetworkConfigProperty.FindPropertyRelative("ProtocolVersion");
-            m_AllowRuntimeSceneChangesProperty = m_NetworkConfigProperty.FindPropertyRelative("AllowRuntimeSceneChanges");
             m_NetworkTransportProperty = m_NetworkConfigProperty.FindPropertyRelative("NetworkTransport");
             m_ReceiveTickrateProperty = m_NetworkConfigProperty.FindPropertyRelative("ReceiveTickrate");
             m_NetworkTickIntervalSecProperty = m_NetworkConfigProperty.FindPropertyRelative("NetworkTickIntervalSec");
@@ -342,7 +339,6 @@ namespace MLAPI.Editor
                 using (new EditorGUI.DisabledScope(!m_NetworkManager.NetworkConfig.EnableSceneManagement))
                 {
                     EditorGUILayout.PropertyField(m_LoadSceneTimeOutProperty);
-                    EditorGUILayout.PropertyField(m_AllowRuntimeSceneChangesProperty);
                 }
 
                 serializedObject.ApplyModifiedProperties();
