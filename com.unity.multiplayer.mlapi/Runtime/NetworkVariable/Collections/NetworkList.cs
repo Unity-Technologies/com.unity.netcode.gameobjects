@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using MLAPI.Timing;
 using MLAPI.Serialization.Pooled;
 using MLAPI.Transports;
 
@@ -20,7 +21,7 @@ namespace MLAPI.NetworkVariable.Collections
         /// <summary>
         /// Gets the last time the variable was synced
         /// </summary>
-        public float LastSyncedTime { get; internal set; }
+        public NetworkTime LastSyncedTime { get; internal set; }
 
         /// <summary>
         /// The settings for this container
@@ -82,7 +83,7 @@ namespace MLAPI.NetworkVariable.Collections
         public void ResetDirty()
         {
             m_DirtyEvents.Clear();
-            LastSyncedTime = m_NetworkBehaviour.NetworkManager.NetworkTime;
+            LastSyncedTime = m_NetworkBehaviour.NetworkManager.LocalTime;
         }
 
         /// <inheritdoc />
@@ -103,7 +104,7 @@ namespace MLAPI.NetworkVariable.Collections
                 return false;
             }
 
-            if (m_NetworkBehaviour.NetworkManager.NetworkTime - LastSyncedTime >= (1f / Settings.SendTickrate))
+            if (m_NetworkBehaviour.NetworkManager.LocalTime.FixedTime - LastSyncedTime.FixedTime >= (1.0 / Settings.SendTickrate))
             {
                 return true;
             }
@@ -595,7 +596,7 @@ namespace MLAPI.NetworkVariable.Collections
             }
         }
 
-        public ushort RemoteTick
+        public int LastModifiedTick
         {
             get
             {

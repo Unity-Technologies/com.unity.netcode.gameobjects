@@ -247,7 +247,7 @@ namespace MLAPI.Prototyping
 
         [SerializeField]
         private float m_SendRate = 0.1f;
-        private float m_NextSendTime = 0.0f;
+        private double m_NextSendTime = 0.0f;
         private bool m_ServerRequestsAnimationResync = false;
         [SerializeField]
         private Animator m_Animator;
@@ -270,7 +270,7 @@ namespace MLAPI.Prototyping
 
                 if (m_Animator.IsParameterControlledByCurve(parameter.nameHash))
                 {
-                    //we are ignoring parameters that are controlled by animation curves - syncing the layer states indirectly syncs the values that are driven by the animation curves 
+                    //we are ignoring parameters that are controlled by animation curves - syncing the layer states indirectly syncs the values that are driven by the animation curves
                     continue;
                 }
 
@@ -373,7 +373,7 @@ namespace MLAPI.Prototyping
 
         private bool CheckSendRate()
         {
-            var networkTime = NetworkManager.NetworkTime;
+            var networkTime = NetworkManager.LocalTime.FixedTime;
             if (m_SendRate != 0 && m_NextSendTime < networkTime)
             {
                 m_NextSendTime = networkTime + m_SendRate;
