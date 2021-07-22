@@ -1209,8 +1209,6 @@ namespace MLAPI
                 if (MessageQueueContainer.IsUsingBatching())
                 {
                     m_MessageBatcher.ReceiveItems(messageStream, ReceiveCallback, clientId, receiveTime, networkChannel);
-                    ProfilerStatManager.MessageBatchesRcvd.Record();
-                    PerformanceDataManager.Increment(ProfilerConstants.MessageBatchesReceived);
                 }
                 else
                 {

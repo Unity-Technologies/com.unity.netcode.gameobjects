@@ -224,20 +224,6 @@ namespace MLAPI.Messaging
                 //This only gets reset when we advanced to next frame (do not reset this in the ResetQueueHistoryFrame)
                 messageQueueHistoryItem.HasLoopbackData = false;
 
-                if (messageQueueHistoryItem.QueueItemOffsets.Count > 0)
-                {
-                    if (queueType == MessageQueueHistoryFrame.QueueFrameType.Inbound)
-                    {
-                        ProfilerStatManager.MessageInQueueSize.Record((int)messageQueueHistoryItem.TotalSize);
-                        PerformanceDataManager.Increment(ProfilerConstants.MessageInQueueSize, (int)messageQueueHistoryItem.TotalSize);
-                    }
-                    else
-                    {
-                        ProfilerStatManager.MessageOutQueueSize.Record((int)messageQueueHistoryItem.TotalSize);
-                        PerformanceDataManager.Increment(ProfilerConstants.MessageOutQueueSize, (int)messageQueueHistoryItem.TotalSize);
-                    }
-                }
-
                 ResetQueueHistoryFrame(messageQueueHistoryItem);
                 IncrementAndSetQueueHistoryFrame(messageQueueHistoryItem);
             }
@@ -322,6 +308,8 @@ namespace MLAPI.Messaging
             //Inbound we copy the entire packet and store the position offset
             long streamSize = message.Length - message.Position;
             messageFrameItem.QueueWriter.WriteInt64(streamSize);
+            // This 0 is an offset into the following stream. Since we're copying from the offset rather than copying the whole buffer, it can stay at 0.
+            // In other words, we're not using the offset anymore, but it's being left for now in case it becomes necessary again later.
             messageFrameItem.QueueWriter.WriteInt64(0);
             messageFrameItem.QueueWriter.WriteBytes(message.GetBuffer(), streamSize, (int)message.Position);
 
@@ -530,8 +518,14 @@ namespace MLAPI.Messaging
 
                     //Write message data
                     loopBackHistoryFrame.QueueWriter.WriteBytes(
-                        messageQueueHistoryItem.QueueBuffer.GetBuffer(), messageSize,
-                        // Skip the 2 byte header
+                        messageQueueHistoryItem.QueueBuffer.GetBuffer(), messageSize - 2,
+                        // Skip the 2 byte network header
+                        // The network header is read on the receiving side to be able to call
+                        // AddQueueItemToInboundFrame, which needs the message type and update stage
+                        // (which are the two values in the network header) in order to create
+                        // the inbound queue item. Here, we're skipping that - the loopback frame item
+                        // is added to the inbound frame directly rather than passed along the wire.
+                        // Since this skips the process that reads the network header, we skip writing it.
                         (int)messageQueueHistoryItem.QueueBuffer.Position + 2);
 
                     //Set the total size for this stream

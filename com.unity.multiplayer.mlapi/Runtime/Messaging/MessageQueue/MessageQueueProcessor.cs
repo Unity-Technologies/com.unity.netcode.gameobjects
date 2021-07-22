@@ -215,8 +215,6 @@ namespace MLAPI.Messaging
                             ProcessMessage(currentQueueItem);
                         }
 
-                        ProfilerStatManager.MessagesQueueProc.Record();
-                        PerformanceDataManager.Increment(ProfilerConstants.MessageQueueProcessed);
                         currentQueueItem = currentFrame.GetNextQueueItem();
                     }
 
@@ -329,11 +327,18 @@ namespace MLAPI.Messaging
                         //For each packet sent, we want to record how much data we have sent
 
                         PerformanceDataManager.Increment(ProfilerConstants.ByteSent, (int)item.StreamSize);
-                        PerformanceDataManager.Increment(ProfilerConstants.MessagesSent);
+                        PerformanceDataManager.Increment(ProfilerConstants.RpcSent);
                         ProfilerStatManager.BytesSent.Record((int)item.StreamSize);
-                        ProfilerStatManager.MessagesSent.Record();
+                        ProfilerStatManager.RpcsSent.Record();
                         break;
                     }
+                case MessageQueueContainer.MessageType.ClientRpc:
+
+                    //For each client we send to, we want to record how many messages we have sent
+                    PerformanceDataManager.Increment(ProfilerConstants.RpcSent, item.ClientNetworkIds.Length);
+                    ProfilerStatManager.RpcsSent.Record(item.ClientNetworkIds.Length);
+                    // Falls through
+                    goto default;
                 default:
                     {
                         foreach (ulong clientid in item.ClientNetworkIds)
@@ -344,10 +349,6 @@ namespace MLAPI.Messaging
                             PerformanceDataManager.Increment(ProfilerConstants.ByteSent, (int)item.StreamSize);
                             ProfilerStatManager.BytesSent.Record((int)item.StreamSize);
                         }
-
-                        //For each client we send to, we want to record how many messages we have sent
-                        PerformanceDataManager.Increment(ProfilerConstants.MessagesSent, item.ClientNetworkIds.Length);
-                        ProfilerStatManager.MessagesSent.Record(item.ClientNetworkIds.Length);
 
                         break;
                     }

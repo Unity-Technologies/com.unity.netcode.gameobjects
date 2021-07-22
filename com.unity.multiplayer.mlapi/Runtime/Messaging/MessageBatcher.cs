@@ -148,8 +148,6 @@ namespace MLAPI.Messaging
                     // clear the batch that was sent from the SendDict
                     sendStream.Buffer.SetLength(0);
                     sendStream.Buffer.Position = 0;
-                    ProfilerStatManager.MessageBatchesSent.Record();
-                    PerformanceDataManager.Increment(ProfilerConstants.MessageBatchesSent);
 
                     sendStream.NetworkChannel = item.NetworkChannel;
                 }
@@ -160,10 +158,14 @@ namespace MLAPI.Messaging
                 // write the message to send
                 sendStream.Writer.WriteBytes(item.MessageData.Array, item.MessageData.Count, item.MessageData.Offset);
 
+                if (item.MessageType == MessageQueueContainer.MessageType.ClientRpc ||
+                    item.MessageType == MessageQueueContainer.MessageType.ServerRpc)
+                {
+                    ProfilerStatManager.RpcsSent.Record();
+                    PerformanceDataManager.Increment(ProfilerConstants.RpcSent);
+                }
                 ProfilerStatManager.BytesSent.Record(item.MessageData.Count);
-                ProfilerStatManager.MessagesSent.Record();
                 PerformanceDataManager.Increment(ProfilerConstants.ByteSent, item.MessageData.Count);
-                PerformanceDataManager.Increment(ProfilerConstants.MessagesSent);
 
 
                 if (sendStream.Buffer.Length >= automaticSendThresholdBytes)
@@ -173,8 +175,6 @@ namespace MLAPI.Messaging
                     sendStream.Buffer.SetLength(0);
                     sendStream.Buffer.Position = 0;
                     sendStream.IsEmpty = true;
-                    ProfilerStatManager.MessageBatchesSent.Record();
-                    PerformanceDataManager.Increment(ProfilerConstants.MessageBatchesSent);
                 }
             }
         }
@@ -205,8 +205,6 @@ namespace MLAPI.Messaging
                         entry.Value.Buffer.SetLength(0);
                         entry.Value.Buffer.Position = 0;
                         entry.Value.IsEmpty = true;
-                        ProfilerStatManager.MessageBatchesSent.Record();
-                        PerformanceDataManager.Increment(ProfilerConstants.MessageBatchesSent);
                     }
                 }
             }

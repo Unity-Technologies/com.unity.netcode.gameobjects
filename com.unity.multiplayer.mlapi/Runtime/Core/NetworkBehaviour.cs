@@ -68,7 +68,6 @@ namespace MLAPI
             }
 
             var messageQueueContainer = NetworkManager.MessageQueueContainer;
-            var isUsingBatching = messageQueueContainer.IsUsingBatching();
             var transportChannel = rpcDelivery == RpcDelivery.Reliable ? NetworkChannel.ReliableRpc : NetworkChannel.UnreliableRpc;
 
             if (IsHost)
@@ -132,8 +131,6 @@ namespace MLAPI
             }
 
             // This will start a new queue item entry and will then return the writer to the current frame's stream
-            var messageQueueContainer = NetworkManager.MessageQueueContainer;
-            var isUsingBatching = messageQueueContainer.IsUsingBatching();
             var transportChannel = rpcDelivery == RpcDelivery.Reliable ? NetworkChannel.ReliableRpc : NetworkChannel.UnreliableRpc;
 
             ulong[] clientIds = clientRpcParams.Send.TargetClientIds ?? NetworkManager.ConnectedClientsIds;
@@ -148,6 +145,7 @@ namespace MLAPI
             //!!! This code is temporary and will change (soon) when NetworkSerializer can be configured for mutliple NetworkWriters!!!
             var containsServerClientId = clientIds.Contains(NetworkManager.ServerClientId);
             bool addHeader = true;
+            var messageQueueContainer = NetworkManager.MessageQueueContainer;
             if (IsHost && containsServerClientId)
             {
                 //Always write to the next frame's inbound queue

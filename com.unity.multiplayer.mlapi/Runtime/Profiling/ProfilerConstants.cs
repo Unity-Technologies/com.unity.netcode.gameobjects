@@ -13,12 +13,7 @@ namespace MLAPI.Profiling
         public const string ByteReceived = nameof(ByteReceived);
         public const string NetworkVarDeltas = nameof(NetworkVarDeltas);
         public const string NetworkVarUpdates = nameof(NetworkVarUpdates);
-        public const string MessagesSent = nameof(MessagesSent);
-        public const string MessagesReceived = nameof(MessagesReceived);
-        public const string MessageBatchesSent = nameof(MessageBatchesSent);
-        public const string MessageBatchesReceived = nameof(MessageBatchesReceived);
-        public const string MessageQueueProcessed = nameof(MessageQueueProcessed);
-        public const string MessageInQueueSize = nameof(MessageInQueueSize);
-        public const string MessageOutQueueSize = nameof(MessageOutQueueSize);
+        public const string RpcSent = nameof(RpcSent);
+        public const string RpcReceived = nameof(RpcReceived);
     }
 }

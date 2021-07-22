@@ -52,31 +52,11 @@ namespace MLAPI.Profiling
 
         // Queue Stats
         private static readonly ProfilerCounterValue<int> k_MessagesSentCounterValue =
-            new ProfilerCounterValue<int>(ProfilerCategory.Network, ProfilerConstants.MessagesSent,
+            new ProfilerCounterValue<int>(ProfilerCategory.Network, ProfilerConstants.RpcSent,
                 ProfilerMarkerDataUnit.Count, ProfilerCounterOptions.FlushOnEndOfFrame | ProfilerCounterOptions.ResetToZeroOnFlush);
 
         private static readonly ProfilerCounterValue<int> k_MessagesReceivedCounterValue =
-            new ProfilerCounterValue<int>(ProfilerCategory.Network, ProfilerConstants.MessagesReceived,
-                ProfilerMarkerDataUnit.Count, ProfilerCounterOptions.FlushOnEndOfFrame | ProfilerCounterOptions.ResetToZeroOnFlush);
-
-        private static readonly ProfilerCounterValue<int> k_MessageBatchesSentCounterValue =
-            new ProfilerCounterValue<int>(ProfilerCategory.Network, ProfilerConstants.MessageBatchesSent,
-                ProfilerMarkerDataUnit.Count, ProfilerCounterOptions.FlushOnEndOfFrame | ProfilerCounterOptions.ResetToZeroOnFlush);
-
-        private static readonly ProfilerCounterValue<int> k_MessageBatchesReceivedCounterValue =
-            new ProfilerCounterValue<int>(ProfilerCategory.Network, ProfilerConstants.MessageBatchesReceived,
-                ProfilerMarkerDataUnit.Count, ProfilerCounterOptions.FlushOnEndOfFrame | ProfilerCounterOptions.ResetToZeroOnFlush);
-
-        private static readonly ProfilerCounterValue<int> k_MessageQueueProcessedCounterValue =
-            new ProfilerCounterValue<int>(ProfilerCategory.Network, ProfilerConstants.MessageQueueProcessed,
-                ProfilerMarkerDataUnit.Count, ProfilerCounterOptions.FlushOnEndOfFrame | ProfilerCounterOptions.ResetToZeroOnFlush);
-
-        private static readonly ProfilerCounterValue<int> k_MessagesInQueueSizeCounterValue =
-            new ProfilerCounterValue<int>(ProfilerCategory.Network, ProfilerConstants.MessageInQueueSize,
-                ProfilerMarkerDataUnit.Count, ProfilerCounterOptions.FlushOnEndOfFrame | ProfilerCounterOptions.ResetToZeroOnFlush);
-
-        private static readonly ProfilerCounterValue<int> k_MessagesOutQueueSizeCounterValue =
-            new ProfilerCounterValue<int>(ProfilerCategory.Network, ProfilerConstants.MessageOutQueueSize,
+            new ProfilerCounterValue<int>(ProfilerCategory.Network, ProfilerConstants.RpcReceived,
                 ProfilerMarkerDataUnit.Count, ProfilerCounterOptions.FlushOnEndOfFrame | ProfilerCounterOptions.ResetToZeroOnFlush);
 
         [RuntimeInitializeOnLoadMethod]
@@ -108,11 +88,6 @@ namespace MLAPI.Profiling
 
             k_MessagesSentCounterValue.Value = 0;
             k_MessagesReceivedCounterValue.Value = 0;
-            k_MessageBatchesSentCounterValue.Value = 0;
-            k_MessageBatchesReceivedCounterValue.Value = 0;
-            k_MessageQueueProcessedCounterValue.Value = 0;
-            k_MessagesInQueueSizeCounterValue.Value = 0;
-            k_MessagesOutQueueSizeCounterValue.Value = 0;
         }
 
         private static void OnPerformanceTickData(PerformanceTickData tickData)
@@ -132,13 +107,8 @@ namespace MLAPI.Profiling
             UpdateIntCounter(tickData, k_NetworkVarUpdatesCounterValue, ProfilerConstants.NetworkVarUpdates);
 
             // Queue stats
-            UpdateIntCounter(tickData, k_MessagesSentCounterValue, ProfilerConstants.MessagesSent);
-            UpdateIntCounter(tickData, k_MessagesReceivedCounterValue, ProfilerConstants.MessagesReceived);
-            UpdateIntCounter(tickData, k_MessageBatchesSentCounterValue, ProfilerConstants.MessageBatchesSent);
-            UpdateIntCounter(tickData, k_MessageBatchesReceivedCounterValue, ProfilerConstants.MessageBatchesReceived);
-            UpdateIntCounter(tickData, k_MessageBatchesReceivedCounterValue, ProfilerConstants.MessageQueueProcessed);
-            UpdateIntCounter(tickData, k_MessageQueueProcessedCounterValue, ProfilerConstants.MessageInQueueSize);
-            UpdateIntCounter(tickData, k_MessagesInQueueSizeCounterValue, ProfilerConstants.MessageOutQueueSize);
+            UpdateIntCounter(tickData, k_MessagesSentCounterValue, ProfilerConstants.RpcSent);
+            UpdateIntCounter(tickData, k_MessagesReceivedCounterValue, ProfilerConstants.RpcReceived);
         }
 
         private static void UpdateIntCounter(PerformanceTickData tickData, ProfilerCounterValue<int> counter, string fieldName)

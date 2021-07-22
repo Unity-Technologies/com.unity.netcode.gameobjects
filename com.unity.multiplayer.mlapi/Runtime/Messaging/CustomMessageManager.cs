@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using MLAPI.Configuration;
@@ -47,12 +48,7 @@ namespace MLAPI.Messaging
         {
             if (!m_NetworkManager.IsServer)
             {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
-                {
-                    NetworkLog.LogWarning("Can not send unnamed messages to multiple users as a client");
-                }
-
-                return;
+                throw new InvalidOperationException("Can not send unnamed messages to multiple users as a client");
             }
 
             var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
@@ -202,12 +198,7 @@ namespace MLAPI.Messaging
         {
             if (!m_NetworkManager.IsServer)
             {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
-                {
-                    NetworkLog.LogWarning("Can not send named messages to multiple users as a client");
-                }
-
-                return;
+                throw new InvalidOperationException("Can not send unnamed messages to multiple users as a client");
             }
 
             ulong hash = 0;
