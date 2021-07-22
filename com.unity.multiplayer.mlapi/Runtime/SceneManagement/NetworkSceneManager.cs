@@ -383,7 +383,7 @@ namespace MLAPI.SceneManagement
         }
 
         /// <summary>
-        /// Loads the scene name in question as either additive or single.
+        /// Loads the scene name in question in either additive or single LoadSceneMode.
         /// </summary>
         /// <param name="sceneName"></param>
         /// NSS TODO: This could probably stand to have some form of "scene event status" class/structure that will
