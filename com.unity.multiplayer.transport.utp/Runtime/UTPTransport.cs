@@ -367,6 +367,11 @@ namespace MLAPI.Transports
 
         }
 
+        private void OnDestroy()
+        {
+            DisposeDriver();
+        }
+
         private static unsafe ulong ParseClientId(NetworkConnection utpConnectionId)
         {
             return *(ulong*)&utpConnectionId;
@@ -474,11 +479,6 @@ namespace MLAPI.Transports
             Debug.LogError("Error sending the message");
         }
 
-        public override void Shutdown()
-        {
-            DisposeDriver();
-        }
-
         public override SocketTasks StartClient()
         {
             if (m_Driver.IsCreated)
@@ -505,6 +505,11 @@ namespace MLAPI.Transports
                     break;
             }
             return task.AsTasks();
+        }
+
+        public override void Shutdown()
+        {
+            DisposeDriver();
         }
     }
 }
