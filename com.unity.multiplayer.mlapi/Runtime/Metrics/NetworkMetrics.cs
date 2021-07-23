@@ -9,8 +9,6 @@ namespace MLAPI.Metrics
 {
     public class NetworkMetrics : INetworkMetrics
     {
-        readonly NetworkManager m_NetworkManager;
-
         readonly EventMetric<NamedMessageEvent> m_NamedMessageSentEvent = new EventMetric<NamedMessageEvent>(MetricNames.NamedMessageSent);
         readonly EventMetric<NamedMessageEvent> m_NamedMessageReceivedEvent = new EventMetric<NamedMessageEvent>(MetricNames.NamedMessageReceived);
         readonly EventMetric<UnnamedMessageEvent> m_UnnamedMessageSentEvent = new EventMetric<UnnamedMessageEvent>(MetricNames.UnnamedMessageSent);
@@ -30,9 +28,8 @@ namespace MLAPI.Metrics
 
         readonly Dictionary<ulong, NetworkObjectIdentifier> m_NetworkGameObjects = new Dictionary<ulong, NetworkObjectIdentifier>();
 
-        public NetworkMetrics(NetworkManager networkManager)
+        public NetworkMetrics()
         {
-            m_NetworkManager = networkManager;
             Dispatcher = new MetricDispatcherBuilder()
                 .WithMetricEvents(m_NamedMessageSentEvent, m_NamedMessageReceivedEvent)
                 .WithMetricEvents(m_UnnamedMessageSentEvent, m_UnnamedMessageReceivedEvent)
@@ -98,7 +95,6 @@ namespace MLAPI.Metrics
             variableName = PrettyPrintVariableName(variableName);
             m_NetworkVariableDeltaSentEvent.Mark(new NetworkVariableEvent(new ConnectionInfo(receiverClientId), new NetworkObjectIdentifier(gameObjectName, networkObjectId), variableName, bytesCount));
         }
-
 
         public void TrackNetworkVariableDeltaReceived(ulong senderClientId, ulong networkObjectId, string gameObjectName, string variableName, long bytesCount)
         {

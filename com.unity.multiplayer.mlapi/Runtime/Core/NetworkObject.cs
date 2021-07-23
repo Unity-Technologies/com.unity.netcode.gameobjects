@@ -267,7 +267,6 @@ namespace MLAPI
                 throw new NotServerException("Only server can change visibility");
             }
 
-
             // Do the safety loop first to prevent putting the MLAPI in an invalid state.
             for (int i = 0; i < networkObjects.Count; i++)
             {
@@ -286,19 +285,25 @@ namespace MLAPI
                     throw new ArgumentNullException("All " + nameof(NetworkObject) + "s must belong to the same " + nameof(NetworkManager));
                 }
             }
+
             using (var buffer = PooledNetworkBuffer.Get())
             using (var writer = PooledNetworkWriter.Get(buffer))
             {
                 writer.WriteUInt16Packed((ushort)networkObjects.Count);
-                long prevLength = 0;
+
+                var initialBufferLength = buffer.Length;
+                var previousBufferLength = initialBufferLength;
+
                 for (int i = 0; i < networkObjects.Count; i++)
                 {
                     // Send spawn call
                     networkObjects[i].Observers.Add(clientId);
 
                     networkManager.SpawnManager.WriteSpawnCallForObject(buffer, clientId, networkObjects[i], payload);
-                    networkManager.NetworkMetrics.TrackObjectSpawnSent(clientId, networkObjects[i].NetworkObjectId, networkObjects[i].name, buffer.Length - prevLength);
-                    prevLength = buffer.Length;
+
+                    var currentBufferLength = buffer.Length - previousBufferLength + initialBufferLength;
+                    networkManager.NetworkMetrics.TrackObjectSpawnSent(clientId, networkObjects[i].NetworkObjectId, networkObjects[i].name, currentBufferLength);
+                    previousBufferLength = buffer.Length;
                 }
 
                 networkManager.MessageSender.Send(clientId, NetworkConstants.ADD_OBJECTS, NetworkChannel.Internal, buffer);
@@ -392,7 +397,8 @@ namespace MLAPI
             {
                 writer.WriteUInt16Packed((ushort)networkObjects.Count);
 
-                long prevLength = 0;
+                var initialBufferLength = buffer.Length;
+                var previousBufferLength = initialBufferLength;
 
                 for (int i = 0; i < networkObjects.Count; i++)
                 {
@@ -400,8 +406,10 @@ namespace MLAPI
                     networkObjects[i].Observers.Remove(clientId);
 
                     writer.WriteUInt64Packed(networkObjects[i].NetworkObjectId);
-                    networkManager.NetworkMetrics.TrackObjectDestroySent(clientId, networkObjects[i].NetworkObjectId, networkObjects[i].name, buffer.Length - prevLength);
-                    prevLength = buffer.Length;
+
+                    var currentBufferLength = buffer.Length - previousBufferLength + initialBufferLength;
+                    networkManager.NetworkMetrics.TrackObjectDestroySent(clientId, networkObjects[i].NetworkObjectId, networkObjects[i].name, currentBufferLength);
+                    previousBufferLength = buffer.Length;
                 }
 
                 networkManager.MessageSender.Send(clientId, NetworkConstants.DESTROY_OBJECTS, NetworkChannel.Internal, buffer);
