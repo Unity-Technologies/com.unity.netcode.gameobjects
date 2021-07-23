@@ -7,27 +7,12 @@ namespace MLAPI
     {
         private HashSet<NetworkObject> m_Touched = new HashSet<NetworkObject>();
 
-        /// <summary>
-        /// Stores the network tick at the NetworkBehaviourUpdate time
-        /// This allows sending NetworkVariables not more often than once per network tick, regardless of the update rate
-        /// </summary>
-        public ushort CurrentTick { get; set; }
-
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
         private ProfilerMarker m_NetworkBehaviourUpdate = new ProfilerMarker($"{nameof(NetworkBehaviour)}.{nameof(NetworkBehaviourUpdate)}");
 #endif
 
         internal void NetworkBehaviourUpdate(NetworkManager networkManager)
         {
-            // Do not execute NetworkBehaviourUpdate more than once per network tick
-            ushort tick = networkManager.NetworkTickSystem.GetTick();
-            if (tick == CurrentTick)
-            {
-                return;
-            }
-
-            CurrentTick = tick;
-
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             m_NetworkBehaviourUpdate.Begin();
 #endif

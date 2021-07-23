@@ -222,16 +222,19 @@ namespace MLAPI.SceneManagement
             {
                 OnNotifyServerAllClientsLoadedScene?.Invoke(switchSceneProgress, timedOut);
 
-                using (var buffer = PooledNetworkBuffer.Get())
-                using (var writer = PooledNetworkWriter.Get(buffer))
+                var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
+                    MessageQueueContainer.MessageType.AllClientsLoadedScene, NetworkChannel.Internal,
+                    new[] {NetworkManager.Singleton.ServerClientId}, NetworkUpdateLoop.UpdateStage);
+                if (context != null)
                 {
-                    var doneClientIds = switchSceneProgress.DoneClients.ToArray();
-                    var timedOutClientIds = m_NetworkManager.ConnectedClients.Keys.Except(doneClientIds).ToArray();
+                    using (var nonNullContext = (InternalCommandContext) context)
+                    {
+                        var doneClientIds = switchSceneProgress.DoneClients.ToArray();
+                        var timedOutClientIds = m_NetworkManager.ConnectedClients.Keys.Except(doneClientIds).ToArray();
 
-                    writer.WriteULongArray(doneClientIds, doneClientIds.Length);
-                    writer.WriteULongArray(timedOutClientIds, timedOutClientIds.Length);
-
-                    m_NetworkManager.MessageSender.Send(NetworkManager.Singleton.ServerClientId, NetworkConstants.ALL_CLIENTS_LOADED_SCENE, NetworkChannel.Internal, buffer);
+                        nonNullContext.NetworkWriter.WriteULongArray(doneClientIds, doneClientIds.Length);
+                        nonNullContext.NetworkWriter.WriteULongArray(timedOutClientIds, timedOutClientIds.Length);
+                    }
                 }
             };
 
@@ -605,8 +608,10 @@ namespace MLAPI.SceneManagement
                 }
             }
 
-            using (var buffer = PooledNetworkBuffer.Get())
-            using (var writer = PooledNetworkWriter.Get(buffer))
+            var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
+                MessageQueueContainer.MessageType.ClientSwitchSceneCompleted, NetworkChannel.Internal,
+                new[] {m_NetworkManager.ServerClientId}, NetworkUpdateLoop.UpdateStage);
+            if (context != null)
             {
                 SceneEventData.SceneEventType = SceneEventData.SceneEventTypes.Event_Load_Complete;
                 SceneEventData.OnWrite(writer);

@@ -58,7 +58,7 @@ namespace MLAPI.RuntimeTests
         public override IEnumerator Teardown()
         {
             yield return base.Teardown();
-            
+
             if (m_TestNetworkObjectPrefab != null)
             {
                 Object.Destroy(m_TestNetworkObjectPrefab);
