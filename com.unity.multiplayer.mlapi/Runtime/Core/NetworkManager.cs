@@ -396,7 +396,7 @@ namespace MLAPI
             }
             else
             {
-                NetworkTimeSystem = new NetworkTimeSystem(1.0 / NetworkConfig.TickRate, 1.0 / NetworkConfig.TickRate, 0.2);
+                NetworkTimeSystem = new NetworkTimeSystem(1.0 / NetworkConfig.TickRate, 3.0 / NetworkConfig.TickRate, 0.2);
             }
 
             NetworkTickSystem = new NetworkTickSystem(NetworkConfig.TickRate, 0, 0);

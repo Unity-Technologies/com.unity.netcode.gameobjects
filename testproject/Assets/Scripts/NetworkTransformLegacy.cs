@@ -170,9 +170,9 @@ namespace Sam
         {
             if (IsOwner)
             {
-                if (NetworkManager.NetworkTime - m_LastSendTime >= (1f / FixedSendsPerSecond) && (Vector3.Distance(transform.position, m_LastSentPos) > MinMeters || Quaternion.Angle(transform.rotation, m_LastSentRot) > MinDegrees))
+                if (NetworkManager.LocalTime.FixedTime - m_LastSendTime >= (1f / FixedSendsPerSecond) && (Vector3.Distance(transform.position, m_LastSentPos) > MinMeters || Quaternion.Angle(transform.rotation, m_LastSentRot) > MinDegrees))
                 {
-                    m_LastSendTime = NetworkManager.NetworkTime;
+                    m_LastSendTime = (float) NetworkManager.LocalTime.FixedTime;
                     m_LastSentPos = transform.position;
                     m_LastSentRot = transform.rotation;
 
@@ -293,9 +293,9 @@ namespace Sam
                     Vector3? receiverPosition = NetworkManager.Singleton.ConnectedClientsList[i].PlayerObject == null ? null : new Vector3?(NetworkManager.Singleton.ConnectedClientsList[i].PlayerObject.transform.position);
                     Vector3? senderPosition = NetworkManager.Singleton.ConnectedClients[OwnerClientId].PlayerObject == null ? null : new Vector3?(NetworkManager.Singleton.ConnectedClients[OwnerClientId].PlayerObject.transform.position);
 
-                    if ((receiverPosition == null || senderPosition == null && NetworkManager.NetworkTime - info.LastSent >= (1f / FixedSendsPerSecond)) || NetworkManager.NetworkTime - info.LastSent >= GetTimeForLerp(receiverPosition.Value, senderPosition.Value))
+                    if ((receiverPosition == null || senderPosition == null && NetworkManager.LocalTime.FixedTime - info.LastSent >= (1f / FixedSendsPerSecond)) || NetworkManager.LocalTime.FixedTime - info.LastSent >= GetTimeForLerp(receiverPosition.Value, senderPosition.Value))
                     {
-                        info.LastSent = NetworkManager.NetworkTime;
+                        info.LastSent = (float) NetworkManager.LocalTime.FixedTime;
                         info.LastMissedPosition = null;
                         info.LastMissedRotation = null;
 
@@ -334,7 +334,7 @@ namespace Sam
                 Vector3? receiverPosition = NetworkManager.ConnectedClientsList[i].PlayerObject == null ? null : new Vector3?(NetworkManager.ConnectedClientsList[i].PlayerObject.transform.position);
                 Vector3? senderPosition = NetworkManager.ConnectedClients[OwnerClientId].PlayerObject == null ? null : new Vector3?(NetworkManager.ConnectedClients[OwnerClientId].PlayerObject.transform.position);
 
-                if ((receiverPosition == null || senderPosition == null && NetworkManager.NetworkTime - info.LastSent >= (1f / FixedSendsPerSecond)) || NetworkManager.NetworkTime - info.LastSent >= GetTimeForLerp(receiverPosition.Value, senderPosition.Value))
+                if ((receiverPosition == null || senderPosition == null && NetworkManager.LocalTime.FixedTime - info.LastSent >= (1f / FixedSendsPerSecond)) || NetworkManager.LocalTime.FixedTime - info.LastSent >= GetTimeForLerp(receiverPosition.Value, senderPosition.Value))
                 {
                     /* why is this??? ->*/
                     Vector3? pos = NetworkManager.ConnectedClients[OwnerClientId].PlayerObject == null ? null : new Vector3?(NetworkManager.ConnectedClients[OwnerClientId].PlayerObject.transform.position);
@@ -343,7 +343,7 @@ namespace Sam
 
                     if (info.LastMissedPosition != null && info.LastMissedRotation != null)
                     {
-                        info.LastSent = NetworkManager.NetworkTime;
+                        info.LastSent = (float) NetworkManager.LocalTime.FixedTime;
 
                         ApplyTransformClientRpc(info.LastMissedPosition.Value, info.LastMissedRotation.Value.eulerAngles,
                             new ClientRpcParams { Send = new ClientRpcSendParams { TargetClientIds = new[] { NetworkManager.ConnectedClientsList[i].ClientId } } });

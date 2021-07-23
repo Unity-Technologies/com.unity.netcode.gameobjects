@@ -1,8 +1,10 @@
 using System;
+using DefaultNamespace;
 using MLAPI.NetworkVariable;
 using MLAPI.Serialization;
 using MLAPI.Transports;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 namespace MLAPI.Prototyping
 {
@@ -31,12 +33,28 @@ namespace MLAPI.Prototyping
             public Quaternion Rotation;
             public Vector3 Scale;
 
+            public int SentTick;
+
+            public NetworkState(NetworkState copy)
+            {
+                InLocalSpace = copy.InLocalSpace;
+                Position = copy.Position;
+                Rotation = copy.Rotation;
+                Scale = copy.Scale;
+                SentTick = copy.SentTick;
+            }
+
+            public NetworkState()
+            {
+            }
+
             public void NetworkSerialize(NetworkSerializer serializer)
             {
                 serializer.Serialize(ref InLocalSpace);
                 serializer.Serialize(ref Position);
                 serializer.Serialize(ref Rotation);
                 serializer.Serialize(ref Scale);
+                serializer.Serialize(ref SentTick);
             }
         }
 
@@ -51,7 +69,8 @@ namespace MLAPI.Prototyping
         /// The network channel to use send updates
         /// </summary>
         [Tooltip("The network channel to use send updates")]
-        public NetworkChannel Channel = NetworkChannel.PositionUpdate;
+        private NetworkChannel Channel = NetworkChannel.SyncChannel;
+        // private NetworkChannel Channel = NetworkChannel.PositionUpdate;
 
         /// <summary>
         /// Sets whether this transform should sync in local space or in world space.
@@ -67,6 +86,8 @@ namespace MLAPI.Prototyping
         /// </summary>
         [SerializeField, Range(0, 120), Tooltip("The base amount of sends per seconds to use when range is disabled")]
         public float FixedSendsPerSecond = 30f;
+
+        public IInterpolator<Vector3> PositionInterpolator = new BufferedLinearInterpolatorVector3();
 
         private Transform m_Transform; // cache the transform component to reduce unnecessary bounce between managed and native
         private readonly NetworkVariable<NetworkState> m_NetworkState = new NetworkVariable<NetworkState>(new NetworkState());
@@ -92,13 +113,13 @@ namespace MLAPI.Prototyping
             isDirty |= networkState.InLocalSpace != InLocalSpace;
             if (InLocalSpace)
             {
-                isDirty |= networkState.Position != m_Transform.localPosition;
+                isDirty |= networkState.Position != PositionInterpolator.GetInterpolatedValue();
                 isDirty |= networkState.Rotation != m_Transform.localRotation;
                 isDirty |= networkState.Scale != m_Transform.localScale;
             }
             else
             {
-                isDirty |= networkState.Position != m_Transform.position;
+                isDirty |= networkState.Position != PositionInterpolator.GetInterpolatedValue();
                 isDirty |= networkState.Rotation != m_Transform.rotation;
                 isDirty |= networkState.Scale != m_Transform.lossyScale;
             }
@@ -106,9 +127,13 @@ namespace MLAPI.Prototyping
             return isDirty;
         }
 
+        private int previousTickSam;
+        private Vector3 previousPosSam;
         private void UpdateNetworkState()
         {
             m_NetworkState.Value.InLocalSpace = InLocalSpace;
+            // m_NetworkState.Value.SentTime = Time.realtimeSinceStartup;
+            m_NetworkState.Value.SentTick = NetworkManager.Singleton.LocalTime.Tick;
             if (InLocalSpace)
             {
                 m_NetworkState.Value.Position = m_Transform.localPosition;
@@ -122,11 +147,18 @@ namespace MLAPI.Prototyping
                 m_NetworkState.Value.Scale = m_Transform.lossyScale;
             }
 
+            Debug.Log($"sam asdf distance {Math.Round((m_NetworkState.Value.Position - previousPosSam).magnitude, 2)} tick diff {m_NetworkState.Value.SentTick - previousTickSam} sam");
+            previousTickSam = m_NetworkState.Value.SentTick;
+            previousPosSam = m_NetworkState.Value.Position;
+
             m_NetworkState.SetDirty(true);
         }
 
         private void ApplyNetworkState(NetworkState netState)
         {
+            netState = new NetworkState(netState);
+            netState.Position = PositionInterpolator.GetInterpolatedValue();
+
             InLocalSpace = netState.InLocalSpace;
             if (InLocalSpace)
             {
@@ -146,6 +178,8 @@ namespace MLAPI.Prototyping
             m_PrevNetworkState = netState;
         }
 
+
+        private int oldTick;
         private void OnNetworkStateChanged(NetworkState oldState, NetworkState newState)
         {
             if (!NetworkObject.IsSpawned)
@@ -160,7 +194,12 @@ namespace MLAPI.Prototyping
                 return;
             }
 
-            ApplyNetworkState(newState);
+            // PositionInterpolator.AddMeasurement(newState.Position, NetworkManager.Singleton.ServerTime.Time);
+
+            Debug.Log($"distance sam {Math.Round((newState.Position - oldState.Position).magnitude, 2)}");
+            Debug.Log($"diff tick sam {(newState.SentTick - oldState.SentTick, 2)}");
+            // oldTick = NetworkManager.Singleton.ServerTime.Tick;
+            PositionInterpolator.AddMeasurement(newState.Position, newState.SentTick);
         }
 
         private void UpdateNetVarPerms()
@@ -184,6 +223,7 @@ namespace MLAPI.Prototyping
         private void Awake()
         {
             m_Transform = transform;
+            PositionInterpolator.Teleport(m_Transform.position);
 
             UpdateNetVarPerms();
 
@@ -196,6 +236,10 @@ namespace MLAPI.Prototyping
         public override void OnNetworkSpawn()
         {
             m_PrevNetworkState = null;
+            if (enabled) // todo Luke fix your UX
+            {
+                NetworkManager.NetworkTickSystem.Tick += NetworkTickUpdate;
+            }
         }
 
         private void OnDestroy()
@@ -203,24 +247,45 @@ namespace MLAPI.Prototyping
             m_NetworkState.OnValueChanged -= OnNetworkStateChanged;
         }
 
-        private void FixedUpdate()
+        private void NetworkTickUpdate()
         {
             if (!NetworkObject.IsSpawned)
             {
                 return;
             }
 
-            if (CanUpdateTransform && IsNetworkStateDirty(m_NetworkState.Value))
+            if (CanUpdateTransform) //&& IsNetworkStateDirty(m_NetworkState.Value))
             {
                 UpdateNetworkState();
             }
             else
             {
-                if (IsNetworkStateDirty(m_PrevNetworkState))
-                {
-                    Debug.LogWarning("A local change without authority detected, revert back to latest network state!");
-                }
+                // if (IsNetworkStateDirty(m_PrevNetworkState))
+                // {
+                //     Debug.LogWarning("A local change without authority detected, revert back to latest network state!");
+                //     ApplyNetworkState(m_NetworkState.Value);
+                // }
 
+                // PositionInterpolator.FixedUpdate(Time.fixedDeltaTime);
+            }
+        }
+
+        private int debugOldTime = 0;
+
+        private void Update()
+        {
+            // Debug.Log("gaga "+Math.Round(Time.time - (float)NetworkManager.Singleton.ServerTime.Time, 2));
+
+            // Debug.Log($"sam {Math.Round(NetworkManager.Singleton.ServerTime.Time - debugOldTime, 2)}");
+            // debugOldTime = NetworkManager.Singleton.ServerTime.Time;
+            if (!NetworkObject.IsSpawned)
+            {
+                return;
+            }
+
+            if (!CanUpdateTransform)
+            {
+                PositionInterpolator.Update(Time.deltaTime);
                 ApplyNetworkState(m_NetworkState.Value);
             }
         }
