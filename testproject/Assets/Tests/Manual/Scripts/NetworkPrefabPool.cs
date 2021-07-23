@@ -337,14 +337,14 @@ namespace TestProject.ManualTests
     public class MyCustomPrefabSpawnHandler : INetworkPrefabInstanceHandler
     {
         private NetworkPrefabPool m_PrefabPool;
-        public NetworkObject HandleNetworkPrefabSpawn(ulong ownerClientId, Vector3 position, Quaternion rotation)
+        public NetworkObject ClientInstantiateOverride(ulong ownerClientId, Vector3 position, Quaternion rotation)
         {
             var obj = m_PrefabPool.GetObject();
             obj.transform.position = position;
             obj.transform.rotation = rotation;
             return obj.GetComponent<NetworkObject>();
         }
-        public void HandleNetworkPrefabDestroy(NetworkObject networkObject)
+        public void DestroyOverride(NetworkObject networkObject)
         {
             networkObject.transform.position = Vector3.zero;
             networkObject.gameObject.SetActive(false);
