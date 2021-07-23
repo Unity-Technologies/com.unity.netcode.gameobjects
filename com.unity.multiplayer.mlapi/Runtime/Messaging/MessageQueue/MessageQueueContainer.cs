@@ -68,6 +68,12 @@ namespace MLAPI.Messaging
         private bool m_IsTestingEnabled;
         private bool m_ProcessUpdateStagesExternally;
         private bool m_IsNotUsingBatching;
+        
+        // TODO hack: Fixed update can run multiple times in a frame and the queue history frame doesn't get cleared
+        // until the end of the frame. This results in messages executing at FixedUpdate being invoked multiple times.
+        // This is used to prevent it being called more than once per frame.
+        // This will be fixed by the upcoming serialization refactor.
+        private bool m_hasRunFixedUpdate;
 
         internal readonly NetworkManager NetworkManager;
 
@@ -605,12 +611,22 @@ namespace MLAPI.Messaging
         /// <param name="updateStage">the stage to process RPC Queues</param>
         public void NetworkUpdate(NetworkUpdateStage updateStage)
         {
+            if (updateStage == NetworkUpdateStage.FixedUpdate)
+            {
+                if (m_hasRunFixedUpdate)
+                {
+                    return;
+                }
+
+                m_hasRunFixedUpdate = true;
+            }
             ProcessAndFlushMessageQueue(MessageQueueProcessingTypes.Receive, updateStage);
 
             if (updateStage == NetworkUpdateStage.PostLateUpdate)
             {
                 ProcessAndFlushMessageQueue(MessageQueueProcessingTypes.Send, updateStage);
                 m_MessageQueueProcessor.AdvanceFrameHistoryIfNeeded();
+                m_hasRunFixedUpdate = false;
             }
         }
 
