@@ -53,6 +53,7 @@ namespace MLAPI.EditorTests
                     (NetworkBuffer) stream, receiveChannel);
                 messageQueueContainer.ProcessAndFlushMessageQueue(
                     MessageQueueContainer.MessageQueueProcessingTypes.Receive, NetworkUpdateLoop.UpdateStage);
+                messageQueueContainer.AdvanceFrameHistory(MessageQueueHistoryFrame.QueueFrameType.Inbound);
             }
         }
 
