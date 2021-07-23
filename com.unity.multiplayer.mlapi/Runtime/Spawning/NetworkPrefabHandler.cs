@@ -17,9 +17,9 @@ namespace MLAPI.Spawning
         /// Note on Pooling:  If you are using a NetworkObject pool, don't forget to make the NetworkObject active
         /// via the  <see cref="GameObject.SetActive(bool)"/> method.
         /// </summary>
-        /// <param name="ownerClientId">the owner of this NetworkObject</param>
-        /// <param name="position">the initial/default position for this NetworkObject</param>
-        /// <param name="rotation">the initial/default rotation for this NetworkObject</param>
+        /// <param name="ownerClientId">the owner for the <see cref="NetworkObject"/> to be instantiated</param>
+        /// <param name="position">the initial/default position for the <see cref="NetworkObject"/> to be instantiated</param>
+        /// <param name="rotation">the initial/default rotation for the <see cref="NetworkObject"/> to be instantiated</param>
         /// <returns></returns>
         NetworkObject ClientInstantiateOverride(ulong ownerClientId, Vector3 position, Quaternion rotation);
 
@@ -32,7 +32,7 @@ namespace MLAPI.Spawning
         /// Note on Pooling: When invoked, you do not need to despawn or destroy the NetworkObject as long as you want your pool to persist.
         /// The most common approach is to make the <see cref="NetworkObject"/> inactive by calling <see cref="GameObject.SetActive(bool)"/>.
         /// </summary>
-        /// <param name="networkObject">The NetworkObject being destroyed (see notes on </param>
+        /// <param name="networkObject">The <see cref="NetworkObject"/> being destroyed</param>
         void DestroyOverride(NetworkObject networkObject);
     }
 
