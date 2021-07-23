@@ -462,11 +462,14 @@ namespace MLAPI.Transports
                 writer.WriteByte((byte)networkChannel);
                 writer.WriteInt(data.Count);
 
-                unsafe
+                if (data.Array != null)
                 {
-                    fixed(byte* dataPtr = &data.Array[data.Offset])
+                    unsafe
                     {
-                        writer.WriteBytes(dataPtr, data.Count);
+                        fixed(byte* dataPtr = &data.Array[data.Offset])
+                        {
+                            writer.WriteBytes(dataPtr, data.Count);
+                        }
                     }
                 }
 
