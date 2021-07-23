@@ -73,7 +73,7 @@ namespace MLAPI.Messaging
         // until the end of the frame. This results in messages executing at FixedUpdate being invoked multiple times.
         // This is used to prevent it being called more than once per frame.
         // This will be fixed by the upcoming serialization refactor.
-        private bool m_hasRunFixedUpdate;
+        private bool m_HasRunFixedUpdate;
 
         internal readonly NetworkManager NetworkManager;
 
@@ -613,12 +613,12 @@ namespace MLAPI.Messaging
         {
             if (updateStage == NetworkUpdateStage.FixedUpdate)
             {
-                if (m_hasRunFixedUpdate)
+                if (m_HasRunFixedUpdate)
                 {
                     return;
                 }
 
-                m_hasRunFixedUpdate = true;
+                m_HasRunFixedUpdate = true;
             }
             ProcessAndFlushMessageQueue(MessageQueueProcessingTypes.Receive, updateStage);
 
@@ -626,7 +626,7 @@ namespace MLAPI.Messaging
             {
                 ProcessAndFlushMessageQueue(MessageQueueProcessingTypes.Send, updateStage);
                 m_MessageQueueProcessor.AdvanceFrameHistoryIfNeeded();
-                m_hasRunFixedUpdate = false;
+                m_HasRunFixedUpdate = false;
             }
         }
 
