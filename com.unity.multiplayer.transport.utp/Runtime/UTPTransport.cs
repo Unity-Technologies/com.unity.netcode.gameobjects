@@ -367,6 +367,11 @@ namespace MLAPI.Transports
 
         }
 
+        private void OnDestroy()
+        {
+            DisposeDriver();
+        }
+
         private static unsafe ulong ParseClientId(NetworkConnection utpConnectionId)
         {
             return *(ulong*)&utpConnectionId;
@@ -397,9 +402,7 @@ namespace MLAPI.Transports
 
         public override void DisconnectRemoteClient(ulong clientId)
         {
-            Debug.Assert(m_State == State.Connected, "DisconnectRemoteClient should be called on a listening server");
-
-            Debug.Log("Disconnecting");
+            Debug.Assert(m_State == State.Listening, "DisconnectRemoteClient should be called on a listening server");
 
             if (m_State == State.Listening)
             {
@@ -474,24 +477,22 @@ namespace MLAPI.Transports
             Debug.LogError("Error sending the message");
         }
 
-        public override void Shutdown()
-        {
-            DisposeDriver();
-        }
-
         public override SocketTasks StartClient()
         {
+            if (m_Driver.IsCreated)
+                return SocketTask.Fault.AsTasks();
+
             var task = SocketTask.Working;
-
             StartCoroutine(ClientBindAndConnect(task));
-
             return task.AsTasks();
         }
 
         public override SocketTasks StartServer()
         {
-            var task = SocketTask.Working;
+            if (m_Driver.IsCreated)
+                return SocketTask.Fault.AsTasks();
 
+            var task = SocketTask.Working;
             switch (m_ProtocolType)
             {
                 case ProtocolType.UnityTransport:
@@ -501,8 +502,12 @@ namespace MLAPI.Transports
                     StartCoroutine(StartRelayServer(task));
                     break;
             }
-
             return task.AsTasks();
+        }
+
+        public override void Shutdown()
+        {
+            DisposeDriver();
         }
     }
 }
