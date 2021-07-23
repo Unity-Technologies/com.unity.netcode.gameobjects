@@ -5,6 +5,7 @@ using MLAPI.Logging;
 using MLAPI.Serialization;
 using MLAPI.Serialization.Pooled;
 using MLAPI.Hashing;
+using MLAPI.Metrics;
 using MLAPI.Profiling;
 using MLAPI.Transports;
 
@@ -37,14 +38,8 @@ namespace MLAPI.Messaging
 
         internal void InvokeUnnamedMessage(ulong clientId, Stream stream)
         {
-            var bytesCount = 0L;
-            if (stream.CanSeek)
-            {
-                bytesCount = stream.Length;
-            }
-
             OnUnnamedMessage?.Invoke(clientId, stream);
-            m_NetworkManager.NetworkMetrics.TrackUnnamedMessageReceived(clientId, bytesCount);
+            m_NetworkManager.NetworkMetrics.TrackUnnamedMessageReceived(clientId, stream.SafeGetLengthOrDefault());
         }
 
         /// <summary>
@@ -96,11 +91,7 @@ namespace MLAPI.Messaging
 
         internal void InvokeNamedMessage(ulong hash, ulong sender, Stream stream)
         {
-            var bytesCount = 0L;
-            if (stream.CanSeek)
-            {
-                bytesCount = stream.Length;
-            }
+            var bytesCount = stream.SafeGetLengthOrDefault();
 
             if (m_NetworkManager == null)
             {

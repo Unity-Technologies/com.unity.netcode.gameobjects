@@ -1449,7 +1449,7 @@ namespace MLAPI
 
                 if (__rpc_name_table.TryGetValue(networkRpcMethodId, out var rpcMethodName))
                 {
-                    NetworkMetrics.TrackRpcReceived(queueItem.NetworkId, networkObjectId, rpcMethodName, queueItem.MessageData.Count);
+                    NetworkMetrics.TrackRpcReceived(queueItem.NetworkId, networkObjectId, rpcMethodName, queueItem.StreamSize);
                 }
             }
 

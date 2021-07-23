@@ -47,6 +47,7 @@ namespace MLAPI.RuntimeTests.Metrics
             var networkVariableDeltaSent = metricValues.First();
             Assert.AreEqual(nameof(NetworkVariableComponent.MyNetworkVariable), networkVariableDeltaSent.Name);
             Assert.AreEqual(m_Server.LocalClientId, networkVariableDeltaSent.Connection.Id);
+            Assert.AreNotEqual(0, networkVariableDeltaSent.BytesCount);
         }
 
         [UnityTest]
@@ -61,9 +62,11 @@ namespace MLAPI.RuntimeTests.Metrics
 
             var first = metricValues.First();
             Assert.AreEqual(nameof(NetworkVariableComponent.MyNetworkVariable), first.Name);
+            Assert.AreNotEqual(0, first.BytesCount);
 
             var last = metricValues.Last();
             Assert.AreEqual(nameof(NetworkVariableComponent.MyNetworkVariable), last.Name);
+            Assert.AreNotEqual(0, last.BytesCount);
         }
     }
 }

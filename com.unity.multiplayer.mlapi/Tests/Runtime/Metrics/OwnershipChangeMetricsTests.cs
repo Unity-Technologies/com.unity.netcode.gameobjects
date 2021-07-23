@@ -14,7 +14,6 @@ namespace MLAPI.RuntimeTests.Metrics
     {
         NetworkManager m_Server;
         NetworkMetrics m_ServerMetrics;
-        NetworkManager m_Client;
         NetworkMetrics m_ClientMetrics;
 
         [UnitySetUp]
@@ -25,7 +24,6 @@ namespace MLAPI.RuntimeTests.Metrics
             yield return initializer.Initialize();
 
             m_Server = initializer.Server;
-            m_Client = initializer.Client;
             m_ServerMetrics = initializer.ServerMetrics;
             m_ClientMetrics = initializer.ClientMetrics;
         }
@@ -57,7 +55,9 @@ namespace MLAPI.RuntimeTests.Metrics
             var metricValues = waitForMetricValues.AssertMetricValuesHaveBeenFound();
 
             var ownershipChangeSent = metricValues.First();
+            Assert.AreEqual(networkObject.NetworkObjectId, ownershipChangeSent.NetworkId.NetworkId);
             Assert.AreEqual(m_Server.LocalClientId, ownershipChangeSent.Connection.Id);
+            Assert.AreEqual(2, ownershipChangeSent.BytesCount);
         }
 
         [UnityTest]
@@ -78,6 +78,10 @@ namespace MLAPI.RuntimeTests.Metrics
 
             var metricValues = waitForMetricValues.AssertMetricValuesHaveBeenFound();
             Assert.AreEqual(1, metricValues.Count);
+
+            var ownershipChangeReceived = metricValues.First();
+            Assert.AreEqual(networkObject.NetworkObjectId, ownershipChangeReceived.NetworkId.NetworkId);
+            Assert.AreEqual(3, ownershipChangeReceived.BytesCount);
         }
     }
 }
