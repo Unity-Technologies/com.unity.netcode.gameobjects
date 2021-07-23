@@ -13,6 +13,7 @@ namespace TestProject.RuntimeTests
     public class FixedUpdateMessagesAreOnlyProcessedOnceTest
     {
         private GameObject m_Prefab;
+        private int m_originalFrameRate;
 
 
         [UnityTearDown]
@@ -26,7 +27,15 @@ namespace TestProject.RuntimeTests
                 m_Prefab = null;
                 Support.SpawnRpcDespawn.ClientUpdateCount = 0;
                 Support.SpawnRpcDespawn.ServerUpdateCount = 0;
+                Application.targetFrameRate = m_originalFrameRate;
             }
+            yield break;
+        }
+        
+        [UnitySetUp]
+        public IEnumerator Setup()
+        {
+            m_originalFrameRate = Application.targetFrameRate;
             yield break;
         }
 
