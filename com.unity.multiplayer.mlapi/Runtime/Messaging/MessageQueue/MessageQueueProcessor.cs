@@ -25,6 +25,8 @@ namespace MLAPI.Messaging
         private readonly MessageBatcher m_MessageBatcher = new MessageBatcher();
         private const int k_BatchThreshold = 512;
 
+        private bool m_AdvanceInboundFrameHistory = false;
+
         //The MessageQueueContainer that is associated with this MessageQueueProcessor
         private MessageQueueContainer m_MessageQueueContainer;
 
@@ -192,7 +194,6 @@ namespace MLAPI.Messaging
         /// </summary>
         public void ProcessReceiveQueue(NetworkUpdateStage currentStage, bool isTesting)
         {
-            bool advanceFrameHistory = false;
             if (!ReferenceEquals(m_MessageQueueContainer, null))
             {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
@@ -202,7 +203,7 @@ namespace MLAPI.Messaging
                 var nextFrame = m_MessageQueueContainer.GetQueueHistoryFrame(MessageQueueHistoryFrame.QueueFrameType.Inbound, currentStage, true);
                 if (nextFrame.IsDirty && nextFrame.HasLoopbackData)
                 {
-                    advanceFrameHistory = true;
+                    m_AdvanceInboundFrameHistory = true;
                 }
 
                 if (currentFrame != null && currentFrame.IsDirty)
@@ -210,7 +211,7 @@ namespace MLAPI.Messaging
                     var currentQueueItem = currentFrame.GetFirstQueueItem();
                     while (currentQueueItem.MessageType != MessageQueueContainer.MessageType.None)
                     {
-                        advanceFrameHistory = true;
+                        m_AdvanceInboundFrameHistory = true;
 
                         if (!isTesting)
                         {
@@ -225,14 +226,18 @@ namespace MLAPI.Messaging
                     currentFrame.CloseQueue();
                 }
 
-                if (advanceFrameHistory)
-                {
-                    m_MessageQueueContainer.AdvanceFrameHistory(MessageQueueHistoryFrame.QueueFrameType.Inbound);
-                }
-
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                 s_ProcessReceiveQueue.End();
 #endif
+            }
+        }
+
+        public void AdvanceFrameHistoryIfNeeded()
+        {
+            if (m_AdvanceInboundFrameHistory)
+            {
+                m_MessageQueueContainer.AdvanceFrameHistory(MessageQueueHistoryFrame.QueueFrameType.Inbound);
+                m_AdvanceInboundFrameHistory = false;
             }
         }
 

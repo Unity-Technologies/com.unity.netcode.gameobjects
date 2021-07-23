@@ -331,16 +331,6 @@ namespace MLAPI.Messaging
                 return;
             }
 
-            if (stream == null)
-            {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
-                {
-                    NetworkLog.LogError("Message unwrap could not be completed. Was the header corrupt?");
-                }
-
-                return;
-            }
-
             if (messageType == MessageQueueContainer.MessageType.None)
             {
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Error)

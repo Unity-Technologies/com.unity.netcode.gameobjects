@@ -610,6 +610,7 @@ namespace MLAPI.Messaging
             if (updateStage == NetworkUpdateStage.PostLateUpdate)
             {
                 ProcessAndFlushMessageQueue(MessageQueueProcessingTypes.Send, updateStage);
+                m_MessageQueueProcessor.AdvanceFrameHistoryIfNeeded();
             }
         }
 
