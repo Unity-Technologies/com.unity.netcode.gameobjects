@@ -402,9 +402,7 @@ namespace MLAPI.Transports
 
         public override void DisconnectRemoteClient(ulong clientId)
         {
-            Debug.Assert(m_State == State.Connected, "DisconnectRemoteClient should be called on a listening server");
-
-            Debug.Log("Disconnecting");
+            Debug.Assert(m_State == State.Listening, "DisconnectRemoteClient should be called on a listening server");
 
             if (m_State == State.Listening)
             {
