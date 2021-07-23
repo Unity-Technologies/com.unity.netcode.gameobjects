@@ -297,7 +297,7 @@ namespace MLAPI
                     networkObjects[i].Observers.Add(clientId);
 
                     networkManager.SpawnManager.WriteSpawnCallForObject(buffer, clientId, networkObjects[i], payload);
-                    networkManager.NetworkMetrics.TrackObjectSpawnSent(clientId, networkObjects[i].NetworkObjectId, networkObjects[i].name, (ulong)(buffer.Length - prevLength));
+                    networkManager.NetworkMetrics.TrackObjectSpawnSent(clientId, networkObjects[i].NetworkObjectId, networkObjects[i].name, buffer.Length - prevLength);
                     prevLength = buffer.Length;
                 }
 
@@ -400,7 +400,7 @@ namespace MLAPI
                     networkObjects[i].Observers.Remove(clientId);
 
                     writer.WriteUInt64Packed(networkObjects[i].NetworkObjectId);
-                    networkManager.NetworkMetrics.TrackObjectDestroySent(clientId, networkObjects[i].NetworkObjectId, networkObjects[i].name, (ulong)(buffer.Length - prevLength));
+                    networkManager.NetworkMetrics.TrackObjectDestroySent(clientId, networkObjects[i].NetworkObjectId, networkObjects[i].name, buffer.Length - prevLength);
                     prevLength = buffer.Length;
                 }
 

@@ -119,7 +119,7 @@ namespace MLAPI.Spawning
 
                 foreach (var client in NetworkManager.ConnectedClients)
                 {
-                    NetworkManager.NetworkMetrics.TrackOwnershipChangeSent(client.Key, networkObject.NetworkObjectId, networkObject.name, (ulong)buffer.Length);
+                    NetworkManager.NetworkMetrics.TrackOwnershipChangeSent(client.Key, networkObject.NetworkObjectId, networkObject.name, buffer.Length);
                 }
             }
         }
@@ -161,7 +161,7 @@ namespace MLAPI.Spawning
 
                 foreach (var client in NetworkManager.ConnectedClients)
                 {
-                    NetworkManager.NetworkMetrics.TrackOwnershipChangeSent(client.Key, networkObject.NetworkObjectId, networkObject.name, (ulong)buffer.Length);
+                    NetworkManager.NetworkMetrics.TrackOwnershipChangeSent(client.Key, networkObject.NetworkObjectId, networkObject.name, buffer.Length);
                 }
             }
         }
@@ -393,7 +393,7 @@ namespace MLAPI.Spawning
                 ClientNetworkIds = new[] {clientId}
             };
             rpcQueueContainer.AddToInternalMLAPISendQueue(queueItem);
-            NetworkManager.NetworkMetrics.TrackObjectSpawnSent(clientId, networkObject.NetworkObjectId, networkObject.name, (ulong)buffer.Length);
+            NetworkManager.NetworkMetrics.TrackObjectSpawnSent(clientId, networkObject.NetworkObjectId, networkObject.name, buffer.Length);
         }
 
         internal void WriteSpawnCallForObject(NetworkBuffer buffer, ulong clientId, NetworkObject networkObject, Stream payload)
@@ -711,7 +711,7 @@ namespace MLAPI.Spawning
 
                                 rpcQueueContainer.AddToInternalMLAPISendQueue(queueItem);
 
-                                NetworkManager.NetworkMetrics.TrackObjectDestroySent(clientIds, networkObject.NetworkObjectId, networkObject.name, (ulong)buffer.Length);
+                                NetworkManager.NetworkMetrics.TrackObjectDestroySent(clientIds, networkObject.NetworkObjectId, networkObject.name, buffer.Length);
                             }
                         }
                     }
