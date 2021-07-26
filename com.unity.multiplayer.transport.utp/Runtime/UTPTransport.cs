@@ -37,12 +37,11 @@ namespace MLAPI.Transports
         }
 
         [SerializeField] private ProtocolType m_ProtocolType;
-        [SerializeField] private int m_MessageBufferSize = 1024;
+        [SerializeField] private int m_MessageBufferSize = 6 * 1024;
         [SerializeField] private string m_ServerAddress = "127.0.0.1";
         [SerializeField] private ushort m_ServerPort = 7777;
         [SerializeField] private int m_RelayMaxPlayers = 10;
         [SerializeField] private string m_RelayServer = "https://relay-allocations.cloud.unity3d.com";
-        [SerializeField] private int m_MaxFragmentationCapacity = 6 * 1024;
 
         private State m_State = State.Disconnected;
         private NetworkDriver m_Driver;
@@ -428,7 +427,7 @@ namespace MLAPI.Transports
             m_NetworkParameters = new List<INetworkParameter>();
 
 
-            m_NetworkParameters.Add(new FragmentationUtility.Parameters(){PayloadCapacity = m_MaxFragmentationCapacity});
+            m_NetworkParameters.Add(new FragmentationUtility.Parameters(){PayloadCapacity = m_MessageBufferSize});
 
             m_MessageBuffer = new byte[m_MessageBufferSize];
 #if ENABLE_RELAY_SERVICE
