@@ -216,7 +216,19 @@ namespace MLAPI.Messaging
                         if (!isTesting)
                         {
                             currentQueueItem.UpdateStage = currentStage;
-                            ProcessMessage(currentQueueItem);
+                            try
+                            {
+                                ProcessMessage(currentQueueItem);
+                            }
+                            catch (Exception ex)
+                            {
+                                Debug.LogException(ex);
+
+                                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                                {
+                                    NetworkLog.LogWarning($"A {currentQueueItem.MessageType} threw an exception while executing! Please check Unity logs for more information.");
+                                }
+                            }
                         }
 
                         currentQueueItem = currentFrame.GetNextQueueItem();
