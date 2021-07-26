@@ -7,6 +7,7 @@ using System.IO;
 using MLAPI.Configuration;
 using MLAPI.Logging;
 using MLAPI.Messaging;
+using MLAPI.Metrics;
 using MLAPI.NetworkVariable;
 using MLAPI.Profiling;
 using MLAPI.Reflection;
@@ -583,9 +584,9 @@ namespace MLAPI
                             writer.WriteUInt64Packed(NetworkObjectId);
                             writer.WriteUInt16Packed(NetworkObject.GetNetworkBehaviourOrderIndex(this));
 
-                            bool writtenAny = false;
-                            var initialBufferLength = buffer.Length;
-                            var previousBufferLength = initialBufferLength;
+                            var bufferSizeCapture = new BufferSizeCapture(buffer);
+
+                            var writtenAny = false;
                             for (int k = 0; k < NetworkVariableFields.Count; k++)
                             {
                                 if (!m_ChannelMappedNetworkVariableIndexes[j].Contains(k))
@@ -650,11 +651,8 @@ namespace MLAPI
                                         m_NetworkVariableIndexesToReset.Add(k);
                                     }
 
-                                    var currentBufferLength = buffer.Length - previousBufferLength + initialBufferLength;
-                                    NetworkManager.NetworkMetrics.TrackNetworkVariableDeltaSent(clientId, NetworkObjectId, name, NetworkVariableFields[k].Name, currentBufferLength);
+                                    NetworkManager.NetworkMetrics.TrackNetworkVariableDeltaSent(clientId, NetworkObjectId, name, NetworkVariableFields[k].Name, bufferSizeCapture.Flush());
                                 }
-
-                                previousBufferLength = buffer.Length;
                             }
 
                             if (writtenAny)
