@@ -359,7 +359,7 @@ namespace MLAPI
             if (NetworkMetrics == null)
             {
 #if MULTIPLAYER_TOOLS
-                NetworkMetrics = new NetworkMetrics(this);
+                NetworkMetrics = new NetworkMetrics();
 #else
                 NetworkMetrics = new NullNetworkMetrics();
 #endif
@@ -1449,7 +1449,7 @@ namespace MLAPI
 
                 if (__rpc_name_table.TryGetValue(networkRpcMethodId, out var rpcMethodName))
                 {
-                    NetworkMetrics.TrackRpcReceived(queueItem.NetworkId, networkObjectId, rpcMethodName, (ulong)queueItem.MessageData.Count);
+                    NetworkMetrics.TrackRpcReceived(queueItem.NetworkId, networkObjectId, rpcMethodName, queueItem.StreamSize);
                 }
             }
 

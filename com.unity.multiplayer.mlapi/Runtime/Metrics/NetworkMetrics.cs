@@ -9,8 +9,6 @@ namespace MLAPI.Metrics
 {
     public class NetworkMetrics : INetworkMetrics
     {
-        readonly NetworkManager m_NetworkManager;
-
         readonly EventMetric<NamedMessageEvent> m_NamedMessageSentEvent = new EventMetric<NamedMessageEvent>(MetricNames.NamedMessageSent);
         readonly EventMetric<NamedMessageEvent> m_NamedMessageReceivedEvent = new EventMetric<NamedMessageEvent>(MetricNames.NamedMessageReceived);
         readonly EventMetric<UnnamedMessageEvent> m_UnnamedMessageSentEvent = new EventMetric<UnnamedMessageEvent>(MetricNames.UnnamedMessageSent);
@@ -30,9 +28,8 @@ namespace MLAPI.Metrics
 
         readonly Dictionary<ulong, NetworkObjectIdentifier> m_NetworkGameObjects = new Dictionary<ulong, NetworkObjectIdentifier>();
 
-        public NetworkMetrics(NetworkManager networkManager)
+        public NetworkMetrics()
         {
-            m_NetworkManager = networkManager;
             Dispatcher = new MetricDispatcherBuilder()
                 .WithMetricEvents(m_NamedMessageSentEvent, m_NamedMessageReceivedEvent)
                 .WithMetricEvents(m_UnnamedMessageSentEvent, m_UnnamedMessageReceivedEvent)
@@ -57,12 +54,12 @@ namespace MLAPI.Metrics
             }
         }
 
-        public void TrackNamedMessageSent(ulong receiverClientId, string messageName, ulong bytesCount)
+        public void TrackNamedMessageSent(ulong receiverClientId, string messageName, long bytesCount)
         {
             m_NamedMessageSentEvent.Mark(new NamedMessageEvent(new ConnectionInfo(receiverClientId), messageName, bytesCount));
         }
 
-        public void TrackNamedMessageSent(IReadOnlyCollection<ulong> receiverClientIds, string messageName, ulong bytesCount)
+        public void TrackNamedMessageSent(IReadOnlyCollection<ulong> receiverClientIds, string messageName, long bytesCount)
         {
             foreach (var receiver in receiverClientIds)
             {
@@ -70,17 +67,17 @@ namespace MLAPI.Metrics
             }
         }
 
-        public void TrackNamedMessageReceived(ulong senderClientId, string messageName, ulong bytesCount)
+        public void TrackNamedMessageReceived(ulong senderClientId, string messageName, long bytesCount)
         {
             m_NamedMessageReceivedEvent.Mark(new NamedMessageEvent(new ConnectionInfo(senderClientId), messageName, bytesCount));
         }
 
-        public void TrackUnnamedMessageSent(ulong receiverClientId, ulong bytesCount)
+        public void TrackUnnamedMessageSent(ulong receiverClientId, long bytesCount)
         {
             m_UnnamedMessageSentEvent.Mark(new UnnamedMessageEvent(new ConnectionInfo(receiverClientId), bytesCount));
         }
 
-        public void TrackUnnamedMessageSent(IReadOnlyCollection<ulong> receiverClientIds, ulong bytesCount)
+        public void TrackUnnamedMessageSent(IReadOnlyCollection<ulong> receiverClientIds, long bytesCount)
         {
             foreach (var receiverClientId in receiverClientIds)
             {
@@ -88,51 +85,50 @@ namespace MLAPI.Metrics
             }
         }
 
-        public void TrackUnnamedMessageReceived(ulong senderClientId, ulong bytesCount)
+        public void TrackUnnamedMessageReceived(ulong senderClientId, long bytesCount)
         {
             m_UnnamedMessageReceivedEvent.Mark(new UnnamedMessageEvent(new ConnectionInfo(senderClientId), bytesCount));
         }
 
-        public void TrackNetworkVariableDeltaSent(ulong receiverClientId, ulong networkObjectId, string gameObjectName, string variableName, ulong bytesCount)
+        public void TrackNetworkVariableDeltaSent(ulong receiverClientId, ulong networkObjectId, string gameObjectName, string variableName, long bytesCount)
         {
             variableName = PrettyPrintVariableName(variableName);
             m_NetworkVariableDeltaSentEvent.Mark(new NetworkVariableEvent(new ConnectionInfo(receiverClientId), new NetworkObjectIdentifier(gameObjectName, networkObjectId), variableName, bytesCount));
         }
 
-
-        public void TrackNetworkVariableDeltaReceived(ulong senderClientId, ulong networkObjectId, string gameObjectName, string variableName, ulong bytesCount)
+        public void TrackNetworkVariableDeltaReceived(ulong senderClientId, ulong networkObjectId, string gameObjectName, string variableName, long bytesCount)
         {
             variableName = PrettyPrintVariableName(variableName);
             m_NetworkVariableDeltaReceivedEvent.Mark(new NetworkVariableEvent(new ConnectionInfo(senderClientId), new NetworkObjectIdentifier(gameObjectName, networkObjectId), variableName, bytesCount));
         }
 
-        public void TrackOwnershipChangeSent(ulong receiverClientId, ulong networkObjectId, string gameObjectName, ulong bytesCount)
+        public void TrackOwnershipChangeSent(ulong receiverClientId, ulong networkObjectId, string gameObjectName, long bytesCount)
         {
             m_OwnershipChangeSentEvent.Mark(new OwnershipChangeEvent(new ConnectionInfo(receiverClientId), new NetworkObjectIdentifier(gameObjectName, networkObjectId), bytesCount));
         }
 
-        public void TrackOwnershipChangeReceived(ulong senderClientId, ulong networkObjectId, string gameObjectName, ulong bytesCount)
+        public void TrackOwnershipChangeReceived(ulong senderClientId, ulong networkObjectId, string gameObjectName, long bytesCount)
         {
             m_OwnershipChangeReceivedEvent.Mark(new OwnershipChangeEvent(new ConnectionInfo(senderClientId),
                 new NetworkObjectIdentifier(gameObjectName, networkObjectId), bytesCount));
         }
 
-        public void TrackObjectSpawnSent(ulong receiverClientId, ulong networkObjectId, string gameObjectName, ulong bytesCount)
+        public void TrackObjectSpawnSent(ulong receiverClientId, ulong networkObjectId, string gameObjectName, long bytesCount)
         {
             m_ObjectSpawnSentEvent.Mark(new ObjectSpawnedEvent(new ConnectionInfo(receiverClientId), new NetworkObjectIdentifier(gameObjectName, networkObjectId), bytesCount));
         }
 
-        public void TrackObjectSpawnReceived(ulong senderClientId, ulong networkObjectId, string gameObjectName, ulong bytesCount)
+        public void TrackObjectSpawnReceived(ulong senderClientId, ulong networkObjectId, string gameObjectName, long bytesCount)
         {
             m_ObjectSpawnReceivedEvent.Mark(new ObjectSpawnedEvent(new ConnectionInfo(senderClientId), new NetworkObjectIdentifier(gameObjectName, networkObjectId), bytesCount));
         }
 
-        public void TrackObjectDestroySent(ulong receiverClientId, ulong networkObjectId, string gameObjectName, ulong bytesCount)
+        public void TrackObjectDestroySent(ulong receiverClientId, ulong networkObjectId, string gameObjectName, long bytesCount)
         {
             m_ObjectDestroySentEvent.Mark(new ObjectDestroyedEvent(new ConnectionInfo(receiverClientId), new NetworkObjectIdentifier(gameObjectName, networkObjectId), bytesCount));
         }
 
-        public void TrackObjectDestroySent(IReadOnlyCollection<ulong> receiverClientIds, ulong networkObjectId, string gameObjectName, ulong bytesCount)
+        public void TrackObjectDestroySent(IReadOnlyCollection<ulong> receiverClientIds, ulong networkObjectId, string gameObjectName, long bytesCount)
         {
             foreach (var receiverClientId in receiverClientIds)
             {
@@ -140,12 +136,12 @@ namespace MLAPI.Metrics
             }
         }
 
-        public void TrackObjectDestroyReceived(ulong senderClientId, ulong networkObjectId, string gameObjectName, ulong bytesCount)
+        public void TrackObjectDestroyReceived(ulong senderClientId, ulong networkObjectId, string gameObjectName, long bytesCount)
         {
             m_ObjectDestroyReceivedEvent.Mark(new ObjectDestroyedEvent(new ConnectionInfo(senderClientId), new NetworkObjectIdentifier(gameObjectName, networkObjectId), bytesCount));
         }
 
-        public void TrackRpcSent(ulong receiverClientId, ulong networkObjectId, string rpcName, ulong bytesCount)
+        public void TrackRpcSent(ulong receiverClientId, ulong networkObjectId, string rpcName, long bytesCount)
         {
             if (!m_NetworkGameObjects.TryGetValue(networkObjectId, out var networkObjectIdentifier))
             {
@@ -155,7 +151,7 @@ namespace MLAPI.Metrics
             m_RpcSentEvent.Mark(new RpcEvent(new ConnectionInfo(receiverClientId), networkObjectIdentifier, rpcName, bytesCount));
         }
 
-        public void TrackRpcSent(ulong[] receiverClientIds, ulong networkObjectId, string rpcName, ulong bytesCount)
+        public void TrackRpcSent(ulong[] receiverClientIds, ulong networkObjectId, string rpcName, long bytesCount)
         {
             foreach (var receiverClientId in receiverClientIds)
             {
@@ -163,7 +159,7 @@ namespace MLAPI.Metrics
             }
         }
 
-        public void TrackRpcReceived(ulong senderClientId, ulong networkObjectId, string rpcName, ulong bytesCount)
+        public void TrackRpcReceived(ulong senderClientId, ulong networkObjectId, string rpcName, long bytesCount)
         {
             if (!m_NetworkGameObjects.TryGetValue(networkObjectId, out var networkObjectIdentifier))
             {
@@ -173,12 +169,12 @@ namespace MLAPI.Metrics
             m_RpcReceivedEvent.Mark(new RpcEvent(new ConnectionInfo(senderClientId), networkObjectIdentifier, rpcName, bytesCount));
         }
 
-        public void TrackServerLogSent(ulong receiverClientId, uint logType, ulong bytesCount)
+        public void TrackServerLogSent(ulong receiverClientId, uint logType, long bytesCount)
         {
             m_ServerLogSentEvent.Mark(new ServerLogEvent(new ConnectionInfo(receiverClientId), (LogLevel)logType, bytesCount));
         }
 
-        public void TrackServerLogReceived(ulong senderClientId, uint logType, ulong bytesCount)
+        public void TrackServerLogReceived(ulong senderClientId, uint logType, long bytesCount)
         {
             m_ServerLogReceivedEvent.Mark(new ServerLogEvent(new ConnectionInfo(senderClientId), (LogLevel)logType, bytesCount));
         }

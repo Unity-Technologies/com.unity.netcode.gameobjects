@@ -182,7 +182,7 @@ namespace MLAPI.Messaging
                     }
                 }
 
-                m_NetworkManager.NetworkMetrics.TrackObjectSpawnReceived(clientId, networkObject.NetworkObjectId, networkObject.name, (ulong)stream.Length);
+                m_NetworkManager.NetworkMetrics.TrackObjectSpawnReceived(clientId, networkObject.NetworkObjectId, networkObject.name, stream.Length);
             }
         }
 
@@ -198,7 +198,7 @@ namespace MLAPI.Messaging
                     Debug.LogWarning($"Trying to destroy object {networkId} but it doesn't seem to exist anymore!");
                     return;
                 }
-                m_NetworkManager.NetworkMetrics.TrackObjectDestroyReceived(clientId, networkId, networkObject.name, (ulong)stream.Length);
+                m_NetworkManager.NetworkMetrics.TrackObjectDestroyReceived(clientId, networkId, networkObject.name, stream.Length);
                 NetworkManager.SpawnManager.OnDespawnObject(networkObject, true);
             }
         }
@@ -248,7 +248,7 @@ namespace MLAPI.Messaging
 
                 networkObject.OwnerClientId = ownerClientId;
 
-                NetworkManager.NetworkMetrics.TrackOwnershipChangeReceived(clientId, networkObject.NetworkObjectId, networkObject.name, (ulong)stream.Length);
+                NetworkManager.NetworkMetrics.TrackOwnershipChangeReceived(clientId, networkObject.NetworkObjectId, networkObject.name, stream.Length);
             }
         }
 
@@ -385,7 +385,7 @@ namespace MLAPI.Messaging
             {
                 var length = stream.Length;
                 var logType = (NetworkLog.LogType)reader.ReadByte();
-                m_NetworkManager.NetworkMetrics.TrackServerLogReceived(clientId, (uint)logType, (ulong)length);
+                m_NetworkManager.NetworkMetrics.TrackServerLogReceived(clientId, (uint)logType, length);
                 string message = reader.ReadStringPacked();
 
                 switch (logType)

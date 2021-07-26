@@ -7,6 +7,7 @@ using System.IO;
 using MLAPI.Configuration;
 using MLAPI.Logging;
 using MLAPI.Messaging;
+using MLAPI.Metrics;
 using MLAPI.NetworkVariable;
 using MLAPI.Profiling;
 using MLAPI.Reflection;
@@ -89,20 +90,13 @@ namespace MLAPI
                 return;
             }
 
-            var rpcQueueContainer = NetworkManager.RpcQueueContainer;
-            var rpcMessageSize = 0L;
-            if (IsHost)
-            {
-                rpcMessageSize = rpcQueueContainer.EndAddQueueItemToFrame(serializer.Writer, RpcQueueHistoryFrame.QueueFrameType.Inbound, serverRpcParams.Send.UpdateStage);
-            }
-            else
-            {
-                rpcMessageSize = rpcQueueContainer.EndAddQueueItemToFrame(serializer.Writer, RpcQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
-            }
+            var rpcMessageSize = IsHost
+                ? NetworkManager.RpcQueueContainer.EndAddQueueItemToFrame(serializer.Writer, RpcQueueHistoryFrame.QueueFrameType.Inbound, serverRpcParams.Send.UpdateStage)
+                : NetworkManager.RpcQueueContainer.EndAddQueueItemToFrame(serializer.Writer, RpcQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
 
             if (NetworkManager.__rpc_name_table.TryGetValue(rpcMethodId, out var rpcMethodName))
             {
-                NetworkManager.NetworkMetrics.TrackRpcSent(NetworkManager.ServerClientId, NetworkObjectId, rpcMethodName, (ulong)rpcMessageSize);
+                NetworkManager.NetworkMetrics.TrackRpcSent(NetworkManager.ServerClientId, NetworkObjectId, rpcMethodName, rpcMessageSize);
             }
         }
 
@@ -188,11 +182,9 @@ namespace MLAPI
             }
 
             var rpcQueueContainer = NetworkManager.RpcQueueContainer;
-            var messageSize = 0L;
-            string rpcMethodName;
             if (IsHost)
             {
-                ulong[] clientIds = clientRpcParams.Send.TargetClientIds ?? NetworkManager.ConnectedClientsList.Select(c => c.ClientId).ToArray();
+                var clientIds = clientRpcParams.Send.TargetClientIds ?? NetworkManager.ConnectedClientsList.Select(c => c.ClientId).ToArray();
                 if (clientRpcParams.Send.TargetClientIds != null && clientRpcParams.Send.TargetClientIds.Length == 0)
                 {
                     clientIds = NetworkManager.ConnectedClientsList.Select(c => c.ClientId).ToArray();
@@ -201,22 +193,17 @@ namespace MLAPI
                 var containsServerClientId = clientIds.Contains(NetworkManager.ServerClientId);
                 if (containsServerClientId && clientIds.Length == 1)
                 {
-                    messageSize = rpcQueueContainer.EndAddQueueItemToFrame(serializer.Writer, RpcQueueHistoryFrame.QueueFrameType.Inbound, clientRpcParams.Send.UpdateStage);
-
-                    if (NetworkManager.__rpc_name_table.TryGetValue(rpcMethodId, out rpcMethodName))
-                    {
-                        NetworkManager.NetworkMetrics.TrackRpcSent(clientIds, NetworkObjectId, rpcMethodName, (ulong)messageSize);
-                    }
+                    rpcQueueContainer.EndAddQueueItemToFrame(serializer.Writer, RpcQueueHistoryFrame.QueueFrameType.Inbound, clientRpcParams.Send.UpdateStage);
 
                     return;
                 }
             }
 
-            messageSize = rpcQueueContainer.EndAddQueueItemToFrame(serializer.Writer, RpcQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
+            var messageSize = rpcQueueContainer.EndAddQueueItemToFrame(serializer.Writer, RpcQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
 
-            if (NetworkManager.__rpc_name_table.TryGetValue(rpcMethodId, out rpcMethodName))
+            if (NetworkManager.__rpc_name_table.TryGetValue(rpcMethodId, out var rpcMethodName))
             {
-                NetworkManager.NetworkMetrics.TrackRpcSent(NetworkManager.ServerClientId, NetworkObjectId, rpcMethodName, (ulong)messageSize);
+                NetworkManager.NetworkMetrics.TrackRpcSent(NetworkManager.ConnectedClients.Select(x => x.Key).ToArray(), NetworkObjectId, rpcMethodName, messageSize);
             }
         }
 
@@ -597,7 +584,9 @@ namespace MLAPI
                             writer.WriteUInt64Packed(NetworkObjectId);
                             writer.WriteUInt16Packed(NetworkObject.GetNetworkBehaviourOrderIndex(this));
 
-                            bool writtenAny = false;
+                            var bufferSizeCapture = new BufferSizeCapture(buffer);
+
+                            var writtenAny = false;
                             for (int k = 0; k < NetworkVariableFields.Count; k++)
                             {
                                 if (!m_ChannelMappedNetworkVariableIndexes[j].Contains(k))
@@ -639,7 +628,6 @@ namespace MLAPI
                                 if (shouldWrite)
                                 {
                                     writtenAny = true;
-                                    var deltaBuffer = 0L;
 
                                     if (NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                                     {
@@ -650,7 +638,6 @@ namespace MLAPI
 
                                             writer.WriteUInt16Packed((ushort)varBuffer.Length);
                                             buffer.CopyFrom(varBuffer);
-                                            deltaBuffer = varBuffer.Length;
                                         }
                                     }
                                     else
@@ -664,7 +651,7 @@ namespace MLAPI
                                         m_NetworkVariableIndexesToReset.Add(k);
                                     }
 
-                                    NetworkManager.NetworkMetrics.TrackNetworkVariableDeltaSent(clientId, NetworkObjectId, name, NetworkVariableFields[k].Name, (ulong)deltaBuffer);
+                                    NetworkManager.NetworkMetrics.TrackNetworkVariableDeltaSent(clientId, NetworkObjectId, name, NetworkVariableFields[k].Name, bufferSizeCapture.Flush());
                                 }
                             }
 
@@ -754,7 +741,7 @@ namespace MLAPI
                     networkVariableList[i].ReadDelta(stream, networkManager.IsServer);
                     PerformanceDataManager.Increment(ProfilerConstants.NetworkVarDeltas);
                     ProfilerStatManager.NetworkVarsRcvd.Record();
-                    networkManager.NetworkMetrics.TrackNetworkVariableDeltaReceived(clientId, logInstance.NetworkObjectId, logInstance.name, networkVariableList[i].Name, (ulong)stream.Length);
+                    networkManager.NetworkMetrics.TrackNetworkVariableDeltaReceived(clientId, logInstance.NetworkObjectId, logInstance.name, networkVariableList[i].Name, stream.Length);
 
                     if (networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                     {
