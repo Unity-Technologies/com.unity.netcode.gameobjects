@@ -380,6 +380,9 @@ namespace MLAPI
 
             BehaviourUpdater = new NetworkBehaviourUpdater();
 
+            // Only create this if it's not already set (like in test cases)
+            MessageHandler ??= CreateMessageHandler();
+
             if (NetworkMetrics == null)
             {
 #if MULTIPLAYER_TOOLS

@@ -67,11 +67,13 @@ namespace MLAPI.Logging
                     using (var nonNullContext = (InternalCommandContext) context)
                     {
                         var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
+                        using (bufferSizeCapture.Measure())
+                        {
+                            nonNullContext.NetworkWriter.WriteByte((byte) logType);
+                            nonNullContext.NetworkWriter.WriteStringPacked(message);
+                        }
 
-                        nonNullContext.NetworkWriter.WriteByte((byte) logType);
-                        nonNullContext.NetworkWriter.WriteStringPacked(message);
-
-                        NetworkManager.Singleton.NetworkMetrics.TrackServerLogSent(NetworkManager.Singleton.ServerClientId, (uint)logType, bufferSizeCapture.Flush());
+                        NetworkManager.Singleton.NetworkMetrics.TrackServerLogSent(NetworkManager.Singleton.ServerClientId, (uint)logType, bufferSizeCapture.Size);
                     }
                 }
             }

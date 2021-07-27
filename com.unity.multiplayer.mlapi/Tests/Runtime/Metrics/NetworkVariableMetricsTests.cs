@@ -1,6 +1,6 @@
+using System;
 using System.Collections;
 using System.Linq;
-using MLAPI.Metrics;
 using MLAPI.RuntimeTests.Metrics.Utility;
 using NUnit.Framework;
 using Unity.Multiplayer.MetricTypes;
@@ -9,36 +9,14 @@ using UnityEngine.TestTools;
 
 namespace MLAPI.RuntimeTests.Metrics
 {
-    public class NetworkVariableMetricsTests
+    public class NetworkVariableMetricsTests : SingleClientMetricTestBase
     {
-        NetworkManager m_Server;
-        NetworkMetrics m_ServerMetrics;
-        NetworkMetrics m_ClientMetrics;
-
-        [UnitySetUp]
-        public IEnumerator SetUp()
-        {
-            var initializer = new SingleClientMetricTestInitializer(MetricTestInitializer.CreateAndAssignPlayerPrefabs);
-
-            yield return initializer.Initialize();
-
-            m_Server = initializer.Server;
-            m_ServerMetrics = initializer.ServerMetrics;
-            m_ClientMetrics = initializer.ClientMetrics;
-        }
-
-        [UnityTearDown]
-        public IEnumerator TearDown()
-        {
-            MultiInstanceHelpers.Destroy();
-
-            yield return null;
-        }
+        protected override Action<GameObject> UpdatePlayerPrefab => prefab => prefab.AddComponent<NetworkVariableComponent>();
 
         [UnityTest]
         public IEnumerator TrackNetworkVariableDeltaSentMetric()
         {
-            var waitForMetricValues = new WaitForMetricValues<NetworkVariableEvent>(m_ServerMetrics.Dispatcher, MetricNames.NetworkVariableDeltaSent);
+            var waitForMetricValues = new WaitForMetricValues<NetworkVariableEvent>(ServerMetrics.Dispatcher, MetricNames.NetworkVariableDeltaSent);
 
             yield return waitForMetricValues.WaitForMetricsReceived();
 
@@ -46,14 +24,14 @@ namespace MLAPI.RuntimeTests.Metrics
 
             var networkVariableDeltaSent = metricValues.First();
             Assert.AreEqual(nameof(NetworkVariableComponent.MyNetworkVariable), networkVariableDeltaSent.Name);
-            Assert.AreEqual(m_Server.LocalClientId, networkVariableDeltaSent.Connection.Id);
+            Assert.AreEqual(Server.LocalClientId, networkVariableDeltaSent.Connection.Id);
             Assert.AreNotEqual(0, networkVariableDeltaSent.BytesCount);
         }
 
         [UnityTest]
         public IEnumerator TrackNetworkVariableDeltaReceivedMetric()
         {
-            var waitForMetricValues = new WaitForMetricValues<NetworkVariableEvent>(m_ClientMetrics.Dispatcher, MetricNames.NetworkVariableDeltaReceived);
+            var waitForMetricValues = new WaitForMetricValues<NetworkVariableEvent>(ClientMetrics.Dispatcher, MetricNames.NetworkVariableDeltaReceived);
 
             yield return waitForMetricValues.WaitForMetricsReceived();
 

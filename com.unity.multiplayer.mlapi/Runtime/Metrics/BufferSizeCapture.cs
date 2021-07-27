@@ -1,33 +1,9 @@
-﻿using MLAPI.Messaging;
+using System;
+using MLAPI.Messaging;
 using MLAPI.Serialization;
 
 namespace MLAPI.Metrics
 {
-    internal struct CommandContextSizeCapture
-    {
-        private readonly long m_InitialLength;
-        private readonly InternalCommandContext m_Context;
-
-        private long m_PreviousLength;
-
-        public CommandContextSizeCapture(InternalCommandContext context)
-        {
-            m_Context = context;
-            m_InitialLength = context.NetworkWriter.GetStream().SafeGetLengthOrDefault();
-            m_PreviousLength = m_InitialLength;
-        }
-        
-        public long Flush()
-        {
-            var currentLength = m_Context.NetworkWriter.GetStream().SafeGetLengthOrDefault();
-            var segmentLength = currentLength - m_PreviousLength + m_InitialLength;
-            
-            m_PreviousLength = currentLength;
-            
-            return segmentLength;
-        }
-    }
-    
     internal struct BufferSizeCapture
     {
         private readonly long m_InitialLength;
@@ -50,6 +26,49 @@ namespace MLAPI.Metrics
             m_PreviousLength = currentLength;
             
             return segmentLength;
+        }
+    }
+
+    internal class CommandContextSizeCapture
+    {
+        private readonly InternalCommandContext m_Context;
+        private long m_Overhead;
+        private long m_CurrentSize;
+
+        public CommandContextSizeCapture(InternalCommandContext context)
+        {
+            m_Context = context;
+        }
+
+        public long Size => m_CurrentSize + m_Overhead;
+
+        public CaptureScope MeasureOverhead()
+        {
+            return new CaptureScope(m_Context, overhead => m_Overhead = overhead);
+        }
+
+        public CaptureScope Measure()
+        {
+            return new CaptureScope(m_Context, size => m_CurrentSize = size);
+        }
+
+        public struct CaptureScope : IDisposable
+        {
+            private readonly InternalCommandContext m_Context;
+            private readonly Action<long> m_Callback;
+            private readonly long m_InitialSize;
+
+            internal CaptureScope(InternalCommandContext context, Action<long> callback)
+            {
+                m_Context = context;
+                m_InitialSize = context.NetworkWriter.GetStream().Position;
+                m_Callback = callback;
+            }
+
+            public void Dispose()
+            {
+                m_Callback?.Invoke(m_Context.NetworkWriter.GetStream().Position - m_InitialSize);
+            }
         }
     }
 }

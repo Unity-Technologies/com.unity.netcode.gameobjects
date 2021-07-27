@@ -2,9 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using MLAPI.Configuration;
-using MLAPI.Logging;
 using MLAPI.Serialization;
-using MLAPI.Serialization.Pooled;
 using MLAPI.Hashing;
 using MLAPI.Metrics;
 using MLAPI.Profiling;
@@ -18,7 +16,7 @@ namespace MLAPI.Messaging
     /// </summary>
     public class CustomMessagingManager
     {
-        private NetworkManager m_NetworkManager { get; }
+        private readonly NetworkManager m_NetworkManager;
 
         internal CustomMessagingManager(NetworkManager networkManager)
         {
@@ -198,7 +196,6 @@ namespace MLAPI.Messaging
                     break;
             }
 
-
             var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
                 MessageQueueContainer.MessageType.NamedMessage, networkChannel,
                 new[] {clientId}, NetworkUpdateLoop.UpdateStage);
@@ -207,12 +204,14 @@ namespace MLAPI.Messaging
                 using (var nonNullContext = (InternalCommandContext) context)
                 {
                     var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
-
-                    nonNullContext.NetworkWriter.WriteUInt64Packed(hash);
+                    using (bufferSizeCapture.Measure())
+                    {
+                        nonNullContext.NetworkWriter.WriteUInt64Packed(hash);
+                    }
 
                     stream.CopyTo(nonNullContext.NetworkWriter.GetStream());
 
-                    m_NetworkManager.NetworkMetrics.TrackNamedMessageSent(clientId, name, bufferSizeCapture.Flush());
+                    m_NetworkManager.NetworkMetrics.TrackNamedMessageSent(clientId, name, bufferSizeCapture.Size + stream.SafeGetLengthOrDefault());
                 }
             }
             PerformanceDataManager.Increment(ProfilerConstants.NamedMessageSent);
@@ -251,12 +250,14 @@ namespace MLAPI.Messaging
                 using (var nonNullContext = (InternalCommandContext) context)
                 {
                     var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
-
-                    nonNullContext.NetworkWriter.WriteUInt64Packed(hash);
+                    using (bufferSizeCapture.Measure())
+                    {
+                        nonNullContext.NetworkWriter.WriteUInt64Packed(hash);
+                    }
 
                     stream.CopyTo(nonNullContext.NetworkWriter.GetStream());
 
-                    m_NetworkManager.NetworkMetrics.TrackNamedMessageSent(clientIds, name, bufferSizeCapture.Flush());
+                    m_NetworkManager.NetworkMetrics.TrackNamedMessageSent(clientIds, name, bufferSizeCapture.Size + stream.Length);
                 }
             }
             PerformanceDataManager.Increment(ProfilerConstants.NamedMessageSent);

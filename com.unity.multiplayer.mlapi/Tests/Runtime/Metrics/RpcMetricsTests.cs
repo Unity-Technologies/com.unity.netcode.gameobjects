@@ -1,46 +1,25 @@
+using System;
 using System.Collections;
 using System.Linq;
-using MLAPI.Metrics;
 using MLAPI.RuntimeTests.Metrics.Utility;
 using NUnit.Framework;
 using Unity.Multiplayer.MetricTypes;
+using UnityEngine;
 using UnityEngine.TestTools;
 
 namespace MLAPI.RuntimeTests.Metrics
 {
-    public class RpcMetricsTests
+    public class RpcMetricsTests : SingleClientMetricTestBase
     {
-        NetworkManager m_Server;
-        NetworkManager m_Client;
-        NetworkMetrics m_ClientMetrics;
-        NetworkMetrics m_ServerMetrics;
-
-        [UnitySetUp]
-        public IEnumerator SetUp()
-        {
-            var initializer = new SingleClientMetricTestInitializer(MetricTestInitializer.CreateAndAssignPlayerPrefabs);
-
-            yield return initializer.Initialize();
-
-            m_Server = initializer.Server;
-            m_Client = initializer.Client;
-            m_ClientMetrics = initializer.ClientMetrics;
-            m_ServerMetrics = initializer.ServerMetrics;
-        }
-
-        [TearDown]
-        public void TearDown()
-        {
-            MultiInstanceHelpers.Destroy();
-        }
+        protected override Action<GameObject> UpdatePlayerPrefab => prefab => prefab.AddComponent<RpcTestComponent>();
 
         [UnityTest]
         public IEnumerator TrackRpcSentMetricOnServer()
         {
             var clientPlayer = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_Client.LocalClientId), m_Server, clientPlayer));
+            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation(x => x.IsPlayerObject && x.OwnerClientId == Client.LocalClientId, Server, clientPlayer));
             
-            var waitForMetricValues = new WaitForMetricValues<RpcEvent>(m_ServerMetrics.Dispatcher, MetricNames.RpcSent);
+            var waitForMetricValues = new WaitForMetricValues<RpcEvent>(ServerMetrics.Dispatcher, MetricNames.RpcSent);
 
             clientPlayer.Result.GetComponent<RpcTestComponent>().MyClientRpc();
 
@@ -51,17 +30,17 @@ namespace MLAPI.RuntimeTests.Metrics
             
             Assert.That(serverRpcSentValues, Has.All.Matches<RpcEvent>(x => x.Name == nameof(RpcTestComponent.MyClientRpc)));
             Assert.That(serverRpcSentValues, Has.All.Matches<RpcEvent>(x => x.BytesCount != 0));
-            Assert.Contains(m_Server.LocalClientId, serverRpcSentValues.Select(x => x.Connection.Id).ToArray());
-            Assert.Contains(m_Client.LocalClientId, serverRpcSentValues.Select(x => x.Connection.Id).ToArray());
+            Assert.Contains(Server.LocalClientId, serverRpcSentValues.Select(x => x.Connection.Id).ToArray());
+            Assert.Contains(Client.LocalClientId, serverRpcSentValues.Select(x => x.Connection.Id).ToArray());
         }
 
         [UnityTest]
         public IEnumerator TrackRpcSentMetricOnClient()
         {
             var clientPlayer = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_Client.LocalClientId), m_Client, clientPlayer));
+            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation(x => x.IsPlayerObject && x.OwnerClientId == Client.LocalClientId, Client, clientPlayer));
             
-            var waitForClientMetricsValues = new WaitForMetricValues<RpcEvent>(m_ClientMetrics.Dispatcher, MetricNames.RpcSent);
+            var waitForClientMetricsValues = new WaitForMetricValues<RpcEvent>(ClientMetrics.Dispatcher, MetricNames.RpcSent);
 
             clientPlayer.Result.GetComponent<RpcTestComponent>().MyServerRpc();
 
@@ -71,7 +50,7 @@ namespace MLAPI.RuntimeTests.Metrics
             Assert.AreEqual(1, clientRpcSentValues.Count);
 
             var rpcSent = clientRpcSentValues.First();
-            Assert.AreEqual(m_Server.LocalClientId, rpcSent.Connection.Id);
+            Assert.AreEqual(Server.LocalClientId, rpcSent.Connection.Id);
             Assert.AreEqual(nameof(RpcTestComponent.MyServerRpc), rpcSent.Name);
             Assert.AreNotEqual(0, rpcSent.BytesCount);
         }
@@ -80,9 +59,9 @@ namespace MLAPI.RuntimeTests.Metrics
         public IEnumerator TrackRpcReceivedMetricOnServer()
         {
             var clientPlayer = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_Client.LocalClientId), m_Client, clientPlayer));
+            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation(x => x.IsPlayerObject && x.OwnerClientId == Client.LocalClientId, Client, clientPlayer));
 
-            var waitForServerMetricsValues = new WaitForMetricValues<RpcEvent>(m_ServerMetrics.Dispatcher, MetricNames.RpcReceived);
+            var waitForServerMetricsValues = new WaitForMetricValues<RpcEvent>(ServerMetrics.Dispatcher, MetricNames.RpcReceived);
 
             clientPlayer.Result.GetComponent<RpcTestComponent>().MyServerRpc();
 
@@ -92,7 +71,7 @@ namespace MLAPI.RuntimeTests.Metrics
             Assert.AreEqual(1, serverRpcReceivedValues.Count);
 
             var rpcReceived = serverRpcReceivedValues.First();
-            Assert.AreEqual(m_Client.LocalClientId, rpcReceived.Connection.Id);
+            Assert.AreEqual(Client.LocalClientId, rpcReceived.Connection.Id);
             Assert.AreEqual(nameof(RpcTestComponent.MyServerRpc), rpcReceived.Name);
             Assert.AreNotEqual(0, rpcReceived.BytesCount);
         }
@@ -101,9 +80,9 @@ namespace MLAPI.RuntimeTests.Metrics
         public IEnumerator TrackRpcReceivedMetricOnClient()
         {
             var clientPlayer = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_Client.LocalClientId), m_Server, clientPlayer));
+            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation(x => x.IsPlayerObject && x.OwnerClientId == Client.LocalClientId, Server, clientPlayer));
             
-            var waitForServerMetricsValues = new WaitForMetricValues<RpcEvent>(m_ServerMetrics.Dispatcher, MetricNames.RpcReceived);
+            var waitForServerMetricsValues = new WaitForMetricValues<RpcEvent>(ServerMetrics.Dispatcher, MetricNames.RpcReceived);
 
             clientPlayer.Result.GetComponent<RpcTestComponent>().MyClientRpc();
 
@@ -113,7 +92,7 @@ namespace MLAPI.RuntimeTests.Metrics
             Assert.AreEqual(1, clientRpcReceivedValues.Count);
 
             var rpcReceived = clientRpcReceivedValues.First();
-            Assert.AreEqual(m_Server.LocalClientId, rpcReceived.Connection.Id);
+            Assert.AreEqual(Server.LocalClientId, rpcReceived.Connection.Id);
             Assert.AreEqual(nameof(RpcTestComponent.MyClientRpc), rpcReceived.Name);
             Assert.AreNotEqual(0, rpcReceived.BytesCount);
         }

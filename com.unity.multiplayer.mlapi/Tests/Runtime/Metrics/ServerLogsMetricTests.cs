@@ -10,38 +10,12 @@ using UnityEngine.TestTools;
 
 namespace MLAPI.RuntimeTests.Metrics
 {
-    public class ServerLogsMetricTests
+    public class ServerLogsMetricTests : SingleClientMetricTestBase
     {
-        NetworkManager m_Server;
-        NetworkManager m_Client;
-        NetworkMetrics m_ClientMetrics;
-        NetworkMetrics m_ServerMetrics;
-
-        [UnitySetUp]
-        public IEnumerator SetUp()
-        {
-            var initializer = new SingleClientMetricTestInitializer();
-
-            yield return initializer.Initialize();
-
-            m_Server = initializer.Server;
-            m_Client = initializer.Client;
-            m_ClientMetrics = initializer.ClientMetrics;
-            m_ServerMetrics = initializer.ServerMetrics;
-        }
-
-        [UnityTearDown]
-        public IEnumerator TearDown()
-        {
-            MultiInstanceHelpers.Destroy();
-
-            yield return null;
-        }
-
         [UnityTest]
         public IEnumerator TrackServerLogSentMetric()
         {
-            var waitForSentMetric = new WaitForMetricValues<ServerLogEvent>(m_ClientMetrics.Dispatcher, MetricNames.ServerLogSent);
+            var waitForSentMetric = new WaitForMetricValues<ServerLogEvent>(ClientMetrics.Dispatcher, MetricNames.ServerLogSent);
 
             var message = Guid.NewGuid().ToString();
             NetworkLog.LogWarningServer(message);
@@ -52,7 +26,7 @@ namespace MLAPI.RuntimeTests.Metrics
             Assert.AreEqual(1, sentMetrics.Count);
 
             var sentMetric = sentMetrics.First();
-            Assert.AreEqual(m_Server.LocalClientId, sentMetric.Connection.Id);
+            Assert.AreEqual(Server.LocalClientId, sentMetric.Connection.Id);
             Assert.AreEqual((uint)NetworkLog.LogType.Warning, (uint)sentMetric.LogLevel);
             Assert.AreEqual(message.Length + 2, sentMetric.BytesCount);
         }
@@ -60,7 +34,7 @@ namespace MLAPI.RuntimeTests.Metrics
         [UnityTest]
         public IEnumerator TrackServerLogReceivedMetric()
         {
-            var waitForReceivedMetric = new WaitForMetricValues<ServerLogEvent>(m_ServerMetrics.Dispatcher, MetricNames.ServerLogReceived);
+            var waitForReceivedMetric = new WaitForMetricValues<ServerLogEvent>(ServerMetrics.Dispatcher, MetricNames.ServerLogReceived);
 
             var message = Guid.NewGuid().ToString();
             NetworkLog.LogWarningServer(message);
@@ -71,9 +45,9 @@ namespace MLAPI.RuntimeTests.Metrics
             Assert.AreEqual(1, receivedMetrics.Count);
 
             var receivedMetric = receivedMetrics.First();
-            Assert.AreEqual(m_Client.LocalClientId, receivedMetric.Connection.Id);
+            Assert.AreEqual(Client.LocalClientId, receivedMetric.Connection.Id);
             Assert.AreEqual((uint)NetworkLog.LogType.Warning, (uint)receivedMetric.LogLevel);
-            Assert.AreEqual(message.Length + 3, receivedMetric.BytesCount);
+            Assert.AreEqual(message.Length + 2, receivedMetric.BytesCount);
         }
     }
 }
