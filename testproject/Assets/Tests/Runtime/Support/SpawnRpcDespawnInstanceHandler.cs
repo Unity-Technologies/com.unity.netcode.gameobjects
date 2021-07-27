@@ -63,7 +63,7 @@ namespace TestProject.RuntimeTests.Support
             WasDestroyed = true;
             if (networkObject.NetworkManager.IsClient)
             {
-                Assert.AreEqual(SpawnRpcDespawn.TestStage, NetworkUpdateLoop.UpdateStage);
+                Assert.AreEqual(NetworkUpdateStage.PostLateUpdate, NetworkUpdateLoop.UpdateStage);
             }
 
             GameObject.Destroy(networkObject.gameObject);

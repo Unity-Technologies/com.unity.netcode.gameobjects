@@ -1,5 +1,6 @@
 using MLAPI;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace TestProject.ManualTests
 {
@@ -11,6 +12,8 @@ namespace TestProject.ManualTests
         [SerializeField]
         [Tooltip("This will make the spawned objects move around randomly.  !Caution! You can generate a lot of objects this way!")]
         private bool m_MoveRandomly = true;
+
+        public Text txtComponent;
 
         private Rigidbody m_RigidBody;
         private Vector3 m_Direction;
@@ -44,6 +47,11 @@ namespace TestProject.ManualTests
         /// </summary>
         private void FixedUpdate()
         {
+            if (txtComponent)
+            {
+                txtComponent.text = NetworkObjectId.ToString();
+            }
+
             if (NetworkManager != null && NetworkManager.IsListening)
             {
                 if (IsOwner)
