@@ -661,7 +661,7 @@ namespace MLAPI.Spawning
                             ulong[] clientIds = NetworkManager.ConnectedClientsIds;
                             var context = messageQueueContainer.EnterInternalCommandContext(
                                 MessageQueueContainer.MessageType.DestroyObject, NetworkChannel.Internal,
-                                clientIds, NetworkUpdateLoop.UpdateStage);
+                                clientIds, NetworkUpdateStage.PostLateUpdate);
                             if (context != null)
                             {
                                 using (var nonNullContext = (InternalCommandContext) context)
