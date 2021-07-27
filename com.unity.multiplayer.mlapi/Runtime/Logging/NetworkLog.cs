@@ -1,5 +1,5 @@
-using MLAPI.Configuration;
-using MLAPI.Serialization.Pooled;
+using MLAPI.Messaging;
+using MLAPI.Metrics;
 using MLAPI.Transports;
 using UnityEngine;
 
@@ -59,14 +59,20 @@ namespace MLAPI.Logging
 
             if (NetworkManager.Singleton != null && !NetworkManager.Singleton.IsServer && NetworkManager.Singleton.NetworkConfig.EnableNetworkLogs)
             {
-                using (var buffer = PooledNetworkBuffer.Get())
-                using (var writer = PooledNetworkWriter.Get(buffer))
+                var context = NetworkManager.Singleton.MessageQueueContainer.EnterInternalCommandContext(
+                    MessageQueueContainer.MessageType.ServerLog, NetworkChannel.Internal,
+                    new[] {NetworkManager.Singleton.ServerClientId}, NetworkUpdateLoop.UpdateStage);
+                if (context != null)
                 {
-                    writer.WriteByte((byte)logType);
-                    writer.WriteStringPacked(message);
+                    using (var nonNullContext = (InternalCommandContext) context)
+                    {
+                        var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
 
-                    NetworkManager.Singleton.MessageSender.Send(NetworkManager.Singleton.ServerClientId, NetworkConstants.SERVER_LOG, NetworkChannel.Internal, buffer);
-                    NetworkManager.Singleton.NetworkMetrics.TrackServerLogSent(NetworkManager.Singleton.ServerClientId, (uint)logType, buffer.Length);
+                        nonNullContext.NetworkWriter.WriteByte((byte) logType);
+                        nonNullContext.NetworkWriter.WriteStringPacked(message);
+
+                        NetworkManager.Singleton.NetworkMetrics.TrackServerLogSent(NetworkManager.Singleton.ServerClientId, (uint)logType, bufferSizeCapture.Flush());
+                    }
                 }
             }
         }

@@ -54,11 +54,6 @@ namespace MLAPI
         {
             new MLAPIProfilerCounter { m_Name = ProfilerConstants.RpcSent, m_Category = ProfilerCategory.Network.Name },
             new MLAPIProfilerCounter { m_Name = ProfilerConstants.RpcReceived, m_Category = ProfilerCategory.Network.Name },
-            new MLAPIProfilerCounter { m_Name = ProfilerConstants.RpcBatchesSent, m_Category = ProfilerCategory.Network.Name },
-            new MLAPIProfilerCounter { m_Name = ProfilerConstants.RpcBatchesReceived, m_Category = ProfilerCategory.Network.Name },
-            new MLAPIProfilerCounter { m_Name = ProfilerConstants.RpcQueueProcessed, m_Category = ProfilerCategory.Network.Name },
-            new MLAPIProfilerCounter { m_Name = ProfilerConstants.RpcInQueueSize, m_Category = ProfilerCategory.Network.Name },
-            new MLAPIProfilerCounter { m_Name = ProfilerConstants.RpcOutQueueSize, m_Category = ProfilerCategory.Network.Name },
         };
 
         private static List<MLAPIProfilerCounter> CreateOperationsCounters() => new List<MLAPIProfilerCounter>()

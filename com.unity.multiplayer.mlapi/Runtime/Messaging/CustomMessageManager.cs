@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using MLAPI.Configuration;
@@ -52,15 +53,20 @@ namespace MLAPI.Messaging
         {
             if (!m_NetworkManager.IsServer)
             {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
-                {
-                    NetworkLog.LogWarning("Can not send unnamed messages to multiple users as a client");
-                }
-
-                return;
+                throw new InvalidOperationException("Can not send unnamed messages to multiple users as a client");
             }
 
-            m_NetworkManager.MessageSender.Send(NetworkConstants.UNNAMED_MESSAGE, networkChannel, clientIds, buffer);
+            var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
+                MessageQueueContainer.MessageType.UnnamedMessage, networkChannel,
+                clientIds.ToArray(), NetworkUpdateLoop.UpdateStage);
+            if (context != null)
+            {
+                using (var nonNullContext = (InternalCommandContext) context)
+                {
+                    nonNullContext.NetworkWriter.WriteBytes(buffer.GetBuffer(), buffer.Length);
+                }
+            }
+
             PerformanceDataManager.Increment(ProfilerConstants.UnnamedMessageSent);
             m_NetworkManager.NetworkMetrics.TrackUnnamedMessageSent(clientIds, buffer.Length);
         }
@@ -73,9 +79,17 @@ namespace MLAPI.Messaging
         /// <param name="networkChannel">The channel tos end the data on</param>
         public void SendUnnamedMessage(ulong clientId, NetworkBuffer buffer, NetworkChannel networkChannel = NetworkChannel.Internal)
         {
-            m_NetworkManager.MessageSender.Send(clientId, NetworkConstants.UNNAMED_MESSAGE, networkChannel, buffer);
-            PerformanceDataManager.Increment(ProfilerConstants.UnnamedMessageSent);
-            m_NetworkManager.NetworkMetrics.TrackUnnamedMessageSent(clientId, buffer.Length);
+            var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
+                MessageQueueContainer.MessageType.UnnamedMessage, networkChannel,
+                new[] {clientId}, NetworkUpdateLoop.UpdateStage);
+            if (context != null)
+            {
+                using (var nonNullContext = (InternalCommandContext) context)
+                {
+                    nonNullContext.NetworkWriter.WriteBytes(buffer.GetBuffer(), buffer.Length);
+                    m_NetworkManager.NetworkMetrics.TrackUnnamedMessageSent(clientId, buffer.Length);
+                }
+            }
         }
 
         /// <summary>
@@ -184,18 +198,24 @@ namespace MLAPI.Messaging
                     break;
             }
 
-            using (var messageBuffer = PooledNetworkBuffer.Get())
-            using (var writer = PooledNetworkWriter.Get(messageBuffer))
+
+            var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
+                MessageQueueContainer.MessageType.NamedMessage, networkChannel,
+                new[] {clientId}, NetworkUpdateLoop.UpdateStage);
+            if (context != null)
             {
-                writer.WriteUInt64Packed(hash);
+                using (var nonNullContext = (InternalCommandContext) context)
+                {
+                    var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
 
-                messageBuffer.CopyFrom(stream);
+                    nonNullContext.NetworkWriter.WriteUInt64Packed(hash);
 
-                m_NetworkManager.MessageSender.Send(clientId, NetworkConstants.NAMED_MESSAGE, networkChannel, messageBuffer);
-                PerformanceDataManager.Increment(ProfilerConstants.NamedMessageSent);
+                    stream.CopyTo(nonNullContext.NetworkWriter.GetStream());
 
-                m_NetworkManager.NetworkMetrics.TrackNamedMessageSent(clientId, name, messageBuffer.Length);
+                    m_NetworkManager.NetworkMetrics.TrackNamedMessageSent(clientId, name, bufferSizeCapture.Flush());
+                }
             }
+            PerformanceDataManager.Increment(ProfilerConstants.NamedMessageSent);
         }
 
         /// <summary>
@@ -207,6 +227,11 @@ namespace MLAPI.Messaging
         /// <param name="networkChannel">The channel to send the data on</param>
         public void SendNamedMessage(string name, List<ulong> clientIds, Stream stream, NetworkChannel networkChannel = NetworkChannel.Internal)
         {
+            if (!m_NetworkManager.IsServer)
+            {
+                throw new InvalidOperationException("Can not send unnamed messages to multiple users as a client");
+            }
+
             ulong hash = 0;
             switch (m_NetworkManager.NetworkConfig.RpcHashSize)
             {
@@ -218,28 +243,23 @@ namespace MLAPI.Messaging
                     break;
             }
 
-            using (var messageBuffer = PooledNetworkBuffer.Get())
-            using (var writer = PooledNetworkWriter.Get(messageBuffer))
+            var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
+                MessageQueueContainer.MessageType.NamedMessage, networkChannel,
+                clientIds.ToArray(), NetworkUpdateLoop.UpdateStage);
+            if (context != null)
             {
-                writer.WriteUInt64Packed(hash);
-
-                messageBuffer.CopyFrom(stream);
-
-                if (!m_NetworkManager.IsServer)
+                using (var nonNullContext = (InternalCommandContext) context)
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
-                    {
-                        NetworkLog.LogWarning("Can not send named messages to multiple users as a client");
-                    }
+                    var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
 
-                    return;
+                    nonNullContext.NetworkWriter.WriteUInt64Packed(hash);
+
+                    stream.CopyTo(nonNullContext.NetworkWriter.GetStream());
+
+                    m_NetworkManager.NetworkMetrics.TrackNamedMessageSent(clientIds, name, bufferSizeCapture.Flush());
                 }
-
-                m_NetworkManager.MessageSender.Send(NetworkConstants.NAMED_MESSAGE, networkChannel, clientIds, messageBuffer);
-                PerformanceDataManager.Increment(ProfilerConstants.NamedMessageSent);
-
-                m_NetworkManager.NetworkMetrics.TrackNamedMessageSent(clientIds, name, messageBuffer.Length);
             }
+            PerformanceDataManager.Increment(ProfilerConstants.NamedMessageSent);
         }
     }
 }

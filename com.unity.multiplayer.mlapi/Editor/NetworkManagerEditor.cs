@@ -25,15 +25,10 @@ namespace MLAPI.Editor
         private SerializedProperty m_ProtocolVersionProperty;
         private SerializedProperty m_AllowRuntimeSceneChangesProperty;
         private SerializedProperty m_NetworkTransportProperty;
-        private SerializedProperty m_ReceiveTickrateProperty;
-        private SerializedProperty m_NetworkTickIntervalSecProperty;
-        private SerializedProperty m_MaxReceiveEventsPerTickRateProperty;
-        private SerializedProperty m_EventTickrateProperty;
+        private SerializedProperty m_TickRateProperty;
         private SerializedProperty m_MaxObjectUpdatesPerTickProperty;
         private SerializedProperty m_ClientConnectionBufferTimeoutProperty;
         private SerializedProperty m_ConnectionApprovalProperty;
-        private SerializedProperty m_EnableTimeResyncProperty;
-        private SerializedProperty m_TimeResyncIntervalProperty;
         private SerializedProperty m_EnableNetworkVariableProperty;
         private SerializedProperty m_EnsureNetworkVariableLengthSafetyProperty;
         private SerializedProperty m_ForceSamePrefabsProperty;
@@ -42,8 +37,6 @@ namespace MLAPI.Editor
         private SerializedProperty m_NetworkIdRecycleDelayProperty;
         private SerializedProperty m_RpcHashSizeProperty;
         private SerializedProperty m_LoadSceneTimeOutProperty;
-        private SerializedProperty m_EnableMessageBufferingProperty;
-        private SerializedProperty m_MessageBufferTimeoutProperty;
 
         private ReorderableList m_NetworkPrefabsList;
         private ReorderableList m_RegisteredScenesList;
@@ -103,14 +96,9 @@ namespace MLAPI.Editor
             m_ProtocolVersionProperty = m_NetworkConfigProperty.FindPropertyRelative("ProtocolVersion");
             m_AllowRuntimeSceneChangesProperty = m_NetworkConfigProperty.FindPropertyRelative("AllowRuntimeSceneChanges");
             m_NetworkTransportProperty = m_NetworkConfigProperty.FindPropertyRelative("NetworkTransport");
-            m_ReceiveTickrateProperty = m_NetworkConfigProperty.FindPropertyRelative("ReceiveTickrate");
-            m_NetworkTickIntervalSecProperty = m_NetworkConfigProperty.FindPropertyRelative("NetworkTickIntervalSec");
-            m_MaxReceiveEventsPerTickRateProperty = m_NetworkConfigProperty.FindPropertyRelative("MaxReceiveEventsPerTickRate");
-            m_EventTickrateProperty = m_NetworkConfigProperty.FindPropertyRelative("EventTickrate");
+            m_TickRateProperty = m_NetworkConfigProperty.FindPropertyRelative("TickRate");
             m_ClientConnectionBufferTimeoutProperty = m_NetworkConfigProperty.FindPropertyRelative("ClientConnectionBufferTimeout");
             m_ConnectionApprovalProperty = m_NetworkConfigProperty.FindPropertyRelative("ConnectionApproval");
-            m_EnableTimeResyncProperty = m_NetworkConfigProperty.FindPropertyRelative("EnableTimeResync");
-            m_TimeResyncIntervalProperty = m_NetworkConfigProperty.FindPropertyRelative("TimeResyncInterval");
             m_EnableNetworkVariableProperty = m_NetworkConfigProperty.FindPropertyRelative("EnableNetworkVariable");
             m_EnsureNetworkVariableLengthSafetyProperty = m_NetworkConfigProperty.FindPropertyRelative("EnsureNetworkVariableLengthSafety");
             m_ForceSamePrefabsProperty = m_NetworkConfigProperty.FindPropertyRelative("ForceSamePrefabs");
@@ -119,8 +107,6 @@ namespace MLAPI.Editor
             m_NetworkIdRecycleDelayProperty = m_NetworkConfigProperty.FindPropertyRelative("NetworkIdRecycleDelay");
             m_RpcHashSizeProperty = m_NetworkConfigProperty.FindPropertyRelative("RpcHashSize");
             m_LoadSceneTimeOutProperty = m_NetworkConfigProperty.FindPropertyRelative("LoadSceneTimeOut");
-            m_EnableMessageBufferingProperty = m_NetworkConfigProperty.FindPropertyRelative("EnableMessageBuffering");
-            m_MessageBufferTimeoutProperty = m_NetworkConfigProperty.FindPropertyRelative("MessageBufferTimeout");
 
 
             ReloadTransports();
@@ -139,14 +125,9 @@ namespace MLAPI.Editor
             m_ProtocolVersionProperty = m_NetworkConfigProperty.FindPropertyRelative("ProtocolVersion");
             m_AllowRuntimeSceneChangesProperty = m_NetworkConfigProperty.FindPropertyRelative("AllowRuntimeSceneChanges");
             m_NetworkTransportProperty = m_NetworkConfigProperty.FindPropertyRelative("NetworkTransport");
-            m_ReceiveTickrateProperty = m_NetworkConfigProperty.FindPropertyRelative("ReceiveTickrate");
-            m_NetworkTickIntervalSecProperty = m_NetworkConfigProperty.FindPropertyRelative("NetworkTickIntervalSec");
-            m_MaxReceiveEventsPerTickRateProperty = m_NetworkConfigProperty.FindPropertyRelative("MaxReceiveEventsPerTickRate");
-            m_EventTickrateProperty = m_NetworkConfigProperty.FindPropertyRelative("EventTickrate");
+            m_TickRateProperty = m_NetworkConfigProperty.FindPropertyRelative("TickRate");
             m_ClientConnectionBufferTimeoutProperty = m_NetworkConfigProperty.FindPropertyRelative("ClientConnectionBufferTimeout");
             m_ConnectionApprovalProperty = m_NetworkConfigProperty.FindPropertyRelative("ConnectionApproval");
-            m_EnableTimeResyncProperty = m_NetworkConfigProperty.FindPropertyRelative("EnableTimeResync");
-            m_TimeResyncIntervalProperty = m_NetworkConfigProperty.FindPropertyRelative("TimeResyncInterval");
             m_EnableNetworkVariableProperty = m_NetworkConfigProperty.FindPropertyRelative("EnableNetworkVariable");
             m_EnsureNetworkVariableLengthSafetyProperty = m_NetworkConfigProperty.FindPropertyRelative("EnsureNetworkVariableLengthSafety");
             m_ForceSamePrefabsProperty = m_NetworkConfigProperty.FindPropertyRelative("ForceSamePrefabs");
@@ -155,8 +136,6 @@ namespace MLAPI.Editor
             m_NetworkIdRecycleDelayProperty = m_NetworkConfigProperty.FindPropertyRelative("NetworkIdRecycleDelay");
             m_RpcHashSizeProperty = m_NetworkConfigProperty.FindPropertyRelative("RpcHashSize");
             m_LoadSceneTimeOutProperty = m_NetworkConfigProperty.FindPropertyRelative("LoadSceneTimeOut");
-            m_EnableMessageBufferingProperty = m_NetworkConfigProperty.FindPropertyRelative("EnableMessageBuffering");
-            m_MessageBufferTimeoutProperty = m_NetworkConfigProperty.FindPropertyRelative("MessageBufferTimeout");
         }
 
         private void OnEnable()
@@ -304,27 +283,13 @@ namespace MLAPI.Editor
                     }
                 }
 
-                EditorGUILayout.PropertyField(m_EnableTimeResyncProperty);
-
-                using (new EditorGUI.DisabledScope(!m_NetworkManager.NetworkConfig.EnableTimeResync))
-                {
-                    EditorGUILayout.PropertyField(m_TimeResyncIntervalProperty);
-                }
+                EditorGUILayout.PropertyField(m_TickRateProperty);
 
                 EditorGUILayout.LabelField("Performance", EditorStyles.boldLabel);
-                EditorGUILayout.PropertyField(m_ReceiveTickrateProperty);
-                EditorGUILayout.PropertyField(m_NetworkTickIntervalSecProperty);
-                EditorGUILayout.PropertyField(m_MaxReceiveEventsPerTickRateProperty);
-                EditorGUILayout.PropertyField(m_EventTickrateProperty);
                 EditorGUILayout.PropertyField(m_EnableNetworkVariableProperty);
 
                 using (new EditorGUI.DisabledScope(!m_NetworkManager.NetworkConfig.EnableNetworkVariable))
                 {
-                    if (m_MaxObjectUpdatesPerTickProperty != null)
-                    {
-                        EditorGUILayout.PropertyField(m_MaxObjectUpdatesPerTickProperty);
-                    }
-
                     EditorGUILayout.PropertyField(m_EnsureNetworkVariableLengthSafetyProperty);
                 }
 
@@ -345,13 +310,6 @@ namespace MLAPI.Editor
                 using (new EditorGUI.DisabledScope(!m_NetworkManager.NetworkConfig.RecycleNetworkIds))
                 {
                     EditorGUILayout.PropertyField(m_NetworkIdRecycleDelayProperty);
-                }
-
-                EditorGUILayout.PropertyField(m_EnableMessageBufferingProperty);
-
-                using (new EditorGUI.DisabledScope(!m_NetworkManager.NetworkConfig.EnableMessageBuffering))
-                {
-                    EditorGUILayout.PropertyField(m_MessageBufferTimeoutProperty);
                 }
 
                 EditorGUILayout.LabelField("Bandwidth", EditorStyles.boldLabel);

@@ -61,28 +61,10 @@ namespace MLAPI.Configuration
         internal Dictionary<uint, NetworkPrefab> NetworkPrefabOverrideLinks = new Dictionary<uint, NetworkPrefab>();
 
         /// <summary>
-        /// Amount of times per second the receive queue is emptied and all messages inside are processed.
+        /// The tickrate of network ticks. This value controls how often MLAPI runs user code and sends out data.
         /// </summary>
-        [Tooltip("The amount of times per second the receive queue is emptied from pending incoming messages")]
-        public int ReceiveTickrate = 64;
-
-        /// <summary>
-        /// Duration in seconds between network ticks.
-        /// </summary>
-        [Tooltip("Duration in seconds between network ticks")]
-        public float NetworkTickIntervalSec = 0.050f;
-
-        /// <summary>
-        /// The max amount of messages to process per ReceiveTickrate. This is to prevent flooding.
-        /// </summary>
-        [Tooltip("The maximum amount of Receive events to poll per Receive tick. This is to prevent flooding and freezing on the server")]
-        public int MaxReceiveEventsPerTickRate = 500;
-
-        /// <summary>
-        /// The amount of times per second internal frame events will occur, e.g. send checking.
-        /// </summary>
-        [Tooltip("The amount of times per second the internal event loop will run. This includes for example NetworkVariable checking.")]
-        public int EventTickrate = 64;
+        [Tooltip("The tickrate. This value controls how often MLAPI runs user code and sends out data. The value is in 'ticks per seconds' which means a value of 50 will result in 50 ticks being executed per second or a fixed delta time of 0.02.")]
+        public int TickRate = 30;
 
         /// <summary>
         /// The amount of seconds to wait for handshake to complete before timing out a client
@@ -167,12 +149,6 @@ namespace MLAPI.Configuration
         public int LoadSceneTimeOut = 120;
 
         /// <summary>
-        /// Whether or not message buffering should be enabled. This will resolve most out of order messages during spawn.
-        /// </summary>
-        [Tooltip("Whether or not message buffering should be enabled. This will resolve most out of order messages during spawn")]
-        public bool EnableMessageBuffering = true;
-
-        /// <summary>
         /// The amount of time a message should be buffered for without being consumed. If it is not consumed within this time, it will be dropped.
         /// </summary>
         [Tooltip("The amount of time a message should be buffered for without being consumed. If it is not consumed within this time, it will be dropped")]
@@ -206,9 +182,7 @@ namespace MLAPI.Configuration
                     writer.WriteString(config.RegisteredScenes[i]);
                 }
 
-                writer.WriteInt32Packed(config.ReceiveTickrate);
-                writer.WriteInt32Packed(config.MaxReceiveEventsPerTickRate);
-                writer.WriteInt32Packed(config.EventTickrate);
+                writer.WriteInt32Packed(config.TickRate);
                 writer.WriteInt32Packed(config.ClientConnectionBufferTimeout);
                 writer.WriteBool(config.ConnectionApproval);
                 writer.WriteInt32Packed(config.LoadSceneTimeOut);
@@ -249,9 +223,7 @@ namespace MLAPI.Configuration
                     config.RegisteredScenes.Add(reader.ReadString().ToString());
                 }
 
-                config.ReceiveTickrate = reader.ReadInt32Packed();
-                config.MaxReceiveEventsPerTickRate = reader.ReadInt32Packed();
-                config.EventTickrate = reader.ReadInt32Packed();
+                config.TickRate = reader.ReadInt32Packed();
                 config.ClientConnectionBufferTimeout = reader.ReadInt32Packed();
                 config.ConnectionApproval = reader.ReadBool();
                 config.LoadSceneTimeOut = reader.ReadInt32Packed();

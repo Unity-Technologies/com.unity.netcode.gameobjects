@@ -104,7 +104,7 @@ namespace MLAPI.Transports
             // todo: Currently, fragmentation support needed to deal with oversize packets encounterable with current pre-snapshot code".
             // todo: once we have snapshotting able to deal with missing frame, this should be unreliable
             new TransportChannel(NetworkChannel.NetworkVariable, NetworkDelivery.ReliableFragmentedSequenced),
-            new TransportChannel(NetworkChannel.SnapshotExchange, NetworkDelivery.Unreliable),
+            new TransportChannel(NetworkChannel.SnapshotExchange, NetworkDelivery.ReliableFragmentedSequenced), // todo: temporary until we separate snapshots in chunks
         };
 
         /// <summary>
