@@ -114,6 +114,8 @@ namespace TestProject.RuntimeTests
             Assert.AreEqual(testStage, Support.SpawnRpcDespawn.StageExecutedByReceiver);
             Assert.AreEqual(Support.SpawnRpcDespawn.ServerUpdateCount, Support.SpawnRpcDespawn.ClientUpdateCount);
             Assert.True(handler.WasSpawned);
+            var lastFrameNumber = Time.frameCount + 1;
+            yield return new WaitUntil(() => Time.frameCount >= lastFrameNumber);
             Assert.True(handler.WasDestroyed);
         }
     }
