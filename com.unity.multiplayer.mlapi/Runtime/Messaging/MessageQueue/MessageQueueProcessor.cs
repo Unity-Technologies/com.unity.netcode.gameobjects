@@ -4,6 +4,7 @@ using Unity.Profiling;
 using MLAPI.Profiling;
 using MLAPI.Logging;
 using MLAPI.Serialization.Pooled;
+using MLAPI.Transports;
 using UnityEngine;
 
 namespace MLAPI.Messaging
@@ -216,19 +217,7 @@ namespace MLAPI.Messaging
                         if (!isTesting)
                         {
                             currentQueueItem.UpdateStage = currentStage;
-                            try
-                            {
-                                ProcessMessage(currentQueueItem);
-                            }
-                            catch (Exception ex)
-                            {
-                                Debug.LogException(ex);
-
-                                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                                {
-                                    NetworkLog.LogWarning($"A {currentQueueItem.MessageType} threw an exception while executing! Please check Unity logs for more information.");
-                                }
-                            }
+                            ProcessMessage(currentQueueItem);
                         }
 
                         currentQueueItem = currentFrame.GetNextQueueItem();
@@ -326,8 +315,13 @@ namespace MLAPI.Messaging
             var length = (int)sendStream.Buffer.Length;
             var bytes = sendStream.Buffer.GetBuffer();
             var sendBuffer = new ArraySegment<byte>(bytes, 0, length);
-
-            m_MessageQueueContainer.NetworkManager.NetworkConfig.NetworkTransport.Send(clientId, sendBuffer, sendStream.NetworkChannel);
+            
+            var channel = sendStream.NetworkChannel;
+            if (length > 1024)
+            {
+                channel = NetworkChannel.Fragmented;
+            }
+            m_MessageQueueContainer.NetworkManager.NetworkConfig.NetworkTransport.Send(clientId, sendBuffer, channel);
         }
 
         /// <summary>
@@ -337,12 +331,17 @@ namespace MLAPI.Messaging
         /// <param name="item">Information on what to send</param>
         private void SendFrameQueueItem(MessageFrameItem item)
         {
+            var channel = item.NetworkChannel;
+            if (item.MessageData.Count > 1024)
+            {
+                channel = NetworkChannel.Fragmented;
+            }
             switch (item.MessageType)
             {
                 case MessageQueueContainer.MessageType.ServerRpc:
                     // TODO: Can we remove this special case for server RPCs?
                     {
-                        m_MessageQueueContainer.NetworkManager.NetworkConfig.NetworkTransport.Send(item.NetworkId, item.MessageData, item.NetworkChannel);
+                        m_MessageQueueContainer.NetworkManager.NetworkConfig.NetworkTransport.Send(item.NetworkId, item.MessageData, channel);
 
                         //For each packet sent, we want to record how much data we have sent
 
@@ -363,7 +362,7 @@ namespace MLAPI.Messaging
                     {
                         foreach (ulong clientid in item.ClientNetworkIds)
                         {
-                            m_MessageQueueContainer.NetworkManager.NetworkConfig.NetworkTransport.Send(clientid, item.MessageData, item.NetworkChannel);
+                            m_MessageQueueContainer.NetworkManager.NetworkConfig.NetworkTransport.Send(clientid, item.MessageData, channel);
 
                             //For each packet sent, we want to record how much data we have sent
                             PerformanceDataManager.Increment(ProfilerConstants.ByteSent, (int)item.StreamSize);
