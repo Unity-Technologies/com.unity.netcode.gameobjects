@@ -25,6 +25,8 @@ namespace MLAPI.Messaging
         // Batcher object used to manage the message batching on the send side
         private readonly MessageBatcher m_MessageBatcher = new MessageBatcher();
         private const int k_BatchThreshold = 512;
+        // Selected mostly arbitrarily... Better solution to come soon.
+        private const int k_FragmentationThreshold = 1024;
 
         private bool m_AdvanceInboundFrameHistory = false;
 
@@ -317,7 +319,11 @@ namespace MLAPI.Messaging
             var sendBuffer = new ArraySegment<byte>(bytes, 0, length);
             
             var channel = sendStream.NetworkChannel;
-            if (length > 1024)
+            // If the length is greater than the fragmented threshold, switch to a fragmented channel.
+            // This is kind of a hack to get around issues with certain usages patterns on fragmentation with UNet.
+            // We send everything unfragmented to avoid those issues, and only switch to the fragmented channel
+            // if we have no other choice.
+            if (length > k_FragmentationThreshold)
             {
                 channel = NetworkChannel.Fragmented;
             }
@@ -332,7 +338,11 @@ namespace MLAPI.Messaging
         private void SendFrameQueueItem(MessageFrameItem item)
         {
             var channel = item.NetworkChannel;
-            if (item.MessageData.Count > 1024)
+            // If the length is greater than the fragmented threshold, switch to a fragmented channel.
+            // This is kind of a hack to get around issues with certain usages patterns on fragmentation with UNet.
+            // We send everything unfragmented to avoid those issues, and only switch to the fragmented channel
+            // if we have no other choice.
+            if (item.MessageData.Count > k_FragmentationThreshold)
             {
                 channel = NetworkChannel.Fragmented;
             }
