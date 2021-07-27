@@ -36,8 +36,10 @@ namespace MLAPI.Transports
             Connected,
         }
 
+        public const int MaximumMessageLength = 6 * 1024;
+
         [SerializeField] private ProtocolType m_ProtocolType;
-        [SerializeField] private int m_MessageBufferSize = 6 * 1024;
+        [SerializeField] private int m_MessageBufferSize = MaximumMessageLength;
         [SerializeField] private string m_ServerAddress = "127.0.0.1";
         [SerializeField] private ushort m_ServerPort = 7777;
         [SerializeField] private int m_RelayMaxPlayers = 10;
@@ -50,13 +52,15 @@ namespace MLAPI.Transports
         private string m_RelayJoinCode;
         private ulong m_ServerClientId;
 
+        private NetworkPipeline m_UnreliableSequencedPipeline;
+        private NetworkPipeline m_ReliableSequencedPipeline;
+        private NetworkPipeline m_ReliableSequencedFragmentedPipeline;
+
         public override ulong ServerClientId => m_ServerClientId;
 
         public string RelayJoinCode => m_RelayJoinCode;
 
         public ProtocolType Protocol => m_ProtocolType;
-
-        NetworkPipeline unreliableFragmentedPipeline;
 
         private void InitDriver()
         {
@@ -65,8 +69,11 @@ namespace MLAPI.Transports
             else
                 m_Driver = NetworkDriver.Create();
 
-            unreliableFragmentedPipeline = m_Driver.CreatePipeline(
-                    typeof(FragmentationPipelineStage));
+            m_UnreliableSequencedPipeline = m_Driver.CreatePipeline(typeof(UnreliableSequencedPipelineStage));
+            m_ReliableSequencedPipeline = m_Driver.CreatePipeline(typeof(ReliableSequencedPipelineStage));
+            m_ReliableSequencedFragmentedPipeline = m_Driver.CreatePipeline(
+                typeof(FragmentationPipelineStage), typeof(ReliableSequencedPipelineStage)
+            );
         }
 
         private void DisposeDriver()
@@ -105,6 +112,35 @@ namespace MLAPI.Transports
                 {
                     return RelayConnectionData.FromBytePointer(ptr, RelayConnectionData.k_Length);
                 }
+            }
+        }
+
+        private NetworkPipeline SelectSendPipeline(NetworkChannel channel, int size)
+        {
+            TransportChannel transportChannel = Array.Find(MLAPI_CHANNELS, tc => tc.Channel == channel);
+
+            switch (transportChannel.Delivery)
+            {
+                case NetworkDelivery.Unreliable:
+                    return NetworkPipeline.Null;
+
+                case NetworkDelivery.UnreliableSequenced:
+                    return m_UnreliableSequencedPipeline;
+
+                case NetworkDelivery.Reliable:
+                case NetworkDelivery.ReliableSequenced:
+                    return m_ReliableSequencedPipeline;
+
+                case NetworkDelivery.ReliableFragmentedSequenced:
+                    // No need to send on the fragmented pipeline if data is smaller than MTU.
+                    if (size < NetworkParameterConstants.MTU)
+                        return m_ReliableSequencedPipeline;
+
+                    return m_ReliableSequencedFragmentedPipeline;
+
+                default:
+                    Debug.LogError($"Unknown NetworkDelivery value: {transportChannel.Delivery}");
+                    return NetworkPipeline.Null;
             }
         }
 
@@ -427,7 +463,11 @@ namespace MLAPI.Transports
             m_NetworkParameters = new List<INetworkParameter>();
 
 
-            m_NetworkParameters.Add(new FragmentationUtility.Parameters(){PayloadCapacity = m_MessageBufferSize});
+            // If we want to be able to actually handle messages MaximumMessageLength bytes in
+            // size, we need to allow a bit more than that in FragmentationUtility since this needs
+            // to account for headers and such. 128 bytes is plenty enough for such overhead.
+            var maxFragmentationCapacity = MaximumMessageLength + 128;
+            m_NetworkParameters.Add(new FragmentationUtility.Parameters(){PayloadCapacity = maxFragmentationCapacity});
 
             m_MessageBuffer = new byte[m_MessageBufferSize];
 #if ENABLE_RELAY_SERVICE
@@ -451,12 +491,9 @@ namespace MLAPI.Transports
         {
             var size = data.Count + 5;
 
-            // Debug.Log($"Sending: {String.Join(", ", data.Skip(data.Offset).Take(data.Count).Select(x => string.Format("{0:x}", x)))}");
-            var defaultPipeline = NetworkPipeline.Null;
-            if (data.Count >= NetworkParameterConstants.MTU)
-                defaultPipeline = unreliableFragmentedPipeline;
+            var pipeline = SelectSendPipeline(networkChannel, size);
 
-            if (m_Driver.BeginSend(defaultPipeline, ParseClientId(clientId), out var writer, size) == 0)
+            if (m_Driver.BeginSend(pipeline, ParseClientId(clientId), out var writer, size) == 0)
             {
                 writer.WriteByte((byte)networkChannel);
                 writer.WriteInt(data.Count);
