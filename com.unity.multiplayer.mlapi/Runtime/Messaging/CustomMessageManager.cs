@@ -181,6 +181,7 @@ namespace MLAPI.Messaging
                 {
                     nonNullContext.NetworkWriter.WriteUInt64Packed(hash);
 
+                    stream.Position = 0;
                     stream.CopyTo(nonNullContext.NetworkWriter.GetStream());
                 }
             }
@@ -221,6 +222,7 @@ namespace MLAPI.Messaging
                 {
                     nonNullContext.NetworkWriter.WriteUInt64Packed(hash);
 
+                    stream.Position = 0;
                     stream.CopyTo(nonNullContext.NetworkWriter.GetStream());
                 }
             }
