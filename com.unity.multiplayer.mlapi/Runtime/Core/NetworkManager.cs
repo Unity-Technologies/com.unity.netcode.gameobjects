@@ -185,7 +185,7 @@ namespace MLAPI
         /// <summary>
         /// Gets a list of just the IDs of all connected clients.
         /// </summary>
-        public ulong[] ConnectedClientsIds => ConnectedClientsList.Select(c => c.ClientId).Where(c => c != LocalClientId).ToArray();
+        public ulong[] ConnectedClientsIds => ConnectedClientsList.Select(c => c.ClientId).ToArray();
 
         /// <summary>
         /// Gets a dictionary of the clients that have been accepted by the transport but are still pending by the MLAPI. This is only populated on the server.
