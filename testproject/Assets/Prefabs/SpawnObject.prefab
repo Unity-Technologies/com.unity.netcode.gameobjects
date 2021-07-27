@@ -52,6 +52,7 @@ MonoBehaviour:
   GlobalObjectIdHash: 951099334
   AlwaysReplicateAsRoot: 0
   DontDestroyWithOwner: 0
+  AutoObjectParentSync: 0
 --- !u!33 &771575417923360817
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -143,7 +144,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fa7bfe2bc280049f38557d643d8a3471, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_MoveRandomly: 1
+  m_MoveRandomly: 0
+  IsRegisteredPoolObject: 0
+  IsRemovedFromPool: 0
 --- !u!114 &4600632750638426092
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -156,39 +159,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e96cb6065543e43c4a752faaa1468eb1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  Authority: 0
+  Channel: 0
+  InLocalSpace: 0
   FixedSendsPerSecond: 5
-  AssumeSyncedSends: 1
-  InterpolatePosition: 1
-  SnapDistance: 10
-  InterpolateServer: 1
-  MinMeters: 0.16
-  MinDegrees: 1.5
-  ExtrapolatePosition: 0
-  MaxSendsToExtrapolate: 5
-  Channel: 
-  EnableRange: 0
-  EnableNonProvokedResendChecks: 0
-  DistanceSendrate:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 20
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    - serializedVersion: 3
-      time: 500
-      value: 20
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4

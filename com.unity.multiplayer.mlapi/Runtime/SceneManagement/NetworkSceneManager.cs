@@ -10,6 +10,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using MLAPI.Serialization;
 using MLAPI.Transports;
+using MLAPI.Messaging;
 
 namespace MLAPI.SceneManagement
 {
@@ -100,11 +101,33 @@ namespace MLAPI.SceneManagement
 
         private NetworkManager m_NetworkManager { get; }
 
+        private MessageQueueContainer.MessageType m_MessageType = MessageQueueContainer.MessageType.SceneEvent;
+        private NetworkChannel m_ChannelType = NetworkChannel.Internal;
+        private NetworkUpdateStage m_NetworkUpdateStage = NetworkUpdateLoop.UpdateStage;
+
         internal NetworkSceneManager(NetworkManager networkManager)
         {
+
             m_NetworkManager = networkManager;
             SceneEventData = new SceneEventData(networkManager);
             ClientSynchEventData = new SceneEventData(networkManager);
+        }
+
+
+        internal void SendSceneEventData(ulong[] targetClientIds)
+        {
+            var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(m_MessageType, m_ChannelType, targetClientIds, m_NetworkUpdateStage);
+
+            if (context != null)
+            {
+                using (var nonNullContext = (InternalCommandContext)context)
+                {
+                    SceneEventData.OnWrite(nonNullContext.NetworkWriter);
+                }
+
+                return;
+            }
+            throw new Exception($"{nameof(NetworkSceneManager)} failed to send event notification {SceneEventData.SceneEventType} to target clientIds {targetClientIds}!");
         }
 
         /// <summary>
@@ -221,10 +244,10 @@ namespace MLAPI.SceneManagement
             switchSceneProgress.OnComplete += timedOut =>
             {
                 OnNotifyServerAllClientsLoadedScene?.Invoke(switchSceneProgress, timedOut);
+                // Send notification to all clients that everyone is done loading
+                var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext( MessageQueueContainer.MessageType.AllClientsLoadedScene, NetworkChannel.Internal,
+                    m_NetworkManager.ConnectedClientsIds, NetworkUpdateLoop.UpdateStage);
 
-                var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
-                    MessageQueueContainer.MessageType.AllClientsLoadedScene, NetworkChannel.Internal,
-                    new[] {NetworkManager.Singleton.ServerClientId}, NetworkUpdateLoop.UpdateStage);
                 if (context != null)
                 {
                     using (var nonNullContext = (InternalCommandContext) context)
@@ -240,6 +263,8 @@ namespace MLAPI.SceneManagement
 
             return switchSceneProgress;
         }
+
+
 
         /// <summary>
         /// Unloads an additively loaded scene
@@ -266,17 +291,8 @@ namespace MLAPI.SceneManagement
             SceneEventData.SceneEventType = SceneEventData.SceneEventTypes.Event_Unload;
             SceneEventData.SceneIndex = SceneNameToIndex[sceneName];
 
-            for (int j = 0; j < m_NetworkManager.ConnectedClientsList.Count; j++)
-            {
-                using (var buffer = PooledNetworkBuffer.Get())
-                {
-                    using (var writer = PooledNetworkWriter.Get(buffer))
-                    {
-                        SceneEventData.OnWrite(writer);
-                        m_NetworkManager.MessageSender.Send(m_NetworkManager.ConnectedClientsList[j].ClientId, NetworkConstants.SCENE_EVENT, NetworkChannel.Internal, buffer);
-                    }
-                }
-            }
+            // Sends the unload scene notification
+            SendSceneEventData(m_NetworkManager.ConnectedClientsIds);
 
             // start loading the scene
             AsyncOperation sceneUnload = SceneManager.UnloadSceneAsync(sceneToUnload);
@@ -322,14 +338,11 @@ namespace MLAPI.SceneManagement
         /// </summary>
         private void OnSceneUnloaded()
         {
-            using (var buffer = PooledNetworkBuffer.Get())
-            using (var writer = PooledNetworkWriter.Get(buffer))
+            if (!m_NetworkManager.IsServer)
             {
                 SceneEventData.SceneEventType = SceneEventData.SceneEventTypes.Event_Unload_Complete;
-                SceneEventData.OnWrite(writer);
-                m_NetworkManager.MessageSender.Send(m_NetworkManager.ServerClientId, NetworkConstants.SCENE_EVENT, NetworkChannel.Internal, buffer);
+                SendSceneEventData(new ulong[] { m_NetworkManager.ServerClientId });
             }
-
             s_IsSceneEventActive = false;
         }
 
@@ -551,34 +564,37 @@ namespace MLAPI.SceneManagement
                 var clientId = m_NetworkManager.ConnectedClientsList[j].ClientId;
                 if (clientId != m_NetworkManager.ServerClientId)
                 {
-                    using (var buffer = PooledNetworkBuffer.Get())
+
+                    uint sceneObjectsToSpawn = 0;
+
+                    foreach (var keyValuePair in ScenePlacedObjects)
                     {
-                        using (var writer = PooledNetworkWriter.Get(buffer))
+                        if (keyValuePair.Value.Observers.Contains(clientId))
                         {
-                            SceneEventData.OnWrite(writer);
-
-                            uint sceneObjectsToSpawn = 0;
-
-                            foreach (var keyValuePair in ScenePlacedObjects)
-                            {
-                                if (keyValuePair.Value.Observers.Contains(clientId))
-                                {
-                                    sceneObjectsToSpawn++;
-                                }
-                            }
-
-                            // Write number of scene objects to spawn
-                            writer.WriteUInt32Packed(sceneObjectsToSpawn);
-                            foreach (var keyValuePair in ScenePlacedObjects)
-                            {
-                                if (keyValuePair.Value.Observers.Contains(clientId))
-                                {
-                                    keyValuePair.Value.SerializeSceneObject(writer, clientId);
-                                }
-                            }
-
-                            m_NetworkManager.MessageSender.Send(m_NetworkManager.ConnectedClientsList[j].ClientId, NetworkConstants.SCENE_EVENT, NetworkChannel.Internal, buffer);
+                            sceneObjectsToSpawn++;
                         }
+                    }
+                    var clientIdAsArray = new ulong[] { m_NetworkManager.ConnectedClientsList[j].ClientId } ;
+                    var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(m_MessageType, m_ChannelType, clientIdAsArray, m_NetworkUpdateStage);
+                    if (context != null)
+                    {
+                        using (var nonNullContext = (InternalCommandContext)context)
+                        {
+                            SceneEventData.OnWrite(nonNullContext.NetworkWriter);
+                            // Write number of scene objects to spawn
+                            nonNullContext.NetworkWriter.WriteUInt32Packed(sceneObjectsToSpawn);
+                            foreach (var keyValuePair in ScenePlacedObjects)
+                            {
+                                if (keyValuePair.Value.Observers.Contains(clientId))
+                                {
+                                    keyValuePair.Value.SerializeSceneObject(nonNullContext.NetworkWriter, clientId);
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        throw new Exception($"{nameof(NetworkSceneManager)} failed to send event notification {SceneEventData.SceneEventType} to target clientId {clientIdAsArray}!");
                     }
                 }
             }
@@ -608,15 +624,8 @@ namespace MLAPI.SceneManagement
                 }
             }
 
-            var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
-                MessageQueueContainer.MessageType.ClientSwitchSceneCompleted, NetworkChannel.Internal,
-                new[] {m_NetworkManager.ServerClientId}, NetworkUpdateLoop.UpdateStage);
-            if (context != null)
-            {
-                SceneEventData.SceneEventType = SceneEventData.SceneEventTypes.Event_Load_Complete;
-                SceneEventData.OnWrite(writer);
-                m_NetworkManager.MessageSender.Send(m_NetworkManager.ServerClientId, NetworkConstants.SCENE_EVENT, NetworkChannel.Internal, buffer);
-            }
+            SceneEventData.SceneEventType = SceneEventData.SceneEventTypes.Event_Load_Complete;
+            SendSceneEventData(new ulong[] { m_NetworkManager.ServerClientId });
 
             s_IsSceneEventActive = false;
 
@@ -678,16 +687,17 @@ namespace MLAPI.SceneManagement
                     ClientSynchEventData.AddNetworkObjectForSynch(malpiSceneIndex, networkObject);
                 }
             }
-
-            // Send the scene event
-            using (var buffer = PooledNetworkBuffer.Get())
-            using (var writer = PooledNetworkWriter.Get(buffer))
+            var clientIdAsArray = new ulong[] { ownerClientId };
+            var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(m_MessageType, m_ChannelType, clientIdAsArray, m_NetworkUpdateStage);
+            if (context != null)
             {
-                ClientSynchEventData.OnWrite(writer);
-                m_NetworkManager.MessageSender.Send(ownerClientId, NetworkConstants.SCENE_EVENT, NetworkChannel.Internal, buffer);
+                using (var nonNullContext = (InternalCommandContext)context)
+                {
+                    ClientSynchEventData.OnWrite(nonNullContext.NetworkWriter);
+                }
             }
-
         }
+
 
         /// <summary>
         /// This is called when the client receives the SCENE_EVENT of type SceneEventData.SceneEventTypes.SYNC
@@ -879,13 +889,9 @@ namespace MLAPI.SceneManagement
                             // All scenes are synchronized, let the server know we are done synchronizing
                             m_NetworkManager.IsConnectedClient = true;
                             m_NetworkManager.InvokeOnClientConnectedCallback(m_NetworkManager.LocalClientId);
-                            using (var buffer = PooledNetworkBuffer.Get())
-                            using (var writer = PooledNetworkWriter.Get(buffer))
-                            {
-                                SceneEventData.SceneEventType = SceneEventData.SceneEventTypes.Event_Sync_Complete;
-                                SceneEventData.OnWrite(writer);
-                                m_NetworkManager.MessageSender.Send(m_NetworkManager.ServerClientId, NetworkConstants.SCENE_EVENT, NetworkChannel.Internal, buffer);
-                            }
+
+                            SceneEventData.SceneEventType = SceneEventData.SceneEventTypes.Event_Sync_Complete;
+                            SendSceneEventData(new ulong[] { m_NetworkManager.ServerClientId});
                         }
                         break;
                     }
@@ -933,13 +939,8 @@ namespace MLAPI.SceneManagement
                         if (SceneEventData.ClientNeedsReSynchronization())
                         {
                             Debug.Log($"Re-Synchronizing client {clientId} for missed destroyed NetworkObjects.");
-                            using (var buffer = PooledNetworkBuffer.Get())
-                            using (var writer = PooledNetworkWriter.Get(buffer))
-                            {
-                                SceneEventData.SceneEventType = SceneEventData.SceneEventTypes.Event_ReSync;
-                                SceneEventData.OnWrite(writer);
-                                m_NetworkManager.MessageSender.Send(clientId, NetworkConstants.SCENE_EVENT, NetworkChannel.Internal, buffer);
-                            }
+                            SceneEventData.SceneEventType = SceneEventData.SceneEventTypes.Event_ReSync;
+                            SendSceneEventData(new ulong[] { clientId });
                         }
                         // NSS TOOD: The scene event local notification needs to be called
                         //m_NetworkManager.NotifyPlayerConnected(clientId);

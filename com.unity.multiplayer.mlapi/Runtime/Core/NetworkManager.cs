@@ -64,7 +64,6 @@ namespace MLAPI
         internal static bool UseSnapshot = false;
 
         private const double k_TimeSyncFrequency = 1.0d; // sync every second, TODO will be removed once timesync is done via snapshots
-        
         internal MessageQueueContainer MessageQueueContainer { get; private set; }
 
 
@@ -114,7 +113,7 @@ namespace MLAPI
             }
             return gameObject;
         }
-        
+
         public NetworkTimeSystem NetworkTimeSystem { get; private set; }
 
         public NetworkTickSystem NetworkTickSystem { get; private set; }
@@ -186,7 +185,7 @@ namespace MLAPI
         /// <summary>
         /// Gets a list of just the IDs of all connected clients.
         /// </summary>
-        public ulong[] ConnectedClientsIds => ConnectedClientsList.Select(c => c.ClientId).ToArray();
+        public ulong[] ConnectedClientsIds => ConnectedClientsList.Select(c => c.ClientId).Where(c => c != LocalClientId).ToArray();
 
         /// <summary>
         /// Gets a dictionary of the clients that have been accepted by the transport but are still pending by the MLAPI. This is only populated on the server.
@@ -1170,8 +1169,7 @@ namespace MLAPI
         private readonly NetworkBuffer m_InputBufferWrapper = new NetworkBuffer(new byte[0]);
         private readonly MessageBatcher m_MessageBatcher = new MessageBatcher();
 
-        internal void HandleIncomingData(ulong clientId, NetworkChannel networkChannel, ArraySegment<byte> data,
-            float receiveTime)
+        internal void HandleIncomingData(ulong clientId, NetworkChannel networkChannel, ArraySegment<byte> data, float receiveTime)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleIncomingData.Begin();
@@ -1208,8 +1206,8 @@ namespace MLAPI
 #endif
         }
 
-        private void ReceiveCallback(NetworkBuffer messageBuffer, MessageQueueContainer.MessageType messageType,
-            ulong clientId, float receiveTime, NetworkChannel receiveChannel)
+        private void ReceiveCallback(NetworkBuffer messageBuffer, MessageQueueContainer.MessageType messageType, ulong clientId,
+            float receiveTime, NetworkChannel receiveChannel)
         {
             MessageHandler.MessageReceiveQueueItem(clientId, messageBuffer, receiveTime, messageType, receiveChannel);
         }
@@ -1431,13 +1429,18 @@ namespace MLAPI
                 // Don't send the CONNECTION_APPROVED message if this is the host that connected locally
                 if (ownerClientId != ServerClientId)
                 {
+                    ulong[] clientIds = {ownerClientId};
 
-                    using (var buffer = PooledNetworkBuffer.Get())
-                    using (var writer = PooledNetworkWriter.Get(buffer))
+                    var context = MessageQueueContainer.EnterInternalCommandContext( MessageQueueContainer.MessageType.ConnectionApproved, NetworkChannel.Internal, clientIds,
+                        NetworkUpdateStage.EarlyUpdate);
+
+                    if (context != null)
                     {
-                        writer.WriteUInt64Packed(ownerClientId);
-                        writer.WriteSinglePacked(Time.realtimeSinceStartup);
-                        MessageSender.Send(ownerClientId, NetworkConstants.CONNECTION_APPROVED, NetworkChannel.Internal, buffer);
+                        using (var nonNullContext = (InternalCommandContext) context)
+                        {
+                            nonNullContext.NetworkWriter.WriteUInt64Packed(ownerClientId);
+                            nonNullContext.NetworkWriter.WriteInt32Packed(LocalTime.Tick);
+                        }
                     }
 
                     // Now inform the newly joined client of the scenes to be loaded as well as synchronize it with all relevant in-scene and dynamically spawned NetworkObjects
@@ -1473,24 +1476,23 @@ namespace MLAPI
         {
             foreach (KeyValuePair<ulong, NetworkClient> clientPair in ConnectedClients)
             {
-                if (clientPair.Key == ownerClientId ||
+                if (clientPair.Key == clientId ||
                     clientPair.Key == ServerClientId || // Server already spawned it
-                    ConnectedClients[ownerClientId].PlayerObject == null ||
-                    !ConnectedClients[ownerClientId].PlayerObject.Observers.Contains(clientPair.Key))
+                    ConnectedClients[clientId].PlayerObject == null ||
+                    !ConnectedClients[clientId].PlayerObject.Observers.Contains(clientPair.Key))
                 {
                     continue; //The new client.
                 }
 
-                var context = MessageQueueContainer.EnterInternalCommandContext(
-                    MessageQueueContainer.MessageType.CreateObject, NetworkChannel.Internal,
+                var context = MessageQueueContainer.EnterInternalCommandContext( MessageQueueContainer.MessageType.CreateObject, NetworkChannel.Internal,
                     new[] {clientPair.Key}, NetworkUpdateLoop.UpdateStage);
                 if (context != null)
                 {
                     using (var nonNullContext = (InternalCommandContext)context)
                     {
                         nonNullContext.NetworkWriter.WriteBool(true);
-                        nonNullContext.NetworkWriter.WriteUInt64Packed(ConnectedClients[ownerClientId].PlayerObject.NetworkObjectId);
-                        nonNullContext.NetworkWriter.WriteUInt64Packed(ownerClientId);
+                        nonNullContext.NetworkWriter.WriteUInt64Packed(ConnectedClients[clientId].PlayerObject.NetworkObjectId);
+                        nonNullContext.NetworkWriter.WriteUInt64Packed(clientId);
 
                         //Does not have a parent
                         nonNullContext.NetworkWriter.WriteBool(false);
@@ -1498,18 +1500,18 @@ namespace MLAPI
                         // This is not a scene object
                         nonNullContext.NetworkWriter.WriteBool(false);
 
-                        nonNullContext.NetworkWriter.WriteUInt32Packed(playerPrefabHash ?? NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash);
+                        nonNullContext.NetworkWriter.WriteUInt32Packed(playerPrefabHash);
 
-                        if (ConnectedClients[ownerClientId].PlayerObject.IncludeTransformWhenSpawning == null || ConnectedClients[ownerClientId].PlayerObject.IncludeTransformWhenSpawning(ownerClientId))
+                        if (ConnectedClients[clientId].PlayerObject.IncludeTransformWhenSpawning == null || ConnectedClients[clientId].PlayerObject.IncludeTransformWhenSpawning(clientId))
                         {
                             nonNullContext.NetworkWriter.WriteBool(true);
-                            nonNullContext.NetworkWriter.WriteSinglePacked(ConnectedClients[ownerClientId].PlayerObject.transform.position.x);
-                            nonNullContext.NetworkWriter.WriteSinglePacked(ConnectedClients[ownerClientId].PlayerObject.transform.position.y);
-                            nonNullContext.NetworkWriter.WriteSinglePacked(ConnectedClients[ownerClientId].PlayerObject.transform.position.z);
+                            nonNullContext.NetworkWriter.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.position.x);
+                            nonNullContext.NetworkWriter.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.position.y);
+                            nonNullContext.NetworkWriter.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.position.z);
 
-                            nonNullContext.NetworkWriter.WriteSinglePacked(ConnectedClients[ownerClientId].PlayerObject.transform.rotation.eulerAngles.x);
-                            nonNullContext.NetworkWriter.WriteSinglePacked(ConnectedClients[ownerClientId].PlayerObject.transform.rotation.eulerAngles.y);
-                            nonNullContext.NetworkWriter.WriteSinglePacked(ConnectedClients[ownerClientId].PlayerObject.transform.rotation.eulerAngles.z);
+                            nonNullContext.NetworkWriter.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.rotation.eulerAngles.x);
+                            nonNullContext.NetworkWriter.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.rotation.eulerAngles.y);
+                            nonNullContext.NetworkWriter.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.rotation.eulerAngles.z);
                         }
                         else
                         {
@@ -1520,7 +1522,7 @@ namespace MLAPI
 
                         if (NetworkConfig.EnableNetworkVariable)
                         {
-                            ConnectedClients[ownerClientId].PlayerObject.WriteNetworkVariableData(nonNullContext.NetworkWriter.GetStream(), clientPair.Key);
+                            ConnectedClients[clientId].PlayerObject.WriteNetworkVariableData(nonNullContext.NetworkWriter.GetStream(), clientPair.Key);
                         }
                     }
                 }

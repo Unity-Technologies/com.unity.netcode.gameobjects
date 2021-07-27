@@ -67,6 +67,23 @@ namespace TestProject.ManualTests
             }
         }
 
+        private bool m_ShouldDespawn;
+
+
+
+        private void Update()
+        {
+            if(IsOwner && m_ShouldDespawn)
+            {
+                m_ShouldDespawn = false;
+                NetworkObject.Despawn(IsRemovedFromPool);
+                if (!IsRemovedFromPool)
+                {
+                    NetworkObject.gameObject.SetActive(false);
+                }
+            }
+        }
+
         /// <summary>
         /// Tells us that we are registered with a NetworkPefab pool
         /// This is primarily for late joining clients and object synchronization.
@@ -82,7 +99,7 @@ namespace TestProject.ManualTests
 
         private void OnTriggerEnter(Collider other)
         {
-            if (IsOwner)
+            if (IsOwner && !m_ShouldDespawn)
             {
                 if (other.CompareTag("GenericObject") || other.CompareTag("Floor"))
                 {
@@ -90,11 +107,17 @@ namespace TestProject.ManualTests
                 }
                 else
                 {
-                    NetworkObject.Despawn(IsRemovedFromPool);
-                    if (!IsRemovedFromPool)
-                    {
-                        NetworkObject.gameObject.SetActive(false);
-                    }
+                    m_ShouldDespawn = true;
+
+                    // NSS REMOVE WHEN FIXED: New message ordering changes that force a message to try and match its
+                    // invoker's NetworkUpdateLoop stage will cause this despawn message to happen during the early Fixed Update
+                    // stages.  This, in turn, will cause the client side to fail to disable itself.  The current "work around" is
+                    // to despawn and disable within the MonoBehaviour.Update so the message is not invoked in FIXED_UPDATE
+                    //NetworkObject.Despawn(IsRemovedFromPool);
+                    //if (!IsRemovedFromPool)
+                    //{
+                    //    NetworkObject.gameObject.SetActive(false);
+                    //}
                 }
             }
         }

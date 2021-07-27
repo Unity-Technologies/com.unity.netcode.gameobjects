@@ -84,6 +84,7 @@ namespace MLAPI.EditorTests
 
                 // Should not cause log (client only)
                 // Everything should log MessageReceiveQueueItem even if ignored
+                LogAssert.Expect(LogType.Log, nameof(DummyMessageHandler.MessageReceiveQueueItem));
                 LogAssert.Expect(LogType.Log, nameof(DummyMessageHandler.HandleSceneEvent));
                 using (var messageStream = MessagePacker.WrapMessage(MessageQueueContainer.MessageType.SceneEvent, inputBuffer, networkManager.MessageQueueContainer.IsUsingBatching()))
                 {
@@ -145,15 +146,6 @@ namespace MLAPI.EditorTests
                 LogAssert.Expect(LogType.Log, nameof(DummyMessageHandler.MessageReceiveQueueItem));
                 LogAssert.Expect(LogType.Log, nameof(DummyMessageHandler.HandleNamedMessage));
                 using (var messageStream = MessagePacker.WrapMessage(MessageQueueContainer.MessageType.NamedMessage, inputBuffer, networkManager.MessageQueueContainer.IsUsingBatching()))
-                {
-                    networkManager.HandleIncomingData(0, NetworkChannel.Internal, new ArraySegment<byte>(messageStream.GetBuffer(), 0, (int)messageStream.Length), 0);
-                }
-
-                // Should cause log (server only)
-                // Everything should log MessageReceiveQueueItem even if ignored
-                LogAssert.Expect(LogType.Log, nameof(DummyMessageHandler.MessageReceiveQueueItem));
-                LogAssert.Expect(LogType.Log, nameof(DummyMessageHandler.HandleClientSwitchSceneCompleted));
-                using (var messageStream = MessagePacker.WrapMessage(MessageQueueContainer.MessageType.ClientSwitchSceneCompleted, inputBuffer, networkManager.MessageQueueContainer.IsUsingBatching()))
                 {
                     networkManager.HandleIncomingData(0, NetworkChannel.Internal, new ArraySegment<byte>(messageStream.GetBuffer(), 0, (int)messageStream.Length), 0);
                 }
@@ -283,14 +275,6 @@ namespace MLAPI.EditorTests
                 LogAssert.Expect(LogType.Log, nameof(DummyMessageHandler.MessageReceiveQueueItem));
                 LogAssert.Expect(LogType.Log, nameof(DummyMessageHandler.HandleNamedMessage));
                 using (var messageStream = MessagePacker.WrapMessage(MessageQueueContainer.MessageType.NamedMessage, inputBuffer, networkManager.MessageQueueContainer.IsUsingBatching()))
-                {
-                    networkManager.HandleIncomingData(0, NetworkChannel.Internal, new ArraySegment<byte>(messageStream.GetBuffer(), 0, (int)messageStream.Length), 0);
-                }
-
-                // Should not cause log (server only)
-                // Everything should log MessageReceiveQueueItem even if ignored
-                LogAssert.Expect(LogType.Log, nameof(DummyMessageHandler.MessageReceiveQueueItem));
-                using (var messageStream = MessagePacker.WrapMessage(MessageQueueContainer.MessageType.ClientSwitchSceneCompleted, inputBuffer, networkManager.MessageQueueContainer.IsUsingBatching()))
                 {
                     networkManager.HandleIncomingData(0, NetworkChannel.Internal, new ArraySegment<byte>(messageStream.GetBuffer(), 0, (int)messageStream.Length), 0);
                 }

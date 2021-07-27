@@ -217,7 +217,7 @@ namespace MLAPI.Messaging
 
             if (m_CurrentItem.NetworkBuffer != null)
             {
-                m_CurrentItem.NetworkBuffer.Dispose();
+                ((PooledNetworkBuffer)m_CurrentItem.NetworkBuffer).Dispose();
                 m_CurrentItem.NetworkBuffer = null;
             }
         }

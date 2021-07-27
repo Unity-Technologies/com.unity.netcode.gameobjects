@@ -40,8 +40,7 @@ namespace MLAPI.Messaging
             SnapshotData,
             SnapshotAck,
             NetworkVariableDelta,
-            SwitchScene,
-            ClientSwitchSceneCompleted,
+            SceneEvent,
             AllClientsLoadedScene,
             ParentSync,
 
@@ -67,8 +66,8 @@ namespace MLAPI.Messaging
         private int m_OutBoundStreamBufferIndex;
         private bool m_IsTestingEnabled;
         private bool m_ProcessUpdateStagesExternally;
-        private bool m_IsNotUsingBatching;
-        
+        private bool m_IsNotUsingBatching = true;  //NSS REMOVE: Batching is broken currently, so I am disabling it.
+
         // TODO hack: Fixed update can run multiple times in a frame and the queue history frame doesn't get cleared
         // until the end of the frame. This results in messages executing at FixedUpdate being invoked multiple times.
         // This is used to prevent it being called more than once per frame.
@@ -135,7 +134,7 @@ namespace MLAPI.Messaging
                 return null;
             }
 
-            writer = BeginAddQueueItemToFrame(messageType, Time.realtimeSinceStartup, transportChannel, 0,
+            writer = BeginAddQueueItemToFrame(messageType, Time.realtimeSinceStartup, transportChannel, NetworkManager.LocalClientId,
                 clientIds, MessageQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
 
             writer.WriteByte((byte)messageType);

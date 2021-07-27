@@ -101,11 +101,6 @@ namespace TestProject.ManualTests
 
         private void OnDisable()
         {
-            if (NetworkManager != null && NetworkManager.SceneManager != null)
-            {
-                NetworkManager.SceneManager.OnSceneSwitchStarted -= OnSceneSwitchStarted;
-            }
-
             StopCoroutine(SpawnObjects());
             DeRegisterCustomPrefabHandler();
             CleanNetworkObjects();
@@ -168,26 +163,9 @@ namespace TestProject.ManualTests
                 SpawnSliderValueText.text = SpawnsPerSecond.ToString();
             }
 
-            if (NetworkManager.SceneManager != null && IsServer)
-            {
-                NetworkManager.SceneManager.OnSceneSwitchStarted += OnSceneSwitchStarted;
-            }
-
             //Call this again in case we didn't have access to the NetworkManager already (i.e. first scene loaded)
             RegisterCustomPrefabHandler();
 
-        }
-
-        /// <summary>
-        /// Detect when we are switching scenes in order
-        /// to assure we stop spawning objects
-        /// </summary>
-        private void OnSceneSwitchStarted(AsyncOperation operation)
-        {
-            if (IsServer)
-            {
-
-            }
         }
 
         /// <summary>
@@ -206,10 +184,6 @@ namespace TestProject.ManualTests
                     //Make sure our slider reflects the current spawn rate
                     UpdateSpawnsPerSecond();
                 }
-            }
-            else
-            {
-                NetworkManager.SceneManager.OnSceneSwitchStarted += OnSceneSwitchStarted;
             }
         }
 
@@ -432,7 +406,7 @@ namespace TestProject.ManualTests
             var genericBehaviour = networkObject.gameObject.GetComponent<GenericNetworkObjectBehaviour>();
             if (genericBehaviour.IsRegisteredPoolObject)
             {
-                networkObject.transform.position = Vector3.zero;
+                //networkObject.transform.position = Vector3.zero;
                 networkObject.gameObject.SetActive(false);
             }
             else
