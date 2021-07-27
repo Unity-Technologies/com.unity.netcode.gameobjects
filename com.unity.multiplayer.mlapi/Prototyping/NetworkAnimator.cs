@@ -12,7 +12,7 @@ namespace MLAPI.Prototyping
     [AddComponentMenu("MLAPI/NetworkAnimator")]
     public class NetworkAnimator : NetworkBehaviour
     {
-        
+
         private class AnimatorSnapshot : INetworkSerializable
         {
             public Dictionary<int, bool> BoolParameters;
@@ -239,7 +239,7 @@ namespace MLAPI.Prototyping
             Server = 0,
             Owner
         }
-        
+
         /// <summary>
         /// This constant is used to force the resync if the delta between current
         /// and last synced normalized state time goes above it
@@ -306,7 +306,7 @@ namespace MLAPI.Prototyping
             var states = new LayerState[m_Animator.layerCount];
 
             m_AnimatorSnapshot = new AnimatorSnapshot(boolParameters, floatParameters, intParameters, triggerParameters, states);
-            
+
             if (!IsAuthorityOverAnimator)
             {
                 m_Animator.StopPlayback();
@@ -358,10 +358,10 @@ namespace MLAPI.Prototyping
             {
                 return;
             }
-            
+
             m_ServerRequestsAnimationResync = true;
         }
-        
+
         private void FixedUpdate()
         {
             if (!NetworkObject.IsSpawned)
@@ -494,7 +494,7 @@ namespace MLAPI.Prototyping
             {
                 ApplyAnimatorSnapshot(animSnapshot);
             }
-            
+
             var clientRpcParams = new ClientRpcParams
             {
                 Send = new ClientRpcSendParams
