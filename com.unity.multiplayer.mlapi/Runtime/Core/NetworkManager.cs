@@ -57,10 +57,13 @@ namespace MLAPI
         // todo: transitional. For the next release, only Snapshot should remain
         // The booleans allow iterative development and testing in the meantime
         internal static bool UseClassicDelta = true;
-        internal static bool UseSnapshot = false;
+        internal static bool UseSnapshotDelta = false;
+
+        internal static bool UseClassicSpawn = true;
+        internal static bool UseSnapshotSpawn = false;
 
         private const double k_TimeSyncFrequency = 1.0d; // sync every second, TODO will be removed once timesync is done via snapshots
-        
+
         internal MessageQueueContainer MessageQueueContainer { get; private set; }
 
 

@@ -443,6 +443,35 @@ namespace MLAPI
 
             NetworkManager.SpawnManager.SpawnNetworkObjectLocally(this, NetworkManager.SpawnManager.GetNetworkObjectId(), false, playerObject, ownerClientId, spawnPayload, spawnPayload != null, spawnPayload == null ? 0 : (int)spawnPayload.Length, false, destroyWithScene);
 
+            if (NetworkManager.UseSnapshotSpawn)
+            {
+                SnapshotSpawnCommand command;
+                command.NetworkObjectId = NetworkObjectId;
+                command.OwnerClientId = OwnerClientId;
+                command.IsPlayerObject = IsPlayerObject;
+                command.IsSceneObject = (IsSceneObject == null) || IsSceneObject.Value;
+
+                ulong? parent = NetworkManager.SpawnManager.GetSpawnParentId(this);
+                if (parent != null)
+                {
+                    command.ParentNetworkId = parent.Value;
+                }
+                else
+                {
+                    // write own network id, when no parents. todo: optimize this.
+                    command.ParentNetworkId = command.NetworkObjectId;
+                }
+
+                command.GlobalObjectIdHash = GlobalObjectIdHash;
+                // todo: check if (IncludeTransformWhenSpawning == null || IncludeTransformWhenSpawning(clientId)) for any clientId
+                command.ObjectPosition = transform.position;
+                command.ObjectRotation = transform.rotation;
+                command.ObjectScale = transform.localScale;
+                command.TickWritten = 0; // will be reset in Spawn
+
+                NetworkManager.SnapshotSystem.Spawn(command);
+            }
+
             for (int i = 0; i < NetworkManager.ConnectedClientsList.Count; i++)
             {
                 if (Observers.Contains(NetworkManager.ConnectedClientsList[i].ClientId))

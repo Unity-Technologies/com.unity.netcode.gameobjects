@@ -494,7 +494,7 @@ namespace MLAPI
                 return;
             }
 
-            if (NetworkManager.UseSnapshot)
+            if (NetworkManager.UseSnapshotDelta)
             {
                 for (int k = 0; k < NetworkVariableFields.Count; k++)
                 {
