@@ -15,10 +15,5 @@ namespace MLAPI.Profiling
         public const string NetworkVarUpdates = nameof(NetworkVarUpdates);
         public const string RpcSent = nameof(RpcSent);
         public const string RpcReceived = nameof(RpcReceived);
-        public const string RpcBatchesSent = nameof(RpcBatchesSent);
-        public const string RpcBatchesReceived = nameof(RpcBatchesReceived);
-        public const string RpcQueueProcessed = nameof(RpcQueueProcessed);
-        public const string RpcInQueueSize = nameof(RpcInQueueSize);
-        public const string RpcOutQueueSize = nameof(RpcOutQueueSize);
     }
 }

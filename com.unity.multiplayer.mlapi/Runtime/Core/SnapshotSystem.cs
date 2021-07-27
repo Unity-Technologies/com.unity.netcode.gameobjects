@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using MLAPI.Configuration;
+using MLAPI.Messaging;
 using MLAPI.NetworkVariable;
 using MLAPI.Serialization;
 using MLAPI.Serialization.Pooled;
@@ -359,18 +360,21 @@ namespace MLAPI
         private void SendSnapshot(ulong clientId)
         {
             // Send the entry index and the buffer where the variables are serialized
-            using (var buffer = PooledNetworkBuffer.Get())
+            
+            var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
+                MessageQueueContainer.MessageType.SnapshotData, NetworkChannel.SnapshotExchange,
+                new[] {clientId}, NetworkUpdateLoop.UpdateStage);
+            
+            if (context != null)
             {
-                using (var writer = PooledNetworkWriter.Get(buffer))
+                using (var nonNullContext = (InternalCommandContext) context)
                 {
-                    writer.WriteInt32Packed(m_CurrentTick);
+                    nonNullContext.NetworkWriter.WriteInt32Packed(m_CurrentTick);
+
+                    var buffer = (NetworkBuffer) nonNullContext.NetworkWriter.GetStream();
+                    WriteIndex(buffer);
+                    WriteBuffer(buffer);
                 }
-
-                WriteIndex(buffer);
-                WriteBuffer(buffer);
-
-                m_NetworkManager.MessageSender.Send(clientId, NetworkConstants.SNAPSHOT_DATA,
-                    NetworkChannel.SnapshotExchange, buffer);
             }
         }
 
@@ -490,18 +494,17 @@ namespace MLAPI
 
         public void SendAck(ulong clientId, int tick)
         {
-            using (var buffer = PooledNetworkBuffer.Get())
+            var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
+                MessageQueueContainer.MessageType.SnapshotAck, NetworkChannel.SnapshotExchange,
+                new[] {clientId}, NetworkUpdateLoop.UpdateStage);
+            
+            if (context != null)
             {
-                using (var writer = PooledNetworkWriter.Get(buffer))
+                using (var nonNullContext = (InternalCommandContext) context)
                 {
-                    writer.WriteInt32Packed(tick);
+                    nonNullContext.NetworkWriter.WriteInt32Packed(tick);
                 }
-
-                m_NetworkManager.MessageSender.Send(clientId, NetworkConstants.SNAPSHOT_ACK,
-                    NetworkChannel.SnapshotExchange, buffer);
-                buffer.Dispose();
             }
-
         }
 
         // todo --M1--
