@@ -244,7 +244,7 @@ namespace MLAPI.Prototyping
         /// This constant is used to force the resync if the delta between current
         /// and last synced normalized state time goes above it
         /// </summary>
-        private const float NormalizedTimeResyncThreshold = 0.15f;
+        private const float k_NormalizedTimeResyncThreshold = 0.15f;
 
         /// <summary>
         /// Specifies who can update this animator
@@ -413,7 +413,7 @@ namespace MLAPI.Prototyping
                 var snapshotAnimStateInfo = m_AnimatorSnapshot.LayerStates[i];
                 bool didStateChange = snapshotAnimStateInfo.StateHash != animStateInfo.fullPathHash;
                 bool enoughDelta = !didStateChange &&
-                                   Mathf.Abs(animStateInfo.normalizedTime - snapshotAnimStateInfo.NormalizedStateTime) >= NormalizedTimeResyncThreshold;
+                                   Mathf.Abs(animStateInfo.normalizedTime - snapshotAnimStateInfo.NormalizedStateTime) >= k_NormalizedTimeResyncThreshold;
 
                 float newLayerWeight = m_Animator.GetLayerWeight(i);
                 bool layerWeightChanged = Mathf.Abs(snapshotAnimStateInfo.LayerWeight - newLayerWeight) > Mathf.Epsilon;
@@ -550,7 +550,7 @@ namespace MLAPI.Prototyping
 
                 bool stateChanged = currentAnimatorState.fullPathHash != layerState.StateHash;
                 bool forceAnimationCatchup = !stateChanged &&
-                                             Mathf.Abs(layerState.NormalizedStateTime - currentAnimatorState.normalizedTime) >= NormalizedTimeResyncThreshold;
+                                             Mathf.Abs(layerState.NormalizedStateTime - currentAnimatorState.normalizedTime) >= k_NormalizedTimeResyncThreshold;
 
                 if (stateChanged || forceAnimationCatchup)
                 {
