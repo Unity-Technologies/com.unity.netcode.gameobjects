@@ -1,8 +1,34 @@
-﻿using MLAPI.Serialization;
+﻿using MLAPI.Messaging;
+using MLAPI.Serialization;
 
 namespace MLAPI.Metrics
 {
-    public struct BufferSizeCapture
+    internal struct CommandContextSizeCapture
+    {
+        private readonly long m_InitialLength;
+        private readonly InternalCommandContext m_Context;
+
+        private long m_PreviousLength;
+
+        public CommandContextSizeCapture(InternalCommandContext context)
+        {
+            m_Context = context;
+            m_InitialLength = context.NetworkWriter.GetStream().SafeGetLengthOrDefault();
+            m_PreviousLength = m_InitialLength;
+        }
+        
+        public long Flush()
+        {
+            var currentLength = m_Context.NetworkWriter.GetStream().SafeGetLengthOrDefault();
+            var segmentLength = currentLength - m_PreviousLength + m_InitialLength;
+            
+            m_PreviousLength = currentLength;
+            
+            return segmentLength;
+        }
+    }
+    
+    internal struct BufferSizeCapture
     {
         private readonly long m_InitialLength;
         private readonly NetworkBuffer m_Buffer;
@@ -18,9 +44,10 @@ namespace MLAPI.Metrics
         
         public long Flush()
         {
-            var segmentLength = m_Buffer.Length - m_PreviousLength + m_InitialLength;
+            var currentLength = m_Buffer.Length;
+            var segmentLength = currentLength - m_PreviousLength + m_InitialLength;
             
-            m_PreviousLength = m_Buffer.Length;
+            m_PreviousLength = currentLength;
             
             return segmentLength;
         }
