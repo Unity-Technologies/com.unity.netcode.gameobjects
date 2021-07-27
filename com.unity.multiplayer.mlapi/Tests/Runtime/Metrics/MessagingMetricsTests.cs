@@ -17,10 +17,8 @@ namespace MLAPI.RuntimeTests.Metrics
     {
         const uint MessageNameHashSize = 5;
         const uint MessageContentStringLength = 1;
-        const uint MessageTypeLength = 1;
 
-        const uint MessageSentOverhead = MessageNameHashSize + MessageContentStringLength;
-        const uint MessageReceivedOverhead = MessageTypeLength + MessageNameHashSize + MessageContentStringLength;
+        const uint MessageOverhead = MessageNameHashSize + MessageContentStringLength;
 
         protected override int NbClients => 2;
 
@@ -44,7 +42,7 @@ namespace MLAPI.RuntimeTests.Metrics
             var namedMessageSent = namedMessageSentMetricValues.First();
             Assert.AreEqual(messageName, namedMessageSent.Name);
             Assert.AreEqual(FirstClient.LocalClientId, namedMessageSent.Connection.Id);
-            Assert.AreEqual(messageName.Length + MessageSentOverhead, namedMessageSent.BytesCount);
+            Assert.AreEqual(messageName.Length + MessageOverhead, namedMessageSent.BytesCount);
         }
 
         [UnityTest]
@@ -63,7 +61,7 @@ namespace MLAPI.RuntimeTests.Metrics
             var namedMessageSentMetricValues = waitForMetricValues.AssertMetricValuesHaveBeenFound();
             Assert.AreEqual(2, namedMessageSentMetricValues.Count);
             Assert.That(namedMessageSentMetricValues.Select(x => x.Name), Has.All.EqualTo(messageName));
-            Assert.That(namedMessageSentMetricValues.Select(x => x.BytesCount), Has.All.EqualTo(messageName.Length + MessageSentOverhead));
+            Assert.That(namedMessageSentMetricValues.Select(x => x.BytesCount), Has.All.EqualTo(messageName.Length + MessageOverhead));
         }
 
         [UnityTest]
@@ -92,7 +90,7 @@ namespace MLAPI.RuntimeTests.Metrics
             var namedMessageReceived = namedMessageReceivedValues.First();
             Assert.AreEqual(messageName, namedMessageReceived.Name);
             Assert.AreEqual(Server.LocalClientId, namedMessageReceived.Connection.Id);
-            Assert.AreEqual(messageName.Length + MessageReceivedOverhead, namedMessageReceived.BytesCount);
+            Assert.AreEqual(messageName.Length + MessageOverhead, namedMessageReceived.BytesCount);
         }
 
         [UnityTest]

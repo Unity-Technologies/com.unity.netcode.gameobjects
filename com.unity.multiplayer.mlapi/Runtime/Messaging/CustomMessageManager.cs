@@ -207,11 +207,12 @@ namespace MLAPI.Messaging
                     using (bufferSizeCapture.Measure())
                     {
                         nonNullContext.NetworkWriter.WriteUInt64Packed(hash);
+
+                        stream.Position = 0;
+                        stream.CopyTo(nonNullContext.NetworkWriter.GetStream());
                     }
 
-                    stream.CopyTo(nonNullContext.NetworkWriter.GetStream());
-
-                    m_NetworkManager.NetworkMetrics.TrackNamedMessageSent(clientId, name, bufferSizeCapture.Size + stream.SafeGetLengthOrDefault());
+                    m_NetworkManager.NetworkMetrics.TrackNamedMessageSent(clientId, name, bufferSizeCapture.Size);
                 }
             }
             PerformanceDataManager.Increment(ProfilerConstants.NamedMessageSent);
@@ -253,11 +254,12 @@ namespace MLAPI.Messaging
                     using (bufferSizeCapture.Measure())
                     {
                         nonNullContext.NetworkWriter.WriteUInt64Packed(hash);
+
+                        stream.Position = 0;
+                        stream.CopyTo(nonNullContext.NetworkWriter.GetStream());
                     }
 
-                    stream.CopyTo(nonNullContext.NetworkWriter.GetStream());
-
-                    m_NetworkManager.NetworkMetrics.TrackNamedMessageSent(clientIds, name, bufferSizeCapture.Size + stream.Length);
+                    m_NetworkManager.NetworkMetrics.TrackNamedMessageSent(clientIds, name, bufferSizeCapture.Size);
                 }
             }
             PerformanceDataManager.Increment(ProfilerConstants.NamedMessageSent);
