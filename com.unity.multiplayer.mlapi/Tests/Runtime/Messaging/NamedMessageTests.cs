@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using NUnit.Framework;
@@ -22,7 +23,10 @@ namespace MLAPI.RuntimeTests.Messaging
             var messageContent = Guid.NewGuid().ToString();
             using var messageStream = new MemoryStream(Encoding.UTF8.GetBytes(messageContent));
 
-            m_ServerNetworkManager.CustomMessagingManager.SendNamedMessage(messageName, FirstClient.LocalClientId, messageStream);
+            m_ServerNetworkManager.CustomMessagingManager.SendNamedMessage(
+                messageName,
+                FirstClient.LocalClientId,
+                messageStream);
 
             ulong receivedMessageSender = 0;
             string receivedMessageContent = null;
@@ -51,7 +55,10 @@ namespace MLAPI.RuntimeTests.Messaging
             var messageContent = Guid.NewGuid().ToString();
             using var messageStream = new MemoryStream(Encoding.UTF8.GetBytes(messageContent));
 
-            m_ServerNetworkManager.CustomMessagingManager.SendNamedMessage(messageName, FirstClient.LocalClientId, messageStream);
+            m_ServerNetworkManager.CustomMessagingManager.SendNamedMessage(
+                messageName,
+                new List<ulong> { FirstClient.LocalClientId, SecondClient.LocalClientId },
+                messageStream);
 
             ulong firstReceivedMessageSender = 0;
             string firstReceivedMessageContent = null;
