@@ -416,7 +416,7 @@ namespace MLAPI.Spawning
             }
 
             writer.WriteBool(networkObject.IsSceneObject ?? true);
-            writer.WriteUInt32Packed(networkObject.GlobalObjectIdHash);
+            writer.WriteUInt32Packed(networkObject.HostCheckForGlobalObjectIdHashOverride());
 
             if (networkObject.IncludeTransformWhenSpawning == null || networkObject.IncludeTransformWhenSpawning(clientId))
             {

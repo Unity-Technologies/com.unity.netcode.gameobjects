@@ -1024,10 +1024,7 @@ MonoBehaviour:
       SourceHashToOverride: 0
       OverridingTargetPrefab: {fileID: 8059323910720821982, guid: d143db9172e1f234e99d450286b77695,
         type: 3}
-    ReceiveTickrate: 64
-    NetworkTickIntervalSec: 0.05
-    MaxReceiveEventsPerTickRate: 500
-    EventTickrate: 64
+    TickRate: 30
     ClientConnectionBufferTimeout: 10
     ConnectionApproval: 0
     ConnectionData: 
@@ -1041,7 +1038,6 @@ MonoBehaviour:
     NetworkIdRecycleDelay: 120
     RpcHashSize: 0
     LoadSceneTimeOut: 120
-    EnableMessageBuffering: 1
     MessageBufferTimeout: 20
     EnableNetworkLogs: 1
 --- !u!114 &1024114719
@@ -1118,7 +1114,7 @@ MonoBehaviour:
   SpawnsPerSecond: 5
   PoolSize: 128
   ObjectSpeed: 8
-  EnableHandler: 0
+  EnableHandler: 1
   RegisterUsingNetworkObject: 0
   ServerObjectToPool: {fileID: 771575417923360811, guid: c0a45bdb516f341498d933b7a7ed4fc1,
     type: 3}
@@ -1155,6 +1151,7 @@ MonoBehaviour:
   GlobalObjectIdHash: 2782806529
   AlwaysReplicateAsRoot: 0
   DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
 --- !u!1 &1332123091
 GameObject:
   m_ObjectHideFlags: 0
@@ -2553,6 +2550,7 @@ MonoBehaviour:
   GlobalObjectIdHash: 2267100048
   AlwaysReplicateAsRoot: 0
   DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
 --- !u!1001 &2848221156282925290
 PrefabInstance:
   m_ObjectHideFlags: 0

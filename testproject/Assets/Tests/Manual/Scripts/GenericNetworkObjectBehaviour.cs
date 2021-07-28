@@ -86,8 +86,7 @@ namespace TestProject.ManualTests
                 }
                 else
                 {
-                    NetworkObject.Despawn();
-                    NetworkObject.gameObject.SetActive(false);
+                    NetworkObject.Despawn(true);
                 }
             }
         }

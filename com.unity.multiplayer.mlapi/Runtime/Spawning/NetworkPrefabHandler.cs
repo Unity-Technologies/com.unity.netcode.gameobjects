@@ -12,7 +12,10 @@ namespace MLAPI.Spawning
         /// <summary>
         /// Client Side Only
         /// Once an implementation is registered with the <see cref="NetworkPrefabHandler"/>, this method will be called every time
-        /// a Network Prefab associated <see cref="NetworkObject"/> is spawned on clients (excluding host since it is the server).
+        /// a Network Prefab associated <see cref="NetworkObject"/> is spawned on clients
+        ///
+        /// Note On Hosts: Use the <see cref="NetworkPrefabHandler.RegisterHostGlobalObjectIdHashValues(GameObject, List{GameObject})"/>
+        /// method to register all targeted NetworkPrefab overrides manually since the host will be acting as both a server and client.
         ///
         /// Note on Pooling:  If you are using a NetworkObject pool, don't forget to make the NetworkObject active
         /// via the  <see cref="GameObject.SetActive(bool)"/> method.
@@ -21,23 +24,28 @@ namespace MLAPI.Spawning
         /// <param name="position">the initial/default position for the <see cref="NetworkObject"/> to be instantiated</param>
         /// <param name="rotation">the initial/default rotation for the <see cref="NetworkObject"/> to be instantiated</param>
         /// <returns></returns>
-        NetworkObject ClientInstantiateOverride(ulong ownerClientId, Vector3 position, Quaternion rotation);
+        NetworkObject Instantiate(ulong ownerClientId, Vector3 position, Quaternion rotation);
 
         /// <summary>
-        /// Client and Server
-        /// Once an implementation is registered with the <see cref="NetworkPrefabHandler"/>, this method will be called every time
-        /// a Network Prefab associated <see cref="NetworkObject"/> is destroyed.
-        /// If <see cref="NetworkObject.Despawn(bool)"/> is invoked with the default destroy parameter (i.e. false) then this method will not be invoked.
+        /// Invoked on Client and Server
+        /// Once an implementation is registered with the <see cref="NetworkPrefabHandler"/>, this method will be called when
+        /// a Network Prefab associated <see cref="NetworkObject"/> is:
         ///
-        /// Note on Pooling: When invoked, you do not need to despawn or destroy the NetworkObject as long as you want your pool to persist.
+        /// Server Side: destroyed or despawned with the destroy parameter equal to true
+        /// If <see cref="NetworkObject.Despawn(bool)"/> is invoked with the default destroy parameter (i.e. false) then this method will NOT be invoked!
+        ///
+        /// Client Side: destroyed when the client receives a destroy object message from the server or host.
+        ///
+        /// Note on Pooling: When this method is invoked, you do not need to destroy the NetworkObject as long as you want your pool to persist.
         /// The most common approach is to make the <see cref="NetworkObject"/> inactive by calling <see cref="GameObject.SetActive(bool)"/>.
         /// </summary>
         /// <param name="networkObject">The <see cref="NetworkObject"/> being destroyed</param>
-        void DestroyOverride(NetworkObject networkObject);
+        void Destroy(NetworkObject networkObject);
     }
 
     /// <summary>
     /// Primary handler to add or remove customized spawn and destroy handlers for a network prefab (i.e. a prefab with a NetworkObject component)
+    /// Register custom prefab handlers by implementing the <see cref="INetworkPrefabInstanceHandler"/> interface.
     /// </summary>
     public class NetworkPrefabHandler
     {
@@ -92,10 +100,64 @@ namespace MLAPI.Spawning
         }
 
         /// <summary>
+        /// HOST ONLY!
+        /// Since a host is unique and is considered both a client and a server, for each source NetworkPrefab you must manually
+        /// register all potential <see cref="GameObject"/> target overrides that have the <see cref="NetworkObject"/> component.
+        /// </summary>
+        /// <param name="sourceNetworkPrefab">source NetworkPrefab to be overridden</param>
+        /// <param name="networkPrefabOverrides">one or more NetworkPrefabs could be used to override the source NetworkPrefab</param>
+        public void RegisterHostGlobalObjectIdHashValues(GameObject sourceNetworkPrefab, List<GameObject> networkPrefabOverrides)
+        {
+            if(NetworkManager.Singleton.IsListening)
+            {
+                if (NetworkManager.Singleton.IsHost)
+                {
+                    var sourceNetworkObject = sourceNetworkPrefab.GetComponent<NetworkObject>();
+                    if (sourceNetworkPrefab != null)
+                    {
+                        var sourceGlobalObjectIdHash = sourceNetworkObject.GlobalObjectIdHash;
+                        // Now we register all
+                        foreach (var gameObject in networkPrefabOverrides)
+                        {
+                            var targetNetworkObject = gameObject.GetComponent<NetworkObject>();
+                            if(targetNetworkObject != null)
+                            {
+                                if (!m_PrefabInstanceToPrefabAsset.ContainsKey(targetNetworkObject.GlobalObjectIdHash))
+                                {
+                                    m_PrefabInstanceToPrefabAsset.Add(targetNetworkObject.GlobalObjectIdHash, sourceGlobalObjectIdHash);
+                                }
+                                else
+                                {
+                                    Debug.LogWarning($"{targetNetworkObject.name} appears to be a duplicate entry!");
+                                }
+                            }
+                            else
+                            {
+                                throw new System.Exception($"{targetNetworkObject.name} does not have a {nameof(NetworkObject)} component!");
+                            }
+                        }
+                    }
+                    else
+                    {
+                        throw new System.Exception($"{sourceNetworkPrefab.name} does not have a {nameof(NetworkObject)} component!");
+                    }
+                }
+                else
+                {
+                    throw new System.Exception($"You should only call {nameof(RegisterHostGlobalObjectIdHashValues)} as a Host!");
+                }
+            }
+            else
+            {
+                throw new System.Exception($"You can only call {nameof(RegisterHostGlobalObjectIdHashValues)} once NetworkManager is listening!");
+            }
+        }
+
+        /// <summary>
         /// Use the <see cref="GameObject"/> of the overridden network prefab asset to remove a registered class that implements the <see cref="INetworkPrefabInstanceHandler"/> interface.
         /// </summary>
         /// <param name="networkPrefabAsset"><see cref="GameObject"/> of the network prefab asset that was being overridden</param>
-        /// <returns>true or false</returns>
+        /// <returns>true (success) or false (failure)</returns>
         public bool RemoveHandler(GameObject networkPrefabAsset)
         {
             return RemoveHandler(networkPrefabAsset.GetComponent<NetworkObject>().GlobalObjectIdHash);
@@ -104,8 +166,8 @@ namespace MLAPI.Spawning
         /// <summary>
         /// Use the <see cref="NetworkObject"/> of the overridden network prefab asset to remove a registered class that implements the <see cref="INetworkPrefabInstanceHandler"/> interface.
         /// </summary>
-        /// <param name="networkObject"></param>
-        /// <returns>true or false</returns>
+        /// <param name="networkObject"><see cref="NetworkObject"/> of the source NetworkPrefab that was being overridden</param>
+        /// <returns>true (success) or false (failure)</returns>
         public bool RemoveHandler(NetworkObject networkObject)
         {
             return RemoveHandler(networkObject.GlobalObjectIdHash);
@@ -114,8 +176,8 @@ namespace MLAPI.Spawning
         /// <summary>
         /// Use the <see cref="NetworkObject.GlobalObjectIdHash"/> of the overridden network prefab asset to remove a registered class that implements the <see cref="INetworkPrefabInstanceHandler"/> interface.
         /// </summary>
-        /// <param name="networkPrefabHash"></param>
-        /// <returns>true or false</returns>
+        /// <param name="networkPrefabHash"><see cref="NetworkObject.GlobalObjectIdHash"/> of the source NetworkPrefab that was being overridden</param>
+        /// <returns>true (success) or false (failure)</returns>
         public bool RemoveHandler(uint globalObjectIdHash)
         {
             if (m_PrefabInstanceToPrefabAsset.ContainsValue(globalObjectIdHash))
@@ -136,7 +198,7 @@ namespace MLAPI.Spawning
         }
 
         /// <summary>
-        /// Check to see if a GameObject with a NetworkObject component has an INetworkPrefabInstanceHandler derived class associated with it
+        /// Check to see if a <see cref="GameObject"/> with a <see cref="NetworkObject"/> is registered to an <see cref="INetworkPrefabInstanceHandler"/> implementation
         /// </summary>
         /// <param name="networkPrefab"></param>
         /// <returns>true or false</returns>
@@ -146,7 +208,7 @@ namespace MLAPI.Spawning
         }
 
         /// <summary>
-        /// Check to see if a NetworkObject component has an INetworkPrefabInstanceHandler derived class associated with it
+        /// Check to see if a <see cref="NetworkObject"/> is registered to an <see cref="INetworkPrefabInstanceHandler"/> implementation
         /// </summary>
         /// <param name="networkObject"></param>
         /// <returns>true or false</returns>
@@ -156,7 +218,7 @@ namespace MLAPI.Spawning
         }
 
         /// <summary>
-        /// Check to see if a networkPrefabHash(GlobalObjectIdHash) component has an INetworkPrefabInstanceHandler derived class associated with it
+        /// Check to see if a <see cref="NetworkObject.GlobalObjectIdHash"/> is registered to an <see cref="INetworkPrefabInstanceHandler"/> implementation
         /// </summary>
         /// <param name="networkPrefabHash"></param>
         /// <returns>true or false</returns>
@@ -166,8 +228,27 @@ namespace MLAPI.Spawning
         }
 
         /// <summary>
-        /// Will return back a NetworkObject generated via the INetworkPrefabInstanceHandler derived class associated with the networkPrefabAssetHash
-        /// Invoked only on the client side and called within NetworkSpawnManager.CreateLocalNetworkObject
+        /// Returns the source NetworkPrefab's <see cref="NetworkObject.GlobalObjectIdHash"/>
+        /// </summary>
+        /// <param name="networkPrefabHash"></param>
+        /// <returns></returns>
+        internal uint GetSourceGlobalObjectIdHash(uint networkPrefabHash)
+        {
+            if(m_PrefabAssetToPrefabHandler.ContainsKey(networkPrefabHash))
+            {
+                return networkPrefabHash;
+            }
+            else if(m_PrefabInstanceToPrefabAsset.ContainsKey(networkPrefabHash))
+            {
+                return m_PrefabInstanceToPrefabAsset[networkPrefabHash];
+            }
+
+            return 0;
+        }
+
+        /// <summary>
+        /// Will return back a <see cref="NetworkObject"/> generated via an <see cref="INetworkPrefabInstanceHandler"/> implementation
+        /// Note: Invoked only on the client side and called within NetworkSpawnManager.CreateLocalNetworkObject
         /// </summary>
         /// <param name="networkPrefabAssetHash">typically the "server-side" asset's prefab hash</param>
         /// <param name="ownerClientId"></param>
@@ -178,7 +259,7 @@ namespace MLAPI.Spawning
         {
             if (m_PrefabAssetToPrefabHandler.ContainsKey(networkPrefabAssetHash))
             {
-                var networkObjectInstance = m_PrefabAssetToPrefabHandler[networkPrefabAssetHash].ClientInstantiateOverride(ownerClientId, position, rotation);
+                var networkObjectInstance = m_PrefabAssetToPrefabHandler[networkPrefabAssetHash].Instantiate(ownerClientId, position, rotation);
 
                 //Now we must make sure this alternate PrefabAsset spawned in place of the prefab asset with the networkPrefabAssetHash (GlobalObjectIdHash)
                 //is registered and linked to the networkPrefabAssetHash so during the HandleNetworkPrefabDestroy process we can identify the alternate prefab asset.
@@ -194,21 +275,27 @@ namespace MLAPI.Spawning
         }
 
         /// <summary>
-        /// Will invoke the NetworkPrefabInstanceHandler derived class HandleNetworkPrefabDestroy method
-        /// Note [both the client and server]: A NetworkObject that was instantiated via a INetworkPrefabInstanceHandler implementation
-        /// will have this called in place of being destroyed.
+        /// Will invoke the <see cref="INetworkPrefabInstanceHandler"/> implementation's Destroy method
         /// </summary>
         /// <param name="networkObjectInstance"></param>
         internal void HandleNetworkPrefabDestroy(NetworkObject networkObjectInstance)
         {
             var networkObjectInstanceHash = networkObjectInstance.GlobalObjectIdHash;
-            if (m_PrefabInstanceToPrefabAsset.ContainsKey(networkObjectInstanceHash))
+            if (networkObjectInstance.NetworkManager.IsClient)
             {
-                var networkPrefabAssetHash = m_PrefabInstanceToPrefabAsset[networkObjectInstanceHash];
-                if (m_PrefabAssetToPrefabHandler.ContainsKey(networkPrefabAssetHash))
+                if (m_PrefabInstanceToPrefabAsset.ContainsKey(networkObjectInstanceHash))
                 {
-                    m_PrefabAssetToPrefabHandler[networkPrefabAssetHash].DestroyOverride(networkObjectInstance);
+                    var networkPrefabAssetHash = m_PrefabInstanceToPrefabAsset[networkObjectInstanceHash];
+                    if (m_PrefabAssetToPrefabHandler.ContainsKey(networkPrefabAssetHash))
+                    {
+                        m_PrefabAssetToPrefabHandler[networkPrefabAssetHash].Destroy(networkObjectInstance);
+                    }
                 }
+            }
+            else // Otherwise for server only (i.e. not host) the NetworkObject is the source NetworkPrefab
+            if (m_PrefabAssetToPrefabHandler.ContainsKey(networkObjectInstanceHash))
+            {
+                m_PrefabAssetToPrefabHandler[networkObjectInstanceHash].Destroy(networkObjectInstance);
             }
         }
     }
