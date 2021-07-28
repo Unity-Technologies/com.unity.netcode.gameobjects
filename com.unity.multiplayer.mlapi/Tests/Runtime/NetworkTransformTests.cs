@@ -28,6 +28,7 @@ namespace MLAPI.RuntimeTests
         [UnitySetUp]
         public override IEnumerator Setup()
         {
+            Application.targetFrameRate = 60;
             yield return StartSomeClientsAndServerWithPlayers(useHost: m_TestWithHost, nbClients: NbClients, updatePlayerPrefab: playerPrefab =>
             {
                 var networkTransform = playerPrefab.AddComponent<NetworkTransform>();
@@ -144,6 +145,7 @@ namespace MLAPI.RuntimeTests
         [UnityTearDown]
         public override IEnumerator Teardown()
         {
+            Application.targetFrameRate = -1;
             yield return base.Teardown();
             UnityEngine.Object.Destroy(m_PlayerPrefab);
         }
