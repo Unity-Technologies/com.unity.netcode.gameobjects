@@ -1,10 +1,9 @@
 using System;
-using DefaultNamespace;
 using MLAPI.NetworkVariable;
 using MLAPI.Serialization;
+using MLAPI.Timing;
 using MLAPI.Transports;
 using UnityEngine;
-using UnityEngine.UIElements;
 
 namespace MLAPI.Prototyping
 {
@@ -87,7 +86,11 @@ namespace MLAPI.Prototyping
         [SerializeField, Range(0, 120), Tooltip("The base amount of sends per seconds to use when range is disabled")]
         public float FixedSendsPerSecond = 30f;
 
-        public IInterpolator<Vector3> PositionInterpolator = new BufferedLinearInterpolatorVector3();
+        [SerializeField]
+        private InterpolatorFactory<Vector3> m_PositionInterpolatorFactory;
+
+        private IInterpolator<Vector3> PositionInterpolator;
+        // public IInterpolator<Vector3> PositionInterpolator = new BufferedLinearInterpolatorVector3(ScriptableObject.CreateInstance<BufferedLinearInterpolatorVector3Factory>()); // todo tmp, use default value instead
 
         private Transform m_Transform; // cache the transform component to reduce unnecessary bounce between managed and native
         private readonly NetworkVariable<NetworkState> m_NetworkState = new NetworkVariable<NetworkState>(new NetworkState());
@@ -199,7 +202,7 @@ namespace MLAPI.Prototyping
             Debug.Log($"distance sam {Math.Round((newState.Position - oldState.Position).magnitude, 2)}");
             Debug.Log($"diff tick sam {(newState.SentTick - oldState.SentTick, 2)}");
             // oldTick = NetworkManager.Singleton.ServerTime.Tick;
-            PositionInterpolator.AddMeasurement(newState.Position, newState.SentTick);
+            PositionInterpolator.AddMeasurement(newState.Position, new NetworkTime(NetworkManager.Singleton.ServerTime.TickRate, newState.SentTick));
         }
 
         private void UpdateNetVarPerms()
@@ -223,7 +226,8 @@ namespace MLAPI.Prototyping
         private void Awake()
         {
             m_Transform = transform;
-            PositionInterpolator.Teleport(m_Transform.position);
+            PositionInterpolator = m_PositionInterpolatorFactory.CreateInterpolator();
+            PositionInterpolator.Teleport(m_Transform.position, new NetworkTime(NetworkManager.Singleton.ServerTime.TickRate, m_NetworkState.Value.SentTick));
 
             UpdateNetVarPerms();
 
@@ -266,7 +270,7 @@ namespace MLAPI.Prototyping
                 //     ApplyNetworkState(m_NetworkState.Value);
                 // }
 
-                // PositionInterpolator.FixedUpdate(Time.fixedDeltaTime);
+                PositionInterpolator.NetworkTickUpdate(NetworkManager.ServerTime.FixedDeltaTime);
             }
         }
 

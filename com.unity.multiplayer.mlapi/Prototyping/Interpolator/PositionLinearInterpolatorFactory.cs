@@ -1,17 +1,18 @@
 using System;
+using MLAPI.Timing;
 using UnityEngine;
 
-namespace DefaultNamespace
+namespace MLAPI
 {
-    [CreateAssetMenu(fileName = "PositionLinearInterpolator", menuName = "MLAPI/PositionLinearInterpolator", order = 1)]
-    public class PositionLinearInterpolatorFactory : InterpolatorVector3Factory
+    [CreateAssetMenu(fileName = "PositionLinearInterpolator", menuName = BaseMenuName + "PositionLinearInterpolator", order = 1)]
+    public class PositionLinearInterpolatorFactory : InterpolatorFactory<Vector3>
     {
         [SerializeField]
-        private float m_MaxLerpTime = 0.2f;
+        public float MaxLerpTime = 0.2f;
 
         public override IInterpolator<Vector3> CreateInterpolator()
         {
-            return new PositionLinearInterpolator(m_MaxLerpTime);
+            return new PositionLinearInterpolator(this);
         }
     }
 
@@ -21,26 +22,24 @@ namespace DefaultNamespace
         public Vector3 m_StartVector;
         public Vector3 m_EndVector;
         public Vector3 m_UpdatedVector;
+        private readonly PositionLinearInterpolatorFactory m_Factory;
 
-        private float m_MaxLerpTime;
-
-        public PositionLinearInterpolator(float maxLerpTime)
+        public PositionLinearInterpolator(PositionLinearInterpolatorFactory factory)
         {
-            m_MaxLerpTime = maxLerpTime;
+            m_Factory = factory;
         }
 
         public void Update(float deltaTime)
         {
             m_CurrentTime += deltaTime;
-            m_UpdatedVector = Vector3.Lerp(m_StartVector, m_EndVector, m_CurrentTime / m_MaxLerpTime);
+            m_UpdatedVector = Vector3.Lerp(m_StartVector, m_EndVector, m_CurrentTime / m_Factory.MaxLerpTime);
         }
 
-        public void FixedUpdate(float fixedDeltaTime)
+        public void NetworkTickUpdate(float fixedDeltaTime)
         {
-
         }
 
-        public void AddMeasurement(Vector3 newMeasurement, int SentTick)
+        public void AddMeasurement(Vector3 newMeasurement, NetworkTime SentTick)
         {
             m_EndVector = newMeasurement;
             m_CurrentTime = 0;
@@ -52,7 +51,7 @@ namespace DefaultNamespace
             return m_UpdatedVector;
         }
 
-        public void Teleport(Vector3 value)
+        public void Teleport(Vector3 value, NetworkTime SentTick)
         {
             m_UpdatedVector = value;
         }

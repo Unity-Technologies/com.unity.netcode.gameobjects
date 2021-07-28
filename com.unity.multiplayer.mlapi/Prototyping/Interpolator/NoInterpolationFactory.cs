@@ -1,41 +1,50 @@
+using MLAPI.Timing;
 using UnityEngine;
 
 namespace DefaultNamespace
 {
-    [CreateAssetMenu(fileName = "NoInterpolation", menuName = "MLAPI/NoInterpolation", order = 1)]
-    public class NoInterpolationFactory : InterpolatorVector3Factory
+    [CreateAssetMenu(fileName = "NoInterpolationVector3", menuName = BaseMenuName + "NoInterpolationVector3", order = 1)]
+    public class NoInterpolationVector3Factory : InterpolatorFactory<Vector3>
     {
         public override IInterpolator<Vector3> CreateInterpolator()
         {
-            return new NoInterpolation();
+            return new NoInterpolation<Vector3>();
         }
     }
 
-    public class NoInterpolation : IInterpolator<Vector3>
+    [CreateAssetMenu(fileName = "NoInterpolationQuaternion", menuName = BaseMenuName + "NoInterpolationQuaternion", order = 1)]
+    public class NoInterpolationQuaternionFactory : InterpolatorFactory<Quaternion>
     {
-        public Vector3 m_Current;
+        public override IInterpolator<Quaternion> CreateInterpolator()
+        {
+            return new NoInterpolation<Quaternion>();
+        }
+    }
+
+    public class NoInterpolation<T> : IInterpolator<T>
+    {
+        private T m_Current;
 
         public void Update(float deltaTime)
         {
             // nothing
         }
 
-        public void FixedUpdate(float fixedDeltaTime)
+        public void NetworkTickUpdate(float fixedDeltaTime)
         {
-
         }
 
-        public void AddMeasurement(Vector3 newMeasurement, int SentTick)
+        public void AddMeasurement(T newMeasurement, NetworkTime sentTick)
         {
             m_Current = newMeasurement;
         }
 
-        public Vector3 GetInterpolatedValue()
+        public T GetInterpolatedValue()
         {
             return m_Current;
         }
 
-        public void Teleport(Vector3 value)
+        public void Teleport(T value, NetworkTime SentTick)
         {
             m_Current = value;
         }

@@ -284,7 +284,7 @@ MonoBehaviour:
     - SampleScene
     - ZooSam
     AllowRuntimeSceneChanges: 0
-    PlayerPrefab: {fileID: 8685790303553767886, guid: 96e0a72e30d0c46c8a5c9a750e8f5807,
+    PlayerPrefab: {fileID: 4700706668509470175, guid: 7eeaaf9e50c0afc4dab93584a54fb0d6,
       type: 3}
     NetworkPrefabs: []
     TickRate: 20
@@ -600,6 +600,8 @@ MonoBehaviour:
   Authority: 0
   InLocalSpace: 0
   FixedSendsPerSecond: 30
+  m_PositionInterpolatorFactory: {fileID: 11400000, guid: a882403a7bf6247cd881a093a9a3f537,
+    type: 2}
 --- !u!65 &678326396
 BoxCollider:
   m_ObjectHideFlags: 0
