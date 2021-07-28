@@ -145,7 +145,7 @@ namespace TestProject.ManualTests
         /// </summary>
         private void OnSceneSwitchBegin()
         {
-            DeRegisterCustomPrefabHandler();
+            DeregisterCustomPrefabHandler();
             if (IsServer)
             {
                 StopCoroutine(SpawnObjects());

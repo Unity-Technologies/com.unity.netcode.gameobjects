@@ -68,14 +68,28 @@ namespace TestProject.ManualTests
             }
         }
 
+
+        private void Update()
+        {
+            if(IsOwner && m_ShouldDespawn)
+            {
+                m_ShouldDespawn = false;
+                NetworkObject.Despawn(HasHandler);
+                if (!HasHandler)
+                {
+                    NetworkObject.gameObject.SetActive(false);
+                }
+            }
+        }
+
         [HideInInspector]
         public bool HasHandler;
 
-
+        private bool m_ShouldDespawn;
 
         private void OnTriggerEnter(Collider other)
         {
-            if (IsOwner)
+            if (IsOwner && gameObject.activeInHierarchy)
             {
                 if (other.CompareTag("GenericObject") || other.CompareTag("Floor"))
                 {
@@ -83,11 +97,7 @@ namespace TestProject.ManualTests
                 }
                 else
                 {
-                    NetworkObject.Despawn(HasHandler);
-                    if (!HasHandler)
-                    {
-                        NetworkObject.gameObject.SetActive(false);
-                    }
+                    m_ShouldDespawn = true;
                 }
             }
         }
