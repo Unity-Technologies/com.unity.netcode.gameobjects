@@ -58,7 +58,8 @@ namespace MLAPI.Messaging
             {
                 using (var nonNullContext = (InternalCommandContext) context)
                 {
-                    nonNullContext.NetworkWriter.WriteBytes(buffer.GetBuffer(), buffer.Length);
+                    buffer.Position = 0;
+                    buffer.CopyTo(nonNullContext.NetworkWriter.GetStream());
                 }
             }
 
@@ -73,7 +74,6 @@ namespace MLAPI.Messaging
         /// <param name="networkChannel">The channel tos end the data on</param>
         public void SendUnnamedMessage(ulong clientId, NetworkBuffer buffer, NetworkChannel networkChannel = NetworkChannel.Internal)
         {
-
             var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
                 MessageQueueContainer.MessageType.UnnamedMessage, networkChannel,
                 new[] {clientId}, NetworkUpdateLoop.UpdateStage);
@@ -81,7 +81,8 @@ namespace MLAPI.Messaging
             {
                 using (var nonNullContext = (InternalCommandContext) context)
                 {
-                    nonNullContext.NetworkWriter.WriteBytes(buffer.GetBuffer(), buffer.Length);
+                    buffer.Position = 0;
+                    buffer.CopyTo(nonNullContext.NetworkWriter.GetStream());
                 }
             }
         }
