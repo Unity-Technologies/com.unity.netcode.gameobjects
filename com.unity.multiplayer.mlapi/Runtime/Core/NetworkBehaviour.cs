@@ -597,7 +597,7 @@ namespace MLAPI
                                 {
                                     using (var nonNullContext = (InternalCommandContext)context)
                                     {
-                                        nonNullContext.NetworkWriter.WriteBytes(buffer.GetBuffer(), buffer.Length);
+                                        nonNullContext.NetworkWriter.WriteBytes(buffer.GetBuffer(), buffer.Position);
                                     }
                                 }
                             }

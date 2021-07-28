@@ -61,7 +61,7 @@ namespace MLAPI.Messaging
             {
                 using (var nonNullContext = (InternalCommandContext) context)
                 {
-                    nonNullContext.NetworkWriter.WriteBytes(buffer.GetBuffer(), buffer.Length);
+                    nonNullContext.NetworkWriter.WriteBytes(buffer.GetBuffer(), buffer.Position);
                 }
             }
 
@@ -84,8 +84,8 @@ namespace MLAPI.Messaging
             {
                 using (var nonNullContext = (InternalCommandContext) context)
                 {
-                    nonNullContext.NetworkWriter.WriteBytes(buffer.GetBuffer(), buffer.Length);
-                    m_NetworkManager.NetworkMetrics.TrackUnnamedMessageSent(clientId, buffer.Length);
+                    nonNullContext.NetworkWriter.WriteBytes(buffer.GetBuffer(), buffer.Position);
+					m_NetworkManager.NetworkMetrics.TrackUnnamedMessageSent(clientId, buffer.Position);
                 }
             }
         }
