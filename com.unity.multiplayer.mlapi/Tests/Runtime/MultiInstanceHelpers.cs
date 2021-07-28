@@ -451,7 +451,7 @@ namespace MLAPI.RuntimeTests
 
             while (Time.frameCount - startFrameNumber <= maxFrames && !predicate())
             {
-                var nextFrameNumber = Time.frameCount + 1;
+                var nextFrameNumber = Time.frameCount + 2;
                 yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
             }
 
