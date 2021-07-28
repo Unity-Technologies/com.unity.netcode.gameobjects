@@ -1,3 +1,4 @@
+#if MULTIPLAYER_TOOLS
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -29,7 +30,7 @@ namespace MLAPI.RuntimeTests.Metrics.Utility
             yield return WaitForFrames(60);
         }
 
-        public IReadOnlyCollection<TMetric> AssertMetricValuesHaveBeenFound() 
+        public IReadOnlyCollection<TMetric> AssertMetricValuesHaveBeenFound()
         {
             if (m_HasError)
             {
@@ -86,3 +87,4 @@ namespace MLAPI.RuntimeTests.Metrics.Utility
         }
     }
 }
+#endif
