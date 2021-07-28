@@ -1,28 +1,36 @@
 using System;
+using System.IO;
+using MLAPI.Serialization;
 using MLAPI.Transports;
 using MLAPI.Serialization.Pooled;
 
 namespace MLAPI.Messaging
 {
     /// <summary>
-    /// FrameQueueItem
-    /// Container structure for RPCs written to the Queue Frame
-    /// Used for both Inbound and Outbound RPCs
+    /// MessageFrameItem
+    /// Container structure for messages written to the Queue Frame
+    /// Used for both Inbound and Outbound messages
     /// NOTE: This structure will change in the near future and is in a state of flux.
     /// This will include removing specific properties or changing property types
     /// </summary>
-    internal struct RpcFrameQueueItem
+    internal struct MessageFrameItem
     {
         public NetworkUpdateStage UpdateStage;
-        public RpcQueueContainer.QueueItemType QueueItemType;
-        public ulong NetworkId; //Sender's network Identifier
+        public MessageQueueContainer.MessageType MessageType;
+        /// <summary>
+        /// Sender's network Identifier, or recipient identifier for server RPCs
+        /// </summary>
+        public ulong NetworkId;
         public NetworkChannel NetworkChannel;
-        public ulong[] ClientNetworkIds; //Server invoked Client RPCs only
+        /// <summary>
+        /// Everything other than server RPCs
+        /// </summary>
+        public ulong[] ClientNetworkIds;
         public long StreamSize;
         public float Timestamp;
         public PooledNetworkWriter NetworkWriter;
         public PooledNetworkReader NetworkReader;
-        public PooledNetworkBuffer NetworkBuffer;
+        public Stream NetworkBuffer;
         public ArraySegment<byte> MessageData;
     }
 }
