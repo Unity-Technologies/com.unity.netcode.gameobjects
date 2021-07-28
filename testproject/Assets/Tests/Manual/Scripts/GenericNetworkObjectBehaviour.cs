@@ -77,6 +77,7 @@ namespace TestProject.ManualTests
                 NetworkObject.Despawn(HasHandler);
                 if (!HasHandler)
                 {
+                    NetworkObject.gameObject.transform.position = Vector3.zero;
                     NetworkObject.gameObject.SetActive(false);
                 }
             }
