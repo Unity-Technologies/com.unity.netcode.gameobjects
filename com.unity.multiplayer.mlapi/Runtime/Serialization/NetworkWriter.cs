@@ -234,7 +234,7 @@ namespace MLAPI.Serialization
             }
 
 
-            throw new ArgumentException($"{nameof(NetworkWriter)} cannot write type {value.GetType().Namespace}");
+            throw new ArgumentException($"{nameof(NetworkWriter)} cannot write type {value.GetType()}");
         }
 
         /// <summary>
