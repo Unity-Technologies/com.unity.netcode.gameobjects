@@ -83,7 +83,7 @@ namespace TestProject.ManualTests
         }
 
 
-        private void DeRegisterCustomPrefabHandler()
+        private void DeregisterCustomPrefabHandler()
         {
             if (EnableHandler && NetworkManager && NetworkManager.PrefabHandler != null && m_MyCustomPrefabSpawnHandler != null)
             {
@@ -210,18 +210,21 @@ namespace TestProject.ManualTests
                 }
 
                 // Since the host should spawn the override, we need to register the host to link it to the originally registered ServerObjectToPool
-                if (IsHost)
+                if (IsHost && EnableHandler)
                 {
                     // While this seems redundant, we could theoretically have several objects that we could potentially be spawning
                     NetworkManager.PrefabHandler.RegisterHostGlobalObjectIdHashValues(ServerObjectToPool, new List<GameObject>() { m_ObjectToSpawn });
                 }
             }
 
-            m_ObjectPool = new List<GameObject>(PoolSize);
-
-            for (int i = 0; i < PoolSize; i++)
+            if (EnableHandler || IsServer)
             {
-                AddNewInstance();
+                m_ObjectPool = new List<GameObject>(PoolSize);
+
+                for (int i = 0; i < PoolSize; i++)
+                {
+                    AddNewInstance();
+                }
             }
         }
 
@@ -255,7 +258,8 @@ namespace TestProject.ManualTests
         private GameObject AddNewInstance()
         {
             var obj = Instantiate(m_ObjectToSpawn);
-            var no = obj.GetComponent<NetworkObject>();
+            var genericNetworkObjectBehaviour = obj.GetComponent<GenericNetworkObjectBehaviour>();
+            genericNetworkObjectBehaviour.HasHandler = EnableHandler;
             obj.SetActive(false);
             m_ObjectPool.Add(obj);
             return obj;

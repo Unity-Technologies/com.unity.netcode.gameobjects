@@ -75,6 +75,10 @@ namespace TestProject.ManualTests
             }
         }
 
+        [HideInInspector]
+        public bool HasHandler;
+
+
 
         private void OnTriggerEnter(Collider other)
         {
@@ -86,7 +90,11 @@ namespace TestProject.ManualTests
                 }
                 else
                 {
-                    NetworkObject.Despawn(true);
+                    NetworkObject.Despawn(HasHandler);
+                    if (!HasHandler)
+                    {
+                        NetworkObject.gameObject.SetActive(false);
+                    }
                 }
             }
         }

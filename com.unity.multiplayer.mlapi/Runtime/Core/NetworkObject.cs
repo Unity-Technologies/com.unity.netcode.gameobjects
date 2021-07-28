@@ -1063,10 +1063,19 @@ namespace MLAPI
         /// <returns></returns>
         internal uint HostCheckForGlobalObjectIdHashOverride()
         {
-            if (NetworkManager.IsHost && NetworkManager.PrefabHandler.ContainsHandler(this))
+            if (NetworkManager.IsHost)
             {
-                return NetworkManager.PrefabHandler.GetSourceGlobalObjectIdHash(GlobalObjectIdHash);
+                if (NetworkManager.PrefabHandler.ContainsHandler(this))
+                {
+                    return NetworkManager.PrefabHandler.GetSourceGlobalObjectIdHash(GlobalObjectIdHash);
+                }
+                else
+                if (NetworkManager.NetworkConfig.OverrideToNetworkPrefab.ContainsKey(GlobalObjectIdHash))
+                {
+                    return NetworkManager.NetworkConfig.OverrideToNetworkPrefab[GlobalObjectIdHash];
+                }
             }
+
             return GlobalObjectIdHash;
         }
     }
