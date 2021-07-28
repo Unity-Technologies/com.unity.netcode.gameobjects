@@ -223,7 +223,8 @@ namespace TestProject.ManualTests
 
                 for (int i = 0; i < PoolSize; i++)
                 {
-                    AddNewInstance();
+                    var gameObject = AddNewInstance();
+                    gameObject.SetActive(false);
                 }
             }
         }
@@ -238,14 +239,13 @@ namespace TestProject.ManualTests
             {
                 foreach (var obj in m_ObjectPool)
                 {
-                    if (!obj.activeInHierarchy)
+                    if (obj != null && !obj.activeInHierarchy)
                     {
                         obj.SetActive(true);
                         return obj;
                     }
                 }
                 var newObj = AddNewInstance();
-                newObj.SetActive(true);
                 return newObj;
             }
             return null;
@@ -260,7 +260,6 @@ namespace TestProject.ManualTests
             var obj = Instantiate(m_ObjectToSpawn);
             var genericNetworkObjectBehaviour = obj.GetComponent<GenericNetworkObjectBehaviour>();
             genericNetworkObjectBehaviour.HasHandler = EnableHandler;
-            obj.SetActive(false);
             m_ObjectPool.Add(obj);
             return obj;
         }
@@ -304,8 +303,6 @@ namespace TestProject.ManualTests
                 }
             }
         }
-
-        private bool m_HasHostRegistered;
 
         /// <summary>
         /// Coroutine to spawn boxes
@@ -384,7 +381,7 @@ namespace TestProject.ManualTests
         }
         public void Destroy(NetworkObject networkObject)
         {
-            networkObject.transform.position = Vector3.zero;
+            networkObject.transform.position = new Vector3(0, -1000, 0);
             networkObject.gameObject.SetActive(false);
         }
 

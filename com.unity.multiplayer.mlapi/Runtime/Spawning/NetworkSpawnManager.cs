@@ -504,14 +504,14 @@ namespace MLAPI.Spawning
                     // This **needs** to be here until we overhaul NetworkSceneManager due to dependencies
                     // that occur shortly after NetworkSceneManager invokes ServerDestroySpawnedSceneObjects
                     // within the NetworkSceneManager.SwitchScene method.
-                    SpawnedObjectsList.Remove(sobj);
+
                     if (NetworkManager.PrefabHandler != null && NetworkManager.PrefabHandler.ContainsHandler(sobj))
                     {
                         NetworkManager.PrefabHandler.HandleNetworkPrefabDestroy(sobj);
-                        OnDespawnObject(sobj, false);
                     }
                     else
                     {
+                        SpawnedObjectsList.Remove(sobj);
                         UnityEngine.Object.Destroy(sobj.gameObject);
                     }
                 }
@@ -559,7 +559,10 @@ namespace MLAPI.Spawning
                         if (NetworkManager.PrefabHandler.ContainsHandler(networkObjects[i]))
                         {
                             NetworkManager.PrefabHandler.HandleNetworkPrefabDestroy(networkObjects[i]);
-                            OnDespawnObject(networkObjects[i], false);
+                            if (SpawnedObjects.ContainsKey(networkObjects[i].NetworkObjectId))
+                            {
+                                OnDespawnObject(networkObjects[i], false);
+                            }
                         }
                         else
                         {
@@ -681,7 +684,6 @@ namespace MLAPI.Spawning
                 if (NetworkManager.PrefabHandler.ContainsHandler(networkObject))
                 {
                     NetworkManager.PrefabHandler.HandleNetworkPrefabDestroy(networkObject);
-                    OnDespawnObject(networkObject, false);
                 }
                 else
                 {

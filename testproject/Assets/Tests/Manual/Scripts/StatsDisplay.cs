@@ -72,19 +72,11 @@ namespace TestProject.ManualTests
         }
 
         /// <summary>
-        /// Remove our OnClientConnectedCallback registration when we are destroyed
-        /// </summary>
-        private void OnDestroy()
-        {
-            NetworkManager.OnClientConnectedCallback -= OnClientConnectedCallback;
-        }
-
-        /// <summary>
         /// Used by UI Button click event
         /// </summary>
         public void ToggleClientSever()
         {
-            if (NetworkManager.Singleton.IsClient)
+            if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsClient)
             {
                 m_ClientMode = !m_ClientMode;
                 GetStatsServerRPC(NetworkManager.Singleton.LocalClientId);
