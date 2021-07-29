@@ -245,7 +245,7 @@ namespace MLAPI
 
             Observers.Add(clientId);
 
-            NetworkManager.SpawnManager.SendSpawnCallForObject(clientId, this, payload);
+            NetworkManager.SpawnManager.SendSpawnCallForObject(clientId, OwnerClientId, this, payload);
         }
 
         /// <summary>
@@ -442,12 +442,12 @@ namespace MLAPI
             }
 
             NetworkManager.SpawnManager.SpawnNetworkObjectLocally(this, NetworkManager.SpawnManager.GetNetworkObjectId(), false, playerObject, ownerClientId, spawnPayload, spawnPayload != null, spawnPayload == null ? 0 : (int)spawnPayload.Length, false, destroyWithScene);
-
+            ulong ownerId = ownerClientId != null ? ownerClientId.Value : NetworkManager.ServerClientId;
             for (int i = 0; i < NetworkManager.ConnectedClientsList.Count; i++)
             {
                 if (Observers.Contains(NetworkManager.ConnectedClientsList[i].ClientId))
                 {
-                    NetworkManager.SpawnManager.SendSpawnCallForObject(NetworkManager.ConnectedClientsList[i].ClientId, this, spawnPayload);
+                    NetworkManager.SpawnManager.SendSpawnCallForObject(NetworkManager.ConnectedClientsList[i].ClientId, ownerId, this, spawnPayload);
                 }
             }
         }
@@ -456,7 +456,7 @@ namespace MLAPI
         /// Spawns this GameObject across the network. Can only be called from the Server
         /// </summary>
         /// <param name="spawnPayload">The writer containing the spawn payload</param>
-        /// <param name="destroyWithScene">Should the object be destroyd when the scene is changed</param>
+        /// <param name="destroyWithScene">Should the object be destroyed when the scene is changed</param>
         public void Spawn(Stream spawnPayload = null, bool destroyWithScene = false)
         {
             SpawnInternal(spawnPayload, destroyWithScene, null, false);
@@ -915,7 +915,7 @@ namespace MLAPI
             writer.WriteBool(IsSceneObject ?? true);
 
             // Write the hash for this NetworkObject
-            writer.WriteUInt32Packed(GlobalObjectIdHash);
+            writer.WriteUInt32Packed(HostCheckForGlobalObjectIdHashOverride());
 
             if (IncludeTransformWhenSpawning == null || IncludeTransformWhenSpawning(OwnerClientId))
             {
@@ -1053,6 +1053,31 @@ namespace MLAPI
             networkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, networkId, isSceneObject, isPlayerObject, ownerClientId, objectStream, false, 0, true, false);
 
             return networkObject;
+        }
+
+        /// <summary>
+        /// Only applies to Host mode.
+        /// Will return the registered source NetworkPrefab's GlobalObjectIdHash if one exists.
+        /// Server and Clients will always return the NetworkObject's GlobalObjectIdHash.
+        /// </summary>
+        /// <returns></returns>
+        internal uint HostCheckForGlobalObjectIdHashOverride()
+        {
+            if (NetworkManager.IsHost)
+            {
+                if (NetworkManager.PrefabHandler.ContainsHandler(this))
+                {
+                    var globalObjectIdHash = NetworkManager.PrefabHandler.GetSourceGlobalObjectIdHash(GlobalObjectIdHash);
+                    return globalObjectIdHash == 0 ? GlobalObjectIdHash : globalObjectIdHash;
+                }
+                else
+                if (NetworkManager.NetworkConfig.OverrideToNetworkPrefab.ContainsKey(GlobalObjectIdHash))
+                {
+                    return NetworkManager.NetworkConfig.OverrideToNetworkPrefab[GlobalObjectIdHash];
+                }
+            }
+
+            return GlobalObjectIdHash;
         }
     }
 }
