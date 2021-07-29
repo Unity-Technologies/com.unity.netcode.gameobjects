@@ -3,6 +3,7 @@
   "dependencies": {
     "com.unity.test-framework": "1.1.26",
     "com.unity.multiplayer.mlapi": "file:../../com.unity.multiplayer.mlapi",
+    "com.unity.multiplayer.transport.utp": "file:../../com.unity.multiplayer.transport.utp",
     "com.unity.multiplayer.tools": "0.0.1-preview",
     "com.unity.modules.ai": "1.0.0",
     "com.unity.modules.androidjni": "1.0.0",
