@@ -233,7 +233,7 @@ namespace MLAPI.Serialization
         /// <returns>Amount of bytes read.</returns>
         public override int Read(byte[] buffer, int offset, int count)
         {
-            int tLen = (int)(Length - Position);
+            int tLen = Math.Min(count, (int)(Length - Position));
             for (int i = 0; i < tLen; ++i)
             {
                 buffer[offset + i] = ReadByteInternal();
