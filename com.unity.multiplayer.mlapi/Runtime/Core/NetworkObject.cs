@@ -245,7 +245,7 @@ namespace MLAPI
 
             Observers.Add(clientId);
 
-            NetworkManager.SpawnManager.SendSpawnCallForObject(clientId, this, payload);
+            NetworkManager.SpawnManager.SendSpawnCallForObject(clientId, OwnerClientId, this, payload);
         }
 
         /// <summary>
@@ -442,12 +442,12 @@ namespace MLAPI
             }
 
             NetworkManager.SpawnManager.SpawnNetworkObjectLocally(this, NetworkManager.SpawnManager.GetNetworkObjectId(), false, playerObject, ownerClientId, spawnPayload, spawnPayload != null, spawnPayload == null ? 0 : (int)spawnPayload.Length, false, destroyWithScene);
-
+            ulong ownerId = ownerClientId != null ? ownerClientId.Value : NetworkManager.ServerClientId;
             for (int i = 0; i < NetworkManager.ConnectedClientsList.Count; i++)
             {
                 if (Observers.Contains(NetworkManager.ConnectedClientsList[i].ClientId))
                 {
-                    NetworkManager.SpawnManager.SendSpawnCallForObject(NetworkManager.ConnectedClientsList[i].ClientId, this, spawnPayload);
+                    NetworkManager.SpawnManager.SendSpawnCallForObject(NetworkManager.ConnectedClientsList[i].ClientId, ownerId, this, spawnPayload);
                 }
             }
         }

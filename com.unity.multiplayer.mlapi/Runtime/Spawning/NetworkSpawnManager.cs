@@ -367,7 +367,7 @@ namespace MLAPI.Spawning
             }
         }
 
-        internal void SendSpawnCallForObject(ulong clientId, NetworkObject networkObject, Stream payload)
+        internal void SendSpawnCallForObject(ulong clientId, ulong ownerClientId, NetworkObject networkObject, Stream payload)
         {
             //Currently, if this is called and the clientId (destination) is the server's client Id, this case
             //will be checked within the below Send function.  To avoid unwarranted allocation of a PooledNetworkBuffer
@@ -379,15 +379,14 @@ namespace MLAPI.Spawning
 
             var messageQueueContainer = NetworkManager.MessageQueueContainer;
 
-            ulong[] clientIds = NetworkManager.ConnectedClientsIds;
             var context = messageQueueContainer.EnterInternalCommandContext(
                 MessageQueueContainer.MessageType.CreateObject, NetworkChannel.Internal,
-                clientIds, NetworkUpdateLoop.UpdateStage);
+                new ulong[] { clientId }, NetworkUpdateLoop.UpdateStage);
             if (context != null)
             {
                 using (var nonNullContext = (InternalCommandContext) context)
                 {
-                    WriteSpawnCallForObject(nonNullContext.NetworkWriter, clientId, networkObject, payload);
+                    WriteSpawnCallForObject(nonNullContext.NetworkWriter, ownerClientId, networkObject, payload);
                 }
             }
         }
