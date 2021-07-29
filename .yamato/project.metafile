@@ -30,14 +30,16 @@ test_platforms:
 projects:
   - name: testproject
     path: testproject
+    validate: true
     # Packages within a project that will be tested
     packages:
       - name: com.unity.multiplayer.mlapi
         path: com.unity.multiplayer.mlapi
       - name: com.unity.multiplayer.transport.utp
         path: com.unity.multiplayer.transport.utp
-  - name: testprojectwithtools
+  - name: testproject-tools-integration
     path: testproject-tools-integration
+    validate: false
     packages:
       - name: com.unity.multiplayer.mlapi
         path: com.unity.multiplayer.mlapi

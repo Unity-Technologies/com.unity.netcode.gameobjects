@@ -5,11 +5,12 @@
 # to generate its independent package tests and validation tests.
 # The idea is to only run validation once per package and not mix.
 # the results with package tests
-{% for package in projects.first.packages -%}
+{% for project in projects -%}
+{% for package in project.packages -%}
 {% for editor in test_editors -%}
 {% for platform in test_platforms -%}
-test_{{  package.name }}_{{ editor }}_{{ platform.name }}:
-  name : {{ package.name }} package tests - {{ editor }} on {{ platform.name }}
+{{project.name}}_{{  package.name }}_{{ editor }}_{{ platform.name }}:
+  name : {{ project.name }} - {{ package.name }} package tests - {{ editor }} on {{ platform.name }}
   agent:
     type: {{ platform.type }}
     image: {{ platform.image }}
@@ -23,6 +24,7 @@ test_{{  package.name }}_{{ editor }}_{{ platform.name }}:
         - "upm-ci~/test-results/**/*"
   dependencies:
     - .yamato/project-pack.yml#pack_{{ projects.first.name }}
+{% endfor -%}
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}
