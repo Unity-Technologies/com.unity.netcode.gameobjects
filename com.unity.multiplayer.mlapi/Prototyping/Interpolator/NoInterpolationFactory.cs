@@ -44,7 +44,7 @@ namespace DefaultNamespace
             return m_Current;
         }
 
-        public void Teleport(T value, NetworkTime SentTick)
+        public void Reset(T value, NetworkTime SentTick)
         {
             m_Current = value;
         }

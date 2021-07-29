@@ -227,7 +227,7 @@ namespace MLAPI.Prototyping
         {
             m_Transform = transform;
             PositionInterpolator = m_PositionInterpolatorFactory.CreateInterpolator();
-            PositionInterpolator.Teleport(m_Transform.position, new NetworkTime(NetworkManager.Singleton.ServerTime.TickRate, m_NetworkState.Value.SentTick));
+            PositionInterpolator.Reset(m_Transform.position, new NetworkTime(NetworkManager.Singleton.ServerTime.TickRate, m_NetworkState.Value.SentTick));
 
             UpdateNetVarPerms();
 

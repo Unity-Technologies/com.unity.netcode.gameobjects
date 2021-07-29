@@ -51,7 +51,7 @@ namespace MLAPI
             return m_UpdatedVector;
         }
 
-        public void Teleport(Vector3 value, NetworkTime SentTick)
+        public void Reset(Vector3 value, NetworkTime SentTick)
         {
             m_UpdatedVector = value;
         }

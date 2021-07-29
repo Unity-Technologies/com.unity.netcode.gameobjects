@@ -130,7 +130,7 @@ namespace DefaultNamespace
             return m_CurrentValue;
         }
 
-        public void Teleport(T value, NetworkTime SentTick)
+        public void Reset(T value, NetworkTime SentTick)
         {
             m_CurrentValue = value;
             m_LerpEndValue = value;
