@@ -69,6 +69,9 @@ namespace MLAPI.Configuration
         /// </summary>
         internal Dictionary<uint, NetworkPrefab> NetworkPrefabOverrideLinks = new Dictionary<uint, NetworkPrefab>();
 
+        internal Dictionary<uint, uint> OverrideToNetworkPrefab = new Dictionary<uint, uint>();
+
+
         /// <summary>
         /// The tickrate of network ticks. This value controls how often MLAPI runs user code and sends out data.
         /// </summary>

@@ -18,7 +18,7 @@ namespace MLAPI.MultiprocessRuntimeTests
             m_OnRelease = onRelease;
         }
 
-        public NetworkObject HandleNetworkPrefabSpawn(ulong ownerClientId, Vector3 position, Quaternion rotation)
+        public NetworkObject Instantiate(ulong ownerClientId, Vector3 position, Quaternion rotation)
         {
             var netBehaviour = m_ObjectPool.Get();
             var networkObject = netBehaviour.NetworkObject;
@@ -29,7 +29,7 @@ namespace MLAPI.MultiprocessRuntimeTests
             return networkObject;
         }
 
-        public void HandleNetworkPrefabDestroy(NetworkObject networkObject)
+        public void Destroy(NetworkObject networkObject)
         {
             var behaviour = networkObject.gameObject.GetComponent<T>(); // todo expensive, only used in teardown for now, should optimize eventually
             m_OnRelease(behaviour);

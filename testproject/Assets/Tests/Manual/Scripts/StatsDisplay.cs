@@ -88,7 +88,7 @@ namespace TestProject.ManualTests
         /// </summary>
         public void ToggleClientSever()
         {
-            if (NetworkManager.Singleton.IsClient)
+            if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsClient)
             {
                 m_ClientMode = !m_ClientMode;
                 GetStatsServerRPC(NetworkManager.Singleton.LocalClientId);

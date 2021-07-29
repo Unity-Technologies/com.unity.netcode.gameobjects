@@ -13,15 +13,59 @@ namespace TestProject.ManualTests
         [Tooltip("This will make the spawned objects move around randomly.  !Caution! You can generate a lot of objects this way!")]
         private bool m_MoveRandomly = true;
 
-        public Text txtComponent;
-
         private Rigidbody m_RigidBody;
+        private MeshRenderer m_MeshRenderer;
         private Vector3 m_Direction;
         private float m_Velocity;
 
         private void Start()
         {
             m_RigidBody = GetComponent<Rigidbody>();
+            m_MeshRenderer = GetComponent<MeshRenderer>();
+        }
+
+        /// <summary>
+        /// Handles disabling the MeshRenderer when the client despawns a NetworkObject
+        /// </summary>
+        public override void OnNetworkDespawn()
+        {
+            if (!IsServer)
+            {
+                if (m_MeshRenderer == null)
+                {
+                    m_MeshRenderer = GetComponent<MeshRenderer>();
+                }
+
+                if (m_MeshRenderer != null)
+                {
+                    m_MeshRenderer.enabled = false;
+                }
+            }
+            base.OnNetworkDespawn();
+        }
+
+        private float m_VisibilitySpawn;
+        /// <summary>
+        /// Handles setting a delay before the newly spawned object is visible
+        /// Note: this might get removed once the snapshot system is synchronizing
+        /// NetworkObjects' spawn and despawn.
+        /// </summary>
+        public override void OnNetworkSpawn()
+        {
+            if (!IsServer)
+            {
+                if (m_MeshRenderer == null)
+                {
+                    m_MeshRenderer = GetComponent<MeshRenderer>();
+                }
+                m_MeshRenderer.enabled = false;
+                m_VisibilitySpawn = Time.realtimeSinceStartup + 0.12f;
+                if(NetworkObject.NetworkObjectId == 0)
+                {
+                    Debug.Log("Spawning NetworkObjectId 0!");
+                }
+            }
+            base.OnNetworkSpawn();
         }
 
         public void ShouldMoveRandomly(bool shouldMoveRandomly)
@@ -47,11 +91,6 @@ namespace TestProject.ManualTests
         /// </summary>
         private void FixedUpdate()
         {
-            if (txtComponent)
-            {
-                txtComponent.text = NetworkObjectId.ToString();
-            }
-
             if (NetworkManager != null && NetworkManager.IsListening)
             {
                 if (IsOwner)
@@ -75,23 +114,6 @@ namespace TestProject.ManualTests
             }
         }
 
-        private bool m_ShouldDespawn;
-
-
-
-        private void Update()
-        {
-            if(IsOwner && m_ShouldDespawn)
-            {
-                m_ShouldDespawn = false;
-                NetworkObject.Despawn(IsRemovedFromPool);
-                if (!IsRemovedFromPool)
-                {
-                    NetworkObject.gameObject.SetActive(false);
-                }
-            }
-        }
-
         /// <summary>
         /// Tells us that we are registered with a NetworkPefab pool
         /// This is primarily for late joining clients and object synchronization.
@@ -105,6 +127,40 @@ namespace TestProject.ManualTests
         /// </summary>
         public bool IsRemovedFromPool;
 
+        private void Update()
+        {
+            if(IsOwner && m_ShouldDespawn && NetworkObject != null)
+            {
+                m_ShouldDespawn = false;
+
+                NetworkObject.Despawn(HasHandler);
+                if (!HasHandler)
+                {
+                    NetworkObject.gameObject.SetActive(false);
+                    NetworkObject.gameObject.transform.position = Vector3.zero;
+                }
+            }
+            else if (!IsServer)
+            {
+                // This is here to handle any short term latency between the time
+                // an object becomes spawned to the time it takes to update its first
+                // position.
+                if (m_MeshRenderer != null && !m_MeshRenderer.enabled)
+                {
+                    if (m_VisibilitySpawn < Time.realtimeSinceStartup)
+                    {
+                        m_MeshRenderer.enabled = true;
+                    }
+                }
+            }
+
+        }
+
+        [HideInInspector]
+        public bool HasHandler;
+
+        private bool m_ShouldDespawn;
+
         private void OnTriggerEnter(Collider other)
         {
             if (IsOwner && !m_ShouldDespawn)
@@ -116,16 +172,6 @@ namespace TestProject.ManualTests
                 else
                 {
                     m_ShouldDespawn = true;
-
-                    // NSS REMOVE WHEN FIXED: New message ordering changes that force a message to try and match its
-                    // invoker's NetworkUpdateLoop stage will cause this despawn message to happen during the early Fixed Update
-                    // stages.  This, in turn, will cause the client side to fail to disable itself.  The current "work around" is
-                    // to despawn and disable within the MonoBehaviour.Update so the message is not invoked in FIXED_UPDATE
-                    //NetworkObject.Despawn(IsRemovedFromPool);
-                    //if (!IsRemovedFromPool)
-                    //{
-                    //    NetworkObject.gameObject.SetActive(false);
-                    //}
                 }
             }
         }

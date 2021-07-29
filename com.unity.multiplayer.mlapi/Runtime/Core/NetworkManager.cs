@@ -86,14 +86,16 @@ namespace MLAPI
         }
 
         /// <summary>
-        /// Returns the GameObject to use as the override as could be defined within the NetworkPrefab list
-        /// Note: This should be used to create GameObject pools (with NetworkObject components) under the
-        /// scenario where a Host is being used as the Host spawns everything locally and as such the override
-        /// will not be applied during the typical client side invocation of CreateLocalNetworkObject for the
-        /// CREATE_OBECT command.
+        /// Returns the <see cref="GameObject"/> to use as the override as could be defined within the NetworkPrefab list
+        /// Note: This should be used to create <see cref="GameObject"/> pools (with <see cref="NetworkObject"/> components)
+        /// under the scenario where you are using the Host model as it spawns everything locally. As such, the override
+        /// will not be applied when spawning locally on a Host.
+        /// Related Classes and Interfaces:
+        /// <see cref="NetworkPrefabHandler"/>
+        /// <see cref="INetworkPrefabInstanceHandler"/>
         /// </summary>
-        /// <param name="networkObject"></param>
-        /// <returns></returns>
+        /// <param name="gameObject">the <see cref="GameObject"/> to be checked for a <see cref="NetworkManager"/> defined NetworkPrefab override</param>
+        /// <returns>a <see cref="GameObject"/> that is either the override or if no overrides exist it returns the same as the one passed in as a parameter</returns>
         public GameObject GetNetworkPrefabOverride(GameObject gameObject)
         {
             var networkObject = gameObject.GetComponent<NetworkObject>();
@@ -522,13 +524,22 @@ namespace MLAPI
                                 NetworkConfig.NetworkPrefabs[i]);
                             break;
                         case NetworkPrefabOverride.Prefab:
-                            NetworkConfig.NetworkPrefabOverrideLinks.Add(
-                                NetworkConfig.NetworkPrefabs[i].SourcePrefabToOverride.GetComponent<NetworkObject>()
-                                    .GlobalObjectIdHash, NetworkConfig.NetworkPrefabs[i]);
+                            {
+                                var sourcePrefabGlobalObjectIdHash = NetworkConfig.NetworkPrefabs[i].SourcePrefabToOverride.GetComponent<NetworkObject>().GlobalObjectIdHash;
+                                NetworkConfig.NetworkPrefabOverrideLinks.Add(sourcePrefabGlobalObjectIdHash, NetworkConfig.NetworkPrefabs[i]);
+
+                                var targetPrefabGlobalObjectIdHash = NetworkConfig.NetworkPrefabs[i].OverridingTargetPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash;
+                                NetworkConfig.OverrideToNetworkPrefab.Add(targetPrefabGlobalObjectIdHash, sourcePrefabGlobalObjectIdHash);
+                            }
                             break;
                         case NetworkPrefabOverride.Hash:
-                            NetworkConfig.NetworkPrefabOverrideLinks.Add(
-                                NetworkConfig.NetworkPrefabs[i].SourceHashToOverride, NetworkConfig.NetworkPrefabs[i]);
+                            {
+                                var sourcePrefabGlobalObjectIdHash = NetworkConfig.NetworkPrefabs[i].SourceHashToOverride;
+                                NetworkConfig.NetworkPrefabOverrideLinks.Add(sourcePrefabGlobalObjectIdHash, NetworkConfig.NetworkPrefabs[i]);
+
+                                var targetPrefabGlobalObjectIdHash = NetworkConfig.NetworkPrefabs[i].OverridingTargetPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash;
+                                NetworkConfig.OverrideToNetworkPrefab.Add(targetPrefabGlobalObjectIdHash, sourcePrefabGlobalObjectIdHash);
+                            }
                             break;
                     }
                 }
@@ -1313,7 +1324,6 @@ namespace MLAPI
                         if (PrefabHandler.ContainsHandler(ConnectedClients[clientId].PlayerObject.GlobalObjectIdHash))
                         {
                             PrefabHandler.HandleNetworkPrefabDestroy(ConnectedClients[clientId].PlayerObject);
-                            SpawnManager.OnDespawnObject(ConnectedClients[clientId].PlayerObject, false);
                         }
                         else
                         {
@@ -1332,7 +1342,6 @@ namespace MLAPI
                                     .GlobalObjectIdHash))
                                 {
                                     PrefabHandler.HandleNetworkPrefabDestroy(ConnectedClients[clientId].OwnedObjects[i]);
-                                    SpawnManager.OnDespawnObject(ConnectedClients[clientId].OwnedObjects[i], false);
                                 }
                                 else
                                 {

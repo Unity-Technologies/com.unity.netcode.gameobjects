@@ -174,6 +174,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_SwitchSceneButtonObject: {fileID: 1347823141}
   m_SceneToSwitchTo: SecondSceneToLoad
+  m_EnableAutoSwitch: 1
+  m_AutoSwitchTimeOut: 300
 --- !u!1 &37242881
 GameObject:
   m_ObjectHideFlags: 0
@@ -1130,8 +1132,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   AutoSpawnEnable: 1
   InitialSpawnDelay: 0.2
-  SpawnsPerSecond: 5
-  PoolSize: 128
+  SpawnsPerSecond: 2
+  PoolSize: 10
   ObjectSpeed: 8
   EnableHandler: 1
   RegisterUsingNetworkObject: 0
@@ -2493,7 +2495,7 @@ MonoBehaviour:
   m_MinValue: 0
   m_MaxValue: 550
   m_WholeNumbers: 1
-  m_Value: 6
+  m_Value: 2
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls:
