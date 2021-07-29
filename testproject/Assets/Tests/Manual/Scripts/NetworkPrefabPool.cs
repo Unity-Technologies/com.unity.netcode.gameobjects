@@ -381,7 +381,7 @@ namespace TestProject.ManualTests
         }
         public void Destroy(NetworkObject networkObject)
         {
-            networkObject.transform.position = new Vector3(0, -1000, 0);
+            networkObject.transform.position = new Vector3(0, 0, 0);
             networkObject.gameObject.SetActive(false);
         }
 

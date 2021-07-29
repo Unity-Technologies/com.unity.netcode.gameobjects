@@ -38,7 +38,6 @@ namespace TestProject.ManualTests
 
                 if (m_MeshRenderer != null)
                 {
-                    NetworkObject.gameObject.transform.position = Vector3.zero;
                     m_MeshRenderer.enabled = false;
                 }
             }
@@ -59,7 +58,12 @@ namespace TestProject.ManualTests
                 {
                     m_MeshRenderer = GetComponent<MeshRenderer>();
                 }
-                m_VisibilitySpawn = Time.realtimeSinceStartup + 0.1f;
+                m_MeshRenderer.enabled = false;
+                m_VisibilitySpawn = Time.realtimeSinceStartup + 0.12f;
+                if(NetworkObject.NetworkObjectId == 0)
+                {
+                    Debug.Log("Spawning NetworkObjectId 0!");
+                }
             }
             base.OnNetworkSpawn();
         }
@@ -105,6 +109,7 @@ namespace TestProject.ManualTests
                     if (NetworkObject != null && !NetworkObject.IsSpawned)
                     {
                         Debug.LogWarning($"{nameof(GenericNetworkObjectBehaviour)} id {NetworkObject.NetworkObjectId} is not spawned but still active and enabled");
+                        gameObject.SetActive(false);
                     }
                 }
             }
