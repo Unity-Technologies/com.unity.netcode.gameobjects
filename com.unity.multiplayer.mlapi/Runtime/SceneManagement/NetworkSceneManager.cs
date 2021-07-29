@@ -29,7 +29,7 @@ namespace MLAPI.SceneManagement
         /// </summary>
         public delegate void SceneSwitchStartedDelegate(AsyncOperation operation);
 
-        public delegate void AdditiveSceneEventDelegate(AsyncOperation operation, string sceneName, bool isLoading);
+        public delegate void SceneEventDelegate(AsyncOperation operation, SceneEventData.SceneEventTypes sceneEventType, LoadSceneMode loadSceneMode, string sceneName);
 
         /// <summary>
         /// Delegate for when a client has reported to the server that it has completed scene transition
@@ -54,7 +54,7 @@ namespace MLAPI.SceneManagement
         /// </summary>
         public event SceneSwitchedDelegate OnSceneSwitched;
 
-        public event AdditiveSceneEventDelegate OnAdditiveSceneEvent;
+        public event SceneEventDelegate OnSceneEvent;
 
         /// <summary>
         /// Event that is invoked when a local scene switch has started
@@ -103,7 +103,7 @@ namespace MLAPI.SceneManagement
 
         private MessageQueueContainer.MessageType m_MessageType = MessageQueueContainer.MessageType.SceneEvent;
         private NetworkChannel m_ChannelType = NetworkChannel.Internal;
-        private NetworkUpdateStage m_NetworkUpdateStage = NetworkUpdateLoop.UpdateStage;
+        private NetworkUpdateStage m_NetworkUpdateStage = NetworkUpdateStage.EarlyUpdate;
 
         internal NetworkSceneManager(NetworkManager networkManager)
         {
@@ -116,18 +116,21 @@ namespace MLAPI.SceneManagement
 
         internal void SendSceneEventData(ulong[] targetClientIds)
         {
-            var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(m_MessageType, m_ChannelType, targetClientIds, m_NetworkUpdateStage);
-
-            if (context != null)
+            if (targetClientIds.Length > 1)
             {
-                using (var nonNullContext = (InternalCommandContext)context)
-                {
-                    SceneEventData.OnWrite(nonNullContext.NetworkWriter);
-                }
+                var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(m_MessageType, m_ChannelType, targetClientIds, m_NetworkUpdateStage);
 
-                return;
+                if (context != null)
+                {
+                    using (var nonNullContext = (InternalCommandContext)context)
+                    {
+                        SceneEventData.OnWrite(nonNullContext.NetworkWriter);
+                    }
+
+                    return;
+                }
+                throw new Exception($"{nameof(NetworkSceneManager)} failed to send event notification {SceneEventData.SceneEventType} to target clientIds {targetClientIds}!");
             }
-            throw new Exception($"{nameof(NetworkSceneManager)} failed to send event notification {SceneEventData.SceneEventType} to target clientIds {targetClientIds}!");
         }
 
         /// <summary>
@@ -246,7 +249,7 @@ namespace MLAPI.SceneManagement
                 OnNotifyServerAllClientsLoadedScene?.Invoke(switchSceneProgress, timedOut);
                 // Send notification to all clients that everyone is done loading
                 var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext( MessageQueueContainer.MessageType.AllClientsLoadedScene, NetworkChannel.Internal,
-                    m_NetworkManager.ConnectedClientsIds, NetworkUpdateLoop.UpdateStage);
+                    m_NetworkManager.ConnectedClientsIds, NetworkUpdateStage.EarlyUpdate);
 
                 if (context != null)
                 {
@@ -302,7 +305,7 @@ namespace MLAPI.SceneManagement
             {
                 m_ScenesLoaded.Remove(sceneName);
             }
-            OnAdditiveSceneEvent?.Invoke(sceneUnload, sceneName, false);
+            OnSceneEvent?.Invoke(sceneUnload,SceneEventData.SceneEventType, SceneEventData.LoadSceneMode, sceneName);
 
             //Return our scene progress instance
             return switchSceneProgress;
@@ -330,7 +333,7 @@ namespace MLAPI.SceneManagement
 
             sceneUnload.completed += asyncOp2 => OnSceneUnloaded();
 
-            OnAdditiveSceneEvent?.Invoke(sceneUnload, sceneName, false);
+            OnSceneEvent?.Invoke(sceneUnload, SceneEventData.SceneEventType, SceneEventData.LoadSceneMode, sceneName);
         }
 
         /// <summary>
@@ -424,6 +427,7 @@ namespace MLAPI.SceneManagement
                 m_ScenesLoaded.Clear();
                 // NSS TODO: Make a single unified notification callback
                 OnSceneSwitchStarted?.Invoke(sceneLoad);
+                OnSceneEvent?.Invoke(sceneLoad, SceneEventData.SceneEventType, SceneEventData.LoadSceneMode, sceneName);
             }
             else
             {
@@ -436,7 +440,7 @@ namespace MLAPI.SceneManagement
                     throw new Exception($"{sceneName} is being loaded twice?!");
                 }
                 // NSS TODO: Make a single unified notification callback
-                OnAdditiveSceneEvent?.Invoke(sceneLoad, sceneName, true);
+                OnSceneEvent?.Invoke(sceneLoad, SceneEventData.SceneEventType, SceneEventData.LoadSceneMode, sceneName);
             }
         }
 
@@ -466,9 +470,8 @@ namespace MLAPI.SceneManagement
                 {
                     if (currentActiveScene.name != loadedSceneName)
                     {
-                        SceneManager.UnloadSceneAsync(loadedSceneName);
+                        OnSceneEvent?.Invoke(SceneManager.UnloadSceneAsync(loadedSceneName), SceneEventData.SceneEventTypes.Event_Unload, LoadSceneMode.Additive, loadedSceneName);
                     }
-
                 }
                 m_ScenesLoaded.Clear();
 
@@ -502,10 +505,7 @@ namespace MLAPI.SceneManagement
             {
                 OnSceneSwitchStarted?.Invoke(sceneLoad);
             }
-            else
-            {
-                OnAdditiveSceneEvent?.Invoke(sceneLoad, sceneName, true);
-            }
+            OnSceneEvent?.Invoke(sceneLoad, SceneEventData.SceneEventType, SceneEventData.LoadSceneMode, sceneName);
         }
 
         /// <summary>

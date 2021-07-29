@@ -301,6 +301,7 @@ namespace MLAPI.Spawning
 
             if (SpawnedObjects.ContainsKey(networkId))
             {
+                Debug.LogWarning($"Trying to spawn NetworkObjectId {networkId} that already exists!");
                 return;
             }
 
@@ -507,6 +508,7 @@ namespace MLAPI.Spawning
                     if (NetworkManager.PrefabHandler != null && NetworkManager.PrefabHandler.ContainsHandler(sobj))
                     {
                         NetworkManager.PrefabHandler.HandleNetworkPrefabDestroy(sobj);
+                        OnDespawnObject(sobj, false);
                     }
                     else
                     {
@@ -530,11 +532,7 @@ namespace MLAPI.Spawning
                         if (NetworkManager.PrefabHandler.ContainsHandler(networkObjects[i]))
                         {
                             NetworkManager.PrefabHandler.HandleNetworkPrefabDestroy(networkObjects[i]);
-
-                            if (SpawnedObjects.ContainsKey(networkObjects[i].NetworkObjectId))
-                            {
-                                OnDespawnObject(networkObjects[i], false);
-                            }
+                            OnDespawnObject(networkObjects[i], false);
                         }
                         else
                         {

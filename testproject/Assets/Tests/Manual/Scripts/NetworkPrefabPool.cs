@@ -95,10 +95,15 @@ namespace TestProject.ManualTests
             }
         }
 
+        public override void OnNetworkDespawn()
+        {
+            DeregisterCustomPrefabHandler();
+        }
+
         private void OnDisable()
         {
             StopCoroutine(SpawnObjects());
-            DeRegisterCustomPrefabHandler();
+
             CleanNetworkObjects();
         }
 
@@ -245,6 +250,7 @@ namespace TestProject.ManualTests
             var obj = Instantiate(m_ObjectToSpawn);
             var genericNetworkObjectBehaviour = obj.GetComponent<GenericNetworkObjectBehaviour>();
             genericNetworkObjectBehaviour.HasHandler = EnableHandler;
+            genericNetworkObjectBehaviour.IsRegisteredPoolObject = true;
             m_ObjectPool.Add(obj);
             return obj;
         }
