@@ -399,6 +399,8 @@ namespace MLAPI.Transports.UNET
         {
             var connectionConfig = new ConnectionConfig();
 
+            connectionConfig.FragmentSize = 1024;
+
             // MLAPI built-in channels
             for (int i = 0; i < MLAPI_CHANNELS.Length; i++)
             {
