@@ -1067,7 +1067,8 @@ namespace MLAPI
             {
                 if (NetworkManager.PrefabHandler.ContainsHandler(this))
                 {
-                    return NetworkManager.PrefabHandler.GetSourceGlobalObjectIdHash(GlobalObjectIdHash);
+                    var globalObjectIdHash = NetworkManager.PrefabHandler.GetSourceGlobalObjectIdHash(GlobalObjectIdHash);
+                    return globalObjectIdHash == 0 ? GlobalObjectIdHash : globalObjectIdHash;
                 }
                 else
                 if (NetworkManager.NetworkConfig.OverrideToNetworkPrefab.ContainsKey(GlobalObjectIdHash))

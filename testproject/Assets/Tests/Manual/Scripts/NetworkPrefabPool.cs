@@ -202,15 +202,15 @@ namespace TestProject.ManualTests
             {
                 if (EnableHandler && ClientObjectToPool != null)
                 {
-                    m_ObjectToSpawn = ClientObjectToPool;
+                    m_ObjectToSpawn = NetworkManager.GetNetworkPrefabOverride(ClientObjectToPool);
                 }
                 else
                 {
-                    m_ObjectToSpawn = NetworkManager.GetNetworkPrefabOverride(ServerObjectToPool);
+                    m_ObjectToSpawn = NetworkManager.GetNetworkPrefabOverride(m_ObjectToSpawn);
                 }
 
                 // Since the host should spawn the override, we need to register the host to link it to the originally registered ServerObjectToPool
-                if (IsHost && EnableHandler)
+                if (IsHost && EnableHandler && ServerObjectToPool != m_ObjectToSpawn)
                 {
                     // While this seems redundant, we could theoretically have several objects that we could potentially be spawning
                     NetworkManager.PrefabHandler.RegisterHostGlobalObjectIdHashValues(ServerObjectToPool, new List<GameObject>() { m_ObjectToSpawn });

@@ -281,18 +281,17 @@ namespace MLAPI.Spawning
         internal void HandleNetworkPrefabDestroy(NetworkObject networkObjectInstance)
         {
             var networkObjectInstanceHash = networkObjectInstance.GlobalObjectIdHash;
-            if (networkObjectInstance.NetworkManager.IsClient)
+
+            // Do we have custom overrides registered?
+            if (m_PrefabInstanceToPrefabAsset.ContainsKey(networkObjectInstanceHash))
             {
-                if (m_PrefabInstanceToPrefabAsset.ContainsKey(networkObjectInstanceHash))
+                var networkPrefabAssetHash = m_PrefabInstanceToPrefabAsset[networkObjectInstanceHash];
+                if (m_PrefabAssetToPrefabHandler.ContainsKey(networkPrefabAssetHash))
                 {
-                    var networkPrefabAssetHash = m_PrefabInstanceToPrefabAsset[networkObjectInstanceHash];
-                    if (m_PrefabAssetToPrefabHandler.ContainsKey(networkPrefabAssetHash))
-                    {
-                        m_PrefabAssetToPrefabHandler[networkPrefabAssetHash].Destroy(networkObjectInstance);
-                    }
+                    m_PrefabAssetToPrefabHandler[networkPrefabAssetHash].Destroy(networkObjectInstance);
                 }
             }
-            else // Otherwise for server only (i.e. not host) the NetworkObject is the source NetworkPrefab
+            else // Otherwise the NetworkObject is the source NetworkPrefab
             if (m_PrefabAssetToPrefabHandler.ContainsKey(networkObjectInstanceHash))
             {
                 m_PrefabAssetToPrefabHandler[networkObjectInstanceHash].Destroy(networkObjectInstance);
