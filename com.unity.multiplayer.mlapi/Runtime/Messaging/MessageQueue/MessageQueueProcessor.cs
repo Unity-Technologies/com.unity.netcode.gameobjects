@@ -317,7 +317,7 @@ namespace MLAPI.Messaging
             var length = (int)sendStream.Buffer.Length;
             var bytes = sendStream.Buffer.GetBuffer();
             var sendBuffer = new ArraySegment<byte>(bytes, 0, length);
-            
+
             var channel = sendStream.NetworkChannel;
             // If the length is greater than the fragmented threshold, switch to a fragmented channel.
             // This is kind of a hack to get around issues with certain usages patterns on fragmentation with UNet.

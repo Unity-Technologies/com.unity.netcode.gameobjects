@@ -115,7 +115,7 @@ namespace MLAPI.Spawning
                 NetworkManager.ConnectedClientsIds, NetworkUpdateLoop.UpdateStage);
             if (context != null)
             {
-                using (var nonNullContext = (InternalCommandContext) context)
+                using (var nonNullContext = (InternalCommandContext)context)
                 {
                     nonNullContext.NetworkWriter.WriteUInt64Packed(networkObject.NetworkObjectId);
                     nonNullContext.NetworkWriter.WriteUInt64Packed(networkObject.OwnerClientId);
@@ -157,7 +157,7 @@ namespace MLAPI.Spawning
                 clientIds, NetworkUpdateLoop.UpdateStage);
             if (context != null)
             {
-                using (var nonNullContext = (InternalCommandContext) context)
+                using (var nonNullContext = (InternalCommandContext)context)
                 {
                     nonNullContext.NetworkWriter.WriteUInt64Packed(networkObject.NetworkObjectId);
                     nonNullContext.NetworkWriter.WriteUInt64Packed(clientId);
@@ -384,7 +384,7 @@ namespace MLAPI.Spawning
                 new ulong[] { clientId }, NetworkUpdateLoop.UpdateStage);
             if (context != null)
             {
-                using (var nonNullContext = (InternalCommandContext) context)
+                using (var nonNullContext = (InternalCommandContext)context)
                 {
                     WriteSpawnCallForObject(nonNullContext.NetworkWriter, ownerClientId, networkObject, payload);
                 }
@@ -666,7 +666,7 @@ namespace MLAPI.Spawning
                                 clientIds, NetworkUpdateStage.PostLateUpdate);
                             if (context != null)
                             {
-                                using (var nonNullContext = (InternalCommandContext) context)
+                                using (var nonNullContext = (InternalCommandContext)context)
                                 {
                                     nonNullContext.NetworkWriter.WriteUInt64Packed(networkObject.NetworkObjectId);
                                 }

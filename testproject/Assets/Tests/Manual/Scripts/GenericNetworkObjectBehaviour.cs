@@ -60,7 +60,7 @@ namespace TestProject.ManualTests
                 }
                 m_MeshRenderer.enabled = false;
                 m_VisibilitySpawn = Time.realtimeSinceStartup + 0.12f;
-                if(NetworkObject.NetworkObjectId == 0)
+                if (NetworkObject.NetworkObjectId == 0)
                 {
                     Debug.Log("Spawning NetworkObjectId 0!");
                 }
@@ -118,7 +118,7 @@ namespace TestProject.ManualTests
 
         private void Update()
         {
-            if(IsOwner && m_ShouldDespawn && NetworkObject != null)
+            if (IsOwner && m_ShouldDespawn && NetworkObject != null)
             {
                 m_ShouldDespawn = false;
 

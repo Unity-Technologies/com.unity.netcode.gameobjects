@@ -360,18 +360,18 @@ namespace MLAPI
         private void SendSnapshot(ulong clientId)
         {
             // Send the entry index and the buffer where the variables are serialized
-            
+
             var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
                 MessageQueueContainer.MessageType.SnapshotData, NetworkChannel.SnapshotExchange,
-                new[] {clientId}, NetworkUpdateLoop.UpdateStage);
-            
+                new[] { clientId }, NetworkUpdateLoop.UpdateStage);
+
             if (context != null)
             {
-                using (var nonNullContext = (InternalCommandContext) context)
+                using (var nonNullContext = (InternalCommandContext)context)
                 {
                     nonNullContext.NetworkWriter.WriteInt32Packed(m_CurrentTick);
 
-                    var buffer = (NetworkBuffer) nonNullContext.NetworkWriter.GetStream();
+                    var buffer = (NetworkBuffer)nonNullContext.NetworkWriter.GetStream();
                     WriteIndex(buffer);
                     WriteBuffer(buffer);
                 }
@@ -496,11 +496,11 @@ namespace MLAPI
         {
             var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
                 MessageQueueContainer.MessageType.SnapshotAck, NetworkChannel.SnapshotExchange,
-                new[] {clientId}, NetworkUpdateLoop.UpdateStage);
-            
+                new[] { clientId }, NetworkUpdateLoop.UpdateStage);
+
             if (context != null)
             {
-                using (var nonNullContext = (InternalCommandContext) context)
+                using (var nonNullContext = (InternalCommandContext)context)
                 {
                     nonNullContext.NetworkWriter.WriteInt32Packed(tick);
                 }
