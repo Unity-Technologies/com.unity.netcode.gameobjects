@@ -19,6 +19,7 @@ namespace MLAPI.Transports
         NavAgentCorrection,
         NetworkVariable, //todo: this channel will be used for snapshotting and should then go from reliable to unreliable
         SnapshotExchange,
+        Fragmented,
         ChannelUnused, // <<-- must be present, and must be last
     };
 
@@ -91,7 +92,7 @@ namespace MLAPI.Transports
         private readonly TransportChannel[] MLAPI_INTERNAL_CHANNELS =
 #pragma warning restore IDE1006 // restore naming rule violation check
         {
-            new TransportChannel(NetworkChannel.Internal, NetworkDelivery.ReliableFragmentedSequenced),
+            new TransportChannel(NetworkChannel.Internal, NetworkDelivery.ReliableSequenced),
             new TransportChannel(NetworkChannel.ReliableRpc, NetworkDelivery.ReliableSequenced),
             new TransportChannel(NetworkChannel.UnreliableRpc, NetworkDelivery.UnreliableSequenced),
             new TransportChannel(NetworkChannel.TimeSync, NetworkDelivery.Unreliable),
@@ -103,8 +104,11 @@ namespace MLAPI.Transports
             new TransportChannel(NetworkChannel.NavAgentCorrection, NetworkDelivery.UnreliableSequenced),
             // todo: Currently, fragmentation support needed to deal with oversize packets encounterable with current pre-snapshot code".
             // todo: once we have snapshotting able to deal with missing frame, this should be unreliable
-            new TransportChannel(NetworkChannel.NetworkVariable, NetworkDelivery.ReliableFragmentedSequenced),
-            new TransportChannel(NetworkChannel.SnapshotExchange, NetworkDelivery.ReliableFragmentedSequenced), // todo: temporary until we separate snapshots in chunks
+            new TransportChannel(NetworkChannel.NetworkVariable, NetworkDelivery.ReliableSequenced),
+            new TransportChannel(NetworkChannel.SnapshotExchange, NetworkDelivery.ReliableSequenced), // todo: temporary until we separate snapshots in chunks
+ 
+            new TransportChannel(NetworkChannel.Fragmented, NetworkDelivery.ReliableFragmentedSequenced),
+
         };
 
         /// <summary>

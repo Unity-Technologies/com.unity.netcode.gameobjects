@@ -1,4 +1,3 @@
-﻿using System;
 using System.Collections;
 using MLAPI;
 using MLAPI.Configuration;
@@ -22,7 +21,7 @@ namespace TestProject.RuntimeTests
             if (m_Prefab)
             {
                 MultiInstanceHelpers.Destroy();
-                UnityEngine.Object.Destroy(m_Prefab);
+                Object.Destroy(m_Prefab);
                 m_Prefab = null;
                 Support.SpawnRpcDespawn.ClientUpdateCount = 0;
                 Support.SpawnRpcDespawn.ServerUpdateCount = 0;
@@ -63,7 +62,7 @@ namespace TestProject.RuntimeTests
             yield return MultiInstanceHelpers.Run(
                 MultiInstanceHelpers.WaitForClientsConnectedToServer(server, clients.Length + 1, null, 512));
 
-            GameObject serverObject = GameObject.Instantiate(m_Prefab, Vector3.zero, Quaternion.identity);
+            var serverObject = Object.Instantiate(m_Prefab, Vector3.zero, Quaternion.identity);
             NetworkObject serverNetworkObject = serverObject.GetComponent<NetworkObject>();
             serverNetworkObject.NetworkManagerOwner = server;
             serverNetworkObject.Spawn();
@@ -73,7 +72,7 @@ namespace TestProject.RuntimeTests
             const int expectedNetworkObjects = numClients + 2; // +2 = one for prefab, one for server.
             const int maxFrames = 240;
             var doubleCheckTime = Time.realtimeSinceStartup + 10.0f;
-            while (GameObject.FindObjectsOfType<NetworkObject>().Length != expectedNetworkObjects)
+            while (Object.FindObjectsOfType<NetworkObject>().Length != expectedNetworkObjects)
             {
                 if (Time.frameCount > maxFrames)
                 {
@@ -91,7 +90,7 @@ namespace TestProject.RuntimeTests
         }
 
         [UnityTest]
-        public IEnumerator SpawnRpcDespawn([Values]NetworkUpdateStage testStage)
+        public IEnumerator SpawnRpcDespawn([Values] NetworkUpdateStage testStage)
         {
             // Neither of these is supported for sending RPCs.
             if (testStage == NetworkUpdateStage.Unset || testStage == NetworkUpdateStage.Initialization)
@@ -136,7 +135,7 @@ namespace TestProject.RuntimeTests
             yield return MultiInstanceHelpers.Run(
                 MultiInstanceHelpers.WaitForClientsConnectedToServer(server, clients.Length + 1, null, 512));
 
-            GameObject serverObject = GameObject.Instantiate(m_Prefab, Vector3.zero, Quaternion.identity);
+            var serverObject = Object.Instantiate(m_Prefab, Vector3.zero, Quaternion.identity);
             NetworkObject serverNetworkObject = serverObject.GetComponent<NetworkObject>();
             serverNetworkObject.NetworkManagerOwner = server;
             SpawnRpcDespawn srdComponent = serverObject.GetComponent<SpawnRpcDespawn>();
@@ -165,6 +164,8 @@ namespace TestProject.RuntimeTests
             Assert.AreEqual(testStage, Support.SpawnRpcDespawn.StageExecutedByReceiver);
             Assert.AreEqual(Support.SpawnRpcDespawn.ServerUpdateCount, Support.SpawnRpcDespawn.ClientUpdateCount);
             Assert.True(handler.WasSpawned);
+            var lastFrameNumber = Time.frameCount + 1;
+            yield return new WaitUntil(() => Time.frameCount >= lastFrameNumber);
             Assert.True(handler.WasDestroyed);
         }
     }

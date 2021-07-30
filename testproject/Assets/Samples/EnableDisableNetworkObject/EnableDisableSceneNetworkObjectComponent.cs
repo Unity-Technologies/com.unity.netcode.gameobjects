@@ -30,7 +30,7 @@ public class EnableDisableSceneNetworkObjectComponent : NetworkBehaviour
     public override void OnNetworkSpawn()
     {
         //For this example, the server controls whether the mesh is visible and can collide or not
-        if(IsServer && IsHost)
+        if (IsServer && IsHost)
         {
             if (m_ActivateObjectButton)
             {

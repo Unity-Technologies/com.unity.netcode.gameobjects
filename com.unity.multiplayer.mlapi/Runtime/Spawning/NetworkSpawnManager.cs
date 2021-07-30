@@ -115,7 +115,7 @@ namespace MLAPI.Spawning
                 NetworkManager.ConnectedClientsIds, NetworkUpdateLoop.UpdateStage);
             if (context != null)
             {
-                using (var nonNullContext = (InternalCommandContext) context)
+                using (var nonNullContext = (InternalCommandContext)context)
                 {
                     nonNullContext.NetworkWriter.WriteUInt64Packed(networkObject.NetworkObjectId);
                     nonNullContext.NetworkWriter.WriteUInt64Packed(networkObject.OwnerClientId);
@@ -157,7 +157,7 @@ namespace MLAPI.Spawning
                 clientIds, NetworkUpdateLoop.UpdateStage);
             if (context != null)
             {
-                using (var nonNullContext = (InternalCommandContext) context)
+                using (var nonNullContext = (InternalCommandContext)context)
                 {
                     nonNullContext.NetworkWriter.WriteUInt64Packed(networkObject.NetworkObjectId);
                     nonNullContext.NetworkWriter.WriteUInt64Packed(clientId);
@@ -367,7 +367,7 @@ namespace MLAPI.Spawning
             }
         }
 
-        internal void SendSpawnCallForObject(ulong clientId, NetworkObject networkObject, Stream payload)
+        internal void SendSpawnCallForObject(ulong clientId, ulong ownerClientId, NetworkObject networkObject, Stream payload)
         {
             //Currently, if this is called and the clientId (destination) is the server's client Id, this case
             //will be checked within the below Send function.  To avoid unwarranted allocation of a PooledNetworkBuffer
@@ -379,15 +379,14 @@ namespace MLAPI.Spawning
 
             var messageQueueContainer = NetworkManager.MessageQueueContainer;
 
-            ulong[] clientIds = NetworkManager.ConnectedClientsIds;
             var context = messageQueueContainer.EnterInternalCommandContext(
                 MessageQueueContainer.MessageType.CreateObject, NetworkChannel.Internal,
-                clientIds, NetworkUpdateLoop.UpdateStage);
+                new ulong[] { clientId }, NetworkUpdateLoop.UpdateStage);
             if (context != null)
             {
-                using (var nonNullContext = (InternalCommandContext) context)
+                using (var nonNullContext = (InternalCommandContext)context)
                 {
-                    WriteSpawnCallForObject(nonNullContext.NetworkWriter, clientId, networkObject, payload);
+                    WriteSpawnCallForObject(nonNullContext.NetworkWriter, ownerClientId, networkObject, payload);
                 }
             }
         }
@@ -416,7 +415,7 @@ namespace MLAPI.Spawning
             }
 
             writer.WriteBool(networkObject.IsSceneObject ?? true);
-            writer.WriteUInt32Packed(networkObject.GlobalObjectIdHash);
+            writer.WriteUInt32Packed(networkObject.HostCheckForGlobalObjectIdHashOverride());
 
             if (networkObject.IncludeTransformWhenSpawning == null || networkObject.IncludeTransformWhenSpawning(clientId))
             {
@@ -504,14 +503,14 @@ namespace MLAPI.Spawning
                     // This **needs** to be here until we overhaul NetworkSceneManager due to dependencies
                     // that occur shortly after NetworkSceneManager invokes ServerDestroySpawnedSceneObjects
                     // within the NetworkSceneManager.SwitchScene method.
-                    SpawnedObjectsList.Remove(sobj);
+
                     if (NetworkManager.PrefabHandler != null && NetworkManager.PrefabHandler.ContainsHandler(sobj))
                     {
                         NetworkManager.PrefabHandler.HandleNetworkPrefabDestroy(sobj);
-                        OnDespawnObject(sobj, false);
                     }
                     else
                     {
+                        SpawnedObjectsList.Remove(sobj);
                         UnityEngine.Object.Destroy(sobj.gameObject);
                     }
                 }
@@ -559,7 +558,10 @@ namespace MLAPI.Spawning
                         if (NetworkManager.PrefabHandler.ContainsHandler(networkObjects[i]))
                         {
                             NetworkManager.PrefabHandler.HandleNetworkPrefabDestroy(networkObjects[i]);
-                            OnDespawnObject(networkObjects[i], false);
+                            if (SpawnedObjects.ContainsKey(networkObjects[i].NetworkObjectId))
+                            {
+                                OnDespawnObject(networkObjects[i], false);
+                            }
                         }
                         else
                         {
@@ -661,10 +663,10 @@ namespace MLAPI.Spawning
                             ulong[] clientIds = NetworkManager.ConnectedClientsIds;
                             var context = messageQueueContainer.EnterInternalCommandContext(
                                 MessageQueueContainer.MessageType.DestroyObject, NetworkChannel.Internal,
-                                clientIds, NetworkUpdateLoop.UpdateStage);
+                                clientIds, NetworkUpdateStage.PostLateUpdate);
                             if (context != null)
                             {
-                                using (var nonNullContext = (InternalCommandContext) context)
+                                using (var nonNullContext = (InternalCommandContext)context)
                                 {
                                     nonNullContext.NetworkWriter.WriteUInt64Packed(networkObject.NetworkObjectId);
                                 }
@@ -681,7 +683,6 @@ namespace MLAPI.Spawning
                 if (NetworkManager.PrefabHandler.ContainsHandler(networkObject))
                 {
                     NetworkManager.PrefabHandler.HandleNetworkPrefabDestroy(networkObject);
-                    OnDespawnObject(networkObject, false);
                 }
                 else
                 {
