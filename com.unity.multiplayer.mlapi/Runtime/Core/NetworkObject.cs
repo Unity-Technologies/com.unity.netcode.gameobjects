@@ -417,6 +417,11 @@ namespace MLAPI
 
         private void OnDestroy()
         {
+            if (NetworkManager != null && NetworkManager.IsListening && NetworkManager.IsServer == false && IsSpawned)
+            {
+                throw new NotServerException($"Destroy a spawned {nameof(NetworkObject)} on a non-host client is not valid. Call {nameof(Destroy)} or {nameof(Despawn)} on the server/host instead.");
+            }
+
             if (NetworkManager != null && NetworkManager.SpawnManager != null && NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(NetworkObjectId, out var networkObject))
             {
                 NetworkManager.SpawnManager.OnDespawnObject(networkObject, false);
