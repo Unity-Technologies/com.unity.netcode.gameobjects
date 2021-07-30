@@ -108,7 +108,7 @@ namespace MLAPI.Spawning
         /// <param name="networkPrefabOverrides">one or more NetworkPrefabs could be used to override the source NetworkPrefab</param>
         public void RegisterHostGlobalObjectIdHashValues(GameObject sourceNetworkPrefab, List<GameObject> networkPrefabOverrides)
         {
-            if(NetworkManager.Singleton.IsListening)
+            if (NetworkManager.Singleton.IsListening)
             {
                 if (NetworkManager.Singleton.IsHost)
                 {
@@ -120,7 +120,7 @@ namespace MLAPI.Spawning
                         foreach (var gameObject in networkPrefabOverrides)
                         {
                             var targetNetworkObject = gameObject.GetComponent<NetworkObject>();
-                            if(targetNetworkObject != null)
+                            if (targetNetworkObject != null)
                             {
                                 if (!m_PrefabInstanceToPrefabAsset.ContainsKey(targetNetworkObject.GlobalObjectIdHash))
                                 {
@@ -234,11 +234,11 @@ namespace MLAPI.Spawning
         /// <returns></returns>
         internal uint GetSourceGlobalObjectIdHash(uint networkPrefabHash)
         {
-            if(m_PrefabAssetToPrefabHandler.ContainsKey(networkPrefabHash))
+            if (m_PrefabAssetToPrefabHandler.ContainsKey(networkPrefabHash))
             {
                 return networkPrefabHash;
             }
-            else if(m_PrefabInstanceToPrefabAsset.ContainsKey(networkPrefabHash))
+            else if (m_PrefabInstanceToPrefabAsset.ContainsKey(networkPrefabHash))
             {
                 return m_PrefabInstanceToPrefabAsset[networkPrefabHash];
             }

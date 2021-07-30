@@ -15,7 +15,7 @@ public class ConnectionModeScript : MonoBehaviour
     internal void SetCommandLineHandler(CommandLineProcessor commandLineProcessor)
     {
         m_CommandLineProcessor = commandLineProcessor;
-        if(m_CommandLineProcessor.AutoConnectEnabled())
+        if (m_CommandLineProcessor.AutoConnectEnabled())
         {
             StartCoroutine(WaitForNetworkManager());
         }
@@ -30,7 +30,7 @@ public class ConnectionModeScript : MonoBehaviour
 
     private IEnumerator WaitForNetworkManager()
     {
-        while(true)
+        while (true)
         {
             yield return new WaitForSeconds(0.5f);
             try

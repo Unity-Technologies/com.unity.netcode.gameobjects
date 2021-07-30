@@ -68,7 +68,7 @@ namespace MLAPI.Messaging
         private bool m_IsTestingEnabled;
         private bool m_ProcessUpdateStagesExternally;
         private bool m_IsNotUsingBatching;
-        
+
         // TODO hack: Fixed update can run multiple times in a frame and the queue history frame doesn't get cleared
         // until the end of the frame. This results in messages executing at FixedUpdate being invoked multiple times.
         // This is used to prevent it being called more than once per frame.

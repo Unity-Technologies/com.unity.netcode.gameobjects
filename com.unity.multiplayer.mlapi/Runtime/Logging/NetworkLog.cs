@@ -62,12 +62,12 @@ namespace MLAPI.Logging
             {
                 var context = NetworkManager.Singleton.MessageQueueContainer.EnterInternalCommandContext(
                     MessageQueueContainer.MessageType.ServerLog, NetworkChannel.Internal,
-                    new[] {NetworkManager.Singleton.ServerClientId}, NetworkUpdateLoop.UpdateStage);
+                    new[] { NetworkManager.Singleton.ServerClientId }, NetworkUpdateLoop.UpdateStage);
                 if (context != null)
                 {
-                    using (var nonNullContext = (InternalCommandContext) context)
+                    using (var nonNullContext = (InternalCommandContext)context)
                     {
-                        nonNullContext.NetworkWriter.WriteByte((byte) logType);
+                        nonNullContext.NetworkWriter.WriteByte((byte)logType);
                         nonNullContext.NetworkWriter.WriteStringPacked(message);
                     }
                 }

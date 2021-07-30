@@ -346,20 +346,20 @@ namespace MLAPI
                         switch (networkPrefab.Override)
                         {
                             case NetworkPrefabOverride.Prefab:
-                            {
-                                if (NetworkConfig.NetworkPrefabs[i].SourcePrefabToOverride == null &&
-                                    NetworkConfig.NetworkPrefabs[i].Prefab != null)
                                 {
-                                    if (networkPrefab.SourcePrefabToOverride == null && networkPrefab.Prefab != null)
+                                    if (NetworkConfig.NetworkPrefabs[i].SourcePrefabToOverride == null &&
+                                        NetworkConfig.NetworkPrefabs[i].Prefab != null)
                                     {
-                                        networkPrefab.SourcePrefabToOverride = networkPrefab.Prefab;
+                                        if (networkPrefab.SourcePrefabToOverride == null && networkPrefab.Prefab != null)
+                                        {
+                                            networkPrefab.SourcePrefabToOverride = networkPrefab.Prefab;
+                                        }
+
+                                        globalObjectIdHash = networkPrefab.SourcePrefabToOverride.GetComponent<NetworkObject>().GlobalObjectIdHash;
                                     }
 
-                                    globalObjectIdHash = networkPrefab.SourcePrefabToOverride.GetComponent<NetworkObject>().GlobalObjectIdHash;
+                                    break;
                                 }
-
-                                break;
-                            }
                             case NetworkPrefabOverride.Hash:
                                 globalObjectIdHash = networkPrefab.SourceHashToOverride;
                                 break;
@@ -467,8 +467,8 @@ namespace MLAPI
                 for (int i = 0; i < NetworkConfig.RegisteredScenes.Count; i++)
                 {
                     SceneManager.RegisteredSceneNames.Add(NetworkConfig.RegisteredScenes[i]);
-                    SceneManager.SceneIndexToString.Add((uint) i, NetworkConfig.RegisteredScenes[i]);
-                    SceneManager.SceneNameToIndex.Add(NetworkConfig.RegisteredScenes[i], (uint) i);
+                    SceneManager.SceneIndexToString.Add((uint)i, NetworkConfig.RegisteredScenes[i]);
+                    SceneManager.SceneNameToIndex.Add(NetworkConfig.RegisteredScenes[i], (uint)i);
                 }
 
                 SceneManager.SetCurrentSceneIndex();
@@ -1029,13 +1029,13 @@ namespace MLAPI
 
         private void SendConnectionRequest()
         {
-            var clientIds = new[] {ServerClientId};
+            var clientIds = new[] { ServerClientId };
             var context = MessageQueueContainer.EnterInternalCommandContext(
                 MessageQueueContainer.MessageType.ConnectionRequest, NetworkChannel.Internal,
                 clientIds, NetworkUpdateStage.EarlyUpdate);
             if (context != null)
             {
-                using (var nonNullContext = (InternalCommandContext) context)
+                using (var nonNullContext = (InternalCommandContext)context)
                 {
                     nonNullContext.NetworkWriter.WriteUInt64Packed(NetworkConfig.GetConfig());
 
@@ -1124,15 +1124,15 @@ namespace MLAPI
 #endif
                     break;
                 case NetworkEvent.Data:
-                {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
                     {
-                        NetworkLog.LogInfo($"Incoming Data From {clientId}: {payload.Count} bytes");
-                    }
+                        if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+                        {
+                            NetworkLog.LogInfo($"Incoming Data From {clientId}: {payload.Count} bytes");
+                        }
 
-                    HandleIncomingData(clientId, networkChannel, payload, receiveTime);
-                    break;
-                }
+                        HandleIncomingData(clientId, networkChannel, payload, receiveTime);
+                        break;
+                    }
                 case NetworkEvent.Disconnect:
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                     s_TransportDisconnect.Begin();
@@ -1254,7 +1254,7 @@ namespace MLAPI
                             {
                                 Receive = new ServerRpcReceiveParams
                                 {
-                                    UpdateStage = (NetworkUpdateStage) networkUpdateStage,
+                                    UpdateStage = (NetworkUpdateStage)networkUpdateStage,
                                     SenderClientId = item.NetworkId
                                 }
                             };
@@ -1264,7 +1264,7 @@ namespace MLAPI
                             {
                                 Receive = new ClientRpcReceiveParams
                                 {
-                                    UpdateStage = (NetworkUpdateStage) networkUpdateStage
+                                    UpdateStage = (NetworkUpdateStage)networkUpdateStage
                                 }
                             };
                             break;
@@ -1386,7 +1386,7 @@ namespace MLAPI
                 clientIds, NetworkUpdateStage.EarlyUpdate);
             if (context != null)
             {
-                using (var nonNullContext = (InternalCommandContext) context)
+                using (var nonNullContext = (InternalCommandContext)context)
                 {
                     nonNullContext.NetworkWriter.WriteInt32Packed(NetworkTickSystem.ServerTime.Tick);
                 }
@@ -1434,7 +1434,7 @@ namespace MLAPI
                 if (ownerClientId != ServerClientId)
                 {
                     // Don't send any data over the wire if the host "connected"
-                    ulong[] clientIds = {ownerClientId};
+                    ulong[] clientIds = { ownerClientId };
 
                     var context = MessageQueueContainer.EnterInternalCommandContext(
                         MessageQueueContainer.MessageType.ConnectionApproved, NetworkChannel.Internal,
@@ -1442,7 +1442,7 @@ namespace MLAPI
 
                     if (context != null)
                     {
-                        using (var nonNullContext = (InternalCommandContext) context)
+                        using (var nonNullContext = (InternalCommandContext)context)
                         {
                             nonNullContext.NetworkWriter.WriteUInt64Packed(ownerClientId);
 
@@ -1454,7 +1454,7 @@ namespace MLAPI
                             }
 
                             nonNullContext.NetworkWriter.WriteInt32Packed(LocalTime.Tick);
-                            nonNullContext.NetworkWriter.WriteUInt32Packed((uint) m_ObservedObjects.Count);
+                            nonNullContext.NetworkWriter.WriteUInt32Packed((uint)m_ObservedObjects.Count);
 
                             for (int i = 0; i < m_ObservedObjects.Count; i++)
                             {
@@ -1484,7 +1484,7 @@ namespace MLAPI
 
                     var context = MessageQueueContainer.EnterInternalCommandContext(
                         MessageQueueContainer.MessageType.CreateObject, NetworkChannel.Internal,
-                        new[] {clientPair.Key}, NetworkUpdateLoop.UpdateStage);
+                        new[] { clientPair.Key }, NetworkUpdateLoop.UpdateStage);
                     if (context != null)
                     {
                         using (var nonNullContext = (InternalCommandContext)context)

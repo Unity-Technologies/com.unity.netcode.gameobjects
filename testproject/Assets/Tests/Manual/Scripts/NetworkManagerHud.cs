@@ -9,27 +9,25 @@ namespace TestProject.ManualTests
     [DisallowMultipleComponent]
     public class NetworkManagerHud : MonoBehaviour
     {
-        NetworkManager m_NetworkManager;
-
-        UNetTransport m_Transport;
-
-        GUIStyle m_LabelTextStyle;
+        private NetworkManager m_NetworkManager;
+        private UNetTransport m_Transport;
+        private GUIStyle m_LabelTextStyle;
 
         // This is needed to make the port field more convenient. GUILayout.TextField is very limited and we want to be able to clear the field entirely so we can't cache this as ushort.
-        string m_PortString;
+        private string m_PortString;
 
         public Vector2 DrawOffset = new Vector2(10, 10);
 
         public Color LabelColor = Color.black;
 
-        void Awake()
+        private void Awake()
         {
             // Only cache networking manager but not transport here because transport could change anytime.
             m_NetworkManager = GetComponent<NetworkManager>();
             m_LabelTextStyle = new GUIStyle(GUIStyle.none);
         }
 
-        void OnGUI()
+        private void OnGUI()
         {
             m_LabelTextStyle.normal.textColor = LabelColor;
 
@@ -54,7 +52,7 @@ namespace TestProject.ManualTests
             GUILayout.EndArea();
         }
 
-        void DrawConnectGUI()
+        private void DrawConnectGUI()
         {
             GUILayout.BeginHorizontal();
             GUILayout.Space(10);
@@ -94,7 +92,7 @@ namespace TestProject.ManualTests
             GUILayout.EndHorizontal();
         }
 
-        void DrawStatusGUI()
+        private void DrawStatusGUI()
         {
             if (m_NetworkManager.IsServer)
             {
@@ -115,7 +113,7 @@ namespace TestProject.ManualTests
                 {
                     m_NetworkManager.StopHost();
                 }
-                else if(m_NetworkManager.IsServer)
+                else if (m_NetworkManager.IsServer)
                 {
                     m_NetworkManager.StopServer();
                 }
@@ -125,8 +123,8 @@ namespace TestProject.ManualTests
                 }
             }
         }
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        bool IsRunning(NetworkManager networkManager) => networkManager.IsServer || networkManager.IsClient;
+        private bool IsRunning(NetworkManager networkManager) => networkManager.IsServer || networkManager.IsClient;
     }
 }

@@ -291,13 +291,13 @@ namespace MLAPI
 
             var context = networkManager.MessageQueueContainer.EnterInternalCommandContext(
                 MessageQueueContainer.MessageType.CreateObjects, NetworkChannel.Internal,
-                new[] {clientId}, NetworkUpdateLoop.UpdateStage);
+                new[] { clientId }, NetworkUpdateLoop.UpdateStage);
 
             if (context != null)
             {
-                using (var nonNullContext = (InternalCommandContext) context)
+                using (var nonNullContext = (InternalCommandContext)context)
                 {
-                    nonNullContext.NetworkWriter.WriteUInt16Packed((ushort) networkObjects.Count);
+                    nonNullContext.NetworkWriter.WriteUInt16Packed((ushort)networkObjects.Count);
 
                     for (int i = 0; i < networkObjects.Count; i++)
                     {
@@ -342,10 +342,10 @@ namespace MLAPI
 
             var context = NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
                 MessageQueueContainer.MessageType.DestroyObject, NetworkChannel.Internal,
-                new[] {clientId}, NetworkUpdateStage.PostLateUpdate);
+                new[] { clientId }, NetworkUpdateStage.PostLateUpdate);
             if (context != null)
             {
-                using (var nonNullContext = (InternalCommandContext) context)
+                using (var nonNullContext = (InternalCommandContext)context)
                 {
                     nonNullContext.NetworkWriter.WriteUInt64Packed(NetworkObjectId);
                 }
@@ -397,12 +397,12 @@ namespace MLAPI
 
             var context = networkManager.MessageQueueContainer.EnterInternalCommandContext(
                 MessageQueueContainer.MessageType.DestroyObjects, NetworkChannel.Internal,
-                new[] {clientId}, NetworkUpdateStage.PostLateUpdate);
+                new[] { clientId }, NetworkUpdateStage.PostLateUpdate);
             if (context != null)
             {
-                using (var nonNullContext = (InternalCommandContext) context)
+                using (var nonNullContext = (InternalCommandContext)context)
                 {
-                    nonNullContext.NetworkWriter.WriteUInt16Packed((ushort) networkObjects.Count);
+                    nonNullContext.NetworkWriter.WriteUInt16Packed((ushort)networkObjects.Count);
 
                     for (int i = 0; i < networkObjects.Count; i++)
                     {
@@ -695,7 +695,7 @@ namespace MLAPI
 
             if (context != null)
             {
-                using (var nonNullContext = (InternalCommandContext) context)
+                using (var nonNullContext = (InternalCommandContext)context)
                 {
                     nonNullContext.NetworkWriter.WriteUInt64Packed(NetworkObjectId);
                     WriteNetworkParenting(nonNullContext.NetworkWriter, m_IsReparented, m_LatestParent);

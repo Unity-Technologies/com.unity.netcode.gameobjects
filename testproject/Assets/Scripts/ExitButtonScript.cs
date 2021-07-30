@@ -30,13 +30,13 @@ public class ExitButtonScript : MonoBehaviour
         }
 
         if (m_SceneMenuToLoad != null && m_SceneMenuToLoad.GetReferencedScenes()[0] != string.Empty)
-        {           
+        {
             SceneManager.LoadSceneAsync(m_SceneMenuToLoad.GetReferencedScenes()[0], LoadSceneMode.Single);
         }
         else
         {
             SceneManager.LoadSceneAsync(0, LoadSceneMode.Single);
         }
-        
+
     }
 }

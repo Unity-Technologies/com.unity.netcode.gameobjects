@@ -53,7 +53,7 @@ namespace TestProject.RuntimeTests.Support
             }
 
             // Otherwise, instantiate an instance of the NetworkPrefab linked to the prefabHash
-            var networkObject =  Object.Instantiate(networkPrefabReference, position, rotation).GetComponent<NetworkObject>();
+            var networkObject = Object.Instantiate(networkPrefabReference, position, rotation).GetComponent<NetworkObject>();
 
             return networkObject;
         }

@@ -182,10 +182,10 @@ namespace MLAPI.SceneManagement
 
                 var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
                     MessageQueueContainer.MessageType.AllClientsLoadedScene, NetworkChannel.Internal,
-                    new[] {NetworkManager.Singleton.ServerClientId}, NetworkUpdateLoop.UpdateStage);
+                    new[] { NetworkManager.Singleton.ServerClientId }, NetworkUpdateLoop.UpdateStage);
                 if (context != null)
                 {
-                    using (var nonNullContext = (InternalCommandContext) context)
+                    using (var nonNullContext = (InternalCommandContext)context)
                     {
                         var doneClientIds = switchSceneProgress.DoneClients.ToArray();
                         var timedOutClientIds = m_NetworkManager.ConnectedClients.Keys.Except(doneClientIds).ToArray();
@@ -267,10 +267,10 @@ namespace MLAPI.SceneManagement
 
             var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
                 MessageQueueContainer.MessageType.ClientSwitchSceneCompleted, NetworkChannel.Internal,
-                new[] {m_NetworkManager.ServerClientId}, NetworkUpdateLoop.UpdateStage);
+                new[] { m_NetworkManager.ServerClientId }, NetworkUpdateLoop.UpdateStage);
             if (context != null)
             {
-                using (var nonNullContext = (InternalCommandContext) context)
+                using (var nonNullContext = (InternalCommandContext)context)
                 {
                     nonNullContext.NetworkWriter.WriteByteArray(switchSceneGuid.ToByteArray());
                 }
@@ -356,7 +356,7 @@ namespace MLAPI.SceneManagement
                 {
                     var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
                         MessageQueueContainer.MessageType.SwitchScene, NetworkChannel.Internal,
-                        new[] {m_NetworkManager.ConnectedClientsList[j].ClientId}, NetworkUpdateLoop.UpdateStage);
+                        new[] { m_NetworkManager.ConnectedClientsList[j].ClientId }, NetworkUpdateLoop.UpdateStage);
                     if (context != null)
                     {
                         using (var nonNullContext = (InternalCommandContext)context)
@@ -415,10 +415,10 @@ namespace MLAPI.SceneManagement
 
             var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
                 MessageQueueContainer.MessageType.ClientSwitchSceneCompleted, NetworkChannel.Internal,
-                new[] {m_NetworkManager.ServerClientId}, NetworkUpdateLoop.UpdateStage);
+                new[] { m_NetworkManager.ServerClientId }, NetworkUpdateLoop.UpdateStage);
             if (context != null)
             {
-                using (var nonNullContext = (InternalCommandContext) context)
+                using (var nonNullContext = (InternalCommandContext)context)
                 {
                     nonNullContext.NetworkWriter.WriteByteArray(switchSceneGuid.ToByteArray());
                 }
