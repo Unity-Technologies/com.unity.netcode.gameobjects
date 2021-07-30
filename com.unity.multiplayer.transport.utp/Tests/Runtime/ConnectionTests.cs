@@ -133,7 +133,7 @@ namespace MLAPI.UTP.RuntimeTests
             for (int i = 1; i < NumClients; i++)
                 server.DisconnectRemoteClient(serverEvents[i].ClientID);
 
-            // Need to manually wait since we don't know which client will got the Disconnect.
+            // Need to manually wait since we don't know which client got the Disconnect.
             yield return new WaitForSeconds(MaxNetworkEventWaitTime);
 
             // Check that all clients got a Disconnect event.
