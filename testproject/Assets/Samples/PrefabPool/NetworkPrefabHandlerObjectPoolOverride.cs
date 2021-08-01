@@ -11,8 +11,8 @@ using MLAPI.Serialization.Pooled;
 /// USAGE NOTE: When using more than one network prefab, it is important to understand that each
 /// client determines what prefab they will be using and will not be synchronized across other clients.
 /// This feature is primarily to be used for things like platform specific Network Prefabs where
-/// things like collision models or graphics related assets need to be used. The usage of different
-/// visual assets used is strictly for example purposes.
+/// things like collision models or graphics related assets might need to vary between platforms.
+/// The usage of different visual assets used is strictly for example purposes only.
 /// </summary>
 public class NetworkPrefabHandlerObjectPoolOverride : NetworkBehaviour, INetworkPrefabInstanceHandler
 {
