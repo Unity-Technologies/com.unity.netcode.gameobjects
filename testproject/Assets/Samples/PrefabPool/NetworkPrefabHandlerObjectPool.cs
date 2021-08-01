@@ -2,7 +2,6 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using MLAPI;
-using MLAPI.Serialization.Pooled;
 using MLAPI.Spawning;
 
 public class NetworkPrefabHandlerObjectPool : NetworkBehaviour, INetworkPrefabInstanceHandler
