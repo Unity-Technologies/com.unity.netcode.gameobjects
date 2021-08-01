@@ -984,6 +984,7 @@ MonoBehaviour:
   - {fileID: 1991364468704639885, guid: 2ab098de4ccb3a8459b88084b29fd0ac, type: 3}
   - {fileID: 6137946741893414299, guid: d2bccc96d1636264fa43b546a1b617c3, type: 3}
   m_ObjectPoolSize: 15
+  m_SynchronizeOverrides: 1
   m_SpawnsPerSecond: 2
 --- !u!4 &1113539280
 Transform:

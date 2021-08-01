@@ -3,7 +3,17 @@ using System.Collections.Generic;
 using UnityEngine;
 using MLAPI;
 using MLAPI.Spawning;
+using MLAPI.Serialization;
+using MLAPI.Serialization.Pooled;
 
+/// <summary>
+/// This is an example of using more than one Network Prefab override when using a custom handler
+/// USAGE NOTE: When using more than one network prefab, it is important to understand that each
+/// client determines what prefab they will be using and will not be synchronized across other clients.
+/// This feature is primarily to be used for things like platform specific Network Prefabs where
+/// things like collision models or graphics related assets need to be used. The usage of different
+/// visual assets used is strictly for example purposes.
+/// </summary>
 public class NetworkPrefabHandlerObjectPoolOverride : NetworkBehaviour, INetworkPrefabInstanceHandler
 {
     private GameObject m_ObjectToPool;
@@ -16,6 +26,9 @@ public class NetworkPrefabHandlerObjectPoolOverride : NetworkBehaviour, INetwork
 
     [SerializeField]
     private int m_ObjectPoolSize = 15;
+
+    [SerializeField]
+    private bool m_SynchronizeOverrides;
 
     [SerializeField]
     [Range(1, 5)]
@@ -59,8 +72,8 @@ public class NetworkPrefabHandlerObjectPoolOverride : NetworkBehaviour, INetwork
         {
             // If we are a server, then we just create a big pool of the same base override object
             // otherwise for Host and Client we use the list of object overrides
-            var objectIndex = IsServer && !IsHost ? 0 : x;
-            var objectToPool = IsServer && !IsHost ? m_ObjectToOverride : m_ObjectOverrides[x];
+            var objectIndex = (IsServer && !IsHost) ? 0 : x;
+            var objectToPool = (IsServer && !IsHost) ? m_ObjectToOverride : m_ObjectOverrides[objectIndex];
 
             if (!m_ObjectsPool.ContainsKey(objectIndex))
             {
@@ -89,7 +102,7 @@ public class NetworkPrefabHandlerObjectPoolOverride : NetworkBehaviour, INetwork
         }
     }
 
-    private GameObject GetNextSpawnObject()
+    private GameObject GetNextSpawnObject(int synchronizedIndex = -1)
     {
         // If we are just a server use index 0, otherwise we are a host or client so get a random override object to spawn
         var indexType = IsServer && !IsHost ? 0 : Random.Range(0, m_ObjectOverrides.Count - 1);
@@ -103,13 +116,30 @@ public class NetworkPrefabHandlerObjectPoolOverride : NetworkBehaviour, INetwork
                     return gameObject;
                 }
             }
-            //We are out of objects, expand our pool by 1 more NetworkObject
-            var newObject = Instantiate(m_ObjectOverrides[indexType]);
+            // We are out of objects, get the type of object we need to instantiate and add to the pool
+            var objectToPool = (IsServer && !IsHost) ? m_ObjectToOverride : m_ObjectOverrides[indexType];
+
+            // Expand our pool by 1 more NetworkObject
+            var newObject = Instantiate(objectToPool);
+            var genericObjectPooledBehaviour = NetworkObject.GetComponent<GenericPooledObjectBehaviour>();
+            genericObjectPooledBehaviour.SyncrhonizedObjectTypeIndex = (IsServer && !IsHost) ? Random.Range(0, m_ObjectOverrides.Count - 1) : indexType;
             m_ObjectsPool[indexType].Add(newObject);
             return newObject;
         }
         // If requesting a bad index return null
         return null;
+    }
+
+    public void OnSynchronizeWrite(NetworkWriter networkWriter, NetworkObject networkObject)
+    {
+        var genericObjectPooledBehaviour = NetworkObject.GetComponent<GenericPooledObjectBehaviour>();
+        networkWriter.WriteInt32Packed(genericObjectPooledBehaviour.SyncrhonizedObjectTypeIndex);
+    }
+
+    private int m_UseSynchronizedIndexValue = -1;
+    public void OnSynchronizeRead(NetworkReader networkReader)
+    {
+        m_UseSynchronizedIndexValue = networkReader.ReadInt32Packed();
     }
 
     public NetworkObject Instantiate(ulong ownerClientId, Vector3 position, Quaternion rotation)
@@ -129,6 +159,8 @@ public class NetworkPrefabHandlerObjectPoolOverride : NetworkBehaviour, INetwork
         }
     }
 
+
+
     /// <summary>
     ///  Spawns the objects.
     /// </summary>
@@ -144,6 +176,16 @@ public class NetworkPrefabHandlerObjectPoolOverride : NetworkBehaviour, INetwork
         m_IsSpawningObjects = true;
 
         var entitySpawnUpdateRate = 1.0f;
+
+        var networkBuffer = (NetworkBuffer)null;
+        var networkWriter = (PooledNetworkWriter)null;
+
+        if(m_SynchronizeOverrides)
+        {
+            networkBuffer = new NetworkBuffer(2);
+            networkWriter = PooledNetworkWriter.Get(networkBuffer);
+        }
+
         while (m_IsSpawningObjects)
         {
             entitySpawnUpdateRate = 1.0f / (float)m_SpawnsPerSecond;
@@ -160,11 +202,24 @@ public class NetworkPrefabHandlerObjectPoolOverride : NetworkBehaviour, INetwork
                 var no = go.GetComponent<NetworkObject>();
                 if (!no.IsSpawned)
                 {
-                    no.Spawn(null, true);
+                    if (m_SynchronizeOverrides)
+                    {
+                        networkBuffer.Position = 0;
+                        var genericObjectPooledBehaviour = no.GetComponent<GenericPooledObjectBehaviour>();
+                        networkWriter.WriteInt32Packed(genericObjectPooledBehaviour.SyncrhonizedObjectTypeIndex);
+                    }
+                    no.Spawn(networkBuffer, true);
                 }
             }
             yield return new WaitForSeconds(entitySpawnUpdateRate);
         }
+
+        if (m_SynchronizeOverrides)
+        {
+            NetworkWriterPool.PutBackInPool(networkWriter);
+            networkBuffer.Dispose();
+        }
+
     }
 }
 

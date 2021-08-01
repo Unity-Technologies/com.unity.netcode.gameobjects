@@ -1,8 +1,10 @@
-using MLAPI;
 using UnityEngine;
+using MLAPI;
+using MLAPI.NetworkVariable;
+
 
 /// <summary>
-/// A general object that can be used for testing purposes
+/// A general object used for pooling purposes
 /// </summary>
 public class GenericPooledObjectBehaviour : NetworkBehaviour
 {
@@ -10,16 +12,26 @@ public class GenericPooledObjectBehaviour : NetworkBehaviour
     [Tooltip("This will make the spawned objects move around randomly.  !Caution! You can generate a lot of objects this way!")]
     private bool m_MoveRandomly = true;
 
+    [HideInInspector]
+    public bool HasHandler;
+
+    [HideInInspector]
+    public int SyncrhonizedObjectTypeIndex;
+
     private Rigidbody m_RigidBody;
     private MeshRenderer m_MeshRenderer;
     private Vector3 m_Direction;
     private float m_Velocity;
+    private float m_VisibilitySpawn;
+    private bool m_ShouldDespawn;
 
     private void Start()
     {
         m_RigidBody = GetComponent<Rigidbody>();
         m_MeshRenderer = GetComponent<MeshRenderer>();
     }
+
+
 
     /// <summary>
     /// Handles disabling the MeshRenderer when the client despawns a NetworkObject
@@ -37,11 +49,18 @@ public class GenericPooledObjectBehaviour : NetworkBehaviour
             {
                 m_MeshRenderer.enabled = false;
             }
+
+            var objectLabel = GetComponentInChildren<NetworkObjectLabel>();
+            if (objectLabel != null)
+            {
+                objectLabel.enabled = false;
+            }
         }
+
         base.OnNetworkDespawn();
     }
 
-    private float m_VisibilitySpawn;
+
     /// <summary>
     /// Handles setting a delay before the newly spawned object is visible
     /// Note: this might get removed once the snapshot system is synchronizing
@@ -56,11 +75,13 @@ public class GenericPooledObjectBehaviour : NetworkBehaviour
                 m_MeshRenderer = GetComponent<MeshRenderer>();
             }
             m_MeshRenderer.enabled = false;
-            m_VisibilitySpawn = Time.realtimeSinceStartup + 0.12f;
-            if (NetworkObject.NetworkObjectId == 0)
+            var objectLabel = GetComponentInChildren<NetworkObjectLabel>();
+            if (objectLabel != null)
             {
-                Debug.Log("Spawning NetworkObjectId 0!");
+                objectLabel.enabled = false;
             }
+
+            m_VisibilitySpawn = Time.realtimeSinceStartup + 0.12f;
         }
         base.OnNetworkSpawn();
     }
@@ -98,6 +119,7 @@ public class GenericPooledObjectBehaviour : NetworkBehaviour
             }
             else
             {
+                // All of the below is strictly for debugging purposes.  None of these conditions should ever be true.
                 if (NetworkObject != null && !NetworkObject.isActiveAndEnabled)
                 {
                     Debug.LogWarning($"{nameof(GenericPooledObjectBehaviour)} id {NetworkObject.NetworkObjectId} is not active and enabled but game object is still active!");
@@ -105,14 +127,16 @@ public class GenericPooledObjectBehaviour : NetworkBehaviour
 
                 if (NetworkObject != null && !NetworkObject.IsSpawned)
                 {
-                    Debug.LogWarning($"{nameof(GenericPooledObjectBehaviour)} id {NetworkObject.NetworkObjectId} is not spawned but still active and enabled");
+                    Debug.LogWarning($"{nameof(GenericPooledObjectBehaviour)} id {NetworkObject.NetworkObjectId} is not spawned but still active and enabled (forcing set active false)");
                     gameObject.SetActive(false);
                 }
             }
         }
     }
 
-
+    /// <summary>
+    /// This update handles server side despawning and enables client side visibility
+    /// </summary>
     private void Update()
     {
         if (IsOwner && m_ShouldDespawn && NetworkObject != null)
@@ -136,17 +160,23 @@ public class GenericPooledObjectBehaviour : NetworkBehaviour
                 if (m_VisibilitySpawn < Time.realtimeSinceStartup)
                 {
                     m_MeshRenderer.enabled = true;
+                    var objectLabel = GetComponentInChildren<NetworkObjectLabel>();
+                    if (objectLabel != null)
+                    {
+                        objectLabel.enabled = true;
+                    }
                 }
             }
         }
 
     }
 
-    [HideInInspector]
-    public bool HasHandler;
 
-    private bool m_ShouldDespawn;
-
+    /// <summary>
+    /// Host and Server Only:
+    /// When triggered this will start the despawn process
+    /// </summary>
+    /// <param name="other"></param>
     private void OnTriggerEnter(Collider other)
     {
         if (IsOwner && gameObject.activeInHierarchy)

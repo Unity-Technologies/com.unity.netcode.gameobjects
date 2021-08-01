@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using MLAPI;
+using MLAPI.Serialization.Pooled;
 using MLAPI.Spawning;
 
 public class NetworkPrefabHandlerObjectPool : NetworkBehaviour, INetworkPrefabInstanceHandler
@@ -27,8 +28,12 @@ public class NetworkPrefabHandlerObjectPool : NetworkBehaviour, INetworkPrefabIn
             NetworkManager.PrefabHandler.AddHandler(m_ObjectToPool, this);
         }
 
-        // Makes sure we have the right prefab
-        m_ObjectToPool = NetworkManager.GetNetworkPrefabOverride(m_ObjectToPool);
+        // This assures we have the right prefab
+        if (IsClient)
+        {
+            m_ObjectToPool = NetworkManager.GetNetworkPrefabOverride(m_ObjectToPool);
+        }
+
         if (m_ObjectToPool != null)
         {
             m_ObjectsPool = new List<GameObject>();

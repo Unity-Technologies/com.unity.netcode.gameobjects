@@ -5,6 +5,33 @@ public class NetworkObjectLabel : NetworkBehaviour
 {
 
     private TextMesh m_ObjectLabel;
+    private MeshRenderer m_Renderer;
+
+    private void OnEnable()
+    {
+        if (m_Renderer == null)
+        {
+            m_Renderer = GetComponent<MeshRenderer>();
+        }
+
+        if(m_Renderer != null)
+        {
+            m_Renderer.enabled = true;
+        }
+    }
+
+    private void OnDisable()
+    {
+        if (m_Renderer == null)
+        {
+            m_Renderer = GetComponent<MeshRenderer>();
+        }
+
+        if (m_Renderer != null)
+        {
+            m_Renderer.enabled = false;
+        }
+    }
 
     public override void OnNetworkSpawn()
     {
@@ -29,5 +56,4 @@ public class NetworkObjectLabel : NetworkBehaviour
 
         base.OnNetworkDespawn();
     }
-
 }
