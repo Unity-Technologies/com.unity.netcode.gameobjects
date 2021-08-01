@@ -324,7 +324,7 @@ namespace MLAPI
         /// Gets called when the <see cref="NetworkObject"/> gets spawned, message handlers are ready to be registered and the network is setup. Provides a Payload if it was provided
         /// </summary>
         /// <param name="stream">The stream containing the spawn payload</param>
-        public virtual void OnNetworkSpawn(Stream stream)
+        internal void NetworkSpawn()
         {
             OnNetworkSpawn();
         }

@@ -226,7 +226,7 @@ namespace MLAPI
         /// </summary>
         /// <param name="clientId">The client to show the object to</param>
         /// <param name="payload">An optional payload to send as part of the spawn</param>
-        public void NetworkShow(ulong clientId, Stream payload = null)
+        public void NetworkShow(ulong clientId)
         {
             if (!IsSpawned)
             {
@@ -245,7 +245,7 @@ namespace MLAPI
 
             Observers.Add(clientId);
 
-            NetworkManager.SpawnManager.SendSpawnCallForObject(clientId, OwnerClientId, this, payload);
+            NetworkManager.SpawnManager.SendSpawnCallForObject(clientId, OwnerClientId, this);
         }
 
         /// <summary>
@@ -254,7 +254,7 @@ namespace MLAPI
         /// <param name="networkObjects">The objects to show</param>
         /// <param name="clientId">The client to show the objects to</param>
         /// <param name="payload">An optional payload to send as part of the spawns</param>
-        public static void NetworkShow(List<NetworkObject> networkObjects, ulong clientId, Stream payload = null)
+        public static void NetworkShow(List<NetworkObject> networkObjects, ulong clientId)
         {
             if (networkObjects == null || networkObjects.Count == 0)
             {
@@ -304,7 +304,7 @@ namespace MLAPI
                         networkObjects[i].Observers.Add(clientId);
 
                         networkManager.SpawnManager.WriteSpawnCallForObject(nonNullContext.NetworkWriter, clientId,
-                            networkObjects[i], payload);
+                            networkObjects[i]);
                     }
                 }
             }
@@ -429,7 +429,7 @@ namespace MLAPI
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void SpawnInternal(Stream spawnPayload, bool destroyWithScene, ulong? ownerClientId, bool playerObject)
+        private void SpawnInternal(bool destroyWithScene, ulong? ownerClientId, bool playerObject)
         {
             if (!NetworkManager.IsListening)
             {
@@ -441,18 +441,13 @@ namespace MLAPI
                 throw new NotServerException($"Only server can spawn {nameof(NetworkObject)}s");
             }
 
-            if (spawnPayload != null)
-            {
-                spawnPayload.Position = 0;
-            }
-
-            NetworkManager.SpawnManager.SpawnNetworkObjectLocally(this, NetworkManager.SpawnManager.GetNetworkObjectId(), false, playerObject, ownerClientId, spawnPayload, spawnPayload != null, spawnPayload == null ? 0 : (int)spawnPayload.Length, false, destroyWithScene);
+            NetworkManager.SpawnManager.SpawnNetworkObjectLocally(this, NetworkManager.SpawnManager.GetNetworkObjectId(), false, playerObject, ownerClientId,null, false, destroyWithScene);
             ulong ownerId = ownerClientId != null ? ownerClientId.Value : NetworkManager.ServerClientId;
             for (int i = 0; i < NetworkManager.ConnectedClientsList.Count; i++)
             {
                 if (Observers.Contains(NetworkManager.ConnectedClientsList[i].ClientId))
                 {
-                    NetworkManager.SpawnManager.SendSpawnCallForObject(NetworkManager.ConnectedClientsList[i].ClientId, ownerId, this, spawnPayload);
+                    NetworkManager.SpawnManager.SendSpawnCallForObject(NetworkManager.ConnectedClientsList[i].ClientId, ownerId, this);
                 }
             }
         }
@@ -462,9 +457,9 @@ namespace MLAPI
         /// </summary>
         /// <param name="spawnPayload">The writer containing the spawn payload</param>
         /// <param name="destroyWithScene">Should the object be destroyed when the scene is changed</param>
-        public void Spawn(Stream spawnPayload = null, bool destroyWithScene = false)
+        public void Spawn(bool destroyWithScene = false)
         {
-            SpawnInternal(spawnPayload, destroyWithScene, null, false);
+            SpawnInternal(destroyWithScene, null, false);
         }
 
         /// <summary>
@@ -473,9 +468,9 @@ namespace MLAPI
         /// <param name="clientId">The clientId to own the object</param>
         /// <param name="spawnPayload">The writer containing the spawn payload</param>
         /// <param name="destroyWithScene">Should the object be destroyd when the scene is changed</param>
-        public void SpawnWithOwnership(ulong clientId, Stream spawnPayload = null, bool destroyWithScene = false)
+        public void SpawnWithOwnership(ulong clientId, bool destroyWithScene = false)
         {
-            SpawnInternal(spawnPayload, destroyWithScene, clientId, false);
+            SpawnInternal(destroyWithScene, clientId, false);
         }
 
         /// <summary>
@@ -484,9 +479,9 @@ namespace MLAPI
         /// <param name="clientId">The clientId whos player object this is</param>
         /// <param name="spawnPayload">The writer containing the spawn payload</param>
         /// <param name="destroyWithScene">Should the object be destroyd when the scene is changed</param>
-        public void SpawnAsPlayerObject(ulong clientId, Stream spawnPayload = null, bool destroyWithScene = false)
+        public void SpawnAsPlayerObject(ulong clientId, bool destroyWithScene = false)
         {
-            SpawnInternal(spawnPayload, destroyWithScene, clientId, true);
+            SpawnInternal(destroyWithScene, clientId, true);
         }
 
         /// <summary>
@@ -781,12 +776,12 @@ namespace MLAPI
             }
         }
 
-        internal void InvokeBehaviourNetworkSpawn(Stream stream)
+        internal void InvokeBehaviourNetworkSpawn()
         {
             for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
             {
                 ChildNetworkBehaviours[i].InternalOnNetworkSpawn();
-                ChildNetworkBehaviours[i].OnNetworkSpawn(stream);
+                ChildNetworkBehaviours[i].NetworkSpawn();
             }
         }
 
@@ -1055,7 +1050,7 @@ namespace MLAPI
             }
 
             // Spawn the NetworkObject
-            networkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, networkId, isSceneObject, isPlayerObject, ownerClientId, objectStream, false, 0, true, false);
+            networkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, networkId, isSceneObject, isPlayerObject, ownerClientId, objectStream, true, false);
 
             return networkObject;
         }

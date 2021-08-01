@@ -66,7 +66,7 @@ namespace TestProject.ManualTests
                 var networkObject = GetComponent<NetworkObject>();
                 if (networkObject != null)
                 {
-                    networkObject.SpawnWithOwnership(clientId, null, true);
+                    networkObject.SpawnWithOwnership(clientId, true);
                 }
             }
         }
