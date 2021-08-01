@@ -3,12 +3,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using MLAPI.Configuration;
 using MLAPI.Exceptions;
 using MLAPI.Hashing;
 using MLAPI.Logging;
 using MLAPI.Messaging;
-using MLAPI.Serialization.Pooled;
 using MLAPI.Transports;
 using MLAPI.Serialization;
 using UnityEngine;
@@ -222,10 +220,9 @@ namespace MLAPI
         }
 
         /// <summary>
-        /// Shows a previously hidden object to a client
+        /// Shows a previously hidden <see cref="NetworkObject"/> to a client
         /// </summary>
-        /// <param name="clientId">The client to show the object to</param>
-        /// <param name="payload">An optional payload to send as part of the spawn</param>
+        /// <param name="clientId">The client to show the <see cref="NetworkObject"/> to</param>
         public void NetworkShow(ulong clientId)
         {
             if (!IsSpawned)
@@ -249,11 +246,10 @@ namespace MLAPI
         }
 
         /// <summary>
-        /// Shows a list of previously hidden objects to a client
+        /// Shows a list of previously hidden <see cref="NetworkObject"/>s to a client
         /// </summary>
-        /// <param name="networkObjects">The objects to show</param>
+        /// <param name="networkObjects">The <see cref="NetworkObject"/>s to show</param>
         /// <param name="clientId">The client to show the objects to</param>
-        /// <param name="payload">An optional payload to send as part of the spawns</param>
         public static void NetworkShow(List<NetworkObject> networkObjects, ulong clientId)
         {
             if (networkObjects == null || networkObjects.Count == 0)
@@ -453,9 +449,8 @@ namespace MLAPI
         }
 
         /// <summary>
-        /// Spawns this GameObject across the network. Can only be called from the Server
+        /// Spawns this <see cref="NetworkObject"/> across the network. Can only be called from the Server
         /// </summary>
-        /// <param name="spawnPayload">The writer containing the spawn payload</param>
         /// <param name="destroyWithScene">Should the object be destroyed when the scene is changed</param>
         public void Spawn(bool destroyWithScene = false)
         {
@@ -463,21 +458,19 @@ namespace MLAPI
         }
 
         /// <summary>
-        /// Spawns an object across the network with a given owner. Can only be called from server
+        /// Spawns a <see cref="NetworkObject"/> across the network with a given owner. Can only be called from server
         /// </summary>
         /// <param name="clientId">The clientId to own the object</param>
-        /// <param name="spawnPayload">The writer containing the spawn payload</param>
-        /// <param name="destroyWithScene">Should the object be destroyd when the scene is changed</param>
+        /// <param name="destroyWithScene">Should the object be destroyed when the scene is changed</param>
         public void SpawnWithOwnership(ulong clientId, bool destroyWithScene = false)
         {
             SpawnInternal(destroyWithScene, clientId, false);
         }
 
         /// <summary>
-        /// Spawns an object across the network and makes it the player object for the given client
+        /// Spawns a <see cref="NetworkObject"/> across the network and makes it the player object for the given client
         /// </summary>
         /// <param name="clientId">The clientId whos player object this is</param>
-        /// <param name="spawnPayload">The writer containing the spawn payload</param>
         /// <param name="destroyWithScene">Should the object be destroyd when the scene is changed</param>
         public void SpawnAsPlayerObject(ulong clientId, bool destroyWithScene = false)
         {
@@ -781,7 +774,7 @@ namespace MLAPI
             for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
             {
                 ChildNetworkBehaviours[i].InternalOnNetworkSpawn();
-                ChildNetworkBehaviours[i].NetworkSpawn();
+                ChildNetworkBehaviours[i].OnNetworkSpawn();
             }
         }
 

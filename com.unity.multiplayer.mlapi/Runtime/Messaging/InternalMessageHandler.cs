@@ -164,9 +164,6 @@ namespace MLAPI.Messaging
 
                 var (isReparented, latestParent) = NetworkObject.ReadNetworkParenting(reader);
 
-                var hasPayload = reader.ReadBool();
-                var payLoadLength = hasPayload ? reader.ReadInt32Packed() : 0;
-
                 var networkObject = NetworkManager.SpawnManager.CreateLocalNetworkObject(softSync, prefabHash, ownerClientId, parentNetworkId, pos, rot, isReparented);
                 networkObject.SetNetworkParenting(isReparented, latestParent);
                 NetworkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, networkId, softSync, isPlayerObject, ownerClientId, stream, true, false);
