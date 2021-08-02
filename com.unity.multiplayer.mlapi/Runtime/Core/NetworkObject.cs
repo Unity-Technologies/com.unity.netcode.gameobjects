@@ -342,7 +342,7 @@ namespace MLAPI
 
             var context = NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
                 MessageQueueContainer.MessageType.DestroyObject, NetworkChannel.Internal,
-                new[] {clientId}, NetworkUpdateLoop.UpdateStage);
+                new[] {clientId}, NetworkUpdateStage.PostLateUpdate);
             if (context != null)
             {
                 using (var nonNullContext = (InternalCommandContext) context)
@@ -397,7 +397,7 @@ namespace MLAPI
 
             var context = networkManager.MessageQueueContainer.EnterInternalCommandContext(
                 MessageQueueContainer.MessageType.DestroyObjects, NetworkChannel.Internal,
-                new[] {clientId}, NetworkUpdateLoop.UpdateStage);
+                new[] {clientId}, NetworkUpdateStage.PostLateUpdate);
             if (context != null)
             {
                 using (var nonNullContext = (InternalCommandContext) context)
