@@ -134,7 +134,10 @@ namespace TestProject.ManualTests
 
         private void OnDisable()
         {
-            NetworkManager.SceneManager.OnSceneEvent -= OnSceneEvent;
+            if (NetworkManager != null)
+            {
+                NetworkManager.SceneManager.OnSceneEvent -= OnSceneEvent;
+            }
             StopCoroutine(SpawnObjects());
 
             CleanNetworkObjects();
