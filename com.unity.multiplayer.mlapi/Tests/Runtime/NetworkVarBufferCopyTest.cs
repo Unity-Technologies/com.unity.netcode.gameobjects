@@ -50,6 +50,7 @@ namespace MLAPI.RuntimeTests
             {
                 using (var writer = PooledNetworkWriter.Get(stream))
                 {
+                    writer.WriteBits((byte)1, 1);
                     writer.WriteInt32(k_DummyValue);
                 }
 
@@ -60,6 +61,7 @@ namespace MLAPI.RuntimeTests
             {
                 using (var writer = PooledNetworkWriter.Get(stream))
                 {
+                    writer.WriteBits((byte)1, 1);
                     writer.WriteInt32(k_DummyValue);
                 }
 
@@ -70,6 +72,7 @@ namespace MLAPI.RuntimeTests
             {
                 using (var reader = PooledNetworkReader.Get(stream))
                 {
+                    reader.ReadBits(1);
                     Assert.AreEqual(k_DummyValue, reader.ReadInt32());
                 }
 
@@ -80,6 +83,7 @@ namespace MLAPI.RuntimeTests
             {
                 using (var reader = PooledNetworkReader.Get(stream))
                 {
+                    reader.ReadBits(1);
                     Assert.AreEqual(k_DummyValue, reader.ReadInt32());
                 }
 

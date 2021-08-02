@@ -561,6 +561,7 @@ namespace MLAPI
                                     else
                                     {
                                         NetworkVariableFields[k].WriteDelta(buffer);
+                                        buffer.PadBuffer();
                                     }
 
                                     if (!m_NetworkVariableIndexesToResetSet.Contains(k))
@@ -580,7 +581,7 @@ namespace MLAPI
                                 {
                                     using (var nonNullContext = (InternalCommandContext)context)
                                     {
-                                        nonNullContext.NetworkWriter.WriteBytes(buffer.GetBuffer(), buffer.Position+1);
+                                        nonNullContext.NetworkWriter.WriteBytes(buffer.GetBuffer(), buffer.Position);
                                     }
                                 }
                             }
@@ -666,11 +667,10 @@ namespace MLAPI
                     PerformanceDataManager.Increment(ProfilerConstants.NetworkVarDeltas);
 
                     ProfilerStatManager.NetworkVarsRcvd.Record();
+                    (stream as NetworkBuffer).SkipPadBits();
 
                     if (networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                     {
-                        (stream as NetworkBuffer).SkipPadBits();
-
                         if (stream.Position > (readStartPos + varSize))
                         {
                             if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
@@ -826,6 +826,7 @@ namespace MLAPI
                         else
                         {
                             networkVariableList[j].WriteField(stream);
+                            writer.WritePadBits();
                         }
                     }
                 }
@@ -865,6 +866,7 @@ namespace MLAPI
                     long readStartPos = stream.Position;
 
                     networkVariableList[j].ReadField(stream);
+                    reader.SkipPadBits();
 
                     if (networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                     {
