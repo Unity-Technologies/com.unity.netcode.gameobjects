@@ -277,15 +277,18 @@ namespace MLAPI.RuntimeTests
         /// <returns></returns>
         public static IEnumerator WaitForClientsConnected(NetworkManager[] clients, CoroutineResultWrapper<bool> result = null, int maxFrames = 64)
         {
+            Debug.Log("007");
             // Make sure none are the host client
             foreach (var client in clients)
             {
                 if (client.IsServer)
                 {
+                    Debug.Log("008");
                     throw new InvalidOperationException("Cannot wait for connected as server");
                 }
             }
 
+            Debug.Log("009");
             var startFrameNumber = Time.frameCount;
             var allConnected = true;
             while (Time.frameCount - startFrameNumber <= maxFrames)
@@ -304,15 +307,18 @@ namespace MLAPI.RuntimeTests
                     break;
                 }
                 var nextFrameNumber = Time.frameCount + 1;
+                Debug.Log("00A - (" + (Time.frameCount - startFrameNumber) + ")");
                 yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
             }
 
             if (result != null)
             {
+                Debug.Log("00B");
                 result.Result = allConnected;
             }
             else
             {
+                Debug.Log("00C");
                 for (var i = 0; i < clients.Length; ++i)
                 {
                     var client = clients[i];
@@ -342,6 +348,7 @@ namespace MLAPI.RuntimeTests
         /// <param name="maxFrames">The max frames to wait for</param>
         public static IEnumerator WaitForClientsConnectedToServer(NetworkManager server, int clientCount = 1, CoroutineResultWrapper<bool> result = null, int maxFrames = 64)
         {
+            Debug.Log("00D");
             if (!server.IsServer)
             {
                 throw new InvalidOperationException("Cannot wait for connected as client");
@@ -349,9 +356,11 @@ namespace MLAPI.RuntimeTests
 
             var startFrameNumber = Time.frameCount;
 
+            Debug.Log("00E");
             while (Time.frameCount - startFrameNumber <= maxFrames && server.ConnectedClients.Count != clientCount)
             {
                 var nextFrameNumber = Time.frameCount + 1;
+                Debug.Log("00F - (" + (Time.frameCount - startFrameNumber) + ")");
                 yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
             }
 
@@ -359,10 +368,12 @@ namespace MLAPI.RuntimeTests
 
             if (result != null)
             {
+                Debug.Log("010");
                 result.Result = res;
             }
             else
             {
+                Debug.Log("011");
                 Assert.True(res, "A client never connected to server");
             }
         }

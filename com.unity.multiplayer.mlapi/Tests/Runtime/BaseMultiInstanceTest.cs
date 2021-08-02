@@ -53,9 +53,12 @@ namespace MLAPI.RuntimeTests
         /// <returns></returns>
         public IEnumerator StartSomeClientsAndServerWithPlayers(bool useHost, int nbClients, Action<GameObject> updatePlayerPrefab, int targetFrameRate = 60)
         {
+            Debug.Log("001");
+
             // Create multiple NetworkManager instances
             if (!MultiInstanceHelpers.Create(nbClients, out NetworkManager server, out NetworkManager[] clients, targetFrameRate))
             {
+                Debug.Log("002");
                 Debug.LogError("Failed to create instances");
                 Assert.Fail("Failed to create instances");
             }
@@ -87,16 +90,21 @@ namespace MLAPI.RuntimeTests
                 clients[i].NetworkConfig.PlayerPrefab = m_PlayerPrefab;
             }
 
+            Debug.Log("003");
+
             // Start the instances
             if (!MultiInstanceHelpers.Start(useHost, server, clients))
             {
+                Debug.Log("004");
                 Debug.LogError("Failed to start instances");
                 Assert.Fail("Failed to start instances");
             }
 
+            Debug.Log("005");
             // Wait for connection on client side
             yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(clients));
 
+            Debug.Log("006");
             // Wait for connection on server side
             yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnectedToServer(server, useHost ? nbClients + 1 : nbClients));
         }
