@@ -28,9 +28,6 @@ public class NetworkPrefabHandlerObjectPoolOverride : NetworkBehaviour, INetwork
     private int m_ObjectPoolSize = 15;
 
     [SerializeField]
-    private bool m_SynchronizeOverrides;
-
-    [SerializeField]
     [Range(1, 5)]
     private int m_SpawnsPerSecond = 2;
 
@@ -136,12 +133,6 @@ public class NetworkPrefabHandlerObjectPoolOverride : NetworkBehaviour, INetwork
         networkWriter.WriteInt32Packed(genericObjectPooledBehaviour.SyncrhonizedObjectTypeIndex);
     }
 
-    private int m_UseSynchronizedIndexValue = -1;
-    public void OnSynchronizeRead(NetworkReader networkReader)
-    {
-        m_UseSynchronizedIndexValue = networkReader.ReadInt32Packed();
-    }
-
     public NetworkObject Instantiate(ulong ownerClientId, Vector3 position, Quaternion rotation)
     {
         var gameObject = GetNextSpawnObject();
@@ -159,8 +150,6 @@ public class NetworkPrefabHandlerObjectPoolOverride : NetworkBehaviour, INetwork
         }
     }
 
-
-
     /// <summary>
     ///  Spawns the objects.
     /// </summary>
@@ -176,15 +165,6 @@ public class NetworkPrefabHandlerObjectPoolOverride : NetworkBehaviour, INetwork
         m_IsSpawningObjects = true;
 
         var entitySpawnUpdateRate = 1.0f;
-
-        var networkBuffer = (NetworkBuffer)null;
-        var networkWriter = (PooledNetworkWriter)null;
-
-        if(m_SynchronizeOverrides)
-        {
-            networkBuffer = new NetworkBuffer(2);
-            networkWriter = PooledNetworkWriter.Get(networkBuffer);
-        }
 
         while (m_IsSpawningObjects)
         {
@@ -202,24 +182,11 @@ public class NetworkPrefabHandlerObjectPoolOverride : NetworkBehaviour, INetwork
                 var no = go.GetComponent<NetworkObject>();
                 if (!no.IsSpawned)
                 {
-                    if (m_SynchronizeOverrides)
-                    {
-                        networkBuffer.Position = 0;
-                        var genericObjectPooledBehaviour = no.GetComponent<GenericPooledObjectBehaviour>();
-                        networkWriter.WriteInt32Packed(genericObjectPooledBehaviour.SyncrhonizedObjectTypeIndex);
-                    }
-                    no.Spawn(networkBuffer, true);
+                    no.Spawn(null,true);
                 }
             }
             yield return new WaitForSeconds(entitySpawnUpdateRate);
         }
-
-        if (m_SynchronizeOverrides)
-        {
-            NetworkWriterPool.PutBackInPool(networkWriter);
-            networkBuffer.Dispose();
-        }
-
     }
 }
 
