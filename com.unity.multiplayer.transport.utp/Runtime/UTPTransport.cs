@@ -14,7 +14,7 @@ using UnityEngine;
 using UnityEngine.Assertions;
 
 using NetworkEvent = Unity.Networking.Transport.NetworkEvent;
-using NetcodeNetworkEvent = Unity.Netcode.Transports.NetworkEvent;
+using NetcodeEvent = Unity.Netcode.Transports.NetworkEvent;
 
 [StructLayout(LayoutKind.Explicit)]
 public unsafe struct RawNetworkMessage
@@ -48,7 +48,7 @@ internal struct ClientUpdateJob : IJob
         {
             if (cmd == NetworkEvent.Type.Connect)
             {
-                var d = new RawNetworkMessage() { Length = 0, Type = (uint)NetcodeNetworkEvent.Connect, Id = Connection[0].InternalId };
+                var d = new RawNetworkMessage() { Length = 0, Type = (uint)NetcodeEvent.Connect, Id = Connection[0].InternalId };
                 PacketData.Enqueue(d);
             }
             else if (cmd == NetworkEvent.Type.Data)
@@ -62,7 +62,7 @@ internal struct ClientUpdateJob : IJob
                 var d = new RawNetworkMessage()
                 {
                     Length = messageSize,
-                    Type = (uint)NetcodeNetworkEvent.Data,
+                    Type = (uint)NetcodeEvent.Data,
                     Id = Connection[0].InternalId,
                     ChannelId = channelId
                 };
@@ -99,7 +99,7 @@ internal struct ServerUpdateJob : IJobParallelForDefer
         var d = new RawNetworkMessage()
         {
             Length = messageSize,
-            Type = (uint)NetcodeNetworkEvent.Data,
+            Type = (uint)NetcodeEvent.Data,
             Id = index,
             ChannelId = channelId
         };
@@ -122,12 +122,12 @@ internal struct ServerUpdateJob : IJobParallelForDefer
             }
             else if (command == NetworkEvent.Type.Connect)
             {
-                var d = new RawNetworkMessage() { Length = 0, Type = (uint)NetcodeNetworkEvent.Connect, Id = index };
+                var d = new RawNetworkMessage() { Length = 0, Type = (uint)NetcodeEvent.Connect, Id = index };
                 PacketData.Enqueue(d);
             }
             else if (command == NetworkEvent.Type.Disconnect)
             {
-                var d = new RawNetworkMessage() { Length = 0, Type = (uint)NetcodeNetworkEvent.Disconnect, Id = index };
+                var d = new RawNetworkMessage() { Length = 0, Type = (uint)NetcodeEvent.Disconnect, Id = index };
                 PacketData.Enqueue(d);
                 Connections[index] = default;
             }
@@ -158,7 +158,7 @@ internal struct ServerUpdateConnectionsJob : IJob
         while ((c = Driver.Accept()) != default(NetworkConnection))
         {
             Connections.Add(c);
-            var d = new RawNetworkMessage() { Length = 0, Type = (uint)NetcodeNetworkEvent.Connect, Id = c.InternalId };
+            var d = new RawNetworkMessage() { Length = 0, Type = (uint)NetcodeEvent.Connect, Id = c.InternalId };
             PacketData.Enqueue(d);
             Debug.Log("Accepted a connection");
         }
@@ -279,7 +279,7 @@ public class UTPTransport : NetworkTransport
         SendToClient(writer.AsNativeArray(), peerId, pipelineIndex);
     }
 
-    public override NetcodeNetworkEvent PollEvent(out ulong clientId, out NetworkChannel networkChannel, out ArraySegment<byte> payload, out float receiveTime)
+    public override NetcodeEvent PollEvent(out ulong clientId, out NetworkChannel networkChannel, out ArraySegment<byte> payload, out float receiveTime)
     {
         clientId = 0;
         networkChannel = NetworkChannel.ChannelUnused;
@@ -287,7 +287,7 @@ public class UTPTransport : NetworkTransport
         payload = new ArraySegment<byte>(Array.Empty<byte>());
         receiveTime = 0;
 
-        return NetcodeNetworkEvent.Nothing;
+        return NetcodeEvent.Nothing;
     }
 
     public override ulong GetCurrentRtt(ulong clientId) => 0;
@@ -307,29 +307,29 @@ public class UTPTransport : NetworkTransport
                 }
                 var clientId = GetMLAPIClientId((uint)message.Id, false);
 
-                switch ((NetcodeNetworkEvent)message.Type)
+                switch ((NetcodeEvent)message.Type)
                 {
-                    case NetcodeNetworkEvent.Data:
+                    case NetcodeEvent.Data:
                         int size = message.Length;
                         byte[] arr = new byte[size];
                         unsafe
                         {
                             Marshal.Copy((IntPtr)message.Data, arr, 0, size);
                             var payload = new ArraySegment<byte>(arr);
-                            InvokeOnTransportEvent((NetcodeNetworkEvent)message.Type, clientId, (NetworkChannel)message.ChannelId, payload, Time.realtimeSinceStartup);
+                            InvokeOnTransportEvent((NetcodeEvent)message.Type, clientId, (NetworkChannel)message.ChannelId, payload, Time.realtimeSinceStartup);
                         }
 
                         break;
-                    case NetcodeNetworkEvent.Connect:
+                    case NetcodeEvent.Connect:
                         {
-                            InvokeOnTransportEvent((NetcodeNetworkEvent)message.Type, clientId, NetworkChannel.ChannelUnused, new ArraySegment<byte>(), Time.realtimeSinceStartup);
+                            InvokeOnTransportEvent((NetcodeEvent)message.Type, clientId, NetworkChannel.ChannelUnused, new ArraySegment<byte>(), Time.realtimeSinceStartup);
                         }
                         break;
-                    case NetcodeNetworkEvent.Disconnect:
-                        InvokeOnTransportEvent((NetcodeNetworkEvent)message.Type, clientId, NetworkChannel.ChannelUnused, new ArraySegment<byte>(), Time.realtimeSinceStartup);
+                    case NetcodeEvent.Disconnect:
+                        InvokeOnTransportEvent((NetcodeEvent)message.Type, clientId, NetworkChannel.ChannelUnused, new ArraySegment<byte>(), Time.realtimeSinceStartup);
                         break;
-                    case NetcodeNetworkEvent.Nothing:
-                        InvokeOnTransportEvent((NetcodeNetworkEvent)message.Type, clientId, NetworkChannel.ChannelUnused, new ArraySegment<byte>(), Time.realtimeSinceStartup);
+                    case NetcodeEvent.Nothing:
+                        InvokeOnTransportEvent((NetcodeEvent)message.Type, clientId, NetworkChannel.ChannelUnused, new ArraySegment<byte>(), Time.realtimeSinceStartup);
                         break;
                 }
             }
