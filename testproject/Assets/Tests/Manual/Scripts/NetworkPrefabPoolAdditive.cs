@@ -118,17 +118,9 @@ namespace TestProject.ManualTests
         {
             switch(sceneEventType)
             {
-                case SceneEventData.SceneEventTypes.Event_Unload:
-                    {
-                        //if(loadSceneMode == LoadSceneMode.Additive)
-                        //{
-                        //    OnUnloadScene();
-                        //}
-                        break;
-                    }
                 case SceneEventData.SceneEventTypes.Event_Load:
                     {
-                        if (loadSceneMode == LoadSceneMode.Single && gameObject.scene.name == sceneName)
+                        if (loadSceneMode == LoadSceneMode.Single && ((gameObject.scene.name == sceneName) || !SpawnInSourceScene) )
                         {
                             OnUnloadScene();
                         }
@@ -149,23 +141,13 @@ namespace TestProject.ManualTests
                     genericBehaviour.IsRemovedFromPool = true;
                     if (IsServer)
                     {
-                        if (SpawnInSourceScene)
+                        if (networkObject.IsSpawned)
                         {
-                            if (networkObject.IsSpawned)
-                            {
-                                networkObject.Despawn(true);
-                            }
-                            else
-                            {
-                                DestroyImmediate(obj);
-                            }
+                            networkObject.Despawn(true);
                         }
                         else
                         {
-                            if (!networkObject.IsSpawned)
-                            {
-                                DestroyImmediate(obj);
-                            }
+                            DestroyImmediate(obj);
                         }
                     }
                     else //Client
@@ -190,10 +172,9 @@ namespace TestProject.ManualTests
             {
                 StopCoroutine(SpawnObjects());
             }
+
             // De-register the custom prefab handler
             DeregisterCustomPrefabHandler();
-
-            CleanNetworkObjects();
         }
 
         /// <summary>

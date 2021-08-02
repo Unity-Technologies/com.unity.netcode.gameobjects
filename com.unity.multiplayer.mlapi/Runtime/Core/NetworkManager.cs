@@ -1355,7 +1355,7 @@ namespace MLAPI
                         }
                     }
 
-                    // TODO: Could(should?) be replaced with more memory per client, by storing the visiblity
+                    // TODO: Could(should?) be replaced with more memory per client, by storing the visibility
 
                     foreach (var sobj in SpawnManager.SpawnedObjectsList)
                     {
@@ -1438,7 +1438,7 @@ namespace MLAPI
                 // Don't send the CONNECTION_APPROVED message if this is the host that connected locally
                 if (ownerClientId != ServerClientId)
                 {
-                    var context = MessageQueueContainer.EnterInternalCommandContext( MessageQueueContainer.MessageType.ConnectionApproved, NetworkChannel.Internal, new ulong[] clientIds{ownerClientId},
+                    var context = MessageQueueContainer.EnterInternalCommandContext( MessageQueueContainer.MessageType.ConnectionApproved, NetworkChannel.Internal, new ulong[]{ownerClientId},
                         NetworkUpdateStage.EarlyUpdate);
 
                     if (context != null)

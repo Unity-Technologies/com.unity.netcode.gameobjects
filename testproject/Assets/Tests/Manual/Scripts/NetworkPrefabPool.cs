@@ -1,9 +1,11 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using MLAPI;
 using MLAPI.Spawning;
+using MLAPI.SceneManagement;
 
 namespace TestProject.ManualTests
 {
@@ -95,16 +97,48 @@ namespace TestProject.ManualTests
             }
         }
 
+        private void OnSceneEvent(AsyncOperation operation, SceneEventData.SceneEventTypes sceneEventType, LoadSceneMode loadSceneMode, string sceneName)
+        {
+            switch (sceneEventType)
+            {
+                case SceneEventData.SceneEventTypes.Event_Unload:
+                    {
+                        if (loadSceneMode == LoadSceneMode.Single && (gameObject.scene.name == sceneName))
+                        {
+                            OnUnloadScene();
+                        }
+                        break;
+                    }
+            }
+        }
+
+        /// <summary>
+        /// Detect when we are switching scenes in order
+        /// to assure we stop spawning objects
+        /// </summary>
+        private void OnUnloadScene()
+        {
+            if (IsServer)
+            {
+                StopCoroutine(SpawnObjects());
+            }
+            CleanNetworkObjects();
+            DeregisterCustomPrefabHandler();
+            NetworkManager.SceneManager.OnSceneEvent -= OnSceneEvent;
+        }
+
         public override void OnNetworkDespawn()
         {
-            DeregisterCustomPrefabHandler();
+           // DeregisterCustomPrefabHandler();
         }
 
         private void OnDisable()
         {
+            NetworkManager.SceneManager.OnSceneEvent -= OnSceneEvent;
             StopCoroutine(SpawnObjects());
 
             CleanNetworkObjects();
+
         }
 
         private void CleanNetworkObjects()
@@ -161,6 +195,7 @@ namespace TestProject.ManualTests
         /// </summary>
         public override void OnNetworkSpawn()
         {
+            NetworkManager.SceneManager.OnSceneEvent += OnSceneEvent;
             InitializeObjectPool();
             if (IsServer)
             {

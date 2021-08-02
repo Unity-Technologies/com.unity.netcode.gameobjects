@@ -499,22 +499,10 @@ namespace MLAPI.Spawning
 
             foreach (var sobj in spawnedObjects)
             {
-                if ((sobj.IsSceneObject != null && sobj.IsSceneObject == true) || sobj.DestroyWithScene)
+                if ((sobj.IsSceneObject != null && sobj.IsSceneObject == true))
                 {
-                    // This **needs** to be here until we overhaul NetworkSceneManager due to dependencies
-                    // that occur shortly after NetworkSceneManager invokes ServerDestroySpawnedSceneObjects
-                    // within the NetworkSceneManager.SwitchScene method.
-
-                    if (NetworkManager.PrefabHandler != null && NetworkManager.PrefabHandler.ContainsHandler(sobj))
-                    {
-                        NetworkManager.PrefabHandler.HandleNetworkPrefabDestroy(sobj);
-                        OnDespawnObject(sobj, false);
-                    }
-                    else
-                    {
-                        SpawnedObjectsList.Remove(sobj);
-                        UnityEngine.Object.Destroy(sobj.gameObject);
-                    }
+                    SpawnedObjectsList.Remove(sobj);
+                    UnityEngine.Object.Destroy(sobj.gameObject);
                 }
             }
         }

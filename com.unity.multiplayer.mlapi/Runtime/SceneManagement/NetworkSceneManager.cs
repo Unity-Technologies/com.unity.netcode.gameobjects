@@ -376,6 +376,8 @@ namespace MLAPI.SceneManagement
 
                 // Preserve the objects that should not be destroyed during the scene event
                 MoveObjectsToDontDestroyOnLoad();
+
+
             }
 
             // Begin the scene event
@@ -417,17 +419,20 @@ namespace MLAPI.SceneManagement
 
             if (SceneEventData.LoadSceneMode == LoadSceneMode.Single)
             {
+                OnSceneEvent?.Invoke(null, SceneEventData.SceneEventTypes.Event_Unload, SceneEventData.LoadSceneMode, SceneManager.GetActiveScene().name);
                 foreach (var additiveSceneName in m_ScenesLoaded)
                 {
                     if (currentActiveScene.name != additiveSceneName)
                     {
-                        SceneManager.UnloadSceneAsync(additiveSceneName);
+                        OnSceneEvent?.Invoke(SceneManager.UnloadSceneAsync(additiveSceneName), SceneEventData.SceneEventTypes.Event_Unload, LoadSceneMode.Additive, additiveSceneName);
                     }
                 }
                 m_ScenesLoaded.Clear();
+
+
                 // NSS TODO: Make a single unified notification callback
                 OnSceneSwitchStarted?.Invoke(sceneLoad);
-                OnSceneEvent?.Invoke(sceneLoad, SceneEventData.SceneEventType, SceneEventData.LoadSceneMode, sceneName);
+
             }
             else
             {
@@ -439,9 +444,9 @@ namespace MLAPI.SceneManagement
                 {
                     throw new Exception($"{sceneName} is being loaded twice?!");
                 }
-                // NSS TODO: Make a single unified notification callback
-                OnSceneEvent?.Invoke(sceneLoad, SceneEventData.SceneEventType, SceneEventData.LoadSceneMode, sceneName);
             }
+
+            OnSceneEvent?.Invoke(sceneLoad, SceneEventData.SceneEventType, SceneEventData.LoadSceneMode, sceneName);
         }
 
         /// <summary>
@@ -574,7 +579,7 @@ namespace MLAPI.SceneManagement
                             sceneObjectsToSpawn++;
                         }
                     }
-                    
+
                     var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(m_MessageType, m_ChannelType, new ulong[] { clientId }, m_NetworkUpdateStage);
                     if (context != null)
                     {
@@ -594,7 +599,7 @@ namespace MLAPI.SceneManagement
                     }
                     else
                     {
-                        throw new Exception($"{nameof(NetworkSceneManager)} failed to send event notification {SceneEventData.SceneEventType} to target clientId {clientIdAsArray}!");
+                        throw new Exception($"{nameof(NetworkSceneManager)} failed to send event notification {SceneEventData.SceneEventType} to target clientId {clientId}!");
                     }
                 }
             }
@@ -775,7 +780,7 @@ namespace MLAPI.SceneManagement
         private void MoveObjectsToDontDestroyOnLoad()
         {
             // Move ALL NetworkObjects to the temp scene
-            var objectsToKeep = m_NetworkManager.SpawnManager.SpawnedObjectsList;
+            var objectsToKeep = new HashSet<NetworkObject>(m_NetworkManager.SpawnManager.SpawnedObjectsList);
 
             foreach (var sobj in objectsToKeep)
             {
@@ -785,7 +790,14 @@ namespace MLAPI.SceneManagement
                     sobj.gameObject.transform.parent = null;
                 }
 
-                UnityEngine.Object.DontDestroyOnLoad(sobj.gameObject);
+                if (!sobj.DestroyWithScene)
+                {
+                    UnityEngine.Object.DontDestroyOnLoad(sobj.gameObject);
+                }
+                else
+                {
+                    sobj.Despawn(true);
+                }
             }
         }
 
