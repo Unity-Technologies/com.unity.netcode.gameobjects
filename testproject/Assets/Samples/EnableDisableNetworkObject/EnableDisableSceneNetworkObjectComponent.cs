@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
-using MLAPI;
-using MLAPI.Messaging;
+using Unity.Netcode;
+using Unity.Netcode.Messaging;
 
 
 public class EnableDisableSceneNetworkObjectComponent : NetworkBehaviour

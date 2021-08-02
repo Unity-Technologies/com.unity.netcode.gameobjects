@@ -1,7 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using MLAPI.NetworkVariable;
+using Unity.Netcode.NetworkVariable;
 using NUnit.Framework;
 using Unity.PerformanceTesting;
 using UnityEngine;
@@ -11,7 +11,7 @@ using UnityEngine.TestTools;
 using static ExecuteStepInContext;
 using Object = UnityEngine.Object;
 
-namespace MLAPI.MultiprocessRuntimeTests
+namespace Unity.Netcode.MultiprocessRuntimeTests
 {
     public class NetworkVariablePerformanceTests : BaseMultiprocessTests
     {

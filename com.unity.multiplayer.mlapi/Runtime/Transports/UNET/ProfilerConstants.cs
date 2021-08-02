@@ -1,4 +1,4 @@
-namespace MLAPI.Transports.UNET
+namespace Unity.Netcode.Transports.UNET
 {
     public static class ProfilerConstants
     {

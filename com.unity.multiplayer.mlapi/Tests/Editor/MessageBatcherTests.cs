@@ -1,12 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using MLAPI.Messaging;
-using MLAPI.Serialization;
-using MLAPI.Transports;
+using Unity.Netcode.Messaging;
+using Unity.Netcode.Serialization;
+using Unity.Netcode.Transports;
 using NUnit.Framework;
 
-namespace MLAPI.EditorTests
+namespace Unity.Netcode.EditorTests
 {
     public class MessageBatcherTests
     {

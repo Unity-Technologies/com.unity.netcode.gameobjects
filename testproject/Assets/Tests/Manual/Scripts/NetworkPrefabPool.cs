@@ -2,8 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
-using MLAPI;
-using MLAPI.Spawning;
+using Unity.Netcode;
+using Unity.Netcode.Spawning;
 
 namespace TestProject.ManualTests
 {

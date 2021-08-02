@@ -1,11 +1,10 @@
 using System.Collections.Generic;
-using MLAPI.Collections;
-using MLAPI.Configuration;
-using MLAPI.Messaging;
-using MLAPI.Transports;
+using Unity.Netcode.Collections;
+using Unity.Netcode.Messaging;
+using Unity.Netcode.Transports;
 using UnityEngine;
 
-namespace MLAPI.Profiling
+namespace Unity.Netcode.Profiling
 {
     /// <summary>
     /// NetworkProfiler for profiling network traffic

@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using System.IO;
-using MLAPI.Serialization.Pooled;
+using Unity.Netcode.Serialization.Pooled;
 
-namespace MLAPI.Profiling
+namespace Unity.Netcode.Profiling
 {
     /// <summary>
     /// The type of Tick

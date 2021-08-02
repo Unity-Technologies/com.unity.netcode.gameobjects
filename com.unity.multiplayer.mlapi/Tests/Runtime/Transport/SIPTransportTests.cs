@@ -1,10 +1,10 @@
 using System;
 using System.Text;
-using MLAPI.Transports;
+using Unity.Netcode.Transports;
 using NUnit.Framework;
 using UnityEngine;
 
-namespace MLAPI.RuntimeTests.Transport
+namespace Unity.Netcode.RuntimeTests.Transport
 {
     public class SIPTransportTests
     {

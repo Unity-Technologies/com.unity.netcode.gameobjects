@@ -1,15 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using MLAPI.Configuration;
-using MLAPI.Logging;
-using MLAPI.Serialization;
-using MLAPI.Serialization.Pooled;
-using MLAPI.Hashing;
-using MLAPI.Profiling;
-using MLAPI.Transports;
+using Unity.Netcode.Configuration;
+using Unity.Netcode.Serialization;
+using Unity.Netcode.Hashing;
+using Unity.Netcode.Profiling;
+using Unity.Netcode.Transports;
 
-namespace MLAPI.Messaging
+namespace Unity.Netcode.Messaging
 {
     /// <summary>
     /// The manager class to manage custom messages, note that this is different from the NetworkManager custom messages.

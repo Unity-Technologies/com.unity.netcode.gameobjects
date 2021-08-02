@@ -5,10 +5,9 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 using TestProject.ManualTests;
-using MLAPI.RuntimeTests;
-using MLAPI;
+using Unity.Netcode.RuntimeTests;
+using Unity.Netcode;
 using Debug = UnityEngine.Debug;
-using Object = UnityEngine.Object;
 
 namespace TestProject.RuntimeTests
 {

@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 using UnityEditorInternal;
-using MLAPI.Configuration;
-using MLAPI.Transports;
+using Unity.Netcode.Configuration;
+using Unity.Netcode.Transports;
 
-namespace MLAPI.Editor
+namespace Unity.Netcode.Editor
 {
     [CustomEditor(typeof(NetworkManager), true)]
     [CanEditMultipleObjects]

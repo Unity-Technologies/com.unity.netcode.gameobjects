@@ -6,12 +6,12 @@
 using System;
 using System.IO;
 using System.Text;
-using MLAPI.Reflection;
-using MLAPI.Logging;
-using MLAPI.Spawning;
+using Unity.Netcode.Reflection;
+using Unity.Netcode.Logging;
+using Unity.Netcode.Spawning;
 using UnityEngine;
 
-namespace MLAPI.Serialization
+namespace Unity.Netcode.Serialization
 {
     /// <summary>
     /// A BinaryReader that can do bit wise manipulation when backed by a NetworkBuffer

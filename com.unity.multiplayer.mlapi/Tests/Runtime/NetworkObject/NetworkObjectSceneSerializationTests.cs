@@ -1,11 +1,11 @@
 using System.Collections.Generic;
 using UnityEngine;
-using MLAPI.NetworkVariable.Collections;
-using MLAPI.Serialization.Pooled;
+using Unity.Netcode.NetworkVariable.Collections;
+using Unity.Netcode.Serialization.Pooled;
 using NUnit.Framework;
 
 
-namespace MLAPI.RuntimeTests
+namespace Unity.Netcode.RuntimeTests
 {
     public class NetworkObjectSceneSerializationTests
     {
@@ -54,7 +54,7 @@ namespace MLAPI.RuntimeTests
 
                     invalidNetworkObjects.Add(gameObject);
 
-                    // Serialize the invalid NetworkObject 
+                    // Serialize the invalid NetworkObject
                     networkObject.SerializeSceneObject(writer, 0);
 
                     Debug.Log($"Invalid {nameof(NetworkObject)} Size {pooledBuffer.Position - invalidNetworkObjectOffsets[invalidNetworkObjectOffsets.Count - 1]}");

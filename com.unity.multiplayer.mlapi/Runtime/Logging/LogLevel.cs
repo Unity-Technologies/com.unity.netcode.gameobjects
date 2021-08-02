@@ -1,4 +1,4 @@
-namespace MLAPI.Logging
+namespace Unity.Netcode.Logging
 {
     /// <summary>
     /// Log level

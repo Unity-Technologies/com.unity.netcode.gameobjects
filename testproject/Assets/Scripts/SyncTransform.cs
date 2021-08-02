@@ -1,7 +1,7 @@
-using MLAPI.NetworkVariable;
+using Unity.Netcode.NetworkVariable;
 using UnityEngine;
 
-namespace MLAPI
+namespace Unity.Netcode
 {
     /// <summary>
     /// A component for syncing variables

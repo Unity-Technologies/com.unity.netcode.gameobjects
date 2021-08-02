@@ -1,6 +1,6 @@
 using System;
 
-namespace MLAPI.Exceptions
+namespace Unity.Netcode.Exceptions
 {
     /// <summary>
     /// Exception thrown when the operation require NetworkManager to be listening.

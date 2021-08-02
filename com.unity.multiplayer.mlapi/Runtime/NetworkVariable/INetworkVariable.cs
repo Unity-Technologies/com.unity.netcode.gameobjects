@@ -1,7 +1,7 @@
 using System.IO;
-using MLAPI.Transports;
+using Unity.Netcode.Transports;
 
-namespace MLAPI.NetworkVariable
+namespace Unity.Netcode.NetworkVariable
 {
     /// <summary>
     /// Interface for network value containers

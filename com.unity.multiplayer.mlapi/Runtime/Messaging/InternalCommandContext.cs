@@ -1,8 +1,8 @@
 using System;
-using MLAPI.Serialization.Pooled;
+using Unity.Netcode.Serialization.Pooled;
 using System.Linq;
 
-namespace MLAPI.Messaging
+namespace Unity.Netcode.Messaging
 {
     /// <summary>
     /// A context used for building an internal command.

@@ -1,14 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using MLAPI.Logging;
-using MLAPI.Profiling;
-using MLAPI.Serialization;
-using MLAPI.Serialization.Pooled;
-using MLAPI.Transports;
+using Unity.Netcode.Logging;
+using Unity.Netcode.Serialization;
+using Unity.Netcode.Serialization.Pooled;
+using Unity.Netcode.Transports;
 using UnityEngine;
 
-namespace MLAPI.Messaging
+namespace Unity.Netcode.Messaging
 {
     /// <summary>
     /// MessageQueueContainer
@@ -213,7 +212,7 @@ namespace MLAPI.Messaging
 
             if (!m_QueueHistory.ContainsKey(queueType))
             {
-                Debug.LogError($"You must initialize the {nameof(MessageQueueContainer)} before using MLAPI!");
+                Debug.LogError($"You must initialize the {nameof(MessageQueueContainer)} before using Unity.Netcode!");
                 return;
             }
 

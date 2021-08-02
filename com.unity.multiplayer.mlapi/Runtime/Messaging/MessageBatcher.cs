@@ -2,14 +2,12 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Collections.Generic;
-using MLAPI.Serialization.Pooled;
-using MLAPI.Serialization;
-using MLAPI.Configuration;
-using MLAPI.Profiling;
-using MLAPI.Transports;
-using UnityEngine;
+using Unity.Netcode.Serialization.Pooled;
+using Unity.Netcode.Serialization;
+using Unity.Netcode.Profiling;
+using Unity.Netcode.Transports;
 
-namespace MLAPI.Messaging
+namespace Unity.Netcode.Messaging
 {
     internal class MessageBatcher
     {

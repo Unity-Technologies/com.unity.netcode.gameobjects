@@ -1,4 +1,4 @@
-namespace MLAPI.Transports
+namespace Unity.Netcode.Transports
 {
     /// <summary>
     /// Represents a netEvent when polling

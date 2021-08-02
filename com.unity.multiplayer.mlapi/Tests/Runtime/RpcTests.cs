@@ -1,12 +1,11 @@
 using System;
 using System.Collections;
-using MLAPI.Messaging;
+using Unity.Netcode.Messaging;
 using NUnit.Framework;
-using UnityEngine;
 using UnityEngine.TestTools;
 using Debug = UnityEngine.Debug;
 
-namespace MLAPI.RuntimeTests
+namespace Unity.Netcode.RuntimeTests
 {
     public class RpcTests : BaseMultiInstanceTest
     {

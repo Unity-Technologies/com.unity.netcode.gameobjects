@@ -1,5 +1,5 @@
 using UnityEngine;
-using MLAPI;
+using Unity.Netcode;
 
 namespace TestProject.ManualTests
 {

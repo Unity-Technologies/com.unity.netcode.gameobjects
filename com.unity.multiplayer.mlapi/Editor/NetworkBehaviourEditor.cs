@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
-using MLAPI;
-using MLAPI.NetworkVariable;
+using Unity.Netcode;
+using Unity.Netcode.NetworkVariable;
 using UnityEngine;
 
 namespace UnityEditor

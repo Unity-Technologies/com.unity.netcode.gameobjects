@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
-using MLAPI.Transports.Tasks;
+using Unity.Netcode.Transports.Tasks;
 
-namespace MLAPI.Transports.Multiplex
+namespace Unity.Netcode.Transports.Multiplex
 {
     /// <summary>
     /// Multiplex transport adapter.

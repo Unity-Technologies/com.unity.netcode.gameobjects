@@ -1,4 +1,4 @@
-namespace MLAPI.Serialization
+namespace Unity.Netcode.Serialization
 {
     /// <summary>
     /// AutoBitWritable implements INetworkSerializable and automatically serializes fields using reflection

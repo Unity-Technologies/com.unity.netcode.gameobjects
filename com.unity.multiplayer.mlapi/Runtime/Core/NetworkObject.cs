@@ -3,15 +3,15 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using MLAPI.Exceptions;
-using MLAPI.Hashing;
-using MLAPI.Logging;
-using MLAPI.Messaging;
-using MLAPI.Transports;
-using MLAPI.Serialization;
+using Unity.Netcode.Exceptions;
+using Unity.Netcode.Hashing;
+using Unity.Netcode.Logging;
+using Unity.Netcode.Messaging;
+using Unity.Netcode.Transports;
+using Unity.Netcode.Serialization;
 using UnityEngine;
 
-namespace MLAPI
+namespace Unity.Netcode
 {
     /// <summary>
     /// A component used to identify that a GameObject in the network
@@ -437,7 +437,7 @@ namespace MLAPI
                 throw new NotServerException($"Only server can spawn {nameof(NetworkObject)}s");
             }
 
-            NetworkManager.SpawnManager.SpawnNetworkObjectLocally(this, NetworkManager.SpawnManager.GetNetworkObjectId(), false, playerObject, ownerClientId,null, false, destroyWithScene);
+            NetworkManager.SpawnManager.SpawnNetworkObjectLocally(this, NetworkManager.SpawnManager.GetNetworkObjectId(), false, playerObject, ownerClientId, null, false, destroyWithScene);
             ulong ownerId = ownerClientId != null ? ownerClientId.Value : NetworkManager.ServerClientId;
             for (int i = 0; i < NetworkManager.ConnectedClientsList.Count; i++)
             {

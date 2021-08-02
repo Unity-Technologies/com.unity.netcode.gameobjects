@@ -1,6 +1,5 @@
-using MLAPI;
+using Unity.Netcode;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace TestProject.ManualTests
 {

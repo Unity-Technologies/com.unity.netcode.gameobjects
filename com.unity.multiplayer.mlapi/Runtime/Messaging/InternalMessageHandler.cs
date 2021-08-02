@@ -1,20 +1,19 @@
 using System;
 using System.IO;
-using MLAPI.Connection;
-using MLAPI.Logging;
-using MLAPI.SceneManagement;
-using MLAPI.Serialization.Pooled;
+using Unity.Netcode.Connection;
+using Unity.Netcode.Logging;
+using Unity.Netcode.SceneManagement;
+using Unity.Netcode.Serialization.Pooled;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.SceneManagement;
-using MLAPI.Configuration;
-using MLAPI.Profiling;
-using MLAPI.Serialization;
-using MLAPI.Transports;
-using MLAPI.Timing;
-using UnityEngine.Assertions;
+using Unity.Netcode.Configuration;
+using Unity.Netcode.Profiling;
+using Unity.Netcode.Serialization;
+using Unity.Netcode.Transports;
+using Unity.Netcode.Timing;
 
-namespace MLAPI.Messaging
+namespace Unity.Netcode.Messaging
 {
     internal class InternalMessageHandler : IInternalMessageHandler
     {

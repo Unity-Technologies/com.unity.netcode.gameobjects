@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
-using MLAPI.Logging;
+using Unity.Netcode.Logging;
 
-namespace MLAPI.Serialization.Pooled
+namespace Unity.Netcode.Serialization.Pooled
 {
     /// <summary>
     /// Static class containing PooledNetworkBuffers

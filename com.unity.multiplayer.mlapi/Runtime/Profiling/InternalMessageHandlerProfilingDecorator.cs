@@ -1,9 +1,9 @@
 using System.IO;
-using MLAPI.Messaging;
-using MLAPI.Transports;
+using Unity.Netcode.Messaging;
+using Unity.Netcode.Transports;
 using Unity.Profiling;
 
-namespace MLAPI.Profiling
+namespace Unity.Netcode.Profiling
 {
     internal class InternalMessageHandlerProfilingDecorator : IInternalMessageHandler
     {

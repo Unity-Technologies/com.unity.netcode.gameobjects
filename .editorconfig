@@ -14,6 +14,7 @@ indent_size = 4
 # formatting rules
 dotnet_diagnostic.IDE0001.severity = error # Simplify name
 dotnet_diagnostic.IDE0002.severity = error # Simplify member access
+dotnet_diagnostic.IDE0005.severity = error # Remove unnecessary import
 dotnet_style_qualification_for_field = false:error
 dotnet_style_qualification_for_property = false:error
 dotnet_style_qualification_for_method = false:error
@@ -26,7 +27,7 @@ csharp_prefer_braces = true:error
 csharp_using_directive_placement = outside_namespace:error
 
 # naming rules
-# namespace MLAPI { ... }
+# namespace Unity.Netcode { ... }
 # public class NetworkObject { ... }
 # public void Spawn(...) { ... }
 dotnet_naming_symbols.usertypes_naming_symbols.applicable_kinds = namespace, class, struct, enum, property, method, field, event, delegate, local_function

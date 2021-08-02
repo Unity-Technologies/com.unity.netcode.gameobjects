@@ -1,8 +1,6 @@
-using MLAPI;
 using NUnit.Framework;
-using UnityEngine;
 
-namespace MLAPI.EditorTests
+namespace Unity.Netcode.EditorTests
 {
     public class SnapshotRttTests
     {

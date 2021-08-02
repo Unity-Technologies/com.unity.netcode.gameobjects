@@ -1,7 +1,7 @@
 using System;
 using System.Net.Sockets;
 
-namespace MLAPI.Transports.Tasks
+namespace Unity.Netcode.Transports.Tasks
 {
     /// <summary>
     /// Represents one or more socket tasks.

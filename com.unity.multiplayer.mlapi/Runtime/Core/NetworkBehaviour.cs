@@ -4,18 +4,16 @@ using UnityEngine;
 using System.Reflection;
 using System.Linq;
 using System.IO;
-using MLAPI.Configuration;
-using MLAPI.Logging;
-using MLAPI.Messaging;
-using MLAPI.Timing;
-using MLAPI.NetworkVariable;
-using MLAPI.Profiling;
-using MLAPI.Reflection;
-using MLAPI.Serialization;
-using MLAPI.Serialization.Pooled;
-using MLAPI.Transports;
+using Unity.Netcode.Logging;
+using Unity.Netcode.Messaging;
+using Unity.Netcode.NetworkVariable;
+using Unity.Netcode.Profiling;
+using Unity.Netcode.Reflection;
+using Unity.Netcode.Serialization;
+using Unity.Netcode.Serialization.Pooled;
+using Unity.Netcode.Transports;
 
-namespace MLAPI
+namespace Unity.Netcode
 {
     /// <summary>
     /// The base class to override to write network code. Inherits MonoBehaviour

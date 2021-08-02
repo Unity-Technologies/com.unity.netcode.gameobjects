@@ -4,9 +4,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.TestTools;
 using NUnit.Framework;
-using MLAPI.Messaging;
+using Unity.Netcode.Messaging;
 
-namespace MLAPI.RuntimeTests
+namespace Unity.Netcode.RuntimeTests
 {
     /// <summary>
     /// The RpcQueue unit tests validate:
@@ -66,7 +66,7 @@ namespace MLAPI.RuntimeTests
         }
 
         /// <summary>
-        /// This tests the RPC Queue outbound and inbound buffer capabilities.        
+        /// This tests the RPC Queue outbound and inbound buffer capabilities.
         /// </summary>
         /// <returns>IEnumerator</returns>
         [UnityTest, Order(2)]

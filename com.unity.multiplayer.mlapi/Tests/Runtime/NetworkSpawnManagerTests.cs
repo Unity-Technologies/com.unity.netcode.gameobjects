@@ -1,10 +1,10 @@
 using System.Collections;
-using MLAPI.Exceptions;
+using Unity.Netcode.Exceptions;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace MLAPI.RuntimeTests
+namespace Unity.Netcode.RuntimeTests
 {
     public class NetworkSpawnManagerTests : BaseMultiInstanceTest
     {

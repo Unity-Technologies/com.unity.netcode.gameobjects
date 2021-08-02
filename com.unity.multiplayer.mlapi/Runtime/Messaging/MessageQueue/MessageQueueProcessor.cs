@@ -1,13 +1,11 @@
 using System;
-using MLAPI.Configuration;
 using Unity.Profiling;
-using MLAPI.Profiling;
-using MLAPI.Logging;
-using MLAPI.Serialization.Pooled;
-using MLAPI.Transports;
+using Unity.Netcode.Profiling;
+using Unity.Netcode.Logging;
+using Unity.Netcode.Transports;
 using UnityEngine;
 
-namespace MLAPI.Messaging
+namespace Unity.Netcode.Messaging
 {
     /// <summary>
     /// MessageQueueProcessing

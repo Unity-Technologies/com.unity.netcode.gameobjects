@@ -1,7 +1,7 @@
 using System.Collections;
 using UnityEngine;
-using MLAPI;
-using MLAPI.SceneManagement;
+using Unity.Netcode;
+using Unity.Netcode.SceneManagement;
 
 namespace TestProject.ManualTests
 {

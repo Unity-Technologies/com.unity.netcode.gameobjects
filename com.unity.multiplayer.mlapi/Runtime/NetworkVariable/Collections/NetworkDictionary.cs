@@ -2,11 +2,11 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using MLAPI.Timing;
-using MLAPI.Serialization.Pooled;
-using MLAPI.Transports;
+using Unity.Netcode.Timing;
+using Unity.Netcode.Serialization.Pooled;
+using Unity.Netcode.Transports;
 
-namespace MLAPI.NetworkVariable.Collections
+namespace Unity.Netcode.NetworkVariable.Collections
 {
     /// <summary>
     /// Event based NetworkVariable container for syncing Dictionaries

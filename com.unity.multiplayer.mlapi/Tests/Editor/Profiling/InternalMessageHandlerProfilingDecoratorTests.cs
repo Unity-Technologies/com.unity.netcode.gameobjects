@@ -1,11 +1,11 @@
-using MLAPI.Messaging;
-using MLAPI.Profiling;
-using MLAPI.Transports;
+using Unity.Netcode.Messaging;
+using Unity.Netcode.Profiling;
+using Unity.Netcode.Transports;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace MLAPI.EditorTests.Profiling
+namespace Unity.Netcode.EditorTests.Profiling
 {
     public class InternalMessageHandlerProfilingDecoratorTests
     {

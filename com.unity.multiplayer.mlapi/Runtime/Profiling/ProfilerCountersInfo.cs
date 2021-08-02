@@ -3,7 +3,7 @@ using UnityEngine;
 using Unity.Profiling;
 #endif
 
-namespace MLAPI.Profiling
+namespace Unity.Netcode.Profiling
 {
     internal static class ProfilerCountersInfo
     {

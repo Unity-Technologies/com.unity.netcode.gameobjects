@@ -1,10 +1,9 @@
 using System;
 using System.IO;
-using MLAPI.Serialization;
-using MLAPI.Transports;
-using MLAPI.Serialization.Pooled;
+using Unity.Netcode.Transports;
+using Unity.Netcode.Serialization.Pooled;
 
-namespace MLAPI.Messaging
+namespace Unity.Netcode.Messaging
 {
     /// <summary>
     /// MessageFrameItem

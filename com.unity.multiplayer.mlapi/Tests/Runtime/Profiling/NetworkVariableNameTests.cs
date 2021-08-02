@@ -1,10 +1,9 @@
 using System;
-using MLAPI.NetworkVariable;
-using MLAPI.NetworkVariable.Collections;
+using Unity.Netcode.NetworkVariable;
+using Unity.Netcode.NetworkVariable.Collections;
 using NUnit.Framework;
-using UnityEngine;
 
-namespace MLAPI.RuntimeTests.Profiling
+namespace Unity.Netcode.RuntimeTests.Profiling
 {
     public sealed class NetworkVariableNameTests
     {

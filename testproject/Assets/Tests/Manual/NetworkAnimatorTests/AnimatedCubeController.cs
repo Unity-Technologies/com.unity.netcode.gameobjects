@@ -1,6 +1,6 @@
-using MLAPI;
-using MLAPI.Messaging;
-using MLAPI.Prototyping;
+using Unity.Netcode;
+using Unity.Netcode.Messaging;
+using Unity.Netcode.Prototyping;
 using UnityEngine;
 
 namespace Tests.Manual.NetworkAnimatorTests

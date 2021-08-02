@@ -1,4 +1,4 @@
-using MLAPI;
+using Unity.Netcode;
 using UnityEngine;
 
 public class ScalingCube : MonoBehaviour

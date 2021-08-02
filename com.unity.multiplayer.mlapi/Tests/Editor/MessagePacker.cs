@@ -1,8 +1,8 @@
-using MLAPI.Serialization;
-using MLAPI.Messaging;
-using MLAPI.Serialization.Pooled;
+using Unity.Netcode.Serialization;
+using Unity.Netcode.Messaging;
+using Unity.Netcode.Serialization.Pooled;
 
-namespace MLAPI.EditorTests
+namespace Unity.Netcode.EditorTests
 {
     internal static class MessagePacker
     {

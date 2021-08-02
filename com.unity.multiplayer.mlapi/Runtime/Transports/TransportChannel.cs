@@ -1,6 +1,6 @@
 using System;
 
-namespace MLAPI.Transports
+namespace Unity.Netcode.Transports
 {
     /// <summary>
     /// A transport channel used by the MLAPI

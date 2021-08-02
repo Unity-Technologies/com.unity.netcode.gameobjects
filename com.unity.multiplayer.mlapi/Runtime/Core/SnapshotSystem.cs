@@ -1,16 +1,15 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using MLAPI.Configuration;
-using MLAPI.Messaging;
-using MLAPI.NetworkVariable;
-using MLAPI.Serialization;
-using MLAPI.Serialization.Pooled;
-using MLAPI.Timing;
-using MLAPI.Transports;
+using Unity.Netcode.Messaging;
+using Unity.Netcode.NetworkVariable;
+using Unity.Netcode.Serialization;
+using Unity.Netcode.Serialization.Pooled;
+using Unity.Netcode.Timing;
+using Unity.Netcode.Transports;
 using UnityEngine;
 
-namespace MLAPI
+namespace Unity.Netcode
 {
     // Structure that acts as a key for a NetworkVariable
     // Allows telling which variable we're talking about.

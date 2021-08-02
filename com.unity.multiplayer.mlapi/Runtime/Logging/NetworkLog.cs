@@ -1,10 +1,8 @@
-using MLAPI.Configuration;
-using MLAPI.Messaging;
-using MLAPI.Serialization.Pooled;
-using MLAPI.Transports;
+using Unity.Netcode.Messaging;
+using Unity.Netcode.Transports;
 using UnityEngine;
 
-namespace MLAPI.Logging
+namespace Unity.Netcode.Logging
 {
     /// <summary>
     /// Helper class for logging

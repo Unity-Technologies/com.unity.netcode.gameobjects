@@ -1,12 +1,10 @@
-using System;
 using System.Collections;
-using MLAPI.Exceptions;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 using Object = UnityEngine.Object;
 
-namespace MLAPI.RuntimeTests
+namespace Unity.Netcode.RuntimeTests
 {
     /// <summary>
     /// Tests calling destroy on spawned / unspawned <see cref="NetworkObject"/>s. Expected behavior:

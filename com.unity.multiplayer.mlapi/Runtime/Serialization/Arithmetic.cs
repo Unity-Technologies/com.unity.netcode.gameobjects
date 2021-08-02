@@ -1,4 +1,4 @@
-namespace MLAPI.Serialization
+namespace Unity.Netcode.Serialization
 {
     /// <summary>
     /// Arithmetic helper class

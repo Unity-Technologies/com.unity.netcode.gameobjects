@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using MLAPI.Spawning;
+using Unity.Netcode.Spawning;
 using NUnit.Framework;
 
 
-namespace MLAPI.RuntimeTests
+namespace Unity.Netcode.RuntimeTests
 {
     /// <summary>
     /// The NetworkPrefabHandler unit tests validates:

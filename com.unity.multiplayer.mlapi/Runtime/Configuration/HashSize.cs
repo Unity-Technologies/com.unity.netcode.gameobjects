@@ -1,4 +1,4 @@
-namespace MLAPI.Configuration
+namespace Unity.Netcode.Configuration
 {
     /// <summary>
     /// Represents the length of a var int encoded hash

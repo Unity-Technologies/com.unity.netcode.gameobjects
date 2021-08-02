@@ -1,6 +1,6 @@
 using System;
 
-namespace MLAPI.Reflection
+namespace Unity.Netcode.Reflection
 {
     internal static class TypeExtensions
     {

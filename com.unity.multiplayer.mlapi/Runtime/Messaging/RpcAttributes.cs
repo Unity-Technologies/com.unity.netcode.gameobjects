@@ -1,6 +1,6 @@
 using System;
 
-namespace MLAPI.Messaging
+namespace Unity.Netcode.Messaging
 {
     /// <summary>
     /// RPC delivery types

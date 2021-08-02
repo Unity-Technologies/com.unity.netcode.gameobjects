@@ -1,12 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using MLAPI.Timing;
+using Unity.Netcode.Timing;
 using NUnit.Framework;
 using UnityEngine;
 using Random = System.Random;
 
-namespace MLAPI.EditorTests.Timing
+namespace Unity.Netcode.EditorTests.Timing
 {
     public class NetworkTimeTests
     {

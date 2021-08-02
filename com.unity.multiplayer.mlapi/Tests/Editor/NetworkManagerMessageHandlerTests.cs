@@ -1,18 +1,18 @@
 using System;
 using System.Collections.Generic;
-using MLAPI.Configuration;
-using MLAPI.Editor;
-using MLAPI.Messaging;
-using MLAPI.Serialization;
-using MLAPI.Transports;
-using MLAPI.Transports.Tasks;
+using Unity.Netcode.Configuration;
+using Unity.Netcode.Editor;
+using Unity.Netcode.Messaging;
+using Unity.Netcode.Serialization;
+using Unity.Netcode.Transports;
+using Unity.Netcode.Transports.Tasks;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using Object = UnityEngine.Object;
 
-namespace MLAPI.EditorTests
+namespace Unity.Netcode.EditorTests
 {
     public class NetworkManagerMessageHandlerTests
     {

@@ -2,12 +2,12 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
-using MLAPI.Transports;
-using MLAPI.Hashing;
-using MLAPI.Serialization;
-using MLAPI.Serialization.Pooled;
+using Unity.Netcode.Transports;
+using Unity.Netcode.Hashing;
+using Unity.Netcode.Serialization;
+using Unity.Netcode.Serialization.Pooled;
 
-namespace MLAPI.Configuration
+namespace Unity.Netcode.Configuration
 {
     /// <summary>
     /// The configuration object used to start server, client and hosts
