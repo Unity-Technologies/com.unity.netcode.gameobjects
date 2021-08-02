@@ -313,6 +313,7 @@ namespace MLAPI.RuntimeTests
                     try
                     {
                         int frameCount = Time.frameCount;
+                        Debug.Log("Testing frame " + frameCount + " against " + nextFrameNumber);
                         return frameCount >= nextFrameNumber;
                     }
                     catch (Exception e)
