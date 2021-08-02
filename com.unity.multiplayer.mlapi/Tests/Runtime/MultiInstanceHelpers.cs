@@ -140,10 +140,14 @@ namespace MLAPI.RuntimeTests
             NetworkManagerInstances.Clear();
 
             // Destroy the temporary GameObject used to run co-routines
-            if (s_CoroutineRunner != null)
+            foreach (var coroutineRunner in s_CoroutineRunners)
             {
-                Object.Destroy(s_CoroutineRunner);
+                if (coroutineRunner)
+                {
+                    Object.Destroy(coroutineRunner);
+                }
             }
+            s_CoroutineRunners.Clear();
 
             Application.targetFrameRate = s_OriginalTargetFrameRate;
         }
@@ -181,25 +185,18 @@ namespace MLAPI.RuntimeTests
             return true;
         }
 
-        // Empty MonoBehaviour that is a holder of coroutine
-        private class CoroutineRunner : MonoBehaviour
-        {
-        }
-
-        private static CoroutineRunner s_CoroutineRunner;
+        static List<CoroutineRunner> s_CoroutineRunners = new List<CoroutineRunner>();
 
         /// <summary>
         /// Runs a IEnumerator as a Coroutine on a dummy GameObject. Used to get exceptions coming from the coroutine
         /// </summary>
+        /// <param name="name">The name of the coroutine (for debugging)</param>
         /// <param name="enumerator">The IEnumerator to run</param>
-        public static Coroutine Run(IEnumerator enumerator)
+        public static Coroutine Run(IEnumerator enumerator, string name = "Unknown")
         {
-            if (s_CoroutineRunner == null)
-            {
-                s_CoroutineRunner = new GameObject(nameof(CoroutineRunner)).AddComponent<CoroutineRunner>();
-            }
-
-            return s_CoroutineRunner.StartCoroutine(enumerator);
+            var coroutineRunner = new GameObject($"Coroutine: {name}").AddComponent<CoroutineRunner>();
+            s_CoroutineRunners.Add(coroutineRunner);
+            return coroutineRunner.StartCoroutine(enumerator);
         }
 
         public class CoroutineResultWrapper<T>
