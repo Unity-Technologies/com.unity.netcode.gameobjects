@@ -308,7 +308,19 @@ namespace MLAPI.RuntimeTests
                 }
                 var nextFrameNumber = Time.frameCount + 1;
                 Debug.Log("00A - (" + (Time.frameCount - startFrameNumber) + ")");
-                yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
+                yield return new WaitUntil(() =>
+                {
+                    try
+                    {
+                        int frameCount = Time.frameCount;
+                        return frameCount >= nextFrameNumber;
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogException(e);
+                        return false;
+                    }
+                });
             }
 
             if (result != null)
