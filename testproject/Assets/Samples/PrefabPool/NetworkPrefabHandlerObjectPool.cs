@@ -112,7 +112,7 @@ public class NetworkPrefabHandlerObjectPool : NetworkBehaviour, INetworkPrefabIn
                 var no = go.GetComponent<NetworkObject>();
                 if (!no.IsSpawned)
                 {
-                    no.Spawn(null, true);
+                    no.Spawn(true);
                 }
             }
             yield return new WaitForSeconds(entitySpawnUpdateRate);
