@@ -314,12 +314,12 @@ namespace Unity.Netcode
         public ulong OwnerClientId => NetworkObject.OwnerClientId;
 
         /// <summary>
-        /// Gets called when the <see cref="MLAPI.NetworkObject"/> gets spawned, message handlers are ready to be registered and the network is setup.
+        /// Gets called when the <see cref="NetworkObject"/> gets spawned, message handlers are ready to be registered and the network is setup.
         /// </summary>
         public virtual void OnNetworkSpawn() { }
 
         /// <summary>
-        /// Gets called when the <see cref="MLAPI.NetworkObject"/> gets despawned. Is called both on the server and clients.
+        /// Gets called when the <see cref="NetworkObject"/> gets despawned. Is called both on the server and clients.
         /// </summary>
         public virtual void OnNetworkDespawn() { }
 
