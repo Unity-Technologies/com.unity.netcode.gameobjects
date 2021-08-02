@@ -24,14 +24,20 @@ namespace MLAPI.RuntimeTests
         [UnityTearDown]
         public virtual IEnumerator Teardown()
         {
+            Debug.Log("012");
             // Shutdown and clean up both of our NetworkManager instances
             try
             {
                 MultiInstanceHelpers.Destroy();
             }
-            catch (Exception e) { throw e; }
+            catch (Exception e)
+            {
+                Debug.Log("013");
+                throw e;
+            }
             finally
             {
+                Debug.Log("014");
                 if (m_PlayerPrefab != null)
                 {
                     Object.Destroy(m_PlayerPrefab);
@@ -39,8 +45,10 @@ namespace MLAPI.RuntimeTests
                 }
             }
 
+            Debug.Log("015");
             // wait for next frame so everything is destroyed, so following tests can execute from clean environment
             yield return CoroutineHelper.WaitOneFrame();
+            Debug.Log("016");
         }
 
         /// <summary>
@@ -106,6 +114,8 @@ namespace MLAPI.RuntimeTests
             Debug.Log("006");
             // Wait for connection on server side
             yield return CoroutineHelper.Run(MultiInstanceHelpers.WaitForClientsConnectedToServer(server, useHost ? nbClients + 1 : nbClients));
+            
+            Debug.Log("006b");
         }
     }
 }
