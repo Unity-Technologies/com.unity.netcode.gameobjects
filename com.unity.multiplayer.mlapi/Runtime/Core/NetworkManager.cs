@@ -59,8 +59,8 @@ namespace MLAPI
         internal static bool UseClassicDelta = true;
         internal static bool UseSnapshotDelta = false;
 
-        internal static bool UseClassicSpawn = true;
-        internal static bool UseSnapshotSpawn = false;
+        internal static bool UseClassicSpawn = false;
+        internal static bool UseSnapshotSpawn = true;
 
         private const double k_TimeSyncFrequency = 1.0d; // sync every second, TODO will be removed once timesync is done via snapshots
 

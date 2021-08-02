@@ -468,6 +468,7 @@ namespace MLAPI
                 command.ObjectRotation = transform.rotation;
                 command.ObjectScale = transform.localScale;
                 command.TickWritten = 0; // will be reset in Spawn
+                command.TargetClientIds = default;
 
                 NetworkManager.SnapshotSystem.Spawn(command);
             }
