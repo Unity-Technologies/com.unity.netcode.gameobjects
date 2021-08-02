@@ -54,8 +54,7 @@ namespace MLAPI.RuntimeTests
 
                 NetworkUpdateLoop.RegisterLoopSystems();
 
-                int nextFrameNumber = Time.frameCount + 1;
-                yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
+                yield return CoroutineHelper.WaitOneFrame();
 
                 NetworkUpdateLoop.UnregisterLoopSystems();
 
@@ -256,13 +255,11 @@ namespace MLAPI.RuntimeTests
                 };
 
                 plainScript.Initialize();
-                int nextFrameNumber = Time.frameCount + 1;
-                yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
+                yield return CoroutineHelper.WaitOneFrame();
                 isTesting = true;
 
                 const int kRunTotalFrames = 16;
-                int waitFrameNumber = Time.frameCount + kRunTotalFrames;
-                yield return new WaitUntil(() => Time.frameCount >= waitFrameNumber);
+                yield return CoroutineHelper.WaitNumFrames(kRunTotalFrames);
 
                 Assert.AreEqual(0, netUpdates[kNetInitializationIndex]);
                 Assert.AreEqual(kRunTotalFrames, netUpdates[kNetEarlyUpdateIndex]);
@@ -421,13 +418,11 @@ namespace MLAPI.RuntimeTests
                     }
                 };
 
-                int nextFrameNumber = Time.frameCount + 1;
-                yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
+                yield return CoroutineHelper.WaitOneFrame();
                 isTesting = true;
 
                 const int kRunTotalFrames = 16;
-                int waitFrameNumber = Time.frameCount + kRunTotalFrames;
-                yield return new WaitUntil(() => Time.frameCount >= waitFrameNumber);
+                yield return CoroutineHelper.WaitNumFrames(kRunTotalFrames);
 
                 Assert.AreEqual(kRunTotalFrames, netUpdates[kNetPreUpdateIndex]);
                 Assert.AreEqual(netUpdates[kNetPreUpdateIndex], monoUpdates[kMonoUpdateIndex]);

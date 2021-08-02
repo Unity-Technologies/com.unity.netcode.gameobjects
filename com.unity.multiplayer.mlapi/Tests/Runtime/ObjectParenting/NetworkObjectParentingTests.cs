@@ -88,10 +88,10 @@ namespace MLAPI.RuntimeTests
             Assert.That(MultiInstanceHelpers.Start(true, m_ServerNetworkManager, m_ClientNetworkManagers));
 
             // Wait for connection on client side
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(m_ClientNetworkManagers));
+            yield return CoroutineHelper.Run(MultiInstanceHelpers.WaitForClientsConnected(m_ClientNetworkManagers));
 
             // Wait for connection on server side
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientConnectedToServer(m_ServerNetworkManager));
+            yield return CoroutineHelper.Run(MultiInstanceHelpers.WaitForClientConnectedToServer(m_ServerNetworkManager));
         }
 
         public void SetupSet(Transform rootTransform, int setIndex, NetworkManager networkManager)
@@ -207,8 +207,7 @@ namespace MLAPI.RuntimeTests
             m_Cube_NetObjs[0].parent = m_Pickup_Back_NetObjs[0];
             Assert.That(m_Cube_NetBhvs[0].ParentNetworkObject, Is.EqualTo(m_Pickup_Back_NetObjs[0].GetComponent<NetworkObject>()));
 
-            int nextFrameNumber = Time.frameCount + 2;
-            yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
+            yield return CoroutineHelper.WaitNumFrames(2);
 
             // Client[n]: Set/Cube -> Set/Pickup/Back/Cube
             for (int setIndex = 0; setIndex < k_ClientInstanceCount; setIndex++)
@@ -222,8 +221,7 @@ namespace MLAPI.RuntimeTests
             m_Cube_NetObjs[0].parent = null;
             Assert.That(m_Cube_NetBhvs[0].ParentNetworkObject, Is.EqualTo(null));
 
-            nextFrameNumber = Time.frameCount + 2;
-            yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
+            yield return CoroutineHelper.WaitNumFrames(2);
 
             // Client[n]: Set/Pickup/Back -> Root/Cube
             for (int setIndex = 0; setIndex < k_ClientInstanceCount; setIndex++)
@@ -237,8 +235,7 @@ namespace MLAPI.RuntimeTests
             m_Cube_NetObjs[0].parent = m_Dude_RightArm_NetObjs[0];
             Assert.That(m_Cube_NetBhvs[0].ParentNetworkObject, Is.EqualTo(m_Dude_RightArm_NetObjs[0].GetComponent<NetworkObject>()));
 
-            nextFrameNumber = Time.frameCount + 2;
-            yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
+            yield return CoroutineHelper.WaitNumFrames(2);
 
             // Client[n]: Root/Cube -> Set/Dude/Arms/RightArm/Cube
             for (int setIndex = 0; setIndex < k_ClientInstanceCount; setIndex++)
@@ -261,8 +258,7 @@ namespace MLAPI.RuntimeTests
 
             Assert.That(!m_Cube_NetObjs[0].GetComponent<NetworkObject>().TrySetParent(Camera.main.transform));
 
-            int nextFrameNumber = Time.frameCount + 2;
-            yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
+            yield return CoroutineHelper.WaitNumFrames(2);
 
             Assert.That(m_Cube_NetObjs[0].parent, Is.EqualTo(serverCachedParent));
             for (int setIndex = 0; setIndex < k_ClientInstanceCount; setIndex++)
@@ -275,8 +271,7 @@ namespace MLAPI.RuntimeTests
             Assert.That(m_Cube_NetObjs[0].GetComponent<NetworkObject>().TrySetParent(m_Dude_LeftArm_NetObjs[0]));
             Assert.That(m_Cube_NetBhvs[0].ParentNetworkObject, Is.EqualTo(m_Dude_LeftArm_NetObjs[0].GetComponent<NetworkObject>()));
 
-            nextFrameNumber = Time.frameCount + 2;
-            yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
+            yield return CoroutineHelper.WaitNumFrames(2);
 
             for (int setIndex = 0; setIndex < k_ClientInstanceCount; setIndex++)
             {

@@ -138,16 +138,10 @@ namespace MLAPI.RuntimeTests.Timing
             }
 
             // Wait for connection on client side
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(clients));
+            yield return CoroutineHelper.Run(MultiInstanceHelpers.WaitForClientsConnected(clients));
 
             // Wait for connection on server side
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnectedToServer(server, useHost ? nbClients + 1 : nbClients));
-        }
-
-        private IEnumerator WaitForFrames(int count)
-        {
-            int nextFrameNumber = Time.frameCount + count;
-            yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
+            yield return CoroutineHelper.Run(MultiInstanceHelpers.WaitForClientsConnectedToServer(server, useHost ? nbClients + 1 : nbClients));
         }
 
         private readonly struct NetworkTimeState : IEquatable<NetworkTimeState>

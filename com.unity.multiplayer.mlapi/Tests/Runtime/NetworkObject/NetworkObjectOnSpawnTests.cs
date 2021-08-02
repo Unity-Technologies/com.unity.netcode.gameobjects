@@ -78,16 +78,16 @@ namespace MLAPI.RuntimeTests
         public IEnumerator TestOnNetworkSpawnCallbacks()
         {
             // [Host-Side] Get the Host owned instance
-            var serverClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), m_ServerNetworkManager, serverClientPlayerResult));
+            var serverClientPlayerResult = new CoroutineResultWrapper<NetworkObject>();
+            yield return CoroutineHelper.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), m_ServerNetworkManager, serverClientPlayerResult));
 
             var serverInstance = serverClientPlayerResult.Result.GetComponent<TrackOnSpawnFunctions>();
 
             var clientInstances = new List<TrackOnSpawnFunctions>();
             foreach (var client in m_ClientNetworkManagers)
             {
-                var clientClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
-                yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), client, clientClientPlayerResult));
+                var clientClientPlayerResult = new CoroutineResultWrapper<NetworkObject>();
+                yield return CoroutineHelper.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), client, clientClientPlayerResult));
                 var clientRpcTests = clientClientPlayerResult.Result.GetComponent<TrackOnSpawnFunctions>();
                 Assert.IsNotNull(clientRpcTests);
                 clientInstances.Add(clientRpcTests);
@@ -117,8 +117,7 @@ namespace MLAPI.RuntimeTests
             Assert.AreEqual(1, serverInstance.OnNetworkDespawnCalledCount);
 
             // wait long enough for player object to be despawned
-            int nextFrameNumber = Time.frameCount + 2;
-            yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
+            yield return CoroutineHelper.WaitNumFrames(2);
 
             // check despawned on clients
             foreach (var clientInstance in clientInstances)
@@ -131,8 +130,7 @@ namespace MLAPI.RuntimeTests
             serverInstance.GetComponent<NetworkObject>().Spawn();
 
             // wait long enough for player object to be spawned
-            nextFrameNumber = Time.frameCount + 2;
-            yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
+            yield return CoroutineHelper.WaitNumFrames(2);
 
 
             // check spawned again on server this is 2 becaue we are reusing the object which was already spawned once.
@@ -154,8 +152,7 @@ namespace MLAPI.RuntimeTests
             Assert.AreEqual(2, serverInstance.OnNetworkDespawnCalledCount);
 
             // wait long enough for player object to be despawned on client
-            nextFrameNumber = Time.frameCount + 2;
-            yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
+            yield return CoroutineHelper.WaitNumFrames(2);
 
             // check despawned on clients
             foreach (var clientInstance in clientInstances)

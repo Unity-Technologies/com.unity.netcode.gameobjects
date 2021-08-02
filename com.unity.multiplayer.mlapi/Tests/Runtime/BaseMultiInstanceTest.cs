@@ -40,8 +40,7 @@ namespace MLAPI.RuntimeTests
             }
 
             // wait for next frame so everything is destroyed, so following tests can execute from clean environment
-            int nextFrameNumber = Time.frameCount + 1;
-            yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
+            yield return CoroutineHelper.WaitOneFrame();
         }
 
         /// <summary>
@@ -102,11 +101,11 @@ namespace MLAPI.RuntimeTests
 
             Debug.Log("005");
             // Wait for connection on client side
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(clients));
+            yield return CoroutineHelper.Run(MultiInstanceHelpers.WaitForClientsConnected(clients));
 
             Debug.Log("006");
             // Wait for connection on server side
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnectedToServer(server, useHost ? nbClients + 1 : nbClients));
+            yield return CoroutineHelper.Run(MultiInstanceHelpers.WaitForClientsConnectedToServer(server, useHost ? nbClients + 1 : nbClients));
         }
     }
 }

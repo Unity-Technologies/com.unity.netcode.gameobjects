@@ -80,10 +80,10 @@ namespace MLAPI.RuntimeTests
                 Assert.Fail("Failed to start instances");
             }
             // Wait for connection on client side
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(clients));
+            yield return CoroutineHelper.Run(MultiInstanceHelpers.WaitForClientsConnected(clients));
 
             // Wait for connection on server side
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnectedToServer(server, clientCount: useHost ? nbClients + 1 : nbClients));
+            yield return CoroutineHelper.Run(MultiInstanceHelpers.WaitForClientsConnectedToServer(server, clientCount: useHost ? nbClients + 1 : nbClients));
 
             // gathering netvars to test on
             var serverNetVarsToUpdate = new List<NetworkVariableInt>();
@@ -129,8 +129,8 @@ namespace MLAPI.RuntimeTests
             foreach (var client in m_ClientNetworkManagers)
             {
                 var nbVarsCheckedClientSide = 0;
-                var countSpawnObjectResult = new MultiInstanceHelpers.CoroutineResultWrapper<bool>();
-                yield return MultiInstanceHelpers.WaitForCondition(() => client.SpawnManager.SpawnedObjects.Count == nbSpawnedObjects, countSpawnObjectResult);
+                var countSpawnObjectResult = new CoroutineResultWrapper<bool>();
+                yield return CoroutineHelper.WaitUntilConditionWithTimeout(() => client.SpawnManager.SpawnedObjects.Count == nbSpawnedObjects, countSpawnObjectResult);
                 Assert.That(countSpawnObjectResult.Result, Is.True);
 
                 foreach (var spawnedObject in client.SpawnManager.SpawnedObjects)
@@ -140,8 +140,8 @@ namespace MLAPI.RuntimeTests
                         foreach (var networkVariable in behaviour.NetworkVariableFields)
                         {
                             var varInt = networkVariable as NetworkVariableInt;
-                            var varUpdateResult = new MultiInstanceHelpers.CoroutineResultWrapper<bool>();
-                            yield return MultiInstanceHelpers.WaitForCondition(() => varInt.Value == updatedValue, varUpdateResult);
+                            var varUpdateResult = new CoroutineResultWrapper<bool>();
+                            yield return CoroutineHelper.WaitUntilConditionWithTimeout(() => varInt.Value == updatedValue, varUpdateResult);
                             Assert.That(varUpdateResult.Result, Is.True);
 
                             nbVarsCheckedClientSide++;

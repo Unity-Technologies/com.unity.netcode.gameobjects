@@ -34,12 +34,12 @@ namespace MLAPI.RuntimeTests
             });
 
             // This is the *SERVER VERSION* of the *CLIENT PLAYER*
-            var serverClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation(x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId, m_ServerNetworkManager, serverClientPlayerResult));
+            var serverClientPlayerResult = new CoroutineResultWrapper<NetworkObject>();
+            yield return CoroutineHelper.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation(x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId, m_ServerNetworkManager, serverClientPlayerResult));
 
             // This is the *CLIENT VERSION* of the *CLIENT PLAYER*
-            var clientClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation(x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId, m_ClientNetworkManagers[0], clientClientPlayerResult));
+            var clientClientPlayerResult = new CoroutineResultWrapper<NetworkObject>();
+            yield return CoroutineHelper.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation(x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId, m_ClientNetworkManagers[0], clientClientPlayerResult));
 
             m_ServerSideClientPlayer = serverClientPlayerResult.Result;
             m_ClientSideClientPlayer = clientClientPlayerResult.Result;
@@ -52,7 +52,7 @@ namespace MLAPI.RuntimeTests
         [TestCase(false, NetworkAuthority.Server, ExpectedResult = null)]
         public IEnumerator TestAuthoritativeTransformChangeOneAtATime(bool testLocalTransform, NetworkAuthority authorityToTest)
         {
-            var waitResult = new MultiInstanceHelpers.CoroutineResultWrapper<bool>();
+            var waitResult = new CoroutineResultWrapper<bool>();
 
             var networkTransform = (authorityToTest == NetworkAuthority.Client ? m_ClientSideClientPlayer : m_ServerSideClientPlayer).GetComponent<NetworkTransform>();
             networkTransform.SetAuthority(authorityToTest);
@@ -82,7 +82,7 @@ namespace MLAPI.RuntimeTests
             var playerTransform = networkTransform.transform;
             playerTransform.position = new Vector3(10, 20, 30);
             Assert.AreEqual(Vector3.zero, otherSideNetworkTransform.transform.position, "server side pos should be zero at first"); // sanity check
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForCondition(() => otherSideNetworkTransform.transform.position.x > approximation, waitResult, maxFrames: 120));
+            yield return CoroutineHelper.Run(CoroutineHelper.WaitUntilConditionWithTimeout(() => otherSideNetworkTransform.transform.position.x > approximation, waitResult, maxFramesBeforeTimeout: 120));
             if (!waitResult.Result)
             {
                 throw new Exception("timeout while waiting for position change");
@@ -92,7 +92,7 @@ namespace MLAPI.RuntimeTests
             // test rotation
             playerTransform.rotation = Quaternion.Euler(45, 40, 35); // using euler angles instead of quaternions directly to really see issues users might encounter
             Assert.AreEqual(Quaternion.identity, otherSideNetworkTransform.transform.rotation, "wrong initial value for rotation"); // sanity check
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForCondition(() => otherSideNetworkTransform.transform.rotation.eulerAngles.x > approximation, waitResult, maxFrames: 120));
+            yield return CoroutineHelper.Run(CoroutineHelper.WaitUntilConditionWithTimeout(() => otherSideNetworkTransform.transform.rotation.eulerAngles.x > approximation, waitResult, maxFramesBeforeTimeout: 120));
             if (!waitResult.Result)
             {
                 throw new Exception("timeout while waiting for position change");
@@ -107,7 +107,7 @@ namespace MLAPI.RuntimeTests
             UnityEngine.Assertions.Assert.AreApproximatelyEqual(1f, otherSideNetworkTransform.transform.lossyScale.y, "wrong initial value for scale"); // sanity check
             UnityEngine.Assertions.Assert.AreApproximatelyEqual(1f, otherSideNetworkTransform.transform.lossyScale.z, "wrong initial value for scale"); // sanity check
             playerTransform.localScale = new Vector3(2, 3, 4);
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForCondition(() => otherSideNetworkTransform.transform.lossyScale.x > 1f + approximation, waitResult, maxFrames: 120));
+            yield return CoroutineHelper.Run(CoroutineHelper.WaitUntilConditionWithTimeout(() => otherSideNetworkTransform.transform.lossyScale.x > 1f + approximation, waitResult, maxFramesBeforeTimeout: 120));
             if (!waitResult.Result)
             {
                 throw new Exception("timeout while waiting for position change");

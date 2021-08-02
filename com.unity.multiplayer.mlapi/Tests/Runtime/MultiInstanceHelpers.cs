@@ -139,15 +139,7 @@ namespace MLAPI.RuntimeTests
 
             NetworkManagerInstances.Clear();
 
-            // Destroy the temporary GameObject used to run co-routines
-            foreach (var coroutineRunner in s_CoroutineRunners)
-            {
-                if (coroutineRunner)
-                {
-                    Object.Destroy(coroutineRunner);
-                }
-            }
-            s_CoroutineRunners.Clear();
+            CoroutineHelper.Cleanup();
 
             Application.targetFrameRate = s_OriginalTargetFrameRate;
         }
@@ -183,25 +175,6 @@ namespace MLAPI.RuntimeTests
             }
 
             return true;
-        }
-
-        static List<CoroutineRunner> s_CoroutineRunners = new List<CoroutineRunner>();
-
-        /// <summary>
-        /// Runs a IEnumerator as a Coroutine on a dummy GameObject. Used to get exceptions coming from the coroutine
-        /// </summary>
-        /// <param name="name">The name of the coroutine (for debugging)</param>
-        /// <param name="enumerator">The IEnumerator to run</param>
-        public static Coroutine Run(IEnumerator enumerator, string name = "Unknown")
-        {
-            var coroutineRunner = new GameObject($"Coroutine: {name}").AddComponent<CoroutineRunner>();
-            s_CoroutineRunners.Add(coroutineRunner);
-            return coroutineRunner.StartCoroutine(enumerator);
-        }
-
-        public class CoroutineResultWrapper<T>
-        {
-            public T Result;
         }
 
         /// <summary>
@@ -303,22 +276,8 @@ namespace MLAPI.RuntimeTests
                 {
                     break;
                 }
-                var nextFrameNumber = Time.frameCount + 1;
                 Debug.Log("00A - (" + (Time.frameCount - startFrameNumber) + ")");
-                yield return new WaitUntil(() =>
-                {
-                    try
-                    {
-                        int frameCount = Time.frameCount;
-                        Debug.Log("Testing frame " + frameCount + " against " + nextFrameNumber);
-                        return frameCount >= nextFrameNumber;
-                    }
-                    catch (Exception e)
-                    {
-                        Debug.LogException(e);
-                        return false;
-                    }
-                });
+                yield return CoroutineHelper.WaitOneFrame();
             }
 
             if (result != null)
@@ -369,9 +328,8 @@ namespace MLAPI.RuntimeTests
             Debug.Log("00E");
             while (Time.frameCount - startFrameNumber <= maxFrames && server.ConnectedClients.Count != clientCount)
             {
-                var nextFrameNumber = Time.frameCount + 1;
                 Debug.Log("00F - (" + (Time.frameCount - startFrameNumber) + ")");
-                yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
+                yield return CoroutineHelper.WaitOneFrame();
             }
 
             var res = server.ConnectedClients.Count == clientCount;
@@ -403,13 +361,10 @@ namespace MLAPI.RuntimeTests
                 throw new ArgumentNullException("Result cannot be null");
             }
 
-            var startFrameNumber = Time.frameCount;
-
-            while (Time.frameCount - startFrameNumber <= maxFrames && representation.SpawnManager.SpawnedObjects.All(x => x.Value.NetworkObjectId != networkObjectId))
+            yield return CoroutineHelper.WaitUntilConditionWithTimeout(() =>
             {
-                var nextFrameNumber = Time.frameCount + 1;
-                yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
-            }
+                return !representation.SpawnManager.SpawnedObjects.All(x => x.Value.NetworkObjectId != networkObjectId);
+            }, maxFramesBeforeTimeout: maxFrames);
 
             result.Result = representation.SpawnManager.SpawnedObjects.First(x => x.Value.NetworkObjectId == networkObjectId).Value;
 
@@ -439,52 +394,16 @@ namespace MLAPI.RuntimeTests
                 throw new ArgumentNullException("Predicate cannot be null");
             }
 
-            var startFrame = Time.frameCount;
-
-            while (Time.frameCount - startFrame <= maxFrames && !representation.SpawnManager.SpawnedObjects.Any(x => predicate(x.Value)))
+            yield return CoroutineHelper.WaitUntilConditionWithTimeout(() =>
             {
-                var nextFrameNumber = Time.frameCount + 1;
-                yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
-            }
+                return representation.SpawnManager.SpawnedObjects.Any(x => predicate(x.Value));
+            }, maxFramesBeforeTimeout: maxFrames);
 
             result.Result = representation.SpawnManager.SpawnedObjects.FirstOrDefault(x => predicate(x.Value)).Value;
 
             if (failIfNull && result.Result == null)
             {
                 Assert.Fail("NetworkObject could not be found");
-            }
-        }
-
-        /// <summary>
-        /// Waits for a predicate condition to be met
-        /// </summary>
-        /// <param name="predicate">The predicate to wait for</param>
-        /// <param name="result">The result. If null, it will fail if the predicate is not met</param>
-        /// <param name="maxFrames">The max frames to wait for</param>
-        public static IEnumerator WaitForCondition(Func<bool> predicate, CoroutineResultWrapper<bool> result = null, int maxFrames = 64)
-        {
-            if (predicate == null)
-            {
-                throw new ArgumentNullException("Predicate cannot be null");
-            }
-
-            var startFrameNumber = Time.frameCount;
-
-            while (Time.frameCount - startFrameNumber <= maxFrames && !predicate())
-            {
-                var nextFrameNumber = Time.frameCount + 1;
-                yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
-            }
-
-            var res = predicate();
-
-            if (result != null)
-            {
-                result.Result = res;
-            }
-            else
-            {
-                Assert.True(res, "PREDICATE CONDITION");
             }
         }
     }

@@ -105,8 +105,8 @@ namespace MLAPI.RuntimeTests
             var newClientNetworkManager = clients[0];
             newClientNetworkManager.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
             newClientNetworkManager.StartClient();
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientConnected(newClientNetworkManager));
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForCondition(() => m_ServerNetworkManager.ConnectedClients.ContainsKey(newClientNetworkManager.LocalClientId)));
+            yield return CoroutineHelper.Run(MultiInstanceHelpers.WaitForClientConnected(newClientNetworkManager));
+            yield return CoroutineHelper.Run(CoroutineHelper.WaitUntilConditionWithTimeout(() => m_ServerNetworkManager.ConnectedClients.ContainsKey(newClientNetworkManager.LocalClientId)));
             var newClientLocalClientId = newClientNetworkManager.LocalClientId;
 
             // test new client can get that itself locally
@@ -121,7 +121,7 @@ namespace MLAPI.RuntimeTests
             // test when client disconnects, player object no longer available.
             var nbConnectedClients = m_ServerNetworkManager.ConnectedClients.Count;
             MultiInstanceHelpers.StopOneClient(newClientNetworkManager);
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForCondition(() => m_ServerNetworkManager.ConnectedClients.Count == nbConnectedClients - 1));
+            yield return CoroutineHelper.Run(CoroutineHelper.WaitUntilConditionWithTimeout(() => m_ServerNetworkManager.ConnectedClients.Count == nbConnectedClients - 1));
 
             serverSideNewClientPlayer = m_ServerNetworkManager.SpawnManager.GetPlayerNetworkObject(newClientLocalClientId);
             Assert.Null(serverSideNewClientPlayer);
