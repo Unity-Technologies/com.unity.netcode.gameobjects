@@ -10,7 +10,7 @@ namespace MLAPI.RuntimeTests
 {
     public class NetworkVarBufferCopyTest : BaseMultiInstanceTest
     {
-        class DummyNetVar : INetworkVariable
+        public class DummyNetVar : INetworkVariable
         {
             private const int k_DummyValue = 0x13579BDF;
             public bool DeltaWritten;
@@ -92,7 +92,7 @@ namespace MLAPI.RuntimeTests
             }
         }
 
-        class DummyNetBehaviour : NetworkBehaviour
+        public class DummyNetBehaviour : NetworkBehaviour
         {
             public DummyNetVar NetVar;
         }
