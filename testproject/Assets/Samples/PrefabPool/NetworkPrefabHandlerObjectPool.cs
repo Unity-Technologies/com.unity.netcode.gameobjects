@@ -118,5 +118,4 @@ public class NetworkPrefabHandlerObjectPool : NetworkBehaviour, INetworkPrefabIn
             yield return new WaitForSeconds(entitySpawnUpdateRate);
         }
     }
-
 }

@@ -4,7 +4,6 @@ using UnityEngine;
 using MLAPI;
 using MLAPI.Spawning;
 using MLAPI.Serialization;
-using MLAPI.Serialization.Pooled;
 
 /// <summary>
 /// This is an example of using more than one Network Prefab override when using a custom handler
