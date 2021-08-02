@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -72,7 +72,7 @@ namespace MLAPI.RuntimeTests.Messaging
                     stream.CopyTo(memoryStream);
                     firstReceivedMessageContent = Encoding.UTF8.GetString(memoryStream.ToArray());
                 });
-            
+
             ulong secondReceivedMessageSender = 0;
             string secondReceivedMessageContent = null;
             SecondClient.CustomMessagingManager.RegisterNamedMessageHandler(

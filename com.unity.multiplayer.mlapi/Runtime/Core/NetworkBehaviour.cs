@@ -32,7 +32,7 @@ namespace MLAPI
             Client = 2
         }
 
-        private static void SetUpdateStage<T>(ref T param) where T: IHasUpdateStage
+        private static void SetUpdateStage<T>(ref T param) where T : IHasUpdateStage
         {
             if (param.UpdateStage == NetworkUpdateStage.Unset)
             {
@@ -584,7 +584,7 @@ namespace MLAPI
                             {
                                 var context = NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
                                     MessageQueueContainer.MessageType.NetworkVariableDelta, m_ChannelsForNetworkVariableGroups[j],
-                                    new[] {clientId}, NetworkUpdateLoop.UpdateStage);
+                                    new[] { clientId }, NetworkUpdateLoop.UpdateStage);
                                 if (context != null)
                                 {
                                     using (var nonNullContext = (InternalCommandContext)context)

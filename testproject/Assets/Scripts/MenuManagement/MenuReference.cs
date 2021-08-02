@@ -7,7 +7,7 @@ using UnityEditor;
 
 
 [CreateAssetMenu(fileName = "MenuReference", menuName = "MLAPI/MenuReference")]
-public class MenuReference: ScriptableObject, ISceneReference
+public class MenuReference : ScriptableObject, ISceneReference
 {
 #if UNITY_EDITOR    
     public SceneAsset MenuScene;

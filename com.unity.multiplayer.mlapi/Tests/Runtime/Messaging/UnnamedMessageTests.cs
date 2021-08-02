@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -13,7 +13,7 @@ namespace MLAPI.RuntimeTests.Messaging
     public class UnnamedMessageTests : BaseMultiInstanceTest
     {
         protected override int NbClients => 2;
-        
+
         private NetworkManager FirstClient => m_ClientNetworkManagers[0];
         private NetworkManager SecondClient => m_ClientNetworkManagers[1];
 
@@ -42,7 +42,7 @@ namespace MLAPI.RuntimeTests.Messaging
             Assert.AreEqual(messageContent, receivedMessageContent);
             Assert.AreEqual(m_ServerNetworkManager.LocalClientId, receivedMessageSender);
         }
-        
+
         [UnityTest]
         public IEnumerator UnnamedMessageIsReceivedOnMultipleClientsWithContent()
         {
@@ -61,7 +61,7 @@ namespace MLAPI.RuntimeTests.Messaging
                 stream.CopyTo(memoryStream);
                 firstReceivedMessageContent = Encoding.UTF8.GetString(memoryStream.ToArray());
             };
-            
+
             ulong secondReceivedMessageSender = 0;
             string secondReceivedMessageContent = null;
             SecondClient.CustomMessagingManager.OnUnnamedMessage += (sender, stream) =>

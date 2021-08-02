@@ -23,7 +23,7 @@ namespace TestProject.ManualTests
         {
             m_NetworkedObject = GetComponent<NetworkObject>();
             m_RandomMovement = GetComponent<RandomMovement>();
-         
+
         }
 
         public override void OnNetworkSpawn()

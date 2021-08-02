@@ -1,4 +1,4 @@
-﻿namespace TestProject.ManualTests
+namespace TestProject.ManualTests
 {
     public interface IPlayerMovement
     {

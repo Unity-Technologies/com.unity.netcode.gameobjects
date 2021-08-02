@@ -249,11 +249,11 @@ namespace MLAPI.SceneManagement
                 OnNotifyServerAllClientsLoadedScene?.Invoke(switchSceneProgress, timedOut);
                 // Send notification to all clients that everyone is done loading
                 var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext( MessageQueueContainer.MessageType.AllClientsLoadedScene, NetworkChannel.Internal,
-                    m_NetworkManager.ConnectedClientsIds, NetworkUpdateStage.EarlyUpdate);
+                    m_NetworkManager.ConnectedClientsIds, m_NetworkUpdateStage);
 
                 if (context != null)
                 {
-                    using (var nonNullContext = (InternalCommandContext) context)
+                    using (var nonNullContext = (InternalCommandContext)context)
                     {
                         var doneClientIds = switchSceneProgress.DoneClients.ToArray();
                         var timedOutClientIds = m_NetworkManager.ConnectedClients.Keys.Except(doneClientIds).ToArray();
@@ -574,8 +574,8 @@ namespace MLAPI.SceneManagement
                             sceneObjectsToSpawn++;
                         }
                     }
-                    var clientIdAsArray = new ulong[] { m_NetworkManager.ConnectedClientsList[j].ClientId } ;
-                    var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(m_MessageType, m_ChannelType, clientIdAsArray, m_NetworkUpdateStage);
+                    
+                    var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(m_MessageType, m_ChannelType, new ulong[] { clientId }, m_NetworkUpdateStage);
                     if (context != null)
                     {
                         using (var nonNullContext = (InternalCommandContext)context)
@@ -687,8 +687,8 @@ namespace MLAPI.SceneManagement
                     ClientSynchEventData.AddNetworkObjectForSynch(malpiSceneIndex, networkObject);
                 }
             }
-            var clientIdAsArray = new ulong[] { ownerClientId };
-            var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(m_MessageType, m_ChannelType, clientIdAsArray, m_NetworkUpdateStage);
+
+            var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(m_MessageType, m_ChannelType, new ulong[] { ownerClientId }, m_NetworkUpdateStage);
             if (context != null)
             {
                 using (var nonNullContext = (InternalCommandContext)context)

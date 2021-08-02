@@ -48,7 +48,7 @@ namespace MLAPI.EditorTests
                 // That's what will then call back into this for the others.
                 var messageQueueContainer = NetworkManager.MessageQueueContainer;
                 messageQueueContainer.AddQueueItemToInboundFrame(messageType, receiveTime, clientId,
-                    (NetworkBuffer) stream, receiveChannel);
+                    (NetworkBuffer)stream, receiveChannel);
                 messageQueueContainer.ProcessAndFlushMessageQueue(
                     MessageQueueContainer.MessageQueueProcessingTypes.Receive, NetworkUpdateLoop.UpdateStage);
                 messageQueueContainer.AdvanceFrameHistory(MessageQueueHistoryFrame.QueueFrameType.Inbound);
