@@ -19,6 +19,7 @@ using MLAPI.Serialization.Pooled;
 using MLAPI.Transports.Tasks;
 using MLAPI.Timing;
 using Unity.Profiling;
+using UnityEngine.SceneManagement;
 using Debug = UnityEngine.Debug;
 
 namespace MLAPI
@@ -852,6 +853,28 @@ namespace MLAPI
             {
                 SetSingleton();
             }
+        }
+
+        private void Awake()
+        {
+            Application.wantsToQuit += ApplicationWantsToQuit;
+            UnityEngine.SceneManagement.SceneManager.sceneUnloaded += OnSceneUnloaded;
+        }
+
+        // Ensures that the NetworkManager is cleaned up before OnDestroy is run on NetworkObjects and NetworkBehaviours when unloading a scene with a NetworkManager
+        private void OnSceneUnloaded(Scene scene)
+        {
+            if (scene == gameObject.scene)
+            {
+                OnDestroy();
+            }
+        }
+
+        // Ensures that the NetworkManager is cleaned up before OnDestroy is run on NetworkObjects and NetworkBehaviours when quitting the application.
+        private bool ApplicationWantsToQuit()
+        {
+            OnDestroy();
+            return true;
         }
 
         private void OnDestroy()
