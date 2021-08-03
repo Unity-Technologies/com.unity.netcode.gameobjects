@@ -3,6 +3,9 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 using Unity.Multiplayer.Netcode.Logging;
 using Unity.Multiplayer.Netcode.Configuration;
 using Unity.Multiplayer.Netcode.Profiling;
@@ -18,6 +21,7 @@ using Unity.Multiplayer.Netcode.Transports.Tasks;
 using Unity.Multiplayer.Netcode.Timing;
 using Unity.Profiling;
 using Debug = UnityEngine.Debug;
+
 
 namespace Unity.Multiplayer.Netcode
 {

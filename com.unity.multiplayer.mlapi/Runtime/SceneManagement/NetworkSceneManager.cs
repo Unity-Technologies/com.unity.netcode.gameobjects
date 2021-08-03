@@ -6,6 +6,7 @@ using Unity.Multiplayer.Netcode.Configuration;
 using Unity.Multiplayer.Netcode.Exceptions;
 using Unity.Multiplayer.Netcode.Logging;
 using Unity.Multiplayer.Netcode.Messaging;
+using Unity.Multiplayer.Netcode.Serialization;
 using Unity.Multiplayer.Netcode.Serialization.Pooled;
 using UnityEngine;
 using UnityEngine.SceneManagement;

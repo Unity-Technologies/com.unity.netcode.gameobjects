@@ -2,9 +2,9 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using MLAPI;
-using MLAPI.Spawning;
-using MLAPI.SceneManagement;
+using Unity.Multiplayer.Netcode;
+using Unity.Multiplayer.Netcode.Spawning;
+using Unity.Multiplayer.Netcode.SceneManagement;
 
 namespace TestProject.ManualTests
 {
@@ -377,7 +377,7 @@ namespace TestProject.ManualTests
                                 var no = go.GetComponent<NetworkObject>();
                                 if (!no.IsSpawned)
                                 {
-                                    no.Spawn(null, true);
+                                    no.Spawn(true);
                                 }
                             }
                         }
