@@ -1,7 +1,4 @@
 using System;
-using Unity.Multiplayer.Netcode.NetworkVariable;
-using Unity.Multiplayer.Netcode.Serialization;
-using Unity.Multiplayer.Netcode.Transports;
 using UnityEngine;
 
 namespace Unity.Multiplayer.Netcode.Prototyping

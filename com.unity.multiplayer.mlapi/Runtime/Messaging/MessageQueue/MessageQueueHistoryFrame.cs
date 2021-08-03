@@ -1,9 +1,7 @@
 using System.Collections.Generic;
-using Unity.Multiplayer.Netcode.Serialization.Pooled;
-using Unity.Multiplayer.Netcode.Transports;
 using UnityEngine;
 
-namespace Unity.Multiplayer.Netcode.Messaging
+namespace Unity.Multiplayer.Netcode
 {
     /// <summary>
     /// Used by the MessageQueueContainer to hold queued messages

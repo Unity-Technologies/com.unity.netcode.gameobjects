@@ -1,4 +1,4 @@
-namespace Unity.Multiplayer.Netcode.Transports
+namespace Unity.Multiplayer.Netcode
 {
     /// <summary>
     /// Delivery methods

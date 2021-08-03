@@ -1,9 +1,7 @@
 using System.IO;
-using Unity.Multiplayer.Netcode.Messaging;
-using Unity.Multiplayer.Netcode.Transports;
 using Unity.Profiling;
 
-namespace Unity.Multiplayer.Netcode.Profiling
+namespace Unity.Multiplayer.Netcode
 {
     internal class InternalMessageHandlerProfilingDecorator : IInternalMessageHandler
     {

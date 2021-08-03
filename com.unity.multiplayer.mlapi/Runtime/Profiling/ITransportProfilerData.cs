@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace Unity.Multiplayer.Netcode.Profiling
+namespace Unity.Multiplayer.Netcode
 {
     public interface ITransportProfilerData
     {

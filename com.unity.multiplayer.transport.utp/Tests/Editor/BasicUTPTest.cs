@@ -1,7 +1,7 @@
 using UnityEngine;
 using NUnit.Framework;
 
-namespace Unity.Multiplayer.Netcode.UTP.RuntimeTests
+namespace Unity.Multiplayer.Netcode.UTP.EditorTests
 {
     public class BasicUTPTest : MonoBehaviour
     {
@@ -18,5 +18,3 @@ namespace Unity.Multiplayer.Netcode.UTP.RuntimeTests
         }
     }
 }
-
-

@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using Unity.Multiplayer.Netcode.Serialization;
+using Unity.Multiplayer.Netcode;
 
 namespace TestProject.ManualTests
 {

@@ -1,19 +1,10 @@
 using System;
 using System.IO;
-using Unity.Multiplayer.Netcode.Connection;
-using Unity.Multiplayer.Netcode.Logging;
-using Unity.Multiplayer.Netcode.SceneManagement;
-using Unity.Multiplayer.Netcode.Serialization.Pooled;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.SceneManagement;
-using Unity.Multiplayer.Netcode.Configuration;
-using Unity.Multiplayer.Netcode.Profiling;
-using Unity.Multiplayer.Netcode.Serialization;
-using Unity.Multiplayer.Netcode.Transports;
-using Unity.Multiplayer.Netcode.Timing;
 
-namespace Unity.Multiplayer.Netcode.Messaging
+namespace Unity.Multiplayer.Netcode
 {
     internal class InternalMessageHandler : IInternalMessageHandler
     {

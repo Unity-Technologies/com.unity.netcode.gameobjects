@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using Unity.Multiplayer.Netcode;
-using Unity.Multiplayer.Netcode.Messaging;
-using Unity.Multiplayer.Netcode.Profiling;
 
 namespace TestProject.ManualTests
 {

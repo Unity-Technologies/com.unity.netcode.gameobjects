@@ -1,9 +1,7 @@
 using System;
-using Unity.Multiplayer.Netcode;
-using Unity.Multiplayer.Netcode.Configuration;
-using Unity.Multiplayer.Netcode.Transports;
 using NUnit.Framework;
 using UnityEngine;
+using Unity.Multiplayer.Netcode;
 using Unity.Multiplayer.Netcode.Transports.UNET;
 using UnityEngine.Networking;
 

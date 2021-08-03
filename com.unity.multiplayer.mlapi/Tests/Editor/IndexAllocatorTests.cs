@@ -87,7 +87,6 @@ namespace Unity.Multiplayer.Netcode.EditorTests
             int count = 100;
             bool[] used = new bool[count];
             int[] pos = new int[count];
-            int bufferSize = 20000;
             int iterations = 10000;
 
             var allocator = new IndexAllocator(20000, 200);

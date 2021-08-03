@@ -1,8 +1,7 @@
-using Unity.Multiplayer.Netcode.Timing;
 using NUnit.Framework;
 using UnityEngine;
 
-namespace Unity.Multiplayer.Netcode.EditorTests.Timing
+namespace Unity.Multiplayer.Netcode.EditorTests
 {
     public class ServerNetworkTimeSystemTests
     {
