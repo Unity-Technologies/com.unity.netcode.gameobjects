@@ -37,7 +37,6 @@ namespace Unity.Multiplayer.Netcode.Messaging
             NamedMessage,
             ServerLog,
             SnapshotData,
-            SnapshotAck,
             NetworkVariableDelta,
             SwitchScene,
             ClientSwitchSceneCompleted,

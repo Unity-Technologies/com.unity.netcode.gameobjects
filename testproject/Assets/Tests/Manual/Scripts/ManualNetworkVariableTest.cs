@@ -28,7 +28,6 @@ namespace TestProject.ManualTests
         private NetworkVariable<int> m_TestVar = new NetworkVariable<int>();
 
         private string m_Problems = string.Empty;
-        private int m_Count = 0;
         private bool m_Started = false;
 
         private const int k_EndValue = 1000;

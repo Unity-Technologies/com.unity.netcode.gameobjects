@@ -123,9 +123,6 @@ namespace Unity.Multiplayer.Netcode.Messaging
                     case MessageQueueContainer.MessageType.SnapshotData:
                         InternalMessageHandler.HandleSnapshot(item.NetworkId, item.NetworkBuffer);
                         break;
-                    case MessageQueueContainer.MessageType.SnapshotAck:
-                        InternalMessageHandler.HandleAck(item.NetworkId, item.NetworkBuffer);
-                        break;
                     case MessageQueueContainer.MessageType.NetworkVariableDelta:
                         m_NetworkManager.MessageHandler.HandleNetworkVariableDelta(item.NetworkId, item.NetworkBuffer);
                         break;
