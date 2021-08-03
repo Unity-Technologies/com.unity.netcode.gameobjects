@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
-using MLAPI.NetworkVariable;
+using Unity.Multiplayer.Netcode.NetworkVariable;
 
-namespace MLAPI.RuntimeTests
+namespace Unity.Multiplayer.Netcode.RuntimeTests
 {
     /// <summary>
     /// Will automatically register for the NetworkVariable OnValueChanged

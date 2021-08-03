@@ -5,7 +5,7 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using Object = UnityEngine.Object;
 
-namespace MLAPI.RuntimeTests
+namespace Unity.Multiplayer.Netcode.RuntimeTests
 {
     public abstract class BaseMultiInstanceTest
     {

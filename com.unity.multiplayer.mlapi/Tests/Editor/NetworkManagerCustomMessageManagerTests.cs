@@ -1,11 +1,11 @@
 using System.Collections.Generic;
-using MLAPI.Configuration;
-using MLAPI.Messaging;
+using Unity.Multiplayer.Netcode.Configuration;
+using Unity.Multiplayer.Netcode.Messaging;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace MLAPI.EditorTests
+namespace Unity.Multiplayer.Netcode.EditorTests
 {
     public class NetworkManagerCustomMessageManagerTests
     {

@@ -3,9 +3,9 @@ using System.IO;
 using System.Linq;
 using System.Collections.Generic;
 using System.Reflection;
-using MLAPI.Logging;
-using MLAPI.Messaging;
-using MLAPI.Serialization;
+using Unity.Multiplayer.Netcode.Logging;
+using Unity.Multiplayer.Netcode.Messaging;
+using Unity.Multiplayer.Netcode.Serialization;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
@@ -16,7 +16,7 @@ using MethodAttributes = Mono.Cecil.MethodAttributes;
 using ParameterAttributes = Mono.Cecil.ParameterAttributes;
 using ILPPInterface = Unity.CompilationPipeline.Common.ILPostProcessing.ILPostProcessor;
 
-namespace MLAPI.Editor.CodeGen
+namespace Unity.Multiplayer.Netcode.Editor.CodeGen
 {
     internal sealed class NetworkBehaviourILPP : ILPPInterface
     {

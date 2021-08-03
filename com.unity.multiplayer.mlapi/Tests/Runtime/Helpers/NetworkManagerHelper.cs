@@ -1,13 +1,12 @@
 using System;
 using System.Collections.Generic;
-using MLAPI.Configuration;
+using Unity.Multiplayer.Netcode.Configuration;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using NUnit.Framework;
-using MLAPI.SceneManagement;
-using MLAPI.Transports.UNET;
+using Unity.Multiplayer.Netcode.Transports.UNET;
 
-namespace MLAPI.RuntimeTests
+namespace Unity.Multiplayer.Netcode.RuntimeTests
 {
     /// <summary>
     /// Helper class to instantiate a NetworkManager

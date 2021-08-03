@@ -1,6 +1,6 @@
 using System;
 
-namespace MLAPI.Exceptions
+namespace Unity.Multiplayer.Netcode.Exceptions
 {
     /// <summary>
     /// Exception thrown when the operation can only be done on the server

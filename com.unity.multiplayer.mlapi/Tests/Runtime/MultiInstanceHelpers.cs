@@ -2,13 +2,13 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using MLAPI.Configuration;
+using Unity.Multiplayer.Netcode.Configuration;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using Object = UnityEngine.Object;
 
-namespace MLAPI.RuntimeTests
+namespace Unity.Multiplayer.Netcode.RuntimeTests
 {
     /// <summary>
     /// Provides helpers for running multi instance tests.

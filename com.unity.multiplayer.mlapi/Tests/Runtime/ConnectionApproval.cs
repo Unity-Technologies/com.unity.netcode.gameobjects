@@ -5,7 +5,7 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using NUnit.Framework;
 
-namespace MLAPI.RuntimeTests
+namespace Unity.Multiplayer.Netcode.RuntimeTests
 {
 
     public class ConnectionApprovalTests

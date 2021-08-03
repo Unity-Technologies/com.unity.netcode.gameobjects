@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using MLAPI.Reflection;
+using Unity.Multiplayer.Netcode.Reflection;
 using UnityEngine;
 
-namespace MLAPI.Serialization
+namespace Unity.Multiplayer.Netcode.Serialization
 {
     /// <summary>
     /// Helper class to manage the MLAPI serialization.

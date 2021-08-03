@@ -1,13 +1,13 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using MLAPI.NetworkVariable;
+using Unity.Multiplayer.Netcode.NetworkVariable;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 using Object = UnityEngine.Object;
 
-namespace MLAPI.RuntimeTests
+namespace Unity.Multiplayer.Netcode.RuntimeTests
 {
     public class NetworkBehaviourUpdaterTests : BaseMultiInstanceTest
     {

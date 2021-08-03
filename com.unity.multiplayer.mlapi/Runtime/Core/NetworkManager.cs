@@ -1,28 +1,26 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Diagnostics;
 using System.Linq;
 using UnityEngine;
-using MLAPI.Logging;
-using MLAPI.Configuration;
-using MLAPI.Profiling;
-using MLAPI.Serialization;
-using MLAPI.Transports;
-using MLAPI.Connection;
-using MLAPI.Messaging;
-using MLAPI.SceneManagement;
-using MLAPI.Spawning;
-using MLAPI.Exceptions;
-using MLAPI.Serialization.Pooled;
-using MLAPI.Transports.Tasks;
-using MLAPI.Timing;
+using Unity.Multiplayer.Netcode.Logging;
+using Unity.Multiplayer.Netcode.Configuration;
+using Unity.Multiplayer.Netcode.Profiling;
+using Unity.Multiplayer.Netcode.Serialization;
+using Unity.Multiplayer.Netcode.Transports;
+using Unity.Multiplayer.Netcode.Connection;
+using Unity.Multiplayer.Netcode.Messaging;
+using Unity.Multiplayer.Netcode.SceneManagement;
+using Unity.Multiplayer.Netcode.Spawning;
+using Unity.Multiplayer.Netcode.Exceptions;
+using Unity.Multiplayer.Netcode.Serialization.Pooled;
+using Unity.Multiplayer.Netcode.Transports.Tasks;
+using Unity.Multiplayer.Netcode.Timing;
 using Unity.Profiling;
 using UnityEngine.SceneManagement;
 using Debug = UnityEngine.Debug;
 
-namespace MLAPI
+namespace Unity.Multiplayer.Netcode
 {
     /// <summary>
     /// The main component of the library

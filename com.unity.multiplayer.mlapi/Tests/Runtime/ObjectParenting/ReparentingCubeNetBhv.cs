@@ -1,4 +1,4 @@
-namespace MLAPI.RuntimeTests
+namespace Unity.Multiplayer.Netcode.RuntimeTests
 {
     public class ReparentingCubeNetBhv : NetworkBehaviour
     {
