@@ -459,7 +459,7 @@ namespace MLAPI
                     command.ParentNetworkId = command.NetworkObjectId;
                 }
 
-                command.GlobalObjectIdHash = GlobalObjectIdHash;
+                command.GlobalObjectIdHash = HostCheckForGlobalObjectIdHashOverride();
                 // todo: check if (IncludeTransformWhenSpawning == null || IncludeTransformWhenSpawning(clientId)) for any clientId
                 command.ObjectPosition = transform.position;
                 command.ObjectRotation = transform.rotation;
