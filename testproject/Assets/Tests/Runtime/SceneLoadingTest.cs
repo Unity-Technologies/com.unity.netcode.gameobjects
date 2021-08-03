@@ -1,3 +1,4 @@
+#if IGNORETHISTEST
 using System.Collections;
 using UnityEngine;
 using NUnit.Framework;
@@ -7,7 +8,7 @@ using Unity.Multiplayer.Netcode;
 
 namespace TestProject.RuntimeTests
 {
-#if IGNORETHISTEST
+
     /// <summary>
     /// This is nothing more than a template to follow in order to
     /// use a scene to configure your NetworkManager as well as how
@@ -257,5 +258,6 @@ namespace TestProject.RuntimeTests
             yield return null;
         }
     }
-#endif
+
 }
+#endif
