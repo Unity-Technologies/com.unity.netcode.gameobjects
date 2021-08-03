@@ -1,13 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Unity.Multiplayer.Netcode.Logging;
-using Unity.Multiplayer.Netcode.Serialization;
-using Unity.Multiplayer.Netcode.Serialization.Pooled;
-using Unity.Multiplayer.Netcode.Transports;
 using UnityEngine;
 
-namespace Unity.Multiplayer.Netcode.Messaging
+namespace Unity.Multiplayer.Netcode
 {
     /// <summary>
     /// MessageQueueContainer
@@ -37,7 +33,6 @@ namespace Unity.Multiplayer.Netcode.Messaging
             NamedMessage,
             ServerLog,
             SnapshotData,
-            SnapshotAck,
             NetworkVariableDelta,
             SceneEvent,
             AllClientsLoadedScene,

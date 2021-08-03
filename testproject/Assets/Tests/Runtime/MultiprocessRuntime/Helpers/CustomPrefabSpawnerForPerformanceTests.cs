@@ -1,6 +1,5 @@
 using System;
 using UnityEngine;
-using Unity.Multiplayer.Netcode.Spawning;
 
 namespace Unity.Multiplayer.Netcode.MultiprocessRuntimeTests
 {

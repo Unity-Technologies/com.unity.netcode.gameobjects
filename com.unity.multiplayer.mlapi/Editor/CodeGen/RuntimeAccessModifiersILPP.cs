@@ -52,7 +52,7 @@ namespace Unity.Multiplayer.Netcode.Editor.CodeGen
                         case nameof(NetworkBehaviour):
                             ProcessNetworkBehaviour(typeDefinition);
                             break;
-                        case nameof(Messaging.__RpcParams):
+                        case nameof(__RpcParams):
                             typeDefinition.IsPublic = true;
                             break;
                     }

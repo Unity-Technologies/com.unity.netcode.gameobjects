@@ -1,11 +1,8 @@
-using Unity.Multiplayer.Netcode.Messaging;
-using Unity.Multiplayer.Netcode.Profiling;
-using Unity.Multiplayer.Netcode.Transports;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace Unity.Multiplayer.Netcode.EditorTests.Profiling
+namespace Unity.Multiplayer.Netcode.EditorTests
 {
     public class InternalMessageHandlerProfilingDecoratorTests
     {

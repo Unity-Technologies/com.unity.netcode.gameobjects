@@ -1,6 +1,6 @@
 {
     "name": "Unity.Multiplayer.MLAPI.RuntimeTests",
-    "rootNamespace": "MLAPI.RuntimeTests",
+    "rootNamespace": "Unity.Multiplayer.Netcode.RuntimeTests",
     "references": [
         "Unity.Multiplayer.MLAPI.Runtime",
         "Unity.Multiplayer.MLAPI.Editor",

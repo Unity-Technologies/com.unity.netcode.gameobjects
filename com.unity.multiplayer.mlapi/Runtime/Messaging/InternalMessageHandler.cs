@@ -1,16 +1,10 @@
 
 using System.IO;
-using Unity.Multiplayer.Netcode.Connection;
-using Unity.Multiplayer.Netcode.Logging;
-using Unity.Multiplayer.Netcode.Serialization.Pooled;
 using UnityEngine;
-using Unity.Multiplayer.Netcode.Configuration;
-using Unity.Multiplayer.Netcode.Profiling;
-using Unity.Multiplayer.Netcode.Serialization;
-using Unity.Multiplayer.Netcode.Transports;
-using Unity.Multiplayer.Netcode.Timing;
+using UnityEngine.Events;
+using UnityEngine.SceneManagement;
 
-namespace Unity.Multiplayer.Netcode.Messaging
+namespace Unity.Multiplayer.Netcode
 {
     internal class InternalMessageHandler : IInternalMessageHandler
     {
@@ -335,11 +329,6 @@ namespace Unity.Multiplayer.Netcode.Messaging
         internal static void HandleSnapshot(ulong clientId, Stream messageStream)
         {
             NetworkManager.Singleton.SnapshotSystem.ReadSnapshot(clientId, messageStream);
-        }
-
-        internal static void HandleAck(ulong clientId, Stream messageStream)
-        {
-            NetworkManager.Singleton.SnapshotSystem.ReadAck(clientId, messageStream);
         }
 
         public void HandleAllClientsSwitchSceneCompleted(ulong clientId, Stream stream)

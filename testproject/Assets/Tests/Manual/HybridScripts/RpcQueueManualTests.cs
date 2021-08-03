@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using Unity.Multiplayer.Netcode;
-using Unity.Multiplayer.Netcode.Messaging;
 
 namespace TestProject.ManualTests
 {

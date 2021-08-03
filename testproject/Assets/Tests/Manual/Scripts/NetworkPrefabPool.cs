@@ -4,8 +4,6 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using Unity.Multiplayer.Netcode;
-using Unity.Multiplayer.Netcode.Spawning;
-using Unity.Multiplayer.Netcode.SceneManagement;
 
 namespace TestProject.ManualTests
 {

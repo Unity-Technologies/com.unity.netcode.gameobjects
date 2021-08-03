@@ -1,5 +1,4 @@
 using System;
-using Unity.Multiplayer.Netcode.Configuration;
 using NUnit.Framework;
 
 namespace Unity.Multiplayer.Netcode.RuntimeTests
