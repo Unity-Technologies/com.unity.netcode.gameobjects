@@ -21,10 +21,10 @@ MonoBehaviour:
   m_Registries:
   - m_Id: main
     m_Name: 
-    m_Url: https://packages.unity.com
+    m_Url: https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-candidates
     m_Scopes: []
     m_IsDefault: 1
-    m_Capabilities: 7
+    m_Capabilities: 0
   m_UserSelectedRegistryName: 
   m_UserAddingNewScopedRegistry: 0
   m_RegistryInfoDraft:
