@@ -44,6 +44,9 @@ namespace Unity.Multiplayer.Netcode.RuntimeTests.Transport
             // Make sure the payload was correct
             Assert.That(serverPayload, Is.EquivalentTo(Encoding.ASCII.GetBytes("Hello Server")));
             Assert.That(clientPayload, Is.EquivalentTo(Encoding.ASCII.GetBytes("Hello Client")));
+
+            server.Shutdown();
+            client.Shutdown();
         }
     }
 }
