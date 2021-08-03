@@ -1,6 +1,4 @@
-using Unity.Multiplayer.Netcode.Transports;
-
-namespace Unity.Multiplayer.Netcode.NetworkVariable
+namespace Unity.Multiplayer.Netcode
 {
     /// <summary>
     /// Delegate type for permission checking

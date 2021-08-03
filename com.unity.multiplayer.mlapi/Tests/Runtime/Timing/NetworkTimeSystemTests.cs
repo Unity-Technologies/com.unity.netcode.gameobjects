@@ -1,12 +1,10 @@
 using System.Collections;
-using Unity.Multiplayer.Netcode.Timing;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace Unity.Multiplayer.Netcode.RuntimeTests.Timing
+namespace Unity.Multiplayer.Netcode.RuntimeTests
 {
-
     /// <summary>
     /// Runtime tests to test the network time system with the Unity player loop.
     /// </summary>

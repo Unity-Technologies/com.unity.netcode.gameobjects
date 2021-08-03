@@ -1,6 +1,6 @@
 using System;
 
-namespace Unity.Multiplayer.Netcode.Exceptions
+namespace Unity.Multiplayer.Netcode
 {
     /// <summary>
     /// Exception thrown when the operation can only be done on the server

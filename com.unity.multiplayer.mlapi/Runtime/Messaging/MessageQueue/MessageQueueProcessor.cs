@@ -1,11 +1,8 @@
 using System;
 using Unity.Profiling;
-using Unity.Multiplayer.Netcode.Profiling;
-using Unity.Multiplayer.Netcode.Logging;
-using Unity.Multiplayer.Netcode.Transports;
 using UnityEngine;
 
-namespace Unity.Multiplayer.Netcode.Messaging
+namespace Unity.Multiplayer.Netcode
 {
     /// <summary>
     /// MessageQueueProcessing

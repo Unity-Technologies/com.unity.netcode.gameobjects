@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using Unity.Multiplayer.Netcode.Messaging;
 
 namespace Unity.Multiplayer.Netcode.RuntimeTests
 {

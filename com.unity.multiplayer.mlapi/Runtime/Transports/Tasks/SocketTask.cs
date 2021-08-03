@@ -1,7 +1,7 @@
 using System;
 using System.Net.Sockets;
 
-namespace Unity.Multiplayer.Netcode.Transports.Tasks
+namespace Unity.Multiplayer.Netcode
 {
     /// <summary>
     /// Represents one or more socket tasks.

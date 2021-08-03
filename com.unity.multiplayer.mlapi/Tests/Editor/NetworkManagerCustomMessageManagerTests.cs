@@ -1,6 +1,4 @@
 using System.Collections.Generic;
-using Unity.Multiplayer.Netcode.Configuration;
-using Unity.Multiplayer.Netcode.Messaging;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.SceneManagement;

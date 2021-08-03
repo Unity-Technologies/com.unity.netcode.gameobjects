@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using Unity.Multiplayer.Netcode.Configuration;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using NUnit.Framework;
@@ -21,7 +20,7 @@ namespace Unity.Multiplayer.Netcode.RuntimeTests
     /// </summary>
     public static class NetworkManagerHelper
     {
-        public static Transports.Tasks.SocketTasks StartHostSocketTasks { get; internal set; }
+        public static SocketTasks StartHostSocketTasks { get; internal set; }
         public static NetworkManager NetworkManagerObject { get; internal set; }
         public static GameObject NetworkManagerGameObject { get; internal set; }
 

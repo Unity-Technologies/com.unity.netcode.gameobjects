@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using Unity.Multiplayer.Netcode.Profiling;
 using NUnit.Framework;
 
 namespace Unity.Multiplayer.Netcode.EditorTests
