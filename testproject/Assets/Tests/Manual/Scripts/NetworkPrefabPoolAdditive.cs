@@ -13,7 +13,12 @@ namespace TestProject.ManualTests
         [Header("General Settings")]
         public bool RandomMovement = true;
         public bool AutoSpawnEnable = true;
+        [Tooltip("When enabled, this will spawn the objects in the source spawn generator's scene")]
         public bool SpawnInSourceScene = true;
+
+        [Tooltip("When enabled, this will despawn or destroy all associated network prefab instances when the additive scene is unloaded.")]
+        public bool DestroyOnUnload = false;
+
         public float InitialSpawnDelay;
         public int SpawnsPerSecond;
         public int PoolSize;
@@ -118,6 +123,14 @@ namespace TestProject.ManualTests
         {
             switch(sceneEventType)
             {
+                case SceneEventData.SceneEventTypes.Event_Unload:
+                    {
+                        if (loadSceneMode == LoadSceneMode.Additive && (gameObject.scene.name == sceneName))
+                        {
+                            OnUnloadScene();
+                        }
+                        break;
+                    }
                 case SceneEventData.SceneEventTypes.Event_Load:
                     {
                         if (loadSceneMode == LoadSceneMode.Single && ((gameObject.scene.name == sceneName) || !SpawnInSourceScene) )
@@ -135,15 +148,33 @@ namespace TestProject.ManualTests
             {
                 foreach (var obj in m_ObjectPool)
                 {
+                    if(obj == null)
+                    {
+                        continue;
+                    }
                     var networkObject = obj.GetComponent<NetworkObject>();
                     var genericBehaviour = obj.GetComponent<GenericNetworkObjectBehaviour>();
                     genericBehaviour.IsRegisteredPoolObject = false;
                     genericBehaviour.IsRemovedFromPool = true;
+                    genericBehaviour.HasHandler = false;
                     if (IsServer)
                     {
                         if (networkObject.IsSpawned)
                         {
-                            networkObject.Despawn(true);
+                            if (DestroyOnUnload)
+                            {
+                                networkObject.Despawn(true);
+                            }
+                            else if (SpawnInSourceScene)
+                            {
+                                // If we are spawning in the source scene and we are not supposed to destroy this object
+                                // then move it to the currently active scene.
+                                var activeScene = SceneManager.GetActiveScene();
+                                if (gameObject.scene != SceneManager.GetActiveScene())
+                                {
+                                    SceneManager.MoveGameObjectToScene(obj, activeScene);
+                                }
+                            }
                         }
                         else
                         {
@@ -155,6 +186,16 @@ namespace TestProject.ManualTests
                         if (!networkObject.IsSpawned)
                         {
                             DestroyImmediate(obj);
+                        }
+                        else if (SpawnInSourceScene)
+                        {
+                            // If we are spawning in the source scene and we are not supposed to destroy this object
+                            // then move it to the currently active scene.
+                            var activeScene = SceneManager.GetActiveScene();
+                            if (gameObject.scene != SceneManager.GetActiveScene())
+                            {
+                                SceneManager.MoveGameObjectToScene(obj, activeScene);
+                            }
                         }
                     }
                 }
@@ -175,6 +216,10 @@ namespace TestProject.ManualTests
 
             // De-register the custom prefab handler
             DeregisterCustomPrefabHandler();
+
+            CleanNetworkObjects();
+
+            NetworkManager.SceneManager.OnSceneEvent -= OnSceneEvent;
         }
 
         /// <summary>
@@ -250,6 +295,11 @@ namespace TestProject.ManualTests
             {
                 foreach (var obj in m_ObjectPool)
                 {
+                    if(obj == null)
+                    {
+                        continue;
+                    }
+
                     if (!obj.activeInHierarchy)
                     {
                         obj.SetActive(true);
@@ -410,7 +460,7 @@ namespace TestProject.ManualTests
             }
             return null;
         }
-        public void Destroy(NetworkObject networkObject)
+        public bool Destroy(NetworkObject networkObject)
         {
             var genericBehaviour = networkObject.gameObject.GetComponent<GenericNetworkObjectBehaviour>();
             if (genericBehaviour.IsRegisteredPoolObject)
@@ -420,9 +470,11 @@ namespace TestProject.ManualTests
             }
             else
             {
-                Debug.Log($"NetworkObject {networkObject.name}:{networkObject.NetworkObjectId} is not registered and will be destroyed immediately");
-                Object.DestroyImmediate(networkObject.gameObject);
+                return true;
+                //Debug.Log($"NetworkObject {networkObject.name}:{networkObject.NetworkObjectId} is not registered and will be destroyed immediately");
+                //Object.DestroyImmediate(networkObject.gameObject);
             }
+            return false;
         }
 
         public MyAdditiveCustomPrefabSpawnHandler(NetworkPrefabPoolAdditive objectPool)

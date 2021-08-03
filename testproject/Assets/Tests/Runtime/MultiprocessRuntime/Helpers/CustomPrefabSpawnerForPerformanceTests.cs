@@ -29,7 +29,7 @@ namespace Unity.Multiplayer.Netcode.MultiprocessRuntimeTests
             return networkObject;
         }
 
-        public void Destroy(NetworkObject networkObject)
+        public bool Destroy(NetworkObject networkObject)
         {
             var behaviour = networkObject.gameObject.GetComponent<T>(); // todo expensive, only used in teardown for now, should optimize eventually
             m_OnRelease(behaviour);
@@ -37,6 +37,7 @@ namespace Unity.Multiplayer.Netcode.MultiprocessRuntimeTests
             netTransform.position = Vector3.zero;
             netTransform.rotation = Quaternion.identity;
             m_ObjectPool.Release(behaviour);
+            return true;
         }
 
         public void Dispose()

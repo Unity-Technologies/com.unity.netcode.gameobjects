@@ -14,7 +14,7 @@ namespace Unity.Multiplayer.Netcode.RuntimeTests
             var threwException = false;
             try
             {
-                networkManager.SceneManager.SwitchScene("SomeSceneNane");
+                networkManager.SceneManager.LoadScene("SomeSceneNane",UnityEngine.SceneManagement.LoadSceneMode.Single);
             }
             catch (Exception ex)
             {

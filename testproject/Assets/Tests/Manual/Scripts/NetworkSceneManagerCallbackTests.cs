@@ -25,7 +25,7 @@ namespace TestProject.ManualTests
                     Debug.Log("OnNotifyServerAllClientsLoadedScene invoked on the host - Passed");
                 };
 
-                NetworkManager.SceneManager.SwitchScene("SceneWeAreSwitchingTo");
+                NetworkManager.SceneManager.LoadScene("SceneWeAreSwitchingTo",UnityEngine.SceneManagement.LoadSceneMode.Single);
             }
         }
     }

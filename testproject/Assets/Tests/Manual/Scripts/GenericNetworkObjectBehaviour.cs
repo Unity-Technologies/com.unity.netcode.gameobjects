@@ -132,12 +132,7 @@ namespace TestProject.ManualTests
             {
                 m_ShouldDespawn = false;
 
-                NetworkObject.Despawn(HasHandler);
-                if (!HasHandler)
-                {
-                    NetworkObject.gameObject.SetActive(false);
-                    NetworkObject.gameObject.transform.position = Vector3.zero;
-                }
+                NetworkObject.Despawn(true);
             }
             else if (!IsServer)
             {
@@ -152,7 +147,6 @@ namespace TestProject.ManualTests
                     }
                 }
             }
-
         }
 
         [HideInInspector]

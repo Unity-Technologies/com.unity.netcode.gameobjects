@@ -116,7 +116,7 @@ namespace Unity.Multiplayer.Netcode.SceneManagement
 
         internal void SendSceneEventData(ulong[] targetClientIds)
         {
-            if (targetClientIds.Length > 1)
+            if (targetClientIds.Length >= 1)
             {
                 var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(m_MessageType, m_ChannelType, targetClientIds, m_NetworkUpdateStage);
 
@@ -267,8 +267,6 @@ namespace Unity.Multiplayer.Netcode.SceneManagement
             return switchSceneProgress;
         }
 
-
-
         /// <summary>
         /// Unloads an additively loaded scene
         /// </summary>
@@ -376,8 +374,6 @@ namespace Unity.Multiplayer.Netcode.SceneManagement
 
                 // Preserve the objects that should not be destroyed during the scene event
                 MoveObjectsToDontDestroyOnLoad();
-
-
             }
 
             // Begin the scene event
@@ -385,19 +381,6 @@ namespace Unity.Multiplayer.Netcode.SceneManagement
 
             //Return our scene progress instance
             return switchSceneProgress;
-        }
-
-        /// <summary>
-        /// Switches to a scene with a given name. Can only be called from Server
-        /// </summary>
-        /// <param name="sceneName">The name of the scene to switch to</param>
-        /// <param name="loadSceneMode">The mode to load the scene (Additive vs Single)</param>
-        /// NSS TODO: This is a topic for MTT discussion.  Do we want to keep this divergence from Unity's SceneManager API?
-        /// It is proposed we completely remove this call or mark it as deprecated with message to use Load and Unload
-        /// <returns>SceneSwitchProgress</returns>
-        public SceneSwitchProgress SwitchScene(string sceneName, LoadSceneMode loadSceneMode = LoadSceneMode.Single)
-        {
-            return LoadScene(sceneName, loadSceneMode);
         }
 
         /// <summary>
@@ -414,8 +397,6 @@ namespace Unity.Multiplayer.Netcode.SceneManagement
             AsyncOperation sceneLoad = SceneManager.LoadSceneAsync(sceneName, loadSceneMode);
             sceneLoad.completed += (AsyncOperation asyncOp2) => { OnSceneLoaded(sceneName); };
             switchSceneProgress.SetSceneLoadOperation(sceneLoad);
-
-
 
             if (SceneEventData.LoadSceneMode == LoadSceneMode.Single)
             {
@@ -703,7 +684,6 @@ namespace Unity.Multiplayer.Netcode.SceneManagement
             }
         }
 
-
         /// <summary>
         /// This is called when the client receives the SCENE_EVENT of type SceneEventData.SceneEventTypes.SYNC
         /// Note: This can recurse one additional time by the client if the current scene loaded by the client
@@ -794,7 +774,7 @@ namespace Unity.Multiplayer.Netcode.SceneManagement
                 {
                     UnityEngine.Object.DontDestroyOnLoad(sobj.gameObject);
                 }
-                else
+                else if (m_NetworkManager.IsServer)
                 {
                     sobj.Despawn(true);
                 }
@@ -898,12 +878,14 @@ namespace Unity.Multiplayer.Netcode.SceneManagement
                         }
                         else
                         {
+                            SceneEventData.SceneEventType = SceneEventData.SceneEventTypes.Event_Sync_Complete;
+                            SendSceneEventData(new ulong[] { m_NetworkManager.ServerClientId });
+
                             // All scenes are synchronized, let the server know we are done synchronizing
                             m_NetworkManager.IsConnectedClient = true;
                             m_NetworkManager.InvokeOnClientConnectedCallback(m_NetworkManager.LocalClientId);
 
-                            SceneEventData.SceneEventType = SceneEventData.SceneEventTypes.Event_Sync_Complete;
-                            SendSceneEventData(new ulong[] { m_NetworkManager.ServerClientId});
+
                         }
                         break;
                     }

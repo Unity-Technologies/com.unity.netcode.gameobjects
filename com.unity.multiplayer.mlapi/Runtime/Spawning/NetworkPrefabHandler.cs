@@ -40,7 +40,8 @@ namespace Unity.Multiplayer.Netcode.Spawning
         /// The most common approach is to make the <see cref="NetworkObject"/> inactive by calling <see cref="GameObject.SetActive(bool)"/>.
         /// </summary>
         /// <param name="networkObject">The <see cref="NetworkObject"/> being destroyed</param>
-        void Destroy(NetworkObject networkObject);
+        /// <returns>(true) destroy the <see cref="GameObject"/> (false) do not destroy the <see cref="GameObject"/> </returns>
+        bool Destroy(NetworkObject networkObject);
     }
 
     /// <summary>
@@ -278,7 +279,7 @@ namespace Unity.Multiplayer.Netcode.Spawning
         /// Will invoke the <see cref="INetworkPrefabInstanceHandler"/> implementation's Destroy method
         /// </summary>
         /// <param name="networkObjectInstance"></param>
-        internal void HandleNetworkPrefabDestroy(NetworkObject networkObjectInstance)
+        internal bool HandleNetworkPrefabDestroy(NetworkObject networkObjectInstance)
         {
             var networkObjectInstanceHash = networkObjectInstance.GlobalObjectIdHash;
 
@@ -288,14 +289,16 @@ namespace Unity.Multiplayer.Netcode.Spawning
                 var networkPrefabAssetHash = m_PrefabInstanceToPrefabAsset[networkObjectInstanceHash];
                 if (m_PrefabAssetToPrefabHandler.ContainsKey(networkPrefabAssetHash))
                 {
-                    m_PrefabAssetToPrefabHandler[networkPrefabAssetHash].Destroy(networkObjectInstance);
+                    return m_PrefabAssetToPrefabHandler[networkPrefabAssetHash].Destroy(networkObjectInstance);
                 }
             }
             else // Otherwise the NetworkObject is the source NetworkPrefab
             if (m_PrefabAssetToPrefabHandler.ContainsKey(networkObjectInstanceHash))
             {
-                m_PrefabAssetToPrefabHandler[networkObjectInstanceHash].Destroy(networkObjectInstance);
+                return m_PrefabAssetToPrefabHandler[networkObjectInstanceHash].Destroy(networkObjectInstance);
             }
+
+            return true;
         }
     }
 }

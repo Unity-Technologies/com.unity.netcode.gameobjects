@@ -173,12 +173,12 @@ namespace Unity.Multiplayer.Netcode.RuntimeTests
             return networkObjectInstance;
         }
 
-        public void Destroy(NetworkObject networkObject)
+        public bool Destroy(NetworkObject networkObject)
         {
             var instancesContainsNetworkObject = m_Instances.Contains(networkObject);
             Assert.True(instancesContainsNetworkObject);
             m_Instances.Remove(networkObject);
-            UnityEngine.Object.Destroy(networkObject.gameObject);
+            return true;
         }
 
         public bool StillHasInstances()

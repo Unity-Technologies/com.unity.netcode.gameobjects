@@ -615,7 +615,6 @@ namespace Unity.Multiplayer.Netcode.Spawning
                         // As long as we have any remaining clients, then notify of the object being destroy.
                         if (NetworkManager.ConnectedClientsList.Count > 0)
                         {
-
                             ulong[] clientIds = NetworkManager.ConnectedClientsIds;
                             var context = messageQueueContainer.EnterInternalCommandContext(
                                 MessageQueueContainer.MessageType.DestroyObject, NetworkChannel.Internal,
@@ -638,7 +637,15 @@ namespace Unity.Multiplayer.Netcode.Spawning
             {
                 if (NetworkManager.PrefabHandler.ContainsHandler(networkObject))
                 {
-                    NetworkManager.PrefabHandler.HandleNetworkPrefabDestroy(networkObject);
+                    if(NetworkManager.PrefabHandler.HandleNetworkPrefabDestroy(networkObject))
+                    {
+                        if (SpawnedObjects.Remove(networkObject.NetworkObjectId))
+                        {
+                            SpawnedObjectsList.Remove(networkObject);
+                        }
+                        UnityEngine.Object.Destroy(gobj);
+                        return;
+                    }
                 }
                 else
                 {

@@ -122,26 +122,22 @@ namespace TestProject.ManualTests
             {
                 StopCoroutine(SpawnObjects());
             }
-            CleanNetworkObjects();
+
+            // De-register the custom prefab handler
             DeregisterCustomPrefabHandler();
+
+            CleanNetworkObjects();
+
             NetworkManager.SceneManager.OnSceneEvent -= OnSceneEvent;
         }
 
-        public override void OnNetworkDespawn()
-        {
-           // DeregisterCustomPrefabHandler();
-        }
 
-        private void OnDisable()
+        public override void OnNetworkDespawn()
         {
             if (NetworkManager != null)
             {
                 NetworkManager.SceneManager.OnSceneEvent -= OnSceneEvent;
             }
-            StopCoroutine(SpawnObjects());
-
-            CleanNetworkObjects();
-
         }
 
         private void CleanNetworkObjects()
@@ -412,7 +408,7 @@ namespace TestProject.ManualTests
             }
             return null;
         }
-        public void Destroy(NetworkObject networkObject)
+        public bool Destroy(NetworkObject networkObject)
         {
             var genericBehaviour = networkObject.gameObject.GetComponent<GenericNetworkObjectBehaviour>();
             if (genericBehaviour.IsRegisteredPoolObject)
@@ -421,9 +417,12 @@ namespace TestProject.ManualTests
             }
             else
             {
-                Debug.Log($"NetworkObject {networkObject.name}:{networkObject.NetworkObjectId} is not registered and will be destroyed immediately");
-                Object.DestroyImmediate(networkObject.gameObject);
+                return true;
+                //// NSS TODO: Remove before converting from draft to PR
+                //Debug.Log($"NetworkObject {networkObject.name}:{networkObject.NetworkObjectId} is not registered and will be destroyed immediately");
+                //Object.DestroyImmediate(networkObject.gameObject);
             }
+            return false;
         }
 
         public MyCustomPrefabSpawnHandler(NetworkPrefabPool objectPool)
