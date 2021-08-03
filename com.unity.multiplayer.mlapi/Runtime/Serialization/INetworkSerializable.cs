@@ -1,4 +1,4 @@
-namespace MLAPI.Serialization
+namespace Unity.Multiplayer.Netcode.Serialization
 {
     public interface INetworkSerializable
     {

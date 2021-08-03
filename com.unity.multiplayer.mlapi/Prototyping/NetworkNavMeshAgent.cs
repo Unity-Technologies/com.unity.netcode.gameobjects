@@ -1,10 +1,10 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
-using MLAPI.Connection;
-using MLAPI.Messaging;
+using Unity.Multiplayer.Netcode.Connection;
+using Unity.Multiplayer.Netcode.Messaging;
 
-namespace MLAPI.Prototyping
+namespace Unity.Multiplayer.Netcode.Prototyping
 {
     /// <summary>
     /// A prototype component for syncing NavMeshAgents

@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace MLAPI.Profiling
+namespace Unity.Multiplayer.Netcode.Profiling
 {
     public class ProfilerStat
     {

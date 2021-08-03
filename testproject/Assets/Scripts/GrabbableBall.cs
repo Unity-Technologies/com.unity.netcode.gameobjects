@@ -1,7 +1,7 @@
 using UnityEngine;
-using MLAPI;
-using MLAPI.NetworkVariable;
-using MLAPI.Messaging;
+using Unity.Multiplayer.Netcode;
+using Unity.Multiplayer.Netcode.NetworkVariable;
+using Unity.Multiplayer.Netcode.Messaging;
 
 public class GrabbableBall : NetworkBehaviour
 {
