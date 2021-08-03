@@ -1,10 +1,8 @@
 using System;
-using MLAPI.Serialization;
-using MLAPI.Serialization.Pooled;
 using NUnit.Framework;
 using UnityEngine;
 
-namespace MLAPI.EditorTests
+namespace Unity.Multiplayer.Netcode.EditorTests
 {
     public class NetworkSerializerTests
     {

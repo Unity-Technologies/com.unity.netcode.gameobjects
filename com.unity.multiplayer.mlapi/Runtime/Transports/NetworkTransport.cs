@@ -1,9 +1,8 @@
 using System;
 using System.Collections.Generic;
-using MLAPI.Transports.Tasks;
 using UnityEngine;
 
-namespace MLAPI.Transports
+namespace Unity.Multiplayer.Netcode
 {
     public enum NetworkChannel : byte
     {
@@ -106,7 +105,7 @@ namespace MLAPI.Transports
             // todo: once we have snapshotting able to deal with missing frame, this should be unreliable
             new TransportChannel(NetworkChannel.NetworkVariable, NetworkDelivery.ReliableSequenced),
             new TransportChannel(NetworkChannel.SnapshotExchange, NetworkDelivery.ReliableSequenced), // todo: temporary until we separate snapshots in chunks
- 
+
             new TransportChannel(NetworkChannel.Fragmented, NetworkDelivery.ReliableFragmentedSequenced),
 
         };

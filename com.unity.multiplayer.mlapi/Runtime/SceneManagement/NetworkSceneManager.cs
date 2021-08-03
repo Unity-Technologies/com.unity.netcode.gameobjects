@@ -2,16 +2,10 @@ using System.Collections.Generic;
 using System;
 using System.IO;
 using System.Linq;
-using MLAPI.Configuration;
-using MLAPI.Exceptions;
-using MLAPI.Logging;
-using MLAPI.Messaging;
-using MLAPI.Serialization.Pooled;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using MLAPI.Transports;
 
-namespace MLAPI.SceneManagement
+namespace Unity.Multiplayer.Netcode
 {
     /// <summary>
     /// Main class for managing network scenes
@@ -409,7 +403,7 @@ namespace MLAPI.SceneManagement
 
                 for (int i = 0; i < newObjectsCount; i++)
                 {
-                    NetworkObject.DeserializeSceneObject(objectStream as Serialization.NetworkBuffer, reader, m_NetworkManager);
+                    NetworkObject.DeserializeSceneObject(objectStream as NetworkBuffer, reader, m_NetworkManager);
                 }
             }
 

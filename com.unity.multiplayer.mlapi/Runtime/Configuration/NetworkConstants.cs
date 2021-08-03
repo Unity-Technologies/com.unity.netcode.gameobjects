@@ -1,4 +1,4 @@
-namespace MLAPI.Configuration
+namespace Unity.Multiplayer.Netcode
 {
     /// <summary>
     /// A static class containing MLAPI constants

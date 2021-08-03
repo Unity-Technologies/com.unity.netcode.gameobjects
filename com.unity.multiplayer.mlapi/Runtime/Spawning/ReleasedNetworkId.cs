@@ -1,4 +1,4 @@
-namespace MLAPI.Spawning
+namespace Unity.Multiplayer.Netcode
 {
     internal struct ReleasedNetworkId
     {

@@ -1,8 +1,7 @@
 using System;
 using Unity.Profiling;
-using UnityEngine;
 
-namespace MLAPI.Timing
+namespace Unity.Multiplayer.Netcode
 {
     public class NetworkTickSystem
     {

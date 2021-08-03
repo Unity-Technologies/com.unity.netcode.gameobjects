@@ -1,6 +1,6 @@
 {
     "name": "Unity.Multiplayer.Transport.UTP.EditorTests",
-    "rootNamespace": "",
+    "rootNamespace": "Unity.Multiplayer.Netcode.UTP.EditorTests",
     "references": [
         "Unity.Multiplayer.MLAPI.Runtime",
         "UnityEngine.TestRunner",

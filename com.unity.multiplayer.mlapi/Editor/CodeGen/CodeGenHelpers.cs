@@ -3,9 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using MLAPI.Hashing;
-using MLAPI.Messaging;
-using MLAPI.Serialization;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
@@ -13,7 +10,7 @@ using Unity.CompilationPipeline.Common.Diagnostics;
 using Unity.CompilationPipeline.Common.ILPostProcessing;
 using UnityEngine;
 
-namespace MLAPI.Editor.CodeGen
+namespace Unity.Multiplayer.Netcode.Editor.CodeGen
 {
     internal static class CodeGenHelpers
     {

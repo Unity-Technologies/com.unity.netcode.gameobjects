@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace MLAPI.Profiling
+namespace Unity.Multiplayer.Netcode
 {
     internal static class PerformanceDataManager
     {

@@ -2,19 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Runtime.CompilerServices;
-using MLAPI.Configuration;
-using MLAPI.Connection;
-using MLAPI.Exceptions;
-using MLAPI.Logging;
-using MLAPI.Messaging;
-using MLAPI.SceneManagement;
-using MLAPI.Serialization;
-using MLAPI.Serialization.Pooled;
-using MLAPI.Transports;
 using UnityEngine;
 
-namespace MLAPI.Spawning
+namespace Unity.Multiplayer.Netcode
 {
     /// <summary>
     /// Class that handles object spawning
@@ -355,34 +345,34 @@ namespace MLAPI.Spawning
 
         internal void SendSpawnCallForObject(ulong clientId, ulong ownerClientId, NetworkObject networkObject)
         {
-            //Currently, if this is called and the clientId (destination) is the server's client Id, this case
-            //will be checked within the below Send function.  To avoid unwarranted allocation of a PooledNetworkBuffer
-            //placing this check here. [NSS]
-            if (NetworkManager.IsServer && clientId == NetworkManager.ServerClientId)
+            if (true) // this is to keep the branch close to the snapshot branch. Merge planning
             {
-                return;
-            }
-
-            var messageQueueContainer = NetworkManager.MessageQueueContainer;
-
-            var context = messageQueueContainer.EnterInternalCommandContext(
-                MessageQueueContainer.MessageType.CreateObject, NetworkChannel.Internal,
-                new ulong[] { clientId }, NetworkUpdateLoop.UpdateStage);
-            if (context != null)
-            {
-                using (var nonNullContext = (InternalCommandContext)context)
+                //Currently, if this is called and the clientId (destination) is the server's client Id, this case
+                //will be checked within the below Send function.  To avoid unwarranted allocation of a PooledNetworkBuffer
+                //placing this check here. [NSS]
+                if (NetworkManager.IsServer && clientId == NetworkManager.ServerClientId)
                 {
-                    WriteSpawnCallForObject(nonNullContext.NetworkWriter, ownerClientId, networkObject);
+                    return;
+                }
+
+                var messageQueueContainer = NetworkManager.MessageQueueContainer;
+
+                ulong[] clientIds = NetworkManager.ConnectedClientsIds;
+                var context = messageQueueContainer.EnterInternalCommandContext(
+                    MessageQueueContainer.MessageType.CreateObject, NetworkChannel.Internal,
+                    clientIds, NetworkUpdateLoop.UpdateStage);
+                if (context != null)
+                {
+                    using (var nonNullContext = (InternalCommandContext) context)
+                    {
+                        WriteSpawnCallForObject(nonNullContext.NetworkWriter, clientId, networkObject);
+                    }
                 }
             }
         }
 
-        internal void WriteSpawnCallForObject(PooledNetworkWriter writer, ulong clientId, NetworkObject networkObject)
+        internal ulong? GetSpawnParentId(NetworkObject networkObject)
         {
-            writer.WriteBool(networkObject.IsPlayerObject);
-            writer.WriteUInt64Packed(networkObject.NetworkObjectId);
-            writer.WriteUInt64Packed(networkObject.OwnerClientId);
-
             NetworkObject parentNetworkObject = null;
 
             if (!networkObject.AlwaysReplicateAsRoot && networkObject.transform.parent != null)
@@ -392,12 +382,27 @@ namespace MLAPI.Spawning
 
             if (parentNetworkObject == null)
             {
+                return null;
+            }
+
+            return parentNetworkObject.NetworkObjectId;
+        }
+
+        internal void WriteSpawnCallForObject(PooledNetworkWriter writer, ulong clientId, NetworkObject networkObject)
+        {
+            writer.WriteBool(networkObject.IsPlayerObject);
+            writer.WriteUInt64Packed(networkObject.NetworkObjectId);
+            writer.WriteUInt64Packed(networkObject.OwnerClientId);
+
+            var parent = GetSpawnParentId(networkObject);
+            if (parent == null)
+            {
                 writer.WriteBool(false);
             }
             else
             {
                 writer.WriteBool(true);
-                writer.WriteUInt64Packed(parentNetworkObject.NetworkObjectId);
+                writer.WriteUInt64Packed(parent.Value);
             }
 
             writer.WriteBool(networkObject.IsSceneObject ?? true);

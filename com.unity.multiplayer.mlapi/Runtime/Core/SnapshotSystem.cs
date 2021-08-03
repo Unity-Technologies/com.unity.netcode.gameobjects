@@ -1,16 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using MLAPI.Configuration;
-using MLAPI.Messaging;
-using MLAPI.NetworkVariable;
-using MLAPI.Serialization;
-using MLAPI.Serialization.Pooled;
-using MLAPI.Timing;
-using MLAPI.Transports;
 using UnityEngine;
 
-namespace MLAPI
+namespace Unity.Multiplayer.Netcode
 {
     // Structure that acts as a key for a NetworkVariable
     // Allows telling which variable we're talking about.
@@ -479,8 +472,6 @@ namespace MLAPI
                 snapshot.ReadIndex(reader);
                 snapshot.ReadBuffer(reader, snapshotStream);
             }
-
-            SendAck(clientId, snapshotTick);
         }
 
         public void ReadAck(ulong clientId, Stream snapshotStream)
@@ -489,21 +480,6 @@ namespace MLAPI
             {
                 var ackTick = reader.ReadInt32Packed();
                 //Debug.Log(string.Format("Receive ack {0} from client {1}", ackTick, clientId));
-            }
-        }
-
-        public void SendAck(ulong clientId, int tick)
-        {
-            var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
-                MessageQueueContainer.MessageType.SnapshotAck, NetworkChannel.SnapshotExchange,
-                new[] { clientId }, NetworkUpdateLoop.UpdateStage);
-
-            if (context != null)
-            {
-                using (var nonNullContext = (InternalCommandContext)context)
-                {
-                    nonNullContext.NetworkWriter.WriteInt32Packed(tick);
-                }
             }
         }
 

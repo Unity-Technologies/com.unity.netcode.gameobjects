@@ -1,4 +1,4 @@
-namespace MLAPI.Messaging
+namespace Unity.Multiplayer.Netcode
 {
     public interface IHasUpdateStage
     {
