@@ -18,7 +18,7 @@ namespace MLAPI.RuntimeTests
         [UnitySetUp]
         public virtual IEnumerator Setup()
         {
-            yield return StartSomeClientsAndServerWithPlayers(true, NbClients, _ => { });
+            yield return CoroutineHelper.Run(StartSomeClientsAndServerWithPlayers(true, NbClients, _ => { }));
         }
 
         [UnityTearDown]
@@ -47,7 +47,7 @@ namespace MLAPI.RuntimeTests
 
             Debug.Log("015");
             // wait for next frame so everything is destroyed, so following tests can execute from clean environment
-            yield return CoroutineHelper.WaitOneFrame();
+            yield return CoroutineHelper.Run(CoroutineHelper.WaitOneFrame());
             Debug.Log("016");
         }
 
@@ -114,7 +114,7 @@ namespace MLAPI.RuntimeTests
             Debug.Log("006");
             // Wait for connection on server side
             yield return CoroutineHelper.Run(MultiInstanceHelpers.WaitForClientsConnectedToServer(server, useHost ? nbClients + 1 : nbClients));
-            
+
             Debug.Log("006b");
         }
     }
