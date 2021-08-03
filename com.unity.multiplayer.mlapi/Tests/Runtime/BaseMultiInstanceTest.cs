@@ -60,6 +60,8 @@ namespace MLAPI.RuntimeTests
             // wait for next frame so everything is destroyed, so following tests can execute from clean environment
             yield return CoroutineHelper.Run(CoroutineHelper.WaitOneFrame());
             Debug.Log("016");
+            yield return null;
+            Debug.Log("017");
         }
 
         /// <summary>
