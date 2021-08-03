@@ -438,6 +438,8 @@ namespace MLAPI
 
             NetworkManager.SpawnManager.SpawnNetworkObjectLocally(this, NetworkManager.SpawnManager.GetNetworkObjectId(), false, playerObject, ownerClientId,null, false, destroyWithScene);
 
+            Debug.Log($"local spawn Id Hash {GlobalObjectIdHash} ObjectId {NetworkObjectId}");
+
             if (NetworkManager.UseSnapshotSpawn)
             {
                 SnapshotSpawnCommand command;

@@ -377,6 +377,8 @@ namespace MLAPI
 
                 m_TickApplied[command.NetworkObjectId] = command.TickWritten;
 
+                Debug.Log($"remote spawn Id Hash {command.GlobalObjectIdHash} ObjectId {command.NetworkObjectId}");
+
                 // what is a soft sync ?
                 // what are spawn payloads ?
                 if (command.ParentNetworkId == command.NetworkObjectId)
