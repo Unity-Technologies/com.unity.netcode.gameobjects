@@ -25,10 +25,10 @@ namespace Unity.Multiplayer.Netcode.Messaging
 
         public void Dispose()
         {
-            Finalize();
+            Cleanup();
         }
 
-        public void Finalize()
+        public void Cleanup()
         {
             if (m_Owner.NetworkManager.IsHost)
             {
