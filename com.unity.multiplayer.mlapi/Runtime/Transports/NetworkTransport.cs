@@ -108,7 +108,7 @@ namespace MLAPI.Transports
             new TransportChannel(NetworkChannel.SnapshotExchange, NetworkDelivery.ReliableSequenced), // todo: temporary until we separate snapshots in chunks
  
             new TransportChannel(NetworkChannel.Fragmented, NetworkDelivery.ReliableFragmentedSequenced),
-            
+
         };
 
         /// <summary>

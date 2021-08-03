@@ -382,12 +382,12 @@ namespace MLAPI
                 if (command.ParentNetworkId == command.NetworkObjectId)
                 {
                     var networkObject = m_NetworkManager.SpawnManager.CreateLocalNetworkObject(false, command.GlobalObjectIdHash, command.OwnerClientId, null, command.ObjectPosition, command.ObjectRotation);
-                    m_NetworkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, command.NetworkObjectId, true, command.IsPlayerObject, command.OwnerClientId, null, false, 0, false, false);
+                    m_NetworkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, command.NetworkObjectId, true, command.IsPlayerObject, command.OwnerClientId, null, false, false);
                 }
                 else
                 {
                     var networkObject = m_NetworkManager.SpawnManager.CreateLocalNetworkObject(false, command.GlobalObjectIdHash, command.OwnerClientId, command.ParentNetworkId, command.ObjectPosition, command.ObjectRotation);
-                    m_NetworkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, command.NetworkObjectId, true, command.IsPlayerObject, command.OwnerClientId, null, false, 0, false, false);
+                    m_NetworkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, command.NetworkObjectId, true, command.IsPlayerObject, command.OwnerClientId, null, false, false);
                 }
             }
         }
@@ -576,18 +576,18 @@ namespace MLAPI
 
             var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
                 MessageQueueContainer.MessageType.SnapshotData, NetworkChannel.SnapshotExchange,
-                new[] {clientId}, NetworkUpdateLoop.UpdateStage);
+                new[] { clientId }, NetworkUpdateLoop.UpdateStage);
 
             if (context != null)
             {
-                using (var nonNullContext = (InternalCommandContext) context)
+                using (var nonNullContext = (InternalCommandContext)context)
                 {
                     var sequence = m_ClientData[clientId].m_SequenceNumber;
 
                     nonNullContext.NetworkWriter.WriteInt32Packed(m_CurrentTick);
                     nonNullContext.NetworkWriter.WriteUInt16(sequence);
 
-                    var buffer = (NetworkBuffer) nonNullContext.NetworkWriter.GetStream();
+                    var buffer = (NetworkBuffer)nonNullContext.NetworkWriter.GetStream();
 
                     using (var writer = PooledNetworkWriter.Get(buffer))
                     {

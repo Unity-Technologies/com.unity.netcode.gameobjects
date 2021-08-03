@@ -174,6 +174,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_SwitchSceneButtonObject: {fileID: 1347823141}
   m_SceneToSwitchTo: SecondSceneToLoad
+  m_EnableAutoSwitch: 1
+  m_AutoSwitchTimeOut: 300
 --- !u!1 &37242881
 GameObject:
   m_ObjectHideFlags: 0
@@ -1024,10 +1026,7 @@ MonoBehaviour:
       SourceHashToOverride: 0
       OverridingTargetPrefab: {fileID: 8059323910720821982, guid: d143db9172e1f234e99d450286b77695,
         type: 3}
-    ReceiveTickrate: 64
-    NetworkTickIntervalSec: 0.05
-    MaxReceiveEventsPerTickRate: 500
-    EventTickrate: 64
+    TickRate: 30
     ClientConnectionBufferTimeout: 10
     ConnectionApproval: 0
     ConnectionData: 
@@ -1041,7 +1040,6 @@ MonoBehaviour:
     NetworkIdRecycleDelay: 120
     RpcHashSize: 0
     LoadSceneTimeOut: 120
-    EnableMessageBuffering: 1
     MessageBufferTimeout: 20
     EnableNetworkLogs: 1
 --- !u!114 &1024114719
@@ -1115,8 +1113,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   AutoSpawnEnable: 1
   InitialSpawnDelay: 0.2
-  SpawnsPerSecond: 5
-  PoolSize: 128
+  SpawnsPerSecond: 2
+  PoolSize: 10
   ObjectSpeed: 8
   EnableHandler: 0
   RegisterUsingNetworkObject: 0
@@ -1155,6 +1153,7 @@ MonoBehaviour:
   GlobalObjectIdHash: 2782806529
   AlwaysReplicateAsRoot: 0
   DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
 --- !u!1 &1332123091
 GameObject:
   m_ObjectHideFlags: 0
@@ -2477,7 +2476,7 @@ MonoBehaviour:
   m_MinValue: 0
   m_MaxValue: 550
   m_WholeNumbers: 1
-  m_Value: 6
+  m_Value: 2
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls:
@@ -2553,6 +2552,7 @@ MonoBehaviour:
   GlobalObjectIdHash: 2267100048
   AlwaysReplicateAsRoot: 0
   DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
 --- !u!1001 &2848221156282925290
 PrefabInstance:
   m_ObjectHideFlags: 0

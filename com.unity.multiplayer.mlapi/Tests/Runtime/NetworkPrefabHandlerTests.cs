@@ -164,7 +164,7 @@ namespace MLAPI.RuntimeTests
 
         private List<NetworkObject> m_Instances;
 
-        public NetworkObject HandleNetworkPrefabSpawn(ulong ownerClientId, Vector3 position, Quaternion rotation)
+        public NetworkObject Instantiate(ulong ownerClientId, Vector3 position, Quaternion rotation)
         {
             var networkObjectInstance = UnityEngine.Object.Instantiate(m_NetworkObject.gameObject).GetComponent<NetworkObject>();
             networkObjectInstance.transform.position = position;
@@ -173,7 +173,7 @@ namespace MLAPI.RuntimeTests
             return networkObjectInstance;
         }
 
-        public void HandleNetworkPrefabDestroy(NetworkObject networkObject)
+        public void Destroy(NetworkObject networkObject)
         {
             var instancesContainsNetworkObject = m_Instances.Contains(networkObject);
             Assert.True(instancesContainsNetworkObject);

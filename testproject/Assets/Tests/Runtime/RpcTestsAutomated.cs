@@ -63,11 +63,11 @@ namespace TestProject.RuntimeTests
             // Set RpcQueueManualTests into unit testing mode
             RpcQueueManualTests.UnitTesting = true;
 
-            yield return StartSomeClientsAndServerWithPlayers(useHost:true, numClients, playerPrefab =>
-            {
-                // Add our RpcQueueManualTests component
-                playerPrefab.AddComponent<RpcQueueManualTests>();
-            });
+            yield return StartSomeClientsAndServerWithPlayers(useHost: true, numClients, playerPrefab =>
+             {
+                 // Add our RpcQueueManualTests component
+                 playerPrefab.AddComponent<RpcQueueManualTests>();
+             });
 
             // Set the RPC Batch sending mode
             m_ServerNetworkManager.MessageQueueContainer.EnableBatchedMessages(useBatching);
