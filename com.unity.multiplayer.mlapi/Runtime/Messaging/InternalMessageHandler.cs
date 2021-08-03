@@ -397,11 +397,6 @@ namespace Unity.Multiplayer.Netcode
             NetworkManager.Singleton.SnapshotSystem.ReadSnapshot(clientId, messageStream);
         }
 
-        internal static void HandleAck(ulong clientId, Stream messageStream)
-        {
-            NetworkManager.Singleton.SnapshotSystem.ReadAck(clientId, messageStream);
-        }
-
         public void HandleAllClientsSwitchSceneCompleted(ulong clientId, Stream stream)
         {
             using (var reader = PooledNetworkReader.Get(stream))
