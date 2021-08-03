@@ -1,10 +1,6 @@
 {
-  "registry": "https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-candidates",
   "dependencies": {
     "com.unity.test-framework": "1.1.26",
-    "com.unity.multiplayer.mlapi": "file:../../com.unity.multiplayer.mlapi",
-    "com.unity.multiplayer.transport.utp": "file:../../com.unity.multiplayer.transport.utp",
-    "com.unity.multiplayer.tools": "0.0.1-preview",
     "com.unity.modules.ai": "1.0.0",
     "com.unity.modules.androidjni": "1.0.0",
     "com.unity.modules.animation": "1.0.0",
@@ -36,8 +32,5 @@
     "com.unity.modules.vr": "1.0.0",
     "com.unity.modules.wind": "1.0.0",
     "com.unity.modules.xr": "1.0.0"
-  },
-  "testables": [
-    "com.unity.multiplayer.mlapi"
-  ]
+  }
 }

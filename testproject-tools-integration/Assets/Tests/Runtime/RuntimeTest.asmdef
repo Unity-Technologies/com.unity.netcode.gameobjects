@@ -1,0 +1,13 @@
+{
+    "name": "RuntimeTest",
+    "rootNamespace": "RuntimeTest",
+    "references": [
+    ],
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ],
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS",
+        "UNITY_EDITOR"
+    ]
+}
