@@ -16,7 +16,7 @@ public class MainMenuManager : MenuManager<MenuReference>
 /// Used for to construct a menu that accepts a specific type of ISceneReference
 /// </summary>
 /// <typeparam name="T"></typeparam>
-public class MenuManager<T>: MonoBehaviour where T : ISceneReference
+public class MenuManager<T> : MonoBehaviour where T : ISceneReference
 {
     [SerializeField]
     protected List<T> m_SceneMenus;
@@ -49,7 +49,7 @@ public class MenuManager<T>: MonoBehaviour where T : ISceneReference
         {
             if (!m_SceneMenuReferencesByDisplayName.ContainsKey(menuReference.GetReferencedScenes()[0]))
             {
-                m_SceneMenuReferencesByDisplayName.Add(menuReference.GetDisplayName(), menuReference );
+                m_SceneMenuReferencesByDisplayName.Add(menuReference.GetDisplayName(), menuReference);
 
                 var optionData = new Dropdown.OptionData();
                 optionData.text = menuReference.GetDisplayName();

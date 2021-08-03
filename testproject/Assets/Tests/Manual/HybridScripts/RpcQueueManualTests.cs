@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
-using MLAPI;
-using MLAPI.Messaging;
+using Unity.Multiplayer.Netcode;
+using Unity.Multiplayer.Netcode.Messaging;
 
 namespace TestProject.ManualTests
 {

@@ -2,16 +2,16 @@ using System.Collections.Generic;
 using System;
 using System.IO;
 using System.Linq;
-using MLAPI.Configuration;
-using MLAPI.Exceptions;
-using MLAPI.Logging;
-using MLAPI.Messaging;
-using MLAPI.Serialization.Pooled;
+using Unity.Multiplayer.Netcode.Configuration;
+using Unity.Multiplayer.Netcode.Exceptions;
+using Unity.Multiplayer.Netcode.Logging;
+using Unity.Multiplayer.Netcode.Messaging;
+using Unity.Multiplayer.Netcode.Serialization.Pooled;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using MLAPI.Transports;
+using Unity.Multiplayer.Netcode.Transports;
 
-namespace MLAPI.SceneManagement
+namespace Unity.Multiplayer.Netcode.SceneManagement
 {
     /// <summary>
     /// Main class for managing network scenes
@@ -182,10 +182,10 @@ namespace MLAPI.SceneManagement
 
                 var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
                     MessageQueueContainer.MessageType.AllClientsLoadedScene, NetworkChannel.Internal,
-                    new[] {NetworkManager.Singleton.ServerClientId}, NetworkUpdateLoop.UpdateStage);
+                    new[] { NetworkManager.Singleton.ServerClientId }, NetworkUpdateLoop.UpdateStage);
                 if (context != null)
                 {
-                    using (var nonNullContext = (InternalCommandContext) context)
+                    using (var nonNullContext = (InternalCommandContext)context)
                     {
                         var doneClientIds = switchSceneProgress.DoneClients.ToArray();
                         var timedOutClientIds = m_NetworkManager.ConnectedClients.Keys.Except(doneClientIds).ToArray();
@@ -267,10 +267,10 @@ namespace MLAPI.SceneManagement
 
             var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
                 MessageQueueContainer.MessageType.ClientSwitchSceneCompleted, NetworkChannel.Internal,
-                new[] {m_NetworkManager.ServerClientId}, NetworkUpdateLoop.UpdateStage);
+                new[] { m_NetworkManager.ServerClientId }, NetworkUpdateLoop.UpdateStage);
             if (context != null)
             {
-                using (var nonNullContext = (InternalCommandContext) context)
+                using (var nonNullContext = (InternalCommandContext)context)
                 {
                     nonNullContext.NetworkWriter.WriteByteArray(switchSceneGuid.ToByteArray());
                 }
@@ -346,7 +346,7 @@ namespace MLAPI.SceneManagement
             {
                 if (!keyValuePair.Value.IsPlayerObject)
                 {
-                    m_NetworkManager.SpawnManager.SpawnNetworkObjectLocally(keyValuePair.Value, m_NetworkManager.SpawnManager.GetNetworkObjectId(), true, false, null, null, false, 0, false, true);
+                    m_NetworkManager.SpawnManager.SpawnNetworkObjectLocally(keyValuePair.Value, m_NetworkManager.SpawnManager.GetNetworkObjectId(), true, false, null, null, false, true);
                 }
             }
 
@@ -356,7 +356,7 @@ namespace MLAPI.SceneManagement
                 {
                     var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
                         MessageQueueContainer.MessageType.SwitchScene, NetworkChannel.Internal,
-                        new[] {m_NetworkManager.ConnectedClientsList[j].ClientId}, NetworkUpdateLoop.UpdateStage);
+                        new[] { m_NetworkManager.ConnectedClientsList[j].ClientId }, NetworkUpdateLoop.UpdateStage);
                     if (context != null)
                     {
                         using (var nonNullContext = (InternalCommandContext)context)
@@ -415,10 +415,10 @@ namespace MLAPI.SceneManagement
 
             var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
                 MessageQueueContainer.MessageType.ClientSwitchSceneCompleted, NetworkChannel.Internal,
-                new[] {m_NetworkManager.ServerClientId}, NetworkUpdateLoop.UpdateStage);
+                new[] { m_NetworkManager.ServerClientId }, NetworkUpdateLoop.UpdateStage);
             if (context != null)
             {
-                using (var nonNullContext = (InternalCommandContext) context)
+                using (var nonNullContext = (InternalCommandContext)context)
                 {
                     nonNullContext.NetworkWriter.WriteByteArray(switchSceneGuid.ToByteArray());
                 }

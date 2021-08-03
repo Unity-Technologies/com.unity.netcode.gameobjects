@@ -1,13 +1,11 @@
 using System;
-using MLAPI.Configuration;
 using Unity.Profiling;
-using MLAPI.Profiling;
-using MLAPI.Logging;
-using MLAPI.Serialization.Pooled;
-using MLAPI.Transports;
+using Unity.Multiplayer.Netcode.Profiling;
+using Unity.Multiplayer.Netcode.Logging;
+using Unity.Multiplayer.Netcode.Transports;
 using UnityEngine;
 
-namespace MLAPI.Messaging
+namespace Unity.Multiplayer.Netcode.Messaging
 {
     /// <summary>
     /// MessageQueueProcessing
@@ -317,7 +315,7 @@ namespace MLAPI.Messaging
             var length = (int)sendStream.Buffer.Length;
             var bytes = sendStream.Buffer.GetBuffer();
             var sendBuffer = new ArraySegment<byte>(bytes, 0, length);
-            
+
             var channel = sendStream.NetworkChannel;
             // If the length is greater than the fragmented threshold, switch to a fragmented channel.
             // This is kind of a hack to get around issues with certain usages patterns on fragmentation with UNet.

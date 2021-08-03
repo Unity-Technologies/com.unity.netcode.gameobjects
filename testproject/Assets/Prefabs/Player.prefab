@@ -51,17 +51,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e96cb6065543e43c4a752faaa1468eb1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  TransformAuthority: 1
-  FixedSendsPerSecond: 15
-  InterpolatePosition: 1
-  SnapDistance: 10
-  InterpolateServer: 1
-  MinMeters: 0.15
-  MinDegrees: 1.5
-  MinSize: 0.15
-  Channel: 2
-  m_UseLocal:
-    m_InternalValue: 0
+  Authority: 1
+  Channel: 0
+  InLocalSpace: 0
+  FixedSendsPerSecond: 5
 --- !u!114 &-3775814466963834669
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -75,9 +68,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   GlobalObjectIdHash: 951099334
-  m_MarkedAsSceneObject: 0
   AlwaysReplicateAsRoot: 0
   DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
 --- !u!33 &4079352819444256610
 MeshFilter:
   m_ObjectHideFlags: 0

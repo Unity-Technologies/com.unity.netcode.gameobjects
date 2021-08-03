@@ -1,7 +1,7 @@
-﻿using MLAPI;
-using MLAPI.Configuration;
-using MLAPI.Logging;
-using MLAPI.Spawning;
+using Unity.Multiplayer.Netcode;
+using Unity.Multiplayer.Netcode.Configuration;
+using Unity.Multiplayer.Netcode.Logging;
+using Unity.Multiplayer.Netcode.Spawning;
 using NUnit.Framework;
 using UnityEngine;
 
@@ -19,7 +19,7 @@ namespace TestProject.RuntimeTests.Support
             m_PrefabHash = prefabHash;
         }
 
-        public NetworkObject HandleNetworkPrefabSpawn(ulong ownerClientId, Vector3 position, Quaternion rotation)
+        public NetworkObject Instantiate(ulong ownerClientId, Vector3 position, Quaternion rotation)
         {
             WasSpawned = true;
             Assert.AreEqual(SpawnRpcDespawn.TestStage, NetworkUpdateLoop.UpdateStage);
@@ -53,12 +53,12 @@ namespace TestProject.RuntimeTests.Support
             }
 
             // Otherwise, instantiate an instance of the NetworkPrefab linked to the prefabHash
-            var networkObject =  UnityEngine.Object.Instantiate(networkPrefabReference, position, rotation).GetComponent<NetworkObject>();
+            var networkObject = Object.Instantiate(networkPrefabReference, position, rotation).GetComponent<NetworkObject>();
 
             return networkObject;
         }
 
-        public void HandleNetworkPrefabDestroy(NetworkObject networkObject)
+        public void Destroy(NetworkObject networkObject)
         {
             WasDestroyed = true;
             if (networkObject.NetworkManager.IsClient)
@@ -66,7 +66,7 @@ namespace TestProject.RuntimeTests.Support
                 Assert.AreEqual(NetworkUpdateStage.PostLateUpdate, NetworkUpdateLoop.UpdateStage);
             }
 
-            GameObject.Destroy(networkObject.gameObject);
+            Object.Destroy(networkObject.gameObject);
         }
     }
 }

@@ -1,16 +1,15 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using MLAPI.Configuration;
-using MLAPI.Messaging;
-using MLAPI.NetworkVariable;
-using MLAPI.Serialization;
-using MLAPI.Serialization.Pooled;
-using MLAPI.Timing;
-using MLAPI.Transports;
+using Unity.Multiplayer.Netcode.Messaging;
+using Unity.Multiplayer.Netcode.NetworkVariable;
+using Unity.Multiplayer.Netcode.Serialization;
+using Unity.Multiplayer.Netcode.Serialization.Pooled;
+using Unity.Multiplayer.Netcode.Timing;
+using Unity.Multiplayer.Netcode.Transports;
 using UnityEngine;
 
-namespace MLAPI
+namespace Unity.Multiplayer.Netcode
 {
     // Structure that acts as a key for a NetworkVariable
     // Allows telling which variable we're talking about.
@@ -360,18 +359,18 @@ namespace MLAPI
         private void SendSnapshot(ulong clientId)
         {
             // Send the entry index and the buffer where the variables are serialized
-            
+
             var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
                 MessageQueueContainer.MessageType.SnapshotData, NetworkChannel.SnapshotExchange,
-                new[] {clientId}, NetworkUpdateLoop.UpdateStage);
-            
+                new[] { clientId }, NetworkUpdateLoop.UpdateStage);
+
             if (context != null)
             {
-                using (var nonNullContext = (InternalCommandContext) context)
+                using (var nonNullContext = (InternalCommandContext)context)
                 {
                     nonNullContext.NetworkWriter.WriteInt32Packed(m_CurrentTick);
 
-                    var buffer = (NetworkBuffer) nonNullContext.NetworkWriter.GetStream();
+                    var buffer = (NetworkBuffer)nonNullContext.NetworkWriter.GetStream();
                     WriteIndex(buffer);
                     WriteBuffer(buffer);
                 }
@@ -496,11 +495,11 @@ namespace MLAPI
         {
             var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
                 MessageQueueContainer.MessageType.SnapshotAck, NetworkChannel.SnapshotExchange,
-                new[] {clientId}, NetworkUpdateLoop.UpdateStage);
-            
+                new[] { clientId }, NetworkUpdateLoop.UpdateStage);
+
             if (context != null)
             {
-                using (var nonNullContext = (InternalCommandContext) context)
+                using (var nonNullContext = (InternalCommandContext)context)
                 {
                     nonNullContext.NetworkWriter.WriteInt32Packed(tick);
                 }

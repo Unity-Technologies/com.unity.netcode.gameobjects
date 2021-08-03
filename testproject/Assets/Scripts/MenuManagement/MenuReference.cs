@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 #if UNITY_EDITOR    
@@ -7,7 +6,7 @@ using UnityEditor;
 
 
 [CreateAssetMenu(fileName = "MenuReference", menuName = "MLAPI/MenuReference")]
-public class MenuReference: ScriptableObject, ISceneReference
+public class MenuReference : ScriptableObject, ISceneReference
 {
 #if UNITY_EDITOR    
     public SceneAsset MenuScene;

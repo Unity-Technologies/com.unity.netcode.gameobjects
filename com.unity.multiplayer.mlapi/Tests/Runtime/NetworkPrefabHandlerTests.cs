@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using MLAPI.Spawning;
+using Unity.Multiplayer.Netcode.Spawning;
 using NUnit.Framework;
 
 
-namespace MLAPI.RuntimeTests
+namespace Unity.Multiplayer.Netcode.RuntimeTests
 {
     /// <summary>
     /// The NetworkPrefabHandler unit tests validates:
@@ -164,7 +164,7 @@ namespace MLAPI.RuntimeTests
 
         private List<NetworkObject> m_Instances;
 
-        public NetworkObject HandleNetworkPrefabSpawn(ulong ownerClientId, Vector3 position, Quaternion rotation)
+        public NetworkObject Instantiate(ulong ownerClientId, Vector3 position, Quaternion rotation)
         {
             var networkObjectInstance = UnityEngine.Object.Instantiate(m_NetworkObject.gameObject).GetComponent<NetworkObject>();
             networkObjectInstance.transform.position = position;
@@ -173,7 +173,7 @@ namespace MLAPI.RuntimeTests
             return networkObjectInstance;
         }
 
-        public void HandleNetworkPrefabDestroy(NetworkObject networkObject)
+        public void Destroy(NetworkObject networkObject)
         {
             var instancesContainsNetworkObject = m_Instances.Contains(networkObject);
             Assert.True(instancesContainsNetworkObject);

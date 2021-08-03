@@ -1,8 +1,7 @@
-using System;
 using System.IO;
-using MLAPI.Transports;
+using Unity.Multiplayer.Netcode.Transports;
 
-namespace MLAPI.Messaging
+namespace Unity.Multiplayer.Netcode.Messaging
 {
     internal interface IInternalMessageHandler
     {

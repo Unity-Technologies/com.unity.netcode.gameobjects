@@ -1,15 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using MLAPI.Configuration;
-using MLAPI.Logging;
-using MLAPI.Serialization;
-using MLAPI.Serialization.Pooled;
-using MLAPI.Hashing;
-using MLAPI.Profiling;
-using MLAPI.Transports;
+using Unity.Multiplayer.Netcode.Configuration;
+using Unity.Multiplayer.Netcode.Serialization;
+using Unity.Multiplayer.Netcode.Hashing;
+using Unity.Multiplayer.Netcode.Profiling;
+using Unity.Multiplayer.Netcode.Transports;
 
-namespace MLAPI.Messaging
+namespace Unity.Multiplayer.Netcode.Messaging
 {
     /// <summary>
     /// The manager class to manage custom messages, note that this is different from the NetworkManager custom messages.
@@ -56,9 +54,10 @@ namespace MLAPI.Messaging
                 clientIds.ToArray(), NetworkUpdateLoop.UpdateStage);
             if (context != null)
             {
-                using (var nonNullContext = (InternalCommandContext) context)
+                using (var nonNullContext = (InternalCommandContext)context)
                 {
-                    nonNullContext.NetworkWriter.WriteBytes(buffer.GetBuffer(), buffer.Position);
+                    buffer.Position = 0;
+                    buffer.CopyTo(nonNullContext.NetworkWriter.GetStream());
                 }
             }
 
@@ -73,15 +72,15 @@ namespace MLAPI.Messaging
         /// <param name="networkChannel">The channel tos end the data on</param>
         public void SendUnnamedMessage(ulong clientId, NetworkBuffer buffer, NetworkChannel networkChannel = NetworkChannel.Internal)
         {
-
             var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
                 MessageQueueContainer.MessageType.UnnamedMessage, networkChannel,
-                new[] {clientId}, NetworkUpdateLoop.UpdateStage);
+                new[] { clientId }, NetworkUpdateLoop.UpdateStage);
             if (context != null)
             {
-                using (var nonNullContext = (InternalCommandContext) context)
+                using (var nonNullContext = (InternalCommandContext)context)
                 {
-                    nonNullContext.NetworkWriter.WriteBytes(buffer.GetBuffer(), buffer.Position);
+                    buffer.Position = 0;
+                    buffer.CopyTo(nonNullContext.NetworkWriter.GetStream());
                 }
             }
         }
@@ -174,13 +173,14 @@ namespace MLAPI.Messaging
 
             var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
                 MessageQueueContainer.MessageType.NamedMessage, networkChannel,
-                new[] {clientId}, NetworkUpdateLoop.UpdateStage);
+                new[] { clientId }, NetworkUpdateLoop.UpdateStage);
             if (context != null)
             {
-                using (var nonNullContext = (InternalCommandContext) context)
+                using (var nonNullContext = (InternalCommandContext)context)
                 {
                     nonNullContext.NetworkWriter.WriteUInt64Packed(hash);
 
+                    stream.Position = 0;
                     stream.CopyTo(nonNullContext.NetworkWriter.GetStream());
                 }
             }
@@ -217,10 +217,11 @@ namespace MLAPI.Messaging
                 clientIds.ToArray(), NetworkUpdateLoop.UpdateStage);
             if (context != null)
             {
-                using (var nonNullContext = (InternalCommandContext) context)
+                using (var nonNullContext = (InternalCommandContext)context)
                 {
                     nonNullContext.NetworkWriter.WriteUInt64Packed(hash);
 
+                    stream.Position = 0;
                     stream.CopyTo(nonNullContext.NetworkWriter.GetStream());
                 }
             }

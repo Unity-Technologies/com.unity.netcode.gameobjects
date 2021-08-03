@@ -2,13 +2,13 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using MLAPI.Configuration;
+using Unity.Multiplayer.Netcode.Configuration;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using Object = UnityEngine.Object;
 
-namespace MLAPI.RuntimeTests
+namespace Unity.Multiplayer.Netcode.RuntimeTests
 {
     /// <summary>
     /// Provides helpers for running multi instance tests.
@@ -318,7 +318,7 @@ namespace MLAPI.RuntimeTests
                     var client = clients[i];
                     // Logging i+1 because that's the local client ID they'll get (0 is server)
                     // Can't use client.LocalClientId because that doesn't get assigned until IsConnectedClient == true,
-                    Assert.True(client.IsConnectedClient, $"Client {i+1} never connected");
+                    Assert.True(client.IsConnectedClient, $"Client {i + 1} never connected");
                 }
             }
         }

@@ -2,9 +2,9 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
-using MLAPI;
-using MLAPI.Messaging;
-using MLAPI.Profiling;
+using Unity.Multiplayer.Netcode;
+using Unity.Multiplayer.Netcode.Messaging;
+using Unity.Multiplayer.Netcode.Profiling;
 
 namespace TestProject.ManualTests
 {
@@ -66,17 +66,9 @@ namespace TestProject.ManualTests
                 var networkObject = GetComponent<NetworkObject>();
                 if (networkObject != null)
                 {
-                    networkObject.SpawnWithOwnership(clientId, null, true);
+                    networkObject.SpawnWithOwnership(clientId, true);
                 }
             }
-        }
-
-        /// <summary>
-        /// Remove our OnClientConnectedCallback registration when we are destroyed
-        /// </summary>
-        private void OnDestroy()
-        {
-            NetworkManager.OnClientConnectedCallback -= OnClientConnectedCallback;
         }
 
         /// <summary>
@@ -84,7 +76,7 @@ namespace TestProject.ManualTests
         /// </summary>
         public void ToggleClientSever()
         {
-            if (NetworkManager.Singleton.IsClient)
+            if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsClient)
             {
                 m_ClientMode = !m_ClientMode;
                 GetStatsServerRPC(NetworkManager.Singleton.LocalClientId);
