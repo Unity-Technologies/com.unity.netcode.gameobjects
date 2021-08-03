@@ -478,8 +478,6 @@ namespace Unity.Multiplayer.Netcode
                 snapshot.ReadIndex(reader);
                 snapshot.ReadBuffer(reader, snapshotStream);
             }
-
-            SendAck(clientId, snapshotTick);
         }
 
         public void ReadAck(ulong clientId, Stream snapshotStream)
@@ -488,21 +486,6 @@ namespace Unity.Multiplayer.Netcode
             {
                 var ackTick = reader.ReadInt32Packed();
                 //Debug.Log(string.Format("Receive ack {0} from client {1}", ackTick, clientId));
-            }
-        }
-
-        public void SendAck(ulong clientId, int tick)
-        {
-            var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
-                MessageQueueContainer.MessageType.SnapshotAck, NetworkChannel.SnapshotExchange,
-                new[] { clientId }, NetworkUpdateLoop.UpdateStage);
-
-            if (context != null)
-            {
-                using (var nonNullContext = (InternalCommandContext)context)
-                {
-                    nonNullContext.NetworkWriter.WriteInt32Packed(tick);
-                }
             }
         }
 
