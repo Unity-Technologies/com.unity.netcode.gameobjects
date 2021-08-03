@@ -2,13 +2,11 @@ using System.Collections.Generic;
 using System;
 using System.IO;
 using System.Linq;
-using Unity.Multiplayer.Netcode.Serialization.Pooled;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using Unity.Multiplayer.Netcode.Serialization;
 
 
-namespace Unity.Multiplayer.Netcode.SceneManagement
+namespace Unity.Multiplayer.Netcode
 {
     [Serializable]
     public class SceneEventData : IDisposable

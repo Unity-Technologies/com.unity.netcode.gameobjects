@@ -6,7 +6,6 @@ using UnityEditor;
 #endif
 
 using Unity.Multiplayer.Netcode;
-using Unity.Multiplayer.Netcode.SceneManagement;
 
 namespace TestProject.ManualTests
 {
