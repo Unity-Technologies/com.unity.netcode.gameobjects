@@ -1,7 +1,6 @@
 {% metadata_file .yamato/project.metafile %}
 ---
 {% for project in projects -%}
-{% if project.pack == "true" -%}
 pack_{{ project.name }}:
   name: Pack {{ project.name }}
   agent:
@@ -15,5 +14,4 @@ pack_{{ project.name }}:
     packages:
       paths:
         - "upm-ci~/packages/**/*"
-{% endif -%}
 {% endfor -%}

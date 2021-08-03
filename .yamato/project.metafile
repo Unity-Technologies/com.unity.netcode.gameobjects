@@ -31,7 +31,6 @@ projects:
   - name: testproject
     path: testproject
     validate: true
-    pack: true
     # Packages within a project that will be tested
     packages:
       - name: com.unity.multiplayer.mlapi
@@ -40,5 +39,4 @@ projects:
         path: com.unity.multiplayer.transport.utp
   - name: testproject-tools-integration
     path: testproject-tools-integration
-    validate: false
-    pack: false
+    validate: false  
