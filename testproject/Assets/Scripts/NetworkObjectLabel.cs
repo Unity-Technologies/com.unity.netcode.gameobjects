@@ -1,5 +1,5 @@
 using UnityEngine;
-using MLAPI;
+using Unity.Multiplayer.Netcode;
 
 public class NetworkObjectLabel : NetworkBehaviour
 {

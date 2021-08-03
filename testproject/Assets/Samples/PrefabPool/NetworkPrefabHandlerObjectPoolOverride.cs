@@ -1,9 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using MLAPI;
-using MLAPI.Spawning;
-using MLAPI.Serialization;
+using Unity.Multiplayer.Netcode;
 
 /// <summary>
 /// This is an example of using more than one Network Prefab override when using a custom handler

@@ -1,6 +1,5 @@
 using UnityEngine;
-using MLAPI;
-using MLAPI.NetworkVariable;
+using Unity.Multiplayer.Netcode;
 
 
 /// <summary>
