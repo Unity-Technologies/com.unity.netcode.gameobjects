@@ -1,12 +1,23 @@
 using System;
 using System.Collections;
 using NUnit.Framework;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.TestTools;
 using Object = UnityEngine.Object;
 
 namespace MLAPI.RuntimeTests
 {
+    public static class AssemblyNotifier
+    {
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        public static void NotifyAssemblyReload()
+        {
+            Debug.Log("Registering reload events");
+            AssemblyReloadEvents.beforeAssemblyReload += () => Debug.Log("Before Reload Assembly");
+            AssemblyReloadEvents.afterAssemblyReload += () => Debug.Log("After Reload Assembly");
+        }
+    }
     public abstract class BaseMultiInstanceTest
     {
         protected GameObject m_PlayerPrefab;
