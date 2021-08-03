@@ -5,6 +5,7 @@ using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using Unity.Multiplayer.Netcode;
 
+
 namespace TestProject.ManualTests
 {
     public class StatsDisplay : NetworkBehaviour
@@ -37,6 +38,9 @@ namespace TestProject.ManualTests
             {
                 m_ClientServerToggle.SetActive(false);
             }
+
+            Unity.Multiplayer.Netcode.Transports.UNET.UNetTransport.ProfilerEnabled = true;
+
         }
 
         public override void OnNetworkSpawn()
@@ -51,6 +55,8 @@ namespace TestProject.ManualTests
                 m_ClientServerToggle.SetActive(true);
                 UpdateButton();
             }
+
+
             StartCoroutine("UpdateTextStatus");
         }
 
@@ -125,25 +131,8 @@ namespace TestProject.ManualTests
         private void ReceiveStatsClientRpc(StatsInfoContainer statsinfo)
         {
             m_LastStatsDump = "Server Stats";
-            m_LastStatsDump += "\ndeltaTime: [" + Time.deltaTime.ToString() + "]";
-            /* if (ProfilerStatManager.AllStats.Count != statsinfo.StatValues.Count)
-            {
-                Debug.LogError("[StatsDisplay-Error][Mismatch] Received " + statsinfo.StatValues.Count.ToString() + " values and have " + ProfilerStatManager.AllStats.Count.ToString() + " profiler stats entries!");
-            }
-            else
-            {
-                var statsCounter = 0;
-                foreach (ProfilerStat p in ProfilerStatManager.AllStats)
-                {
-                    if (m_LastStatsDump != string.Empty)
-                    {
-                        m_LastStatsDump += "\n";
-                    }
-                    m_LastStatsDump += p.PrettyPrintName + ": " + statsinfo.StatValues[statsCounter].ToString(("0.0"));
-                    statsCounter++;
-                }
-                m_LastStatsDump += $"Active Scene: {SceneManager.GetActiveScene().name}";
-            }*/
+            m_LastStatsDump += "\ndeltaTime: [" + statsinfo.StatValues[0] + "]";
+            m_LastStatsDump += $"\nActive Scene: {SceneManager.GetActiveScene().name}";
         }
 
         /// <summary>
@@ -177,14 +166,24 @@ namespace TestProject.ManualTests
                     {
                         m_LastStatsDump = m_IsServer ? "Server Stats" : "Client Stats";
                         m_LastStatsDump += "\ndeltaTime: [" + Time.deltaTime.ToString() + "]";
-                        /* foreach (ProfilerStat p in ProfilerStatManager.AllStats)
+                        var profileData = NetworkObject.NetworkManager.Transport.GetTransportProfilerData();
+
+                        if (profileData.Count > 0)
                         {
-                            if (m_LastStatsDump != string.Empty)
+                            foreach (var entry in profileData)
                             {
-                                m_LastStatsDump += "\n";
+                                if (m_LastStatsDump != string.Empty)
+                                {
+                                    m_LastStatsDump += "\n";
+                                }
+                                m_LastStatsDump += entry.Key + ": " + entry.Value.ToString("0.0");
                             }
-                            m_LastStatsDump += p.PrettyPrintName + ": " + p.SampleRate().ToString("0.0");
-                        }*/
+                        }
+                        else
+                        {
+                            m_LastStatsDump += "\n";
+                        }
+
                         m_LastStatsDump += $"Active Scene: {SceneManager.GetActiveScene().name}";
 
                     }
@@ -192,10 +191,7 @@ namespace TestProject.ManualTests
                     {
                         var statsInfoContainer = new StatsInfoContainer();
                         statsInfoContainer.StatValues = new List<float>();
-                        /* foreach (ProfilerStat p in ProfilerStatManager.AllStats)
-                        {
-                            statsInfoContainer.StatValues.Add(p.SampleRate());
-                        } */
+                        statsInfoContainer.StatValues.Add(Time.deltaTime);
                         ReceiveStatsClientRpc(statsInfoContainer);
                     }
                 }

@@ -28,10 +28,14 @@ namespace Unity.Multiplayer.Netcode
                         m_Touched.UnionWith(spawnedObjs);
                         foreach (var sobj in spawnedObjs)
                         {
-                            // Sync just the variables for just the objects this client sees
-                            for (int k = 0; k < sobj.ChildNetworkBehaviours.Count; k++)
+                            // Under specific conditions this can become null, so we don't want to access it if it is null
+                            if (sobj != null)
                             {
-                                sobj.ChildNetworkBehaviours[k].VariableUpdate(client.ClientId);
+                                // Sync just the variables for just the objects this client sees
+                                for (int k = 0; k < sobj.ChildNetworkBehaviours.Count; k++)
+                                {
+                                    sobj.ChildNetworkBehaviours[k].VariableUpdate(client.ClientId);
+                                }
                             }
                         }
                     }
@@ -39,9 +43,13 @@ namespace Unity.Multiplayer.Netcode
                     // Now, reset all the no-longer-dirty variables
                     foreach (var sobj in m_Touched)
                     {
-                        for (int k = 0; k < sobj.ChildNetworkBehaviours.Count; k++)
+                        // Under specific conditions this can become null, so we don't want to access it if it is null
+                        if (sobj != null)
                         {
-                            sobj.ChildNetworkBehaviours[k].PostNetworkVariableWrite();
+                            for (int k = 0; k < sobj.ChildNetworkBehaviours.Count; k++)
+                            {
+                                sobj.ChildNetworkBehaviours[k].PostNetworkVariableWrite();
+                            }
                         }
                     }
                 }
@@ -50,18 +58,26 @@ namespace Unity.Multiplayer.Netcode
                     // when client updates the server, it tells it about all its objects
                     foreach (var sobj in networkManager.SpawnManager.SpawnedObjectsList)
                     {
-                        for (int k = 0; k < sobj.ChildNetworkBehaviours.Count; k++)
+                        // Under specific conditions this can become null, so we don't want to access it if it is null
+                        if (sobj != null)
                         {
-                            sobj.ChildNetworkBehaviours[k].VariableUpdate(networkManager.ServerClientId);
+                            for (int k = 0; k < sobj.ChildNetworkBehaviours.Count; k++)
+                            {
+                                sobj.ChildNetworkBehaviours[k].VariableUpdate(networkManager.ServerClientId);
+                            }
                         }
                     }
 
                     // Now, reset all the no-longer-dirty variables
                     foreach (var sobj in networkManager.SpawnManager.SpawnedObjectsList)
                     {
-                        for (int k = 0; k < sobj.ChildNetworkBehaviours.Count; k++)
+                        // Under specific conditions this can become null, so we don't want to access it if it is null
+                        if (sobj != null)
                         {
-                            sobj.ChildNetworkBehaviours[k].PostNetworkVariableWrite();
+                            for (int k = 0; k < sobj.ChildNetworkBehaviours.Count; k++)
+                            {
+                                sobj.ChildNetworkBehaviours[k].PostNetworkVariableWrite();
+                            }
                         }
                     }
                 }
