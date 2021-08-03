@@ -1,6 +1,6 @@
 using System.Runtime.CompilerServices;
-using MLAPI;
-using MLAPI.Transports.UNET;
+using Unity.Multiplayer.Netcode;
+using Unity.Multiplayer.Netcode.Transports.UNET;
 using UnityEngine;
 
 namespace TestProject.ManualTests

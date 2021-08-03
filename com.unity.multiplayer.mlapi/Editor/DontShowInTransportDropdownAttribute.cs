@@ -1,9 +1,8 @@
 using System;
 
-namespace MLAPI.Editor
+namespace Unity.Multiplayer.Netcode.Editor
 {
     public class DontShowInTransportDropdownAttribute : Attribute
     {
-
     }
 }

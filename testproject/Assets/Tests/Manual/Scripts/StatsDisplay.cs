@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
-using MLAPI;
-using MLAPI.Messaging;
-using MLAPI.Profiling;
+using Unity.Multiplayer.Netcode;
+using Unity.Multiplayer.Netcode.Messaging;
+using Unity.Multiplayer.Netcode.Profiling;
 
 namespace TestProject.ManualTests
 {
@@ -67,7 +67,7 @@ namespace TestProject.ManualTests
                 var networkObject = GetComponent<NetworkObject>();
                 if (networkObject != null)
                 {
-                    networkObject.SpawnWithOwnership(clientId, null, true);
+                    networkObject.SpawnWithOwnership(clientId, true);
                 }
             }
         }

@@ -2,17 +2,16 @@ using System.Collections.Generic;
 using System;
 using System.IO;
 using System.Linq;
-using MLAPI.Configuration;
-using MLAPI.Exceptions;
-using MLAPI.Logging;
-using MLAPI.Serialization.Pooled;
+using Unity.Multiplayer.Netcode.Configuration;
+using Unity.Multiplayer.Netcode.Exceptions;
+using Unity.Multiplayer.Netcode.Logging;
+using Unity.Multiplayer.Netcode.Messaging;
+using Unity.Multiplayer.Netcode.Serialization.Pooled;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using MLAPI.Serialization;
-using MLAPI.Transports;
-using MLAPI.Messaging;
+using Unity.Multiplayer.Netcode.Transports;
 
-namespace MLAPI.SceneManagement
+namespace Unity.Multiplayer.Netcode.SceneManagement
 {
     /// <summary>
     /// Main class for managing network scenes
@@ -560,7 +559,7 @@ namespace MLAPI.SceneManagement
             {
                 if (!keyValuePair.Value.IsPlayerObject)
                 {
-                    m_NetworkManager.SpawnManager.SpawnNetworkObjectLocally(keyValuePair.Value, m_NetworkManager.SpawnManager.GetNetworkObjectId(), true, false, null, null, false, 0, false, true);
+                    m_NetworkManager.SpawnManager.SpawnNetworkObjectLocally(keyValuePair.Value, m_NetworkManager.SpawnManager.GetNetworkObjectId(), true, false, null, null, false, true);
                 }
             }
 

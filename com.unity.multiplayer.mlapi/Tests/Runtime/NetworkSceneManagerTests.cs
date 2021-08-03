@@ -1,13 +1,8 @@
 using System;
-using System.Collections;
-using System.Linq;
-using MLAPI.SceneManagement;
-using MLAPI.Configuration;
+using Unity.Multiplayer.Netcode.Configuration;
 using NUnit.Framework;
-using UnityEngine;
-using UnityEngine.TestTools;
 
-namespace MLAPI.RuntimeTests
+namespace Unity.Multiplayer.Netcode.RuntimeTests
 {
     public class NetworkSceneManagerTests
     {

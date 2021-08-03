@@ -6,12 +6,12 @@ using UnityEngine.SceneManagement;
 using UnityEditor;
 #endif
 using System.Linq;
-using MLAPI.Transports;
-using MLAPI.Hashing;
-using MLAPI.Serialization;
-using MLAPI.Serialization.Pooled;
+using Unity.Multiplayer.Netcode.Transports;
+using Unity.Multiplayer.Netcode.Hashing;
+using Unity.Multiplayer.Netcode.Serialization;
+using Unity.Multiplayer.Netcode.Serialization.Pooled;
 
-namespace MLAPI.Configuration
+namespace Unity.Multiplayer.Netcode.Configuration
 {
     /// <summary>
     /// The configuration object used to start server, client and hosts

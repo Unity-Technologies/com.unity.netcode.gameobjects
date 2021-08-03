@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
-using MLAPI.Profiling;
+using Unity.Multiplayer.Netcode.Profiling;
 using NUnit.Framework;
 
-namespace MLAPI.EditorTests
+namespace Unity.Multiplayer.Netcode.EditorTests
 {
     public class TestTransport : ITransportProfilerData
     {

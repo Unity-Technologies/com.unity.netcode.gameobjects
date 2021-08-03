@@ -1,10 +1,10 @@
 using System;
-using MLAPI.NetworkVariable;
-using MLAPI.Serialization;
-using MLAPI.Transports;
+using Unity.Multiplayer.Netcode.NetworkVariable;
+using Unity.Multiplayer.Netcode.Serialization;
+using Unity.Multiplayer.Netcode.Transports;
 using UnityEngine;
 
-namespace MLAPI.Prototyping
+namespace Unity.Multiplayer.Netcode.Prototyping
 {
     /// <summary>
     /// A prototype component for syncing transforms

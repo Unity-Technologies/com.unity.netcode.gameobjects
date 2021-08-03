@@ -2,19 +2,17 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Runtime.CompilerServices;
-using MLAPI.Configuration;
-using MLAPI.Connection;
-using MLAPI.Exceptions;
-using MLAPI.Logging;
-using MLAPI.Messaging;
-using MLAPI.SceneManagement;
-using MLAPI.Serialization;
-using MLAPI.Serialization.Pooled;
-using MLAPI.Transports;
+using Unity.Multiplayer.Netcode.Configuration;
+using Unity.Multiplayer.Netcode.Connection;
+using Unity.Multiplayer.Netcode.Exceptions;
+using Unity.Multiplayer.Netcode.Logging;
+using Unity.Multiplayer.Netcode.Messaging;
+using Unity.Multiplayer.Netcode.SceneManagement;
+using Unity.Multiplayer.Netcode.Serialization.Pooled;
+using Unity.Multiplayer.Netcode.Transports;
 using UnityEngine;
 
-namespace MLAPI.Spawning
+namespace Unity.Multiplayer.Netcode.Spawning
 {
     /// <summary>
     /// Class that handles object spawning
@@ -282,7 +280,7 @@ namespace MLAPI.Spawning
         }
 
         // Ran on both server and client
-        internal void SpawnNetworkObjectLocally(NetworkObject networkObject, ulong networkId, bool sceneObject, bool playerObject, ulong? ownerClientId, Stream dataStream, bool readPayload, int payloadLength, bool readNetworkVariable, bool destroyWithScene)
+        internal void SpawnNetworkObjectLocally(NetworkObject networkObject, ulong networkId, bool sceneObject, bool playerObject, ulong? ownerClientId, Stream dataStream, bool readNetworkVariable, bool destroyWithScene)
         {
             if (networkObject == null)
             {
@@ -351,24 +349,10 @@ namespace MLAPI.Spawning
             networkObject.SetCachedParent(networkObject.transform.parent);
             networkObject.ApplyNetworkParenting();
             NetworkObject.CheckOrphanChildren();
-
-            if (readPayload)
-            {
-                using (var payloadBuffer = PooledNetworkBuffer.Get())
-                {
-                    payloadBuffer.CopyUnreadFrom(dataStream, payloadLength);
-                    dataStream.Position += payloadLength;
-                    payloadBuffer.Position = 0;
-                    networkObject.InvokeBehaviourNetworkSpawn(payloadBuffer);
-                }
-            }
-            else
-            {
-                networkObject.InvokeBehaviourNetworkSpawn(null);
-            }
+            networkObject.InvokeBehaviourNetworkSpawn();
         }
 
-        internal void SendSpawnCallForObject(ulong clientId, ulong ownerClientId, NetworkObject networkObject, Stream payload)
+        internal void SendSpawnCallForObject(ulong clientId, ulong ownerClientId, NetworkObject networkObject)
         {
             //Currently, if this is called and the clientId (destination) is the server's client Id, this case
             //will be checked within the below Send function.  To avoid unwarranted allocation of a PooledNetworkBuffer
@@ -387,12 +371,12 @@ namespace MLAPI.Spawning
             {
                 using (var nonNullContext = (InternalCommandContext)context)
                 {
-                    WriteSpawnCallForObject(nonNullContext.NetworkWriter, ownerClientId, networkObject, payload);
+                    WriteSpawnCallForObject(nonNullContext.NetworkWriter, ownerClientId, networkObject);
                 }
             }
         }
 
-        internal void WriteSpawnCallForObject(PooledNetworkWriter writer, ulong clientId, NetworkObject networkObject, Stream payload)
+        internal void WriteSpawnCallForObject(PooledNetworkWriter writer, ulong clientId, NetworkObject networkObject)
         {
             writer.WriteBool(networkObject.IsPlayerObject);
             writer.WriteUInt64Packed(networkObject.NetworkObjectId);
@@ -438,23 +422,9 @@ namespace MLAPI.Spawning
                 var (isReparented, latestParent) = networkObject.GetNetworkParenting();
                 NetworkObject.WriteNetworkParenting(writer, isReparented, latestParent);
             }
-
-
-            writer.WriteBool(payload != null);
-
-            if (payload != null)
-            {
-                writer.WriteInt32Packed((int)payload.Length);
-            }
-
             if (NetworkManager.NetworkConfig.EnableNetworkVariable)
             {
                 networkObject.WriteNetworkVariableData(writer.GetStream(), clientId);
-            }
-
-            if (payload != null)
-            {
-                payload.CopyTo(writer.GetStream());
             }
         }
 
@@ -569,7 +539,7 @@ namespace MLAPI.Spawning
                 {
                     if (networkObjects[i].IsSceneObject == null)
                     {
-                        SpawnNetworkObjectLocally(networkObjects[i], GetNetworkObjectId(), true, false, null, null, false, 0, false, true);
+                        SpawnNetworkObjectLocally(networkObjects[i], GetNetworkObjectId(), true, false, null, null, false, true);
                     }
                 }
             }
