@@ -1,9 +1,9 @@
 using System.Collections.Generic;
-using Unity.Netcode.Timing;
+using Unity.Multiplayer.Netcode.Timing;
 using UnityEngine;
 using Random = System.Random;
 
-namespace Unity.Netcode.EditorTests.Timing
+namespace Unity.Multiplayer.Netcode.EditorTests.Timing
 {
     /// <summary>
     /// Helper functions for timing related tests. Allows to get a set of time steps and simulate time advancing without the need of a full playmode test.

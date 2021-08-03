@@ -1,8 +1,8 @@
 using System;
 using UnityEngine;
-using Unity.Netcode.Spawning;
+using Unity.Multiplayer.Netcode.Spawning;
 
-namespace Unity.Netcode.MultiprocessRuntimeTests
+namespace Unity.Multiplayer.Netcode.MultiprocessRuntimeTests
 {
     public class CustomPrefabSpawnerForPerformanceTests<T> : INetworkPrefabInstanceHandler, IDisposable where T : NetworkBehaviour
     {

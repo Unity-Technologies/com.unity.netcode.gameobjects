@@ -1,6 +1,6 @@
 using System;
 
-namespace Unity.Netcode
+namespace Unity.Multiplayer.Netcode
 {
     internal class ConnectionRtt
     {

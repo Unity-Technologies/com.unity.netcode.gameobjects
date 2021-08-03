@@ -1,10 +1,10 @@
 using System.Collections.Generic;
-using Unity.Netcode.Collections;
-using Unity.Netcode.Messaging;
-using Unity.Netcode.Transports;
+using Unity.Multiplayer.Netcode.Collections;
+using Unity.Multiplayer.Netcode.Messaging;
+using Unity.Multiplayer.Netcode.Transports;
 using UnityEngine;
 
-namespace Unity.Netcode.Profiling
+namespace Unity.Multiplayer.Netcode.Profiling
 {
     /// <summary>
     /// NetworkProfiler for profiling network traffic

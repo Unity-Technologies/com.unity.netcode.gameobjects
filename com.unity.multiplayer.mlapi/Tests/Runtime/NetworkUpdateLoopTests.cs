@@ -7,7 +7,7 @@ using NUnit.Framework;
 using UnityEngine.LowLevel;
 using UnityEngine.PlayerLoop;
 
-namespace Unity.Netcode.RuntimeTests
+namespace Unity.Multiplayer.Netcode.RuntimeTests
 {
     public class NetworkUpdateLoopTests
     {

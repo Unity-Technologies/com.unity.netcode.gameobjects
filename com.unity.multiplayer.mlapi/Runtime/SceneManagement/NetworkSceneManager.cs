@@ -2,16 +2,16 @@ using System.Collections.Generic;
 using System;
 using System.IO;
 using System.Linq;
-using Unity.Netcode.Configuration;
-using Unity.Netcode.Exceptions;
-using Unity.Netcode.Logging;
-using Unity.Netcode.Messaging;
-using Unity.Netcode.Serialization.Pooled;
+using Unity.Multiplayer.Netcode.Configuration;
+using Unity.Multiplayer.Netcode.Exceptions;
+using Unity.Multiplayer.Netcode.Logging;
+using Unity.Multiplayer.Netcode.Messaging;
+using Unity.Multiplayer.Netcode.Serialization.Pooled;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using Unity.Netcode.Transports;
+using Unity.Multiplayer.Netcode.Transports;
 
-namespace Unity.Netcode.SceneManagement
+namespace Unity.Multiplayer.Netcode.SceneManagement
 {
     /// <summary>
     /// Main class for managing network scenes

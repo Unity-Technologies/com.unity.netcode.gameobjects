@@ -1,7 +1,7 @@
-using Unity.Netcode;
-using Unity.Netcode.Configuration;
-using Unity.Netcode.Logging;
-using Unity.Netcode.Spawning;
+using Unity.Multiplayer.Netcode;
+using Unity.Multiplayer.Netcode.Configuration;
+using Unity.Multiplayer.Netcode.Logging;
+using Unity.Multiplayer.Netcode.Spawning;
 using NUnit.Framework;
 using UnityEngine;
 

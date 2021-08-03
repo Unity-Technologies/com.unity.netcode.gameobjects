@@ -3,7 +3,7 @@ using UnityEngine;
 using Unity.Profiling;
 #endif
 
-namespace Unity.Netcode.Profiling
+namespace Unity.Multiplayer.Netcode.Profiling
 {
     internal static class ProfilerCountersInfo
     {

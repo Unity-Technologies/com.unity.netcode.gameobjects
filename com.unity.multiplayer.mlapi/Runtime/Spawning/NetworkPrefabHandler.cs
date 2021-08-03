@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Unity.Netcode.Spawning
+namespace Unity.Multiplayer.Netcode.Spawning
 {
     /// <summary>
     /// Interface for customizing, overriding, spawning, and destroying Network Prefabs

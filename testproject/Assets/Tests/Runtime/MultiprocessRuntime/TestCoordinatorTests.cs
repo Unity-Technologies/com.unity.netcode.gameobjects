@@ -4,7 +4,7 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace Unity.Netcode.MultiprocessRuntimeTests
+namespace Unity.Multiplayer.Netcode.MultiprocessRuntimeTests
 {
     [TestFixture(1)]
     [TestFixture(2)]

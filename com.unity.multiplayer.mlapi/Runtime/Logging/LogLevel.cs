@@ -1,4 +1,4 @@
-namespace Unity.Netcode.Logging
+namespace Unity.Multiplayer.Netcode.Logging
 {
     /// <summary>
     /// Log level

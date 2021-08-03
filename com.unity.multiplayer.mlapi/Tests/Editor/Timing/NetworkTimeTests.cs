@@ -1,12 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Unity.Netcode.Timing;
+using Unity.Multiplayer.Netcode.Timing;
 using NUnit.Framework;
 using UnityEngine;
 using Random = System.Random;
 
-namespace Unity.Netcode.EditorTests.Timing
+namespace Unity.Multiplayer.Netcode.EditorTests.Timing
 {
     public class NetworkTimeTests
     {

@@ -1,4 +1,4 @@
-using Unity.Netcode;
+using Unity.Multiplayer.Netcode;
 using UnityEngine;
 
 public class ScalingCube : MonoBehaviour

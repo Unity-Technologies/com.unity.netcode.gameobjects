@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using UnityEngine;
-using Unity.Netcode.Messaging;
+using Unity.Multiplayer.Netcode.Messaging;
 
-namespace Unity.Netcode.RuntimeTests
+namespace Unity.Multiplayer.Netcode.RuntimeTests
 {
     /// <summary>
     /// Used in conjunction with the RpcQueueTest to validate from 1 byte to (n) MaximumBufferSize

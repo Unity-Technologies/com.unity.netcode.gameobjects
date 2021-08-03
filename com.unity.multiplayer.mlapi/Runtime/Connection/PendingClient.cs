@@ -1,4 +1,4 @@
-namespace Unity.Netcode.Connection
+namespace Unity.Multiplayer.Netcode.Connection
 {
     /// <summary>
     /// A class representing a client that is currently in the process of connecting

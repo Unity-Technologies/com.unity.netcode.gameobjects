@@ -1,6 +1,6 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using Unity.Netcode;
+using Unity.Multiplayer.Netcode;
 
 public class ExitButtonScript : MonoBehaviour
 {

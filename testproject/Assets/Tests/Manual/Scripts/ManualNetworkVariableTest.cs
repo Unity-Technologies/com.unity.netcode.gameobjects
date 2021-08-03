@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using UnityEngine;
-using Unity.Netcode;
-using Unity.Netcode.NetworkVariable;
-using Unity.Netcode.NetworkVariable.Collections;
+using Unity.Multiplayer.Netcode;
+using Unity.Multiplayer.Netcode.NetworkVariable;
+using Unity.Multiplayer.Netcode.NetworkVariable.Collections;
 
 namespace TestProject.ManualTests
 {

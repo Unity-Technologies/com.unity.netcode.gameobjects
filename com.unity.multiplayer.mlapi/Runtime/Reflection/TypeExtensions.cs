@@ -1,6 +1,6 @@
 using System;
 
-namespace Unity.Netcode.Reflection
+namespace Unity.Multiplayer.Netcode.Reflection
 {
     internal static class TypeExtensions
     {

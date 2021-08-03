@@ -4,9 +4,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.TestTools;
 using NUnit.Framework;
-using Unity.Netcode.Messaging;
+using Unity.Multiplayer.Netcode.Messaging;
 
-namespace Unity.Netcode.RuntimeTests
+namespace Unity.Multiplayer.Netcode.RuntimeTests
 {
     /// <summary>
     /// The RpcQueue unit tests validate:

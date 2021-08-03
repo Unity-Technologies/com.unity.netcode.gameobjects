@@ -1,11 +1,11 @@
 using System;
 using System.Collections;
-using Unity.Netcode.Messaging;
+using Unity.Multiplayer.Netcode.Messaging;
 using NUnit.Framework;
 using UnityEngine.TestTools;
 using Debug = UnityEngine.Debug;
 
-namespace Unity.Netcode.RuntimeTests
+namespace Unity.Multiplayer.Netcode.RuntimeTests
 {
     public class RpcTests : BaseMultiInstanceTest
     {

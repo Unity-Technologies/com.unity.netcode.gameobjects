@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using Unity.Profiling;
 
-namespace Unity.Netcode
+namespace Unity.Multiplayer.Netcode
 {
     public class NetworkBehaviourUpdater
     {

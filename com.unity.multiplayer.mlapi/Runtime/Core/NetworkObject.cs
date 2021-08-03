@@ -3,15 +3,15 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using Unity.Netcode.Exceptions;
-using Unity.Netcode.Hashing;
-using Unity.Netcode.Logging;
-using Unity.Netcode.Messaging;
-using Unity.Netcode.Transports;
-using Unity.Netcode.Serialization;
+using Unity.Multiplayer.Netcode.Exceptions;
+using Unity.Multiplayer.Netcode.Hashing;
+using Unity.Multiplayer.Netcode.Logging;
+using Unity.Multiplayer.Netcode.Messaging;
+using Unity.Multiplayer.Netcode.Transports;
+using Unity.Multiplayer.Netcode.Serialization;
 using UnityEngine;
 
-namespace Unity.Netcode
+namespace Unity.Multiplayer.Netcode
 {
     /// <summary>
     /// A component used to identify that a GameObject in the network

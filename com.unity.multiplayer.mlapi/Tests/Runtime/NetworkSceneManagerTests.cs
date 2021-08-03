@@ -1,8 +1,8 @@
 using System;
-using Unity.Netcode.Configuration;
+using Unity.Multiplayer.Netcode.Configuration;
 using NUnit.Framework;
 
-namespace Unity.Netcode.RuntimeTests
+namespace Unity.Multiplayer.Netcode.RuntimeTests
 {
     public class NetworkSceneManagerTests
     {

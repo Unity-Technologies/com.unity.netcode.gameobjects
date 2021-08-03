@@ -1,7 +1,7 @@
 using System.Collections;
-using Unity.Netcode;
-using Unity.Netcode.Configuration;
-using Unity.Netcode.RuntimeTests;
+using Unity.Multiplayer.Netcode;
+using Unity.Multiplayer.Netcode.Configuration;
+using Unity.Multiplayer.Netcode.RuntimeTests;
 using NUnit.Framework;
 using TestProject.RuntimeTests.Support;
 using UnityEngine;

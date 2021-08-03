@@ -1,11 +1,11 @@
 using System.Collections.Generic;
-using Unity.Netcode.Configuration;
-using Unity.Netcode.SceneManagement;
+using Unity.Multiplayer.Netcode.Configuration;
+using Unity.Multiplayer.Netcode.SceneManagement;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace Unity.Netcode.EditorTests
+namespace Unity.Multiplayer.Netcode.EditorTests
 {
     public class NetworkManagerSceneManagerTests
     {

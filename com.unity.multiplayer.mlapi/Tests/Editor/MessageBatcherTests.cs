@@ -1,12 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using Unity.Netcode.Messaging;
-using Unity.Netcode.Serialization;
-using Unity.Netcode.Transports;
+using Unity.Multiplayer.Netcode.Messaging;
+using Unity.Multiplayer.Netcode.Serialization;
+using Unity.Multiplayer.Netcode.Transports;
 using NUnit.Framework;
 
-namespace Unity.Netcode.EditorTests
+namespace Unity.Multiplayer.Netcode.EditorTests
 {
     public class MessageBatcherTests
     {

@@ -1,7 +1,7 @@
 using NUnit.Framework;
 using UnityEngine;
 
-namespace Unity.Netcode.EditorTests
+namespace Unity.Multiplayer.Netcode.EditorTests
 {
     public class FixedAllocatorTest
     {

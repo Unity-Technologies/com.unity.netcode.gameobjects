@@ -1,8 +1,8 @@
-using Unity.Netcode.Messaging;
-using Unity.Netcode.Transports;
+using Unity.Multiplayer.Netcode.Messaging;
+using Unity.Multiplayer.Netcode.Transports;
 using UnityEngine;
 
-namespace Unity.Netcode.Logging
+namespace Unity.Multiplayer.Netcode.Logging
 {
     /// <summary>
     /// Helper class for logging

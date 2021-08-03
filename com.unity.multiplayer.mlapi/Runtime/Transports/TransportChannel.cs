@@ -1,6 +1,6 @@
 using System;
 
-namespace Unity.Netcode.Transports
+namespace Unity.Multiplayer.Netcode.Transports
 {
     /// <summary>
     /// A transport channel used by the MLAPI

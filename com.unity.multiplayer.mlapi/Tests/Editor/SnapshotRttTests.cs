@@ -1,6 +1,6 @@
 using NUnit.Framework;
 
-namespace Unity.Netcode.EditorTests
+namespace Unity.Multiplayer.Netcode.EditorTests
 {
     public class SnapshotRttTests
     {

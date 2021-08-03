@@ -1,7 +1,7 @@
-using Unity.Netcode.Serialization;
+using Unity.Multiplayer.Netcode.Serialization;
 using NUnit.Framework;
 
-namespace Unity.Netcode.EditorTests
+namespace Unity.Multiplayer.Netcode.EditorTests
 {
     public class ArithmeticTests
     {

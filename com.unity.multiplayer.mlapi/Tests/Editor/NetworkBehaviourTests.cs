@@ -2,7 +2,7 @@ using NUnit.Framework;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
-namespace Unity.Netcode.EditorTests
+namespace Unity.Multiplayer.Netcode.EditorTests
 {
     public class NetworkBehaviourTests
     {

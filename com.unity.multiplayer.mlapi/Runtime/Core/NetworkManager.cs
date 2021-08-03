@@ -3,23 +3,23 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using Unity.Netcode.Logging;
-using Unity.Netcode.Configuration;
-using Unity.Netcode.Profiling;
-using Unity.Netcode.Serialization;
-using Unity.Netcode.Transports;
-using Unity.Netcode.Connection;
-using Unity.Netcode.Messaging;
-using Unity.Netcode.SceneManagement;
-using Unity.Netcode.Spawning;
-using Unity.Netcode.Exceptions;
-using Unity.Netcode.Serialization.Pooled;
-using Unity.Netcode.Transports.Tasks;
-using Unity.Netcode.Timing;
+using Unity.Multiplayer.Netcode.Logging;
+using Unity.Multiplayer.Netcode.Configuration;
+using Unity.Multiplayer.Netcode.Profiling;
+using Unity.Multiplayer.Netcode.Serialization;
+using Unity.Multiplayer.Netcode.Transports;
+using Unity.Multiplayer.Netcode.Connection;
+using Unity.Multiplayer.Netcode.Messaging;
+using Unity.Multiplayer.Netcode.SceneManagement;
+using Unity.Multiplayer.Netcode.Spawning;
+using Unity.Multiplayer.Netcode.Exceptions;
+using Unity.Multiplayer.Netcode.Serialization.Pooled;
+using Unity.Multiplayer.Netcode.Transports.Tasks;
+using Unity.Multiplayer.Netcode.Timing;
 using Unity.Profiling;
 using Debug = UnityEngine.Debug;
 
-namespace Unity.Netcode
+namespace Unity.Multiplayer.Netcode
 {
     /// <summary>
     /// The main component of the library

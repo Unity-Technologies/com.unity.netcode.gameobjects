@@ -1,5 +1,5 @@
 using UnityEngine;
-using Unity.Netcode;
+using Unity.Multiplayer.Netcode;
 
 
 namespace TestProject.ManualTests

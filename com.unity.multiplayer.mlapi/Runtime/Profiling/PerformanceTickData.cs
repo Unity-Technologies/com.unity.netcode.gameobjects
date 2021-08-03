@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace Unity.Netcode.Profiling
+namespace Unity.Multiplayer.Netcode.Profiling
 {
     public class PerformanceTickData
     {

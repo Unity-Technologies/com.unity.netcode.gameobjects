@@ -1,9 +1,9 @@
 using System;
 using System.IO;
-using Unity.Netcode.Transports;
-using Unity.Netcode.Serialization.Pooled;
+using Unity.Multiplayer.Netcode.Transports;
+using Unity.Multiplayer.Netcode.Serialization.Pooled;
 
-namespace Unity.Netcode.Messaging
+namespace Unity.Multiplayer.Netcode.Messaging
 {
     /// <summary>
     /// MessageFrameItem

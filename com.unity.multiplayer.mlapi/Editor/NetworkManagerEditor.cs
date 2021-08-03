@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 using UnityEditorInternal;
-using Unity.Netcode.Configuration;
-using Unity.Netcode.Transports;
+using Unity.Multiplayer.Netcode.Configuration;
+using Unity.Multiplayer.Netcode.Transports;
 
-namespace Unity.Netcode.Editor
+namespace Unity.Multiplayer.Netcode.Editor
 {
     [CustomEditor(typeof(NetworkManager), true)]
     [CanEditMultipleObjects]

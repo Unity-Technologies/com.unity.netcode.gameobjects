@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using Unity.Netcode.Hashing;
-using Unity.Netcode.Messaging;
-using Unity.Netcode.Serialization;
+using Unity.Multiplayer.Netcode.Hashing;
+using Unity.Multiplayer.Netcode.Messaging;
+using Unity.Multiplayer.Netcode.Serialization;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
@@ -13,7 +13,7 @@ using Unity.CompilationPipeline.Common.Diagnostics;
 using Unity.CompilationPipeline.Common.ILPostProcessing;
 using UnityEngine;
 
-namespace Unity.Netcode.Editor.CodeGen
+namespace Unity.Multiplayer.Netcode.Editor.CodeGen
 {
     internal static class CodeGenHelpers
     {

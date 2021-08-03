@@ -1,10 +1,10 @@
 using System;
-using Unity.Netcode.NetworkVariable;
-using Unity.Netcode.Serialization;
-using Unity.Netcode.Transports;
+using Unity.Multiplayer.Netcode.NetworkVariable;
+using Unity.Multiplayer.Netcode.Serialization;
+using Unity.Multiplayer.Netcode.Transports;
 using UnityEngine;
 
-namespace Unity.Netcode.Prototyping
+namespace Unity.Multiplayer.Netcode.Prototyping
 {
     /// <summary>
     /// A prototype component for syncing transforms

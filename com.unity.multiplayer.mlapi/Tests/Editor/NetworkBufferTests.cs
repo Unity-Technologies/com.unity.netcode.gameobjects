@@ -1,9 +1,9 @@
 using System;
 using NUnit.Framework;
-using Unity.Netcode.Serialization;
+using Unity.Multiplayer.Netcode.Serialization;
 using System.Text;
 
-namespace Unity.Netcode.EditorTests
+namespace Unity.Multiplayer.Netcode.EditorTests
 {
     public class NetworkBufferTests
     {

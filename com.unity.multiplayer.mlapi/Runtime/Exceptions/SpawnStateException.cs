@@ -1,6 +1,6 @@
 using System;
 
-namespace Unity.Netcode.Exceptions
+namespace Unity.Multiplayer.Netcode.Exceptions
 {
     /// <summary>
     /// Exception thrown when an object is not yet spawned

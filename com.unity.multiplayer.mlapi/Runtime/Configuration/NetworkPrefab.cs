@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace Unity.Netcode.Configuration
+namespace Unity.Multiplayer.Netcode.Configuration
 {
     internal enum NetworkPrefabOverride
     {

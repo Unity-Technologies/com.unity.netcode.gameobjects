@@ -1,7 +1,7 @@
 using System;
-using Unity.Netcode.Logging;
+using Unity.Multiplayer.Netcode.Logging;
 
-namespace Unity.Netcode.Profiling
+namespace Unity.Multiplayer.Netcode.Profiling
 {
     public static class ProfilerNotifier
     {

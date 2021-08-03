@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 
-namespace Unity.Netcode.Serialization
+namespace Unity.Multiplayer.Netcode.Serialization
 {
     /// <summary>
     /// A struct with a explicit memory layout. The struct has 4 fields. float,uint,double and ulong.

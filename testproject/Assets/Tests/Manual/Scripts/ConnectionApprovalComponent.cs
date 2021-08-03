@@ -2,7 +2,7 @@ using System.Collections;
 using System.Text;
 using UnityEngine;
 using UnityEngine.UI;
-using Unity.Netcode;
+using Unity.Multiplayer.Netcode;
 
 namespace TestProject.ManualTests
 {

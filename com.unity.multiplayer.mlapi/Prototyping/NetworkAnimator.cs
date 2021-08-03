@@ -1,10 +1,10 @@
 using System.Linq;
 using System.Collections.Generic;
-using Unity.Netcode.Messaging;
-using Unity.Netcode.Serialization;
+using Unity.Multiplayer.Netcode.Messaging;
+using Unity.Multiplayer.Netcode.Serialization;
 using UnityEngine;
 
-namespace Unity.Netcode.Prototyping
+namespace Unity.Multiplayer.Netcode.Prototyping
 {
     /// <summary>
     /// A prototype component for syncing animations

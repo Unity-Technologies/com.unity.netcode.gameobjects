@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace Unity.Netcode.Serialization
+namespace Unity.Multiplayer.Netcode.Serialization
 {
     public sealed class NetworkSerializer
     {

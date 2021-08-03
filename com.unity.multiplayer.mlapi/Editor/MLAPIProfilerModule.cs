@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Generic;
-using Unity.Netcode.Profiling;
+using Unity.Multiplayer.Netcode.Profiling;
 using Unity.Profiling;
 using UnityEditor;
 using UnityEngine;
 
-namespace Unity.Netcode
+namespace Unity.Multiplayer.Netcode
 {
     [InitializeOnLoad]
     internal static class MLAPIProfilerModule

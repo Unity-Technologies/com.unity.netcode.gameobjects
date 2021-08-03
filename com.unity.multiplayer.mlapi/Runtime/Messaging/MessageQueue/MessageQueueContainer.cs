@@ -1,13 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Unity.Netcode.Logging;
-using Unity.Netcode.Serialization;
-using Unity.Netcode.Serialization.Pooled;
-using Unity.Netcode.Transports;
+using Unity.Multiplayer.Netcode.Logging;
+using Unity.Multiplayer.Netcode.Serialization;
+using Unity.Multiplayer.Netcode.Serialization.Pooled;
+using Unity.Multiplayer.Netcode.Transports;
 using UnityEngine;
 
-namespace Unity.Netcode.Messaging
+namespace Unity.Multiplayer.Netcode.Messaging
 {
     /// <summary>
     /// MessageQueueContainer
@@ -212,7 +212,7 @@ namespace Unity.Netcode.Messaging
 
             if (!m_QueueHistory.ContainsKey(queueType))
             {
-                Debug.LogError($"You must initialize the {nameof(MessageQueueContainer)} before using Unity.Netcode!");
+                Debug.LogError($"You must initialize the {nameof(MessageQueueContainer)} before using Unity.Multiplayer.Netcode!");
                 return;
             }
 

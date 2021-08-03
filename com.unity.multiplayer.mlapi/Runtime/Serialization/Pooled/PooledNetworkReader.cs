@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using UnityEngine;
 
-namespace Unity.Netcode.Serialization.Pooled
+namespace Unity.Multiplayer.Netcode.Serialization.Pooled
 {
     /// <summary>
     /// Disposable NetworkReader that returns the Reader to the NetworkReaderPool when disposed

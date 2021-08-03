@@ -1,7 +1,7 @@
-using Unity.Netcode.NetworkVariable;
+using Unity.Multiplayer.Netcode.NetworkVariable;
 using UnityEngine;
 
-namespace Unity.Netcode
+namespace Unity.Multiplayer.Netcode
 {
     /// <summary>
     /// A component for syncing variables

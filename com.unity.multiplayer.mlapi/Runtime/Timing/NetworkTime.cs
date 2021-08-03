@@ -2,7 +2,7 @@ using System;
 using UnityEngine;
 using UnityEngine.Assertions;
 
-namespace Unity.Netcode.Timing
+namespace Unity.Multiplayer.Netcode.Timing
 {
     /// <summary>
     /// A struct to represent a point of time in a networked game.

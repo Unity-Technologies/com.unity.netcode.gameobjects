@@ -1,11 +1,11 @@
 using System.Collections.Generic;
 using UnityEngine;
-using Unity.Netcode.NetworkVariable.Collections;
-using Unity.Netcode.Serialization.Pooled;
+using Unity.Multiplayer.Netcode.NetworkVariable.Collections;
+using Unity.Multiplayer.Netcode.Serialization.Pooled;
 using NUnit.Framework;
 
 
-namespace Unity.Netcode.RuntimeTests
+namespace Unity.Multiplayer.Netcode.RuntimeTests
 {
     public class NetworkObjectSceneSerializationTests
     {

@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace Unity.Netcode.Connection
+namespace Unity.Multiplayer.Netcode.Connection
 {
     /// <summary>
     /// A NetworkClient

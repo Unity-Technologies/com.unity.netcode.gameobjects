@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 
-namespace Unity.Netcode.Editor
+namespace Unity.Multiplayer.Netcode.Editor
 {
     [CustomEditor(typeof(NetworkObject), true)]
     [CanEditMultipleObjects]

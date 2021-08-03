@@ -2,9 +2,9 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
-using Unity.Netcode;
-using Unity.Netcode.Messaging;
-using Unity.Netcode.Profiling;
+using Unity.Multiplayer.Netcode;
+using Unity.Multiplayer.Netcode.Messaging;
+using Unity.Multiplayer.Netcode.Profiling;
 
 namespace TestProject.ManualTests
 {

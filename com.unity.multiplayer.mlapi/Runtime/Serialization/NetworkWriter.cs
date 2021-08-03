@@ -6,10 +6,10 @@
 using System;
 using System.Diagnostics;
 using System.IO;
-using Unity.Netcode.Reflection;
+using Unity.Multiplayer.Netcode.Reflection;
 using UnityEngine;
 
-namespace Unity.Netcode.Serialization
+namespace Unity.Multiplayer.Netcode.Serialization
 {
     // Improved version of NetworkWriter
     /// <summary>

@@ -1,10 +1,10 @@
 using System.Collections;
-using Unity.Netcode.Timing;
+using Unity.Multiplayer.Netcode.Timing;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace Unity.Netcode.RuntimeTests.Timing
+namespace Unity.Multiplayer.Netcode.RuntimeTests.Timing
 {
 
     /// <summary>

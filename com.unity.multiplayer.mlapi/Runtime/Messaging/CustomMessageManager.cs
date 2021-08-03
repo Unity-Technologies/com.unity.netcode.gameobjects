@@ -1,13 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Unity.Netcode.Configuration;
-using Unity.Netcode.Serialization;
-using Unity.Netcode.Hashing;
-using Unity.Netcode.Profiling;
-using Unity.Netcode.Transports;
+using Unity.Multiplayer.Netcode.Configuration;
+using Unity.Multiplayer.Netcode.Serialization;
+using Unity.Multiplayer.Netcode.Hashing;
+using Unity.Multiplayer.Netcode.Profiling;
+using Unity.Multiplayer.Netcode.Transports;
 
-namespace Unity.Netcode.Messaging
+namespace Unity.Multiplayer.Netcode.Messaging
 {
     /// <summary>
     /// The manager class to manage custom messages, note that this is different from the NetworkManager custom messages.

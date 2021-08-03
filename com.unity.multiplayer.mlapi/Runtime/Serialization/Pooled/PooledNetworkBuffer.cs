@@ -1,4 +1,4 @@
-namespace Unity.Netcode.Serialization.Pooled
+namespace Unity.Multiplayer.Netcode.Serialization.Pooled
 {
     /// <summary>
     /// Disposable NetworkBuffer that returns back to the NetworkBufferPool when disposed

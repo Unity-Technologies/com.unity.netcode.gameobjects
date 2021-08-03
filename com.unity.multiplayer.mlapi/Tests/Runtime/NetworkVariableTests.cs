@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using NUnit.Framework;
 
-namespace Unity.Netcode.RuntimeTests
+namespace Unity.Multiplayer.Netcode.RuntimeTests
 {
     public class NetworkVariableTests
     {

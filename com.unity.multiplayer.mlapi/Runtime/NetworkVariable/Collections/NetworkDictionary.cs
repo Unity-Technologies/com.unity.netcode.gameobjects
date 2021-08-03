@@ -2,11 +2,11 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using Unity.Netcode.Timing;
-using Unity.Netcode.Serialization.Pooled;
-using Unity.Netcode.Transports;
+using Unity.Multiplayer.Netcode.Timing;
+using Unity.Multiplayer.Netcode.Serialization.Pooled;
+using Unity.Multiplayer.Netcode.Transports;
 
-namespace Unity.Netcode.NetworkVariable.Collections
+namespace Unity.Multiplayer.Netcode.NetworkVariable.Collections
 {
     /// <summary>
     /// Event based NetworkVariable container for syncing Dictionaries

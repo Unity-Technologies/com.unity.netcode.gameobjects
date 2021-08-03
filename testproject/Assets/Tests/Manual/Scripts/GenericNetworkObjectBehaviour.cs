@@ -1,4 +1,4 @@
-using Unity.Netcode;
+using Unity.Multiplayer.Netcode;
 using UnityEngine;
 
 namespace TestProject.ManualTests

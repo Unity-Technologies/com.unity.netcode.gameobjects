@@ -1,7 +1,7 @@
 using UnityEngine;
-using Unity.Netcode.NetworkVariable;
+using Unity.Multiplayer.Netcode.NetworkVariable;
 
-namespace Unity.Netcode.RuntimeTests
+namespace Unity.Multiplayer.Netcode.RuntimeTests
 {
     /// <summary>
     /// This provides coverage for all of the predefined NetworkVariable types

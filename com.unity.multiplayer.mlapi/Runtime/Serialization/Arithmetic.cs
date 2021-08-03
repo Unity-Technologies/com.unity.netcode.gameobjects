@@ -1,4 +1,4 @@
-namespace Unity.Netcode.Serialization
+namespace Unity.Multiplayer.Netcode.Serialization
 {
     /// <summary>
     /// Arithmetic helper class

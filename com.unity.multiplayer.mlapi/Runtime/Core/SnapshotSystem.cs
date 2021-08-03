@@ -1,15 +1,15 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Unity.Netcode.Messaging;
-using Unity.Netcode.NetworkVariable;
-using Unity.Netcode.Serialization;
-using Unity.Netcode.Serialization.Pooled;
-using Unity.Netcode.Timing;
-using Unity.Netcode.Transports;
+using Unity.Multiplayer.Netcode.Messaging;
+using Unity.Multiplayer.Netcode.NetworkVariable;
+using Unity.Multiplayer.Netcode.Serialization;
+using Unity.Multiplayer.Netcode.Serialization.Pooled;
+using Unity.Multiplayer.Netcode.Timing;
+using Unity.Multiplayer.Netcode.Transports;
 using UnityEngine;
 
-namespace Unity.Netcode
+namespace Unity.Multiplayer.Netcode
 {
     // Structure that acts as a key for a NetworkVariable
     // Allows telling which variable we're talking about.

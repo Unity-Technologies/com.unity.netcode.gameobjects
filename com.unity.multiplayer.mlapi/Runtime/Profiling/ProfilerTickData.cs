@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using System.IO;
-using Unity.Netcode.Serialization.Pooled;
+using Unity.Multiplayer.Netcode.Serialization.Pooled;
 
-namespace Unity.Netcode.Profiling
+namespace Unity.Multiplayer.Netcode.Profiling
 {
     /// <summary>
     /// The type of Tick

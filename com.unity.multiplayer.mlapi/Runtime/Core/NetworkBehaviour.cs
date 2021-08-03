@@ -4,16 +4,16 @@ using UnityEngine;
 using System.Reflection;
 using System.Linq;
 using System.IO;
-using Unity.Netcode.Logging;
-using Unity.Netcode.Messaging;
-using Unity.Netcode.NetworkVariable;
-using Unity.Netcode.Profiling;
-using Unity.Netcode.Reflection;
-using Unity.Netcode.Serialization;
-using Unity.Netcode.Serialization.Pooled;
-using Unity.Netcode.Transports;
+using Unity.Multiplayer.Netcode.Logging;
+using Unity.Multiplayer.Netcode.Messaging;
+using Unity.Multiplayer.Netcode.NetworkVariable;
+using Unity.Multiplayer.Netcode.Profiling;
+using Unity.Multiplayer.Netcode.Reflection;
+using Unity.Multiplayer.Netcode.Serialization;
+using Unity.Multiplayer.Netcode.Serialization.Pooled;
+using Unity.Multiplayer.Netcode.Transports;
 
-namespace Unity.Netcode
+namespace Unity.Multiplayer.Netcode
 {
     /// <summary>
     /// The base class to override to write network code. Inherits MonoBehaviour

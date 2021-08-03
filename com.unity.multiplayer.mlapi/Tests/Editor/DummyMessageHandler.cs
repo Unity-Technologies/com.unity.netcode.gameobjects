@@ -1,10 +1,10 @@
 using System.IO;
-using Unity.Netcode.Messaging;
-using Unity.Netcode.Serialization;
-using Unity.Netcode.Transports;
+using Unity.Multiplayer.Netcode.Messaging;
+using Unity.Multiplayer.Netcode.Serialization;
+using Unity.Multiplayer.Netcode.Transports;
 using UnityEngine;
 
-namespace Unity.Netcode.EditorTests
+namespace Unity.Multiplayer.Netcode.EditorTests
 {
     internal class DummyMessageHandler : IInternalMessageHandler
     {

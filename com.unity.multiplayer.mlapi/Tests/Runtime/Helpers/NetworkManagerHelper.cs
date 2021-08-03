@@ -1,12 +1,12 @@
 using System;
 using System.Collections.Generic;
-using Unity.Netcode.Configuration;
+using Unity.Multiplayer.Netcode.Configuration;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using NUnit.Framework;
-using Unity.Netcode.Transports.UNET;
+using Unity.Multiplayer.Netcode.Transports.UNET;
 
-namespace Unity.Netcode.RuntimeTests
+namespace Unity.Multiplayer.Netcode.RuntimeTests
 {
     /// <summary>
     /// Helper class to instantiate a NetworkManager

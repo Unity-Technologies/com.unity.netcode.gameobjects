@@ -5,7 +5,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.Networking;
 
-namespace Unity.Netcode.Transports
+namespace Unity.Multiplayer.Netcode.Transports
 {
     /// <summary>
     /// A transport channel used by the MLAPI

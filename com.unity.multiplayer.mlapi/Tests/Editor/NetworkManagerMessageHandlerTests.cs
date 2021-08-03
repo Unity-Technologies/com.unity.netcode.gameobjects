@@ -1,18 +1,18 @@
 using System;
 using System.Collections.Generic;
-using Unity.Netcode.Configuration;
-using Unity.Netcode.Editor;
-using Unity.Netcode.Messaging;
-using Unity.Netcode.Serialization;
-using Unity.Netcode.Transports;
-using Unity.Netcode.Transports.Tasks;
+using Unity.Multiplayer.Netcode.Configuration;
+using Unity.Multiplayer.Netcode.Editor;
+using Unity.Multiplayer.Netcode.Messaging;
+using Unity.Multiplayer.Netcode.Serialization;
+using Unity.Multiplayer.Netcode.Transports;
+using Unity.Multiplayer.Netcode.Transports.Tasks;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using Object = UnityEngine.Object;
 
-namespace Unity.Netcode.EditorTests
+namespace Unity.Multiplayer.Netcode.EditorTests
 {
     public class NetworkManagerMessageHandlerTests
     {
