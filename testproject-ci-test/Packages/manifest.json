@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "com.unity.ide.rider": "3.0.7",
+    "com.unity.dummy.package": "file:../../dummy_package",
     "com.unity.test-framework": "1.1.26",
     "com.unity.modules.ai": "1.0.0",
     "com.unity.modules.androidjni": "1.0.0",
