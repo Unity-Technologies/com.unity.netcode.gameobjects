@@ -6,12 +6,9 @@
 using System;
 using System.IO;
 using System.Text;
-using Unity.Multiplayer.Netcode.Reflection;
-using Unity.Multiplayer.Netcode.Logging;
-using Unity.Multiplayer.Netcode.Spawning;
 using UnityEngine;
 
-namespace Unity.Multiplayer.Netcode.Serialization
+namespace Unity.Multiplayer.Netcode
 {
     /// <summary>
     /// A BinaryReader that can do bit wise manipulation when backed by a NetworkBuffer

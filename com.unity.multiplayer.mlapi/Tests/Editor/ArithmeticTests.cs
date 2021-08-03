@@ -1,4 +1,3 @@
-using Unity.Multiplayer.Netcode.Serialization;
 using NUnit.Framework;
 
 namespace Unity.Multiplayer.Netcode.EditorTests

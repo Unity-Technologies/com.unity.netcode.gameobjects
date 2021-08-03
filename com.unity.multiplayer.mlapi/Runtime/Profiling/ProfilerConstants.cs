@@ -1,10 +1,9 @@
-namespace Unity.Multiplayer.Netcode.Profiling
+namespace Unity.Multiplayer.Netcode
 {
-    public static class ProfilerConstants
+    internal static class ProfilerConstants
     {
         public const string Connections = nameof(Connections);
         public const string ReceiveTickRate = nameof(ReceiveTickRate);
-
         public const string NamedMessageReceived = nameof(NamedMessageReceived);
         public const string UnnamedMessageReceived = nameof(UnnamedMessageReceived);
         public const string NamedMessageSent = nameof(NamedMessageSent);

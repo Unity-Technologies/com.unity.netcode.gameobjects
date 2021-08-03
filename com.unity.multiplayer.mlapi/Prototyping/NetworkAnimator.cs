@@ -1,7 +1,5 @@
 using System.Linq;
 using System.Collections.Generic;
-using Unity.Multiplayer.Netcode.Messaging;
-using Unity.Multiplayer.Netcode.Serialization;
 using UnityEngine;
 
 namespace Unity.Multiplayer.Netcode.Prototyping

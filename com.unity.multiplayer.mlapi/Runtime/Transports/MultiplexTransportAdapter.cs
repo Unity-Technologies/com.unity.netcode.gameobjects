@@ -1,8 +1,7 @@
 using System;
 using System.Collections.Generic;
-using Unity.Multiplayer.Netcode.Transports.Tasks;
 
-namespace Unity.Multiplayer.Netcode.Transports.Multiplex
+namespace Unity.Multiplayer.Netcode
 {
     /// <summary>
     /// Multiplex transport adapter.

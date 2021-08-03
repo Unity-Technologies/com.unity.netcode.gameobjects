@@ -1,9 +1,7 @@
 {
     "name": "Unity.Multiplayer.MLAPI.Prototyping",
-    "rootNamespace": "MLAPI.Prototyping",
+    "rootNamespace": "Unity.Multiplayer.Netcode.Prototyping",
     "references": [
         "Unity.Multiplayer.MLAPI.Runtime"
-    ],
-    "includePlatforms": [],
-    "excludePlatforms": []
+    ]
 }

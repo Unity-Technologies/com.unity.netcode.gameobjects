@@ -1,15 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
-using Unity.Multiplayer.Netcode;
-using Unity.Multiplayer.Netcode.NetworkVariable;
 using UnityEngine;
+using UnityEditor;
 
-namespace UnityEditor
+namespace Unity.Multiplayer.Netcode.Editor
 {
     [CustomEditor(typeof(NetworkBehaviour), true)]
     [CanEditMultipleObjects]
-    public class NetworkBehaviourEditor : Editor
+    public class NetworkBehaviourEditor : UnityEditor.Editor
     {
         private bool m_Initialized;
         private readonly List<string> m_NetworkVariableNames = new List<string>();

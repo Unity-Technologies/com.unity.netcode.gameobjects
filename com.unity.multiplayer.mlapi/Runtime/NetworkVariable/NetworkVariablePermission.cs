@@ -1,4 +1,4 @@
-namespace Unity.Multiplayer.Netcode.NetworkVariable
+namespace Unity.Multiplayer.Netcode
 {
     /// <summary>
     /// Permission type

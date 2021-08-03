@@ -1,9 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
-using Unity.Multiplayer.Netcode.NetworkVariable.Collections;
-using Unity.Multiplayer.Netcode.Serialization.Pooled;
 using NUnit.Framework;
-
 
 namespace Unity.Multiplayer.Netcode.RuntimeTests
 {
@@ -104,7 +101,7 @@ namespace Unity.Multiplayer.Netcode.RuntimeTests
                     invalidNetworkObjectOffsets.RemoveAt(0);
 
                     // Turn off Network Logging to avoid other errors that we know will happen after the below LogAssert.Expect message occurs.
-                    NetworkManager.Singleton.LogLevel = Logging.LogLevel.Nothing;
+                    NetworkManager.Singleton.LogLevel = LogLevel.Nothing;
 
                     // Trap for this specific error message so we don't make Test Runner think we failed (it will fail on Debug.LogError)
                     UnityEngine.TestTools.LogAssert.Expect(LogType.Error, $"Failed to spawn {nameof(NetworkObject)} for Hash {invalidNetworkObjectIdCount[invalidNetworkObjectCount]}.");
@@ -161,7 +158,6 @@ namespace Unity.Multiplayer.Netcode.RuntimeTests
             NetworkManagerHelper.ShutdownNetworkManager();
         }
     }
-
 
     /// <summary>
     /// A simple test class that will provide varying NetworkBuffer stream sizes

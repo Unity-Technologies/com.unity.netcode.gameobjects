@@ -1,7 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using Unity.Multiplayer.Netcode.NetworkVariable;
 using NUnit.Framework;
 using Unity.PerformanceTesting;
 using UnityEngine;

@@ -1,5 +1,6 @@
 {
     "name": "Unity.Multiplayer.MLAPI.EditorTests",
+    "rootNamespace": "Unity.Multiplayer.Netcode.EditorTests",
     "references": [
         "Unity.Multiplayer.MLAPI.Runtime",
         "Unity.Multiplayer.MLAPI.Editor"
@@ -9,6 +10,5 @@
     ],
     "includePlatforms": [
         "Editor"
-    ],
-    "excludePlatforms": []
+    ]
 }

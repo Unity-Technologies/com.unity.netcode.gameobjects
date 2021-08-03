@@ -1,4 +1,4 @@
-namespace Unity.Multiplayer.Netcode.Serialization
+namespace Unity.Multiplayer.Netcode
 {
     public interface INetworkSerializable
     {
