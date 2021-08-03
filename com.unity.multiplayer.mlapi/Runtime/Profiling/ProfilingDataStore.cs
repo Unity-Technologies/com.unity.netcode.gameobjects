@@ -2,7 +2,7 @@ using System.Collections.Generic;
 
 namespace Unity.Multiplayer.Netcode
 {
-    public class ProfilingDataStore
+    internal class ProfilingDataStore
     {
         private readonly Dictionary<string, int> m_Dictionary = new Dictionary<string, int>();
 

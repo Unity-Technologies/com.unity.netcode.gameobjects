@@ -1,6 +1,6 @@
 namespace Unity.Multiplayer.Netcode
 {
-    public static class ProfilerConstants
+    internal static class ProfilerConstants
     {
         public const string Connections = nameof(Connections);
         public const string ReceiveTickRate = nameof(ReceiveTickRate);

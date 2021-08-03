@@ -2,7 +2,7 @@ using System;
 
 namespace Unity.Multiplayer.Netcode
 {
-    public static class ProfilerNotifier
+    internal static class ProfilerNotifier
     {
         public delegate void PerformanceDataEventHandler(PerformanceTickData profilerData);
 

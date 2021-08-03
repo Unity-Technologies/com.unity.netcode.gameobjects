@@ -2,7 +2,7 @@ using System.Collections.Generic;
 
 namespace Unity.Multiplayer.Netcode
 {
-    public class PerformanceTickData
+    internal class PerformanceTickData
     {
         public int TickId;
 

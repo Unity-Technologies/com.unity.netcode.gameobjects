@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace Unity.Multiplayer.Netcode
 {
-    public class ProfilerStat
+    internal class ProfilerStat
     {
         public ProfilerStat(string name)
         {
@@ -36,7 +36,7 @@ namespace Unity.Multiplayer.Netcode
         }
     }
 
-    public class ProfilerIncStat : ProfilerStat
+    internal class ProfilerIncStat : ProfilerStat
     {
         public ProfilerIncStat(string name) : base(name) { }
 

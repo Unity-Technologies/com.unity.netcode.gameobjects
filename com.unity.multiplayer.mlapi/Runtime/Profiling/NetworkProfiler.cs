@@ -6,7 +6,7 @@ namespace Unity.Multiplayer.Netcode
     /// <summary>
     /// NetworkProfiler for profiling network traffic
     /// </summary>
-    public static class NetworkProfiler
+    internal static class NetworkProfiler
     {
         /// <summary>
         /// The ticks that has been recorded
