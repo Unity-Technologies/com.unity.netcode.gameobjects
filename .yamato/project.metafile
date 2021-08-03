@@ -40,3 +40,6 @@ projects:
   - name: testproject-tools-integration
     path: testproject-tools-integration
     validate: false
+  - name: testproject-ci-test
+    path: testproject-ci-test
+    validate: false
