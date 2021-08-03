@@ -153,8 +153,6 @@ namespace MLAPI
         {
             if (NumSpawns < k_MaxSpawns)
             {
-                Debug.Log(string.Format("Spawning {0} {1} {2} {3} {4} {5} {6}", command.NetworkObjectId, command.GlobalObjectIdHash, command.IsSceneObject, command.IsPlayerObject, command.OwnerClientId, command.ParentNetworkId, command.ObjectPosition));
-
                 command.TargetClientIds = new List<ulong>();
                 if (!m_NetworkManager.IsServer)
                 {
