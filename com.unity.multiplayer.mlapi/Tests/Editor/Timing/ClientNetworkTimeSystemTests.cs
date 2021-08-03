@@ -1,9 +1,8 @@
 using System;
-using MLAPI.Timing;
 using NUnit.Framework;
 using UnityEngine;
 
-namespace MLAPI.EditorTests.Timing
+namespace Unity.Multiplayer.Netcode.EditorTests
 {
     /// <summary>
     /// Tests for running a <see cref="NetworkTimeSystem"/> as a client.

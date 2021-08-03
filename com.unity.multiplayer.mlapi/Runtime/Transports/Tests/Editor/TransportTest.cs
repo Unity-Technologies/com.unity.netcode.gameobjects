@@ -1,10 +1,8 @@
 using System;
-using MLAPI;
-using MLAPI.Configuration;
-using MLAPI.Transports;
 using NUnit.Framework;
 using UnityEngine;
-using MLAPI.Transports.UNET;
+using Unity.Multiplayer.Netcode;
+using Unity.Multiplayer.Netcode.Transports.UNET;
 using UnityEngine.Networking;
 
 public class TransportTest : MonoBehaviour

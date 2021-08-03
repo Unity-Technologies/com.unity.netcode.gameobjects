@@ -1,8 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
-using MLAPI;
-using MLAPI.Messaging;
-
+using Unity.Multiplayer.Netcode;
 
 public class EnableDisableSceneNetworkObjectComponent : NetworkBehaviour
 {

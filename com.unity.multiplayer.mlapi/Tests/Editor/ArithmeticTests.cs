@@ -1,7 +1,6 @@
-using MLAPI.Serialization;
 using NUnit.Framework;
 
-namespace MLAPI.EditorTests
+namespace Unity.Multiplayer.Netcode.EditorTests
 {
     public class ArithmeticTests
     {

@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
-using MLAPI;
+using Unity.Multiplayer.Netcode;
 
 public class Raygun : NetworkBehaviour
 {

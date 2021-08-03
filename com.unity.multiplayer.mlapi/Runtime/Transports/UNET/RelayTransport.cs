@@ -6,7 +6,7 @@ using System.Net;
 using UnityEngine;
 using UnityEngine.Networking;
 
-namespace MLAPI.Transports.UNET
+namespace Unity.Multiplayer.Netcode.Transports.UNET
 {
     public static class RelayTransport
     {

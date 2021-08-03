@@ -1,7 +1,6 @@
-using MLAPI.NetworkVariable;
 using UnityEngine;
 
-namespace MLAPI
+namespace Unity.Multiplayer.Netcode
 {
     /// <summary>
     /// A component for syncing variables

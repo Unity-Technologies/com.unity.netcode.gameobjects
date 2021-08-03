@@ -1,8 +1,7 @@
 using System;
-using MLAPI.Serialization.Pooled;
 using System.Linq;
 
-namespace MLAPI.Messaging
+namespace Unity.Multiplayer.Netcode
 {
     /// <summary>
     /// A context used for building an internal command.
@@ -25,10 +24,10 @@ namespace MLAPI.Messaging
 
         public void Dispose()
         {
-            Finalize();
+            Cleanup();
         }
 
-        public void Finalize()
+        public void Cleanup()
         {
             if (m_Owner.NetworkManager.IsHost)
             {

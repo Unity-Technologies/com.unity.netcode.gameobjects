@@ -1,13 +1,8 @@
 using System;
-using MLAPI.Configuration;
 using Unity.Profiling;
-using MLAPI.Profiling;
-using MLAPI.Logging;
-using MLAPI.Serialization.Pooled;
-using MLAPI.Transports;
 using UnityEngine;
 
-namespace MLAPI.Messaging
+namespace Unity.Multiplayer.Netcode
 {
     /// <summary>
     /// MessageQueueProcessing
@@ -124,9 +119,6 @@ namespace MLAPI.Messaging
                         break;
                     case MessageQueueContainer.MessageType.SnapshotData:
                         InternalMessageHandler.HandleSnapshot(item.NetworkId, item.NetworkBuffer);
-                        break;
-                    case MessageQueueContainer.MessageType.SnapshotAck:
-                        InternalMessageHandler.HandleAck(item.NetworkId, item.NetworkBuffer);
                         break;
                     case MessageQueueContainer.MessageType.NetworkVariableDelta:
                         m_NetworkManager.MessageHandler.HandleNetworkVariableDelta(item.NetworkId, item.NetworkBuffer);

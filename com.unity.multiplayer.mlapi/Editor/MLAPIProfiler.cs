@@ -1,10 +1,9 @@
 using System.Collections.Generic;
 using System.IO;
-using MLAPI.Profiling;
-using MLAPI.Serialization;
+using UnityEditor;
 using UnityEngine;
 
-namespace UnityEditor
+namespace Unity.Multiplayer.Netcode.Editor
 {
     public class MLAPIProfiler : EditorWindow
     {

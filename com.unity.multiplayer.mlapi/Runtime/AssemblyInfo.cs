@@ -7,5 +7,4 @@ using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("Unity.Multiplayer.MLAPI.Editor")]
 [assembly: InternalsVisibleTo("TestProject.EditorTests")]
 [assembly: InternalsVisibleTo("TestProject.RuntimeTests")]
-[assembly: InternalsVisibleTo("TestProject.ManualTests")]
 #endif

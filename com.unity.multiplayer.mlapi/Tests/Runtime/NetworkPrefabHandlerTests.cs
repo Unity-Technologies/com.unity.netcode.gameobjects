@@ -1,11 +1,9 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using MLAPI.Spawning;
 using NUnit.Framework;
 
-
-namespace MLAPI.RuntimeTests
+namespace Unity.Multiplayer.Netcode.RuntimeTests
 {
     /// <summary>
     /// The NetworkPrefabHandler unit tests validates:
@@ -30,9 +28,9 @@ namespace MLAPI.RuntimeTests
             NetworkManagerHelper.NetworkManagerObject.NetworkConfig.NetworkPrefabs.Add(null);
 
             // Add a NetworkPrefab with no prefab
-            NetworkManagerHelper.NetworkManagerObject.NetworkConfig.NetworkPrefabs.Add(new Configuration.NetworkPrefab());
+            NetworkManagerHelper.NetworkManagerObject.NetworkConfig.NetworkPrefabs.Add(new NetworkPrefab());
 
-            var validNetworkPrefab = new Configuration.NetworkPrefab();
+            var validNetworkPrefab = new NetworkPrefab();
             validNetworkPrefab.Prefab = baseObject.gameObject;
 
             //Add a valid prefab

@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 
-namespace MLAPI.Profiling
+namespace Unity.Multiplayer.Netcode
 {
-    public static class ProfilerStatManager
+    internal static class ProfilerStatManager
     {
         public static List<ProfilerStat> AllStats = new List<ProfilerStat>();
 

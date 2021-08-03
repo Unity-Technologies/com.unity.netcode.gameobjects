@@ -6,10 +6,9 @@
 using System;
 using System.Diagnostics;
 using System.IO;
-using MLAPI.Reflection;
 using UnityEngine;
 
-namespace MLAPI.Serialization
+namespace Unity.Multiplayer.Netcode
 {
     // Improved version of NetworkWriter
     /// <summary>
