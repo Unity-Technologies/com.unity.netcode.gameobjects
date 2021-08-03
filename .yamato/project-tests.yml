@@ -22,7 +22,10 @@ validate_{{ package.name }}_{{ test_platforms.first.name }}_{{ test_editors.firs
       paths:
         - "upm-ci~/test-results/**/*"
   dependencies:
+{% if project.pack == "true" -%}
     - .yamato/project-pack.yml#pack_{{ project.name }}
+{% endif -%}
+
 {% endfor -%}
 {% endif -%}
 {% endfor -%}
@@ -47,8 +50,9 @@ test_{{ project.name }}_{{ editor }}_{{ platform.name }}:
       paths:
         - "upm-ci~/test-results/**/*"
   dependencies:
+{% if project.pack == "true" -%}
     - .yamato/project-pack.yml#pack_{{ project.name }}
-
+{% endif -%}
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}

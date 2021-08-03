@@ -23,7 +23,10 @@ test_{{project.name}}_{{  package.name }}_{{ editor }}_{{ platform.name }}:
       paths:
         - "upm-ci~/test-results/**/*"
   dependencies:
+{% if project.pack == "true" -%}
     - .yamato/project-pack.yml#pack_{{ project.name }}
+{% endif -%}
+
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}
