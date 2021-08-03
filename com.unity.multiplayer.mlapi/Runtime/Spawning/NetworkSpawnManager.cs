@@ -2,17 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Unity.Multiplayer.Netcode.Configuration;
-using Unity.Multiplayer.Netcode.Connection;
-using Unity.Multiplayer.Netcode.Exceptions;
-using Unity.Multiplayer.Netcode.Logging;
-using Unity.Multiplayer.Netcode.Messaging;
-using Unity.Multiplayer.Netcode.SceneManagement;
-using Unity.Multiplayer.Netcode.Serialization.Pooled;
-using Unity.Multiplayer.Netcode.Transports;
 using UnityEngine;
 
-namespace Unity.Multiplayer.Netcode.Spawning
+namespace Unity.Multiplayer.Netcode
 {
     /// <summary>
     /// Class that handles object spawning

@@ -2,16 +2,10 @@ using System.Collections.Generic;
 using System;
 using System.IO;
 using System.Linq;
-using Unity.Multiplayer.Netcode.Configuration;
-using Unity.Multiplayer.Netcode.Exceptions;
-using Unity.Multiplayer.Netcode.Logging;
-using Unity.Multiplayer.Netcode.Messaging;
-using Unity.Multiplayer.Netcode.Serialization.Pooled;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using Unity.Multiplayer.Netcode.Transports;
 
-namespace Unity.Multiplayer.Netcode.SceneManagement
+namespace Unity.Multiplayer.Netcode
 {
     /// <summary>
     /// Main class for managing network scenes
@@ -409,7 +403,7 @@ namespace Unity.Multiplayer.Netcode.SceneManagement
 
                 for (int i = 0; i < newObjectsCount; i++)
                 {
-                    NetworkObject.DeserializeSceneObject(objectStream as Serialization.NetworkBuffer, reader, m_NetworkManager);
+                    NetworkObject.DeserializeSceneObject(objectStream as NetworkBuffer, reader, m_NetworkManager);
                 }
             }
 

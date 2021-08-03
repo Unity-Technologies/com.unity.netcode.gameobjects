@@ -7,7 +7,7 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace Unity.Multiplayer.Netcode.RuntimeTests.Messaging
+namespace Unity.Multiplayer.Netcode.RuntimeTests
 {
     public class NamedMessageTests : BaseMultiInstanceTest
     {

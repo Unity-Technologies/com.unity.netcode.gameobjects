@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 
-namespace Unity.Multiplayer.Netcode.Serialization
+namespace Unity.Multiplayer.Netcode
 {
     [StructLayout(LayoutKind.Explicit)]
     internal struct ByteBool

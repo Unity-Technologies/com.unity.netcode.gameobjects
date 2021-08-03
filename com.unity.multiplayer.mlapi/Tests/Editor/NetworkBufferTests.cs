@@ -1,6 +1,5 @@
 using System;
 using NUnit.Framework;
-using Unity.Multiplayer.Netcode.Serialization;
 using System.Text;
 
 namespace Unity.Multiplayer.Netcode.EditorTests

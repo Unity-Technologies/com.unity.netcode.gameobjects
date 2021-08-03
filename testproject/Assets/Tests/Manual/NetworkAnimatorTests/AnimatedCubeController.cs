@@ -1,5 +1,4 @@
 using Unity.Multiplayer.Netcode;
-using Unity.Multiplayer.Netcode.Messaging;
 using Unity.Multiplayer.Netcode.Prototyping;
 using UnityEngine;
 

@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using Unity.Multiplayer.Netcode.Configuration;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -35,23 +34,21 @@ namespace Unity.Multiplayer.Netcode.RuntimeTests
 
             CreateNewClients(clientCount, out clients);
 
+            // Create gameObject
+            var go = new GameObject("NetworkManager - Server");
+
+            // Create networkManager component
+            server = go.AddComponent<NetworkManager>();
+            NetworkManagerInstances.Insert(0, server);
+
+            // Set the NetworkConfig
+            server.NetworkConfig = new NetworkConfig()
             {
-                // Create gameObject
-                var go = new GameObject("NetworkManager - Server");
-
-                // Create networkManager component
-                server = go.AddComponent<NetworkManager>();
-                NetworkManagerInstances.Insert(0, server);
-
-                // Set the NetworkConfig
-                server.NetworkConfig = new NetworkConfig()
-                {
-                    // Set the current scene to prevent unexpected log messages which would trigger a failure
-                    RegisteredScenes = new List<string>() { SceneManager.GetActiveScene().name },
-                    // Set transport
-                    NetworkTransport = go.AddComponent<SIPTransport>()
-                };
-            }
+                // Set the current scene to prevent unexpected log messages which would trigger a failure
+                RegisteredScenes = new List<string>() { SceneManager.GetActiveScene().name },
+                // Set transport
+                NetworkTransport = go.AddComponent<SIPTransport>()
+            };
 
             s_OriginalTargetFrameRate = Application.targetFrameRate;
             Application.targetFrameRate = targetFrameRate;

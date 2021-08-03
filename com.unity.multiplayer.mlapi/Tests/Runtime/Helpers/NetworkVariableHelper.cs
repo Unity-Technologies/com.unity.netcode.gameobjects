@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using Unity.Multiplayer.Netcode.NetworkVariable;
 
 namespace Unity.Multiplayer.Netcode.RuntimeTests
 {

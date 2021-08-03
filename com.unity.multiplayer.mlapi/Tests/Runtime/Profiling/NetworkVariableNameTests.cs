@@ -1,9 +1,7 @@
 using System;
-using Unity.Multiplayer.Netcode.NetworkVariable;
-using Unity.Multiplayer.Netcode.NetworkVariable.Collections;
 using NUnit.Framework;
 
-namespace Unity.Multiplayer.Netcode.RuntimeTests.Profiling
+namespace Unity.Multiplayer.Netcode.RuntimeTests
 {
     public sealed class NetworkVariableNameTests
     {

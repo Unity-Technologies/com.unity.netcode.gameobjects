@@ -2,10 +2,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.IO;
 using System;
-using Unity.Multiplayer.Netcode.Serialization.Pooled;
-using Unity.Multiplayer.Netcode.Transports;
 
-namespace Unity.Multiplayer.Netcode.NetworkVariable
+namespace Unity.Multiplayer.Netcode
 {
     /// <summary>
     /// A variable that can be synchronized over the network.

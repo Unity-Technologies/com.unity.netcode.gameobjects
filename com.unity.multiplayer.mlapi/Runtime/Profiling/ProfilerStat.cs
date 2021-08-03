@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Unity.Multiplayer.Netcode.Profiling
+namespace Unity.Multiplayer.Netcode
 {
     public class ProfilerStat
     {
