@@ -2,14 +2,14 @@
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 using System;
 using System.Collections.Generic;
-using MLAPI.Exceptions;
-using MLAPI.Logging;
-using MLAPI.Profiling;
-using MLAPI.Transports.Tasks;
+using Unity.Multiplayer.Netcode.Exceptions;
+using Unity.Multiplayer.Netcode.Logging;
+using Unity.Multiplayer.Netcode.Profiling;
+using Unity.Multiplayer.Netcode.Transports.Tasks;
 using UnityEngine;
 using UnityEngine.Networking;
 
-namespace MLAPI.Transports.UNET
+namespace Unity.Multiplayer.Netcode.Transports.UNET
 {
     public class UNetTransport : NetworkTransport, ITransportProfilerData
     {
@@ -315,7 +315,7 @@ namespace MLAPI.Transports.UNET
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
                     {
-                        NetworkLog.LogError("Cannot create websocket host when using MLAPI relay");
+                        NetworkLog.LogError("Cannot create websocket host when using Unity.Multiplayer.Netcode relay");
                     }
                 }
             }

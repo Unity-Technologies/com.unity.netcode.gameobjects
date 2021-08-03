@@ -1,10 +1,8 @@
-using System;
 using System.Collections.Generic;
-using MLAPI.Timing;
 using UnityEngine;
-using MLAPI;
-using MLAPI.NetworkVariable;
-using MLAPI.NetworkVariable.Collections;
+using Unity.Multiplayer.Netcode;
+using Unity.Multiplayer.Netcode.NetworkVariable;
+using Unity.Multiplayer.Netcode.NetworkVariable.Collections;
 
 namespace TestProject.ManualTests
 {

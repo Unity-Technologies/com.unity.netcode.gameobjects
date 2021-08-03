@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace MLAPI
+namespace Unity.Multiplayer.Netcode
 {
     internal struct IndexAllocatorEntry
     {

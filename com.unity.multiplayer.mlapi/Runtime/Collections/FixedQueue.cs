@@ -1,6 +1,6 @@
 using System;
 
-namespace MLAPI.Collections
+namespace Unity.Multiplayer.Netcode.Collections
 {
     /// <summary>
     /// Queue with a fixed size

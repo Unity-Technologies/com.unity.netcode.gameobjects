@@ -3,11 +3,11 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using MLAPI.Timing;
-using MLAPI.Serialization.Pooled;
-using MLAPI.Transports;
+using Unity.Multiplayer.Netcode.Timing;
+using Unity.Multiplayer.Netcode.Serialization.Pooled;
+using Unity.Multiplayer.Netcode.Transports;
 
-namespace MLAPI.NetworkVariable.Collections
+namespace Unity.Multiplayer.Netcode.NetworkVariable.Collections
 {
     /// <summary>
     /// Event based NetworkVariable container for syncing Sets

@@ -1,4 +1,4 @@
-namespace MLAPI.Profiling
+namespace Unity.Multiplayer.Netcode.Profiling
 {
     public static class ProfilerConstants
     {

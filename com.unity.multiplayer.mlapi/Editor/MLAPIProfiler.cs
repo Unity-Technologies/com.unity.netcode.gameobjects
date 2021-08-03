@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
-using MLAPI.Profiling;
-using MLAPI.Serialization;
+using Unity.Multiplayer.Netcode.Profiling;
+using Unity.Multiplayer.Netcode.Serialization;
 using UnityEngine;
 
 namespace UnityEditor

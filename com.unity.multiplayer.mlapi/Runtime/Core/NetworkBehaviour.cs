@@ -4,18 +4,16 @@ using UnityEngine;
 using System.Reflection;
 using System.Linq;
 using System.IO;
-using MLAPI.Configuration;
-using MLAPI.Logging;
-using MLAPI.Messaging;
-using MLAPI.Timing;
-using MLAPI.NetworkVariable;
-using MLAPI.Profiling;
-using MLAPI.Reflection;
-using MLAPI.Serialization;
-using MLAPI.Serialization.Pooled;
-using MLAPI.Transports;
+using Unity.Multiplayer.Netcode.Logging;
+using Unity.Multiplayer.Netcode.Messaging;
+using Unity.Multiplayer.Netcode.NetworkVariable;
+using Unity.Multiplayer.Netcode.Profiling;
+using Unity.Multiplayer.Netcode.Reflection;
+using Unity.Multiplayer.Netcode.Serialization;
+using Unity.Multiplayer.Netcode.Serialization.Pooled;
+using Unity.Multiplayer.Netcode.Transports;
 
-namespace MLAPI
+namespace Unity.Multiplayer.Netcode
 {
     /// <summary>
     /// The base class to override to write network code. Inherits MonoBehaviour
@@ -316,12 +314,12 @@ namespace MLAPI
         public ulong OwnerClientId => NetworkObject.OwnerClientId;
 
         /// <summary>
-        /// Gets called when the <see cref="MLAPI.NetworkObject"/> gets spawned, message handlers are ready to be registered and the network is setup.
+        /// Gets called when the <see cref="NetworkObject"/> gets spawned, message handlers are ready to be registered and the network is setup.
         /// </summary>
         public virtual void OnNetworkSpawn() { }
 
         /// <summary>
-        /// Gets called when the <see cref="MLAPI.NetworkObject"/> gets despawned. Is called both on the server and clients.
+        /// Gets called when the <see cref="NetworkObject"/> gets despawned. Is called both on the server and clients.
         /// </summary>
         public virtual void OnNetworkDespawn() { }
 
