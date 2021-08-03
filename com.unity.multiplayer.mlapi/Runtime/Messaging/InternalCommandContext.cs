@@ -24,10 +24,10 @@ namespace Unity.Multiplayer.Netcode
 
         public void Dispose()
         {
-            Finalize();
+            Cleanup();
         }
 
-        public void Finalize()
+        public void Cleanup()
         {
             if (m_Owner.NetworkManager.IsHost)
             {
