@@ -432,6 +432,29 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         /// <summary>
+        /// Runs some code, then verifies the condition (combines 'Run' and 'WaitForCondition')
+        /// </summary>
+        /// <param name="workload">Action / code to run</param>
+        /// <param name="predicate">The predicate to wait for</param>
+        /// <param name="maxFrames">The max frames to wait for</param>
+        public static IEnumerator RunAndWaitForCondition(Action workload, Func<bool> predicate, int maxFrames = 64)
+        {
+            var waitResult = new CoroutineResultWrapper<bool>();
+            workload();
+
+            yield return Run(WaitForCondition(
+                predicate,
+                waitResult,
+                maxFrames: maxFrames));
+
+            if (!waitResult.Result)
+            {
+                throw new Exception();
+            }
+        }
+
+
+        /// <summary>
         /// Waits for a predicate condition to be met
         /// </summary>
         /// <param name="predicate">The predicate to wait for</param>
