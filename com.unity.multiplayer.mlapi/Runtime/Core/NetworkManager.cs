@@ -274,10 +274,6 @@ namespace Unity.Multiplayer.Netcode
             {
                 foreach(var sceneAsset in NetworkConfig.RegisteredSceneAssets)
                 {
-                    if(NetworkConfig.RegisteredScenes == null)
-                    {
-                        NetworkConfig.RegisteredScenes = new List<string>();
-                    }
                     if(!NetworkConfig.RegisteredScenes.Contains(sceneAsset.name))
                     {
                         NetworkConfig.RegisteredScenes.Add(sceneAsset.name);
