@@ -363,7 +363,7 @@ namespace Unity.Multiplayer.Netcode
                     clientIds, NetworkUpdateLoop.UpdateStage);
                 if (context != null)
                 {
-                    using (var nonNullContext = (InternalCommandContext) context)
+                    using (var nonNullContext = (InternalCommandContext)context)
                     {
                         WriteSpawnCallForObject(nonNullContext.NetworkWriter, clientId, networkObject);
                     }

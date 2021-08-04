@@ -213,8 +213,6 @@ namespace Unity.Multiplayer.Netcode
             writer.WriteVector3(spawn.ObjectScale);
 
             writer.WriteUInt16(spawn.TickWritten);
-
-            writer.WriteUInt32(SnapshotSystem.k_Sentinel);
         }
 
         /// <summary>
@@ -251,12 +249,6 @@ namespace Unity.Multiplayer.Netcode
 
             command.TickWritten = reader.ReadUInt16();
             command.TargetClientIds = default;
-
-            var sentinel = reader.ReadUInt32();
-            if (sentinel != SnapshotSystem.k_Sentinel)
-            {
-                Debug.Log("JEFF Criticial sentinel error after spawn");
-            }
 
             return command;
         }
@@ -471,7 +463,10 @@ namespace Unity.Multiplayer.Netcode
 
     public class SnapshotSystem : INetworkUpdateSystem, IDisposable
     {
-        internal const UInt16 k_Sentinel = 0x4246;
+        // temporary, debugging sentinels
+        internal const ushort k_SentinelBefore = 0x4246;
+        internal const ushort k_SentinelAfter = 0x89CE;
+
         private NetworkManager m_NetworkManager = NetworkManager.Singleton;
         private Snapshot m_Snapshot = new Snapshot(NetworkManager.Singleton, false);
 
@@ -542,8 +537,6 @@ namespace Unity.Multiplayer.Netcode
                     {
                         SendSnapshot(m_NetworkManager.ServerClientId);
                     }
-
-//                    DebugDisplayStore(m_Snapshot, $"Snapshot tick {m_CurrentTick}");
                 }
             }
         }
@@ -582,16 +575,14 @@ namespace Unity.Multiplayer.Netcode
 
                     using (var writer = PooledNetworkWriter.Get(buffer))
                     {
-                        writer.WriteUInt16(k_Sentinel);
+                        writer.WriteUInt16(k_SentinelBefore);
                         WriteBuffer(buffer);
                         WriteIndex(buffer);
-                        writer.WriteUInt16(k_Sentinel + 1);
                         WriteSpawns(buffer, clientId);
-                        writer.WriteUInt16(k_Sentinel + 2);
                         WriteAcks(buffer, clientId);
+                        writer.WriteUInt16(k_SentinelAfter);
 
                         m_ClientData[clientId].m_SequenceNumber++;
-                        writer.WriteUInt16(k_Sentinel + 3);
                     }
                 }
             }
@@ -760,33 +751,19 @@ namespace Unity.Multiplayer.Netcode
                 // todo: check we didn't miss any and deal with gaps
                 m_ClientData[clientId].m_LastReceivedSequence = sequence;
 
-                var sentinel= reader.ReadUInt16();
-
-                if (sentinel != k_Sentinel)
+                var sentinel = reader.ReadUInt16();
+                if (sentinel != k_SentinelBefore)
                 {
                     Debug.Log("JEFF Critical : snapshot integrity (before)");
                 }
 
                 m_Snapshot.ReadBuffer(reader, snapshotStream);
                 m_Snapshot.ReadIndex(reader);
-
-                sentinel= reader.ReadUInt16();
-                if (sentinel != k_Sentinel + 1)
-                {
-                    Debug.Log("JEFF Critical : snapshot integrity (middle)");
-                }
-
                 m_Snapshot.ReadSpawns(reader);
-
-                sentinel= reader.ReadUInt16();
-                if (sentinel != k_Sentinel + 2)
-                {
-                    Debug.Log("JEFF Critical : snapshot integrity (middle 2)");
-                }
                 m_Snapshot.ReadAcks(clientId, m_ClientData[clientId], reader);
 
-                sentinel= reader.ReadUInt16();
-                if (sentinel != k_Sentinel + 3)
+                sentinel = reader.ReadUInt16();
+                if (sentinel != k_SentinelAfter)
                 {
                     Debug.Log("JEFF Critical : snapshot integrity (after)");
                 }
