@@ -185,7 +185,7 @@ namespace Unity.Netcode.RuntimeTests
                     }
             }
 
-            // If we started an MLAPI session
+            // If we started an netcode session
             if (CurrentNetworkManagerMode != NetworkManagerOperatingMode.None)
             {
                 // With some unit tests the Singleton can still be from a previous unit test
@@ -195,7 +195,7 @@ namespace Unity.Netcode.RuntimeTests
                     NetworkManagerObject.SetSingleton();
                 }
 
-                // Only log this if we started an MLAPI session
+                // Only log this if we started an netcode session
                 Debug.Log($"{CurrentNetworkManagerMode} started.");
             }
         }

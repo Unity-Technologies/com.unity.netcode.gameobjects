@@ -10,9 +10,9 @@ namespace Unity.Netcode.Editor
     internal static class NetcodeProfilerModule
     {
 #if UNITY_2020_2_OR_NEWER && ENABLE_PROFILER
-        private const string k_RpcModuleName = "MLAPI RPCs";
-        private const string k_OperationModuleName = "MLAPI Operations";
-        private const string k_MessageModuleName = "MLAPI Messages";
+        private const string k_RpcModuleName = "Netcode RPCs";
+        private const string k_OperationModuleName = "Netcode Operations";
+        private const string k_MessageModuleName = "Netcode Messages";
 
 #pragma warning disable IDE1006 // disable naming rule violation check
         /// <summary>
@@ -75,9 +75,9 @@ namespace Unity.Netcode.Editor
 
         private delegate List<NetcodeProfilerCounter> CounterListFactoryDelegate();
 
-        private static bool CreateNetcodeDynamicModule(ref NetcodeModules mlapiModules, string moduleName, CounterListFactoryDelegate counterListFactoryDelegate)
+        private static bool CreateNetcodeDynamicModule(ref NetcodeModules netcodeModules, string moduleName, CounterListFactoryDelegate counterListFactoryDelegate)
         {
-            var module = mlapiModules.m_Modules.Find(x => x.m_Name == moduleName);
+            var module = netcodeModules.m_Modules.Find(x => x.m_Name == moduleName);
             if (module == null)
             {
                 var newModule = new NetcodeProfilerModuleData
@@ -86,7 +86,8 @@ namespace Unity.Netcode.Editor
                     m_ChartCounters = counterListFactoryDelegate(),
                     m_DetailCounters = counterListFactoryDelegate(),
                 };
-                mlapiModules.m_Modules.Add(newModule);
+                netcodeModules.m_Modules.Add(newModule);
+
                 return true;
             }
 

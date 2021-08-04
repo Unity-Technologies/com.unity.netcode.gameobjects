@@ -37,9 +37,9 @@ namespace Unity.Netcode.EditorTests
             var networkObject = gameObject.AddComponent<NetworkObject>();
 
             // TODO: Maybe not hardcode message?
-            LogAssert.Expect(LogType.Error, $"[MLAPI] Behaviour index was out of bounds. Did you mess up the order of your {nameof(NetworkBehaviour)}s?");
-            LogAssert.Expect(LogType.Error, $"[MLAPI] Behaviour index was out of bounds. Did you mess up the order of your {nameof(NetworkBehaviour)}s?");
-            LogAssert.Expect(LogType.Error, $"[MLAPI] Behaviour index was out of bounds. Did you mess up the order of your {nameof(NetworkBehaviour)}s?");
+            LogAssert.Expect(LogType.Error, $"[Netcode] Behaviour index was out of bounds. Did you mess up the order of your {nameof(NetworkBehaviour)}s?");
+            LogAssert.Expect(LogType.Error, $"[Netcode] Behaviour index was out of bounds. Did you mess up the order of your {nameof(NetworkBehaviour)}s?");
+            LogAssert.Expect(LogType.Error, $"[Netcode] Behaviour index was out of bounds. Did you mess up the order of your {nameof(NetworkBehaviour)}s?");
 
             Assert.That(networkObject.GetNetworkBehaviourAtOrderIndex(0), Is.Null);
             Assert.That(networkObject.GetNetworkBehaviourAtOrderIndex(1), Is.Null);
@@ -57,8 +57,8 @@ namespace Unity.Netcode.EditorTests
             var networkBehaviour = gameObject.AddComponent<EmptyNetworkBehaviour>();
 
             // TODO: Maybe not hardcode message?
-            LogAssert.Expect(LogType.Error, $"[MLAPI] Behaviour index was out of bounds. Did you mess up the order of your {nameof(NetworkBehaviour)}s?");
-            LogAssert.Expect(LogType.Error, $"[MLAPI] Behaviour index was out of bounds. Did you mess up the order of your {nameof(NetworkBehaviour)}s?");
+            LogAssert.Expect(LogType.Error, $"[Netcode] Behaviour index was out of bounds. Did you mess up the order of your {nameof(NetworkBehaviour)}s?");
+            LogAssert.Expect(LogType.Error, $"[Netcode] Behaviour index was out of bounds. Did you mess up the order of your {nameof(NetworkBehaviour)}s?");
 
             Assert.That(networkObject.GetNetworkBehaviourAtOrderIndex(0), Is.EqualTo(networkBehaviour));
             Assert.That(networkObject.GetNetworkBehaviourAtOrderIndex(1), Is.Null);

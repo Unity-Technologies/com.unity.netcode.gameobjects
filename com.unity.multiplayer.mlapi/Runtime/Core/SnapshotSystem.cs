@@ -684,7 +684,7 @@ namespace Unity.Netcode
 
         // todo: consider using a Key, instead of 3 ints, if it can be exposed
         /// <summary>
-        /// Called by the rest of MLAPI when a NetworkVariable changed and need to go in our snapshot
+        /// Called by the rest of the netcode when a NetworkVariable changed and need to go in our snapshot
         /// Might not happen for all variable on every frame. Might even happen more than once.
         /// </summary>
         /// <param name="networkVariable">The NetworkVariable to write, or rather, its INetworkVariable</param>

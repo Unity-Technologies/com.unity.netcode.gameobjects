@@ -5,11 +5,11 @@ using UnityEngine;
 using UnityEditor;
 #endif
 
-[CreateAssetMenu(fileName = "SceneReference", menuName = "MLAPI/SceneReference")]
+[CreateAssetMenu(fileName = nameof(SceneReference), menuName = "Netcode/" + nameof(SceneReference))]
 [Serializable]
 public class SceneReference : ScriptableObject, ISceneReference
 {
-#if UNITY_EDITOR    
+#if UNITY_EDITOR
     public SceneAsset SceneToReference;
     [SerializeField]
     private List<SceneAsset> m_IncludedScenes;
@@ -21,7 +21,7 @@ public class SceneReference : ScriptableObject, ISceneReference
     [SerializeField]
     private List<string> m_ReferencedScenes;
 
-#if UNITY_EDITOR    
+#if UNITY_EDITOR
     private void OnValidate()
     {
         if (m_ReferencedScenes == null)

@@ -519,7 +519,7 @@ namespace Unity.Netcode.Transports.UNET
                     {
                         if ((NetworkError)error == NetworkError.CRCMismatch)
                         {
-                            Debug.LogError("[Netcode.Relay] The MLAPI Relay detected a CRC mismatch. This could be due to the maxClients or other connectionConfig settings not being the same");
+                            Debug.LogError("[Netcode.Relay] Relay detected a CRC mismatch. This could be due to the maxClients or other connectionConfig settings not being the same");
                         }
 
                         return NetworkEventType.DisconnectEvent;
