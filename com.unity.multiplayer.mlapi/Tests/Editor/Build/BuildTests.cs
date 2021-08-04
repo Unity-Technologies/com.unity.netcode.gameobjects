@@ -22,7 +22,7 @@ namespace Unity.Netcode.EditorTests
                 EditorUserBuildSettings.activeBuildTarget,
                 BuildOptions.None
             );
-            Assert.That(buildReport.summary.result == BuildResult.Succeeded);
+            Assert.AreEqual(BuildResult.Succeeded, buildReport.summary.result);
         }
     }
 }
