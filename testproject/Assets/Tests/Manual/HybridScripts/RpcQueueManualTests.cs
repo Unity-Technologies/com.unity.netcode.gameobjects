@@ -316,7 +316,7 @@ namespace TestProject.ManualTests
         }
 
         /// <summary>
-        /// Invoked upon the attached NetworkObject component being initialized by MLAPI
+        /// Invoked upon the attached NetworkObject component being initialized by the netcode
         /// </summary>
         public override void OnNetworkSpawn()
         {

@@ -35,7 +35,7 @@ namespace Unity.Netcode.Transports.UNET
         //  transport.Channels.Add(
         //     new UNetChannel()
         //       {
-        //         Id = Channel.ChannelUnused + MY_CHANNEL,  <<-- must offset from reserved channel offset in MLAPI SDK
+        //         Id = Channel.ChannelUnused + MY_CHANNEL,  <<-- must offset from reserved channel offset in netcode SDK
         //         Type = QosType.Unreliable
         //       }
         //  );
@@ -395,7 +395,7 @@ namespace Unity.Netcode.Transports.UNET
         {
             var connectionConfig = new ConnectionConfig();
 
-            // MLAPI built-in channels
+            // Built-in netcode channels
             for (int i = 0; i < NETCODE_CHANNELS.Length; i++)
             {
                 int channelId = AddNetcodeChannel(NETCODE_CHANNELS[i].Delivery, connectionConfig);

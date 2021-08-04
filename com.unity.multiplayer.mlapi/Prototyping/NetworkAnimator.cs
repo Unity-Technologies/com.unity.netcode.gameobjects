@@ -7,7 +7,7 @@ namespace Unity.Netcode.Prototyping
     /// <summary>
     /// A prototype component for syncing animations
     /// </summary>
-    [AddComponentMenu("MLAPI/NetworkAnimator")]
+    [AddComponentMenu("Netcode/" + nameof(NetworkAnimator))]
     public class NetworkAnimator : NetworkBehaviour
     {
 
