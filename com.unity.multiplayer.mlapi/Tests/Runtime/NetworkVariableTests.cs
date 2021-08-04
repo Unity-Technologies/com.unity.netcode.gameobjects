@@ -101,6 +101,7 @@ namespace Unity.Netcode.RuntimeTests
 
             // This is the *SERVER VERSION* of the *CLIENT PLAYER*
             var serverClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
+
             yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation(
                 x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId,
                 m_ServerNetworkManager, serverClientPlayerResult));
@@ -178,8 +179,6 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator NetworkListAdd()
         {
-            var waitResult = new MultiInstanceHelpers.CoroutineResultWrapper<bool>();
-
             yield return MultiInstanceHelpers.RunAndWaitForCondition(
                 () =>
                 {
