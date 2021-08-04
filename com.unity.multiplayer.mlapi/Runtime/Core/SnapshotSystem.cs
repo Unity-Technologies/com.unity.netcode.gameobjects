@@ -535,7 +535,7 @@ namespace Unity.Netcode
                 }
 
                 // useful for debugging, but generates LOTS of spam
-                DebugDisplayStore();
+                // DebugDisplayStore();
             }
         }
 

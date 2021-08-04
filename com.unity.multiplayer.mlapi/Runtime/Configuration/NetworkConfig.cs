@@ -161,7 +161,7 @@ namespace Unity.Netcode
         // todo: transitional. For the next release, only Snapshot should remain
         // The booleans allow iterative development and testing in the meantime
         public bool UseSnapshotDelta = false;
-        public bool UseSnapshotSpawn = true;
+        public bool UseSnapshotSpawn = false;
 
         public const int RttAverageSamples = 5; // number of RTT to keep an average of (plus one)
         public const int RttWindowSize = 64; // number of slots to use for RTT computations (max number of in-flight packets)
