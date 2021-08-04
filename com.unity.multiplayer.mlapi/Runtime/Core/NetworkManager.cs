@@ -272,18 +272,15 @@ namespace Unity.Multiplayer.Netcode
 
             if (NetworkConfig.EnableSceneManagement)
             {
-                if(NetworkConfig.RegisteredSceneAssets.Count > 0)
+                foreach(var sceneAsset in NetworkConfig.RegisteredSceneAssets)
                 {
-                    foreach(var sceneAsset in NetworkConfig.RegisteredSceneAssets)
+                    if(NetworkConfig.RegisteredScenes == null)
                     {
-                        if(NetworkConfig.RegisteredScenes == null)
-                        {
-                            NetworkConfig.RegisteredScenes = new List<string>();
-                        }
-                        if(!NetworkConfig.RegisteredScenes.Contains(sceneAsset.name))
-                        {
-                            NetworkConfig.RegisteredScenes.Add(sceneAsset.name);
-                        }
+                        NetworkConfig.RegisteredScenes = new List<string>();
+                    }
+                    if(!NetworkConfig.RegisteredScenes.Contains(sceneAsset.name))
+                    {
+                        NetworkConfig.RegisteredScenes.Add(sceneAsset.name);
                     }
                 }
             }

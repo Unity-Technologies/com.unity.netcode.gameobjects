@@ -84,7 +84,7 @@ namespace Unity.Multiplayer.Netcode
 
         private static bool s_IsSceneEventActive = false;
         internal static bool IsSpawnedObjectsPendingInDontDestroyOnLoad = false;
-        internal static bool IsRunningUnitTest = false;
+
 
         //Client and Server: used for all scene event processing exception for client synchronization
         internal SceneEventData SceneEventData;
@@ -109,21 +109,25 @@ namespace Unity.Multiplayer.Netcode
 
         internal void SendSceneEventData(ulong[] targetClientIds)
         {
-            if (targetClientIds.Length >= 1)
+            if (targetClientIds.Length == 0)
             {
-                var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(m_MessageType, m_ChannelType, targetClientIds, m_NetworkUpdateStage);
-
-                if (context != null)
-                {
-                    using (var nonNullContext = (InternalCommandContext)context)
-                    {
-                        SceneEventData.OnWrite(nonNullContext.NetworkWriter);
-                    }
-
-                    return;
-                }
-                throw new Exception($"{nameof(NetworkSceneManager)} failed to send event notification {SceneEventData.SceneEventType} to target clientIds {targetClientIds}!");
+                Debug.LogWarning($"Attempting to send {nameof(SceneEventData)} to zero (0) clients!");
+                return;
             }
+
+            var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(m_MessageType, m_ChannelType, targetClientIds, m_NetworkUpdateStage);
+
+            if (context != null)
+            {
+                using (var nonNullContext = (InternalCommandContext)context)
+                {
+                    SceneEventData.OnWrite(nonNullContext.NetworkWriter);
+                }
+                return;
+            }
+
+            // This should never happen, but if it does something very bad has happened and we should throw an exception
+            throw new Exception($"{nameof(InternalCommandContext)} is null! {nameof(NetworkSceneManager)} failed to send event notification {SceneEventData.SceneEventType} to target clientIds {targetClientIds}!");
         }
 
         /// <summary>
@@ -282,13 +286,12 @@ namespace Unity.Multiplayer.Netcode
             }
 
             SceneEventData.SwitchSceneGuid = switchSceneProgress.Guid;
-            SceneEventData.SceneEventType = SceneEventData.SceneEventTypes.Event_Unload;
+            SceneEventData.SceneEventType = SceneEventData.SceneEventTypes.S2C_Event_Unload;
             SceneEventData.SceneIndex = SceneNameToIndex[sceneName];
 
             // Sends the unload scene notification
             SendSceneEventData(m_NetworkManager.ConnectedClientsIds);
 
-            // start loading the scene
             AsyncOperation sceneUnload = SceneManager.UnloadSceneAsync(sceneToUnload);
             sceneUnload.completed += (AsyncOperation asyncOp2) => { OnSceneUnloaded(); };
             switchSceneProgress.SetSceneLoadOperation(sceneUnload);
@@ -334,7 +337,7 @@ namespace Unity.Multiplayer.Netcode
         {
             if (!m_NetworkManager.IsServer)
             {
-                SceneEventData.SceneEventType = SceneEventData.SceneEventTypes.Event_Unload_Complete;
+                SceneEventData.SceneEventType = SceneEventData.SceneEventTypes.C2S_Event_Unload_Complete;
                 SendSceneEventData(new ulong[] { m_NetworkManager.ServerClientId });
             }
             s_IsSceneEventActive = false;
@@ -356,7 +359,7 @@ namespace Unity.Multiplayer.Netcode
             }
 
             SceneEventData.SwitchSceneGuid = switchSceneProgress.Guid;
-            SceneEventData.SceneEventType = SceneEventData.SceneEventTypes.Event_Load;
+            SceneEventData.SceneEventType = SceneEventData.SceneEventTypes.S2C_Event_Load;
             SceneEventData.SceneIndex = SceneNameToIndex[sceneName];
             SceneEventData.LoadSceneMode = loadSceneMode;
 
@@ -393,12 +396,12 @@ namespace Unity.Multiplayer.Netcode
 
             if (SceneEventData.LoadSceneMode == LoadSceneMode.Single)
             {
-                OnSceneEvent?.Invoke(null, SceneEventData.SceneEventTypes.Event_Unload, SceneEventData.LoadSceneMode, SceneManager.GetActiveScene().name);
+                OnSceneEvent?.Invoke(null, SceneEventData.SceneEventTypes.S2C_Event_Unload, SceneEventData.LoadSceneMode, SceneManager.GetActiveScene().name);
                 foreach (var additiveSceneName in m_ScenesLoaded)
                 {
                     if (currentActiveScene.name != additiveSceneName)
                     {
-                        OnSceneEvent?.Invoke(SceneManager.UnloadSceneAsync(additiveSceneName), SceneEventData.SceneEventTypes.Event_Unload, LoadSceneMode.Additive, additiveSceneName);
+                        OnSceneEvent?.Invoke(SceneManager.UnloadSceneAsync(additiveSceneName), SceneEventData.SceneEventTypes.S2C_Event_Unload, LoadSceneMode.Additive, additiveSceneName);
                     }
                 }
                 m_ScenesLoaded.Clear();
@@ -449,7 +452,7 @@ namespace Unity.Multiplayer.Netcode
                 {
                     if (currentActiveScene.name != loadedSceneName)
                     {
-                        OnSceneEvent?.Invoke(SceneManager.UnloadSceneAsync(loadedSceneName), SceneEventData.SceneEventTypes.Event_Unload, LoadSceneMode.Additive, loadedSceneName);
+                        OnSceneEvent?.Invoke(SceneManager.UnloadSceneAsync(loadedSceneName), SceneEventData.SceneEventTypes.S2C_Event_Unload, LoadSceneMode.Additive, loadedSceneName);
                     }
                 }
                 m_ScenesLoaded.Clear();
@@ -603,7 +606,7 @@ namespace Unity.Multiplayer.Netcode
                 }
             }
 
-            SceneEventData.SceneEventType = SceneEventData.SceneEventTypes.Event_Load_Complete;
+            SceneEventData.SceneEventType = SceneEventData.SceneEventTypes.C2S_Event_Load_Complete;
             SendSceneEventData(new ulong[] { m_NetworkManager.ServerClientId });
 
             s_IsSceneEventActive = false;
@@ -632,7 +635,7 @@ namespace Unity.Multiplayer.Netcode
             ClientSynchEventData.InitializeForSynch();
             ClientSynchEventData.LoadSceneMode = LoadSceneMode.Single;
             var activeScene = SceneManager.GetActiveScene();
-            ClientSynchEventData.SceneEventType = SceneEventData.SceneEventTypes.Event_Sync;
+            ClientSynchEventData.SceneEventType = SceneEventData.SceneEventTypes.S2C_Event_Sync;
 
             for (int i = 0; i < SceneManager.sceneCount; i++)
             {
@@ -853,17 +856,17 @@ namespace Unity.Multiplayer.Netcode
             {
                 // Both events are basically the same with some minor differences
                 //case SceneEventData.SceneEventTypes.EventSwitch:
-                case SceneEventData.SceneEventTypes.Event_Load:
+                case SceneEventData.SceneEventTypes.S2C_Event_Load:
                     {
                         OnClientSceneLoadingEvent(stream);
                         break;
                     }
-                case SceneEventData.SceneEventTypes.Event_Unload:
+                case SceneEventData.SceneEventTypes.S2C_Event_Unload:
                     {
                         OnClientUnloadScene();
                         break;
                     }
-                case SceneEventData.SceneEventTypes.Event_Sync:
+                case SceneEventData.SceneEventTypes.S2C_Event_Sync:
                     {
                         if (!SceneEventData.IsDoneWithSynchronization())
                         {
@@ -871,7 +874,7 @@ namespace Unity.Multiplayer.Netcode
                         }
                         else
                         {
-                            SceneEventData.SceneEventType = SceneEventData.SceneEventTypes.Event_Sync_Complete;
+                            SceneEventData.SceneEventType = SceneEventData.SceneEventTypes.C2S_Event_Sync_Complete;
                             SendSceneEventData(new ulong[] { m_NetworkManager.ServerClientId });
 
                             // All scenes are synchronized, let the server know we are done synchronizing
@@ -882,7 +885,7 @@ namespace Unity.Multiplayer.Netcode
                         }
                         break;
                     }
-                case SceneEventData.SceneEventTypes.Event_ReSync:
+                case SceneEventData.SceneEventTypes.S2C_Event_ReSync:
                     {
                         break;
                     }
@@ -903,9 +906,9 @@ namespace Unity.Multiplayer.Netcode
         {
             switch (SceneEventData.SceneEventType)
             {
-                case SceneEventData.SceneEventTypes.Event_Load_Complete:
+                case SceneEventData.SceneEventTypes.C2S_Event_Load_Complete:
                     {
-                        Debug.Log($"[{nameof(SceneEventData.SceneEventTypes.Event_Load_Complete)}] Client Id {clientId} finished loading additive scene.");
+                        Debug.Log($"[{nameof(SceneEventData.SceneEventTypes.C2S_Event_Load_Complete)}] Client Id {clientId} finished loading additive scene.");
                         if (SceneEventData.LoadSceneMode == LoadSceneMode.Single)
                         {
                             OnClientSceneLoadingEventCompleted(clientId, SceneEventData.SwitchSceneGuid);
@@ -916,17 +919,17 @@ namespace Unity.Multiplayer.Netcode
                         }
                         break;
                     }
-                case SceneEventData.SceneEventTypes.Event_Unload_Complete:
+                case SceneEventData.SceneEventTypes.C2S_Event_Unload_Complete:
                     {
-                        Debug.Log($"[{nameof(SceneEventData.SceneEventTypes.Event_Unload_Complete)}] Client Id {clientId} finished unloading additive scene.");
+                        Debug.Log($"[{nameof(SceneEventData.SceneEventTypes.C2S_Event_Unload_Complete)}] Client Id {clientId} finished unloading additive scene.");
                         break;
                     }
-                case SceneEventData.SceneEventTypes.Event_Sync_Complete:
+                case SceneEventData.SceneEventTypes.C2S_Event_Sync_Complete:
                     {
                         if (SceneEventData.ClientNeedsReSynchronization())
                         {
                             Debug.Log($"Re-Synchronizing client {clientId} for missed destroyed NetworkObjects.");
-                            SceneEventData.SceneEventType = SceneEventData.SceneEventTypes.Event_ReSync;
+                            SceneEventData.SceneEventType = SceneEventData.SceneEventTypes.S2C_Event_ReSync;
                             SendSceneEventData(new ulong[] { clientId });
                         }
                         // NSS TOOD: The scene event local notification needs to be called

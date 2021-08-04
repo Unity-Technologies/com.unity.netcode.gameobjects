@@ -245,14 +245,13 @@ namespace TestProject.RuntimeTests
         [UnitySetUp]
         private IEnumerator SetUp()
         {
-            MLAPI.SceneManagement.NetworkSceneManager.IsRunningUnitTest = true;
+
             yield return null;
         }
 
         [UnityTearDown]
         private IEnumerator TearDown()
         {
-            MLAPI.SceneManagement.NetworkSceneManager.IsRunningUnitTest = false;
 
 
             yield return null;

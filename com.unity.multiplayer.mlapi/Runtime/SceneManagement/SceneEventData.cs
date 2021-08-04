@@ -11,17 +11,23 @@ namespace Unity.Multiplayer.Netcode
     [Serializable]
     public class SceneEventData : IDisposable
     {
+        /// <summary>
+        /// The different types of scene events communicated between a server and client.
+        /// Scene event types can be:
+        /// A Server To Client Event (S2C)
+        /// A Client to Server Event (C2S)
+        /// </summary>
         public enum SceneEventTypes
         {
-            Event_Load,                 //Server to client load additive scene
-            Event_Unload,               //Server to client unload additive scene
-            Event_SetActive,            //Server to client make scene active
-            Event_Sync,                 //Server to client late join approval synchronization
-            Event_ReSync,               //Server to client update of objects that were destroyed during sync
-            Event_Load_Complete,        //Client to server
-            Event_Unload_Complete,      //Client to server
-            Event_SetActiveComplete,    //Client to server
-            Event_Sync_Complete,        //Client to server
+            S2C_Event_Load,                 //Server to client load additive scene
+            S2C_Event_Unload,               //Server to client unload additive scene
+            S2C_Event_SetActive,            //Server to client make scene active
+            S2C_Event_Sync,                 //Server to client late join approval synchronization
+            S2C_Event_ReSync,               //Server to client update of objects that were destroyed during sync
+            C2S_Event_Load_Complete,        //Client to server
+            C2S_Event_Unload_Complete,      //Client to server
+            C2S_Event_SetActiveComplete,    //Client to server
+            C2S_Event_Sync_Complete,        //Client to server
         }
 
         public SceneEventTypes SceneEventType;
@@ -118,10 +124,11 @@ namespace Unity.Multiplayer.Netcode
         {
             switch (SceneEventType)
             {
-                case SceneEventTypes.Event_Load:
-                case SceneEventTypes.Event_Unload:
-                case SceneEventTypes.Event_Sync:
-                case SceneEventTypes.Event_ReSync:
+                case SceneEventTypes.S2C_Event_Load:
+                case SceneEventTypes.S2C_Event_Unload:
+                case SceneEventTypes.S2C_Event_Sync:
+                case SceneEventTypes.S2C_Event_ReSync:
+                case SceneEventTypes.S2C_Event_SetActive:
                     {
                         return true;
                     }
@@ -164,14 +171,14 @@ namespace Unity.Multiplayer.Netcode
 
             writer.WriteByte((byte)LoadSceneMode);
 
-            if (SceneEventType != SceneEventTypes.Event_Sync)
+            if (SceneEventType != SceneEventTypes.S2C_Event_Sync)
             {
                 writer.WriteByteArray(SwitchSceneGuid.ToByteArray());
             }
 
             writer.WriteUInt32Packed(SceneIndex);
 
-            if (SceneEventType == SceneEventTypes.Event_Sync)
+            if (SceneEventType == SceneEventTypes.S2C_Event_Sync)
             {
                 writer.WriteInt32Packed(m_SceneNetworkObjects.Count());
 
@@ -215,12 +222,12 @@ namespace Unity.Multiplayer.Netcode
                 }
             }
 
-            if (SceneEventType == SceneEventTypes.Event_Sync_Complete)
+            if (SceneEventType == SceneEventTypes.C2S_Event_Sync_Complete)
             {
                 WriteClientSynchronizationResults(writer);
             }
 
-            if (SceneEventType == SceneEventTypes.Event_ReSync)
+            if (SceneEventType == SceneEventTypes.S2C_Event_ReSync)
             {
                 WriteClientReSynchronizationData(writer);
             }
@@ -256,14 +263,14 @@ namespace Unity.Multiplayer.Netcode
                 // NSS TODO: Add to proposal's MTT discussion topics: Should we assert here?
             }
 
-            if (SceneEventType != SceneEventTypes.Event_Sync)
+            if (SceneEventType != SceneEventTypes.S2C_Event_Sync)
             {
                 SwitchSceneGuid = new Guid(reader.ReadByteArray());
             }
 
             SceneIndex = reader.ReadUInt32Packed();
 
-            if (SceneEventType == SceneEventTypes.Event_Sync)
+            if (SceneEventType == SceneEventTypes.S2C_Event_Sync)
             {
                 m_NetworkObjectsSync.Clear();
                 var keyPairCount = reader.ReadInt32Packed();
@@ -296,12 +303,12 @@ namespace Unity.Multiplayer.Netcode
                 }
             }
 
-            if (SceneEventType == SceneEventTypes.Event_Sync_Complete)
+            if (SceneEventType == SceneEventTypes.C2S_Event_Sync_Complete)
             {
                 CheckClientSynchronizationResults(reader);
             }
 
-            if (SceneEventType == SceneEventTypes.Event_ReSync)
+            if (SceneEventType == SceneEventTypes.S2C_Event_ReSync)
             {
                 ReadClientReSynchronizationData(reader);
             }

@@ -99,7 +99,7 @@ namespace TestProject.ManualTests
         {
             switch (sceneEventType)
             {
-                case SceneEventData.SceneEventTypes.Event_Unload:
+                case SceneEventData.SceneEventTypes.S2C_Event_Unload:
                     {
                         if (loadSceneMode == LoadSceneMode.Single && (gameObject.scene.name == sceneName))
                         {

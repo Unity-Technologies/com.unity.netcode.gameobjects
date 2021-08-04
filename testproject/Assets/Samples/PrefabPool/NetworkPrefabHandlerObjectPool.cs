@@ -76,12 +76,13 @@ public class NetworkPrefabHandlerObjectPool : NetworkBehaviour, INetworkPrefabIn
         return gameObject.GetComponent<NetworkObject>();
     }
 
-    public void Destroy(NetworkObject networkObject)
+    public bool Destroy(NetworkObject networkObject)
     {
         if (m_ObjectsPool.Contains(networkObject.gameObject))
         {
             networkObject.gameObject.SetActive(false);
         }
+        return false;
     }
 
     private IEnumerator SpawnObjects()

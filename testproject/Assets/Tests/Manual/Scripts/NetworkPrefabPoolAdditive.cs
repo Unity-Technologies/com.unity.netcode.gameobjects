@@ -121,7 +121,7 @@ namespace TestProject.ManualTests
         {
             switch(sceneEventType)
             {
-                case SceneEventData.SceneEventTypes.Event_Unload:
+                case SceneEventData.SceneEventTypes.S2C_Event_Unload:
                     {
                         if (loadSceneMode == LoadSceneMode.Additive && (gameObject.scene.name == sceneName))
                         {
@@ -129,7 +129,7 @@ namespace TestProject.ManualTests
                         }
                         break;
                     }
-                case SceneEventData.SceneEventTypes.Event_Load:
+                case SceneEventData.SceneEventTypes.S2C_Event_Load:
                     {
                         if (loadSceneMode == LoadSceneMode.Single && ((gameObject.scene.name == sceneName) || !SpawnInSourceScene) )
                         {
