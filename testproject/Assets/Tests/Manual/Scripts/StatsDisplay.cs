@@ -12,6 +12,15 @@ namespace TestProject.ManualTests
     {
         [SerializeField]
         private GameObject m_ClientServerToggle;
+
+        [Tooltip("When enabled, this will display all scene events in the display window.")]
+        [SerializeField]
+        private bool m_TrackSceneEvents;
+
+        [Tooltip("When enabled, this will log all messages to the console.")]
+        [SerializeField]
+        private bool m_LogSceneEventsToConsole;
+
         private bool m_ClientMode = true;
         private Rect m_Stats;
         private string m_LastStatsDump;
@@ -19,6 +28,8 @@ namespace TestProject.ManualTests
         private List<ulong> m_ClientsToUpdate = new List<ulong>();
 
         private bool m_IsServer;
+
+        private SceneEventNotificationQueue m_SceneEventNotificationQueue;
 
         private void Start()
         {
@@ -52,28 +63,12 @@ namespace TestProject.ManualTests
                 UpdateButton();
             }
 
-            NetworkManager.SceneManager.OnSceneEvent += OnSceneEvent;
+            if (m_TrackSceneEvents)
+            {
+                m_SceneEventNotificationQueue = NetworkManager.gameObject.GetComponent<SceneEventNotificationQueue>();
+            }
+
             StartCoroutine("UpdateTextStatus");
-        }
-
-        public override void OnNetworkDespawn()
-        {
-            NetworkManager.SceneManager.OnSceneEvent -= OnSceneEvent;
-            base.OnNetworkDespawn();
-        }
-
-
-        private class SceneEventNotification
-        {
-            public float TimeToLive;
-            public SceneEvent SceneEvent;
-        }
-
-        private Queue<SceneEventNotification> m_SceneEventNotifications = new Queue<SceneEventNotification>();
-
-        private void OnSceneEvent(SceneEvent sceneEvent)
-        {
-            m_SceneEventNotifications.Enqueue(new SceneEventNotification() { SceneEvent = sceneEvent, TimeToLive = Time.realtimeSinceStartup + 10 });
         }
 
         /// <summary>
@@ -123,13 +118,12 @@ namespace TestProject.ManualTests
         {
             if (NetworkManager && NetworkManager.IsListening)
             {
-                var width = 0.20f * Screen.width;
-                var height = 0.35f * Screen.height;
+                var width = 0.25f * Screen.width;
+                var height = 0.50f * Screen.height;
                 m_Stats = new Rect(5, 10, width, height);
                 GUI.TextArea(m_Stats, m_LastStatsDump);
             }
         }
-
 
         /// <summary>
         /// Updates the text of the button for switching between server and client stats
@@ -204,17 +198,13 @@ namespace TestProject.ManualTests
                         }
 
                         m_LastStatsDump += $"Active Scene: {SceneManager.GetActiveScene().name}\n";
-                        if (m_SceneEventNotifications.Count > 0)
+                        if (m_SceneEventNotificationQueue != null)
                         {
-                            m_LastStatsDump += "Scene Events:\n";
-                            foreach (var sceneEventEntry in m_SceneEventNotifications)
+                            var sceneEvents = m_SceneEventNotificationQueue.GetCurrentNotifications();
+                            m_LastStatsDump += $"Scene Events {sceneEvents.Count}:\n";
+                            foreach (var sceneEventEntry in sceneEvents)
                             {
-                                m_LastStatsDump += $"[{sceneEventEntry.SceneEvent.ClientId} | {sceneEventEntry.SceneEvent.SceneEventType} | " +
-                                    $"{sceneEventEntry.SceneEvent.SceneName} | {sceneEventEntry.SceneEvent.LoadSceneMode}]\n";
-                            }
-                            if(m_SceneEventNotifications.Peek().TimeToLive < Time.realtimeSinceStartup)
-                            {
-                                m_SceneEventNotifications.Dequeue();
+                                m_LastStatsDump += sceneEventEntry + "\n";
                             }
                         }
                     }

@@ -55,16 +55,6 @@ namespace Unity.Netcode
     /// </summary>
     public class NetworkSceneManager
     {
-        /// <summary>
-        /// Delegate for when the scene has been switched
-        /// </summary>
-        public delegate void SceneSwitchedDelegate();
-
-        /// <summary>
-        /// Delegate for when a scene switch has been initiated
-        /// </summary>
-        public delegate void SceneSwitchStartedDelegate(AsyncOperation operation);
-
         public delegate void SceneEventDelegate(SceneEvent sceneEvent);
 
         /// <summary>
@@ -85,17 +75,8 @@ namespace Unity.Netcode
         /// </summary>
         public delegate void NotifyClientAllClientsLoadedSceneDelegate(ulong[] clientIds, ulong[] timedOutClientIds);
 
-        /// <summary>
-        /// Event that is invoked when the scene is switched
-        /// </summary>
-        public event SceneSwitchedDelegate OnSceneSwitched;
 
         public event SceneEventDelegate OnSceneEvent;
-
-        /// <summary>
-        /// Event that is invoked when a local scene switch has started
-        /// </summary>
-        public event SceneSwitchStartedDelegate OnSceneSwitchStarted;
 
         /// <summary>
         /// Event that is invoked on the server when a client completes scene transition
@@ -139,7 +120,7 @@ namespace Unity.Netcode
 
         private MessageQueueContainer.MessageType m_MessageType = MessageQueueContainer.MessageType.SceneEvent;
         private NetworkChannel m_ChannelType = NetworkChannel.Internal;
-        private NetworkUpdateStage m_NetworkUpdateStage = NetworkUpdateStage.EarlyUpdate;
+        private NetworkUpdateStage m_NetworkUpdateStage = NetworkUpdateStage.PreUpdate;
 
         internal NetworkSceneManager(NetworkManager networkManager)
         {
@@ -459,22 +440,10 @@ namespace Unity.Netcode
         /// <param name="loadSceneMode">how the scene will be loaded</param>
         private void OnBeginSceneEvent(string sceneName, SceneSwitchProgress switchSceneProgress, LoadSceneMode loadSceneMode)
         {
-            // start loading the scene
-            // NSS TODO: This is a temporary place holder check to make sure we don't try to unload a scene loaded in single mode.
             var currentActiveScene = SceneManager.GetActiveScene();
-            AsyncOperation sceneLoad = SceneManager.LoadSceneAsync(sceneName, loadSceneMode);
-            sceneLoad.completed += (AsyncOperation asyncOp2) => { OnSceneLoaded(sceneName); };
-            switchSceneProgress.SetSceneLoadOperation(sceneLoad);
-
+            // Unload all additive scenes while making sure we don't try to unload the base scene ( loaded in single mode ).
             if (SceneEventData.LoadSceneMode == LoadSceneMode.Single)
             {
-                OnSceneEvent?.Invoke(new SceneEvent()
-                {
-                    SceneEventType = SceneEventData.SceneEventTypes.S2C_Event_Unload,
-                    LoadSceneMode = SceneEventData.LoadSceneMode,
-                    SceneName = SceneManager.GetActiveScene().name,
-                    ClientId = m_NetworkManager.ServerClientId
-                });
                 foreach (var additiveSceneName in m_ScenesLoaded)
                 {
                     if (currentActiveScene.name != additiveSceneName)
@@ -489,23 +458,12 @@ namespace Unity.Netcode
                     }
                 }
                 m_ScenesLoaded.Clear();
-
-
-                // NSS TODO: Make a single unified notification callback
-                OnSceneSwitchStarted?.Invoke(sceneLoad);
-
             }
-            else
-            {
-                if (!m_ScenesLoaded.Contains(sceneName))
-                {
-                    m_ScenesLoaded.Add(sceneName);
-                }
-                else
-                {
-                    throw new Exception($"{sceneName} is being loaded twice?!");
-                }
-            }
+
+            // Now start loading the scene
+            AsyncOperation sceneLoad = SceneManager.LoadSceneAsync(sceneName, loadSceneMode);
+            sceneLoad.completed += (AsyncOperation asyncOp2) => { OnSceneLoaded(sceneName); };
+            switchSceneProgress.SetSceneLoadOperation(sceneLoad);
 
             OnSceneEvent?.Invoke(new SceneEvent()
             {
@@ -543,6 +501,7 @@ namespace Unity.Netcode
                 {
                     if (currentActiveScene.name != loadedSceneName)
                     {
+                        Debug.Log($"Invoking unload scene event for {loadedSceneName}");
                         OnSceneEvent?.Invoke(new SceneEvent()
                         {
                             AsyncOperation = SceneManager.UnloadSceneAsync(loadedSceneName),
@@ -557,17 +516,6 @@ namespace Unity.Netcode
 
                 // Move ALL NetworkObjects to the temp scene
                 MoveObjectsToDontDestroyOnLoad();
-            }
-            else
-            {
-                if (!m_ScenesLoaded.Contains(sceneName))
-                {
-                    m_ScenesLoaded.Add(sceneName);
-                }
-                else
-                {
-                    throw new Exception($"{sceneName} is being loaded twice?!");
-                }
             }
 
             // The Condition: While a scene is asynchronously loaded in single loading scene mode, if any new NetworkObjects are spawned they need to be moved into the do not destroy temporary scene
@@ -589,12 +537,6 @@ namespace Unity.Netcode
                 SceneName = sceneName,
                 ClientId = m_NetworkManager.LocalClientId
             });
-
-
-            if (SceneEventData.LoadSceneMode == LoadSceneMode.Single)
-            {
-                OnSceneSwitchStarted?.Invoke(sceneLoad);
-            }
         }
 
         /// <summary>
@@ -606,7 +548,15 @@ namespace Unity.Netcode
             if (SceneEventData.LoadSceneMode == LoadSceneMode.Single)
             {
                 SceneManager.SetActiveScene(nextScene);
+            }
+
+            if (!m_ScenesLoaded.Contains(sceneName))
+            {
                 m_ScenesLoaded.Add(sceneName);
+            }
+            else
+            {
+                throw new Exception($"{sceneName} is being loaded twice?!");
             }
 
             //Get all NetworkObjects loaded by the scene
@@ -704,8 +654,6 @@ namespace Unity.Netcode
                 SceneName = GetSceneNameFromNetcodeSceneIndex(SceneEventData.SceneIndex),
                 ClientId = m_NetworkManager.ServerClientId
             });
-
-            OnSceneSwitched?.Invoke();
         }
 
         /// <summary>
@@ -735,9 +683,6 @@ namespace Unity.Netcode
                 SceneName = GetSceneNameFromNetcodeSceneIndex(SceneEventData.SceneIndex),
                 ClientId = m_NetworkManager.LocalClientId
             });
-
-
-            OnSceneSwitched?.Invoke();
         }
 
         /// <summary>
@@ -889,6 +834,15 @@ namespace Unity.Netcode
             if (loadSceneMode == LoadSceneMode.Single)
             {
                 SceneManager.SetActiveScene(nextScene);
+            }
+
+            if (!m_ScenesLoaded.Contains(sceneName))
+            {
+                m_ScenesLoaded.Add(sceneName);
+            }
+            else
+            {
+                throw new Exception($"{sceneName} is being loaded twice?!");
             }
 
             // Get all NetworkObjects loaded by the scene  (in-scene NetworkObjects)

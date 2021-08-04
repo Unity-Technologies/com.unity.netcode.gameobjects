@@ -1445,6 +1445,7 @@ GameObject:
   - component: {fileID: 1024114719}
   - component: {fileID: 1024114718}
   - component: {fileID: 1024114721}
+  - component: {fileID: 1024114722}
   m_Layer: 0
   m_Name: NetworkManager
   m_TagString: Untagged
@@ -1580,9 +1581,9 @@ MonoBehaviour:
   ServerWebsocketListenPort: 8887
   SupportWebsocket: 0
   Channels: []
-  UseMLAPIRelay: 0
-  MLAPIRelayAddress: 184.72.104.138
-  MLAPIRelayPort: 8888
+  UseNetcodeRelay: 0
+  NetcodeRelayAddress: 127.0.0.1
+  NetcodeRelayPort: 8888
   MessageSendMode: 0
 --- !u!4 &1024114720
 Transform:
@@ -1610,6 +1611,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0e6f8504d891fc44881b2d9703017d03, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &1024114722
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1024114717}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 71c52a32bd1c1c84691050b6d045ab4a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  LogToConsole: 1
+  TimeToLive: 10
 --- !u!1 &1113539278
 GameObject:
   m_ObjectHideFlags: 0
@@ -3371,6 +3386,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_ClientServerToggle: {fileID: 1588117327}
+  m_TrackSceneEvents: 1
+  m_LogSceneEventsToConsole: 1
 --- !u!114 &2107482023
 MonoBehaviour:
   m_ObjectHideFlags: 0
