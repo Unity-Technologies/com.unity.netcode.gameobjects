@@ -2,7 +2,7 @@ using System.IO;
 using UnityEngine;
 
 
-namespace Unity.Multiplayer.Netcode
+namespace Unity.Netcode
 {
     internal class InternalMessageHandler : IInternalMessageHandler
     {

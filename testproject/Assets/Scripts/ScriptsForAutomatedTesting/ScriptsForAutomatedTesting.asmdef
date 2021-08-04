@@ -1,17 +1,6 @@
 {
     "name": "ScriptsForAutomatedTesting",
-    "rootNamespace": "",
     "references": [
-        "GUID:753245531f1b64a6ea7491ec63a5947c",
-        "GUID:1491147abca9d7d4bb7105af628b223e"
-    ],
-    "includePlatforms": [],
-    "excludePlatforms": [],
-    "allowUnsafeCode": false,
-    "overrideReferences": false,
-    "precompiledReferences": [],
-    "autoReferenced": true,
-    "defineConstraints": [],
-    "versionDefines": [],
-    "noEngineReferences": false
+        "Unity.Netcode.Runtime"
+    ]
 }

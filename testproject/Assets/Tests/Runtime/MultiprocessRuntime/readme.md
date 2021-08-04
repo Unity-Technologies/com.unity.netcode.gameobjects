@@ -80,7 +80,7 @@ using UnityEngine.Profiling;
 using UnityEngine.TestTools;
 using static ExecuteStepInContext;
 
-namespace Unity.Multiplayer.Netcode.MultiprocessRuntimeTests
+namespace Unity.Netcode.MultiprocessRuntimeTests
 {
     public class DemoProcessTest : BaseMultiprocessTests
     {

@@ -8,7 +8,7 @@ using System.Diagnostics;
 using System.IO;
 using UnityEngine;
 
-namespace Unity.Multiplayer.Netcode
+namespace Unity.Netcode
 {
     // Improved version of NetworkWriter
     /// <summary>

@@ -4,7 +4,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEditorInternal;
 
-namespace Unity.Multiplayer.Netcode.Editor
+namespace Unity.Netcode.Editor
 {
     [CustomEditor(typeof(NetworkManager), true)]
     [CanEditMultipleObjects]

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 
-namespace Unity.Multiplayer.Netcode
+namespace Unity.Netcode
 {
     // Structure that acts as a key for a NetworkVariable
     // Allows telling which variable we're talking about.

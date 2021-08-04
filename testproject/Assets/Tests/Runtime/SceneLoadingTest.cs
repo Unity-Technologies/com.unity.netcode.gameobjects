@@ -4,7 +4,7 @@ using UnityEngine;
 using NUnit.Framework;
 using UnityEngine.TestTools;
 using UnityEngine.SceneManagement;
-using Unity.Multiplayer.Netcode;
+using Unity.Netcode;
 
 namespace TestProject.RuntimeTests
 {

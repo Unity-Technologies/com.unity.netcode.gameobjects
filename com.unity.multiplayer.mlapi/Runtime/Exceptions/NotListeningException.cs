@@ -1,6 +1,6 @@
 using System;
 
-namespace Unity.Multiplayer.Netcode
+namespace Unity.Netcode
 {
     /// <summary>
     /// Exception thrown when the operation require NetworkManager to be listening.

@@ -1,7 +1,7 @@
 using System.IO;
 using UnityEngine;
 
-namespace Unity.Multiplayer.Netcode.EditorTests
+namespace Unity.Netcode.EditorTests
 {
     internal class DummyMessageHandler : IInternalMessageHandler
     {

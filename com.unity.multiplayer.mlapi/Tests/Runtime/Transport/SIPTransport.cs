@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
-using Unity.Multiplayer.Netcode.Editor;
+using Unity.Netcode.Editor;
 using UnityEngine;
 
-namespace Unity.Multiplayer.Netcode.RuntimeTests
+namespace Unity.Netcode.RuntimeTests
 {
     /// <summary>
     /// SIPTransport (SIngleProcessTransport)
