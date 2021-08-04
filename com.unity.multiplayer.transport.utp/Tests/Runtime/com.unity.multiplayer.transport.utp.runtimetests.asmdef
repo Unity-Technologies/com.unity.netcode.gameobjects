@@ -5,7 +5,9 @@
         "Unity.Netcode.Runtime",
         "Unity.Networking.Transport"
     ],
-    "includePlatforms": [],
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ],
     "defineConstraints": [
         "UNITY_INCLUDE_TESTS"
     ]
