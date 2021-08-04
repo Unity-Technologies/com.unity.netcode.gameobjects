@@ -3,15 +3,15 @@ using System.IO;
 using UnityEditor;
 using UnityEngine;
 
-namespace Unity.Multiplayer.Netcode.Editor
+namespace Unity.Netcode.Editor
 {
-    public class MLAPIProfiler : EditorWindow
+    public class NetcodeProfiler : EditorWindow
     {
 #if !UNITY_2020_2_OR_NEWER
-        [MenuItem("Window/MLAPI Profiler")]
+        [MenuItem("Window/Netcode Profiler")]
         public static void ShowWindow()
         {
-            GetWindow<MLAPIProfiler>();
+            GetWindow<NetcodeProfiler>();
         }
 #endif
 

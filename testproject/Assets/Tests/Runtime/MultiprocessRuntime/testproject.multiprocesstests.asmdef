@@ -1,0 +1,11 @@
+{
+    "name": "TestProject.MultiprocessTests",
+    "references": [
+        "Unity.Netcode.Runtime",
+        "ScriptsForAutomatedTesting",
+        "Unity.PerformanceTesting"
+    ],
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ]
+}

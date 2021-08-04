@@ -5,7 +5,7 @@ using NUnit.Framework;
 using UnityEngine;
 using Random = System.Random;
 
-namespace Unity.Multiplayer.Netcode.EditorTests
+namespace Unity.Netcode.EditorTests
 {
     public class NetworkTimeTests
     {

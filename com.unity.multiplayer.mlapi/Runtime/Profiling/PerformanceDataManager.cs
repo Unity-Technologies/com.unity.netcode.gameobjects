@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Unity.Multiplayer.Netcode
+namespace Unity.Netcode
 {
     internal static class PerformanceDataManager
     {

@@ -1,4 +1,4 @@
-using Unity.Multiplayer.Netcode;
+using Unity.Netcode;
 using NUnit.Framework;
 using UnityEngine;
 

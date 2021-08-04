@@ -1,24 +1,14 @@
 {
     "name": "Unity.Multiplayer.Transport.UTP.RuntimeTests",
-    "rootNamespace": "Unity.Multiplayer.Netcode.UTP.RuntimeTests",
+    "rootNamespace": "Unity.Netcode.UTP.RuntimeTests",
     "references": [
-        "Unity.Multiplayer.MLAPI.Runtime",
-        "UnityEngine.TestRunner",
-        "UnityEditor.TestRunner",
-        "Unity MLAPI Transport",
+        "Unity.Netcode.Runtime",
         "Unity.Networking.Transport"
     ],
-    "includePlatforms": [],
-    "excludePlatforms": [],
-    "allowUnsafeCode": false,
-    "overrideReferences": true,
-    "precompiledReferences": [
-        "nunit.framework.dll"
+    "optionalUnityReferences": [
+        "TestAssemblies"
     ],
-    "autoReferenced": false,
     "defineConstraints": [
         "UNITY_INCLUDE_TESTS"
-    ],
-    "versionDefines": [],
-    "noEngineReferences": false
+    ]
 }

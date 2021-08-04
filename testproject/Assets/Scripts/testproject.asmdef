@@ -1,8 +1,8 @@
 {
     "name": "TestProject",
     "references": [
-        "Unity.Multiplayer.MLAPI.Runtime",
-        "Unity.Multiplayer.MLAPI.Editor",
-        "Unity.Multiplayer.MLAPI.Prototyping"
+        "Unity.Netcode.Runtime",
+        "Unity.Netcode.Editor",
+        "Unity.Netcode.Prototyping"
     ]
 }

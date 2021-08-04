@@ -5,7 +5,7 @@ using System.Reflection;
 using System.Linq;
 using System.IO;
 
-namespace Unity.Multiplayer.Netcode
+namespace Unity.Netcode
 {
     /// <summary>
     /// The base class to override to write network code. Inherits MonoBehaviour

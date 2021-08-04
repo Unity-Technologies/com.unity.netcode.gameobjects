@@ -1,0 +1,12 @@
+{
+    "name": "Unity.Netcode.Transport.EditorTests",
+    "references": [
+        "Unity.Netcode.Runtime"
+    ],
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ]
+}

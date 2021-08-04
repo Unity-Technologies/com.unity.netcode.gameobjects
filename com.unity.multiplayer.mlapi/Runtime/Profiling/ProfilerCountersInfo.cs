@@ -3,7 +3,7 @@ using UnityEngine;
 using Unity.Profiling;
 #endif
 
-namespace Unity.Multiplayer.Netcode
+namespace Unity.Netcode
 {
     internal static class ProfilerCountersInfo
     {
@@ -60,7 +60,7 @@ namespace Unity.Multiplayer.Netcode
                 ProfilerMarkerDataUnit.Count, ProfilerCounterOptions.FlushOnEndOfFrame | ProfilerCounterOptions.ResetToZeroOnFlush);
 
         [RuntimeInitializeOnLoadMethod]
-        private static void RegisterMLAPIPerformanceEvent()
+        private static void RegisterNetcodePerformanceEvent()
         {
             InitializeCounters();
             ProfilerNotifier.OnPerformanceDataEvent += OnPerformanceTickData;

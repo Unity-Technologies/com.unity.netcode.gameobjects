@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Unity.Multiplayer.Netcode
+namespace Unity.Netcode
 {
     public enum NetworkChannel : byte
     {
@@ -44,7 +44,7 @@ namespace Unity.Multiplayer.Netcode
         public abstract ulong ServerClientId { get; }
 
         /// <summary>
-        /// Gets a value indicating whether this <see cref="T:MLAPI.Transports.Transport"/> is supported in the current runtime context.
+        /// Gets a value indicating whether this <see cref="T:Transport"/> is supported in the current runtime context.
         /// This is used by multiplex adapters.
         /// </summary>
         /// <value><c>true</c> if is supported; otherwise, <c>false</c>.</value>
@@ -57,7 +57,7 @@ namespace Unity.Multiplayer.Netcode
             m_ChannelsCache = null;
         }
 
-        public TransportChannel[] MLAPI_CHANNELS
+        public TransportChannel[] NETCODE_CHANNELS
         {
             get
             {
@@ -67,16 +67,16 @@ namespace Unity.Multiplayer.Netcode
 
                     OnChannelRegistration?.Invoke(transportChannels);
 
-                    m_ChannelsCache = new TransportChannel[MLAPI_INTERNAL_CHANNELS.Length + transportChannels.Count];
+                    m_ChannelsCache = new TransportChannel[NETCODE_INTERNAL_CHANNELS.Length + transportChannels.Count];
 
-                    for (int i = 0; i < MLAPI_INTERNAL_CHANNELS.Length; i++)
+                    for (int i = 0; i < NETCODE_INTERNAL_CHANNELS.Length; i++)
                     {
-                        m_ChannelsCache[i] = MLAPI_INTERNAL_CHANNELS[i];
+                        m_ChannelsCache[i] = NETCODE_INTERNAL_CHANNELS[i];
                     }
 
                     for (int i = 0; i < transportChannels.Count; i++)
                     {
-                        m_ChannelsCache[i + MLAPI_INTERNAL_CHANNELS.Length] = transportChannels[i];
+                        m_ChannelsCache[i + NETCODE_INTERNAL_CHANNELS.Length] = transportChannels[i];
                     }
                 }
 
@@ -85,10 +85,10 @@ namespace Unity.Multiplayer.Netcode
         }
 
         /// <summary>
-        /// The channels the MLAPI will use when sending internal messages.
+        /// The channels the Netcode will use when sending internal messages.
         /// </summary>
 #pragma warning disable IDE1006 // disable naming rule violation check
-        private readonly TransportChannel[] MLAPI_INTERNAL_CHANNELS =
+        private readonly TransportChannel[] NETCODE_INTERNAL_CHANNELS =
 #pragma warning restore IDE1006 // restore naming rule violation check
         {
             new TransportChannel(NetworkChannel.Internal, NetworkDelivery.ReliableSequenced),
