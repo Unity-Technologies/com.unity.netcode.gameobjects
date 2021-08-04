@@ -6,7 +6,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 
 
-namespace Unity.Multiplayer.Netcode
+namespace Unity.Netcode
 {
     [Serializable]
     public class SceneEventData : IDisposable

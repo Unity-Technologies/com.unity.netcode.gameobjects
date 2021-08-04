@@ -38,9 +38,6 @@ namespace TestProject.ManualTests
             {
                 m_ClientServerToggle.SetActive(false);
             }
-
-            Unity.Multiplayer.Netcode.Transports.UNET.UNetTransport.ProfilerEnabled = true;
-
         }
 
         public override void OnNetworkSpawn()
