@@ -6,7 +6,7 @@ using Unity.CompilationPipeline.Common.Diagnostics;
 using Unity.CompilationPipeline.Common.ILPostProcessing;
 using ILPPInterface = Unity.CompilationPipeline.Common.ILPostProcessing.ILPostProcessor;
 
-namespace Unity.Multiplayer.Netcode.Editor.CodeGen
+namespace Unity.Netcode.Editor.CodeGen
 {
     internal sealed class RuntimeAccessModifiersILPP : ILPPInterface
     {

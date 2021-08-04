@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-namespace Unity.Multiplayer.Netcode
+namespace Unity.Netcode
 {
     /// <summary>
     /// MessageQueueContainer
@@ -207,7 +207,7 @@ namespace Unity.Multiplayer.Netcode
 
             if (!m_QueueHistory.ContainsKey(queueType))
             {
-                Debug.LogError($"You must initialize the {nameof(MessageQueueContainer)} before using Unity.Multiplayer.Netcode!");
+                Debug.LogError($"You must initialize the {nameof(MessageQueueContainer)} before using Unity.Netcode!");
                 return;
             }
 
