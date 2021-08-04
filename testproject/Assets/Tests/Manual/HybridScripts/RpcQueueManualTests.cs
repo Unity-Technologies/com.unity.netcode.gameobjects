@@ -164,7 +164,7 @@ namespace TestProject.ManualTests
                 m_BeginTest = false;
                 m_MesageSendDelay = 0.01f;
 
-                var gameObject = GameObject.Find("NetworkManager");
+                var gameObject = GameObject.Find("[NetworkManager]");
                 if (gameObject != null)
                 {
                     gameObject.SetActive(false);
