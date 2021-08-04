@@ -77,7 +77,7 @@ namespace Unity.Netcode
         private bool m_TickIndex;
 
         // indexed by ObjectId
-        internal Dictionary<ulong, ushort> m_TickApplied = new Dictionary<ulong, ushort>();
+        internal Dictionary<ulong, ushort> TickApplied = new Dictionary<ulong, ushort>();
 
         /// <summary>
         /// Constructor
@@ -191,10 +191,10 @@ namespace Unity.Netcode
             // remember which spawn we sent this connection with which sequence number
             // that way, upon ack, we can track what is being ack'ed
             ClientData.SentSpawn s;
-            s.objectId = spawn.NetworkObjectId;
-            s.tick = spawn.TickWritten;
-            s.sequenceNumber = clientData.m_SequenceNumber;
-            clientData.m_SentSpawns.Add(s);
+            s.ObjectId = spawn.NetworkObjectId;
+            s.Tick = spawn.TickWritten;
+            s.SequenceNumber = clientData.SequenceNumber;
+            clientData.SentSpawns.Add(s);
 
             writer.WriteUInt64(spawn.NetworkObjectId);
             writer.WriteUInt64(spawn.GlobalObjectIdHash);
@@ -347,13 +347,13 @@ namespace Unity.Netcode
             {
                 command = ReadSpawn(reader);
 
-                if (m_TickApplied.ContainsKey(command.NetworkObjectId) &&
-                    command.TickWritten <= m_TickApplied[command.NetworkObjectId])
+                if (TickApplied.ContainsKey(command.NetworkObjectId) &&
+                    command.TickWritten <= TickApplied[command.NetworkObjectId])
                 {
                     continue;
                 }
 
-                m_TickApplied[command.NetworkObjectId] = command.TickWritten;
+                TickApplied[command.NetworkObjectId] = command.TickWritten;
 
                 // what is a soft sync ?
                 // what are spawn payloads ?
@@ -375,27 +375,27 @@ namespace Unity.Netcode
             ushort ackSequence = reader.ReadUInt16();
 
             // look through the spawns sent
-            foreach (var sent in clientData.m_SentSpawns)
+            foreach (var sent in clientData.SentSpawns)
             {
                 // for those with the sequence number being ack'ed
-                if (sent.sequenceNumber == ackSequence)
+                if (sent.SequenceNumber == ackSequence)
                 {
                     // remember the tick
-                    if (!clientData.m_SpawnAck.ContainsKey(sent.objectId))
+                    if (!clientData.SpawnAck.ContainsKey(sent.ObjectId))
                     {
-                        clientData.m_SpawnAck.Add(sent.objectId, sent.tick);
+                        clientData.SpawnAck.Add(sent.ObjectId, sent.Tick);
                     }
                     else
                     {
-                        clientData.m_SpawnAck[sent.objectId] = sent.tick;
+                        clientData.SpawnAck[sent.ObjectId] = sent.Tick;
                     }
 
                     // check the spawn commands, find it, and if this is the last connection
                     // to ack, let's remove it
                     for (var i = 0; i < NumSpawns; i++)
                     {
-                        if (Spawns[i].TickWritten == sent.tick &&
-                            Spawns[i].NetworkObjectId == sent.objectId)
+                        if (Spawns[i].TickWritten == sent.Tick &&
+                            Spawns[i].NetworkObjectId == sent.ObjectId)
                         {
                             Spawns[i].TargetClientIds.Remove(clientId);
 
@@ -439,28 +439,28 @@ namespace Unity.Netcode
     {
         internal struct SentSpawn
         {
-            internal ulong sequenceNumber;
-            internal ulong objectId;
-            internal int tick;
+            internal ulong SequenceNumber;
+            internal ulong ObjectId;
+            internal int Tick;
         }
 
-        internal ushort m_SequenceNumber = 0; // the next sequence number to use for this client
-        internal ushort m_LastReceivedSequence = 0; // the last sequence number received by this client
+        internal ushort SequenceNumber = 0; // the next sequence number to use for this client
+        internal ushort LastReceivedSequence = 0; // the last sequence number received by this client
 
         // by objectId
         // which spawns did this connection ack'ed ?
-        internal Dictionary<ulong, int> m_SpawnAck = new Dictionary<ulong, int>();
+        internal Dictionary<ulong, int> SpawnAck = new Dictionary<ulong, int>();
 
         // list of spawn commands we sent, with sequence number
         // need to manage acknowledgements
-        internal List<SentSpawn> m_SentSpawns = new List<SentSpawn>();
+        internal List<SentSpawn> SentSpawns = new List<SentSpawn>();
     }
 
     public class SnapshotSystem : INetworkUpdateSystem, IDisposable
     {
         // temporary, debugging sentinels
-        internal const ushort k_SentinelBefore = 0x4246;
-        internal const ushort k_SentinelAfter = 0x89CE;
+        internal const ushort SentinelBefore = 0x4246;
+        internal const ushort SentinelAfter = 0x89CE;
 
         private NetworkManager m_NetworkManager = NetworkManager.Singleton;
         private Snapshot m_Snapshot = new Snapshot(NetworkManager.Singleton, false);
@@ -558,7 +558,7 @@ namespace Unity.Netcode
                 m_ConnectionRtts.Add(clientId, new ConnectionRtt());
             }
 
-            m_ConnectionRtts[clientId].NotifySend(m_ClientData[clientId].m_SequenceNumber, Time.unscaledTime);
+            m_ConnectionRtts[clientId].NotifySend(m_ClientData[clientId].SequenceNumber, Time.unscaledTime);
 
             // Send the entry index and the buffer where the variables are serialized
 
@@ -570,7 +570,7 @@ namespace Unity.Netcode
             {
                 using (var nonNullContext = (InternalCommandContext)context)
                 {
-                    var sequence = m_ClientData[clientId].m_SequenceNumber;
+                    var sequence = m_ClientData[clientId].SequenceNumber;
 
                     nonNullContext.NetworkWriter.WriteInt32Packed(m_CurrentTick);
                     nonNullContext.NetworkWriter.WriteUInt16(sequence);
@@ -579,14 +579,14 @@ namespace Unity.Netcode
 
                     using (var writer = PooledNetworkWriter.Get(buffer))
                     {
-                        writer.WriteUInt16(k_SentinelBefore);
+                        writer.WriteUInt16(SentinelBefore);
                         WriteBuffer(buffer);
                         WriteIndex(buffer);
                         WriteSpawns(buffer, clientId);
                         WriteAcks(buffer, clientId);
-                        writer.WriteUInt16(k_SentinelAfter);
+                        writer.WriteUInt16(SentinelAfter);
 
-                        m_ClientData[clientId].m_SequenceNumber++;
+                        m_ClientData[clientId].SequenceNumber++;
                     }
                 }
             }
@@ -606,9 +606,9 @@ namespace Unity.Netcode
                     bool skip = false;
 
                     // todo : check that this condition is the same as the clientId one, then remove id :-)
-                    if (m_ClientData[clientId].m_SpawnAck.ContainsKey(m_Snapshot.Spawns[i].NetworkObjectId))
+                    if (m_ClientData[clientId].SpawnAck.ContainsKey(m_Snapshot.Spawns[i].NetworkObjectId))
                     {
-                        if (m_ClientData[clientId].m_SpawnAck[m_Snapshot.Spawns[i].NetworkObjectId] ==
+                        if (m_ClientData[clientId].SpawnAck[m_Snapshot.Spawns[i].NetworkObjectId] ==
                             m_Snapshot.Spawns[i].TickWritten)
                         {
                             skip = true;
@@ -638,7 +638,7 @@ namespace Unity.Netcode
         {
             using (var writer = PooledNetworkWriter.Get(buffer))
             {
-                writer.WriteUInt16(m_ClientData[clientId].m_LastReceivedSequence);
+                writer.WriteUInt16(m_ClientData[clientId].LastReceivedSequence);
             }
         }
 
@@ -753,10 +753,10 @@ namespace Unity.Netcode
                 var sequence = reader.ReadUInt16();
 
                 // todo: check we didn't miss any and deal with gaps
-                m_ClientData[clientId].m_LastReceivedSequence = sequence;
+                m_ClientData[clientId].LastReceivedSequence = sequence;
 
                 var sentinel = reader.ReadUInt16();
-                if (sentinel != k_SentinelBefore)
+                if (sentinel != SentinelBefore)
                 {
                     Debug.Log("JEFF Critical : snapshot integrity (before)");
                 }
@@ -770,7 +770,7 @@ namespace Unity.Netcode
                 m_ConnectionRtts[clientId].NotifyAck(ackSequence, Time.unscaledTime);
 
                 sentinel = reader.ReadUInt16();
-                if (sentinel != k_SentinelAfter)
+                if (sentinel != SentinelAfter)
                 {
                     Debug.Log("JEFF Critical : snapshot integrity (after)");
                 }
