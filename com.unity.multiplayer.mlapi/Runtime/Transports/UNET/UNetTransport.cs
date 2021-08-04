@@ -42,9 +42,9 @@ namespace Unity.Netcode.Transports.UNET
         public List<UNetChannel> Channels = new List<UNetChannel>();
 
         // Relay
-        public bool UseMLAPIRelay = false;
-        public string MLAPIRelayAddress = "184.72.104.138";
-        public int MLAPIRelayPort = 8888;
+        public bool UseNetcodeRelay = false;
+        public string NetcodeRelayAddress = "127.0.0.1";
+        public int NetcodeRelayPort = 8888;
 
         public SendMode MessageSendMode = SendMode.Immediately;
 
@@ -59,7 +59,7 @@ namespace Unity.Netcode.Transports.UNET
         private int m_ServerHostId;
 
         private SocketTask m_ConnectTask;
-        public override ulong ServerClientId => GetMLAPIClientId(0, 0, true);
+        public override ulong ServerClientId => GetNetcodeClientId(0, 0, true);
 
 #if UNITY_EDITOR
         private void OnValidate()
@@ -177,7 +177,7 @@ namespace Unity.Netcode.Transports.UNET
         {
             var eventType = RelayTransport.Receive(out int hostId, out int connectionId, out int channelId, m_MessageBuffer, m_MessageBuffer.Length, out int receivedSize, out byte error);
 
-            clientId = GetMLAPIClientId((byte)hostId, (ushort)connectionId, false);
+            clientId = GetNetcodeClientId((byte)hostId, (ushort)connectionId, false);
             receiveTime = Time.realtimeSinceStartup;
 
             var networkError = (NetworkError)error;
@@ -303,7 +303,7 @@ namespace Unity.Netcode.Transports.UNET
 
             if (SupportWebsocket)
             {
-                if (!UseMLAPIRelay)
+                if (!UseNetcodeRelay)
                 {
                     int websocketHostId = UnityEngine.Networking.NetworkTransport.AddWebsocketHost(topology, ServerWebsocketListenPort);
                 }
@@ -337,7 +337,7 @@ namespace Unity.Netcode.Transports.UNET
         {
             GetUNetConnectionDetails(clientId, out byte hostId, out ushort connectionId);
 
-            if (UseMLAPIRelay)
+            if (UseNetcodeRelay)
             {
                 return 0;
             }
@@ -365,7 +365,7 @@ namespace Unity.Netcode.Transports.UNET
             UnityEngine.Networking.NetworkTransport.Init();
         }
 
-        public ulong GetMLAPIClientId(byte hostId, ushort connectionId, bool isServer)
+        public ulong GetNetcodeClientId(byte hostId, ushort connectionId, bool isServer)
         {
             if (isServer)
             {
@@ -396,12 +396,12 @@ namespace Unity.Netcode.Transports.UNET
             var connectionConfig = new ConnectionConfig();
 
             // MLAPI built-in channels
-            for (int i = 0; i < MLAPI_CHANNELS.Length; i++)
+            for (int i = 0; i < NETCODE_CHANNELS.Length; i++)
             {
-                int channelId = AddMLAPIChannel(MLAPI_CHANNELS[i].Delivery, connectionConfig);
+                int channelId = AddNetcodeChannel(NETCODE_CHANNELS[i].Delivery, connectionConfig);
 
-                m_ChannelIdToName.Add(channelId, MLAPI_CHANNELS[i].Channel);
-                m_ChannelNameToId.Add(MLAPI_CHANNELS[i].Channel, channelId);
+                m_ChannelIdToName.Add(channelId, NETCODE_CHANNELS[i].Channel);
+                m_ChannelNameToId.Add(NETCODE_CHANNELS[i].Channel, channelId);
             }
 
             // Custom user-added channels
@@ -423,7 +423,7 @@ namespace Unity.Netcode.Transports.UNET
             return connectionConfig;
         }
 
-        public int AddMLAPIChannel(NetworkDelivery type, ConnectionConfig config)
+        public int AddNetcodeChannel(NetworkDelivery type, ConnectionConfig config)
         {
             switch (type)
             {
@@ -475,9 +475,9 @@ namespace Unity.Netcode.Transports.UNET
 
         private void UpdateRelay()
         {
-            RelayTransport.Enabled = UseMLAPIRelay;
-            RelayTransport.RelayAddress = MLAPIRelayAddress;
-            RelayTransport.RelayPort = (ushort)MLAPIRelayPort;
+            RelayTransport.Enabled = UseNetcodeRelay;
+            RelayTransport.RelayAddress = NetcodeRelayAddress;
+            RelayTransport.RelayPort = (ushort)NetcodeRelayPort;
         }
 
         public void BeginNewTick()
