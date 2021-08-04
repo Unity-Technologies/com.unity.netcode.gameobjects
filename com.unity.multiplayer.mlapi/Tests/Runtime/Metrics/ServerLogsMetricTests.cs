@@ -1,3 +1,4 @@
+#if MULTIPLAYER_TOOLS
 using System;
 using System.Collections;
 using System.Linq;
@@ -51,3 +52,4 @@ namespace MLAPI.RuntimeTests.Metrics
         }
     }
 }
+#endif

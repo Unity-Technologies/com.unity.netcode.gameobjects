@@ -1,3 +1,4 @@
+#if MULTIPLAYER_TOOLS
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -99,9 +100,9 @@ namespace MLAPI.RuntimeTests.Metrics
             yield return new WaitForSeconds(0.2f);
 
             var waitForMetricEvent = new WaitForMetricValues<ObjectDestroyedEvent>(ClientMetrics.Dispatcher, MetricNames.ObjectDestroyedReceived);
-            
+
             Server.SpawnManager.OnDespawnObject(m_NewNetworkObject, true);
-            
+
             yield return waitForMetricEvent.WaitForMetricsReceived();
 
             var objectDestroyedReceivedMetricValues = waitForMetricEvent.AssertMetricValuesHaveBeenFound();
@@ -195,3 +196,4 @@ namespace MLAPI.RuntimeTests.Metrics
         }
     }
 }
+#endif
