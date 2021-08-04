@@ -1,7 +1,6 @@
 {
   "registry": "https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-candidates",
   "dependencies": {
-    "com.unity.dummy.package": "file:../../dummy_package",
     "com.unity.test-framework": "1.1.26",
     "com.unity.multiplayer.mlapi": "file:../../com.unity.multiplayer.mlapi",
     "com.unity.multiplayer.transport.utp": "file:../../com.unity.multiplayer.transport.utp",
