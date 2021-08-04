@@ -1,9 +1,8 @@
 using System;
-using MLAPI.Logging;
 
-namespace MLAPI.Profiling
+namespace Unity.Netcode
 {
-    public static class ProfilerNotifier
+    internal static class ProfilerNotifier
     {
         public delegate void PerformanceDataEventHandler(PerformanceTickData profilerData);
 

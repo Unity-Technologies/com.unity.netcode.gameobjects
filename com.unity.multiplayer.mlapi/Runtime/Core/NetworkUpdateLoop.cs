@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.LowLevel;
 using UnityEngine.PlayerLoop;
 
-namespace MLAPI
+namespace Unity.Netcode
 {
     /// <summary>
     /// Defines the required interface of a network update system being executed by the network update loop.

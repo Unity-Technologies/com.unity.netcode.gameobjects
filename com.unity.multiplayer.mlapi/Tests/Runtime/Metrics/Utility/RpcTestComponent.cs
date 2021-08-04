@@ -1,7 +1,6 @@
 ﻿using System;
-using MLAPI.Messaging;
 
-namespace MLAPI.RuntimeTests.Metrics.Utility
+namespace Unity.Netcode.RuntimeTests
 {
     public class RpcTestComponent : NetworkBehaviour
     {

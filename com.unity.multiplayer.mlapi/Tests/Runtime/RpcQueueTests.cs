@@ -4,9 +4,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.TestTools;
 using NUnit.Framework;
-using MLAPI.Messaging;
 
-namespace MLAPI.RuntimeTests
+namespace Unity.Netcode.RuntimeTests
 {
     /// <summary>
     /// The RpcQueue unit tests validate:
@@ -138,7 +137,7 @@ namespace MLAPI.RuntimeTests
                 // Increment our offset into our randomly generated data for next entry;
                 indexOffset = (i * messageChunkSize) % maximumOffsetValue;
 
-                var writer = rpcQueueContainer.BeginAddQueueItemToFrame(MessageQueueContainer.MessageType.ServerRpc, Time.realtimeSinceStartup, Transports.NetworkChannel.DefaultMessage,
+                var writer = rpcQueueContainer.BeginAddQueueItemToFrame(MessageQueueContainer.MessageType.ServerRpc, Time.realtimeSinceStartup, NetworkChannel.DefaultMessage,
                         senderNetworkId, psuedoClients, MessageQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
 
 
@@ -162,7 +161,7 @@ namespace MLAPI.RuntimeTests
                 Assert.AreEqual(currentQueueItem.NetworkId, senderNetworkId);
                 Assert.AreEqual(currentQueueItem.MessageType, MessageQueueContainer.MessageType.ServerRpc);
                 Assert.AreEqual(currentQueueItem.UpdateStage, NetworkUpdateStage.PostLateUpdate);
-                Assert.AreEqual(currentQueueItem.NetworkChannel, Transports.NetworkChannel.DefaultMessage);
+                Assert.AreEqual(currentQueueItem.NetworkChannel, NetworkChannel.DefaultMessage);
 
                 // Validate the data in the queue
                 Assert.IsTrue(NetworkManagerHelper.BuffersMatch(currentQueueItem.MessageData.Offset, messageChunkSize, currentQueueItem.MessageData.Array, randomGeneratedDataArray));

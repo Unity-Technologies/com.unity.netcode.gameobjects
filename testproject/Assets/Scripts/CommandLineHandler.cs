@@ -2,8 +2,8 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using MLAPI;
-using MLAPI.Transports.UNET;
+using Unity.Netcode;
+using Unity.Netcode.Transports.UNET;
 
 
 /// <summary>
@@ -26,14 +26,14 @@ public class CommandLineProcessor
     public CommandLineProcessor(string[] args)
     {
         try
-        {        
-            if(s_Singleton != null)
+        {
+            if (s_Singleton != null)
             {
                 Debug.LogError($"More than one {nameof(CommandLineProcessor)} has been instantiated!");
                 throw new Exception();
             }
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             Debug.LogError($"Stack Trace: {ex.StackTrace}");
         }
@@ -62,13 +62,13 @@ public class CommandLineProcessor
         {
             switch (mlapiValue)
             {
-                case "server":                   
+                case "server":
                 case "host":
                 case "client":
-                {
+                    {
 
-                    return true;
-                }
+                        return true;
+                    }
             }
         }
         return false;
@@ -129,7 +129,7 @@ public class CommandLineProcessor
 
     private void StartSceneSwitch()
     {
-        if(m_SceneToLoad != string.Empty)
+        if (m_SceneToLoad != string.Empty)
         {
             SceneManager.sceneLoaded += SceneManager_sceneLoaded;
             SceneManager.LoadSceneAsync(m_SceneToLoad, LoadSceneMode.Single);
@@ -149,7 +149,7 @@ public class CommandLineProcessor
                 if (m_ConnectionModeScript)
                 {
                     m_ConnectionModeScript.SetCommandLineHandler(this);
-         
+
                     return;
                 }
             }
@@ -192,7 +192,7 @@ public class CommandLineProcessor
         else
         {
             NetworkManager.Singleton.StartClient();
-        }       
+        }
     }
 
     private void SetTransportAddress(string address)
@@ -228,10 +228,10 @@ public class CommandLineHandler : MonoBehaviour
     private static CommandLineProcessor s_CommandLineProcessorInstance;
     private void Start()
     {
-        if(s_CommandLineProcessorInstance == null)
+        if (s_CommandLineProcessorInstance == null)
         {
             s_CommandLineProcessorInstance = new CommandLineProcessor(Environment.GetCommandLineArgs());
         }
-        
+
     }
 }

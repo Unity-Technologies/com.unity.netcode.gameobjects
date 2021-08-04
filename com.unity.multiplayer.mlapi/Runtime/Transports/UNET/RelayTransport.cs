@@ -6,7 +6,7 @@ using System.Net;
 using UnityEngine;
 using UnityEngine.Networking;
 
-namespace MLAPI.Transports.UNET
+namespace Unity.Netcode.Transports.UNET
 {
     public static class RelayTransport
     {
@@ -519,7 +519,7 @@ namespace MLAPI.Transports.UNET
                     {
                         if ((NetworkError)error == NetworkError.CRCMismatch)
                         {
-                            Debug.LogError("[MLAPI.Relay] The MLAPI Relay detected a CRC mismatch. This could be due to the maxClients or other connectionConfig settings not being the same");
+                            Debug.LogError("[Netcode.Relay] The MLAPI Relay detected a CRC mismatch. This could be due to the maxClients or other connectionConfig settings not being the same");
                         }
 
                         return NetworkEventType.DisconnectEvent;

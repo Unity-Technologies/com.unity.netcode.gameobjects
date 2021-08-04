@@ -1,11 +1,8 @@
 using System.Collections.Generic;
 using UnityEngine;
-using MLAPI.NetworkVariable.Collections;
-using MLAPI.Serialization.Pooled;
 using NUnit.Framework;
 
-
-namespace MLAPI.RuntimeTests
+namespace Unity.Netcode.RuntimeTests
 {
     public class NetworkObjectSceneSerializationTests
     {
@@ -54,7 +51,7 @@ namespace MLAPI.RuntimeTests
 
                     invalidNetworkObjects.Add(gameObject);
 
-                    // Serialize the invalid NetworkObject 
+                    // Serialize the invalid NetworkObject
                     networkObject.SerializeSceneObject(writer, 0);
 
                     Debug.Log($"Invalid {nameof(NetworkObject)} Size {pooledBuffer.Position - invalidNetworkObjectOffsets[invalidNetworkObjectOffsets.Count - 1]}");
@@ -104,7 +101,7 @@ namespace MLAPI.RuntimeTests
                     invalidNetworkObjectOffsets.RemoveAt(0);
 
                     // Turn off Network Logging to avoid other errors that we know will happen after the below LogAssert.Expect message occurs.
-                    NetworkManager.Singleton.LogLevel = Logging.LogLevel.Nothing;
+                    NetworkManager.Singleton.LogLevel = LogLevel.Nothing;
 
                     // Trap for this specific error message so we don't make Test Runner think we failed (it will fail on Debug.LogError)
                     UnityEngine.TestTools.LogAssert.Expect(LogType.Error, $"Failed to spawn {nameof(NetworkObject)} for Hash {invalidNetworkObjectIdCount[invalidNetworkObjectCount]}.");
@@ -161,7 +158,6 @@ namespace MLAPI.RuntimeTests
             NetworkManagerHelper.ShutdownNetworkManager();
         }
     }
-
 
     /// <summary>
     /// A simple test class that will provide varying NetworkBuffer stream sizes

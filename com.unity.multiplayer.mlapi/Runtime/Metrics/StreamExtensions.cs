@@ -1,6 +1,6 @@
 ﻿using System.IO;
 
-namespace MLAPI.Metrics
+namespace Unity.Netcode
 {
     public static class StreamExtensions
     {

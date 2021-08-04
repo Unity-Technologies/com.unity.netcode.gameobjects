@@ -1,6 +1,6 @@
 using System;
 
-namespace MLAPI.Exceptions
+namespace Unity.Netcode
 {
     /// <summary>
     /// Exception thrown when a visibility change fails

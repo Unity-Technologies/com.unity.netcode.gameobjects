@@ -1,8 +1,6 @@
 using System;
-using MLAPI.Messaging;
-using MLAPI.Serialization;
 
-namespace MLAPI.Metrics
+namespace Unity.Netcode
 {
     internal struct BufferSizeCapture
     {
@@ -17,14 +15,14 @@ namespace MLAPI.Metrics
             m_InitialLength = buffer.Length;
             m_PreviousLength = m_InitialLength;
         }
-        
+
         public long Flush()
         {
             var currentLength = m_Buffer.Length;
             var segmentLength = currentLength - m_PreviousLength + m_InitialLength;
-            
+
             m_PreviousLength = currentLength;
-            
+
             return segmentLength;
         }
     }

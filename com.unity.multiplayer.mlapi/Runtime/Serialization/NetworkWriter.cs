@@ -6,10 +6,9 @@
 using System;
 using System.Diagnostics;
 using System.IO;
-using MLAPI.Reflection;
 using UnityEngine;
 
-namespace MLAPI.Serialization
+namespace Unity.Netcode
 {
     // Improved version of NetworkWriter
     /// <summary>
@@ -234,7 +233,7 @@ namespace MLAPI.Serialization
             }
 
 
-            throw new ArgumentException($"{nameof(NetworkWriter)} cannot write type {value.GetType().Namespace}");
+            throw new ArgumentException($"{nameof(NetworkWriter)} cannot write type {value.GetType()}");
         }
 
         /// <summary>

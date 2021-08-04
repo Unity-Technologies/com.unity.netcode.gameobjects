@@ -3,7 +3,7 @@ using UnityEngine;
 using NUnit.Framework;
 using UnityEngine.TestTools;
 using UnityEngine.SceneManagement;
-using MLAPI;
+using Unity.Netcode;
 
 namespace TestProject.RuntimeTests
 {

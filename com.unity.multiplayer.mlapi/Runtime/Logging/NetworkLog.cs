@@ -1,9 +1,6 @@
-using MLAPI.Messaging;
-using MLAPI.Metrics;
-using MLAPI.Transports;
 using UnityEngine;
 
-namespace MLAPI.Logging
+namespace Unity.Netcode
 {
     /// <summary>
     /// Helper class for logging
@@ -61,10 +58,10 @@ namespace MLAPI.Logging
             {
                 var context = NetworkManager.Singleton.MessageQueueContainer.EnterInternalCommandContext(
                     MessageQueueContainer.MessageType.ServerLog, NetworkChannel.Internal,
-                    new[] {NetworkManager.Singleton.ServerClientId}, NetworkUpdateLoop.UpdateStage);
+                    new[] { NetworkManager.Singleton.ServerClientId }, NetworkUpdateLoop.UpdateStage);
                 if (context != null)
                 {
-                    using (var nonNullContext = (InternalCommandContext) context)
+                    using (var nonNullContext = (InternalCommandContext)context)
                     {
                         var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
                         using (bufferSizeCapture.Measure())

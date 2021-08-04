@@ -1,13 +1,12 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using MLAPI.NetworkVariable;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 using Object = UnityEngine.Object;
 
-namespace MLAPI.RuntimeTests
+namespace Unity.Netcode.RuntimeTests
 {
     public class NetworkBehaviourUpdaterTests : BaseMultiInstanceTest
     {
@@ -67,10 +66,10 @@ namespace MLAPI.RuntimeTests
             AddNetworkBehaviour(firstNetworkBehaviour, prefabToSpawn);
             AddNetworkBehaviour(secondNetworkBehaviour, prefabToSpawn);
             MultiInstanceHelpers.MakeNetworkedObjectTestPrefab(networkObjectPrefab);
-            m_ServerNetworkManager.NetworkConfig.NetworkPrefabs.Add(new Configuration.NetworkPrefab() { Prefab = prefabToSpawn });
+            m_ServerNetworkManager.NetworkConfig.NetworkPrefabs.Add(new NetworkPrefab() { Prefab = prefabToSpawn });
             foreach (var clientNetworkManager in m_ClientNetworkManagers)
             {
-                clientNetworkManager.NetworkConfig.NetworkPrefabs.Add(new Configuration.NetworkPrefab() { Prefab = prefabToSpawn });
+                clientNetworkManager.NetworkConfig.NetworkPrefabs.Add(new NetworkPrefab() { Prefab = prefabToSpawn });
             }
 
             // Start the instances

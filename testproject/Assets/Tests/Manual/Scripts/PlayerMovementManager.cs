@@ -1,5 +1,5 @@
 using UnityEngine;
-using MLAPI;
+using Unity.Netcode;
 
 
 namespace TestProject.ManualTests
@@ -23,7 +23,7 @@ namespace TestProject.ManualTests
         {
             m_NetworkedObject = GetComponent<NetworkObject>();
             m_RandomMovement = GetComponent<RandomMovement>();
-         
+
         }
 
         public override void OnNetworkSpawn()

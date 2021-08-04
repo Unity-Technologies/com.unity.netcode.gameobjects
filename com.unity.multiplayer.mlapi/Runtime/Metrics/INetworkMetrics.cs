@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace MLAPI.Metrics
+namespace Unity.Netcode
 {
     public interface INetworkMetrics
     {

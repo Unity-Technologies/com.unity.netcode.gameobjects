@@ -2,12 +2,8 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
-using MLAPI.Transports;
-using MLAPI.Hashing;
-using MLAPI.Serialization;
-using MLAPI.Serialization.Pooled;
 
-namespace MLAPI.Configuration
+namespace Unity.Netcode
 {
     /// <summary>
     /// The configuration object used to start server, client and hosts
@@ -59,6 +55,9 @@ namespace MLAPI.Configuration
         /// Generated at runtime and OnValidate
         /// </summary>
         internal Dictionary<uint, NetworkPrefab> NetworkPrefabOverrideLinks = new Dictionary<uint, NetworkPrefab>();
+
+        internal Dictionary<uint, uint> OverrideToNetworkPrefab = new Dictionary<uint, uint>();
+
 
         /// <summary>
         /// The tickrate of network ticks. This value controls how often MLAPI runs user code and sends out data.

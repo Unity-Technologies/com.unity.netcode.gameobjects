@@ -1,10 +1,8 @@
 using System.Linq;
 using System.Collections.Generic;
-using MLAPI.Messaging;
-using MLAPI.Serialization;
 using UnityEngine;
 
-namespace MLAPI.Prototyping
+namespace Unity.Netcode.Prototyping
 {
     /// <summary>
     /// A prototype component for syncing animations

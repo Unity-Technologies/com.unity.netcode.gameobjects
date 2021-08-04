@@ -1,6 +1,4 @@
-using System;
-
-namespace MLAPI.Serialization.Pooled
+namespace Unity.Netcode
 {
     /// <summary>
     /// Disposable NetworkBuffer that returns back to the NetworkBufferPool when disposed
@@ -31,7 +29,7 @@ namespace MLAPI.Serialization.Pooled
         ///
         /// Stream buffer = PooledNetworkBuffer.Get();
         /// buffer.Dispose();
-        /// 
+        ///
         /// ^ Static type is Stream, this calls Stream::Dispose() instead of PooledNetworkBuffer::Dispose()
         /// </summary>
         public override void Close()

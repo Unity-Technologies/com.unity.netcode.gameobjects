@@ -7,7 +7,7 @@ using UnityEditor;
 
 [CreateAssetMenu(fileName = "SceneReference", menuName = "MLAPI/SceneReference")]
 [Serializable]
-public class SceneReference : ScriptableObject,ISceneReference
+public class SceneReference : ScriptableObject, ISceneReference
 {
 #if UNITY_EDITOR    
     public SceneAsset SceneToReference;
@@ -63,7 +63,7 @@ public class SceneReference : ScriptableObject,ISceneReference
 
 
 public interface ISceneReference
-{ 
+{
     string GetDisplayName();
     List<string> GetReferencedScenes();
 }

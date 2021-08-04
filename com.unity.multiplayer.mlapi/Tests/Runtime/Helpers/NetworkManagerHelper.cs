@@ -1,13 +1,11 @@
 using System;
 using System.Collections.Generic;
-using MLAPI.Configuration;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using NUnit.Framework;
-using MLAPI.SceneManagement;
-using MLAPI.Transports.UNET;
+using Unity.Netcode.Transports.UNET;
 
-namespace MLAPI.RuntimeTests
+namespace Unity.Netcode.RuntimeTests
 {
     /// <summary>
     /// Helper class to instantiate a NetworkManager
@@ -22,7 +20,7 @@ namespace MLAPI.RuntimeTests
     /// </summary>
     public static class NetworkManagerHelper
     {
-        public static Transports.Tasks.SocketTasks StartHostSocketTasks { get; internal set; }
+        public static SocketTasks StartHostSocketTasks { get; internal set; }
         public static NetworkManager NetworkManagerObject { get; internal set; }
         public static GameObject NetworkManagerGameObject { get; internal set; }
 

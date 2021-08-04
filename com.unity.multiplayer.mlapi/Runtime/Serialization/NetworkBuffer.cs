@@ -1,8 +1,8 @@
 using System;
 using System.IO;
-using static MLAPI.Serialization.Arithmetic;
+using static Unity.Netcode.Arithmetic;
 
-namespace MLAPI.Serialization
+namespace Unity.Netcode
 {
     /// <summary>
     /// A buffer that can be used at the bit level
@@ -233,7 +233,7 @@ namespace MLAPI.Serialization
         /// <returns>Amount of bytes read.</returns>
         public override int Read(byte[] buffer, int offset, int count)
         {
-            int tLen = Math.Min(count, (int)(m_Target.LongLength - Position) - ((BitPosition & 7) == 0 ? 0 : 1));
+            int tLen = Math.Min(count, (int)(Length - Position));
             for (int i = 0; i < tLen; ++i)
             {
                 buffer[offset + i] = ReadByteInternal();

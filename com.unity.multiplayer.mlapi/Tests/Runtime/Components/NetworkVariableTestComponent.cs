@@ -1,16 +1,12 @@
-using System;
-using System.Collections.Generic;
 using UnityEngine;
-using MLAPI.NetworkVariable;
-using MLAPI.NetworkVariable.Collections;
 
-namespace MLAPI.RuntimeTests
+namespace Unity.Netcode.RuntimeTests
 {
     /// <summary>
     /// This provides coverage for all of the predefined NetworkVariable types
     /// The initial goal is for generalized full coverage of NetworkVariables:
     /// Covers all of the various constructor calls (i.e. various parameters or no parameters)
-    /// Covers the local NetworkVariable's OnValueChanged functionality (i.e. when a specific type changes do we get a notification?)    
+    /// Covers the local NetworkVariable's OnValueChanged functionality (i.e. when a specific type changes do we get a notification?)
     /// This was built as a NetworkBehaviour for further client-server unit testing patterns when this capability is available.
     /// </summary>
     internal class NetworkVariableTestComponent : NetworkBehaviour

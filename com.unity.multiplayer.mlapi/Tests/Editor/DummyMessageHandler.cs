@@ -1,10 +1,7 @@
 using System.IO;
-using MLAPI.Messaging;
-using MLAPI.Serialization;
-using MLAPI.Transports;
 using UnityEngine;
 
-namespace MLAPI.EditorTests
+namespace Unity.Netcode.EditorTests
 {
     internal class DummyMessageHandler : IInternalMessageHandler
     {
@@ -50,7 +47,7 @@ namespace MLAPI.EditorTests
                 // That's what will then call back into this for the others.
                 var messageQueueContainer = NetworkManager.MessageQueueContainer;
                 messageQueueContainer.AddQueueItemToInboundFrame(messageType, receiveTime, clientId,
-                    (NetworkBuffer) stream, receiveChannel);
+                    (NetworkBuffer)stream, receiveChannel);
                 messageQueueContainer.ProcessAndFlushMessageQueue(
                     MessageQueueContainer.MessageQueueProcessingTypes.Receive, NetworkUpdateLoop.UpdateStage);
                 messageQueueContainer.AdvanceFrameHistory(MessageQueueHistoryFrame.QueueFrameType.Inbound);

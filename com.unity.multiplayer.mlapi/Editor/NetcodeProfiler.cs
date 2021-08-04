@@ -1,18 +1,17 @@
 using System.Collections.Generic;
 using System.IO;
-using MLAPI.Profiling;
-using MLAPI.Serialization;
+using UnityEditor;
 using UnityEngine;
 
-namespace UnityEditor
+namespace Unity.Netcode.Editor
 {
-    public class MLAPIProfiler : EditorWindow
+    public class NetcodeProfiler : EditorWindow
     {
 #if !UNITY_2020_2_OR_NEWER
-        [MenuItem("Window/MLAPI Profiler")]
+        [MenuItem("Window/Netcode Profiler")]
         public static void ShowWindow()
         {
-            GetWindow<MLAPIProfiler>();
+            GetWindow<NetcodeProfiler>();
         }
 #endif
 

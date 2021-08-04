@@ -2,11 +2,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.IO;
 using System;
-using MLAPI.Timing;
-using MLAPI.Serialization.Pooled;
-using MLAPI.Transports;
 
-namespace MLAPI.NetworkVariable
+namespace Unity.Netcode
 {
     /// <summary>
     /// A variable that can be synchronized over the network.

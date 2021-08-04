@@ -2,7 +2,7 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace MLAPI.EditorTests
+namespace Unity.Netcode.EditorTests
 {
     public class NetworkObjectTests
     {

@@ -5,14 +5,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using MLAPI.RuntimeTests.Metrics.Utility;
-using MLAPI.Serialization;
 using NUnit.Framework;
 using Unity.Multiplayer.MetricTypes;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace MLAPI.RuntimeTests.Metrics
+namespace Unity.Netcode.RuntimeTests
 {
     public class MessagingMetricsTests : DualClientMetricTestBase
     {

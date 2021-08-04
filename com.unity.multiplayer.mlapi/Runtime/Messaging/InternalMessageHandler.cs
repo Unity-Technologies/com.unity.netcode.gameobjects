@@ -1,20 +1,10 @@
 using System;
 using System.IO;
-using MLAPI.Connection;
-using MLAPI.Logging;
-using MLAPI.SceneManagement;
-using MLAPI.Serialization.Pooled;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.SceneManagement;
-using MLAPI.Configuration;
-using MLAPI.Profiling;
-using MLAPI.Serialization;
-using MLAPI.Transports;
-using MLAPI.Timing;
-using UnityEngine.Assertions;
 
-namespace MLAPI.Messaging
+namespace Unity.Netcode
 {
     internal class InternalMessageHandler : IInternalMessageHandler
     {
@@ -163,12 +153,9 @@ namespace MLAPI.Messaging
 
                 var (isReparented, latestParent) = NetworkObject.ReadNetworkParenting(reader);
 
-                var hasPayload = reader.ReadBool();
-                var payLoadLength = hasPayload ? reader.ReadInt32Packed() : 0;
-
                 var networkObject = NetworkManager.SpawnManager.CreateLocalNetworkObject(softSync, prefabHash, ownerClientId, parentNetworkId, pos, rot, isReparented);
                 networkObject.SetNetworkParenting(isReparented, latestParent);
-                NetworkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, networkId, softSync, isPlayerObject, ownerClientId, stream, hasPayload, payLoadLength, true, false);
+                NetworkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, networkId, softSync, isPlayerObject, ownerClientId, stream, true, false);
                 m_NetworkManager.NetworkMetrics.TrackObjectSpawnReceived(clientId, networkObject.NetworkObjectId, networkObject.name, stream.Length);
             }
         }
@@ -414,11 +401,6 @@ namespace MLAPI.Messaging
         internal static void HandleSnapshot(ulong clientId, Stream messageStream)
         {
             NetworkManager.Singleton.SnapshotSystem.ReadSnapshot(clientId, messageStream);
-        }
-
-        internal static void HandleAck(ulong clientId, Stream messageStream)
-        {
-            NetworkManager.Singleton.SnapshotSystem.ReadAck(clientId, messageStream);
         }
 
         public void HandleAllClientsSwitchSceneCompleted(ulong clientId, Stream stream)

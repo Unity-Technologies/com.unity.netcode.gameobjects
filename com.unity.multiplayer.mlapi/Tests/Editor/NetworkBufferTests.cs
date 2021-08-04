@@ -1,9 +1,8 @@
 using System;
 using NUnit.Framework;
-using MLAPI.Serialization;
 using System.Text;
 
-namespace MLAPI.EditorTests
+namespace Unity.Netcode.EditorTests
 {
     public class NetworkBufferTests
     {

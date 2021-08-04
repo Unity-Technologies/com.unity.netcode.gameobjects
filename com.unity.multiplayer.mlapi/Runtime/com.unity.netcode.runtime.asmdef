@@ -1,10 +1,10 @@
 {
-    "name": "Unity.Multiplayer.MLAPI.Runtime",
-    "rootNamespace": "MLAPI",
+    "name": "Unity.Netcode.Runtime",
+    "rootNamespace": "Unity.Netcode",
     "references": [
-        "GUID:821943bbff0df3b48b43584136c29e17",
+        "GUID:7c4416f9e8f132246b0e1c1ec45be7d6",
         "GUID:b1cd7326e664a434ab35daa802773c7f",
-        "GUID:7c4416f9e8f132246b0e1c1ec45be7d6"
+        "GUID:821943bbff0df3b48b43584136c29e17"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

@@ -5,7 +5,7 @@ using Unity.Multiplayer.NetStats.Dispatch;
 using Unity.Multiplayer.NetStats.Metrics;
 using Unity.Multiplayer.NetStatsReporting;
 
-namespace MLAPI.Metrics
+namespace Unity.Netcode
 {
     public class NetworkMetrics : INetworkMetrics
     {
@@ -171,12 +171,12 @@ namespace MLAPI.Metrics
 
         public void TrackServerLogSent(ulong receiverClientId, uint logType, long bytesCount)
         {
-            m_ServerLogSentEvent.Mark(new ServerLogEvent(new ConnectionInfo(receiverClientId), (LogLevel)logType, bytesCount));
+            m_ServerLogSentEvent.Mark(new ServerLogEvent(new ConnectionInfo(receiverClientId), (Unity.Multiplayer.MetricTypes.LogLevel)logType, bytesCount));
         }
 
         public void TrackServerLogReceived(ulong senderClientId, uint logType, long bytesCount)
         {
-            m_ServerLogReceivedEvent.Mark(new ServerLogEvent(new ConnectionInfo(senderClientId), (LogLevel)logType, bytesCount));
+            m_ServerLogReceivedEvent.Mark(new ServerLogEvent(new ConnectionInfo(senderClientId), (Unity.Multiplayer.MetricTypes.LogLevel)logType, bytesCount));
         }
 
         public void DispatchFrame()

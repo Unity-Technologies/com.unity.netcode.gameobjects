@@ -1,7 +1,5 @@
 using UnityEngine;
-using MLAPI;
-using MLAPI.NetworkVariable;
-using MLAPI.NetworkVariable.Collections;
+using Unity.Netcode;
 
 namespace TestProject.ManualTests
 {

@@ -1,16 +1,12 @@
 using System.Collections.Generic;
-using MLAPI.Collections;
-using MLAPI.Configuration;
-using MLAPI.Messaging;
-using MLAPI.Transports;
 using UnityEngine;
 
-namespace MLAPI.Profiling
+namespace Unity.Netcode
 {
     /// <summary>
     /// NetworkProfiler for profiling network traffic
     /// </summary>
-    public static class NetworkProfiler
+    internal static class NetworkProfiler
     {
         /// <summary>
         /// The ticks that has been recorded

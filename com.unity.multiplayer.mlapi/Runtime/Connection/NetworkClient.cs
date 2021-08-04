@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace MLAPI.Connection
+namespace Unity.Netcode
 {
     /// <summary>
     /// A NetworkClient

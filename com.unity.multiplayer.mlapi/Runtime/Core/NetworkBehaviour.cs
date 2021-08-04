@@ -4,19 +4,8 @@ using UnityEngine;
 using System.Reflection;
 using System.Linq;
 using System.IO;
-using MLAPI.Configuration;
-using MLAPI.Logging;
-using MLAPI.Messaging;
-using MLAPI.Metrics;
-using MLAPI.Timing;
-using MLAPI.NetworkVariable;
-using MLAPI.Profiling;
-using MLAPI.Reflection;
-using MLAPI.Serialization;
-using MLAPI.Serialization.Pooled;
-using MLAPI.Transports;
 
-namespace MLAPI
+namespace Unity.Netcode
 {
     /// <summary>
     /// The base class to override to write network code. Inherits MonoBehaviour
@@ -33,7 +22,7 @@ namespace MLAPI
             Client = 2
         }
 
-        private static void SetUpdateStage<T>(ref T param) where T: IHasUpdateStage
+        private static void SetUpdateStage<T>(ref T param) where T : IHasUpdateStage
         {
             if (param.UpdateStage == NetworkUpdateStage.Unset)
             {
@@ -320,21 +309,12 @@ namespace MLAPI
         public ulong OwnerClientId => NetworkObject.OwnerClientId;
 
         /// <summary>
-        /// Gets called when message handlers are ready to be registered and the network is setup
+        /// Gets called when the <see cref="NetworkObject"/> gets spawned, message handlers are ready to be registered and the network is setup.
         /// </summary>
         public virtual void OnNetworkSpawn() { }
 
         /// <summary>
-        /// Gets called when the <see cref="NetworkObject"/> gets spawned, message handlers are ready to be registered and the network is setup. Provides a Payload if it was provided
-        /// </summary>
-        /// <param name="stream">The stream containing the spawn payload</param>
-        public virtual void OnNetworkSpawn(Stream stream)
-        {
-            OnNetworkSpawn();
-        }
-
-        /// <summary>
-        /// Gets called when the <see cref="NetworkObject"/> gets de-spawned. Is called both on the server and clients.
+        /// Gets called when the <see cref="NetworkObject"/> gets despawned. Is called both on the server and clients.
         /// </summary>
         public virtual void OnNetworkDespawn() { }
 
@@ -592,7 +572,7 @@ namespace MLAPI
                             {
                                 var context = NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
                                     MessageQueueContainer.MessageType.NetworkVariableDelta, m_ChannelsForNetworkVariableGroups[j],
-                                    new[] {clientId}, NetworkUpdateLoop.UpdateStage);
+                                    new[] { clientId }, NetworkUpdateLoop.UpdateStage);
                                 if (context != null)
                                 {
                                     using (var nonNullContext = (InternalCommandContext)context)
@@ -652,7 +632,7 @@ namespace MLAPI
                         {
                             if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                             {
-                                NetworkLog.LogWarning($"Client wrote to {nameof(NetworkVariable)} without permission. => {(logInstance != null ? ($"{nameof(NetworkObjectId)}: {logInstance.NetworkObjectId} - {nameof(NetworkObject.GetNetworkBehaviourOrderIndex)}(): {logInstance.NetworkObject.GetNetworkBehaviourOrderIndex(logInstance)} - VariableIndex: {i}") : string.Empty)}");
+                                NetworkLog.LogWarning($"Client wrote to {typeof(NetworkVariable<>).Name} without permission. => {(logInstance != null ? ($"{nameof(NetworkObjectId)}: {logInstance.NetworkObjectId} - {nameof(NetworkObject.GetNetworkBehaviourOrderIndex)}(): {logInstance.NetworkObject.GetNetworkBehaviourOrderIndex(logInstance)} - VariableIndex: {i}") : string.Empty)}");
                                 NetworkLog.LogError($"[{networkVariableList[i].GetType().Name}]");
                             }
 
@@ -670,7 +650,7 @@ namespace MLAPI
 
                         if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
                         {
-                            NetworkLog.LogError($"Client wrote to {nameof(NetworkVariable)} without permission. No more variables can be read. This is critical. => {(logInstance != null ? ($"{nameof(NetworkObjectId)}: {logInstance.NetworkObjectId} - {nameof(NetworkObject.GetNetworkBehaviourOrderIndex)}(): {logInstance.NetworkObject.GetNetworkBehaviourOrderIndex(logInstance)} - VariableIndex: {i}") : string.Empty)}");
+                            NetworkLog.LogError($"Client wrote to {typeof(NetworkVariable<>).Name} without permission. No more variables can be read. This is critical. => {(logInstance != null ? ($"{nameof(NetworkObjectId)}: {logInstance.NetworkObjectId} - {nameof(NetworkObject.GetNetworkBehaviourOrderIndex)}(): {logInstance.NetworkObject.GetNetworkBehaviourOrderIndex(logInstance)} - VariableIndex: {i}") : string.Empty)}");
                             NetworkLog.LogError($"[{networkVariableList[i].GetType().Name}]");
                         }
 
@@ -742,7 +722,7 @@ namespace MLAPI
                         {
                             if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                             {
-                                NetworkLog.LogWarning($"Client wrote to {nameof(NetworkVariable)} without permission. => {(logInstance != null ? ($"{nameof(NetworkObjectId)}: {logInstance.NetworkObjectId} - {nameof(NetworkObject.GetNetworkBehaviourOrderIndex)}(): {logInstance.NetworkObject.GetNetworkBehaviourOrderIndex(logInstance)} - VariableIndex: {i}") : string.Empty)}");
+                                NetworkLog.LogWarning($"Client wrote to {typeof(NetworkVariable<>).Name} without permission. => {(logInstance != null ? ($"{nameof(NetworkObjectId)}: {logInstance.NetworkObjectId} - {nameof(NetworkObject.GetNetworkBehaviourOrderIndex)}(): {logInstance.NetworkObject.GetNetworkBehaviourOrderIndex(logInstance)} - VariableIndex: {i}") : string.Empty)}");
                             }
 
                             stream.Position += varSize;
@@ -758,7 +738,7 @@ namespace MLAPI
                         // - TwoTen
                         if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
                         {
-                            NetworkLog.LogError($"Client wrote to {nameof(NetworkVariable)} without permission. No more variables can be read. This is critical. => {(logInstance != null ? ($"{nameof(NetworkObjectId)}: {logInstance.NetworkObjectId} - {nameof(NetworkObject.GetNetworkBehaviourOrderIndex)}(): {logInstance.NetworkObject.GetNetworkBehaviourOrderIndex(logInstance)} - VariableIndex: {i}") : string.Empty)}");
+                            NetworkLog.LogError($"Client wrote to {typeof(NetworkVariable<>).Name} without permission. No more variables can be read. This is critical. => {(logInstance != null ? ($"{nameof(NetworkObjectId)}: {logInstance.NetworkObjectId} - {nameof(NetworkObject.GetNetworkBehaviourOrderIndex)}(): {logInstance.NetworkObject.GetNetworkBehaviourOrderIndex(logInstance)} - VariableIndex: {i}") : string.Empty)}");
                         }
 
                         return;

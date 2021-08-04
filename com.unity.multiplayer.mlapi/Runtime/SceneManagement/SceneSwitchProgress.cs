@@ -1,10 +1,9 @@
 using System;
 using System.Collections.Generic;
-using MLAPI.Timing;
 using UnityEngine;
 using AsyncOperation = UnityEngine.AsyncOperation;
 
-namespace MLAPI.SceneManagement
+namespace Unity.Netcode
 {
     /// <summary>
     /// Class for tracking scene switching progress by server and clients.

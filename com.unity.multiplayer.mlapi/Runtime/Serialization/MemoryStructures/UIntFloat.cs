@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 
-namespace MLAPI.Serialization
+namespace Unity.Netcode
 {
     /// <summary>
     /// A struct with a explicit memory layout. The struct has 4 fields. float,uint,double and ulong.

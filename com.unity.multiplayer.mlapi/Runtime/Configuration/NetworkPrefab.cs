@@ -1,8 +1,7 @@
 using System;
-using MLAPI.Logging;
 using UnityEngine;
 
-namespace MLAPI.Configuration
+namespace Unity.Netcode
 {
     internal enum NetworkPrefabOverride
     {

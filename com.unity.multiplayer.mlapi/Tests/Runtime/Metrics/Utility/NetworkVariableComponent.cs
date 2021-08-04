@@ -1,8 +1,7 @@
 ﻿#if MULTIPLAYER_TOOLS
 using System;
-using MLAPI.NetworkVariable;
 
-namespace MLAPI.RuntimeTests.Metrics.Utility
+namespace Unity.Netcode.RuntimeTests
 {
     public class NetworkVariableComponent : NetworkBehaviour
     {

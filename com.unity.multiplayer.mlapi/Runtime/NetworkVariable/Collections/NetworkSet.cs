@@ -3,11 +3,8 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using MLAPI.Timing;
-using MLAPI.Serialization.Pooled;
-using MLAPI.Transports;
 
-namespace MLAPI.NetworkVariable.Collections
+namespace Unity.Netcode
 {
     /// <summary>
     /// Event based NetworkVariable container for syncing Sets

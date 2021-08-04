@@ -3,14 +3,12 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using MLAPI.Configuration;
-using MLAPI.RuntimeTests.Metrics.Utility;
 using NUnit.Framework;
 using Unity.Multiplayer.MetricTypes;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace MLAPI.RuntimeTests.Metrics
+namespace Unity.Netcode.RuntimeTests
 {
     public class NetworkObjectMetricsTests : SingleClientMetricTestBase
     {

@@ -3,24 +3,10 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using MLAPI.Logging;
-using MLAPI.Configuration;
-using MLAPI.Profiling;
-using MLAPI.Serialization;
-using MLAPI.Transports;
-using MLAPI.Connection;
-using MLAPI.Messaging;
-using MLAPI.SceneManagement;
-using MLAPI.Spawning;
-using MLAPI.Exceptions;
-using MLAPI.Serialization.Pooled;
-using MLAPI.Transports.Tasks;
-using MLAPI.Metrics;
-using MLAPI.Timing;
 using Unity.Profiling;
 using Debug = UnityEngine.Debug;
 
-namespace MLAPI
+namespace Unity.Netcode
 {
     /// <summary>
     /// The main component of the library
@@ -59,7 +45,7 @@ namespace MLAPI
         internal static bool UseSnapshot = false;
 
         private const double k_TimeSyncFrequency = 1.0d; // sync every second, TODO will be removed once timesync is done via snapshots
-        
+
         internal MessageQueueContainer MessageQueueContainer { get; private set; }
 
 
@@ -79,6 +65,37 @@ namespace MLAPI
 
                 return m_PrefabHandler;
             }
+        }
+
+        /// <summary>
+        /// Returns the <see cref="GameObject"/> to use as the override as could be defined within the NetworkPrefab list
+        /// Note: This should be used to create <see cref="GameObject"/> pools (with <see cref="NetworkObject"/> components)
+        /// under the scenario where you are using the Host model as it spawns everything locally. As such, the override
+        /// will not be applied when spawning locally on a Host.
+        /// Related Classes and Interfaces:
+        /// <see cref="NetworkPrefabHandler"/>
+        /// <see cref="INetworkPrefabInstanceHandler"/>
+        /// </summary>
+        /// <param name="gameObject">the <see cref="GameObject"/> to be checked for a <see cref="NetworkManager"/> defined NetworkPrefab override</param>
+        /// <returns>a <see cref="GameObject"/> that is either the override or if no overrides exist it returns the same as the one passed in as a parameter</returns>
+        public GameObject GetNetworkPrefabOverride(GameObject gameObject)
+        {
+            var networkObject = gameObject.GetComponent<NetworkObject>();
+            if (networkObject != null)
+            {
+                if (NetworkConfig.NetworkPrefabOverrideLinks.ContainsKey(networkObject.GlobalObjectIdHash))
+                {
+                    switch (NetworkConfig.NetworkPrefabOverrideLinks[networkObject.GlobalObjectIdHash].Override)
+                    {
+                        case NetworkPrefabOverride.Hash:
+                        case NetworkPrefabOverride.Prefab:
+                            {
+                                return NetworkConfig.NetworkPrefabOverrideLinks[networkObject.GlobalObjectIdHash].OverridingTargetPrefab;
+                            }
+                    }
+                }
+            }
+            return gameObject;
         }
 
         public NetworkTimeSystem NetworkTimeSystem { get; private set; }
@@ -155,7 +172,7 @@ namespace MLAPI
         public ulong[] ConnectedClientsIds => ConnectedClientsList.Select(c => c.ClientId).ToArray();
 
         /// <summary>
-        /// Gets a dictionary of the clients that have been accepted by the transport but are still pending by the MLAPI. This is only populated on the server.
+        /// Gets a dictionary of the clients that have been accepted by the transport but are still pending by the Netcode. This is only populated on the server.
         /// </summary>
         public readonly Dictionary<ulong, PendingClient> PendingClients = new Dictionary<ulong, PendingClient>();
 
@@ -316,20 +333,20 @@ namespace MLAPI
                         switch (networkPrefab.Override)
                         {
                             case NetworkPrefabOverride.Prefab:
-                            {
-                                if (NetworkConfig.NetworkPrefabs[i].SourcePrefabToOverride == null &&
-                                    NetworkConfig.NetworkPrefabs[i].Prefab != null)
                                 {
-                                    if (networkPrefab.SourcePrefabToOverride == null && networkPrefab.Prefab != null)
+                                    if (NetworkConfig.NetworkPrefabs[i].SourcePrefabToOverride == null &&
+                                        NetworkConfig.NetworkPrefabs[i].Prefab != null)
                                     {
-                                        networkPrefab.SourcePrefabToOverride = networkPrefab.Prefab;
+                                        if (networkPrefab.SourcePrefabToOverride == null && networkPrefab.Prefab != null)
+                                        {
+                                            networkPrefab.SourcePrefabToOverride = networkPrefab.Prefab;
+                                        }
+
+                                        globalObjectIdHash = networkPrefab.SourcePrefabToOverride.GetComponent<NetworkObject>().GlobalObjectIdHash;
                                     }
 
-                                    globalObjectIdHash = networkPrefab.SourcePrefabToOverride.GetComponent<NetworkObject>().GlobalObjectIdHash;
+                                    break;
                                 }
-
-                                break;
-                            }
                             case NetworkPrefabOverride.Hash:
                                 globalObjectIdHash = networkPrefab.SourceHashToOverride;
                                 break;
@@ -446,8 +463,8 @@ namespace MLAPI
                 for (int i = 0; i < NetworkConfig.RegisteredScenes.Count; i++)
                 {
                     SceneManager.RegisteredSceneNames.Add(NetworkConfig.RegisteredScenes[i]);
-                    SceneManager.SceneIndexToString.Add((uint) i, NetworkConfig.RegisteredScenes[i]);
-                    SceneManager.SceneNameToIndex.Add(NetworkConfig.RegisteredScenes[i], (uint) i);
+                    SceneManager.SceneIndexToString.Add((uint)i, NetworkConfig.RegisteredScenes[i]);
+                    SceneManager.SceneNameToIndex.Add(NetworkConfig.RegisteredScenes[i], (uint)i);
                 }
 
                 SceneManager.SetCurrentSceneIndex();
@@ -502,13 +519,22 @@ namespace MLAPI
                                 NetworkConfig.NetworkPrefabs[i]);
                             break;
                         case NetworkPrefabOverride.Prefab:
-                            NetworkConfig.NetworkPrefabOverrideLinks.Add(
-                                NetworkConfig.NetworkPrefabs[i].SourcePrefabToOverride.GetComponent<NetworkObject>()
-                                    .GlobalObjectIdHash, NetworkConfig.NetworkPrefabs[i]);
+                            {
+                                var sourcePrefabGlobalObjectIdHash = NetworkConfig.NetworkPrefabs[i].SourcePrefabToOverride.GetComponent<NetworkObject>().GlobalObjectIdHash;
+                                NetworkConfig.NetworkPrefabOverrideLinks.Add(sourcePrefabGlobalObjectIdHash, NetworkConfig.NetworkPrefabs[i]);
+
+                                var targetPrefabGlobalObjectIdHash = NetworkConfig.NetworkPrefabs[i].OverridingTargetPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash;
+                                NetworkConfig.OverrideToNetworkPrefab.Add(targetPrefabGlobalObjectIdHash, sourcePrefabGlobalObjectIdHash);
+                            }
                             break;
                         case NetworkPrefabOverride.Hash:
-                            NetworkConfig.NetworkPrefabOverrideLinks.Add(
-                                NetworkConfig.NetworkPrefabs[i].SourceHashToOverride, NetworkConfig.NetworkPrefabs[i]);
+                            {
+                                var sourcePrefabGlobalObjectIdHash = NetworkConfig.NetworkPrefabs[i].SourceHashToOverride;
+                                NetworkConfig.NetworkPrefabOverrideLinks.Add(sourcePrefabGlobalObjectIdHash, NetworkConfig.NetworkPrefabs[i]);
+
+                                var targetPrefabGlobalObjectIdHash = NetworkConfig.NetworkPrefabs[i].OverridingTargetPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash;
+                                NetworkConfig.OverrideToNetworkPrefab.Add(targetPrefabGlobalObjectIdHash, sourcePrefabGlobalObjectIdHash);
+                            }
                             break;
                     }
                 }
@@ -999,13 +1025,13 @@ namespace MLAPI
 
         private void SendConnectionRequest()
         {
-            var clientIds = new[] {ServerClientId};
+            var clientIds = new[] { ServerClientId };
             var context = MessageQueueContainer.EnterInternalCommandContext(
                 MessageQueueContainer.MessageType.ConnectionRequest, NetworkChannel.Internal,
                 clientIds, NetworkUpdateStage.EarlyUpdate);
             if (context != null)
             {
-                using (var nonNullContext = (InternalCommandContext) context)
+                using (var nonNullContext = (InternalCommandContext)context)
                 {
                     nonNullContext.NetworkWriter.WriteUInt64Packed(NetworkConfig.GetConfig());
 
@@ -1094,15 +1120,15 @@ namespace MLAPI
 #endif
                     break;
                 case NetworkEvent.Data:
-                {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
                     {
-                        NetworkLog.LogInfo($"Incoming Data From {clientId}: {payload.Count} bytes");
-                    }
+                        if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+                        {
+                            NetworkLog.LogInfo($"Incoming Data From {clientId}: {payload.Count} bytes");
+                        }
 
-                    HandleIncomingData(clientId, networkChannel, payload, receiveTime);
-                    break;
-                }
+                        HandleIncomingData(clientId, networkChannel, payload, receiveTime);
+                        break;
+                    }
                 case NetworkEvent.Disconnect:
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                     s_TransportDisconnect.Begin();
@@ -1224,7 +1250,7 @@ namespace MLAPI
                             {
                                 Receive = new ServerRpcReceiveParams
                                 {
-                                    UpdateStage = (NetworkUpdateStage) networkUpdateStage,
+                                    UpdateStage = (NetworkUpdateStage)networkUpdateStage,
                                     SenderClientId = item.NetworkId
                                 }
                             };
@@ -1234,7 +1260,7 @@ namespace MLAPI
                             {
                                 Receive = new ClientRpcReceiveParams
                                 {
-                                    UpdateStage = (NetworkUpdateStage) networkUpdateStage
+                                    UpdateStage = (NetworkUpdateStage)networkUpdateStage
                                 }
                             };
                             break;
@@ -1291,7 +1317,6 @@ namespace MLAPI
                         if (PrefabHandler.ContainsHandler(ConnectedClients[clientId].PlayerObject.GlobalObjectIdHash))
                         {
                             PrefabHandler.HandleNetworkPrefabDestroy(ConnectedClients[clientId].PlayerObject);
-                            SpawnManager.OnDespawnObject(ConnectedClients[clientId].PlayerObject, false);
                         }
                         else
                         {
@@ -1310,7 +1335,6 @@ namespace MLAPI
                                     .GlobalObjectIdHash))
                                 {
                                     PrefabHandler.HandleNetworkPrefabDestroy(ConnectedClients[clientId].OwnedObjects[i]);
-                                    SpawnManager.OnDespawnObject(ConnectedClients[clientId].OwnedObjects[i], false);
                                 }
                                 else
                                 {
@@ -1363,7 +1387,7 @@ namespace MLAPI
                 clientIds, NetworkUpdateStage.EarlyUpdate);
             if (context != null)
             {
-                using (var nonNullContext = (InternalCommandContext) context)
+                using (var nonNullContext = (InternalCommandContext)context)
                 {
                     nonNullContext.NetworkWriter.WriteInt32Packed(NetworkTickSystem.ServerTime.Tick);
                 }
@@ -1392,7 +1416,7 @@ namespace MLAPI
                 if (createPlayerObject)
                 {
                     var networkObject = SpawnManager.CreateLocalNetworkObject(false, playerPrefabHash ?? NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash, ownerClientId, null, position, rotation);
-                    SpawnManager.SpawnNetworkObjectLocally(networkObject, SpawnManager.GetNetworkObjectId(), false, true, ownerClientId, null, false, 0, false, false);
+                    SpawnManager.SpawnNetworkObjectLocally(networkObject, SpawnManager.GetNetworkObjectId(), false, true, ownerClientId, null, false, false);
 
                     ConnectedClients[ownerClientId].PlayerObject = networkObject;
                 }
@@ -1411,7 +1435,7 @@ namespace MLAPI
                 if (ownerClientId != ServerClientId)
                 {
                     // Don't send any data over the wire if the host "connected"
-                    ulong[] clientIds = {ownerClientId};
+                    ulong[] clientIds = { ownerClientId };
 
                     var context = MessageQueueContainer.EnterInternalCommandContext(
                         MessageQueueContainer.MessageType.ConnectionApproved, NetworkChannel.Internal,
@@ -1419,7 +1443,7 @@ namespace MLAPI
 
                     if (context != null)
                     {
-                        using (var nonNullContext = (InternalCommandContext) context)
+                        using (var nonNullContext = (InternalCommandContext)context)
                         {
                             nonNullContext.NetworkWriter.WriteUInt64Packed(ownerClientId);
 
@@ -1431,7 +1455,7 @@ namespace MLAPI
                             }
 
                             nonNullContext.NetworkWriter.WriteInt32Packed(LocalTime.Tick);
-                            nonNullContext.NetworkWriter.WriteUInt32Packed((uint) m_ObservedObjects.Count);
+                            nonNullContext.NetworkWriter.WriteUInt32Packed((uint)m_ObservedObjects.Count);
 
                             for (int i = 0; i < m_ObservedObjects.Count; i++)
                             {
@@ -1461,7 +1485,7 @@ namespace MLAPI
 
                     var context = MessageQueueContainer.EnterInternalCommandContext(
                         MessageQueueContainer.MessageType.CreateObject, NetworkChannel.Internal,
-                        new[] {clientPair.Key}, NetworkUpdateLoop.UpdateStage);
+                        new[] { clientPair.Key }, NetworkUpdateLoop.UpdateStage);
                     if (context != null)
                     {
                         using (var nonNullContext = (InternalCommandContext)context)

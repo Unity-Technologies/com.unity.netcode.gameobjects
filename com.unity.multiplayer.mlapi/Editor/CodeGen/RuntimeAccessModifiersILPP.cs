@@ -6,7 +6,7 @@ using Unity.CompilationPipeline.Common.Diagnostics;
 using Unity.CompilationPipeline.Common.ILPostProcessing;
 using ILPPInterface = Unity.CompilationPipeline.Common.ILPostProcessing.ILPostProcessor;
 
-namespace MLAPI.Editor.CodeGen
+namespace Unity.Netcode.Editor.CodeGen
 {
     internal sealed class RuntimeAccessModifiersILPP : ILPPInterface
     {
@@ -52,7 +52,7 @@ namespace MLAPI.Editor.CodeGen
                         case nameof(NetworkBehaviour):
                             ProcessNetworkBehaviour(typeDefinition);
                             break;
-                        case nameof(Messaging.__RpcParams):
+                        case nameof(__RpcParams):
                             typeDefinition.IsPublic = true;
                             break;
                     }

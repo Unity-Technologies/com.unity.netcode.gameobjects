@@ -1,7 +1,6 @@
-using System;
 using System.Collections;
 using UnityEngine;
-using MLAPI;
+using Unity.Netcode;
 
 /// <summary>
 /// Used in tandem with the ConnectModeButtons prefab asset in test project
@@ -15,7 +14,7 @@ public class ConnectionModeScript : MonoBehaviour
     internal void SetCommandLineHandler(CommandLineProcessor commandLineProcessor)
     {
         m_CommandLineProcessor = commandLineProcessor;
-        if(m_CommandLineProcessor.AutoConnectEnabled())
+        if (m_CommandLineProcessor.AutoConnectEnabled())
         {
             StartCoroutine(WaitForNetworkManager());
         }
@@ -30,7 +29,7 @@ public class ConnectionModeScript : MonoBehaviour
 
     private IEnumerator WaitForNetworkManager()
     {
-        while(true)
+        while (true)
         {
             yield return new WaitForSeconds(0.5f);
             try

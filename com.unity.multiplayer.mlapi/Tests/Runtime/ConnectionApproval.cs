@@ -5,14 +5,11 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using NUnit.Framework;
 
-namespace MLAPI.RuntimeTests
+namespace Unity.Netcode.RuntimeTests
 {
-
     public class ConnectionApprovalTests
     {
-
         private Guid m_ValidationToken;
-
         private bool m_IsValidated;
 
         [SetUp]
@@ -65,6 +62,5 @@ namespace MLAPI.RuntimeTests
             // Stop, shutdown, and destroy
             NetworkManagerHelper.ShutdownNetworkManager();
         }
-
     }
 }

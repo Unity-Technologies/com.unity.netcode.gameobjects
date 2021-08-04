@@ -1,14 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using MLAPI.Configuration;
-using MLAPI.Serialization;
-using MLAPI.Hashing;
-using MLAPI.Metrics;
-using MLAPI.Profiling;
-using MLAPI.Transports;
 
-namespace MLAPI.Messaging
+namespace Unity.Netcode
 {
     /// <summary>
     /// The manager class to manage custom messages, note that this is different from the NetworkManager custom messages.
@@ -59,9 +53,10 @@ namespace MLAPI.Messaging
                 clientIds.ToArray(), NetworkUpdateLoop.UpdateStage);
             if (context != null)
             {
-                using (var nonNullContext = (InternalCommandContext) context)
+                using (var nonNullContext = (InternalCommandContext)context)
                 {
-                    nonNullContext.NetworkWriter.WriteBytes(buffer.GetBuffer(), buffer.Position);
+                    buffer.Position = 0;
+                    buffer.CopyTo(nonNullContext.NetworkWriter.GetStream());
                 }
             }
 
@@ -79,13 +74,14 @@ namespace MLAPI.Messaging
         {
             var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
                 MessageQueueContainer.MessageType.UnnamedMessage, networkChannel,
-                new[] {clientId}, NetworkUpdateLoop.UpdateStage);
+                new[] { clientId }, NetworkUpdateLoop.UpdateStage);
             if (context != null)
             {
-                using (var nonNullContext = (InternalCommandContext) context)
+                using (var nonNullContext = (InternalCommandContext)context)
                 {
-                    nonNullContext.NetworkWriter.WriteBytes(buffer.GetBuffer(), buffer.Position);
-					m_NetworkManager.NetworkMetrics.TrackUnnamedMessageSent(clientId, buffer.Position);
+                    m_NetworkManager.NetworkMetrics.TrackUnnamedMessageSent(clientId, buffer.Position);
+                    buffer.Position = 0;
+                    buffer.CopyTo(nonNullContext.NetworkWriter.GetStream());
                 }
             }
         }
@@ -198,10 +194,10 @@ namespace MLAPI.Messaging
 
             var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
                 MessageQueueContainer.MessageType.NamedMessage, networkChannel,
-                new[] {clientId}, NetworkUpdateLoop.UpdateStage);
+                new[] { clientId }, NetworkUpdateLoop.UpdateStage);
             if (context != null)
             {
-                using (var nonNullContext = (InternalCommandContext) context)
+                using (var nonNullContext = (InternalCommandContext)context)
                 {
                     var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
                     using (bufferSizeCapture.Measure())
@@ -248,7 +244,7 @@ namespace MLAPI.Messaging
                 clientIds.ToArray(), NetworkUpdateLoop.UpdateStage);
             if (context != null)
             {
-                using (var nonNullContext = (InternalCommandContext) context)
+                using (var nonNullContext = (InternalCommandContext)context)
                 {
                     var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
                     using (bufferSizeCapture.Measure())

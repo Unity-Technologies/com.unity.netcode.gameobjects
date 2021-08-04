@@ -1,11 +1,10 @@
 ﻿#if MULTIPLAYER_TOOLS
 using System;
 using System.Collections;
-using MLAPI.Metrics;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace MLAPI.RuntimeTests.Metrics.Utility
+namespace Unity.Netcode.RuntimeTests
 {
     public abstract class SingleClientMetricTestBase : BaseMultiInstanceTest
     {

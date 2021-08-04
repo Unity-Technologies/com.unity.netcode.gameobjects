@@ -1,6 +1,5 @@
-using MLAPI;
-using MLAPI.Messaging;
-using MLAPI.Prototyping;
+using Unity.Netcode;
+using Unity.Netcode.Prototyping;
 using UnityEngine;
 
 namespace Tests.Manual.NetworkAnimatorTests
@@ -11,7 +10,7 @@ namespace Tests.Manual.NetworkAnimatorTests
         private Animator m_Animator;
         private bool m_Rotate;
         private NetworkAnimator m_NetworkAnimator;
-        
+
         private void Awake()
         {
             m_Animator = GetComponent<Animator>();
@@ -26,30 +25,30 @@ namespace Tests.Manual.NetworkAnimatorTests
                 enabled = false;
             }
         }
-        
+
         private void Update()
         {
             if (m_NetworkAnimator.IsAuthorityOverAnimator)
             {
-                if(Input.GetKeyDown(KeyCode.C))
+                if (Input.GetKeyDown(KeyCode.C))
                 {
                     ToggleRotateAnimation();
-                }  
-                if(Input.GetKeyDown(KeyCode.Space))
+                }
+                if (Input.GetKeyDown(KeyCode.Space))
                 {
                     PlayPulseAnimation();
-                }  
+                }
             }
-            else 
+            else
             {
-                if(Input.GetKeyDown(KeyCode.C))
+                if (Input.GetKeyDown(KeyCode.C))
                 {
                     ToggleRotateAnimationServerRpc();
-                }  
-                if(Input.GetKeyDown(KeyCode.Space))
+                }
+                if (Input.GetKeyDown(KeyCode.Space))
                 {
                     PlayPulseAnimationServerRpc();
-                }  
+                }
             }
         }
 
@@ -63,7 +62,7 @@ namespace Tests.Manual.NetworkAnimatorTests
         {
             m_Animator.SetTrigger("Pulse");
         }
-        
+
         [ServerRpc]
         public void ToggleRotateAnimationServerRpc()
         {
@@ -73,7 +72,7 @@ namespace Tests.Manual.NetworkAnimatorTests
         [ServerRpc]
         public void PlayPulseAnimationServerRpc()
         {
-           PlayPulseAnimation();
+            PlayPulseAnimation();
         }
     }
 }

@@ -1,9 +1,8 @@
 using System;
-using MLAPI.Timing;
 using NUnit.Framework;
 using UnityEngine;
 
-namespace MLAPI.EditorTests.Timing
+namespace Unity.Netcode.EditorTests
 {
     /// <summary>
     /// Tests for running a <see cref="NetworkTimeSystem"/> as a client.
@@ -91,8 +90,8 @@ namespace MLAPI.EditorTests.Timing
             double unscaledServerTime = timeSystem.ServerTime;
             TimingTestHelper.ApplySteps(timeSystem, tickSystem, steps, delegate (int step)
              {
-                // sync network stats
-                unscaledLocalTime += steps[step];
+                 // sync network stats
+                 unscaledLocalTime += steps[step];
                  unscaledServerTime += steps[step];
                  receivedServerTime += steps[step];
                  timeSystem.Sync(receivedServerTime, rttSteps2[step]);
