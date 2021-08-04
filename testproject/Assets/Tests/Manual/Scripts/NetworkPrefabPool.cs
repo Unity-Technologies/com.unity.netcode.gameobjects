@@ -260,7 +260,7 @@ namespace TestProject.ManualTests
             var genericNetworkObjectBehaviour = obj.GetComponent<GenericNetworkObjectBehaviour>();
             genericNetworkObjectBehaviour.HasHandler = EnableHandler;
             m_ObjectPool.Add(obj);
-            return obj;
+            return m_ObjectPool[m_ObjectPool.Count - 1];
         }
 
         /// <summary>
