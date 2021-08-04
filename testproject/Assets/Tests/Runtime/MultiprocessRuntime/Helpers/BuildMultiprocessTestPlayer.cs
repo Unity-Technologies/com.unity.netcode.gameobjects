@@ -14,7 +14,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
     /// </summary>
     public static class BuildMultiprocessTestPlayer
     {
-        public const string MultiprocessBaseMenuName = "MLAPI/Multiprocess Test";
+        public const string MultiprocessBaseMenuName = "Netcode/Multiprocess Test";
         public const string BuildAndExecuteMenuName = MultiprocessBaseMenuName + "/Build Test Player #t";
         public const string MainSceneName = "MultiprocessTestScene";
 

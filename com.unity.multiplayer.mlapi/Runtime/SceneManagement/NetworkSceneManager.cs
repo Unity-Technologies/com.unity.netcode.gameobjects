@@ -588,7 +588,7 @@ namespace Unity.Netcode
         /// </summary>
         private void OnServerLoadedScene()
         {
-            // Register in-scene placed NetworkObjects with MLAPI
+            // Register in-scene placed NetworkObjects with the netcode
             foreach (var keyValuePair in ScenePlacedObjects)
             {
                 if (!keyValuePair.Value.IsPlayerObject)

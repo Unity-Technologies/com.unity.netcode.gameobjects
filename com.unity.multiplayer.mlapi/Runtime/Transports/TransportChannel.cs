@@ -3,7 +3,7 @@ using System;
 namespace Unity.Netcode
 {
     /// <summary>
-    /// A transport channel used by the MLAPI
+    /// A transport channel used by the netcode
     /// </summary>
     [Serializable]
     public struct TransportChannel

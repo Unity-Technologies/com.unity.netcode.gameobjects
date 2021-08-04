@@ -7,7 +7,7 @@ namespace Unity.Netcode
     /// Initial goal: allow an FPS-style snapshot
     /// with variables updating at specific place in the frame
     /// </summary>
-    [AddComponentMenu("MLAPI/SyncTransform")]
+    [AddComponentMenu("Netcode/" + nameof(SyncTransform))]
     // todo: check inheriting from NetworkBehaviour. Currently needed for IsOwner, to synchronize position
     public class SyncTransform : NetworkBehaviour
     {

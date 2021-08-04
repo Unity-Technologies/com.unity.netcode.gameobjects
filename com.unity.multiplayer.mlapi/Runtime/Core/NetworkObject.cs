@@ -10,7 +10,7 @@ namespace Unity.Netcode
     /// <summary>
     /// A component used to identify that a GameObject in the network
     /// </summary>
-    [AddComponentMenu("MLAPI/NetworkObject", -99)]
+    [AddComponentMenu("Netcode/" + nameof(NetworkObject), -99)]
     [DisallowMultipleComponent]
     public sealed class NetworkObject : MonoBehaviour
     {
@@ -172,7 +172,7 @@ namespace Unity.Netcode
         public delegate bool VisibilityDelegate(ulong clientId);
 
         /// <summary>
-        /// Delegate invoked when the MLAPI needs to know if the object should be visible to a client, if null it will assume true
+        /// Delegate invoked when the netcode needs to know if the object should be visible to a client, if null it will assume true
         /// </summary>
         public VisibilityDelegate CheckObjectVisibility = null;
 
@@ -183,7 +183,7 @@ namespace Unity.Netcode
         public delegate bool SpawnDelegate(ulong clientId);
 
         /// <summary>
-        /// Delegate invoked when the MLAPI needs to know if it should include the transform when spawning the object, if null it will assume true
+        /// Delegate invoked when the netcode needs to know if it should include the transform when spawning the object, if null it will assume true
         /// </summary>
         public SpawnDelegate IncludeTransformWhenSpawning = null;
 
@@ -280,7 +280,7 @@ namespace Unity.Netcode
             }
 
 
-            // Do the safety loop first to prevent putting the MLAPI in an invalid state.
+            // Do the safety loop first to prevent putting the netcode in an invalid state.
             for (int i = 0; i < networkObjects.Count; i++)
             {
                 if (!networkObjects[i].IsSpawned)
@@ -387,7 +387,7 @@ namespace Unity.Netcode
                 throw new VisibilityChangeException("Cannot hide an object from the server");
             }
 
-            // Do the safety loop first to prevent putting the MLAPI in an invalid state.
+            // Do the safety loop first to prevent putting the netcode in an invalid state.
             for (int i = 0; i < networkObjects.Count; i++)
             {
                 if (!networkObjects[i].IsSpawned)

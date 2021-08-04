@@ -14,7 +14,7 @@ namespace Unity.Netcode
     /// <summary>
     /// The main component of the library
     /// </summary>
-    [AddComponentMenu("MLAPI/NetworkManager", -100)]
+    [AddComponentMenu("Netcode/" + nameof(NetworkManager), -100)]
     public class NetworkManager : MonoBehaviour, INetworkUpdateSystem, IProfilableTransportProvider
     {
 #pragma warning disable IDE1006 // disable naming rule violation check
@@ -718,7 +718,7 @@ namespace Unity.Netcode
             IsClient = false;
             StopServer();
 
-            //We don't stop client since we dont actually have a transport connection to our own host. We just handle host messages directly in the MLAPI
+            //We don't stop client since we dont actually have a transport connection to our own host. We just handle host messages directly in the netcode
         }
 
         /// <summary>
