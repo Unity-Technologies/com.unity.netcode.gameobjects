@@ -232,8 +232,7 @@ namespace Unity.Netcode
                 return;
             }
 
-
-            throw new ArgumentException($"{nameof(NetworkWriter)} cannot write type {value.GetType()}");
+            throw new ArgumentException($"{nameof(NetworkWriter)} cannot write type {value.GetType().Name} - it does not implement {nameof(INetworkSerializable)}");
         }
 
         /// <summary>

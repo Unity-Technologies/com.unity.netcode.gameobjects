@@ -304,7 +304,7 @@ public class UTPTransport : NetworkTransport
                     UnsafeUtility.MemClear(data.GetUnsafePtr(), message.Length);
                     UnsafeUtility.MemCpy(data.GetUnsafePtr(), message.Data, message.Length);
                 }
-                var clientId = GetMLAPIClientId((uint)message.Id, false);
+                var clientId = GetNetcodeClientId((uint)message.Id, false);
 
                 switch ((NetcodeEvent)message.Type)
                 {
@@ -406,7 +406,7 @@ public class UTPTransport : NetworkTransport
         return SocketTask.Working.AsTasks();
     }
 
-    public int MLAPIChannelToPipeline(UTPDelivery type)
+    public int NetcodeChannelToPipeline(UTPDelivery type)
     {
         switch (type)
         {
@@ -421,7 +421,7 @@ public class UTPTransport : NetworkTransport
         return 0;
     }
 
-    public ulong GetMLAPIClientId(uint peerId, bool isServer)
+    public ulong GetNetcodeClientId(uint peerId, bool isServer)
     {
         if (isServer)
         {

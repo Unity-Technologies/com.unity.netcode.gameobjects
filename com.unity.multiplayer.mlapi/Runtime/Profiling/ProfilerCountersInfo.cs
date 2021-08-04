@@ -60,7 +60,7 @@ namespace Unity.Netcode
                 ProfilerMarkerDataUnit.Count, ProfilerCounterOptions.FlushOnEndOfFrame | ProfilerCounterOptions.ResetToZeroOnFlush);
 
         [RuntimeInitializeOnLoadMethod]
-        private static void RegisterMLAPIPerformanceEvent()
+        private static void RegisterNetcodePerformanceEvent()
         {
             InitializeCounters();
             ProfilerNotifier.OnPerformanceDataEvent += OnPerformanceTickData;
