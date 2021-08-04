@@ -855,7 +855,6 @@ namespace Unity.Multiplayer.Netcode
 
         private void Awake()
         {
-            Application.wantsToQuit += ApplicationWantsToQuit;
             UnityEngine.SceneManagement.SceneManager.sceneUnloaded += OnSceneUnloaded;
         }
 
@@ -869,10 +868,9 @@ namespace Unity.Multiplayer.Netcode
         }
 
         // Ensures that the NetworkManager is cleaned up before OnDestroy is run on NetworkObjects and NetworkBehaviours when quitting the application.
-        private bool ApplicationWantsToQuit()
+        private void OnApplicationQuit()
         {
             OnDestroy();
-            return true;
         }
 
         private void OnDestroy()
