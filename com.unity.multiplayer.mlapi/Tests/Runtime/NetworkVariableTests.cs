@@ -136,6 +136,9 @@ namespace Unity.Netcode.RuntimeTests
         public IEnumerator AllNetworkVariableTypes()
         {
             // Create, instantiate, and host
+            // This would normally go in Setup, but since every other test but this one
+            //  uses MultiInstanceHelper, and it does its own NetworkManager setup / teardown,
+            //  for now we put this within this one test until we migrate it to MIH
             Assert.IsTrue(NetworkManagerHelper.StartNetworkManager(out _));
 
             Guid gameObjectId = NetworkManagerHelper.AddGameNetworkObject("NetworkVariableTestComponent");
@@ -165,6 +168,10 @@ namespace Unity.Netcode.RuntimeTests
             networkVariableTestComponent.gameObject.SetActive(false);
 
             Assert.IsTrue(testsAreComplete);
+
+            // This would normally go in Teardown, but since every other test but this one
+            //  uses MultiInstanceHelper, and it does its own NetworkManager setup / teardown,
+            //  for now we put this within this one test until we migrate it to MIH
             NetworkManagerHelper.ShutdownNetworkManager();
         }
 
