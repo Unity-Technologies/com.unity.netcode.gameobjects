@@ -101,7 +101,7 @@ namespace Unity.Netcode
 
                     if (networkEvent != NetworkEvent.Nothing)
                     {
-                        clientId = GetMLAPIClientId(i, connectionId, false);
+                        clientId = GetNetcodeClientId(i, connectionId, false);
 
                         return networkEvent;
                     }
@@ -165,7 +165,7 @@ namespace Unity.Netcode
         }
 
 
-        public ulong GetMLAPIClientId(byte transportId, ulong connectionId, bool isServer)
+        public ulong GetNetcodeClientId(byte transportId, ulong connectionId, bool isServer)
         {
             if (isServer)
             {
