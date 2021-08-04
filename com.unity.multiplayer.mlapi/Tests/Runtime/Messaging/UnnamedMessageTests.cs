@@ -3,12 +3,11 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using Unity.Multiplayer.Netcode.Serialization;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace Unity.Multiplayer.Netcode.RuntimeTests.Messaging
+namespace Unity.Multiplayer.Netcode.RuntimeTests
 {
     public class UnnamedMessageTests : BaseMultiInstanceTest
     {

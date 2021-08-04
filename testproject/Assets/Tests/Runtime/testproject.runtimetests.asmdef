@@ -1,5 +1,6 @@
 {
     "name": "TestProject.RuntimeTests",
+    "rootNamespace": "TestProject.RuntimeTests",
     "references": [
         "TestProject.ManualTests",
         "Unity.Multiplayer.MLAPI.Runtime",

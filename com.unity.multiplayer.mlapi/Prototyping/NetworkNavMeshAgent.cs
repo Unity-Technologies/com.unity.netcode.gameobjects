@@ -1,8 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
-using Unity.Multiplayer.Netcode.Connection;
-using Unity.Multiplayer.Netcode.Messaging;
 
 namespace Unity.Multiplayer.Netcode.Prototyping
 {

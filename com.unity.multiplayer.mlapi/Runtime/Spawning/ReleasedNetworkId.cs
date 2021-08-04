@@ -1,4 +1,4 @@
-namespace Unity.Multiplayer.Netcode.Spawning
+namespace Unity.Multiplayer.Netcode
 {
     internal struct ReleasedNetworkId
     {

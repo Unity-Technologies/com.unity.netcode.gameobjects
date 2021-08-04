@@ -1,5 +1,4 @@
 using System.Collections;
-using Unity.Multiplayer.Netcode.Exceptions;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;

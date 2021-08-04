@@ -1,5 +1,4 @@
 using UnityEngine;
-using Unity.Multiplayer.Netcode.NetworkVariable;
 
 namespace Unity.Multiplayer.Netcode.RuntimeTests
 {

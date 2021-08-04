@@ -1,9 +1,8 @@
 using System;
 using System.Collections.Generic;
-using Unity.Multiplayer.Netcode.Transports.Tasks;
 using UnityEngine;
 
-namespace Unity.Multiplayer.Netcode.Transports
+namespace Unity.Multiplayer.Netcode
 {
     public enum NetworkChannel : byte
     {

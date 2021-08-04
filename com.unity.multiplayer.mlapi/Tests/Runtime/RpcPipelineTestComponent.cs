@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using Unity.Multiplayer.Netcode.Messaging;
 
 namespace Unity.Multiplayer.Netcode.RuntimeTests
 {
@@ -24,7 +23,6 @@ namespace Unity.Multiplayer.Netcode.RuntimeTests
         /// </summary>
         public int MaxIterations = 2;
 
-
         // Start is called before the first frame update
         private void Start()
         {
@@ -34,7 +32,7 @@ namespace Unity.Multiplayer.Netcode.RuntimeTests
             m_ServerParams.Receive.UpdateStage = NetworkUpdateStage.EarlyUpdate;
             m_ClientParams.Receive.UpdateStage = NetworkUpdateStage.EarlyUpdate;
 
-            m_MaxStagesSent = (Enum.GetValues(typeof(NetworkUpdateStage)).Length) * MaxIterations;
+            m_MaxStagesSent = Enum.GetValues(typeof(NetworkUpdateStage)).Length * MaxIterations;
 
             //Start out with this being true (for first sequence)
             m_ClientReceivedRpc = true;
