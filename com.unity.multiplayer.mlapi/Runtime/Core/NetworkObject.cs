@@ -293,7 +293,8 @@ namespace Unity.Netcode
                     {
                         networkObjects[i].Observers.Add(clientId);
 
-                        networkManager.SpawnManager.WriteSpawnCallForObject(nonNullContext.NetworkWriter, clientId, networkObjects[i]);
+                        networkManager.SpawnManager.WriteSpawnCallForObject(nonNullContext.NetworkWriter, clientId,
+                            networkObjects[i]);
                     }
                 }
             }

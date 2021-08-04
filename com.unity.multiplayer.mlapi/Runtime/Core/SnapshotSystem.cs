@@ -27,11 +27,6 @@ namespace Unity.Netcode
         public const int NotFound = -1;
     }
 
-    internal struct SnapshotCommand
-    {
-
-    }
-
     internal struct SnapshotSpawnCommand
     {
         // identity
