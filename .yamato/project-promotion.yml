@@ -4,8 +4,8 @@
 {% for package in project.packages -%}
 # Validation job for package {{ package.name }}, only using the first entry in the
 # platform and editor meta data
-promotion_validate_{{ project.name }}_{{ package.name }}_{{ test_platforms.first.name }}_{{ test_editors.first }}:
-  name : Validate Project {{ project.name }} - Package {{ package.name }} - {{ test_editors.first }} on {{ test_platforms.first.name }}
+promotion_validate_{{ project.name }}_{{ package.name }}_{{ test_platforms.first.name }}_{{ validation_editor }}:
+  name : Validate Project {{ project.name }} - Package {{ package.name }} - {{ validation_editor }} on {{ test_platforms.first.name }}
   agent:
     type: {{ test_platforms.first.type }}
     image: {{ test_platforms.first.image }}
@@ -14,7 +14,7 @@ promotion_validate_{{ project.name }}_{{ package.name }}_{{ test_platforms.first
     UPMCI_PROMOTION: 1
   commands:
     - npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
-    - upm-ci project test -u {{ test_editors.first }} --project-path {{ project.path }} --type vetting-tests --project-path {{ project.path }} --package-filter {{ package.name }}
+    - upm-ci project test -u {{ validation_editor }} --project-path {{ project.path }} --type vetting-tests --project-path {{ project.path }} --package-filter {{ package.name }}
   artifacts:
     logs:
       paths:
@@ -39,7 +39,7 @@ promote_{{ project.name }}_{{ package.name }}:
         - "upm-ci~/packages/*.tgz"
   dependencies:
     - .yamato/project-pack.yml#pack_{{ project.name }}
-    - .yamato/project-promotion.yml#promotion_validate_{{ project.name }}_{{ project.packages.first.name }}_{{ test_platforms.first.name }}_{{ test_editors.first }}
+    - .yamato/project-promotion.yml#promotion_validate_{{ project.name }}_{{ project.packages.first.name }}_{{ test_platforms.first.name }}_{{ validation_editor }}
 
 {% endfor -%}
 
@@ -60,5 +60,5 @@ promote_{{ project.name }}:
         - "upm-ci~/packages/*.tgz"
   dependencies:
     - .yamato/project-pack.yml#pack_{{ project.name }}
-    - .yamato/project-promotion.yml#promotion_validate_{{ project.packages.first.name }}_{{ test_platforms.first.name }}_{{ test_editors.first }}
+    - .yamato/project-promotion.yml#promotion_validate_{{ project.packages.first.name }}_{{ test_platforms.first.name }}_{{ validation_editor }}
 {% endfor -%}

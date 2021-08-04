@@ -7,7 +7,7 @@
 # the results with package tests
 {% for project in projects -%}
 {% for package in project.packages -%}
-{% for editor in test_editors -%}
+{% for editor in project.test_editors -%}
 {% for platform in test_platforms -%}
 test_{{project.name}}_{{  package.name }}_{{ editor }}_{{ platform.name }}:
   name : {{ project.name }} - {{ package.name }} package tests - {{ editor }} on {{ platform.name }}
