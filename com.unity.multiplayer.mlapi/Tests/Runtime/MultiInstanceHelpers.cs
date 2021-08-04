@@ -247,18 +247,15 @@ namespace MLAPI.RuntimeTests
         /// <returns></returns>
         public static IEnumerator WaitForClientsConnected(NetworkManager[] clients, CoroutineResultWrapper<bool> result = null, int maxFrames = 64)
         {
-            Debug.Log("007");
             // Make sure none are the host client
             foreach (var client in clients)
             {
                 if (client.IsServer)
                 {
-                    Debug.Log("008");
                     throw new InvalidOperationException("Cannot wait for connected as server");
                 }
             }
 
-            Debug.Log("009");
             var startFrameNumber = Time.frameCount;
             var allConnected = true;
             while (Time.frameCount - startFrameNumber <= maxFrames)
@@ -276,18 +273,15 @@ namespace MLAPI.RuntimeTests
                 {
                     break;
                 }
-                Debug.Log("00A - (" + (Time.frameCount - startFrameNumber) + ")");
                 yield return CoroutineHelper.WaitOneFrame();
             }
 
             if (result != null)
             {
-                Debug.Log("00B");
                 result.Result = allConnected;
             }
             else
             {
-                Debug.Log("00C");
                 for (var i = 0; i < clients.Length; ++i)
                 {
                     var client = clients[i];

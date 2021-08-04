@@ -43,17 +43,12 @@ namespace MLAPI.RuntimeTests
         public static IEnumerator WaitOneFrame() => WaitNumFrames(1);
         public static IEnumerator WaitNumFrames(int numFrames)
         {
-            Debug.Log($"Waiting {numFrames} frames");
-
             int currentFrame = Time.frameCount;
             int targetFrame = currentFrame + numFrames;
             while (Time.frameCount < targetFrame)
             {
-                Debug.Log($"Waited a frame. Current: {Time.frameCount}, Target: {targetFrame}");
                 yield return null;
             }
-
-            Debug.Log("Finished waiting.");
         }
 
         /// <summary>
