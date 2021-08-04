@@ -1,4 +1,5 @@
-﻿using System;
+﻿#if MULTIPLAYER_TOOLS
+using System;
 using MLAPI.NetworkVariable;
 
 namespace MLAPI.RuntimeTests.Metrics.Utility
@@ -16,3 +17,4 @@ namespace MLAPI.RuntimeTests.Metrics.Utility
         }
     }
 }
+#endif
