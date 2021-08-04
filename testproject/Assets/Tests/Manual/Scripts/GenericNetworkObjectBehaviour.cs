@@ -131,8 +131,10 @@ namespace TestProject.ManualTests
             if (IsOwner && m_ShouldDespawn && NetworkObject != null)
             {
                 m_ShouldDespawn = false;
-
-                NetworkObject.Despawn(true);
+                if (NetworkObject.NetworkManager != null)
+                {
+                    NetworkObject.Despawn(true);
+                }
             }
             else if (!IsServer)
             {

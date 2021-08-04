@@ -22,7 +22,6 @@ namespace TestProject.ManualTests
 
         private void Start()
         {
-            m_Stats = new Rect(5, 10, 175, 300);
             GUI.contentColor = new Color(196, 196, 196, 196);
             GUI.backgroundColor = new Color(96, 96, 96, 96);
             if (m_ClientServerToggle != null)
@@ -53,8 +52,28 @@ namespace TestProject.ManualTests
                 UpdateButton();
             }
 
-
+            NetworkManager.SceneManager.OnSceneEvent += OnSceneEvent;
             StartCoroutine("UpdateTextStatus");
+        }
+
+        public override void OnNetworkDespawn()
+        {
+            NetworkManager.SceneManager.OnSceneEvent -= OnSceneEvent;
+            base.OnNetworkDespawn();
+        }
+
+
+        private class SceneEventNotification
+        {
+            public float TimeToLive;
+            public SceneEvent SceneEvent;
+        }
+
+        private Queue<SceneEventNotification> m_SceneEventNotifications = new Queue<SceneEventNotification>();
+
+        private void OnSceneEvent(SceneEvent sceneEvent)
+        {
+            m_SceneEventNotifications.Enqueue(new SceneEventNotification() { SceneEvent = sceneEvent, TimeToLive = Time.realtimeSinceStartup + 10 });
         }
 
         /// <summary>
@@ -104,6 +123,9 @@ namespace TestProject.ManualTests
         {
             if (NetworkManager && NetworkManager.IsListening)
             {
+                var width = 0.20f * Screen.width;
+                var height = 0.35f * Screen.height;
+                m_Stats = new Rect(5, 10, width, height);
                 GUI.TextArea(m_Stats, m_LastStatsDump);
             }
         }
@@ -181,8 +203,20 @@ namespace TestProject.ManualTests
                             m_LastStatsDump += "\n";
                         }
 
-                        m_LastStatsDump += $"Active Scene: {SceneManager.GetActiveScene().name}";
-
+                        m_LastStatsDump += $"Active Scene: {SceneManager.GetActiveScene().name}\n";
+                        if (m_SceneEventNotifications.Count > 0)
+                        {
+                            m_LastStatsDump += "Scene Events:\n";
+                            foreach (var sceneEventEntry in m_SceneEventNotifications)
+                            {
+                                m_LastStatsDump += $"[{sceneEventEntry.SceneEvent.ClientId} | {sceneEventEntry.SceneEvent.SceneEventType} | " +
+                                    $"{sceneEventEntry.SceneEvent.SceneName} | {sceneEventEntry.SceneEvent.LoadSceneMode}]\n";
+                            }
+                            if(m_SceneEventNotifications.Peek().TimeToLive < Time.realtimeSinceStartup)
+                            {
+                                m_SceneEventNotifications.Dequeue();
+                            }
+                        }
                     }
                     if (NetworkManager.Singleton.IsServer && m_ClientsToUpdate.Count > 0)
                     {

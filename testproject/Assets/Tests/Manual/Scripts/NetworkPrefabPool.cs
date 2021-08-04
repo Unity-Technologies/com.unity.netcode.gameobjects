@@ -95,13 +95,13 @@ namespace TestProject.ManualTests
             }
         }
 
-        private void OnSceneEvent(AsyncOperation operation, SceneEventData.SceneEventTypes sceneEventType, LoadSceneMode loadSceneMode, string sceneName)
+        private void OnSceneEvent(SceneEvent sceneEvent)
         {
-            switch (sceneEventType)
+            switch (sceneEvent.SceneEventType)
             {
                 case SceneEventData.SceneEventTypes.S2C_Event_Unload:
                     {
-                        if (loadSceneMode == LoadSceneMode.Single && (gameObject.scene.name == sceneName))
+                        if (sceneEvent.LoadSceneMode == LoadSceneMode.Single && (gameObject.scene.name == sceneEvent.SceneName))
                         {
                             OnUnloadScene();
                         }
@@ -416,9 +416,6 @@ namespace TestProject.ManualTests
             else
             {
                 return true;
-                //// NSS TODO: Remove before converting from draft to PR
-                //Debug.Log($"NetworkObject {networkObject.name}:{networkObject.NetworkObjectId} is not registered and will be destroyed immediately");
-                //Object.DestroyImmediate(networkObject.gameObject);
             }
             return false;
         }

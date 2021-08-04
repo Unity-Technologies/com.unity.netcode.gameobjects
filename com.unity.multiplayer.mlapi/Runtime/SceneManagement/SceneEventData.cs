@@ -8,7 +8,10 @@ using UnityEngine.SceneManagement;
 
 namespace Unity.Netcode
 {
-    [Serializable]
+    /// <summary>
+    /// Used by <see cref="NetworkSceneManager"/> to communicate scene event states
+    /// when scene management is enabled.
+    /// </summary>
     public class SceneEventData : IDisposable
     {
         /// <summary>
@@ -30,12 +33,12 @@ namespace Unity.Netcode
             C2S_Event_Sync_Complete,        //Client to server
         }
 
-        public SceneEventTypes SceneEventType;
-        public LoadSceneMode LoadSceneMode;
-        public Guid SwitchSceneGuid;
+        internal SceneEventTypes SceneEventType;
+        internal LoadSceneMode LoadSceneMode;
+        internal Guid SwitchSceneGuid;
 
-        public uint SceneIndex;
-        public ulong TargetClientId;
+        internal uint SceneIndex;
+        internal ulong TargetClientId;
 
         private Dictionary<uint, List<NetworkObject>> m_SceneNetworkObjects;
         private Dictionary<uint, long> m_SceneNetworkObjectDataOffsets;
@@ -65,7 +68,7 @@ namespace Unity.Netcode
         /// Gets the next scene index to be loaded for approval and/or late joining
         /// </summary>
         /// <returns></returns>
-        public uint GetNextSceneSynchronizationIndex()
+        internal uint GetNextSceneSynchronizationIndex()
         {
             if (m_SceneNetworkObjectDataOffsets.ContainsKey(SceneIndex))
             {
@@ -79,7 +82,7 @@ namespace Unity.Netcode
         /// Determines if all scenes have been processed during the synchronization process
         /// </summary>
         /// <returns>true/false</returns>
-        public bool IsDoneWithSynchronization()
+        internal bool IsDoneWithSynchronization()
         {
             return (m_SceneNetworkObjectDataOffsets.Count == 0);
         }
@@ -88,7 +91,7 @@ namespace Unity.Netcode
         /// Server Side:
         /// Called just before the synchronization process
         /// </summary>
-        public void InitializeForSynch()
+        internal void InitializeForSynch()
         {
             if (m_SceneNetworkObjects == null)
             {
@@ -106,7 +109,7 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="sceneIndex"></param>
         /// <param name="networkObject"></param>
-        public void AddNetworkObjectForSynch(uint sceneIndex, NetworkObject networkObject)
+        internal void AddNetworkObjectForSynch(uint sceneIndex, NetworkObject networkObject)
         {
             if (!m_SceneNetworkObjects.ContainsKey(sceneIndex))
             {
@@ -120,7 +123,7 @@ namespace Unity.Netcode
         /// Determines if the scene event type was intended for the client ( or server )
         /// </summary>
         /// <returns>true (client should handle this message) false (server should handle this message)</returns>
-        public bool IsSceneEventClientSide()
+        internal bool IsSceneEventClientSide()
         {
             switch (SceneEventType)
             {
@@ -162,10 +165,10 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Serializes data based on the SceneEvent type.
+        /// Serializes data based on the SceneEvent type (<see cref="SceneEventTypes"/>)
         /// </summary>
-        /// <param name="writer"></param>
-        public void OnWrite(NetworkWriter writer)
+        /// <param name="writer"><see cref="NetworkWriter"/> to write the scene event data</param>
+        internal void OnWrite(NetworkWriter writer)
         {
             writer.WriteByte((byte)SceneEventType);
 
@@ -237,7 +240,7 @@ namespace Unity.Netcode
         /// Deserialize data based on the SceneEvent type.
         /// </summary>
         /// <param name="reader"></param>
-        public void OnRead(NetworkReader reader)
+        internal void OnRead(NetworkReader reader)
         {
             var sceneEventTypeValue = reader.ReadByte();
 
@@ -389,7 +392,7 @@ namespace Unity.Netcode
         /// process the server finds NetworkObjects that the client still thinks are spawned.
         /// </summary>
         /// <returns></returns>
-        public bool ClientNeedsReSynchronization()
+        internal bool ClientNeedsReSynchronization()
         {
             return (m_NetworkObjectsToBeRemoved.Count > 0);
         }
@@ -441,7 +444,7 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="sceneId"></param>
         /// <param name="networkManager"></param>
-        public void SynchronizeSceneNetworkObjects(uint sceneId, NetworkManager networkManager)
+        internal void SynchronizeSceneNetworkObjects(uint sceneId, NetworkManager networkManager)
         {
             if (m_SceneNetworkObjectDataOffsets.ContainsKey(sceneId))
             {
@@ -494,7 +497,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Constructor
         /// </summary>
-        public SceneEventData(NetworkManager networkManager)
+        internal SceneEventData(NetworkManager networkManager)
         {
             m_NetworkManager = networkManager;
             InternalBuffer = NetworkBufferPool.GetBuffer();

@@ -18,7 +18,7 @@ namespace TestProject.ManualTests
         public bool DestroyOnUnload = false;
 
         public float InitialSpawnDelay;
-        public int SpawnsPerSecond;
+        public int SpawnsPerSecond = 3;
         public int PoolSize;
         public float ObjectSpeed = 10.0f;
 
@@ -104,9 +104,7 @@ namespace TestProject.ManualTests
         // Start is called before the first frame update
         private void Start()
         {
-            SpawnsPerSecond = 3;
             NetworkManager.SceneManager.OnSceneEvent += OnSceneEvent;
-
         }
 
 
@@ -117,26 +115,26 @@ namespace TestProject.ManualTests
         /// </summary>
         /// <param name="operation"></param>
         /// <param name="sceneName"></param>
-        private void OnSceneEvent(AsyncOperation operation,SceneEventData.SceneEventTypes sceneEventType,LoadSceneMode loadSceneMode, string sceneName)
+        private void OnSceneEvent(SceneEvent sceneEvent)
         {
-            switch(sceneEventType)
+            switch (sceneEvent.SceneEventType)
             {
                 case SceneEventData.SceneEventTypes.S2C_Event_Unload:
+                {
+                    if (sceneEvent.LoadSceneMode == LoadSceneMode.Additive && (gameObject.scene.name == sceneEvent.SceneName))
                     {
-                        if (loadSceneMode == LoadSceneMode.Additive && (gameObject.scene.name == sceneName))
-                        {
-                            OnUnloadScene();
-                        }
-                        break;
+                        OnUnloadScene();
                     }
+                    break;
+                }
                 case SceneEventData.SceneEventTypes.S2C_Event_Load:
+                {
+                    if (sceneEvent.LoadSceneMode == LoadSceneMode.Single && ((gameObject.scene.name == sceneEvent.SceneName) || !SpawnInSourceScene))
                     {
-                        if (loadSceneMode == LoadSceneMode.Single && ((gameObject.scene.name == sceneName) || !SpawnInSourceScene) )
-                        {
-                            OnUnloadScene();
-                        }
-                        break;
+                        OnUnloadScene();
                     }
+                    break;
+                }
             }
         }
 
@@ -469,8 +467,6 @@ namespace TestProject.ManualTests
             else
             {
                 return true;
-                //Debug.Log($"NetworkObject {networkObject.name}:{networkObject.NetworkObjectId} is not registered and will be destroyed immediately");
-                //Object.DestroyImmediate(networkObject.gameObject);
             }
             return false;
         }
