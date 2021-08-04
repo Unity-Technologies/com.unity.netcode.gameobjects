@@ -25,10 +25,12 @@ pull_request_trigger:
 {% if project.validate == "true" -%}
     - .yamato/project-tests.yml#validate_{{ package.name }}_{{ test_platforms.first.name }}_{{ test_editors.first }}
 {% endif -%}
-{% for platform in test_platforms -%}
-    - .yamato/package-tests.yml#test_{{ project.name }}_{{ package.name }}_{{ test_editors.first }}_{{ platform.name }}
-    - .yamato/project-tests.yml#test_{{ project.name }}_{{ test_editors.first }}_{{ platform.name }}
 {% endfor -%}
+{% for platform in test_platforms -%}
+{% for package in project.packages -%}
+    - .yamato/package-tests.yml#test_{{ project.name }}_{{ package.name }}_{{ test_editors.first }}_{{ platform.name }}
+{% endfor -%}
+    - .yamato/project-tests.yml#test_{{ project.name }}_{{ test_editors.first }}_{{ platform.name }}
 {% endfor -%}
 {% endfor -%}
   triggers:
