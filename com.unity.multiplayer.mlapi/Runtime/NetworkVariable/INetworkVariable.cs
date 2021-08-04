@@ -1,7 +1,6 @@
 using System.IO;
-using Unity.Multiplayer.Netcode.Transports;
 
-namespace Unity.Multiplayer.Netcode.NetworkVariable
+namespace Unity.Multiplayer.Netcode
 {
     /// <summary>
     /// Interface for network value containers

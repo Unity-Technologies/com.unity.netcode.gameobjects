@@ -7,12 +7,9 @@ using NUnit.Framework;
 
 namespace Unity.Multiplayer.Netcode.RuntimeTests
 {
-
     public class ConnectionApprovalTests
     {
-
         private Guid m_ValidationToken;
-
         private bool m_IsValidated;
 
         [SetUp]
@@ -65,6 +62,5 @@ namespace Unity.Multiplayer.Netcode.RuntimeTests
             // Stop, shutdown, and destroy
             NetworkManagerHelper.ShutdownNetworkManager();
         }
-
     }
 }

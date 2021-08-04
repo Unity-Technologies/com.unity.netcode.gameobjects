@@ -2,12 +2,8 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
-using Unity.Multiplayer.Netcode.Transports;
-using Unity.Multiplayer.Netcode.Hashing;
-using Unity.Multiplayer.Netcode.Serialization;
-using Unity.Multiplayer.Netcode.Serialization.Pooled;
 
-namespace Unity.Multiplayer.Netcode.Configuration
+namespace Unity.Multiplayer.Netcode
 {
     /// <summary>
     /// The configuration object used to start server, client and hosts

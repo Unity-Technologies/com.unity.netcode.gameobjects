@@ -1,12 +1,11 @@
 using System;
 using System.Collections;
 using System.Linq;
-using Unity.Multiplayer.Netcode.Timing;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace Unity.Multiplayer.Netcode.RuntimeTests.Timing
+namespace Unity.Multiplayer.Netcode.RuntimeTests
 {
     /// <summary>
     /// Tests the times of two clients connecting to a server using the SIPTransport (returns 50ms RTT but has no latency simulation)

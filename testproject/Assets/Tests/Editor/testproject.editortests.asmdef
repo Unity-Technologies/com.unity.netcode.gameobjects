@@ -1,5 +1,6 @@
 {
     "name": "TestProject.EditorTests",
+    "rootNamespace": "TestProject.EditorTests",
     "references": [
         "Unity.Multiplayer.MLAPI.Runtime",
         "Unity.Multiplayer.MLAPI.Editor"
@@ -9,6 +10,5 @@
     ],
     "includePlatforms": [
         "Editor"
-    ],
-    "excludePlatforms": []
+    ]
 }

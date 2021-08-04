@@ -1,15 +1,12 @@
 using System.Collections.Generic;
-using Unity.Multiplayer.Netcode.Collections;
-using Unity.Multiplayer.Netcode.Messaging;
-using Unity.Multiplayer.Netcode.Transports;
 using UnityEngine;
 
-namespace Unity.Multiplayer.Netcode.Profiling
+namespace Unity.Multiplayer.Netcode
 {
     /// <summary>
     /// NetworkProfiler for profiling network traffic
     /// </summary>
-    public static class NetworkProfiler
+    internal static class NetworkProfiler
     {
         /// <summary>
         /// The ticks that has been recorded

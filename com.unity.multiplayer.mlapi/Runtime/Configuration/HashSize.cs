@@ -1,4 +1,4 @@
-namespace Unity.Multiplayer.Netcode.Configuration
+namespace Unity.Multiplayer.Netcode
 {
     /// <summary>
     /// Represents the length of a var int encoded hash

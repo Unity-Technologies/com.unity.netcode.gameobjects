@@ -1,8 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
-using Unity.Multiplayer.Netcode.Logging;
 
-namespace Unity.Multiplayer.Netcode.Serialization.Pooled
+namespace Unity.Multiplayer.Netcode
 {
     /// <summary>
     /// Static class containing PooledNetworkReaders

@@ -1,11 +1,8 @@
 using System;
 using Unity.Profiling;
-using Unity.Multiplayer.Netcode.Profiling;
-using Unity.Multiplayer.Netcode.Logging;
-using Unity.Multiplayer.Netcode.Transports;
 using UnityEngine;
 
-namespace Unity.Multiplayer.Netcode.Messaging
+namespace Unity.Multiplayer.Netcode
 {
     /// <summary>
     /// MessageQueueProcessing
@@ -122,9 +119,6 @@ namespace Unity.Multiplayer.Netcode.Messaging
                         break;
                     case MessageQueueContainer.MessageType.SnapshotData:
                         InternalMessageHandler.HandleSnapshot(item.NetworkId, item.NetworkBuffer);
-                        break;
-                    case MessageQueueContainer.MessageType.SnapshotAck:
-                        InternalMessageHandler.HandleAck(item.NetworkId, item.NetworkBuffer);
                         break;
                     case MessageQueueContainer.MessageType.NetworkVariableDelta:
                         m_NetworkManager.MessageHandler.HandleNetworkVariableDelta(item.NetworkId, item.NetworkBuffer);

@@ -1,13 +1,12 @@
 using System.Collections.Generic;
 using System.IO;
-using Unity.Multiplayer.Netcode.Serialization.Pooled;
 
-namespace Unity.Multiplayer.Netcode.Profiling
+namespace Unity.Multiplayer.Netcode
 {
     /// <summary>
     /// The type of Tick
     /// </summary>
-    public enum TickType
+    internal enum TickType
     {
         /// <summary>
         /// Event tick. During EventTick NetworkVars are flushed etc
@@ -28,7 +27,7 @@ namespace Unity.Multiplayer.Netcode.Profiling
     /// <summary>
     /// A tick in used for the Profiler
     /// </summary>
-    public class ProfilerTick
+    internal class ProfilerTick
     {
         /// <summary>
         /// The events that occured during this tick
@@ -134,7 +133,7 @@ namespace Unity.Multiplayer.Netcode.Profiling
     /// <summary>
     /// A event that can occur during a Event
     /// </summary>
-    public class TickEvent
+    internal class TickEvent
     {
         /// <summary>
         /// The type of evenmt

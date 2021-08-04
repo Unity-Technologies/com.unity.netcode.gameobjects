@@ -1,6 +1,6 @@
 using System;
 
-namespace Unity.Multiplayer.Netcode.Collections
+namespace Unity.Multiplayer.Netcode
 {
     /// <summary>
     /// Queue with a fixed size
