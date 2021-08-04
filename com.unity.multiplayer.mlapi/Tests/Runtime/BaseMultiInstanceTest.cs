@@ -35,7 +35,6 @@ namespace MLAPI.RuntimeTests
         [UnityTearDown]
         public virtual IEnumerator Teardown()
         {
-            Debug.Log("012");
             // Shutdown and clean up both of our NetworkManager instances
             try
             {
@@ -43,12 +42,10 @@ namespace MLAPI.RuntimeTests
             }
             catch (Exception e)
             {
-                Debug.Log("013");
                 throw e;
             }
             finally
             {
-                Debug.Log("014");
                 if (m_PlayerPrefab != null)
                 {
                     Object.Destroy(m_PlayerPrefab);
@@ -56,14 +53,7 @@ namespace MLAPI.RuntimeTests
                 }
             }
 
-            Debug.Log("015");
-            yield return null;
-            Debug.Log("015b");
-            // wait for next frame so everything is destroyed, so following tests can execute from clean environment
-            yield return CoroutineHelper.Run(CoroutineHelper.WaitOneFrame());
-            Debug.Log("016");
-            yield return null;
-            Debug.Log("017");
+            yield break;
         }
 
         /// <summary>
@@ -75,12 +65,9 @@ namespace MLAPI.RuntimeTests
         /// <returns></returns>
         public IEnumerator StartSomeClientsAndServerWithPlayers(bool useHost, int nbClients, Action<GameObject> updatePlayerPrefab, int targetFrameRate = 60)
         {
-            Debug.Log("001");
-
             // Create multiple NetworkManager instances
             if (!MultiInstanceHelpers.Create(nbClients, out NetworkManager server, out NetworkManager[] clients, targetFrameRate))
             {
-                Debug.Log("002");
                 Debug.LogError("Failed to create instances");
                 Assert.Fail("Failed to create instances");
             }
@@ -112,25 +99,18 @@ namespace MLAPI.RuntimeTests
                 clients[i].NetworkConfig.PlayerPrefab = m_PlayerPrefab;
             }
 
-            Debug.Log("003");
-
             // Start the instances
             if (!MultiInstanceHelpers.Start(useHost, server, clients))
             {
-                Debug.Log("004");
                 Debug.LogError("Failed to start instances");
                 Assert.Fail("Failed to start instances");
             }
 
-            Debug.Log("005");
             // Wait for connection on client side
             yield return CoroutineHelper.Run(MultiInstanceHelpers.WaitForClientsConnected(clients));
 
-            Debug.Log("006");
             // Wait for connection on server side
             yield return CoroutineHelper.Run(MultiInstanceHelpers.WaitForClientsConnectedToServer(server, useHost ? nbClients + 1 : nbClients));
-
-            Debug.Log("006b");
         }
     }
 }

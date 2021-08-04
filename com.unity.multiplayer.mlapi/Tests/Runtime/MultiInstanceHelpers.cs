@@ -317,7 +317,6 @@ namespace MLAPI.RuntimeTests
         /// <param name="maxFrames">The max frames to wait for</param>
         public static IEnumerator WaitForClientsConnectedToServer(NetworkManager server, int clientCount = 1, CoroutineResultWrapper<bool> result = null, int maxFrames = 64)
         {
-            Debug.Log("00D");
             if (!server.IsServer)
             {
                 throw new InvalidOperationException("Cannot wait for connected as client");
@@ -325,10 +324,8 @@ namespace MLAPI.RuntimeTests
 
             var startFrameNumber = Time.frameCount;
 
-            Debug.Log("00E");
             while (Time.frameCount - startFrameNumber <= maxFrames && server.ConnectedClients.Count != clientCount)
             {
-                Debug.Log("00F - (" + (Time.frameCount - startFrameNumber) + ")");
                 yield return CoroutineHelper.WaitOneFrame();
             }
 
@@ -336,12 +333,10 @@ namespace MLAPI.RuntimeTests
 
             if (result != null)
             {
-                Debug.Log("010");
                 result.Result = res;
             }
             else
             {
-                Debug.Log("011");
                 Assert.True(res, "A client never connected to server");
             }
         }
