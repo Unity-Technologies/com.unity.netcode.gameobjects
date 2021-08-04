@@ -60,9 +60,9 @@ namespace Unity.Netcode
 
 
         /// <summary>
-        /// The tickrate of network ticks. This value controls how often MLAPI runs user code and sends out data.
+        /// The tickrate of network ticks. This value controls how often netcode runs user code and sends out data.
         /// </summary>
-        [Tooltip("The tickrate. This value controls how often MLAPI runs user code and sends out data. The value is in 'ticks per seconds' which means a value of 50 will result in 50 ticks being executed per second or a fixed delta time of 0.02.")]
+        [Tooltip("The tickrate. This value controls how often netcode runs user code and sends out data. The value is in 'ticks per seconds' which means a value of 50 will result in 50 ticks being executed per second or a fixed delta time of 0.02.")]
         public int TickRate = 30;
 
         /// <summary>
@@ -117,10 +117,10 @@ namespace Unity.Netcode
         public bool EnableSceneManagement = true;
 
         /// <summary>
-        /// Whether or not the MLAPI should check for differences in the prefabs at connection.
+        /// Whether or not the netcode should check for differences in the prefabs at connection.
         /// If you dynamically add prefabs at runtime, turn this OFF
         /// </summary>
-        [Tooltip("Whether or not the MLAPI should check for differences in the prefab lists at connection")]
+        [Tooltip("Whether or not the netcode should check for differences in the prefab lists at connection")]
         public bool ForceSamePrefabs = true;
 
         /// <summary>
