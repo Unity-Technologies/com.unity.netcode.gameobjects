@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using NUnit.Framework;
 
-namespace Unity.Multiplayer.Netcode.RuntimeTests
+namespace Unity.Netcode.RuntimeTests
 {
     public class NetworkObjectSceneSerializationTests
     {

@@ -8,7 +8,7 @@
 using System.Text;
 using System.Runtime.CompilerServices;
 
-namespace Unity.Multiplayer.Netcode
+namespace Unity.Netcode
 {
     /// <summary>
     /// XXHash implementation.

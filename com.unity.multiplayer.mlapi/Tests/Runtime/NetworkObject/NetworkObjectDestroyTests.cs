@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using Object = UnityEngine.Object;
 
-namespace Unity.Multiplayer.Netcode.RuntimeTests
+namespace Unity.Netcode.RuntimeTests
 {
     /// <summary>
     /// Tests calling destroy on spawned / unspawned <see cref="NetworkObject"/>s. Expected behavior:

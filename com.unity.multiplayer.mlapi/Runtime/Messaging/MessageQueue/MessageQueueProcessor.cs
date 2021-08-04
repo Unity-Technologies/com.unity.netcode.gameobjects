@@ -2,7 +2,7 @@ using System;
 using Unity.Profiling;
 using UnityEngine;
 
-namespace Unity.Multiplayer.Netcode
+namespace Unity.Netcode
 {
     /// <summary>
     /// MessageQueueProcessing

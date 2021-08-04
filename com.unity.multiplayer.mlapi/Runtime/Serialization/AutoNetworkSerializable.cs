@@ -1,4 +1,4 @@
-namespace Unity.Multiplayer.Netcode
+namespace Unity.Netcode
 {
     /// <summary>
     /// AutoBitWritable implements INetworkSerializable and automatically serializes fields using reflection

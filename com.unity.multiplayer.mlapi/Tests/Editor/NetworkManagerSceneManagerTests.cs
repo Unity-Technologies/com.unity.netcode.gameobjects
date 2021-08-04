@@ -3,7 +3,7 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace Unity.Multiplayer.Netcode.EditorTests
+namespace Unity.Netcode.EditorTests
 {
     public class NetworkManagerSceneManagerTests
     {

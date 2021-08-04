@@ -27,7 +27,7 @@ csharp_prefer_braces = true:error
 csharp_using_directive_placement = outside_namespace:error
 
 # naming rules
-# namespace Unity.Multiplayer.Netcode { ... }
+# namespace Unity.Netcode { ... }
 # public class NetworkObject { ... }
 # public void Spawn(...) { ... }
 dotnet_naming_symbols.usertypes_naming_symbols.applicable_kinds = namespace, class, struct, enum, property, method, field, event, delegate, local_function

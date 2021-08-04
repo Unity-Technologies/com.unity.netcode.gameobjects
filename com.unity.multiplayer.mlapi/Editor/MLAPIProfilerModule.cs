@@ -4,7 +4,7 @@ using Unity.Profiling;
 using UnityEditor;
 using UnityEngine;
 
-namespace Unity.Multiplayer.Netcode.Editor
+namespace Unity.Netcode.Editor
 {
     [InitializeOnLoad]
     internal static class MLAPIProfilerModule

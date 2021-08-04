@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
-using Unity.Multiplayer.Netcode;
-using Unity.Multiplayer.Netcode.RuntimeTests;
+using Unity.Netcode;
+using Unity.Netcode.RuntimeTests;
 
 namespace TestProject.RuntimeTests
 {

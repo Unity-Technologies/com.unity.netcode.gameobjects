@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Unity.Multiplayer.Netcode
+namespace Unity.Netcode
 {
     public enum NetworkChannel : byte
     {
@@ -44,7 +44,7 @@ namespace Unity.Multiplayer.Netcode
         public abstract ulong ServerClientId { get; }
 
         /// <summary>
-        /// Gets a value indicating whether this <see cref="T:MLAPI.Transports.Transport"/> is supported in the current runtime context.
+        /// Gets a value indicating whether this <see cref="T:Transport"/> is supported in the current runtime context.
         /// This is used by multiplex adapters.
         /// </summary>
         /// <value><c>true</c> if is supported; otherwise, <c>false</c>.</value>

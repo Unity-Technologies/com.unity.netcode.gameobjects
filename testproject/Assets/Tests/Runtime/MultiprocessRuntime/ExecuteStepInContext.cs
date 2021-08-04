@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
-using Unity.Multiplayer.Netcode;
+using Unity.Netcode;
 using NUnit.Framework;
 using NUnit.Framework.Interfaces;
 using UnityEngine;

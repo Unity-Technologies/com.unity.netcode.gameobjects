@@ -1,6 +1,6 @@
 using System.Collections;
 using UnityEngine;
-using Unity.Multiplayer.Netcode;
+using Unity.Netcode;
 
 /// <summary>
 /// Used in tandem with the ConnectModeButtons prefab asset in test project

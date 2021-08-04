@@ -2,8 +2,8 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using Unity.Multiplayer.Netcode;
-using Unity.Multiplayer.Netcode.Transports.UNET;
+using Unity.Netcode;
+using Unity.Netcode.Transports.UNET;
 
 
 /// <summary>

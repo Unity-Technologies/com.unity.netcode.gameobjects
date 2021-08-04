@@ -2,7 +2,7 @@ using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Unity.Multiplayer.Netcode.Prototyping
+namespace Unity.Netcode.Prototyping
 {
     /// <summary>
     /// A prototype component for syncing animations

@@ -10,11 +10,11 @@ using Unity.CompilationPipeline.Common.Diagnostics;
 using Unity.CompilationPipeline.Common.ILPostProcessing;
 using UnityEngine;
 
-namespace Unity.Multiplayer.Netcode.Editor.CodeGen
+namespace Unity.Netcode.Editor.CodeGen
 {
     internal static class CodeGenHelpers
     {
-        public const string RuntimeAssemblyName = "Unity.Multiplayer.MLAPI.Runtime";
+        public const string RuntimeAssemblyName = "Unity.Netcode.Runtime";
 
         public static readonly string NetworkBehaviour_FullName = typeof(NetworkBehaviour).FullName;
         public static readonly string ServerRpcAttribute_FullName = typeof(ServerRpcAttribute).FullName;
@@ -278,10 +278,10 @@ namespace Unity.Multiplayer.Netcode.Editor.CodeGen
 
             var assemblyDefinition = AssemblyDefinition.ReadAssembly(new MemoryStream(compiledAssembly.InMemoryAssembly.PeData), readerParameters);
 
-            //apparently, it will happen that when we ask to resolve a type that lives inside MLAPI.Runtime, and we
-            //are also postprocessing MLAPI.Runtime, type resolving will fail, because we do not actually try to resolve
+            //apparently, it will happen that when we ask to resolve a type that lives inside Unity.Netcode.Runtime, and we
+            //are also postprocessing Unity.Netcode.Runtime, type resolving will fail, because we do not actually try to resolve
             //inside the assembly we are processing. Let's make sure we do that, so that we can use postprocessor features inside
-            //MLAPI.Runtime itself as well.
+            //Unity.Netcode.Runtime itself as well.
             assemblyResolver.AddAssemblyDefinitionBeingOperatedOn(assemblyDefinition);
 
             return assemblyDefinition;

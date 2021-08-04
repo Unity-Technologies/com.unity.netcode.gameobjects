@@ -5,7 +5,7 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using NUnit.Framework;
 
-namespace Unity.Multiplayer.Netcode.RuntimeTests
+namespace Unity.Netcode.RuntimeTests
 {
     /// <summary>
     /// The RpcQueue unit tests validate:

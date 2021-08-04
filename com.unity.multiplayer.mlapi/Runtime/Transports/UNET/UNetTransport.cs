@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Networking;
 
-namespace Unity.Multiplayer.Netcode.Transports.UNET
+namespace Unity.Netcode.Transports.UNET
 {
     public class UNetTransport : NetworkTransport, ITransportProfilerData
     {
@@ -311,7 +311,7 @@ namespace Unity.Multiplayer.Netcode.Transports.UNET
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
                     {
-                        NetworkLog.LogError("Cannot create websocket host when using Unity.Multiplayer.Netcode relay");
+                        NetworkLog.LogError("Cannot create websocket host when using Unity.Netcode relay");
                     }
                 }
             }

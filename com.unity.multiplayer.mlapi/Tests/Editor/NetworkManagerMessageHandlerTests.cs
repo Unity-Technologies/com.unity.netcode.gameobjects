@@ -1,13 +1,13 @@
 using System;
 using System.Collections.Generic;
 using NUnit.Framework;
-using Unity.Multiplayer.Netcode.Editor;
+using Unity.Netcode.Editor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using Object = UnityEngine.Object;
 
-namespace Unity.Multiplayer.Netcode.EditorTests
+namespace Unity.Netcode.EditorTests
 {
     public class NetworkManagerMessageHandlerTests
     {

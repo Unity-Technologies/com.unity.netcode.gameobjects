@@ -2,7 +2,7 @@ using System.Collections;
 using NUnit.Framework;
 using UnityEngine.TestTools;
 
-namespace Unity.Multiplayer.Netcode.UTP.RuntimeTests
+namespace Unity.Netcode.UTP.RuntimeTests
 {
     public class DummyTestScript
     {

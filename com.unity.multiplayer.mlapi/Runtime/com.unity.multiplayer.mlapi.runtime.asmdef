@@ -1,5 +1,0 @@
-{
-    "name": "Unity.Multiplayer.MLAPI.Runtime",
-    "rootNamespace": "Unity.Multiplayer.Netcode",
-    "allowUnsafeCode": true
-}

@@ -1,8 +1,8 @@
 {
-    "name": "Unity.Multiplayer.MLAPI.Editor.CodeGen",
-    "rootNamespace": "Unity.Multiplayer.Netcode.Editor.CodeGen",
+    "name": "Unity.Netcode.Editor.CodeGen",
+    "rootNamespace": "Unity.Netcode.Editor.CodeGen",
     "references": [
-        "Unity.Multiplayer.MLAPI.Runtime"
+        "Unity.Netcode.Runtime"
     ],
     "includePlatforms": [
         "Editor"
@@ -15,5 +15,5 @@
         "Mono.Cecil.Pdb.dll",
         "Mono.Cecil.Rocks.dll"
     ],
-	"autoReferenced": false
+    "autoReferenced": false
 }

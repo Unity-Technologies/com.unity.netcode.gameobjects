@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Unity.Multiplayer.Netcode.RuntimeTests
+namespace Unity.Netcode.RuntimeTests
 {
     /// <summary>
     /// Used in conjunction with the RpcQueueTest to validate that Rpcs are being invoked at the proper NetworkUpdateStage

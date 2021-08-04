@@ -6,7 +6,7 @@ using UnityEngine;
 using Unity.Profiling;
 using Debug = UnityEngine.Debug;
 
-namespace Unity.Multiplayer.Netcode
+namespace Unity.Netcode
 {
     /// <summary>
     /// The main component of the library
@@ -172,7 +172,7 @@ namespace Unity.Multiplayer.Netcode
         public ulong[] ConnectedClientsIds => ConnectedClientsList.Select(c => c.ClientId).ToArray();
 
         /// <summary>
-        /// Gets a dictionary of the clients that have been accepted by the transport but are still pending by the MLAPI. This is only populated on the server.
+        /// Gets a dictionary of the clients that have been accepted by the transport but are still pending by the Netcode. This is only populated on the server.
         /// </summary>
         public readonly Dictionary<ulong, PendingClient> PendingClients = new Dictionary<ulong, PendingClient>();
 

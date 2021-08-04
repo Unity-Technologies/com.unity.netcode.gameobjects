@@ -1,8 +1,8 @@
 using System;
 using System.IO;
-using static Unity.Multiplayer.Netcode.Arithmetic;
+using static Unity.Netcode.Arithmetic;
 
-namespace Unity.Multiplayer.Netcode
+namespace Unity.Netcode
 {
     /// <summary>
     /// A buffer that can be used at the bit level

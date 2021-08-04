@@ -1,7 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
 
-using Unity.Multiplayer.Netcode;
+using Unity.Netcode;
 
 using Unity.Burst;
 using Unity.Collections;
@@ -13,7 +13,7 @@ using UnityEngine;
 using UnityEngine.Assertions;
 
 using NetworkEvent = Unity.Networking.Transport.NetworkEvent;
-using NetcodeEvent = Unity.Multiplayer.Netcode.NetworkEvent;
+using NetcodeEvent = Unity.Netcode.NetworkEvent;
 
 [StructLayout(LayoutKind.Explicit)]
 public unsafe struct RawNetworkMessage

@@ -1,8 +1,8 @@
 using System;
 using NUnit.Framework;
 using UnityEngine;
-using Unity.Multiplayer.Netcode;
-using Unity.Multiplayer.Netcode.Transports.UNET;
+using Unity.Netcode;
+using Unity.Netcode.Transports.UNET;
 using UnityEngine.Networking;
 
 public class TransportTest : MonoBehaviour

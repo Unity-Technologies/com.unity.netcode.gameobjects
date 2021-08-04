@@ -1,9 +1,8 @@
 using UnityEngine;
-using Unity.Multiplayer.Netcode;
+using Unity.Netcode;
 
 public class NetworkObjectLabel : NetworkBehaviour
 {
-
     private TextMesh m_ObjectLabel;
     private MeshRenderer m_Renderer;
 
@@ -14,7 +13,7 @@ public class NetworkObjectLabel : NetworkBehaviour
             m_Renderer = GetComponent<MeshRenderer>();
         }
 
-        if(m_Renderer != null)
+        if (m_Renderer != null)
         {
             m_Renderer.enabled = true;
         }

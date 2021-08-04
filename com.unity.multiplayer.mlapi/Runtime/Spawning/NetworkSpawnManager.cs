@@ -4,7 +4,7 @@ using System.IO;
 using System.Linq;
 using UnityEngine;
 
-namespace Unity.Multiplayer.Netcode
+namespace Unity.Netcode
 {
     /// <summary>
     /// Class that handles object spawning
@@ -363,7 +363,7 @@ namespace Unity.Multiplayer.Netcode
                     clientIds, NetworkUpdateLoop.UpdateStage);
                 if (context != null)
                 {
-                    using (var nonNullContext = (InternalCommandContext) context)
+                    using (var nonNullContext = (InternalCommandContext)context)
                     {
                         WriteSpawnCallForObject(nonNullContext.NetworkWriter, clientId, networkObject);
                     }

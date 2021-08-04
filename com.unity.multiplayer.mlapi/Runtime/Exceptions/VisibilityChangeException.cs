@@ -1,6 +1,6 @@
 using System;
 
-namespace Unity.Multiplayer.Netcode
+namespace Unity.Netcode
 {
     /// <summary>
     /// Exception thrown when a visibility change fails

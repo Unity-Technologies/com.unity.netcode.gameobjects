@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using Unity.Multiplayer.Netcode;
+using Unity.Netcode;
 using NUnit.Framework;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
