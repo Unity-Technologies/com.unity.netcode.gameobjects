@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.TestTools;
 using NUnit.Framework;
-using Unity.Multiplayer.Netcode;
+using Unity.Netcode;
 
 public struct TestStruct : INetworkSerializable
 {
