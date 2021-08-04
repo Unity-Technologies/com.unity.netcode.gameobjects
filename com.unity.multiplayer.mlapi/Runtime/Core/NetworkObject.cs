@@ -433,7 +433,7 @@ namespace Unity.Netcode
 
             NetworkManager.SpawnManager.SpawnNetworkObjectLocally(this, NetworkManager.SpawnManager.GetNetworkObjectId(), false, playerObject, ownerClientId, null, false, destroyWithScene);
 
-            if (NetworkManager.UseSnapshotSpawn)
+            if (NetworkManager.NetworkConfig.UseSnapshotSpawn)
             {
                 SnapshotSpawnCommand command;
                 command.NetworkObjectId = NetworkObjectId;

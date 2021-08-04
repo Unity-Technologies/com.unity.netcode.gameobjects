@@ -370,7 +370,7 @@ namespace Unity.Netcode
             }
         }
 
-        internal void ReadAcks(ulong clientId, ClientData clientData, NetworkReader reader)
+        internal ushort ReadAcks(ulong clientId, ClientData clientData, NetworkReader reader)
         {
             ushort ackSequence = reader.ReadUInt16();
 
@@ -411,7 +411,7 @@ namespace Unity.Netcode
                 }
             }
 
-
+            return ackSequence;
         }
 
         /// <summary>
@@ -467,18 +467,18 @@ namespace Unity.Netcode
 
         // by clientId
         private Dictionary<ulong, ClientData> m_ClientData = new Dictionary<ulong, ClientData>();
-        private Dictionary<ulong, ConnectionRtt> m_ClientRtts = new Dictionary<ulong, ConnectionRtt>();
+        private Dictionary<ulong, ConnectionRtt> m_ConnectionRtts = new Dictionary<ulong, ConnectionRtt>();
 
         private int m_CurrentTick = NetworkTickSystem.NoTick;
 
         internal ConnectionRtt GetConnectionRtt(ulong clientId)
         {
-            if (!m_ClientRtts.ContainsKey(clientId))
+            if (!m_ConnectionRtts.ContainsKey(clientId))
             {
-                m_ClientRtts.Add(clientId, new ConnectionRtt());
+                m_ConnectionRtts.Add(clientId, new ConnectionRtt());
             }
 
-            return m_ClientRtts[clientId];
+            return m_ConnectionRtts[clientId];
         }
 
         /// <summary>
@@ -503,7 +503,7 @@ namespace Unity.Netcode
         {
             //TODO: here, make sure we check both path, vars and spawns.
 
-            if (!NetworkManager.UseSnapshotDelta && !NetworkManager.UseSnapshotSpawn)
+            if (!m_NetworkManager.NetworkConfig.UseSnapshotDelta && !m_NetworkManager.NetworkConfig.UseSnapshotSpawn)
             {
                 return;
             }
@@ -533,6 +533,9 @@ namespace Unity.Netcode
                         SendSnapshot(m_NetworkManager.ServerClientId);
                     }
                 }
+
+                // useful for debugging, but generates LOTS of spam
+                DebugDisplayStore();
             }
         }
 
@@ -545,11 +548,17 @@ namespace Unity.Netcode
         /// <param name="clientId">The client index to send to</param>
         private void SendSnapshot(ulong clientId)
         {
-            // make sure we have a ClientData entry for each client
+            // make sure we have a ClientData and ConnectionRtt entry for each client
             if (!m_ClientData.ContainsKey(clientId))
             {
                 m_ClientData.Add(clientId, new ClientData());
             }
+            if (!m_ConnectionRtts.ContainsKey(clientId))
+            {
+                m_ConnectionRtts.Add(clientId, new ConnectionRtt());
+            }
+
+            m_ConnectionRtts[clientId].NotifySend(m_ClientData[clientId].m_SequenceNumber, Time.unscaledTime);
 
             // Send the entry index and the buffer where the variables are serialized
 
@@ -755,7 +764,10 @@ namespace Unity.Netcode
                 m_Snapshot.ReadBuffer(reader, snapshotStream);
                 m_Snapshot.ReadIndex(reader);
                 m_Snapshot.ReadSpawns(reader);
-                m_Snapshot.ReadAcks(clientId, m_ClientData[clientId], reader);
+                var ackSequence = m_Snapshot.ReadAcks(clientId, m_ClientData[clientId], reader);
+
+                // keep track of RTTs, using the sequence number acknowledgement as a marker
+                m_ConnectionRtts[clientId].NotifyAck(ackSequence, Time.unscaledTime);
 
                 sentinel = reader.ReadUInt16();
                 if (sentinel != k_SentinelAfter)
@@ -763,27 +775,25 @@ namespace Unity.Netcode
                     Debug.Log("JEFF Critical : snapshot integrity (after)");
                 }
             }
-
-            // todo: handle acks
         }
 
         // todo --M1--
         // This is temporary debugging code. Once the feature is complete, we can consider removing it
         // But we could also leave it in in debug to help developers
-        private void DebugDisplayStore(Snapshot block, string name)
+        private void DebugDisplayStore()
         {
-            string table = "=== Snapshot table === " + name + " ===\n";
+            string table = "=== Snapshot table ===\n";
             table += $"We're clientId {m_NetworkManager.LocalClientId}\n";
 
             table += "=== Variables ===\n";
-            for (int i = 0; i < block.LastEntry; i++)
+            for (int i = 0; i < m_Snapshot.LastEntry; i++)
             {
-                table += string.Format("NetworkVariable {0}:{1}:{2} written {5}, range [{3}, {4}] ", block.Entries[i].Key.NetworkObjectId, block.Entries[i].Key.BehaviourIndex,
-                    block.Entries[i].Key.VariableIndex, block.Entries[i].Position, block.Entries[i].Position + block.Entries[i].Length, block.Entries[i].Key.TickWritten);
+                table += string.Format("NetworkVariable {0}:{1}:{2} written {5}, range [{3}, {4}] ", m_Snapshot.Entries[i].Key.NetworkObjectId, m_Snapshot.Entries[i].Key.BehaviourIndex,
+                    m_Snapshot.Entries[i].Key.VariableIndex, m_Snapshot.Entries[i].Position, m_Snapshot.Entries[i].Position + m_Snapshot.Entries[i].Length, m_Snapshot.Entries[i].Key.TickWritten);
 
-                for (int j = 0; j < block.Entries[i].Length && j < 4; j++)
+                for (int j = 0; j < m_Snapshot.Entries[i].Length && j < 4; j++)
                 {
-                    table += block.MainBuffer[block.Entries[i].Position + j].ToString("X2") + " ";
+                    table += m_Snapshot.MainBuffer[m_Snapshot.Entries[i].Position + j].ToString("X2") + " ";
                 }
 
                 table += "\n";
@@ -791,14 +801,20 @@ namespace Unity.Netcode
 
             table += "=== Spawns ===\n";
 
-            for (int i = 0; i < block.NumSpawns; i++)
+            for (int i = 0; i < m_Snapshot.NumSpawns; i++)
             {
                 string targets = "";
-                foreach (var target in block.Spawns[i].TargetClientIds)
+                foreach (var target in m_Snapshot.Spawns[i].TargetClientIds)
                 {
                     targets += target.ToString() + ", ";
                 }
-                table += $"Spawn Object Id {block.Spawns[i].NetworkObjectId}, Tick {block.Spawns[i].TickWritten}, Target {targets}\n";
+                table += $"Spawn Object Id {m_Snapshot.Spawns[i].NetworkObjectId}, Tick {m_Snapshot.Spawns[i].TickWritten}, Target {targets}\n";
+            }
+
+            table += $"=== RTTs ===\n";
+            foreach (var iterator in m_ConnectionRtts)
+            {
+                table += $"client {iterator.Key} RTT {iterator.Value.GetRtt().AverageSec}\n";
             }
 
             table += "======\n";
