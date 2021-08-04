@@ -26,6 +26,15 @@
       "dependencies": {},
       "url": "https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-candidates"
     },
+    "com.unity.ide.rider": {
+      "version": "3.0.7",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.ext.nunit": "1.0.6"
+      },
+      "url": "https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-candidates"
+    },
     "com.unity.jobs": {
       "version": "0.2.10-preview.13",
       "depth": 1,
@@ -54,7 +63,7 @@
       }
     },
     "com.unity.multiplayer.tools": {
-      "version": "0.0.1-preview",
+      "version": "0.0.1-preview.1",
       "depth": 0,
       "source": "registry",
       "dependencies": {
