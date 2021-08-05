@@ -1,4 +1,5 @@
 using System;
+using DefaultNamespace;
 using MLAPI.NetworkVariable;
 using MLAPI.Serialization;
 using MLAPI.Timing;
@@ -89,7 +90,12 @@ namespace MLAPI.Prototyping
         [SerializeField]
         private InterpolatorFactory<Vector3> m_PositionInterpolatorFactory;
 
-        private IInterpolator<Vector3> PositionInterpolator;
+        [SerializeField]
+        private InterpolatorFactory<Quaternion> m_RotationInterpolatorFactory;
+
+        protected virtual IInterpolator<Vector3> PositionInterpolator { get; set; }
+
+        protected virtual IInterpolator<Quaternion> RotationInterpolator { get; set; }
         // public IInterpolator<Vector3> PositionInterpolator = new BufferedLinearInterpolatorVector3(ScriptableObject.CreateInstance<BufferedLinearInterpolatorVector3Factory>()); // todo tmp, use default value instead
 
         private Transform m_Transform; // cache the transform component to reduce unnecessary bounce between managed and native
@@ -117,13 +123,13 @@ namespace MLAPI.Prototyping
             if (InLocalSpace)
             {
                 isDirty |= networkState.Position != PositionInterpolator.GetInterpolatedValue();
-                isDirty |= networkState.Rotation != m_Transform.localRotation;
+                isDirty |= networkState.Rotation != RotationInterpolator.GetInterpolatedValue();
                 isDirty |= networkState.Scale != m_Transform.localScale;
             }
             else
             {
                 isDirty |= networkState.Position != PositionInterpolator.GetInterpolatedValue();
-                isDirty |= networkState.Rotation != m_Transform.rotation;
+                isDirty |= networkState.Rotation != RotationInterpolator.GetInterpolatedValue();
                 isDirty |= networkState.Scale != m_Transform.lossyScale;
             }
 
@@ -161,6 +167,7 @@ namespace MLAPI.Prototyping
         {
             netState = new NetworkState(netState);
             netState.Position = PositionInterpolator.GetInterpolatedValue();
+            netState.Rotation = RotationInterpolator.GetInterpolatedValue();
 
             InLocalSpace = netState.InLocalSpace;
             if (InLocalSpace)
@@ -197,12 +204,20 @@ namespace MLAPI.Prototyping
                 return;
             }
 
+            // todo check teleport flag
+            // if (newState.Teleporting)
+            // {
+            //     PositionInterpolator.Reset(newState.Position, new NetworkTime(NetworkManager.Singleton.ServerTime.TickRate, newState.SentTick));
+            // }
+
             // PositionInterpolator.AddMeasurement(newState.Position, NetworkManager.Singleton.ServerTime.Time);
 
             Debug.Log($"distance sam {Math.Round((newState.Position - oldState.Position).magnitude, 2)}");
             Debug.Log($"diff tick sam {(newState.SentTick - oldState.SentTick, 2)}");
             // oldTick = NetworkManager.Singleton.ServerTime.Tick;
-            PositionInterpolator.AddMeasurement(newState.Position, new NetworkTime(NetworkManager.Singleton.ServerTime.TickRate, newState.SentTick));
+            var sentTime = new NetworkTime(NetworkManager.Singleton.ServerTime.TickRate, newState.SentTick);
+            PositionInterpolator.AddMeasurement(newState.Position, sentTime);
+            RotationInterpolator.AddMeasurement(newState.Rotation, sentTime);
         }
 
         private void UpdateNetVarPerms()
@@ -225,9 +240,32 @@ namespace MLAPI.Prototyping
 
         private void Awake()
         {
+            //debug, remove me
+            // Time.maximumDeltaTime = 999f;
+
             m_Transform = transform;
-            PositionInterpolator = m_PositionInterpolatorFactory.CreateInterpolator();
-            PositionInterpolator.Reset(m_Transform.position, new NetworkTime(NetworkManager.Singleton.ServerTime.TickRate, m_NetworkState.Value.SentTick));
+            var defaultBufferTime = 0.1f;
+            if (m_PositionInterpolatorFactory == null)
+            {
+                PositionInterpolator = new BufferedLinearInterpolatorVector3(new BufferedLinearInterpolatorSettings {InterpolationTime = defaultBufferTime});
+            }
+            else
+            {
+                PositionInterpolator = m_PositionInterpolatorFactory.CreateInterpolator();
+            }
+
+            if (m_RotationInterpolatorFactory == null)
+            {
+                RotationInterpolator = new BufferedLinearInterpolatorQuaternion(new BufferedLinearInterpolatorSettings {InterpolationTime = defaultBufferTime});
+            }
+            else
+            {
+                RotationInterpolator = m_RotationInterpolatorFactory.CreateInterpolator();
+            }
+
+            var currentTime = new NetworkTime(NetworkManager.Singleton.ServerTime.TickRate, m_NetworkState.Value.SentTick);
+            PositionInterpolator.Reset(m_Transform.position, currentTime);
+            RotationInterpolator.Reset(m_Transform.rotation, currentTime);
 
             UpdateNetVarPerms();
 
@@ -244,6 +282,9 @@ namespace MLAPI.Prototyping
             {
                 NetworkManager.NetworkTickSystem.Tick += NetworkTickUpdate;
             }
+
+            PositionInterpolator.OnNetworkSpawn();
+            RotationInterpolator.OnNetworkSpawn();
         }
 
         private void OnDestroy()
@@ -264,13 +305,14 @@ namespace MLAPI.Prototyping
             }
             else
             {
-                // if (IsNetworkStateDirty(m_PrevNetworkState))
-                // {
-                //     Debug.LogWarning("A local change without authority detected, revert back to latest network state!");
-                //     ApplyNetworkState(m_NetworkState.Value);
-                // }
+                if (IsNetworkStateDirty(m_PrevNetworkState))
+                {
+                    Debug.LogWarning("A local change without authority detected, revert back to latest network state!");
+                    ApplyNetworkState(m_NetworkState.Value);
+                }
 
                 PositionInterpolator.NetworkTickUpdate(NetworkManager.ServerTime.FixedDeltaTime);
+                RotationInterpolator.NetworkTickUpdate(NetworkManager.ServerTime.FixedDeltaTime);
             }
         }
 
@@ -290,6 +332,7 @@ namespace MLAPI.Prototyping
             if (!CanUpdateTransform)
             {
                 PositionInterpolator.Update(Time.deltaTime);
+                RotationInterpolator.Update(Time.deltaTime);
                 ApplyNetworkState(m_NetworkState.Value);
             }
         }
@@ -310,6 +353,8 @@ namespace MLAPI.Prototyping
         /// </summary>
         public void Teleport(Vector3 newPosition, Quaternion newRotation, Vector3 newScale)
         {
+            // check server side
+            // set teleport flag in state
             throw new NotImplementedException(); // TODO MTT-769
         }
     }

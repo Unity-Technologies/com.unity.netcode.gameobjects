@@ -41,6 +41,15 @@ namespace MLAPI.RuntimeTests.Timing
         }
 
         [UnityTest]
+        public IEnumerator TestSam()
+        {
+            yield return StartSomeClientsAndServerWithPlayersCustom(true, NbClients, 60, 30);
+
+
+
+        }
+
+        [UnityTest]
         [TestCase(60, 30, ExpectedResult = null)]
         [TestCase(30, 30, ExpectedResult = null)]
         [TestCase(40, 30, ExpectedResult = null)]

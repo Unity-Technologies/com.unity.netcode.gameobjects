@@ -25,9 +25,26 @@ namespace DefaultNamespace
     {
         private T m_Current;
 
-        public void Update(float deltaTime)
+        public void Awake()
+        {
+        }
+
+        public void OnNetworkSpawn()
+        {
+        }
+
+        public void Start()
+        {
+        }
+
+        public void OnEnable()
+        {
+        }
+
+        public T Update(float deltaTime)
         {
             // nothing
+            return GetInterpolatedValue();
         }
 
         public void NetworkTickUpdate(float fixedDeltaTime)
@@ -47,6 +64,11 @@ namespace DefaultNamespace
         public void Reset(T value, NetworkTime SentTick)
         {
             m_Current = value;
+        }
+
+        public void OnDestroy()
+        {
+            throw new System.NotImplementedException();
         }
     }
 }

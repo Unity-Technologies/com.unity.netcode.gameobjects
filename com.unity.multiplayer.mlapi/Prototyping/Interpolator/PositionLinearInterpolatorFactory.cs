@@ -29,10 +29,27 @@ namespace MLAPI
             m_Factory = factory;
         }
 
-        public void Update(float deltaTime)
+        public void Awake()
+        {
+        }
+
+        public void OnNetworkSpawn()
+        {
+        }
+
+        public void Start()
+        {
+        }
+
+        public void OnEnable()
+        {
+        }
+
+        public Vector3 Update(float deltaTime)
         {
             m_CurrentTime += deltaTime;
             m_UpdatedVector = Vector3.Lerp(m_StartVector, m_EndVector, m_CurrentTime / m_Factory.MaxLerpTime);
+            return GetInterpolatedValue();
         }
 
         public void NetworkTickUpdate(float fixedDeltaTime)
@@ -54,6 +71,11 @@ namespace MLAPI
         public void Reset(Vector3 value, NetworkTime SentTick)
         {
             m_UpdatedVector = value;
+        }
+
+        public void OnDestroy()
+        {
+            throw new NotImplementedException();
         }
     }
 }
