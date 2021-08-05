@@ -278,25 +278,9 @@ namespace Unity.Netcode
                 }
             }
 
-
-            var context = networkManager.MessageQueueContainer.EnterInternalCommandContext(
-                MessageQueueContainer.MessageType.CreateObjects, NetworkChannel.Internal,
-                new[] { clientId }, NetworkUpdateLoop.UpdateStage);
-
-            if (context != null)
+            foreach(var networkObject in networkObjects)
             {
-                using (var nonNullContext = (InternalCommandContext)context)
-                {
-                    nonNullContext.NetworkWriter.WriteUInt16Packed((ushort)networkObjects.Count);
-
-                    for (int i = 0; i < networkObjects.Count; i++)
-                    {
-                        networkObjects[i].Observers.Add(clientId);
-
-                        networkManager.SpawnManager.WriteSpawnCallForObject(nonNullContext.NetworkWriter, clientId,
-                            networkObjects[i]);
-                    }
-                }
+                networkObject.NetworkShow(clientId);
             }
         }
 
