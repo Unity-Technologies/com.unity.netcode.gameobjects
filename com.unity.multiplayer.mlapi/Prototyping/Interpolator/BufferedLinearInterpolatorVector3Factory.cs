@@ -1,9 +1,11 @@
 using System.Collections.Generic;
 using MLAPI;
+using MLAPI.NetworkVariable;
+using MLAPI.Serialization;
 using MLAPI.Timing;
 using UnityEngine;
 
-namespace DefaultNamespace
+namespace unity.netcode
 {
     public interface IBufferedLinearInterpolatorSettings : IInterpolatorSettings
     {
@@ -49,16 +51,16 @@ namespace DefaultNamespace
         struct BufferedItem<T>
         {
             public T item;
-            public NetworkTime tickSent;
+            public NetworkTime timeSent;
         }
 
         // private double ServerTick => NetworkManager.Singleton.ServerTime.Tick;
-        protected virtual double ServerTickBeingHandledForBuffering => NetworkManager.Singleton.ServerTime.Tick; // override this if you want configurable buffering, right now using ServerTick's own global buffering
+        protected virtual double ServerTimeBeingHandledForBuffering => NetworkManager.Singleton.ServerTime.Time; // override this if you want configurable buffering, right now using ServerTick's own global buffering
 
         T m_LerpStartValue;
         T m_LerpEndValue;
         private T m_CurrentValue;
-        private NetworkTime m_ValueCurrentTickConsumed;
+        private NetworkTime m_CurrentTimeConsumed;
 
         private List<BufferedItem<T>> m_Buffer = new List<BufferedItem<T>>();
 
@@ -74,18 +76,7 @@ namespace DefaultNamespace
             m_Settings = settings;
         }
 
-        public BufferedLinearInterpolator(NetworkVariable<IInterpolatedState<T>> netvar)
-        {
-            netvar.OnValueChanged += OnStateChanged;
-        }
-
-        public void OnStateChanged(IInterpolatedState<T> old, IInterpolatedState<T> newState)
-        {
-            var sentTime = new NetworkTime(NetworkManager.Singleton.ServerTime.TickRate, newState.SentTick);
-            AddMeasurement(newState.Value, sentTime);
-        }
-
-        private NetworkTime m_PreviousTickConsumed;
+        private NetworkTime m_PreviousTimeConsumed;
 
         private void TryConsumeFromBuffer()
         {
@@ -94,13 +85,17 @@ namespace DefaultNamespace
             for (int i = m_Buffer.Count - 1; i >= 0; i--)
             {
                 var bufferedValue = m_Buffer[i];
-                if (bufferedValue.tickSent.Tick <= ServerTickBeingHandledForBuffering)
+                if (bufferedValue.timeSent.Time <= ServerTimeBeingHandledForBuffering)
                 {
-                    m_LerpStartValue = m_LerpEndValue;
+                    if (nbConsumed == 0)
+                    {
+                        m_PreviousTimeConsumed = m_CurrentTimeConsumed;
+                        m_LerpStartValue = m_LerpEndValue;
+                    }
+
                     m_LerpEndValue = bufferedValue.item;
-                    samPreviousTickConsumed = m_ValueCurrentTickConsumed;
-                    m_ValueCurrentTickConsumed = bufferedValue.tickSent;
-                    Debug.Log($"hellooooo {bufferedValue.tickSent}");
+                    m_CurrentTimeConsumed = bufferedValue.timeSent;
+                    Debug.Log($"hellooooo {bufferedValue.timeSent}");
                     m_Buffer.RemoveAt(i);
                     nbConsumed++;
 
@@ -112,7 +107,7 @@ namespace DefaultNamespace
             Debug.Log($"Buffer size: {count}, nb consumed: {nbConsumed}");
             var pos2 = m_LerpEndValue is Vector3 value2 ? value2 : default;
 
-            Debug.DrawLine(pos2, pos2 + Vector3.down * (m_ValueCurrentTickConsumed.Tick - m_PreviousTickConsumed.Tick), Color.cyan, 10, false);
+            Debug.DrawLine(pos2, pos2 + Vector3.down * 100 * (float) (m_CurrentTimeConsumed.Time - m_PreviousTimeConsumed.Time), Color.cyan, 10, false);
             for (int i = 0; i < count; i++)
             {
                 Debug.DrawLine(pos2 + Vector3.up * (i+1), pos2 + Vector3.up* (i+1) + Vector3.left, Color.white, 10, false);
@@ -148,16 +143,17 @@ namespace DefaultNamespace
 
             TryConsumeFromBuffer();
 
-            var timeB = m_ValueCurrentTickConsumed;//new NetworkTime(NetworkManager.Singleton.NetworkTickSystem.TickRate, m_ValueLastTick);
-            // var timeA = timeB - timeB.FixedDeltaTime;//
+
 
             // Interpolation example to understand the math below
             // 4            6   6.5
             // |            |   |
             // A            B   Server
-            var timeA = m_PreviousTickConsumed;
+            var timeB = m_CurrentTimeConsumed;//new NetworkTime(NetworkManager.Singleton.NetworkTickSystem.TickRate, m_ValueLastTick);
+            // var timeA = timeB - timeB.FixedDeltaTime;//
+            var timeA = m_PreviousTimeConsumed;
             double range = timeB.Time - timeA.Time;
-            var renderTime = NetworkManager.Singleton.NetworkTickSystem.ServerTime.Time - range;
+            var renderTime = ServerTimeBeingHandledForBuffering - range;
             // var renderTime = m_RenderTime;
             float t = (float)((renderTime - timeA.Time) / range);
             var diffServerTime = NetworkManager.Singleton.NetworkTickSystem.ServerTime.Time - samLastServerTime;
@@ -183,19 +179,19 @@ namespace DefaultNamespace
             return m_CurrentValue;
         }
 
-        public void NetworkTickUpdate(float fixedDeltaTime)
+        public void FixedUpdate(float fixedDeltaTime)
         {
         }
 
-        public void AddMeasurement(T newMeasurement, NetworkTime SentTick)
+        public void AddMeasurement(T newMeasurement, NetworkTime sentTime)
         {
             var debugPos = newMeasurement is Vector3 value ? value : default;
             Debug.DrawLine(debugPos, debugPos + Vector3.right + Vector3.up, Color.red, 10, false);
 
             Debug.Log($"Adding measurement {Time.time}");
             // todo put limit on size, we don't want lag spikes to create 100 entries and have a list that size in memory for ever
-            m_Buffer.Add(new BufferedItem<T>() {item = newMeasurement, tickSent = SentTick});
-            m_Buffer.Sort((item1, item2) => item2.tickSent.Tick.CompareTo(item1.tickSent.Tick));
+            m_Buffer.Add(new BufferedItem<T>() {item = newMeasurement, timeSent = sentTime});
+            m_Buffer.Sort((item1, item2) => item2.timeSent.Time.CompareTo(item1.timeSent.Time));
         }
 
         public T GetInterpolatedValue()
@@ -203,7 +199,7 @@ namespace DefaultNamespace
             return m_CurrentValue;
         }
 
-        public void Reset(T value, NetworkTime SentTick)
+        public void Reset(T value, NetworkTime sentTime)
         {
             m_CurrentValue = value;
             m_LerpEndValue = value;
@@ -224,17 +220,25 @@ namespace DefaultNamespace
 
         public override Vector3 Interpolate(Vector3 start, Vector3 end, float time)
         {
-            return Vector3.LerpUnclamped(start, end, time);
+            return Vector3.Lerp(start, end, time);
         }
     }
 
     public class BufferedLinearInterpolatorQuaternion : BufferedLinearInterpolator<Quaternion>
     {
+        public BufferedLinearInterpolatorQuaternion(IBufferedLinearInterpolatorSettings settings) : base(settings) { }
+
         public override Quaternion Interpolate(Quaternion start, Quaternion end, float time)
         {
             return Quaternion.Slerp(start, end, time);
         }
+    }
 
-        public BufferedLinearInterpolatorQuaternion(IBufferedLinearInterpolatorSettings settings) : base(settings) { }
+    public class BufferedLinearInterpolatorFloat : BufferedLinearInterpolator<float>
+    {
+        public override float Interpolate(float start, float end, float time)
+        {
+            return Mathf.Lerp(start, end, time);
+        }
     }
 }

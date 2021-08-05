@@ -1,9 +1,9 @@
 using System;
-using DefaultNamespace;
 using MLAPI.NetworkVariable;
 using MLAPI.Serialization;
 using MLAPI.Timing;
 using MLAPI.Transports;
+using unity.netcode;
 using UnityEngine;
 
 namespace MLAPI.Prototyping
@@ -12,6 +12,7 @@ namespace MLAPI.Prototyping
     /// A prototype component for syncing transforms
     /// </summary>
     [AddComponentMenu("MLAPI/NetworkTransform")]
+    [DefaultExecutionOrder(10000)]
     public class NetworkTransform : NetworkBehaviour
     {
         /// <summary>
@@ -33,7 +34,7 @@ namespace MLAPI.Prototyping
             public Quaternion Rotation;
             public Vector3 Scale;
 
-            public int SentTick;
+            public double SentTime;
 
             public NetworkState(NetworkState copy)
             {
@@ -41,7 +42,7 @@ namespace MLAPI.Prototyping
                 Position = copy.Position;
                 Rotation = copy.Rotation;
                 Scale = copy.Scale;
-                SentTick = copy.SentTick;
+                SentTime = copy.SentTime;
             }
 
             public NetworkState()
@@ -54,7 +55,7 @@ namespace MLAPI.Prototyping
                 serializer.Serialize(ref Position);
                 serializer.Serialize(ref Rotation);
                 serializer.Serialize(ref Scale);
-                serializer.Serialize(ref SentTick);
+                serializer.Serialize(ref SentTime);
             }
         }
 
@@ -136,13 +137,34 @@ namespace MLAPI.Prototyping
             return isDirty;
         }
 
-        private int previousTickSam;
+        private bool IsTransformDirty()
+        {
+            bool isDirty = false;
+            var networkState = m_NetworkState.Value;
+            isDirty |= networkState.InLocalSpace != InLocalSpace;
+            if (InLocalSpace)
+            {
+                isDirty |= networkState.Position != m_Transform.localPosition;
+                isDirty |= networkState.Rotation != m_Transform.localRotation;
+                isDirty |= networkState.Scale != m_Transform.localScale;
+            }
+            else
+            {
+                isDirty |= networkState.Position != m_Transform.position;
+                isDirty |= networkState.Rotation != m_Transform.rotation;
+                isDirty |= networkState.Scale != m_Transform.lossyScale;
+            }
+
+            return isDirty;
+        }
+
+        private double previousTimeSam;
         private Vector3 previousPosSam;
         private void UpdateNetworkState()
         {
             m_NetworkState.Value.InLocalSpace = InLocalSpace;
             // m_NetworkState.Value.SentTime = Time.realtimeSinceStartup;
-            m_NetworkState.Value.SentTick = NetworkManager.Singleton.LocalTime.Tick;
+            m_NetworkState.Value.SentTime = m_DirtyTime;
             if (InLocalSpace)
             {
                 m_NetworkState.Value.Position = m_Transform.localPosition;
@@ -156,8 +178,8 @@ namespace MLAPI.Prototyping
                 m_NetworkState.Value.Scale = m_Transform.lossyScale;
             }
 
-            Debug.Log($"sam asdf distance {Math.Round((m_NetworkState.Value.Position - previousPosSam).magnitude, 2)} tick diff {m_NetworkState.Value.SentTick - previousTickSam} sam");
-            previousTickSam = m_NetworkState.Value.SentTick;
+            Debug.Log($"sam asdf distance {Math.Round((m_NetworkState.Value.Position - previousPosSam).magnitude, 2)} tick diff {m_NetworkState.Value.SentTime - previousTimeSam} sam");
+            previousTimeSam = m_NetworkState.Value.SentTime;
             previousPosSam = m_NetworkState.Value.Position;
 
             m_NetworkState.SetDirty(true);
@@ -213,9 +235,9 @@ namespace MLAPI.Prototyping
             // PositionInterpolator.AddMeasurement(newState.Position, NetworkManager.Singleton.ServerTime.Time);
 
             Debug.Log($"distance sam {Math.Round((newState.Position - oldState.Position).magnitude, 2)}");
-            Debug.Log($"diff tick sam {(newState.SentTick - oldState.SentTick, 2)}");
+            Debug.Log($"diff tick sam {(newState.SentTime - oldState.SentTime, 2)}");
             // oldTick = NetworkManager.Singleton.ServerTime.Tick;
-            var sentTime = new NetworkTime(NetworkManager.Singleton.ServerTime.TickRate, newState.SentTick);
+            var sentTime = new NetworkTime(NetworkManager.Singleton.ServerTime.TickRate, newState.SentTime);
             PositionInterpolator.AddMeasurement(newState.Position, sentTime);
             RotationInterpolator.AddMeasurement(newState.Rotation, sentTime);
         }
@@ -263,10 +285,6 @@ namespace MLAPI.Prototyping
                 RotationInterpolator = m_RotationInterpolatorFactory.CreateInterpolator();
             }
 
-            var currentTime = new NetworkTime(NetworkManager.Singleton.ServerTime.TickRate, m_NetworkState.Value.SentTick);
-            PositionInterpolator.Reset(m_Transform.position, currentTime);
-            RotationInterpolator.Reset(m_Transform.rotation, currentTime);
-
             UpdateNetVarPerms();
 
             m_NetworkState.Settings.SendNetworkChannel = Channel;
@@ -278,10 +296,14 @@ namespace MLAPI.Prototyping
         public override void OnNetworkSpawn()
         {
             m_PrevNetworkState = null;
-            if (enabled) // todo Luke fix your UX
-            {
-                NetworkManager.NetworkTickSystem.Tick += NetworkTickUpdate;
-            }
+            // if (enabled) // todo Luke fix your UX
+            // {
+            //     NetworkManager.NetworkTickSystem.Tick += NetworkTickUpdate;
+            // }
+
+            var currentTime = new NetworkTime(NetworkManager.Singleton.ServerTime.TickRate, m_NetworkState.Value.SentTime);
+            PositionInterpolator.Reset(m_Transform.position, currentTime);
+            RotationInterpolator.Reset(m_Transform.rotation, currentTime);
 
             PositionInterpolator.OnNetworkSpawn();
             RotationInterpolator.OnNetworkSpawn();
@@ -292,15 +314,20 @@ namespace MLAPI.Prototyping
             m_NetworkState.OnValueChanged -= OnNetworkStateChanged;
         }
 
-        private void NetworkTickUpdate()
+        private void FixedUpdate()
         {
             if (!NetworkObject.IsSpawned)
             {
                 return;
             }
-
-            if (CanUpdateTransform) //&& IsNetworkStateDirty(m_NetworkState.Value))
+            if (CanUpdateTransform)
             {
+                if (IsTransformDirty())
+                {
+                    // check for time there was a change to the transform
+                    m_DirtyTime = NetworkManager.LocalTime.Time;
+                }
+
                 UpdateNetworkState();
             }
             else
@@ -311,26 +338,30 @@ namespace MLAPI.Prototyping
                     ApplyNetworkState(m_NetworkState.Value);
                 }
 
-                PositionInterpolator.NetworkTickUpdate(NetworkManager.ServerTime.FixedDeltaTime);
-                RotationInterpolator.NetworkTickUpdate(NetworkManager.ServerTime.FixedDeltaTime);
+                PositionInterpolator.FixedUpdate(NetworkManager.ServerTime.FixedDeltaTime);
+                RotationInterpolator.FixedUpdate(NetworkManager.ServerTime.FixedDeltaTime);
             }
         }
 
         private int debugOldTime = 0;
 
+        private double m_DirtyTime;
+
         private void Update()
         {
-            // Debug.Log("gaga "+Math.Round(Time.time - (float)NetworkManager.Singleton.ServerTime.Time, 2));
-
-            // Debug.Log($"sam {Math.Round(NetworkManager.Singleton.ServerTime.Time - debugOldTime, 2)}");
-            // debugOldTime = NetworkManager.Singleton.ServerTime.Time;
             if (!NetworkObject.IsSpawned)
             {
                 return;
             }
 
+
             if (!CanUpdateTransform)
             {
+                // Debug.Log("gaga "+Math.Round(Time.time - (float)NetworkManager.Singleton.ServerTime.Time, 2));
+
+                // Debug.Log($"sam {Math.Round(NetworkManager.Singleton.ServerTime.Time - debugOldTime, 2)}");
+                // debugOldTime = NetworkManager.Singleton.ServerTime.Time;
+
                 PositionInterpolator.Update(Time.deltaTime);
                 RotationInterpolator.Update(Time.deltaTime);
                 ApplyNetworkState(m_NetworkState.Value);

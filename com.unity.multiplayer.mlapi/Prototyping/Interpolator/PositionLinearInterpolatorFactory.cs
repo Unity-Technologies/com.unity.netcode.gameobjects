@@ -52,7 +52,7 @@ namespace MLAPI
             return GetInterpolatedValue();
         }
 
-        public void NetworkTickUpdate(float fixedDeltaTime)
+        public void FixedUpdate(float fixedDeltaTime)
         {
         }
 

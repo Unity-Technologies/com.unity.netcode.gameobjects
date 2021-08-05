@@ -4,8 +4,9 @@ MonoImporter:
   externalObjects: {}
   serializedVersion: 2
   defaultReferences:
-  - m_PositionInterpolator: {fileID: 11400000, guid: a882403a7bf6247cd881a093a9a3f537,
+  - m_PositionInterpolatorFactory: {fileID: 11400000, guid: a882403a7bf6247cd881a093a9a3f537,
       type: 2}
+  - m_RotationInterpolatorFactory: {instanceID: 0}
   executionOrder: 0
   icon: {instanceID: 0}
   userData: 

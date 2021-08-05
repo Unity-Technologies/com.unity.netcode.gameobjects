@@ -1,3 +1,4 @@
+using System;
 using MLAPI;
 using UnityEngine;
 
@@ -9,22 +10,40 @@ public class MoveInCircle : NetworkBehaviour
     [SerializeField]
     private float m_RotationSpeed = 30;
 
+    public bool runServerOnly;
+    public bool runInUpdate;
+
     private Vector3 oldPosition;
 
-    public override void OnNetworkSpawn()
+    // public override void OnNetworkSpawn()
+    // {
+    //     base.OnNetworkSpawn();//
+    //     NetworkManager.NetworkTickSystem.Tick += NetworkTickUpdate;
+    // }
+
+    private float lastTime;
+
+    void FixedUpdate()
     {
-        base.OnNetworkSpawn();//
-        NetworkManager.NetworkTickSystem.Tick += NetworkTickUpdate;
+        if (runInUpdate) return;
+        Tick(Time.fixedDeltaTime);
     }
 
-    void NetworkTickUpdate() // doesn't work with Update?
+    void Tick(float deltaTime)
     {
-        if (NetworkManager.Singleton.IsServer)
+        if (NetworkManager.Singleton.IsServer || !runServerOnly)
         {
             oldPosition = transform.position;
-            transform.position = transform.position + transform.forward * (m_MoveSpeed * NetworkManager.LocalTime.FixedDeltaTime);
-            Debug.Log($"ewqqwe {(transform.position - oldPosition).magnitude}");
-            transform.Rotate(0, m_RotationSpeed * NetworkManager.LocalTime.FixedDeltaTime, 0);
+            transform.position = transform.position + transform.forward * (m_MoveSpeed * deltaTime);
+            Debug.Log($"ewqqwe {Math.Round((transform.position - oldPosition).magnitude, 2)} time diff {Math.Round(Time.time - lastTime, 2)}");
+            lastTime = Time.time;
+            transform.Rotate(0, m_RotationSpeed * deltaTime, 0);
         }
+    }
+
+    private void Update()
+    {
+        if (!runInUpdate) return;
+        Tick(Time.deltaTime);
     }
 }

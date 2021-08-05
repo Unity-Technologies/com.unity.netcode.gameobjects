@@ -47,7 +47,7 @@ namespace DefaultNamespace
             return GetInterpolatedValue();
         }
 
-        public void NetworkTickUpdate(float fixedDeltaTime)
+        public void FixedUpdate(float fixedDeltaTime)
         {
         }
 
