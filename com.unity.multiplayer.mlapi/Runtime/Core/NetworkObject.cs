@@ -418,6 +418,36 @@ namespace Unity.Netcode
             }
         }
 
+        private void SendToSnapshot()
+        {
+            SnapshotSpawnCommand command;
+            command.NetworkObjectId = NetworkObjectId;
+            command.OwnerClientId = OwnerClientId;
+            command.IsPlayerObject = IsPlayerObject;
+            command.IsSceneObject = (IsSceneObject == null) || IsSceneObject.Value;
+
+            ulong? parent = NetworkManager.SpawnManager.GetSpawnParentId(this);
+            if (parent != null)
+            {
+                command.ParentNetworkId = parent.Value;
+            }
+            else
+            {
+                // write own network id, when no parents. todo: optimize this.
+                command.ParentNetworkId = command.NetworkObjectId;
+            }
+
+            command.GlobalObjectIdHash = HostCheckForGlobalObjectIdHashOverride();
+            // todo: check if (IncludeTransformWhenSpawning == null || IncludeTransformWhenSpawning(clientId)) for any clientId
+            command.ObjectPosition = transform.position;
+            command.ObjectRotation = transform.rotation;
+            command.ObjectScale = transform.localScale;
+            command.TickWritten = 0; // will be reset in Spawn
+            command.TargetClientIds = default;
+
+            NetworkManager.SnapshotSystem.Spawn(command);
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void SpawnInternal(bool destroyWithScene, ulong? ownerClientId, bool playerObject)
         {
@@ -435,32 +465,7 @@ namespace Unity.Netcode
 
             if (NetworkManager.NetworkConfig.UseSnapshotSpawn)
             {
-                SnapshotSpawnCommand command;
-                command.NetworkObjectId = NetworkObjectId;
-                command.OwnerClientId = OwnerClientId;
-                command.IsPlayerObject = IsPlayerObject;
-                command.IsSceneObject = (IsSceneObject == null) || IsSceneObject.Value;
-
-                ulong? parent = NetworkManager.SpawnManager.GetSpawnParentId(this);
-                if (parent != null)
-                {
-                    command.ParentNetworkId = parent.Value;
-                }
-                else
-                {
-                    // write own network id, when no parents. todo: optimize this.
-                    command.ParentNetworkId = command.NetworkObjectId;
-                }
-
-                command.GlobalObjectIdHash = HostCheckForGlobalObjectIdHashOverride();
-                // todo: check if (IncludeTransformWhenSpawning == null || IncludeTransformWhenSpawning(clientId)) for any clientId
-                command.ObjectPosition = transform.position;
-                command.ObjectRotation = transform.rotation;
-                command.ObjectScale = transform.localScale;
-                command.TickWritten = 0; // will be reset in Spawn
-                command.TargetClientIds = default;
-
-                NetworkManager.SnapshotSystem.Spawn(command);
+                SendToSnapshot();
             }
 
             ulong ownerId = ownerClientId != null ? ownerClientId.Value : NetworkManager.ServerClientId;
