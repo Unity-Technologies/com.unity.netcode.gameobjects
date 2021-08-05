@@ -328,15 +328,5 @@ namespace Unity.Netcode
         {
             NetworkManager.Singleton.SnapshotSystem.ReadSnapshot(clientId, messageStream);
         }
-
-        public void HandleAllClientsSwitchSceneCompleted(ulong clientId, Stream stream)
-        {
-            using (var reader = PooledNetworkReader.Get(stream))
-            {
-                var clientIds = reader.ReadULongArray();
-                var timedOutClientIds = reader.ReadULongArray();
-                NetworkManager.SceneManager.AllClientsReady(clientIds, timedOutClientIds);
-            }
-        }
     }
 }

@@ -44,7 +44,28 @@ namespace TestProject.ManualTests
         /// <param name="sceneEvent"></param>
         private void OnSceneEvent(SceneEvent sceneEvent)
         {
-            var sceneEventMsg = $"[{sceneEvent.ClientId} | {sceneEvent.SceneEventType} | {sceneEvent.SceneName} | {sceneEvent.LoadSceneMode}]";
+            var sceneEventMsg = $"[{sceneEvent.ClientId} | {sceneEvent.SceneEventType} | {sceneEvent.SceneName}";
+            if (sceneEvent.SceneEventType == SceneEventData.SceneEventTypes.S2C_Load || sceneEvent.SceneEventType == SceneEventData.SceneEventTypes.C2S_LoadComplete)
+            {
+                sceneEventMsg += $" | { sceneEvent.LoadSceneMode}";
+            }
+
+            if (sceneEvent.SceneEventType == SceneEventData.SceneEventTypes.S2C_UnLoadComplete || sceneEvent.SceneEventType == SceneEventData.SceneEventTypes.S2C_LoadComplete)
+            {
+                sceneEventMsg += $" | Loaded ({sceneEvent.ClientsThatCompleted.Count}) : (";
+                foreach(var clientId in sceneEvent.ClientsThatCompleted)
+                {
+                    sceneEventMsg += $"{clientId}, ";
+                }
+                sceneEventMsg += $") | TimedOut ({sceneEvent.ClientsThatTimedOut.Count}) : (";
+                foreach (var clientId in sceneEvent.ClientsThatTimedOut)
+                {
+                    sceneEventMsg += $"{clientId}, ";
+                }
+                sceneEventMsg += ")";
+            }
+            sceneEventMsg += "]";
+
             m_SceneEvents.Enqueue(new SceneEventNotification() { SceneEvent = sceneEventMsg, TimeToLive = Time.realtimeSinceStartup + TimeToLive });
             if (LogToConsole)
             {

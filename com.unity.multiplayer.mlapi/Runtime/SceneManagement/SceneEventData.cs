@@ -22,18 +22,20 @@ namespace Unity.Netcode
         /// </summary>
         public enum SceneEventTypes
         {
-            S2C_Event_Load,                 //Server to client load additive scene
-            S2C_Event_Unload,               //Server to client unload additive scene
-            S2C_Event_Sync,                 //Server to client late join approval synchronization
-            S2C_Event_ReSync,               //Server to client update of objects that were destroyed during sync
-            C2S_Event_Load_Complete,        //Client to server load complete
-            C2S_Event_Unload_Complete,      //Client to server unload complete
-            C2S_Event_Sync_Complete,        //Client to server
+            S2C_Load,                 //Server to client load additive scene
+            S2C_Unload,               //Server to client unload additive scene
+            S2C_Sync,                 //Server to client late join approval synchronization
+            S2C_ReSync,               //Server to client update of objects that were destroyed during sync
+            S2C_LoadComplete,         //Server to client(s) all clients loaded scene
+            S2C_UnLoadComplete,       //Server to client(s) all clients unloaded scene
+            C2S_LoadComplete,         //Client to server load complete
+            C2S_UnloadComplete,       //Client to server unload complete
+            C2S_SyncComplete,         //Client to server
         }
 
         internal SceneEventTypes SceneEventType;
         internal LoadSceneMode LoadSceneMode;
-        internal Guid SwitchSceneGuid;
+        internal Guid SceneEventGuid;
 
         internal uint SceneIndex;
         internal ulong TargetClientId;
@@ -60,6 +62,16 @@ namespace Unity.Netcode
         internal PooledNetworkBuffer InternalBuffer;
 
         private NetworkManager m_NetworkManager;
+
+        /// <summary>
+        /// Client side and only applies to the following scene event types:
+        /// <see cref="C2S_LoadComplete"/>
+        /// <see cref="C2S_UnLoadComplete"/>
+        /// </summary>
+        internal SceneEvent SceneEvent;
+
+        internal List<ulong> ClientsCompleted;
+        internal List<ulong> ClientsTimedOut;
 
         /// <summary>
         /// Client Side:
@@ -125,10 +137,12 @@ namespace Unity.Netcode
         {
             switch (SceneEventType)
             {
-                case SceneEventTypes.S2C_Event_Load:
-                case SceneEventTypes.S2C_Event_Unload:
-                case SceneEventTypes.S2C_Event_Sync:
-                case SceneEventTypes.S2C_Event_ReSync:
+                case SceneEventTypes.S2C_Load:
+                case SceneEventTypes.S2C_Unload:
+                case SceneEventTypes.S2C_Sync:
+                case SceneEventTypes.S2C_ReSync:
+                case SceneEventTypes.S2C_LoadComplete:
+                case SceneEventTypes.S2C_UnLoadComplete:
                     {
                         return true;
                     }
@@ -171,14 +185,14 @@ namespace Unity.Netcode
 
             writer.WriteByte((byte)LoadSceneMode);
 
-            if (SceneEventType != SceneEventTypes.S2C_Event_Sync)
+            if (SceneEventType != SceneEventTypes.S2C_Sync)
             {
-                writer.WriteByteArray(SwitchSceneGuid.ToByteArray());
+                writer.WriteByteArray(SceneEventGuid.ToByteArray());
             }
 
             writer.WriteUInt32Packed(SceneIndex);
 
-            if (SceneEventType == SceneEventTypes.S2C_Event_Sync)
+            if (SceneEventType == SceneEventTypes.S2C_Sync)
             {
                 writer.WriteInt32Packed(m_SceneNetworkObjects.Count());
 
@@ -222,14 +236,19 @@ namespace Unity.Netcode
                 }
             }
 
-            if (SceneEventType == SceneEventTypes.C2S_Event_Sync_Complete)
+            if (SceneEventType == SceneEventTypes.C2S_SyncComplete)
             {
                 WriteClientSynchronizationResults(writer);
             }
 
-            if (SceneEventType == SceneEventTypes.S2C_Event_ReSync)
+            if (SceneEventType == SceneEventTypes.S2C_ReSync)
             {
                 WriteClientReSynchronizationData(writer);
+            }
+
+            if (SceneEventType == SceneEventTypes.S2C_LoadComplete || SceneEventType == SceneEventTypes.S2C_UnLoadComplete)
+            {
+                WriteSceneEventProgressDone(writer);
             }
         }
 
@@ -261,14 +280,14 @@ namespace Unity.Netcode
                 Debug.LogError($"Serialization Read Error: {nameof(LoadSceneMode)} vale {loadSceneModeValue} is not within the range of the defined {nameof(LoadSceneMode)} enumerator!");
             }
 
-            if (SceneEventType != SceneEventTypes.S2C_Event_Sync)
+            if (SceneEventType != SceneEventTypes.S2C_Sync)
             {
-                SwitchSceneGuid = new Guid(reader.ReadByteArray());
+                SceneEventGuid = new Guid(reader.ReadByteArray());
             }
 
             SceneIndex = reader.ReadUInt32Packed();
 
-            if (SceneEventType == SceneEventTypes.S2C_Event_Sync)
+            if (SceneEventType == SceneEventTypes.S2C_Sync)
             {
                 m_NetworkObjectsSync.Clear();
                 var keyPairCount = reader.ReadInt32Packed();
@@ -301,14 +320,19 @@ namespace Unity.Netcode
                 }
             }
 
-            if (SceneEventType == SceneEventTypes.C2S_Event_Sync_Complete)
+            if (SceneEventType == SceneEventTypes.C2S_SyncComplete)
             {
                 CheckClientSynchronizationResults(reader);
             }
 
-            if (SceneEventType == SceneEventTypes.S2C_Event_ReSync)
+            if (SceneEventType == SceneEventTypes.S2C_ReSync)
             {
                 ReadClientReSynchronizationData(reader);
+            }
+
+            if (SceneEventType == SceneEventTypes.S2C_LoadComplete || SceneEventType == SceneEventTypes.S2C_UnLoadComplete)
+            {
+               ReadSceneEventProgressDone(reader);
             }
         }
 
@@ -462,6 +486,47 @@ namespace Unity.Netcode
                 m_SceneNetworkObjectDataOffsets.Remove(sceneId);
             }
         }
+
+        /// <summary>
+        /// Writes the all clients loaded or unloaded completed and timed out lists
+        /// </summary>
+        /// <param name="writer"></param>
+        internal void WriteSceneEventProgressDone(NetworkWriter writer)
+        {
+            writer.WriteUInt16Packed((ushort)ClientsCompleted.Count);
+            foreach (var clientId in ClientsCompleted)
+            {
+                writer.WriteUInt64Packed(clientId);
+            }
+
+            writer.WriteUInt16Packed((ushort)ClientsTimedOut.Count);
+            foreach (var clientId in ClientsTimedOut)
+            {
+                writer.WriteUInt64Packed(clientId);
+            }
+        }
+
+        /// <summary>
+        /// Reads the all clients loaded or unloaded completed and timed out lists
+        /// </summary>
+        /// <param name="reader"></param>
+        internal void ReadSceneEventProgressDone(NetworkReader reader)
+        {
+            var completedCount = reader.ReadUInt16Packed();
+            ClientsCompleted = new List<ulong>();
+            for (int i = 0; i < completedCount; i++)
+            {
+                ClientsCompleted.Add(reader.ReadUInt64Packed());
+            }
+
+            var timedOutCount = reader.ReadUInt16Packed();
+            ClientsTimedOut = new List<ulong>();
+            for (int i = 0; i < timedOutCount; i++)
+            {
+                ClientsTimedOut.Add(reader.ReadUInt64Packed());
+            }
+        }
+
 
         /// <summary>
         /// Used to store data during an asynchronous scene loading event

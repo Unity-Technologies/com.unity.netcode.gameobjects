@@ -21,7 +21,6 @@ namespace Unity.Netcode
         private readonly ProfilerMarker m_MessageReceiveQueueItemServerRpc = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(MessageReceiveQueueItem)}.{nameof(MessageQueueContainer.MessageType.ServerRpc)}");
         private readonly ProfilerMarker m_MessageReceiveQueueItemClientRpc = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(MessageReceiveQueueItem)}.{nameof(MessageQueueContainer.MessageType.ClientRpc)}");
         private readonly ProfilerMarker m_MessageReceiveQueueItemInternalMessage = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(MessageReceiveQueueItem)}.InternalMessage");
-        private readonly ProfilerMarker m_HandleAllClientsSwitchSceneCompleted = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleAllClientsSwitchSceneCompleted)}");
 
         private readonly IInternalMessageHandler m_MessageHandler;
 
@@ -179,15 +178,6 @@ namespace Unity.Netcode
             m_MessageHandler.HandleSceneEvent(clientId, stream);
 
             m_HandleSceneEvent.End();
-        }
-
-        public void HandleAllClientsSwitchSceneCompleted(ulong clientId, Stream stream)
-        {
-            m_HandleAllClientsSwitchSceneCompleted.Begin();
-
-            m_MessageHandler.HandleAllClientsSwitchSceneCompleted(clientId, stream);
-
-            m_HandleAllClientsSwitchSceneCompleted.End();
         }
     }
 }

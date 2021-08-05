@@ -117,13 +117,5 @@ namespace Unity.Netcode.EditorTests
 
             LogAssert.Expect(LogType.Log, nameof(m_Decorator.MessageReceiveQueueItem));
         }
-
-        [Test]
-        public void HandleAllClientsSwitchSceneCompleted()
-        {
-            m_Decorator.HandleAllClientsSwitchSceneCompleted(0, null);
-
-            LogAssert.Expect(LogType.Log, nameof(m_Decorator.HandleAllClientsSwitchSceneCompleted));
-        }
     }
 }

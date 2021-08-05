@@ -35,7 +35,6 @@ namespace Unity.Netcode
             SnapshotData,
             NetworkVariableDelta,
             SceneEvent,
-            AllClientsLoadedScene,
             ParentSync,
 
             None //Indicates end of frame

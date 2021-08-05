@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using AsyncOperation = UnityEngine.AsyncOperation;
 
 namespace Unity.Netcode
@@ -29,49 +30,44 @@ namespace Unity.Netcode
     }
 
     /// <summary>
-    /// Class for tracking scene switching progress by server and clients.
+    /// Server side only:
+    /// This tracks the progress of clients during a load or unload scene event
     /// </summary>
-    public class SceneEventProgress
+    internal class SceneEventProgress
     {
         /// <summary>
         /// List of clientIds of those clients that is done loading the scene.
         /// </summary>
-        public List<ulong> DoneClients { get; } = new List<ulong>();
+        internal List<ulong> DoneClients { get; } = new List<ulong>();
 
         /// <summary>
         /// The NetworkTime at the moment the scene switch was initiated by the server.
         /// </summary>
-        public NetworkTime TimeAtInitiation { get; }
+        internal NetworkTime TimeAtInitiation { get; }
 
         /// <summary>
         /// Delegate type for when the switch scene progress is completed. Either by all clients done loading the scene or by time out.
         /// </summary>
-        public delegate void OnCompletedDelegate(bool timedOut);
+        internal delegate bool OnCompletedDelegate(SceneEventProgress sceneEventProgress);
 
         /// <summary>
         /// The callback invoked when the switch scene progress is completed. Either by all clients done loading the scene or by time out.
         /// </summary>
-        public event OnCompletedDelegate OnComplete;
+        internal OnCompletedDelegate OnComplete;
 
         /// <summary>
         /// Is this scene switch progresses completed, all clients are done loading the scene or a timeout has occurred.
         /// </summary>
-        public bool IsCompleted { get; private set; }
+        internal bool IsCompleted { get; private set; }
+
+        internal bool TimedOut { get; private set; }
 
         /// <summary>
         /// If all clients are done loading the scene, at the moment of completed.
         /// </summary>
-        public bool IsAllClientsDoneLoading { get; private set; }
+        internal bool AreAllClientsDoneLoading { get; private set; }
 
-        /// <summary>
-        /// Delegate type for when a client is done loading the scene.
-        /// </summary>
-        public delegate void OnClientLoadedSceneDelegate(ulong clientId);
-
-        /// <summary>
-        /// The callback invoked when a client is done loading the scene.
-        /// </summary>
-        public event OnClientLoadedSceneDelegate OnClientLoadedScene;
+        internal string SceneName { get; set; }
 
         internal Guid Guid { get; } = Guid.NewGuid();
 
@@ -82,9 +78,13 @@ namespace Unity.Netcode
 
         internal SceneEventProgressStatus Status { get; set; }
 
+        internal SceneEventData.SceneEventTypes SceneEventType { get; set; }
+
+        internal LoadSceneMode LoadSceneMode;
+
         internal SceneEventProgress(NetworkManager networkManager, SceneEventProgressStatus status = SceneEventProgressStatus.Started)
         {
-            if(status == SceneEventProgressStatus.Started)
+            if (status == SceneEventProgressStatus.Started)
             {
                 m_NetworkManager = networkManager;
                 m_TimeOutCoroutine = m_NetworkManager.StartCoroutine(TimeOutSceneEventProgress());
@@ -96,13 +96,13 @@ namespace Unity.Netcode
         internal IEnumerator TimeOutSceneEventProgress()
         {
             yield return new WaitForSecondsRealtime(m_NetworkManager.NetworkConfig.LoadSceneTimeOut);
-            SetTimedOut();
+            TimedOut = true;
+            CheckCompletion();
         }
 
         internal void AddClientAsDone(ulong clientId)
         {
             DoneClients.Add(clientId);
-            OnClientLoadedScene?.Invoke(clientId);
             CheckCompletion();
         }
 
@@ -120,24 +120,17 @@ namespace Unity.Netcode
 
         internal void CheckCompletion()
         {
-            if (!IsCompleted && DoneClients.Count == m_NetworkManager.ConnectedClientsList.Count && m_SceneLoadOperation.isDone)
+            if ((!IsCompleted && DoneClients.Count == m_NetworkManager.ConnectedClientsList.Count && m_SceneLoadOperation.isDone) || (!IsCompleted && TimedOut))
             {
                 IsCompleted = true;
-                IsAllClientsDoneLoading = true;
-                m_NetworkManager.SceneManager.SceneSwitchProgresses.Remove(Guid);
-                OnComplete?.Invoke(false);
+                AreAllClientsDoneLoading = true;
 
+                // If OnComplete is not registered or it is and returns true then remove this from the progress tracking
+                if (OnComplete == null || (OnComplete != null && OnComplete.Invoke(this)))
+                {
+                    m_NetworkManager.SceneManager.SceneEventProgressTracking.Remove(Guid);
+                }
                 m_NetworkManager.StopCoroutine(m_TimeOutCoroutine);
-            }
-        }
-
-        internal void SetTimedOut()
-        {
-            if (!IsCompleted)
-            {
-                IsCompleted = true;
-                m_NetworkManager.SceneManager.SceneSwitchProgresses.Remove(Guid);
-                OnComplete?.Invoke(true);
             }
         }
     }

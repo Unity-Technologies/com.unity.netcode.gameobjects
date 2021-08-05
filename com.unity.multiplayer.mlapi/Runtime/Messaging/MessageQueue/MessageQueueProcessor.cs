@@ -126,13 +126,6 @@ namespace Unity.Netcode
                     case MessageQueueContainer.MessageType.SceneEvent:
                         m_NetworkManager.MessageHandler.HandleSceneEvent(item.NetworkId, item.NetworkBuffer);
                         break;
-                    case MessageQueueContainer.MessageType.AllClientsLoadedScene:
-                        if (m_NetworkManager.IsClient)
-                        {
-                            m_NetworkManager.MessageHandler.HandleAllClientsSwitchSceneCompleted(item.NetworkId, item.NetworkBuffer);
-                        }
-
-                        break;
                     case MessageQueueContainer.MessageType.ParentSync:
                         if (m_NetworkManager.IsClient)
                         {
