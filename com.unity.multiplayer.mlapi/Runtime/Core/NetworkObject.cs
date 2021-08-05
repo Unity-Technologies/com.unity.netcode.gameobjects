@@ -278,7 +278,7 @@ namespace Unity.Netcode
                 }
             }
 
-            foreach(var networkObject in networkObjects)
+            foreach (var networkObject in networkObjects)
             {
                 networkObject.NetworkShow(clientId);
             }
