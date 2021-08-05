@@ -75,24 +75,24 @@
       "dependencies": {},
       "url": "https://packages.unity.com"
     },
-    "com.unity.multiplayer.mlapi": {
-      "version": "file:../../com.unity.multiplayer.mlapi",
+    "com.unity.multiplayer.transport.utp": {
+      "version": "file:../../com.unity.multiplayer.transport.utp",
+      "depth": 0,
+      "source": "local",
+      "dependencies": {
+        "com.unity.netcode.gameobjects": "0.0.1-preview.1",
+        "com.unity.transport": "0.4.1-preview.1",
+        "com.unity.jobs": "0.2.10-preview.13"
+      }
+    },
+    "com.unity.netcode.gameobjects": {
+      "version": "file:../../com.unity.netcode.gameobjects",
       "depth": 0,
       "source": "local",
       "dependencies": {
         "com.unity.modules.ai": "1.0.0",
         "com.unity.modules.animation": "1.0.0",
         "com.unity.nuget.mono-cecil": "1.10.1-preview.1"
-      }
-    },
-    "com.unity.multiplayer.transport.utp": {
-      "version": "file:../../com.unity.multiplayer.transport.utp",
-      "depth": 0,
-      "source": "local",
-      "dependencies": {
-        "com.unity.multiplayer.mlapi": "0.0.1-preview.1",
-        "com.unity.transport": "0.4.1-preview.1",
-        "com.unity.jobs": "0.2.10-preview.13"
       }
     },
     "com.unity.nuget.mono-cecil": {

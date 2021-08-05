@@ -2,7 +2,7 @@
 # Order is important; the last matching pattern takes the most precedence.
 
 Profiling/ @Unity-Technologies/multiplayer-tools
-/com.unity.multiplayer.mlapi/Runtime/Transports/ @Unity-Technologies/server-team
+/com.unity.netcode.gameobjects/Runtime/Transports/ @Unity-Technologies/server-team
+/com.unity.netcode.gameobjects/Runtime/SceneManagement/ @NoelStephensUnity
 /com.unity.multiplayer.transport.utp/ @Unity-Technologies/server-team
-/com.unity.multiplayer.mlapi/Runtime/SceneManagement/ @NoelStephensUnity
 Documentation~/ @Briancoughlin @lkrell

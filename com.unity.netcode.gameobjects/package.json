@@ -1,0 +1,12 @@
+{
+    "name": "com.unity.netcode.gameobjects",
+    "displayName": "Netcode for GameObjects",
+    "description": "This the Core Unity Mid-level API that provides core SDK for multiplayer games within unity",
+    "version": "0.2.0",
+    "unity": "2020.3",
+    "dependencies": {
+        "com.unity.modules.ai": "1.0.0",
+        "com.unity.modules.animation": "1.0.0",
+        "com.unity.nuget.mono-cecil": "1.10.1-preview.1"
+    }
+}
