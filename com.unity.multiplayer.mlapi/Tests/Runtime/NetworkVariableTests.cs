@@ -31,15 +31,15 @@ public class TestClass : INetworkSerializable
 public class NetworkVariableTest : NetworkBehaviour
 {
     public readonly NetworkList<int> TheList = new NetworkList<int>(
-        new NetworkVariableSettings {WritePermission = NetworkVariablePermission.ServerOnly}
+        new NetworkVariableSettings { WritePermission = NetworkVariablePermission.ServerOnly }
     );
 
     public readonly NetworkSet<int> TheSet = new NetworkSet<int>(
-        new NetworkVariableSettings {WritePermission = NetworkVariablePermission.ServerOnly}
+        new NetworkVariableSettings { WritePermission = NetworkVariablePermission.ServerOnly }
     );
 
     public readonly NetworkDictionary<int, int> TheDictionary = new NetworkDictionary<int, int>(
-        new NetworkVariableSettings {WritePermission = NetworkVariablePermission.ServerOnly}
+        new NetworkVariableSettings { WritePermission = NetworkVariablePermission.ServerOnly }
     );
 
     private void ListChanged(NetworkListEvent<int> e)
@@ -425,7 +425,7 @@ namespace Unity.Netcode.RuntimeTests
                 () =>
                 {
                     m_ServerComp.TheStruct.Value =
-                        new TestStruct() {SomeInt = k_TestUInt, SomeBool = false};
+                        new TestStruct() { SomeInt = k_TestUInt, SomeBool = false };
                     m_ServerComp.TheStruct.SetDirty(true);
                 },
                 () =>
