@@ -9,4 +9,4 @@ assignees: ''
 
 Post your questions or problems here.
 
-For general questions, networking advice or discussions about MLAPI, you can also reach us on our [Discord Community](https://discord.gg/FM8SE9E) or create a post in the [Unity Multiplayer Forum](https://forum.unity.com/forums/multiplayer.26/).
+For general questions, networking advice or discussions about the Netcode for GameObjects, you can also reach us on our [Discord Community](https://discord.gg/FM8SE9E) or create a post in the [Unity Multiplayer Forum](https://forum.unity.com/forums/multiplayer.26/).
