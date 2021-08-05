@@ -658,7 +658,7 @@ GameObject:
   - component: {fileID: 1211923377}
   - component: {fileID: 1211923378}
   m_Layer: 0
-  m_Name: NetworkManager-Multiprocess
+  m_Name: '[NetworkManager] (Multiprocess)'
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -695,10 +695,7 @@ MonoBehaviour:
       SourcePrefabToOverride: {fileID: 0}
       SourceHashToOverride: 0
       OverridingTargetPrefab: {fileID: 0}
-    ReceiveTickrate: 64
-    NetworkTickIntervalSec: 0.05
-    MaxReceiveEventsPerTickRate: -1
-    EventTickrate: 64
+    TickRate: 30
     ClientConnectionBufferTimeout: 10
     ConnectionApproval: 0
     ConnectionData: 
@@ -712,7 +709,6 @@ MonoBehaviour:
     NetworkIdRecycleDelay: 120
     RpcHashSize: 0
     LoadSceneTimeOut: 120
-    EnableMessageBuffering: 1
     MessageBufferTimeout: 20
     EnableNetworkLogs: 1
 --- !u!4 &1211923376
@@ -869,9 +865,9 @@ MonoBehaviour:
   ServerWebsocketListenPort: 8887
   SupportWebsocket: 0
   Channels: []
-  UseMLAPIRelay: 0
-  MLAPIRelayAddress: 184.72.104.138
-  MLAPIRelayPort: 8888
+  UseNetcodeRelay: 0
+  NetcodeRelayAddress: 127.0.0.1
+  NetcodeRelayPort: 8888
   MessageSendMode: 0
 --- !u!1 &2027640071
 GameObject:
