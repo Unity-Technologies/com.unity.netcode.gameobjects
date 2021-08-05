@@ -369,23 +369,9 @@ namespace Unity.Netcode
                 }
             }
 
-            var context = networkManager.MessageQueueContainer.EnterInternalCommandContext(
-                MessageQueueContainer.MessageType.DestroyObjects, NetworkChannel.Internal,
-                new[] { clientId }, NetworkUpdateStage.PostLateUpdate);
-            if (context != null)
+            foreach (var networkObject in networkObjects)
             {
-                using (var nonNullContext = (InternalCommandContext)context)
-                {
-                    nonNullContext.NetworkWriter.WriteUInt16Packed((ushort)networkObjects.Count);
-
-                    for (int i = 0; i < networkObjects.Count; i++)
-                    {
-                        // Send destroy call
-                        networkObjects[i].Observers.Remove(clientId);
-
-                        nonNullContext.NetworkWriter.WriteUInt64Packed(networkObjects[i].NetworkObjectId);
-                    }
-                }
+                networkObject.NetworkHide(clientId);
             }
         }
 
