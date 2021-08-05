@@ -1055,12 +1055,6 @@ namespace Unity.Netcode
             }
         }
 
-        internal IEnumerator TimeOutSwitchSceneProgress(SceneSwitchProgress switchSceneProgress)
-        {
-            yield return new WaitForSecondsRealtime(NetworkConfig.LoadSceneTimeOut);
-            switchSceneProgress.SetTimedOut();
-        }
-
         private void HandleRawTransportPoll(NetworkEvent networkEvent, ulong clientId, NetworkChannel networkChannel,
             ArraySegment<byte> payload, float receiveTime)
         {

@@ -88,32 +88,18 @@ namespace TestProject.ManualTests
 
         }
 
-        private SceneSwitchProgress m_CurrentSceneSwitchProgress;
-
-        public delegate void OnSceneSwitchBeginDelegateHandler();
-
-        public event OnSceneSwitchBeginDelegateHandler OnSceneSwitchBegin;
-
         public void OnSwitchScene()
         {
             if (NetworkManager.Singleton && NetworkManager.Singleton.IsListening)
             {
-                OnSceneSwitchBegin?.Invoke();
                 m_ExitingScene = true;
                 ExitingNow = true;
-                m_CurrentSceneSwitchProgress = NetworkManager.Singleton.SceneManager.LoadScene(m_SceneToSwitchTo, UnityEngine.SceneManagement.LoadSceneMode.Single);
-
-                m_CurrentSceneSwitchProgress.OnComplete += CurrentSceneSwitchProgress_OnComplete;
+                var sceneEventProgressStatus = NetworkManager.Singleton.SceneManager.LoadScene(m_SceneToSwitchTo, UnityEngine.SceneManagement.LoadSceneMode.Single);
+                if (sceneEventProgressStatus != SceneEventProgressStatus.Started)
+                {
+                    Debug.LogError($"{nameof(NetworkSceneManager.LoadScene)} returned a {nameof(SceneEventProgressStatus)} value of {sceneEventProgressStatus}");
+                }
             }
-        }
-
-        public delegate void OnSceneSwitchCompletedDelegateHandler();
-
-        public event OnSceneSwitchCompletedDelegateHandler OnSceneSwitchCompleted;
-
-        private void CurrentSceneSwitchProgress_OnComplete(bool timedOut)
-        {
-            OnSceneSwitchCompleted?.Invoke();
         }
     }
 }

@@ -73,7 +73,7 @@ namespace Unity.Netcode
         /// Delegate for when all clients have reported to the server that they have completed scene transition or timed out
         /// <see cref='OnNotifyServerAllClientsLoadedScene'/>
         /// </summary>
-        public delegate void NotifyServerAllClientsLoadedSceneDelegate(SceneSwitchProgress progress, bool timedOut);
+        public delegate void NotifyServerAllClientsLoadedSceneDelegate(SceneEventProgress progress, bool timedOut);
 
         /// <summary>
         /// Delegate for when the clients get notified by the server that all clients have completed their scene transitions.
@@ -97,7 +97,7 @@ namespace Unity.Netcode
         internal readonly HashSet<string> RegisteredSceneNames = new HashSet<string>();
         internal readonly Dictionary<string, uint> SceneNameToIndex = new Dictionary<string, uint>();
         internal readonly Dictionary<uint, string> SceneIndexToString = new Dictionary<uint, string>();
-        internal readonly Dictionary<Guid, SceneSwitchProgress> SceneSwitchProgresses = new Dictionary<Guid, SceneSwitchProgress>();
+        internal readonly Dictionary<Guid, SceneEventProgress> SceneSwitchProgresses = new Dictionary<Guid, SceneEventProgress>();
         internal readonly Dictionary<uint, NetworkObject> ScenePlacedObjects = new Dictionary<uint, NetworkObject>();
 
         // Used for observed object synchronization
@@ -130,7 +130,6 @@ namespace Unity.Netcode
 
         internal NetworkSceneManager(NetworkManager networkManager)
         {
-
             m_NetworkManager = networkManager;
             SceneEventData = new SceneEventData(networkManager);
             ClientSynchEventData = new SceneEventData(networkManager);
@@ -227,7 +226,7 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="sceneName"></param>
         /// <returns>SceneSwitchProgress (if null it failed)</returns>
-        private SceneSwitchProgress ValidateServerSceneEvent(string sceneName, bool isUnloading = false)
+        private SceneEventProgress ValidateServerSceneEvent(string sceneName, bool isUnloading = false)
         {
             if (!m_NetworkManager.IsServer)
             {
@@ -247,7 +246,7 @@ namespace Unity.Netcode
                     NetworkLog.LogWarning("Scene event is already in progress");
                 }
 
-                return null;
+                return new SceneEventProgress(null, SceneEventProgressStatus.SceneEventInProgress);
             }
 
             if (!RegisteredSceneNames.Contains(sceneName))
@@ -257,11 +256,11 @@ namespace Unity.Netcode
                     NetworkLog.LogWarning($"The scene {sceneName} is not registered as a switchable scene.");
                 }
 
-                return null;
+                return new SceneEventProgress(null, SceneEventProgressStatus.InvalidSceneName);
             }
 
-            var switchSceneProgress = new SceneSwitchProgress(m_NetworkManager);
-            SceneSwitchProgresses.Add(switchSceneProgress.Guid, switchSceneProgress);
+            var sceneEventProgress = new SceneEventProgress(m_NetworkManager);
+            SceneSwitchProgresses.Add(sceneEventProgress.Guid, sceneEventProgress);
 
             if (!isUnloading)
             {
@@ -277,9 +276,9 @@ namespace Unity.Netcode
 
             // NSS TODO: switchSceneProgress needs to be re-factored
             // This replicates what OnSceneEvent handles.
-            switchSceneProgress.OnComplete += timedOut =>
+            sceneEventProgress.OnComplete += timedOut =>
             {
-                OnNotifyServerAllClientsLoadedScene?.Invoke(switchSceneProgress, timedOut);
+                OnNotifyServerAllClientsLoadedScene?.Invoke(sceneEventProgress, timedOut);
                 // Send notification to all clients that everyone is done loading
                 var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext( MessageQueueContainer.MessageType.AllClientsLoadedScene, NetworkChannel.Internal,
                     m_NetworkManager.ConnectedClientsIds, k_NetworkUpdateStage);
@@ -288,7 +287,7 @@ namespace Unity.Netcode
                 {
                     using (var nonNullContext = (InternalCommandContext)context)
                     {
-                        var doneClientIds = switchSceneProgress.DoneClients.ToArray();
+                        var doneClientIds = sceneEventProgress.DoneClients.ToArray();
                         var timedOutClientIds = m_NetworkManager.ConnectedClients.Keys.Except(doneClientIds).ToArray();
 
                         nonNullContext.NetworkWriter.WriteULongArray(doneClientIds, doneClientIds.Length);
@@ -297,31 +296,32 @@ namespace Unity.Netcode
                 }
             };
 
-            return switchSceneProgress;
+            return sceneEventProgress;
         }
 
         /// <summary>
         /// Unloads an additively loaded scene
+        /// When applicable, the <see cref="AsyncOperation"/> is delivered within the <see cref="SceneEvent"/> via the <see cref="OnSceneEvent"/>
         /// </summary>
         /// <param name="sceneName">scene name to unload</param>
         /// <returns></returns>
-        public SceneSwitchProgress UnloadScene(string sceneName)
+        public SceneEventProgressStatus UnloadScene(string sceneName)
         {
             // Make sure the scene is actually loaded
             var sceneToUnload = SceneManager.GetSceneByName(sceneName);
             if (sceneToUnload == null)
             {
                 Debug.LogWarning($"{nameof(UnloadScene)} was called, but the scene {sceneName} is not currently loaded!");
-                return null;
+                return SceneEventProgressStatus.SceneNotLoaded;
             }
 
-            var switchSceneProgress = ValidateServerSceneEvent(sceneName, true);
-            if (switchSceneProgress == null)
+            var sceneEventProgress = ValidateServerSceneEvent(sceneName, true);
+            if (sceneEventProgress.Status != SceneEventProgressStatus.Started)
             {
-                return null;
+                return sceneEventProgress.Status;
             }
 
-            SceneEventData.SwitchSceneGuid = switchSceneProgress.Guid;
+            SceneEventData.SwitchSceneGuid = sceneEventProgress.Guid;
             SceneEventData.SceneEventType = SceneEventData.SceneEventTypes.S2C_Event_Unload;
             SceneEventData.SceneIndex = SceneNameToIndex[sceneName];
 
@@ -330,7 +330,7 @@ namespace Unity.Netcode
 
             AsyncOperation sceneUnload = SceneManager.UnloadSceneAsync(sceneToUnload);
             sceneUnload.completed += (AsyncOperation asyncOp2) => { OnSceneUnloaded(); };
-            switchSceneProgress.SetSceneLoadOperation(sceneUnload);
+            sceneEventProgress.SetSceneLoadOperation(sceneUnload);
             if (m_ScenesLoaded.Contains(sceneName))
             {
                 m_ScenesLoaded.Remove(sceneName);
@@ -346,8 +346,8 @@ namespace Unity.Netcode
                 ClientId = m_NetworkManager.ServerClientId
             });
 
-            //Return our scene progress instance
-            return switchSceneProgress;
+            //Return the status
+            return sceneEventProgress.Status;
         }
 
         /// <summary>
@@ -412,19 +412,19 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Server side: Loads the scene name in either additive or single loading mode.
+        /// When applicable, the <see cref="AsyncOperation"/> is delivered within the <see cref="SceneEvent"/> via the <see cref="OnSceneEvent"/>
         /// </summary>
         /// <param name="sceneName">the name of the scene to be loaded</param>
-        /// NSS TODO: Either gut and rename the SwitchSceneProgress or completely remove it
-        /// <returns>SceneSwitchProgress  (if null this call failed)</returns>
-        public SceneSwitchProgress LoadScene(string sceneName, LoadSceneMode loadSceneMode)
+        /// <returns><see cref="SceneManagerReturnStatus"/></returns>
+        public SceneEventProgressStatus LoadScene(string sceneName, LoadSceneMode loadSceneMode)
         {
-            var switchSceneProgress = ValidateServerSceneEvent(sceneName);
-            if (switchSceneProgress == null)
+            var sceneEventProgress = ValidateServerSceneEvent(sceneName);
+            if (sceneEventProgress.Status != SceneEventProgressStatus.Started)
             {
-                return null;
+                return sceneEventProgress.Status;
             }
 
-            SceneEventData.SwitchSceneGuid = switchSceneProgress.Guid;
+            SceneEventData.SwitchSceneGuid = sceneEventProgress.Guid;
             SceneEventData.SceneEventType = SceneEventData.SceneEventTypes.S2C_Event_Load;
             SceneEventData.SceneIndex = SceneNameToIndex[sceneName];
             SceneEventData.LoadSceneMode = loadSceneMode;
@@ -461,7 +461,7 @@ namespace Unity.Netcode
             // Now start loading the scene
             AsyncOperation sceneLoad = SceneManager.LoadSceneAsync(sceneName, loadSceneMode);
             sceneLoad.completed += (AsyncOperation asyncOp2) => { OnSceneLoaded(sceneName); };
-            switchSceneProgress.SetSceneLoadOperation(sceneLoad);
+            sceneEventProgress.SetSceneLoadOperation(sceneLoad);
 
             // Notify the local server that a scene loading event has begun
             OnSceneEvent?.Invoke(new SceneEvent()
@@ -474,7 +474,7 @@ namespace Unity.Netcode
             });
 
             //Return our scene progress instance
-            return switchSceneProgress;
+            return sceneEventProgress.Status;
         }
 
         /// <summary>
@@ -969,8 +969,7 @@ namespace Unity.Netcode
                             ClientId = clientId
                         });
 
-                        // NSS TODO: Either re-factor and rename or remove this
-                        if (SceneSwitchProgresses.TryGetValue(SceneEventData.SwitchSceneGuid, out SceneSwitchProgress progress))
+                        if (SceneSwitchProgresses.TryGetValue(SceneEventData.SwitchSceneGuid, out SceneEventProgress progress))
                         {
                             SceneSwitchProgresses[SceneEventData.SwitchSceneGuid].AddClientAsDone(clientId);
                         }
@@ -1145,6 +1144,9 @@ namespace Unity.Netcode
         {
             OnNotifyClientAllClientsLoadedScene?.Invoke(clientIds, timedOutClientIds);
         }
+
+
+
 
         #endregion
     }

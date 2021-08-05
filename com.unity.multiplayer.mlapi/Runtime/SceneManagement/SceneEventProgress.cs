@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using AsyncOperation = UnityEngine.AsyncOperation;
@@ -6,9 +7,31 @@ using AsyncOperation = UnityEngine.AsyncOperation;
 namespace Unity.Netcode
 {
     /// <summary>
+    /// Used by <see cref="NetworkSceneManager"/> to determine if a server invoked scene event has started and stored
+    /// within the <see cref="SceneEventProgress"/>
+    /// Note: This was formally known as SwitchSceneProgress which contained the <see cref="AsyncOperation"/>.
+    /// The <see cref="AsyncOperation"/> is now delivered via the <see cref="NetworkSceneManager.OnSceneEvent"/> event through
+    /// the <see cref="SceneEvent"/> parameter.
+    /// Status Values:
+    /// None - No status
+    /// Started - Success in starting a load or unload scene event
+    /// SceneNotLoaded - Returned if you attempt to unload a scene that is not loaded
+    /// SceneEventInProgress - Returned if you attempt to start a new scene event (load or unload) during an existing scene event
+    /// InvalidSceneName - Returned if the scene name you specified does not exist
+    /// </summary>
+    public enum SceneEventProgressStatus
+    {
+        None,
+        Started,
+        SceneNotLoaded,
+        SceneEventInProgress,
+        InvalidSceneName,
+    }
+
+    /// <summary>
     /// Class for tracking scene switching progress by server and clients.
     /// </summary>
-    public class SceneSwitchProgress
+    public class SceneEventProgress
     {
         /// <summary>
         /// List of clientIds of those clients that is done loading the scene.
@@ -31,7 +54,7 @@ namespace Unity.Netcode
         public event OnCompletedDelegate OnComplete;
 
         /// <summary>
-        /// Is this scene switch progresses completed, all clients are done loading the scene or a timeout has occured.
+        /// Is this scene switch progresses completed, all clients are done loading the scene or a timeout has occurred.
         /// </summary>
         public bool IsCompleted { get; private set; }
 
@@ -57,11 +80,23 @@ namespace Unity.Netcode
 
         private NetworkManager m_NetworkManager { get; }
 
-        internal SceneSwitchProgress(NetworkManager networkManager)
+        internal SceneEventProgressStatus Status { get; set; }
+
+        internal SceneEventProgress(NetworkManager networkManager, SceneEventProgressStatus status = SceneEventProgressStatus.Started)
         {
-            m_NetworkManager = networkManager;
-            m_TimeOutCoroutine = m_NetworkManager.StartCoroutine(m_NetworkManager.TimeOutSwitchSceneProgress(this));
-            TimeAtInitiation = networkManager.LocalTime;
+            if(status == SceneEventProgressStatus.Started)
+            {
+                m_NetworkManager = networkManager;
+                m_TimeOutCoroutine = m_NetworkManager.StartCoroutine(TimeOutSceneEventProgress());
+                TimeAtInitiation = networkManager.LocalTime;
+            }
+            Status = status;
+        }
+
+        internal IEnumerator TimeOutSceneEventProgress()
+        {
+            yield return new WaitForSecondsRealtime(m_NetworkManager.NetworkConfig.LoadSceneTimeOut);
+            SetTimedOut();
         }
 
         internal void AddClientAsDone(ulong clientId)

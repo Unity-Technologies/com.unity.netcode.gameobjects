@@ -94,9 +94,6 @@ namespace TestProject.ManualTests
             yield return null;
         }
 
-        private SceneSwitchProgress m_CurrentSceneSwitchProgress;
-
-
         public void OnToggle()
         {
             if (NetworkManager.Singleton && NetworkManager.Singleton.IsListening)
@@ -111,36 +108,26 @@ namespace TestProject.ManualTests
 
         private IEnumerator SceneEventCoroutine(bool isLoading)
         {
-            while (m_CurrentSceneSwitchProgress == null)
+            var sceneEventProgressStatus = SceneEventProgressStatus.None;
+
+            while (sceneEventProgressStatus != SceneEventProgressStatus.Started)
             {
                 if (isLoading)
                 {
-                    m_CurrentSceneSwitchProgress = NetworkManager.Singleton.SceneManager.LoadScene(m_SceneToLoad,UnityEngine.SceneManagement.LoadSceneMode.Additive);
+                    sceneEventProgressStatus = NetworkManager.Singleton.SceneManager.LoadScene(m_SceneToLoad,UnityEngine.SceneManagement.LoadSceneMode.Additive);
                 }
                 else
                 {
-                    m_CurrentSceneSwitchProgress = NetworkManager.Singleton.SceneManager.UnloadScene(m_SceneToLoad);
+                    sceneEventProgressStatus = NetworkManager.Singleton.SceneManager.UnloadScene(m_SceneToLoad);
                 }
-                if (m_CurrentSceneSwitchProgress == null)
+                if (sceneEventProgressStatus  == SceneEventProgressStatus.SceneEventInProgress)
                 {
                     yield return new WaitForSeconds(0.25f);
                 }
             }
             m_ToggleObject.isOn = isLoading;
             m_ToggleObject.enabled = true;
-            m_CurrentSceneSwitchProgress = null;
             yield return null;
-        }
-
-
-
-        public delegate void OnSceneSwitchCompletedDelegateHandler();
-
-        public event OnSceneSwitchCompletedDelegateHandler OnSceneSwitchCompleted;
-
-        private void CurrentSceneSwitchProgress_OnComplete(bool timedOut)
-        {
-            OnSceneSwitchCompleted?.Invoke();
         }
     }
 }
