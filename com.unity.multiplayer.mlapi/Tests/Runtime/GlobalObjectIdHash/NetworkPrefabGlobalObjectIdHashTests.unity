@@ -218,7 +218,7 @@ GameObject:
   - component: {fileID: 1102477897}
   - component: {fileID: 1102477896}
   m_Layer: 0
-  m_Name: NetworkManager
+  m_Name: '[NetworkManager]'
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -245,9 +245,9 @@ MonoBehaviour:
   ServerWebsocketListenPort: 8887
   SupportWebsocket: 0
   Channels: []
-  UseMLAPIRelay: 0
-  MLAPIRelayAddress: 184.72.104.138
-  MLAPIRelayPort: 8888
+  UseNetcodeRelay: 0
+  NetcodeRelayAddress: 127.0.0.1
+  NetcodeRelayPort: 8888
   MessageSendMode: 0
 --- !u!114 &1102477897
 MonoBehaviour:
@@ -270,22 +270,27 @@ MonoBehaviour:
     RegisteredScenes:
     - NetworkPrefabGlobalObjectIdHashTests
     AllowRuntimeSceneChanges: 0
+    PlayerPrefab: {fileID: 0}
     NetworkPrefabs:
-    - Prefab: {fileID: 6634540090042209438, guid: 7006127095cef495b808ea027e90bf91,
+    - Override: 0
+      Prefab: {fileID: 6634540090042209438, guid: 7006127095cef495b808ea027e90bf91,
         type: 3}
-      IsPlayer: 1
-    - Prefab: {fileID: 5253977552660788477, guid: e9ff9ca5dee4e4a0e9aba758527ed56e,
+      SourcePrefabToOverride: {fileID: 0}
+      SourceHashToOverride: 0
+      OverridingTargetPrefab: {fileID: 0}
+    - Override: 0
+      Prefab: {fileID: 5253977552660788477, guid: e9ff9ca5dee4e4a0e9aba758527ed56e,
         type: 3}
-      IsPlayer: 0
-    - Prefab: {fileID: 8106213239008607392, guid: 08036a5a809c74816892f96d72e1ca81,
+      SourcePrefabToOverride: {fileID: 0}
+      SourceHashToOverride: 0
+      OverridingTargetPrefab: {fileID: 0}
+    - Override: 0
+      Prefab: {fileID: 8106213239008607392, guid: 08036a5a809c74816892f96d72e1ca81,
         type: 3}
-      IsPlayer: 0
-    PlayerPrefabHash: 2044183727
-    CreatePlayerPrefab: 1
-    ReceiveTickrate: 64
-    NetworkTickIntervalSec: 0.05
-    MaxReceiveEventsPerTickRate: 500
-    EventTickrate: 64
+      SourcePrefabToOverride: {fileID: 0}
+      SourceHashToOverride: 0
+      OverridingTargetPrefab: {fileID: 0}
+    TickRate: 30
     ClientConnectionBufferTimeout: 10
     ConnectionApproval: 0
     ConnectionData: 
@@ -299,7 +304,6 @@ MonoBehaviour:
     NetworkIdRecycleDelay: 120
     RpcHashSize: 0
     LoadSceneTimeOut: 120
-    EnableMessageBuffering: 1
     MessageBufferTimeout: 20
     EnableNetworkLogs: 1
 --- !u!4 &1102477898
