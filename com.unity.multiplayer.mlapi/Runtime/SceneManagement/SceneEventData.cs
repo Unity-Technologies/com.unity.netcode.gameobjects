@@ -24,12 +24,10 @@ namespace Unity.Netcode
         {
             S2C_Event_Load,                 //Server to client load additive scene
             S2C_Event_Unload,               //Server to client unload additive scene
-            S2C_Event_SetActive,            //Server to client make scene active
             S2C_Event_Sync,                 //Server to client late join approval synchronization
             S2C_Event_ReSync,               //Server to client update of objects that were destroyed during sync
-            C2S_Event_Load_Complete,        //Client to server
-            C2S_Event_Unload_Complete,      //Client to server
-            C2S_Event_SetActiveComplete,    //Client to server
+            C2S_Event_Load_Complete,        //Client to server load complete
+            C2S_Event_Unload_Complete,      //Client to server unload complete
             C2S_Event_Sync_Complete,        //Client to server
         }
 
@@ -131,7 +129,6 @@ namespace Unity.Netcode
                 case SceneEventTypes.S2C_Event_Unload:
                 case SceneEventTypes.S2C_Event_Sync:
                 case SceneEventTypes.S2C_Event_ReSync:
-                case SceneEventTypes.S2C_Event_SetActive:
                     {
                         return true;
                     }
@@ -251,7 +248,6 @@ namespace Unity.Netcode
             else
             {
                 Debug.LogError($"Serialization Read Error: {nameof(SceneEventType)} vale {sceneEventTypeValue} is not within the range of the defined {nameof(SceneEventTypes)} enumerator!");
-                // NSS TODO: Add to proposal's MTT discussion topics: Should we assert here?
             }
 
             var loadSceneModeValue = reader.ReadByte();
@@ -263,7 +259,6 @@ namespace Unity.Netcode
             else
             {
                 Debug.LogError($"Serialization Read Error: {nameof(LoadSceneMode)} vale {loadSceneModeValue} is not within the range of the defined {nameof(LoadSceneMode)} enumerator!");
-                // NSS TODO: Add to proposal's MTT discussion topics: Should we assert here?
             }
 
             if (SceneEventType != SceneEventTypes.S2C_Event_Sync)
@@ -329,7 +324,6 @@ namespace Unity.Netcode
 
             if (networkObjectsToRemove.Length > 0)
             {
-                Debug.Log($"Client {NetworkManager.Singleton.LocalClientId} is being re-synchronized.");
                 var networkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>();
                 var networkObjectIdToNetworkObject = new Dictionary<ulong, NetworkObject>();
                 foreach (var networkObject in networkObjects)
@@ -350,7 +344,6 @@ namespace Unity.Netcode
                         networkObject.IsSpawned = false;
                         if (m_NetworkManager.PrefabHandler.ContainsHandler(networkObject))
                         {
-                            Debug.Log($"NetworkObjectId {networkObjectId} marked as not spawned and is being destroyed via prefab handler.");
                             // Since this is the client side and we have missed the delete message, until the Snapshot system is in place for spawn and despawn handling
                             // we have to remove this from the list of spawned objects manually or when a NetworkObjectId is recycled the client will throw an error
                             // about the id already being assigned.
@@ -366,7 +359,6 @@ namespace Unity.Netcode
                         }
                         else
                         {
-                            Debug.Log($"NetworkObjectId {networkObjectId} marked as not spawned and is being destroyed immediately.");
                             UnityEngine.Object.DestroyImmediate(networkObject.gameObject);
                         }
                     }

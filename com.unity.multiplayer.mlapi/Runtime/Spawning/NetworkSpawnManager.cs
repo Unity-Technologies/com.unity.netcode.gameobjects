@@ -358,10 +358,9 @@ namespace Unity.Netcode
 
                 var messageQueueContainer = NetworkManager.MessageQueueContainer;
 
-                ulong[] clientIds = NetworkManager.ConnectedClientsIds;
                 var context = messageQueueContainer.EnterInternalCommandContext(
                     MessageQueueContainer.MessageType.CreateObject, NetworkChannel.Internal,
-                    clientIds, NetworkUpdateLoop.UpdateStage);
+                    new ulong[] { clientId }, NetworkUpdateLoop.UpdateStage);
                 if (context != null)
                 {
                     using (var nonNullContext = (InternalCommandContext)context)
