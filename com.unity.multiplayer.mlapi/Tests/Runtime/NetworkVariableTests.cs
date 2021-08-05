@@ -1,6 +1,5 @@
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.TestTools;
 using NUnit.Framework;
@@ -101,6 +100,7 @@ namespace Unity.Netcode.RuntimeTests
 
             // This is the *SERVER VERSION* of the *CLIENT PLAYER*
             var serverClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
+
             yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation(
                 x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId,
                 m_ServerNetworkManager, serverClientPlayerResult));
@@ -118,14 +118,16 @@ namespace Unity.Netcode.RuntimeTests
             m_ClientComp = clientSideClientPlayer.GetComponent<NetworkVariableTest>();
 
             m_ServerComp.TheList.Clear();
+            m_ServerComp.TheSet.Clear();
+            m_ServerComp.TheDictionary.Clear();
 
-            if (m_ServerComp.TheList.Count > 0)
+            if (m_ServerComp.TheList.Count > 0 || m_ServerComp.TheSet.Count > 0 || m_ServerComp.TheDictionary.Count > 0)
             {
-                throw new Exception("server network list not empty at start");
+                throw new Exception("at least one server network container not empty at start");
             }
-            if (m_ClientComp.TheList.Count > 0)
+            if (m_ClientComp.TheList.Count > 0 || m_ClientComp.TheSet.Count > 0 || m_ClientComp.TheDictionary.Count > 0)
             {
-                throw new Exception("client network list not empty at start");
+                throw new Exception("at least one client network container not empty at start");
             }
         }
 
@@ -178,8 +180,6 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator NetworkListAdd()
         {
-            var waitResult = new MultiInstanceHelpers.CoroutineResultWrapper<bool>();
-
             yield return MultiInstanceHelpers.RunAndWaitForCondition(
                 () =>
                 {
@@ -245,9 +245,8 @@ namespace Unity.Netcode.RuntimeTests
             yield return MultiInstanceHelpers.RunAndWaitForCondition(
                 () =>
                 {
-                    ISet<int> iSet = m_ServerComp.TheSet;
-                    iSet.Add(k_TestVal1);
-                    iSet.Add(k_TestVal2);
+                    m_ServerComp.TheSet.Add(k_TestVal1);
+                    m_ServerComp.TheSet.Add(k_TestVal2);
                 },
                 () =>
                 {
@@ -272,8 +271,7 @@ namespace Unity.Netcode.RuntimeTests
             yield return MultiInstanceHelpers.RunAndWaitForCondition(
                 () =>
                 {
-                    ISet<int> iSet = m_ServerComp.TheSet;
-                    iSet.Remove(k_TestVal1);
+                    m_ServerComp.TheSet.Remove(k_TestVal1);
                 },
                 () =>
                 {
@@ -296,8 +294,7 @@ namespace Unity.Netcode.RuntimeTests
             yield return MultiInstanceHelpers.RunAndWaitForCondition(
                 () =>
                 {
-                    ISet<int> iSet = m_ServerComp.TheSet;
-                    iSet.Clear();
+                    m_ServerComp.TheSet.Clear();
                 },
                 () =>
                 {
