@@ -332,29 +332,6 @@ namespace Unity.Netcode
         }
 
         /// <inheritdoc />
-        void ICollection<T>.Add(T item)
-        {
-            EnsureInitialized();
-
-            if (m_NetworkBehaviour.NetworkManager.IsServer)
-            {
-                m_Set.Add(item);
-            }
-
-            var setEvent = new NetworkSetEvent<T>()
-            {
-                Type = NetworkSetEvent<T>.EventType.Add,
-                Value = item
-            };
-            m_DirtyEvents.Add(setEvent);
-
-            if (m_NetworkBehaviour.NetworkManager.IsServer && OnSetChanged != null)
-            {
-                OnSetChanged(setEvent);
-            }
-        }
-
-        /// <inheritdoc />
         public void ExceptWith(IEnumerable<T> other)
         {
             foreach (T value in other)
@@ -478,8 +455,7 @@ namespace Unity.Netcode
             }
         }
 
-        /// <inheritdoc />
-        bool ISet<T>.Add(T item)
+        public void Add(T item)
         {
             EnsureInitialized();
 
@@ -499,8 +475,19 @@ namespace Unity.Netcode
             {
                 OnSetChanged(setEvent);
             }
+        }
 
+        /// <inheritdoc />
+        bool ISet<T>.Add(T item)
+        {
+            Add(item);
             return true;
+        }
+
+        /// <inheritdoc />
+        void ICollection<T>.Add(T item)
+        {
+            Add(item);
         }
 
         /// <inheritdoc />
