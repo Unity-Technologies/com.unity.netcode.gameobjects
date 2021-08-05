@@ -18,7 +18,7 @@ Please help us keep Unity Netcode for GameObjects open and inclusive. Read and f
 
 ## <a name="ways"></a> Ways to Contribute
 
-There are many ways in which you can contribute to the Netcode for GameObjects.
+There are many ways in which you can contribute to Netcode for GameObjects.
 
 ### <a name="issue"></a> Issues and Bugs
 
