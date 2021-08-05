@@ -150,9 +150,9 @@ namespace Unity.Netcode
         public HashSize RpcHashSize = HashSize.VarIntFourBytes;
 
         /// <summary>
-        /// The amount of seconds to wait on all clients to load requested scene before the SwitchSceneProgress onComplete callback, that waits for all clients to complete loading, is called anyway.
+        /// The amount of seconds to wait for all clients to load or unload a requested scene
         /// </summary>
-        [Tooltip("The amount of seconds to wait for all clients to load a requested scene")]
+        [Tooltip("The amount of seconds to wait for all clients to load or unload a requested scene (only when EnableSceneManagement is enabled)")]
         public int LoadSceneTimeOut = 120;
 
         /// <summary>

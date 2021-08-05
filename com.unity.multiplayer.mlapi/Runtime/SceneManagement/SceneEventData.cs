@@ -9,8 +9,8 @@ using UnityEngine.SceneManagement;
 namespace Unity.Netcode
 {
     /// <summary>
-    /// Used by <see cref="NetworkSceneManager"/> to communicate scene event states
-    /// when scene management is enabled.
+    /// Used by <see cref="NetworkSceneManager"/> for <see cref="MessageQueueContainer.MessageType.SceneEvent"/> messages
+    /// Note: This is only when <see cref="NetworkConfig.EnableSceneManagement"/> is enabled
     /// </summary>
     public class SceneEventData : IDisposable
     {
@@ -22,15 +22,71 @@ namespace Unity.Netcode
         /// </summary>
         public enum SceneEventTypes
         {
-            S2C_Load,                 //Server to client load additive scene
-            S2C_Unload,               //Server to client unload additive scene
-            S2C_Sync,                 //Server to client late join approval synchronization
-            S2C_ReSync,               //Server to client update of objects that were destroyed during sync
-            S2C_LoadComplete,         //Server to client(s) all clients loaded scene
-            S2C_UnLoadComplete,       //Server to client(s) all clients unloaded scene
-            C2S_LoadComplete,         //Client to server load complete
-            C2S_UnloadComplete,       //Client to server unload complete
-            C2S_SyncComplete,         //Client to server
+            /// <summary>
+            /// Load a scene
+            /// Invocation: Server Side
+            /// Message Flow: Server to client
+            /// Event Notification: Both server and client are notified a load scene event started
+            /// </summary>
+            S2C_Load,
+            /// <summary>
+            /// Unload a scene
+            /// Invocation: Server Side
+            /// Message Flow: Server to client
+            /// Event Notification: Both server and client are notified an unload scene event started
+            /// </summary>
+            S2C_Unload,
+            /// <summary>
+            /// Synchronize current game session state for approved clients
+            /// Invocation: Server Side
+            /// Message Flow: Server to client
+            /// Event Notification: Server and Client receives a local notification (server receives the ClientId being synchronized)
+            /// </summary>
+            S2C_Sync,
+            /// <summary>
+            /// Game session re-synchronization of NetworkOjects that were destroyed during a <see cref="S2C_Sync"/> event
+            /// Invocation: Server Side
+            /// Message Flow: Server to client
+            /// Event Notification: Both server and client receive a local notification
+            /// </summary>
+            S2C_ReSync,
+            /// <summary>
+            /// All clients have finished loading a scene
+            /// Invocation: Server Side
+            /// Message Flow: Server to Client
+            /// Event Notification: Both server and client receive a local notification containing the clients that finished
+            /// as well as the clients that timed out (if any).
+            /// </summary>
+            S2C_LoadComplete,
+            /// <summary>
+            /// All clients have unloaded a scene
+            /// Invocation: Server Side
+            /// Message Flow: Server to Client
+            /// Event Notification: Both server and client receive a local notification containing the clients that finished
+            /// as well as the clients that timed out (if any).
+            /// </summary>
+            S2C_UnLoadComplete,
+            /// <summary>
+            /// A client has finished loading a scene
+            /// Invocation: Client Side
+            /// Message Flow: Client to Server
+            /// Event Notification: Both server and client receive a local notification
+            /// </summary>
+            C2S_LoadComplete,
+            /// <summary>
+            /// A client has finished unloading a scene
+            /// Invocation: Client Side
+            /// Message Flow: Client to Server
+            /// Event Notification: Both server and client receive a local notification
+            /// </summary>
+            C2S_UnloadComplete,
+            /// <summary>
+            /// A client has finished synchronizing from a <see cref="S2C_Sync"/> event
+            /// Invocation: Client Side
+            /// Message Flow: Client to Server
+            /// Event Notification: Both server and client receive a local notification
+            /// </summary>
+            C2S_SyncComplete,
         }
 
         internal SceneEventTypes SceneEventType;
@@ -130,6 +186,7 @@ namespace Unity.Netcode
         }
 
         /// <summary>
+        /// Client and Server:
         /// Determines if the scene event type was intended for the client ( or server )
         /// </summary>
         /// <returns>true (client should handle this message) false (server should handle this message)</returns>
@@ -151,6 +208,7 @@ namespace Unity.Netcode
         }
 
         /// <summary>
+        /// Server Side:
         /// Sorts the NetworkObjects to assure proper order of operations for custom Network Prefab handlers
         /// that implement the INetworkPrefabInstanceHandler interface.
         /// </summary>
@@ -176,6 +234,7 @@ namespace Unity.Netcode
         }
 
         /// <summary>
+        /// Client and Server Side:
         /// Serializes data based on the SceneEvent type (<see cref="SceneEventTypes"/>)
         /// </summary>
         /// <param name="writer"><see cref="NetworkWriter"/> to write the scene event data</param>
@@ -253,6 +312,7 @@ namespace Unity.Netcode
         }
 
         /// <summary>
+        /// Client and Server Side:
         /// Deserialize data based on the SceneEvent type.
         /// </summary>
         /// <param name="reader"></param>
@@ -526,7 +586,6 @@ namespace Unity.Netcode
                 ClientsTimedOut.Add(reader.ReadUInt64Packed());
             }
         }
-
 
         /// <summary>
         /// Used to store data during an asynchronous scene loading event

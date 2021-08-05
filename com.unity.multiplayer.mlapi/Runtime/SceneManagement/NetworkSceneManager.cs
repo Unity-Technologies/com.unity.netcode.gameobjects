@@ -76,12 +76,13 @@ namespace Unity.Netcode
     }
 
     /// <summary>
-    /// Main class for managing network scenes
+    /// Main class for managing network scenes when <see cref="NetworkConfig.EnableSceneManagement"/> is enabled.
+    /// Uses the <see cref="MessageQueueContainer.MessageType.SceneEvent"/> message to communicate <see cref="SceneEventData"/> between the server and client(s)
     /// </summary>
     public class NetworkSceneManager
     {
         /// <summary>
-        /// The delegate callback definition for scene events
+        /// The delegate callback definition for scene event notifications
         /// For more details review over <see cref="SceneEvent"/> and <see cref="SceneEventData"/>
         /// </summary>
         /// <param name="sceneEvent"></param>
@@ -89,7 +90,7 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Event that will notify the local client or server of all scene events that take place
-        /// For more details review over <see cref="SceneEvent"/> and <see cref="SceneEventData"/>
+        /// For more details review over <see cref="SceneEvent"/>, <see cref="SceneEventData"/>, and <see cref="SceneEventData.SceneEventTypes"/>
         /// </summary>
         public event SceneEventDelegate OnSceneEvent;
 
@@ -127,6 +128,10 @@ namespace Unity.Netcode
         private const NetworkChannel k_ChannelType = NetworkChannel.Internal;
         private const NetworkUpdateStage k_NetworkUpdateStage = NetworkUpdateStage.PreUpdate;
 
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="networkManager"></param>
         internal NetworkSceneManager(NetworkManager networkManager)
         {
             m_NetworkManager = networkManager;
@@ -163,10 +168,10 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Returns the MLAPI scene index from a scene
+        /// Returns the Netcode scene index from a scene
         /// </summary>
         /// <param name="scene"></param>
-        /// <returns>MLAPI Scene Index</returns>
+        /// <returns>Netcode Scene Index</returns>
         internal uint GetNetcodeSceneIndexFromScene(Scene scene)
         {
             uint index = 0;
@@ -183,10 +188,10 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Returns the scene name from the MLAPI scene index
+        /// Returns the scene name from the Netcode scene index
         /// Note: This is not the same as the Build Settings Scenes in Build index
         /// </summary>
-        /// <param name="sceneIndex">MLAPI Scene Index</param>
+        /// <param name="sceneIndex">Netcode Scene Index</param>
         /// <returns>scene name</returns>
         internal string GetSceneNameFromNetcodeSceneIndex(uint sceneIndex)
         {
@@ -221,10 +226,10 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Validates the new scene event request by the server-side code.
-        /// This also initializes some commonly shared values as well as switchSceneProgress
+        /// This also initializes some commonly shared values as well as SceneEventProgress
         /// </summary>
         /// <param name="sceneName"></param>
-        /// <returns>SceneSwitchProgress (if null it failed)</returns>
+        /// <returns><see cref="SceneEventProgress"/> that should have a <see cref="SceneEventProgress.Status"/> of <see cref="SceneEventProgressStatus.Started"/> otherwise it failed.</returns>
         private SceneEventProgress ValidateServerSceneEvent(string sceneName, bool isUnloading = false)
         {
             if (!m_NetworkManager.IsServer)
@@ -300,7 +305,7 @@ namespace Unity.Netcode
                 SceneEventType = sceneEventProgress.SceneEventType,
                 SceneName = sceneEventProgress.SceneName,
                 ClientId = m_NetworkManager.ServerClientId,
-                LoadSceneMode =sceneEventProgress.LoadSceneMode,
+                LoadSceneMode = sceneEventProgress.LoadSceneMode,
                 ClientsThatCompleted = sceneEventProgress.DoneClients,
                 ClientsThatTimedOut = m_NetworkManager.ConnectedClients.Keys.Except(sceneEventProgress.DoneClients).ToList(),
             });
@@ -315,7 +320,7 @@ namespace Unity.Netcode
         /// When applicable, the <see cref="AsyncOperation"/> is delivered within the <see cref="SceneEvent"/> via the <see cref="OnSceneEvent"/>
         /// </summary>
         /// <param name="sceneName">scene name to unload</param>
-        /// <returns></returns>
+        /// <returns><see cref="SceneEventProgressStatus"/> (<see cref="SceneEventProgressStatus.Started"/> means it was successful)</returns>
         public SceneEventProgressStatus UnloadScene(string sceneName)
         {
             // Make sure the scene is actually loaded
@@ -363,6 +368,7 @@ namespace Unity.Netcode
         }
 
         /// <summary>
+        /// Client Side:
         /// SceneManager.UnloadSceneAsync handler for clients
         /// </summary>
         private void OnClientUnloadScene()
@@ -400,6 +406,7 @@ namespace Unity.Netcode
         }
 
         /// <summary>
+        /// Server and Client:
         /// Invoked when the additively loaded scene is unloaded
         /// </summary>
         private void OnSceneUnloaded()
@@ -435,7 +442,7 @@ namespace Unity.Netcode
         /// When applicable, the <see cref="AsyncOperation"/> is delivered within the <see cref="SceneEvent"/> via the <see cref="OnSceneEvent"/>
         /// </summary>
         /// <param name="sceneName">the name of the scene to be loaded</param>
-        /// <returns><see cref="SceneManagerReturnStatus"/></returns>
+        /// <returns><see cref="SceneEventProgressStatus"/> (<see cref="SceneEventProgressStatus.Started"/> means it was successful)</returns>
         public SceneEventProgressStatus LoadScene(string sceneName, LoadSceneMode loadSceneMode)
         {
             var sceneEventProgress = ValidateServerSceneEvent(sceneName);
@@ -500,9 +507,10 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Client Side: handles both forms of scene loading
+        /// Client Side:
+        /// Handles both forms of scene loading
         /// </summary>
-        /// <param name="objectStream">Stream data associated with the event </param>
+        /// <param name="objectStream">Stream data associated with the event</param>
         internal void OnClientSceneLoadingEvent(Stream objectStream)
         {
             SceneEventData.CopyUnreadFromStream(objectStream);
@@ -613,7 +621,8 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Server side: on scene loaded callback method invoked by OnSceneLoading only
+        /// Server side:
+        /// On scene loaded callback method invoked by OnSceneLoading only
         /// </summary>
         private void OnServerLoadedScene()
         {
@@ -686,7 +695,8 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Client side: on scene loaded callback method invoked by OnSceneLoading only
+        /// Client side:
+        /// On scene loaded callback method invoked by OnSceneLoading only
         /// </summary>
         private void OnClientLoadedScene()
         {
@@ -794,7 +804,7 @@ namespace Unity.Netcode
         /// Note: This can recurse one additional time by the client if the current scene loaded by the client
         /// is already loaded.
         /// </summary>
-        /// <param name="sceneIndex">MLAPI sceneIndex to load</param>
+        /// <param name="sceneIndex">Netcode sceneIndex to load</param>
         private void OnClientBeginSync(uint sceneIndex)
         {
             if (!SceneIndexToString.TryGetValue(sceneIndex, out string sceneName) || !RegisteredSceneNames.Contains(sceneName))
@@ -811,7 +821,7 @@ namespace Unity.Netcode
             var loadSceneMode = sceneIndex == SceneEventData.SceneIndex ? SceneEventData.LoadSceneMode : LoadSceneMode.Additive;
 
             // If this is the beginning of the synchronization event, then send client a notification that synchronization has begun
-            if(sceneIndex == SceneEventData.SceneIndex)
+            if (sceneIndex == SceneEventData.SceneIndex)
             {
                 OnSceneEvent?.Invoke(new SceneEvent()
                 {
@@ -849,7 +859,7 @@ namespace Unity.Netcode
         /// Once a scene is loaded ( or if it was already loaded) this gets called.
         /// This handles all of the in-scene and dynamically spawned NetworkObject synchronization
         /// </summary>
-        /// <param name="sceneIndex">MLAPI scene index that was loaded</param>
+        /// <param name="sceneIndex">Netcode scene index that was loaded</param>
         private void ClientLoadedSynchronization(uint sceneIndex)
         {
             var sceneName = GetSceneNameFromNetcodeSceneIndex(sceneIndex);
@@ -999,8 +1009,6 @@ namespace Unity.Netcode
             {
                 case SceneEventData.SceneEventTypes.C2S_LoadComplete:
                     {
-                        Debug.Log($"[{nameof(SceneEventData.SceneEventTypes.C2S_LoadComplete)}] Client Id {clientId} finished loading additive scene.");
-
                         // Notify the local server that the client has finished loading a scene
                         OnSceneEvent?.Invoke(new SceneEvent()
                         {
@@ -1046,7 +1054,6 @@ namespace Unity.Netcode
 
                         if (SceneEventData.ClientNeedsReSynchronization())
                         {
-                            Debug.Log($"Re-Synchronizing client {clientId} for missed destroyed NetworkObjects.");
                             SceneEventData.SceneEventType = SceneEventData.SceneEventTypes.S2C_ReSync;
                             SendSceneEventData(new ulong[] { clientId });
 
@@ -1103,8 +1110,10 @@ namespace Unity.Netcode
             }
         }
 
-        #region NetworkObject Scene Transitioning Related Method
-
+        /// <summary>
+        /// Moves all NetworkObjects that don't have the <see cref="NetworkObject.DestroyWithScene"/> set to
+        /// the "Do not destroy on load" scene.
+        /// </summary>
         private void MoveObjectsToDontDestroyOnLoad()
         {
             // Move ALL NetworkObjects to the temp scene
@@ -1180,6 +1189,5 @@ namespace Unity.Netcode
                 SceneManager.MoveGameObjectToScene(sobj.gameObject, scene);
             }
         }
-        #endregion
     }
 }
