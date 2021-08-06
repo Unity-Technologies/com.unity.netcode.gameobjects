@@ -2,3 +2,7 @@
 .vs
 .vscode
 .idea
+.bin
+.Editor
+.download
+upm-ci~
