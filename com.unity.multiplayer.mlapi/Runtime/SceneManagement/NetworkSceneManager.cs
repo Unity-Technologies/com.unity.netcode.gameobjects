@@ -589,10 +589,6 @@ namespace Unity.Netcode
             {
                 m_ScenesLoaded.Add(sceneName);
             }
-            else
-            {
-                throw new Exception($"{sceneName} is being loaded twice?!");
-            }
 
             //Get all NetworkObjects loaded by the scene
             PopulateScenePlacedObjects(nextScene);
@@ -881,10 +877,6 @@ namespace Unity.Netcode
             if (!m_ScenesLoaded.Contains(sceneName))
             {
                 m_ScenesLoaded.Add(sceneName);
-            }
-            else
-            {
-                throw new Exception($"{sceneName} is being loaded twice?!");
             }
 
             // Get all NetworkObjects loaded by the scene  (in-scene NetworkObjects)
