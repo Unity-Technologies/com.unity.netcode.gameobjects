@@ -14,6 +14,7 @@ public class UIController : MonoBehaviour
     public GameObject JoinCode;
 
     public UTPTransport Transport;
+    private string m_JoinCodeString;
 
     private void Awake()
     {
@@ -52,7 +53,7 @@ public class UIController : MonoBehaviour
     public async void OnSignIn()
     {
 #if ENABLE_RELAY_SERVICE
-        await UnityServices.Initialize();
+        //await UnityServices.Initialize();
         Debug.Log("OnSignIn");
         await AuthenticationService.Instance.SignInAnonymouslyAsync();
         Debug.Log($"Logging in with PlayerID {AuthenticationService.Instance.PlayerId}");

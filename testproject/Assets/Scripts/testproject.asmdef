@@ -7,11 +7,13 @@
         "Unity.Multiplayer.MLAPI.Prototyping",
         "Unity.Multiplayer.Transport.UTP",
         "Unity.Services.Authentication",
-        "Unity.Services.Core"
+        "Unity.Services.Core",
+        "Unity.Networking.Transport",
+        "Unity.Services.Relay"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
-    "allowUnsafeCode": false,
+    "allowUnsafeCode": true,
     "overrideReferences": false,
     "precompiledReferences": [],
     "autoReferenced": true,

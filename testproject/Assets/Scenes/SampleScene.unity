@@ -219,6 +219,18 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 19899154}
   m_Mesh: {fileID: 10209, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &102484700 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 4850072633501053442, guid: d725b5588e1b956458798319e6541d84,
+    type: 3}
+  m_PrefabInstance: {fileID: 1928839749}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 50623966c8d88ab40982cc2b0e4c2d2e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &225870858
 GameObject:
   m_ObjectHideFlags: 0
@@ -586,6 +598,7 @@ MonoBehaviour:
   GlobalObjectIdHash: 3604669530
   AlwaysReplicateAsRoot: 0
   DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
 --- !u!114 &402668304
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -815,7 +828,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 903872102732f5c4cbdd3863de5dbc97, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Transport: {fileID: 620561613}
+  ConnectionScript: {fileID: 102484700}
 --- !u!114 &509741759
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1097,7 +1110,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 620561609}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b84c2d8dfe509a34fb59e2b81f8e1319, type: 3}
   m_Name: 
@@ -1140,7 +1153,7 @@ MonoBehaviour:
       type: 3}
     NetworkPrefabs:
     - Override: 0
-      Prefab: {fileID: 442217489085244684, guid: 5eca8a21314fe4278ba2571c289a9773,
+      Prefab: {fileID: 8133991607019124060, guid: 421bcf732fe69486d8abecfa5eee63bb,
         type: 3}
       SourcePrefabToOverride: {fileID: 0}
       SourceHashToOverride: 0
@@ -1195,8 +1208,6 @@ MonoBehaviour:
   m_MessageBufferSize: 1024
   m_ServerAddress: 127.0.0.1
   m_ServerPort: 7777
-  m_RelayMaxPlayers: 10
-  m_RelayServer: https://relay-allocations-stg.cloud.unity3d.com
 --- !u!1001 &627808638
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2179,6 +2190,7 @@ MonoBehaviour:
   GlobalObjectIdHash: 3972363333
   AlwaysReplicateAsRoot: 0
   DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
 --- !u!65 &963826007
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -2270,7 +2282,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 05037a80244af4174806bc7f242e4432, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  UnityChanPrefab: {fileID: 442217489085244684, guid: 5eca8a21314fe4278ba2571c289a9773,
+  UnityChanPrefab: {fileID: 8133991607019124060, guid: 421bcf732fe69486d8abecfa5eee63bb,
     type: 3}
 --- !u!4 &1202924674
 Transform:
@@ -2672,6 +2684,7 @@ MonoBehaviour:
   GlobalObjectIdHash: 1445980162
   AlwaysReplicateAsRoot: 0
   DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
 --- !u!54 &1397037320
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -2935,6 +2948,7 @@ MonoBehaviour:
   GlobalObjectIdHash: 1148320762
   AlwaysReplicateAsRoot: 0
   DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
 --- !u!54 &1402467447
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -3345,6 +3359,7 @@ MonoBehaviour:
   GlobalObjectIdHash: 2710131580
   AlwaysReplicateAsRoot: 0
   DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
 --- !u!114 &1475593096
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3589,11 +3604,46 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 1333567166}
     m_Modifications:
+    - target: {fileID: 2956145122089128464, guid: d725b5588e1b956458798319e6541d84,
+        type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
+      value: OnStartServerButton
+      objectReference: {fileID: 0}
+    - target: {fileID: 2956145122089128464, guid: d725b5588e1b956458798319e6541d84,
+        type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
+      value: ConnectionModeScript, TestProject
+      objectReference: {fileID: 0}
+    - target: {fileID: 2956145122546206394, guid: d725b5588e1b956458798319e6541d84,
+        type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
+      value: OnStartClientButton
+      objectReference: {fileID: 0}
+    - target: {fileID: 2956145122546206394, guid: d725b5588e1b956458798319e6541d84,
+        type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
+      value: ConnectionModeScript, TestProject
+      objectReference: {fileID: 0}
+    - target: {fileID: 2956145122624039697, guid: d725b5588e1b956458798319e6541d84,
+        type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
+      value: OnStartHostButton
+      objectReference: {fileID: 0}
+    - target: {fileID: 2956145122624039697, guid: d725b5588e1b956458798319e6541d84,
+        type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
+      value: ConnectionModeScript, TestProject
+      objectReference: {fileID: 0}
     - target: {fileID: 4850072633501053442, guid: d725b5588e1b956458798319e6541d84,
         type: 3}
       propertyPath: m_JoinCodeInput
       value: 
       objectReference: {fileID: 509741756}
+    - target: {fileID: 4850072633501053442, guid: d725b5588e1b956458798319e6541d84,
+        type: 3}
+      propertyPath: m_RelayAllocationBasePath
+      value: https://relay-allocations-stg.services.api.unity.com
+      objectReference: {fileID: 0}
     - target: {fileID: 6633621479308595792, guid: d725b5588e1b956458798319e6541d84,
         type: 3}
       propertyPath: m_Pivot.x
@@ -3802,4 +3852,3 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2036456027}
   m_Mesh: {fileID: 10209, guid: 0000000000000000e000000000000000, type: 0}
-  
