@@ -257,11 +257,9 @@ namespace Unity.Netcode
 
                 if (m_SceneNetworkObjects.Count() > 0)
                 {
-                    string msg = "Scene Associated NetworkObjects Write:\n";
                     foreach (var keypair in m_SceneNetworkObjects)
                     {
                         writer.WriteUInt32Packed(keypair.Key);
-                        msg += $"Scene ID [{keypair.Key}] NumNetworkObjects:[{keypair.Value.Count}]\n";
                         writer.WriteInt32Packed(keypair.Value.Count);
                         var positionStart = writer.GetStream().Position;
                         // Size Place Holder (For offset purposes, needs to not be packed)
@@ -280,7 +278,6 @@ namespace Unity.Netcode
                             networkObject.SerializeSceneObject(writer, TargetClientId);
                             var noStop = writer.GetStream().Position;
                             totalBytes += (int)(noStop - noStart);
-                            msg += $"Included: {networkObject.name} Bytes: {totalBytes} \n";
                         }
                         var positionEnd = writer.GetStream().Position;
                         var bytesWritten = (uint)(positionEnd - (positionStart + sizeof(uint)));
@@ -288,10 +285,7 @@ namespace Unity.Netcode
                         // Write the total size written to the stream by NetworkObjects being serialized
                         writer.WriteUInt32(bytesWritten);
                         writer.GetStream().Position = positionEnd;
-                        msg += $"Wrote [{bytesWritten}] bytes of NetworkObject data. Verification: {totalBytes}\n";
                     }
-
-                    Debug.Log(msg);
                 }
             }
 
