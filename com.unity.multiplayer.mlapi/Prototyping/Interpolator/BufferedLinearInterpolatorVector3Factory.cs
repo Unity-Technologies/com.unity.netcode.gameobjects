@@ -101,6 +101,7 @@ namespace unity.netcode
 
                     var pos = m_LerpEndValue is Vector3 value ? value : default;
                     Debug.DrawLine(pos, pos + Random.Range(0f, 1f) * Vector3.up + Random.Range(0f, 1f) * Vector3.left, Color.green, 10, false);
+                    // break;
                 }
             }
 
@@ -114,15 +115,15 @@ namespace unity.netcode
             }
         }
 
-        private float samLastServerTime;
-        private float samLastTime;
+        // private float samLastServerTime;
+        // private float samLastTime;
 
-        private float serverOffset;
-        private float m_RenderTime => Time.time - serverOffset;
+        // private float serverOffset;
+        // private float m_RenderTime => Time.time - serverOffset;
 
         public void Start()
         {
-            serverOffset = (float) (Time.time - NetworkManager.Singleton.NetworkTickSystem.ServerTime.Time);
+            // serverOffset = (float) (Time.time - NetworkManager.Singleton.NetworkTickSystem.ServerTime.Time);
         }
 
         public void OnEnable()
@@ -149,18 +150,24 @@ namespace unity.netcode
             // 4            6   6.5
             // |            |   |
             // A            B   Server
+
+            // Unclamped
+            // 4            6   6.5
+            // |            |   |           |   |
+            // A            B   Render          Server
+            // A            B              C
+            //              A              B
             var timeB = m_CurrentTimeConsumed;//new NetworkTime(NetworkManager.Singleton.NetworkTickSystem.TickRate, m_ValueLastTick);
-            // var timeA = timeB - timeB.FixedDeltaTime;//
             var timeA = m_PreviousTimeConsumed;
             double range = timeB.Time - timeA.Time;
             var renderTime = ServerTimeBeingHandledForBuffering - range;
             // var renderTime = m_RenderTime;
             float t = (float)((renderTime - timeA.Time) / range);
-            var diffServerTime = NetworkManager.Singleton.NetworkTickSystem.ServerTime.Time - samLastServerTime;
-            samLastServerTime = (float) NetworkManager.Singleton.NetworkTickSystem.ServerTime.Time;
-            var diffTime = Time.time - samLastTime;
-            samLastTime = Time.time;
-            Debug.Log($"diffServerTime {diffServerTime} diffTime {diffTime} deltaTime {deltaTime}");
+            // var diffServerTime = NetworkManager.Singleton.NetworkTickSystem.ServerTime.Time - samLastServerTime;
+            // samLastServerTime = (float) NetworkManager.Singleton.NetworkTickSystem.ServerTime.Time;
+            // var diffTime = Time.time - samLastTime;
+            // samLastTime = Time.time;
+            // Debug.Log($"diffServerTime {diffServerTime} diffTime {diffTime} deltaTime {deltaTime}");
             Debug.Log($"ttttttttttttt {t}");
             m_CurrentValue = Interpolate(m_LerpStartValue, m_LerpEndValue, t);
             // m_CurrentValue = m_LerpEndValue;
