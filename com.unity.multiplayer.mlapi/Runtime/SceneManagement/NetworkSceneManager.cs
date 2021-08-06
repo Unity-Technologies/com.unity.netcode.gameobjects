@@ -82,6 +82,7 @@ namespace Unity.Netcode
     public class NetworkSceneManager
     {
         internal static bool DisableReSynchronization;
+        internal static bool IsUnitTesting;
 
         /// <summary>
         /// The delegate callback definition for scene event notifications
@@ -375,6 +376,7 @@ namespace Unity.Netcode
         /// </summary>
         private void OnClientUnloadScene()
         {
+
             var sceneName = GetSceneNameFromNetcodeSceneIndex(SceneEventData.SceneIndex);
             if (sceneName == string.Empty)
             {
@@ -387,24 +389,35 @@ namespace Unity.Netcode
             }
             s_IsSceneEventActive = true;
 
-            var sceneUnload = SceneManager.UnloadSceneAsync(sceneName);
+            var sceneUnload = (AsyncOperation)null;
+
+            // Don't unload anything while unit testing (i.e. multi-instance *not* multi-process)
+            if (!IsUnitTesting)
+            {
+                sceneUnload = SceneManager.UnloadSceneAsync(sceneName);
+                sceneUnload.completed += asyncOp2 => OnSceneUnloaded();
+            }
 
             if (m_ScenesLoaded.Contains(sceneName))
             {
                 m_ScenesLoaded.Remove(sceneName);
             }
 
-            sceneUnload.completed += asyncOp2 => OnSceneUnloaded();
-
             // Notify the local client that a scene is going to be unloaded
             OnSceneEvent?.Invoke(new SceneEvent()
             {
-                AsyncOperation = sceneUnload,
+                AsyncOperation = IsUnitTesting ? new AsyncOperation() : sceneUnload,
                 SceneEventType = SceneEventData.SceneEventType,
                 LoadSceneMode = SceneEventData.LoadSceneMode,
                 SceneName = sceneName,
                 ClientId = m_NetworkManager.LocalClientId   // Server sent this message to the client, but client is executing it
             });
+
+            // Pass through for unit test (i.e. multi-instance *not* multi-process)
+            if (IsUnitTesting)
+            {
+                OnSceneUnloaded();
+            }
         }
 
         /// <summary>
@@ -562,17 +575,28 @@ namespace Unity.Netcode
                 IsSpawnedObjectsPendingInDontDestroyOnLoad = true;
             }
 
-            var sceneLoad = SceneManager.LoadSceneAsync(sceneName, SceneEventData.LoadSceneMode);
-            sceneLoad.completed += asyncOp2 => OnSceneLoaded(sceneName);
+            var sceneLoad = (AsyncOperation)null;
+            // Don't load anything while unit testing (i.e. multi-instance *not* multi-process)
+            if (!IsUnitTesting)
+            {
+                sceneLoad = SceneManager.LoadSceneAsync(sceneName, SceneEventData.LoadSceneMode);
+                sceneLoad.completed += asyncOp2 => OnSceneLoaded(sceneName);
+            }
 
             OnSceneEvent?.Invoke(new SceneEvent()
             {
-                AsyncOperation = sceneLoad,
+                AsyncOperation = IsUnitTesting ? new AsyncOperation() : sceneLoad,
                 SceneEventType = SceneEventData.SceneEventType,
                 LoadSceneMode = SceneEventData.LoadSceneMode,
                 SceneName = sceneName,
                 ClientId = m_NetworkManager.LocalClientId
             });
+
+            // Pass through for unit test (i.e. multi-instance *not* multi-process)
+            if (IsUnitTesting)
+            {
+                OnSceneLoaded(sceneName);
+            }
         }
 
         /// <summary>
