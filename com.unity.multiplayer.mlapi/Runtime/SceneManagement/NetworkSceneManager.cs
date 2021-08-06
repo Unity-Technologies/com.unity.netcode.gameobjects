@@ -81,6 +81,8 @@ namespace Unity.Netcode
     /// </summary>
     public class NetworkSceneManager
     {
+        internal static bool DisableReSynchronization;
+
         /// <summary>
         /// The delegate callback definition for scene event notifications
         /// For more details review over <see cref="SceneEvent"/> and <see cref="SceneEventData"/>
@@ -1044,7 +1046,7 @@ namespace Unity.Netcode
                             ClientId = clientId
                         });
 
-                        if (SceneEventData.ClientNeedsReSynchronization())
+                        if (SceneEventData.ClientNeedsReSynchronization() && !DisableReSynchronization)
                         {
                             SceneEventData.SceneEventType = SceneEventData.SceneEventTypes.S2C_ReSync;
                             SendSceneEventData(new ulong[] { clientId });
