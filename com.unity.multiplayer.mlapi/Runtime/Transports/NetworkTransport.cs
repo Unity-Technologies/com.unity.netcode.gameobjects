@@ -19,6 +19,11 @@ namespace Unity.Netcode
         NetworkVariable, //todo: this channel will be used for snapshotting and should then go from reliable to unreliable
         SnapshotExchange,
         Fragmented,
+        ReliableSequenced,
+        ReliableUnsequenced,
+        ReliableFragmentedSequenced,
+        UnreliableSequenced,
+        UnreliableUnsequenced,
         ChannelUnused, // <<-- must be present, and must be last
     };
 
@@ -108,6 +113,12 @@ namespace Unity.Netcode
 
             new TransportChannel(NetworkChannel.Fragmented, NetworkDelivery.ReliableFragmentedSequenced),
 
+            // Channels for those that just want to know exactly what it is
+            new TransportChannel(NetworkChannel.UnreliableSequenced, NetworkDelivery.UnreliableSequenced),
+            new TransportChannel(NetworkChannel.UnreliableUnsequenced, NetworkDelivery.Unreliable),
+            new TransportChannel(NetworkChannel.ReliableSequenced, NetworkDelivery.ReliableSequenced),
+            new TransportChannel(NetworkChannel.ReliableUnsequenced, NetworkDelivery.Reliable),
+            new TransportChannel(NetworkChannel.ReliableFragmentedSequenced, NetworkDelivery.ReliableFragmentedSequenced),
         };
 
         /// <summary>
