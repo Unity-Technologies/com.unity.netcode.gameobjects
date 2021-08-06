@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -47,6 +48,25 @@ namespace TestProject.RuntimeTests
         {
             m_ServerNetworkManager.SceneManager.OnSceneEvent += SceneManager_OnSceneEvent;
             m_CurrentScene = "AdditiveScene1";
+
+            // Check that we cannot call LoadScene when EnableSceneManagement is false (from previous legacy test)
+            var threwException = false;
+            try
+            {
+                m_ServerNetworkManager.NetworkConfig.EnableSceneManagement = false;
+                m_ServerNetworkManager.SceneManager.LoadScene("SomeSceneNane", LoadSceneMode.Single);
+            }
+            catch (Exception ex)
+            {
+                if (ex.Message.Contains($"{nameof(NetworkConfig.EnableSceneManagement)} flag is not enabled in the {nameof(NetworkManager)}'s {nameof(NetworkConfig)}. Please set {nameof(NetworkConfig.EnableSceneManagement)} flag to true before calling this method."))
+                {
+                    threwException = true;
+                }
+            }
+            Assert.IsTrue(threwException);
+            m_ServerNetworkManager.NetworkConfig.EnableSceneManagement = true;
+
+            // Now prepare for the loading and unloading additive scene testing
             InitializeSceneTestInfo();
 
             // Test loading additive scenes and the associated event messaging and notification pipelines
