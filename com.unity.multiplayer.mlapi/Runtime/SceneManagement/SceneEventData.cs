@@ -267,7 +267,7 @@ namespace Unity.Netcode
                         var totalBytes = 0;
 
                         // Sort NetworkObjects so any NetworkObjects with a PrefabHandler are sorted to be after all other NetworkObjects
-                        // This will assure the INetworkPrefabInstanceHandler instance is registered before we try to spawn the NetworkObjects
+                        // This will assure any INetworkPrefabInstanceHandler instance is registered before we try to spawn the NetworkObjects
                         // on the client side.
                         keypair.Value.Sort(SortNetworkObjects);
 
@@ -393,7 +393,8 @@ namespace Unity.Netcode
         /// <summary>
         /// Client Side:
         /// If there happens to be NetworkObjects in the final Event_Sync_Complete message that are no longer spawned,
-        /// the server will compile a list and send back an Event_ReSync message to the client.
+        /// the server will compile a list and send back an Event_ReSync message to the client.  This is where the
+        /// client handles any returned values by the server.
         /// </summary>
         /// <param name="reader"></param>
         internal void ReadClientReSynchronizationData(NetworkReader reader)
@@ -492,7 +493,7 @@ namespace Unity.Netcode
         /// Client Side:
         /// During the deserialization process of the servers Event_Sync, the client builds a list of
         /// all NetworkObjectIds that were spawned.  Upon responding to the server with the Event_Sync_Complete
-        /// this list is included for the server to review to determine if the client needs a minor resynchronization
+        /// this list is included for the server to review over and determine if the client needs a minor resynchronization
         /// of NetworkObjects that might have been despawned while the client was processing the Event_Sync.
         /// </summary>
         /// <param name="writer"></param>

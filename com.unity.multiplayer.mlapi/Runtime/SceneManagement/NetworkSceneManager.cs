@@ -81,8 +81,12 @@ namespace Unity.Netcode
     /// </summary>
     public class NetworkSceneManager
     {
+        // Used to be able to turn re-synchronization off for future snapshot development purposes.
         internal static bool DisableReSynchronization;
         internal static bool IsUnitTesting;
+
+        // Used to detect if we are in the middle of a single mode scene transition
+        private static bool s_IsSceneEventActive = false;
 
         /// <summary>
         /// The delegate callback definition for scene event notifications
@@ -108,9 +112,6 @@ namespace Unity.Netcode
 
         // Used to track which scenes are currently loaded (outside of SceneManager)
         private List<string> m_ScenesLoaded = new List<string>();
-
-        // Used to detect if we are in the middle of a single mode scene transition
-        private static bool s_IsSceneEventActive = false;
 
         // The Condition: While a scene is asynchronously loaded in single loading scene mode, if any new NetworkObjects are spawned
         // they need to be moved into the do not destroy temporary scene
@@ -146,11 +147,11 @@ namespace Unity.Netcode
         /// Generic sending of scene event data
         /// </summary>
         /// <param name="targetClientIds">array of client identifiers to receive the scene event message</param>
-        internal void SendSceneEventData(ulong[] targetClientIds)
+        private void SendSceneEventData(ulong[] targetClientIds)
         {
             if (targetClientIds.Length == 0)
             {
-                // This would be the server with no clients connected
+                // This would be the Host/Server with no clients connected
                 // Silently return as there is nothing to be done
                 return;
             }
@@ -175,7 +176,7 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="scene"></param>
         /// <returns>Netcode Scene Index</returns>
-        internal uint GetNetcodeSceneIndexFromScene(Scene scene)
+        private uint GetNetcodeSceneIndexFromScene(Scene scene)
         {
             uint index = 0;
             if (!SceneNameToIndex.TryGetValue(scene.name, out index))
@@ -196,7 +197,7 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="sceneIndex">Netcode Scene Index</param>
         /// <returns>scene name</returns>
-        internal string GetSceneNameFromNetcodeSceneIndex(uint sceneIndex)
+        private string GetSceneNameFromNetcodeSceneIndex(uint sceneIndex)
         {
             var sceneName = string.Empty;
             if (!SceneIndexToString.TryGetValue(sceneIndex, out sceneName))
@@ -285,7 +286,7 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="sceneEventProgress"></param>
         /// <returns></returns>
-        internal bool OnSceneEventProgressCompleted(SceneEventProgress sceneEventProgress)
+        private bool OnSceneEventProgressCompleted(SceneEventProgress sceneEventProgress)
         {
             // Send a message to all clients that all clients are done loading or unloading
             var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(k_MessageType, k_ChannelType, m_NetworkManager.ConnectedClientsIds, k_NetworkUpdateStage);
@@ -319,7 +320,8 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Unloads an additively loaded scene
+        /// Server Side:
+        /// Unloads an additively loaded scene.  If you want to unload a <see cref="LoadSceneMode.Single"/> mode loaded scene load another <see cref="LoadSceneMode.Single"/> scene.
         /// When applicable, the <see cref="AsyncOperation"/> is delivered within the <see cref="SceneEvent"/> via the <see cref="OnSceneEvent"/>
         /// </summary>
         /// <param name="sceneName">scene name to unload</param>
@@ -453,7 +455,8 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Server side: Loads the scene name in either additive or single loading mode.
+        /// Server side:
+        /// Loads the scene name in either additive or single loading mode.
         /// When applicable, the <see cref="AsyncOperation"/> is delivered within the <see cref="SceneEvent"/> via the <see cref="OnSceneEvent"/>
         /// </summary>
         /// <param name="sceneName">the name of the scene to be loaded</param>
@@ -526,7 +529,7 @@ namespace Unity.Netcode
         /// Handles both forms of scene loading
         /// </summary>
         /// <param name="objectStream">Stream data associated with the event</param>
-        internal void OnClientSceneLoadingEvent(Stream objectStream)
+        private void OnClientSceneLoadingEvent(Stream objectStream)
         {
             SceneEventData.CopyUnreadFromStream(objectStream);
 
@@ -940,8 +943,8 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Client Side: Handles incoming Scene_Event messages
-        /// It is "understood" that the server is the sender
+        /// Client Side:
+        /// Handles incoming Scene_Event messages for clients
         /// </summary>
         /// <param name="stream">data associated with the event</param>
         private void HandleClientSceneEvent(Stream stream)
@@ -1017,7 +1020,8 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Server Side: Handles incoming Scene_Event messages
+        /// Server Side:
+        /// Handles incoming Scene_Event messages for host or server
         /// </summary>
         /// <param name="clientId">client who sent the event</param>
         /// <param name="stream">data associated with the event</param>
@@ -1098,7 +1102,7 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="clientId">client who sent the scene event</param>
         /// <param name="stream">data associated with the scene event</param>
-        public void HandleSceneEvent(ulong clientId, Stream stream)
+        internal void HandleSceneEvent(ulong clientId, Stream stream)
         {
             if (m_NetworkManager != null)
             {
@@ -1162,7 +1166,7 @@ namespace Unity.Netcode
         /// -- Before any "DontDestroyOnLoad" NetworkObjects have been added back into the scene.
         /// Added the ability to choose not to clear the scene placed objects for additive scene loading.
         /// </summary>
-        internal void PopulateScenePlacedObjects(Scene sceneToFilterBy, bool clearScenePlacedObjects = true)
+        private void PopulateScenePlacedObjects(Scene sceneToFilterBy, bool clearScenePlacedObjects = true)
         {
             if (clearScenePlacedObjects)
             {
