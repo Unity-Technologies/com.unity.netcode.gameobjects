@@ -193,10 +193,9 @@ namespace TestProject.RuntimeTests
         }
 
         /// <summary>
-        /// For this test, we only need to check the server side for the proper event notifications of loading a scene
-        /// as well as the final (more important) event notifications S2C_LoadComplete and S2C_UnloadComplete that signify
-        /// the clients have processed through the loading and unloading of the scenes (really server ends up being the only)
-        /// one that loads and unloads and the clients pass through or ignore the incoming command if the scene is no longer loaded.
+        /// This test only needs to check the server side for the proper event notifications of loading a scene, each
+        /// client response that it loaded the scene, and the final  event notifications S2C_LoadComplete and S2C_UnloadComplete
+        /// that signify all clients have processed through the loading and unloading process.
         /// </summary>
         /// <param name="sceneEvent"></param>
         private void SceneManager_OnSceneEvent(SceneEvent sceneEvent)
