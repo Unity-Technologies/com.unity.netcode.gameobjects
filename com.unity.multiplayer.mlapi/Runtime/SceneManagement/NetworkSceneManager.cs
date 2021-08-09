@@ -238,7 +238,7 @@ namespace Unity.Netcode
         {
             if (!m_NetworkManager.IsServer)
             {
-                throw new NotServerException("Only the server can start a scene event!");
+                throw new NotServerException("Only server can start a scene event!");
             }
 
             if (!m_NetworkManager.NetworkConfig.EnableSceneManagement)
