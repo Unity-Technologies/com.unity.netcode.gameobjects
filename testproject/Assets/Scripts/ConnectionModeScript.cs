@@ -3,7 +3,7 @@ using System.Collections;
 using UnityEngine;
 using MLAPI;
 using MLAPI.Transports;
-using System.Threading.Tasks;
+
 #if ENABLE_RELAY_SERVICE
 using Unity.Services.Core;
 using Unity.Services.Authentication;
@@ -32,17 +32,8 @@ public class ConnectionModeScript : MonoBehaviour
     [SerializeField]
     private string m_RelayAllocationBasePath = "https://relay-allocations-stg.services.api.unity.com";
 
-    private string m_RelayJoinCode;
-
-    public void SetRelayJoinCode(string relayJoinCode)
-    {
-        m_RelayJoinCode = relayJoinCode;
-    }
-
-    public string GetRelayJoinCode()
-    {
-        return m_RelayJoinCode;
-    }
+    [HideInInspector]
+    public string RelayJoinCode { get; set; }
 #endif
 
     internal void SetCommandLineHandler(CommandLineProcessor commandLineProcessor)
@@ -157,9 +148,12 @@ public class ConnectionModeScript : MonoBehaviour
             yield break;
         }
 
-        m_RelayJoinCode = serverRelayUtilityTask.Result.joinCode;
+        var (ipv4address, port, allocationIdBytes, connectionData, key, joinCode) = serverRelayUtilityTask.Result;
 
-        NetworkManager.Singleton.GetComponent<UTPTransport>().SetRelayServerDataInstance(serverRelayUtilityTask.Result.relayServerData);
+        RelayJoinCode = joinCode;
+
+        //When starting a relay server, both instances of connection data are identical.
+        NetworkManager.Singleton.GetComponent<UTPTransport>().SetRelayServerData(ipv4address, port, allocationIdBytes, key, connectionData);
 
         postAllocationAction();
     }
@@ -219,7 +213,7 @@ public class ConnectionModeScript : MonoBehaviour
         m_ConnectionModeButtons.SetActive(false);
 
         //assumes that RelayJoinCodeInput populated RelayJoinCode prior to this
-        var clientRelayUtilityTask = RelayUtility.JoinRelayServerFromJoinCode(m_RelayJoinCode);
+        var clientRelayUtilityTask = RelayUtility.JoinRelayServerFromJoinCode(RelayJoinCode);
         
         while (!clientRelayUtilityTask.IsCompleted)
         {
@@ -232,16 +226,10 @@ public class ConnectionModeScript : MonoBehaviour
             yield break;
         }
 
-        try
-        {
-            //Currently only supported by the UTPTransport adapter for MLAPI; RelayServerData as a property isn't in the base Transport interface.
-            ((UTPTransport)NetworkManager.Singleton.NetworkConfig.NetworkTransport).SetRelayServerDataInstance(clientRelayUtilityTask.Result);
-        }
-        catch (InvalidCastException e)
-        {
-            Debug.LogError("Transport is not UTPTransport, but attempting to start Relay Client. Client not started. Exception message: " + e.Message);
-            yield break;
-        }
+        var (ipv4address, port, allocationIdBytes, connectionData, hostConnectionData, key) = clientRelayUtilityTask.Result;
+
+        //When connecting as a client to a relay server, connectionData and hostConnectionData are different.
+        NetworkManager.Singleton.GetComponent<UTPTransport>().SetRelayServerData(ipv4address, port, allocationIdBytes, key, connectionData, hostConnectionData);
 
         NetworkManager.Singleton.StartClient();
         OnNotifyConnectionEventClient?.Invoke();

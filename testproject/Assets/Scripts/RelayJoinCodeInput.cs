@@ -15,8 +15,8 @@ public class RelayJoinCodeInput : MonoBehaviour
     private void Update()
     {
         if (m_TextInput.IsInteractable()) {
-            if (!string.IsNullOrEmpty(ConnectionScript.GetRelayJoinCode())) {
-                m_TextInput.text = ConnectionScript.GetRelayJoinCode();
+            if (!string.IsNullOrEmpty(ConnectionScript.RelayJoinCode)) {
+                m_TextInput.text = ConnectionScript.RelayJoinCode;
                 m_TextInput.readOnly = true;
             }
         }
@@ -24,6 +24,6 @@ public class RelayJoinCodeInput : MonoBehaviour
 
     public void SetJoinCode()
     {
-        ConnectionScript.SetRelayJoinCode(m_TextInput.text);
+        ConnectionScript.RelayJoinCode = m_TextInput.text;
     }
 }
