@@ -2,7 +2,7 @@
   "dependencies": {
     "com.unity.burst": {
       "version": "1.5.3",
-      "depth": 2,
+      "depth": 3,
       "source": "registry",
       "dependencies": {
         "com.unity.mathematics": "1.2.1"
@@ -10,7 +10,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.collab-proxy": {
-      "version": "1.7.1",
+      "version": "1.5.7",
       "depth": 0,
       "source": "registry",
       "dependencies": {
@@ -20,7 +20,7 @@
     },
     "com.unity.collections": {
       "version": "1.0.0-pre.3",
-      "depth": 1,
+      "depth": 2,
       "source": "registry",
       "dependencies": {
         "com.unity.burst": "1.5.3",
@@ -36,16 +36,14 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.ide.rider": {
-      "version": "3.0.7",
+      "version": "3.0.5",
       "depth": 0,
       "source": "registry",
-      "dependencies": {
-        "com.unity.ext.nunit": "1.0.6"
-      },
+      "dependencies": {},
       "url": "https://packages.unity.com"
     },
     "com.unity.ide.visualstudio": {
-      "version": "2.0.11",
+      "version": "2.0.9",
       "depth": 0,
       "source": "registry",
       "dependencies": {
@@ -72,7 +70,7 @@
     },
     "com.unity.mathematics": {
       "version": "1.2.1",
-      "depth": 0,
+      "depth": 2,
       "source": "registry",
       "dependencies": {},
       "url": "https://packages.unity.com"
@@ -112,7 +110,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.package-validation-suite": {
-      "version": "0.21.0-preview",
+      "version": "0.19.2-preview",
       "depth": 0,
       "source": "registry",
       "dependencies": {
@@ -121,31 +119,32 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.services.authentication": {
-      "version": "1.0.0-pre.4",
+      "version": "0.5.0-preview",
       "depth": 0,
       "source": "registry",
       "dependencies": {
         "com.unity.nuget.newtonsoft-json": "2.0.0",
-        "com.unity.services.core": "1.1.0-pre.8",
+        "com.unity.services.core": "1.1.0-pre.2",
         "com.unity.modules.unitywebrequest": "1.0.0"
       },
       "url": "https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-candidates"
     },
     "com.unity.services.core": {
-      "version": "1.1.0-pre.8",
+      "version": "1.1.0-pre.2",
       "depth": 0,
       "source": "registry",
       "dependencies": {
-        "com.unity.modules.unitywebrequest": "1.0.0"
+        "com.unity.modules.unitywebrequest": "1.0.0",
+        "com.unity.nuget.newtonsoft-json": "2.0.0"
       },
       "url": "https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-candidates"
     },
     "com.unity.services.relay": {
-      "version": "1.0.0-preview.1",
+      "version": "0.0.1-preview.5",
       "depth": 0,
       "source": "registry",
       "dependencies": {
-        "com.unity.services.core": "1.1.0-pre.4",
+        "com.unity.services.core": "1.1.0-pre.2",
         "com.unity.modules.unitywebrequest": "1.0.0",
         "com.unity.modules.unitywebrequestassetbundle": "1.0.0",
         "com.unity.modules.unitywebrequestaudio": "1.0.0",
@@ -167,12 +166,12 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.test-framework.performance": {
-      "version": "2.8.0-preview",
+      "version": "2.3.1-preview",
       "depth": 0,
       "source": "registry",
       "dependencies": {
         "com.unity.test-framework": "1.1.0",
-        "com.unity.modules.jsonserialize": "1.0.0"
+        "com.unity.nuget.newtonsoft-json": "2.0.0-preview"
       },
       "url": "https://packages.unity.com"
     },
@@ -186,7 +185,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.timeline": {
-      "version": "1.5.6",
+      "version": "1.5.2",
       "depth": 0,
       "source": "registry",
       "dependencies": {
@@ -198,8 +197,8 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.transport": {
-      "version": "1.0.0-pre.1",
-      "depth": 0,
+      "version": "0.9.0-preview.3",
+      "depth": 1,
       "source": "registry",
       "dependencies": {
         "com.unity.collections": "1.0.0-pre.3",

@@ -7,9 +7,7 @@
         "Unity.Multiplayer.MLAPI.Prototyping",
         "Unity.Multiplayer.Transport.UTP",
         "Unity.Services.Authentication",
-        "Unity.Services.Core",
-        "Unity.Networking.Transport",
-        "Unity.Services.Relay"
+        "Unity.Services.Core"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

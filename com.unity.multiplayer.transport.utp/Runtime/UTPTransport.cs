@@ -4,6 +4,12 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Unity.Networking.Transport;
 using Unity.Networking.Transport.Relay;
+#if ENABLE_RELAY_SERVICE
+using Unity.Services.Relay;
+using Unity.Services.Relay.Allocations;
+using Unity.Services.Relay.Models;
+using Unity.Services.Core;
+#endif
 
 using MLAPI.Transports.Tasks;
 using UnityEngine;
@@ -36,11 +42,14 @@ namespace MLAPI.Transports
         [SerializeField] private int m_MessageBufferSize = MaximumMessageLength;
         [SerializeField] private string m_ServerAddress = "127.0.0.1";
         [SerializeField] private ushort m_ServerPort = 7777;
+        [SerializeField] private int m_RelayMaxPlayers = 10;
+        [SerializeField] private string m_RelayServer = "https://relay-allocations.cloud.unity3d.com";
 
         private State m_State = State.Disconnected;
         private NetworkDriver m_Driver;
         private List<INetworkParameter> m_NetworkParameters;
         private byte[] m_MessageBuffer;
+        private string m_RelayJoinCode;
         private ulong m_ServerClientId;
 
         private NetworkPipeline m_UnreliableSequencedPipeline;
@@ -49,23 +58,16 @@ namespace MLAPI.Transports
 
         public override ulong ServerClientId => m_ServerClientId;
 
+        public string RelayJoinCode => m_RelayJoinCode;
+
         public ProtocolType Protocol => m_ProtocolType;
-
-        private RelayServerData m_RelayServerData;
-
-        private static readonly RelayServerData k_DefaultRelayServerData = default(RelayServerData);
-        private static RelayServerData DefaultRelayServerData => k_DefaultRelayServerData;
 
         private void InitDriver()
         {
             if (m_NetworkParameters.Count > 0)
-            {
                 m_Driver = NetworkDriver.Create(m_NetworkParameters.ToArray());
-            }
             else
-            {
                 m_Driver = NetworkDriver.Create();
-            }
 
             m_UnreliableSequencedPipeline = m_Driver.CreatePipeline(typeof(UnreliableSequencedPipelineStage));
             m_ReliableSequencedPipeline = m_Driver.CreatePipeline(typeof(ReliableSequencedPipelineStage));
@@ -77,8 +79,39 @@ namespace MLAPI.Transports
         private void DisposeDriver()
         {
             if (m_Driver.IsCreated)
-            {
                 m_Driver.Dispose();
+        }
+
+        private static RelayAllocationId ConvertFromAllocationIdBytes(byte[] allocationIdBytes)
+        {
+            unsafe
+            {
+                fixed (byte* ptr = allocationIdBytes)
+                {
+                    return RelayAllocationId.FromBytePointer(ptr, allocationIdBytes.Length);
+                }
+            }
+        }
+
+        private static RelayHMACKey ConvertFromHMAC(byte[] hmac)
+        {
+            unsafe
+            {
+                fixed (byte* ptr = hmac)
+                {
+                    return RelayHMACKey.FromBytePointer(ptr, RelayHMACKey.k_Length);
+                }
+            }
+        }
+
+        private static RelayConnectionData ConvertConnectionData(byte[] connectionData)
+        {
+            unsafe
+            {
+                fixed (byte* ptr = connectionData)
+                {
+                    return RelayConnectionData.FromBytePointer(ptr, RelayConnectionData.k_Length);
+                }
             }
         }
 
@@ -101,9 +134,7 @@ namespace MLAPI.Transports
                 case NetworkDelivery.ReliableFragmentedSequenced:
                     // No need to send on the fragmented pipeline if data is smaller than MTU.
                     if (size < NetworkParameterConstants.MTU)
-                    {
                         return m_ReliableSequencedPipeline;
-                    }
 
                     return m_ReliableSequencedFragmentedPipeline;
 
@@ -119,15 +150,43 @@ namespace MLAPI.Transports
 
             if (m_ProtocolType == ProtocolType.RelayUnityTransport)
             {
-                //This comparison is currently slow since RelayServerData does not implement a custom comparison operator that doesn't use
-                //reflection, but this does not live in the context of a performance-critical loop, it runs once at initial connection time.
-                if(m_RelayServerData.Equals(DefaultRelayServerData))
+#if !ENABLE_RELAY_SERVICE
+                Debug.LogError("You must have Relay SDK installed via the UDash in order to use the relay transport");
+                yield return null;
+#else
+                var joinTask = RelayService.AllocationsApiClient.JoinRelayAsync(new JoinRelayRequest(new JoinRequest(m_RelayJoinCode)));
+
+                while(!joinTask.IsCompleted)
+                    yield return null;
+
+                if (joinTask.IsFaulted)
                 {
-                    Debug.LogError("You must set the RelayServerData property to something different from the default value before calling StartRelayServer.");
+                    Debug.LogError("Join Relay request failed");
+                    task.IsDone = true;
+                    task.Success = false;
                     yield break;
                 }
 
-                m_NetworkParameters.Add(new RelayNetworkParameter{ ServerData = m_RelayServerData });
+                var allocation = joinTask.Result.Result.Data.Allocation;
+
+                serverEndpoint = NetworkEndPoint.Parse(allocation.RelayServer.IpV4, (ushort)allocation.RelayServer.Port);
+
+                var allocationId = ConvertFromAllocationIdBytes(allocation.AllocationIdBytes);
+
+                var connectionData = ConvertConnectionData(allocation.ConnectionData);
+                var hostConnectionData = ConvertConnectionData(allocation.HostConnectionData);
+                var key = ConvertFromHMAC(allocation.Key);
+
+                Debug.Log($"client: {allocation.ConnectionData[0]} {allocation.ConnectionData[1]}");
+                Debug.Log($"host: {allocation.HostConnectionData[0]} {allocation.HostConnectionData[1]}");
+
+                Debug.Log($"client: {allocation.AllocationId}");
+
+                var relayServerData = new RelayServerData(ref serverEndpoint, 0, ref allocationId, ref connectionData, ref hostConnectionData, ref key);
+                relayServerData.ComputeNewNonce();
+
+                m_NetworkParameters.Add(new RelayNetworkParameter{ ServerData = relayServerData });
+#endif
             }
             else
             {
@@ -164,6 +223,8 @@ namespace MLAPI.Transports
                 {
                     Debug.LogError("Client failed to connect to server");
                 }
+
+
             }
 
             task.IsDone = true;
@@ -195,80 +256,69 @@ namespace MLAPI.Transports
                 {
                     Debug.LogError("Server failed to listen");
                 }
+
+
             }
 
             task.IsDone = true;
         }
 
-        private static RelayAllocationId ConvertFromAllocationIdBytes(byte[] allocationIdBytes)
-        {
-            unsafe
-            {
-                fixed (byte* ptr = allocationIdBytes)
-                {
-                    return RelayAllocationId.FromBytePointer(ptr, allocationIdBytes.Length);
-                }
-            }
-        }
-
-        private static RelayHMACKey ConvertFromHMAC(byte[] hmac)
-        {
-            unsafe
-            {
-                fixed (byte* ptr = hmac)
-                {
-                    return RelayHMACKey.FromBytePointer(ptr, RelayHMACKey.k_Length);
-                }
-            }
-        }
-
-        private static RelayConnectionData ConvertConnectionData(byte[] connectionData)
-        {
-            unsafe
-            {
-                fixed (byte* ptr = connectionData)
-                {
-                    return RelayConnectionData.FromBytePointer(ptr, RelayConnectionData.k_Length);
-                }
-            }
-        }
-
-        public void SetRelayServerData(string ipv4address, ushort port, byte[] allocationIdBytes, byte[] keyBytes, byte[] connectionDataBytes, byte[] hostConnectionDataBytes = null)
-        {
-            RelayConnectionData hostConnectionData;
-
-            var serverEndpoint = NetworkEndPoint.Parse(ipv4address, port);
-            var allocationId = ConvertFromAllocationIdBytes(allocationIdBytes);
-            var key = ConvertFromHMAC(keyBytes);
-            var connectionData = ConvertConnectionData(connectionDataBytes);
-            
-            if (hostConnectionDataBytes != null)
-            {
-                hostConnectionData = ConvertConnectionData(hostConnectionDataBytes);
-            }
-            else
-            {
-                hostConnectionData = connectionData;
-            }
-            m_RelayServerData = new RelayServerData(ref serverEndpoint, 0, ref allocationId, ref connectionData, ref hostConnectionData, ref key);
-            m_RelayServerData.ComputeNewNonce();
-        }
 
         private IEnumerator StartRelayServer(SocketTask task)
         {
-            //This comparison is currently slow since RelayServerData does not implement a custom comparison operator that doesn't use
-            //reflection, but this does not live in the context of a performance-critical loop, it runs once at initial connection time.
-            if (m_RelayServerData.Equals(DefaultRelayServerData))
+#if !ENABLE_RELAY_SERVICE
+            Debug.LogError("You must have Relay SDK installed via the UDash in order to use the relay transport");
+            yield return null;
+#else
+            var allocationTask = RelayService.AllocationsApiClient.CreateAllocationAsync(new CreateAllocationRequest(new AllocationRequest(m_RelayMaxPlayers)));
+
+            while(!allocationTask.IsCompleted)
             {
-                Debug.LogError("You must set the RelayServerData property to something different from the default value before calling StartRelayServer.");
+                yield return null;
+            }
+
+            if (allocationTask.IsFaulted)
+            {
+                Debug.LogError("Create allocation request failed");
+                task.IsDone = true;
+                task.Success = false;
                 yield break;
             }
-            else
-            {
-                m_NetworkParameters.Add(new RelayNetworkParameter { ServerData = m_RelayServerData });
 
-                yield return ServerBindAndListen(task, NetworkEndPoint.AnyIpv4);
+            var allocation = allocationTask.Result.Result.Data.Allocation;
+
+            var joinCodeTask = RelayService.AllocationsApiClient.CreateJoincodeAsync(new CreateJoincodeRequest(new JoinCodeRequest(allocation.AllocationId)));
+
+            while(!joinCodeTask.IsCompleted)
+            {
+                yield return null;
             }
+
+            if (joinCodeTask.IsFaulted)
+            {
+                Debug.LogError("Create join code request failed");
+                task.IsDone = true;
+                task.Success = false;
+                yield break;
+            }
+
+            m_RelayJoinCode = joinCodeTask.Result.Result.Data.JoinCode;
+
+            var serverEndpoint = NetworkEndPoint.Parse(allocation.RelayServer.IpV4, (ushort)allocation.RelayServer.Port);
+            // Debug.Log($"Relay Server endpoint: {allocation.RelayServer.IpV4}:{(ushort)allocation.RelayServer.Port}");
+
+            var allocationId = ConvertFromAllocationIdBytes(allocation.AllocationIdBytes);
+            var connectionData = ConvertConnectionData(allocation.ConnectionData);
+            var key = ConvertFromHMAC(allocation.Key);
+
+
+            var relayServerData = new RelayServerData(ref serverEndpoint, 0, ref allocationId, ref connectionData, ref connectionData, ref key);
+            relayServerData.ComputeNewNonce();
+
+            m_NetworkParameters.Add(new RelayNetworkParameter{ ServerData = relayServerData });
+
+            yield return ServerBindAndListen(task, NetworkEndPoint.AnyIpv4);
+#endif
         }
 
         private bool AcceptConnection()
@@ -346,15 +396,8 @@ namespace MLAPI.Transports
             if (m_Driver.IsCreated)
             {
                 m_Driver.ScheduleUpdate().Complete();
-                while(AcceptConnection() && m_Driver.IsCreated)
-                {
-                    ;
-                }
-
-                while (ProcessEvent() && m_Driver.IsCreated)
-                {
-                    ;
-                }
+                while(AcceptConnection() && m_Driver.IsCreated);
+                while(ProcessEvent() && m_Driver.IsCreated);
             }
 
         }
@@ -372,6 +415,14 @@ namespace MLAPI.Transports
         private static unsafe NetworkConnection ParseClientId(ulong mlapiConnectionId)
         {
             return *(NetworkConnection*)&mlapiConnectionId;
+        }
+
+        public void SetRelayJoinCode(string value)
+        {
+            if (m_State == State.Disconnected)
+            {
+                m_RelayJoinCode = value;
+            }
         }
 
         public override void DisconnectLocalClient()
@@ -411,6 +462,7 @@ namespace MLAPI.Transports
 
             m_NetworkParameters = new List<INetworkParameter>();
 
+
             // If we want to be able to actually handle messages MaximumMessageLength bytes in
             // size, we need to allow a bit more than that in FragmentationUtility since this needs
             // to account for headers and such. 128 bytes is plenty enough for such overhead.
@@ -418,6 +470,12 @@ namespace MLAPI.Transports
             m_NetworkParameters.Add(new FragmentationUtility.Parameters(){PayloadCapacity = maxFragmentationCapacity});
 
             m_MessageBuffer = new byte[m_MessageBufferSize];
+#if ENABLE_RELAY_SERVICE
+            if (m_ProtocolType == ProtocolType.RelayUnityTransport) {
+                Unity.Services.Relay.RelayService.Configuration.BasePath = m_RelayServer;
+                UnityServices.Initialize();
+            }
+#endif
         }
 
         public override NetworkEvent PollEvent(out ulong clientId, out NetworkChannel networkChannel, out ArraySegment<byte> payload, out float receiveTime)
@@ -452,9 +510,7 @@ namespace MLAPI.Transports
                 }
 
                 if (m_Driver.EndSend(writer) == size)
-                {
                     return;
-                }
             }
 
             Debug.LogError("Error sending the message");
@@ -463,9 +519,7 @@ namespace MLAPI.Transports
         public override SocketTasks StartClient()
         {
             if (m_Driver.IsCreated)
-            {
                 return SocketTask.Fault.AsTasks();
-            }
 
             var task = SocketTask.Working;
             StartCoroutine(ClientBindAndConnect(task));
@@ -475,9 +529,7 @@ namespace MLAPI.Transports
         public override SocketTasks StartServer()
         {
             if (m_Driver.IsCreated)
-            {
                 return SocketTask.Fault.AsTasks();
-            }
 
             var task = SocketTask.Working;
             switch (m_ProtocolType)
