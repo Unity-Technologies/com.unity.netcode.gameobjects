@@ -7,7 +7,7 @@ using Unity.Multiplayer.NetStatsReporting;
 
 namespace Unity.Netcode
 {
-    public class NetworkMetrics : INetworkMetrics
+    internal class NetworkMetrics : INetworkMetrics
     {
         readonly EventMetric<NamedMessageEvent> m_NamedMessageSentEvent = new EventMetric<NamedMessageEvent>(MetricNames.NamedMessageSent);
         readonly EventMetric<NamedMessageEvent> m_NamedMessageReceivedEvent = new EventMetric<NamedMessageEvent>(MetricNames.NamedMessageReceived);

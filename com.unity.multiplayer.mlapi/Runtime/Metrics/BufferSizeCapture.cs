@@ -27,7 +27,7 @@ namespace Unity.Netcode
         }
     }
 
-    internal class CommandContextSizeCapture
+    internal struct CommandContextSizeCapture
     {
         private readonly InternalCommandContext m_Context;
         private long m_Overhead;
@@ -36,18 +36,30 @@ namespace Unity.Netcode
         public CommandContextSizeCapture(InternalCommandContext context)
         {
             m_Context = context;
+            m_Overhead = 0L;
+            m_CurrentSize = 0L;
         }
 
         public long Size => m_CurrentSize + m_Overhead;
 
         public CaptureScope MeasureOverhead()
         {
-            return new CaptureScope(m_Context, overhead => m_Overhead = overhead);
+            return new CaptureScope(m_Context, SetOverhead);
         }
 
         public CaptureScope Measure()
         {
-            return new CaptureScope(m_Context, size => m_CurrentSize = size);
+            return new CaptureScope(m_Context, SetCurrentSize);
+        }
+
+        private void SetOverhead(long overhead)
+        {
+            m_Overhead = overhead;
+        }
+
+        private void SetCurrentSize(long currentSize)
+        {
+            m_CurrentSize = currentSize;
         }
 
         public struct CaptureScope : IDisposable

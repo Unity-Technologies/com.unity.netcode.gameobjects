@@ -2,7 +2,7 @@ using System.Collections.Generic;
 
 namespace Unity.Netcode
 {
-    public class NullNetworkMetrics : INetworkMetrics
+    internal class NullNetworkMetrics : INetworkMetrics
     {
         public void TrackNetworkObject(NetworkObject networkObject)
         {
