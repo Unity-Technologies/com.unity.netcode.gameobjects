@@ -767,7 +767,7 @@ namespace Unity.Netcode
                 var ackSequence = m_Snapshot.ReadAcks(clientId, m_ClientData[clientId], reader);
 
                 // keep track of RTTs, using the sequence number acknowledgement as a marker
-                m_ConnectionRtts[clientId].NotifyAck(ackSequence, Time.unscaledTime);
+                GetConnectionRtt(clientId).NotifyAck(ackSequence, Time.unscaledTime);
 
                 sentinel = reader.ReadUInt16();
                 if (sentinel != SentinelAfter)
