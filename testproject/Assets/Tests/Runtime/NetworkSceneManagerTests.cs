@@ -75,7 +75,7 @@ namespace TestProject.RuntimeTests
             }
             catch (Exception ex)
             {
-                if (ex.Message.Contains($"Only the server can start a scene event!"))
+                if (ex.Message.Contains("Only server can start a scene event!"))
                 {
                     threwException = true;
                 }
@@ -110,7 +110,7 @@ namespace TestProject.RuntimeTests
             }
             catch (Exception ex)
             {
-                if (ex.Message.Contains($"Only the server can start a scene event!"))
+                if (ex.Message.Contains("Only server can start a scene event!"))
                 {
                     threwException = true;
                 }
