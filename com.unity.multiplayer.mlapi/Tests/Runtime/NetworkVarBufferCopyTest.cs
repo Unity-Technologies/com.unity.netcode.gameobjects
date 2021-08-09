@@ -1,12 +1,9 @@
-﻿using System.Collections;
+using System.Collections;
 using System.IO;
-using MLAPI.NetworkVariable;
-using MLAPI.Serialization.Pooled;
-using MLAPI.Transports;
 using NUnit.Framework;
 using UnityEngine.TestTools;
 
-namespace MLAPI.RuntimeTests
+namespace Unity.Netcode.RuntimeTests
 {
     public class NetworkVarBufferCopyTest : BaseMultiInstanceTest
     {
@@ -20,7 +17,7 @@ namespace MLAPI.RuntimeTests
             public bool Dirty = true;
 
             public string Name { get; internal set; }
-            
+
             public NetworkChannel GetChannel()
             {
                 return NetworkChannel.NetworkVariable;
@@ -132,7 +129,7 @@ namespace MLAPI.RuntimeTests
 
             var serverComponent = (serverSideClientPlayer).GetComponent<DummyNetBehaviour>();
             var clientComponent = (clientSideClientPlayer).GetComponent<DummyNetBehaviour>();
-            
+
             var waitResult = new MultiInstanceHelpers.CoroutineResultWrapper<bool>();
 
             yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForCondition(
