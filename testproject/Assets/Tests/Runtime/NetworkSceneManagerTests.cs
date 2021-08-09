@@ -64,7 +64,24 @@ namespace TestProject.RuntimeTests
                 }
             }
             Assert.IsTrue(threwException);
+
             m_ServerNetworkManager.NetworkConfig.EnableSceneManagement = true;
+
+            // Check that a client cannot call LoadScene
+            threwException = false;
+            try
+            {
+                m_ClientNetworkManagers[0].SceneManager.LoadScene("SomeSceneNane", LoadSceneMode.Single);
+            }
+            catch (Exception ex)
+            {
+                if (ex.Message.Contains($"Only the server can start a scene event!"))
+                {
+                    threwException = true;
+                }
+            }
+            Assert.IsTrue(threwException);
+
 
             // Now prepare for the loading and unloading additive scene testing
             InitializeSceneTestInfo();
@@ -74,16 +91,46 @@ namespace TestProject.RuntimeTests
             var result = m_ServerNetworkManager.SceneManager.LoadScene(m_CurrentScene, LoadSceneMode.Additive);
             Assert.True(result == SceneEventProgressStatus.Started);
 
+            // Check error status for trying to load during an already in progress scene event
+            result = m_ServerNetworkManager.SceneManager.LoadScene(m_CurrentScene, LoadSceneMode.Additive);
+            Assert.True(result == SceneEventProgressStatus.SceneEventInProgress);
+
+            // Wait for all clients to load the scene
             yield return new WaitWhile(ShouldWait);
             Assert.IsFalse(m_TimedOut);
 
             // Test unloading additive scenes and the associated event messaging and notification pipelines
             ResetWait();
+
+            // Check that a client cannot call UnloadScene
+            threwException = false;
+            try
+            {
+                m_ClientNetworkManagers[0].SceneManager.UnloadScene(m_CurrentScene);
+            }
+            catch (Exception ex)
+            {
+                if (ex.Message.Contains($"Only the server can start a scene event!"))
+                {
+                    threwException = true;
+                }
+            }
+            Assert.IsTrue(threwException);
+
             result = m_ServerNetworkManager.SceneManager.UnloadScene(m_CurrentScene);
             Assert.True(result == SceneEventProgressStatus.Started);
 
             yield return new WaitWhile(ShouldWait);
             Assert.IsFalse(m_TimedOut);
+
+            // Check error status for trying to unloading something not loaded
+            ResetWait();
+            result = m_ServerNetworkManager.SceneManager.UnloadScene(m_CurrentScene);
+            Assert.True(result == SceneEventProgressStatus.SceneNotLoaded);
+
+            // Check error status for trying to load an invalid scene name
+            result = m_ServerNetworkManager.SceneManager.LoadScene("SomeInvalidSceneName", LoadSceneMode.Additive);
+            Assert.True(result == SceneEventProgressStatus.InvalidSceneName);
 
             yield break;
         }

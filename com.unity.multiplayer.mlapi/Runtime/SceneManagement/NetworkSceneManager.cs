@@ -238,7 +238,7 @@ namespace Unity.Netcode
         {
             if (!m_NetworkManager.IsServer)
             {
-                throw new NotServerException("Only server can start a scene switch");
+                throw new NotServerException("Only the server can start a scene event!");
             }
 
             if (!m_NetworkManager.NetworkConfig.EnableSceneManagement)
@@ -330,7 +330,7 @@ namespace Unity.Netcode
         {
             // Make sure the scene is actually loaded
             var sceneToUnload = SceneManager.GetSceneByName(sceneName);
-            if (sceneToUnload == null)
+            if (!sceneToUnload.isLoaded)
             {
                 Debug.LogWarning($"{nameof(UnloadScene)} was called, but the scene {sceneName} is not currently loaded!");
                 return SceneEventProgressStatus.SceneNotLoaded;
