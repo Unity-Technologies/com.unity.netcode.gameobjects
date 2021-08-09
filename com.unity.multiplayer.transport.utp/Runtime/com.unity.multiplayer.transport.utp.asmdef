@@ -6,9 +6,7 @@
         "Unity.Jobs",
         "Unity.Burst",
         "Unity.Multiplayer.MLAPI.Runtime",
-        "Unity.Networking.Transport",
-        "Unity.Services.Relay",
-        "Unity.Services.Core"
+        "Unity.Networking.Transport"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
@@ -17,12 +15,6 @@
     "precompiledReferences": [],
     "autoReferenced": true,
     "defineConstraints": [],
-    "versionDefines": [
-        {
-            "name": "com.unity.services.relay",
-            "expression": "0.0.1-preview.3",
-            "define": "ENABLE_RELAY_SERVICE"
-        }
-    ],
+    "versionDefines": [],
     "noEngineReferences": false
 }
