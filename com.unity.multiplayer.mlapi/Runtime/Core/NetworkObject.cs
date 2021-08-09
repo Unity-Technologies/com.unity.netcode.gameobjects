@@ -234,6 +234,11 @@ namespace Unity.Netcode
                 throw new VisibilityChangeException("The object is already visible");
             }
 
+            if (NetworkManager.NetworkConfig.UseSnapshotSpawn)
+            {
+//                SendToSnapshot(needs overide here to specify which client);
+            }
+
             Observers.Add(clientId);
 
             NetworkManager.SpawnManager.SendSpawnCallForObject(clientId, OwnerClientId, this);
