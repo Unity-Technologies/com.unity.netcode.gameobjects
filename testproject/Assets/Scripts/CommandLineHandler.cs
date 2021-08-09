@@ -163,7 +163,7 @@ public class CommandLineProcessor
         m_CommandLineArguments.Remove("-m");
         if (m_ConnectionModeScript)
         {
-            m_ConnectionModeScript.OnStartServerButton();
+            m_ConnectionModeScript.OnStartServer();
         }
         else
         {
@@ -175,7 +175,7 @@ public class CommandLineProcessor
     {
         if (m_ConnectionModeScript)
         {
-            m_ConnectionModeScript.OnStartHostButton();
+            m_ConnectionModeScript.OnStartHost();
         }
         else
         {
@@ -187,7 +187,7 @@ public class CommandLineProcessor
     {
         if (m_ConnectionModeScript)
         {
-            m_ConnectionModeScript.OnStartClientButton();
+            m_ConnectionModeScript.OnStartClient();
         }
         else
         {
