@@ -29,7 +29,7 @@ namespace Unity.Netcode.Editor.CodeGen
             var assemblyDefinition = CodeGenHelpers.AssemblyDefinitionFor(compiledAssembly);
             if (assemblyDefinition == null)
             {
-                m_Diagnostics.AddError($"Cannot read MLAPI Runtime assembly definition: {compiledAssembly.Name}");
+                m_Diagnostics.AddError($"Cannot read Netcode Runtime assembly definition: {compiledAssembly.Name}");
                 return null;
             }
 
@@ -60,7 +60,7 @@ namespace Unity.Netcode.Editor.CodeGen
             }
             else
             {
-                m_Diagnostics.AddError($"Cannot get main module from MLAPI Runtime assembly definition: {compiledAssembly.Name}");
+                m_Diagnostics.AddError($"Cannot get main module from Netcode Runtime assembly definition: {compiledAssembly.Name}");
             }
 
             // write

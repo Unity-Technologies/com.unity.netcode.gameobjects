@@ -1,7 +1,7 @@
 namespace Unity.Netcode
 {
     /// <summary>
-    /// A static class containing MLAPI constants
+    /// A static class containing network constants
     /// </summary>
     internal static class NetworkConstants
     {

@@ -6,7 +6,7 @@ namespace TestProject.ManualTests
     /// <summary>
     /// A prototype component for syncing transforms
     /// </summary>
-    [AddComponentMenu("MLAPI/BandwidthTest")]
+    [AddComponentMenu("Netcode/" + nameof(BandwidthTest))]
     public class BandwidthTest : NetworkBehaviour
     {
         private int m_IdCount = 2000;

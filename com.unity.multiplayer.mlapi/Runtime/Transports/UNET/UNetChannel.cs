@@ -8,7 +8,7 @@ using UnityEngine.Networking;
 namespace Unity.Netcode.Transports.UNET
 {
     /// <summary>
-    /// A transport channel used by the MLAPI
+    /// A transport channel used by the netcode
     /// </summary>
     [Serializable]
     public class UNetChannel
