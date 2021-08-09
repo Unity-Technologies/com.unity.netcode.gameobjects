@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using UnityEngine.Scripting.APIUpdating;
 
 namespace Unity.Netcode
 {
@@ -9,6 +10,7 @@ namespace Unity.Netcode
     /// Event based NetworkVariable container for syncing Lists
     /// </summary>
     /// <typeparam name="T">The type for the list</typeparam>
+    [MovedFrom("MLAPI.NetworkVariable.Collections")]
     public class NetworkList<T> : IList<T>, INetworkVariable
     {
         private readonly IList<T> m_List = new List<T>();
@@ -615,6 +617,7 @@ namespace Unity.Netcode
     /// Struct containing event information about changes to a NetworkList.
     /// </summary>
     /// <typeparam name="T">The type for the list that the event is about</typeparam>
+    [MovedFrom("MLAPI.NetworkVariable.Collections")]
     public struct NetworkListEvent<T>
     {
         /// <summary>

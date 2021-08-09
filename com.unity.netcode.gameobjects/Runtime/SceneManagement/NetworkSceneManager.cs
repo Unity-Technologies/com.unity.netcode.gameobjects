@@ -4,12 +4,14 @@ using System.IO;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.Scripting.APIUpdating;
 
 namespace Unity.Netcode
 {
     /// <summary>
     /// Main class for managing network scenes
     /// </summary>
+    [MovedFrom("MLAPI.SceneManagement")]
     public class NetworkSceneManager
     {
         /// <summary>

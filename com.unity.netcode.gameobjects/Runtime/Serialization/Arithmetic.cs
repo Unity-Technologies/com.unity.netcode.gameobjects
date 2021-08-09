@@ -1,8 +1,11 @@
+using UnityEngine.Scripting.APIUpdating;
+
 namespace Unity.Netcode
 {
     /// <summary>
     /// Arithmetic helper class
     /// </summary>
+    [MovedFrom("MLAPI.Serialization")]
     public static class Arithmetic
     {
         // Sign bits for different data types

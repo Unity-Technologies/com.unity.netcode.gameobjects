@@ -1,10 +1,12 @@
 using System;
+using UnityEngine.Scripting.APIUpdating;
 
 namespace Unity.Netcode
 {
     /// <summary>
     /// Exception thrown when the new parent candidate of the NetworkObject is not valid
     /// </summary>
+    [MovedFrom("MLAPI.Exceptions")]
     public class InvalidParentException : Exception
     {
         public InvalidParentException() { }

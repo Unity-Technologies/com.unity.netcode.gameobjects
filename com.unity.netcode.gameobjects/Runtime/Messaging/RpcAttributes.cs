@@ -1,10 +1,12 @@
 using System;
+using UnityEngine.Scripting.APIUpdating;
 
 namespace Unity.Netcode
 {
     /// <summary>
     /// RPC delivery types
     /// </summary>
+    [MovedFrom("MLAPI.Messaging")]
     public enum RpcDelivery
     {
         /// <summary>
@@ -21,6 +23,7 @@ namespace Unity.Netcode
     /// <summary>
     /// <para>Represents the common base class for Rpc attributes.</para>
     /// </summary>
+    [MovedFrom("MLAPI.Messaging")]
     public abstract class RpcAttribute : Attribute
     {
         /// <summary>
@@ -33,6 +36,7 @@ namespace Unity.Netcode
     /// <para>Marks a method as ServerRpc.</para>
     /// <para>A ServerRpc marked method will be fired by a client but executed on the server.</para>
     /// </summary>
+    [MovedFrom("MLAPI.Messaging")]
     [AttributeUsage(AttributeTargets.Method)]
     public class ServerRpcAttribute : RpcAttribute
     {
@@ -46,6 +50,7 @@ namespace Unity.Netcode
     /// <para>Marks a method as ClientRpc.</para>
     /// <para>A ClientRpc marked method will be fired by the server but executed on clients.</para>
     /// </summary>
+    [MovedFrom("MLAPI.Messaging")]
     [AttributeUsage(AttributeTargets.Method)]
     public class ClientRpcAttribute : RpcAttribute { }
 }

@@ -1,10 +1,12 @@
 using UnityEngine;
+using UnityEngine.Scripting.APIUpdating;
 
 namespace Unity.Netcode
 {
     /// <summary>
     /// Helper class for logging
     /// </summary>
+    [MovedFrom("MLAPI.Logging")]
     public static class NetworkLog
     {
         /// <summary>

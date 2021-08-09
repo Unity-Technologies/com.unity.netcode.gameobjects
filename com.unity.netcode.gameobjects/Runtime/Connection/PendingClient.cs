@@ -1,8 +1,11 @@
+using UnityEngine.Scripting.APIUpdating;
+
 namespace Unity.Netcode
 {
     /// <summary>
     /// A class representing a client that is currently in the process of connecting
     /// </summary>
+    [MovedFrom("MLAPI.Connection")]
     public class PendingClient
     {
         /// <summary>

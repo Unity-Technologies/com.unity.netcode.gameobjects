@@ -1,11 +1,13 @@
 using System.Collections.Generic;
 using System.IO;
+using UnityEngine.Scripting.APIUpdating;
 
 namespace Unity.Netcode
 {
     /// <summary>
     /// Static class containing PooledNetworkWriters
     /// </summary>
+    [MovedFrom("MLAPI.Serialization.Pooled")]
     public static class NetworkWriterPool
     {
         private static byte s_CreatedWriters = 0;

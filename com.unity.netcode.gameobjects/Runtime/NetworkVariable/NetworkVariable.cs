@@ -2,12 +2,14 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.IO;
 using System;
+using UnityEngine.Scripting.APIUpdating;
 
 namespace Unity.Netcode
 {
     /// <summary>
     /// A variable that can be synchronized over the network.
     /// </summary>
+    [MovedFrom("MLAPI.NetworkVariable")]
     [Serializable]
     public class NetworkVariable<T> : INetworkVariable
     {
@@ -224,6 +226,7 @@ namespace Unity.Netcode
     /// <summary>
     /// A NetworkVariable that holds strings and support serialization
     /// </summary>
+    [MovedFrom("MLAPI.NetworkVariable")]
     [Serializable]
     public class NetworkVariableString : NetworkVariable<string>
     {
@@ -243,6 +246,7 @@ namespace Unity.Netcode
     /// <summary>
     /// A NetworkVariable that holds bools and support serialization
     /// </summary>
+    [MovedFrom("MLAPI.NetworkVariable")]
     [Serializable]
     public class NetworkVariableBool : NetworkVariable<bool>
     {
@@ -262,6 +266,7 @@ namespace Unity.Netcode
     /// <summary>
     /// A NetworkVariable that holds bytes and support serialization
     /// </summary>
+    [MovedFrom("MLAPI.NetworkVariable")]
     [Serializable]
     public class NetworkVariableByte : NetworkVariable<byte>
     {
@@ -281,6 +286,7 @@ namespace Unity.Netcode
     /// <summary>
     /// A NetworkVariable that holds sbytes and support serialization
     /// </summary>
+    [MovedFrom("MLAPI.NetworkVariable")]
     [Serializable]
     public class NetworkVariableSByte : NetworkVariable<sbyte>
     {
@@ -300,6 +306,7 @@ namespace Unity.Netcode
     /// <summary>
     /// A NetworkVariable that holds ushorts and support serialization
     /// </summary>
+    [MovedFrom("MLAPI.NetworkVariable")]
     [Serializable]
     public class NetworkVariableUShort : NetworkVariable<ushort>
     {
@@ -319,6 +326,7 @@ namespace Unity.Netcode
     /// <summary>
     /// A NetworkVariable that holds shorts and support serialization
     /// </summary>
+    [MovedFrom("MLAPI.NetworkVariable")]
     [Serializable]
     public class NetworkVariableShort : NetworkVariable<short>
     {
@@ -338,6 +346,7 @@ namespace Unity.Netcode
     /// <summary>
     /// A NetworkVariable that holds uints and support serialization
     /// </summary>
+    [MovedFrom("MLAPI.NetworkVariable")]
     [Serializable]
     public class NetworkVariableUInt : NetworkVariable<uint>
     {
@@ -357,6 +366,7 @@ namespace Unity.Netcode
     /// <summary>
     /// A NetworkVariable that holds ints and support serialization
     /// </summary>
+    [MovedFrom("MLAPI.NetworkVariable")]
     [Serializable]
     public class NetworkVariableInt : NetworkVariable<int>
     {
@@ -376,6 +386,7 @@ namespace Unity.Netcode
     /// <summary>
     /// A NetworkVariable that holds ulongs and support serialization
     /// </summary>
+    [MovedFrom("MLAPI.NetworkVariable")]
     [Serializable]
     public class NetworkVariableULong : NetworkVariable<ulong>
     {
@@ -395,6 +406,7 @@ namespace Unity.Netcode
     /// <summary>
     /// A NetworkVariable that holds longs and support serialization
     /// </summary>
+    [MovedFrom("MLAPI.NetworkVariable")]
     [Serializable]
     public class NetworkVariableLong : NetworkVariable<long>
     {
@@ -414,6 +426,7 @@ namespace Unity.Netcode
     /// <summary>
     /// A NetworkVariable that holds floats and support serialization
     /// </summary>
+    [MovedFrom("MLAPI.NetworkVariable")]
     [Serializable]
     public class NetworkVariableFloat : NetworkVariable<float>
     {
@@ -433,6 +446,7 @@ namespace Unity.Netcode
     /// <summary>
     /// A NetworkVariable that holds doubles and support serialization
     /// </summary>
+    [MovedFrom("MLAPI.NetworkVariable")]
     [Serializable]
     public class NetworkVariableDouble : NetworkVariable<double>
     {
@@ -452,6 +466,7 @@ namespace Unity.Netcode
     /// <summary>
     /// A NetworkVariable that holds vector2s and support serialization
     /// </summary>
+    [MovedFrom("MLAPI.NetworkVariable")]
     [Serializable]
     public class NetworkVariableVector2 : NetworkVariable<Vector2>
     {
@@ -471,6 +486,7 @@ namespace Unity.Netcode
     /// <summary>
     /// A NetworkVariable that holds vector3s and support serialization
     /// </summary>
+    [MovedFrom("MLAPI.NetworkVariable")]
     [Serializable]
     public class NetworkVariableVector3 : NetworkVariable<Vector3>
     {
@@ -490,6 +506,7 @@ namespace Unity.Netcode
     /// <summary>
     /// A NetworkVariable that holds vector4s and support serialization
     /// </summary>
+    [MovedFrom("MLAPI.NetworkVariable")]
     [Serializable]
     public class NetworkVariableVector4 : NetworkVariable<Vector4>
     {
@@ -509,6 +526,7 @@ namespace Unity.Netcode
     /// <summary>
     /// A NetworkVariable that holds colors and support serialization
     /// </summary>
+    [MovedFrom("MLAPI.NetworkVariable")]
     [Serializable]
     public class NetworkVariableColor : NetworkVariable<Color>
     {
@@ -528,6 +546,7 @@ namespace Unity.Netcode
     /// <summary>
     /// A NetworkVariable that holds color32s and support serialization
     /// </summary>
+    [MovedFrom("MLAPI.NetworkVariable")]
     [Serializable]
     public class NetworkVariableColor32 : NetworkVariable<Color32>
     {
@@ -547,6 +566,7 @@ namespace Unity.Netcode
     /// <summary>
     /// A NetworkVariable that holds rays and support serialization
     /// </summary>
+    [MovedFrom("MLAPI.NetworkVariable")]
     [Serializable]
     public class NetworkVariableRay : NetworkVariable<Ray>
     {
@@ -566,6 +586,7 @@ namespace Unity.Netcode
     /// <summary>
     /// A NetworkVariable that holds quaternions and support serialization
     /// </summary>
+    [MovedFrom("MLAPI.NetworkVariable")]
     [Serializable]
     public class NetworkVariableQuaternion : NetworkVariable<Quaternion>
     {

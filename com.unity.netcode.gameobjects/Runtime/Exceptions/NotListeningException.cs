@@ -1,10 +1,12 @@
 using System;
+using UnityEngine.Scripting.APIUpdating;
 
 namespace Unity.Netcode
 {
     /// <summary>
     /// Exception thrown when the operation require NetworkManager to be listening.
     /// </summary>
+    [MovedFrom("MLAPI.Exceptions")]
     public class NotListeningException : Exception
     {
         /// <summary>

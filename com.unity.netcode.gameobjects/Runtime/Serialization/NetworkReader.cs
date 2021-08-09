@@ -7,12 +7,14 @@ using System;
 using System.IO;
 using System.Text;
 using UnityEngine;
+using UnityEngine.Scripting.APIUpdating;
 
 namespace Unity.Netcode
 {
     /// <summary>
     /// A BinaryReader that can do bit wise manipulation when backed by a NetworkBuffer
     /// </summary>
+    [MovedFrom("MLAPI.Serialization")]
     public class NetworkReader
     {
         private Stream m_Source;

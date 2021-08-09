@@ -1,8 +1,10 @@
 using System;
 using Unity.Profiling;
+using UnityEngine.Scripting.APIUpdating;
 
 namespace Unity.Netcode
 {
+    [MovedFrom("MLAPI.Timing")]
     public class NetworkTickSystem
     {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR

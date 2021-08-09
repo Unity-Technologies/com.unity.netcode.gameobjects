@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using UnityEngine.Scripting.APIUpdating;
 
 namespace Unity.Netcode
 {
@@ -8,6 +9,7 @@ namespace Unity.Netcode
     /// The manager class to manage custom messages, note that this is different from the NetworkManager custom messages.
     /// These are named and are much easier to use.
     /// </summary>
+    [MovedFrom("MLAPI.Messaging")]
     public class CustomMessagingManager
     {
         private NetworkManager m_NetworkManager { get; }

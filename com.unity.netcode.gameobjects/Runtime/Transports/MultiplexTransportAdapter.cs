@@ -1,11 +1,13 @@
 using System;
 using System.Collections.Generic;
+using UnityEngine.Scripting.APIUpdating;
 
 namespace Unity.Netcode
 {
     /// <summary>
     /// Multiplex transport adapter.
     /// </summary>
+    [MovedFrom("MLAPI.Transports.Multiplex")]
     public class MultiplexTransportAdapter : NetworkTransport
     {
         /// <summary>

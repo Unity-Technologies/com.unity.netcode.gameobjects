@@ -1,8 +1,10 @@
 using System;
 using UnityEngine;
+using UnityEngine.Scripting.APIUpdating;
 
 namespace Unity.Netcode
 {
+    [MovedFrom("MLAPI.Serialization")]
     public sealed class NetworkSerializer
     {
         private readonly NetworkReader m_Reader;

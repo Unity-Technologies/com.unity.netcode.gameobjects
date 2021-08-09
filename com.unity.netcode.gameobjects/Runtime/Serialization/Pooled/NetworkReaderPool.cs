@@ -1,11 +1,13 @@
 using System.Collections.Generic;
 using System.IO;
+using UnityEngine.Scripting.APIUpdating;
 
 namespace Unity.Netcode
 {
     /// <summary>
     /// Static class containing PooledNetworkReaders
     /// </summary>
+    [MovedFrom("MLAPI.Serialization.Pooled")]
     public static class NetworkReaderPool
     {
         private static byte s_CreatedReaders = 0;

@@ -1,8 +1,11 @@
+using UnityEngine.Scripting.APIUpdating;
+
 namespace Unity.Netcode
 {
     /// <summary>
     /// Log level
     /// </summary>
+    [MovedFrom("MLAPI.Logging")]
     public enum LogLevel
     {
         /// <summary>

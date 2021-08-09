@@ -1,10 +1,12 @@
 using System;
+using UnityEngine.Scripting.APIUpdating;
 
 namespace Unity.Netcode
 {
     /// <summary>
     /// Exception thrown when an object is not yet spawned
     /// </summary>
+    [MovedFrom("MLAPI.Exceptions")]
     public class SpawnStateException : Exception
     {
         /// <summary>

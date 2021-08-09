@@ -1,8 +1,11 @@
+using UnityEngine.Scripting.APIUpdating;
+
 namespace Unity.Netcode
 {
     /// <summary>
     /// Disposable NetworkBuffer that returns back to the NetworkBufferPool when disposed
     /// </summary>
+    [MovedFrom("MLAPI.Serialization.Pooled")]
     public sealed class PooledNetworkBuffer : NetworkBuffer
     {
         private bool m_IsDisposed = false;

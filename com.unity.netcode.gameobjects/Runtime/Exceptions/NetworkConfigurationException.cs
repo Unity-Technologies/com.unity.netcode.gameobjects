@@ -1,10 +1,12 @@
 using System;
+using UnityEngine.Scripting.APIUpdating;
 
 namespace Unity.Netcode
 {
     /// <summary>
     /// Exception thrown when the operation can only be done on the server
     /// </summary>
+    [MovedFrom("MLAPI.Exceptions")]
     public class NetworkConfigurationException : Exception
     {
         /// <summary>

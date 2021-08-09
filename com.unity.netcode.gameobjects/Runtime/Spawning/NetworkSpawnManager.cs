@@ -3,12 +3,14 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.Scripting.APIUpdating;
 
 namespace Unity.Netcode
 {
     /// <summary>
     /// Class that handles object spawning
     /// </summary>
+    [MovedFrom("MLAPI.Spawning")]
     public class NetworkSpawnManager
     {
         /// <summary>

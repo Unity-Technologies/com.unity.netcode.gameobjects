@@ -1,8 +1,11 @@
+using UnityEngine.Scripting.APIUpdating;
+
 namespace Unity.Netcode
 {
     /// <summary>
     /// AutoBitWritable implements INetworkSerializable and automatically serializes fields using reflection
     /// </summary>
+    [MovedFrom("MLAPI.Serialization")]
     public abstract class AutoNetworkSerializable : INetworkSerializable
     {
         private void Write(NetworkWriter writer)

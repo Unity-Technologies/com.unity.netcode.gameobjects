@@ -1,10 +1,12 @@
 using System;
+using UnityEngine.Scripting.APIUpdating;
 
 namespace Unity.Netcode
 {
     /// <summary>
     /// Exception thrown when a visibility change fails
     /// </summary>
+    [MovedFrom("MLAPI.Exceptions")]
     public class VisibilityChangeException : Exception
     {
         /// <summary>

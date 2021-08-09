@@ -1,10 +1,12 @@
 using System.IO;
+using UnityEngine.Scripting.APIUpdating;
 
 namespace Unity.Netcode
 {
     /// <summary>
     /// Interface for network value containers
     /// </summary>
+    [MovedFrom("MLAPI.NetworkVariable")]
     public interface INetworkVariable
     {
         /// <summary>

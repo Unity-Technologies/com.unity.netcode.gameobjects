@@ -24,6 +24,7 @@ namespace Unity.Netcode
             public double LastSec; // latest ack'ed RTT
             public int SampleCount; // number of contributing samples
         }
+
         public ConnectionRtt()
         {
             m_RttSendTimes = new double[RingSize];

@@ -3,12 +3,14 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.LowLevel;
 using UnityEngine.PlayerLoop;
+using UnityEngine.Scripting.APIUpdating;
 
 namespace Unity.Netcode
 {
     /// <summary>
     /// Defines the required interface of a network update system being executed by the network update loop.
     /// </summary>
+    [MovedFrom("MLAPI")]
     public interface INetworkUpdateSystem
     {
         void NetworkUpdate(NetworkUpdateStage updateStage);
@@ -17,6 +19,7 @@ namespace Unity.Netcode
     /// <summary>
     /// Defines network update stages being executed by the network update loop.
     /// </summary>
+    [MovedFrom("MLAPI")]
     public enum NetworkUpdateStage : byte
     {
         Unset = 0, // Default
@@ -32,6 +35,7 @@ namespace Unity.Netcode
     /// <summary>
     /// Represents the network update loop injected into low-level player loop in Unity.
     /// </summary>
+    [MovedFrom("MLAPI")]
     public static class NetworkUpdateLoop
     {
         private static Dictionary<NetworkUpdateStage, HashSet<INetworkUpdateSystem>> s_UpdateSystem_Sets;

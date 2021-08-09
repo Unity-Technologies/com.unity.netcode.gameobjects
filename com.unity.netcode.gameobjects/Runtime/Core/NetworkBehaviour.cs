@@ -4,12 +4,14 @@ using UnityEngine;
 using System.Reflection;
 using System.Linq;
 using System.IO;
+using UnityEngine.Scripting.APIUpdating;
 
 namespace Unity.Netcode
 {
     /// <summary>
     /// The base class to override to write network code. Inherits MonoBehaviour
     /// </summary>
+    [MovedFrom("MLAPI")]
     public abstract class NetworkBehaviour : MonoBehaviour
     {
 #pragma warning disable IDE1006 // disable naming rule violation check

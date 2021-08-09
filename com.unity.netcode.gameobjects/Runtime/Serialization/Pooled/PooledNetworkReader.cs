@@ -1,12 +1,14 @@
 using System;
 using System.IO;
 using UnityEngine;
+using UnityEngine.Scripting.APIUpdating;
 
 namespace Unity.Netcode
 {
     /// <summary>
     /// Disposable NetworkReader that returns the Reader to the NetworkReaderPool when disposed
     /// </summary>
+    [MovedFrom("MLAPI.Serialization.Pooled")]
     public sealed class PooledNetworkReader : NetworkReader, IDisposable
     {
         private NetworkSerializer m_Serializer;

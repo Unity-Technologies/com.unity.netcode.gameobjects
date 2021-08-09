@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Scripting.APIUpdating;
 
 namespace Unity.Netcode
 {
@@ -7,6 +8,7 @@ namespace Unity.Netcode
     /// Interface for customizing, overriding, spawning, and destroying Network Prefabs
     /// Used by <see cref="NetworkPrefabHandler"/>
     /// </summary>
+    [MovedFrom("MLAPI.Spawning")]
     public interface INetworkPrefabInstanceHandler
     {
         /// <summary>
@@ -47,6 +49,7 @@ namespace Unity.Netcode
     /// Primary handler to add or remove customized spawn and destroy handlers for a network prefab (i.e. a prefab with a NetworkObject component)
     /// Register custom prefab handlers by implementing the <see cref="INetworkPrefabInstanceHandler"/> interface.
     /// </summary>
+    [MovedFrom("MLAPI.Spawning")]
     public class NetworkPrefabHandler
     {
         /// <summary>
