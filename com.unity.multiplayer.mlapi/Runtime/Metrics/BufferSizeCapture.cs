@@ -27,7 +27,7 @@ namespace Unity.Netcode
         }
     }
 
-    internal struct CommandContextSizeCapture
+    internal class CommandContextSizeCapture
     {
         private readonly InternalCommandContext m_Context;
         private long m_Overhead;

@@ -7,10 +7,11 @@ using System.Linq;
 using System.Text;
 using NUnit.Framework;
 using Unity.Multiplayer.MetricTypes;
+using Unity.Netcode.RuntimeTests.Metrics.Utlity;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace Unity.Netcode.RuntimeTests
+namespace Unity.Netcode.RuntimeTests.Metrics
 {
     public class MessagingMetricsTests : DualClientMetricTestBase
     {

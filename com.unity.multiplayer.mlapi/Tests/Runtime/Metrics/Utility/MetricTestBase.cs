@@ -4,7 +4,7 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace Unity.Netcode.RuntimeTests
+namespace Unity.Netcode.RuntimeTests.Metrics.Utlity
 {
     public abstract class SingleClientMetricTestBase : BaseMultiInstanceTest
     {
