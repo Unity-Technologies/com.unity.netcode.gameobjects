@@ -1,14 +1,14 @@
 using System;
 using System.Collections.Generic;
-using Unity.Multiplayer.Netcode.Editor;
+using Unity.Netcode.Editor;
 using UnityEngine;
 
-namespace Unity.Multiplayer.Netcode.RuntimeTests
+namespace Unity.Netcode.RuntimeTests
 {
     /// <summary>
     /// SIPTransport (SIngleProcessTransport)
-    /// is a NetworkTransport designed to be used with multiple MLAPI instances in a single process
-    /// it's designed for the MLAPI in a way where no networking stack has to be available
+    /// is a NetworkTransport designed to be used with multiple network instances in a single process
+    /// it's designed for the netcode in a way where no networking stack has to be available
     /// it's designed for testing purposes and it's not designed with speed in mind
     /// </summary>
     [DontShowInTransportDropdown]
@@ -226,7 +226,7 @@ namespace Unity.Multiplayer.Netcode.RuntimeTests
         {
             if (m_LocalConnection != null)
             {
-                // Create copy since MLAPI wants the byte array back straight after the method call.
+                // Create copy since netcode wants the byte array back straight after the method call.
                 // Hard on GC.
                 byte[] copy = new byte[data.Count];
                 Buffer.BlockCopy(data.Array, data.Offset, copy, 0, data.Count);

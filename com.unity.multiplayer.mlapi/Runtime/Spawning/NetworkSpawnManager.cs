@@ -4,7 +4,7 @@ using System.IO;
 using System.Linq;
 using UnityEngine;
 
-namespace Unity.Multiplayer.Netcode
+namespace Unity.Netcode
 {
     /// <summary>
     /// Class that handles object spawning
@@ -357,13 +357,12 @@ namespace Unity.Multiplayer.Netcode
 
                 var messageQueueContainer = NetworkManager.MessageQueueContainer;
 
-                ulong[] clientIds = NetworkManager.ConnectedClientsIds;
                 var context = messageQueueContainer.EnterInternalCommandContext(
                     MessageQueueContainer.MessageType.CreateObject, NetworkChannel.Internal,
-                    clientIds, NetworkUpdateLoop.UpdateStage);
+                    new ulong[] { clientId }, NetworkUpdateLoop.UpdateStage);
                 if (context != null)
                 {
-                    using (var nonNullContext = (InternalCommandContext) context)
+                    using (var nonNullContext = (InternalCommandContext)context)
                     {
                         WriteSpawnCallForObject(nonNullContext.NetworkWriter, clientId, networkObject);
                     }

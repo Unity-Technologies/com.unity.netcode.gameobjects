@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Unity.Multiplayer.Netcode
+namespace Unity.Netcode
 {
     /// <summary>
     /// Multiplex transport adapter.
@@ -29,7 +29,7 @@ namespace Unity.Multiplayer.Netcode
             /// <summary>
             /// Drops the last few bits (right side) and replaces them with the transport index.
             /// Ensure that ALL transports dont use the last bits in their produced clientId.
-            /// This option is for advanced users and will not work with the official MLAPI transports as they use the last bits.
+            /// This option is for advanced users and will not work with the official netcode transports as they use the last bits.
             /// </summary>
             ReplaceLastBits,
 
@@ -101,7 +101,7 @@ namespace Unity.Multiplayer.Netcode
 
                     if (networkEvent != NetworkEvent.Nothing)
                     {
-                        clientId = GetMLAPIClientId(i, connectionId, false);
+                        clientId = GetNetcodeClientId(i, connectionId, false);
 
                         return networkEvent;
                     }
@@ -165,7 +165,7 @@ namespace Unity.Multiplayer.Netcode
         }
 
 
-        public ulong GetMLAPIClientId(byte transportId, ulong connectionId, bool isServer)
+        public ulong GetNetcodeClientId(byte transportId, ulong connectionId, bool isServer)
         {
             if (isServer)
             {

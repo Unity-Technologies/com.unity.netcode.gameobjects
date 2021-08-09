@@ -1,4 +1,4 @@
-namespace Unity.Multiplayer.Netcode
+namespace Unity.Netcode
 {
     public interface IProfilableTransportProvider
     {

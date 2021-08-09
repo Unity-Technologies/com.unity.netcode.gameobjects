@@ -6,7 +6,7 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using static ExecuteStepInContext;
 
-namespace Unity.Multiplayer.Netcode.MultiprocessRuntimeTests
+namespace Unity.Netcode.MultiprocessRuntimeTests
 {
     /// <summary>
     /// Smoke tests for ExecuteStepInContext, to make sure it's working properly before being used in other tests

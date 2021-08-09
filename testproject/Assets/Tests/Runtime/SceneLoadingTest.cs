@@ -3,7 +3,7 @@ using UnityEngine;
 using NUnit.Framework;
 using UnityEngine.TestTools;
 using UnityEngine.SceneManagement;
-using Unity.Multiplayer.Netcode;
+using Unity.Netcode;
 
 namespace TestProject.RuntimeTests
 {
@@ -69,7 +69,7 @@ namespace TestProject.RuntimeTests
             SceneManager.sceneLoaded -= SceneManager_sceneLoaded;
 
             // Get the NetworkManager instantiated from the scene
-            var gameObject = GameObject.Find("NetworkManager");
+            var gameObject = GameObject.Find("[NetworkManager]");
             Assert.IsNotNull(gameObject);
 
             m_NetworkManager = gameObject.GetComponent<NetworkManager>();

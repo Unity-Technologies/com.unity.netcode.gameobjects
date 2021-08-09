@@ -3,7 +3,7 @@ using System;
 using Unity.Profiling.LowLevel;
 #endif
 
-namespace Unity.Multiplayer.Netcode
+namespace Unity.Netcode
 {
     internal struct ProfilerCounterUtility
     {

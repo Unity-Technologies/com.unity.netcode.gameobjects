@@ -2,7 +2,7 @@ using System.Linq;
 using System.Reflection;
 using Mono.Cecil;
 
-namespace Unity.Multiplayer.Netcode.Editor.CodeGen
+namespace Unity.Netcode.Editor.CodeGen
 {
     internal class PostProcessorReflectionImporter : DefaultReflectionImporter
     {

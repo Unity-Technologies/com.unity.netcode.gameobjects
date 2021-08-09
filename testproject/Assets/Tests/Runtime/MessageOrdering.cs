@@ -1,6 +1,6 @@
 using System.Collections;
-using Unity.Multiplayer.Netcode;
-using Unity.Multiplayer.Netcode.RuntimeTests;
+using Unity.Netcode;
+using Unity.Netcode.RuntimeTests;
 using NUnit.Framework;
 using TestProject.RuntimeTests.Support;
 using UnityEngine;

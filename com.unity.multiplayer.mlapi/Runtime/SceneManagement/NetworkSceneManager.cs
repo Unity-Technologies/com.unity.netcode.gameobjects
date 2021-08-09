@@ -5,7 +5,7 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace Unity.Multiplayer.Netcode
+namespace Unity.Netcode
 {
     /// <summary>
     /// Main class for managing network scenes
@@ -335,7 +335,7 @@ namespace Unity.Multiplayer.Netcode
 
         private void OnServerLoadedScene(Guid switchSceneGuid)
         {
-            // Register in-scene placed NetworkObjects with MLAPI
+            // Register in-scene placed NetworkObjects with the netcode
             foreach (var keyValuePair in ScenePlacedObjects)
             {
                 if (!keyValuePair.Value.IsPlayerObject)

@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using NUnit.Framework;
 
-namespace Unity.Multiplayer.Netcode.EditorTests
+namespace Unity.Netcode.EditorTests
 {
     public class TestTransport : ITransportProfilerData
     {

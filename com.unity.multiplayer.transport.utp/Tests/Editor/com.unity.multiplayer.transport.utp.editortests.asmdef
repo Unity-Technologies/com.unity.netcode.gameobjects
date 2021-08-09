@@ -1,26 +1,15 @@
 {
     "name": "Unity.Multiplayer.Transport.UTP.EditorTests",
-    "rootNamespace": "Unity.Multiplayer.Netcode.UTP.EditorTests",
+    "rootNamespace": "Unity.Netcode.UTP.EditorTests",
     "references": [
-        "Unity.Multiplayer.MLAPI.Runtime",
-        "UnityEngine.TestRunner",
-        "UnityEditor.TestRunner",
+        "Unity.Netcode.Runtime",
         "Unity.Networking.Transport",
         "Unity.Multiplayer.Transport.UTP"
     ],
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ],
     "includePlatforms": [
         "Editor"
-    ],
-    "excludePlatforms": [],
-    "allowUnsafeCode": false,
-    "overrideReferences": true,
-    "precompiledReferences": [
-        "nunit.framework.dll"
-    ],
-    "autoReferenced": false,
-    "defineConstraints": [
-        "UNITY_INCLUDE_TESTS"
-    ],
-    "versionDefines": [],
-    "noEngineReferences": false
+    ]
 }

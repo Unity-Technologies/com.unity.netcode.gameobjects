@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.SceneManagement;
 
-namespace Unity.Multiplayer.Netcode
+namespace Unity.Netcode
 {
     internal class InternalMessageHandler : IInternalMessageHandler
     {

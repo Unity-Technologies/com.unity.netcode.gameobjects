@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using AsyncOperation = UnityEngine.AsyncOperation;
 
-namespace Unity.Multiplayer.Netcode
+namespace Unity.Netcode
 {
     /// <summary>
     /// Class for tracking scene switching progress by server and clients.

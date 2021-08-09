@@ -2,12 +2,12 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
 
-namespace Unity.Multiplayer.Netcode.Prototyping
+namespace Unity.Netcode.Prototyping
 {
     /// <summary>
     /// A prototype component for syncing NavMeshAgents
     /// </summary>
-    [AddComponentMenu("MLAPI/NetworkNavMeshAgent")]
+    [AddComponentMenu("Netcode/" + nameof(NetworkNavMeshAgent))]
     [RequireComponent(typeof(NavMeshAgent))]
     public class NetworkNavMeshAgent : NetworkBehaviour
     {

@@ -1,8 +1,8 @@
 using System;
 using NUnit.Framework;
 using UnityEngine;
-using Unity.Multiplayer.Netcode;
-using Unity.Multiplayer.Netcode.Transports.UNET;
+using Unity.Netcode;
+using Unity.Netcode.Transports.UNET;
 using UnityEngine.Networking;
 
 public class TransportTest : MonoBehaviour
@@ -51,13 +51,13 @@ public class TransportTest : MonoBehaviour
         nm.Shutdown();
 
         ut.Channels.Clear();
-        // test 2: add a bogus channel (one that intersects with the MLAPI built-in ones.)  Expect failure
+        // test 2: add a bogus channel (one that intersects with the netcode built-in ones.)  Expect failure
         ut.Channels.Add(new UNetChannel { Id = (byte)NetworkChannel.Internal, Type = QosType.Unreliable });
 
         try
         {
             nm.StartServer();
-            Assert.Fail("The UNet transport allowed registration of an MLAPI-reserved channel");
+            Assert.Fail("The UNet transport allowed registration of an netcode-reserved channel");
         }
         catch (Exception ex)
         {

@@ -1,4 +1,4 @@
-namespace Unity.Multiplayer.Netcode.EditorTests
+namespace Unity.Netcode.EditorTests
 {
     internal static class MessagePacker
     {

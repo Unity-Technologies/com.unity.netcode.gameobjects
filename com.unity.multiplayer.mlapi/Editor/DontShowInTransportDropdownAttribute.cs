@@ -1,6 +1,6 @@
 using System;
 
-namespace Unity.Multiplayer.Netcode.Editor
+namespace Unity.Netcode.Editor
 {
     public class DontShowInTransportDropdownAttribute : Attribute
     {

@@ -1,7 +1,7 @@
 using System;
 using System.Linq;
 
-namespace Unity.Multiplayer.Netcode
+namespace Unity.Netcode
 {
     /// <summary>
     /// A context used for building an internal command.

@@ -6,12 +6,12 @@ using UnityEngine;
 using Unity.Profiling;
 using Debug = UnityEngine.Debug;
 
-namespace Unity.Multiplayer.Netcode
+namespace Unity.Netcode
 {
     /// <summary>
     /// The main component of the library
     /// </summary>
-    [AddComponentMenu("MLAPI/NetworkManager", -100)]
+    [AddComponentMenu("Netcode/" + nameof(NetworkManager), -100)]
     public class NetworkManager : MonoBehaviour, INetworkUpdateSystem, IProfilableTransportProvider
     {
 #pragma warning disable IDE1006 // disable naming rule violation check
@@ -172,7 +172,7 @@ namespace Unity.Multiplayer.Netcode
         public ulong[] ConnectedClientsIds => ConnectedClientsList.Select(c => c.ClientId).ToArray();
 
         /// <summary>
-        /// Gets a dictionary of the clients that have been accepted by the transport but are still pending by the MLAPI. This is only populated on the server.
+        /// Gets a dictionary of the clients that have been accepted by the transport but are still pending by the Netcode. This is only populated on the server.
         /// </summary>
         public readonly Dictionary<ulong, PendingClient> PendingClients = new Dictionary<ulong, PendingClient>();
 
@@ -273,7 +273,7 @@ namespace Unity.Multiplayer.Netcode
             {
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                 {
-                    NetworkLog.LogWarning("Active scene is not registered as a network scene. The MLAPI has added it");
+                    NetworkLog.LogWarning("Active scene is not registered as a network scene. Netcode has added it");
                 }
 
                 NetworkConfig.RegisteredScenes.Add(activeSceneName);
@@ -725,7 +725,7 @@ namespace Unity.Multiplayer.Netcode
             IsClient = false;
             StopServer();
 
-            //We don't stop client since we dont actually have a transport connection to our own host. We just handle host messages directly in the MLAPI
+            //We don't stop client since we dont actually have a transport connection to our own host. We just handle host messages directly in the netcode
         }
 
         /// <summary>

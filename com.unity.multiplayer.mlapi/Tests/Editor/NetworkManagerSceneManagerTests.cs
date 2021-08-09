@@ -3,7 +3,7 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace Unity.Multiplayer.Netcode.EditorTests
+namespace Unity.Netcode.EditorTests
 {
     public class NetworkManagerSceneManagerTests
     {
@@ -14,7 +14,7 @@ namespace Unity.Multiplayer.Netcode.EditorTests
             var networkManager = gameObject.AddComponent<NetworkManager>();
             var transport = gameObject.AddComponent<DummyTransport>();
 
-            // MLAPI sets this in validate
+            // Netcode sets this in validate
             networkManager.NetworkConfig = new NetworkConfig()
             {
                 // Set the current scene to prevent unexpected log messages which would trigger a failure

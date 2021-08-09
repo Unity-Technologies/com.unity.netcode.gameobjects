@@ -1,4 +1,4 @@
-namespace Unity.Multiplayer.Netcode
+namespace Unity.Netcode
 {
     /// <summary>
     /// Disposable NetworkBuffer that returns back to the NetworkBufferPool when disposed

@@ -8,7 +8,7 @@ using System.Diagnostics;
 using System.IO;
 using UnityEngine;
 
-namespace Unity.Multiplayer.Netcode
+namespace Unity.Netcode
 {
     // Improved version of NetworkWriter
     /// <summary>
@@ -232,8 +232,7 @@ namespace Unity.Multiplayer.Netcode
                 return;
             }
 
-
-            throw new ArgumentException($"{nameof(NetworkWriter)} cannot write type {value.GetType()}");
+            throw new ArgumentException($"{nameof(NetworkWriter)} cannot write type {value.GetType().Name} - it does not implement {nameof(INetworkSerializable)}");
         }
 
         /// <summary>

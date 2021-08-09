@@ -1,4 +1,4 @@
-namespace Unity.Multiplayer.Netcode
+namespace Unity.Netcode
 {
     internal static class ProfilerConstants
     {

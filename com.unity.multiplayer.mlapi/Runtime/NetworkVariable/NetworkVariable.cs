@@ -3,7 +3,7 @@ using UnityEngine;
 using System.IO;
 using System;
 
-namespace Unity.Multiplayer.Netcode
+namespace Unity.Netcode
 {
     /// <summary>
     /// A variable that can be synchronized over the network.

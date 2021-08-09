@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using Unity.Multiplayer.Netcode;
+using Unity.Netcode;
 using UnityEngine;
 
 public class PlayerMovement : NetworkBehaviour

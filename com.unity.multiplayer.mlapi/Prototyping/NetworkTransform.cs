@@ -1,12 +1,12 @@
 using System;
 using UnityEngine;
 
-namespace Unity.Multiplayer.Netcode.Prototyping
+namespace Unity.Netcode.Prototyping
 {
     /// <summary>
     /// A prototype component for syncing transforms
     /// </summary>
-    [AddComponentMenu("MLAPI/NetworkTransform")]
+    [AddComponentMenu("Netcode/" + nameof(NetworkTransform))]
     public class NetworkTransform : NetworkBehaviour
     {
         /// <summary>

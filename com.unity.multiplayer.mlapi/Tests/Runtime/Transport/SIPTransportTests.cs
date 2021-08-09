@@ -3,7 +3,7 @@ using System.Text;
 using NUnit.Framework;
 using UnityEngine;
 
-namespace Unity.Multiplayer.Netcode.RuntimeTests.Transport
+namespace Unity.Netcode.RuntimeTests.Transport
 {
     public class SIPTransportTests
     {

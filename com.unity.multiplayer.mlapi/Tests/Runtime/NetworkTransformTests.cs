@@ -1,13 +1,13 @@
 using System;
 using System.Collections;
 using System.Text.RegularExpressions;
-using Unity.Multiplayer.Netcode.Prototyping;
+using Unity.Netcode.Prototyping;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
-using static Unity.Multiplayer.Netcode.Prototyping.NetworkTransform;
+using static Unity.Netcode.Prototyping.NetworkTransform;
 
-namespace Unity.Multiplayer.Netcode.RuntimeTests
+namespace Unity.Netcode.RuntimeTests
 {
     [TestFixture(true)]
     [TestFixture(false)]

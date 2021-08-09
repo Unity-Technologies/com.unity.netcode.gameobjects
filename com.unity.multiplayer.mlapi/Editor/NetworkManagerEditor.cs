@@ -4,7 +4,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEditorInternal;
 
-namespace Unity.Multiplayer.Netcode.Editor
+namespace Unity.Netcode.Editor
 {
     [CustomEditor(typeof(NetworkManager), true)]
     [CanEditMultipleObjects]
@@ -260,7 +260,7 @@ namespace Unity.Multiplayer.Netcode.Editor
 
                 if (m_NetworkTransportProperty.objectReferenceValue == null)
                 {
-                    EditorGUILayout.HelpBox("You have no transport selected. A transport is required for the MLAPI to work. Which one do you want?", MessageType.Warning);
+                    EditorGUILayout.HelpBox("You have no transport selected. A transport is required for netcode to work. Which one do you want?", MessageType.Warning);
 
                     int selection = EditorGUILayout.Popup(0, m_TransportNames);
 

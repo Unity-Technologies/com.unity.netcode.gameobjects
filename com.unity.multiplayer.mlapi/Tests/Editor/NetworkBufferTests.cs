@@ -2,7 +2,7 @@ using System;
 using NUnit.Framework;
 using System.Text;
 
-namespace Unity.Multiplayer.Netcode.EditorTests
+namespace Unity.Netcode.EditorTests
 {
     public class NetworkBufferTests
     {

@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 
-namespace Unity.Multiplayer.Netcode
+namespace Unity.Netcode
 {
     /// <summary>
     /// MessageFrameItem

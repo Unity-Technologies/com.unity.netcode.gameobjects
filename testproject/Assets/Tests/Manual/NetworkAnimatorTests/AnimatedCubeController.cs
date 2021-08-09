@@ -1,5 +1,5 @@
-using Unity.Multiplayer.Netcode;
-using Unity.Multiplayer.Netcode.Prototyping;
+using Unity.Netcode;
+using Unity.Netcode.Prototyping;
 using UnityEngine;
 
 namespace Tests.Manual.NetworkAnimatorTests

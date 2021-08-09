@@ -5,7 +5,7 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using NUnit.Framework;
 
-namespace Unity.Multiplayer.Netcode.RuntimeTests
+namespace Unity.Netcode.RuntimeTests
 {
     /// <summary>
     /// The RpcQueue unit tests validate:
@@ -24,7 +24,7 @@ namespace Unity.Multiplayer.Netcode.RuntimeTests
 
         /// <summary>
         /// Tests to make sure providing different
-        /// ** This does not include any of the MLAPI to Transport code **
+        /// ** This does not include any of the Netcode to Transport code **
         /// </summary>
         /// <returns>IEnumerator</returns>
         [UnityTest, Order(1)]

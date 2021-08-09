@@ -5,10 +5,10 @@ using System.Linq;
 using System.Reflection;
 using UnityEngine;
 
-namespace Unity.Multiplayer.Netcode
+namespace Unity.Netcode
 {
     /// <summary>
-    /// Helper class to manage the MLAPI serialization.
+    /// Helper class to manage the netcode serialization
     /// </summary>
     public static class SerializationManager
     {
