@@ -14,7 +14,6 @@ public class UIController : MonoBehaviour
     public GameObject JoinCode;
 
     public UTPTransport Transport;
-    private string m_JoinCodeString;
 
     private void Awake()
     {
