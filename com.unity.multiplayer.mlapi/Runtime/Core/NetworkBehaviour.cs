@@ -478,7 +478,7 @@ namespace Unity.Netcode
                 return;
             }
 
-            if (NetworkManager.UseSnapshot)
+            if (NetworkManager.NetworkConfig.UseSnapshotDelta)
             {
                 for (int k = 0; k < NetworkVariableFields.Count; k++)
                 {
@@ -486,7 +486,7 @@ namespace Unity.Netcode
                 }
             }
 
-            if (NetworkManager.UseClassicDelta)
+            if (!NetworkManager.NetworkConfig.UseSnapshotDelta)
             {
                 for (int j = 0; j < m_ChannelMappedNetworkVariableIndexes.Count; j++)
                 {
