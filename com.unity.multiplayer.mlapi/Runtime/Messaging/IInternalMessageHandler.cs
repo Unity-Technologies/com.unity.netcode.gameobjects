@@ -12,7 +12,6 @@ namespace Unity.Netcode
         void HandleSwitchScene(ulong clientId, Stream stream);
         void HandleClientSwitchSceneCompleted(ulong clientId, Stream stream);
         void HandleChangeOwner(ulong clientId, Stream stream);
-        void HandleAddObjects(ulong clientId, Stream stream);
         void HandleDestroyObjects(ulong clientId, Stream stream);
         void HandleTimeSync(ulong clientId, Stream stream);
         void HandleNetworkVariableDelta(ulong clientId, Stream stream);

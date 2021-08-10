@@ -24,7 +24,6 @@ namespace Unity.Netcode
             ClientRpc,
             ServerRpc,
             CreateObject,
-            CreateObjects,
             DestroyObject,
             DestroyObjects,
             ChangeOwner,

@@ -71,14 +71,6 @@ namespace Unity.Netcode.EditorTests
         }
 
         [Test]
-        public void HandleAddObjectsCallsUnderlyingHandler()
-        {
-            m_Decorator.HandleAddObjects(0, null);
-
-            LogAssert.Expect(LogType.Log, nameof(m_Decorator.HandleAddObjects));
-        }
-
-        [Test]
         public void HandleDestroyObjectsCallsUnderlyingHandler()
         {
             m_Decorator.HandleDestroyObjects(0, null);

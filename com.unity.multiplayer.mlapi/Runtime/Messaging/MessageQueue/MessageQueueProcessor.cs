@@ -68,13 +68,6 @@ namespace Unity.Netcode
                         }
 
                         break;
-                    case MessageQueueContainer.MessageType.CreateObjects:
-                        if (m_NetworkManager.IsClient)
-                        {
-                            m_NetworkManager.MessageHandler.HandleAddObjects(item.NetworkId, item.NetworkBuffer);
-                        }
-
-                        break;
                     case MessageQueueContainer.MessageType.DestroyObject:
                         if (m_NetworkManager.IsClient)
                         {
