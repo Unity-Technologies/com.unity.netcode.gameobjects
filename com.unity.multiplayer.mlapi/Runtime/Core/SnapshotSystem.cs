@@ -73,8 +73,7 @@ namespace Unity.Netcode
         public int NumSpawns = 0;
 
         private MemoryStream m_BufferStream;
-        private NetworkManager m_NetworkManager;
-        private bool m_TickIndex;
+        internal NetworkManager m_NetworkManager;
 
         // indexed by ObjectId
         internal Dictionary<ulong, ushort> TickApplied = new Dictionary<ulong, ushort>();
@@ -85,13 +84,11 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="networkManager">The NetworkManaher this Snapshot uses. Needed upon receive to set Variables</param>
         /// <param name="tickIndex">Whether this Snapshot uses the tick as an index</param>
-        public Snapshot(NetworkManager networkManager, bool tickIndex)
+        public Snapshot()
         {
             m_BufferStream = new MemoryStream(RecvBuffer, 0, k_BufferSize);
             // we ask for twice as many slots because there could end up being one free spot between each pair of slot used
             Allocator = new IndexAllocator(k_BufferSize, k_MaxVariables * 2);
-            m_NetworkManager = networkManager;
-            m_TickIndex = tickIndex;
         }
 
         public void Clear()
@@ -141,18 +138,22 @@ namespace Unity.Netcode
         {
             if (NumSpawns < k_MaxSpawns)
             {
-                command.TargetClientIds = new List<ulong>();
-                if (!m_NetworkManager.IsServer)
+                if (command.TargetClientIds == default)
                 {
-                    command.TargetClientIds.Add(m_NetworkManager.ServerClientId);
-                }
-                else
-                {
-                    foreach (var clientId in m_NetworkManager.ConnectedClientsIds)
+                    command.TargetClientIds = new List<ulong>();
+
+                    if (!m_NetworkManager.IsServer)
                     {
-                        if (clientId != m_NetworkManager.ServerClientId)
+                        command.TargetClientIds.Add(m_NetworkManager.ServerClientId);
+                    }
+                    else
+                    {
+                        foreach (var clientId in m_NetworkManager.ConnectedClientsIds)
                         {
-                            command.TargetClientIds.Add(clientId);
+                            if (clientId != m_NetworkManager.ServerClientId)
+                            {
+                                command.TargetClientIds.Add(clientId);
+                            }
                         }
                     }
                 }
@@ -462,14 +463,28 @@ namespace Unity.Netcode
         internal const ushort SentinelBefore = 0x4246;
         internal const ushort SentinelAfter = 0x89CE;
 
-        private NetworkManager m_NetworkManager = NetworkManager.Singleton;
-        private Snapshot m_Snapshot = new Snapshot(NetworkManager.Singleton, false);
+        private NetworkManager m_NetworkManager = default;
+        private Snapshot m_Snapshot = default;
 
         // by clientId
         private Dictionary<ulong, ClientData> m_ClientData = new Dictionary<ulong, ClientData>();
         private Dictionary<ulong, ConnectionRtt> m_ConnectionRtts = new Dictionary<ulong, ConnectionRtt>();
 
         private int m_CurrentTick = NetworkTickSystem.NoTick;
+
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// Registers the snapshot system for early updates, keeps reference to the NetworkManager
+        public SnapshotSystem(NetworkManager networkManager)
+        {
+            m_Snapshot = new Snapshot();
+
+            m_NetworkManager = networkManager;
+            m_Snapshot.m_NetworkManager = networkManager;
+
+            this.RegisterNetworkUpdate(NetworkUpdateStage.EarlyUpdate);
+        }
 
         internal ConnectionRtt GetConnectionRtt(ulong clientId)
         {
@@ -479,15 +494,6 @@ namespace Unity.Netcode
             }
 
             return m_ConnectionRtts[clientId];
-        }
-
-        /// <summary>
-        /// Constructor
-        /// </summary>
-        /// Registers the snapshot system for early updates
-        public SnapshotSystem()
-        {
-            this.RegisterNetworkUpdate(NetworkUpdateStage.EarlyUpdate);
         }
 
         /// <summary>

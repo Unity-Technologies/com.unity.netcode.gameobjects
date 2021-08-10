@@ -236,7 +236,7 @@ namespace Unity.Netcode
 
             if (NetworkManager.NetworkConfig.UseSnapshotSpawn)
             {
-//                SendToSnapshot(needs overide here to specify which client);
+                SendToSnapshot(clientId);
             }
 
             Observers.Add(clientId);
@@ -393,7 +393,7 @@ namespace Unity.Netcode
             }
         }
 
-        private void SendToSnapshot()
+        private SnapshotSpawnCommand GetSpawnCommand()
         {
             SnapshotSpawnCommand command;
             command.NetworkObjectId = NetworkObjectId;
@@ -420,6 +420,20 @@ namespace Unity.Netcode
             command.TickWritten = 0; // will be reset in Spawn
             command.TargetClientIds = default;
 
+            return command;
+        }
+
+        private void SendToSnapshot()
+        {
+            var command = GetSpawnCommand();
+            NetworkManager.SnapshotSystem.Spawn(command);
+        }
+
+        private void SendToSnapshot(ulong clientId)
+        {
+            var command = GetSpawnCommand();
+            command.TargetClientIds = new List<ulong>();
+            command.TargetClientIds.Add(clientId);
             NetworkManager.SnapshotSystem.Spawn(command);
         }
 
