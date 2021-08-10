@@ -53,9 +53,6 @@ namespace MLAPI.Transports
 
         private RelayServerData m_RelayServerData;
 
-        private static readonly RelayServerData k_DefaultRelayServerData = default(RelayServerData);
-        private static RelayServerData DefaultRelayServerData => k_DefaultRelayServerData;
-
         private void InitDriver()
         {
             if (m_NetworkParameters.Count > 0)
@@ -121,9 +118,11 @@ namespace MLAPI.Transports
             {
                 //This comparison is currently slow since RelayServerData does not implement a custom comparison operator that doesn't use
                 //reflection, but this does not live in the context of a performance-critical loop, it runs once at initial connection time.
-                if(m_RelayServerData.Equals(DefaultRelayServerData))
+                if(m_RelayServerData.Equals(default(RelayServerData)))
                 {
-                    Debug.LogError("You must set the RelayServerData property to something different from the default value before calling StartRelayServer.");
+                    Debug.LogError("You must call SetRelayServerData() at least once before calling StartRelayServer.");
+                    task.IsDone = true;
+                    task.Success = false;
                     yield break;
                 }
 
@@ -258,9 +257,11 @@ namespace MLAPI.Transports
         {
             //This comparison is currently slow since RelayServerData does not implement a custom comparison operator that doesn't use
             //reflection, but this does not live in the context of a performance-critical loop, it runs once at initial connection time.
-            if (m_RelayServerData.Equals(DefaultRelayServerData))
+            if (m_RelayServerData.Equals(default(RelayServerData)))
             {
-                Debug.LogError("You must set the RelayServerData property to something different from the default value before calling StartRelayServer.");
+                Debug.LogError("You must call SetRelayServerData() at least once before calling StartRelayServer.");
+                task.IsDone = true;
+                task.Success = false;
                 yield break;
             }
             else
