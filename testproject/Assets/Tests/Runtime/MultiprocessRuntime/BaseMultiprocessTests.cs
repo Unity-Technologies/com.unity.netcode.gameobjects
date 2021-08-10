@@ -23,7 +23,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
         private bool m_SceneHasLoaded;
 
-        protected bool ShouldIgnoreTests => IsPerformanceTest && Application.isEditor || MultiprocessOrchestration.IsUsingUTR(); // todo remove UTR check once we have proper automation
+        protected bool ShouldIgnoreTests => IsPerformanceTest && Application.isEditor;
 
         /// <summary>
         /// Implement this to specify the amount of workers to spawn from your main test runner
