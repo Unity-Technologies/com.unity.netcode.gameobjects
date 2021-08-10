@@ -551,7 +551,6 @@ namespace Unity.Netcode
                 {
                     if (currentActiveScene.name != loadedSceneName)
                     {
-                        Debug.Log($"Invoking unload scene event for {loadedSceneName}");
                         OnSceneEvent?.Invoke(new SceneEvent()
                         {
                             AsyncOperation = SceneManager.UnloadSceneAsync(loadedSceneName),
