@@ -1,17 +1,12 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
 using System.Linq;
-using MLAPI.Transports;
-using MLAPI.Hashing;
-using MLAPI.Serialization;
-using MLAPI.Serialization.Pooled;
 
-namespace MLAPI.Configuration
+namespace Unity.Netcode
 {
     /// <summary>
     /// The configuration object used to start server, client and hosts
@@ -50,29 +45,14 @@ namespace MLAPI.Configuration
         /// </summary>
         internal Dictionary<uint, NetworkPrefab> NetworkPrefabOverrideLinks = new Dictionary<uint, NetworkPrefab>();
 
-        /// <summary>
-        /// Amount of times per second the receive queue is emptied and all messages inside are processed.
-        /// </summary>
-        [Tooltip("The amount of times per second the receive queue is emptied from pending incoming messages")]
-        public int ReceiveTickrate = 64;
+        internal Dictionary<uint, uint> OverrideToNetworkPrefab = new Dictionary<uint, uint>();
+
 
         /// <summary>
-        /// Duration in seconds between network ticks.
+        /// The tickrate of network ticks. This value controls how often netcode runs user code and sends out data.
         /// </summary>
-        [Tooltip("Duration in seconds between network ticks")]
-        public float NetworkTickIntervalSec = 0.050f;
-
-        /// <summary>
-        /// The max amount of messages to process per ReceiveTickrate. This is to prevent flooding.
-        /// </summary>
-        [Tooltip("The maximum amount of Receive events to poll per Receive tick. This is to prevent flooding and freezing on the server")]
-        public int MaxReceiveEventsPerTickRate = 500;
-
-        /// <summary>
-        /// The amount of times per second internal frame events will occur, e.g. send checking.
-        /// </summary>
-        [Tooltip("The amount of times per second the internal event loop will run. This includes for example NetworkVariable checking.")]
-        public int EventTickrate = 64;
+        [Tooltip("The tickrate. This value controls how often netcode runs user code and sends out data. The value is in 'ticks per seconds' which means a value of 50 will result in 50 ticks being executed per second or a fixed delta time of 0.02.")]
+        public int TickRate = 30;
 
         /// <summary>
         /// The amount of seconds to wait for handshake to complete before timing out a client
@@ -126,10 +106,10 @@ namespace MLAPI.Configuration
         public bool EnableSceneManagement = true;
 
         /// <summary>
-        /// Whether or not the MLAPI should check for differences in the prefabs at connection.
+        /// Whether or not the netcode should check for differences in the prefabs at connection.
         /// If you dynamically add prefabs at runtime, turn this OFF
         /// </summary>
-        [Tooltip("Whether or not the MLAPI should check for differences in the prefab lists at connection")]
+        [Tooltip("Whether or not the netcode should check for differences in the prefab lists at connection")]
         public bool ForceSamePrefabs = true;
 
         /// <summary>
@@ -151,16 +131,10 @@ namespace MLAPI.Configuration
         public HashSize RpcHashSize = HashSize.VarIntFourBytes;
 
         /// <summary>
-        /// The amount of seconds to wait on all clients to load requested scene before the SwitchSceneProgress onComplete callback, that waits for all clients to complete loading, is called anyway.
+        /// The amount of seconds to wait for all clients to load or unload a requested scene
         /// </summary>
-        [Tooltip("The amount of seconds to wait for all clients to load a requested scene")]
+        [Tooltip("The amount of seconds to wait for all clients to load or unload a requested scene (only when EnableSceneManagement is enabled)")]
         public int LoadSceneTimeOut = 120;
-
-        /// <summary>
-        /// Whether or not message buffering should be enabled. This will resolve most out of order messages during spawn.
-        /// </summary>
-        [Tooltip("Whether or not message buffering should be enabled. This will resolve most out of order messages during spawn")]
-        public bool EnableMessageBuffering = true;
 
         /// <summary>
         /// The amount of time a message should be buffered for without being consumed. If it is not consumed within this time, it will be dropped.
@@ -184,9 +158,7 @@ namespace MLAPI.Configuration
             using (var writer = PooledNetworkWriter.Get(buffer))
             {
                 writer.WriteUInt16Packed(config.ProtocolVersion);
-                writer.WriteInt32Packed(config.ReceiveTickrate);
-                writer.WriteInt32Packed(config.MaxReceiveEventsPerTickRate);
-                writer.WriteInt32Packed(config.EventTickrate);
+                writer.WriteInt32Packed(config.TickRate);
                 writer.WriteInt32Packed(config.ClientConnectionBufferTimeout);
                 writer.WriteBool(config.ConnectionApproval);
                 writer.WriteInt32Packed(config.LoadSceneTimeOut);
@@ -220,9 +192,7 @@ namespace MLAPI.Configuration
 
                 ushort sceneCount = reader.ReadUInt16Packed();
 
-                config.ReceiveTickrate = reader.ReadInt32Packed();
-                config.MaxReceiveEventsPerTickRate = reader.ReadInt32Packed();
-                config.EventTickrate = reader.ReadInt32Packed();
+                config.TickRate = reader.ReadInt32Packed();
                 config.ClientConnectionBufferTimeout = reader.ReadInt32Packed();
                 config.ConnectionApproval = reader.ReadBool();
                 config.LoadSceneTimeOut = reader.ReadInt32Packed();

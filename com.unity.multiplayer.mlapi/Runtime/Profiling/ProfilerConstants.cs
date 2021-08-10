@@ -1,10 +1,9 @@
-namespace MLAPI.Profiling
+namespace Unity.Netcode
 {
-    public static class ProfilerConstants
+    internal static class ProfilerConstants
     {
         public const string Connections = nameof(Connections);
         public const string ReceiveTickRate = nameof(ReceiveTickRate);
-
         public const string NamedMessageReceived = nameof(NamedMessageReceived);
         public const string UnnamedMessageReceived = nameof(UnnamedMessageReceived);
         public const string NamedMessageSent = nameof(NamedMessageSent);
@@ -15,10 +14,5 @@ namespace MLAPI.Profiling
         public const string NetworkVarUpdates = nameof(NetworkVarUpdates);
         public const string RpcSent = nameof(RpcSent);
         public const string RpcReceived = nameof(RpcReceived);
-        public const string RpcBatchesSent = nameof(RpcBatchesSent);
-        public const string RpcBatchesReceived = nameof(RpcBatchesReceived);
-        public const string RpcQueueProcessed = nameof(RpcQueueProcessed);
-        public const string RpcInQueueSize = nameof(RpcInQueueSize);
-        public const string RpcOutQueueSize = nameof(RpcOutQueueSize);
     }
 }

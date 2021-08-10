@@ -5,10 +5,10 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.Networking;
 
-namespace MLAPI.Transports
+namespace Unity.Netcode.Transports.UNET
 {
     /// <summary>
-    /// A transport channel used by the MLAPI
+    /// A transport channel used by the netcode
     /// </summary>
     [Serializable]
     public class UNetChannel

@@ -1,8 +1,7 @@
 using System;
 using System.Collections.Generic;
-using MLAPI.NetworkVariable;
 
-namespace MLAPI.RuntimeTests
+namespace Unity.Netcode.RuntimeTests
 {
     /// <summary>
     /// Will automatically register for the NetworkVariable OnValueChanged

@@ -1,8 +1,8 @@
 using UnityEngine;
 
-namespace MLAPI.Profiling
+namespace Unity.Netcode
 {
-    public class ProfilerStat
+    internal class ProfilerStat
     {
         public ProfilerStat(string name)
         {
@@ -36,7 +36,7 @@ namespace MLAPI.Profiling
         }
     }
 
-    public class ProfilerIncStat : ProfilerStat
+    internal class ProfilerIncStat : ProfilerStat
     {
         public ProfilerIncStat(string name) : base(name) { }
 

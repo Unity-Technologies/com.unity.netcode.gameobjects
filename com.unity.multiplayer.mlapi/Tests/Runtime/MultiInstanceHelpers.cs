@@ -2,13 +2,12 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using MLAPI.Configuration;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using Object = UnityEngine.Object;
 
-namespace MLAPI.RuntimeTests
+namespace Unity.Netcode.RuntimeTests
 {
     /// <summary>
     /// Provides helpers for running multi instance tests.
@@ -20,35 +19,36 @@ namespace MLAPI.RuntimeTests
         private static int s_ClientCount;
         private static int s_OriginalTargetFrameRate = -1;
 
+        public static List<NetworkManager> NetworkManagerInstances => s_NetworkManagerInstances;
+
         /// <summary>
         /// Creates NetworkingManagers and configures them for use in a multi instance setting.
         /// </summary>
         /// <param name="clientCount">The amount of clients</param>
         /// <param name="server">The server NetworkManager</param>
         /// <param name="clients">The clients NetworkManagers</param>
+        /// <param name="targetFrameRate">The targetFrameRate of the Unity engine to use while the multi instance helper is running. Will be reset on shutdown.</param>
         public static bool Create(int clientCount, out NetworkManager server, out NetworkManager[] clients, int targetFrameRate = 60)
         {
             s_NetworkManagerInstances = new List<NetworkManager>();
             ScenesInBuild.IsTesting = true;
             CreateNewClients(clientCount, out clients);
 
+            // Create gameObject
+            var go = new GameObject("NetworkManager - Server");
+
+            // Create networkManager component
+            server = go.AddComponent<NetworkManager>();
+            NetworkManagerInstances.Insert(0, server);
+
+            // Set the NetworkConfig
+            server.NetworkConfig = new NetworkConfig()
             {
-                // Create gameObject
-                var go = new GameObject("NetworkManager - Server");
-
-                // Create networkManager component
-                server = go.AddComponent<NetworkManager>();
-                s_NetworkManagerInstances.Insert(0, server);
-
-                // Set the NetworkConfig
-                server.NetworkConfig = new NetworkConfig()
-                {
-                    // Set transport
-                    NetworkTransport = go.AddComponent<SIPTransport>()
-                };
-                server.PopulateScenesInBuild(true);
-                server.ScenesInBuild.Scenes.Add(SceneManager.GetActiveScene().name);
-            }
+                // Set transport
+                NetworkTransport = go.AddComponent<SIPTransport>()
+            };
+            server.PopulateScenesInBuild(true);
+            server.ScenesInBuild.Scenes.Add(SceneManager.GetActiveScene().name);
 
             s_OriginalTargetFrameRate = Application.targetFrameRate;
             Application.targetFrameRate = targetFrameRate;
@@ -88,7 +88,7 @@ namespace MLAPI.RuntimeTests
                 }
             }
 
-            s_NetworkManagerInstances.AddRange(clients);
+            NetworkManagerInstances.AddRange(clients);
             return true;
         }
 
@@ -100,7 +100,7 @@ namespace MLAPI.RuntimeTests
         {
             clientToStop.StopClient();
             Object.Destroy(clientToStop.gameObject);
-            s_NetworkManagerInstances.Remove(clientToStop);
+            NetworkManagerInstances.Remove(clientToStop);
         }
 
         /// <summary>
@@ -109,29 +109,37 @@ namespace MLAPI.RuntimeTests
         /// </summary>
         public static void Destroy()
         {
-            if (!s_IsStarted)
+            if (s_IsStarted == false)
             {
-                throw new InvalidOperationException("MultiInstanceHelper is not started");
+                return;
             }
 
             s_IsStarted = false;
 
             // Shutdown the server which forces clients to disconnect
-            foreach (var networkManager in s_NetworkManagerInstances)
+            foreach (var networkManager in NetworkManagerInstances)
             {
-                if (networkManager.IsServer)
+                if (networkManager.IsHost)
                 {
                     networkManager.StopHost();
+                }
+                else if (networkManager.IsServer)
+                {
+                    networkManager.StopServer();
+                }
+                else if (networkManager.IsClient)
+                {
+                    networkManager.StopClient();
                 }
             }
 
             // Destroy the network manager instances
-            foreach (var networkManager in s_NetworkManagerInstances)
+            foreach (var networkManager in NetworkManagerInstances)
             {
                 Object.Destroy(networkManager.gameObject);
             }
 
-            s_NetworkManagerInstances.Clear();
+            NetworkManagerInstances.Clear();
 
             // Destroy the temporary GameObject used to run co-routines
             if (s_CoroutineRunner != null)
@@ -205,8 +213,8 @@ namespace MLAPI.RuntimeTests
         /// Normally we would only allow player prefabs to be set to a prefab. Not runtime created objects.
         /// In order to prevent having a Resource folder full of a TON of prefabs that we have to maintain,
         /// MultiInstanceHelper has a helper function that lets you mark a runtime created object to be
-        /// treated as a prefab by the MLAPI. That's how we can get away with creating the player prefab
-        /// at runtime without it being treated as a SceneObject or causing other conflicts with the MLAPI.
+        /// treated as a prefab by the Netcode. That's how we can get away with creating the player prefab
+        /// at runtime without it being treated as a SceneObject or causing other conflicts with the Netcode.
         /// </summary>
         /// <param name="networkObject">The networkObject to be treated as Prefab</param>
         /// <param name="globalObjectIdHash">The GlobalObjectId to force</param>
@@ -307,9 +315,12 @@ namespace MLAPI.RuntimeTests
             }
             else
             {
-                foreach (var client in clients)
+                for (var i = 0; i < clients.Length; ++i)
                 {
-                    Assert.True(client.IsConnectedClient, $"Client {client.LocalClientId} never connected");
+                    var client = clients[i];
+                    // Logging i+1 because that's the local client ID they'll get (0 is server)
+                    // Can't use client.LocalClientId because that doesn't get assigned until IsConnectedClient == true,
+                    Assert.True(client.IsConnectedClient, $"Client {i + 1} never connected");
                 }
             }
         }
@@ -426,6 +437,29 @@ namespace MLAPI.RuntimeTests
         }
 
         /// <summary>
+        /// Runs some code, then verifies the condition (combines 'Run' and 'WaitForCondition')
+        /// </summary>
+        /// <param name="workload">Action / code to run</param>
+        /// <param name="predicate">The predicate to wait for</param>
+        /// <param name="maxFrames">The max frames to wait for</param>
+        public static IEnumerator RunAndWaitForCondition(Action workload, Func<bool> predicate, int maxFrames = 64)
+        {
+            var waitResult = new CoroutineResultWrapper<bool>();
+            workload();
+
+            yield return Run(WaitForCondition(
+                predicate,
+                waitResult,
+                maxFrames: maxFrames));
+
+            if (!waitResult.Result)
+            {
+                throw new Exception();
+            }
+        }
+
+
+        /// <summary>
         /// Waits for a predicate condition to be met
         /// </summary>
         /// <param name="predicate">The predicate to wait for</param>
@@ -442,7 +476,7 @@ namespace MLAPI.RuntimeTests
 
             while (Time.frameCount - startFrameNumber <= maxFrames && !predicate())
             {
-                var nextFrameNumber = Time.frameCount + 1;
+                var nextFrameNumber = Time.frameCount + 2;
                 yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
             }
 

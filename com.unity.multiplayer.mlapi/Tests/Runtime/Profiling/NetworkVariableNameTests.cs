@@ -1,10 +1,7 @@
-﻿using System;
-using MLAPI.NetworkVariable;
-using MLAPI.NetworkVariable.Collections;
+using System;
 using NUnit.Framework;
-using UnityEngine;
 
-namespace MLAPI.RuntimeTests.Profiling
+namespace Unity.Netcode.RuntimeTests
 {
     public sealed class NetworkVariableNameTests
     {
@@ -16,7 +13,7 @@ namespace MLAPI.RuntimeTests.Profiling
             NetworkManagerHelper.StartNetworkManager(out _);
 
             var gameObjectId = NetworkManagerHelper.AddGameNetworkObject(Guid.NewGuid().ToString());
-            m_NetworkVariableNameComponent= NetworkManagerHelper.AddComponentToObject<NetworkVariableNameComponent>(gameObjectId);
+            m_NetworkVariableNameComponent = NetworkManagerHelper.AddComponentToObject<NetworkVariableNameComponent>(gameObjectId);
             NetworkManagerHelper.SpawnNetworkObject(gameObjectId);
         }
 
@@ -41,11 +38,11 @@ namespace MLAPI.RuntimeTests.Profiling
         private class NetworkVariableNameComponent : NetworkBehaviour
         {
             public NetworkVariableString NetworkVarString { get; } = new NetworkVariableString();
-            
+
             public NetworkSet<ulong> NetworkVarSet { get; } = new NetworkSet<ulong>();
-            
+
             public NetworkList<ulong> NetworkVarList = new NetworkList<ulong>();
-            
+
             public NetworkDictionary<ulong, ulong> NetworkVarDictionary = new NetworkDictionary<ulong, ulong>();
         }
     }

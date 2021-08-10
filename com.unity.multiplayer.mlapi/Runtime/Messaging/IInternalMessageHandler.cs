@@ -1,8 +1,6 @@
-using System;
 using System.IO;
-using MLAPI.Messaging.Buffering;
 
-namespace MLAPI.Messaging
+namespace Unity.Netcode
 {
     internal interface IInternalMessageHandler
     {
@@ -15,12 +13,11 @@ namespace MLAPI.Messaging
         void HandleChangeOwner(ulong clientId, Stream stream);
         void HandleAddObjects(ulong clientId, Stream stream);
         void HandleDestroyObjects(ulong clientId, Stream stream);
-        void HandleTimeSync(ulong clientId, Stream stream, float receiveTime);
-        void HandleNetworkVariableDelta(ulong clientId, Stream stream, Action<ulong, PreBufferPreset> bufferCallback, PreBufferPreset bufferPreset);
-        void RpcReceiveQueueItem(ulong clientId, Stream stream, float receiveTime, RpcQueueContainer.QueueItemType queueItemType);
+        void HandleTimeSync(ulong clientId, Stream stream);
+        void HandleNetworkVariableDelta(ulong clientId, Stream stream);
+        void MessageReceiveQueueItem(ulong clientId, Stream stream, float receiveTime, MessageQueueContainer.MessageType messageType, NetworkChannel receiveChannel);
         void HandleUnnamedMessage(ulong clientId, Stream stream);
         void HandleNamedMessage(ulong clientId, Stream stream);
         void HandleNetworkLog(ulong clientId, Stream stream);
-        void HandleAllClientsSwitchSceneCompleted(ulong clientId, Stream stream);
     }
 }

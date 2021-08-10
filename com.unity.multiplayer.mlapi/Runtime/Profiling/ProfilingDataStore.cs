@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 
-namespace MLAPI.Profiling
+namespace Unity.Netcode
 {
-    public class ProfilingDataStore
+    internal class ProfilingDataStore
     {
         private readonly Dictionary<string, int> m_Dictionary = new Dictionary<string, int>();
 

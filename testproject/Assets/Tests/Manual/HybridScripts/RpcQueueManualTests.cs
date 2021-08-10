@@ -1,8 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
-using MLAPI;
-using MLAPI.Messaging;
+using Unity.Netcode;
 
 namespace TestProject.ManualTests
 {
@@ -165,7 +164,7 @@ namespace TestProject.ManualTests
                 m_BeginTest = false;
                 m_MesageSendDelay = 0.01f;
 
-                var gameObject = GameObject.Find("NetworkManager");
+                var gameObject = GameObject.Find("[NetworkManager]");
                 if (gameObject != null)
                 {
                     gameObject.SetActive(false);
@@ -317,7 +316,7 @@ namespace TestProject.ManualTests
         }
 
         /// <summary>
-        /// Invoked upon the attached NetworkObject component being initialized by MLAPI
+        /// Invoked upon the attached NetworkObject component being initialized by the netcode
         /// </summary>
         public override void OnNetworkSpawn()
         {

@@ -5,8 +5,7 @@ using UnityEngine;
 using UnityEditor;
 #endif
 
-using MLAPI;
-using MLAPI.SceneManagement;
+using Unity.Netcode;
 
 namespace TestProject.ManualTests
 {
@@ -93,12 +92,6 @@ namespace TestProject.ManualTests
             base.OnNetworkSpawn();
         }
 
-        private SceneSwitchProgress m_CurrentSceneSwitchProgress;
-
-        public delegate void OnSceneSwitchBeginDelegateHandler();
-
-        public event OnSceneSwitchBeginDelegateHandler OnSceneSwitchBegin;
-
         private bool m_IsReversing;
 
         public void OnSwitchScene()
@@ -110,38 +103,31 @@ namespace TestProject.ManualTests
 
                 if (!m_IsReversing)
                 {
-                    OnSceneSwitchBegin?.Invoke();
-
-                    m_CurrentSceneSwitchProgress = NetworkManager.Singleton.SceneManager.LoadScene(m_SceneToSwitchTo[m_CurrentSceneIndex], UnityEngine.SceneManagement.LoadSceneMode.Additive);
-                    m_CurrentSceneIndex++;
-                    m_CurrentSceneSwitchProgress.OnComplete += CurrentSceneSwitchProgress_OnComplete;
-                    if(m_CurrentSceneIndex == m_SceneToSwitchTo.Count)
+                    if (NetworkManager.Singleton.SceneManager.LoadScene(m_SceneToSwitchTo[m_CurrentSceneIndex], UnityEngine.SceneManagement.LoadSceneMode.Additive)
+                        == SceneEventProgressStatus.Started)
                     {
-                        m_IsReversing = true;
-                        m_CurrentSceneIndex--;
+                        m_CurrentSceneIndex++;
+
+                        if (m_CurrentSceneIndex == m_SceneToSwitchTo.Count)
+                        {
+                            m_IsReversing = true;
+                            m_CurrentSceneIndex--;
+                        }
                     }
                 }
                 else
                 {
-                    m_CurrentSceneSwitchProgress = NetworkManager.Singleton.SceneManager.UnloadScene(m_SceneToSwitchTo[m_CurrentSceneIndex]);
-                    m_CurrentSceneIndex--;
-                    m_CurrentSceneSwitchProgress.OnComplete += CurrentSceneSwitchProgress_OnComplete;
-                    if(m_CurrentSceneIndex < 0)
+                    if (NetworkManager.Singleton.SceneManager.UnloadScene(m_SceneToSwitchTo[m_CurrentSceneIndex]) == SceneEventProgressStatus.Started)
                     {
-                        m_IsReversing = false;
-                        m_CurrentSceneIndex = 0;
+                        m_CurrentSceneIndex--;
+                        if (m_CurrentSceneIndex < 0)
+                        {
+                            m_IsReversing = false;
+                            m_CurrentSceneIndex = 0;
+                        }
                     }
                 }
             }
-        }
-
-        public delegate void OnSceneSwitchCompletedDelegateHandler();
-
-        public event OnSceneSwitchCompletedDelegateHandler OnSceneSwitchCompleted;
-
-        private void CurrentSceneSwitchProgress_OnComplete(bool timedOut)
-        {
-            OnSceneSwitchCompleted?.Invoke();
         }
     }
 }

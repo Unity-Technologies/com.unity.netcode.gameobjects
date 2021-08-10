@@ -1,11 +1,7 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.TestTools;
 using NUnit.Framework;
-using Unity.Networking.Transport;
 
-namespace MLAPI.UTP.RuntimeTests
+namespace Unity.Netcode.UTP.EditorTests
 {
     public class BasicUTPTest : MonoBehaviour
     {
@@ -22,5 +18,3 @@ namespace MLAPI.UTP.RuntimeTests
         }
     }
 }
-
-

@@ -1,7 +1,7 @@
 using System;
 using System.Net.Sockets;
 
-namespace MLAPI.Transports.Tasks
+namespace Unity.Netcode
 {
     /// <summary>
     /// Represents one or more socket tasks.
@@ -102,13 +102,13 @@ namespace MLAPI.Transports.Tasks
     {
         // Used for states
         /// <summary>
-        /// Gets or sets a value indicating whether this <see cref="T:MLAPI.Transports.Tasks.SocketTask"/> is done.
+        /// Gets or sets a value indicating whether this <see cref="T:SocketTask"/> is done.
         /// </summary>
         /// <value><c>true</c> if is done; otherwise, <c>false</c>.</value>
         public bool IsDone { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether this <see cref="T:MLAPI.Transports.Tasks.SocketTask"/> is success.
+        /// Gets or sets a value indicating whether this <see cref="T:SocketTask"/> is success.
         /// </summary>
         /// <value><c>true</c> if success; otherwise, <c>false</c>.</value>
         public bool Success { get; set; }

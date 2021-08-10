@@ -6,7 +6,7 @@ using Unity.CompilationPipeline.Common.Diagnostics;
 using Unity.CompilationPipeline.Common.ILPostProcessing;
 using ILPPInterface = Unity.CompilationPipeline.Common.ILPostProcessing.ILPostProcessor;
 
-namespace MLAPI.Editor.CodeGen
+namespace Unity.Netcode.Editor.CodeGen
 {
     internal sealed class RuntimeAccessModifiersILPP : ILPPInterface
     {
@@ -29,7 +29,7 @@ namespace MLAPI.Editor.CodeGen
             var assemblyDefinition = CodeGenHelpers.AssemblyDefinitionFor(compiledAssembly);
             if (assemblyDefinition == null)
             {
-                m_Diagnostics.AddError($"Cannot read MLAPI Runtime assembly definition: {compiledAssembly.Name}");
+                m_Diagnostics.AddError($"Cannot read Netcode Runtime assembly definition: {compiledAssembly.Name}");
                 return null;
             }
 
@@ -52,7 +52,7 @@ namespace MLAPI.Editor.CodeGen
                         case nameof(NetworkBehaviour):
                             ProcessNetworkBehaviour(typeDefinition);
                             break;
-                        case nameof(Messaging.__RpcParams):
+                        case nameof(__RpcParams):
                             typeDefinition.IsPublic = true;
                             break;
                     }
@@ -60,7 +60,7 @@ namespace MLAPI.Editor.CodeGen
             }
             else
             {
-                m_Diagnostics.AddError($"Cannot get main module from MLAPI Runtime assembly definition: {compiledAssembly.Name}");
+                m_Diagnostics.AddError($"Cannot get main module from Netcode Runtime assembly definition: {compiledAssembly.Name}");
             }
 
             // write

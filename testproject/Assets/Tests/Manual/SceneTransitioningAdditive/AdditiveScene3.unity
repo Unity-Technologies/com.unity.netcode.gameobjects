@@ -247,6 +247,7 @@ MonoBehaviour:
   RandomMovement: 0
   AutoSpawnEnable: 1
   SpawnInSourceScene: 1
+  DestroyOnUnload: 1
   InitialSpawnDelay: 0.2
   SpawnsPerSecond: 3
   PoolSize: 32

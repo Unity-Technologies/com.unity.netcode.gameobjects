@@ -3,10 +3,8 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using MLAPI.Serialization.Pooled;
-using MLAPI.Transports;
 
-namespace MLAPI.NetworkVariable.Collections
+namespace Unity.Netcode
 {
     /// <summary>
     /// Event based NetworkVariable container for syncing Sets
@@ -21,7 +19,7 @@ namespace MLAPI.NetworkVariable.Collections
         /// <summary>
         /// Gets the last time the variable was synced
         /// </summary>
-        public float LastSyncedTime { get; internal set; }
+        public NetworkTime LastSyncedTime { get; internal set; }
 
         /// <summary>
         /// The settings for this container
@@ -83,7 +81,7 @@ namespace MLAPI.NetworkVariable.Collections
         public void ResetDirty()
         {
             m_DirtyEvents.Clear();
-            LastSyncedTime = m_NetworkBehaviour.NetworkManager.NetworkTime;
+            LastSyncedTime = m_NetworkBehaviour.NetworkManager.LocalTime;
         }
 
         /// <inheritdoc />
@@ -104,7 +102,7 @@ namespace MLAPI.NetworkVariable.Collections
                 return false;
             }
 
-            if (m_NetworkBehaviour.NetworkManager.NetworkTime - LastSyncedTime >= (1f / Settings.SendTickrate))
+            if ((m_NetworkBehaviour.NetworkManager.LocalTime.FixedTime - LastSyncedTime.FixedTime) >= (1.0 / Settings.SendTickrate))
             {
                 return true;
             }
@@ -334,29 +332,6 @@ namespace MLAPI.NetworkVariable.Collections
         }
 
         /// <inheritdoc />
-        void ICollection<T>.Add(T item)
-        {
-            EnsureInitialized();
-
-            if (m_NetworkBehaviour.NetworkManager.IsServer)
-            {
-                m_Set.Add(item);
-            }
-
-            var setEvent = new NetworkSetEvent<T>()
-            {
-                Type = NetworkSetEvent<T>.EventType.Add,
-                Value = item
-            };
-            m_DirtyEvents.Add(setEvent);
-
-            if (m_NetworkBehaviour.NetworkManager.IsServer && OnSetChanged != null)
-            {
-                OnSetChanged(setEvent);
-            }
-        }
-
-        /// <inheritdoc />
         public void ExceptWith(IEnumerable<T> other)
         {
             foreach (T value in other)
@@ -480,8 +455,7 @@ namespace MLAPI.NetworkVariable.Collections
             }
         }
 
-        /// <inheritdoc />
-        bool ISet<T>.Add(T item)
+        public void Add(T item)
         {
             EnsureInitialized();
 
@@ -501,8 +475,19 @@ namespace MLAPI.NetworkVariable.Collections
             {
                 OnSetChanged(setEvent);
             }
+        }
 
+        /// <inheritdoc />
+        bool ISet<T>.Add(T item)
+        {
+            Add(item);
             return true;
+        }
+
+        /// <inheritdoc />
+        void ICollection<T>.Add(T item)
+        {
+            Add(item);
         }
 
         /// <inheritdoc />
@@ -570,7 +555,7 @@ namespace MLAPI.NetworkVariable.Collections
         /// <inheritdoc />
         public bool IsReadOnly => m_Set.IsReadOnly;
 
-        public ushort RemoteTick
+        public int LastModifiedTick
         {
             get
             {

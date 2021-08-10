@@ -1,9 +1,8 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using MLAPI.Messaging;
 
-namespace MLAPI.RuntimeTests
+namespace Unity.Netcode.RuntimeTests
 {
     /// <summary>
     /// Used in conjunction with the RpcQueueTest to validate that Rpcs are being invoked at the proper NetworkUpdateStage
@@ -32,14 +31,14 @@ namespace MLAPI.RuntimeTests
         // Start is called before the first frame update
         private void Start()
         {
-            m_ServerParams.Send.UpdateStage = NetworkUpdateStage.Initialization;
+            m_ServerParams.Send.UpdateStage = NetworkUpdateStage.EarlyUpdate;
             m_ClientParams.Send.UpdateStage = NetworkUpdateStage.Update;
 
             //This assures the ILPP Codegen side of things is working by making sure that the Receive.UpdateStage
-            //is not always NetworkUpdateStage.Initialization as it should be whatever NetworkUpdateStage the RPC
+            //is not always NetworkUpdateStage.EarlyUpdate as it should be whatever NetworkUpdateStage the RPC
             //was assigned within the Send.UpdateStage
-            m_ServerParams.Receive.UpdateStage = NetworkUpdateStage.Initialization;
-            m_ClientParams.Receive.UpdateStage = NetworkUpdateStage.Initialization;
+            m_ServerParams.Receive.UpdateStage = NetworkUpdateStage.EarlyUpdate;
+            m_ClientParams.Receive.UpdateStage = NetworkUpdateStage.EarlyUpdate;
 
             m_MaxStages = (Enum.GetValues(typeof(NetworkUpdateStage)).Length);
             m_MaxStagesSent = m_MaxStages * MaxIterations;
@@ -94,9 +93,6 @@ namespace MLAPI.RuntimeTests
 
                     switch (m_ServerParams.Send.UpdateStage)
                     {
-                        case NetworkUpdateStage.Initialization:
-                            m_ServerParams.Send.UpdateStage = NetworkUpdateStage.EarlyUpdate;
-                            break;
                         case NetworkUpdateStage.EarlyUpdate:
                             m_ServerParams.Send.UpdateStage = NetworkUpdateStage.FixedUpdate;
                             break;
@@ -113,7 +109,7 @@ namespace MLAPI.RuntimeTests
                             m_ServerParams.Send.UpdateStage = NetworkUpdateStage.PostLateUpdate;
                             break;
                         case NetworkUpdateStage.PostLateUpdate:
-                            m_ServerParams.Send.UpdateStage = NetworkUpdateStage.Initialization;
+                            m_ServerParams.Send.UpdateStage = NetworkUpdateStage.EarlyUpdate;
                             break;
                     }
                 }

@@ -1,9 +1,8 @@
 using System;
 using System.Collections.Generic;
-using MLAPI.Transports.Tasks;
 using UnityEngine;
 
-namespace MLAPI.Transports
+namespace Unity.Netcode
 {
     public enum NetworkChannel : byte
     {
@@ -19,6 +18,7 @@ namespace MLAPI.Transports
         NavAgentCorrection,
         NetworkVariable, //todo: this channel will be used for snapshotting and should then go from reliable to unreliable
         SnapshotExchange,
+        Fragmented,
         ChannelUnused, // <<-- must be present, and must be last
     };
 
@@ -44,7 +44,7 @@ namespace MLAPI.Transports
         public abstract ulong ServerClientId { get; }
 
         /// <summary>
-        /// Gets a value indicating whether this <see cref="T:MLAPI.Transports.Transport"/> is supported in the current runtime context.
+        /// Gets a value indicating whether this <see cref="T:Transport"/> is supported in the current runtime context.
         /// This is used by multiplex adapters.
         /// </summary>
         /// <value><c>true</c> if is supported; otherwise, <c>false</c>.</value>
@@ -57,7 +57,7 @@ namespace MLAPI.Transports
             m_ChannelsCache = null;
         }
 
-        public TransportChannel[] MLAPI_CHANNELS
+        public TransportChannel[] NETCODE_CHANNELS
         {
             get
             {
@@ -67,16 +67,16 @@ namespace MLAPI.Transports
 
                     OnChannelRegistration?.Invoke(transportChannels);
 
-                    m_ChannelsCache = new TransportChannel[MLAPI_INTERNAL_CHANNELS.Length + transportChannels.Count];
+                    m_ChannelsCache = new TransportChannel[NETCODE_INTERNAL_CHANNELS.Length + transportChannels.Count];
 
-                    for (int i = 0; i < MLAPI_INTERNAL_CHANNELS.Length; i++)
+                    for (int i = 0; i < NETCODE_INTERNAL_CHANNELS.Length; i++)
                     {
-                        m_ChannelsCache[i] = MLAPI_INTERNAL_CHANNELS[i];
+                        m_ChannelsCache[i] = NETCODE_INTERNAL_CHANNELS[i];
                     }
 
                     for (int i = 0; i < transportChannels.Count; i++)
                     {
-                        m_ChannelsCache[i + MLAPI_INTERNAL_CHANNELS.Length] = transportChannels[i];
+                        m_ChannelsCache[i + NETCODE_INTERNAL_CHANNELS.Length] = transportChannels[i];
                     }
                 }
 
@@ -85,13 +85,13 @@ namespace MLAPI.Transports
         }
 
         /// <summary>
-        /// The channels the MLAPI will use when sending internal messages.
+        /// The channels the Netcode will use when sending internal messages.
         /// </summary>
 #pragma warning disable IDE1006 // disable naming rule violation check
-        private readonly TransportChannel[] MLAPI_INTERNAL_CHANNELS =
+        private readonly TransportChannel[] NETCODE_INTERNAL_CHANNELS =
 #pragma warning restore IDE1006 // restore naming rule violation check
         {
-            new TransportChannel(NetworkChannel.Internal, NetworkDelivery.ReliableFragmentedSequenced),
+            new TransportChannel(NetworkChannel.Internal, NetworkDelivery.ReliableSequenced),
             new TransportChannel(NetworkChannel.ReliableRpc, NetworkDelivery.ReliableSequenced),
             new TransportChannel(NetworkChannel.UnreliableRpc, NetworkDelivery.UnreliableSequenced),
             new TransportChannel(NetworkChannel.TimeSync, NetworkDelivery.Unreliable),
@@ -103,8 +103,11 @@ namespace MLAPI.Transports
             new TransportChannel(NetworkChannel.NavAgentCorrection, NetworkDelivery.UnreliableSequenced),
             // todo: Currently, fragmentation support needed to deal with oversize packets encounterable with current pre-snapshot code".
             // todo: once we have snapshotting able to deal with missing frame, this should be unreliable
-            new TransportChannel(NetworkChannel.NetworkVariable, NetworkDelivery.ReliableFragmentedSequenced),
-            new TransportChannel(NetworkChannel.SnapshotExchange, NetworkDelivery.ReliableFragmentedSequenced), // todo: temporary until we separate snapshots in chunks
+            new TransportChannel(NetworkChannel.NetworkVariable, NetworkDelivery.ReliableSequenced),
+            new TransportChannel(NetworkChannel.SnapshotExchange, NetworkDelivery.ReliableSequenced), // todo: temporary until we separate snapshots in chunks
+
+            new TransportChannel(NetworkChannel.Fragmented, NetworkDelivery.ReliableFragmentedSequenced),
+
         };
 
         /// <summary>

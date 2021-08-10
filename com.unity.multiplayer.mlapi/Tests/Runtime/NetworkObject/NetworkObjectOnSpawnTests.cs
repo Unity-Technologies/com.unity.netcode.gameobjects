@@ -4,7 +4,7 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace MLAPI.RuntimeTests
+namespace Unity.Netcode.RuntimeTests
 {
     public class NetworkObjectOnSpawnTests : BaseMultiInstanceTest
     {
@@ -58,7 +58,7 @@ namespace MLAPI.RuntimeTests
         public override IEnumerator Teardown()
         {
             yield return base.Teardown();
-            
+
             if (m_TestNetworkObjectPrefab != null)
             {
                 Object.Destroy(m_TestNetworkObjectPrefab);

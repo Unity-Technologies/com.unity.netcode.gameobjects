@@ -1,15 +1,12 @@
 using System.Collections.Generic;
-using MLAPI.Collections;
-using MLAPI.Configuration;
-using MLAPI.Transports;
 using UnityEngine;
 
-namespace MLAPI.Profiling
+namespace Unity.Netcode
 {
     /// <summary>
     /// NetworkProfiler for profiling network traffic
     /// </summary>
-    public static class NetworkProfiler
+    internal static class NetworkProfiler
     {
         /// <summary>
         /// The ticks that has been recorded
@@ -141,7 +138,7 @@ namespace MLAPI.Profiling
             s_CurrentTick = null;
         }
 
-        internal static void StartEvent(TickType eventType, uint bytes, NetworkChannel networkChannel, byte messageType)
+        internal static void StartEvent(TickType eventType, uint bytes, NetworkChannel networkChannel, MessageQueueContainer.MessageType messageType)
         {
             if (!IsRunning)
             {
@@ -153,7 +150,7 @@ namespace MLAPI.Profiling
                 return;
             }
 
-            string messageName = messageType < NetworkConstants.MESSAGE_NAMES.Length ? NetworkConstants.MESSAGE_NAMES[messageType] : "INVALID_MESSAGE_TYPE";
+            string messageName = messageType.ToString();
 
             string channelName = networkChannel.ToString();
             s_CurrentTick.StartEvent(eventType, bytes, channelName, messageName);

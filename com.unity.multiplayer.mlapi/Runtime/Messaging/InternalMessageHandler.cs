@@ -1,19 +1,8 @@
-using System;
 using System.IO;
-using MLAPI.Connection;
-using MLAPI.Logging;
-using MLAPI.SceneManagement;
-using MLAPI.Serialization.Pooled;
 using UnityEngine;
-using UnityEngine.Events;
-using UnityEngine.SceneManagement;
-using System.Collections.Generic;
-using MLAPI.Configuration;
-using MLAPI.Messaging.Buffering;
-using MLAPI.Profiling;
-using MLAPI.Serialization;
 
-namespace MLAPI.Messaging
+
+namespace Unity.Netcode
 {
     internal class InternalMessageHandler : IInternalMessageHandler
     {
@@ -73,8 +62,9 @@ namespace MLAPI.Messaging
             {
                 NetworkManager.LocalClientId = reader.ReadUInt64Packed();
 
-                float netTime = reader.ReadSinglePacked();
-                NetworkManager.UpdateNetworkTime(clientId, netTime, receiveTime, true);
+                int tick = reader.ReadInt32Packed();
+                var time = new NetworkTime(NetworkManager.NetworkTickSystem.TickRate, tick);
+                NetworkManager.NetworkTimeSystem.Reset(time.Time, 0.15f); // Start with a constant RTT of 150 until we receive values from the transport.
 
                 NetworkManager.ConnectedClients.Add(NetworkManager.LocalClientId, new NetworkClient { ClientId = NetworkManager.LocalClientId });
             }
@@ -108,25 +98,9 @@ namespace MLAPI.Messaging
 
                 var (isReparented, latestParent) = NetworkObject.ReadNetworkParenting(reader);
 
-                var hasPayload = reader.ReadBool();
-                var payLoadLength = hasPayload ? reader.ReadInt32Packed() : 0;
-
                 var networkObject = NetworkManager.SpawnManager.CreateLocalNetworkObject(softSync, prefabHash, ownerClientId, parentNetworkId, pos, rot, isReparented);
                 networkObject.SetNetworkParenting(isReparented, latestParent);
-                NetworkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, networkId, softSync, isPlayerObject, ownerClientId, stream, hasPayload, payLoadLength, true, false);
-
-                Queue<BufferManager.BufferedMessage> bufferQueue = NetworkManager.BufferManager.ConsumeBuffersForNetworkId(networkId);
-
-                // Apply buffered messages
-                if (bufferQueue != null)
-                {
-                    while (bufferQueue.Count > 0)
-                    {
-                        BufferManager.BufferedMessage message = bufferQueue.Dequeue();
-                        NetworkManager.HandleIncomingData(message.SenderClientId, message.NetworkChannel, new ArraySegment<byte>(message.NetworkBuffer.GetBuffer(), (int)message.NetworkBuffer.Position, (int)message.NetworkBuffer.Length), message.ReceiveTime, false);
-                        BufferManager.RecycleConsumedBufferedMessage(message);
-                    }
-                }
+                NetworkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, networkId, softSync, isPlayerObject, ownerClientId, stream, true, false);
             }
         }
 
@@ -207,22 +181,23 @@ namespace MLAPI.Messaging
             }
         }
 
-        public void HandleTimeSync(ulong clientId, Stream stream, float receiveTime)
+        public void HandleTimeSync(ulong clientId, Stream stream)
         {
             using (var reader = PooledNetworkReader.Get(stream))
             {
-                float netTime = reader.ReadSinglePacked();
-                NetworkManager.UpdateNetworkTime(clientId, netTime, receiveTime);
+                int tick = reader.ReadInt32Packed();
+                var time = new NetworkTime(NetworkManager.NetworkTickSystem.TickRate, tick);
+                NetworkManager.NetworkTimeSystem.Sync(time.Time, NetworkManager.NetworkConfig.NetworkTransport.GetCurrentRtt(clientId) / 1000d);
             }
         }
 
-        public void HandleNetworkVariableDelta(ulong clientId, Stream stream, Action<ulong, PreBufferPreset> bufferCallback, PreBufferPreset bufferPreset)
+        public void HandleNetworkVariableDelta(ulong clientId, Stream stream)
         {
             if (!NetworkManager.NetworkConfig.EnableNetworkVariable)
             {
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                 {
-                    NetworkLog.LogWarning($"{nameof(NetworkConstants.NETWORK_VARIABLE_DELTA)} received but {nameof(NetworkConfig.EnableNetworkVariable)} is false");
+                    NetworkLog.LogWarning($"Network variable delta received but {nameof(NetworkConfig.EnableNetworkVariable)} is false");
                 }
 
                 return;
@@ -241,7 +216,7 @@ namespace MLAPI.Messaging
                     {
                         if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                         {
-                            NetworkLog.LogWarning($"{nameof(NetworkConstants.NETWORK_VARIABLE_DELTA)} message received for a non-existent behaviour. {nameof(networkObjectId)}: {networkObjectId}, {nameof(networkBehaviourIndex)}: {networkBehaviourIndex}");
+                            NetworkLog.LogWarning($"Network variable delta message received for a non-existent behaviour. {nameof(networkObjectId)}: {networkObjectId}, {nameof(networkBehaviourIndex)}: {networkBehaviourIndex}");
                         }
                     }
                     else
@@ -249,21 +224,12 @@ namespace MLAPI.Messaging
                         NetworkBehaviour.HandleNetworkVariableDeltas(instance.NetworkVariableFields, stream, clientId, instance, NetworkManager);
                     }
                 }
-                else if (NetworkManager.IsServer || !NetworkManager.NetworkConfig.EnableMessageBuffering)
+                else if (NetworkManager.IsServer)
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                     {
-                        NetworkLog.LogWarning($"{nameof(NetworkConstants.NETWORK_VARIABLE_DELTA)} message received for a non-existent object with {nameof(networkObjectId)}: {networkObjectId}. This delta was lost.");
+                        NetworkLog.LogWarning($"Network variable delta message received for a non-existent object with {nameof(networkObjectId)}: {networkObjectId}. This delta was lost.");
                     }
-                }
-                else
-                {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
-                    {
-                        NetworkLog.LogWarning($"{nameof(NetworkConstants.NETWORK_VARIABLE_DELTA)} message received for a non-existent object with {nameof(networkObjectId)}: {networkObjectId}. This delta will be buffered and might be recovered.");
-                    }
-
-                    bufferCallback(networkObjectId, bufferPreset);
                 }
             }
         }
@@ -274,18 +240,47 @@ namespace MLAPI.Messaging
         /// <param name="clientId"></param>
         /// <param name="stream"></param>
         /// <param name="receiveTime"></param>
-        public void RpcReceiveQueueItem(ulong clientId, Stream stream, float receiveTime, RpcQueueContainer.QueueItemType queueItemType)
+        public void MessageReceiveQueueItem(ulong clientId, Stream stream, float receiveTime, MessageQueueContainer.MessageType messageType, NetworkChannel receiveChannel)
         {
             if (NetworkManager.IsServer && clientId == NetworkManager.ServerClientId)
             {
                 return;
             }
 
-            ProfilerStatManager.RpcsRcvd.Record();
-            PerformanceDataManager.Increment(ProfilerConstants.RpcReceived);
+            if (messageType == MessageQueueContainer.MessageType.None)
+            {
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
+                {
+                    NetworkLog.LogError($"Message header contained an invalid type: {((int)messageType).ToString()}");
+                }
 
-            var rpcQueueContainer = NetworkManager.RpcQueueContainer;
-            rpcQueueContainer.AddQueueItemToInboundFrame(queueItemType, receiveTime, clientId, (NetworkBuffer)stream);
+                return;
+            }
+
+            if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+            {
+                NetworkLog.LogInfo($"Data Header: {nameof(messageType)}={((int)messageType).ToString()}");
+            }
+
+            if (NetworkManager.PendingClients.TryGetValue(clientId, out PendingClient client) && (client.ConnectionState == PendingClient.State.PendingApproval || client.ConnectionState == PendingClient.State.PendingConnection && messageType != MessageQueueContainer.MessageType.ConnectionRequest))
+            {
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                {
+                    NetworkLog.LogWarning($"Message received from {nameof(clientId)}={clientId.ToString()} before it has been accepted");
+                }
+
+                return;
+            }
+
+            if (messageType == MessageQueueContainer.MessageType.ClientRpc ||
+                messageType == MessageQueueContainer.MessageType.ServerRpc)
+            {
+                ProfilerStatManager.RpcsRcvd.Record();
+                PerformanceDataManager.Increment(ProfilerConstants.RpcReceived);
+            }
+
+            var messageQueueContainer = NetworkManager.MessageQueueContainer;
+            messageQueueContainer.AddQueueItemToInboundFrame(messageType, receiveTime, clientId, (NetworkBuffer)stream, receiveChannel);
         }
 
         public void HandleUnnamedMessage(ulong clientId, Stream stream)
@@ -332,21 +327,6 @@ namespace MLAPI.Messaging
         internal static void HandleSnapshot(ulong clientId, Stream messageStream)
         {
             NetworkManager.Singleton.SnapshotSystem.ReadSnapshot(clientId, messageStream);
-        }
-
-        internal static void HandleAck(ulong clientId, Stream messageStream)
-        {
-            NetworkManager.Singleton.SnapshotSystem.ReadAck(clientId, messageStream);
-        }
-
-        public void HandleAllClientsSwitchSceneCompleted(ulong clientId, Stream stream)
-        {
-            using (var reader = PooledNetworkReader.Get(stream))
-            {
-                var clientIds = reader.ReadULongArray();
-                var timedOutClientIds = reader.ReadULongArray();
-                NetworkManager.SceneManager.AllClientsReady(clientIds, timedOutClientIds);
-            }
         }
     }
 }

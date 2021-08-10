@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 
-namespace MLAPI.Serialization
+namespace Unity.Netcode
 {
     [StructLayout(LayoutKind.Explicit)]
     internal struct ByteBool

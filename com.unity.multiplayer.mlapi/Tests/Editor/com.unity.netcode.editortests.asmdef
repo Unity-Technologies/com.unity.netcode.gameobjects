@@ -1,0 +1,14 @@
+{
+    "name": "Unity.Netcode.EditorTests",
+    "rootNamespace": "Unity.Netcode.EditorTests",
+    "references": [
+        "Unity.Netcode.Runtime",
+        "Unity.Netcode.Editor"
+    ],
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ]
+}

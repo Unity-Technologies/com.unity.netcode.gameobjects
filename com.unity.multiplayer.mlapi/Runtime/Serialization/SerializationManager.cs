@@ -3,13 +3,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using MLAPI.Reflection;
 using UnityEngine;
 
-namespace MLAPI.Serialization
+namespace Unity.Netcode
 {
     /// <summary>
-    /// Helper class to manage the MLAPI serialization.
+    /// Helper class to manage the netcode serialization
     /// </summary>
     public static class SerializationManager
     {

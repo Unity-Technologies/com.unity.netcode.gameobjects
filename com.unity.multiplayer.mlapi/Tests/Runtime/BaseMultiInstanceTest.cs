@@ -5,7 +5,7 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using Object = UnityEngine.Object;
 
-namespace MLAPI.RuntimeTests
+namespace Unity.Netcode.RuntimeTests
 {
     public abstract class BaseMultiInstanceTest
     {
@@ -49,11 +49,12 @@ namespace MLAPI.RuntimeTests
         /// </summary>
         /// <param name="nbClients"></param>
         /// <param name="updatePlayerPrefab">Update the prefab with whatever is needed before players spawn</param>
+        /// <param name="targetFrameRate">The targetFrameRate of the Unity engine to use while this multi instance test is running. Will be reset on teardown.</param>
         /// <returns></returns>
-        public IEnumerator StartSomeClientsAndServerWithPlayers(bool useHost, int nbClients, Action<GameObject> updatePlayerPrefab)
+        public IEnumerator StartSomeClientsAndServerWithPlayers(bool useHost, int nbClients, Action<GameObject> updatePlayerPrefab, int targetFrameRate = 60)
         {
             // Create multiple NetworkManager instances
-            if (!MultiInstanceHelpers.Create(nbClients, out NetworkManager server, out NetworkManager[] clients))
+            if (!MultiInstanceHelpers.Create(nbClients, out NetworkManager server, out NetworkManager[] clients, targetFrameRate))
             {
                 Debug.LogError("Failed to create instances");
                 Assert.Fail("Failed to create instances");
@@ -70,8 +71,8 @@ namespace MLAPI.RuntimeTests
              * Normally we would only allow player prefabs to be set to a prefab. Not runtime created objects.
              * In order to prevent having a Resource folder full of a TON of prefabs that we have to maintain,
              * MultiInstanceHelper has a helper function that lets you mark a runtime created object to be
-             * treated as a prefab by the MLAPI. That's how we can get away with creating the player prefab
-             * at runtime without it being treated as a SceneObject or causing other conflicts with the MLAPI.
+             * treated as a prefab by the Netcode. That's how we can get away with creating the player prefab
+             * at runtime without it being treated as a SceneObject or causing other conflicts with the Netcode.
              */
             // Make it a prefab
             MultiInstanceHelpers.MakeNetworkedObjectTestPrefab(networkObject);
@@ -97,7 +98,7 @@ namespace MLAPI.RuntimeTests
             yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(clients));
 
             // Wait for connection on server side
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnectedToServer(server, clientCount: useHost ? nbClients + 1 : nbClients));
+            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnectedToServer(server, useHost ? nbClients + 1 : nbClients));
         }
     }
 }

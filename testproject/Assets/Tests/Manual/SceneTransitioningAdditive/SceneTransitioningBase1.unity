@@ -174,6 +174,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_SwitchSceneButtonObject: {fileID: 1347823141}
   m_SceneToSwitchTo: SceneTransitioningBase2
+  m_EnableAutoSwitch: 0
+  m_AutoSwitchTimeOut: 60
 --- !u!1 &37242881
 GameObject:
   m_ObjectHideFlags: 0
@@ -1443,6 +1445,7 @@ GameObject:
   - component: {fileID: 1024114719}
   - component: {fileID: 1024114718}
   - component: {fileID: 1024114721}
+  - component: {fileID: 1024114722}
   m_Layer: 0
   m_Name: NetworkManager
   m_TagString: Untagged
@@ -1522,10 +1525,7 @@ MonoBehaviour:
       SourcePrefabToOverride: {fileID: 0}
       SourceHashToOverride: 0
       OverridingTargetPrefab: {fileID: 0}
-    ReceiveTickrate: 64
-    NetworkTickIntervalSec: 0.05
-    MaxReceiveEventsPerTickRate: 500
-    EventTickrate: 64
+    TickRate: 30
     ClientConnectionBufferTimeout: 10
     ConnectionApproval: 0
     ConnectionData: 
@@ -1535,11 +1535,10 @@ MonoBehaviour:
     EnsureNetworkVariableLengthSafety: 0
     EnableSceneManagement: 1
     ForceSamePrefabs: 1
-    RecycleNetworkIds: 1
+    RecycleNetworkIds: 0
     NetworkIdRecycleDelay: 120
     RpcHashSize: 0
     LoadSceneTimeOut: 120
-    EnableMessageBuffering: 1
     MessageBufferTimeout: 20
     EnableNetworkLogs: 1
   ScenesInBuild: {fileID: 11400000, guid: 477a101a7b312d94fb9527c0363e4101, type: 2}
@@ -1565,9 +1564,9 @@ MonoBehaviour:
   ServerWebsocketListenPort: 8887
   SupportWebsocket: 0
   Channels: []
-  UseMLAPIRelay: 0
-  MLAPIRelayAddress: 184.72.104.138
-  MLAPIRelayPort: 8888
+  UseNetcodeRelay: 0
+  NetcodeRelayAddress: 127.0.0.1
+  NetcodeRelayPort: 8888
   MessageSendMode: 0
 --- !u!4 &1024114720
 Transform:
@@ -1595,6 +1594,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0e6f8504d891fc44881b2d9703017d03, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &1024114722
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1024114717}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 71c52a32bd1c1c84691050b6d045ab4a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  LogToConsole: 1
+  TimeToLive: 10
 --- !u!1 &1113539278
 GameObject:
   m_ObjectHideFlags: 0
@@ -3295,7 +3308,7 @@ MonoBehaviour:
   m_MinValue: 0
   m_MaxValue: 550
   m_WholeNumbers: 1
-  m_Value: 2
+  m_Value: 4
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls:
@@ -3356,6 +3369,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_ClientServerToggle: {fileID: 1588117327}
+  m_TrackSceneEvents: 1
+  m_LogSceneEventsToConsole: 1
 --- !u!114 &2107482023
 MonoBehaviour:
   m_ObjectHideFlags: 0

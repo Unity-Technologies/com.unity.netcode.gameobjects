@@ -1,10 +1,8 @@
 using System;
-using MLAPI.Serialization;
-using MLAPI.Serialization.Pooled;
 using NUnit.Framework;
 using UnityEngine;
 
-namespace MLAPI.EditorTests
+namespace Unity.Netcode.EditorTests
 {
     public class NetworkSerializerTests
     {
@@ -25,7 +23,7 @@ namespace MLAPI.EditorTests
                 // we expect the exception below
                 Assert.Fail();
             }
-            catch(ArgumentException exception)
+            catch (ArgumentException exception)
             {
                 Assert.True(exception.Message.IndexOf("NetworkWriter cannot write NetworkObject types that are not spawned") != -1);
             }

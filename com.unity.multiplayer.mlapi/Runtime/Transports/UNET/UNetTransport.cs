@@ -2,14 +2,10 @@
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 using System;
 using System.Collections.Generic;
-using MLAPI.Exceptions;
-using MLAPI.Logging;
-using MLAPI.Profiling;
-using MLAPI.Transports.Tasks;
 using UnityEngine;
 using UnityEngine.Networking;
 
-namespace MLAPI.Transports.UNET
+namespace Unity.Netcode.Transports.UNET
 {
     public class UNetTransport : NetworkTransport, ITransportProfilerData
     {
@@ -39,16 +35,16 @@ namespace MLAPI.Transports.UNET
         //  transport.Channels.Add(
         //     new UNetChannel()
         //       {
-        //         Id = Channel.ChannelUnused + MY_CHANNEL,  <<-- must offset from reserved channel offset in MLAPI SDK
+        //         Id = Channel.ChannelUnused + MY_CHANNEL,  <<-- must offset from reserved channel offset in netcode SDK
         //         Type = QosType.Unreliable
         //       }
         //  );
         public List<UNetChannel> Channels = new List<UNetChannel>();
 
         // Relay
-        public bool UseMLAPIRelay = false;
-        public string MLAPIRelayAddress = "184.72.104.138";
-        public int MLAPIRelayPort = 8888;
+        public bool UseNetcodeRelay = false;
+        public string NetcodeRelayAddress = "127.0.0.1";
+        public int NetcodeRelayPort = 8888;
 
         public SendMode MessageSendMode = SendMode.Immediately;
 
@@ -63,7 +59,7 @@ namespace MLAPI.Transports.UNET
         private int m_ServerHostId;
 
         private SocketTask m_ConnectTask;
-        public override ulong ServerClientId => GetMLAPIClientId(0, 0, true);
+        public override ulong ServerClientId => GetNetcodeClientId(0, 0, true);
 
 #if UNITY_EDITOR
         private void OnValidate()
@@ -181,7 +177,7 @@ namespace MLAPI.Transports.UNET
         {
             var eventType = RelayTransport.Receive(out int hostId, out int connectionId, out int channelId, m_MessageBuffer, m_MessageBuffer.Length, out int receivedSize, out byte error);
 
-            clientId = GetMLAPIClientId((byte)hostId, (ushort)connectionId, false);
+            clientId = GetNetcodeClientId((byte)hostId, (ushort)connectionId, false);
             receiveTime = Time.realtimeSinceStartup;
 
             var networkError = (NetworkError)error;
@@ -307,7 +303,7 @@ namespace MLAPI.Transports.UNET
 
             if (SupportWebsocket)
             {
-                if (!UseMLAPIRelay)
+                if (!UseNetcodeRelay)
                 {
                     int websocketHostId = UnityEngine.Networking.NetworkTransport.AddWebsocketHost(topology, ServerWebsocketListenPort);
                 }
@@ -315,7 +311,7 @@ namespace MLAPI.Transports.UNET
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
                     {
-                        NetworkLog.LogError("Cannot create websocket host when using MLAPI relay");
+                        NetworkLog.LogError("Cannot create websocket host when using Unity.Netcode relay");
                     }
                 }
             }
@@ -341,7 +337,7 @@ namespace MLAPI.Transports.UNET
         {
             GetUNetConnectionDetails(clientId, out byte hostId, out ushort connectionId);
 
-            if (UseMLAPIRelay)
+            if (UseNetcodeRelay)
             {
                 return 0;
             }
@@ -369,7 +365,7 @@ namespace MLAPI.Transports.UNET
             UnityEngine.Networking.NetworkTransport.Init();
         }
 
-        public ulong GetMLAPIClientId(byte hostId, ushort connectionId, bool isServer)
+        public ulong GetNetcodeClientId(byte hostId, ushort connectionId, bool isServer)
         {
             if (isServer)
             {
@@ -399,13 +395,13 @@ namespace MLAPI.Transports.UNET
         {
             var connectionConfig = new ConnectionConfig();
 
-            // MLAPI built-in channels
-            for (int i = 0; i < MLAPI_CHANNELS.Length; i++)
+            // Built-in netcode channels
+            for (int i = 0; i < NETCODE_CHANNELS.Length; i++)
             {
-                int channelId = AddMLAPIChannel(MLAPI_CHANNELS[i].Delivery, connectionConfig);
+                int channelId = AddNetcodeChannel(NETCODE_CHANNELS[i].Delivery, connectionConfig);
 
-                m_ChannelIdToName.Add(channelId, MLAPI_CHANNELS[i].Channel);
-                m_ChannelNameToId.Add(MLAPI_CHANNELS[i].Channel, channelId);
+                m_ChannelIdToName.Add(channelId, NETCODE_CHANNELS[i].Channel);
+                m_ChannelNameToId.Add(NETCODE_CHANNELS[i].Channel, channelId);
             }
 
             // Custom user-added channels
@@ -427,7 +423,7 @@ namespace MLAPI.Transports.UNET
             return connectionConfig;
         }
 
-        public int AddMLAPIChannel(NetworkDelivery type, ConnectionConfig config)
+        public int AddNetcodeChannel(NetworkDelivery type, ConnectionConfig config)
         {
             switch (type)
             {
@@ -479,9 +475,9 @@ namespace MLAPI.Transports.UNET
 
         private void UpdateRelay()
         {
-            RelayTransport.Enabled = UseMLAPIRelay;
-            RelayTransport.RelayAddress = MLAPIRelayAddress;
-            RelayTransport.RelayPort = (ushort)MLAPIRelayPort;
+            RelayTransport.Enabled = UseNetcodeRelay;
+            RelayTransport.RelayAddress = NetcodeRelayAddress;
+            RelayTransport.RelayPort = (ushort)NetcodeRelayPort;
         }
 
         public void BeginNewTick()

@@ -1,10 +1,9 @@
 using System;
 using System.Text;
-using MLAPI.Transports;
 using NUnit.Framework;
 using UnityEngine;
 
-namespace MLAPI.RuntimeTests.Transport
+namespace Unity.Netcode.RuntimeTests.Transport
 {
     public class SIPTransportTests
     {
@@ -45,6 +44,9 @@ namespace MLAPI.RuntimeTests.Transport
             // Make sure the payload was correct
             Assert.That(serverPayload, Is.EquivalentTo(Encoding.ASCII.GetBytes("Hello Server")));
             Assert.That(clientPayload, Is.EquivalentTo(Encoding.ASCII.GetBytes("Hello Client")));
+
+            server.Shutdown();
+            client.Shutdown();
         }
     }
 }

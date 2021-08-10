@@ -1,7 +1,6 @@
 using System.Collections;
 using UnityEngine;
-using MLAPI;
-using MLAPI.SceneManagement;
+using Unity.Netcode;
 
 namespace TestProject.ManualTests
 {
@@ -14,6 +13,14 @@ namespace TestProject.ManualTests
 
         [SerializeField]
         private string m_SceneToSwitchTo;
+
+        [Tooltip("If enabled, this will automatically switch the scene after the Auto Switch TimeOut period has elapsed.")]
+        [SerializeField]
+        private bool m_EnableAutoSwitch;
+
+        [Tooltip("Period in seconds until it will automatically switch to the next scene.")]
+        [SerializeField]
+        private float m_AutoSwitchTimeOut = 60;
 
         private void Awake()
         {
@@ -37,18 +44,20 @@ namespace TestProject.ManualTests
         {
             while (!m_ExitingScene)
             {
-                if (NetworkManager.Singleton && NetworkManager.Singleton.IsListening && NetworkManager.Singleton.IsServer)
+                if (NetworkManager.Singleton && NetworkManager.Singleton.IsListening)
                 {
                     if (m_SwitchSceneButtonObject)
                     {
-                        m_SwitchSceneButtonObject.SetActive(true);
+                        m_SwitchSceneButtonObject.SetActive(NetworkManager.Singleton.IsServer);
                     }
-                }
-                else
-                {
-                    m_SwitchSceneButtonObject.SetActive(false);
-                }
 
+                    if (m_EnableAutoSwitch && NetworkManager.Singleton.IsServer)
+                    {
+                        StartCoroutine(AutoSwitch());
+                    }
+
+                    yield return null;
+                }
                 yield return new WaitForSeconds(0.5f);
             }
 
@@ -71,32 +80,26 @@ namespace TestProject.ManualTests
             base.OnNetworkSpawn();
         }
 
-        private SceneSwitchProgress m_CurrentSceneSwitchProgress;
+        private IEnumerator AutoSwitch()
+        {
+            yield return new WaitForSeconds(m_AutoSwitchTimeOut);
 
-        public delegate void OnSceneSwitchBeginDelegateHandler();
+            OnSwitchScene();
 
-        public event OnSceneSwitchBeginDelegateHandler OnSceneSwitchBegin;
+        }
 
         public void OnSwitchScene()
         {
             if (NetworkManager.Singleton && NetworkManager.Singleton.IsListening)
             {
-                OnSceneSwitchBegin?.Invoke();
                 m_ExitingScene = true;
                 ExitingNow = true;
-                m_CurrentSceneSwitchProgress = NetworkManager.Singleton.SceneManager.SwitchScene(m_SceneToSwitchTo);
-
-                m_CurrentSceneSwitchProgress.OnComplete += CurrentSceneSwitchProgress_OnComplete;
+                var sceneEventProgressStatus = NetworkManager.Singleton.SceneManager.LoadScene(m_SceneToSwitchTo, UnityEngine.SceneManagement.LoadSceneMode.Single);
+                if (sceneEventProgressStatus != SceneEventProgressStatus.Started)
+                {
+                    Debug.LogError($"{nameof(NetworkSceneManager.LoadScene)} returned a {nameof(SceneEventProgressStatus)} value of {sceneEventProgressStatus}");
+                }
             }
-        }
-
-        public delegate void OnSceneSwitchCompletedDelegateHandler();
-
-        public event OnSceneSwitchCompletedDelegateHandler OnSceneSwitchCompleted;
-
-        private void CurrentSceneSwitchProgress_OnComplete(bool timedOut)
-        {
-            OnSceneSwitchCompleted?.Invoke();
         }
     }
 }

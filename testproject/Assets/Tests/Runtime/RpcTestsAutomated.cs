@@ -5,10 +5,9 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 using TestProject.ManualTests;
-using MLAPI.RuntimeTests;
-using MLAPI;
+using Unity.Netcode.RuntimeTests;
+using Unity.Netcode;
 using Debug = UnityEngine.Debug;
-using Object = UnityEngine.Object;
 
 namespace TestProject.RuntimeTests
 {
@@ -63,18 +62,18 @@ namespace TestProject.RuntimeTests
             // Set RpcQueueManualTests into unit testing mode
             RpcQueueManualTests.UnitTesting = true;
 
-            yield return StartSomeClientsAndServerWithPlayers(useHost:true, numClients, playerPrefab =>
-            {
-                // Add our RpcQueueManualTests component
-                playerPrefab.AddComponent<RpcQueueManualTests>();
-            });
+            yield return StartSomeClientsAndServerWithPlayers(useHost: true, numClients, playerPrefab =>
+             {
+                 // Add our RpcQueueManualTests component
+                 playerPrefab.AddComponent<RpcQueueManualTests>();
+             });
 
             // Set the RPC Batch sending mode
-            m_ServerNetworkManager.RpcQueueContainer.EnableBatchedRpcs(useBatching);
+            m_ServerNetworkManager.MessageQueueContainer.EnableBatchedMessages(useBatching);
 
             for (int i = 0; i < m_ClientNetworkManagers.Length; i++)
             {
-                m_ClientNetworkManagers[i].RpcQueueContainer.EnableBatchedRpcs(useBatching);
+                m_ClientNetworkManagers[i].MessageQueueContainer.EnableBatchedMessages(useBatching);
             }
 
             // [Host-Side] Get the Host owned instance of the RpcQueueManualTests

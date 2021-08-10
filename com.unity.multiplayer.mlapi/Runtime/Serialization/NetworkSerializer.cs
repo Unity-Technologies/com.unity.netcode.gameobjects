@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace MLAPI.Serialization
+namespace Unity.Netcode
 {
     public sealed class NetworkSerializer
     {

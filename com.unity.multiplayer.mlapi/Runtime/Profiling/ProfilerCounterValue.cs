@@ -8,7 +8,7 @@ using Unity.Profiling.LowLevel.Unsafe;
 using Unity.Collections.LowLevel.Unsafe;
 #endif
 
-namespace MLAPI.Profiling
+namespace Unity.Netcode
 {
 #if ENABLE_PROFILER
     [StructLayout(LayoutKind.Sequential)]

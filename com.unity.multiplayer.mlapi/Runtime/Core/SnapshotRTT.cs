@@ -1,7 +1,6 @@
 using System;
-using UnityEngine;
 
-namespace MLAPI
+namespace Unity.Netcode
 {
     internal class ConnectionRtt
     {
