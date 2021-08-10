@@ -683,7 +683,7 @@ namespace Unity.Netcode
                             if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                             {
                                 NetworkLog.LogWarning($"Var delta read too little. {(readStartPos + varSize) - stream.Position} bytes. => {(logInstance != null ? ($"{nameof(NetworkObjectId)}: {logInstance.NetworkObjectId} - {nameof(NetworkObject.GetNetworkBehaviourOrderIndex)}(): {logInstance.NetworkObject.GetNetworkBehaviourOrderIndex(logInstance)} - VariableIndex: {i}") : string.Empty)}");
-                            } 
+                            }
 
                             stream.Position = readStartPos + varSize;
                         }
