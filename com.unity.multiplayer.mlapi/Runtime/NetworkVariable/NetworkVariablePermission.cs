@@ -3,17 +3,25 @@ namespace Unity.Netcode
     /// <summary>
     /// Permission type
     /// </summary>
-    public enum NetworkVariablePermission
+    public enum NetworkVariableWritePermission
+    {
+        /// <summary>
+        /// Server-only operation
+        /// </summary>
+        ServerOnly,
+
+        /// <summary>
+        /// Owner-ownly
+        /// </summary>
+        OwnerOnly,
+    }
+
+    public enum NetworkVariableReadPermission
     {
         /// <summary>
         /// Everyone
         /// </summary>
         Everyone,
-
-        /// <summary>
-        /// Server-only operation
-        /// </summary>
-        ServerOnly,
 
         /// <summary>
         /// Owner-ownly
