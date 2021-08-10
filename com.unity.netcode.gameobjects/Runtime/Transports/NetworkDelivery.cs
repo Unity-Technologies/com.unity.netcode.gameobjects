@@ -1,11 +1,8 @@
-using UnityEngine.Scripting.APIUpdating;
-
 namespace Unity.Netcode
 {
     /// <summary>
     /// Delivery methods
     /// </summary>
-    [MovedFrom("MLAPI.Transports")]
     public enum NetworkDelivery
     {
         /// <summary>

@@ -1,11 +1,8 @@
-using UnityEngine.Scripting.APIUpdating;
-
 namespace Unity.Netcode
 {
     /// <summary>
     /// Permission type
     /// </summary>
-    [MovedFrom("MLAPI.NetworkVariable")]
     public enum NetworkVariablePermission
     {
         /// <summary>

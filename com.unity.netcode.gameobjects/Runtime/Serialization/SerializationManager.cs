@@ -4,14 +4,12 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using UnityEngine;
-using UnityEngine.Scripting.APIUpdating;
 
 namespace Unity.Netcode
 {
     /// <summary>
     /// Helper class to manage the netcode serialization
     /// </summary>
-    [MovedFrom("MLAPI.Serialization")]
     public static class SerializationManager
     {
         private static Dictionary<Type, FieldInfo[]> s_FieldCache = new Dictionary<Type, FieldInfo[]>();

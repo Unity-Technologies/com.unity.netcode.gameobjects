@@ -1,14 +1,12 @@
 using System;
 using System.IO;
 using UnityEngine;
-using UnityEngine.Scripting.APIUpdating;
 
 namespace Unity.Netcode
 {
     /// <summary>
     /// Disposable NetworkWriter that returns the Writer to the NetworkWriterPool when disposed
     /// </summary>
-    [MovedFrom("MLAPI.Serialization.Pooled")]
     public sealed class PooledNetworkWriter : NetworkWriter, IDisposable
     {
         private NetworkSerializer m_Serializer;

@@ -1,12 +1,10 @@
 using System.Collections.Generic;
-using UnityEngine.Scripting.APIUpdating;
 
 namespace Unity.Netcode
 {
     /// <summary>
     /// A NetworkClient
     /// </summary>
-    [MovedFrom("MLAPI.Connection")]
     public class NetworkClient
     {
         /// <summary>

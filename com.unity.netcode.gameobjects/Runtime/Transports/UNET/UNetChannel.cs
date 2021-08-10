@@ -4,14 +4,12 @@ using UnityEditor;
 #endif
 using UnityEngine;
 using UnityEngine.Networking;
-using UnityEngine.Scripting.APIUpdating;
 
 namespace Unity.Netcode.Transports.UNET
 {
     /// <summary>
     /// A transport channel used by the netcode
     /// </summary>
-    [MovedFrom("MLAPI.Transports")]
     [Serializable]
     public class UNetChannel
     {

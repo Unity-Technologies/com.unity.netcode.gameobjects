@@ -1,5 +1,4 @@
 using System;
-using UnityEngine.Scripting.APIUpdating;
 
 namespace Unity.Netcode
 {
@@ -7,7 +6,6 @@ namespace Unity.Netcode
     /// Queue with a fixed size
     /// </summary>
     /// <typeparam name="T">The type of the queue</typeparam>
-    [MovedFrom("MLAPI.Collections")]
     public sealed class FixedQueue<T>
     {
         private readonly T[] m_Queue;

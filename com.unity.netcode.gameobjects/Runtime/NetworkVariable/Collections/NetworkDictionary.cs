@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using UnityEngine.Scripting.APIUpdating;
 
 namespace Unity.Netcode
 {
@@ -11,7 +10,6 @@ namespace Unity.Netcode
     /// </summary>
     /// <typeparam name="TKey">The type for the dictionary keys</typeparam>
     /// <typeparam name="TValue">The type for the dictionary values</typeparam>
-    [MovedFrom("MLAPI.NetworkVariable.Collections")]
     public class NetworkDictionary<TKey, TValue> : IDictionary<TKey, TValue>, INetworkVariable
     {
         /// <summary>
@@ -615,7 +613,6 @@ namespace Unity.Netcode
     /// </summary>
     /// <typeparam name="TKey">The type for the dictionary key that the event is about</typeparam>
     /// <typeparam name="TValue">The type for the dictionary value that the event is about</typeparam>
-    [MovedFrom("MLAPI.NetworkVariable.Collections")]
     public struct NetworkDictionaryEvent<TKey, TValue>
     {
         /// <summary>

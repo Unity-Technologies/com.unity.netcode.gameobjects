@@ -1,11 +1,9 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Scripting.APIUpdating;
 
 namespace Unity.Netcode
 {
-    [MovedFrom("MLAPI.Transports")]
     public enum NetworkChannel : byte
     {
         Internal,
@@ -27,7 +25,6 @@ namespace Unity.Netcode
     /// <summary>
     /// A network transport
     /// </summary>
-    [MovedFrom("MLAPI.Transports")]
     public abstract class NetworkTransport : MonoBehaviour
     {
         /// <summary>

@@ -5,14 +5,12 @@ using System.Linq;
 using UnityEngine;
 using Unity.Profiling;
 using Debug = UnityEngine.Debug;
-using UnityEngine.Scripting.APIUpdating;
 
 namespace Unity.Netcode
 {
     /// <summary>
     /// The main component of the library
     /// </summary>
-    [MovedFrom("MLAPI")]
     [AddComponentMenu("Netcode/" + nameof(NetworkManager), -100)]
     public class NetworkManager : MonoBehaviour, INetworkUpdateSystem, IProfilableTransportProvider
     {

@@ -1,13 +1,11 @@
 using System;
 using System.Collections.Generic;
-using UnityEngine.Scripting.APIUpdating;
 
 namespace Unity.Netcode
 {
     /// <summary>
     /// Static class containing PooledNetworkBuffers
     /// </summary>
-    [MovedFrom("MLAPI.Serialization.Pooled")]
     public static class NetworkBufferPool
     {
         private static uint s_CreatedBuffers = 0;

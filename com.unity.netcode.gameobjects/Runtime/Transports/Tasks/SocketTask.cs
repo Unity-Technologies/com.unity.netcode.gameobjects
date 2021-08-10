@@ -1,13 +1,11 @@
 using System;
 using System.Net.Sockets;
-using UnityEngine.Scripting.APIUpdating;
 
 namespace Unity.Netcode
 {
     /// <summary>
     /// Represents one or more socket tasks.
     /// </summary>
-    [MovedFrom("MLAPI.Transports.Tasks")]
     public class SocketTasks
     {
         /// <summary>
@@ -100,7 +98,6 @@ namespace Unity.Netcode
     /// <summary>
     /// A single socket task.
     /// </summary>
-    [MovedFrom("MLAPI.Transports.Tasks")]
     public class SocketTask
     {
         // Used for states

@@ -2,14 +2,12 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
-using UnityEngine.Scripting.APIUpdating;
 
 namespace Unity.Netcode
 {
     /// <summary>
     /// The configuration object used to start server, client and hosts
     /// </summary>
-    [MovedFrom("MLAPI.Configuration")]
     [Serializable]
     public class NetworkConfig
     {

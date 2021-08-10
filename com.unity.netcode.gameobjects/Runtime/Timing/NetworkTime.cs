@@ -1,7 +1,6 @@
 using System;
 using UnityEngine;
 using UnityEngine.Assertions;
-using UnityEngine.Scripting.APIUpdating;
 
 namespace Unity.Netcode
 {
@@ -10,7 +9,6 @@ namespace Unity.Netcode
     /// Time is stored as a combination of amount of passed ticks + a duration offset.
     /// This struct is meant to replace the Unity <see cref="Time"/> API for multiplayer gameplay.
     /// </summary>
-    [MovedFrom("MLAPI.Timing")]
     public struct NetworkTime
     {
         private double m_TimeSec;

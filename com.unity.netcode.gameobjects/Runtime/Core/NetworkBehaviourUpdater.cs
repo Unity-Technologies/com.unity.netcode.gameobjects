@@ -1,10 +1,8 @@
 using System.Collections.Generic;
 using Unity.Profiling;
-using UnityEngine.Scripting.APIUpdating;
 
 namespace Unity.Netcode
 {
-    [MovedFrom("MLAPI")]
     public class NetworkBehaviourUpdater
     {
         private HashSet<NetworkObject> m_Touched = new HashSet<NetworkObject>();

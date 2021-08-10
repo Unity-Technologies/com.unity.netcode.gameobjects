@@ -7,7 +7,6 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using UnityEngine;
-using UnityEngine.Scripting.APIUpdating;
 
 namespace Unity.Netcode
 {
@@ -15,7 +14,6 @@ namespace Unity.Netcode
     /// <summary>
     /// A BinaryWriter that can do bit wise manipulation when backed by a NetworkBuffer
     /// </summary>
-    [MovedFrom("MLAPI.Serialization")]
     public class NetworkWriter
     {
         private Stream m_Sink;

@@ -1,5 +1,4 @@
 using System;
-using UnityEngine.Scripting.APIUpdating;
 
 namespace Unity.Netcode
 {
@@ -7,7 +6,6 @@ namespace Unity.Netcode
     /// <see cref="NetworkTimeSystem"/> is a standalone system which can be used to run a network time simulation.
     /// The network time system maintains both a local and a server time. The local time is based on
     /// </summary>
-    [MovedFrom("MLAPI.Timing")]
     public class NetworkTimeSystem
     {
         private double m_TimeSec;

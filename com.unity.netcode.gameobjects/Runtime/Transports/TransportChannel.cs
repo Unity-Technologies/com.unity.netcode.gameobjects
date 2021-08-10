@@ -1,12 +1,10 @@
 using System;
-using UnityEngine.Scripting.APIUpdating;
 
 namespace Unity.Netcode
 {
     /// <summary>
     /// A transport channel used by the netcode
     /// </summary>
-    [MovedFrom("MLAPI.Transports")]
     [Serializable]
     public struct TransportChannel
     {

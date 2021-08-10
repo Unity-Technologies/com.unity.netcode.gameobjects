@@ -1,5 +1,3 @@
-using UnityEngine.Scripting.APIUpdating;
-
 namespace Unity.Netcode
 {
     /// <summary>
@@ -7,7 +5,6 @@ namespace Unity.Netcode
     /// Note that the HashSize does not say anything about the actual final output due to the var int encoding
     /// It just says how many bytes the maximum will be
     /// </summary>
-    [MovedFrom("MLAPI.Configuration")]
     public enum HashSize
     {
         /// <summary>

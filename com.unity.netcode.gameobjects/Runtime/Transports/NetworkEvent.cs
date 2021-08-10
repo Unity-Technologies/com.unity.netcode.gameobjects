@@ -1,11 +1,8 @@
-using UnityEngine.Scripting.APIUpdating;
-
 namespace Unity.Netcode
 {
     /// <summary>
     /// Represents a netEvent when polling
     /// </summary>
-    [MovedFrom("MLAPI.Transports")]
     public enum NetworkEvent
     {
         /// <summary>

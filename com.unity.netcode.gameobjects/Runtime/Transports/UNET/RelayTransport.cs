@@ -5,11 +5,9 @@ using System.Collections.Generic;
 using System.Net;
 using UnityEngine;
 using UnityEngine.Networking;
-using UnityEngine.Scripting.APIUpdating;
 
 namespace Unity.Netcode.Transports.UNET
 {
-    [MovedFrom("MLAPI.Transports.UNET")]
     public static class RelayTransport
     {
         private enum MessageType
@@ -532,7 +530,6 @@ namespace Unity.Netcode.Transports.UNET
         }
     }
 
-    [MovedFrom("MLAPI.Transports.UNET")]
     public class InvalidConfigException : SystemException
     {
         public InvalidConfigException() { }

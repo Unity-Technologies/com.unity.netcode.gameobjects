@@ -1,8 +1,5 @@
-using UnityEngine.Scripting.APIUpdating;
-
 namespace Unity.Netcode
 {
-    [MovedFrom("MLAPI.Messaging")]
     public interface IHasUpdateStage
     {
         NetworkUpdateStage UpdateStage
@@ -12,7 +9,6 @@ namespace Unity.Netcode
         }
     }
 
-    [MovedFrom("MLAPI.Messaging")]
     public struct ServerRpcSendParams : IHasUpdateStage
     {
         private NetworkUpdateStage m_UpdateStage;
@@ -24,7 +20,6 @@ namespace Unity.Netcode
         }
     }
 
-    [MovedFrom("MLAPI.Messaging")]
     public struct ServerRpcReceiveParams : IHasUpdateStage
     {
         private NetworkUpdateStage m_UpdateStage;
@@ -37,14 +32,12 @@ namespace Unity.Netcode
         public ulong SenderClientId;
     }
 
-    [MovedFrom("MLAPI.Messaging")]
     public struct ServerRpcParams
     {
         public ServerRpcSendParams Send;
         public ServerRpcReceiveParams Receive;
     }
 
-    [MovedFrom("MLAPI.Messaging")]
     public struct ClientRpcSendParams : IHasUpdateStage
     {
         private NetworkUpdateStage m_UpdateStage;
@@ -57,7 +50,6 @@ namespace Unity.Netcode
         public ulong[] TargetClientIds;
     }
 
-    [MovedFrom("MLAPI.Messaging")]
     public struct ClientRpcReceiveParams : IHasUpdateStage
     {
         private NetworkUpdateStage m_UpdateStage;
@@ -69,7 +61,6 @@ namespace Unity.Netcode
         }
     }
 
-    [MovedFrom("MLAPI.Messaging")]
     public struct ClientRpcParams
     {
         public ClientRpcSendParams Send;

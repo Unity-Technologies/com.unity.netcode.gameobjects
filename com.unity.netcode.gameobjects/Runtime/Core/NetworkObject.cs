@@ -4,14 +4,12 @@ using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using UnityEngine;
-using UnityEngine.Scripting.APIUpdating;
 
 namespace Unity.Netcode
 {
     /// <summary>
     /// A component used to identify that a GameObject in the network
     /// </summary>
-    [MovedFrom("MLAPI")]
     [AddComponentMenu("Netcode/" + nameof(NetworkObject), -99)]
     [DisallowMultipleComponent]
     public sealed class NetworkObject : MonoBehaviour

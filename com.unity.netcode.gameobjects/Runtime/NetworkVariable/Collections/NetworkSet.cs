@@ -3,7 +3,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using UnityEngine.Scripting.APIUpdating;
 
 namespace Unity.Netcode
 {
@@ -11,7 +10,6 @@ namespace Unity.Netcode
     /// Event based NetworkVariable container for syncing Sets
     /// </summary>
     /// <typeparam name="T">The type for the set</typeparam>
-    [MovedFrom("MLAPI.NetworkVariable.Collections")]
     public class NetworkSet<T> : ISet<T>, INetworkVariable
     {
         private readonly ISet<T> m_Set = new HashSet<T>();
@@ -579,7 +577,6 @@ namespace Unity.Netcode
     /// Struct containing event information about changes to a NetworkSet.
     /// </summary>
     /// <typeparam name="T">The type for the set that the event is about</typeparam>
-    [MovedFrom("MLAPI.NetworkVariable.Collections")]
     public struct NetworkSetEvent<T>
     {
         /// <summary>

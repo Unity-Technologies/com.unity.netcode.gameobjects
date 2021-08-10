@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using UnityEngine.Scripting.APIUpdating;
 using static Unity.Netcode.Arithmetic;
 
 namespace Unity.Netcode
@@ -8,7 +7,6 @@ namespace Unity.Netcode
     /// <summary>
     /// A buffer that can be used at the bit level
     /// </summary>
-    [MovedFrom("MLAPI.Serialization")]
     public class NetworkBuffer : Stream
     {
         private const int k_InitialCapacity = 16;
