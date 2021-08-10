@@ -6194,9 +6194,9 @@ MonoBehaviour:
   MaxConnectAttempts: 10
   channels: []
   MessageBufferSize: 5120
-  SimulatePacketLossChance: 5
-  SimulateMinLatency: 70
-  SimulateMaxLatency: 130
+  SimulatePacketLossChance: 0
+  SimulateMinLatency: 0
+  SimulateMaxLatency: 0
 --- !u!1001 &627808638
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -7402,7 +7402,7 @@ MonoBehaviour:
   m_MoveSpeed: 5
   m_RotationSpeed: 30
   runServerOnly: 1
-  runInUpdate: 0
+  runInUpdate: 1
 --- !u!114 &678326394
 MonoBehaviour:
   m_ObjectHideFlags: 0

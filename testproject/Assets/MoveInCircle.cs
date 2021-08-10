@@ -13,7 +13,7 @@ public class MoveInCircle : NetworkBehaviour
     public bool runServerOnly;
     public bool runInUpdate;
 
-    private Vector3 oldPosition;
+    private Vector3 debug_oldPosition;
 
     // public override void OnNetworkSpawn()
     // {
@@ -33,9 +33,9 @@ public class MoveInCircle : NetworkBehaviour
     {
         if (NetworkManager.Singleton.IsServer || !runServerOnly)
         {
-            oldPosition = transform.position;
+            debug_oldPosition = transform.position;
             transform.position = transform.position + transform.forward * (m_MoveSpeed * deltaTime);
-            Debug.Log($"ewqqwe {Math.Round((transform.position - oldPosition).magnitude, 2)} time diff {Math.Round(Time.time - lastTime, 2)}");
+            // Debug.Log($"ewqqwe {Math.Round((transform.position - debug_oldPosition).magnitude, 2)} time diff {Math.Round(Time.time - lastTime, 2)}");
             lastTime = Time.time;
             transform.Rotate(0, m_RotationSpeed * deltaTime, 0);
         }
