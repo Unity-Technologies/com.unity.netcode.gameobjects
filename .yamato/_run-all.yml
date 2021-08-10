@@ -36,7 +36,7 @@ all_package_tests:
     - .yamato/_triggers.yml#badges_test_trigger
 {% for platform in test_platforms -%}
 {% for project in projects -%}
-{% for editor in test_editors -%}
+{% for editor in project.test_editors -%}
 {% for package in project.packages -%}
     - .yamato/package-tests.yml#test_{{ project.name}}_{{ package.name }}_{{ editor }}_{{ platform.name }}
 {% endfor -%}
