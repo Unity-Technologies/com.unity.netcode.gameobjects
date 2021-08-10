@@ -113,9 +113,24 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Delegate handler defined by <see cref="VerifySceneBeforeLoadingDelegateHandler"/> that is invoked before the
-        /// server or client loads a scene during an active network session.
+        /// server or client loads a scene during an active netcode game session.
+        /// Client Side: In order for clients to be notified of this condition you must subscribe to the <see cref="OnSceneVerificationFailed"/> event.
+        /// Server Side: <see cref="LoadScene(string, LoadSceneMode)"/> will return <see cref="SceneEventProgressStatus.SceneFailedVerification"/>.
         /// </summary>
         public VerifySceneBeforeLoadingDelegateHandler VerifySceneBeforeLoading;
+
+        /// <summary>
+        /// Delegate declaration for the <see cref="OnSceneVerificationFailed"/> event handler.
+        /// </summary>
+        /// <param name="sceneName">scene name that failed verification</param>
+        public delegate void SceneVerificationFailedDelegateHandler(string sceneName);
+
+        /// <summary>
+        /// Client Side:
+        /// Optional event handler to be notified on the client side that the current server the client is connected to attempted to
+        /// instruct the client to load a scene that did not pass verification.
+        /// </summary>
+        public event SceneVerificationFailedDelegateHandler OnSceneVerificationFailed;
 
         internal readonly Dictionary<Guid, SceneEventProgress> SceneEventProgressTracking = new Dictionary<Guid, SceneEventProgress>();
         internal readonly Dictionary<uint, NetworkObject> ScenePlacedObjects = new Dictionary<uint, NetworkObject>();
@@ -502,8 +517,7 @@ namespace Unity.Netcode
 
             if (!ValidateSceneBeforeLoading(SceneEventData.SceneIndex, sceneName, loadSceneMode))
             {
-                // NSS FIXME: Add new type of status return
-                return sceneEventProgress.Status;
+                return SceneEventProgressStatus.SceneFailedVerification;
             }
 
             sceneEventProgress.SceneEventType = SceneEventData.SceneEventTypes.S2C_LoadComplete;
@@ -578,13 +592,14 @@ namespace Unity.Netcode
                 {
                     NetworkLog.LogWarning("Server requested a scene switch to a non-registered scene");
                 }
-
                 return;
             }
 
             // Run scene validation before loading a scene
             if (!ValidateSceneBeforeLoading(SceneEventData.SceneIndex, sceneName, SceneEventData.LoadSceneMode))
             {
+                // If there are client side subscribers, then send notification that the current server instructed the client to load a scene that did not pass verification
+                OnSceneVerificationFailed?.Invoke(sceneName);
                 return;
             }
 
@@ -891,6 +906,8 @@ namespace Unity.Netcode
             // Always check to see if the scene needs to be validated
             if (!ValidateSceneBeforeLoading(SceneEventData.SceneIndex, sceneName, loadSceneMode))
             {
+                // If there are client side subscribers, then notify the server instructed the client to load a scene that did not pass verification
+                OnSceneVerificationFailed?.Invoke(sceneName);
                 return;
             }
 

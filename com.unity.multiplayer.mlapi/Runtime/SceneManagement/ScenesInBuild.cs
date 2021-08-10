@@ -8,17 +8,29 @@ using UnityEditor;
 
 namespace Unity.Netcode
 {
+    /// <summary>
+    /// This replaces the need to register scenes and contains the Scenes in Build list (as strings)
+    /// Scenes are ordered identically to the Scenes in Build list indices values
+    /// For refined control over which scenes can be loaded or unloaded during a netcode game session,
+    /// use the <see cref="NetworkSceneManager.VerifySceneBeforeLoading"/> event to add additional
+    /// constraints over which scenes are considered valid.
+    /// In order for clients to get this notification you must subscribe to the <see cref="NetworkSceneManager.OnSceneVerificationFailed"/> event.
+    /// </summary>
     public class ScenesInBuild : ScriptableObject
     {
         static internal bool IsTesting;
 
-        //[HideInInspector]
+        [HideInInspector]
         [SerializeField]
         internal List<string> Scenes;
 
-
-
 #if UNITY_EDITOR
+        /// <summary>
+        /// This will create a new ScenesInBuildList asset if one does not exist and will adjust the path to the ScenesInBuildList
+        /// asset if the asset is moved.  This will also notify the user if more than one ScenesInBuildList asset exists.
+        /// </summary>
+        /// <param name="networkManager">The relative network manager instance</param>
+        /// <returns></returns>
         internal static ScenesInBuild InitializeScenesInBuild(NetworkManager networkManager)
         {
             var foundScenesInBuildList = AssetDatabase.FindAssets("ScenesInBuildList");
@@ -46,6 +58,10 @@ namespace Unity.Netcode
             return scenesInBuild;
         }
 
+        /// <summary>
+        /// Populates the scenes from the Scenes in Build list.
+        /// If testing, then this is ignored (i.e. some tests require loading of scenes not in the Scenes in Build list)
+        /// </summary>
         internal void PopulateScenesInBuild()
         {
             if(Scenes != null && Scenes.Count > 0 && IsTesting)
@@ -66,6 +82,9 @@ namespace Unity.Netcode
             AssetDatabase.SaveAssets();
         }
 
+        /// <summary>
+        /// Depending upon the current editor state, this will refresh the Scenes in Build list
+        /// </summary>
         private void OnValidate()
         {
             if (!EditorApplication.isPlayingOrWillChangePlaymode && !EditorApplication.isPlaying && !EditorApplication.isUpdating || IsTesting)

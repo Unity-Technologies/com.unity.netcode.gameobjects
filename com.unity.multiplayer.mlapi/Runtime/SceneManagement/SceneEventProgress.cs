@@ -42,6 +42,11 @@ namespace Unity.Netcode
         /// Returned if the scene name used with <see cref="NetworkSceneManager.LoadScene(string, LoadSceneMode)"/> or <see cref="NetworkSceneManager.UnloadScene(string)"/>is invalid
         /// </summary>
         InvalidSceneName,
+        /// <summary>
+        /// Server side: Returned if the <see cref="NetworkSceneManager.VerifySceneBeforeLoading"/> delegate handler returns false
+        /// (i.e. scene is considered not valid/safe to load)
+        /// </summary>
+        SceneFailedVerification,
     }
 
     /// <summary>

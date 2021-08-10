@@ -590,7 +590,6 @@ namespace Unity.Netcode
         {
             InternalBuffer.Position = 0;
             InternalBuffer.CopyUnreadFrom(stream);
-            Debug.Log($"Copied {InternalBuffer.Position} unread bytes from stream");
             InternalBuffer.Position = 0;
         }
 
