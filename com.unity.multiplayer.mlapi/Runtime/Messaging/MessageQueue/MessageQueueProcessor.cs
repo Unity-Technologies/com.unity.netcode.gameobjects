@@ -75,13 +75,6 @@ namespace Unity.Netcode
                         }
 
                         break;
-                    case MessageQueueContainer.MessageType.DestroyObjects:
-                        if (m_NetworkManager.IsClient)
-                        {
-                            m_NetworkManager.MessageHandler.HandleDestroyObjects(item.NetworkId, item.NetworkBuffer);
-                        }
-
-                        break;
                     case MessageQueueContainer.MessageType.ChangeOwner:
                         if (m_NetworkManager.IsClient)
                         {

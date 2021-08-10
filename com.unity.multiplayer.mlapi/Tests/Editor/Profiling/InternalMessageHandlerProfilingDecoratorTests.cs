@@ -71,14 +71,6 @@ namespace Unity.Netcode.EditorTests
         }
 
         [Test]
-        public void HandleDestroyObjectsCallsUnderlyingHandler()
-        {
-            m_Decorator.HandleDestroyObjects(0, null);
-
-            LogAssert.Expect(LogType.Log, nameof(m_Decorator.HandleDestroyObjects));
-        }
-
-        [Test]
         public void HandleNetworkVariableDeltaCallsUnderlyingHandler()
         {
             m_Decorator.HandleNetworkVariableDelta(0, null);

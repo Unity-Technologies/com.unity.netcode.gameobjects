@@ -12,7 +12,6 @@ namespace Unity.Netcode
         private readonly ProfilerMarker m_HandleSwitchScene = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleSwitchScene)}");
         private readonly ProfilerMarker m_HandleClientSwitchSceneCompleted = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleClientSwitchSceneCompleted)}");
         private readonly ProfilerMarker m_HandleChangeOwner = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleChangeOwner)}");
-        private readonly ProfilerMarker m_HandleDestroyObjects = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleDestroyObjects)}");
         private readonly ProfilerMarker m_HandleTimeSync = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleTimeSync)}");
         private readonly ProfilerMarker m_HandleNetworkVariableDelta = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleNetworkVariableDelta)}");
         private readonly ProfilerMarker m_HandleUnnamedMessage = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleUnnamedMessage)}");
@@ -93,15 +92,6 @@ namespace Unity.Netcode
             m_MessageHandler.HandleChangeOwner(clientId, stream);
 
             m_HandleChangeOwner.End();
-        }
-
-        public void HandleDestroyObjects(ulong clientId, Stream stream)
-        {
-            m_HandleDestroyObjects.Begin();
-
-            m_MessageHandler.HandleDestroyObjects(clientId, stream);
-
-            m_HandleDestroyObjects.End();
         }
 
         public void HandleTimeSync(ulong clientId, Stream stream)
