@@ -1,5 +1,3 @@
-using System;
-
 namespace Unity.Netcode
 {
     internal struct BufferSizeCapture
