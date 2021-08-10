@@ -1,10 +1,14 @@
 # Migrate from MLAPI
 
-Something something, this package was MLAPI but now it's Netcode for GameObjects bla bla.
+Recently, we changed our product name, package name, assembly definition names and namespaces.
+
+Starting by this release, our product is now officially called as "Netcode for GameObjects" going forward.
 
 ## Target Audience
 
-people coming from MLAPI 0.1.0 package released in March
+We already released an experimental package back in March 2021 under the name of "MLAPI Networking Library" (`com.unity.multiplayer.mlapi`).
+
+This document is specifically targeting developers using MLAPI experimental package and will be useful when developers are migrating their existing codebases.
 
 ## What's Changed?
 
