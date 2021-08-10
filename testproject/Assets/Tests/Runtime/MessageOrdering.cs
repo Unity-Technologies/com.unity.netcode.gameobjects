@@ -15,10 +15,6 @@ namespace TestProject.RuntimeTests
         [UnitySetUp]
         public IEnumerator SetUp()
         {
-            if(Application.targetFrameRate < 60)
-            {
-                Application.targetFrameRate = 60;
-            }
             // Make sure these static values are reset
             Support.SpawnRpcDespawn.ClientUpdateCount = 0;
             Support.SpawnRpcDespawn.ServerUpdateCount = 0;
