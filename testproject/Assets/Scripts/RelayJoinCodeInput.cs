@@ -4,7 +4,7 @@ using UnityEngine.UI;
 
 public class RelayJoinCodeInput : MonoBehaviour
 {
-    public UTPTransport Transport;
+    public ConnectionModeScript ConnectionScript;
     private InputField m_TextInput;
 
     private void Start()
@@ -15,8 +15,8 @@ public class RelayJoinCodeInput : MonoBehaviour
     private void Update()
     {
         if (m_TextInput.IsInteractable()) {
-            if (!string.IsNullOrEmpty(Transport.RelayJoinCode)) {
-                m_TextInput.text = Transport.RelayJoinCode;
+            if (!string.IsNullOrEmpty(ConnectionScript.RelayJoinCode)) {
+                m_TextInput.text = ConnectionScript.RelayJoinCode;
                 m_TextInput.readOnly = true;
             }
         }
@@ -24,6 +24,6 @@ public class RelayJoinCodeInput : MonoBehaviour
 
     public void SetJoinCode()
     {
-        Transport.SetRelayJoinCode(m_TextInput.text);
+        ConnectionScript.RelayJoinCode = m_TextInput.text;
     }
 }

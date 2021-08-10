@@ -3,6 +3,7 @@ using System.Collections;
 using UnityEngine;
 using MLAPI;
 using MLAPI.Transports;
+
 #if ENABLE_RELAY_SERVICE
 using Unity.Services.Core;
 using Unity.Services.Authentication;
@@ -22,7 +23,19 @@ public class ConnectionModeScript : MonoBehaviour
     [SerializeField]
     private GameObject m_JoinCodeInput;
 
+    [SerializeField]
+    private int m_MaxConnections = 10;
+
     private CommandLineProcessor m_CommandLineProcessor;
+
+#if ENABLE_RELAY_SERVICE
+    [SerializeField]
+    private string m_RelayAllocationBasePath = "https://relay-allocations-stg.services.api.unity.com";
+
+    [HideInInspector]
+    public string RelayJoinCode { get; set; }
+#endif
+
     internal void SetCommandLineHandler(CommandLineProcessor commandLineProcessor)
     {
         m_CommandLineProcessor = commandLineProcessor;
@@ -37,7 +50,6 @@ public class ConnectionModeScript : MonoBehaviour
     public event OnNotifyConnectionEventDelegateHandler OnNotifyConnectionEventServer;
     public event OnNotifyConnectionEventDelegateHandler OnNotifyConnectionEventHost;
     public event OnNotifyConnectionEventDelegateHandler OnNotifyConnectionEventClient;
-
 
     private IEnumerator WaitForNetworkManager()
     {
@@ -68,8 +80,10 @@ public class ConnectionModeScript : MonoBehaviour
             if (NetworkManager.Singleton.GetComponent<UTPTransport>().Protocol == UTPTransport.ProtocolType.RelayUnityTransport)
             {
                 m_JoinCodeInput.SetActive(true);
-                m_ConnectionModeButtons.SetActive(false || AuthenticationService.Instance.IsSignedIn);
-                m_AuthenticationButtons.SetActive(NetworkManager.Singleton && !NetworkManager.Singleton.IsListening && !AuthenticationService.Instance.IsSignedIn);
+                //If Start() is called on the first frame update, it's not likely that the AuthenticationService is going to be instantiated yet
+                //Moved old logic for this out to OnServicesInitialized
+                m_ConnectionModeButtons.SetActive(false);
+                m_AuthenticationButtons.SetActive(true);
             }
             else
 #endif
@@ -81,54 +95,158 @@ public class ConnectionModeScript : MonoBehaviour
         }
     }
 
+    private void OnServicesInitialized()
+    {
+#if ENABLE_RELAY_SERVICE
+        if (NetworkManager.Singleton.GetComponent<UTPTransport>().Protocol == UTPTransport.ProtocolType.RelayUnityTransport)
+        {
+            m_JoinCodeInput.SetActive(true);
+            m_ConnectionModeButtons.SetActive(false || AuthenticationService.Instance.IsSignedIn);
+            m_AuthenticationButtons.SetActive(NetworkManager.Singleton && !NetworkManager.Singleton.IsListening && !AuthenticationService.Instance.IsSignedIn);
+        }
+#endif
+    }
+
     /// <summary>
     /// Handles starting MLAPI in server mode
     /// </summary>
-    public void OnStartServer()
+    public void OnStartServerButton()
     {
         if (NetworkManager.Singleton && !NetworkManager.Singleton.IsListening && m_ConnectionModeButtons)
         {
-            NetworkManager.Singleton.StartServer();
-            OnNotifyConnectionEventServer?.Invoke();
-            m_ConnectionModeButtons.SetActive(false);
-
+#if ENABLE_RELAY_SERVICE
+            StartCoroutine(StartRelayServer(StartServer));
+#else
+            StartServer();
+#endif
         }
     }
+
+    private void StartServer()
+    {
+        NetworkManager.Singleton.StartServer();
+        OnNotifyConnectionEventServer?.Invoke();
+        m_ConnectionModeButtons.SetActive(false);
+    }
+
+#if ENABLE_RELAY_SERVICE
+    /// <summary>
+    /// Coroutine that handles starting MLAPI in server mode if Relay is enabled
+    /// </summary>
+    private IEnumerator StartRelayServer(Action postAllocationAction)
+    {
+        m_ConnectionModeButtons.SetActive(false);
+
+        var serverRelayUtilityTask = RelayUtility.AllocateRelayServerAndGetJoinCode(m_MaxConnections);
+        while (!serverRelayUtilityTask.IsCompleted)
+        {
+            yield return null;
+        }
+        if (serverRelayUtilityTask.IsFaulted)
+        {
+            Debug.LogError("Exception thrown when attempting to start Relay Server. Server not started. Exception: " + serverRelayUtilityTask.Exception.Message);
+            yield break;
+        }
+
+        var (ipv4address, port, allocationIdBytes, connectionData, key, joinCode) = serverRelayUtilityTask.Result;
+
+        RelayJoinCode = joinCode;
+
+        //When starting a relay server, both instances of connection data are identical.
+        NetworkManager.Singleton.GetComponent<UTPTransport>().SetRelayServerData(ipv4address, port, allocationIdBytes, key, connectionData);
+
+        postAllocationAction();
+    }
+#endif
 
     /// <summary>
     /// Handles starting MLAPI in host mode
     /// </summary>
-    public void OnStartHost()
+    public void OnStartHostButton()
     {
         if (NetworkManager.Singleton && !NetworkManager.Singleton.IsListening && m_ConnectionModeButtons)
         {
-            NetworkManager.Singleton.StartHost();
-            OnNotifyConnectionEventHost?.Invoke();
-            m_ConnectionModeButtons.SetActive(false);
+#if ENABLE_RELAY_SERVICE
+            StartCoroutine(StartRelayServer(StartHost));
+#else
+            StartHost();
+#endif
         }
+    }
+
+    private void StartHost()
+    {
+        NetworkManager.Singleton.StartHost();
+        OnNotifyConnectionEventHost?.Invoke();
+        m_ConnectionModeButtons.SetActive(false);
     }
 
     /// <summary>
     /// Handles starting MLAPI in client mode
     /// </summary>
-    public void OnStartClient()
+    public void OnStartClientButton()
     {
         if (NetworkManager.Singleton && !NetworkManager.Singleton.IsListening && m_ConnectionModeButtons)
         {
-            NetworkManager.Singleton.StartClient();
-            OnNotifyConnectionEventClient?.Invoke();
-            m_ConnectionModeButtons.SetActive(false);
+#if ENABLE_RELAY_SERVICE
+             StartCoroutine(StartRelayClient());
+#else
+             StartClient();
+#endif
         }
     }
 
+    private void StartClient()
+    {
+        NetworkManager.Singleton.StartClient();
+        OnNotifyConnectionEventClient?.Invoke();
+        m_ConnectionModeButtons.SetActive(false);
+    }
+
+#if ENABLE_RELAY_SERVICE
     /// <summary>
-    /// Handles autenticating UnityServices, needed for Relay
+    /// Coroutine that kicks off Relay SDK calls to join a Relay Server instance with a join code
+    /// </summary>
+    /// <returns></returns>
+    private IEnumerator StartRelayClient()
+    {
+        m_ConnectionModeButtons.SetActive(false);
+
+        //assumes that RelayJoinCodeInput populated RelayJoinCode prior to this
+        var clientRelayUtilityTask = RelayUtility.JoinRelayServerFromJoinCode(RelayJoinCode);
+        
+        while (!clientRelayUtilityTask.IsCompleted)
+        {
+            yield return null;
+        }
+
+        if (clientRelayUtilityTask.IsFaulted)
+        {
+            Debug.LogError("Exception thrown when attempting to connect to Relay Server. Exception: " + clientRelayUtilityTask.Exception.Message);
+            yield break;
+        }
+
+        var (ipv4address, port, allocationIdBytes, connectionData, hostConnectionData, key) = clientRelayUtilityTask.Result;
+
+        //When connecting as a client to a relay server, connectionData and hostConnectionData are different.
+        NetworkManager.Singleton.GetComponent<UTPTransport>().SetRelayServerData(ipv4address, port, allocationIdBytes, key, connectionData, hostConnectionData);
+
+        NetworkManager.Singleton.StartClient();
+        OnNotifyConnectionEventClient?.Invoke();
+    }
+#endif
+    /// <summary>
+    /// Handles authenticating UnityServices, needed for Relay
     /// </summary>
     public async void OnSignIn()
     {
 #if ENABLE_RELAY_SERVICE
-        await UnityServices.Initialize();
+        Unity.Services.Relay.RelayService.Configuration.BasePath = m_RelayAllocationBasePath;
+
+        await UnityServices.InitializeAsync();
+        OnServicesInitialized();
         await AuthenticationService.Instance.SignInAnonymouslyAsync();
+
         Debug.Log($"Logging in with PlayerID {AuthenticationService.Instance.PlayerId}");
 
         if (AuthenticationService.Instance.IsSignedIn)

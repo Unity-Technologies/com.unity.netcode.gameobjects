@@ -52,7 +52,7 @@ public class UIController : MonoBehaviour
     public async void OnSignIn()
     {
 #if ENABLE_RELAY_SERVICE
-        await UnityServices.Initialize();
+        await UnityServices.InitializeAsync();
         Debug.Log("OnSignIn");
         await AuthenticationService.Instance.SignInAnonymouslyAsync();
         Debug.Log($"Logging in with PlayerID {AuthenticationService.Instance.PlayerId}");
