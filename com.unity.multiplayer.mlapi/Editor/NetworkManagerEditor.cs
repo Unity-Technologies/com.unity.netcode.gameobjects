@@ -3,10 +3,8 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 using UnityEditorInternal;
-using MLAPI.Configuration;
-using MLAPI.Transports;
 
-namespace MLAPI.Editor
+namespace Unity.Netcode.Editor
 {
     [CustomEditor(typeof(NetworkManager), true)]
     [CanEditMultipleObjects]
@@ -37,8 +35,6 @@ namespace MLAPI.Editor
         private SerializedProperty m_NetworkIdRecycleDelayProperty;
         private SerializedProperty m_RpcHashSizeProperty;
         private SerializedProperty m_LoadSceneTimeOutProperty;
-        private SerializedProperty m_EnableMessageBufferingProperty;
-        private SerializedProperty m_MessageBufferTimeoutProperty;
 
         private ReorderableList m_NetworkPrefabsList;
         private ReorderableList m_RegisteredScenesList;
@@ -109,8 +105,6 @@ namespace MLAPI.Editor
             m_NetworkIdRecycleDelayProperty = m_NetworkConfigProperty.FindPropertyRelative("NetworkIdRecycleDelay");
             m_RpcHashSizeProperty = m_NetworkConfigProperty.FindPropertyRelative("RpcHashSize");
             m_LoadSceneTimeOutProperty = m_NetworkConfigProperty.FindPropertyRelative("LoadSceneTimeOut");
-            m_EnableMessageBufferingProperty = m_NetworkConfigProperty.FindPropertyRelative("EnableMessageBuffering");
-            m_MessageBufferTimeoutProperty = m_NetworkConfigProperty.FindPropertyRelative("MessageBufferTimeout");
 
 
             ReloadTransports();
@@ -140,8 +134,6 @@ namespace MLAPI.Editor
             m_NetworkIdRecycleDelayProperty = m_NetworkConfigProperty.FindPropertyRelative("NetworkIdRecycleDelay");
             m_RpcHashSizeProperty = m_NetworkConfigProperty.FindPropertyRelative("RpcHashSize");
             m_LoadSceneTimeOutProperty = m_NetworkConfigProperty.FindPropertyRelative("LoadSceneTimeOut");
-            m_EnableMessageBufferingProperty = m_NetworkConfigProperty.FindPropertyRelative("EnableMessageBuffering");
-            m_MessageBufferTimeoutProperty = m_NetworkConfigProperty.FindPropertyRelative("MessageBufferTimeout");
         }
 
         private void OnEnable()
@@ -268,7 +260,7 @@ namespace MLAPI.Editor
 
                 if (m_NetworkTransportProperty.objectReferenceValue == null)
                 {
-                    EditorGUILayout.HelpBox("You have no transport selected. A transport is required for the MLAPI to work. Which one do you want?", MessageType.Warning);
+                    EditorGUILayout.HelpBox("You have no transport selected. A transport is required for netcode to work. Which one do you want?", MessageType.Warning);
 
                     int selection = EditorGUILayout.Popup(0, m_TransportNames);
 
@@ -316,13 +308,6 @@ namespace MLAPI.Editor
                 using (new EditorGUI.DisabledScope(!m_NetworkManager.NetworkConfig.RecycleNetworkIds))
                 {
                     EditorGUILayout.PropertyField(m_NetworkIdRecycleDelayProperty);
-                }
-
-                EditorGUILayout.PropertyField(m_EnableMessageBufferingProperty);
-
-                using (new EditorGUI.DisabledScope(!m_NetworkManager.NetworkConfig.EnableMessageBuffering))
-                {
-                    EditorGUILayout.PropertyField(m_MessageBufferTimeoutProperty);
                 }
 
                 EditorGUILayout.LabelField("Bandwidth", EditorStyles.boldLabel);

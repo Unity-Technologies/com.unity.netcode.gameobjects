@@ -2,13 +2,12 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using MLAPI.Configuration;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using Object = UnityEngine.Object;
 
-namespace MLAPI.RuntimeTests
+namespace Unity.Netcode.RuntimeTests
 {
     /// <summary>
     /// Provides helpers for running multi instance tests.
@@ -35,23 +34,21 @@ namespace MLAPI.RuntimeTests
 
             CreateNewClients(clientCount, out clients);
 
+            // Create gameObject
+            var go = new GameObject("NetworkManager - Server");
+
+            // Create networkManager component
+            server = go.AddComponent<NetworkManager>();
+            NetworkManagerInstances.Insert(0, server);
+
+            // Set the NetworkConfig
+            server.NetworkConfig = new NetworkConfig()
             {
-                // Create gameObject
-                var go = new GameObject("NetworkManager - Server");
-
-                // Create networkManager component
-                server = go.AddComponent<NetworkManager>();
-                NetworkManagerInstances.Insert(0, server);
-
-                // Set the NetworkConfig
-                server.NetworkConfig = new NetworkConfig()
-                {
-                    // Set the current scene to prevent unexpected log messages which would trigger a failure
-                    RegisteredScenes = new List<string>() { SceneManager.GetActiveScene().name },
-                    // Set transport
-                    NetworkTransport = go.AddComponent<SIPTransport>()
-                };
-            }
+                // Set the current scene to prevent unexpected log messages which would trigger a failure
+                RegisteredScenes = new List<string>() { SceneManager.GetActiveScene().name },
+                // Set transport
+                NetworkTransport = go.AddComponent<SIPTransport>()
+            };
 
             s_OriginalTargetFrameRate = Application.targetFrameRate;
             Application.targetFrameRate = targetFrameRate;
@@ -117,9 +114,17 @@ namespace MLAPI.RuntimeTests
             // Shutdown the server which forces clients to disconnect
             foreach (var networkManager in NetworkManagerInstances)
             {
-                if (networkManager.IsServer)
+                if (networkManager.IsHost)
                 {
                     networkManager.StopHost();
+                }
+                else if (networkManager.IsServer)
+                {
+                    networkManager.StopServer();
+                }
+                else if (networkManager.IsClient)
+                {
+                    networkManager.StopClient();
                 }
             }
 
@@ -203,8 +208,8 @@ namespace MLAPI.RuntimeTests
         /// Normally we would only allow player prefabs to be set to a prefab. Not runtime created objects.
         /// In order to prevent having a Resource folder full of a TON of prefabs that we have to maintain,
         /// MultiInstanceHelper has a helper function that lets you mark a runtime created object to be
-        /// treated as a prefab by the MLAPI. That's how we can get away with creating the player prefab
-        /// at runtime without it being treated as a SceneObject or causing other conflicts with the MLAPI.
+        /// treated as a prefab by the Netcode. That's how we can get away with creating the player prefab
+        /// at runtime without it being treated as a SceneObject or causing other conflicts with the Netcode.
         /// </summary>
         /// <param name="networkObject">The networkObject to be treated as Prefab</param>
         /// <param name="globalObjectIdHash">The GlobalObjectId to force</param>
@@ -305,9 +310,12 @@ namespace MLAPI.RuntimeTests
             }
             else
             {
-                foreach (var client in clients)
+                for (var i = 0; i < clients.Length; ++i)
                 {
-                    Assert.True(client.IsConnectedClient, $"Client {client.LocalClientId} never connected");
+                    var client = clients[i];
+                    // Logging i+1 because that's the local client ID they'll get (0 is server)
+                    // Can't use client.LocalClientId because that doesn't get assigned until IsConnectedClient == true,
+                    Assert.True(client.IsConnectedClient, $"Client {i + 1} never connected");
                 }
             }
         }
@@ -422,6 +430,29 @@ namespace MLAPI.RuntimeTests
                 Assert.Fail("NetworkObject could not be found");
             }
         }
+
+        /// <summary>
+        /// Runs some code, then verifies the condition (combines 'Run' and 'WaitForCondition')
+        /// </summary>
+        /// <param name="workload">Action / code to run</param>
+        /// <param name="predicate">The predicate to wait for</param>
+        /// <param name="maxFrames">The max frames to wait for</param>
+        public static IEnumerator RunAndWaitForCondition(Action workload, Func<bool> predicate, int maxFrames = 64)
+        {
+            var waitResult = new CoroutineResultWrapper<bool>();
+            workload();
+
+            yield return Run(WaitForCondition(
+                predicate,
+                waitResult,
+                maxFrames: maxFrames));
+
+            if (!waitResult.Result)
+            {
+                throw new Exception();
+            }
+        }
+
 
         /// <summary>
         /// Waits for a predicate condition to be met

@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace MLAPI.Profiling
+namespace Unity.Netcode
 {
     public interface ITransportProfilerData
     {

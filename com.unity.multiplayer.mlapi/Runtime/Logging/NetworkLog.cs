@@ -1,10 +1,6 @@
-using MLAPI.Configuration;
-using MLAPI.Messaging;
-using MLAPI.Serialization.Pooled;
-using MLAPI.Transports;
 using UnityEngine;
 
-namespace MLAPI.Logging
+namespace Unity.Netcode
 {
     /// <summary>
     /// Helper class for logging
@@ -17,10 +13,10 @@ namespace MLAPI.Logging
         /// <value>The current log level.</value>
         internal static LogLevel CurrentLogLevel => NetworkManager.Singleton == null ? LogLevel.Normal : NetworkManager.Singleton.LogLevel;
 
-        // MLAPI internal logging
-        internal static void LogInfo(string message) => Debug.Log($"[MLAPI] {message}");
-        internal static void LogWarning(string message) => Debug.LogWarning($"[MLAPI] {message}");
-        internal static void LogError(string message) => Debug.LogError($"[MLAPI] {message}");
+        // internal logging
+        internal static void LogInfo(string message) => Debug.Log($"[Netcode] {message}");
+        internal static void LogWarning(string message) => Debug.LogWarning($"[Netcode] {message}");
+        internal static void LogError(string message) => Debug.LogError($"[Netcode] {message}");
 
         /// <summary>
         /// Logs an info log locally and on the server if possible.
@@ -60,20 +56,23 @@ namespace MLAPI.Logging
 
             if (NetworkManager.Singleton != null && !NetworkManager.Singleton.IsServer && NetworkManager.Singleton.NetworkConfig.EnableNetworkLogs)
             {
-                using (var buffer = PooledNetworkBuffer.Get())
-                using (var writer = PooledNetworkWriter.Get(buffer))
+                var context = NetworkManager.Singleton.MessageQueueContainer.EnterInternalCommandContext(
+                    MessageQueueContainer.MessageType.ServerLog, NetworkChannel.Internal,
+                    new[] { NetworkManager.Singleton.ServerClientId }, NetworkUpdateLoop.UpdateStage);
+                if (context != null)
                 {
-                    writer.WriteByte((byte)logType);
-                    writer.WriteStringPacked(message);
-
-                    NetworkManager.Singleton.MessageSender.Send(NetworkManager.Singleton.ServerClientId, NetworkConstants.SERVER_LOG, NetworkChannel.Internal, buffer);
+                    using (var nonNullContext = (InternalCommandContext)context)
+                    {
+                        nonNullContext.NetworkWriter.WriteByte((byte)logType);
+                        nonNullContext.NetworkWriter.WriteStringPacked(message);
+                    }
                 }
             }
         }
 
-        internal static void LogInfoServerLocal(string message, ulong sender) => Debug.Log($"[MLAPI_SERVER Sender={sender}] {message}");
-        internal static void LogWarningServerLocal(string message, ulong sender) => Debug.LogWarning($"[MLAPI_SERVER Sender={sender}] {message}");
-        internal static void LogErrorServerLocal(string message, ulong sender) => Debug.LogError($"[MLAPI_SERVER Sender={sender}] {message}");
+        internal static void LogInfoServerLocal(string message, ulong sender) => Debug.Log($"[Netcode-Server Sender={sender}] {message}");
+        internal static void LogWarningServerLocal(string message, ulong sender) => Debug.LogWarning($"[Netcode-Server Sender={sender}] {message}");
+        internal static void LogErrorServerLocal(string message, ulong sender) => Debug.LogError($"[Netcode-Server Sender={sender}] {message}");
 
         internal enum LogType
         {

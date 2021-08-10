@@ -3,11 +3,8 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using MLAPI.Timing;
-using MLAPI.Serialization.Pooled;
-using MLAPI.Transports;
 
-namespace MLAPI.NetworkVariable.Collections
+namespace Unity.Netcode
 {
     /// <summary>
     /// Event based NetworkVariable container for syncing Sets
@@ -335,29 +332,6 @@ namespace MLAPI.NetworkVariable.Collections
         }
 
         /// <inheritdoc />
-        void ICollection<T>.Add(T item)
-        {
-            EnsureInitialized();
-
-            if (m_NetworkBehaviour.NetworkManager.IsServer)
-            {
-                m_Set.Add(item);
-            }
-
-            var setEvent = new NetworkSetEvent<T>()
-            {
-                Type = NetworkSetEvent<T>.EventType.Add,
-                Value = item
-            };
-            m_DirtyEvents.Add(setEvent);
-
-            if (m_NetworkBehaviour.NetworkManager.IsServer && OnSetChanged != null)
-            {
-                OnSetChanged(setEvent);
-            }
-        }
-
-        /// <inheritdoc />
         public void ExceptWith(IEnumerable<T> other)
         {
             foreach (T value in other)
@@ -481,8 +455,7 @@ namespace MLAPI.NetworkVariable.Collections
             }
         }
 
-        /// <inheritdoc />
-        bool ISet<T>.Add(T item)
+        public void Add(T item)
         {
             EnsureInitialized();
 
@@ -502,8 +475,19 @@ namespace MLAPI.NetworkVariable.Collections
             {
                 OnSetChanged(setEvent);
             }
+        }
 
+        /// <inheritdoc />
+        bool ISet<T>.Add(T item)
+        {
+            Add(item);
             return true;
+        }
+
+        /// <inheritdoc />
+        void ICollection<T>.Add(T item)
+        {
+            Add(item);
         }
 
         /// <inheritdoc />

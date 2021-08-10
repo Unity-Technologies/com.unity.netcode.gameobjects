@@ -1,14 +1,16 @@
-using System;
 using System.IO;
-using MLAPI.Messaging;
-using MLAPI.Messaging.Buffering;
 using UnityEngine;
 
-namespace MLAPI.EditorTests
+namespace Unity.Netcode.EditorTests
 {
     internal class DummyMessageHandler : IInternalMessageHandler
     {
         public NetworkManager NetworkManager { get; }
+
+        public DummyMessageHandler(NetworkManager networkManager)
+        {
+            NetworkManager = networkManager;
+        }
 
         public void HandleConnectionRequest(ulong clientId, Stream stream) => VerifyCalled(nameof(HandleConnectionRequest));
 
@@ -30,11 +32,27 @@ namespace MLAPI.EditorTests
 
         public void HandleTimeSync(ulong clientId, Stream stream) => VerifyCalled(nameof(HandleTimeSync));
 
-        public void HandleNetworkVariableDelta(ulong clientId, Stream stream, Action<ulong, PreBufferPreset> bufferCallback, PreBufferPreset bufferPreset) => VerifyCalled(nameof(HandleNetworkVariableDelta));
+        public void HandleNetworkVariableDelta(ulong clientId, Stream stream) => VerifyCalled(nameof(HandleNetworkVariableDelta));
 
-        public void HandleNetworkVariableUpdate(ulong clientId, Stream stream, Action<ulong, PreBufferPreset> bufferCallback, PreBufferPreset bufferPreset) => VerifyCalled(nameof(HandleNetworkVariableUpdate));
-
-        public void RpcReceiveQueueItem(ulong clientId, Stream stream, float receiveTime, RpcQueueContainer.QueueItemType queueItemType) => VerifyCalled(nameof(RpcReceiveQueueItem));
+        public void MessageReceiveQueueItem(ulong clientId, Stream stream, float receiveTime,
+            MessageQueueContainer.MessageType messageType,
+            NetworkChannel receiveChannel)
+        {
+            VerifyCalled(nameof(MessageReceiveQueueItem));
+            if (NetworkManager)
+            {
+                // To actually process the message we have to add it to the inbound frame queue for the current update stage
+                // and then process and flush the queue for the current update stage to actually get it to run through
+                // MessageQueueContainer.ProcessMessage, which is where the actual code handling the message lives.
+                // That's what will then call back into this for the others.
+                var messageQueueContainer = NetworkManager.MessageQueueContainer;
+                messageQueueContainer.AddQueueItemToInboundFrame(messageType, receiveTime, clientId,
+                    (NetworkBuffer)stream, receiveChannel);
+                messageQueueContainer.ProcessAndFlushMessageQueue(
+                    MessageQueueContainer.MessageQueueProcessingTypes.Receive, NetworkUpdateLoop.UpdateStage);
+                messageQueueContainer.AdvanceFrameHistory(MessageQueueHistoryFrame.QueueFrameType.Inbound);
+            }
+        }
 
         public void HandleUnnamedMessage(ulong clientId, Stream stream) => VerifyCalled(nameof(HandleUnnamedMessage));
 

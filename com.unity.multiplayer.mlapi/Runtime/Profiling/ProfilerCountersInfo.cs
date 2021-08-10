@@ -3,7 +3,7 @@ using UnityEngine;
 using Unity.Profiling;
 #endif
 
-namespace MLAPI.Profiling
+namespace Unity.Netcode
 {
     internal static class ProfilerCountersInfo
     {
@@ -50,7 +50,7 @@ namespace MLAPI.Profiling
             new ProfilerCounterValue<int>(ProfilerCategory.Network, ProfilerConstants.NetworkVarUpdates,
                 ProfilerMarkerDataUnit.Count, ProfilerCounterOptions.FlushOnEndOfFrame | ProfilerCounterOptions.ResetToZeroOnFlush);
 
-        // RPCs
+        // Queue Stats
         private static readonly ProfilerCounterValue<int> k_RPCsSentCounterValue =
             new ProfilerCounterValue<int>(ProfilerCategory.Network, ProfilerConstants.RpcSent,
                 ProfilerMarkerDataUnit.Count, ProfilerCounterOptions.FlushOnEndOfFrame | ProfilerCounterOptions.ResetToZeroOnFlush);
@@ -59,28 +59,8 @@ namespace MLAPI.Profiling
             new ProfilerCounterValue<int>(ProfilerCategory.Network, ProfilerConstants.RpcReceived,
                 ProfilerMarkerDataUnit.Count, ProfilerCounterOptions.FlushOnEndOfFrame | ProfilerCounterOptions.ResetToZeroOnFlush);
 
-        private static readonly ProfilerCounterValue<int> k_RPCBatchesSentCounterValue =
-            new ProfilerCounterValue<int>(ProfilerCategory.Network, ProfilerConstants.RpcBatchesSent,
-                ProfilerMarkerDataUnit.Count, ProfilerCounterOptions.FlushOnEndOfFrame | ProfilerCounterOptions.ResetToZeroOnFlush);
-
-        private static readonly ProfilerCounterValue<int> k_RPCBatchesReceivedCounterValue =
-            new ProfilerCounterValue<int>(ProfilerCategory.Network, ProfilerConstants.RpcBatchesReceived,
-                ProfilerMarkerDataUnit.Count, ProfilerCounterOptions.FlushOnEndOfFrame | ProfilerCounterOptions.ResetToZeroOnFlush);
-
-        private static readonly ProfilerCounterValue<int> k_RPCQueueProcessedCounterValue =
-            new ProfilerCounterValue<int>(ProfilerCategory.Network, ProfilerConstants.RpcQueueProcessed,
-                ProfilerMarkerDataUnit.Count, ProfilerCounterOptions.FlushOnEndOfFrame | ProfilerCounterOptions.ResetToZeroOnFlush);
-
-        private static readonly ProfilerCounterValue<int> k_RPCsInQueueSizeCounterValue =
-            new ProfilerCounterValue<int>(ProfilerCategory.Network, ProfilerConstants.RpcInQueueSize,
-                ProfilerMarkerDataUnit.Count, ProfilerCounterOptions.FlushOnEndOfFrame | ProfilerCounterOptions.ResetToZeroOnFlush);
-
-        private static readonly ProfilerCounterValue<int> k_RPCsOutQueueSizeCounterValue =
-            new ProfilerCounterValue<int>(ProfilerCategory.Network, ProfilerConstants.RpcOutQueueSize,
-                ProfilerMarkerDataUnit.Count, ProfilerCounterOptions.FlushOnEndOfFrame | ProfilerCounterOptions.ResetToZeroOnFlush);
-
         [RuntimeInitializeOnLoadMethod]
-        private static void RegisterMLAPIPerformanceEvent()
+        private static void RegisterNetcodePerformanceEvent()
         {
             InitializeCounters();
             ProfilerNotifier.OnPerformanceDataEvent += OnPerformanceTickData;
@@ -108,11 +88,6 @@ namespace MLAPI.Profiling
 
             k_RPCsSentCounterValue.Value = 0;
             k_RPCsReceivedCounterValue.Value = 0;
-            k_RPCBatchesSentCounterValue.Value = 0;
-            k_RPCBatchesReceivedCounterValue.Value = 0;
-            k_RPCQueueProcessedCounterValue.Value = 0;
-            k_RPCsInQueueSizeCounterValue.Value = 0;
-            k_RPCsOutQueueSizeCounterValue.Value = 0;
         }
 
         private static void OnPerformanceTickData(PerformanceTickData tickData)
@@ -131,14 +106,9 @@ namespace MLAPI.Profiling
             UpdateIntCounter(tickData, k_NetworkVarDeltasCounterValue, ProfilerConstants.NetworkVarDeltas);
             UpdateIntCounter(tickData, k_NetworkVarUpdatesCounterValue, ProfilerConstants.NetworkVarUpdates);
 
-            // RPCs
+            // Queue stats
             UpdateIntCounter(tickData, k_RPCsSentCounterValue, ProfilerConstants.RpcSent);
             UpdateIntCounter(tickData, k_RPCsReceivedCounterValue, ProfilerConstants.RpcReceived);
-            UpdateIntCounter(tickData, k_RPCBatchesSentCounterValue, ProfilerConstants.RpcBatchesSent);
-            UpdateIntCounter(tickData, k_RPCBatchesReceivedCounterValue, ProfilerConstants.RpcBatchesReceived);
-            UpdateIntCounter(tickData, k_RPCBatchesReceivedCounterValue, ProfilerConstants.RpcQueueProcessed);
-            UpdateIntCounter(tickData, k_RPCQueueProcessedCounterValue, ProfilerConstants.RpcInQueueSize);
-            UpdateIntCounter(tickData, k_RPCsInQueueSizeCounterValue, ProfilerConstants.RpcOutQueueSize);
         }
 
         private static void UpdateIntCounter(PerformanceTickData tickData, ProfilerCounterValue<int> counter, string fieldName)

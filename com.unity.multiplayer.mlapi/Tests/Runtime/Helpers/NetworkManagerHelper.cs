@@ -1,13 +1,11 @@
 using System;
 using System.Collections.Generic;
-using MLAPI.Configuration;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using NUnit.Framework;
-using MLAPI.SceneManagement;
-using MLAPI.Transports.UNET;
+using Unity.Netcode.Transports.UNET;
 
-namespace MLAPI.RuntimeTests
+namespace Unity.Netcode.RuntimeTests
 {
     /// <summary>
     /// Helper class to instantiate a NetworkManager
@@ -22,7 +20,7 @@ namespace MLAPI.RuntimeTests
     /// </summary>
     public static class NetworkManagerHelper
     {
-        public static Transports.Tasks.SocketTasks StartHostSocketTasks { get; internal set; }
+        public static SocketTasks StartHostSocketTasks { get; internal set; }
         public static NetworkManager NetworkManagerObject { get; internal set; }
         public static GameObject NetworkManagerGameObject { get; internal set; }
 
@@ -187,7 +185,7 @@ namespace MLAPI.RuntimeTests
                     }
             }
 
-            // If we started an MLAPI session
+            // If we started an netcode session
             if (CurrentNetworkManagerMode != NetworkManagerOperatingMode.None)
             {
                 // With some unit tests the Singleton can still be from a previous unit test
@@ -197,7 +195,7 @@ namespace MLAPI.RuntimeTests
                     NetworkManagerObject.SetSingleton();
                 }
 
-                // Only log this if we started an MLAPI session
+                // Only log this if we started an netcode session
                 Debug.Log($"{CurrentNetworkManagerMode} started.");
             }
         }

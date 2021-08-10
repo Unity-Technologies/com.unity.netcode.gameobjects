@@ -3,7 +3,7 @@ using System;
 using Unity.Profiling.LowLevel;
 #endif
 
-namespace MLAPI.Profiling
+namespace Unity.Netcode
 {
     internal struct ProfilerCounterUtility
     {

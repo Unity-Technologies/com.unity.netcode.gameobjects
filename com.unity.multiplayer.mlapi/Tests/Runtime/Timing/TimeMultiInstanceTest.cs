@@ -1,12 +1,11 @@
 using System;
 using System.Collections;
 using System.Linq;
-using MLAPI.Timing;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace MLAPI.RuntimeTests.Timing
+namespace Unity.Netcode.RuntimeTests
 {
     /// <summary>
     /// Tests the times of two clients connecting to a server using the SIPTransport (returns 50ms RTT but has no latency simulation)
@@ -122,8 +121,8 @@ namespace MLAPI.RuntimeTests.Timing
              * Normally we would only allow player prefabs to be set to a prefab. Not runtime created objects.
              * In order to prevent having a Resource folder full of a TON of prefabs that we have to maintain,
              * MultiInstanceHelper has a helper function that lets you mark a runtime created object to be
-             * treated as a prefab by the MLAPI. That's how we can get away with creating the player prefab
-             * at runtime without it being treated as a SceneObject or causing other conflicts with the MLAPI.
+             * treated as a prefab by the Netcode. That's how we can get away with creating the player prefab
+             * at runtime without it being treated as a SceneObject or causing other conflicts with the Netcode.
              */
             // Make it a prefab
             MultiInstanceHelpers.MakeNetworkedObjectTestPrefab(networkObject);

@@ -1,8 +1,6 @@
-using MLAPI;
 using NUnit.Framework;
-using UnityEngine;
 
-namespace MLAPI.EditorTests
+namespace Unity.Netcode.EditorTests
 {
     public class SnapshotRttTests
     {
@@ -44,8 +42,8 @@ namespace MLAPI.EditorTests
         {
             var snapshot = new SnapshotSystem();
             var client1 = snapshot.GetConnectionRtt(0);
-            var iterationCount = ConnectionRtt.RingSize * 3;
-            var extraCount = ConnectionRtt.RingSize * 2;
+            var iterationCount = NetworkConfig.RttWindowSize * 3;
+            var extraCount = NetworkConfig.RttWindowSize * 2;
 
             // feed in some messages
             for (var iteration = 0; iteration < iterationCount; iteration++)

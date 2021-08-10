@@ -1,20 +1,11 @@
 {
     "name": "Unity.Multiplayer.Transport.UTP",
-    "rootNamespace": "",
     "references": [
         "Unity.Collections",
         "Unity.Networking.Transport",
         "Unity.Jobs",
         "Unity.Burst",
-        "Unity.Multiplayer.MLAPI.Runtime"
+        "Unity.Netcode.Runtime"
     ],
-    "includePlatforms": [],
-    "excludePlatforms": [],
-    "allowUnsafeCode": true,
-    "overrideReferences": false,
-    "precompiledReferences": [],
-    "autoReferenced": false,
-    "defineConstraints": [],
-    "versionDefines": [],
-    "noEngineReferences": false
+    "allowUnsafeCode": true
 }

@@ -1,8 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
-using MLAPI.Messaging;
 
-namespace MLAPI.RuntimeTests
+namespace Unity.Netcode.RuntimeTests
 {
     /// <summary>
     /// Used in conjunction with the RpcQueueTest to validate from 1 byte to (n) MaximumBufferSize

@@ -1,4 +1,4 @@
-namespace MLAPI.NetworkVariable
+namespace Unity.Netcode
 {
     /// <summary>
     /// Permission type

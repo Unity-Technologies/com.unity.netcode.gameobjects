@@ -2,18 +2,10 @@ using System.Collections.Generic;
 using System;
 using System.IO;
 using System.Linq;
-using MLAPI.Configuration;
-using MLAPI.Exceptions;
-using MLAPI.Logging;
-using MLAPI.Messaging;
-using MLAPI.Serialization.Pooled;
-using MLAPI.Spawning;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using MLAPI.Messaging.Buffering;
-using MLAPI.Transports;
 
-namespace MLAPI.SceneManagement
+namespace Unity.Netcode
 {
     /// <summary>
     /// Main class for managing network scenes
@@ -182,16 +174,19 @@ namespace MLAPI.SceneManagement
             {
                 OnNotifyServerAllClientsLoadedScene?.Invoke(switchSceneProgress, timedOut);
 
-                using (var buffer = PooledNetworkBuffer.Get())
-                using (var writer = PooledNetworkWriter.Get(buffer))
+                var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
+                    MessageQueueContainer.MessageType.AllClientsLoadedScene, NetworkChannel.Internal,
+                    new[] { NetworkManager.Singleton.ServerClientId }, NetworkUpdateLoop.UpdateStage);
+                if (context != null)
                 {
-                    var doneClientIds = switchSceneProgress.DoneClients.ToArray();
-                    var timedOutClientIds = m_NetworkManager.ConnectedClients.Keys.Except(doneClientIds).ToArray();
+                    using (var nonNullContext = (InternalCommandContext)context)
+                    {
+                        var doneClientIds = switchSceneProgress.DoneClients.ToArray();
+                        var timedOutClientIds = m_NetworkManager.ConnectedClients.Keys.Except(doneClientIds).ToArray();
 
-                    writer.WriteULongArray(doneClientIds, doneClientIds.Length);
-                    writer.WriteULongArray(timedOutClientIds, timedOutClientIds.Length);
-
-                    m_NetworkManager.MessageSender.Send(NetworkManager.Singleton.ServerClientId, NetworkConstants.ALL_CLIENTS_LOADED_SCENE, NetworkChannel.Internal, buffer);
+                        nonNullContext.NetworkWriter.WriteULongArray(doneClientIds, doneClientIds.Length);
+                        nonNullContext.NetworkWriter.WriteULongArray(timedOutClientIds, timedOutClientIds.Length);
+                    }
                 }
             };
 
@@ -264,11 +259,15 @@ namespace MLAPI.SceneManagement
             IsSpawnedObjectsPendingInDontDestroyOnLoad = true;
             SceneManager.LoadScene(sceneName);
 
-            using (var buffer = PooledNetworkBuffer.Get())
-            using (var writer = PooledNetworkWriter.Get(buffer))
+            var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
+                MessageQueueContainer.MessageType.ClientSwitchSceneCompleted, NetworkChannel.Internal,
+                new[] { m_NetworkManager.ServerClientId }, NetworkUpdateLoop.UpdateStage);
+            if (context != null)
             {
-                writer.WriteByteArray(switchSceneGuid.ToByteArray());
-                m_NetworkManager.MessageSender.Send(m_NetworkManager.ServerClientId, NetworkConstants.CLIENT_SWITCH_SCENE_COMPLETED, NetworkChannel.Internal, buffer);
+                using (var nonNullContext = (InternalCommandContext)context)
+                {
+                    nonNullContext.NetworkWriter.WriteByteArray(switchSceneGuid.ToByteArray());
+                }
             }
 
             s_IsSwitching = false;
@@ -294,7 +293,7 @@ namespace MLAPI.SceneManagement
 
             // Just add every NetworkObject found that isn't already in the list
             // If any "non-in-scene placed NetworkObjects" are added to this list it shouldn't matter
-            // The only thing that matters is making sure each NetworkObject is keyed off of their GlobalObjectIdHash            
+            // The only thing that matters is making sure each NetworkObject is keyed off of their GlobalObjectIdHash
             foreach (var networkObjectInstance in networkObjects)
             {
                 if (!ScenePlacedObjects.ContainsKey(networkObjectInstance.GlobalObjectIdHash))
@@ -336,12 +335,12 @@ namespace MLAPI.SceneManagement
 
         private void OnServerLoadedScene(Guid switchSceneGuid)
         {
-            // Register in-scene placed NetworkObjects with MLAPI
+            // Register in-scene placed NetworkObjects with the netcode
             foreach (var keyValuePair in ScenePlacedObjects)
             {
                 if (!keyValuePair.Value.IsPlayerObject)
                 {
-                    m_NetworkManager.SpawnManager.SpawnNetworkObjectLocally(keyValuePair.Value, m_NetworkManager.SpawnManager.GetNetworkObjectId(), true, false, null, null, false, 0, false, true);
+                    m_NetworkManager.SpawnManager.SpawnNetworkObjectLocally(keyValuePair.Value, m_NetworkManager.SpawnManager.GetNetworkObjectId(), true, false, null, null, false, true);
                 }
             }
 
@@ -349,32 +348,36 @@ namespace MLAPI.SceneManagement
             {
                 if (m_NetworkManager.ConnectedClientsList[j].ClientId != m_NetworkManager.ServerClientId)
                 {
-                    using (var buffer = PooledNetworkBuffer.Get())
-                    using (var writer = PooledNetworkWriter.Get(buffer))
+                    var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
+                        MessageQueueContainer.MessageType.SwitchScene, NetworkChannel.Internal,
+                        new[] { m_NetworkManager.ConnectedClientsList[j].ClientId }, NetworkUpdateLoop.UpdateStage);
+                    if (context != null)
                     {
-                        writer.WriteUInt32Packed(CurrentActiveSceneIndex);
-                        writer.WriteByteArray(switchSceneGuid.ToByteArray());
-
-                        uint sceneObjectsToSpawn = 0;
-
-                        foreach (var keyValuePair in ScenePlacedObjects)
+                        using (var nonNullContext = (InternalCommandContext)context)
                         {
-                            if (keyValuePair.Value.Observers.Contains(m_NetworkManager.ConnectedClientsList[j].ClientId))
+                            nonNullContext.NetworkWriter.WriteUInt32Packed(CurrentActiveSceneIndex);
+                            nonNullContext.NetworkWriter.WriteByteArray(switchSceneGuid.ToByteArray());
+
+                            uint sceneObjectsToSpawn = 0;
+
+                            foreach (var keyValuePair in ScenePlacedObjects)
                             {
-                                sceneObjectsToSpawn++;
+                                if (keyValuePair.Value.Observers.Contains(m_NetworkManager.ConnectedClientsList[j].ClientId))
+                                {
+                                    sceneObjectsToSpawn++;
+                                }
+                            }
+
+                            // Write number of scene objects to spawn
+                            nonNullContext.NetworkWriter.WriteUInt32Packed(sceneObjectsToSpawn);
+                            foreach (var keyValuePair in ScenePlacedObjects)
+                            {
+                                if (keyValuePair.Value.Observers.Contains(m_NetworkManager.ConnectedClientsList[j].ClientId))
+                                {
+                                    keyValuePair.Value.SerializeSceneObject(nonNullContext.NetworkWriter, m_NetworkManager.ConnectedClientsList[j].ClientId);
+                                }
                             }
                         }
-
-                        // Write number of scene objects to spawn
-                        writer.WriteUInt32Packed(sceneObjectsToSpawn);
-                        foreach (var keyValuePair in ScenePlacedObjects)
-                        {
-                            if (keyValuePair.Value.Observers.Contains(m_NetworkManager.ConnectedClientsList[j].ClientId))
-                            {
-                                keyValuePair.Value.SerializeSceneObject(writer, m_NetworkManager.ConnectedClientsList[j].ClientId);
-                            }
-                        }
-                        m_NetworkManager.MessageSender.Send(m_NetworkManager.ConnectedClientsList[j].ClientId, NetworkConstants.SWITCH_SCENE, NetworkChannel.Internal, buffer);
                     }
                 }
             }
@@ -400,15 +403,19 @@ namespace MLAPI.SceneManagement
 
                 for (int i = 0; i < newObjectsCount; i++)
                 {
-                    NetworkObject.DeserializeSceneObject(objectStream as Serialization.NetworkBuffer, reader, m_NetworkManager);
+                    NetworkObject.DeserializeSceneObject(objectStream as NetworkBuffer, reader, m_NetworkManager);
                 }
             }
 
-            using (var buffer = PooledNetworkBuffer.Get())
-            using (var writer = PooledNetworkWriter.Get(buffer))
+            var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
+                MessageQueueContainer.MessageType.ClientSwitchSceneCompleted, NetworkChannel.Internal,
+                new[] { m_NetworkManager.ServerClientId }, NetworkUpdateLoop.UpdateStage);
+            if (context != null)
             {
-                writer.WriteByteArray(switchSceneGuid.ToByteArray());
-                m_NetworkManager.MessageSender.Send(m_NetworkManager.ServerClientId, NetworkConstants.CLIENT_SWITCH_SCENE_COMPLETED, NetworkChannel.Internal, buffer);
+                using (var nonNullContext = (InternalCommandContext)context)
+                {
+                    nonNullContext.NetworkWriter.WriteByteArray(switchSceneGuid.ToByteArray());
+                }
             }
 
             s_IsSwitching = false;

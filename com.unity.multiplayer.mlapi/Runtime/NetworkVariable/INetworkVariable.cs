@@ -1,7 +1,6 @@
 using System.IO;
-using MLAPI.Transports;
 
-namespace MLAPI.NetworkVariable
+namespace Unity.Netcode
 {
     /// <summary>
     /// Interface for network value containers

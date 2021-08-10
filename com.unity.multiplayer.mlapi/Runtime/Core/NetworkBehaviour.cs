@@ -4,18 +4,8 @@ using UnityEngine;
 using System.Reflection;
 using System.Linq;
 using System.IO;
-using MLAPI.Configuration;
-using MLAPI.Logging;
-using MLAPI.Messaging;
-using MLAPI.Timing;
-using MLAPI.NetworkVariable;
-using MLAPI.Profiling;
-using MLAPI.Reflection;
-using MLAPI.Serialization;
-using MLAPI.Serialization.Pooled;
-using MLAPI.Transports;
 
-namespace MLAPI
+namespace Unity.Netcode
 {
     /// <summary>
     /// The base class to override to write network code. Inherits MonoBehaviour
@@ -30,6 +20,19 @@ namespace MLAPI
             None = 0,
             Server = 1,
             Client = 2
+        }
+
+        private static void SetUpdateStage<T>(ref T param) where T : IHasUpdateStage
+        {
+            if (param.UpdateStage == NetworkUpdateStage.Unset)
+            {
+                param.UpdateStage = NetworkUpdateLoop.UpdateStage;
+
+                if (param.UpdateStage == NetworkUpdateStage.Initialization)
+                {
+                    param.UpdateStage = NetworkUpdateStage.EarlyUpdate;
+                }
+            }
         }
 
 #pragma warning disable 414 // disable assigned but its value is never used
@@ -47,34 +50,35 @@ namespace MLAPI
         {
             PooledNetworkWriter writer;
 
-            var rpcQueueContainer = NetworkManager.RpcQueueContainer;
-            var isUsingBatching = rpcQueueContainer.IsUsingBatching();
+            SetUpdateStage(ref serverRpcParams.Send);
+
+            if (serverRpcParams.Send.UpdateStage == NetworkUpdateStage.Initialization)
+            {
+                throw new NotSupportedException(
+                    $"{nameof(NetworkUpdateStage.Initialization)} cannot be used as a target for processing RPCs.");
+            }
+
+            var messageQueueContainer = NetworkManager.MessageQueueContainer;
             var transportChannel = rpcDelivery == RpcDelivery.Reliable ? NetworkChannel.ReliableRpc : NetworkChannel.UnreliableRpc;
 
             if (IsHost)
             {
-                writer = rpcQueueContainer.BeginAddQueueItemToFrame(RpcQueueContainer.QueueItemType.ServerRpc, Time.realtimeSinceStartup, transportChannel,
-                    NetworkManager.ServerClientId, null, RpcQueueHistoryFrame.QueueFrameType.Inbound, serverRpcParams.Send.UpdateStage);
-
-                if (!isUsingBatching)
-                {
-                    writer.WriteByte(NetworkConstants.SERVER_RPC); // MessageType
-                }
+                writer = messageQueueContainer.BeginAddQueueItemToFrame(MessageQueueContainer.MessageType.ServerRpc, Time.realtimeSinceStartup, transportChannel,
+                    NetworkManager.ServerClientId, null, MessageQueueHistoryFrame.QueueFrameType.Inbound, serverRpcParams.Send.UpdateStage);
             }
             else
             {
-                writer = rpcQueueContainer.BeginAddQueueItemToFrame(RpcQueueContainer.QueueItemType.ServerRpc, Time.realtimeSinceStartup, transportChannel,
-                    NetworkManager.ServerClientId, null, RpcQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
-                if (!isUsingBatching)
-                {
-                    writer.WriteByte(NetworkConstants.SERVER_RPC); // MessageType
-                }
+                writer = messageQueueContainer.BeginAddQueueItemToFrame(MessageQueueContainer.MessageType.ServerRpc, Time.realtimeSinceStartup, transportChannel,
+                    NetworkManager.ServerClientId, null, MessageQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
+
+                writer.WriteByte((byte)MessageQueueContainer.MessageType.ServerRpc);
+                writer.WriteByte((byte)serverRpcParams.Send.UpdateStage); // NetworkUpdateStage
             }
 
             writer.WriteUInt64Packed(NetworkObjectId); // NetworkObjectId
             writer.WriteUInt16Packed(NetworkBehaviourId); // NetworkBehaviourId
             writer.WriteUInt32Packed(rpcMethodId); // NetworkRpcMethodId
-            writer.WriteByte((byte)serverRpcParams.Send.UpdateStage); // NetworkUpdateStage
+
 
             return writer.Serializer;
         }
@@ -89,14 +93,16 @@ namespace MLAPI
                 return;
             }
 
-            var rpcQueueContainer = NetworkManager.RpcQueueContainer;
+            SetUpdateStage(ref serverRpcParams.Send);
+
+            var messageQueueContainer = NetworkManager.MessageQueueContainer;
             if (IsHost)
             {
-                rpcQueueContainer.EndAddQueueItemToFrame(serializer.Writer, RpcQueueHistoryFrame.QueueFrameType.Inbound, serverRpcParams.Send.UpdateStage);
+                messageQueueContainer.EndAddQueueItemToFrame(serializer.Writer, MessageQueueHistoryFrame.QueueFrameType.Inbound, serverRpcParams.Send.UpdateStage);
             }
             else
             {
-                rpcQueueContainer.EndAddQueueItemToFrame(serializer.Writer, RpcQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
+                messageQueueContainer.EndAddQueueItemToFrame(serializer.Writer, MessageQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
             }
         }
 
@@ -107,15 +113,21 @@ namespace MLAPI
         {
             PooledNetworkWriter writer;
 
+            SetUpdateStage(ref clientRpcParams.Send);
+
+            if (clientRpcParams.Send.UpdateStage == NetworkUpdateStage.Initialization)
+            {
+                throw new NotSupportedException(
+                    $"{nameof(NetworkUpdateStage.Initialization)} cannot be used as a target for processing RPCs.");
+            }
+
             // This will start a new queue item entry and will then return the writer to the current frame's stream
-            var rpcQueueContainer = NetworkManager.RpcQueueContainer;
-            var isUsingBatching = rpcQueueContainer.IsUsingBatching();
             var transportChannel = rpcDelivery == RpcDelivery.Reliable ? NetworkChannel.ReliableRpc : NetworkChannel.UnreliableRpc;
 
-            ulong[] clientIds = clientRpcParams.Send.TargetClientIds ?? NetworkManager.ConnectedClientsList.Select(c => c.ClientId).ToArray();
+            ulong[] clientIds = clientRpcParams.Send.TargetClientIds ?? NetworkManager.ConnectedClientsIds;
             if (clientRpcParams.Send.TargetClientIds != null && clientRpcParams.Send.TargetClientIds.Length == 0)
             {
-                clientIds = NetworkManager.ConnectedClientsList.Select(c => c.ClientId).ToArray();
+                clientIds = NetworkManager.ConnectedClientsIds;
             }
 
             //NOTES ON BELOW CHANGES:
@@ -123,50 +135,44 @@ namespace MLAPI
             //Is part of a patch-fix to handle looping back RPCs into the next frame's inbound queue.
             //!!! This code is temporary and will change (soon) when NetworkSerializer can be configured for mutliple NetworkWriters!!!
             var containsServerClientId = clientIds.Contains(NetworkManager.ServerClientId);
+            bool addHeader = true;
+            var messageQueueContainer = NetworkManager.MessageQueueContainer;
             if (IsHost && containsServerClientId)
             {
                 //Always write to the next frame's inbound queue
-                writer = rpcQueueContainer.BeginAddQueueItemToFrame(RpcQueueContainer.QueueItemType.ClientRpc, Time.realtimeSinceStartup, transportChannel,
-                    NetworkManager.ServerClientId, null, RpcQueueHistoryFrame.QueueFrameType.Inbound, clientRpcParams.Send.UpdateStage);
+                writer = messageQueueContainer.BeginAddQueueItemToFrame(MessageQueueContainer.MessageType.ClientRpc, Time.realtimeSinceStartup, transportChannel,
+                    NetworkManager.ServerClientId, null, MessageQueueHistoryFrame.QueueFrameType.Inbound, clientRpcParams.Send.UpdateStage);
 
                 //Handle sending to the other clients, if so the above notes explain why this code is here (a temporary patch-fix)
                 if (clientIds.Length > 1)
                 {
                     //Set the loopback frame
-                    rpcQueueContainer.SetLoopBackFrameItem(clientRpcParams.Send.UpdateStage);
+                    messageQueueContainer.SetLoopBackFrameItem(clientRpcParams.Send.UpdateStage);
 
                     //Switch to the outbound queue
-                    writer = rpcQueueContainer.BeginAddQueueItemToFrame(RpcQueueContainer.QueueItemType.ClientRpc, Time.realtimeSinceStartup, transportChannel, NetworkObjectId,
-                        clientIds, RpcQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
-
-                    if (!isUsingBatching)
-                    {
-                        writer.WriteByte(NetworkConstants.CLIENT_RPC); // MessageType
-                    }
+                    writer = messageQueueContainer.BeginAddQueueItemToFrame(MessageQueueContainer.MessageType.ClientRpc, Time.realtimeSinceStartup, transportChannel, NetworkObjectId,
+                        clientIds, MessageQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
                 }
                 else
                 {
-                    if (!isUsingBatching)
-                    {
-                        writer.WriteByte(NetworkConstants.CLIENT_RPC); // MessageType
-                    }
+                    addHeader = false;
                 }
             }
             else
             {
-                writer = rpcQueueContainer.BeginAddQueueItemToFrame(RpcQueueContainer.QueueItemType.ClientRpc, Time.realtimeSinceStartup, transportChannel, NetworkObjectId,
-                    clientIds, RpcQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
-
-                if (!isUsingBatching)
-                {
-                    writer.WriteByte(NetworkConstants.CLIENT_RPC); // MessageType
-                }
+                writer = messageQueueContainer.BeginAddQueueItemToFrame(MessageQueueContainer.MessageType.ClientRpc, Time.realtimeSinceStartup, transportChannel, NetworkObjectId,
+                    clientIds, MessageQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
             }
 
+            if (addHeader)
+            {
+                writer.WriteByte((byte)MessageQueueContainer.MessageType.ClientRpc);
+                writer.WriteByte((byte)clientRpcParams.Send.UpdateStage); // NetworkUpdateStage
+            }
             writer.WriteUInt64Packed(NetworkObjectId); // NetworkObjectId
             writer.WriteUInt16Packed(NetworkBehaviourId); // NetworkBehaviourId
             writer.WriteUInt32Packed(rpcMethodId); // NetworkRpcMethodId
-            writer.WriteByte((byte)clientRpcParams.Send.UpdateStage); // NetworkUpdateStage
+
 
             return writer.Serializer;
         }
@@ -181,25 +187,27 @@ namespace MLAPI
                 return;
             }
 
-            var rpcQueueContainer = NetworkManager.RpcQueueContainer;
+            SetUpdateStage(ref clientRpcParams.Send);
+
+            var messageQueueContainer = NetworkManager.MessageQueueContainer;
 
             if (IsHost)
             {
-                ulong[] clientIds = clientRpcParams.Send.TargetClientIds ?? NetworkManager.ConnectedClientsList.Select(c => c.ClientId).ToArray();
+                ulong[] clientIds = clientRpcParams.Send.TargetClientIds ?? NetworkManager.ConnectedClientsIds;
                 if (clientRpcParams.Send.TargetClientIds != null && clientRpcParams.Send.TargetClientIds.Length == 0)
                 {
-                    clientIds = NetworkManager.ConnectedClientsList.Select(c => c.ClientId).ToArray();
+                    clientIds = NetworkManager.ConnectedClientsIds;
                 }
 
                 var containsServerClientId = clientIds.Contains(NetworkManager.ServerClientId);
                 if (containsServerClientId && clientIds.Length == 1)
                 {
-                    rpcQueueContainer.EndAddQueueItemToFrame(serializer.Writer, RpcQueueHistoryFrame.QueueFrameType.Inbound, clientRpcParams.Send.UpdateStage);
+                    messageQueueContainer.EndAddQueueItemToFrame(serializer.Writer, MessageQueueHistoryFrame.QueueFrameType.Inbound, clientRpcParams.Send.UpdateStage);
                     return;
                 }
             }
 
-            rpcQueueContainer.EndAddQueueItemToFrame(serializer.Writer, RpcQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
+            messageQueueContainer.EndAddQueueItemToFrame(serializer.Writer, MessageQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
         }
 
         /// <summary>
@@ -298,21 +306,12 @@ namespace MLAPI
         public ulong OwnerClientId => NetworkObject.OwnerClientId;
 
         /// <summary>
-        /// Gets called when message handlers are ready to be registered and the network is setup
+        /// Gets called when the <see cref="NetworkObject"/> gets spawned, message handlers are ready to be registered and the network is setup.
         /// </summary>
         public virtual void OnNetworkSpawn() { }
 
         /// <summary>
-        /// Gets called when the <see cref="NetworkObject"/> gets spawned, message handlers are ready to be registered and the network is setup. Provides a Payload if it was provided
-        /// </summary>
-        /// <param name="stream">The stream containing the spawn payload</param>
-        public virtual void OnNetworkSpawn(Stream stream)
-        {
-            OnNetworkSpawn();
-        }
-
-        /// <summary>
-        /// Gets called when the <see cref="NetworkObject"/> gets de-spawned. Is called both on the server and clients.
+        /// Gets called when the <see cref="NetworkObject"/> gets despawned. Is called both on the server and clients.
         /// </summary>
         public virtual void OnNetworkDespawn() { }
 
@@ -476,7 +475,7 @@ namespace MLAPI
                 return;
             }
 
-            if (NetworkManager.UseSnapshot)
+            if (NetworkManager.NetworkConfig.UseSnapshotDelta)
             {
                 for (int k = 0; k < NetworkVariableFields.Count; k++)
                 {
@@ -484,7 +483,7 @@ namespace MLAPI
                 }
             }
 
-            if (NetworkManager.UseClassicDelta)
+            if (!NetworkManager.NetworkConfig.UseSnapshotDelta)
             {
                 for (int j = 0; j < m_ChannelMappedNetworkVariableIndexes.Count; j++)
                 {
@@ -552,6 +551,7 @@ namespace MLAPI
                                     else
                                     {
                                         NetworkVariableFields[k].WriteDelta(buffer);
+                                        buffer.PadBuffer();
                                     }
 
                                     if (!m_NetworkVariableIndexesToResetSet.Contains(k))
@@ -564,8 +564,16 @@ namespace MLAPI
 
                             if (writtenAny)
                             {
-                                NetworkManager.MessageSender.Send(clientId, NetworkConstants.NETWORK_VARIABLE_DELTA,
-                                    m_ChannelsForNetworkVariableGroups[j], buffer);
+                                var context = NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
+                                    MessageQueueContainer.MessageType.NetworkVariableDelta, m_ChannelsForNetworkVariableGroups[j],
+                                    new[] { clientId }, NetworkUpdateLoop.UpdateStage);
+                                if (context != null)
+                                {
+                                    using (var nonNullContext = (InternalCommandContext)context)
+                                    {
+                                        nonNullContext.NetworkWriter.WriteBytes(buffer.GetBuffer(), buffer.Position);
+                                    }
+                                }
                             }
                         }
                     }
@@ -618,7 +626,7 @@ namespace MLAPI
                         {
                             if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                             {
-                                NetworkLog.LogWarning($"Client wrote to {nameof(NetworkVariable)} without permission. => {(logInstance != null ? ($"{nameof(NetworkObjectId)}: {logInstance.NetworkObjectId} - {nameof(NetworkObject.GetNetworkBehaviourOrderIndex)}(): {logInstance.NetworkObject.GetNetworkBehaviourOrderIndex(logInstance)} - VariableIndex: {i}") : string.Empty)}");
+                                NetworkLog.LogWarning($"Client wrote to {typeof(NetworkVariable<>).Name} without permission. => {(logInstance != null ? ($"{nameof(NetworkObjectId)}: {logInstance.NetworkObjectId} - {nameof(NetworkObject.GetNetworkBehaviourOrderIndex)}(): {logInstance.NetworkObject.GetNetworkBehaviourOrderIndex(logInstance)} - VariableIndex: {i}") : string.Empty)}");
                                 NetworkLog.LogError($"[{networkVariableList[i].GetType().Name}]");
                             }
 
@@ -636,7 +644,7 @@ namespace MLAPI
 
                         if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
                         {
-                            NetworkLog.LogError($"Client wrote to {nameof(NetworkVariable)} without permission. No more variables can be read. This is critical. => {(logInstance != null ? ($"{nameof(NetworkObjectId)}: {logInstance.NetworkObjectId} - {nameof(NetworkObject.GetNetworkBehaviourOrderIndex)}(): {logInstance.NetworkObject.GetNetworkBehaviourOrderIndex(logInstance)} - VariableIndex: {i}") : string.Empty)}");
+                            NetworkLog.LogError($"Client wrote to {typeof(NetworkVariable<>).Name} without permission. No more variables can be read. This is critical. => {(logInstance != null ? ($"{nameof(NetworkObjectId)}: {logInstance.NetworkObjectId} - {nameof(NetworkObject.GetNetworkBehaviourOrderIndex)}(): {logInstance.NetworkObject.GetNetworkBehaviourOrderIndex(logInstance)} - VariableIndex: {i}") : string.Empty)}");
                             NetworkLog.LogError($"[{networkVariableList[i].GetType().Name}]");
                         }
 
@@ -649,11 +657,10 @@ namespace MLAPI
                     PerformanceDataManager.Increment(ProfilerConstants.NetworkVarDeltas);
 
                     ProfilerStatManager.NetworkVarsRcvd.Record();
+                    (stream as NetworkBuffer).SkipPadBits();
 
                     if (networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                     {
-                        (stream as NetworkBuffer).SkipPadBits();
-
                         if (stream.Position > (readStartPos + varSize))
                         {
                             if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
@@ -708,7 +715,7 @@ namespace MLAPI
                         {
                             if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                             {
-                                NetworkLog.LogWarning($"Client wrote to {nameof(NetworkVariable)} without permission. => {(logInstance != null ? ($"{nameof(NetworkObjectId)}: {logInstance.NetworkObjectId} - {nameof(NetworkObject.GetNetworkBehaviourOrderIndex)}(): {logInstance.NetworkObject.GetNetworkBehaviourOrderIndex(logInstance)} - VariableIndex: {i}") : string.Empty)}");
+                                NetworkLog.LogWarning($"Client wrote to {typeof(NetworkVariable<>).Name} without permission. => {(logInstance != null ? ($"{nameof(NetworkObjectId)}: {logInstance.NetworkObjectId} - {nameof(NetworkObject.GetNetworkBehaviourOrderIndex)}(): {logInstance.NetworkObject.GetNetworkBehaviourOrderIndex(logInstance)} - VariableIndex: {i}") : string.Empty)}");
                             }
 
                             stream.Position += varSize;
@@ -724,7 +731,7 @@ namespace MLAPI
                         // - TwoTen
                         if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
                         {
-                            NetworkLog.LogError($"Client wrote to {nameof(NetworkVariable)} without permission. No more variables can be read. This is critical. => {(logInstance != null ? ($"{nameof(NetworkObjectId)}: {logInstance.NetworkObjectId} - {nameof(NetworkObject.GetNetworkBehaviourOrderIndex)}(): {logInstance.NetworkObject.GetNetworkBehaviourOrderIndex(logInstance)} - VariableIndex: {i}") : string.Empty)}");
+                            NetworkLog.LogError($"Client wrote to {typeof(NetworkVariable<>).Name} without permission. No more variables can be read. This is critical. => {(logInstance != null ? ($"{nameof(NetworkObjectId)}: {logInstance.NetworkObjectId} - {nameof(NetworkObject.GetNetworkBehaviourOrderIndex)}(): {logInstance.NetworkObject.GetNetworkBehaviourOrderIndex(logInstance)} - VariableIndex: {i}") : string.Empty)}");
                         }
 
                         return;
@@ -809,6 +816,7 @@ namespace MLAPI
                         else
                         {
                             networkVariableList[j].WriteField(stream);
+                            writer.WritePadBits();
                         }
                     }
                 }
@@ -848,6 +856,7 @@ namespace MLAPI
                     long readStartPos = stream.Position;
 
                     networkVariableList[j].ReadField(stream);
+                    reader.SkipPadBits();
 
                     if (networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                     {

@@ -6,12 +6,9 @@
 using System;
 using System.IO;
 using System.Text;
-using MLAPI.Reflection;
-using MLAPI.Logging;
-using MLAPI.Spawning;
 using UnityEngine;
 
-namespace MLAPI.Serialization
+namespace Unity.Netcode
 {
     /// <summary>
     /// A BinaryReader that can do bit wise manipulation when backed by a NetworkBuffer
@@ -39,6 +36,15 @@ namespace MLAPI.Serialization
         {
             m_Source = stream;
             m_NetworkSource = stream as NetworkBuffer;
+        }
+
+        /// <summary>
+        /// Retrieves the underlying stream the reader is reading from
+        /// </summary>
+        /// <returns></returns>
+        public Stream GetStream()
+        {
+            return m_Source;
         }
 
         /// <summary>

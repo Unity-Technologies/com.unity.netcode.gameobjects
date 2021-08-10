@@ -1,6 +1,4 @@
-using MLAPI.Transports;
-
-namespace MLAPI.NetworkVariable
+namespace Unity.Netcode
 {
     /// <summary>
     /// Delegate type for permission checking

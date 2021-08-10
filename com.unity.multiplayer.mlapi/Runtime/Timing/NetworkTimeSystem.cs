@@ -1,7 +1,6 @@
 using System;
-using UnityEngine;
 
-namespace MLAPI.Timing
+namespace Unity.Netcode
 {
     /// <summary>
     /// <see cref="NetworkTimeSystem"/> is a standalone system which can be used to run a network time simulation.

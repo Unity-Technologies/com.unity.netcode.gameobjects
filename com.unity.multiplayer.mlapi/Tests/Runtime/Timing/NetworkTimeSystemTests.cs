@@ -1,12 +1,10 @@
 using System.Collections;
-using MLAPI.Timing;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace MLAPI.RuntimeTests.Timing
+namespace Unity.Netcode.RuntimeTests
 {
-
     /// <summary>
     /// Runtime tests to test the network time system with the Unity player loop.
     /// </summary>

@@ -1,10 +1,8 @@
-using System;
 using System.Collections.Generic;
-using MLAPI.Timing;
 using UnityEngine;
 using Random = System.Random;
 
-namespace MLAPI.EditorTests.Timing
+namespace Unity.Netcode.EditorTests
 {
     /// <summary>
     /// Helper functions for timing related tests. Allows to get a set of time steps and simulate time advancing without the need of a full playmode test.

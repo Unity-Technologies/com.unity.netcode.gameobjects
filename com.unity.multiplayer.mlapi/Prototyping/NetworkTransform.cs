@@ -1,17 +1,14 @@
 using System;
-using MLAPI.NetworkVariable;
-using MLAPI.Serialization;
 using MLAPI.Timing;
-using MLAPI.Transports;
 using unity.netcode;
 using UnityEngine;
 
-namespace MLAPI.Prototyping
+namespace Unity.Netcode.Prototyping
 {
     /// <summary>
     /// A prototype component for syncing transforms
     /// </summary>
-    [AddComponentMenu("MLAPI/NetworkTransform")]
+    [AddComponentMenu("Netcode/" + nameof(NetworkTransform))]
     [DefaultExecutionOrder(1000000)]
     public class NetworkTransform : NetworkBehaviour
     {

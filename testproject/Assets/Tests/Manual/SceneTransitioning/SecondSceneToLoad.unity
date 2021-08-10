@@ -1021,6 +1021,7 @@ MonoBehaviour:
   GlobalObjectIdHash: 2807568818
   AlwaysReplicateAsRoot: 0
   DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
 --- !u!1 &1332123091
 GameObject:
   m_ObjectHideFlags: 0
@@ -1968,6 +1969,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_SwitchSceneButtonObject: {fileID: 519083277}
   m_SceneToSwitchTo: ThirdSceneToLoad
+  m_EnableAutoSwitch: 1
+  m_AutoSwitchTimeOut: 300
 --- !u!1 &2058276875
 GameObject:
   m_ObjectHideFlags: 0
@@ -2131,6 +2134,7 @@ MonoBehaviour:
   GlobalObjectIdHash: 4086995543
   AlwaysReplicateAsRoot: 0
   DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
 --- !u!1 &2126410740
 GameObject:
   m_ObjectHideFlags: 0
