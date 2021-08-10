@@ -8,6 +8,7 @@ using NUnit.Framework;
 using MLAPI.Connection;
 using MLAPI.Configuration;
 using MLAPI.Interest;
+using MLAPI.RuntimeTests.AOI;
 using Debug = UnityEngine.Debug;
 
 namespace MLAPI.RuntimeTests
@@ -46,7 +47,7 @@ namespace MLAPI.RuntimeTests
             }
         }
 
-    public class OddsEvensNode : InterestNode
+        public class OddsEvensNode : InterestNode
     {
         public void OnEnable()
         {
@@ -127,6 +128,58 @@ namespace MLAPI.RuntimeTests
             }
 
             return (no, objGuid);
+        }
+
+        [Test]
+        // Start is called before the first frame update
+        public void InterestRandomTest()
+        {
+            InterestNodeStatic randomNode = ScriptableObject.CreateInstance<InterestNodeStatic>();
+            var randomKernel = ScriptableObject.CreateInstance<RandomInterestKernel>();
+            randomNode.InterestKernels.Add(randomKernel);
+            var staticNode = ScriptableObject.CreateInstance<InterestNodeStatic>();
+
+            var results = new HashSet<NetworkObject>();
+            var nc = new NetworkClient()
+            {
+                ClientId = 1,
+            };
+
+            var (playerObj, playerGuid) = MakeGameInterestObjectHelper(new Vector3(0.0f, 0.0f, 0.0f), null);
+            nc.PlayerObject = playerObj;
+
+            var (random1Obj, random1) = MakeGameInterestObjectHelper(new Vector3(0.5f, 0.0f, 0.0f), randomNode);
+            NetworkManagerHelper.SpawnNetworkObject(random1);
+
+            var (random2Obj, random2) = MakeGameInterestObjectHelper(new Vector3(1.0f, 0.0f, 0.0f), randomNode);
+            NetworkManagerHelper.SpawnNetworkObject(random2);
+
+            var (random3Obj, random3) = MakeGameInterestObjectHelper(new Vector3(3.0f, 0.0f, 0.0f), randomNode);
+            NetworkManagerHelper.SpawnNetworkObject(random3);
+
+            var (alwaysObj, alwaysGuid)  = MakeGameInterestObjectHelper(new Vector3(99.0f, 99.0f, 99.0f), staticNode);
+            NetworkManagerHelper.SpawnNetworkObject(alwaysGuid);
+
+            NetworkManagerHelper.SpawnNetworkObject(playerGuid);
+
+            results.Clear();
+            NetworkManager.Singleton.InterestManager.QueryFor(nc, results);
+
+            Assert.True(!randomKernel.VisibleObjects.Contains(random1Obj) || results.Contains(random1Obj));
+            Assert.True(!randomKernel.VisibleObjects.Contains(random2Obj) || results.Contains(random2Obj));
+            Assert.True(!randomKernel.VisibleObjects.Contains(random3Obj) || results.Contains(random3Obj));
+            Assert.True(results.Contains(nc.PlayerObject));
+            Assert.True(results.Contains(alwaysObj));
+
+            // remove an object, should not be in replication manager
+            alwaysObj.Despawn();
+            results.Clear();
+            NetworkManager.Singleton.InterestManager.QueryFor(nc, results);
+            Assert.True(!randomKernel.VisibleObjects.Contains(random1Obj) || results.Contains(random1Obj));
+            Assert.True(!randomKernel.VisibleObjects.Contains(random2Obj) || results.Contains(random2Obj));
+            Assert.True(!randomKernel.VisibleObjects.Contains(random3Obj) || results.Contains(random3Obj));
+            Assert.True(results.Contains(nc.PlayerObject));
+            Assert.False(results.Contains(alwaysObj));
         }
 
         [Test]
