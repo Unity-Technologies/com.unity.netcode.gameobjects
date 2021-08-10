@@ -27,58 +27,41 @@ namespace Unity.Netcode
         }
     }
 
-    internal class CommandContextSizeCapture
+    internal struct CommandContextSizeCapture
     {
         private readonly InternalCommandContext m_Context;
-        private long m_Overhead;
-        private long m_CurrentSize;
+        private long m_OverheadBegin;
+        private long m_OverheadEnd;
+        private long m_SegmentBegin;
 
         public CommandContextSizeCapture(InternalCommandContext context)
         {
             m_Context = context;
-            m_Overhead = 0L;
-            m_CurrentSize = 0L;
+            m_OverheadBegin = 0L;
+            m_OverheadEnd = 0L;
+            m_SegmentBegin = 0L;
         }
 
-        public long Size => m_CurrentSize + m_Overhead;
-
-        public CaptureScope MeasureOverhead()
+        public void StartMeasureOverhead()
         {
-            return new CaptureScope(m_Context, SetOverhead);
+            m_OverheadBegin = m_Context.NetworkWriter.GetStream().Position;
         }
 
-        public CaptureScope Measure()
+        public void StopMeasureOverhead()
         {
-            return new CaptureScope(m_Context, SetCurrentSize);
+            m_OverheadEnd = m_Context.NetworkWriter.GetStream().Position;
         }
 
-        private void SetOverhead(long overhead)
+        public void StartMeasureSegment()
         {
-            m_Overhead = overhead;
+            m_SegmentBegin = m_Context.NetworkWriter.GetStream().Position;
         }
 
-        private void SetCurrentSize(long currentSize)
+        public long StopMeasureSegment()
         {
-            m_CurrentSize = currentSize;
-        }
+            var segmentEnd = m_Context.NetworkWriter.GetStream().Position;
 
-        public struct CaptureScope : IDisposable
-        {
-            private readonly InternalCommandContext m_Context;
-            private readonly Action<long> m_Callback;
-            private readonly long m_InitialSize;
-
-            internal CaptureScope(InternalCommandContext context, Action<long> callback)
-            {
-                m_Context = context;
-                m_InitialSize = context.NetworkWriter.GetStream().Position;
-                m_Callback = callback;
-            }
-
-            public void Dispose()
-            {
-                m_Callback?.Invoke(m_Context.NetworkWriter.GetStream().Position - m_InitialSize);
-            }
+            return m_OverheadEnd - m_OverheadBegin + segmentEnd - m_SegmentBegin;
         }
     }
 }

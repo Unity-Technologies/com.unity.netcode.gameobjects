@@ -107,15 +107,16 @@ namespace Unity.Netcode
                 using (var nonNullContext = (InternalCommandContext)context)
                 {
                     var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
-                    using (bufferSizeCapture.Measure())
-                    {
-                        nonNullContext.NetworkWriter.WriteUInt64Packed(networkObject.NetworkObjectId);
-                        nonNullContext.NetworkWriter.WriteUInt64Packed(networkObject.OwnerClientId);
-                    }
+                    bufferSizeCapture.StartMeasureSegment();
+
+                    nonNullContext.NetworkWriter.WriteUInt64Packed(networkObject.NetworkObjectId);
+                    nonNullContext.NetworkWriter.WriteUInt64Packed(networkObject.OwnerClientId);
+
+                    var size = bufferSizeCapture.StopMeasureSegment();
 
                     foreach (var client in NetworkManager.ConnectedClients)
                     {
-                        NetworkManager.NetworkMetrics.TrackOwnershipChangeSent(client.Key, networkObject.NetworkObjectId, networkObject.name, bufferSizeCapture.Size);
+                        NetworkManager.NetworkMetrics.TrackOwnershipChangeSent(client.Key, networkObject.NetworkObjectId, networkObject.name, size);
                     }
                 }
             }
@@ -158,15 +159,15 @@ namespace Unity.Netcode
                 using (var nonNullContext = (InternalCommandContext)context)
                 {
                     var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
-                    using (bufferSizeCapture.Measure())
-                    {
-                        nonNullContext.NetworkWriter.WriteUInt64Packed(networkObject.NetworkObjectId);
-                        nonNullContext.NetworkWriter.WriteUInt64Packed(clientId);
-                    }
+                    bufferSizeCapture.StartMeasureSegment();
 
+                    nonNullContext.NetworkWriter.WriteUInt64Packed(networkObject.NetworkObjectId);
+                    nonNullContext.NetworkWriter.WriteUInt64Packed(clientId);
+
+                    var size = bufferSizeCapture.StopMeasureSegment();
                     foreach (var client in NetworkManager.ConnectedClients)
                     {
-                        NetworkManager.NetworkMetrics.TrackOwnershipChangeSent(client.Key, networkObject.NetworkObjectId, networkObject.name, bufferSizeCapture.Size);
+                        NetworkManager.NetworkMetrics.TrackOwnershipChangeSent(client.Key, networkObject.NetworkObjectId, networkObject.name, size);
                     }
                 }
             }
@@ -385,12 +386,12 @@ namespace Unity.Netcode
                     using (var nonNullContext = (InternalCommandContext)context)
                     {
                         var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
-                        using (bufferSizeCapture.Measure())
-                        {
-                            WriteSpawnCallForObject(nonNullContext.NetworkWriter, clientId, networkObject);
-                        }
+                        bufferSizeCapture.StartMeasureSegment();
 
-                        NetworkManager.NetworkMetrics.TrackObjectSpawnSent(clientId, networkObject.NetworkObjectId, networkObject.name, bufferSizeCapture.Size);
+                        WriteSpawnCallForObject(nonNullContext.NetworkWriter, clientId, networkObject);
+
+                        var size = bufferSizeCapture.StopMeasureSegment();
+                        NetworkManager.NetworkMetrics.TrackObjectSpawnSent(clientId, networkObject.NetworkObjectId, networkObject.name, size);
                     }
                 }
             }
@@ -671,12 +672,12 @@ namespace Unity.Netcode
                                 using (var nonNullContext = (InternalCommandContext)context)
                                 {
                                     var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
-                                    using (bufferSizeCapture.Measure())
-                                    {
-                                        nonNullContext.NetworkWriter.WriteUInt64Packed(networkObject.NetworkObjectId);
-                                    }
+                                    bufferSizeCapture.StartMeasureSegment();
 
-                                    NetworkManager.NetworkMetrics.TrackObjectDestroySent(clientIds, networkObject.NetworkObjectId, networkObject.name, bufferSizeCapture.Size);
+                                    nonNullContext.NetworkWriter.WriteUInt64Packed(networkObject.NetworkObjectId);
+
+                                    var size = bufferSizeCapture.StopMeasureSegment();
+                                    NetworkManager.NetworkMetrics.TrackObjectDestroySent(clientIds, networkObject.NetworkObjectId, networkObject.name, size);
                                 }
                             }
                         }

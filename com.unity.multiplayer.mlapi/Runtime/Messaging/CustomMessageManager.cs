@@ -200,15 +200,16 @@ namespace Unity.Netcode
                 using (var nonNullContext = (InternalCommandContext)context)
                 {
                     var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
-                    using (bufferSizeCapture.Measure())
-                    {
-                        nonNullContext.NetworkWriter.WriteUInt64Packed(hash);
+                    bufferSizeCapture.StartMeasureSegment();
 
-                        stream.Position = 0;
-                        stream.CopyTo(nonNullContext.NetworkWriter.GetStream());
-                    }
+                    nonNullContext.NetworkWriter.WriteUInt64Packed(hash);
 
-                    m_NetworkManager.NetworkMetrics.TrackNamedMessageSent(clientId, name, bufferSizeCapture.Size);
+                    stream.Position = 0;
+                    stream.CopyTo(nonNullContext.NetworkWriter.GetStream());
+                    
+                    var size = bufferSizeCapture.StopMeasureSegment();
+
+                    m_NetworkManager.NetworkMetrics.TrackNamedMessageSent(clientId, name, size);
                 }
             }
             PerformanceDataManager.Increment(ProfilerConstants.NamedMessageSent);
@@ -247,15 +248,15 @@ namespace Unity.Netcode
                 using (var nonNullContext = (InternalCommandContext)context)
                 {
                     var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
-                    using (bufferSizeCapture.Measure())
-                    {
-                        nonNullContext.NetworkWriter.WriteUInt64Packed(hash);
+                    bufferSizeCapture.StartMeasureSegment();
 
-                        stream.Position = 0;
-                        stream.CopyTo(nonNullContext.NetworkWriter.GetStream());
-                    }
+                    nonNullContext.NetworkWriter.WriteUInt64Packed(hash);
 
-                    m_NetworkManager.NetworkMetrics.TrackNamedMessageSent(clientIds, name, bufferSizeCapture.Size);
+                    stream.Position = 0;
+                    stream.CopyTo(nonNullContext.NetworkWriter.GetStream());
+
+                    var size = bufferSizeCapture.StopMeasureSegment();
+                    m_NetworkManager.NetworkMetrics.TrackNamedMessageSent(clientIds, name, size);
                 }
             }
             PerformanceDataManager.Increment(ProfilerConstants.NamedMessageSent);

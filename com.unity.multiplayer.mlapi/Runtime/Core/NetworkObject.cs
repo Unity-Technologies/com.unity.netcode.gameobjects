@@ -286,21 +286,19 @@ namespace Unity.Netcode
                 using (var nonNullContext = (InternalCommandContext)context)
                 {
                     var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
-                    using (bufferSizeCapture.MeasureOverhead())
-                    {
-                        nonNullContext.NetworkWriter.WriteUInt16Packed((ushort) networkObjects.Count);
-                    }
+                    bufferSizeCapture.StartMeasureOverhead();
+                    nonNullContext.NetworkWriter.WriteUInt16Packed((ushort) networkObjects.Count);
+                    bufferSizeCapture.StopMeasureOverhead();
 
                     for (int i = 0; i < networkObjects.Count; i++)
                     {
                         networkObjects[i].Observers.Add(clientId);
 
-                        using (bufferSizeCapture.Measure())
-                        {
-                            networkManager.SpawnManager.WriteSpawnCallForObject(nonNullContext.NetworkWriter, clientId, networkObjects[i]);
-                        }
+                        bufferSizeCapture.StartMeasureSegment();
+                        networkManager.SpawnManager.WriteSpawnCallForObject(nonNullContext.NetworkWriter, clientId, networkObjects[i]);
+                        var size = bufferSizeCapture.StopMeasureSegment();
 
-                        networkManager.NetworkMetrics.TrackObjectSpawnSent(clientId, networkObjects[i].NetworkObjectId, networkObjects[i].name, bufferSizeCapture.Size);
+                        networkManager.NetworkMetrics.TrackObjectSpawnSent(clientId, networkObjects[i].NetworkObjectId, networkObjects[i].name, size);
                     }
                 }
             }
@@ -399,22 +397,21 @@ namespace Unity.Netcode
                 using (var nonNullContext = (InternalCommandContext)context)
                 {
                     var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
-                    using (bufferSizeCapture.MeasureOverhead())
-                    {
-                        nonNullContext.NetworkWriter.WriteUInt16Packed((ushort) networkObjects.Count);
-                    }
+
+                    bufferSizeCapture.StartMeasureOverhead();
+                    nonNullContext.NetworkWriter.WriteUInt16Packed((ushort) networkObjects.Count);
+                    bufferSizeCapture.StopMeasureOverhead();
 
                     for (int i = 0; i < networkObjects.Count; i++)
                     {
                         // Send destroy call
                         networkObjects[i].Observers.Remove(clientId);
 
-                        using (bufferSizeCapture.Measure())
-                        {
-                            nonNullContext.NetworkWriter.WriteUInt64Packed(networkObjects[i].NetworkObjectId);
-                        }
+                        bufferSizeCapture.StartMeasureSegment();
+                        nonNullContext.NetworkWriter.WriteUInt64Packed(networkObjects[i].NetworkObjectId);
+                        var size = bufferSizeCapture.StopMeasureSegment();
 
-                        networkManager.NetworkMetrics.TrackObjectDestroySent(clientId, networkObjects[i].NetworkObjectId, networkObjects[i].name, bufferSizeCapture.Size);
+                        networkManager.NetworkMetrics.TrackObjectDestroySent(clientId, networkObjects[i].NetworkObjectId, networkObjects[i].name, size);
                     }
                 }
             }
