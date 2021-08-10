@@ -4,9 +4,6 @@ namespace Unity.Netcode
 {
     internal class ConnectionRtt
     {
-        internal const int RttSize = 5; // number of RTT to keep an average of (plus one)
-        internal const int RingSize = 64; // number of slots to use for RTT computations (max number of in-flight packets)
-
         private double[] m_RttSendTimes; // times at which packet were sent for RTT computations
         private int[] m_SendSequence; // tick, or other key, at which packets were sent (to allow matching)
         private double[] m_MeasuredLatencies; // measured latencies (ring buffer)
@@ -26,9 +23,9 @@ namespace Unity.Netcode
         }
         public ConnectionRtt()
         {
-            m_RttSendTimes = new double[RingSize];
-            m_SendSequence = new int[RingSize];
-            m_MeasuredLatencies = new double[RingSize];
+            m_RttSendTimes = new double[NetworkConfig.RttWindowSize];
+            m_SendSequence = new int[NetworkConfig.RttWindowSize];
+            m_MeasuredLatencies = new double[NetworkConfig.RttWindowSize];
         }
 
         /// <summary>
@@ -36,7 +33,7 @@ namespace Unity.Netcode
         /// </summary>
         public Rtt GetRtt()
         {
-            var ret = new Rtt(); // is this a memory alloc ? How do I get a stack alloc ?
+            var ret = new Rtt();
             var index = m_LatenciesBegin;
             double total = 0.0;
             ret.BestSec = m_MeasuredLatencies[m_LatenciesBegin];
@@ -48,14 +45,14 @@ namespace Unity.Netcode
                 ret.SampleCount++;
                 ret.BestSec = Math.Min(ret.BestSec, m_MeasuredLatencies[index]);
                 ret.WorstSec = Math.Max(ret.WorstSec, m_MeasuredLatencies[index]);
-                index = (index + 1) % RttSize;
+                index = (index + 1) % NetworkConfig.RttAverageSamples;
             }
 
             if (ret.SampleCount != 0)
             {
                 ret.AverageSec = total / ret.SampleCount;
                 // the latest RTT is one before m_LatenciesEnd
-                ret.LastSec = m_MeasuredLatencies[(m_LatenciesEnd + (RingSize - 1)) % RingSize];
+                ret.LastSec = m_MeasuredLatencies[(m_LatenciesEnd + (NetworkConfig.RttWindowSize - 1)) % NetworkConfig.RttWindowSize];
             }
             else
             {
@@ -71,23 +68,23 @@ namespace Unity.Netcode
 
         internal void NotifySend(int sequence, double timeSec)
         {
-            m_RttSendTimes[sequence % RingSize] = timeSec;
-            m_SendSequence[sequence % RingSize] = sequence;
+            m_RttSendTimes[sequence % NetworkConfig.RttWindowSize] = timeSec;
+            m_SendSequence[sequence % NetworkConfig.RttWindowSize] = sequence;
         }
 
         internal void NotifyAck(int sequence, double timeSec)
         {
             // if the same slot was not used by a later send
-            if (m_SendSequence[sequence % RingSize] == sequence)
+            if (m_SendSequence[sequence % NetworkConfig.RttWindowSize] == sequence)
             {
-                double latency = timeSec - m_RttSendTimes[sequence % RingSize];
+                double latency = timeSec - m_RttSendTimes[sequence % NetworkConfig.RttWindowSize];
 
                 m_MeasuredLatencies[m_LatenciesEnd] = latency;
-                m_LatenciesEnd = (m_LatenciesEnd + 1) % RttSize;
+                m_LatenciesEnd = (m_LatenciesEnd + 1) % NetworkConfig.RttAverageSamples;
 
                 if (m_LatenciesEnd == m_LatenciesBegin)
                 {
-                    m_LatenciesBegin = (m_LatenciesBegin + 1) % RttSize;
+                    m_LatenciesBegin = (m_LatenciesBegin + 1) % NetworkConfig.RttAverageSamples;
                 }
             }
         }
