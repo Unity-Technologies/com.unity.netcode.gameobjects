@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -22,7 +21,7 @@ namespace Unity.Netcode.EditorTests
 
             CustomMessagingManager preManager = networkManager.CustomMessagingManager;
 
-            // Start server to cause init
+            // Start server to cause initialization
             networkManager.StartServer();
 
             Debug.Assert(preManager == null);

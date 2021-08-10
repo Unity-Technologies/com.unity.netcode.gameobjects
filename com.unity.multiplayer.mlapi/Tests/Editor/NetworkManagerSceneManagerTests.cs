@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -21,7 +20,7 @@ namespace Unity.Netcode.EditorTests
 
             NetworkSceneManager preManager = networkManager.SceneManager;
 
-            // Start server to cause init
+            // Start server to cause initialization process
             networkManager.StartServer();
 
             Debug.Assert(preManager == null);
