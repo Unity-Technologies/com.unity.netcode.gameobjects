@@ -277,30 +277,9 @@ namespace Unity.Netcode
                 }
             }
 
-            var context = networkManager.MessageQueueContainer.EnterInternalCommandContext(
-                MessageQueueContainer.MessageType.CreateObjects, NetworkChannel.Internal,
-                new[] { clientId }, NetworkUpdateLoop.UpdateStage);
-
-            if (context != null)
+            foreach (var networkObject in networkObjects)
             {
-                using (var nonNullContext = (InternalCommandContext)context)
-                {
-                    var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
-                    bufferSizeCapture.StartMeasureOverhead();
-                    nonNullContext.NetworkWriter.WriteUInt16Packed((ushort) networkObjects.Count);
-                    bufferSizeCapture.StopMeasureOverhead();
-
-                    for (int i = 0; i < networkObjects.Count; i++)
-                    {
-                        networkObjects[i].Observers.Add(clientId);
-
-                        bufferSizeCapture.StartMeasureSegment();
-                        networkManager.SpawnManager.WriteSpawnCallForObject(nonNullContext.NetworkWriter, clientId, networkObjects[i]);
-                        var size = bufferSizeCapture.StopMeasureSegment();
-
-                        networkManager.NetworkMetrics.TrackObjectSpawnSent(clientId, networkObjects[i].NetworkObjectId, networkObjects[i].name, size);
-                    }
-                }
+                networkObject.NetworkShow(clientId);
             }
         }
 
@@ -389,31 +368,9 @@ namespace Unity.Netcode
                 }
             }
 
-            var context = networkManager.MessageQueueContainer.EnterInternalCommandContext(
-                MessageQueueContainer.MessageType.DestroyObjects, NetworkChannel.Internal,
-                new[] { clientId }, NetworkUpdateStage.PostLateUpdate);
-            if (context != null)
+            foreach (var networkObject in networkObjects)
             {
-                using (var nonNullContext = (InternalCommandContext)context)
-                {
-                    var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
-
-                    bufferSizeCapture.StartMeasureOverhead();
-                    nonNullContext.NetworkWriter.WriteUInt16Packed((ushort) networkObjects.Count);
-                    bufferSizeCapture.StopMeasureOverhead();
-
-                    for (int i = 0; i < networkObjects.Count; i++)
-                    {
-                        // Send destroy call
-                        networkObjects[i].Observers.Remove(clientId);
-
-                        bufferSizeCapture.StartMeasureSegment();
-                        nonNullContext.NetworkWriter.WriteUInt64Packed(networkObjects[i].NetworkObjectId);
-                        var size = bufferSizeCapture.StopMeasureSegment();
-
-                        networkManager.NetworkMetrics.TrackObjectDestroySent(clientId, networkObjects[i].NetworkObjectId, networkObjects[i].name, size);
-                    }
-                }
+                networkObject.NetworkHide(clientId);
             }
         }
 
