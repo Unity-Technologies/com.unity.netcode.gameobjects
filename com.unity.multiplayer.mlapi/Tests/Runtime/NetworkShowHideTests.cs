@@ -134,7 +134,8 @@ namespace Unity.Netcode.RuntimeTests
             m_NetSpawnedObject2.Spawn();
             m_NetSpawnedObject3.Spawn();
 
-            yield return new WaitForSeconds(0.1f);
+            var waitUntilFrameNumber = Time.frameCount + 10;
+            yield return new WaitUntil(() => Time.frameCount >= waitUntilFrameNumber);
 
             // get the NetworkObject on a client instance
             yield return RefreshNetworkObjects();
@@ -144,14 +145,17 @@ namespace Unity.Netcode.RuntimeTests
 
             // hide them on one client
             Show(false);
-            yield return new WaitForSeconds(0.1f);
+            waitUntilFrameNumber = Time.frameCount + 10;
+            yield return new WaitUntil(() => Time.frameCount >= waitUntilFrameNumber);
 
             // verify they got hidden
             CheckVisible(false);
 
             // show them to that client
             Show(true);
-            yield return new WaitForSeconds(0.1f);
+            waitUntilFrameNumber = Time.frameCount + 10;
+            yield return new WaitUntil(() => Time.frameCount >= waitUntilFrameNumber);
+
             yield return RefreshNetworkObjects();
 
             // verify they become visible
