@@ -3,20 +3,19 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.TestTools;
-using Unity.Netcode;
-
-public class NetworkShowHideTest : NetworkBehaviour
-{
-
-}
-
-public class ShowHideObject : NetworkBehaviour
-{
-
-}
 
 namespace Unity.Netcode.RuntimeTests
 {
+    public class NetworkShowHideTest : NetworkBehaviour
+    {
+
+    }
+
+    public class ShowHideObject : NetworkBehaviour
+    {
+
+    }
+
     public class NetworkShowHideTests : BaseMultiInstanceTest
     {
         protected override int NbClients => 2;
@@ -55,7 +54,7 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         // Check that the first client see them, or not, as expected
-        private void checkVisible(bool target)
+        private void CheckVisible(bool target)
         {
             Debug.Assert(m_NetSpawnedObject1.IsNetworkVisibleTo(m_ClientId0) == target);
             Debug.Assert(m_NetSpawnedObject2.IsNetworkVisibleTo(m_ClientId0) == target);
@@ -67,7 +66,7 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         // Set the 3 objects visibility
-        private void show(bool visibility)
+        private void Show(bool visibility)
         {
             var list = new List<NetworkObject>();
             list.Add(m_NetSpawnedObject1);
@@ -84,7 +83,7 @@ namespace Unity.Netcode.RuntimeTests
             }
         }
 
-        private IEnumerator refreshNetworkObjects()
+        private IEnumerator RefreshNetworkObjects()
         {
             var serverClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
             yield return MultiInstanceHelpers.Run(
@@ -138,25 +137,25 @@ namespace Unity.Netcode.RuntimeTests
             yield return new WaitForSeconds(0.1f);
 
             // get the NetworkObject on a client instance
-            yield return refreshNetworkObjects();
+            yield return RefreshNetworkObjects();
 
             // check object start visible
-            checkVisible(true);
+            CheckVisible(true);
 
             // hide them on one client
-            show(false);
+            Show(false);
             yield return new WaitForSeconds(0.1f);
 
             // verify they got hidden
-            checkVisible(false);
+            CheckVisible(false);
 
             // show them to that client
-            show(true);
+            Show(true);
             yield return new WaitForSeconds(0.1f);
-            yield return refreshNetworkObjects();
+            yield return RefreshNetworkObjects();
 
             // verify they become visible
-            checkVisible(true);
+            CheckVisible(true);
         }
     }
 }
