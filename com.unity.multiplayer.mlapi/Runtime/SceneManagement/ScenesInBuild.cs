@@ -6,7 +6,7 @@ using UnityEditor;
 #endif
 
 
-namespace MLAPI
+namespace Unity.Netcode
 {
     public class ScenesInBuild : ScriptableObject
     {

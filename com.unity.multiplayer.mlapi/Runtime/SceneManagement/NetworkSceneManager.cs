@@ -117,12 +117,6 @@ namespace Unity.Netcode
         /// </summary>
         public VerifySceneBeforeLoadingDelegateHandler VerifySceneBeforeLoading;
 
-        /// <summary>
-        /// Delegate for when the scene has been switched        
-
-        internal readonly HashSet<string> RegisteredSceneNames = new HashSet<string>();
-        internal readonly Dictionary<string, uint> SceneNameToIndex = new Dictionary<string, uint>();
-        internal readonly Dictionary<uint, string> SceneIndexToString = new Dictionary<uint, string>();
         internal readonly Dictionary<Guid, SceneEventProgress> SceneEventProgressTracking = new Dictionary<Guid, SceneEventProgress>();
         internal readonly Dictionary<uint, NetworkObject> ScenePlacedObjects = new Dictionary<uint, NetworkObject>();
 
@@ -191,46 +185,17 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Returns the Netcode scene index from a scene
+        /// Verifies the scene name is valid relative to the scenes in build list
         /// </summary>
-        /// <param name="scene"></param>
-        /// <returns>Netcode Scene Index</returns>
-        private uint GetNetcodeSceneIndexFromScene(Scene scene)
+        /// <param name="sceneName"></param>
+        /// <returns>true (Valid) or false (Invalid)</returns>
+        internal bool IsSceneNameValid(string sceneName)
         {
-            if(m_NetworkManager.ScenesInBuild.Scenes.Contains(sceneName))
+            if (m_NetworkManager.ScenesInBuild.Scenes.Contains(sceneName))
             {
                 return true;
             }
             return false;
-        }
-
-        /// <summary>
-        /// Returns the scene name from the Netcode scene index
-        /// Note: This is not the same as the Build Settings Scenes in Build index
-        /// </summary>
-        /// <param name="sceneIndex">Netcode Scene Index</param>
-        /// <returns>scene name</returns>
-        private string GetSceneNameFromNetcodeSceneIndex(uint sceneIndex)
-        {
-            if(IsSceneNameValid(sceneName))
-            {
-                return m_NetworkManager.ScenesInBuild.Scenes.IndexOf(sceneName);
-            }
-            return -1;
-        }
-
-        /// <summary>
-        /// Gets the scene name from the build index
-        /// </summary>
-        /// <param name="index">build index</param>
-        /// <returns>scene name</returns>
-        internal string GetSceneNameFromBuildIndex(int buildIndex)
-        {
-            if(IsSceneIndexValid(buildIndex))
-            {
-                return m_NetworkManager.ScenesInBuild.Scenes[buildIndex];
-            }
-            return string.Empty;
         }
 
         /// <summary>
@@ -239,9 +204,37 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="index">index value to check</param>
         /// <returns>true (Valid) or false (Invalid)</returns>
-        internal bool IsSceneIndexValid(int index)
+        internal bool IsSceneIndexValid(uint index)
         {
             return (index >= 0 && index < m_NetworkManager.ScenesInBuild.Scenes.Count);
+        }
+
+        /// <summary>
+        /// Gets the build Index value for the scene name
+        /// </summary>
+        /// <param name="sceneName">scene name</param>
+        /// <returns>build index</returns>
+        internal uint GetBuildIndexFromSceneName(string sceneName)
+        {
+            if(IsSceneNameValid(sceneName))
+            {
+                return (uint)m_NetworkManager.ScenesInBuild.Scenes.IndexOf(sceneName);
+            }
+            return uint.MaxValue;
+        }
+
+        /// <summary>
+        /// Gets the scene name from the build index
+        /// </summary>
+        /// <param name="index">build index</param>
+        /// <returns>scene name</returns>
+        internal string GetSceneNameFromBuildIndex(uint buildIndex)
+        {
+            if(IsSceneIndexValid(buildIndex))
+            {
+                return m_NetworkManager.ScenesInBuild.Scenes[(int)buildIndex];
+            }
+            return string.Empty;
         }
 
         /// <summary>
@@ -253,12 +246,12 @@ namespace Unity.Netcode
         /// <param name="sceneName">Name of the scene</param>
         /// <param name="loadSceneMode">LoadSceneMode the scene is going to be loaded</param>
         /// <returns>true (Valid) or false (Invalid)</returns>
-        internal bool ValidateSceneBeforeLoading(int sceneIndex, string sceneName, LoadSceneMode loadSceneMode)
+        internal bool ValidateSceneBeforeLoading(uint sceneIndex, string sceneName, LoadSceneMode loadSceneMode)
         {
             var validated = true;
             if(VerifySceneBeforeLoading != null)
             {
-                validated = VerifySceneBeforeLoading.Invoke(sceneIndex, sceneName, loadSceneMode);
+                validated = VerifySceneBeforeLoading.Invoke((int)sceneIndex, sceneName, loadSceneMode);
             }
             if(!validated)
             {
@@ -298,7 +291,7 @@ namespace Unity.Netcode
             }
 
             // Return invalid scene name status if the scene name is invalid... :)
-            if (!RegisteredSceneNames.Contains(sceneName))
+            if (!IsSceneNameValid(sceneName))
             {
                 return new SceneEventProgress(null, SceneEventProgressStatus.InvalidSceneName);
             }
@@ -339,7 +332,7 @@ namespace Unity.Netcode
                 using (var nonNullContext = (InternalCommandContext)context)
                 {
                     ClientSynchEventData.SceneEventGuid = sceneEventProgress.Guid;
-                    ClientSynchEventData.SceneIndex = SceneNameToIndex[sceneEventProgress.SceneName];
+                    ClientSynchEventData.SceneIndex = GetBuildIndexFromSceneName(sceneEventProgress.SceneName);
                     ClientSynchEventData.SceneEventType = sceneEventProgress.SceneEventType;
                     ClientSynchEventData.ClientsCompleted = sceneEventProgress.DoneClients;
                     ClientSynchEventData.ClientsTimedOut = m_NetworkManager.ConnectedClients.Keys.Except(sceneEventProgress.DoneClients).ToList();
@@ -388,7 +381,7 @@ namespace Unity.Netcode
 
             SceneEventData.SceneEventGuid = sceneEventProgress.Guid;
             SceneEventData.SceneEventType = SceneEventData.SceneEventTypes.S2C_Unload;
-            SceneEventData.SceneIndex = SceneNameToIndex[sceneName];
+            SceneEventData.SceneIndex = GetBuildIndexFromSceneName(sceneName);
             sceneEventProgress.SceneEventType = SceneEventData.SceneEventTypes.S2C_UnLoadComplete;
 
             // Sends the unload scene notification
@@ -423,7 +416,7 @@ namespace Unity.Netcode
         private void OnClientUnloadScene()
         {
 
-            var sceneName = GetSceneNameFromNetcodeSceneIndex(SceneEventData.SceneIndex);
+            var sceneName = GetSceneNameFromBuildIndex(SceneEventData.SceneIndex);
             if (sceneName == string.Empty)
             {
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
@@ -464,7 +457,7 @@ namespace Unity.Netcode
         /// Server and Client:
         /// Invoked when the additively loaded scene is unloaded
         /// </summary>
-        private void OnSceneUnloaded(string sceneName)
+        private void OnSceneUnloaded()
         {
             SceneEventData.SceneEventType = SceneEventData.SceneEventTypes.C2S_UnloadComplete;
 
@@ -473,7 +466,7 @@ namespace Unity.Netcode
             {
                 SceneEventType = SceneEventData.SceneEventType,
                 LoadSceneMode = SceneEventData.LoadSceneMode,
-                SceneName = GetSceneNameFromNetcodeSceneIndex(SceneEventData.SceneIndex),
+                SceneName = GetSceneNameFromBuildIndex(SceneEventData.SceneIndex),
                 ClientId = m_NetworkManager.IsServer ? m_NetworkManager.ServerClientId : m_NetworkManager.LocalClientId
             });
 
@@ -507,17 +500,18 @@ namespace Unity.Netcode
                 return sceneEventProgress.Status;
             }
 
+            if (!ValidateSceneBeforeLoading(SceneEventData.SceneIndex, sceneName, loadSceneMode))
+            {
+                // NSS FIXME: Add new type of status return
+                return sceneEventProgress.Status;
+            }
+
             sceneEventProgress.SceneEventType = SceneEventData.SceneEventTypes.S2C_LoadComplete;
             sceneEventProgress.LoadSceneMode = loadSceneMode;
             SceneEventData.SceneEventGuid = sceneEventProgress.Guid;
             SceneEventData.SceneEventType = SceneEventData.SceneEventTypes.S2C_Load;
-            SceneEventData.SceneIndex = SceneNameToIndex[sceneName];
+            SceneEventData.SceneIndex = GetBuildIndexFromSceneName(sceneName);
             SceneEventData.LoadSceneMode = loadSceneMode;
-
-            if (!ValidateSceneBeforeLoading(SceneEventData.SceneIndex, sceneName, loadSceneMode))
-            {
-                return null;
-            }
 
             if (SceneEventData.LoadSceneMode == LoadSceneMode.Single)
             {
@@ -574,6 +568,8 @@ namespace Unity.Netcode
         /// <param name="objectStream">Stream data associated with the event</param>
         private void OnClientSceneLoadingEvent(Stream objectStream)
         {
+            SceneEventData.CopyUnreadFromStream(objectStream);
+
             var sceneName = GetSceneNameFromBuildIndex(SceneEventData.SceneIndex);
 
             if (sceneName == string.Empty)
@@ -715,7 +711,6 @@ namespace Unity.Netcode
                 var clientId = m_NetworkManager.ConnectedClientsList[j].ClientId;
                 if (clientId != m_NetworkManager.ServerClientId)
                 {
-
                     uint sceneObjectsToSpawn = 0;
 
                     foreach (var keyValuePair in ScenePlacedObjects)
@@ -757,7 +752,7 @@ namespace Unity.Netcode
             {
                 SceneEventType = SceneEventData.SceneEventTypes.C2S_LoadComplete,
                 LoadSceneMode = SceneEventData.LoadSceneMode,
-                SceneName = GetSceneNameFromNetcodeSceneIndex(SceneEventData.SceneIndex),
+                SceneName = GetSceneNameFromBuildIndex(SceneEventData.SceneIndex),
                 ClientId = m_NetworkManager.ServerClientId
             });
 
@@ -793,7 +788,7 @@ namespace Unity.Netcode
             {
                 SceneEventType = SceneEventData.SceneEventTypes.C2S_LoadComplete,
                 LoadSceneMode = SceneEventData.LoadSceneMode,
-                SceneName = GetSceneNameFromNetcodeSceneIndex(SceneEventData.SceneIndex),
+                SceneName = GetSceneNameFromBuildIndex(SceneEventData.SceneIndex),
                 ClientId = m_NetworkManager.LocalClientId
             });
         }
@@ -827,16 +822,16 @@ namespace Unity.Netcode
             {
                 var scene = SceneManager.GetSceneAt(i);
 
-                var malpiSceneIndex = GetNetcodeSceneIndexFromScene(scene);
+                var sceneIndex = GetBuildIndexFromSceneName(scene.name);
 
-                if (malpiSceneIndex == uint.MaxValue)
+                if (sceneIndex == uint.MaxValue)
                 {
                     continue;
                 }
-                // This would depend upon whether we are additive or note
+                // This would depend upon whether we are additive or not (i.e. single mode loaded scenes are the currently active scene for now)
                 if (activeScene == scene)
                 {
-                    ClientSynchEventData.SceneIndex = GetBuildIndexFromSceneName(scene.name);
+                    ClientSynchEventData.SceneIndex = (uint)sceneIndex;
                 }
 
                 // Separate NetworkObjects by scene
@@ -852,7 +847,7 @@ namespace Unity.Netcode
                     {
                         continue;
                     }
-                    ClientSynchEventData.AddNetworkObjectForSynch(GetBuildIndexFromSceneName(scene.name), networkObject);
+                    ClientSynchEventData.AddNetworkObjectForSynch((uint)sceneIndex, networkObject);
                 }
             }
 
@@ -893,13 +888,13 @@ namespace Unity.Netcode
 
             var loadSceneMode = sceneIndex == SceneEventData.SceneIndex ? SceneEventData.LoadSceneMode : LoadSceneMode.Additive;
 
+            // Always check to see if the scene needs to be validated
             if (!ValidateSceneBeforeLoading(SceneEventData.SceneIndex, sceneName, loadSceneMode))
             {
                 return;
             }
 
             var activeScene = SceneManager.GetActiveScene();
-            var loadSceneMode = sceneIndex == SceneEventData.SceneIndex ? SceneEventData.LoadSceneMode : LoadSceneMode.Additive;
 
             // If this is the beginning of the synchronization event, then send client a notification that synchronization has begun
             if (sceneIndex == SceneEventData.SceneIndex)
@@ -943,7 +938,7 @@ namespace Unity.Netcode
         /// <param name="sceneIndex">Netcode scene index that was loaded</param>
         private void ClientLoadedSynchronization(uint sceneIndex)
         {
-            var sceneName = GetSceneNameFromNetcodeSceneIndex(sceneIndex);
+            var sceneName = GetSceneNameFromBuildIndex(sceneIndex);
             var nextScene = SceneManager.GetSceneByName(sceneName);
             if (nextScene == null)
             {
@@ -1059,7 +1054,7 @@ namespace Unity.Netcode
                         OnSceneEvent?.Invoke(new SceneEvent()
                         {
                             SceneEventType = SceneEventData.SceneEventType,
-                            SceneName = m_NetworkManager.SceneManager.GetSceneNameFromNetcodeSceneIndex(SceneEventData.SceneIndex),
+                            SceneName = GetSceneNameFromBuildIndex(SceneEventData.SceneIndex),
                             ClientId = m_NetworkManager.ServerClientId,
                             LoadSceneMode = SceneEventData.LoadSceneMode,
                             ClientsThatCompleted = SceneEventData.ClientsCompleted,
@@ -1092,7 +1087,7 @@ namespace Unity.Netcode
                         {
                             SceneEventType = SceneEventData.SceneEventType,
                             LoadSceneMode = SceneEventData.LoadSceneMode,
-                            SceneName = GetSceneNameFromNetcodeSceneIndex(SceneEventData.SceneIndex),
+                            SceneName = GetSceneNameFromBuildIndex(SceneEventData.SceneIndex),
                             ClientId = clientId
                         });
 
@@ -1114,7 +1109,7 @@ namespace Unity.Netcode
                         {
                             SceneEventType = SceneEventData.SceneEventType,
                             LoadSceneMode = SceneEventData.LoadSceneMode,
-                            SceneName = GetSceneNameFromNetcodeSceneIndex(SceneEventData.SceneIndex),
+                            SceneName = GetSceneNameFromBuildIndex(SceneEventData.SceneIndex),
                             ClientId = clientId
                         });
 

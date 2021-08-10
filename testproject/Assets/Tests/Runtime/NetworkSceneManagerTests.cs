@@ -141,20 +141,20 @@ namespace TestProject.RuntimeTests
         private void InitializeSceneTestInfo()
         {
             m_ShouldWaitList.Add(new SceneTestInfo() { ClientId = m_ServerNetworkManager.ServerClientId, ShouldWait = false });
-            if (!m_ServerNetworkManager.NetworkConfig.RegisteredScenes.Contains(m_CurrentScene))
-            {
-                m_ServerNetworkManager.NetworkConfig.AllowRuntimeSceneChanges = true;
-                m_ServerNetworkManager.SceneManager.AddRuntimeSceneName(m_CurrentScene, (uint)(m_ServerNetworkManager.NetworkConfig.RegisteredScenes.Count + 1));
-            }
+            //if (!m_ServerNetworkManager.ScenesInBuild.Scenes.Contains(m_CurrentScene))
+            //{
+            //    m_ServerNetworkManager.NetworkConfig.AllowRuntimeSceneChanges = true;
+            //    m_ServerNetworkManager.SceneManager.AddRuntimeSceneName(m_CurrentScene, (uint)(m_ServerNetworkManager.NetworkConfig.RegisteredScenes.Count + 1));
+            //}
 
             foreach (var manager in m_ClientNetworkManagers)
             {
                 m_ShouldWaitList.Add(new SceneTestInfo() { ClientId = manager.LocalClientId, ShouldWait = false });
-                if (!manager.NetworkConfig.RegisteredScenes.Contains(m_CurrentScene))
-                {
-                    manager.NetworkConfig.AllowRuntimeSceneChanges = true;
-                    manager.SceneManager.AddRuntimeSceneName(m_CurrentScene, (uint)(manager.NetworkConfig.RegisteredScenes.Count + 1));
-                }
+                //if (!manager.NetworkConfig.RegisteredScenes.Contains(m_CurrentScene))
+                //{
+                //    manager.NetworkConfig.AllowRuntimeSceneChanges = true;
+                //    manager.SceneManager.AddRuntimeSceneName(m_CurrentScene, (uint)(manager.NetworkConfig.RegisteredScenes.Count + 1));
+                //}
             }
         }
 

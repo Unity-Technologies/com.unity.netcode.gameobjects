@@ -120,9 +120,22 @@ namespace TestProject.ManualTests
                 {
                     sceneEventProgressStatus = NetworkManager.Singleton.SceneManager.UnloadScene(m_SceneToLoad);
                 }
-                if (sceneEventProgressStatus  == SceneEventProgressStatus.SceneEventInProgress)
+
+                switch(sceneEventProgressStatus)
                 {
-                    yield return new WaitForSeconds(0.25f);
+                    case SceneEventProgressStatus.SceneEventInProgress:
+                        {
+                            yield return new WaitForSeconds(0.25f);
+                            break;
+                        }
+                    case SceneEventProgressStatus.InvalidSceneName:
+                    case SceneEventProgressStatus.SceneNotLoaded:
+                        {
+                            var isLoadingOrUnloading = isLoading ? "Loading" : "Unloading";
+                            Debug.LogWarning($"{isLoadingOrUnloading} event failed due to the following error status: {sceneEventProgressStatus}");
+                            yield return null;
+                            break;
+                        }
                 }
             }
             m_ToggleObject.isOn = isLoading;

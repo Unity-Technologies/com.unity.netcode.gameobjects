@@ -96,8 +96,8 @@ namespace Unity.Netcode
         internal uint SceneIndex;
         internal ulong TargetClientId;
 
-        private Dictionary<int, List<NetworkObject>> m_SceneNetworkObjects;
-        private Dictionary<int, long> m_SceneNetworkObjectDataOffsets;
+        private Dictionary<uint, List<NetworkObject>> m_SceneNetworkObjects;
+        private Dictionary<uint, long> m_SceneNetworkObjectDataOffsets;
 
         /// <summary>
         /// Client or Server Side:
@@ -161,7 +161,7 @@ namespace Unity.Netcode
         {
             if (m_SceneNetworkObjects == null)
             {
-                m_SceneNetworkObjects = new Dictionary<int, List<NetworkObject>>();
+                m_SceneNetworkObjects = new Dictionary<uint, List<NetworkObject>>();
             }
             else
             {
@@ -249,7 +249,7 @@ namespace Unity.Netcode
                 writer.WriteByteArray(SceneEventGuid.ToByteArray());
             }
 
-            writer.WriteInt32Packed(SceneIndex);
+            writer.WriteUInt32Packed(SceneIndex);
 
             if (SceneEventType == SceneEventTypes.S2C_Sync)
             {
@@ -339,7 +339,7 @@ namespace Unity.Netcode
                 SceneEventGuid = new Guid(reader.ReadByteArray());
             }
 
-            SceneIndex = reader.ReadInt32Packed();
+            SceneIndex = reader.ReadUInt32Packed();
 
             if (SceneEventType == SceneEventTypes.S2C_Sync)
             {
@@ -348,7 +348,7 @@ namespace Unity.Netcode
 
                 if (m_SceneNetworkObjectDataOffsets == null)
                 {
-                    m_SceneNetworkObjectDataOffsets = new Dictionary<int, long>();
+                    m_SceneNetworkObjectDataOffsets = new Dictionary<uint, long>();
                 }
 
                 if (keyPairCount > 0)
@@ -361,7 +361,7 @@ namespace Unity.Netcode
                     {
                         for (int i = 0; i < keyPairCount; i++)
                         {
-                            var key = reader.ReadInt32Packed();
+                            var key = reader.ReadUInt32Packed();
                             var count = reader.ReadInt32Packed();
                             // how many bytes to read for this scene set
                             var bytesToRead = (ulong)reader.ReadUInt32();
@@ -590,6 +590,7 @@ namespace Unity.Netcode
         {
             InternalBuffer.Position = 0;
             InternalBuffer.CopyUnreadFrom(stream);
+            Debug.Log($"Copied {InternalBuffer.Position} unread bytes from stream");
             InternalBuffer.Position = 0;
         }
 
