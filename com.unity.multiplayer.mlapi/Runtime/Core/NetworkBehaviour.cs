@@ -475,7 +475,7 @@ namespace Unity.Netcode
                 return;
             }
 
-            if (NetworkManager.UseSnapshot)
+            if (NetworkManager.NetworkConfig.UseSnapshotDelta)
             {
                 for (int k = 0; k < NetworkVariableFields.Count; k++)
                 {
@@ -483,7 +483,7 @@ namespace Unity.Netcode
                 }
             }
 
-            if (NetworkManager.UseClassicDelta)
+            if (!NetworkManager.NetworkConfig.UseSnapshotDelta)
             {
                 for (int j = 0; j < m_ChannelMappedNetworkVariableIndexes.Count; j++)
                 {
@@ -551,6 +551,7 @@ namespace Unity.Netcode
                                     else
                                     {
                                         NetworkVariableFields[k].WriteDelta(buffer);
+                                        buffer.PadBuffer();
                                     }
 
                                     if (!m_NetworkVariableIndexesToResetSet.Contains(k))
@@ -656,11 +657,10 @@ namespace Unity.Netcode
                     PerformanceDataManager.Increment(ProfilerConstants.NetworkVarDeltas);
 
                     ProfilerStatManager.NetworkVarsRcvd.Record();
+                    (stream as NetworkBuffer).SkipPadBits();
 
                     if (networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                     {
-                        (stream as NetworkBuffer).SkipPadBits();
-
                         if (stream.Position > (readStartPos + varSize))
                         {
                             if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
@@ -816,6 +816,7 @@ namespace Unity.Netcode
                         else
                         {
                             networkVariableList[j].WriteField(stream);
+                            writer.WritePadBits();
                         }
                     }
                 }
@@ -855,6 +856,7 @@ namespace Unity.Netcode
                     long readStartPos = stream.Position;
 
                     networkVariableList[j].ReadField(stream);
+                    reader.SkipPadBits();
 
                     if (networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                     {
