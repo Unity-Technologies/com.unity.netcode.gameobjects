@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Unity.Netcode
 {
-    public class PositionSimpleInterpolator : IInterpolator<Vector3>
+    public class SimpleInterpolatorVector3 : IInterpolator<Vector3>
     {
         private float m_CurrentTime;
         private Vector3 m_StartVector;
