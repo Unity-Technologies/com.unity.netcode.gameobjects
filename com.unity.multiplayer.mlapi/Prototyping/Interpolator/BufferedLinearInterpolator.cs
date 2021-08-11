@@ -41,7 +41,7 @@ namespace Unity.Netcode
         private void TryConsumeFromBuffer()
         {
             int nbConsumed = 0;
-            // sorted so newer (bigger) time values are at the beginning.
+            // sorted so older (smaller) time values are at the end.
             for (int i = m_Buffer.Count - 1; i >= 0; i--)
             {
                 var bufferedValue = m_Buffer[i];
@@ -79,8 +79,6 @@ namespace Unity.Netcode
             float t = (float)((renderTime - timeA.Time) / range);
             m_CurrentUpdatedValue = Interpolate(m_LerpStartValue, m_LerpEndValue, t);
 
-            var pos = m_CurrentUpdatedValue is Vector3 value ? value : default;
-            Debug.DrawLine(pos, pos + Vector3.up, Color.magenta, 10, false);
             return m_CurrentUpdatedValue;
         }
 
@@ -90,18 +88,14 @@ namespace Unity.Netcode
 
         public void AddMeasurement(T newMeasurement, NetworkTime sentTime)
         {
-            var debugPos = newMeasurement is Vector3 value ? value : default;
-            Debug.DrawLine(debugPos, debugPos + Vector3.right + Vector3.up, Color.red, 10, false);
-
-            // todo put limit on size, we don't want lag spikes to create 100 entries and have a list that size in memory for ever
-            if (m_Buffer.Count >= k_BufferSizeLimit)
+            if (m_Buffer.Count > k_BufferSizeLimit)
             {
-                Debug.LogWarning("Going over buffer size limit while adding new interpolation values, interpolation buffering isn't consuming fast enough, removing last value now.");
-                // todo remove oldest item
+                Debug.LogWarning("Going over buffer size limit while adding new interpolation values, interpolation buffering isn't consuming fast enough, removing oldest value now.");
+                m_Buffer.RemoveAt(m_Buffer.Count - 1);
             }
 
             m_Buffer.Add(new BufferedItem {item = newMeasurement, timeSent = sentTime});
-            m_Buffer.Sort((item1, item2) => item2.timeSent.Time.CompareTo(item1.timeSent.Time)); // todo test the reverse, this should actually be the other way
+            m_Buffer.Sort((item1, item2) => item2.timeSent.Time.CompareTo(item1.timeSent.Time));
         }
 
         public T GetInterpolatedValue()

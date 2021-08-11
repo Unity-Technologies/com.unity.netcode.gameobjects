@@ -306,6 +306,13 @@ namespace Unity.Netcode.Prototyping
             ScaleInterpolator.Start();
         }
 
+        public void OnEnable()
+        {
+            PositionInterpolator.OnEnable();
+            RotationInterpolator.OnEnable();
+            ScaleInterpolator.OnEnable();
+        }
+
         public override void OnNetworkSpawn()
         {
             m_PrevNetworkState = null;
@@ -323,6 +330,10 @@ namespace Unity.Netcode.Prototyping
         private void OnDestroy()
         {
             m_NetworkState.OnValueChanged -= OnNetworkStateChanged;
+
+            PositionInterpolator.OnDestroy();
+            RotationInterpolator.OnDestroy();
+            ScaleInterpolator.OnDestroy();
         }
 
         private void FixedUpdate()
