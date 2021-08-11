@@ -84,18 +84,58 @@ namespace Unity.Netcode.Prototyping
         [SerializeField, Range(0, 120), Tooltip("The base amount of sends per seconds to use when range is disabled")]
         public float FixedSendsPerSecond = 30f;
 
-        [SerializeField]
-        private InterpolatorFactory<Vector3> m_PositionInterpolatorFactory;
-
-        [SerializeField]
-        private InterpolatorFactory<Quaternion> m_RotationInterpolatorFactory;
-
         protected virtual IInterpolator<Vector3> PositionInterpolator { get; set; }
-
         protected virtual IInterpolator<Quaternion> RotationInterpolator { get; set; }
+        protected virtual IInterpolator<Vector3> ScaleInterpolator { get; set; }
         // public IInterpolator<Vector3> PositionInterpolator = new BufferedLinearInterpolatorVector3(ScriptableObject.CreateInstance<BufferedLinearInterpolatorVector3Factory>()); // todo tmp, use default value instead
 
         private Transform m_Transform; // cache the transform component to reduce unnecessary bounce between managed and native
+
+        private Vector3 TransformPosition
+        {
+            get
+            {
+                if (InLocalSpace)
+                {
+                    return m_Transform.localPosition;
+                }
+                else
+                {
+                    return m_Transform.position;
+                }
+            }
+        }
+
+        private Quaternion TransformRotation
+        {
+            get
+            {
+                if (InLocalSpace)
+                {
+                    return m_Transform.localRotation;
+                }
+                else
+                {
+                    return m_Transform.rotation;
+                }
+            }
+        }
+
+        private Vector3 TransformScale
+        {
+            get
+            {
+                if (InLocalSpace)
+                {
+                    return m_Transform.localScale;
+                }
+                else
+                {
+                    return m_Transform.lossyScale;
+                }
+            }
+        }
+
         private readonly NetworkVariable<NetworkState> m_NetworkState = new NetworkVariable<NetworkState>(new NetworkState());
         private NetworkState m_PrevNetworkState;
 
@@ -121,13 +161,13 @@ namespace Unity.Netcode.Prototyping
             {
                 isDirty |= networkState.Position != PositionInterpolator.GetInterpolatedValue();
                 isDirty |= networkState.Rotation != RotationInterpolator.GetInterpolatedValue();
-                isDirty |= networkState.Scale != m_Transform.localScale;
+                isDirty |= networkState.Scale != ScaleInterpolator.GetInterpolatedValue();
             }
             else
             {
                 isDirty |= networkState.Position != PositionInterpolator.GetInterpolatedValue();
                 isDirty |= networkState.Rotation != RotationInterpolator.GetInterpolatedValue();
-                isDirty |= networkState.Scale != m_Transform.lossyScale;
+                isDirty |= networkState.Scale != ScaleInterpolator.GetInterpolatedValue();
             }
 
             return isDirty;
@@ -154,8 +194,6 @@ namespace Unity.Netcode.Prototyping
             return isDirty;
         }
 
-        private double previousTimeSam;
-        private Vector3 previousPosSam;
         private void SendNetworkStateToGhosts(double dirtyTime)
         {
             m_NetworkState.Value.InLocalSpace = InLocalSpace;
@@ -172,10 +210,6 @@ namespace Unity.Netcode.Prototyping
                 m_NetworkState.Value.Rotation = m_Transform.rotation;
                 m_NetworkState.Value.Scale = m_Transform.lossyScale;
             }
-            Debug.DrawLine(m_NetworkState.Value.Position, m_NetworkState.Value.Position + Vector3.up * 100f * (float) (m_NetworkState.Value.SentTime - previousTimeSam), Color.yellow, 10, false);
-            Debug.Log($"sam asdf distance {Math.Round((m_NetworkState.Value.Position - previousPosSam).magnitude, 2)} tick diff {m_NetworkState.Value.SentTime - previousTimeSam} sam");
-            previousTimeSam = m_NetworkState.Value.SentTime;
-            previousPosSam = m_NetworkState.Value.Position;
 
             m_NetworkState.SetDirty(true);
         }
@@ -185,6 +219,7 @@ namespace Unity.Netcode.Prototyping
             netState = new NetworkState(netState);
             netState.Position = PositionInterpolator.GetInterpolatedValue();
             netState.Rotation = RotationInterpolator.GetInterpolatedValue();
+            netState.Scale = ScaleInterpolator.GetInterpolatedValue();
 
             InLocalSpace = netState.InLocalSpace;
             if (InLocalSpace)
@@ -205,9 +240,6 @@ namespace Unity.Netcode.Prototyping
             m_PrevNetworkState = netState;
         }
 
-
-        private int oldTick;
-        private NetworkState debug_previousStateChanged;
         private void OnNetworkStateChanged(NetworkState oldState, NetworkState newState)
         {
             if (!NetworkObject.IsSpawned)
@@ -222,22 +254,16 @@ namespace Unity.Netcode.Prototyping
                 return;
             }
 
-            // todo check teleport flag
+            // todo for teleport, check teleport flag
             // if (newState.Teleporting)
             // {
             //     PositionInterpolator.Reset(newState.Position, new NetworkTime(NetworkManager.Singleton.ServerTime.TickRate, newState.SentTick));
             // }
 
-            // PositionInterpolator.AddMeasurement(newState.Position, NetworkManager.Singleton.ServerTime.Time);
-
-            Debug.Log($"distance sam {Math.Round((newState.Position - oldState.Position).magnitude, 2)}");
-            Debug.Log($"diff tick sam {(newState.SentTime - oldState.SentTime, 2)}");
-            // oldTick = NetworkManager.Singleton.ServerTime.Tick;
-            // Debug.DrawLine(newState.Position, newState.Position + Vector3.down + Vector3.left, Color.yellow, 10, false);
-            debug_previousStateChanged = newState;
             var sentTime = new NetworkTime(NetworkManager.Singleton.ServerTime.TickRate, newState.SentTime);
             PositionInterpolator.AddMeasurement(newState.Position, sentTime);
             RotationInterpolator.AddMeasurement(newState.Rotation, sentTime);
+            ScaleInterpolator.AddMeasurement(newState.Scale, sentTime);
         }
 
         private void UpdateNetVarPerms()
@@ -260,28 +286,10 @@ namespace Unity.Netcode.Prototyping
 
         private void Awake()
         {
-            //debug, remove me
-            // Time.maximumDeltaTime = 999f;
-
             m_Transform = transform;
-            var defaultBufferTime = 0.1f;
-            if (m_PositionInterpolatorFactory == null)
-            {
-                PositionInterpolator = new BufferedLinearInterpolatorVector3(new BufferedLinearInterpolatorSettings {InterpolationTime = defaultBufferTime});
-            }
-            else
-            {
-                PositionInterpolator = m_PositionInterpolatorFactory.CreateInterpolator();
-            }
-
-            if (m_RotationInterpolatorFactory == null)
-            {
-                RotationInterpolator = new BufferedLinearInterpolatorQuaternion(new BufferedLinearInterpolatorSettings {InterpolationTime = defaultBufferTime});
-            }
-            else
-            {
-                RotationInterpolator = m_RotationInterpolatorFactory.CreateInterpolator();
-            }
+            PositionInterpolator = new BufferedLinearInterpolatorVector3();
+            RotationInterpolator = new BufferedLinearInterpolatorQuaternion();
+            ScaleInterpolator = new BufferedLinearInterpolatorVector3();
 
             UpdateNetVarPerms();
 
@@ -291,20 +299,25 @@ namespace Unity.Netcode.Prototyping
             m_NetworkState.OnValueChanged += OnNetworkStateChanged;
         }
 
+        public void Start()
+        {
+            PositionInterpolator.Start();
+            RotationInterpolator.Start();
+            ScaleInterpolator.Start();
+        }
+
         public override void OnNetworkSpawn()
         {
             m_PrevNetworkState = null;
-            // if (enabled) // todo Luke fix your UX
-            // {
-            //     NetworkManager.NetworkTickSystem.Tick += NetworkTickUpdate;
-            // }
 
             var currentTime = new NetworkTime(NetworkManager.Singleton.ServerTime.TickRate, m_NetworkState.Value.SentTime);
-            PositionInterpolator.Reset(m_Transform.position, currentTime);
-            RotationInterpolator.Reset(m_Transform.rotation, currentTime);
+            PositionInterpolator.Reset(TransformPosition, currentTime);
+            RotationInterpolator.Reset(TransformRotation, currentTime);
+            ScaleInterpolator.Reset(TransformScale, currentTime);
 
             PositionInterpolator.OnNetworkSpawn();
             RotationInterpolator.OnNetworkSpawn();
+            ScaleInterpolator.OnNetworkSpawn();
         }
 
         private void OnDestroy()
@@ -318,27 +331,16 @@ namespace Unity.Netcode.Prototyping
             {
                 return;
             }
-            // if (CanUpdateTransform)
-            // {
-            //     if (IsTransformDirty())
-            //     {
-            //         // check for time there was a change to the transform
-            //         m_DirtyTime = NetworkManager.LocalTime.Time;
-            //     }
-            //
-            //     UpdateNetworkState();
-            // }
-            // else
-            {
-                if (IsNetworkStateDirty(m_PrevNetworkState))
-                {
-                    Debug.LogWarning("A local change without authority detected, revert back to latest network state!");
-                    ApplyNetworkStateFromAuthority(m_NetworkState.Value);
-                }
 
-                PositionInterpolator.FixedUpdate(NetworkManager.ServerTime.FixedDeltaTime);
-                RotationInterpolator.FixedUpdate(NetworkManager.ServerTime.FixedDeltaTime);
+            if (IsNetworkStateDirty(m_PrevNetworkState))
+            {
+                Debug.LogWarning("A local change without authority detected, revert back to latest network state!");
+                ApplyNetworkStateFromAuthority(m_NetworkState.Value);
             }
+
+            PositionInterpolator.FixedUpdate(NetworkManager.ServerTime.FixedDeltaTime);
+            RotationInterpolator.FixedUpdate(NetworkManager.ServerTime.FixedDeltaTime);
+            ScaleInterpolator.FixedUpdate(NetworkManager.ServerTime.FixedDeltaTime);
         }
 
         private int debugOldTime = 0;
@@ -361,13 +363,9 @@ namespace Unity.Netcode.Prototyping
 
             if (!CanUpdateTransform)
             {
-                // Debug.Log("gaga "+Math.Round(Time.time - (float)NetworkManager.Singleton.ServerTime.Time, 2));
-
-                // Debug.Log($"sam {Math.Round(NetworkManager.Singleton.ServerTime.Time - debugOldTime, 2)}");
-                // debugOldTime = NetworkManager.Singleton.ServerTime.Time;
-
                 PositionInterpolator.Update(Time.deltaTime);
                 RotationInterpolator.Update(Time.deltaTime);
+                ScaleInterpolator.Update(Time.deltaTime);
                 ApplyNetworkStateFromAuthority(m_NetworkState.Value);
             }
         }

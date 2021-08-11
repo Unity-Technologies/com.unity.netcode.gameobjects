@@ -4,7 +4,6 @@ namespace Unity.Netcode
 {
     public interface IInterpolator<T>
     {
-        public void Awake();
         public void OnNetworkSpawn();
         public void Start();
         public void OnEnable();
@@ -14,15 +13,5 @@ namespace Unity.Netcode
         public T GetInterpolatedValue();
         public void Reset(T value, NetworkTime sentTime);
         public void OnDestroy();
-    }
-
-    public abstract class InterpolatorFactory<T> : ScriptableObject
-    {
-        public const string BaseMenuName = "MLAPI/Interpolator/";
-        public abstract IInterpolator<T> CreateInterpolator();
-    }
-
-    public interface IInterpolatorSettings
-    {
     }
 }

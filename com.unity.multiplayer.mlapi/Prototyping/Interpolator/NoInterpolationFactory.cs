@@ -1,25 +1,5 @@
-using UnityEngine;
-
 namespace Unity.Netcode
 {
-    [CreateAssetMenu(fileName = "NoInterpolationVector3", menuName = BaseMenuName + "NoInterpolationVector3", order = 1)]
-    public class NoInterpolationVector3Factory : InterpolatorFactory<Vector3>
-    {
-        public override IInterpolator<Vector3> CreateInterpolator()
-        {
-            return new NoInterpolation<Vector3>();
-        }
-    }
-
-    [CreateAssetMenu(fileName = "NoInterpolationQuaternion", menuName = BaseMenuName + "NoInterpolationQuaternion", order = 1)]
-    public class NoInterpolationQuaternionFactory : InterpolatorFactory<Quaternion>
-    {
-        public override IInterpolator<Quaternion> CreateInterpolator()
-        {
-            return new NoInterpolation<Quaternion>();
-        }
-    }
-
     public class NoInterpolation<T> : IInterpolator<T>
     {
         private T m_Current;
@@ -60,7 +40,7 @@ namespace Unity.Netcode
             return m_Current;
         }
 
-        public void Reset(T value, NetworkTime SentTick)
+        public void Reset(T value, NetworkTime sentTick)
         {
             m_Current = value;
         }

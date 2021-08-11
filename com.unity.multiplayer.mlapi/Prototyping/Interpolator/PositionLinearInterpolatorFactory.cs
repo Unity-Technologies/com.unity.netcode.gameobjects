@@ -3,34 +3,14 @@ using UnityEngine;
 
 namespace Unity.Netcode
 {
-    [CreateAssetMenu(fileName = "PositionLinearInterpolator", menuName = BaseMenuName + "PositionLinearInterpolator", order = 1)]
-    public class PositionLinearInterpolatorFactory : InterpolatorFactory<Vector3>
+    public class PositionSimpleInterpolator : IInterpolator<Vector3>
     {
-        [SerializeField]
-        public float MaxLerpTime = 0.2f;
+        private float m_CurrentTime;
+        private Vector3 m_StartVector;
+        private Vector3 m_EndVector;
+        private Vector3 m_UpdatedVector;
 
-        public override IInterpolator<Vector3> CreateInterpolator()
-        {
-            return new PositionLinearInterpolator(this);
-        }
-    }
-
-    public class PositionLinearInterpolator : IInterpolator<Vector3>
-    {
-        public float m_CurrentTime;
-        public Vector3 m_StartVector;
-        public Vector3 m_EndVector;
-        public Vector3 m_UpdatedVector;
-        private readonly PositionLinearInterpolatorFactory m_Factory;
-
-        public PositionLinearInterpolator(PositionLinearInterpolatorFactory factory)
-        {
-            m_Factory = factory;
-        }
-
-        public void Awake()
-        {
-        }
+        private const float k_MaxLerpTime = 0.1f;
 
         public void OnNetworkSpawn()
         {
@@ -47,7 +27,7 @@ namespace Unity.Netcode
         public Vector3 Update(float deltaTime)
         {
             m_CurrentTime += deltaTime;
-            m_UpdatedVector = Vector3.Lerp(m_StartVector, m_EndVector, m_CurrentTime / m_Factory.MaxLerpTime);
+            m_UpdatedVector = Vector3.Lerp(m_StartVector, m_EndVector, m_CurrentTime / k_MaxLerpTime);
             return GetInterpolatedValue();
         }
 
@@ -55,7 +35,7 @@ namespace Unity.Netcode
         {
         }
 
-        public void AddMeasurement(Vector3 newMeasurement, NetworkTime SentTick)
+        public void AddMeasurement(Vector3 newMeasurement, NetworkTime sentTick)
         {
             m_EndVector = newMeasurement;
             m_CurrentTime = 0;
@@ -67,7 +47,7 @@ namespace Unity.Netcode
             return m_UpdatedVector;
         }
 
-        public void Reset(Vector3 value, NetworkTime SentTick)
+        public void Reset(Vector3 value, NetworkTime sentTick)
         {
             m_UpdatedVector = value;
         }

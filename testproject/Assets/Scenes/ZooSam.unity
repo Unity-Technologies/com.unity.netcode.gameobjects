@@ -6195,9 +6195,9 @@ MonoBehaviour:
   MaxConnectAttempts: 10
   channels: []
   MessageBufferSize: 5120
-  SimulatePacketLossChance: 0
-  SimulateMinLatency: 0
-  SimulateMaxLatency: 0
+  SimulatePacketLossChance: 10
+  SimulateMinLatency: 70
+  SimulateMaxLatency: 130
 --- !u!1001 &627808638
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -7435,9 +7435,6 @@ MonoBehaviour:
   Authority: 0
   InLocalSpace: 0
   FixedSendsPerSecond: 30
-  m_PositionInterpolatorFactory: {fileID: 11400000, guid: a882403a7bf6247cd881a093a9a3f537,
-    type: 2}
-  m_RotationInterpolatorFactory: {fileID: 0}
 --- !u!65 &678326396
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -20871,42 +20868,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: df4fbe773fc544428171994e08b0483f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  FixedSendsPerSecond: 20
-  AssumeSyncedSends: 1
-  InterpolatePosition: 1
-  SnapDistance: 10
-  InterpolateServer: 1
-  MinMeters: 0.15
-  MinDegrees: 1.5
-  ExtrapolatePosition: 0
-  MaxSendsToExtrapolate: 5
-  Channel: 
-  EnableRange: 0
-  EnableNonProvokedResendChecks: 0
-  DistanceSendrate:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 20
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    - serializedVersion: 3
-      time: 500
-      value: 20
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
 --- !u!65 &1643885208
 BoxCollider:
   m_ObjectHideFlags: 0
