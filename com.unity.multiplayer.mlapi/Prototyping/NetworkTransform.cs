@@ -1,5 +1,4 @@
 using System;
-using Unity.Netcode;
 using UnityEngine;
 
 namespace Unity.Netcode.Prototyping
@@ -66,8 +65,8 @@ namespace Unity.Netcode.Prototyping
         /// The network channel to use send updates
         /// </summary>
         [Tooltip("The network channel to use send updates")]
-        private NetworkChannel Channel = NetworkChannel.SyncChannel;
-        // private NetworkChannel Channel = NetworkChannel.PositionUpdate;
+        // private NetworkChannel Channel = NetworkChannel.SyncChannel;
+        private NetworkChannel Channel = NetworkChannel.PositionUpdate;
 
         /// <summary>
         /// Sets whether this transform should sync in local space or in world space.
@@ -87,7 +86,6 @@ namespace Unity.Netcode.Prototyping
         protected virtual IInterpolator<Vector3> PositionInterpolator { get; set; }
         protected virtual IInterpolator<Quaternion> RotationInterpolator { get; set; }
         protected virtual IInterpolator<Vector3> ScaleInterpolator { get; set; }
-        // public IInterpolator<Vector3> PositionInterpolator = new BufferedLinearInterpolatorVector3(ScriptableObject.CreateInstance<BufferedLinearInterpolatorVector3Factory>()); // todo tmp, use default value instead
 
         private Transform m_Transform; // cache the transform component to reduce unnecessary bounce between managed and native
 
@@ -216,28 +214,26 @@ namespace Unity.Netcode.Prototyping
 
         private void ApplyNetworkStateFromAuthority(NetworkState netState)
         {
-            netState = new NetworkState(netState);
-            netState.Position = PositionInterpolator.GetInterpolatedValue();
-            netState.Rotation = RotationInterpolator.GetInterpolatedValue();
-            netState.Scale = ScaleInterpolator.GetInterpolatedValue();
-
             InLocalSpace = netState.InLocalSpace;
             if (InLocalSpace)
             {
-                m_Transform.localPosition = netState.Position;
-                m_Transform.localRotation = netState.Rotation;
-                m_Transform.localScale = netState.Scale;
+                m_Transform.localPosition = PositionInterpolator.GetInterpolatedValue();
+                m_Transform.localRotation = RotationInterpolator.GetInterpolatedValue();
+                m_Transform.localScale = ScaleInterpolator.GetInterpolatedValue();
             }
             else
             {
-                m_Transform.position = netState.Position;
-                m_Transform.rotation = netState.Rotation;
+                m_Transform.position = PositionInterpolator.GetInterpolatedValue();
+                m_Transform.rotation = RotationInterpolator.GetInterpolatedValue();
                 m_Transform.localScale = Vector3.one;
                 var lossyScale = m_Transform.lossyScale;
-                m_Transform.localScale = new Vector3(netState.Scale.x / lossyScale.x, netState.Scale.y / lossyScale.y, netState.Scale.z / lossyScale.z);
+                m_Transform.localScale = new Vector3(ScaleInterpolator.GetInterpolatedValue().x / lossyScale.x, ScaleInterpolator.GetInterpolatedValue().y / lossyScale.y, ScaleInterpolator.GetInterpolatedValue().z / lossyScale.z);
             }
 
             m_PrevNetworkState = netState;
+            m_PrevNetworkState.Position = PositionInterpolator.GetInterpolatedValue();
+            m_PrevNetworkState.Rotation = RotationInterpolator.GetInterpolatedValue();
+            m_PrevNetworkState.Scale = ScaleInterpolator.GetInterpolatedValue();
         }
 
         private void OnNetworkStateChanged(NetworkState oldState, NetworkState newState)
@@ -345,7 +341,7 @@ namespace Unity.Netcode.Prototyping
 
             if (IsNetworkStateDirty(m_PrevNetworkState))
             {
-                Debug.LogWarning("A local change without authority detected, revert back to latest network state!");
+                Debug.LogWarning("A local change without authority detected, revert back to latest network state!", this);
                 ApplyNetworkStateFromAuthority(m_NetworkState.Value);
             }
 
@@ -353,8 +349,6 @@ namespace Unity.Netcode.Prototyping
             RotationInterpolator.FixedUpdate(NetworkManager.ServerTime.FixedDeltaTime);
             ScaleInterpolator.FixedUpdate(NetworkManager.ServerTime.FixedDeltaTime);
         }
-
-        private int debugOldTime = 0;
 
         private void Update()
         {

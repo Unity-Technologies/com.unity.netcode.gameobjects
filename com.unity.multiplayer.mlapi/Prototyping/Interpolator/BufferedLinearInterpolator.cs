@@ -112,7 +112,6 @@ namespace Unity.Netcode
 
         public void OnDestroy()
         {
-            throw new System.NotImplementedException();
         }
 
         public abstract T Interpolate(T start, T end, float time);
