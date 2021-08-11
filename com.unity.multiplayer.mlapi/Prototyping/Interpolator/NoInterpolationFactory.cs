@@ -1,7 +1,6 @@
-using MLAPI.Timing;
 using UnityEngine;
 
-namespace DefaultNamespace
+namespace Unity.Netcode
 {
     [CreateAssetMenu(fileName = "NoInterpolationVector3", menuName = BaseMenuName + "NoInterpolationVector3", order = 1)]
     public class NoInterpolationVector3Factory : InterpolatorFactory<Vector3>

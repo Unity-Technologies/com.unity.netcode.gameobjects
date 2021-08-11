@@ -1,8 +1,7 @@
 using System;
-using MLAPI.Timing;
 using UnityEngine;
 
-namespace MLAPI
+namespace Unity.Netcode
 {
     [CreateAssetMenu(fileName = "PositionLinearInterpolator", menuName = BaseMenuName + "PositionLinearInterpolator", order = 1)]
     public class PositionLinearInterpolatorFactory : InterpolatorFactory<Vector3>

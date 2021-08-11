@@ -1,11 +1,7 @@
 using System.Collections.Generic;
-using MLAPI;
-using MLAPI.NetworkVariable;
-using MLAPI.Serialization;
-using MLAPI.Timing;
 using UnityEngine;
 
-namespace unity.netcode
+namespace Unity.Netcode
 {
     public interface IBufferedLinearInterpolatorSettings : IInterpolatorSettings
     {
