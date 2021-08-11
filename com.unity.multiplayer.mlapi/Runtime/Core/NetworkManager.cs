@@ -241,6 +241,9 @@ namespace Unity.Netcode
         /// </summary>
         [HideInInspector] public NetworkConfig NetworkConfig;
 
+        /// <summary>
+        /// Reference to the ScenesInBuild asset that contains a list of the scenes in the build list
+        /// </summary>
         [HideInInspector]
         [SerializeField]
         internal ScenesInBuild ScenesInBuild;
@@ -258,6 +261,10 @@ namespace Unity.Netcode
 
 
 #if UNITY_EDITOR
+        /// <summary>
+        /// Assures the ScenesInBuild asset exists and that it is always up to date
+        /// </summary>
+        /// <param name="isTesting"></param>
         internal void PopulateScenesInBuild(bool isTesting = false)
         {
             if ( (!EditorApplication.isPlayingOrWillChangePlaymode && !EditorApplication.isPlaying && !EditorApplication.isUpdating) || isTesting)

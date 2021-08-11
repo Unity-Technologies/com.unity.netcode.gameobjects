@@ -119,19 +119,6 @@ namespace Unity.Netcode
         /// </summary>
         public VerifySceneBeforeLoadingDelegateHandler VerifySceneBeforeLoading;
 
-        /// <summary>
-        /// Delegate declaration for the <see cref="OnSceneVerificationFailed"/> event handler.
-        /// </summary>
-        /// <param name="sceneName">scene name that failed verification</param>
-        public delegate void SceneVerificationFailedDelegateHandler(string sceneName);
-
-        /// <summary>
-        /// Client Side:
-        /// Optional event handler to be notified on the client side that the current server the client is connected to attempted to
-        /// instruct the client to load a scene that did not pass verification.
-        /// </summary>
-        public event SceneVerificationFailedDelegateHandler OnSceneVerificationFailed;
-
         internal readonly Dictionary<Guid, SceneEventProgress> SceneEventProgressTracking = new Dictionary<Guid, SceneEventProgress>();
         internal readonly Dictionary<uint, NetworkObject> ScenePlacedObjects = new Dictionary<uint, NetworkObject>();
 
@@ -515,17 +502,19 @@ namespace Unity.Netcode
                 return sceneEventProgress.Status;
             }
 
-            if (!ValidateSceneBeforeLoading(SceneEventData.SceneIndex, sceneName, loadSceneMode))
-            {
-                return SceneEventProgressStatus.SceneFailedVerification;
-            }
-
             sceneEventProgress.SceneEventType = SceneEventData.SceneEventTypes.S2C_LoadComplete;
             sceneEventProgress.LoadSceneMode = loadSceneMode;
             SceneEventData.SceneEventGuid = sceneEventProgress.Guid;
             SceneEventData.SceneEventType = SceneEventData.SceneEventTypes.S2C_Load;
             SceneEventData.SceneIndex = GetBuildIndexFromSceneName(sceneName);
             SceneEventData.LoadSceneMode = loadSceneMode;
+
+            // This both checks to make sure the scene is valid and if not resets the active scene event
+            s_IsSceneEventActive = ValidateSceneBeforeLoading(SceneEventData.SceneIndex, sceneName, loadSceneMode);
+            if (!s_IsSceneEventActive)
+            {
+                return SceneEventProgressStatus.SceneFailedVerification;
+            }
 
             if (SceneEventData.LoadSceneMode == LoadSceneMode.Single)
             {
@@ -598,8 +587,6 @@ namespace Unity.Netcode
             // Run scene validation before loading a scene
             if (!ValidateSceneBeforeLoading(SceneEventData.SceneIndex, sceneName, SceneEventData.LoadSceneMode))
             {
-                // If there are client side subscribers, then send notification that the current server instructed the client to load a scene that did not pass verification
-                OnSceneVerificationFailed?.Invoke(sceneName);
                 return;
             }
 
@@ -905,8 +892,6 @@ namespace Unity.Netcode
             // Always check to see if the scene needs to be validated
             if (!ValidateSceneBeforeLoading(SceneEventData.SceneIndex, sceneName, loadSceneMode))
             {
-                // If there are client side subscribers, then notify the server instructed the client to load a scene that did not pass verification
-                OnSceneVerificationFailed?.Invoke(sceneName);
                 return;
             }
 
