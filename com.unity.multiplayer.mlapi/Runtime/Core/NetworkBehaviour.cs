@@ -409,7 +409,8 @@ namespace Unity.Netcode
                     instance.SetNetworkBehaviour(this);
 
                     var instanceNameProperty = fieldType.GetProperty(nameof(INetworkVariable.Name));
-                    instanceNameProperty?.SetValue(instance, sortedFields[i].Name);
+                    var sanitizedVariableName = sortedFields[i].Name.Replace("<", string.Empty).Replace(">k__BackingField", string.Empty);
+                    instanceNameProperty?.SetValue(instance, sanitizedVariableName);
 
                     NetworkVariableFields.Add(instance);
                 }

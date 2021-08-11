@@ -4,6 +4,7 @@ using Unity.Multiplayer.MetricTypes;
 using Unity.Multiplayer.NetStats.Dispatch;
 using Unity.Multiplayer.NetStats.Metrics;
 using Unity.Multiplayer.NetStatsReporting;
+using UnityEngine.Profiling;
 
 namespace Unity.Netcode
 {
@@ -92,13 +93,11 @@ namespace Unity.Netcode
 
         public void TrackNetworkVariableDeltaSent(ulong receiverClientId, ulong networkObjectId, string gameObjectName, string variableName, long bytesCount)
         {
-            variableName = PrettyPrintVariableName(variableName);
             m_NetworkVariableDeltaSentEvent.Mark(new NetworkVariableEvent(new ConnectionInfo(receiverClientId), new NetworkObjectIdentifier(gameObjectName, networkObjectId), variableName, bytesCount));
         }
 
         public void TrackNetworkVariableDeltaReceived(ulong senderClientId, ulong networkObjectId, string gameObjectName, string variableName, long bytesCount)
         {
-            variableName = PrettyPrintVariableName(variableName);
             m_NetworkVariableDeltaReceivedEvent.Mark(new NetworkVariableEvent(new ConnectionInfo(senderClientId), new NetworkObjectIdentifier(gameObjectName, networkObjectId), variableName, bytesCount));
         }
 
@@ -182,11 +181,6 @@ namespace Unity.Netcode
         public void DispatchFrame()
         {
             Dispatcher.Dispatch();
-        }
-
-        private static string PrettyPrintVariableName(string variableName)
-        {
-            return variableName.Replace("<", string.Empty).Replace(">k__BackingField", string.Empty);
         }
     }
 
