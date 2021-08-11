@@ -101,4 +101,38 @@ namespace Unity.Netcode.Editor
             }
         }
     }
+
+    /// <summary>
+    /// This assures that a user cannot place a GameObject with a NetworkObject component under a GameObject
+    /// with a NetworkManager component
+    /// </summary>
+    [InitializeOnLoad]
+    public static class NetworkObjectHierarchyMonitor
+    {
+        static NetworkObjectHierarchyMonitor()
+        {
+            EditorApplication.hierarchyChanged += OnHierarchyChanged;
+        }
+
+        private static void OnHierarchyChanged()
+        {
+            // Get all NetworkObjects in the Hierarchy
+            var allNetworkObjects = Resources.FindObjectsOfTypeAll<NetworkObject>();
+            foreach (var networkObject in allNetworkObjects)
+            {
+                // Only check NetworkObjects that have a parent
+                if (networkObject.transform.parent != null)
+                {
+                    // Check to see if any parent has the NetworkManager component
+                    var networkManager = networkObject.gameObject.GetComponentInParent<NetworkManager>();
+                    if (networkManager != null)
+                    {
+                        // If it does log a console error and move the GameObject to root of the Hierarchy
+                        Debug.LogError($"{nameof(GameObject)}s with {nameof(NetworkObject)} components cannot be nested under a {nameof(GameObject)} with the {nameof(NetworkManager)} component!");
+                        networkObject.transform.parent = null;
+                    }
+                }
+            }
+        }
+    }
 }
