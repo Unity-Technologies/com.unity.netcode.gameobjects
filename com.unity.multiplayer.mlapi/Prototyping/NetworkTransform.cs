@@ -27,9 +27,9 @@ namespace Unity.Netcode.Prototyping
             internal const int PositionXBit = 1;
             internal const int PositionYBit = 2;
             internal const int PositionZBit = 3;
-            internal const int RotationXBit = 4;
-            internal const int RotationYBit = 5;
-            internal const int RotationZBit = 6;
+            internal const int RotAngleXBit = 4;
+            internal const int RotAngleYBit = 5;
+            internal const int RotAngleZBit = 6;
             internal const int ScaleXBit = 7;
             internal const int ScaleYBit = 8;
             internal const int ScaleZBit = 9;
@@ -57,21 +57,21 @@ namespace Unity.Netcode.Prototyping
                 get => (Bitset & (1 << PositionZBit)) != 0;
                 set => Bitset |= (ushort)((value ? 1 : 0) << PositionZBit);
             }
-            // Rotation
-            public bool HasRotationX
+            // RotAngles
+            public bool HasRotAngleX
             {
-                get => (Bitset & (1 << RotationXBit)) != 0;
-                set => Bitset |= (ushort)((value ? 1 : 0) << RotationXBit);
+                get => (Bitset & (1 << RotAngleXBit)) != 0;
+                set => Bitset |= (ushort)((value ? 1 : 0) << RotAngleXBit);
             }
-            public bool HasRotationY
+            public bool HasRotAngleY
             {
-                get => (Bitset & (1 << RotationYBit)) != 0;
-                set => Bitset |= (ushort)((value ? 1 : 0) << RotationYBit);
+                get => (Bitset & (1 << RotAngleYBit)) != 0;
+                set => Bitset |= (ushort)((value ? 1 : 0) << RotAngleYBit);
             }
-            public bool HasRotationZ
+            public bool HasRotAngleZ
             {
-                get => (Bitset & (1 << RotationZBit)) != 0;
-                set => Bitset |= (ushort)((value ? 1 : 0) << RotationZBit);
+                get => (Bitset & (1 << RotAngleZBit)) != 0;
+                set => Bitset |= (ushort)((value ? 1 : 0) << RotAngleZBit);
             }
             // Scale
             public bool HasScaleX
@@ -91,7 +91,7 @@ namespace Unity.Netcode.Prototyping
             }
 
             public float PositionX, PositionY, PositionZ;
-            public float RotationX, RotationY, RotationZ;
+            public float RotAngleX, RotAngleY, RotAngleZ;
             public float ScaleX, ScaleY, ScaleZ;
 
             public void NetworkSerialize(NetworkSerializer serializer)
@@ -111,18 +111,18 @@ namespace Unity.Netcode.Prototyping
                 {
                     serializer.Serialize(ref PositionZ);
                 }
-                // Rotation Values
-                if (HasRotationX)
+                // RotAngle Values
+                if (HasRotAngleX)
                 {
-                    serializer.Serialize(ref RotationX);
+                    serializer.Serialize(ref RotAngleX);
                 }
-                if (HasRotationY)
+                if (HasRotAngleY)
                 {
-                    serializer.Serialize(ref RotationY);
+                    serializer.Serialize(ref RotAngleY);
                 }
-                if (HasRotationZ)
+                if (HasRotAngleZ)
                 {
-                    serializer.Serialize(ref RotationZ);
+                    serializer.Serialize(ref RotAngleZ);
                 }
                 // Scale Values
                 if (HasScaleX)
@@ -163,7 +163,7 @@ namespace Unity.Netcode.Prototyping
         public bool InLocalSpace = false;
 
         public bool SyncPositionX = true, SyncPositionY = true, SyncPositionZ = true;
-        public bool SyncRotationX = true, SyncRotationY = true, SyncRotationZ = true;
+        public bool SyncRotAngleX = true, SyncRotAngleY = true, SyncRotAngleZ = true;
         public bool SyncScaleX = true, SyncScaleY = true, SyncScaleZ = true;
 
         /// <summary>
@@ -192,7 +192,7 @@ namespace Unity.Netcode.Prototyping
             }
 
             var position = InLocalSpace ? m_Transform.localPosition : m_Transform.position;
-            var rotation = InLocalSpace ? m_Transform.localRotation : m_Transform.rotation;
+            var rotAngles = InLocalSpace ? m_Transform.localEulerAngles : m_Transform.eulerAngles;
             var scale = InLocalSpace ? m_Transform.localScale : m_Transform.lossyScale;
 
             return
@@ -202,10 +202,10 @@ namespace Unity.Netcode.Prototyping
                 (SyncPositionX && !Mathf.Approximately(position.x, networkState.PositionX)) ||
                 (SyncPositionY && !Mathf.Approximately(position.y, networkState.PositionY)) ||
                 (SyncPositionZ && !Mathf.Approximately(position.z, networkState.PositionZ)) ||
-                // Rotation Check
-                (SyncRotationX && !Mathf.Approximately(rotation.x, networkState.RotationX)) ||
-                (SyncRotationY && !Mathf.Approximately(rotation.y, networkState.RotationY)) ||
-                (SyncRotationZ && !Mathf.Approximately(rotation.z, networkState.RotationZ)) ||
+                // RotAngles Check
+                (SyncRotAngleX && !Mathf.Approximately(rotAngles.x, networkState.RotAngleX)) ||
+                (SyncRotAngleY && !Mathf.Approximately(rotAngles.y, networkState.RotAngleY)) ||
+                (SyncRotAngleZ && !Mathf.Approximately(rotAngles.z, networkState.RotAngleZ)) ||
                 // Scale Check
                 (SyncScaleX && !Mathf.Approximately(scale.x, networkState.ScaleX)) ||
                 (SyncScaleY && !Mathf.Approximately(scale.y, networkState.ScaleY)) ||
@@ -215,7 +215,7 @@ namespace Unity.Netcode.Prototyping
         internal void UpdateNetworkState()
         {
             var position = InLocalSpace ? m_Transform.localPosition : m_Transform.position;
-            var rotation = InLocalSpace ? m_Transform.localRotation : m_Transform.rotation;
+            var rotAngles = InLocalSpace ? m_Transform.localEulerAngles : m_Transform.eulerAngles;
             var scale = InLocalSpace ? m_Transform.localScale : m_Transform.lossyScale;
 
             // InLocalSpace Bit
@@ -223,9 +223,9 @@ namespace Unity.Netcode.Prototyping
             // Position Bits
             (ReplNetworkState.Value.HasPositionX, ReplNetworkState.Value.HasPositionY, ReplNetworkState.Value.HasPositionZ) =
                 (SyncPositionX, SyncPositionY, SyncPositionZ);
-            // Rotation Bits
-            (ReplNetworkState.Value.HasRotationX, ReplNetworkState.Value.HasRotationY, ReplNetworkState.Value.HasRotationZ) =
-                (SyncRotationX, SyncRotationY, SyncRotationZ);
+            // RotAngle Bits
+            (ReplNetworkState.Value.HasRotAngleX, ReplNetworkState.Value.HasRotAngleY, ReplNetworkState.Value.HasRotAngleZ) =
+                (SyncRotAngleX, SyncRotAngleY, SyncRotAngleZ);
             // Scale Bits
             (ReplNetworkState.Value.HasScaleX, ReplNetworkState.Value.HasScaleY, ReplNetworkState.Value.HasScaleZ) =
                 (SyncScaleX, SyncScaleY, SyncScaleZ);
@@ -233,9 +233,9 @@ namespace Unity.Netcode.Prototyping
             // Position Values
             (ReplNetworkState.Value.PositionX, ReplNetworkState.Value.PositionY, ReplNetworkState.Value.PositionZ) =
                 (position.x, position.y, position.z);
-            // Rotation Values
-            (ReplNetworkState.Value.RotationX, ReplNetworkState.Value.RotationY, ReplNetworkState.Value.RotationZ) =
-                (rotation.x, rotation.y, rotation.z);
+            // RotAngle Values
+            (ReplNetworkState.Value.RotAngleX, ReplNetworkState.Value.RotAngleY, ReplNetworkState.Value.RotAngleZ) =
+                (rotAngles.x, rotAngles.y, rotAngles.z);
             // Scale Values
             (ReplNetworkState.Value.ScaleX, ReplNetworkState.Value.ScaleY, ReplNetworkState.Value.ScaleZ) =
                 (scale.x, scale.y, scale.z);
@@ -243,14 +243,13 @@ namespace Unity.Netcode.Prototyping
             ReplNetworkState.SetDirty(true);
         }
 
-        // TODO: temporary! the function body below probably needs to be rewritten
-        // (e.g. rotation/quaternion computation looks unreliable, needs to be properly vetted/tested)
+        // TODO: temporary! the function body below probably needs to be rewritten later with interpolation in mind
         internal void ApplyNetworkState(NetworkState networkState)
         {
             PrevNetworkState = networkState;
 
             var position = InLocalSpace ? m_Transform.localPosition : m_Transform.position;
-            var rotation = InLocalSpace ? m_Transform.localRotation : m_Transform.rotation;
+            var rotAngles = InLocalSpace ? m_Transform.localEulerAngles : m_Transform.eulerAngles;
             var scale = InLocalSpace ? m_Transform.localScale : m_Transform.lossyScale;
 
             // InLocalSpace Read
@@ -268,18 +267,18 @@ namespace Unity.Netcode.Prototyping
             {
                 position.z = networkState.PositionZ;
             }
-            // Rotation Read
-            if (networkState.HasRotationX)
+            // RotAngles Read
+            if (networkState.HasRotAngleX)
             {
-                rotation.x = networkState.RotationX;
+                rotAngles.x = networkState.RotAngleX;
             }
-            if (networkState.HasRotationY)
+            if (networkState.HasRotAngleY)
             {
-                rotation.y = networkState.RotationY;
+                rotAngles.y = networkState.RotAngleY;
             }
-            if (networkState.HasRotationZ)
+            if (networkState.HasRotAngleZ)
             {
-                rotation.z = networkState.RotationZ;
+                rotAngles.z = networkState.RotAngleZ;
             }
             // Scale Read
             if (networkState.HasScaleX)
@@ -307,21 +306,16 @@ namespace Unity.Netcode.Prototyping
                     m_Transform.position = position;
                 }
             }
-            // Rotation Apply
-            if (networkState.HasRotationX || networkState.HasRotationY || networkState.HasRotationZ)
+            // RotAngles Apply
+            if (networkState.HasRotAngleX || networkState.HasRotAngleY || networkState.HasRotAngleZ)
             {
-                // numerical precision issues can make the remainder very slightly negative.
-                // In this case, use 0 for w as, otherwise, w would be NaN.
-                var remainder = 1f - Mathf.Pow(rotation.x, 2) - Mathf.Pow(rotation.y, 2) - Mathf.Pow(rotation.z, 2);
-                var computedW = (remainder > 0f) ? Mathf.Sqrt(remainder) : 0.0f;
-                var quaternion = new Quaternion(rotation.x, rotation.y, rotation.z, computedW);
                 if (InLocalSpace)
                 {
-                    m_Transform.localRotation = quaternion;
+                    m_Transform.localEulerAngles = rotAngles;
                 }
                 else
                 {
-                    m_Transform.rotation = quaternion;
+                    m_Transform.eulerAngles = rotAngles;
                 }
             }
             // Scale Apply
