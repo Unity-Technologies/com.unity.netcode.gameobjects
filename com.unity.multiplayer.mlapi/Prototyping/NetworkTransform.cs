@@ -173,8 +173,8 @@ namespace Unity.Netcode.Prototyping
         public float FixedSendsPerSecond = 30f;
 
         private Transform m_Transform; // cache the transform component to reduce unnecessary bounce between managed and native
-        private readonly NetworkVariable<NetworkState> m_NetworkState = new NetworkVariable<NetworkState>(new NetworkState());
-        private NetworkState m_PrevNetworkState;
+        internal readonly NetworkVariable<NetworkState> ReplNetworkState = new NetworkVariable<NetworkState>(new NetworkState());
+        internal NetworkState PrevNetworkState;
 
         /// <summary>
         /// Does this instance (client or server) has authority to update transform?
@@ -184,7 +184,7 @@ namespace Unity.Netcode.Prototyping
             Authority == NetworkAuthority.Server && IsServer ||
             Authority == NetworkAuthority.Shared;
 
-        private bool IsNetworkStateDirty(NetworkState networkState)
+        internal bool IsNetworkStateDirty(NetworkState networkState)
         {
             if (networkState == null)
             {
@@ -197,7 +197,7 @@ namespace Unity.Netcode.Prototyping
 
             return
                 // InLocalSpace Check
-                (networkState.InLocalSpace != InLocalSpace) ||
+                (InLocalSpace != networkState.InLocalSpace) ||
                 // Position Check
                 (SyncPositionX && !Mathf.Approximately(position.x, networkState.PositionX)) ||
                 (SyncPositionY && !Mathf.Approximately(position.y, networkState.PositionY)) ||
@@ -212,42 +212,42 @@ namespace Unity.Netcode.Prototyping
                 (SyncScaleZ && !Mathf.Approximately(scale.z, networkState.ScaleZ));
         }
 
-        private void UpdateNetworkState()
+        internal void UpdateNetworkState()
         {
             var position = InLocalSpace ? m_Transform.localPosition : m_Transform.position;
             var rotation = InLocalSpace ? m_Transform.localRotation : m_Transform.rotation;
             var scale = InLocalSpace ? m_Transform.localScale : m_Transform.lossyScale;
 
             // InLocalSpace Bit
-            m_NetworkState.Value.InLocalSpace = InLocalSpace;
+            ReplNetworkState.Value.InLocalSpace = InLocalSpace;
             // Position Bits
-            (m_NetworkState.Value.HasPositionX, m_NetworkState.Value.HasPositionY, m_NetworkState.Value.HasPositionZ) =
+            (ReplNetworkState.Value.HasPositionX, ReplNetworkState.Value.HasPositionY, ReplNetworkState.Value.HasPositionZ) =
                 (SyncPositionX, SyncPositionY, SyncPositionZ);
             // Rotation Bits
-            (m_NetworkState.Value.HasRotationX, m_NetworkState.Value.HasRotationY, m_NetworkState.Value.HasRotationZ) =
+            (ReplNetworkState.Value.HasRotationX, ReplNetworkState.Value.HasRotationY, ReplNetworkState.Value.HasRotationZ) =
                 (SyncRotationX, SyncRotationY, SyncRotationZ);
             // Scale Bits
-            (m_NetworkState.Value.HasScaleX, m_NetworkState.Value.HasScaleY, m_NetworkState.Value.HasScaleZ) =
+            (ReplNetworkState.Value.HasScaleX, ReplNetworkState.Value.HasScaleY, ReplNetworkState.Value.HasScaleZ) =
                 (SyncScaleX, SyncScaleY, SyncScaleZ);
 
             // Position Values
-            (m_NetworkState.Value.PositionX, m_NetworkState.Value.PositionY, m_NetworkState.Value.PositionZ) =
+            (ReplNetworkState.Value.PositionX, ReplNetworkState.Value.PositionY, ReplNetworkState.Value.PositionZ) =
                 (position.x, position.y, position.z);
             // Rotation Values
-            (m_NetworkState.Value.RotationX, m_NetworkState.Value.RotationY, m_NetworkState.Value.RotationZ) =
+            (ReplNetworkState.Value.RotationX, ReplNetworkState.Value.RotationY, ReplNetworkState.Value.RotationZ) =
                 (rotation.x, rotation.y, rotation.z);
             // Scale Values
-            (m_NetworkState.Value.ScaleX, m_NetworkState.Value.ScaleY, m_NetworkState.Value.ScaleZ) =
+            (ReplNetworkState.Value.ScaleX, ReplNetworkState.Value.ScaleY, ReplNetworkState.Value.ScaleZ) =
                 (scale.x, scale.y, scale.z);
 
-            m_NetworkState.SetDirty(true);
+            ReplNetworkState.SetDirty(true);
         }
 
         // TODO: temporary! the function body below probably needs to be rewritten
         // (e.g. rotation/quaternion computation looks unreliable, needs to be properly vetted/tested)
-        private void ApplyNetworkState(NetworkState networkState)
+        internal void ApplyNetworkState(NetworkState networkState)
         {
-            m_PrevNetworkState = networkState;
+            PrevNetworkState = networkState;
 
             var position = InLocalSpace ? m_Transform.localPosition : m_Transform.position;
             var rotation = InLocalSpace ? m_Transform.localRotation : m_Transform.rotation;
@@ -364,13 +364,13 @@ namespace Unity.Netcode.Prototyping
                 default:
                     throw new NotImplementedException($"Authority: {Authority} is not handled");
                 case NetworkAuthority.Server:
-                    m_NetworkState.Settings.WritePermission = NetworkVariablePermission.ServerOnly;
+                    ReplNetworkState.Settings.WritePermission = NetworkVariablePermission.ServerOnly;
                     break;
                 case NetworkAuthority.Client:
-                    m_NetworkState.Settings.WritePermission = NetworkVariablePermission.OwnerOnly;
+                    ReplNetworkState.Settings.WritePermission = NetworkVariablePermission.OwnerOnly;
                     break;
                 case NetworkAuthority.Shared:
-                    m_NetworkState.Settings.WritePermission = NetworkVariablePermission.Everyone;
+                    ReplNetworkState.Settings.WritePermission = NetworkVariablePermission.Everyone;
                     break;
             }
         }
@@ -381,20 +381,20 @@ namespace Unity.Netcode.Prototyping
 
             UpdateNetVarPerms();
 
-            m_NetworkState.Settings.SendNetworkChannel = Channel;
-            m_NetworkState.Settings.SendTickrate = FixedSendsPerSecond;
+            ReplNetworkState.Settings.SendNetworkChannel = Channel;
+            ReplNetworkState.Settings.SendTickrate = FixedSendsPerSecond;
 
-            m_NetworkState.OnValueChanged += OnNetworkStateChanged;
+            ReplNetworkState.OnValueChanged += OnNetworkStateChanged;
         }
 
         public override void OnNetworkSpawn()
         {
-            m_PrevNetworkState = null;
+            PrevNetworkState = null;
         }
 
         private void OnDestroy()
         {
-            m_NetworkState.OnValueChanged -= OnNetworkStateChanged;
+            ReplNetworkState.OnValueChanged -= OnNetworkStateChanged;
         }
 
         private void FixedUpdate()
@@ -404,18 +404,18 @@ namespace Unity.Netcode.Prototyping
                 return;
             }
 
-            if (CanUpdateTransform && IsNetworkStateDirty(m_NetworkState.Value))
+            if (CanUpdateTransform && IsNetworkStateDirty(ReplNetworkState.Value))
             {
                 UpdateNetworkState();
             }
             else
             {
-                if (IsNetworkStateDirty(m_PrevNetworkState))
+                if (IsNetworkStateDirty(PrevNetworkState))
                 {
                     Debug.LogWarning("A local change without authority detected, revert back to latest network state!");
                 }
 
-                ApplyNetworkState(m_NetworkState.Value);
+                ApplyNetworkState(ReplNetworkState.Value);
             }
         }
 
