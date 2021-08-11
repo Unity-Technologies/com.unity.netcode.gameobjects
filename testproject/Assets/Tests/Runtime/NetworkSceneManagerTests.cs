@@ -13,7 +13,7 @@ namespace TestProject.RuntimeTests
 {
     public class NetworkSceneManagerTests : BaseMultiInstanceTest
     {
-        protected override int NbClients => 4;
+        protected override int NbClients => 9;
 
         [UnitySetUp]
         public override IEnumerator Setup()
