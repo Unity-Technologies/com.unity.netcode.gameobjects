@@ -6114,9 +6114,9 @@ MonoBehaviour:
   ServerWebsocketListenPort: 8887
   SupportWebsocket: 0
   Channels: []
-  UseMLAPIRelay: 0
-  MLAPIRelayAddress: 184.72.104.138
-  MLAPIRelayPort: 8888
+  UseNetcodeRelay: 0
+  NetcodeRelayAddress: 127.0.0.1
+  NetcodeRelayPort: 8888
   MessageSendMode: 0
 --- !u!114 &620561611
 MonoBehaviour:
@@ -6157,9 +6157,10 @@ MonoBehaviour:
     NetworkIdRecycleDelay: 120
     RpcHashSize: 0
     LoadSceneTimeOut: 120
-    EnableMessageBuffering: 1
     MessageBufferTimeout: 20
     EnableNetworkLogs: 1
+    UseSnapshotDelta: 0
+    UseSnapshotSpawn: 0
 --- !u!4 &620561612
 Transform:
   m_ObjectHideFlags: 0
@@ -7402,7 +7403,7 @@ MonoBehaviour:
   m_MoveSpeed: 5
   m_RotationSpeed: 30
   runServerOnly: 1
-  runInUpdate: 1
+  runInUpdate: 0
 --- !u!114 &678326394
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -21005,7 +21006,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1643885206}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 307c40a41954948e7a36bb6b64b4b9cb, type: 3}
   m_Name: 

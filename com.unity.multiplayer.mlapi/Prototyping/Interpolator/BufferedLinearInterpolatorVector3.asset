@@ -11,5 +11,5 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 199dd81621cd441c19cc731e8d29a217, type: 3}
   m_Name: BufferedLinearInterpolatorVector3
-  m_EditorClassIdentifier: 
+  m_EditorClassIdentifier:
   InterpolationTime: 0.1
