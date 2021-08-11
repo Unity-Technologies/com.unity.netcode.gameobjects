@@ -120,18 +120,8 @@ namespace Unity.Netcode.Editor
             var allNetworkObjects = Resources.FindObjectsOfTypeAll<NetworkObject>();
             foreach (var networkObject in allNetworkObjects)
             {
-                // Only check NetworkObjects that have a parent
-                if (networkObject.transform.parent != null)
-                {
-                    // Check to see if any parent has the NetworkManager component
-                    var networkManager = networkObject.gameObject.GetComponentInParent<NetworkManager>();
-                    if (networkManager != null)
-                    {
-                        // If it does log a console error and move the GameObject to root of the Hierarchy
-                        Debug.LogError($"{nameof(GameObject)}s with {nameof(NetworkObject)} components cannot be nested under a {nameof(GameObject)} with the {nameof(NetworkManager)} component!");
-                        networkObject.transform.parent = null;
-                    }
-                }
+                // Check to see if the NetworkObject has been placed under a GameObject with a NetworkObject component
+                networkObject.CheckForNetworkManagerParent();
             }
         }
     }
