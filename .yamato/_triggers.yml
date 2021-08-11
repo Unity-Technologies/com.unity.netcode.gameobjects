@@ -14,7 +14,7 @@ develop_nightly_trigger:
     
 
 # Run all relevant tasks when a pull request targeting the develop
-# branch is created or updated. Currently only mlapi package tests are
+# branch is created or updated. Currently only netcode package tests are
 # enabled, since the others are missing test coverage and will fail CI.
 pull_request_trigger:
   name: Pull Request Trigger on {{ test_editors.first }} (master, develop, & release branches)

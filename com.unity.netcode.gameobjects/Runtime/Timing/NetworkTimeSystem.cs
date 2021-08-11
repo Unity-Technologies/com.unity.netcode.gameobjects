@@ -9,13 +9,9 @@ namespace Unity.Netcode
     public class NetworkTimeSystem
     {
         private double m_TimeSec;
-
         private double m_CurrentLocalTimeOffset;
-
         private double m_DesiredLocalTimeOffset;
-
         private double m_CurrentServerTimeOffset;
-
         private double m_DesiredServerTimeOffset;
 
         /// <summary>
@@ -39,13 +35,10 @@ namespace Unity.Netcode
         /// Gets or sets the ratio at which the NetworkTimeSystem speeds up or slows down time.
         /// </summary>
         public double AdjustmentRatio { get; set; }
-
         public double LocalTime => m_TimeSec + m_CurrentLocalTimeOffset;
-
         public double ServerTime => m_TimeSec + m_CurrentServerTimeOffset;
 
         internal double LastSyncedServerTimeSec { get; private set; }
-
         internal double LastSyncedRttSec { get; private set; }
 
         public NetworkTimeSystem(double localBufferSec, double serverBufferSec, double hardResetThresholdSec, double adjustmentRatio = 0.01d)

@@ -2,7 +2,7 @@ namespace Unity.Netcode
 {
     public interface IHasUpdateStage
     {
-        public NetworkUpdateStage UpdateStage
+        NetworkUpdateStage UpdateStage
         {
             get;
             set;
