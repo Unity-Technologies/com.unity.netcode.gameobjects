@@ -1,6 +1,10 @@
 using UnityEngine;
 using Unity.Netcode;
 
+/// <summary>
+/// This can be added to the same GameObject the NetworkManager component is assigned to in order to prevent
+/// multiple NetworkManager instances from being instantiated if the same scene is loaded.
+/// </summary>
 public class NetworkManagerMonitor : MonoBehaviour
 {
     // Start is called before the first frame update
