@@ -278,25 +278,9 @@ namespace Unity.Netcode
                 }
             }
 
-
-            var context = networkManager.MessageQueueContainer.EnterInternalCommandContext(
-                MessageQueueContainer.MessageType.CreateObjects, NetworkChannel.Internal,
-                new[] { clientId }, NetworkUpdateLoop.UpdateStage);
-
-            if (context != null)
+            foreach (var networkObject in networkObjects)
             {
-                using (var nonNullContext = (InternalCommandContext)context)
-                {
-                    nonNullContext.NetworkWriter.WriteUInt16Packed((ushort)networkObjects.Count);
-
-                    for (int i = 0; i < networkObjects.Count; i++)
-                    {
-                        networkObjects[i].Observers.Add(clientId);
-
-                        networkManager.SpawnManager.WriteSpawnCallForObject(nonNullContext.NetworkWriter, clientId,
-                            networkObjects[i]);
-                    }
-                }
+                networkObject.NetworkShow(clientId);
             }
         }
 
@@ -385,23 +369,9 @@ namespace Unity.Netcode
                 }
             }
 
-            var context = networkManager.MessageQueueContainer.EnterInternalCommandContext(
-                MessageQueueContainer.MessageType.DestroyObjects, NetworkChannel.Internal,
-                new[] { clientId }, NetworkUpdateStage.PostLateUpdate);
-            if (context != null)
+            foreach (var networkObject in networkObjects)
             {
-                using (var nonNullContext = (InternalCommandContext)context)
-                {
-                    nonNullContext.NetworkWriter.WriteUInt16Packed((ushort)networkObjects.Count);
-
-                    for (int i = 0; i < networkObjects.Count; i++)
-                    {
-                        // Send destroy call
-                        networkObjects[i].Observers.Remove(clientId);
-
-                        nonNullContext.NetworkWriter.WriteUInt64Packed(networkObjects[i].NetworkObjectId);
-                    }
-                }
+                networkObject.NetworkHide(clientId);
             }
         }
 
@@ -432,6 +402,37 @@ namespace Unity.Netcode
             }
 
             NetworkManager.SpawnManager.SpawnNetworkObjectLocally(this, NetworkManager.SpawnManager.GetNetworkObjectId(), false, playerObject, ownerClientId, null, false, destroyWithScene);
+
+            if (NetworkManager.NetworkConfig.UseSnapshotSpawn)
+            {
+                SnapshotSpawnCommand command;
+                command.NetworkObjectId = NetworkObjectId;
+                command.OwnerClientId = OwnerClientId;
+                command.IsPlayerObject = IsPlayerObject;
+                command.IsSceneObject = (IsSceneObject == null) || IsSceneObject.Value;
+
+                ulong? parent = NetworkManager.SpawnManager.GetSpawnParentId(this);
+                if (parent != null)
+                {
+                    command.ParentNetworkId = parent.Value;
+                }
+                else
+                {
+                    // write own network id, when no parents. todo: optimize this.
+                    command.ParentNetworkId = command.NetworkObjectId;
+                }
+
+                command.GlobalObjectIdHash = HostCheckForGlobalObjectIdHashOverride();
+                // todo: check if (IncludeTransformWhenSpawning == null || IncludeTransformWhenSpawning(clientId)) for any clientId
+                command.ObjectPosition = transform.position;
+                command.ObjectRotation = transform.rotation;
+                command.ObjectScale = transform.localScale;
+                command.TickWritten = 0; // will be reset in Spawn
+                command.TargetClientIds = default;
+
+                NetworkManager.SnapshotSystem.Spawn(command);
+            }
+
             ulong ownerId = ownerClientId != null ? ownerClientId.Value : NetworkManager.ServerClientId;
             for (int i = 0; i < NetworkManager.ConnectedClientsList.Count; i++)
             {

@@ -345,7 +345,7 @@ namespace Unity.Netcode
 
         internal void SendSpawnCallForObject(ulong clientId, ulong ownerClientId, NetworkObject networkObject)
         {
-            if (true) // this is to keep the branch close to the snapshot branch. Merge planning
+            if (!NetworkManager.NetworkConfig.UseSnapshotSpawn)
             {
                 //Currently, if this is called and the clientId (destination) is the server's client Id, this case
                 //will be checked within the below Send function.  To avoid unwarranted allocation of a PooledNetworkBuffer

@@ -26,10 +26,6 @@ namespace Unity.Netcode.EditorTests
 
         public void HandleChangeOwner(ulong clientId, Stream stream) => VerifyCalled(nameof(HandleChangeOwner));
 
-        public void HandleAddObjects(ulong clientId, Stream stream) => VerifyCalled(nameof(HandleAddObjects));
-
-        public void HandleDestroyObjects(ulong clientId, Stream stream) => VerifyCalled(nameof(HandleDestroyObjects));
-
         public void HandleTimeSync(ulong clientId, Stream stream) => VerifyCalled(nameof(HandleTimeSync));
 
         public void HandleNetworkVariableDelta(ulong clientId, Stream stream) => VerifyCalled(nameof(HandleNetworkVariableDelta));
