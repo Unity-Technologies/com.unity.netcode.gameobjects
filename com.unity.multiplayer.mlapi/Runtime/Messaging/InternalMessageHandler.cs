@@ -223,32 +223,6 @@ namespace Unity.Netcode
             }
         }
 
-        public void HandleAddObjects(ulong clientId, Stream stream)
-        {
-            using (var reader = PooledNetworkReader.Get(stream))
-            {
-                ushort objectCount = reader.ReadUInt16Packed();
-
-                for (int i = 0; i < objectCount; i++)
-                {
-                    HandleAddObject(clientId, stream);
-                }
-            }
-        }
-
-        public void HandleDestroyObjects(ulong clientId, Stream stream)
-        {
-            using (var reader = PooledNetworkReader.Get(stream))
-            {
-                ushort objectCount = reader.ReadUInt16Packed();
-
-                for (int i = 0; i < objectCount; i++)
-                {
-                    HandleDestroyObject(clientId, stream);
-                }
-            }
-        }
-
         public void HandleTimeSync(ulong clientId, Stream stream)
         {
             using (var reader = PooledNetworkReader.Get(stream))
