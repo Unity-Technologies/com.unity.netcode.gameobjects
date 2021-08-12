@@ -310,7 +310,7 @@ namespace Unity.Netcode
 
             if (SpawnedObjects.ContainsKey(networkId))
             {
-                Debug.LogWarning($"Trying to spawn NetworkObjectId {networkId} that already exists!");
+                Debug.LogWarning($"Trying to spawn {nameof(NetworkObject.NetworkObjectId)} {networkId} that already exists!");
                 return;
             }
 
@@ -676,6 +676,9 @@ namespace Unity.Netcode
             {
                 if (NetworkManager.PrefabHandler.ContainsHandler(networkObject))
                 {
+                    // If the custom prefab handler returns true then we destroy the parent GameObject
+                    // otherwise the custom prefab handler handles how they want to deal with despawning
+                    // the NetworkObject
                     if(NetworkManager.PrefabHandler.HandleNetworkPrefabDestroy(networkObject))
                     {
                         if (SpawnedObjects.Remove(networkObject.NetworkObjectId))

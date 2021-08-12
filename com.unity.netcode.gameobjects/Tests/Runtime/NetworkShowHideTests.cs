@@ -134,6 +134,7 @@ namespace Unity.Netcode.RuntimeTests
             m_NetSpawnedObject2.Spawn();
             m_NetSpawnedObject3.Spawn();
 
+            // Using frame count as opposed to time to avoid random failures
             var waitUntilFrameNumber = Time.frameCount + 10;
             yield return new WaitUntil(() => Time.frameCount >= waitUntilFrameNumber);
 

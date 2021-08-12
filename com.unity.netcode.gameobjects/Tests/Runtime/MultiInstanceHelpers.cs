@@ -471,6 +471,8 @@ namespace Unity.Netcode.RuntimeTests
 
             while (Time.frameCount - startFrameNumber <= maxFrames && !predicate())
             {
+                // Changed to 2 frames to avoid the scenario where it would take 1+ frames to
+                // see a value change (i.e. discovered in the NetworkTransformTests)
                 var nextFrameNumber = Time.frameCount + 2;
                 yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
             }
