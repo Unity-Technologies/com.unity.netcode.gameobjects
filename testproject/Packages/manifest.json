@@ -4,7 +4,7 @@
     "com.unity.ide.rider": "3.0.5",
     "com.unity.ide.visualstudio": "2.0.8",
     "com.unity.ide.vscode": "1.2.3",
-    "com.unity.multiplayer.mlapi": "file:../../com.unity.multiplayer.mlapi",
+    "com.unity.netcode.gameobjects": "file:../../com.unity.netcode.gameobjects",
     "com.unity.multiplayer.transport.utp": "file:../../com.unity.multiplayer.transport.utp",
     "com.unity.package-validation-suite": "0.19.2-preview",
     "com.unity.test-framework": "1.1.27",
@@ -45,7 +45,7 @@
     "com.unity.modules.xr": "1.0.0"
   },
   "testables": [
-    "com.unity.multiplayer.mlapi",
+    "com.unity.netcode.gameobjects",
     "com.unity.multiplayer.transport.utp"
   ]
 }
