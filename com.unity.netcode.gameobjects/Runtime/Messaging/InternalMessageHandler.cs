@@ -75,7 +75,6 @@ namespace Unity.Netcode
 
                 NetworkManager.ConnectedClients.Add(NetworkManager.LocalClientId, new NetworkClient { ClientId = NetworkManager.LocalClientId });
 
-
                 void DelayedSpawnAction(Stream continuationStream)
                 {
                     using (var continuationReader = PooledNetworkReader.Get(continuationStream))
@@ -157,6 +156,7 @@ namespace Unity.Netcode
                 var networkObject = NetworkManager.SpawnManager.CreateLocalNetworkObject(softSync, prefabHash, ownerClientId, parentNetworkId, pos, rot, isReparented);
                 networkObject.SetNetworkParenting(isReparented, latestParent);
                 NetworkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, networkId, softSync, isPlayerObject, ownerClientId, stream, true, false);
+                m_NetworkManager.NetworkMetrics.TrackObjectSpawnReceived(clientId, networkObject.NetworkObjectId, networkObject.name, stream.Length);
             }
         }
 
@@ -172,7 +172,7 @@ namespace Unity.Netcode
                     Debug.LogWarning($"Trying to destroy object {networkId} but it doesn't seem to exist anymore!");
                     return;
                 }
-
+                m_NetworkManager.NetworkMetrics.TrackObjectDestroyReceived(clientId, networkId, networkObject.name, stream.Length);
                 NetworkManager.SpawnManager.OnDespawnObject(networkObject, true);
             }
         }
@@ -207,19 +207,22 @@ namespace Unity.Netcode
                 ulong networkId = reader.ReadUInt64Packed();
                 ulong ownerClientId = reader.ReadUInt64Packed();
 
-                if (NetworkManager.SpawnManager.SpawnedObjects[networkId].OwnerClientId == NetworkManager.LocalClientId)
+                var networkObject = NetworkManager.SpawnManager.SpawnedObjects[networkId];
+                if (networkObject.OwnerClientId == NetworkManager.LocalClientId)
                 {
                     //We are current owner.
-                    NetworkManager.SpawnManager.SpawnedObjects[networkId].InvokeBehaviourOnLostOwnership();
+                    networkObject.InvokeBehaviourOnLostOwnership();
                 }
 
                 if (ownerClientId == NetworkManager.LocalClientId)
                 {
                     //We are new owner.
-                    NetworkManager.SpawnManager.SpawnedObjects[networkId].InvokeBehaviourOnGainedOwnership();
+                    networkObject.InvokeBehaviourOnGainedOwnership();
                 }
 
-                NetworkManager.SpawnManager.SpawnedObjects[networkId].OwnerClientId = ownerClientId;
+                networkObject.OwnerClientId = ownerClientId;
+
+                NetworkManager.NetworkMetrics.TrackOwnershipChangeReceived(clientId, networkObject.NetworkObjectId, networkObject.name, stream.Length);
             }
         }
 
@@ -336,6 +339,7 @@ namespace Unity.Netcode
         {
             PerformanceDataManager.Increment(ProfilerConstants.NamedMessageReceived);
             ProfilerStatManager.NamedMessage.Record();
+
             using (var reader = PooledNetworkReader.Get(stream))
             {
                 ulong hash = reader.ReadUInt64Packed();
@@ -348,7 +352,9 @@ namespace Unity.Netcode
         {
             using (var reader = PooledNetworkReader.Get(stream))
             {
+                var length = stream.Length;
                 var logType = (NetworkLog.LogType)reader.ReadByte();
+                m_NetworkManager.NetworkMetrics.TrackServerLogReceived(clientId, (uint)logType, length);
                 string message = reader.ReadStringPacked();
 
                 switch (logType)

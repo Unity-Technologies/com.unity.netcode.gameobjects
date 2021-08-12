@@ -244,6 +244,8 @@ namespace Unity.Netcode
         /// </summary>
         public string ConnectedHostname { get; private set; }
 
+        internal INetworkMetrics NetworkMetrics { get; private set; }
+
         internal static event Action OnSingletonReady;
 
 #if UNITY_EDITOR
@@ -392,6 +394,15 @@ namespace Unity.Netcode
 
             // Only create this if it's not already set (like in test cases)
             MessageHandler ??= CreateMessageHandler();
+
+            if (NetworkMetrics == null)
+            {
+#if MULTIPLAYER_TOOLS
+                NetworkMetrics = new NetworkMetrics();
+#else
+                NetworkMetrics = new NullNetworkMetrics();
+#endif
+            }
 
             if (NetworkConfig.NetworkTransport == null)
             {
@@ -1251,6 +1262,11 @@ namespace Unity.Netcode
                     }
 
                     __rpc_func_table[networkMethodId](networkBehaviour, new NetworkSerializer(item.NetworkReader), rpcParams);
+
+                    if (__rpc_name_table.TryGetValue(networkMethodId, out var rpcMethodName))
+                    {
+                        NetworkMetrics.TrackRpcReceived(item.NetworkId, networkObjectId, rpcMethodName, item.StreamSize);
+                    }
                 }
             }
         }
@@ -1533,6 +1549,7 @@ namespace Unity.Netcode
         private void NotifyProfilerListeners()
         {
             ProfilerNotifier.NotifyProfilerListeners();
+            NetworkMetrics.DispatchFrame();
         }
 
         public ITransportProfilerData Transport

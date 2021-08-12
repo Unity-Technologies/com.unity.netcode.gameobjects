@@ -258,7 +258,6 @@ namespace Unity.Netcode
                 throw new NotServerException("Only server can change visibility");
             }
 
-
             // Do the safety loop first to prevent putting the netcode in an invalid state.
             for (int i = 0; i < networkObjects.Count; i++)
             {
@@ -321,7 +320,13 @@ namespace Unity.Netcode
             {
                 using (var nonNullContext = (InternalCommandContext)context)
                 {
+                    var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
+                    bufferSizeCapture.StartMeasureSegment();
+
                     nonNullContext.NetworkWriter.WriteUInt64Packed(NetworkObjectId);
+
+                    var size = bufferSizeCapture.StopMeasureSegment();
+                    NetworkManager.NetworkMetrics.TrackObjectDestroySent(clientId, NetworkObjectId, name, size);
                 }
             }
         }

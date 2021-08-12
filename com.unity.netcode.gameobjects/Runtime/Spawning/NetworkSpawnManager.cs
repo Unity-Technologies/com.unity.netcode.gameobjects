@@ -66,6 +66,7 @@ namespace Unity.Netcode
             {
                 throw new NotServerException("Only the server can find player objects from other clients.");
             }
+
             if (NetworkManager.ConnectedClients.TryGetValue(clientId, out NetworkClient networkClient))
             {
                 return networkClient.PlayerObject;
@@ -98,17 +99,25 @@ namespace Unity.Netcode
 
             networkObject.OwnerClientIdInternal = null;
 
-            var messageQueueContainer = NetworkManager.MessageQueueContainer;
-
-            var context = messageQueueContainer.EnterInternalCommandContext(
+            var context = NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
                 MessageQueueContainer.MessageType.ChangeOwner, NetworkChannel.Internal,
                 NetworkManager.ConnectedClientsIds, NetworkUpdateLoop.UpdateStage);
             if (context != null)
             {
                 using (var nonNullContext = (InternalCommandContext)context)
                 {
+                    var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
+                    bufferSizeCapture.StartMeasureSegment();
+
                     nonNullContext.NetworkWriter.WriteUInt64Packed(networkObject.NetworkObjectId);
                     nonNullContext.NetworkWriter.WriteUInt64Packed(networkObject.OwnerClientId);
+
+                    var size = bufferSizeCapture.StopMeasureSegment();
+
+                    foreach (var client in NetworkManager.ConnectedClients)
+                    {
+                        NetworkManager.NetworkMetrics.TrackOwnershipChangeSent(client.Key, networkObject.NetworkObjectId, networkObject.name, size);
+                    }
                 }
             }
         }
@@ -149,8 +158,17 @@ namespace Unity.Netcode
             {
                 using (var nonNullContext = (InternalCommandContext)context)
                 {
+                    var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
+                    bufferSizeCapture.StartMeasureSegment();
+
                     nonNullContext.NetworkWriter.WriteUInt64Packed(networkObject.NetworkObjectId);
                     nonNullContext.NetworkWriter.WriteUInt64Packed(clientId);
+
+                    var size = bufferSizeCapture.StopMeasureSegment();
+                    foreach (var client in NetworkManager.ConnectedClients)
+                    {
+                        NetworkManager.NetworkMetrics.TrackOwnershipChangeSent(client.Key, networkObject.NetworkObjectId, networkObject.name, size);
+                    }
                 }
             }
         }
@@ -225,6 +243,7 @@ namespace Unity.Netcode
                         {
                             NetworkLog.LogError($"Failed to create object locally. [{nameof(globalObjectIdHash)}={globalObjectIdHash}]. {nameof(NetworkPrefab)} could not be found. Is the prefab registered with {nameof(NetworkManager)}?");
                         }
+
                         return null;
                     }
 
@@ -307,6 +326,8 @@ namespace Unity.Netcode
             SpawnedObjects.Add(networkObject.NetworkObjectId, networkObject);
             SpawnedObjectsList.Add(networkObject);
 
+            NetworkManager.NetworkMetrics.TrackNetworkObject(networkObject);
+
             if (ownerClientId != null)
             {
                 if (NetworkManager.IsServer)
@@ -364,7 +385,13 @@ namespace Unity.Netcode
                 {
                     using (var nonNullContext = (InternalCommandContext)context)
                     {
+                        var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
+                        bufferSizeCapture.StartMeasureSegment();
+
                         WriteSpawnCallForObject(nonNullContext.NetworkWriter, clientId, networkObject);
+
+                        var size = bufferSizeCapture.StopMeasureSegment();
+                        NetworkManager.NetworkMetrics.TrackObjectSpawnSent(clientId, networkObject.NetworkObjectId, networkObject.name, size);
                     }
                 }
             }
@@ -644,7 +671,13 @@ namespace Unity.Netcode
                             {
                                 using (var nonNullContext = (InternalCommandContext)context)
                                 {
+                                    var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
+                                    bufferSizeCapture.StartMeasureSegment();
+
                                     nonNullContext.NetworkWriter.WriteUInt64Packed(networkObject.NetworkObjectId);
+
+                                    var size = bufferSizeCapture.StopMeasureSegment();
+                                    NetworkManager.NetworkMetrics.TrackObjectDestroySent(clientIds, networkObject.NetworkObjectId, networkObject.name, size);
                                 }
                             }
                         }

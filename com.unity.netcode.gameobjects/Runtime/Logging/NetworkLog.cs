@@ -63,8 +63,13 @@ namespace Unity.Netcode
                 {
                     using (var nonNullContext = (InternalCommandContext)context)
                     {
-                        nonNullContext.NetworkWriter.WriteByte((byte)logType);
+                        var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
+                        bufferSizeCapture.StartMeasureSegment();
+                        nonNullContext.NetworkWriter.WriteByte((byte) logType);
                         nonNullContext.NetworkWriter.WriteStringPacked(message);
+                        var size = bufferSizeCapture.StopMeasureSegment();
+
+                        NetworkManager.Singleton.NetworkMetrics.TrackServerLogSent(NetworkManager.Singleton.ServerClientId, (uint)logType, size);
                     }
                 }
             }

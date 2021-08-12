@@ -95,14 +95,13 @@ namespace Unity.Netcode
 
             SetUpdateStage(ref serverRpcParams.Send);
 
-            var messageQueueContainer = NetworkManager.MessageQueueContainer;
-            if (IsHost)
+            var rpcMessageSize = IsHost
+                ? NetworkManager.MessageQueueContainer.EndAddQueueItemToFrame(serializer.Writer, MessageQueueHistoryFrame.QueueFrameType.Inbound, serverRpcParams.Send.UpdateStage)
+                : NetworkManager.MessageQueueContainer.EndAddQueueItemToFrame(serializer.Writer, MessageQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
+
+            if (NetworkManager.__rpc_name_table.TryGetValue(rpcMethodId, out var rpcMethodName))
             {
-                messageQueueContainer.EndAddQueueItemToFrame(serializer.Writer, MessageQueueHistoryFrame.QueueFrameType.Inbound, serverRpcParams.Send.UpdateStage);
-            }
-            else
-            {
-                messageQueueContainer.EndAddQueueItemToFrame(serializer.Writer, MessageQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
+                NetworkManager.NetworkMetrics.TrackRpcSent(NetworkManager.ServerClientId, NetworkObjectId, rpcMethodName, rpcMessageSize);
             }
         }
 
@@ -189,8 +188,6 @@ namespace Unity.Netcode
 
             SetUpdateStage(ref clientRpcParams.Send);
 
-            var messageQueueContainer = NetworkManager.MessageQueueContainer;
-
             if (IsHost)
             {
                 ulong[] clientIds = clientRpcParams.Send.TargetClientIds ?? NetworkManager.ConnectedClientsIds;
@@ -202,12 +199,18 @@ namespace Unity.Netcode
                 var containsServerClientId = clientIds.Contains(NetworkManager.ServerClientId);
                 if (containsServerClientId && clientIds.Length == 1)
                 {
-                    messageQueueContainer.EndAddQueueItemToFrame(serializer.Writer, MessageQueueHistoryFrame.QueueFrameType.Inbound, clientRpcParams.Send.UpdateStage);
+                    NetworkManager.MessageQueueContainer.EndAddQueueItemToFrame(serializer.Writer, MessageQueueHistoryFrame.QueueFrameType.Inbound, clientRpcParams.Send.UpdateStage);
+
                     return;
                 }
             }
 
-            messageQueueContainer.EndAddQueueItemToFrame(serializer.Writer, MessageQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
+            var messageSize = NetworkManager.MessageQueueContainer.EndAddQueueItemToFrame(serializer.Writer, MessageQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
+
+            if (NetworkManager.__rpc_name_table.TryGetValue(rpcMethodId, out var rpcMethodName))
+            {
+                NetworkManager.NetworkMetrics.TrackRpcSent(NetworkManager.ConnectedClients.Select(x => x.Key).ToArray(), NetworkObjectId, rpcMethodName, messageSize);
+            }
         }
 
         /// <summary>
@@ -406,7 +409,8 @@ namespace Unity.Netcode
                     instance.SetNetworkBehaviour(this);
 
                     var instanceNameProperty = fieldType.GetProperty(nameof(INetworkVariable.Name));
-                    instanceNameProperty?.SetValue(instance, sortedFields[i].Name);
+                    var sanitizedVariableName = sortedFields[i].Name.Replace("<", string.Empty).Replace(">k__BackingField", string.Empty);
+                    instanceNameProperty?.SetValue(instance, sanitizedVariableName);
 
                     NetworkVariableFields.Add(instance);
                 }
@@ -494,7 +498,9 @@ namespace Unity.Netcode
                             writer.WriteUInt64Packed(NetworkObjectId);
                             writer.WriteUInt16Packed(NetworkObject.GetNetworkBehaviourOrderIndex(this));
 
-                            bool writtenAny = false;
+                            var bufferSizeCapture = new BufferSizeCapture(buffer);
+
+                            var writtenAny = false;
                             for (int k = 0; k < NetworkVariableFields.Count; k++)
                             {
                                 if (!m_ChannelMappedNetworkVariableIndexes[j].Contains(k))
@@ -559,6 +565,8 @@ namespace Unity.Netcode
                                         m_NetworkVariableIndexesToResetSet.Add(k);
                                         m_NetworkVariableIndexesToReset.Add(k);
                                     }
+
+                                    NetworkManager.NetworkMetrics.TrackNetworkVariableDeltaSent(clientId, NetworkObjectId, name, NetworkVariableFields[k].Name, bufferSizeCapture.Flush());
                                 }
                             }
 
@@ -655,8 +663,9 @@ namespace Unity.Netcode
 
                     networkVariableList[i].ReadDelta(stream, networkManager.IsServer);
                     PerformanceDataManager.Increment(ProfilerConstants.NetworkVarDeltas);
-
                     ProfilerStatManager.NetworkVarsRcvd.Record();
+                    networkManager.NetworkMetrics.TrackNetworkVariableDeltaReceived(clientId, logInstance.NetworkObjectId, logInstance.name, networkVariableList[i].Name, stream.Length);
+
                     (stream as NetworkBuffer).SkipPadBits();
 
                     if (networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
@@ -741,7 +750,6 @@ namespace Unity.Netcode
 
                     networkVariableList[i].ReadField(stream);
                     PerformanceDataManager.Increment(ProfilerConstants.NetworkVarUpdates);
-
                     ProfilerStatManager.NetworkVarsRcvd.Record();
 
                     if (networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)

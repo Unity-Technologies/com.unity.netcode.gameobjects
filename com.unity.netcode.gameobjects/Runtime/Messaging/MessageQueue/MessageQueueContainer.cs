@@ -450,7 +450,7 @@ namespace Unity.Netcode
         /// <param name="writer">NetworkWriter that was used</param>
         /// <param name="queueFrameType">type of the queue frame that was used</param>
         /// <param name="updateStage">stage the RPC is going to be invoked</param>
-        public void EndAddQueueItemToFrame(NetworkWriter writer, MessageQueueHistoryFrame.QueueFrameType queueFrameType, NetworkUpdateStage updateStage)
+        public long EndAddQueueItemToFrame(NetworkWriter writer, MessageQueueHistoryFrame.QueueFrameType queueFrameType, NetworkUpdateStage updateStage)
         {
             bool getNextFrame = NetworkManager.IsHost && queueFrameType == MessageQueueHistoryFrame.QueueFrameType.Inbound;
 
@@ -551,6 +551,8 @@ namespace Unity.Netcode
 
             //Add the packed size to the offsets for parsing over various entries
             messageQueueHistoryItem.QueueItemOffsets.Add((uint)messageQueueHistoryItem.QueueBuffer.Position);
+
+            return messageSize;
         }
 
         /// <summary>

@@ -10,7 +10,7 @@ namespace Unity.Netcode
     /// </summary>
     public class CustomMessagingManager
     {
-        private NetworkManager m_NetworkManager { get; }
+        private readonly NetworkManager m_NetworkManager;
 
         internal CustomMessagingManager(NetworkManager networkManager)
         {
@@ -29,7 +29,11 @@ namespace Unity.Netcode
         /// </summary>
         public event UnnamedMessageDelegate OnUnnamedMessage;
 
-        internal void InvokeUnnamedMessage(ulong clientId, Stream stream) => OnUnnamedMessage?.Invoke(clientId, stream);
+        internal void InvokeUnnamedMessage(ulong clientId, Stream stream)
+        {
+            OnUnnamedMessage?.Invoke(clientId, stream);
+            m_NetworkManager.NetworkMetrics.TrackUnnamedMessageReceived(clientId, stream.SafeGetLengthOrDefault());
+        }
 
         /// <summary>
         /// Sends unnamed message to a list of clients
@@ -57,6 +61,7 @@ namespace Unity.Netcode
             }
 
             PerformanceDataManager.Increment(ProfilerConstants.UnnamedMessageSent);
+            m_NetworkManager.NetworkMetrics.TrackUnnamedMessageSent(clientIds, buffer.Length);
         }
 
         /// <summary>
@@ -74,6 +79,7 @@ namespace Unity.Netcode
             {
                 using (var nonNullContext = (InternalCommandContext)context)
                 {
+                    m_NetworkManager.NetworkMetrics.TrackUnnamedMessageSent(clientId, buffer.Position);
                     buffer.Position = 0;
                     buffer.CopyTo(nonNullContext.NetworkWriter.GetStream());
                 }
@@ -88,19 +94,26 @@ namespace Unity.Netcode
         private Dictionary<ulong, HandleNamedMessageDelegate> m_NamedMessageHandlers32 = new Dictionary<ulong, HandleNamedMessageDelegate>();
         private Dictionary<ulong, HandleNamedMessageDelegate> m_NamedMessageHandlers64 = new Dictionary<ulong, HandleNamedMessageDelegate>();
 
+        private Dictionary<ulong, string> m_MessageHandlerNameLookup32 = new Dictionary<ulong, string>();
+        private Dictionary<ulong, string> m_MessageHandlerNameLookup64 = new Dictionary<ulong, string>();
+
         internal void InvokeNamedMessage(ulong hash, ulong sender, Stream stream)
         {
+            var bytesCount = stream.SafeGetLengthOrDefault();
+
             if (m_NetworkManager == null)
             {
                 // We dont know what size to use. Try every (more collision prone)
                 if (m_NamedMessageHandlers32.TryGetValue(hash, out HandleNamedMessageDelegate messageHandler32))
                 {
                     messageHandler32(sender, stream);
+                    m_NetworkManager.NetworkMetrics.TrackNamedMessageReceived(sender, m_MessageHandlerNameLookup32[hash], bytesCount);
                 }
 
                 if (m_NamedMessageHandlers64.TryGetValue(hash, out HandleNamedMessageDelegate messageHandler64))
                 {
                     messageHandler64(sender, stream);
+                    m_NetworkManager.NetworkMetrics.TrackNamedMessageReceived(sender, m_MessageHandlerNameLookup64[hash], bytesCount);
                 }
             }
             else
@@ -112,12 +125,14 @@ namespace Unity.Netcode
                         if (m_NamedMessageHandlers32.TryGetValue(hash, out HandleNamedMessageDelegate messageHandler32))
                         {
                             messageHandler32(sender, stream);
+                            m_NetworkManager.NetworkMetrics.TrackNamedMessageReceived(sender, m_MessageHandlerNameLookup32[hash], bytesCount);
                         }
                         break;
                     case HashSize.VarIntEightBytes:
                         if (m_NamedMessageHandlers64.TryGetValue(hash, out HandleNamedMessageDelegate messageHandler64))
                         {
                             messageHandler64(sender, stream);
+                            m_NetworkManager.NetworkMetrics.TrackNamedMessageReceived(sender, m_MessageHandlerNameLookup64[hash], bytesCount);
                         }
                         break;
                 }
@@ -131,8 +146,14 @@ namespace Unity.Netcode
         /// <param name="callback">The callback to run when a named message is received.</param>
         public void RegisterNamedMessageHandler(string name, HandleNamedMessageDelegate callback)
         {
-            m_NamedMessageHandlers32[XXHash.Hash32(name)] = callback;
-            m_NamedMessageHandlers64[XXHash.Hash64(name)] = callback;
+            var hash32 = XXHash.Hash32(name);
+            var hash64 = XXHash.Hash64(name);
+
+            m_NamedMessageHandlers32[hash32] = callback;
+            m_NamedMessageHandlers64[hash64] = callback;
+
+            m_MessageHandlerNameLookup32[hash32] = name;
+            m_MessageHandlerNameLookup64[hash64] = name;
         }
 
         /// <summary>
@@ -141,8 +162,14 @@ namespace Unity.Netcode
         /// <param name="name">The name of the message.</param>
         public void UnregisterNamedMessageHandler(string name)
         {
-            m_NamedMessageHandlers32.Remove(XXHash.Hash32(name));
-            m_NamedMessageHandlers64.Remove(XXHash.Hash64(name));
+            var hash32 = XXHash.Hash32(name);
+            var hash64 = XXHash.Hash64(name);
+
+            m_NamedMessageHandlers32.Remove(hash32);
+            m_NamedMessageHandlers64.Remove(hash64);
+
+            m_MessageHandlerNameLookup32.Remove(hash32);
+            m_MessageHandlerNameLookup64.Remove(hash64);
         }
 
         /// <summary>
@@ -165,7 +192,6 @@ namespace Unity.Netcode
                     break;
             }
 
-
             var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
                 MessageQueueContainer.MessageType.NamedMessage, networkChannel,
                 new[] { clientId }, NetworkUpdateLoop.UpdateStage);
@@ -173,10 +199,17 @@ namespace Unity.Netcode
             {
                 using (var nonNullContext = (InternalCommandContext)context)
                 {
+                    var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
+                    bufferSizeCapture.StartMeasureSegment();
+
                     nonNullContext.NetworkWriter.WriteUInt64Packed(hash);
 
                     stream.Position = 0;
                     stream.CopyTo(nonNullContext.NetworkWriter.GetStream());
+                    
+                    var size = bufferSizeCapture.StopMeasureSegment();
+
+                    m_NetworkManager.NetworkMetrics.TrackNamedMessageSent(clientId, name, size);
                 }
             }
             PerformanceDataManager.Increment(ProfilerConstants.NamedMessageSent);
@@ -214,10 +247,16 @@ namespace Unity.Netcode
             {
                 using (var nonNullContext = (InternalCommandContext)context)
                 {
+                    var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
+                    bufferSizeCapture.StartMeasureSegment();
+
                     nonNullContext.NetworkWriter.WriteUInt64Packed(hash);
 
                     stream.Position = 0;
                     stream.CopyTo(nonNullContext.NetworkWriter.GetStream());
+
+                    var size = bufferSizeCapture.StopMeasureSegment();
+                    m_NetworkManager.NetworkMetrics.TrackNamedMessageSent(clientIds, name, size);
                 }
             }
             PerformanceDataManager.Increment(ProfilerConstants.NamedMessageSent);
