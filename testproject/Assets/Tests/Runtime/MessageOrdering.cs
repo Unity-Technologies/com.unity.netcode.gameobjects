@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using Unity.Netcode;
 using Unity.Netcode.RuntimeTests;
 using NUnit.Framework;
@@ -100,7 +100,7 @@ namespace TestProject.RuntimeTests
         public IEnumerator SpawnRpcDespawn([Values] NetworkUpdateStage testStage)
         {
             // Neither of these is supported for sending RPCs.
-            if (testStage == NetworkUpdateStage.Unset || testStage == NetworkUpdateStage.Initialization)
+            if (testStage == NetworkUpdateStage.Unset || testStage == NetworkUpdateStage.Initialization || testStage == NetworkUpdateStage.FixedUpdate)
             {
                 yield break;
             }
