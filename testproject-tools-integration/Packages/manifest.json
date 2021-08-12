@@ -2,7 +2,7 @@
   "registry": "https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-candidates",
   "dependencies": {
     "com.unity.ide.rider": "3.0.7",
-    "com.unity.multiplayer.mlapi": "file:../../com.unity.multiplayer.mlapi",
+    "com.unity.netcode.gameobjects": "file:../../com.unity.netcode.gameobjects",
     "com.unity.multiplayer.tools": "0.0.1-preview.1",
     "com.unity.multiplayer.transport.utp": "file:../../com.unity.multiplayer.transport.utp",
     "com.unity.test-framework": "1.1.26",
@@ -39,6 +39,6 @@
     "com.unity.modules.xr": "1.0.0"
   },
   "testables": [
-    "com.unity.multiplayer.mlapi"
+    "com.unity.netcode.gameobjects"
   ]
 }
