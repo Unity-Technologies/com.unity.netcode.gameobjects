@@ -152,16 +152,6 @@ namespace Unity.Netcode
                 // write the message to send
                 sendStream.Writer.WriteBytes(item.MessageData.Array, item.MessageData.Count, item.MessageData.Offset);
 
-                if (item.MessageType == MessageQueueContainer.MessageType.ClientRpc ||
-                    item.MessageType == MessageQueueContainer.MessageType.ServerRpc)
-                {
-                    ProfilerStatManager.RpcsSent.Record();
-                    PerformanceDataManager.Increment(ProfilerConstants.RpcSent);
-                }
-                ProfilerStatManager.BytesSent.Record(item.MessageData.Count);
-                PerformanceDataManager.Increment(ProfilerConstants.ByteSent, item.MessageData.Count);
-
-
                 if (sendStream.Buffer.Length >= automaticSendThresholdBytes)
                 {
                     sendCallback(clientId, sendStream);
