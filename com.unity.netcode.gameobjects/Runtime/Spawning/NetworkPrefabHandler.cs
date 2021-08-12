@@ -40,7 +40,7 @@ namespace Unity.Netcode
         /// The most common approach is to make the <see cref="NetworkObject"/> inactive by calling <see cref="GameObject.SetActive(bool)"/>.
         /// </summary>
         /// <param name="networkObject">The <see cref="NetworkObject"/> being destroyed</param>
-        /// <returns>(true) destroy the <see cref="GameObject"/> (false) do not destroy the <see cref="GameObject"/> </returns>
+        /// <returns>(true) destroy the parent <see cref="GameObject"/> (false) do not destroy the parent <see cref="GameObject"/> </returns>
         bool Destroy(NetworkObject networkObject);
     }
 

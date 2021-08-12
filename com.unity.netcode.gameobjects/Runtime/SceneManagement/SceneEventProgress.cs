@@ -8,17 +8,11 @@ using AsyncOperation = UnityEngine.AsyncOperation;
 namespace Unity.Netcode
 {
     /// <summary>
-    /// Used by <see cref="NetworkSceneManager"/> to determine if a server invoked scene event has started and stored
-    /// within the <see cref="SceneEventProgress"/>
+    /// Used by <see cref="NetworkSceneManager"/> to determine if a server invoked scene event has started.
+    /// The returned status is stored in the <see cref="SceneEventProgress.Status"/> property.
     /// Note: This was formally known as SwitchSceneProgress which contained the <see cref="AsyncOperation"/>.
     /// All <see cref="AsyncOperation"/>s are now delivered by the <see cref="NetworkSceneManager.OnSceneEvent"/> event handler
     /// via the <see cref="SceneEvent"/> parameter.
-    /// Status Values:
-    /// None - No status
-    /// Started - Success in starting a load or unload scene event
-    /// SceneNotLoaded - Returned if you attempt to unload a scene that is not loaded
-    /// SceneEventInProgress - Returned if you attempt to start a new scene event (load or unload) during an existing scene event
-    /// InvalidSceneName - Returned if the scene name you specified does not exist
     /// </summary>
     public enum SceneEventProgressStatus
     {
@@ -39,7 +33,8 @@ namespace Unity.Netcode
         /// </summary>
         SceneEventInProgress,
         /// <summary>
-        /// Returned if the scene name used with <see cref="NetworkSceneManager.LoadScene(string, LoadSceneMode)"/> or <see cref="NetworkSceneManager.UnloadScene(string)"/>is invalid
+        /// Returned if the scene name used with <see cref="NetworkSceneManager.LoadScene(string, LoadSceneMode)"/>
+        /// or <see cref="NetworkSceneManager.UnloadScene(string)"/>is invalid
         /// </summary>
         InvalidSceneName,
         /// <summary>
