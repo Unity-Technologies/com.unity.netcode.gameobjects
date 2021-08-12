@@ -358,13 +358,10 @@ namespace Unity.Netcode.Prototyping
                 default:
                     throw new NotImplementedException($"Authority: {Authority} is not handled");
                 case NetworkAuthority.Server:
-                    ReplNetworkState.Settings.WritePermission = NetworkVariablePermission.ServerOnly;
+                    ReplNetworkState.Settings.WritePermission = NetworkVariableWritePermission.ServerOnly;
                     break;
                 case NetworkAuthority.Client:
-                    ReplNetworkState.Settings.WritePermission = NetworkVariablePermission.OwnerOnly;
-                    break;
-                case NetworkAuthority.Shared:
-                    ReplNetworkState.Settings.WritePermission = NetworkVariablePermission.Everyone;
+                    ReplNetworkState.Settings.WritePermission = NetworkVariableWritePermission.OwnerOnly;
                     break;
             }
         }

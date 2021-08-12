@@ -24,7 +24,7 @@ namespace Unity.Netcode
         Everyone,
 
         /// <summary>
-        /// Owner-ownly
+        /// Owner-only
         /// </summary>
         OwnerOnly,
 
