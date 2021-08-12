@@ -110,7 +110,7 @@ namespace TestProject.ManualTests
         {
             var sceneEventProgressStatus = SceneEventProgressStatus.None;
 
-            while (sceneEventProgressStatus != SceneEventProgressStatus.Started)
+            while (sceneEventProgressStatus != SceneEventProgressStatus.Started && sceneEventProgressStatus != SceneEventProgressStatus.SceneFailedVerification)
             {
                 if (isLoading)
                 {
