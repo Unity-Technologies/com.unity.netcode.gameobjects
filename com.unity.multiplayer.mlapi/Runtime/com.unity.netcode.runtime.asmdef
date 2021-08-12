@@ -1,5 +1,0 @@
-{
-    "name": "Unity.Netcode.Runtime",
-    "rootNamespace": "Unity.Netcode",
-    "allowUnsafeCode": true
-}

@@ -1,0 +1,1 @@
+This dummy asset exists to make sure that the Assets folder is included in CI packaging.
