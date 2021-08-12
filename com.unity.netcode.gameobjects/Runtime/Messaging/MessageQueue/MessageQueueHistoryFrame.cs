@@ -6,7 +6,7 @@ namespace Unity.Netcode
     /// <summary>
     /// Used by the MessageQueueContainer to hold queued messages
     /// </summary>
-    public class MessageQueueHistoryFrame
+    internal class MessageQueueHistoryFrame
     {
         public enum QueueFrameType
         {

@@ -24,8 +24,8 @@ projects:
     validate: true
     # Packages within a project that will be tested
     packages:
-      - name: com.unity.multiplayer.mlapi
-        path: com.unity.multiplayer.mlapi
+      - name: com.unity.netcode.gameobjects
+        path: com.unity.netcode.gameobjects
       - name: com.unity.multiplayer.transport.utp
         path: com.unity.multiplayer.transport.utp
     test_editors:
