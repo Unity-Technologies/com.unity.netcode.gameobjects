@@ -887,7 +887,8 @@ namespace Unity.Netcode
                 NetworkTickSystem.Tick -= OnNetworkManagerTick;
                 NetworkTickSystem = null;
             }
-            // NSS TODO: Remove this once MTT-860 is addressed or before PR
+            // This is required for handling the potential scenario where multiple NetworkManager instances are created.
+            // See MTT-860 for more information
 #if !UNITY_2020_2_OR_NEWER
             if (IsListening)
             {
@@ -928,7 +929,8 @@ namespace Unity.Netcode
                 BehaviourUpdater = null;
             }
 
-            // NSS TODO: Remove this once MTT-860 is addressed or before PR
+            // This is required for handling the potential scenario where multiple NetworkManager instances are created.
+            // See MTT-860 for more information
             if (IsListening)
             {
                 //The Transport is set during initialization, thus it is possible for the Transport to be null
