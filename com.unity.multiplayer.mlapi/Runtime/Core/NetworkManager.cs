@@ -41,7 +41,7 @@ namespace Unity.Netcode
 
         private const double k_TimeSyncFrequency = 1.0d; // sync every second, TODO will be removed once timesync is done via snapshots
 
-        private const float k_DefaultBufferSizeSec = 0.05f;
+        private const float k_DefaultBufferSizeSec = 0.05f; // todo talk with UX/Product, find good default value for this
 
         internal MessageQueueContainer MessageQueueContainer { get; private set; }
 

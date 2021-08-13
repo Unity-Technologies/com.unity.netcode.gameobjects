@@ -1,4 +1,5 @@
 using System;
+using UnityEngine;
 
 namespace Unity.Netcode
 {
@@ -41,7 +42,8 @@ namespace Unity.Netcode
             {
                 if (value < 0f || value < 1f / NetworkManager.Singleton.NetworkConfig.TickRate)
                 {
-                    throw new NetworkConfigurationException("Error setting buffer size, buffer time needs to be bigger than the tick length and bigger than zero");
+                    Debug.LogError($"Error setting buffer size to {value}, buffer time needs to be bigger than the tick length and bigger than zero. Setting value to minimum buffer size: {MinBufferSizeSec}");
+                    value = MinBufferSizeSec;
                 }
 
                 m_ServerBufferSec = value;
@@ -66,6 +68,8 @@ namespace Unity.Netcode
 
         internal double LastSyncedRttSec { get; private set; }
 
+        public static double MinBufferSizeSec => 1f / NetworkManager.Singleton.NetworkConfig.TickRate;
+
         public NetworkTimeSystem(double localBufferSec, double serverBufferSec, double hardResetThresholdSec, double adjustmentRatio = 0.01d)
         {
             LocalBufferSec = localBufferSec;
@@ -81,7 +85,7 @@ namespace Unity.Netcode
         /// <returns>The instance.</returns>
         public static NetworkTimeSystem ServerTimeSystem()
         {
-            return new NetworkTimeSystem(0, 0, double.MaxValue);
+            return new NetworkTimeSystem(0, MinBufferSizeSec, double.MaxValue);
         }
 
         /// <summary>
