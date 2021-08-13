@@ -69,7 +69,9 @@ namespace Unity.Netcode
     {
         // todo --M1-- functionality to grow these will be needed in a later milestone
         private const int k_MaxVariables = 2000;
-        private const int k_MaxSpawns = 100; // also despawns
+        private int k_MaxSpawns = 100;
+        private int k_MaxDespawns = 100;
+
         private const int k_BufferSize = 30000;
 
         internal byte[] MainBuffer = new byte[k_BufferSize]; // buffer holding a snapshot in memory
@@ -80,10 +82,10 @@ namespace Unity.Netcode
         internal Entry[] Entries = new Entry[k_MaxVariables];
         internal int LastEntry = 0;
 
-        internal SnapshotSpawnCommand[] Spawns = new SnapshotSpawnCommand[k_MaxSpawns];
+        internal SnapshotSpawnCommand[] Spawns;
         internal int NumSpawns = 0;
 
-        internal SnapshotDespawnCommand[] Despawns = new SnapshotDespawnCommand[k_MaxSpawns];
+        internal SnapshotDespawnCommand[] Despawns;
         internal int NumDespawns = 0;
 
         private MemoryStream m_BufferStream;
@@ -103,6 +105,8 @@ namespace Unity.Netcode
             m_BufferStream = new MemoryStream(RecvBuffer, 0, k_BufferSize);
             // we ask for twice as many slots because there could end up being one free spot between each pair of slot used
             Allocator = new IndexAllocator(k_BufferSize, k_MaxVariables * 2);
+            Spawns = new SnapshotSpawnCommand[k_MaxSpawns];
+            Despawns = new SnapshotDespawnCommand[k_MaxDespawns];
         }
 
         internal void Clear()
@@ -173,6 +177,13 @@ namespace Unity.Netcode
 
         internal void AddSpawn(SnapshotSpawnCommand command)
         {
+            if (NumSpawns >= k_MaxSpawns)
+            {
+                Array.Resize(ref Spawns, 2 * k_MaxSpawns);
+                k_MaxSpawns = k_MaxSpawns * 2;
+                Debug.Log($"[JEFF] spawn size is now {k_MaxSpawns}");
+            }
+
             if (NumSpawns < k_MaxSpawns)
             {
                 if (command.TargetClientIds == default)
@@ -193,7 +204,14 @@ namespace Unity.Netcode
 
         internal void AddDespawn(SnapshotDespawnCommand command)
         {
-            if (NumDespawns < k_MaxSpawns)
+            if (NumSpawns >= k_MaxDespawns)
+            {
+                Array.Resize(ref Despawns, 2 * k_MaxDespawns);
+                k_MaxDespawns = k_MaxDespawns * 2;
+                Debug.Log($"[JEFF] despawn size is now {k_MaxDespawns}");
+            }
+
+            if (NumDespawns < k_MaxDespawns)
             {
                 if (command.TargetClientIds == default)
                 {
@@ -543,8 +561,8 @@ namespace Unity.Netcode
         internal ushort SequenceNumber = 0; // the next sequence number to use for this client
         internal ushort LastReceivedSequence = 0; // the last sequence number received by this client
 
-        internal int LastSpawnIndex = 0; // index of the last spawn sent. Used to cycle through spawns (LRU scheme)
-        internal int LastDespawnIndex = 0; // same as above, but for despawns.
+        internal int NextSpawnIndex = 0; // index of the last spawn sent. Used to cycle through spawns (LRU scheme)
+        internal int NextDespawnIndex = 0; // same as above, but for despawns.
 
         // by objectId
         // which spawns did this connection ack'ed ?
@@ -704,6 +722,10 @@ namespace Unity.Netcode
             bool overSize = false;
             ClientData clientData = m_ClientData[clientId];
 
+            // this is needed because spawns being removed may have reduce the size below LRU position
+            clientData.NextSpawnIndex %= m_Snapshot.NumSpawns;
+            clientData.NextDespawnIndex %= m_Snapshot.NumDespawns;
+
             using (var writer = PooledNetworkWriter.Get(buffer))
             {
                 var positionSpawns = writer.GetStream().Position;
@@ -711,9 +733,11 @@ namespace Unity.Netcode
                 var positionDespawns = writer.GetStream().Position;
                 writer.WriteInt16((short)m_Snapshot.NumDespawns);
 
+                Debug.Assert(writer.GetStream().Position == 0);
+
                 for (var j = 0; j < m_Snapshot.NumSpawns && !overSize; j++)
                 {
-                    var index = clientData.LastSpawnIndex;
+                    var index = clientData.NextSpawnIndex;
                     bool skip = false;
 
                     // todo : check that this condition is the same as the clientId one, then remove it :-)
@@ -742,13 +766,13 @@ namespace Unity.Netcode
                     {
                         overSize = true;
                     }
-                    clientData.LastSpawnIndex = (clientData.LastSpawnIndex + 1) % m_Snapshot.NumSpawns;
+                    clientData.NextSpawnIndex = (clientData.NextSpawnIndex + 1) % m_Snapshot.NumSpawns;
                 }
 
 
                 for (var j = 0; j < m_Snapshot.NumDespawns && !overSize; j++)
                 {
-                    var index = clientData.LastDespawnIndex;
+                    var index = clientData.NextDespawnIndex;
                     bool skip = false;
 
                     // todo : check that this condition is the same as the clientId one, then remove it :-)
@@ -776,7 +800,7 @@ namespace Unity.Netcode
                     {
                         overSize = true;
                     }
-                    clientData.LastDespawnIndex = (clientData.LastDespawnIndex + 1) % m_Snapshot.NumDespawns;
+                    clientData.NextDespawnIndex = (clientData.NextDespawnIndex + 1) % m_Snapshot.NumDespawns;
                 }
 
                 long positionAfter = 0;
