@@ -754,16 +754,16 @@ namespace Unity.Netcode
             {
                 var scene = SceneManager.GetSceneAt(i);
 
-                var malpiSceneIndex = GetNetcodeSceneIndexFromScene(scene);
+                var sceneIndex = GetNetcodeSceneIndexFromScene(scene);
 
-                if (malpiSceneIndex == uint.MaxValue)
+                if (sceneIndex == uint.MaxValue)
                 {
                     continue;
                 }
                 // This would depend upon whether we are additive or note
                 if (activeScene == scene)
                 {
-                    ClientSynchEventData.SceneIndex = malpiSceneIndex;
+                    ClientSynchEventData.SceneIndex = sceneIndex;
                 }
 
                 // Separate NetworkObjects by scene
@@ -779,7 +779,7 @@ namespace Unity.Netcode
                     {
                         continue;
                     }
-                    ClientSynchEventData.AddNetworkObjectForSynch(malpiSceneIndex, networkObject);
+                    ClientSynchEventData.AddNetworkObjectForSynch(sceneIndex, networkObject);
                 }
             }
 
