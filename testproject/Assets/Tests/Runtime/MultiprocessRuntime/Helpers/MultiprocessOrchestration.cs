@@ -11,18 +11,18 @@ public class MultiprocessOrchestration
 {
     public const string IsWorkerArg = "-isWorker";
 
-    private static void StartWorkersOnRemoteNodes()
+    public static void StartWorkersOnRemoteNodes()
     {
         string userprofile = System.Environment.GetEnvironmentVariable("USERPROFILE");
         DirectoryInfo userprofile_di = new DirectoryInfo(userprofile);
         DirectoryInfo multiprocess_di = new DirectoryInfo(Path.Combine(userprofile, ".multiprocess"));
-        FileInfo jobid_fileinfo = new FileInfo(Path.Join(multiprocess_di.FullName, "jobid"));
-        FileInfo resources_fileinfo = new FileInfo(Path.Join(multiprocess_di.FullName, "resources"));
+        FileInfo jobid_fileinfo = new FileInfo(Path.Combine(multiprocess_di.FullName, "jobid"));
+        FileInfo resources_fileinfo = new FileInfo(Path.Combine(multiprocess_di.FullName, "resources"));
         if (jobid_fileinfo.Exists && resources_fileinfo.Exists)
         {
             // That suggests sufficient information to determine that we can run remotely
             var workerProcess = new Process();
-            workerProcess.StartInfo.FileName = Path.Combine(userprofile, "BokkenCore31", "bin", "Debug", "netcoreapp3.1", "BokkenCore31.exe")
+            workerProcess.StartInfo.FileName = Path.Combine(userprofile, "BokkenCore31", "bin", "Debug", "netcoreapp3.1", "BokkenCore31.exe");
             workerProcess.StartInfo.UseShellExecute = false;
             workerProcess.StartInfo.RedirectStandardError = true;
             workerProcess.StartInfo.RedirectStandardOutput = true;
