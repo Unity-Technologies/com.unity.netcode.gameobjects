@@ -206,7 +206,7 @@ namespace Unity.Netcode
 
                     stream.Position = 0;
                     stream.CopyTo(nonNullContext.NetworkWriter.GetStream());
-                    
+
                     var size = bufferSizeCapture.StopMeasureSegment();
 
                     m_NetworkManager.NetworkMetrics.TrackNamedMessageSent(clientId, name, size);

@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using Unity.Netcode;
 using Unity.Netcode.RuntimeTests;
 using NUnit.Framework;
