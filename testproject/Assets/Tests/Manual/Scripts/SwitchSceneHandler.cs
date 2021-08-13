@@ -1,7 +1,6 @@
 using System.Collections;
 using UnityEngine;
-using MLAPI;
-using MLAPI.SceneManagement;
+using Unity.Netcode;
 
 namespace TestProject.ManualTests
 {
@@ -14,6 +13,14 @@ namespace TestProject.ManualTests
 
         [SerializeField]
         private string m_SceneToSwitchTo;
+
+        [Tooltip("If enabled, this will automatically switch the scene after the Auto Switch TimeOut period has elapsed.")]
+        [SerializeField]
+        private bool m_EnableAutoSwitch;
+
+        [Tooltip("Period in seconds until it will automatically switch to the next scene.")]
+        [SerializeField]
+        private float m_AutoSwitchTimeOut = 60;
 
         private void Awake()
         {
@@ -37,18 +44,20 @@ namespace TestProject.ManualTests
         {
             while (!m_ExitingScene)
             {
-                if (NetworkManager.Singleton && NetworkManager.Singleton.IsListening && NetworkManager.Singleton.IsServer)
+                if (NetworkManager.Singleton && NetworkManager.Singleton.IsListening)
                 {
                     if (m_SwitchSceneButtonObject)
                     {
-                        m_SwitchSceneButtonObject.SetActive(true);
+                        m_SwitchSceneButtonObject.SetActive(NetworkManager.Singleton.IsServer);
                     }
-                }
-                else
-                {
-                    m_SwitchSceneButtonObject.SetActive(false);
-                }
 
+                    if (m_EnableAutoSwitch && NetworkManager.Singleton.IsServer)
+                    {
+                        StartCoroutine(AutoSwitch());
+                    }
+
+                    yield return null;
+                }
                 yield return new WaitForSeconds(0.5f);
             }
 
@@ -69,6 +78,14 @@ namespace TestProject.ManualTests
                 m_SwitchSceneButtonObject.SetActive(false);
             }
             base.OnNetworkSpawn();
+        }
+
+        private IEnumerator AutoSwitch()
+        {
+            yield return new WaitForSeconds(m_AutoSwitchTimeOut);
+
+            OnSwitchScene();
+
         }
 
         private SceneSwitchProgress m_CurrentSceneSwitchProgress;

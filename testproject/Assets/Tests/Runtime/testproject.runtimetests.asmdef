@@ -1,11 +1,16 @@
 {
     "name": "TestProject.RuntimeTests",
+    "rootNamespace": "TestProject.RuntimeTests",
     "references": [
-        "Unity.Multiplayer.MLAPI.Runtime",
-        "Unity.Multiplayer.MLAPI.RuntimeTests",
-        "TestProject.ManualTests"
+        "TestProject.ManualTests",
+        "Unity.Netcode.Runtime",
+        "Unity.Netcode.RuntimeTests"
     ],
     "optionalUnityReferences": [
         "TestAssemblies"
+    ],
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS",
+        "UNITY_EDITOR"
     ]
 }

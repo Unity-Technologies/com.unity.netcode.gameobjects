@@ -4,8 +4,8 @@ using System.Text;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
-using MLAPI.RuntimeTests;
-using MLAPI;
+using Unity.Netcode.RuntimeTests;
+using Unity.Netcode;
 using Debug = UnityEngine.Debug;
 
 namespace TestProject.RuntimeTests

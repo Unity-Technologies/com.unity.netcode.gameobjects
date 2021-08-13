@@ -2,8 +2,8 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using MLAPI;
-using MLAPI.Transports.UNET;
+using Unity.Netcode;
+using Unity.Netcode.Transports.UNET;
 
 
 /// <summary>
@@ -13,7 +13,7 @@ using MLAPI.Transports.UNET;
 /// -ip   | IP address of the host-server.
 /// -p    | The connection listening port.
 /// -fr   | Set the target frame rate.
-/// -m (?)| Start MLAPI in one of 3 modes: client, host, server
+/// -m (?)| Start network in one of 3 modes: client, host, server
 /// </summary>
 public class CommandLineProcessor
 {
@@ -26,14 +26,14 @@ public class CommandLineProcessor
     public CommandLineProcessor(string[] args)
     {
         try
-        {        
-            if(s_Singleton != null)
+        {
+            if (s_Singleton != null)
             {
                 Debug.LogError($"More than one {nameof(CommandLineProcessor)} has been instantiated!");
                 throw new Exception();
             }
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             Debug.LogError($"Stack Trace: {ex.StackTrace}");
         }
@@ -58,17 +58,17 @@ public class CommandLineProcessor
 
     public bool AutoConnectEnabled()
     {
-        if (m_CommandLineArguments.TryGetValue("-m", out string mlapiValue))
+        if (m_CommandLineArguments.TryGetValue("-m", out string netcodeValue))
         {
-            switch (mlapiValue)
+            switch (netcodeValue)
             {
-                case "server":                   
+                case "server":
                 case "host":
                 case "client":
-                {
+                    {
 
-                    return true;
-                }
+                        return true;
+                    }
             }
         }
         return false;
@@ -106,9 +106,9 @@ public class CommandLineProcessor
                 m_CommandLineArguments.Remove("-fr");
             }
 
-            if (m_CommandLineArguments.TryGetValue("-m", out string mlapiValue))
+            if (m_CommandLineArguments.TryGetValue("-m", out string netcodeValue))
             {
-                switch (mlapiValue)
+                switch (netcodeValue)
                 {
                     case "server":
                         StartServer();
@@ -120,7 +120,7 @@ public class CommandLineProcessor
                         StartClient();
                         break;
                     default:
-                        Debug.LogWarning($"Invalid MLAPI argument: {mlapiValue}");
+                        Debug.LogWarning($"Invalid netcode argument: {netcodeValue}");
                         break;
                 }
             }
@@ -129,7 +129,7 @@ public class CommandLineProcessor
 
     private void StartSceneSwitch()
     {
-        if(m_SceneToLoad != string.Empty)
+        if (m_SceneToLoad != string.Empty)
         {
             SceneManager.sceneLoaded += SceneManager_sceneLoaded;
             SceneManager.LoadSceneAsync(m_SceneToLoad, LoadSceneMode.Single);
@@ -149,7 +149,7 @@ public class CommandLineProcessor
                 if (m_ConnectionModeScript)
                 {
                     m_ConnectionModeScript.SetCommandLineHandler(this);
-         
+
                     return;
                 }
             }
@@ -192,7 +192,7 @@ public class CommandLineProcessor
         else
         {
             NetworkManager.Singleton.StartClient();
-        }       
+        }
     }
 
     private void SetTransportAddress(string address)
@@ -228,10 +228,10 @@ public class CommandLineHandler : MonoBehaviour
     private static CommandLineProcessor s_CommandLineProcessorInstance;
     private void Start()
     {
-        if(s_CommandLineProcessorInstance == null)
+        if (s_CommandLineProcessorInstance == null)
         {
             s_CommandLineProcessorInstance = new CommandLineProcessor(Environment.GetCommandLineArgs());
         }
-        
+
     }
 }
