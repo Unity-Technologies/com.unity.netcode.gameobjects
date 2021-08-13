@@ -1,8 +1,7 @@
 using System;
 using UnityEngine;
-using MLAPI.Spawning;
 
-namespace MLAPI.MultiprocessRuntimeTests
+namespace Unity.Netcode.MultiprocessRuntimeTests
 {
     public class CustomPrefabSpawnerForPerformanceTests<T> : INetworkPrefabInstanceHandler, IDisposable where T : NetworkBehaviour
     {

@@ -2,7 +2,7 @@ using System.Collections;
 using System.Text;
 using UnityEngine;
 using UnityEngine.UI;
-using MLAPI;
+using Unity.Netcode;
 
 namespace TestProject.ManualTests
 {

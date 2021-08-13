@@ -1,7 +1,6 @@
 using System.Collections;
 using UnityEngine;
-using MLAPI;
-using MLAPI.SceneManagement;
+using Unity.Netcode;
 
 namespace TestProject.ManualTests
 {
@@ -23,7 +22,6 @@ namespace TestProject.ManualTests
         [SerializeField]
         private float m_AutoSwitchTimeOut = 60;
 
-
         private void Awake()
         {
             ExitingNow = false;
@@ -33,10 +31,7 @@ namespace TestProject.ManualTests
         {
             m_SwitchSceneButtonObject.SetActive(false);
             StartCoroutine(CheckForVisibility());
-
         }
-
-
 
         private bool m_ExitingScene;
         private void OnDestroy()

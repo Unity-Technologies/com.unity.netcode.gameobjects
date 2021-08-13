@@ -2,7 +2,7 @@
 
 ## Why
 Multiprocess testing can be used for different use cases like 
-- integration tests (MLAPI + actual transport or multi-scene testing for example)
+- integration tests (Netcode + actual transport or multi-scene testing for example)
 - performance testing. 
 - Anything requiring a more realistic environment for testing that involves having a full client and server, communicating on a real network interface using real transports in separate Unity processes.
 
@@ -80,7 +80,7 @@ using UnityEngine.Profiling;
 using UnityEngine.TestTools;
 using static ExecuteStepInContext;
 
-namespace MLAPI.MultiprocessRuntimeTests
+namespace Unity.Netcode.MultiprocessRuntimeTests
 {
     public class DemoProcessTest : BaseMultiprocessTests
     {

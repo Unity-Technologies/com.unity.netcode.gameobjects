@@ -2,8 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
-using MLAPI;
-using MLAPI.Spawning;
+using Unity.Netcode;
 
 namespace TestProject.ManualTests
 {
@@ -261,7 +260,7 @@ namespace TestProject.ManualTests
             var genericNetworkObjectBehaviour = obj.GetComponent<GenericNetworkObjectBehaviour>();
             genericNetworkObjectBehaviour.HasHandler = EnableHandler;
             m_ObjectPool.Add(obj);
-            return obj;
+            return m_ObjectPool[m_ObjectPool.Count - 1];
         }
 
         /// <summary>
@@ -350,7 +349,7 @@ namespace TestProject.ManualTests
                                 var no = go.GetComponent<NetworkObject>();
                                 if (!no.IsSpawned)
                                 {
-                                    no.Spawn(null, true);
+                                    no.Spawn(true);
                                 }
                             }
                         }

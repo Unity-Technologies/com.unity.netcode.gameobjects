@@ -2,9 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
-using MLAPI;
-using MLAPI.Messaging;
-using MLAPI.Profiling;
+using Unity.Netcode;
 
 namespace TestProject.ManualTests
 {
@@ -66,7 +64,7 @@ namespace TestProject.ManualTests
                 var networkObject = GetComponent<NetworkObject>();
                 if (networkObject != null)
                 {
-                    networkObject.SpawnWithOwnership(clientId, null, true);
+                    networkObject.SpawnWithOwnership(clientId, true);
                 }
             }
         }
@@ -112,11 +110,11 @@ namespace TestProject.ManualTests
         /// </summary>
         /// <param name="statsinfo"></param>
         [ClientRpc]
-        private void ReceiveStatsClientRPC(StatsInfoContainer statsinfo)
+        private void ReceiveStatsClientRpc(StatsInfoContainer statsinfo)
         {
             m_LastStatsDump = "Server Stats";
             m_LastStatsDump += "\ndeltaTime: [" + Time.deltaTime.ToString() + "]";
-            if (ProfilerStatManager.AllStats.Count != statsinfo.StatValues.Count)
+            /* if (ProfilerStatManager.AllStats.Count != statsinfo.StatValues.Count)
             {
                 Debug.LogError("[StatsDisplay-Error][Mismatch] Recieved " + statsinfo.StatValues.Count.ToString() + " values and have " + ProfilerStatManager.AllStats.Count.ToString() + " profiler stats entries!");
             }
@@ -132,7 +130,7 @@ namespace TestProject.ManualTests
                     m_LastStatsDump += p.PrettyPrintName + ": " + statsinfo.StatValues[statsCounter].ToString(("0.0"));
                     statsCounter++;
                 }
-            }
+            } */
         }
 
         /// <summary>
@@ -166,24 +164,24 @@ namespace TestProject.ManualTests
                     {
                         m_LastStatsDump = m_IsServer ? "Server Stats" : "Client Stats";
                         m_LastStatsDump += "\ndeltaTime: [" + Time.deltaTime.ToString() + "]";
-                        foreach (ProfilerStat p in ProfilerStatManager.AllStats)
+                        /* foreach (ProfilerStat p in ProfilerStatManager.AllStats)
                         {
                             if (m_LastStatsDump != string.Empty)
                             {
                                 m_LastStatsDump += "\n";
                             }
                             m_LastStatsDump += p.PrettyPrintName + ": " + p.SampleRate().ToString("0.0");
-                        }
+                        } */
                     }
                     if (NetworkManager.Singleton.IsServer && m_ClientsToUpdate.Count > 0)
                     {
                         var statsInfoContainer = new StatsInfoContainer();
                         statsInfoContainer.StatValues = new List<float>();
-                        foreach (ProfilerStat p in ProfilerStatManager.AllStats)
+                        /* foreach (ProfilerStat p in ProfilerStatManager.AllStats)
                         {
                             statsInfoContainer.StatValues.Add(p.SampleRate());
-                        }
-                        ReceiveStatsClientRPC(statsInfoContainer);
+                        } */
+                        ReceiveStatsClientRpc(statsInfoContainer);
                     }
                 }
                 yield return new WaitForSeconds(0.5f);

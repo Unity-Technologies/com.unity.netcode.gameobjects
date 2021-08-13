@@ -1,8 +1,6 @@
-﻿using System;
 using System.Collections;
-using MLAPI;
-using MLAPI.Configuration;
-using MLAPI.RuntimeTests;
+using Unity.Netcode;
+using Unity.Netcode.RuntimeTests;
 using NUnit.Framework;
 using TestProject.RuntimeTests.Support;
 using UnityEngine;
@@ -13,7 +11,7 @@ namespace TestProject.RuntimeTests
     public class FixedUpdateMessagesAreOnlyProcessedOnceTest
     {
         private GameObject m_Prefab;
-        private int m_originalFrameRate;
+        private int m_OriginalFrameRate;
 
 
         [UnityTearDown]
@@ -23,19 +21,19 @@ namespace TestProject.RuntimeTests
             if (m_Prefab)
             {
                 MultiInstanceHelpers.Destroy();
-                UnityEngine.Object.Destroy(m_Prefab);
+                Object.Destroy(m_Prefab);
                 m_Prefab = null;
-                Support.SpawnRpcDespawn.ClientUpdateCount = 0;
-                Support.SpawnRpcDespawn.ServerUpdateCount = 0;
-                Application.targetFrameRate = m_originalFrameRate;
+                SpawnRpcDespawn.ClientUpdateCount = 0;
+                SpawnRpcDespawn.ServerUpdateCount = 0;
+                Application.targetFrameRate = m_OriginalFrameRate;
             }
             yield break;
         }
-        
+
         [UnitySetUp]
         public IEnumerator Setup()
         {
-            m_originalFrameRate = Application.targetFrameRate;
+            m_OriginalFrameRate = Application.targetFrameRate;
             yield break;
         }
 
@@ -43,13 +41,13 @@ namespace TestProject.RuntimeTests
         public IEnumerator TestFixedUpdateMessagesAreOnlyProcessedOnce()
         {
             NetworkUpdateStage testStage = NetworkUpdateStage.FixedUpdate;
-            
+
             // Must be 1 for this test.
             const int numClients = 1;
             Assert.True(MultiInstanceHelpers.Create(numClients, out NetworkManager server, out NetworkManager[] clients));
             m_Prefab = new GameObject("Object");
             m_Prefab.AddComponent<SpawnRpcDespawn>();
-            Support.SpawnRpcDespawn.TestStage = testStage;
+            SpawnRpcDespawn.TestStage = testStage;
             var networkObject = m_Prefab.AddComponent<NetworkObject>();
 
             // Make it a prefab
@@ -85,17 +83,17 @@ namespace TestProject.RuntimeTests
             // Setting targetFrameRate to 1 will cause FixedUpdate to get called multiple times.
             // We should only see ClientUpdateCount increment once because only one RPC is being sent.
             Application.targetFrameRate = 1;
-            GameObject serverObject = GameObject.Instantiate(m_Prefab, Vector3.zero, Quaternion.identity);
+            var serverObject = Object.Instantiate(m_Prefab, Vector3.zero, Quaternion.identity);
             NetworkObject serverNetworkObject = serverObject.GetComponent<NetworkObject>();
             serverNetworkObject.NetworkManagerOwner = server;
             SpawnRpcDespawn srdComponent = serverObject.GetComponent<SpawnRpcDespawn>();
             srdComponent.Activate();
 
             // Wait until all objects have spawned.
-            int expectedCount = Support.SpawnRpcDespawn.ClientUpdateCount + 1;
+            int expectedCount = SpawnRpcDespawn.ClientUpdateCount + 1;
             const int maxFrames = 240;
             var doubleCheckTime = Time.realtimeSinceStartup + 1.0f;
-            while (Support.SpawnRpcDespawn.ClientUpdateCount < expectedCount)
+            while (SpawnRpcDespawn.ClientUpdateCount < expectedCount)
             {
                 if (Time.frameCount > maxFrames)
                 {
@@ -111,8 +109,8 @@ namespace TestProject.RuntimeTests
                 yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
             }
 
-            Assert.AreEqual(testStage, Support.SpawnRpcDespawn.StageExecutedByReceiver);
-            Assert.AreEqual(Support.SpawnRpcDespawn.ServerUpdateCount, Support.SpawnRpcDespawn.ClientUpdateCount);
+            Assert.AreEqual(testStage, SpawnRpcDespawn.StageExecutedByReceiver);
+            Assert.AreEqual(SpawnRpcDespawn.ServerUpdateCount, SpawnRpcDespawn.ClientUpdateCount);
             Assert.True(handler.WasSpawned);
             var lastFrameNumber = Time.frameCount + 1;
             yield return new WaitUntil(() => Time.frameCount >= lastFrameNumber);

@@ -1,7 +1,4 @@
-using MLAPI;
-using MLAPI.Configuration;
-using MLAPI.Logging;
-using MLAPI.Spawning;
+using Unity.Netcode;
 using NUnit.Framework;
 using UnityEngine;
 
@@ -53,7 +50,7 @@ namespace TestProject.RuntimeTests.Support
             }
 
             // Otherwise, instantiate an instance of the NetworkPrefab linked to the prefabHash
-            var networkObject =  Object.Instantiate(networkPrefabReference, position, rotation).GetComponent<NetworkObject>();
+            var networkObject = Object.Instantiate(networkPrefabReference, position, rotation).GetComponent<NetworkObject>();
 
             return networkObject;
         }
