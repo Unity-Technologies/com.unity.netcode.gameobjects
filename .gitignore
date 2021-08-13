@@ -2,3 +2,8 @@
 .vs
 .vscode
 .idea
+.Editor
+.bin
+.download
+build.log
+upm-ci~/
