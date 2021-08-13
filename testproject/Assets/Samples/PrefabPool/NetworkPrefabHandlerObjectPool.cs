@@ -1,7 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using Unity.Multiplayer.Netcode;
+using Unity.Netcode;
 
 public class NetworkPrefabHandlerObjectPool : NetworkBehaviour, INetworkPrefabInstanceHandler
 {

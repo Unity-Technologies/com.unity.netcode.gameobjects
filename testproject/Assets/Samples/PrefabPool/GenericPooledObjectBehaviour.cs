@@ -1,6 +1,5 @@
 using UnityEngine;
-using Unity.Multiplayer.Netcode;
-
+using Unity.Netcode;
 
 /// <summary>
 /// A general object used for pooling purposes
@@ -30,8 +29,6 @@ public class GenericPooledObjectBehaviour : NetworkBehaviour
         m_MeshRenderer = GetComponent<MeshRenderer>();
     }
 
-
-
     /// <summary>
     /// Handles disabling the MeshRenderer when the client despawns a NetworkObject
     /// </summary>
@@ -58,7 +55,6 @@ public class GenericPooledObjectBehaviour : NetworkBehaviour
 
         base.OnNetworkDespawn();
     }
-
 
     /// <summary>
     /// Handles setting a delay before the newly spawned object is visible
@@ -169,7 +165,6 @@ public class GenericPooledObjectBehaviour : NetworkBehaviour
         }
 
     }
-
 
     /// <summary>
     /// Host and Server Only:

@@ -10,7 +10,7 @@ using UnityEngine.TestTools;
 using static ExecuteStepInContext;
 using Object = UnityEngine.Object;
 
-namespace Unity.Multiplayer.Netcode.MultiprocessRuntimeTests
+namespace Unity.Netcode.MultiprocessRuntimeTests
 {
     public class NetworkVariablePerformanceTests : BaseMultiprocessTests
     {

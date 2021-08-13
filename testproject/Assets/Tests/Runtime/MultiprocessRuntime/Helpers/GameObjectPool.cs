@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using Object = UnityEngine.Object;
 
-namespace Unity.Multiplayer.Netcode.MultiprocessRuntimeTests
+namespace Unity.Netcode.MultiprocessRuntimeTests
 {
     /// <summary>
     /// Have to implement our own pool here for compatibility with Unity 2020LTS

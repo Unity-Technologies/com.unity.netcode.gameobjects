@@ -1,4 +1,4 @@
-using Unity.Multiplayer.Netcode;
+using Unity.Netcode;
 using UnityEngine;
 
 public class UnityChanSpawner : MonoBehaviour

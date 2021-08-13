@@ -3,8 +3,8 @@
     "rootNamespace": "TestProject.RuntimeTests",
     "references": [
         "TestProject.ManualTests",
-        "Unity.Multiplayer.MLAPI.Runtime",
-        "Unity.Multiplayer.MLAPI.RuntimeTests"
+        "Unity.Netcode.Runtime",
+        "Unity.Netcode.RuntimeTests"
     ],
     "optionalUnityReferences": [
         "TestAssemblies"

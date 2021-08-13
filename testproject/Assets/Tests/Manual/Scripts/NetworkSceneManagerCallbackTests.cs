@@ -1,9 +1,9 @@
 using UnityEngine;
-using Unity.Multiplayer.Netcode;
+using Unity.Netcode;
 
 namespace TestProject.ManualTests
 {
-    [AddComponentMenu("MLAPI/NetworkSceneManagerCallbackTests")]
+    [AddComponentMenu("Netcode/" + nameof(NetworkSceneManagerCallbackTests))]
     public class NetworkSceneManagerCallbackTests : NetworkBehaviour
     {
         public void StartHost()

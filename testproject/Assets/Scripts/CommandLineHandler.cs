@@ -2,8 +2,8 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using Unity.Multiplayer.Netcode;
-using Unity.Multiplayer.Netcode.Transports.UNET;
+using Unity.Netcode;
+using Unity.Netcode.Transports.UNET;
 
 
 /// <summary>
@@ -13,7 +13,7 @@ using Unity.Multiplayer.Netcode.Transports.UNET;
 /// -ip   | IP address of the host-server.
 /// -p    | The connection listening port.
 /// -fr   | Set the target frame rate.
-/// -m (?)| Start MLAPI in one of 3 modes: client, host, server
+/// -m (?)| Start network in one of 3 modes: client, host, server
 /// </summary>
 public class CommandLineProcessor
 {
@@ -58,9 +58,9 @@ public class CommandLineProcessor
 
     public bool AutoConnectEnabled()
     {
-        if (m_CommandLineArguments.TryGetValue("-m", out string mlapiValue))
+        if (m_CommandLineArguments.TryGetValue("-m", out string netcodeValue))
         {
-            switch (mlapiValue)
+            switch (netcodeValue)
             {
                 case "server":
                 case "host":
@@ -106,9 +106,9 @@ public class CommandLineProcessor
                 m_CommandLineArguments.Remove("-fr");
             }
 
-            if (m_CommandLineArguments.TryGetValue("-m", out string mlapiValue))
+            if (m_CommandLineArguments.TryGetValue("-m", out string netcodeValue))
             {
-                switch (mlapiValue)
+                switch (netcodeValue)
                 {
                     case "server":
                         StartServer();
@@ -120,7 +120,7 @@ public class CommandLineProcessor
                         StartClient();
                         break;
                     default:
-                        Debug.LogWarning($"Invalid MLAPI argument: {mlapiValue}");
+                        Debug.LogWarning($"Invalid netcode argument: {netcodeValue}");
                         break;
                 }
             }

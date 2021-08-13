@@ -1,0 +1,11 @@
+{
+    "name": "Unity.Netcode.Editor",
+    "rootNamespace": "Unity.Netcode.Editor",
+    "references": [
+        "Unity.Netcode.Runtime",
+        "Unity.Netcode.Prototyping"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ]
+}

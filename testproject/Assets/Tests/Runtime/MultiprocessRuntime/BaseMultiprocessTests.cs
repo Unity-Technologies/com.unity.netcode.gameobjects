@@ -6,7 +6,7 @@ using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using Object = UnityEngine.Object;
 
-namespace Unity.Multiplayer.Netcode.MultiprocessRuntimeTests
+namespace Unity.Netcode.MultiprocessRuntimeTests
 {
     public class MultiprocessTestsAttribute : CategoryAttribute
     {

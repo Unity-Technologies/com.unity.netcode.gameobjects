@@ -1,6 +1,6 @@
 using System.Collections;
 using UnityEngine;
-using Unity.Multiplayer.Netcode;
+using Unity.Netcode;
 
 /// <summary>
 /// Used in tandem with the ConnectModeButtons prefab asset in test project
@@ -57,7 +57,7 @@ public class ConnectionModeScript : MonoBehaviour
     }
 
     /// <summary>
-    /// Handles starting MLAPI in server mode
+    /// Handles starting netcode in server mode
     /// </summary>
     public void OnStartServer()
     {
@@ -71,7 +71,7 @@ public class ConnectionModeScript : MonoBehaviour
     }
 
     /// <summary>
-    /// Handles starting MLAPI in host mode
+    /// Handles starting netcode in host mode
     /// </summary>
     public void OnStartHost()
     {
@@ -84,7 +84,7 @@ public class ConnectionModeScript : MonoBehaviour
     }
 
     /// <summary>
-    /// Handles starting MLAPI in client mode
+    /// Handles starting netcode in client mode
     /// </summary>
     public void OnStartClient()
     {
