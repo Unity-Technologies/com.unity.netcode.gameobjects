@@ -395,7 +395,7 @@ namespace Unity.Netcode.Transports.UNET
         {
             var connectionConfig = new ConnectionConfig
             {
-                connectionConfig.FragmentSize = 1024
+                FragmentSize = 1024
             };
 
             // Built-in netcode channels
