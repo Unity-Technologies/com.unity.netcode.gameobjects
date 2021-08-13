@@ -23,26 +23,18 @@ namespace Unity.Netcode.RuntimeTests
         public uint SomeInt;
         public bool SomeBool;
 
-        public void NetworkSerialize(NetworkSerializer serializer)
-        {
-            serializer.Serialize(ref SomeInt);
-            serializer.Serialize(ref SomeBool);
-        }
-    }
-
-    public class NetworkVariableTest : NetworkBehaviour
+    public void NetworkSerialize(NetworkSerializer serializer)
     {
-        public readonly NetworkList<int> TheList = new NetworkList<int>(
-            new NetworkVariableSettings { WritePermission = NetworkVariablePermission.ServerOnly }
-        );
-
-        public readonly NetworkSet<int> TheSet = new NetworkSet<int>(
-            new NetworkVariableSettings { WritePermission = NetworkVariablePermission.ServerOnly }
-        );
-
-        public readonly NetworkDictionary<int, int> TheDictionary = new NetworkDictionary<int, int>(
-            new NetworkVariableSettings { WritePermission = NetworkVariablePermission.ServerOnly }
-        );
+        serializer.Serialize(ref SomeInt);
+        serializer.Serialize(ref SomeBool);
+    }
+}
+public class NetworkVariableTest : NetworkBehaviour
+{
+    public readonly NetworkVariable<int> TheScalar = new NetworkVariable<int>();
+    public readonly NetworkList<int> TheList = new NetworkList<int>();
+    public readonly NetworkSet<int> TheSet = new NetworkSet<int>();
+    public readonly NetworkDictionary<int, int> TheDictionary = new NetworkDictionary<int, int>();
 
         private void ListChanged(NetworkListEvent<int> e)
         {
@@ -63,8 +55,7 @@ namespace Unity.Netcode.RuntimeTests
             TheDictionary.OnDictionaryChanged += DictionaryChanged;
         }
 
-        public readonly NetworkVariable<TestStruct> TheStruct = new NetworkVariable<TestStruct>();
-        public readonly NetworkVariable<TestClass> TheClass = new NetworkVariable<TestClass>(new TestClass());
+    public readonly NetworkVariable<TestStruct> TheStruct = new NetworkVariable<TestStruct>();
 
         public bool ListDelegateTriggered;
         public bool SetDelegateTriggered;
@@ -173,11 +164,31 @@ namespace Unity.Netcode.RuntimeTests
 
                 Assert.IsTrue(testsAreComplete);
 
-                // This would normally go in Teardown, but since every other test but this one
-                //  uses MultiInstanceHelper, and it does its own NetworkManager setup / teardown,
-                //  for now we put this within this one test until we migrate it to MIH
-                NetworkManagerHelper.ShutdownNetworkManager();
-            }
+            // This would normally go in Teardown, but since every other test but this one
+            //  uses MultiInstanceHelper, and it does its own NetworkManager setup / teardown,
+            //  for now we put this within this one test until we migrate it to MIH
+            NetworkManagerHelper.ShutdownNetworkManager();
+        }
+
+        [UnityTest]
+        public IEnumerator PermissionTest()
+        {
+
+            yield return MultiInstanceHelpers.RunAndWaitForCondition(
+                () =>
+                {
+                    m_ServerComp.TheScalar.Value = k_TestVal1;
+                    m_ClientComp.TheScalar.Value = k_TestVal2;
+                },
+                () =>
+                {
+            // the client should not have overwritten the server, and the server's
+            //  write will stomp the client's value
+                    return m_ServerComp.TheScalar.Value == k_TestVal1 &&
+                        m_ClientComp.TheScalar.Value == k_TestVal1;
+                }
+            );
+        }
 
             [UnityTest]
             public IEnumerator NetworkListAdd()
@@ -386,39 +397,20 @@ namespace Unity.Netcode.RuntimeTests
                 // first put some stuff in; re-use the add test
                 yield return NetworkDictionaryAdd();
 
-                yield return MultiInstanceHelpers.RunAndWaitForCondition(
-                    () =>
-                    {
-                        m_ServerComp.TheDictionary.Clear();
-                    },
-                    () =>
-                    {
-                        return m_ServerComp.TheDictionary.Count == 0 &&
-                               m_ClientComp.TheDictionary.Count == 0 &&
-                               m_ServerComp.DictionaryDelegateTriggered &&
-                               m_ClientComp.DictionaryDelegateTriggered;
-                    }
-                );
-            }
-
-            [UnityTest]
-            public IEnumerator TestNetworkVariableClass()
-            {
-                yield return MultiInstanceHelpers.RunAndWaitForCondition(
-                    () =>
-                    {
-                        m_ServerComp.TheClass.Value.SomeBool = false;
-                        m_ServerComp.TheClass.Value.SomeInt = k_TestUInt;
-                        m_ServerComp.TheClass.SetDirty(true);
-                    },
-                    () =>
-                    {
-                        return
-                            m_ClientComp.TheClass.Value.SomeBool == false &&
-                            m_ClientComp.TheClass.Value.SomeInt == k_TestUInt;
-                    }
-                );
-            }
+            yield return MultiInstanceHelpers.RunAndWaitForCondition(
+                () =>
+                {
+                    m_ServerComp.TheDictionary.Clear();
+                },
+                () =>
+                {
+                    return m_ServerComp.TheDictionary.Count == 0 &&
+                           m_ClientComp.TheDictionary.Count == 0 &&
+                           m_ServerComp.DictionaryDelegateTriggered &&
+                           m_ClientComp.DictionaryDelegateTriggered;
+                }
+            );
+        }
 
             [UnityTest]
             public IEnumerator TestNetworkVariableStruct()

@@ -22,7 +22,6 @@ namespace Unity.Netcode.RuntimeTests
         private NetworkVariableSByte m_NetworkVariableSByte;
         private NetworkVariableQuaternion m_NetworkVariableQuaternion;
         private NetworkVariableShort m_NetworkVariableShort;
-        private NetworkVariableString m_NetworkVariableString;
         private NetworkVariableVector4 m_NetworkVariableVector4;
         private NetworkVariableVector3 m_NetworkVariableVector3;
         private NetworkVariableVector2 m_NetworkVariableVector2;
@@ -43,7 +42,6 @@ namespace Unity.Netcode.RuntimeTests
         public NetworkVariableHelper<sbyte> Sbyte_Var;
         public NetworkVariableHelper<Quaternion> Quaternion_Var;
         public NetworkVariableHelper<short> Short_Var;
-        public NetworkVariableHelper<string> String_Var;
         public NetworkVariableHelper<Vector4> Vector4_Var;
         public NetworkVariableHelper<Vector3> Vector3_Var;
         public NetworkVariableHelper<Vector2> Vector2_Var;
@@ -75,7 +73,6 @@ namespace Unity.Netcode.RuntimeTests
             m_NetworkVariableSByte = new NetworkVariableSByte();
             m_NetworkVariableQuaternion = new NetworkVariableQuaternion();
             m_NetworkVariableShort = new NetworkVariableShort();
-            m_NetworkVariableString = new NetworkVariableString();
             m_NetworkVariableVector4 = new NetworkVariableVector4();
             m_NetworkVariableVector3 = new NetworkVariableVector3();
             m_NetworkVariableVector2 = new NetworkVariableVector2();
@@ -97,7 +94,6 @@ namespace Unity.Netcode.RuntimeTests
             m_NetworkVariableSByte = new NetworkVariableSByte(0);
             m_NetworkVariableQuaternion = new NetworkVariableQuaternion(Quaternion.identity);
             m_NetworkVariableShort = new NetworkVariableShort(256);
-            m_NetworkVariableString = new NetworkVariableString("My String Value");
             m_NetworkVariableVector4 = new NetworkVariableVector4(new Vector4(1, 1, 1, 1));
             m_NetworkVariableVector3 = new NetworkVariableVector3(new Vector3(1, 1, 1));
             m_NetworkVariableVector2 = new NetworkVariableVector2(new Vector2(1, 1));
@@ -109,8 +105,7 @@ namespace Unity.Netcode.RuntimeTests
 
             // NetworkVariable NetworkVariableSettings Constructor Test Coverage
             var settings = new NetworkVariableSettings();
-            settings.ReadPermission = NetworkVariablePermission.ServerOnly;
-            settings.WritePermission = NetworkVariablePermission.ServerOnly;
+            settings.ReadPermission = NetworkVariableReadPermission.Everyone;
             m_NetworkVariableBool = new NetworkVariableBool(settings);
             m_NetworkVariableByte = new NetworkVariableByte(settings);
             m_NetworkVariableColor = new NetworkVariableColor(settings);
@@ -122,7 +117,6 @@ namespace Unity.Netcode.RuntimeTests
             m_NetworkVariableSByte = new NetworkVariableSByte(settings);
             m_NetworkVariableQuaternion = new NetworkVariableQuaternion(settings);
             m_NetworkVariableShort = new NetworkVariableShort(settings);
-            m_NetworkVariableString = new NetworkVariableString(settings);
             m_NetworkVariableVector4 = new NetworkVariableVector4(settings);
             m_NetworkVariableVector3 = new NetworkVariableVector3(settings);
             m_NetworkVariableVector2 = new NetworkVariableVector2(settings);
@@ -130,7 +124,6 @@ namespace Unity.Netcode.RuntimeTests
             m_NetworkVariableULong = new NetworkVariableULong(settings);
             m_NetworkVariableUInt = new NetworkVariableUInt(settings);
             m_NetworkVariableUShort = new NetworkVariableUShort(settings);
-
 
 
             // NetworkVariable Value Type and NetworkVariableSettings Constructor Test Coverage
@@ -145,7 +138,6 @@ namespace Unity.Netcode.RuntimeTests
             m_NetworkVariableSByte = new NetworkVariableSByte(settings, 0);
             m_NetworkVariableQuaternion = new NetworkVariableQuaternion(settings, Quaternion.identity);
             m_NetworkVariableShort = new NetworkVariableShort(settings, 1);
-            m_NetworkVariableString = new NetworkVariableString(settings, "My String Value");
             m_NetworkVariableVector4 = new NetworkVariableVector4(settings, new Vector4(1, 1, 1, 1));
             m_NetworkVariableVector3 = new NetworkVariableVector3(settings, new Vector3(1, 1, 1));
             m_NetworkVariableVector2 = new NetworkVariableVector2(settings, new Vector2(1, 1));
@@ -169,7 +161,6 @@ namespace Unity.Netcode.RuntimeTests
             Sbyte_Var = new NetworkVariableHelper<sbyte>(m_NetworkVariableSByte);
             Quaternion_Var = new NetworkVariableHelper<Quaternion>(m_NetworkVariableQuaternion);
             Short_Var = new NetworkVariableHelper<short>(m_NetworkVariableShort);
-            String_Var = new NetworkVariableHelper<string>(m_NetworkVariableString);
             Vector4_Var = new NetworkVariableHelper<Vector4>(m_NetworkVariableVector4);
             Vector3_Var = new NetworkVariableHelper<Vector3>(m_NetworkVariableVector3);
             Vector2_Var = new NetworkVariableHelper<Vector2>(m_NetworkVariableVector2);
@@ -238,7 +229,6 @@ namespace Unity.Netcode.RuntimeTests
                             m_NetworkVariableSByte.Value = -127;
                             m_NetworkVariableQuaternion.Value = new Quaternion(100, 100, 100, 100);
                             m_NetworkVariableShort.Value = short.MaxValue;
-                            m_NetworkVariableString.Value = "My Changed String Value";
                             m_NetworkVariableVector4.Value = new Vector4(1000, 1000, 1000, 1000);
                             m_NetworkVariableVector3.Value = new Vector3(1000, 1000, 1000);
                             m_NetworkVariableVector2.Value = new Vector2(1000, 1000);

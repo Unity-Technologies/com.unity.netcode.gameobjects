@@ -10,7 +10,7 @@ namespace Unity.Netcode
     /// </summary>
     /// <typeparam name="TKey">The type for the dictionary keys</typeparam>
     /// <typeparam name="TValue">The type for the dictionary values</typeparam>
-    public class NetworkDictionary<TKey, TValue> : IDictionary<TKey, TValue>, INetworkVariable
+    public class NetworkDictionary<TKey, TValue> : IDictionary<TKey, TValue>, INetworkVariable where TKey : unmanaged where TValue : unmanaged
     {
         /// <summary>
         /// Gets the last time the variable was synced
@@ -326,50 +326,14 @@ namespace Unity.Netcode
         }
 
         /// <inheritdoc />
-        public bool CanClientWrite(ulong clientId)
-        {
-            switch (Settings.WritePermission)
-            {
-                case NetworkVariablePermission.Everyone:
-                    return true;
-                case NetworkVariablePermission.ServerOnly:
-                    return false;
-                case NetworkVariablePermission.OwnerOnly:
-                    return m_NetworkBehaviour.OwnerClientId == clientId;
-                case NetworkVariablePermission.Custom:
-                    {
-                        if (Settings.WritePermissionCallback == null)
-                        {
-                            return false;
-                        }
-
-                        return Settings.WritePermissionCallback(clientId);
-                    }
-            }
-
-            return true;
-        }
-
-        /// <inheritdoc />
         public bool CanClientRead(ulong clientId)
         {
             switch (Settings.ReadPermission)
             {
-                case NetworkVariablePermission.Everyone:
+                case NetworkVariableReadPermission.Everyone:
                     return true;
-                case NetworkVariablePermission.ServerOnly:
-                    return false;
-                case NetworkVariablePermission.OwnerOnly:
+                case NetworkVariableReadPermission.OwnerOnly:
                     return m_NetworkBehaviour.OwnerClientId == clientId;
-                case NetworkVariablePermission.Custom:
-                    {
-                        if (Settings.ReadPermissionCallback == null)
-                        {
-                            return false;
-                        }
-
-                        return Settings.ReadPermissionCallback(clientId);
-                    }
             }
 
             return true;
@@ -378,27 +342,7 @@ namespace Unity.Netcode
         /// <inheritdoc />
         public bool IsDirty()
         {
-            if (m_DirtyEvents.Count == 0)
-            {
-                return false;
-            }
-
-            if (Settings.SendTickrate == 0)
-            {
-                return true;
-            }
-
-            if (Settings.SendTickrate < 0)
-            {
-                return false;
-            }
-
-            if (m_NetworkBehaviour.NetworkManager.LocalTime.FixedTime - LastSyncedTime.FixedTime >= (1.0 / Settings.SendTickrate))
-            {
-                return true;
-            }
-
-            return false;
+            return m_DirtyEvents.Count > 0;
         }
 
 

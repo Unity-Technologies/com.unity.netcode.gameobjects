@@ -13,7 +13,7 @@ namespace Unity.Netcode.RuntimeTests
     /// From both we can then at least determine if the value indeed changed
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    internal class NetworkVariableHelper<T> : BaseNetworkVariableHelper
+    internal class NetworkVariableHelper<T> : BaseNetworkVariableHelper where T : unmanaged
     {
         private NetworkVariable<T> m_NetworkVariable;
         public delegate void OnMyValueChangedDelegateHandler(T previous, T next);

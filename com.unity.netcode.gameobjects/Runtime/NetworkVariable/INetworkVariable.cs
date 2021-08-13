@@ -31,13 +31,6 @@ namespace Unity.Netcode
         bool IsDirty();
 
         /// <summary>
-        /// Gets Whether or not a specific client can write to the varaible
-        /// </summary>
-        /// <param name="clientId">The clientId of the remote client</param>
-        /// <returns>Whether or not the client can write to the variable</returns>
-        bool CanClientWrite(ulong clientId);
-
-        /// <summary>
         /// Gets Whether or not a specific client can read to the varaible
         /// </summary>
         /// <param name="clientId">The clientId of the remote client</param>

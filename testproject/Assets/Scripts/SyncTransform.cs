@@ -68,12 +68,6 @@ namespace Unity.Netcode
             }
         }
 
-        private void Start()
-        {
-            m_VarPos.Settings.WritePermission = NetworkVariablePermission.Everyone;
-            m_VarRot.Settings.WritePermission = NetworkVariablePermission.Everyone;
-        }
-
         private void FixedUpdate()
         {
             float now = Time.time;

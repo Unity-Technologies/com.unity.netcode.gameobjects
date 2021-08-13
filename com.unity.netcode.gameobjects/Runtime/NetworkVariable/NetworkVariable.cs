@@ -9,7 +9,7 @@ namespace Unity.Netcode
     /// A variable that can be synchronized over the network.
     /// </summary>
     [Serializable]
-    public class NetworkVariable<T> : INetworkVariable
+    public class NetworkVariable<T> : INetworkVariable where T : unmanaged
     {
         /// <summary>
         /// The settings for this var
@@ -127,21 +127,10 @@ namespace Unity.Netcode
         {
             switch (Settings.ReadPermission)
             {
-                case NetworkVariablePermission.Everyone:
+                case NetworkVariableReadPermission.Everyone:
                     return true;
-                case NetworkVariablePermission.ServerOnly:
-                    return false;
-                case NetworkVariablePermission.OwnerOnly:
+                case NetworkVariableReadPermission.OwnerOnly:
                     return m_NetworkBehaviour.OwnerClientId == clientId;
-                case NetworkVariablePermission.Custom:
-                    {
-                        if (Settings.ReadPermissionCallback == null)
-                        {
-                            return false;
-                        }
-
-                        return Settings.ReadPermissionCallback(clientId);
-                    }
             }
             return true;
         }
@@ -153,31 +142,6 @@ namespace Unity.Netcode
         public void WriteDelta(Stream stream)
         {
             WriteField(stream);
-        }
-
-        /// <inheritdoc />
-        public bool CanClientWrite(ulong clientId)
-        {
-            switch (Settings.WritePermission)
-            {
-                case NetworkVariablePermission.Everyone:
-                    return true;
-                case NetworkVariablePermission.ServerOnly:
-                    return false;
-                case NetworkVariablePermission.OwnerOnly:
-                    return m_NetworkBehaviour.OwnerClientId == clientId;
-                case NetworkVariablePermission.Custom:
-                    {
-                        if (Settings.WritePermissionCallback == null)
-                        {
-                            return false;
-                        }
-
-                        return Settings.WritePermissionCallback(clientId);
-                    }
-            }
-
-            return true;
         }
 
         /// <summary>
@@ -227,25 +191,6 @@ namespace Unity.Netcode
         {
             return Settings.SendNetworkChannel;
         }
-    }
-
-    /// <summary>
-    /// A NetworkVariable that holds strings and support serialization
-    /// </summary>
-    [Serializable]
-    public class NetworkVariableString : NetworkVariable<string>
-    {
-        /// <inheritdoc />
-        public NetworkVariableString() : base(string.Empty) { }
-
-        /// <inheritdoc />
-        public NetworkVariableString(NetworkVariableSettings settings) : base(settings, string.Empty) { }
-
-        /// <inheritdoc />
-        public NetworkVariableString(string value) : base(value) { }
-
-        /// <inheritdoc />
-        public NetworkVariableString(NetworkVariableSettings settings, string value) : base(settings, value) { }
     }
 
     /// <summary>

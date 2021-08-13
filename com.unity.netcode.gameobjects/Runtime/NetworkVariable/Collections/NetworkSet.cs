@@ -10,7 +10,7 @@ namespace Unity.Netcode
     /// Event based NetworkVariable container for syncing Sets
     /// </summary>
     /// <typeparam name="T">The type for the set</typeparam>
-    public class NetworkSet<T> : ISet<T>, INetworkVariable
+    public class NetworkSet<T> : ISet<T>, INetworkVariable where T: unmanaged
     {
         private readonly ISet<T> m_Set = new HashSet<T>();
         private readonly List<NetworkSetEvent<T>> m_DirtyEvents = new List<NetworkSetEvent<T>>();
@@ -87,27 +87,7 @@ namespace Unity.Netcode
         /// <inheritdoc />
         public bool IsDirty()
         {
-            if (m_DirtyEvents.Count == 0)
-            {
-                return false;
-            }
-
-            if (Settings.SendTickrate == 0)
-            {
-                return true;
-            }
-
-            if (Settings.SendTickrate < 0)
-            {
-                return false;
-            }
-
-            if ((m_NetworkBehaviour.NetworkManager.LocalTime.FixedTime - LastSyncedTime.FixedTime) >= (1.0 / Settings.SendTickrate))
-            {
-                return true;
-            }
-
-            return false;
+            return m_DirtyEvents.Count > 0;
         }
 
         /// <inheritdoc />
@@ -117,50 +97,14 @@ namespace Unity.Netcode
         }
 
         /// <inheritdoc />
-        public bool CanClientWrite(ulong clientId)
-        {
-            switch (Settings.WritePermission)
-            {
-                case NetworkVariablePermission.Everyone:
-                    return true;
-                case NetworkVariablePermission.ServerOnly:
-                    return false;
-                case NetworkVariablePermission.OwnerOnly:
-                    return m_NetworkBehaviour.OwnerClientId == clientId;
-                case NetworkVariablePermission.Custom:
-                    {
-                        if (Settings.WritePermissionCallback == null)
-                        {
-                            return false;
-                        }
-
-                        return Settings.WritePermissionCallback(clientId);
-                    }
-            }
-
-            return true;
-        }
-
-        /// <inheritdoc />
         public bool CanClientRead(ulong clientId)
         {
             switch (Settings.ReadPermission)
             {
-                case NetworkVariablePermission.Everyone:
+                case NetworkVariableReadPermission.Everyone:
                     return true;
-                case NetworkVariablePermission.ServerOnly:
-                    return false;
-                case NetworkVariablePermission.OwnerOnly:
+                case NetworkVariableReadPermission.OwnerOnly:
                     return m_NetworkBehaviour.OwnerClientId == clientId;
-                case NetworkVariablePermission.Custom:
-                    {
-                        if (Settings.ReadPermissionCallback == null)
-                        {
-                            return false;
-                        }
-
-                        return Settings.ReadPermissionCallback(clientId);
-                    }
             }
 
             return true;
@@ -455,7 +399,7 @@ namespace Unity.Netcode
             }
         }
 
-        public void Add(T item)
+        public bool Add(T item)
         {
             EnsureInitialized();
 
@@ -475,20 +419,12 @@ namespace Unity.Netcode
             {
                 OnSetChanged(setEvent);
             }
-        }
 
-        /// <inheritdoc />
-        bool ISet<T>.Add(T item)
-        {
-            Add(item);
             return true;
         }
 
         /// <inheritdoc />
-        void ICollection<T>.Add(T item)
-        {
-            Add(item);
-        }
+        void ICollection<T>.Add(T item) => Add(item);
 
         /// <inheritdoc />
         public void Clear()

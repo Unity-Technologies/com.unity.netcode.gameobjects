@@ -543,8 +543,7 @@ namespace Unity.Netcode
 
                                 //   if I'm dirty AND a client, write (server always has all permissions)
                                 //   if I'm dirty AND the server AND the client can read me, send.
-                                bool shouldWrite = isDirty &&
-                                                   (!IsServer || NetworkVariableFields[k].CanClientRead(clientId));
+                                bool shouldWrite = isDirty && IsServer && NetworkVariableFields[k].CanClientRead(clientId);
 
                                 if (NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                                 {
@@ -653,7 +652,7 @@ namespace Unity.Netcode
                         }
                     }
 
-                    if (networkManager.IsServer && !networkVariableList[i].CanClientWrite(clientId))
+                    if (networkManager.IsServer)// ?? && !networkVariableList[i].CanClientWrite(clientId))
                     {
                         if (networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                         {
@@ -721,94 +720,6 @@ namespace Unity.Netcode
                 }
             }
         }
-
-        internal static void HandleNetworkVariableUpdate(List<INetworkVariable> networkVariableList, Stream stream, ulong clientId, NetworkBehaviour logInstance, NetworkManager networkManager)
-        {
-            using (var reader = PooledNetworkReader.Get(stream))
-            {
-                for (int i = 0; i < networkVariableList.Count; i++)
-                {
-                    ushort varSize = 0;
-
-                    if (networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
-                    {
-                        varSize = reader.ReadUInt16Packed();
-
-                        if (varSize == 0)
-                        {
-                            continue;
-                        }
-                    }
-                    else
-                    {
-                        if (!reader.ReadBool())
-                        {
-                            continue;
-                        }
-                    }
-
-                    if (networkManager.IsServer && !networkVariableList[i].CanClientWrite(clientId))
-                    {
-                        if (networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
-                        {
-                            if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                            {
-                                NetworkLog.LogWarning($"Client wrote to {typeof(NetworkVariable<>).Name} without permission. => {(logInstance != null ? ($"{nameof(NetworkObjectId)}: {logInstance.NetworkObjectId} - {nameof(NetworkObject.GetNetworkBehaviourOrderIndex)}(): {logInstance.NetworkObject.GetNetworkBehaviourOrderIndex(logInstance)} - VariableIndex: {i}") : string.Empty)}");
-                            }
-
-                            stream.Position += varSize;
-                            continue;
-                        }
-
-                        //This client wrote somewhere they are not allowed. This is critical
-                        //We can't just skip this field. Because we don't actually know how to dummy read
-                        //That is, we don't know how many bytes to skip. Because the interface doesn't have a
-                        //Read that gives us the value. Only a Read that applies the value straight away
-                        //A dummy read COULD be added to the interface for this situation, but it's just being too nice.
-                        //This is after all a developer fault. A critical error should be fine.
-                        // - TwoTen
-                        if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
-                        {
-                            NetworkLog.LogError($"Client wrote to {typeof(NetworkVariable<>).Name} without permission. No more variables can be read. This is critical. => {(logInstance != null ? ($"{nameof(NetworkObjectId)}: {logInstance.NetworkObjectId} - {nameof(NetworkObject.GetNetworkBehaviourOrderIndex)}(): {logInstance.NetworkObject.GetNetworkBehaviourOrderIndex(logInstance)} - VariableIndex: {i}") : string.Empty)}");
-                        }
-
-                        return;
-                    }
-
-                    long readStartPos = stream.Position;
-
-                    networkVariableList[i].ReadField(stream);
-
-                    if (networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
-                    {
-                        if (stream is NetworkBuffer networkBuffer)
-                        {
-                            networkBuffer.SkipPadBits();
-                        }
-
-                        if (stream.Position > (readStartPos + varSize))
-                        {
-                            if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                            {
-                                NetworkLog.LogWarning($"Var update read too far. {stream.Position - (readStartPos + varSize)} bytes. => {(logInstance != null ? ($"{nameof(NetworkObjectId)}: {logInstance.NetworkObjectId} - {nameof(NetworkObject.GetNetworkBehaviourOrderIndex)}(): {logInstance.NetworkObject.GetNetworkBehaviourOrderIndex(logInstance)} - VariableIndex: {i}") : string.Empty)}");
-                            }
-
-                            stream.Position = readStartPos + varSize;
-                        }
-                        else if (stream.Position < (readStartPos + varSize))
-                        {
-                            if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                            {
-                                NetworkLog.LogWarning($"Var update read too little. {(readStartPos + varSize) - stream.Position} bytes. => {(logInstance != null ? ($"{nameof(NetworkObjectId)}: {logInstance.NetworkObjectId} - {nameof(NetworkObject.GetNetworkBehaviourOrderIndex)}(): {logInstance.NetworkObject.GetNetworkBehaviourOrderIndex(logInstance)} - VariableIndex: {i}") : string.Empty)}");
-                            }
-
-                            stream.Position = readStartPos + varSize;
-                        }
-                    }
-                }
-            }
-        }
-
 
         internal static void WriteNetworkVariableData(List<INetworkVariable> networkVariableList, Stream stream, ulong clientId, NetworkManager networkManager)
         {
