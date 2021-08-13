@@ -10,6 +10,7 @@ using MLAPI.Configuration;
 using MLAPI.Interest;
 using MLAPI.RuntimeTests.AOI;
 using Debug = UnityEngine.Debug;
+using Random = UnityEngine.Random;
 
 namespace MLAPI.RuntimeTests
 {
@@ -145,6 +146,10 @@ namespace MLAPI.RuntimeTests
                 ClientId = 1,
             };
 
+            // Store the state
+            Random.State randomState = Random.state;
+            Random.InitState(2);
+
             var (playerObj, playerGuid) = MakeGameInterestObjectHelper(new Vector3(0.0f, 0.0f, 0.0f), null);
             nc.PlayerObject = playerObj;
 
@@ -165,13 +170,25 @@ namespace MLAPI.RuntimeTests
             results.Clear();
             NetworkManager.Singleton.InterestManager.QueryFor(nc, results);
 
+            // Compare to pre-computed values (based on seed)
+            Assert.True(results.Contains(random1Obj));
+            Assert.False(results.Contains(random2Obj));
+            Assert.True(results.Contains(random3Obj));
+
+            // Restore state
+            Random.state = randomState;
+
+            // Check random results
+            results.Clear();
+            NetworkManager.Singleton.InterestManager.QueryFor(nc, results);
+
             Assert.True(!randomKernel.VisibleObjects.Contains(random1Obj) || results.Contains(random1Obj));
             Assert.True(!randomKernel.VisibleObjects.Contains(random2Obj) || results.Contains(random2Obj));
             Assert.True(!randomKernel.VisibleObjects.Contains(random3Obj) || results.Contains(random3Obj));
             Assert.True(results.Contains(nc.PlayerObject));
             Assert.True(results.Contains(alwaysObj));
 
-            // remove an object, should not be in replication manager
+            // Remove object, then re-check random state
             alwaysObj.Despawn();
             results.Clear();
             NetworkManager.Singleton.InterestManager.QueryFor(nc, results);
