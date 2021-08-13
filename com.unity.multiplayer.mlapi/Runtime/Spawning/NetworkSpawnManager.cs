@@ -627,24 +627,31 @@ namespace Unity.Netcode
                     });
                 }
 
-                var messageQueueContainer = NetworkManager.MessageQueueContainer;
-                if (messageQueueContainer != null)
+                if (NetworkManager.NetworkConfig.UseSnapshotSpawn)
                 {
-                    if (networkObject != null)
+                    networkObject.SnapshotDespawn();
+                }
+                else
+                {
+                    var messageQueueContainer = NetworkManager.MessageQueueContainer;
+                    if (messageQueueContainer != null)
                     {
-                        // As long as we have any remaining clients, then notify of the object being destroy.
-                        if (NetworkManager.ConnectedClientsList.Count > 0)
+                        if (networkObject != null)
                         {
-
-                            ulong[] clientIds = NetworkManager.ConnectedClientsIds;
-                            var context = messageQueueContainer.EnterInternalCommandContext(
-                                MessageQueueContainer.MessageType.DestroyObject, NetworkChannel.Internal,
-                                clientIds, NetworkUpdateStage.PostLateUpdate);
-                            if (context != null)
+                            // As long as we have any remaining clients, then notify of the object being destroy.
+                            if (NetworkManager.ConnectedClientsList.Count > 0)
                             {
-                                using (var nonNullContext = (InternalCommandContext)context)
+
+                                ulong[] clientIds = NetworkManager.ConnectedClientsIds;
+                                var context = messageQueueContainer.EnterInternalCommandContext(
+                                    MessageQueueContainer.MessageType.DestroyObject, NetworkChannel.Internal,
+                                    clientIds, NetworkUpdateStage.PostLateUpdate);
+                                if (context != null)
                                 {
-                                    nonNullContext.NetworkWriter.WriteUInt64Packed(networkObject.NetworkObjectId);
+                                    using (var nonNullContext = (InternalCommandContext) context)
+                                    {
+                                        nonNullContext.NetworkWriter.WriteUInt64Packed(networkObject.NetworkObjectId);
+                                    }
                                 }
                             }
                         }

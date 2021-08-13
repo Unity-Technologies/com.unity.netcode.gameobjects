@@ -236,7 +236,7 @@ namespace Unity.Netcode
 
             if (NetworkManager.NetworkConfig.UseSnapshotSpawn)
             {
-                SendToSnapshot(clientId);
+                SnapshotSpawn(clientId);
             }
 
             Observers.Add(clientId);
@@ -316,17 +316,24 @@ namespace Unity.Netcode
             }
 
 
-            // Send destroy call
             Observers.Remove(clientId);
 
-            var context = NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
-                MessageQueueContainer.MessageType.DestroyObject, NetworkChannel.Internal,
-                new[] { clientId }, NetworkUpdateStage.PostLateUpdate);
-            if (context != null)
+            if (NetworkManager.NetworkConfig.UseSnapshotSpawn)
             {
-                using (var nonNullContext = (InternalCommandContext)context)
+                SnapshotDespawn();
+            }
+            else
+            {
+                // Send destroy call
+                var context = NetworkManager.MessageQueueContainer.EnterInternalCommandContext(
+                    MessageQueueContainer.MessageType.DestroyObject, NetworkChannel.Internal,
+                    new[] {clientId}, NetworkUpdateStage.PostLateUpdate);
+                if (context != null)
                 {
-                    nonNullContext.NetworkWriter.WriteUInt64Packed(NetworkObjectId);
+                    using (var nonNullContext = (InternalCommandContext) context)
+                    {
+                        nonNullContext.NetworkWriter.WriteUInt64Packed(NetworkObjectId);
+                    }
                 }
             }
         }
@@ -393,6 +400,16 @@ namespace Unity.Netcode
             }
         }
 
+        private SnapshotDespawnCommand GetDespawnCommand()
+        {
+            SnapshotDespawnCommand command;
+            command.NetworkObjectId = NetworkObjectId;
+            command.TickWritten = default; // will be reset in Despawn
+            command.TargetClientIds = default;
+
+            return command;
+        }
+
         private SnapshotSpawnCommand GetSpawnCommand()
         {
             SnapshotSpawnCommand command;
@@ -417,24 +434,34 @@ namespace Unity.Netcode
             command.ObjectPosition = transform.position;
             command.ObjectRotation = transform.rotation;
             command.ObjectScale = transform.localScale;
-            command.TickWritten = 0; // will be reset in Spawn
+            command.TickWritten = default; // will be reset in Spawn
             command.TargetClientIds = default;
 
             return command;
         }
 
-        private void SendToSnapshot()
+        private void SnapshotSpawn()
         {
             var command = GetSpawnCommand();
             NetworkManager.SnapshotSystem.Spawn(command);
         }
 
-        private void SendToSnapshot(ulong clientId)
+        private void SnapshotSpawn(ulong clientId)
         {
             var command = GetSpawnCommand();
             command.TargetClientIds = new List<ulong>();
             command.TargetClientIds.Add(clientId);
             NetworkManager.SnapshotSystem.Spawn(command);
+        }
+
+        internal void SnapshotDespawn()
+        {
+            var command = GetDespawnCommand();
+            NetworkManager.SnapshotSystem.Despawn(command);
+        }
+
+        internal void SnapshotDespawn(ulong clientId)
+        {
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -454,7 +481,7 @@ namespace Unity.Netcode
 
             if (NetworkManager.NetworkConfig.UseSnapshotSpawn)
             {
-                SendToSnapshot();
+                SnapshotSpawn();
             }
 
             ulong ownerId = ownerClientId != null ? ownerClientId.Value : NetworkManager.ServerClientId;
