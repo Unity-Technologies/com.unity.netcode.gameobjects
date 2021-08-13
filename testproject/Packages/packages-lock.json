@@ -1,12 +1,5 @@
 {
   "dependencies": {
-    "com.mlapi.contrib.transport.litenetlib": {
-      "version": "https://github.com/Unity-Technologies/mlapi-community-contributions.git?path=/Transports/com.mlapi.contrib.transport.litenetlib#temp/lnl-develop",
-      "depth": 0,
-      "source": "git",
-      "dependencies": {},
-      "hash": "46fed6057bc79103e75446eca7b0f69b65ccf16e"
-    },
     "com.unity.burst": {
       "version": "1.3.2",
       "depth": 3,
@@ -186,13 +179,6 @@
         "com.unity.modules.ui": "1.0.0",
         "com.unity.modules.imgui": "1.0.0"
       }
-    },
-    "com.veriorpies.parrelsync": {
-      "version": "https://github.com/VeriorPies/ParrelSync.git?path=/ParrelSync",
-      "depth": 0,
-      "source": "git",
-      "dependencies": {},
-      "hash": "bb3d5067e49e403d8b8ba15c036d313b4dd2c696"
     },
     "com.unity.modules.ai": {
       "version": "1.0.0",

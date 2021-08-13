@@ -31,19 +31,6 @@ namespace Unity.Netcode.Prototyping
 
             public double SentTime;
 
-            public NetworkState(NetworkState copy)
-            {
-                InLocalSpace = copy.InLocalSpace;
-                Position = copy.Position;
-                Rotation = copy.Rotation;
-                Scale = copy.Scale;
-                SentTime = copy.SentTime;
-            }
-
-            public NetworkState()
-            {
-            }
-
             public void NetworkSerialize(NetworkSerializer serializer)
             {
                 serializer.Serialize(ref InLocalSpace);
@@ -65,7 +52,6 @@ namespace Unity.Netcode.Prototyping
         /// The network channel to use send updates
         /// </summary>
         [Tooltip("The network channel to use send updates")]
-        // private NetworkChannel Channel = NetworkChannel.SyncChannel;
         private NetworkChannel Channel = NetworkChannel.PositionUpdate;
 
         /// <summary>
@@ -145,7 +131,7 @@ namespace Unity.Netcode.Prototyping
             Authority == NetworkAuthority.Server && IsServer ||
             Authority == NetworkAuthority.Shared;
 
-        private bool IsNetworkStateDirty(NetworkState networkState)
+        private bool IsGhostStateDirty(NetworkState networkState)
         {
             if (networkState == null)
             {
@@ -171,7 +157,8 @@ namespace Unity.Netcode.Prototyping
             return isDirty;
         }
 
-        private bool IsTransformDirty()
+        // Is the non-interpolated authoritative state dirty?
+        private bool IsAuthoritativeTransformDirty()
         {
             bool isDirty = false;
             var networkState = m_NetworkState.Value;
@@ -212,7 +199,7 @@ namespace Unity.Netcode.Prototyping
             m_NetworkState.SetDirty(true);
         }
 
-        private void ApplyNetworkStateFromAuthority(NetworkState netState)
+        private void ApplyInterpolatedStateFromAuthority(NetworkState netState)
         {
             InLocalSpace = netState.InLocalSpace;
             if (InLocalSpace)
@@ -339,15 +326,18 @@ namespace Unity.Netcode.Prototyping
                 return;
             }
 
-            if (IsNetworkStateDirty(m_PrevNetworkState))
+            if (!CanUpdateTransform)
             {
-                Debug.LogWarning("A local change without authority detected, revert back to latest network state!", this);
-                ApplyNetworkStateFromAuthority(m_NetworkState.Value);
-            }
+                if (IsGhostStateDirty(m_PrevNetworkState))
+                {
+                    Debug.LogWarning("A local change without authority detected, revert back to latest network state!", this);
+                    ApplyInterpolatedStateFromAuthority(m_NetworkState.Value);
+                }
 
-            PositionInterpolator.FixedUpdate(NetworkManager.ServerTime.FixedDeltaTime);
-            RotationInterpolator.FixedUpdate(NetworkManager.ServerTime.FixedDeltaTime);
-            ScaleInterpolator.FixedUpdate(NetworkManager.ServerTime.FixedDeltaTime);
+                PositionInterpolator.FixedUpdate(NetworkManager.ServerTime.FixedDeltaTime);
+                RotationInterpolator.FixedUpdate(NetworkManager.ServerTime.FixedDeltaTime);
+                ScaleInterpolator.FixedUpdate(NetworkManager.ServerTime.FixedDeltaTime);
+            }
         }
 
         private void Update()
@@ -359,7 +349,7 @@ namespace Unity.Netcode.Prototyping
 
             if (CanUpdateTransform)
             {
-                if (IsTransformDirty())
+                if (IsAuthoritativeTransformDirty())
                 {
                     // check for time there was a change to the transform
                     SendNetworkStateToGhosts(NetworkManager.LocalTime.Time);
@@ -371,7 +361,7 @@ namespace Unity.Netcode.Prototyping
                 PositionInterpolator.Update(Time.deltaTime);
                 RotationInterpolator.Update(Time.deltaTime);
                 ScaleInterpolator.Update(Time.deltaTime);
-                ApplyNetworkStateFromAuthority(m_NetworkState.Value);
+                ApplyInterpolatedStateFromAuthority(m_NetworkState.Value);
             }
         }
 

@@ -24,11 +24,29 @@ namespace Unity.Netcode
         /// </summary>
         public double LocalBufferSec { get; set; }
 
+        private double m_ServerBufferSec;
+
         /// <summary>
         /// Gets or sets the amount of the time in seconds the client should buffer incoming messages from the server. This increases server time.
         /// A higher value increases latency but makes the game look more smooth in bad networking conditions.
+        /// This value must be higher than the tick length.
         /// </summary>
-        public double ServerBufferSec { get; set; }
+        public double ServerBufferSec
+        {
+            get
+            {
+                return m_ServerBufferSec;
+            }
+            set
+            {
+                if (value < 0f || value < 1f / NetworkManager.Singleton.NetworkConfig.TickRate)
+                {
+                    throw new NetworkConfigurationException("Error setting buffer size, buffer time needs to be bigger than the tick length and bigger than zero");
+                }
+
+                m_ServerBufferSec = value;
+            }
+        }
 
         /// <summary>
         /// Gets or sets a threshold in seconds used to force a hard catchup of network time.

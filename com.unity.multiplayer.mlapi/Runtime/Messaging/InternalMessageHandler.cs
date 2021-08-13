@@ -251,7 +251,6 @@ namespace Unity.Netcode
 
         public void HandleTimeSync(ulong clientId, Stream stream)
         {
-            // Assert.IsTrue(clientId == NetworkManager.ServerClientId);
             using (var reader = PooledNetworkReader.Get(stream))
             {
                 int tick = reader.ReadInt32Packed();

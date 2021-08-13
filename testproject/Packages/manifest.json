@@ -6,8 +6,6 @@
     "com.unity.ide.vscode": "1.2.3",
     "com.unity.multiplayer.mlapi": "file:../../com.unity.multiplayer.mlapi",
     "com.unity.multiplayer.transport.utp": "file:../../com.unity.multiplayer.transport.utp",
-    "com.veriorpies.parrelsync": "https://github.com/VeriorPies/ParrelSync.git?path=/ParrelSync",
-    "com.mlapi.contrib.transport.litenetlib": "https://github.com/Unity-Technologies/mlapi-community-contributions.git?path=/Transports/com.mlapi.contrib.transport.litenetlib#temp/lnl-develop",
     "com.unity.package-validation-suite": "0.19.2-preview",
     "com.unity.test-framework": "1.1.27",
     "com.unity.test-framework.performance": "2.3.1-preview",
