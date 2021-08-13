@@ -763,6 +763,7 @@ namespace Unity.Netcode
             }
 
             ClientSynchEventData.InitializeForSynch();
+            ClientSynchEventData.TargetClientId = ownerClientId;
             ClientSynchEventData.LoadSceneMode = LoadSceneMode.Single;
             var activeScene = SceneManager.GetActiveScene();
             ClientSynchEventData.SceneEventType = SceneEventData.SceneEventTypes.S2C_Sync;
