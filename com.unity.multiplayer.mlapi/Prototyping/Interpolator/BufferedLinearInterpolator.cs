@@ -15,13 +15,12 @@ namespace Unity.Netcode
 
         protected virtual double ServerTimeBeingHandledForBuffering => NetworkManager.Singleton.ServerTime.Time; // override this if you want configurable buffering, right now using ServerTick's own global buffering
 
-        private T m_LerpStartValue;
-        private T m_LerpEndValue;
+        private T m_InterpStartValue;
+        private T m_CurrentInterpValue;
+        private T m_InterpEndValue;
 
-        private T m_CurrentUpdatedValue;
-
-        private NetworkTime m_CurrentTimeConsumed;
-        private NetworkTime m_PreviousTimeConsumed;
+        private NetworkTime m_EndTimeConsumed;
+        private NetworkTime m_StartTimeConsumed;
 
         private readonly List<BufferedItem> m_Buffer = new List<BufferedItem>();
         private const int k_BufferSizeLimit = 100;
@@ -49,12 +48,12 @@ namespace Unity.Netcode
                 {
                     if (nbConsumed == 0)
                     {
-                        m_PreviousTimeConsumed = m_CurrentTimeConsumed;
-                        m_LerpStartValue = m_LerpEndValue;
+                        m_StartTimeConsumed = m_EndTimeConsumed;
+                        m_InterpStartValue = m_InterpEndValue;
                     }
 
-                    m_LerpEndValue = bufferedValue.item;
-                    m_CurrentTimeConsumed = bufferedValue.timeSent;
+                    m_InterpEndValue = bufferedValue.item;
+                    m_EndTimeConsumed = bufferedValue.timeSent;
                     m_Buffer.RemoveAt(i);
                     nbConsumed++;
                 }
@@ -63,7 +62,7 @@ namespace Unity.Netcode
 
         public T Update(float deltaTime)
         {
-            if (!NetworkManager.Singleton.IsConnectedClient) return default;
+            if (!NetworkManager.Singleton.IsConnectedClient && !NetworkManager.Singleton.IsListening) return default;
 
             TryConsumeFromBuffer();
 
@@ -72,14 +71,14 @@ namespace Unity.Netcode
             // |   |        |   |
             // A   render   B   Server
 
-            var timeB = m_CurrentTimeConsumed;
-            var timeA = m_PreviousTimeConsumed;
+            var timeB = m_EndTimeConsumed;
+            var timeA = m_StartTimeConsumed;
             double range = timeB.Time - timeA.Time;
             var renderTime = ServerTimeBeingHandledForBuffering - range;
             float t = (float)((renderTime - timeA.Time) / range);
-            m_CurrentUpdatedValue = Interpolate(m_LerpStartValue, m_LerpEndValue, t);
+            m_CurrentInterpValue = Interpolate(m_InterpStartValue, m_InterpEndValue, t);
 
-            return m_CurrentUpdatedValue;
+            return m_CurrentInterpValue;
         }
 
         public void FixedUpdate(float fixedDeltaTime)
@@ -100,14 +99,14 @@ namespace Unity.Netcode
 
         public T GetInterpolatedValue()
         {
-            return m_CurrentUpdatedValue;
+            return m_CurrentInterpValue;
         }
 
         public void Reset(T value, NetworkTime sentTime)
         {
-            m_CurrentUpdatedValue = value;
-            m_LerpEndValue = value;
-            m_LerpStartValue = value;
+            m_CurrentInterpValue = value;
+            m_InterpEndValue = value;
+            m_InterpStartValue = value;
         }
 
         public void OnDestroy()
