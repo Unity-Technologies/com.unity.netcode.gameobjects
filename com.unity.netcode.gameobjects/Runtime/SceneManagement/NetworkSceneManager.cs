@@ -813,7 +813,7 @@ namespace Unity.Netcode
                     ClientSynchEventData.OnWrite(nonNullContext.NetworkWriter);
 
                     var size = bufferSizeCapture.StopMeasureSegment();
-                    m_NetworkManager.NetworkMetrics.TrackSceneEventSent(m_NetworkManager.ConnectedClientsIds, (uint)SceneEventData.SceneEventType, GetSceneNameFromNetcodeSceneIndex(SceneEventData.SceneIndex), size);
+                    m_NetworkManager.NetworkMetrics.TrackSceneEventSent(ownerClientId, (uint)SceneEventData.SceneEventType, GetSceneNameFromNetcodeSceneIndex(SceneEventData.SceneIndex), size);
                 }
             }
 
@@ -926,7 +926,13 @@ namespace Unity.Netcode
             {
                 using (var nonNullContext = (InternalCommandContext)context)
                 {
+                    var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
+                    bufferSizeCapture.StartMeasureSegment();
+
                     ClientSynchEventData.OnWrite(nonNullContext.NetworkWriter);
+
+                    var size = bufferSizeCapture.StopMeasureSegment();
+                    m_NetworkManager.NetworkMetrics.TrackSceneEventSent(m_NetworkManager.ServerClientId, (uint)SceneEventData.SceneEventType, GetSceneNameFromNetcodeSceneIndex(SceneEventData.SceneIndex), size);
                 }
             }
 
