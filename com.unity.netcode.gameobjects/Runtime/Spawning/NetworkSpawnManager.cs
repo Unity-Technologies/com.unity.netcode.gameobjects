@@ -462,7 +462,7 @@ namespace Unity.Netcode
 
         internal void DespawnAllObjects(bool destroyObject = false)
         {
-            List<NetworkObject> deleteMe = new List<NetworkObject>();
+            var deleteMe = new List<NetworkObject>();
             foreach (var spawnedNetObj in SpawnedObjectsList)
             {
                 deleteMe.Add(spawnedNetObj);
