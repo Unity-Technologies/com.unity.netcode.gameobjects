@@ -6085,7 +6085,6 @@ GameObject:
   - component: {fileID: 620561612}
   - component: {fileID: 620561611}
   - component: {fileID: 620561610}
-  - component: {fileID: 620561613}
   m_Layer: 0
   m_Name: NetworkManager
   m_TagString: Untagged
@@ -6175,32 +6174,6 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &620561613
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 620561609}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: db28424c2ae12f64da25c9ecccded6b1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_ChannelsCache: []
-  Port: 7777
-  Address: 127.0.0.1
-  PingInterval: 1
-  DisconnectTimeout: 5
-  ReconnectDelay: 0.5
-  MaxConnectAttempts: 10
-  channels: []
-  MessageBufferSize: 5120
-  SimulatePacketLossChance: 10
-  SimulateMinLatency: 70
-  SimulateMaxLatency: 130
-  m_MessageBuffer: []
-  m_HostType: 0
 --- !u!1001 &627808638
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -7195,8 +7168,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_MoveSpeed: 5
   m_RotationSpeed: 30
-  runServerOnly: 0
-  runInUpdate: 1
+  m_RunServerOnly: 0
+  m_RunInUpdate: 0
 --- !u!65 &674930890
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -7405,8 +7378,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_MoveSpeed: 5
   m_RotationSpeed: 30
-  runServerOnly: 1
-  runInUpdate: 0
+  m_RunServerOnly: 0
+  m_RunInUpdate: 0
 --- !u!114 &678326394
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7419,7 +7392,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 3301752843
+  GlobalObjectIdHash: 162145450
   AlwaysReplicateAsRoot: 0
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
