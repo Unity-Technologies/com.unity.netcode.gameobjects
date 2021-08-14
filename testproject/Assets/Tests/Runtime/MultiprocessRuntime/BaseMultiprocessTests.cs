@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using Object = UnityEngine.Object;
+using Unity.Netcode.Transports.UNET;
 
 namespace Unity.Netcode.MultiprocessRuntimeTests
 {
