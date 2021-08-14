@@ -18,6 +18,12 @@ public class MoveInCircle : NetworkBehaviour
     private Vector3 m_DebugOldPosition;
     private float m_DebugLastTime;
 
+    public override void OnNetworkSpawn()
+    {
+        base.OnNetworkSpawn();
+        NetworkManager.Singleton.NetworkTimeSystem.ServerBufferSec = 0.15f;
+    }
+
     void FixedUpdate()
     {
         if (m_RunInUpdate) return;

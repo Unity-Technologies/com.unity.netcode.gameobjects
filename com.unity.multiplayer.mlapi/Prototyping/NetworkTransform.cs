@@ -301,9 +301,6 @@ namespace Unity.Netcode.Prototyping
             m_PrevNetworkState = null;
 
             var currentTime = new NetworkTime(NetworkManager.Singleton.ServerTime.TickRate, m_NetworkState.Value.SentTime);
-            PositionInterpolator.Reset(TransformPosition, currentTime);
-            RotationInterpolator.Reset(TransformRotation, currentTime);
-            ScaleInterpolator.Reset(TransformScale, currentTime);
 
             PositionInterpolator.OnNetworkSpawn();
             RotationInterpolator.OnNetworkSpawn();
@@ -355,8 +352,7 @@ namespace Unity.Netcode.Prototyping
                     SendNetworkStateToGhosts(NetworkManager.LocalTime.Time);
                 }
             }
-
-            if (!CanUpdateTransform)
+            else if (NetworkManager.Singleton.IsConnectedClient || NetworkManager.Singleton.IsListening)
             {
                 PositionInterpolator.Update(Time.deltaTime);
                 RotationInterpolator.Update(Time.deltaTime);

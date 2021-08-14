@@ -47,11 +47,6 @@ namespace Unity.Netcode
             return m_UpdatedVector;
         }
 
-        public void Reset(Vector3 value, NetworkTime sentTick)
-        {
-            m_UpdatedVector = value;
-        }
-
         public void OnDestroy()
         {
             throw new NotImplementedException();

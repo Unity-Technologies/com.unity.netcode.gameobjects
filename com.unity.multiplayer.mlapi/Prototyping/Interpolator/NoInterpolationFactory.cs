@@ -40,11 +40,6 @@ namespace Unity.Netcode
             return m_Current;
         }
 
-        public void Reset(T value, NetworkTime sentTick)
-        {
-            m_Current = value;
-        }
-
         public void OnDestroy()
         {
             throw new System.NotImplementedException();

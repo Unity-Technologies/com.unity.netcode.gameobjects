@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using NUnit.Framework;
 using UnityEngine;
 
 namespace Unity.Netcode
@@ -7,13 +8,26 @@ namespace Unity.Netcode
     {
         // public const float InterpolationConfigTimeSec = 0.100f; // todo expose global config, todo use in actual code
 
+        public interface IServerTime
+        {
+            public double Time { get; }
+            public int TickRate { get; }
+        }
+
+        private class ServerTime : IServerTime
+        {
+            public double Time => NetworkManager.Singleton.ServerTime.Time;
+            public int TickRate => NetworkManager.Singleton.ServerTime.TickRate;
+        }
+
         private struct BufferedItem
         {
             public T item;
             public NetworkTime timeSent;
         }
 
-        protected virtual double ServerTimeBeingHandledForBuffering => NetworkManager.Singleton.ServerTime.Time; // override this if you want configurable buffering, right now using ServerTick's own global buffering
+        internal IServerTime m_ServerTime = new ServerTime();
+        protected virtual double ServerTimeBeingHandledForBuffering => m_ServerTime.Time; // override this if you want configurable buffering, right now using ServerTick's own global buffering
 
         private T m_InterpStartValue;
         private T m_CurrentInterpValue;
@@ -24,6 +38,8 @@ namespace Unity.Netcode
 
         private readonly List<BufferedItem> m_Buffer = new List<BufferedItem>();
         private const int k_BufferSizeLimit = 100;
+
+        private int m_LifetimeConsumedCount;
 
         public void Start()
         {
@@ -44,8 +60,9 @@ namespace Unity.Netcode
             for (int i = m_Buffer.Count - 1; i >= 0; i--)
             {
                 var bufferedValue = m_Buffer[i];
-                if (bufferedValue.timeSent.Time <= ServerTimeBeingHandledForBuffering)
+                if (bufferedValue.timeSent.Time <= ServerTimeBeingHandledForBuffering && renderTime >= m_EndTimeConsumed.Time)
                 {
+
                     if (nbConsumed == 0)
                     {
                         m_StartTimeConsumed = m_EndTimeConsumed;
@@ -56,14 +73,16 @@ namespace Unity.Netcode
                     m_EndTimeConsumed = bufferedValue.timeSent;
                     m_Buffer.RemoveAt(i);
                     nbConsumed++;
+                    m_LifetimeConsumedCount++;
                 }
             }
         }
 
+        private double range => m_EndTimeConsumed.Time - m_StartTimeConsumed.Time;
+        private double renderTime => ServerTimeBeingHandledForBuffering - range;
+
         public T Update(float deltaTime)
         {
-            if (!NetworkManager.Singleton.IsConnectedClient && !NetworkManager.Singleton.IsListening) return default;
-
             TryConsumeFromBuffer();
 
             // Interpolation example to understand the math below
@@ -71,12 +90,15 @@ namespace Unity.Netcode
             // |   |        |   |
             // A   render   B   Server
 
-            var timeB = m_EndTimeConsumed;
-            var timeA = m_StartTimeConsumed;
-            double range = timeB.Time - timeA.Time;
-            var renderTime = ServerTimeBeingHandledForBuffering - range;
-            float t = (float)((renderTime - timeA.Time) / range);
-            m_CurrentInterpValue = Interpolate(m_InterpStartValue, m_InterpEndValue, t);
+            if (m_LifetimeConsumedCount >= 2) // shouldn't interpolate between default value and first measurement, should only interpolate between real measurements
+            {
+                // var timeB = m_EndTimeConsumed;
+                // var timeA = m_StartTimeConsumed;
+                // double range = timeB.Time - timeA.Time;
+                float t = (float) ((renderTime - m_StartTimeConsumed.Time) / range);
+                Debug.Assert(t >= 0, "t must be bigger or equal than 0");
+                m_CurrentInterpValue = Interpolate(m_InterpStartValue, m_InterpEndValue, t);
+            }
 
             return m_CurrentInterpValue;
         }
@@ -93,20 +115,16 @@ namespace Unity.Netcode
                 m_Buffer.RemoveAt(m_Buffer.Count - 1);
             }
 
-            m_Buffer.Add(new BufferedItem {item = newMeasurement, timeSent = sentTime});
-            m_Buffer.Sort((item1, item2) => item2.timeSent.Time.CompareTo(item1.timeSent.Time));
+            if (sentTime.Time > m_EndTimeConsumed.Time || m_LifetimeConsumedCount == 0) // treat only if value is newer than the one being interpolated to right now
+            {
+                m_Buffer.Add(new BufferedItem {item = newMeasurement, timeSent = sentTime});
+                m_Buffer.Sort((item1, item2) => item2.timeSent.Time.CompareTo(item1.timeSent.Time));
+            }
         }
 
         public T GetInterpolatedValue()
         {
             return m_CurrentInterpValue;
-        }
-
-        public void Reset(T value, NetworkTime sentTime)
-        {
-            m_CurrentInterpValue = value;
-            m_InterpEndValue = value;
-            m_InterpStartValue = value;
         }
 
         public void OnDestroy()

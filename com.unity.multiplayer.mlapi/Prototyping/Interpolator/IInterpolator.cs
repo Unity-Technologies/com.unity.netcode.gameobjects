@@ -11,7 +11,6 @@ namespace Unity.Netcode
         public void FixedUpdate(float tickDeltaTime);
         public void AddMeasurement(T newMeasurement, NetworkTime sentTime);
         public T GetInterpolatedValue();
-        public void Reset(T value, NetworkTime sentTime);
         public void OnDestroy();
     }
 }
