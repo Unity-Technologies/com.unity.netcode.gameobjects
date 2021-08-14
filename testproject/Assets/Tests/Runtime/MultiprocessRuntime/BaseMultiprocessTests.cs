@@ -59,6 +59,8 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         [UnitySetUp]
         public virtual IEnumerator Setup()
         {
+            string port = "3076"; // TODO This port will need to be reconfigurable
+            SetPort(ushort.Parse(port));
             yield return new WaitUntil(() => NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer && m_SceneHasLoaded);
 
             var startTime = Time.time;
@@ -93,6 +95,19 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 NetworkManager.Singleton.StopHost();
                 Object.Destroy(NetworkManager.Singleton.gameObject); // making sure we clear everything before reloading our scene
                 SceneManager.LoadScene(k_GlobalEmptySceneName); // using empty scene to clear our state
+            }
+        }
+
+        private void SetPort(ushort port)
+        {
+            var transport = NetworkManager.Singleton.NetworkConfig.NetworkTransport;
+            
+            switch (transport)
+            {
+                case UNetTransport unetTransport:
+                    unetTransport.ConnectPort = port;
+                    unetTransport.ServerListenPort = port;
+                    break;
             }
         }
     }
