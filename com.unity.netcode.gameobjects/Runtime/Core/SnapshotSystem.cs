@@ -92,7 +92,8 @@ namespace Unity.Netcode
         internal NetworkManager m_NetworkManager;
 
         // indexed by ObjectId
-        internal Dictionary<ulong, ushort> TickApplied = new Dictionary<ulong, ushort>();
+        internal Dictionary<ulong, ushort> TickAppliedSpawn = new Dictionary<ulong, ushort>();
+        internal Dictionary<ulong, ushort> TickAppliedDespawn = new Dictionary<ulong, ushort>();
 
         /// <summary>
         /// Constructor
@@ -430,13 +431,15 @@ namespace Unity.Netcode
             {
                 spawnCommand = ReadSpawn(reader);
 
-                if (TickApplied.ContainsKey(spawnCommand.NetworkObjectId) &&
-                    spawnCommand.TickWritten <= TickApplied[spawnCommand.NetworkObjectId])
+                if (TickAppliedSpawn.ContainsKey(spawnCommand.NetworkObjectId) &&
+                    spawnCommand.TickWritten <= TickAppliedSpawn[spawnCommand.NetworkObjectId])
                 {
                     continue;
                 }
 
-                TickApplied[spawnCommand.NetworkObjectId] = spawnCommand.TickWritten;
+                TickAppliedSpawn[spawnCommand.NetworkObjectId] = spawnCommand.TickWritten;
+
+                Debug.Log($"[Spawn] {spawnCommand.NetworkObjectId} {spawnCommand.TickWritten}");
 
                 if (spawnCommand.ParentNetworkId == spawnCommand.NetworkObjectId)
                 {
@@ -453,13 +456,15 @@ namespace Unity.Netcode
             {
                 despawnCommand = ReadDespawn(reader);
 
-                if (TickApplied.ContainsKey(despawnCommand.NetworkObjectId) &&
-                    despawnCommand.TickWritten <= TickApplied[despawnCommand.NetworkObjectId])
+                if (TickAppliedDespawn.ContainsKey(despawnCommand.NetworkObjectId) &&
+                    despawnCommand.TickWritten <= TickAppliedDespawn[despawnCommand.NetworkObjectId])
                 {
                     continue;
                 }
 
-                TickApplied[despawnCommand.NetworkObjectId] = despawnCommand.TickWritten;
+                TickAppliedDespawn[despawnCommand.NetworkObjectId] = despawnCommand.TickWritten;
+
+                Debug.Log($"[DeSpawn] {despawnCommand.NetworkObjectId} {despawnCommand.TickWritten}");
 
                 m_NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(despawnCommand.NetworkObjectId,
                     out NetworkObject networkObject);
@@ -723,8 +728,23 @@ namespace Unity.Netcode
             ClientData clientData = m_ClientData[clientId];
 
             // this is needed because spawns being removed may have reduce the size below LRU position
-            clientData.NextSpawnIndex %= m_Snapshot.NumSpawns;
-            clientData.NextDespawnIndex %= m_Snapshot.NumDespawns;
+            if (m_Snapshot.NumSpawns > 0)
+            {
+                clientData.NextSpawnIndex %= m_Snapshot.NumSpawns;
+            }
+            else
+            {
+                clientData.NextSpawnIndex = 0;
+            }
+
+            if (m_Snapshot.NumDespawns > 0)
+            {
+                clientData.NextDespawnIndex %= m_Snapshot.NumDespawns;
+            }
+            else
+            {
+                clientData.NextDespawnIndex = 0;
+            }
 
             using (var writer = PooledNetworkWriter.Get(buffer))
             {
@@ -869,12 +889,16 @@ namespace Unity.Netcode
         {
             command.TickWritten = (ushort)m_CurrentTick;
             m_Snapshot.AddSpawn(command);
+
+            Debug.Log($"[Spawn] {command.NetworkObjectId} {command.TickWritten}");
         }
 
         internal void Despawn(SnapshotDespawnCommand command)
         {
             command.TickWritten = (ushort)m_CurrentTick;
             m_Snapshot.AddDespawn(command);
+
+            Debug.Log($"[DeSpawn] {command.NetworkObjectId} {command.TickWritten}");
         }
 
         // todo: consider using a Key, instead of 3 ints, if it can be exposed
