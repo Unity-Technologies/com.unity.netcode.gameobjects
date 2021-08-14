@@ -8,15 +8,17 @@ namespace Unity.Netcode
     {
         // public const float InterpolationConfigTimeSec = 0.100f; // todo expose global config, todo use in actual code
 
-        public interface IServerTime
+        public interface IInterpolatorTime
         {
-            public double Time { get; }
+            public double ServerTime { get; }
+            public double LocalTime { get; }
             public int TickRate { get; }
         }
 
-        private class ServerTime : IServerTime
+        private class InterpolatorTime : IInterpolatorTime
         {
-            public double Time => NetworkManager.Singleton.ServerTime.Time;
+            public double ServerTime => NetworkManager.Singleton.ServerTime.Time;
+            public double LocalTime => NetworkManager.Singleton.LocalTime.Time;
             public int TickRate => NetworkManager.Singleton.ServerTime.TickRate;
         }
 
@@ -26,8 +28,8 @@ namespace Unity.Netcode
             public NetworkTime timeSent;
         }
 
-        internal IServerTime m_ServerTime = new ServerTime();
-        protected virtual double ServerTimeBeingHandledForBuffering => m_ServerTime.Time; // override this if you want configurable buffering, right now using ServerTick's own global buffering
+        internal IInterpolatorTime interpolatorTime = new InterpolatorTime();
+        protected virtual double ServerTimeBeingHandledForBuffering => interpolatorTime.ServerTime; // override this if you want configurable buffering, right now using ServerTick's own global buffering
 
         private T m_InterpStartValue;
         private T m_CurrentInterpValue;
@@ -79,7 +81,12 @@ namespace Unity.Netcode
         }
 
         private double range => m_EndTimeConsumed.Time - m_StartTimeConsumed.Time;
-        private double renderTime => ServerTimeBeingHandledForBuffering - range;
+        private double renderTime => ServerTimeBeingHandledForBuffering - 1f / interpolatorTime.TickRate; //ServerTimeBeingHandledForBuffering - range;
+        // private double renderTime => ServerTimeBeingHandledForBuffering - range;
+
+        // buffer=4
+        //  t=100             101   101.2  101.5                         105.2
+        //    A               B     S      C                             RS
 
         public T Update(float deltaTime)
         {
