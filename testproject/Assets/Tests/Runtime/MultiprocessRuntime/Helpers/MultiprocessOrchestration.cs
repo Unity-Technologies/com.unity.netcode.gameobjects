@@ -45,7 +45,7 @@ public class MultiprocessOrchestration
         }
         else
         {
-            throw new FileNotFoundException("multiprocess files not found");
+            throw new FileNotFoundException($"multiprocess files not found: {jobid_fileinfo.FullName} {jobid_fileinfo.Exists} {resources_fileinfo.FullName} {resources_fileinfo.Exists} {rootdir_fileinfo.FullName} {rootdir_fileinfo.Exists}");
         }
     }
 
