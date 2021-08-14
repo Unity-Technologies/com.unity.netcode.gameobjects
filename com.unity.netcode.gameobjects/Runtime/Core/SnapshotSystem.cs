@@ -504,6 +504,8 @@ namespace Unity.Netcode
 
                             if (Spawns[i].TargetClientIds.Count == 0)
                             {
+                                Debug.Log($"[JEFF] removing spawn command for {Spawns[i].NetworkObjectId} because it was ack'ed") ;
+
                                 // remove by moving the last spawn over
                                 Spawns[i] = Spawns[NumSpawns - 1];
                                 NumSpawns--;
@@ -520,6 +522,7 @@ namespace Unity.Netcode
 
                             if (Despawns[i].TargetClientIds.Count == 0)
                             {
+                                Debug.Log($"[JEFF] removing despawn command for {Despawns[i].NetworkObjectId} because it was ack'ed") ;
                                 // remove by moving the last spawn over
                                 Despawns[i] = Despawns[NumDespawns - 1];
                                 NumDespawns--;
