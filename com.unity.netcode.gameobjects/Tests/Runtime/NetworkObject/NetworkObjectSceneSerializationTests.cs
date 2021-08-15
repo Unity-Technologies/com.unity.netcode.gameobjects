@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using NUnit.Framework;
 
 namespace Unity.Netcode.RuntimeTests
@@ -81,8 +82,12 @@ namespace Unity.Netcode.RuntimeTests
                     // Serialize the valid NetworkObject
                     networkObject.SerializeSceneObject(writer, 0);
 
+                    if (!NetworkManagerHelper.NetworkManagerObject.SceneManager.ScenePlacedObjects.ContainsKey(networkObject.GlobalObjectIdHash))
+                    {
+                        NetworkManagerHelper.NetworkManagerObject.SceneManager.ScenePlacedObjects.Add(networkObject.GlobalObjectIdHash, new Dictionary<int, NetworkObject>());
+                    }
                     // Add this valid NetworkObject into the ScenePlacedObjects list
-                    NetworkManagerHelper.NetworkManagerObject.SceneManager.ScenePlacedObjects.Add(networkObject.GlobalObjectIdHash, networkObject);
+                    NetworkManagerHelper.NetworkManagerObject.SceneManager.ScenePlacedObjects[networkObject.GlobalObjectIdHash].Add(SceneManager.GetActiveScene().handle,networkObject);
                 }
             }
 
