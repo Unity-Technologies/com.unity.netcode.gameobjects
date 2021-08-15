@@ -65,6 +65,16 @@ namespace Unity.Netcode.RuntimeTests
         /// <returns></returns>
         public IEnumerator StartSomeClientsAndServerWithPlayers(bool useHost, int nbClients, Action<GameObject> updatePlayerPrefab, int targetFrameRate = 60)
         {
+            // Make sure any NetworkObject with a GlobalObjectIdHash value of 0 is destroyed
+            // If we are tearing down, we don't want to leave NetworkObjects hanging around
+            var networkObjects = Object.FindObjectsOfType<NetworkObject>().ToList();
+            var networkObjectsList = networkObjects.Where(c => c.GlobalObjectIdHash == 0);
+            foreach (var netObject in networkObjects)
+            {
+                Object.DestroyImmediate(netObject);
+            }
+
+
             // Create multiple NetworkManager instances
             if (!MultiInstanceHelpers.Create(nbClients, out NetworkManager server, out NetworkManager[] clients, targetFrameRate))
             {
