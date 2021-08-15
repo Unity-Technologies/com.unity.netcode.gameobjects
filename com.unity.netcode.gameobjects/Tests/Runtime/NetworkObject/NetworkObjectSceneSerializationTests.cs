@@ -7,6 +7,7 @@ namespace Unity.Netcode.RuntimeTests
 {
     public class NetworkObjectSceneSerializationTests
     {
+
         /// <summary>
         /// The purpose behind this test is to assure that in-scene NetworkObjects
         /// that are serialized into a single stream (approval or switch scene this happens)
@@ -52,6 +53,7 @@ namespace Unity.Netcode.RuntimeTests
 
                     invalidNetworkObjects.Add(gameObject);
 
+                    writer.WriteInt32Packed(networkObject.gameObject.scene.handle);
                     // Serialize the invalid NetworkObject
                     networkObject.SerializeSceneObject(writer, 0);
 
@@ -79,6 +81,7 @@ namespace Unity.Netcode.RuntimeTests
 
                     networkObjectsToTest.Add(gameObject);
 
+                    writer.WriteInt32Packed(networkObject.gameObject.scene.handle);
                     // Serialize the valid NetworkObject
                     networkObject.SerializeSceneObject(writer, 0);
 
@@ -113,6 +116,9 @@ namespace Unity.Netcode.RuntimeTests
 
                     invalidNetworkObjectCount++;
                 }
+
+                NetworkManagerHelper.NetworkManagerObject.SceneManager.SetTheSceneBeingSynchronized(reader.ReadInt32Packed());
+
                 var deserializedNetworkObject = NetworkObject.DeserializeSceneObject(pooledBuffer, reader, NetworkManagerHelper.NetworkManagerObject);
                 if (deserializedNetworkObject != null)
                 {
@@ -150,15 +156,18 @@ namespace Unity.Netcode.RuntimeTests
         [SetUp]
         public void Setup()
         {
+            NetworkSceneManager.IsTesting = true;
             // Create, instantiate, and host
             NetworkManagerHelper.StartNetworkManager(out NetworkManager networkManager, NetworkManagerHelper.NetworkManagerOperatingMode.None);
             networkManager.NetworkConfig.EnableSceneManagement = true;
             networkManager.StartHost();
+
         }
 
         [TearDown]
         public void TearDown()
         {
+            NetworkSceneManager.IsTesting = false;
             // Stop, shutdown, and destroy
             NetworkManagerHelper.ShutdownNetworkManager();
         }

@@ -15,6 +15,7 @@ namespace Unity.Netcode.RuntimeTests
         {
             var gameObject = new GameObject($"Test-{nameof(NetworkTransformStateTests)}");
             var networkObject = gameObject.AddComponent<NetworkObject>();
+            networkObject.GlobalObjectIdHash = (uint)Time.realtimeSinceStartup;
             var networkTransform = gameObject.AddComponent<NetworkTransform>();
             networkTransform.enabled = false; // do not tick `FixedUpdate()` or `Update()`
 
@@ -177,7 +178,7 @@ namespace Unity.Netcode.RuntimeTests
                 }
             }
 
-            Object.DestroyImmediate(networkTransform);
+            Object.DestroyImmediate(gameObject);
         }
     }
 }

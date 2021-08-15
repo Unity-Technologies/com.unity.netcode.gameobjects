@@ -13,6 +13,8 @@ namespace Unity.Netcode.RuntimeTests
         protected NetworkManager m_ServerNetworkManager;
         protected NetworkManager[] m_ClientNetworkManagers;
 
+        internal static uint DefaultPayerGlobalObjectIdHashValue = 7777777;
+
         protected abstract int NbClients { get; }
 
         [UnitySetUp]
@@ -66,7 +68,6 @@ namespace Unity.Netcode.RuntimeTests
             // Create playerPrefab
             m_PlayerPrefab = new GameObject("Player");
             NetworkObject networkObject = m_PlayerPrefab.AddComponent<NetworkObject>();
-
             /*
              * Normally we would only allow player prefabs to be set to a prefab. Not runtime created objects.
              * In order to prevent having a Resource folder full of a TON of prefabs that we have to maintain,
@@ -75,7 +76,7 @@ namespace Unity.Netcode.RuntimeTests
              * at runtime without it being treated as a SceneObject or causing other conflicts with the Netcode.
              */
             // Make it a prefab
-            MultiInstanceHelpers.MakeNetworkedObjectTestPrefab(networkObject);
+            MultiInstanceHelpers.MakeNetworkedObjectTestPrefab(networkObject, DefaultPayerGlobalObjectIdHashValue);
 
             updatePlayerPrefab(m_PlayerPrefab); // update player prefab with whatever is needed before players are spawned
 

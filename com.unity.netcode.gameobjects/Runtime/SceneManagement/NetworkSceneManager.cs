@@ -92,6 +92,8 @@ namespace Unity.Netcode
         // Used to detect if we are in the middle of a single mode scene transition
         private static bool s_IsSceneEventActive = false;
 
+        internal static bool IsTesting;
+
         /// <summary>
         /// The delegate callback definition for scene event notifications
         /// For more details review over <see cref="SceneEvent"/> and <see cref="SceneEventData"/>
@@ -207,6 +209,17 @@ namespace Unity.Netcode
         /// <param name="serverSceneHandle"></param>
         internal void SetTheSceneBeingSynchronized(int serverSceneHandle)
         {
+            if (IsTesting)
+            {
+                // If we were already set, then ignore
+                if (SceneBeingSynchronized.IsValid() && SceneBeingSynchronized.isLoaded)
+                {
+                    return;
+                }
+                SceneBeingSynchronized = SceneManager.GetActiveScene();
+                return;
+            }
+
             var clientSceneHandle = serverSceneHandle;
             if (m_NetworkManager.SceneManager.ServerSceneHandleToClientSceneHandle.ContainsKey(serverSceneHandle))
             {
