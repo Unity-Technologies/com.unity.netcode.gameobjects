@@ -1,4 +1,4 @@
-﻿#if MULTIPLAYER_TOOLS
+#if MULTIPLAYER_TOOLS
 using System;
 using System.Collections;
 using System.Linq;
@@ -34,6 +34,10 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             Assert.AreEqual(networkObject.NetworkObjectId, ownershipChangeSent.NetworkId.NetworkId);
             Assert.AreEqual(Server.LocalClientId, ownershipChangeSent.Connection.Id);
             Assert.AreEqual(2, ownershipChangeSent.BytesCount);
+
+            // Always destroy anything you create
+            UnityEngine.Object.DestroyImmediate(gameObject);
+
         }
 
         [UnityTest]
@@ -58,6 +62,9 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             var ownershipChangeReceived = metricValues.First();
             Assert.AreEqual(networkObject.NetworkObjectId, ownershipChangeReceived.NetworkId.NetworkId);
             Assert.AreEqual(2, ownershipChangeReceived.BytesCount);
+
+            // Always destroy anything you create
+            UnityEngine.Object.DestroyImmediate(gameObject);
         }
     }
 }

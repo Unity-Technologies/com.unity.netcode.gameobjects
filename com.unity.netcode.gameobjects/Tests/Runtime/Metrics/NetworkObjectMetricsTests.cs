@@ -154,6 +154,9 @@ namespace Unity.Netcode.RuntimeTests.Metrics
 
             Assert.AreEqual(1, objectSpawnedSentMetricValues.Select(x => x.BytesCount).Distinct().Count());
             Assert.That(objectSpawnedSentMetricValues.Select(x => x.BytesCount), Has.All.Not.EqualTo(0));
+
+            // Always destroy anything you create
+            UnityEngine.Object.DestroyImmediate(gameObject);
         }
 
         [UnityTest]
@@ -192,6 +195,9 @@ namespace Unity.Netcode.RuntimeTests.Metrics
 
             Assert.AreEqual(1, objectDestroyedSentMetricValues.Select(x => x.BytesCount).Distinct().Count());
             Assert.That(objectDestroyedSentMetricValues.Select(x => x.BytesCount), Has.All.Not.EqualTo(0));
+
+            // Always destroy anything you create
+            UnityEngine.Object.DestroyImmediate(gameObject);
         }
     }
 }
