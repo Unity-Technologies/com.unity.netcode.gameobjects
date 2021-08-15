@@ -11,6 +11,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 {
     public class MultiprocessTestsAttribute : CategoryAttribute
     {
+        
         public const string MultiprocessCategoryName = "Multiprocess";
         public MultiprocessTestsAttribute() : base(MultiprocessCategoryName) { }
     }
@@ -19,7 +20,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
     public abstract class BaseMultiprocessTests
     {
         protected virtual bool IsPerformanceTest => true;
-
+        public string Port = "3076"; // TODO This port will need to be reconfigurable
         private const string k_GlobalEmptySceneName = "EmptyScene";
 
         private bool m_SceneHasLoaded;
@@ -35,6 +36,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         [OneTimeSetUp]
         public virtual void SetupTestSuite()
         {
+            SetPort(ushort.Parse(Port));
             if (ShouldIgnoreTests)
             {
                 Assert.Ignore("Ignoring tests that shouldn't run from unity editor. Performance tests should be run from remote test execution on device (this can be ran using the \"run selected tests (your platform)\" button");
@@ -60,14 +62,14 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         [UnitySetUp]
         public virtual IEnumerator Setup()
         {
-            string port = "3076"; // TODO This port will need to be reconfigurable
-            SetPort(ushort.Parse(port));
+            
+            SetPort(ushort.Parse(Port));
             yield return new WaitUntil(() => NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer && m_SceneHasLoaded);
 
             var startTime = Time.time;
             while (NetworkManager.Singleton.ConnectedClients.Count <= WorkerCount)
             {
-                yield return new WaitForSeconds(0.2f);
+                yield return new WaitForSeconds(30.0f);
 
                 if (Time.time - startTime > TestCoordinator.MaxWaitTimeoutSec)
                 {
