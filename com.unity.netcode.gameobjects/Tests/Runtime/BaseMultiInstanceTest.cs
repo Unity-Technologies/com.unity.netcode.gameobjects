@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Linq;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -39,6 +40,15 @@ namespace Unity.Netcode.RuntimeTests
                     Object.Destroy(m_PlayerPrefab);
                     m_PlayerPrefab = null;
                 }
+            }
+
+            // Make sure any NetworkObject with a GlobalObjectIdHash value of 0 is destroyed
+            // If we are tearing down, we don't want to leave NetworkObjects hanging around
+            var networkObjects = Object.FindObjectsOfType<NetworkObject>().ToList();
+            var networkObjectsList = networkObjects.Where(c => c.GlobalObjectIdHash == 0);
+            foreach (var networkObject in networkObjectsList)
+            {
+                Object.DestroyImmediate(networkObject);
             }
 
             // wait for next frame so everything is destroyed, so following tests can execute from clean environment
