@@ -20,7 +20,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
     public abstract class BaseMultiprocessTests
     {
         protected virtual bool IsPerformanceTest => true;
-        public string Port = "3076"; // TODO This port will need to be reconfigurable
+        public static string Port = "3076"; // TODO This port will need to be reconfigurable
         private const string k_GlobalEmptySceneName = "EmptyScene";
 
         private bool m_SceneHasLoaded;
@@ -36,12 +36,13 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         [OneTimeSetUp]
         public virtual void SetupTestSuite()
         {
+            Debug.Log("Setting port in OneTimeSetUp");
             SetPort(ushort.Parse(Port));
             if (ShouldIgnoreTests)
             {
                 Assert.Ignore("Ignoring tests that shouldn't run from unity editor. Performance tests should be run from remote test execution on device (this can be ran using the \"run selected tests (your platform)\" button");
             }
-
+            Debug.Log("Loading Scene");
             SceneManager.LoadScene(BuildMultiprocessTestPlayer.MainSceneName, LoadSceneMode.Single);
             SceneManager.sceneLoaded += OnSceneLoaded;
         }
