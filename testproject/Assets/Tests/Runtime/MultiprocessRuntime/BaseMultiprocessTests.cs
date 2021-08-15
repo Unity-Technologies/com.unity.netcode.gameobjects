@@ -69,12 +69,13 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             var startTime = Time.time;
             while (NetworkManager.Singleton.ConnectedClients.Count <= WorkerCount)
             {
-                yield return new WaitForSeconds(30.0f);
+                yield return new WaitForSeconds(10.0f);
 
                 if (Time.time - startTime > TestCoordinator.MaxWaitTimeoutSec)
                 {
                     throw new Exception($"waiting too long to see clients to connect, got {NetworkManager.Singleton.ConnectedClients.Count - 1} clients, but was expecting {WorkerCount}, failing");
                 }
+                Debug.LogWarning($"Connected client count < WorkerCount, {NetworkManager.Singleton.ConnectedClients.Count } < {WorkerCount} ");
             }
 
             TestCoordinator.Instance.KeepAliveClientRpc();
