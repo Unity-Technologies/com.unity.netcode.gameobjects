@@ -205,7 +205,7 @@ namespace Unity.Netcode
 
         internal void AddDespawn(SnapshotDespawnCommand command)
         {
-            if (NumSpawns >= k_MaxDespawns)
+            if (NumDespawns >= k_MaxDespawns)
             {
                 Array.Resize(ref Despawns, 2 * k_MaxDespawns);
                 k_MaxDespawns = k_MaxDespawns * 2;
@@ -522,7 +522,6 @@ namespace Unity.Netcode
 
                             if (Despawns[i].TargetClientIds.Count == 0)
                             {
-                                Debug.Log($"[JEFF] removing despawn command for {Despawns[i].NetworkObjectId} because it was ack'ed") ;
                                 // remove by moving the last spawn over
                                 Despawns[i] = Despawns[NumDespawns - 1];
                                 NumDespawns--;
@@ -796,7 +795,8 @@ namespace Unity.Netcode
                 for (var j = 0; j < m_Snapshot.NumDespawns && !overSize; j++)
                 {
                     var index = clientData.NextDespawnIndex;
-                    bool skip = false;
+                    bool skip1 = false;
+                    bool skip2 = false;
 
                     // todo : check that this condition is the same as the clientId one, then remove it :-)
                     if (clientData.SpawnAck.ContainsKey(m_Snapshot.Despawns[index].NetworkObjectId))
@@ -804,14 +804,16 @@ namespace Unity.Netcode
                         if (clientData.SpawnAck[m_Snapshot.Despawns[index].NetworkObjectId] ==
                             m_Snapshot.Despawns[index].TickWritten)
                         {
-                            skip = true;
+                            skip1 = true;
                         }
                     }
 
                     if (!m_Snapshot.Despawns[index].TargetClientIds.Contains(clientId))
                     {
-                        skip = true;
+                        skip2 = true;
                     }
+
+                    bool skip = skip1 || skip2;
 
                     if (!skip)
                     {
