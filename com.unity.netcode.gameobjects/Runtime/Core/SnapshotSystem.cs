@@ -504,8 +504,6 @@ namespace Unity.Netcode
 
                             if (Spawns[i].TargetClientIds.Count == 0)
                             {
-                                Debug.Log($"[JEFF] removing spawn command for {Spawns[i].NetworkObjectId} because it was ack'ed") ;
-
                                 // remove by moving the last spawn over
                                 Spawns[i] = Spawns[NumSpawns - 1];
                                 NumSpawns--;
@@ -755,36 +753,18 @@ namespace Unity.Netcode
                 var positionDespawns = writer.GetStream().Position;
                 writer.WriteInt16((short)m_Snapshot.NumDespawns);
 
-                Debug.Assert(writer.GetStream().Position == 0);
-
                 for (var j = 0; j < m_Snapshot.NumSpawns && !overSize; j++)
                 {
                     var index = clientData.NextSpawnIndex;
-                    bool skip = false;
 
-                    // todo : check that this condition is the same as the clientId one, then remove it :-)
-                    if (clientData.SpawnAck.ContainsKey(m_Snapshot.Spawns[index].NetworkObjectId))
-                    {
-                        if (clientData.SpawnAck[m_Snapshot.Spawns[index].NetworkObjectId] ==
-                            m_Snapshot.Spawns[index].TickWritten)
-                        {
-                            skip = true;
-                        }
-                    }
-
-                    if (!m_Snapshot.Spawns[index].TargetClientIds.Contains(clientId))
-                    {
-                        skip = true;
-                    }
-
-                    if (!skip)
+                    if (m_Snapshot.Spawns[index].TargetClientIds.Contains(clientId))
                     {
                         m_Snapshot.WriteSpawn(clientData, writer, in m_Snapshot.Spawns[index]);
                         spawnWritten++;
                     }
 
-                    // limit spawn sizes
-                    if (writer.GetStream().Position > k_MaxSpawnUsage)
+                    // limit spawn sizes, compare current pos to very first position we wrote to
+                    if (writer.GetStream().Position - positionSpawns > k_MaxSpawnUsage)
                     {
                         overSize = true;
                     }
@@ -795,33 +775,14 @@ namespace Unity.Netcode
                 for (var j = 0; j < m_Snapshot.NumDespawns && !overSize; j++)
                 {
                     var index = clientData.NextDespawnIndex;
-                    bool skip1 = false;
-                    bool skip2 = false;
 
-                    // todo : check that this condition is the same as the clientId one, then remove it :-)
-                    if (clientData.SpawnAck.ContainsKey(m_Snapshot.Despawns[index].NetworkObjectId))
-                    {
-                        if (clientData.SpawnAck[m_Snapshot.Despawns[index].NetworkObjectId] ==
-                            m_Snapshot.Despawns[index].TickWritten)
-                        {
-                            skip1 = true;
-                        }
-                    }
-
-                    if (!m_Snapshot.Despawns[index].TargetClientIds.Contains(clientId))
-                    {
-                        skip2 = true;
-                    }
-
-                    bool skip = skip1 || skip2;
-
-                    if (!skip)
+                    if (m_Snapshot.Despawns[index].TargetClientIds.Contains(clientId))
                     {
                         m_Snapshot.WriteDespawn(clientData, writer, in m_Snapshot.Despawns[index]);
                         despawnWritten++;
                     }
-                    // limit spawn sizes
-                    if (writer.GetStream().Position > k_MaxSpawnUsage)
+                    // limit spawn sizes, compare current pos to very first position we wrote to
+                    if (writer.GetStream().Position - positionSpawns > k_MaxSpawnUsage)
                     {
                         overSize = true;
                     }
@@ -839,12 +800,6 @@ namespace Unity.Netcode
                 writer.GetStream().Position = positionDespawns;
                 writer.WriteInt16((short)despawnWritten);
                 writer.GetStream().Position = positionAfter;
-
-            }
-
-            if (overSize)
-            {
-                Debug.Log("[JEFF] === OVERSIZE ===");
             }
         }
 
