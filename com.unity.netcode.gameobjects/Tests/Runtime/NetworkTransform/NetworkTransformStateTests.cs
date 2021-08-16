@@ -180,7 +180,7 @@ namespace Unity.Netcode.RuntimeTests
             [Values(0, 1.0f)] float rotAngleThreshold,
             [Values(0, 0.5f)] float scaleThreshold)
         {
-            var gameObject = new GameObject($"Test-{nameof(NetworkTransformStateTests)}.{nameof(TestSyncAxes)}");
+            var gameObject = new GameObject($"Test-{nameof(NetworkTransformStateTests)}.{nameof(TestThresholds)}");
             var networkObject = gameObject.AddComponent<NetworkObject>();
             var networkTransform = gameObject.AddComponent<NetworkTransform>();
             networkTransform.enabled = false; // do not tick `FixedUpdate()` or `Update()`
