@@ -82,6 +82,11 @@ namespace TestProject.ManualTests
             }
         }
 
+        private void OnDisable()
+        {
+            OnUnloadScene();
+        }
+
         private void DeregisterCustomPrefabHandler()
         {
             // Register the custom spawn handler?

@@ -267,7 +267,9 @@ namespace Unity.Netcode
             }
             else
             {
-                if (!NetworkManager.SceneManager.ScenePlacedObjects.TryGetValue(globalObjectIdHash, out NetworkObject networkObject))
+                var networkObject = NetworkManager.SceneManager.GetSceneRelativeInSceneNetworkObject(globalObjectIdHash);
+
+                if(networkObject == null)
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
                     {
@@ -275,10 +277,6 @@ namespace Unity.Netcode
                     }
 
                     return null;
-                }
-                else
-                {
-                    NetworkManager.SceneManager.ScenePlacedObjects.Remove(globalObjectIdHash);
                 }
 
                 if (parentNetworkObject != null)

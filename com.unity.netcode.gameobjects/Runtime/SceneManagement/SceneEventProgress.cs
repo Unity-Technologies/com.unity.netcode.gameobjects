@@ -37,6 +37,13 @@ namespace Unity.Netcode
         /// or <see cref="NetworkSceneManager.UnloadScene(string)"/>is invalid
         /// </summary>
         InvalidSceneName,
+
+        /// <summary>
+        /// This is used for internal error notifications.
+        /// If you receive this event then it is most likely due to a bug.
+        /// If you receive this event repeatedly, then please open a GitHub issue with steps to replicate
+        /// </summary>
+        InternalNetcodeError,
     }
 
     /// <summary>
