@@ -89,9 +89,15 @@ namespace Unity.Netcode
         // Used to be able to turn re-synchronization off for future snapshot development purposes.
         internal static bool DisableReSynchronization;
 
-        // Used to detect if we are in the middle of a single mode scene transition
+        /// <summary>
+        /// Used to detect if a scene event is underway
+        /// Only 1 scene event can occur on the server at a time for now.
+        /// </summary>
         private static bool s_IsSceneEventActive = false;
 
+        /// <summary>
+        /// For multi-instance unit tests, set this to true if you are use the <see cref="NetworkSceneManager"/>
+        /// </summary>
         internal static bool IsTesting;
 
         /// <summary>
@@ -112,12 +118,19 @@ namespace Unity.Netcode
         internal readonly Dictionary<uint, string> SceneIndexToString = new Dictionary<uint, string>();
         internal readonly Dictionary<Guid, SceneEventProgress> SceneEventProgressTracking = new Dictionary<Guid, SceneEventProgress>();
 
-
         /// <summary>
-        /// ScenePlacedObjects (i.e. In-Scene Placed NetworkObjects) are now stored by GlobalObjectIdHash
+        /// Used to track in-scene placed NetworkObjects
+        /// We store them by:
+        /// [GlobalObjectIdHash][Scene.Handle][NetworkObject]
+        /// The Scene.Handle aspect allows us to distinguish duplicated in-scene placed NetworkObjects created by the loading
+        /// of the same additive scene multiple times.
         /// </summary>
         internal readonly Dictionary<uint, Dictionary<int, NetworkObject>> ScenePlacedObjects = new Dictionary<uint, Dictionary<int, NetworkObject>>();
 
+        /// <summary>
+        /// This is used for the deserialization of in-scene placed NetworkObjects in order to distinguish duplicated in-scene
+        /// placed NetworkObjects created by the loading of the same additive scene multiple times.
+        /// </summary>
         internal Scene SceneBeingSynchronized;
 
         // Used for observed object synchronization
@@ -126,19 +139,30 @@ namespace Unity.Netcode
         // Used to track which scenes are currently loaded
         private Dictionary<string, Dictionary<int, Scene>> m_ScenesLoaded = new Dictionary<string, Dictionary<int, Scene>>();
 
+        /// <summary>
+        /// Since Scene.handle is unique per client, we create a look-up table between the client and server
+        /// </summary>
         internal Dictionary<int, int> ServerSceneHandleToClientSceneHandle = new Dictionary<int, int>();
 
-        // The Condition: While a scene is asynchronously loaded in single loading scene mode, if any new NetworkObjects are spawned
-        // they need to be moved into the do not destroy temporary scene
-        // When it is set: Just before starting the asynchronous loading call
-        // When it is unset: After the scene has loaded, the PopulateScenePlacedObjects is called, and all NetworkObjects in the do
-        // not destroy temporary scene are moved into the active scene
+        /// <summary>
+        /// The Condition: While a scene is asynchronously loaded in single loading scene mode, if any new NetworkObjects are spawned
+        /// they need to be moved into the do not destroy temporary scene
+        /// When it is set: Just before starting the asynchronous loading call
+        /// When it is unset: After the scene has loaded, the PopulateScenePlacedObjects is called, and all NetworkObjects in the do
+        /// not destroy temporary scene are moved into the active scene
+        /// </summary>
         internal static bool IsSpawnedObjectsPendingInDontDestroyOnLoad = false;
 
-        //Client and Server: used for all scene event processing except for ClientSynchEventData specific events
+        /// <summary>
+        /// Client and Server:
+        /// Used for all scene event processing except for ClientSynchEventData specific events
+        /// </summary>
         internal SceneEventData SceneEventData;
 
-        //Server Side: Used specifically for scene synchronization and scene event progress related events.
+        /// <summary>
+        /// Server Side:
+        /// Used specifically for scene synchronization and scene event progress related events.
+        /// </summary>
         internal SceneEventData ClientSynchEventData;
 
         private NetworkManager m_NetworkManager { get; }
@@ -1363,7 +1387,8 @@ namespace Unity.Netcode
 
             // Just add every NetworkObject found that isn't already in the list
             // With additive scenes, we can have multiple in-scene placed NetworkObjects with the same GlobalObjectIdHash value
-            // Client Side Synchronization: So, we add them on a FIFO basis and for each scene loaded
+            // During Client Side Synchronization: We add them on a FIFO basis, for each scene loaded without clearing, and then
+            // at the end of scene loading we use this list to soft synchronize all in-scene placed NetworkObjects
             foreach (var networkObjectInstance in networkObjects)
             {
                 // We check to make sure the NetworkManager instance is the same one to be "MultiInstanceHelpers" compatible and filter the list on a per scene basis (additive scenes)
