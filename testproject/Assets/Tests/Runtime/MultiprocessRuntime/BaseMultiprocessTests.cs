@@ -38,6 +38,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         {
             Debug.Log("Setting port in OneTimeSetUp");
             SetPort(ushort.Parse(Port));
+            Debug.Log($"Port set to {Port}");
             if (ShouldIgnoreTests)
             {
                 Assert.Ignore("Ignoring tests that shouldn't run from unity editor. Performance tests should be run from remote test execution on device (this can be ran using the \"run selected tests (your platform)\" button");
@@ -105,8 +106,10 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
         private void SetPort(ushort port)
         {
+            Debug.Log("Getting network manager");
             var transport = NetworkManager.Singleton.NetworkConfig.NetworkTransport;
-            
+            Debug.Log($"Got network manager network transport as {transport}");
+
             switch (transport)
             {
                 case UNetTransport unetTransport:
