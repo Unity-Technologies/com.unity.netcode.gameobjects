@@ -65,7 +65,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         public virtual IEnumerator Setup()
         {
             
-            SetPort(ushort.Parse(m_Port));
+            // SetPort(ushort.Parse(m_Port));
             yield return new WaitUntil(() => NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer && m_SceneHasLoaded);
 
             var startTime = Time.time;
@@ -104,7 +104,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             }
         }
 
-        private void SetPort(ushort port)
+        private void SetPortx(ushort port)
         {
             
             Debug.Log($"Getting network manager {NetworkManager.Singleton}");

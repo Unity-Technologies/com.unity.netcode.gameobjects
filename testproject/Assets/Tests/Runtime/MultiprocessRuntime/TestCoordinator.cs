@@ -6,6 +6,7 @@ using Unity.Netcode;
 using NUnit.Framework;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
+using Unity.Netcode.Transports.UNET;
 
 /// <summary>
 /// TestCoordinator
@@ -51,10 +52,30 @@ public class TestCoordinator : NetworkBehaviour
 
     public void Start()
     {
+        string connectAddress = "127.0.0.1";
         bool isClient = Environment.GetCommandLineArgs().Any(value => value == MultiprocessOrchestration.IsWorkerArg);
+        string[] args = Environment.GetCommandLineArgs();
+        foreach (string arg in args)
+        {
+            if (arg.StartsWith("-ip="))
+            {
+                connectAddress = arg.Replace("-ip=", "");
+            }
+        }
         if (isClient)
         {
             Debug.Log("starting netcode client");
+            string port = "3076";
+            var ushortport = ushort.Parse(port);
+            var transport = NetworkManager.Singleton.NetworkConfig.NetworkTransport;
+            switch (transport)
+            {
+                case UNetTransport unetTransport:
+                    unetTransport.ConnectPort = ushortport;
+                    unetTransport.ServerListenPort = ushortport;
+                    unetTransport.ConnectAddress = connectAddress;
+                    break;
+            }
             NetworkManager.Singleton.StartClient();
         }
 
