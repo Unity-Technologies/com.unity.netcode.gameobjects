@@ -190,6 +190,11 @@ namespace Unity.Netcode.Prototyping
         // returned boolean would be useful to change encapsulating `NetworkVariable<NetworkState>`'s dirty state, e.g. ReplNetworkState.SetDirty(isDirty);
         internal bool UpdateNetworkState(NetworkState networkState)
         {
+            if (networkState == null)
+            {
+                return false;
+            }
+
             var position = InLocalSpace ? m_Transform.localPosition : m_Transform.position;
             var rotAngles = InLocalSpace ? m_Transform.localEulerAngles : m_Transform.eulerAngles;
             var scale = InLocalSpace ? m_Transform.localScale : m_Transform.lossyScale;
@@ -443,8 +448,11 @@ namespace Unity.Netcode.Prototyping
 
             if (CanUpdateTransform)
             {
-                bool isDirty = UpdateNetworkState(ReplNetworkState.Value);
-                ReplNetworkState.SetDirty(isDirty);
+                ReplNetworkState.SetDirty(UpdateNetworkState(ReplNetworkState.Value));
+            }
+            else if (UpdateNetworkState(PrevNetworkState))
+            {
+                ApplyNetworkState(ReplNetworkState.Value);
             }
         }
 
