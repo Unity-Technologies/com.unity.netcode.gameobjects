@@ -241,6 +241,8 @@ namespace Unity.Netcode.RuntimeTests
             }
 
             // Step 3: make changes below and above thresholds
+            // changes below the threshold should not make `NetworkState` dirty
+            // changes above the threshold should make `NetworkState` dirty
             {
                 // Position
                 if (!Mathf.Approximately(positionThreshold, 0.0f))

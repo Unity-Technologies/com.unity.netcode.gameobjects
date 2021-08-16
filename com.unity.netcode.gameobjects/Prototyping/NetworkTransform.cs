@@ -186,6 +186,8 @@ namespace Unity.Netcode.Prototyping
             Authority == NetworkAuthority.Server && IsServer ||
             Authority == NetworkAuthority.Shared;
 
+        // updates `NetworkState` properties if they need to and returns a `bool` indicating whether or not there was any changes made
+        // returned boolean would be useful to change encapsulating `NetworkVariable<NetworkState>`'s dirty state, e.g. ReplNetworkState.SetDirty(isDirty);
         internal bool UpdateNetworkState(NetworkState networkState)
         {
             var position = InLocalSpace ? m_Transform.localPosition : m_Transform.position;
