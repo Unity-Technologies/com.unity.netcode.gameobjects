@@ -20,7 +20,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
     public abstract class BaseMultiprocessTests
     {
         protected virtual bool IsPerformanceTest => true;
-        public static string Port = "3076"; // TODO This port will need to be reconfigurable
+        private string m_Port = "3076"; // TODO This port will need to be reconfigurable
         private const string k_GlobalEmptySceneName = "EmptyScene";
 
         private bool m_SceneHasLoaded;
@@ -36,9 +36,9 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         [OneTimeSetUp]
         public virtual void SetupTestSuite()
         {
-            Debug.Log("Setting port in OneTimeSetUp");
-            SetPort(ushort.Parse(Port));
-            Debug.Log($"Port set to {Port}");
+            Debug.Log($"Setting port in OneTimeSetUp to {m_Port}");
+            // SetPort(ushort.Parse(m_Port));
+            Debug.Log($"Port set to {m_Port}");
             if (ShouldIgnoreTests)
             {
                 Assert.Ignore("Ignoring tests that shouldn't run from unity editor. Performance tests should be run from remote test execution on device (this can be ran using the \"run selected tests (your platform)\" button");
@@ -65,7 +65,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         public virtual IEnumerator Setup()
         {
             
-            SetPort(ushort.Parse(Port));
+            SetPort(ushort.Parse(m_Port));
             yield return new WaitUntil(() => NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer && m_SceneHasLoaded);
 
             var startTime = Time.time;
@@ -106,7 +106,9 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
         private void SetPort(ushort port)
         {
-            Debug.Log("Getting network manager");
+            
+            Debug.Log($"Getting network manager {NetworkManager.Singleton}");
+            Debug.Log($"Getting network manager {NetworkManager.Singleton.NetworkConfig}");
             var transport = NetworkManager.Singleton.NetworkConfig.NetworkTransport;
             Debug.Log($"Got network manager network transport as {transport}");
 
