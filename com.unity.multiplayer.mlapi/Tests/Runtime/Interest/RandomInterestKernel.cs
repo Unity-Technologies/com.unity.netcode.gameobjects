@@ -3,7 +3,7 @@ using MLAPI.Connection;
 using MLAPI.Interest;
 using UnityEngine;
 
-namespace MLAPI.RuntimeTests.AOI
+namespace MLAPI.RuntimeTests
 {
     public class RandomInterestKernel : InterestKernel
     {
@@ -11,7 +11,7 @@ namespace MLAPI.RuntimeTests.AOI
 
         public readonly List<NetworkObject> VisibleObjects = new List<NetworkObject>();
 
-        public override void QueryFor(in NetworkClient client, in NetworkObject obj, HashSet<NetworkObject> results)
+        public override void QueryFor(in NetworkClient _, in NetworkObject obj, HashSet<NetworkObject> results)
         {
             VisibleObjects.Clear();
 
