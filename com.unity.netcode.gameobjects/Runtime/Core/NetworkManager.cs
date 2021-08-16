@@ -19,14 +19,11 @@ namespace Unity.Netcode
         // RuntimeAccessModifiersILPP will make this `public`
         internal static readonly Dictionary<uint, Action<NetworkBehaviour, NetworkSerializer, __RpcParams>> __rpc_func_table = new Dictionary<uint, Action<NetworkBehaviour, NetworkSerializer, __RpcParams>>();
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
         // RuntimeAccessModifiersILPP will make this `public`
         internal static readonly Dictionary<uint, string> __rpc_name_table = new Dictionary<uint, string>();
-#else // !(UNITY_EDITOR || DEVELOPMENT_BUILD)
-        // RuntimeAccessModifiersILPP will make this `public`
-        internal static readonly Dictionary<uint, string> __rpc_name_table = null; // not needed on release builds
-#endif // UNITY_EDITOR || DEVELOPMENT_BUILD
+#endif
+
 #pragma warning restore IDE1006 // restore naming rule violation check
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
@@ -35,7 +32,6 @@ namespace Unity.Netcode
         private static ProfilerMarker s_TransportConnect = new ProfilerMarker($"{nameof(NetworkManager)}.TransportConnect");
         private static ProfilerMarker s_HandleIncomingData = new ProfilerMarker($"{nameof(NetworkManager)}.{nameof(HandleIncomingData)}");
         private static ProfilerMarker s_TransportDisconnect = new ProfilerMarker($"{nameof(NetworkManager)}.TransportDisconnect");
-
         private static ProfilerMarker s_InvokeRpc = new ProfilerMarker($"{nameof(NetworkManager)}.{nameof(InvokeRpc)}");
 #endif
 
@@ -1227,10 +1223,12 @@ namespace Unity.Netcode
 
                     __rpc_func_table[networkMethodId](networkBehaviour, new NetworkSerializer(item.NetworkReader), rpcParams);
 
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
                     if (__rpc_name_table.TryGetValue(networkMethodId, out var rpcMethodName))
                     {
                         NetworkMetrics.TrackRpcReceived(item.NetworkId, networkObjectId, rpcMethodName, item.StreamSize);
                     }
+#endif
                 }
             }
         }

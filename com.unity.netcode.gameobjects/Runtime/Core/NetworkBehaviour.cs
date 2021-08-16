@@ -99,10 +99,12 @@ namespace Unity.Netcode
                 ? NetworkManager.MessageQueueContainer.EndAddQueueItemToFrame(serializer.Writer, MessageQueueHistoryFrame.QueueFrameType.Inbound, serverRpcParams.Send.UpdateStage)
                 : NetworkManager.MessageQueueContainer.EndAddQueueItemToFrame(serializer.Writer, MessageQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
 
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (NetworkManager.__rpc_name_table.TryGetValue(rpcMethodId, out var rpcMethodName))
             {
                 NetworkManager.NetworkMetrics.TrackRpcSent(NetworkManager.ServerClientId, NetworkObjectId, rpcMethodName, rpcMessageSize);
             }
+#endif
         }
 
 #pragma warning disable IDE1006 // disable naming rule violation check
@@ -207,10 +209,12 @@ namespace Unity.Netcode
 
             var messageSize = NetworkManager.MessageQueueContainer.EndAddQueueItemToFrame(serializer.Writer, MessageQueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
 
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (NetworkManager.__rpc_name_table.TryGetValue(rpcMethodId, out var rpcMethodName))
             {
                 NetworkManager.NetworkMetrics.TrackRpcSent(NetworkManager.ConnectedClients.Select(x => x.Key).ToArray(), NetworkObjectId, rpcMethodName, messageSize);
             }
+#endif
         }
 
         /// <summary>
