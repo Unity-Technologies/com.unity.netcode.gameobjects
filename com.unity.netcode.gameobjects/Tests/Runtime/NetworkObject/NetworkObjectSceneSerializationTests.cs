@@ -156,7 +156,7 @@ namespace Unity.Netcode.RuntimeTests
         [SetUp]
         public void Setup()
         {
-            NetworkSceneManager.IsTesting = true;
+            NetworkSceneManager.IsUnitTesting = true;
             // Create, instantiate, and host
             NetworkManagerHelper.StartNetworkManager(out NetworkManager networkManager, NetworkManagerHelper.NetworkManagerOperatingMode.None);
             networkManager.NetworkConfig.EnableSceneManagement = true;
@@ -167,7 +167,7 @@ namespace Unity.Netcode.RuntimeTests
         [TearDown]
         public void TearDown()
         {
-            NetworkSceneManager.IsTesting = false;
+            NetworkSceneManager.IsUnitTesting = false;
             // Stop, shutdown, and destroy
             NetworkManagerHelper.ShutdownNetworkManager();
         }

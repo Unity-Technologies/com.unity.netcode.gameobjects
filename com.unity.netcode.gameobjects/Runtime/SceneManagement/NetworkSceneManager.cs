@@ -88,6 +88,10 @@ namespace Unity.Netcode
     {
         // Used to be able to turn re-synchronization off for future snapshot development purposes.
         internal static bool DisableReSynchronization;
+
+        /// <summary>
+        /// For multi-instance unit tests, set this to true if you are use the <see cref="NetworkSceneManager"/>
+        /// </summary>
         internal static bool IsUnitTesting;
 
         /// <summary>
@@ -95,11 +99,6 @@ namespace Unity.Netcode
         /// Only 1 scene event can occur on the server at a time for now.
         /// </summary>
         private static bool s_IsSceneEventActive = false;
-
-        /// <summary>
-        /// For multi-instance unit tests, set this to true if you are use the <see cref="NetworkSceneManager"/>
-        /// </summary>
-        internal static bool IsTesting;
 
         /// <summary>
         /// The delegate callback definition for scene event notifications
@@ -234,7 +233,7 @@ namespace Unity.Netcode
         /// <param name="serverSceneHandle"></param>
         internal void SetTheSceneBeingSynchronized(int serverSceneHandle)
         {
-            if (IsTesting)
+            if (IsUnitTesting)
             {
                 // If we were already set, then ignore
                 if (SceneBeingSynchronized.IsValid() && SceneBeingSynchronized.isLoaded)
@@ -246,6 +245,7 @@ namespace Unity.Netcode
             }
 
             var clientSceneHandle = serverSceneHandle;
+
             if (m_NetworkManager.SceneManager.ServerSceneHandleToClientSceneHandle.ContainsKey(serverSceneHandle))
             {
                 clientSceneHandle = m_NetworkManager.SceneManager.ServerSceneHandleToClientSceneHandle[serverSceneHandle];
@@ -385,12 +385,11 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Validates the new scene event request by the server-side code.
-        /// This also initializes some commonly shared values as well as SceneEventProgress
+        /// Entry method for scene unloading validation
         /// </summary>
-        /// <param name="sceneName"></param>
-        /// <returns><see cref="SceneEventProgress"/> that should have a <see cref="SceneEventProgress.Status"/> of <see cref="SceneEventProgressStatus.Started"/> otherwise it failed.</returns>
-        private SceneEventProgress ValidateServerSceneEvent(string sceneName, bool isUnloading = false)
+        /// <param name="scene">the scene to be unloaded</param>
+        /// <returns></returns>
+        private SceneEventProgress ValidateSceneEventUnLoading(Scene scene)
         {
             if (!m_NetworkManager.IsServer)
             {
@@ -403,6 +402,43 @@ namespace Unity.Netcode
                 throw new Exception($"{nameof(NetworkConfig.EnableSceneManagement)} flag is not enabled in the {nameof(NetworkManager)}'s {nameof(NetworkConfig)}. Please set {nameof(NetworkConfig.EnableSceneManagement)} flag to true before calling this method.");
             }
 
+            if (!scene.isLoaded)
+            {
+                Debug.LogWarning($"{nameof(UnloadScene)} was called, but the scene {scene.name} is not currently loaded!");
+                return new SceneEventProgress(null, SceneEventProgressStatus.SceneNotLoaded);
+            }
+
+            return ValidateSceneEvent(scene.name,true);
+        }
+
+        /// <summary>
+        /// Entry method for scene loading validation
+        /// </summary>
+        /// <param name="sceneName">scene name to load</param>
+        /// <returns></returns>
+        private SceneEventProgress ValidateSceneEventLoading(string sceneName)
+        {
+            if (!m_NetworkManager.IsServer)
+            {
+                throw new NotServerException("Only server can start a scene event!");
+            }
+            if (!m_NetworkManager.NetworkConfig.EnableSceneManagement)
+            {
+                //Log message about enabling SceneManagement
+                throw new Exception($"{nameof(NetworkConfig.EnableSceneManagement)} flag is not enabled in the {nameof(NetworkManager)}'s {nameof(NetworkConfig)}. Please set {nameof(NetworkConfig.EnableSceneManagement)} flag to true before calling this method.");
+            }
+
+            return ValidateSceneEvent(sceneName);
+        }
+
+        /// <summary>
+        /// Validates the new scene event request by the server-side code.
+        /// This also initializes some commonly shared values as well as SceneEventProgress
+        /// </summary>
+        /// <param name="sceneName"></param>
+        /// <returns><see cref="SceneEventProgress"/> that should have a <see cref="SceneEventProgress.Status"/> of <see cref="SceneEventProgressStatus.Started"/> otherwise it failed.</returns>
+        private SceneEventProgress ValidateSceneEvent(string sceneName, bool isUnloading = false)
+        {
             // Return scene event already in progress if one is already in progress... :)
             if (s_IsSceneEventActive)
             {
@@ -485,13 +521,7 @@ namespace Unity.Netcode
         public SceneEventProgressStatus UnloadScene(Scene scene)
         {
             var sceneName = scene.name;
-            if (!scene.isLoaded)
-            {
-                Debug.LogWarning($"{nameof(UnloadScene)} was called, but the scene {scene.name} is not currently loaded!");
-                return SceneEventProgressStatus.SceneNotLoaded;
-            }
-
-            var sceneEventProgress = ValidateServerSceneEvent(sceneName, true);
+            var sceneEventProgress = ValidateSceneEventUnLoading(scene);
             if (sceneEventProgress.Status != SceneEventProgressStatus.Started)
             {
                 return sceneEventProgress.Status;
@@ -545,7 +575,6 @@ namespace Unity.Netcode
         /// </summary>
         private void OnClientUnloadScene()
         {
-
             var sceneName = GetSceneNameFromNetcodeSceneIndex(SceneEventData.SceneIndex);
             if (sceneName == string.Empty)
             {
@@ -567,9 +596,10 @@ namespace Unity.Netcode
                 var sceneHandle = ServerSceneHandleToClientSceneHandle[SceneEventData.SceneHandle];
                 if (m_ScenesLoaded[sceneName].ContainsKey(sceneHandle))
                 {
+                    var sceneUnload = new AsyncOperation();
                     if (!IsUnitTesting)
                     {
-                        var sceneUnload = SceneManager.UnloadSceneAsync(m_ScenesLoaded[sceneName][sceneHandle]);
+                       sceneUnload = SceneManager.UnloadSceneAsync(m_ScenesLoaded[sceneName][sceneHandle]);
 
                         sceneUnload.completed += asyncOp2 => OnSceneUnloaded();
 
@@ -586,7 +616,7 @@ namespace Unity.Netcode
                     // Notify the local client that a scene is going to be unloaded
                     OnSceneEvent?.Invoke(new SceneEvent()
                     {
-                        AsyncOperation = IsUnitTesting ? new AsyncOperation() : sceneUnload,
+                        AsyncOperation = sceneUnload,
                         SceneEventType = SceneEventData.SceneEventType,
                         LoadSceneMode = SceneEventData.LoadSceneMode,
                         SceneName = sceneName,
@@ -607,7 +637,6 @@ namespace Unity.Netcode
             }
             else
             {
-
                 // Error scene not loaded!
                 Debug.LogError("Server Scene Handle Not Loaded!");
             }
@@ -684,7 +713,7 @@ namespace Unity.Netcode
         /// <returns><see cref="SceneEventProgressStatus"/> (<see cref="SceneEventProgressStatus.Started"/> means it was successful)</returns>
         public SceneEventProgressStatus LoadScene(string sceneName, LoadSceneMode loadSceneMode)
         {
-            var sceneEventProgress = ValidateServerSceneEvent(sceneName);
+            var sceneEventProgress = ValidateSceneEventLoading(sceneName);
             if (sceneEventProgress.Status != SceneEventProgressStatus.Started)
             {
                 return sceneEventProgress.Status;
@@ -789,7 +818,10 @@ namespace Unity.Netcode
             // Pass through for unit test (i.e. multi-instance *not* multi-process)
             if (IsUnitTesting)
             {
-                OnSceneLoaded(sceneName);
+                if (m_NetworkManager != null)
+                {
+                    OnSceneLoaded(sceneName);
+                }
             }
         }
 
@@ -945,6 +977,11 @@ namespace Unity.Netcode
         /// </summary>
         private void OnClientLoadedScene(Scene scene)
         {
+            if (IsUnitTesting && m_NetworkManager == null)
+            {
+                return;
+            }
+
             using (var reader = PooledNetworkReader.Get(SceneEventData.InternalBuffer))
             {
                 var newObjectsCount = reader.ReadUInt32Packed();
