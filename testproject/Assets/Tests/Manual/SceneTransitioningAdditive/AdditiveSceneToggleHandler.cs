@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -20,7 +21,7 @@ namespace TestProject.ManualTests
         [SerializeField]
         private string m_SceneToLoad;
 
-
+        private Scene m_SceneLoaded;
 
 #if UNITY_EDITOR
         [SerializeField]
@@ -84,6 +85,29 @@ namespace TestProject.ManualTests
             yield return null;
         }
 
+        private void SceneManager_OnSceneEvent(SceneEvent sceneEvent)
+        {
+            if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening && NetworkManager.Singleton.IsServer)
+            {
+                if (sceneEvent.SceneEventType == SceneEventData.SceneEventTypes.C2S_LoadComplete)
+                {
+                    if (sceneEvent.ClientId == NetworkManager.Singleton.ServerClientId && !m_SceneLoaded.IsValid() && sceneEvent.Scene.IsValid())
+                    {
+                        m_SceneLoaded = sceneEvent.Scene;
+                        m_WaitForSceneLoadOrUnload = false;
+                    }
+                }
+                else if (sceneEvent.SceneEventType == SceneEventData.SceneEventTypes.C2S_UnloadComplete)
+                {
+                    if (sceneEvent.ClientId == NetworkManager.Singleton.ServerClientId && !m_SceneLoaded.isLoaded)
+                    {
+                        m_SceneLoaded = new Scene();
+                        m_WaitForSceneLoadOrUnload = false;
+                    }
+                }
+            }
+        }
+
         private IEnumerator DelayedActivate()
         {
             yield return new WaitForSeconds(0.5f);
@@ -96,7 +120,7 @@ namespace TestProject.ManualTests
 
         public void OnToggle()
         {
-            if (NetworkManager.Singleton && NetworkManager.Singleton.IsListening)
+            if (NetworkManager.Singleton && NetworkManager.Singleton.IsListening && NetworkManager.Singleton.IsServer)
             {
                 if (m_ToggleObject)
                 {
@@ -106,38 +130,58 @@ namespace TestProject.ManualTests
             }
         }
 
+        private bool m_WaitForSceneLoadOrUnload;
+
         private IEnumerator SceneEventCoroutine(bool isLoading)
         {
             var sceneEventProgressStatus = SceneEventProgressStatus.None;
-
-            while (sceneEventProgressStatus != SceneEventProgressStatus.Started && sceneEventProgressStatus != SceneEventProgressStatus.SceneFailedVerification)
+            var continueCheck = true;
+            NetworkManager.Singleton.SceneManager.OnSceneEvent += SceneManager_OnSceneEvent;
+            while (continueCheck && sceneEventProgressStatus != SceneEventProgressStatus.Started && sceneEventProgressStatus != SceneEventProgressStatus.SceneFailedVerification)
             {
                 if (isLoading)
                 {
-                    sceneEventProgressStatus = NetworkManager.Singleton.SceneManager.LoadScene(m_SceneToLoad,UnityEngine.SceneManagement.LoadSceneMode.Additive);
+                    sceneEventProgressStatus = NetworkManager.Singleton.SceneManager.LoadScene(m_SceneToLoad, LoadSceneMode.Additive);
                 }
                 else
                 {
-                    sceneEventProgressStatus = NetworkManager.Singleton.SceneManager.UnloadScene(m_SceneToLoad);
+                    sceneEventProgressStatus = NetworkManager.Singleton.SceneManager.UnloadScene(m_SceneLoaded);
                 }
 
-                switch(sceneEventProgressStatus)
+                switch (sceneEventProgressStatus)
                 {
                     case SceneEventProgressStatus.SceneEventInProgress:
+                    {
+                        yield return new WaitForSeconds(0.25f);
+                        break;
+                    }
+                    case SceneEventProgressStatus.Started:
                         {
-                            yield return new WaitForSeconds(0.25f);
+                            continueCheck = false;
                             break;
                         }
+                    case SceneEventProgressStatus.InternalNetcodeError:
                     case SceneEventProgressStatus.InvalidSceneName:
                     case SceneEventProgressStatus.SceneNotLoaded:
                         {
-                            var isLoadingOrUnloading = isLoading ? "Loading" : "Unloading";
-                            Debug.LogWarning($"{isLoadingOrUnloading} event failed due to the following error status: {sceneEventProgressStatus}");
-                            yield return null;
+                            continueCheck = false;
                             break;
                         }
                 }
             }
+            m_WaitForSceneLoadOrUnload = true;
+            var timeOutAfter = Time.realtimeSinceStartup + 5.0f;
+            while (m_WaitForSceneLoadOrUnload)
+            {
+                if(timeOutAfter < Time.realtimeSinceStartup)
+                {
+                    Debug.LogWarning("Timed out waiting for scene to load or unload!");
+                    m_WaitForSceneLoadOrUnload = false;
+                }
+                yield return new WaitForSeconds(0.5f);
+            }
+
+            NetworkManager.Singleton.SceneManager.OnSceneEvent -= SceneManager_OnSceneEvent;
             m_ToggleObject.isOn = isLoading;
             m_ToggleObject.enabled = true;
             yield return null;

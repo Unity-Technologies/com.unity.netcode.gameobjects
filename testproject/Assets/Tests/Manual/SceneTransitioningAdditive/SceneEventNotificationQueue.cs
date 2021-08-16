@@ -44,7 +44,7 @@ namespace TestProject.ManualTests
         /// <param name="sceneEvent"></param>
         private void OnSceneEvent(SceneEvent sceneEvent)
         {
-            var sceneEventMsg = $"[{sceneEvent.ClientId} | {sceneEvent.SceneEventType} | {sceneEvent.SceneName}";
+            var sceneEventMsg = $"({NetworkManager.Singleton.LocalClientId})-[{sceneEvent.ClientId} | {sceneEvent.SceneEventType} | {sceneEvent.SceneName}";
             if (sceneEvent.SceneEventType == SceneEventData.SceneEventTypes.S2C_Load || sceneEvent.SceneEventType == SceneEventData.SceneEventTypes.C2S_LoadComplete)
             {
                 sceneEventMsg += $" | { sceneEvent.LoadSceneMode}";

@@ -330,17 +330,6 @@ namespace TestProject.ManualTests
                 // about setting the NetworkObject's scene dependency.
                 SceneManager.MoveGameObjectToScene(obj, gameObject.scene);
             }
-            else // Otherwise, instantiate in the currently active scene
-            {
-                // If your spawn generator is not in the target active scene, then to properly synchronize your NetworkObjects
-                // for late joining players you **must** set the scene that the NetworkObject depends on
-                // (i.e. NetworkObjet pool with custom Network Prefab Handler)
-                if (gameObject.scene != SceneManager.GetActiveScene())
-                {
-                    var networkObject = obj.GetComponent<NetworkObject>();
-                    networkObject.SetSceneAsDependency(gameObject.scene.name);
-                }
-            }
 
             obj.SetActive(false);
 

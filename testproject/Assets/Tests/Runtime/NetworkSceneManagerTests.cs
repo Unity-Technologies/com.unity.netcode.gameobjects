@@ -39,15 +39,16 @@ namespace TestProject.RuntimeTests
 
         private float m_TimeOutMarker;
         private bool m_TimedOut;
-        private string m_CurrentScene;
+        private string m_CurrentSceneName;
         private List<SceneTestInfo> m_ShouldWaitList;
+        private Scene m_CurrentScene;
 
 
         [UnityTest]
         public IEnumerator SceneLoadingAndNotifications()
         {
             m_ServerNetworkManager.SceneManager.OnSceneEvent += SceneManager_OnSceneEvent;
-            m_CurrentScene = "AdditiveScene1";
+            m_CurrentSceneName = "AdditiveScene1";
 
             // Check that we cannot call LoadScene when EnableSceneManagement is false (from previous legacy test)
             var threwException = false;
@@ -88,11 +89,11 @@ namespace TestProject.RuntimeTests
 
             // Test loading additive scenes and the associated event messaging and notification pipelines
             ResetWait();
-            var result = m_ServerNetworkManager.SceneManager.LoadScene(m_CurrentScene, LoadSceneMode.Additive);
+            var result = m_ServerNetworkManager.SceneManager.LoadScene(m_CurrentSceneName, LoadSceneMode.Additive);
             Assert.True(result == SceneEventProgressStatus.Started);
 
             // Check error status for trying to load during an already in progress scene event
-            result = m_ServerNetworkManager.SceneManager.LoadScene(m_CurrentScene, LoadSceneMode.Additive);
+            result = m_ServerNetworkManager.SceneManager.LoadScene(m_CurrentSceneName, LoadSceneMode.Additive);
             Assert.True(result == SceneEventProgressStatus.SceneEventInProgress);
 
             // Wait for all clients to load the scene
@@ -260,7 +261,7 @@ namespace TestProject.RuntimeTests
                 case SceneEventData.SceneEventTypes.S2C_Load:
                 case SceneEventData.SceneEventTypes.S2C_Unload:
                     {
-                        Assert.AreEqual(sceneEvent.SceneName, m_CurrentScene);
+                        Assert.AreEqual(sceneEvent.SceneName,m_CurrentSceneName);
                         Assert.IsTrue(ContainsClient(sceneEvent.ClientId));
                         Assert.IsNotNull(sceneEvent.AsyncOperation);
                         break;
@@ -268,7 +269,12 @@ namespace TestProject.RuntimeTests
                 case SceneEventData.SceneEventTypes.C2S_LoadComplete:
                 case SceneEventData.SceneEventTypes.C2S_UnloadComplete:
                     {
-                        Assert.AreEqual(sceneEvent.SceneName, m_CurrentScene);
+                        if (sceneEvent.ClientId == m_ServerNetworkManager.ServerClientId &&
+                            sceneEvent.SceneEventType == SceneEventData.SceneEventTypes.C2S_LoadComplete)
+                        {
+                            m_CurrentScene = sceneEvent.Scene;
+                        }
+                        Assert.AreEqual(sceneEvent.SceneName, m_CurrentSceneName);
                         Assert.IsTrue(ContainsClient(sceneEvent.ClientId));
                         SetClientProcessedEvent(sceneEvent.ClientId);
                         break;
@@ -276,7 +282,7 @@ namespace TestProject.RuntimeTests
                 case SceneEventData.SceneEventTypes.S2C_LoadComplete:
                 case SceneEventData.SceneEventTypes.S2C_UnLoadComplete:
                     {
-                        Assert.AreEqual(sceneEvent.SceneName, m_CurrentScene);
+                        Assert.AreEqual(sceneEvent.SceneName, m_CurrentSceneName);
                         Assert.IsTrue(ContainsClient(sceneEvent.ClientId));
                         Assert.IsTrue(ContainsAllClients(sceneEvent.ClientsThatCompleted));
                         SetClientWaitDone(sceneEvent.ClientsThatCompleted);

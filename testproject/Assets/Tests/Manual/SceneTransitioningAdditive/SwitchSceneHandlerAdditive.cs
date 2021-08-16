@@ -115,18 +115,18 @@ namespace TestProject.ManualTests
                         }
                     }
                 }
-                else
-                {
-                    if (NetworkManager.Singleton.SceneManager.UnloadScene(m_SceneToSwitchTo[m_CurrentSceneIndex]) == SceneEventProgressStatus.Started)
-                    {
-                        m_CurrentSceneIndex--;
-                        if (m_CurrentSceneIndex < 0)
-                        {
-                            m_IsReversing = false;
-                            m_CurrentSceneIndex = 0;
-                        }
-                    }
-                }
+                //else
+                //{
+                //    if (NetworkManager.Singleton.SceneManager.UnloadScene(m_SceneToSwitchTo[m_CurrentSceneIndex]) == SceneEventProgressStatus.Started)
+                //    {
+                //        m_CurrentSceneIndex--;
+                //        if (m_CurrentSceneIndex < 0)
+                //        {
+                //            m_IsReversing = false;
+                //            m_CurrentSceneIndex = 0;
+                //        }
+                //    }
+                //}
             }
         }
     }

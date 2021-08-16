@@ -42,6 +42,12 @@ namespace Unity.Netcode
         /// (i.e. scene is considered not valid/safe to load)
         /// </summary>
         SceneFailedVerification,
+        /// <summary>
+        /// This is used for internal error notifications.
+        /// If you receive this event then it is most likely due to a bug.
+        /// If you receive this event repeatedly, then please open a GitHub issue with steps to replicate
+        /// </summary>
+        InternalNetcodeError,
     }
 
     /// <summary>
