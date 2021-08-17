@@ -9,18 +9,6 @@ namespace Unity.Netcode.Prototyping
     [AddComponentMenu("Netcode/" + nameof(NetworkTransform))]
     public class NetworkTransform : NetworkBehaviour
     {
-        /// <summary>
-        /// Server authority allows only the server to update this transform
-        /// Client authority allows only the owner client to update this transform
-        /// Shared authority allows everyone to update this transform
-        /// </summary>
-        public enum NetworkAuthority
-        {
-            Server = 0,
-            Client,
-            Shared
-        }
-
         internal class NetworkState : INetworkSerializable
         {
             internal const int InLocalSpaceBit = 0;
@@ -141,13 +129,6 @@ namespace Unity.Netcode.Prototyping
         }
 
         /// <summary>
-        /// TODO this will need refactoring
-        /// Specifies who can update this transform
-        /// </summary>
-        [Tooltip("Defines who can update this transform")]
-        public NetworkAuthority Authority = NetworkAuthority.Server;
-
-        /// <summary>
         /// The network channel to use send updates
         /// </summary>
         [Tooltip("The network channel to use send updates")]
@@ -177,14 +158,6 @@ namespace Unity.Netcode.Prototyping
         private Transform m_Transform; // cache the transform component to reduce unnecessary bounce between managed and native
         internal readonly NetworkVariable<NetworkState> ReplNetworkState = new NetworkVariable<NetworkState>(new NetworkState());
         internal NetworkState PrevNetworkState;
-
-        /// <summary>
-        /// Does this instance (client or server) has authority to update transform?
-        /// </summary>
-        public bool CanUpdateTransform =>
-            Authority == NetworkAuthority.Client && IsClient && IsOwner ||
-            Authority == NetworkAuthority.Server && IsServer ||
-            Authority == NetworkAuthority.Shared;
 
         // updates `NetworkState` properties if they need to and returns a `bool` indicating whether or not there was any changes made
         // returned boolean would be useful to change encapsulating `NetworkVariable<NetworkState>`'s dirty state, e.g. ReplNetworkState.SetDirty(isDirty);
@@ -390,38 +363,12 @@ namespace Unity.Netcode.Prototyping
                 return;
             }
 
-            if (Authority == NetworkAuthority.Client && IsClient && IsOwner)
-            {
-                // todo MTT-768 this shouldn't happen anymore with new tick system (tick written will be higher than tick read, so netvar wouldn't change in that case)
-                return;
-            }
-
             ApplyNetworkState(newState);
-        }
-
-        private void UpdateNetVarPerms()
-        {
-            switch (Authority)
-            {
-                default:
-                    throw new NotImplementedException($"Authority: {Authority} is not handled");
-                case NetworkAuthority.Server:
-                    ReplNetworkState.Settings.WritePermission = NetworkVariablePermission.ServerOnly;
-                    break;
-                case NetworkAuthority.Client:
-                    ReplNetworkState.Settings.WritePermission = NetworkVariablePermission.OwnerOnly;
-                    break;
-                case NetworkAuthority.Shared:
-                    ReplNetworkState.Settings.WritePermission = NetworkVariablePermission.Everyone;
-                    break;
-            }
         }
 
         private void Awake()
         {
             m_Transform = transform;
-
-            UpdateNetVarPerms();
 
             ReplNetworkState.Settings.SendNetworkChannel = Channel;
             ReplNetworkState.Settings.SendTickrate = FixedSendsPerSecond;
@@ -446,7 +393,7 @@ namespace Unity.Netcode.Prototyping
                 return;
             }
 
-            if (CanUpdateTransform)
+            if (IsServer)
             {
                 ReplNetworkState.SetDirty(UpdateNetworkState(ReplNetworkState.Value));
             }
@@ -454,17 +401,6 @@ namespace Unity.Netcode.Prototyping
             {
                 ApplyNetworkState(ReplNetworkState.Value);
             }
-        }
-
-        /// <summary>
-        /// Updates the NetworkTransform's authority model at runtime
-        /// </summary>
-        internal void SetAuthority(NetworkAuthority authority)
-        {
-            Authority = authority;
-            UpdateNetVarPerms();
-            // todo this should be synced with the other side.
-            // let's wait for a more final solution before adding more code here
         }
 
         /// <summary>
