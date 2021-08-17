@@ -1113,29 +1113,31 @@ namespace Unity.Netcode
         {
             if (m_NetworkManager != null)
             {
-                if (stream != null)
-                {
-                    var reader = NetworkReaderPool.GetReader(stream);
-                    SceneEventData.OnRead(reader);
-                    NetworkReaderPool.PutBackInPool(reader);
-                    if (SceneEventData.IsSceneEventClientSide())
-                    {
-                        HandleClientSceneEvent(stream);
-                    }
-                    else
-                    {
-                        HandleServerSceneEvent(clientId, stream);
-                    }
-                }
-                else
-                {
-                    Debug.LogError($"Scene Event {nameof(OnClientSceneLoadingEvent)} was invoked with a null stream!");
-                    return;
-                }
+                Debug.LogError($"{nameof(NetworkSceneManager.HandleSceneEvent)} was invoked but {nameof(NetworkManager)} reference was null!");
+                return;
+            }
+
+            if (stream == null)
+            {
+                Debug.LogError($"Scene Event {nameof(OnClientSceneLoadingEvent)} was invoked with a null stream!");
+                return;
+            }
+
+            var reader = NetworkReaderPool.GetReader(stream);
+            SceneEventData.OnRead(reader);
+            NetworkReaderPool.PutBackInPool(reader);
+            m_NetworkManager.NetworkMetrics.TrackSceneEventReceived(
+                clientId,
+                (uint) SceneEventData.SceneEventType,
+                GetSceneNameFromNetcodeSceneIndex(SceneEventData.SceneIndex),
+                stream.Length);
+            if (SceneEventData.IsSceneEventClientSide())
+            {
+                HandleClientSceneEvent(stream);
             }
             else
             {
-                Debug.LogError($"{nameof(NetworkSceneManager.HandleSceneEvent)} was invoked but {nameof(NetworkManager)} reference was null!");
+                HandleServerSceneEvent(clientId, stream);
             }
         }
 
