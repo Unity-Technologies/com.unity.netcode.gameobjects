@@ -1,3 +1,4 @@
+using System;
 using NUnit.Framework;
 
 namespace Unity.Netcode.EditorTests
@@ -244,16 +245,45 @@ namespace Unity.Netcode.EditorTests
         [Test]
         public void TestBufferSizeLimit()
         {
-            float deltaTick = 1f / k_MockTickRate;
-
             var interpolator = new BufferedLinearInterpolatorFloat();
             var mockBufferedTime = new MockInterpolatorTime(0, k_MockTickRate);
             interpolator.interpolatorTime = mockBufferedTime;
 
-            for (int i = 0; i < 101; i++)
+            // set first value
+            interpolator.AddMeasurement(-1f, T(1f));
+            mockBufferedTime.BufferedServerTime = 1f;
+            interpolator.Update(1f);
+
+            // max + 1
+            interpolator.AddMeasurement(2, T(2)); // this value should disappear
+            for (int i = 3; i < 103; i++)
             {
                 interpolator.AddMeasurement(i, T(i));
             }
+
+            // make sure the first value isn't there anymore and that we're already using the second value
+            // the following shouldn't happen in real life, since the server time should catchup to the real time and not stay behind like this
+            mockBufferedTime.BufferedServerTime = 2f;
+            // if there was no buffer limit, we'd still be consuming the first "1" value
+            var interpolatedValue = interpolator.Update(1f);
+            // but now, we're still at the initial -1f
+            Assert.That(interpolatedValue, Is.EqualTo(-1f));
+
+            // interpolation continues as expected, interpolating between -1 and 3
+            mockBufferedTime.BufferedServerTime = 3f;
+            interpolatedValue = interpolator.Update(1f);
+            Assert.That(interpolatedValue, Is.EqualTo(1f));
+        }
+
+        [Test]
+        public void TestUpdatingInterpolatorWithNoData()
+        {
+            var interpolator = new BufferedLinearInterpolatorFloat();
+            var mockBufferedTime = new MockInterpolatorTime(0, k_MockTickRate);
+            interpolator.interpolatorTime = mockBufferedTime;
+
+            // invalid case, this is undefined behaviour
+            Assert.Throws<InvalidOperationException>(() => interpolator.Update(1f));
         }
     }
 }

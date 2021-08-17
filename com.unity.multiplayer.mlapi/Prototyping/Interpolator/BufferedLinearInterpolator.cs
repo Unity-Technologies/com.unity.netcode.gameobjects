@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEngine;
@@ -69,6 +70,7 @@ namespace Unity.Netcode
             for (int i = m_Buffer.Count - 1; i >= 0; i--)
             {
                 var bufferedValue = m_Buffer[i];
+                // check render time so we only try to consume one value at once
                 if (bufferedValue.timeSent.Time <= ServerTimeBeingHandledForBuffering && RenderTime >= m_EndTimeConsumed.Time)
                 {
                     if (m_LifetimeConsumedCount == 0)
@@ -94,6 +96,11 @@ namespace Unity.Netcode
         public T Update(float deltaTime)
         {
             TryConsumeFromBuffer();
+
+            if (m_LifetimeConsumedCount == 0 && m_Buffer.Count == 0)
+            {
+                throw new InvalidOperationException("trying to update interpolator when no data has been added to it yet");
+            }
 
             // Interpolation example to understand the math below
             // 4   4.5      6   6.5
@@ -126,7 +133,7 @@ namespace Unity.Netcode
 
         public void AddMeasurement(T newMeasurement, NetworkTime sentTime)
         {
-            if (m_Buffer.Count > k_BufferSizeLimit)
+            if (m_Buffer.Count >= k_BufferSizeLimit)
             {
                 Debug.LogWarning("Going over buffer size limit while adding new interpolation values, interpolation buffering isn't consuming fast enough, removing oldest value now.");
                 m_Buffer.RemoveAt(m_Buffer.Count - 1);
