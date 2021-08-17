@@ -179,7 +179,7 @@ namespace Unity.Netcode.Prototyping
             return isDirty;
         }
 
-        private void SendNetworkStateToGhosts(double dirtyTime)
+        private void SetNetworkStateDirtyToGhosts(double dirtyTime)
         {
             m_NetworkState.Value.InLocalSpace = InLocalSpace;
             m_NetworkState.Value.SentTime = dirtyTime;
@@ -349,7 +349,8 @@ namespace Unity.Netcode.Prototyping
                 if (IsAuthoritativeTransformDirty())
                 {
                     // check for time there was a change to the transform
-                    SendNetworkStateToGhosts(NetworkManager.LocalTime.Time);
+                    // this needs to be done in Update to catch that time change as soon as it happens.
+                    SetNetworkStateDirtyToGhosts(NetworkManager.LocalTime.Time);
                 }
             }
             else if (NetworkManager.Singleton.IsConnectedClient || NetworkManager.Singleton.IsListening)

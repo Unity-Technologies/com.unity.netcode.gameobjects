@@ -4,20 +4,25 @@ using UnityEngine;
 
 namespace Unity.Netcode
 {
+    /// <summary>
+    /// Solves for jittered incoming values
+    /// Doesn't solve for message loss
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
     public abstract class BufferedLinearInterpolator<T> : IInterpolator<T> where T : struct
     {
         // public const float InterpolationConfigTimeSec = 0.100f; // todo expose global config, todo use in actual code
 
         public interface IInterpolatorTime
         {
-            public double ServerTime { get; }
+            public double BufferedServerTime { get; }
             public double LocalTime { get; }
             public int TickRate { get; }
         }
 
         private class InterpolatorTime : IInterpolatorTime
         {
-            public double ServerTime => NetworkManager.Singleton.ServerTime.Time;
+            public double BufferedServerTime => NetworkManager.Singleton.ServerTime.Time;
             public double LocalTime => NetworkManager.Singleton.LocalTime.Time;
             public int TickRate => NetworkManager.Singleton.ServerTime.TickRate;
         }
@@ -29,7 +34,7 @@ namespace Unity.Netcode
         }
 
         internal IInterpolatorTime interpolatorTime = new InterpolatorTime();
-        protected virtual double ServerTimeBeingHandledForBuffering => interpolatorTime.ServerTime; // override this if you want configurable buffering, right now using ServerTick's own global buffering
+        protected virtual double ServerTimeBeingHandledForBuffering => interpolatorTime.BufferedServerTime; // override this if you want configurable buffering, right now using ServerTick's own global buffering
 
         private T m_InterpStartValue;
         private T m_CurrentInterpValue;

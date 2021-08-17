@@ -6196,8 +6196,8 @@ MonoBehaviour:
   channels: []
   MessageBufferSize: 5120
   SimulatePacketLossChance: 0
-  SimulateMinLatency: 95
-  SimulateMaxLatency: 105
+  SimulateMinLatency: 70
+  SimulateMaxLatency: 130
 --- !u!1001 &627808638
 PrefabInstance:
   m_ObjectHideFlags: 0
