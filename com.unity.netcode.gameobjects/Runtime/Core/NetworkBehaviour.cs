@@ -666,8 +666,6 @@ namespace Unity.Netcode
                     long readStartPos = stream.Position;
 
                     networkVariableList[i].ReadDelta(stream, networkManager.IsServer);
-                    PerformanceDataManager.Increment(ProfilerConstants.NetworkVarDeltas);
-                    ProfilerStatManager.NetworkVarsRcvd.Record();
                     networkManager.NetworkMetrics.TrackNetworkVariableDeltaReceived(clientId, logInstance.NetworkObjectId, logInstance.name, networkVariableList[i].Name, stream.Length);
 
                     (stream as NetworkBuffer).SkipPadBits();
@@ -753,8 +751,6 @@ namespace Unity.Netcode
                     long readStartPos = stream.Position;
 
                     networkVariableList[i].ReadField(stream);
-                    PerformanceDataManager.Increment(ProfilerConstants.NetworkVarUpdates);
-                    ProfilerStatManager.NetworkVarsRcvd.Record();
 
                     if (networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                     {
