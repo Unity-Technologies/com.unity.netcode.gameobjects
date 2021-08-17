@@ -7,16 +7,13 @@ using UnityEngine.Networking;
 
 namespace Unity.Netcode.Transports.UNET
 {
-    public class UNetTransport : NetworkTransport, ITransportProfilerData
+    public class UNetTransport : NetworkTransport
     {
         public enum SendMode
         {
             Immediately,
             Queued
         }
-
-        private static ProfilingDataStore s_TransportProfilerData = new ProfilingDataStore();
-        public static bool ProfilerEnabled;
 
         // Inspector / settings
         public int MessageBufferSize = 1024 * 5;
@@ -96,11 +93,6 @@ namespace Unity.Netcode.Transports.UNET
 
         public override void Send(ulong clientId, ArraySegment<byte> data, NetworkChannel networkChannel)
         {
-            if (ProfilerEnabled)
-            {
-                s_TransportProfilerData.Increment(ProfilerConstants.NumberOfTransportSends);
-            }
-
             GetUNetConnectionDetails(clientId, out byte hostId, out ushort connectionId);
 
             int channelId = 0;
@@ -162,11 +154,6 @@ namespace Unity.Netcode.Transports.UNET
 #if !UNITY_WEBGL
         public void SendQueued(ulong clientId)
         {
-            if (ProfilerEnabled)
-            {
-                s_TransportProfilerData.Increment(ProfilerConstants.NumberOfTransportSendQueues);
-            }
-
             GetUNetConnectionDetails(clientId, out byte hostId, out ushort connectionId);
 
             RelayTransport.SendQueuedMessages(hostId, connectionId, out byte error);
@@ -360,8 +347,6 @@ namespace Unity.Netcode.Transports.UNET
 
             m_MessageBuffer = new byte[MessageBufferSize];
 
-            s_TransportProfilerData.Clear();
-
             UnityEngine.Networking.NetworkTransport.Init();
         }
 
@@ -478,16 +463,6 @@ namespace Unity.Netcode.Transports.UNET
             RelayTransport.Enabled = UseNetcodeRelay;
             RelayTransport.RelayAddress = NetcodeRelayAddress;
             RelayTransport.RelayPort = (ushort)NetcodeRelayPort;
-        }
-
-        public void BeginNewTick()
-        {
-            s_TransportProfilerData.Clear();
-        }
-
-        public IReadOnlyDictionary<string, int> GetTransportProfilerData()
-        {
-            return s_TransportProfilerData.GetReadonly();
         }
     }
 }
