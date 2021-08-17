@@ -20,6 +20,12 @@ namespace Unity.Netcode.EditorTests
             }
         }
 
+        const int k_MockTickRate = 1;
+        NetworkTime T(float time, int tickRate = k_MockTickRate)
+        {
+            return new NetworkTime(tickRate, timeSec: time);
+        }
+
         /*
          * TODO
          * test normal interpolation
@@ -38,21 +44,15 @@ namespace Unity.Netcode.EditorTests
         public void NormalUsage()
         {
             // Testing float instead of Vector3. The only difference with Vector3 is the lerp method used.
-            const int mockTickRate = 1;
-            float deltaTick = 1f / mockTickRate;
-            NetworkTime T(float time)
-            {
-                return new NetworkTime(mockTickRate, timeSec: time);
-            }
 
             var interpolator = new BufferedLinearInterpolatorFloat();
-            var mockBufferedTime = new MockInterpolatorTime(0, mockTickRate);
+            var mockBufferedTime = new MockInterpolatorTime(0, k_MockTickRate);
             interpolator.interpolatorTime = mockBufferedTime;
 
             Assert.That(interpolator.GetInterpolatedValue(), Is.EqualTo(0f));
 
-            interpolator.AddMeasurement(0f, new NetworkTime(mockTickRate, 1.0));
-            interpolator.AddMeasurement(1f, new NetworkTime(mockTickRate, 2.0));
+            interpolator.AddMeasurement(0f, T(1.0f));
+            interpolator.AddMeasurement(1f, T(2.0f));
 
             // too small update, nothing happens, doesn't consume from buffer yet
             float deltaTime = 0.01f;
@@ -91,15 +91,8 @@ namespace Unity.Netcode.EditorTests
         [Test]
         public void OutOfOrderShouldStillWork()
         {
-            const int mockTickRate = 1;
-            float deltaTick = 1f / mockTickRate;
-            NetworkTime T(float time)
-            {
-                return new NetworkTime(mockTickRate, timeSec: time);
-            }
-
             var interpolator = new BufferedLinearInterpolatorFloat();
-            var mockBufferedTime = new MockInterpolatorTime(0, mockTickRate);
+            var mockBufferedTime = new MockInterpolatorTime(0, k_MockTickRate);
             interpolator.interpolatorTime = mockBufferedTime;
 
             interpolator.AddMeasurement(0, T(0f));
@@ -128,17 +121,9 @@ namespace Unity.Netcode.EditorTests
         [Test]
         public void MessageLoss()
         {
-            const int mockTickRate = 1;
-            float deltaTick = 1f / mockTickRate;
-
             var interpolator = new BufferedLinearInterpolatorFloat();
-            var mockBufferedTime = new MockInterpolatorTime(0, mockTickRate);
+            var mockBufferedTime = new MockInterpolatorTime(0, k_MockTickRate);
             interpolator.interpolatorTime = mockBufferedTime;
-
-            NetworkTime T(float time)
-            {
-                return new NetworkTime(mockTickRate, timeSec: time);
-            }
 
             interpolator.AddMeasurement(1f, T(1f));
             interpolator.AddMeasurement(2f, T(2f));
@@ -181,17 +166,9 @@ namespace Unity.Netcode.EditorTests
         [Test]
         public void AddFirstMeasurement()
         {
-            const int mockTickRate = 1;
-            float deltaTick = 1f / mockTickRate;
-
             var interpolator = new BufferedLinearInterpolatorFloat();
-            var mockBufferedTime = new MockInterpolatorTime(0, mockTickRate);
+            var mockBufferedTime = new MockInterpolatorTime(0, k_MockTickRate);
             interpolator.interpolatorTime = mockBufferedTime;
-
-            NetworkTime T(float time)
-            {
-                return new NetworkTime(mockTickRate, timeSec: time);
-            }
 
             interpolator.AddMeasurement(2f, T(1f));
             interpolator.AddMeasurement(3f, T(2f));
@@ -217,17 +194,9 @@ namespace Unity.Netcode.EditorTests
         [Test]
         public void JumpToEachValueIfDeltaTimeTooBig()
         {
-            const int mockTickRate = 1;
-            float deltaTick = 1f / mockTickRate;
-
             var interpolator = new BufferedLinearInterpolatorFloat();
-            var mockBufferedTime = new MockInterpolatorTime(0, mockTickRate);
+            var mockBufferedTime = new MockInterpolatorTime(0, k_MockTickRate);
             interpolator.interpolatorTime = mockBufferedTime;
-
-            NetworkTime T(float time)
-            {
-                return new NetworkTime(mockTickRate, timeSec: time);
-            }
 
             interpolator.AddMeasurement(2f, T(1f));
             interpolator.AddMeasurement(3f, T(2f));
@@ -244,17 +213,9 @@ namespace Unity.Netcode.EditorTests
         [Test]
         public void JumpToLastValueFromStart()
         {
-            const int mockTickRate = 1;
-            float deltaTick = 1f / mockTickRate;
-
             var interpolator = new BufferedLinearInterpolatorFloat();
-            var mockBufferedTime = new MockInterpolatorTime(0, mockTickRate);
+            var mockBufferedTime = new MockInterpolatorTime(0, k_MockTickRate);
             interpolator.interpolatorTime = mockBufferedTime;
-
-            NetworkTime T(float time)
-            {
-                return new NetworkTime(mockTickRate, timeSec: time);
-            }
 
             interpolator.AddMeasurement(1f, T(1f));
             interpolator.AddMeasurement(2f, T(2f));
@@ -283,7 +244,16 @@ namespace Unity.Netcode.EditorTests
         [Test]
         public void TestBufferSizeLimit()
         {
+            float deltaTick = 1f / k_MockTickRate;
 
+            var interpolator = new BufferedLinearInterpolatorFloat();
+            var mockBufferedTime = new MockInterpolatorTime(0, k_MockTickRate);
+            interpolator.interpolatorTime = mockBufferedTime;
+
+            for (int i = 0; i < 101; i++)
+            {
+                interpolator.AddMeasurement(i, T(i));
+            }
         }
     }
 }
