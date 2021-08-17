@@ -134,6 +134,7 @@ namespace Unity.Netcode
         internal Scene SceneBeingSynchronized;
 
         // Used to track which scenes are currently loaded
+        // We store scenes as follows: [SceneName][SceneHandle][Scene]
         private Dictionary<string, Dictionary<int, Scene>> m_ScenesLoaded = new Dictionary<string, Dictionary<int, Scene>>();
 
         /// <summary>
