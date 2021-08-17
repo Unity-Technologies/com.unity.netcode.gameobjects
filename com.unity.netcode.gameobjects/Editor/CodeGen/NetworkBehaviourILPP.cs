@@ -593,7 +593,7 @@ namespace Unity.Netcode.Editor.CodeGen
                 instructions.ForEach(instruction => processor.Body.Instructions.Insert(0, instruction));
             }
 
-            // override NetworkBehaviour.__getBehaviourName() method to return concrete type
+            // override NetworkBehaviour.__getTypeName() method to return concrete type
             {
                 var baseType = typeDefinition.BaseType.Resolve();
                 var baseGetTypeNameMethod = baseType.Methods.First(p => p.Name.Equals(nameof(NetworkBehaviour.__getTypeName)));
