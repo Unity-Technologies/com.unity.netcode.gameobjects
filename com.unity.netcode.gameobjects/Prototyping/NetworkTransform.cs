@@ -166,6 +166,8 @@ namespace Unity.Netcode.Prototyping
         public bool SyncRotAngleX = true, SyncRotAngleY = true, SyncRotAngleZ = true;
         public bool SyncScaleX = true, SyncScaleY = true, SyncScaleZ = true;
 
+        public float PositionThreshold, RotAngleThreshold, ScaleThreshold;
+
         /// <summary>
         /// The base amount of sends per seconds to use when range is disabled
         /// </summary>
@@ -184,7 +186,9 @@ namespace Unity.Netcode.Prototyping
             Authority == NetworkAuthority.Server && IsServer ||
             Authority == NetworkAuthority.Shared;
 
-        internal bool IsNetworkStateDirty(NetworkState networkState)
+        // updates `NetworkState` properties if they need to and returns a `bool` indicating whether or not there was any changes made
+        // returned boolean would be useful to change encapsulating `NetworkVariable<NetworkState>`'s dirty state, e.g. ReplNetworkState.SetDirty(isDirty);
+        internal bool UpdateNetworkState(NetworkState networkState)
         {
             if (networkState == null)
             {
@@ -195,52 +199,96 @@ namespace Unity.Netcode.Prototyping
             var rotAngles = InLocalSpace ? m_Transform.localEulerAngles : m_Transform.eulerAngles;
             var scale = InLocalSpace ? m_Transform.localScale : m_Transform.lossyScale;
 
-            return
-                // InLocalSpace Check
-                (InLocalSpace != networkState.InLocalSpace) ||
-                // Position Check
-                (SyncPositionX && !Mathf.Approximately(position.x, networkState.PositionX)) ||
-                (SyncPositionY && !Mathf.Approximately(position.y, networkState.PositionY)) ||
-                (SyncPositionZ && !Mathf.Approximately(position.z, networkState.PositionZ)) ||
-                // RotAngles Check
-                (SyncRotAngleX && !Mathf.Approximately(rotAngles.x, networkState.RotAngleX)) ||
-                (SyncRotAngleY && !Mathf.Approximately(rotAngles.y, networkState.RotAngleY)) ||
-                (SyncRotAngleZ && !Mathf.Approximately(rotAngles.z, networkState.RotAngleZ)) ||
-                // Scale Check
-                (SyncScaleX && !Mathf.Approximately(scale.x, networkState.ScaleX)) ||
-                (SyncScaleY && !Mathf.Approximately(scale.y, networkState.ScaleY)) ||
-                (SyncScaleZ && !Mathf.Approximately(scale.z, networkState.ScaleZ));
-        }
+            bool isDirty = false;
 
-        internal void UpdateNetworkState()
-        {
-            var position = InLocalSpace ? m_Transform.localPosition : m_Transform.position;
-            var rotAngles = InLocalSpace ? m_Transform.localEulerAngles : m_Transform.eulerAngles;
-            var scale = InLocalSpace ? m_Transform.localScale : m_Transform.lossyScale;
+            if (InLocalSpace != networkState.InLocalSpace)
+            {
+                networkState.InLocalSpace = InLocalSpace;
+                isDirty |= true;
+            }
 
-            // InLocalSpace Bit
-            ReplNetworkState.Value.InLocalSpace = InLocalSpace;
-            // Position Bits
-            (ReplNetworkState.Value.HasPositionX, ReplNetworkState.Value.HasPositionY, ReplNetworkState.Value.HasPositionZ) =
-                (SyncPositionX, SyncPositionY, SyncPositionZ);
-            // RotAngle Bits
-            (ReplNetworkState.Value.HasRotAngleX, ReplNetworkState.Value.HasRotAngleY, ReplNetworkState.Value.HasRotAngleZ) =
-                (SyncRotAngleX, SyncRotAngleY, SyncRotAngleZ);
-            // Scale Bits
-            (ReplNetworkState.Value.HasScaleX, ReplNetworkState.Value.HasScaleY, ReplNetworkState.Value.HasScaleZ) =
-                (SyncScaleX, SyncScaleY, SyncScaleZ);
+            if (SyncPositionX &&
+                Mathf.Abs(networkState.PositionX - position.x) >= PositionThreshold &&
+                !Mathf.Approximately(networkState.PositionX, position.x))
+            {
+                networkState.PositionX = position.x;
+                networkState.HasPositionX = true;
+                isDirty |= true;
+            }
 
-            // Position Values
-            (ReplNetworkState.Value.PositionX, ReplNetworkState.Value.PositionY, ReplNetworkState.Value.PositionZ) =
-                (position.x, position.y, position.z);
-            // RotAngle Values
-            (ReplNetworkState.Value.RotAngleX, ReplNetworkState.Value.RotAngleY, ReplNetworkState.Value.RotAngleZ) =
-                (rotAngles.x, rotAngles.y, rotAngles.z);
-            // Scale Values
-            (ReplNetworkState.Value.ScaleX, ReplNetworkState.Value.ScaleY, ReplNetworkState.Value.ScaleZ) =
-                (scale.x, scale.y, scale.z);
+            if (SyncPositionY &&
+                Mathf.Abs(networkState.PositionY - position.y) >= PositionThreshold &&
+                !Mathf.Approximately(networkState.PositionY, position.y))
+            {
+                networkState.PositionY = position.y;
+                networkState.HasPositionY = true;
+                isDirty |= true;
+            }
 
-            ReplNetworkState.SetDirty(true);
+            if (SyncPositionZ &&
+                Mathf.Abs(networkState.PositionZ - position.z) >= PositionThreshold &&
+                !Mathf.Approximately(networkState.PositionZ, position.z))
+            {
+                networkState.PositionZ = position.z;
+                networkState.HasPositionZ = true;
+                isDirty |= true;
+            }
+
+            if (SyncRotAngleX &&
+                Mathf.Abs(networkState.RotAngleX - rotAngles.x) >= RotAngleThreshold &&
+                !Mathf.Approximately(networkState.RotAngleX, rotAngles.x))
+            {
+                networkState.RotAngleX = rotAngles.x;
+                networkState.HasRotAngleX = true;
+                isDirty |= true;
+            }
+
+            if (SyncRotAngleY &&
+                Mathf.Abs(networkState.RotAngleY - rotAngles.y) >= RotAngleThreshold &&
+                !Mathf.Approximately(networkState.RotAngleY, rotAngles.y))
+            {
+                networkState.RotAngleY = rotAngles.y;
+                networkState.HasRotAngleY = true;
+                isDirty |= true;
+            }
+
+            if (SyncRotAngleZ &&
+                Mathf.Abs(networkState.RotAngleZ - rotAngles.z) >= RotAngleThreshold &&
+                !Mathf.Approximately(networkState.RotAngleZ, rotAngles.z))
+            {
+                networkState.RotAngleZ = rotAngles.z;
+                networkState.HasRotAngleZ = true;
+                isDirty |= true;
+            }
+
+            if (SyncScaleX &&
+                Mathf.Abs(networkState.ScaleX - scale.x) >= ScaleThreshold &&
+                !Mathf.Approximately(networkState.ScaleX, scale.x))
+            {
+                networkState.ScaleX = scale.x;
+                networkState.HasScaleX = true;
+                isDirty |= true;
+            }
+
+            if (SyncScaleY &&
+                Mathf.Abs(networkState.ScaleY - scale.y) >= ScaleThreshold &&
+                !Mathf.Approximately(networkState.ScaleY, scale.y))
+            {
+                networkState.ScaleY = scale.y;
+                networkState.HasScaleY = true;
+                isDirty |= true;
+            }
+
+            if (SyncScaleZ &&
+                Mathf.Abs(networkState.ScaleZ - scale.z) >= ScaleThreshold &&
+                !Mathf.Approximately(networkState.ScaleZ, scale.z))
+            {
+                networkState.ScaleZ = scale.z;
+                networkState.HasScaleZ = true;
+                isDirty |= true;
+            }
+
+            return isDirty;
         }
 
         // TODO: temporary! the function body below probably needs to be rewritten later with interpolation in mind
@@ -398,17 +446,15 @@ namespace Unity.Netcode.Prototyping
                 return;
             }
 
-            if (CanUpdateTransform && IsNetworkStateDirty(ReplNetworkState.Value))
+            if (CanUpdateTransform)
             {
-                UpdateNetworkState();
+                ReplNetworkState.SetDirty(UpdateNetworkState(ReplNetworkState.Value));
             }
-            else
+            // try to update previously consumed NetworkState
+            // if we have any changes, that means made some updates locally
+            // we apply the latest ReplNetworkState again to revert our changes
+            else if (UpdateNetworkState(PrevNetworkState))
             {
-                if (IsNetworkStateDirty(PrevNetworkState))
-                {
-                    Debug.LogWarning("A local change without authority detected, revert back to latest network state!");
-                }
-
                 ApplyNetworkState(ReplNetworkState.Value);
             }
         }
