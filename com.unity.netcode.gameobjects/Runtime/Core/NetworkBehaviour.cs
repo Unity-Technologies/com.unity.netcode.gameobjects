@@ -106,7 +106,7 @@ namespace Unity.Netcode
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (NetworkManager.__rpc_name_table.TryGetValue(rpcMethodId, out var rpcMethodName))
             {
-                NetworkManager.NetworkMetrics.TrackRpcSent(NetworkManager.ServerClientId, NetworkObjectId, rpcMethodName, rpcMessageSize);
+                NetworkManager.NetworkMetrics.TrackRpcSent(NetworkManager.ServerClientId, NetworkObjectId, rpcMethodName, __getBehaviourName(), rpcMessageSize);
             }
 #endif
         }
@@ -216,7 +216,7 @@ namespace Unity.Netcode
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (NetworkManager.__rpc_name_table.TryGetValue(rpcMethodId, out var rpcMethodName))
             {
-                NetworkManager.NetworkMetrics.TrackRpcSent(NetworkManager.ConnectedClients.Select(x => x.Key).ToArray(), NetworkObjectId, rpcMethodName, messageSize);
+                NetworkManager.NetworkMetrics.TrackRpcSent(NetworkManager.ConnectedClients.Select(x => x.Key).ToArray(), NetworkObjectId, rpcMethodName, __getBehaviourName(), messageSize);
             }
 #endif
         }
@@ -574,7 +574,7 @@ namespace Unity.Netcode
                                         m_NetworkVariableIndexesToReset.Add(k);
                                     }
 
-                                    NetworkManager.NetworkMetrics.TrackNetworkVariableDeltaSent(clientId, NetworkObjectId, name, NetworkVariableFields[k].Name, bufferSizeCapture.Flush());
+                                    NetworkManager.NetworkMetrics.TrackNetworkVariableDeltaSent(clientId, NetworkObjectId, name, NetworkVariableFields[k].Name, __getBehaviourName(), bufferSizeCapture.Flush());
                                 }
                             }
 
@@ -672,7 +672,7 @@ namespace Unity.Netcode
                     networkVariableList[i].ReadDelta(stream, networkManager.IsServer);
                     PerformanceDataManager.Increment(ProfilerConstants.NetworkVarDeltas);
                     ProfilerStatManager.NetworkVarsRcvd.Record();
-                    networkManager.NetworkMetrics.TrackNetworkVariableDeltaReceived(clientId, logInstance.NetworkObjectId, logInstance.name, networkVariableList[i].Name, stream.Length);
+                    networkManager.NetworkMetrics.TrackNetworkVariableDeltaReceived(clientId, logInstance.NetworkObjectId, logInstance.name, networkVariableList[i].Name, logInstance.__getBehaviourName(), stream.Length);
 
                     (stream as NetworkBuffer).SkipPadBits();
 
