@@ -12,6 +12,7 @@ using UnityEngine;
 using MethodAttributes = Mono.Cecil.MethodAttributes;
 using ParameterAttributes = Mono.Cecil.ParameterAttributes;
 using ILPPInterface = Unity.CompilationPipeline.Common.ILPostProcessing.ILPostProcessor;
+using PropertyAttributes = Mono.Cecil.PropertyAttributes;
 
 namespace Unity.Netcode.Editor.CodeGen
 {
@@ -591,6 +592,25 @@ namespace Unity.Netcode.Editor.CodeGen
 
                 instructions.Reverse();
                 instructions.ForEach(instruction => processor.Body.Instructions.Insert(0, instruction));
+            }
+
+            // __getBehaviourName processor
+            {
+                var baseType = typeDefinition.BaseType.Resolve();
+                var baseMethod = baseType.Methods.First(p => p.Name.Equals(nameof(NetworkBehaviour.__getBehaviourName)));
+
+                var newMethod = new MethodDefinition(
+                    nameof(NetworkBehaviour.__getBehaviourName),
+                    (baseMethod.Attributes & ~MethodAttributes.NewSlot) | MethodAttributes.ReuseSlot,
+                    baseMethod.ReturnType);
+                newMethod.ImplAttributes = baseMethod.ImplAttributes;
+                newMethod.SemanticsAttributes = baseMethod.SemanticsAttributes;
+
+                var processor = newMethod.Body.GetILProcessor();
+                processor.Body.Instructions.Add(processor.Create(OpCodes.Ldstr, typeDefinition.Name));
+                processor.Body.Instructions.Add(processor.Create(OpCodes.Ret));
+
+                typeDefinition.Methods.Add(newMethod);
             }
         }
 

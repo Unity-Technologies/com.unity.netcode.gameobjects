@@ -35,6 +35,10 @@ namespace Unity.Netcode
             }
         }
 
+#pragma warning disable IDE1006 // disable naming rule violation check
+        internal virtual string __getBehaviourName() => nameof(NetworkBehaviour);
+#pragma warning restore IDE1006 // restore naming rule violation
+
 #pragma warning disable 414 // disable assigned but its value is never used
 #pragma warning disable IDE1006 // disable naming rule violation check
         [NonSerialized]
