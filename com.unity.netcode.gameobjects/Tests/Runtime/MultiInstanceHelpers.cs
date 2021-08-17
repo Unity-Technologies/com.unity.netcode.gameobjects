@@ -136,7 +136,7 @@ namespace Unity.Netcode.RuntimeTests
             // Destroy the network manager instances
             foreach (var networkManager in NetworkManagerInstances)
             {
-                Object.Destroy(networkManager.gameObject);
+                Object.DestroyImmediate(networkManager.gameObject);
             }
 
             NetworkManagerInstances.Clear();
@@ -144,7 +144,8 @@ namespace Unity.Netcode.RuntimeTests
             // Destroy the temporary GameObject used to run co-routines
             if (s_CoroutineRunner != null)
             {
-                Object.Destroy(s_CoroutineRunner);
+                s_CoroutineRunner.StopAllCoroutines();
+                Object.DestroyImmediate(s_CoroutineRunner);
             }
 
             Application.targetFrameRate = s_OriginalTargetFrameRate;

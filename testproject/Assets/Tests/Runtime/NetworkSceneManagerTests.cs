@@ -329,7 +329,7 @@ namespace TestProject.RuntimeTests
         public IEnumerator SceneVerifyBeforeLoadTest()
         {
             m_ServerNetworkManager.SceneManager.OnSceneEvent += SceneManager_OnSceneEvent;
-            m_CurrentScene = "AdditiveScene1";
+            m_CurrentSceneName = "AdditiveScene1";
 
             // Now prepare for the loading and unloading additive scene testing
             InitializeSceneTestInfo(true);
@@ -337,10 +337,10 @@ namespace TestProject.RuntimeTests
             // Test VerifySceneBeforeLoading with both server and client set to true
             ResetWait();
             m_ServerVerifyScene = m_ClientVerifyScene = true;
-            m_ExpectedSceneIndex = (int)m_ServerNetworkManager.SceneManager.GetBuildIndexFromSceneName(m_CurrentScene);
-            m_ExpectedSceneName = m_CurrentScene;
+            m_ExpectedSceneIndex = (int)m_ServerNetworkManager.SceneManager.GetBuildIndexFromSceneName(m_CurrentSceneName);
+            m_ExpectedSceneName = m_CurrentSceneName;
             m_ExpectedLoadMode = LoadSceneMode.Additive;
-            var result = m_ServerNetworkManager.SceneManager.LoadScene(m_CurrentScene, LoadSceneMode.Additive);
+            var result = m_ServerNetworkManager.SceneManager.LoadScene(m_CurrentSceneName, LoadSceneMode.Additive);
             Assert.True(result == SceneEventProgressStatus.Started);
 
             // Wait for all clients to load the scene
@@ -359,20 +359,20 @@ namespace TestProject.RuntimeTests
             // Server will notify it failed scene verification and no client should load
             ResetWait();
             m_ServerVerifyScene = false;
-            result = m_ServerNetworkManager.SceneManager.LoadScene(m_CurrentScene, LoadSceneMode.Additive);
+            result = m_ServerNetworkManager.SceneManager.LoadScene(m_CurrentSceneName, LoadSceneMode.Additive);
             Assert.True(result == SceneEventProgressStatus.SceneFailedVerification);
 
             // Test VerifySceneBeforeLoading with m_ServerVerifyScene set to true and m_ClientVerifyScene set to false
             // Server should load and clients will notify they failed scene verification
             ResetWait();
-            m_CurrentScene = "AdditiveScene2";
-            m_ExpectedSceneName = m_CurrentScene;
-            m_ExpectedSceneIndex = (int)m_ServerNetworkManager.SceneManager.GetBuildIndexFromSceneName(m_CurrentScene);
+            m_CurrentSceneName = "AdditiveScene2";
+            m_ExpectedSceneName = m_CurrentSceneName;
+            m_ExpectedSceneIndex = (int)m_ServerNetworkManager.SceneManager.GetBuildIndexFromSceneName(m_CurrentSceneName);
             m_ServerVerifyScene = true;
             m_ClientVerifyScene = false;
             m_IsTestingVerifyScene = true;
             m_ClientsThatFailedVerification = 0;
-            result = m_ServerNetworkManager.SceneManager.LoadScene(m_CurrentScene, LoadSceneMode.Additive);
+            result = m_ServerNetworkManager.SceneManager.LoadScene(m_CurrentSceneName, LoadSceneMode.Additive);
             Assert.True(result == SceneEventProgressStatus.Started);
 
             // Now wait for server to complete and all clients to fail

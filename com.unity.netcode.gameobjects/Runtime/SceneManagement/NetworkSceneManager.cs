@@ -95,6 +95,14 @@ namespace Unity.Netcode
         internal static bool IsUnitTesting;
 
         /// <summary>
+        /// Client Side:
+        /// This is used for detecting a unit test scene during a multiInstance unit test in order to not load the same unit test scene
+        /// more than once.  This is only under the scenario where a unit test sets the currently active scene to scene other than the
+        /// unit test scene.
+        /// </summary>
+        private const string k_UnitTestScenePrefix = "InitTestScene";
+
+        /// <summary>
         /// Used to detect if a scene event is underway
         /// Only 1 scene event can occur on the server at a time for now.
         /// </summary>
@@ -208,7 +216,6 @@ namespace Unity.Netcode
         /// <returns></returns>
         internal Scene GetAndAddNewlyLoadedSceneByName(string sceneName)
         {
-
             for (int i = 0; i < SceneManager.sceneCount; i++)
             {
                 var sceneLoaded = SceneManager.GetSceneAt(i);
@@ -614,7 +621,6 @@ namespace Unity.Netcode
         /// </summary>
         private void OnClientUnloadScene()
         {
-
             var sceneName = GetSceneNameFromBuildIndex(SceneEventData.SceneIndex);
             if (sceneName == string.Empty)
             {
@@ -626,6 +632,22 @@ namespace Unity.Netcode
             }
             s_IsSceneEventActive = true;
 
+            if(IsUnitTesting)
+            {
+                // This is a fake notification for multiInstance unit testing (since we can only have 1 scene to load or unload)
+                OnSceneEvent?.Invoke(new SceneEvent()
+                {
+                    AsyncOperation = new AsyncOperation(),
+                    SceneEventType = SceneEventData.SceneEventType,
+                    LoadSceneMode = SceneEventData.LoadSceneMode,
+                    SceneName = sceneName,
+                    ClientId = m_NetworkManager.LocalClientId   // Server sent this message to the client, but client is executing it
+                });
+                // Pass through for unit test (i.e. multi-instance *not* multi-process)
+                OnSceneUnloaded();
+                return;
+            }
+
             if (m_ScenesLoaded.ContainsKey(sceneName))
             {
                 if(!ServerSceneHandleToClientSceneHandle.ContainsKey(SceneEventData.SceneHandle))
@@ -635,21 +657,17 @@ namespace Unity.Netcode
                 var sceneHandle = ServerSceneHandleToClientSceneHandle[SceneEventData.SceneHandle];
                 if (m_ScenesLoaded[sceneName].ContainsKey(sceneHandle))
                 {
-                    var sceneUnload = new AsyncOperation();
-                    if (!IsUnitTesting)
+                    var sceneUnload = SceneManager.UnloadSceneAsync(m_ScenesLoaded[sceneName][sceneHandle]);
+
+                    sceneUnload.completed += asyncOp2 => OnSceneUnloaded();
+
+                    m_ScenesLoaded[sceneName].Remove(sceneHandle);
+
+                    // Remove our server to scene handle lookup
+                    ServerSceneHandleToClientSceneHandle.Remove(SceneEventData.SceneHandle);
+                    if (m_ScenesLoaded[sceneName].Count == 0)
                     {
-                       sceneUnload = SceneManager.UnloadSceneAsync(m_ScenesLoaded[sceneName][sceneHandle]);
-
-                        sceneUnload.completed += asyncOp2 => OnSceneUnloaded();
-
-                        m_ScenesLoaded[sceneName].Remove(sceneHandle);
-
-                        // Remove our server to scene handle lookup
-                        ServerSceneHandleToClientSceneHandle.Remove(SceneEventData.SceneHandle);
-                        if (m_ScenesLoaded[sceneName].Count == 0)
-                        {
-                            m_ScenesLoaded.Remove(sceneName);
-                        }
+                        m_ScenesLoaded.Remove(sceneName);
                     }
 
                     // Notify the local client that a scene is going to be unloaded
@@ -661,12 +679,6 @@ namespace Unity.Netcode
                         SceneName = sceneName,
                         ClientId = m_NetworkManager.LocalClientId   // Server sent this message to the client, but client is executing it
                     });
-
-                    // Pass through for unit test (i.e. multi-instance *not* multi-process)
-                    if(IsUnitTesting)
-                    {
-                        OnSceneUnloaded();
-                    }
                 }
                 else
                 {
@@ -1059,7 +1071,7 @@ namespace Unity.Netcode
                 LoadSceneMode = SceneEventData.LoadSceneMode,
                 SceneName = GetSceneNameFromBuildIndex(SceneEventData.SceneIndex),
                 ClientId = m_NetworkManager.LocalClientId,
-                Scene = scene,                
+                Scene = scene,
             });
         }
 
@@ -1138,9 +1150,9 @@ namespace Unity.Netcode
         /// </summary>
         private void OnClientBeginSync()
         {
-            var sceneName = GetSceneNameFromBuildIndex(sceneIndex);
             var sceneIndex = SceneEventData.GetNextSceneSynchronizationIndex();
             var sceneHandle = SceneEventData.GetNextSceneSynchronizationHandle();
+            var sceneName = GetSceneNameFromBuildIndex(sceneIndex);
             if (sceneName == string.Empty)
             {
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
@@ -1171,6 +1183,16 @@ namespace Unity.Netcode
 
                 // Clear the in-scene placed NetworkObjects when we load the first scene in our synchronization process
                 ScenePlacedObjects.Clear();
+            }
+
+            // If we are running a multiInstance unit test and the scene we are processing to load
+            // is the unit test scene, then we do not load it and pass through as if it has already
+            // been loaded.
+            if (IsUnitTesting && sceneName.StartsWith(k_UnitTestScenePrefix))
+            {
+                // If so, then pass through
+                ClientLoadedSynchronization(sceneIndex, sceneHandle);
+                return;
             }
 
             // Check to see if the client already has loaded the scene to be loaded
