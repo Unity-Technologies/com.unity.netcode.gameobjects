@@ -35,13 +35,18 @@ namespace Unity.Netcode
             }
         }
 
+#pragma warning disable IDE1006 // disable naming rule violation check
+        // NetworkBehaviourILPP will override this in derived classes to return the name of the concrete type
+        internal virtual string __getTypeName() => nameof(NetworkBehaviour);
+#pragma warning restore IDE1006 // restore naming rule violation check
+
 #pragma warning disable 414 // disable assigned but its value is never used
 #pragma warning disable IDE1006 // disable naming rule violation check
         [NonSerialized]
         // RuntimeAccessModifiersILPP will make this `protected`
         internal __RpcExecStage __rpc_exec_stage = __RpcExecStage.None;
 #pragma warning restore 414 // restore assigned but its value is never used
-#pragma warning restore IDE1006 // restore naming rule violation
+#pragma warning restore IDE1006 // restore naming rule violation check
 
 #pragma warning disable IDE1006 // disable naming rule violation check
         // RuntimeAccessModifiersILPP will make this `protected`
