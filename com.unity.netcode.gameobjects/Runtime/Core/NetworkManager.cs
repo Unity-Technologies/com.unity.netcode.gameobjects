@@ -1407,7 +1407,7 @@ namespace Unity.Netcode
                 }
 
                 // Separating this into a contained function call for potential further future separation of when this notification is sent.
-                NotifyPlayerConnected(ownerClientId, playerPrefabHash ?? NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash);
+                ApprovedPlayerSpawn(ownerClientId, playerPrefabHash ?? NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash);
             }
             else
             {
@@ -1417,11 +1417,11 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Notifies all existing clients that a new player has joined
+        /// Spawns the newly approved player
         /// </summary>
         /// <param name="clientId">new player client identifier</param>
         /// <param name="playerPrefabHash">the prefab GlobalObjectIdHash value for this player</param>
-        internal void NotifyPlayerConnected(ulong clientId, uint playerPrefabHash)
+        internal void ApprovedPlayerSpawn(ulong clientId, uint playerPrefabHash)
         {
             foreach (KeyValuePair<ulong, NetworkClient> clientPair in ConnectedClients)
             {
