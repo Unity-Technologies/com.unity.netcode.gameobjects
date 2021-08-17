@@ -36,8 +36,9 @@ namespace Unity.Netcode
         }
 
 #pragma warning disable IDE1006 // disable naming rule violation check
-        internal virtual string __getBehaviourName() => nameof(NetworkBehaviour);
-#pragma warning restore IDE1006 // restore naming rule violation
+        // NetworkBehaviourILPP will override this in derived classes to return the name of the concrete type
+        internal virtual string __getTypeName() => nameof(NetworkBehaviour);
+#pragma warning restore IDE1006 // restore naming rule violation check
 
 #pragma warning disable 414 // disable assigned but its value is never used
 #pragma warning disable IDE1006 // disable naming rule violation check
@@ -45,7 +46,7 @@ namespace Unity.Netcode
         // RuntimeAccessModifiersILPP will make this `protected`
         internal __RpcExecStage __rpc_exec_stage = __RpcExecStage.None;
 #pragma warning restore 414 // restore assigned but its value is never used
-#pragma warning restore IDE1006 // restore naming rule violation
+#pragma warning restore IDE1006 // restore naming rule violation check
 
 #pragma warning disable IDE1006 // disable naming rule violation check
         // RuntimeAccessModifiersILPP will make this `protected`
@@ -670,8 +671,6 @@ namespace Unity.Netcode
                     long readStartPos = stream.Position;
 
                     networkVariableList[i].ReadDelta(stream, networkManager.IsServer);
-                    PerformanceDataManager.Increment(ProfilerConstants.NetworkVarDeltas);
-                    ProfilerStatManager.NetworkVarsRcvd.Record();
                     networkManager.NetworkMetrics.TrackNetworkVariableDeltaReceived(clientId, logInstance.NetworkObjectId, logInstance.name, networkVariableList[i].Name, logInstance.__getBehaviourName(), stream.Length);
 
                     (stream as NetworkBuffer).SkipPadBits();
@@ -757,8 +756,6 @@ namespace Unity.Netcode
                     long readStartPos = stream.Position;
 
                     networkVariableList[i].ReadField(stream);
-                    PerformanceDataManager.Increment(ProfilerConstants.NetworkVarUpdates);
-                    ProfilerStatManager.NetworkVarsRcvd.Record();
 
                     if (networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                     {
