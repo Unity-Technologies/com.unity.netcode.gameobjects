@@ -99,7 +99,13 @@ namespace Unity.Netcode
             string networkBehaviourName,
             long bytesCount)
         {
-            m_NetworkVariableDeltaSentEvent.Mark(new NetworkVariableEvent(new ConnectionInfo(receiverClientId), new NetworkObjectIdentifier(gameObjectName, networkObjectId), variableName, networkBehaviourName, bytesCount));
+            m_NetworkVariableDeltaSentEvent.Mark(
+                new NetworkVariableEvent(
+                    new ConnectionInfo(receiverClientId),
+                    new NetworkObjectIdentifier(gameObjectName, networkObjectId),
+                    variableName,
+                    networkBehaviourName,
+                    bytesCount));
         }
 
         public void TrackNetworkVariableDeltaReceived(
@@ -110,7 +116,13 @@ namespace Unity.Netcode
             string networkBehaviourName,
             long bytesCount)
         {
-            m_NetworkVariableDeltaReceivedEvent.Mark(new NetworkVariableEvent(new ConnectionInfo(senderClientId), new NetworkObjectIdentifier(gameObjectName, networkObjectId), variableName, networkBehaviourName, bytesCount));
+            m_NetworkVariableDeltaReceivedEvent.Mark(
+                new NetworkVariableEvent(
+                    new ConnectionInfo(senderClientId),
+                    new NetworkObjectIdentifier(gameObjectName, networkObjectId),
+                    variableName,
+                    networkBehaviourName,
+                    bytesCount));
         }
 
         public void TrackOwnershipChangeSent(ulong receiverClientId, ulong networkObjectId, string gameObjectName, long bytesCount)
@@ -164,7 +176,13 @@ namespace Unity.Netcode
                 networkObjectIdentifier = new NetworkObjectIdentifier("", networkObjectId);
             }
 
-            m_RpcSentEvent.Mark(new RpcEvent(new ConnectionInfo(receiverClientId), networkObjectIdentifier, rpcName, networkBehaviourName, bytesCount));
+            m_RpcSentEvent.Mark(
+                new RpcEvent(
+                    new ConnectionInfo(receiverClientId),
+                    networkObjectIdentifier,
+                    rpcName,
+                    networkBehaviourName,
+                    bytesCount));
         }
 
         public void TrackRpcSent(
@@ -192,7 +210,12 @@ namespace Unity.Netcode
                 networkObjectIdentifier = new NetworkObjectIdentifier("", networkObjectId);
             }
 
-            m_RpcReceivedEvent.Mark(new RpcEvent(new ConnectionInfo(senderClientId), networkObjectIdentifier, rpcName, networkBehaviourName, bytesCount));
+            m_RpcReceivedEvent.Mark(
+                new RpcEvent(new ConnectionInfo(senderClientId),
+                    networkObjectIdentifier,
+                    rpcName,
+                    networkBehaviourName,
+                    bytesCount));
         }
 
         public void TrackServerLogSent(ulong receiverClientId, uint logType, long bytesCount)
