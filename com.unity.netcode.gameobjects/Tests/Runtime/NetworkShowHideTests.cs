@@ -66,20 +66,38 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         // Set the 3 objects visibility
-        private void Show(bool visibility)
+        private void Show(bool individually, bool visibility)
         {
-            var list = new List<NetworkObject>();
-            list.Add(m_NetSpawnedObject1);
-            list.Add(m_NetSpawnedObject2);
-            list.Add(m_NetSpawnedObject3);
-
-            if (!visibility)
+            if (individually)
             {
-                NetworkObject.NetworkHide(list, m_ClientId0);
+                if (!visibility)
+                {
+                    m_NetSpawnedObject1.NetworkHide(m_ClientId0);
+                    m_NetSpawnedObject2.NetworkHide(m_ClientId0);
+                    m_NetSpawnedObject3.NetworkHide(m_ClientId0);
+                }
+                else
+                {
+                    m_NetSpawnedObject1.NetworkShow(m_ClientId0);
+                    m_NetSpawnedObject2.NetworkShow(m_ClientId0);
+                    m_NetSpawnedObject3.NetworkShow(m_ClientId0);
+                }
             }
             else
             {
-                NetworkObject.NetworkShow(list, m_ClientId0);
+                var list = new List<NetworkObject>();
+                list.Add(m_NetSpawnedObject1);
+                list.Add(m_NetSpawnedObject2);
+                list.Add(m_NetSpawnedObject3);
+
+                if (!visibility)
+                {
+                    NetworkObject.NetworkHide(list, m_ClientId0);
+                }
+                else
+                {
+                    NetworkObject.NetworkShow(list, m_ClientId0);
+                }
             }
         }
 
@@ -134,28 +152,32 @@ namespace Unity.Netcode.RuntimeTests
             m_NetSpawnedObject2.Spawn();
             m_NetSpawnedObject3.Spawn();
 
-            yield return new WaitForSeconds(0.1f);
 
-            // get the NetworkObject on a client instance
-            yield return RefreshNetworkObjects();
+            for (int mode = 0; mode < 2; mode++)
+            {
+                yield return new WaitForSeconds(0.1f);
 
-            // check object start visible
-            CheckVisible(true);
+                // get the NetworkObject on a client instance
+                yield return RefreshNetworkObjects();
 
-            // hide them on one client
-            Show(false);
-            yield return new WaitForSeconds(0.1f);
+                // check object start visible
+                CheckVisible(true);
 
-            // verify they got hidden
-            CheckVisible(false);
+                // hide them on one client
+                Show(mode == 0, false);
+                yield return new WaitForSeconds(0.1f);
 
-            // show them to that client
-            Show(true);
-            yield return new WaitForSeconds(0.1f);
-            yield return RefreshNetworkObjects();
+                // verify they got hidden
+                CheckVisible(false);
 
-            // verify they become visible
-            CheckVisible(true);
+                // show them to that client
+                Show(mode == 0, true);
+                yield return new WaitForSeconds(0.1f);
+                yield return RefreshNetworkObjects();
+
+                // verify they become visible
+                CheckVisible(true);
+            }
         }
     }
 }

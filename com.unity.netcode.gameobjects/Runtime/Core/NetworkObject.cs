@@ -319,7 +319,7 @@ namespace Unity.Netcode
 
             if (NetworkManager.NetworkConfig.UseSnapshotSpawn)
             {
-                SnapshotDespawn();
+                SnapshotDespawn(clientId);
             }
             else
             {
@@ -467,6 +467,10 @@ namespace Unity.Netcode
 
         internal void SnapshotDespawn(ulong clientId)
         {
+            var command = GetDespawnCommand();
+            command.TargetClientIds = new List<ulong>();
+            command.TargetClientIds.Add(clientId);
+            NetworkManager.SnapshotSystem.Despawn(command);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
