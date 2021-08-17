@@ -42,7 +42,6 @@ namespace Unity.Netcode
 
         public void OnDestroy()
         {
-            throw new System.NotImplementedException();
         }
     }
 }
