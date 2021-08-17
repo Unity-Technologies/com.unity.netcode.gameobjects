@@ -250,29 +250,17 @@ namespace Unity.Netcode
                 return;
             }
 
-            if (messageType == MessageQueueContainer.MessageType.ClientRpc ||
-                messageType == MessageQueueContainer.MessageType.ServerRpc)
-            {
-                ProfilerStatManager.RpcsRcvd.Record();
-                PerformanceDataManager.Increment(ProfilerConstants.RpcReceived);
-            }
-
             var messageQueueContainer = NetworkManager.MessageQueueContainer;
             messageQueueContainer.AddQueueItemToInboundFrame(messageType, receiveTime, clientId, (NetworkBuffer)stream, receiveChannel);
         }
 
         public void HandleUnnamedMessage(ulong clientId, Stream stream)
         {
-            PerformanceDataManager.Increment(ProfilerConstants.UnnamedMessageReceived);
-            ProfilerStatManager.UnnamedMessage.Record();
             NetworkManager.CustomMessagingManager.InvokeUnnamedMessage(clientId, stream);
         }
 
         public void HandleNamedMessage(ulong clientId, Stream stream)
         {
-            PerformanceDataManager.Increment(ProfilerConstants.NamedMessageReceived);
-            ProfilerStatManager.NamedMessage.Record();
-
             using (var reader = PooledNetworkReader.Get(stream))
             {
                 ulong hash = reader.ReadUInt64Packed();
