@@ -13,6 +13,7 @@ namespace Unity.Netcode
     {
         // public const float InterpolationConfigTimeSec = 0.100f; // todo expose global config, todo use in actual code
 
+        // interface for mock testing, abstracting away external systems
         public interface IInterpolatorTime
         {
             public double BufferedServerTime { get; }
@@ -35,6 +36,7 @@ namespace Unity.Netcode
 
         internal IInterpolatorTime interpolatorTime = new InterpolatorTime();
         protected virtual double ServerTimeBeingHandledForBuffering => interpolatorTime.BufferedServerTime; // override this if you want configurable buffering, right now using ServerTick's own global buffering
+        private double RenderTime => ServerTimeBeingHandledForBuffering - 1f / interpolatorTime.TickRate;
 
         private T m_InterpStartValue;
         private T m_CurrentInterpValue;
@@ -63,13 +65,12 @@ namespace Unity.Netcode
         private void TryConsumeFromBuffer()
         {
             int nbConsumed = 0;
-            // sorted so older (smaller) time values are at the end.
+            // buffer is sorted so older (smaller) time values are at the end.
             for (int i = m_Buffer.Count - 1; i >= 0; i--)
             {
                 var bufferedValue = m_Buffer[i];
-                if (bufferedValue.timeSent.Time <= ServerTimeBeingHandledForBuffering && renderTime >= m_EndTimeConsumed.Time)
+                if (bufferedValue.timeSent.Time <= ServerTimeBeingHandledForBuffering && RenderTime >= m_EndTimeConsumed.Time)
                 {
-
                     if (nbConsumed == 0)
                     {
                         m_StartTimeConsumed = m_EndTimeConsumed;
@@ -85,14 +86,6 @@ namespace Unity.Netcode
             }
         }
 
-        private double range => m_EndTimeConsumed.Time - m_StartTimeConsumed.Time;
-        private double renderTime => ServerTimeBeingHandledForBuffering - 1f / interpolatorTime.TickRate; //ServerTimeBeingHandledForBuffering - range;
-        // private double renderTime => ServerTimeBeingHandledForBuffering - range;
-
-        // buffer=4
-        //  t=100             101   101.2  101.5                         105.2
-        //    A               B     S      C                             RS
-
         public T Update(float deltaTime)
         {
             TryConsumeFromBuffer();
@@ -104,10 +97,8 @@ namespace Unity.Netcode
 
             if (m_LifetimeConsumedCount >= 2) // shouldn't interpolate between default value and first measurement, should only interpolate between real measurements
             {
-                // var timeB = m_EndTimeConsumed;
-                // var timeA = m_StartTimeConsumed;
-                // double range = timeB.Time - timeA.Time;
-                float t = (float) ((renderTime - m_StartTimeConsumed.Time) / range);
+                double range = m_EndTimeConsumed.Time - m_StartTimeConsumed.Time;
+                float t = (float) ((RenderTime - m_StartTimeConsumed.Time) / range);
                 Debug.Assert(t >= 0, "t must be bigger or equal than 0");
                 m_CurrentInterpValue = Interpolate(m_InterpStartValue, m_InterpEndValue, t);
             }

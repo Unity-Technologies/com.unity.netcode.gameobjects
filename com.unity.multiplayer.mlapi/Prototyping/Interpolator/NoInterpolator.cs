@@ -1,6 +1,6 @@
 namespace Unity.Netcode
 {
-    public class NoInterpolation<T> : IInterpolator<T>
+    public class NoInterpolator<T> : IInterpolator<T>
     {
         private T m_Current;
 
