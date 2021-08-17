@@ -1226,7 +1226,12 @@ namespace Unity.Netcode
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                     if (__rpc_name_table.TryGetValue(networkMethodId, out var rpcMethodName))
                     {
-                        NetworkMetrics.TrackRpcReceived(item.NetworkId, networkObjectId, rpcMethodName, networkBehaviour.__getTypeName(), item.StreamSize);
+                        NetworkMetrics.TrackRpcReceived(
+                            item.NetworkId,
+                            networkObjectId,
+                            rpcMethodName,
+                            networkBehaviour.__getTypeName(),
+                            item.StreamSize);
                     }
 #endif
                 }
