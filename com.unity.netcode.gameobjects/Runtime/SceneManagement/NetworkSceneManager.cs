@@ -133,9 +133,6 @@ namespace Unity.Netcode
         /// </summary>
         internal Scene SceneBeingSynchronized;
 
-        // Used for observed object synchronization
-        private readonly List<NetworkObject> m_ObservedObjects = new List<NetworkObject>();
-
         // Used to track which scenes are currently loaded
         private Dictionary<string, Dictionary<int, Scene>> m_ScenesLoaded = new Dictionary<string, Dictionary<int, Scene>>();
 
@@ -962,13 +959,10 @@ namespace Unity.Netcode
         /// <param name="ownerClientId">newly joined client identifier</param>
         internal void SynchronizeNetworkObjects(ulong ownerClientId)
         {
-            m_ObservedObjects.Clear();
-
             foreach (var sobj in m_NetworkManager.SpawnManager.SpawnedObjectsList)
             {
                 if (sobj.CheckObjectVisibility == null || sobj.CheckObjectVisibility(ownerClientId))
                 {
-                    m_ObservedObjects.Add(sobj);
                     sobj.Observers.Add(ownerClientId);
                 }
             }
