@@ -52,7 +52,7 @@ namespace Unity.Netcode.EditorTests
             var gameObject = new GameObject(nameof(GetNetworkBehaviourNameTest));
             var networkBehaviour = gameObject.AddComponent<EmptyNetworkBehaviour>();
 
-            Assert.AreEqual(nameof(EmptyNetworkBehaviour), networkBehaviour.__getBehaviourName());
+            Assert.AreEqual(nameof(EmptyNetworkBehaviour), networkBehaviour.__getTypeName());
         }
 
         public class EmptyNetworkBehaviour : NetworkBehaviour
