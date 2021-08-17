@@ -295,7 +295,7 @@ namespace Unity.Multiplayer.Netcode
                     throw new ArgumentException($"{nameof(NetworkWriter)} cannot write {nameof(NetworkObject)} types that are not spawned. {nameof(GameObject)}: {((GameObject)value).name}");
                 }
 
-                WriteValueSafe(networkObject.NetworkObjectId);
+                WriteValueSafe(networkObject);
                 return;
             }
             if (value is NetworkObject)
@@ -305,7 +305,7 @@ namespace Unity.Multiplayer.Netcode
                     throw new ArgumentException($"{nameof(NetworkWriter)} cannot write {nameof(NetworkObject)} types that are not spawned. {nameof(GameObject)}: {((NetworkObject)value).gameObject.name}");
                 }
 
-                WriteValueSafe(((NetworkObject)value).NetworkObjectId);
+                WriteValueSafe((NetworkObject)value);
                 return;
             }
             if (value is NetworkBehaviour)
@@ -314,13 +314,8 @@ namespace Unity.Multiplayer.Netcode
                 {
                     throw new ArgumentException($"{nameof(NetworkWriter)} cannot write {nameof(NetworkBehaviour)} types that are not spawned. {nameof(GameObject)}: {((NetworkBehaviour)value).gameObject.name}");
                 }
-
-                if (!VerifyCanWrite(sizeof(ulong) * 2))
-                {
-                    throw new OverflowException("Writing past the end of the buffer");
-                }
-                WriteValue(((NetworkBehaviour)value).NetworkObjectId);
-                WriteValue(((NetworkBehaviour)value).NetworkBehaviourId);
+                
+                WriteValueSafe((NetworkBehaviour)value);
                 return;
             }
             if (value is INetworkSerializable)

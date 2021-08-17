@@ -254,6 +254,7 @@ namespace Unity.Netcode.EditorTests
         private unsafe void RunObjectTypeArrayTest<T>(T[] valueToTest) where T : unmanaged
         {
             var writeSize = FastBufferWriter.GetWriteSize(valueToTest);
+            // Extra byte for WriteObject adding isNull flag
             FastBufferWriter writer = new FastBufferWriter(writeSize + 3, Allocator.Temp);
             using(writer)
             {
@@ -262,6 +263,7 @@ namespace Unity.Netcode.EditorTests
                 Assert.AreEqual(sizeof(int) + sizeof(T) * valueToTest.Length, writeSize);
 
                 writer.WriteObject(valueToTest);
+                Assert.AreEqual(0, writer.GetNativeArray()[0]);
                 VerifyPositionAndLength(ref writer, writeSize + sizeof(byte));
 
                 WriteCheckBytes(ref writer, writeSize + sizeof(byte));
@@ -1994,8 +1996,9 @@ namespace Unity.Netcode.EditorTests
             }
         }
 
-        [Test]
-        public void TestNetworkBehavior()
+        private delegate void GameObjectTestDelegate(GameObject obj, NetworkBehaviour networkBehaviour,
+            NetworkObject networkObject);
+        private void RunGameObjectTest(GameObjectTestDelegate testCode)
         {
             var obj = new GameObject("Object");
             var networkBehaviour = obj.AddComponent<NetworkObjectTests.EmptyNetworkBehaviour>();
@@ -2016,106 +2019,176 @@ namespace Unity.Netcode.EditorTests
             networkManager.StartHost();
 
             try
+            {
+                testCode(obj, networkBehaviour, networkObject);
+            }
+            finally
+            {
+                GameObject.DestroyImmediate(obj);
+                networkManager.StopHost();
+            }
+        }
+        
+        [Test]
+        public void TestNetworkBehavior()
+        {
+            RunGameObjectTest((obj, networkBehaviour, networkObject) =>
             {
                 var writer = new FastBufferWriter(FastBufferWriter.GetWriteSize(networkBehaviour), Allocator.Temp);
                 using (writer)
                 {
                     Assert.IsTrue(writer.VerifyCanWrite(FastBufferWriter.GetWriteSize(networkBehaviour)));
-                
+
                     writer.WriteValue(networkBehaviour);
-                
+
                     Assert.AreEqual(FastBufferWriter.GetWriteSize(networkBehaviour), writer.Position);
                     VerifyBytewiseEquality(networkObject.NetworkObjectId, writer.GetNativeArray(), 0, 0, sizeof(ulong));
-                    VerifyBytewiseEquality(networkBehaviour.NetworkBehaviourId, writer.GetNativeArray(), 0, sizeof(ulong), sizeof(ushort));
+                    VerifyBytewiseEquality(networkBehaviour.NetworkBehaviourId, writer.GetNativeArray(), 0,
+                        sizeof(ulong), sizeof(ushort));
                 }
-            }
-            finally
-            {
-                GameObject.DestroyImmediate(obj);
-                networkManager.StopHost();
-            }
+            });
         }
 
         [Test]
         public void TestNetworkObject()
         {
-            var obj = new GameObject("Object");
-            var networkBehaviour = obj.AddComponent<NetworkObjectTests.EmptyNetworkBehaviour>();
-            var networkObject = obj.AddComponent<NetworkObject>();
-            // Create networkManager component
-            var networkManager = obj.AddComponent<NetworkManager>();
-            networkObject.NetworkManagerOwner = networkManager;
-
-            // Set the NetworkConfig
-            networkManager.NetworkConfig = new NetworkConfig()
-            {
-                // Set the current scene to prevent unexpected log messages which would trigger a failure
-                RegisteredScenes = new List<string>() { SceneManager.GetActiveScene().name },
-                // Set transport
-                NetworkTransport = obj.AddComponent<DummyTransport>()
-            };
-
-            networkManager.StartHost();
-
-            try
+            RunGameObjectTest((obj, networkBehaviour, networkObject) =>
             {
                 var writer = new FastBufferWriter(FastBufferWriter.GetWriteSize(networkObject), Allocator.Temp);
                 using (writer)
                 {
                     Assert.IsTrue(writer.VerifyCanWrite(FastBufferWriter.GetWriteSize(networkObject)));
-                
+
                     writer.WriteValue(networkObject);
-                
+
                     Assert.AreEqual(FastBufferWriter.GetWriteSize(networkObject), writer.Position);
                     VerifyBytewiseEquality(networkObject.NetworkObjectId, writer.GetNativeArray(), 0, 0, sizeof(ulong));
                 }
-            }
-            finally
-            {
-                GameObject.DestroyImmediate(obj);
-                networkManager.StopHost();
-            }
+            });
         }
 
         [Test]
         public void TestGameObject()
         {
-            var obj = new GameObject("Object");
-            var networkBehaviour = obj.AddComponent<NetworkObjectTests.EmptyNetworkBehaviour>();
-            var networkObject = obj.AddComponent<NetworkObject>();
-            // Create networkManager component
-            var networkManager = obj.AddComponent<NetworkManager>();
-            networkObject.NetworkManagerOwner = networkManager;
-
-            // Set the NetworkConfig
-            networkManager.NetworkConfig = new NetworkConfig()
-            {
-                // Set the current scene to prevent unexpected log messages which would trigger a failure
-                RegisteredScenes = new List<string>() { SceneManager.GetActiveScene().name },
-                // Set transport
-                NetworkTransport = obj.AddComponent<DummyTransport>()
-            };
-
-            networkManager.StartHost();
-
-            try
+            RunGameObjectTest((obj, networkBehaviour, networkObject) =>
             {
                 var writer = new FastBufferWriter(FastBufferWriter.GetWriteSize(obj), Allocator.Temp);
                 using (writer)
                 {
                     Assert.IsTrue(writer.VerifyCanWrite(FastBufferWriter.GetWriteSize(obj)));
-                
+
                     writer.WriteValue(obj);
-                
+
                     Assert.AreEqual(FastBufferWriter.GetWriteSize(obj), writer.Position);
                     VerifyBytewiseEquality(networkObject.NetworkObjectId, writer.GetNativeArray(), 0, 0, sizeof(ulong));
                 }
-            }
-            finally
+            });
+        }
+        
+        [Test]
+        public void TestNetworkBehaviorSafe()
+        {
+            RunGameObjectTest((obj, networkBehaviour, networkObject) =>
             {
-                GameObject.DestroyImmediate(obj);
-                networkManager.StopHost();
-            }
+                var writer = new FastBufferWriter(FastBufferWriter.GetWriteSize(networkBehaviour), Allocator.Temp);
+                using (writer)
+                {
+                    writer.WriteValueSafe(networkBehaviour);
+
+                    Assert.AreEqual(FastBufferWriter.GetWriteSize(networkBehaviour), writer.Position);
+                    VerifyBytewiseEquality(networkObject.NetworkObjectId, writer.GetNativeArray(), 0, 0, sizeof(ulong));
+                    VerifyBytewiseEquality(networkBehaviour.NetworkBehaviourId, writer.GetNativeArray(), 0,
+                        sizeof(ulong), sizeof(ushort));
+                }
+            });
+        }
+
+        [Test]
+        public void TestNetworkObjectSafe()
+        {
+            RunGameObjectTest((obj, networkBehaviour, networkObject) =>
+            {
+                var writer = new FastBufferWriter(FastBufferWriter.GetWriteSize(networkObject), Allocator.Temp);
+                using (writer)
+                {
+                    writer.WriteValueSafe(networkObject);
+
+                    Assert.AreEqual(FastBufferWriter.GetWriteSize(networkObject), writer.Position);
+                    VerifyBytewiseEquality(networkObject.NetworkObjectId, writer.GetNativeArray(), 0, 0, sizeof(ulong));
+                }
+            });
+        }
+
+        [Test]
+        public void TestGameObjectSafe()
+        {
+            RunGameObjectTest((obj, networkBehaviour, networkObject) =>
+            {
+                var writer = new FastBufferWriter(FastBufferWriter.GetWriteSize(obj), Allocator.Temp);
+                using (writer)
+                {
+                    writer.WriteValueSafe(obj);
+
+                    Assert.AreEqual(FastBufferWriter.GetWriteSize(obj), writer.Position);
+                    VerifyBytewiseEquality(networkObject.NetworkObjectId, writer.GetNativeArray(), 0, 0, sizeof(ulong));
+                }
+            });
+        }
+        
+        [Test]
+        public void TestNetworkBehaviorAsObject()
+        {
+            RunGameObjectTest((obj, networkBehaviour, networkObject) =>
+            {
+                // +1 for extra isNull added by WriteObject
+                var writer = new FastBufferWriter(FastBufferWriter.GetWriteSize(networkBehaviour) + 1, Allocator.Temp);
+                using (writer)
+                {
+                    writer.WriteObject(networkBehaviour);
+
+                    Assert.AreEqual(FastBufferWriter.GetWriteSize(networkBehaviour) + 1, writer.Position);
+                    Assert.AreEqual(0, writer.GetNativeArray()[0]);
+                    VerifyBytewiseEquality(networkObject.NetworkObjectId, writer.GetNativeArray(), 0, 1, sizeof(ulong));
+                    VerifyBytewiseEquality(networkBehaviour.NetworkBehaviourId, writer.GetNativeArray(), 0,
+                        sizeof(ulong)+1, sizeof(ushort));
+                }
+            });
+        }
+
+        [Test]
+        public void TestNetworkObjectAsObject()
+        {
+            RunGameObjectTest((obj, networkBehaviour, networkObject) =>
+            {
+                // +1 for extra isNull added by WriteObject
+                var writer = new FastBufferWriter(FastBufferWriter.GetWriteSize(networkObject) + 1, Allocator.Temp);
+                using (writer)
+                {
+                    writer.WriteObject(networkObject);
+
+                    Assert.AreEqual(FastBufferWriter.GetWriteSize(networkObject) + 1, writer.Position);
+                    Assert.AreEqual(0, writer.GetNativeArray()[0]);
+                    VerifyBytewiseEquality(networkObject.NetworkObjectId, writer.GetNativeArray(), 0, 1, sizeof(ulong));
+                }
+            });
+        }
+
+        [Test]
+        public void TestGameObjectAsObject()
+        {
+            RunGameObjectTest((obj, networkBehaviour, networkObject) =>
+            {
+                // +1 for extra isNull added by WriteObject
+                var writer = new FastBufferWriter(FastBufferWriter.GetWriteSize(obj) + 1, Allocator.Temp);
+                using (writer)
+                {
+                    writer.WriteObject(obj);
+
+                    Assert.AreEqual(FastBufferWriter.GetWriteSize(obj) + 1, writer.Position);
+                    Assert.AreEqual(0, writer.GetNativeArray()[0]);
+                    VerifyBytewiseEquality(networkObject.NetworkObjectId, writer.GetNativeArray(), 0, 1, sizeof(ulong));
+                }
+            });
         }
 
         #endregion
