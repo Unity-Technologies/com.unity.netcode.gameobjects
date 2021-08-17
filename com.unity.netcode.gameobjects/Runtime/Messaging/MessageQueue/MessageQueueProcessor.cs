@@ -308,31 +308,13 @@ namespace Unity.Netcode
                     // TODO: Can we remove this special case for server RPCs?
                     {
                         m_MessageQueueContainer.NetworkManager.NetworkConfig.NetworkTransport.Send(item.NetworkId, item.MessageData, channel);
-
-                        //For each packet sent, we want to record how much data we have sent
-
-                        PerformanceDataManager.Increment(ProfilerConstants.ByteSent, (int)item.StreamSize);
-                        PerformanceDataManager.Increment(ProfilerConstants.RpcSent);
-                        ProfilerStatManager.BytesSent.Record((int)item.StreamSize);
-                        ProfilerStatManager.RpcsSent.Record();
                         break;
                     }
-                case MessageQueueContainer.MessageType.ClientRpc:
-
-                    //For each client we send to, we want to record how many messages we have sent
-                    PerformanceDataManager.Increment(ProfilerConstants.RpcSent, item.ClientNetworkIds.Length);
-                    ProfilerStatManager.RpcsSent.Record(item.ClientNetworkIds.Length);
-                    // Falls through
-                    goto default;
                 default:
                     {
                         foreach (ulong clientid in item.ClientNetworkIds)
                         {
                             m_MessageQueueContainer.NetworkManager.NetworkConfig.NetworkTransport.Send(clientid, item.MessageData, channel);
-
-                            //For each packet sent, we want to record how much data we have sent
-                            PerformanceDataManager.Increment(ProfilerConstants.ByteSent, (int)item.StreamSize);
-                            ProfilerStatManager.BytesSent.Record((int)item.StreamSize);
                         }
 
                         break;
