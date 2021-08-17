@@ -62,20 +62,22 @@ public class TestCoordinator : NetworkBehaviour
                 connectAddress = arg.Replace("-ip=", "");
             }
         }
+
+        string port = "3076";
+        var ushortport = ushort.Parse(port);
+        var transport = NetworkManager.Singleton.NetworkConfig.NetworkTransport;
+        switch (transport)
+        {
+            case UNetTransport unetTransport:
+                unetTransport.ConnectPort = ushortport;
+                unetTransport.ServerListenPort = ushortport;
+                unetTransport.ConnectAddress = connectAddress;
+                break;
+        }
+
         if (isClient)
         {
             Debug.Log("starting netcode client");
-            string port = "3076";
-            var ushortport = ushort.Parse(port);
-            var transport = NetworkManager.Singleton.NetworkConfig.NetworkTransport;
-            switch (transport)
-            {
-                case UNetTransport unetTransport:
-                    unetTransport.ConnectPort = ushortport;
-                    unetTransport.ServerListenPort = ushortport;
-                    unetTransport.ConnectAddress = connectAddress;
-                    break;
-            }
             NetworkManager.Singleton.StartClient();
         }
 

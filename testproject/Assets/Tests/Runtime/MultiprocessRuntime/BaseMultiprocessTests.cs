@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using Object = UnityEngine.Object;
+using Unity.Netcode.Transports.UNET;
 
 namespace Unity.Netcode.MultiprocessRuntimeTests
 {
@@ -47,7 +48,16 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
             SceneManager.sceneLoaded -= OnSceneLoaded;
-
+            string port = "3076";
+            var ushortport = ushort.Parse(port);
+            var transport = NetworkManager.Singleton.NetworkConfig.NetworkTransport;
+            switch (transport)
+            {
+                case UNetTransport unetTransport:
+                    unetTransport.ConnectPort = ushortport;
+                    unetTransport.ServerListenPort = ushortport;
+                    break;
+            }
             NetworkManager.Singleton.StartHost();
             for (int i = 0; i < WorkerCount; i++)
             {
@@ -97,7 +107,6 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 SceneManager.LoadScene(k_GlobalEmptySceneName); // using empty scene to clear our state
             }
         }
-
     }
 }
 
