@@ -33,8 +33,6 @@ namespace Unity.Netcode.EditorTests
          * test with some jitter
          * test with high jitter
          * test with too high jitter
-         * test with packet loss
-         * test with out of order because of network measurements
          * test with negative time should fail
          * check https://github.com/vis2k/Mirror/blob/02cc3de7b8889f477118e20379b584eaf8bd43b6/Assets/Mirror/Tests/Editor/SnapshotInterpolationTests.cs
          * for examples of tests
@@ -284,6 +282,34 @@ namespace Unity.Netcode.EditorTests
 
             // invalid case, this is undefined behaviour
             Assert.Throws<InvalidOperationException>(() => interpolator.Update(1f));
+        }
+
+        [Test]
+        public void TestDuplicatedValues()
+        {
+            var interpolator = new BufferedLinearInterpolatorFloat();
+            var mockBufferedTime = new MockInterpolatorTime(0, k_MockTickRate);
+            interpolator.interpolatorTime = mockBufferedTime;
+
+            interpolator.AddMeasurement(1f, T(1f));
+            interpolator.AddMeasurement(2f, T(2f));
+            interpolator.AddMeasurement(2f, T(2f));
+
+            mockBufferedTime.BufferedServerTime = 2f;
+            var interp = interpolator.Update(1f);
+            Assert.That(interp, Is.EqualTo(1f));
+            mockBufferedTime.BufferedServerTime = 2.5f;
+            interp = interpolator.Update(0.5f);
+            Assert.That(interp, Is.EqualTo(1.5f));
+            mockBufferedTime.BufferedServerTime = 3f;
+            interp = interpolator.Update(0.5f);
+            Assert.That(interp, Is.EqualTo(2f));
+            mockBufferedTime.BufferedServerTime = 3.5f;
+            interp = interpolator.Update(0.5f);
+            Assert.That(interp, Is.EqualTo(2f));
+            mockBufferedTime.BufferedServerTime = 4f;
+            interp = interpolator.Update(0.5f);
+            Assert.That(interp, Is.EqualTo(2f));
         }
     }
 }
