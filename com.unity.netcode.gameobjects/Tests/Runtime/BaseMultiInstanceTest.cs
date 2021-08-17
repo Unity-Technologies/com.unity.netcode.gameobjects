@@ -47,7 +47,7 @@ namespace Unity.Netcode.RuntimeTests
             var networkObjects = Object.FindObjectsOfType<NetworkObject>().ToList();
             foreach (var networkObject in networkObjects)
             {
-                Object.DestroyImmediate(networkObject);
+                Object.Destroy(networkObject);
             }
 
             // wait for next frame so everything is destroyed, so following tests can execute from clean environment
