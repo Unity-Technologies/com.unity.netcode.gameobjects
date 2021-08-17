@@ -98,7 +98,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             var rpcReceived = clientRpcReceivedValues.First();
             Assert.AreEqual(Server.LocalClientId, rpcReceived.Connection.Id);
             Assert.AreEqual(nameof(RpcTestComponent.MyClientRpc), rpcReceived.Name);
-            Assert.AreEqual(nameof(RpcTestComponent), rpcReceived.Name);
+            Assert.AreEqual(nameof(RpcTestComponent), rpcReceived.NetworkBehaviourName);
             Assert.AreNotEqual(0, rpcReceived.BytesCount);
         }
     }
