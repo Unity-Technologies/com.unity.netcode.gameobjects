@@ -64,23 +64,28 @@ namespace Unity.Netcode
 
         private void TryConsumeFromBuffer()
         {
-            int nbConsumed = 0;
+            int consumedCount = 0;
             // buffer is sorted so older (smaller) time values are at the end.
             for (int i = m_Buffer.Count - 1; i >= 0; i--)
             {
                 var bufferedValue = m_Buffer[i];
                 if (bufferedValue.timeSent.Time <= ServerTimeBeingHandledForBuffering && RenderTime >= m_EndTimeConsumed.Time)
                 {
-                    if (nbConsumed == 0)
+                    if (m_LifetimeConsumedCount == 0)
+                    {
+                        m_StartTimeConsumed = bufferedValue.timeSent;
+                        m_InterpStartValue = bufferedValue.item;
+                    }
+                    else if (consumedCount == 0)
                     {
                         m_StartTimeConsumed = m_EndTimeConsumed;
                         m_InterpStartValue = m_InterpEndValue;
                     }
 
-                    m_InterpEndValue = bufferedValue.item;
                     m_EndTimeConsumed = bufferedValue.timeSent;
+                    m_InterpEndValue = bufferedValue.item;
                     m_Buffer.RemoveAt(i);
-                    nbConsumed++;
+                    consumedCount++;
                     m_LifetimeConsumedCount++;
                 }
             }
@@ -95,10 +100,19 @@ namespace Unity.Netcode
             // |   |        |   |
             // A   render   B   Server
 
-            if (m_LifetimeConsumedCount >= 2) // shouldn't interpolate between default value and first measurement, should only interpolate between real measurements
+            if (m_LifetimeConsumedCount >= 1) // shouldn't interpolate between default values, let's wait to receive data first, should only interpolate between real measurements
             {
                 double range = m_EndTimeConsumed.Time - m_StartTimeConsumed.Time;
-                float t = (float) ((RenderTime - m_StartTimeConsumed.Time) / range);
+                float t;
+                if (range == 0)
+                {
+                    t = 1;
+                }
+                else
+                {
+                    t = (float) ((RenderTime - m_StartTimeConsumed.Time) / range);
+                }
+
                 Debug.Assert(t >= 0, "t must be bigger or equal than 0");
                 m_CurrentInterpValue = Interpolate(m_InterpStartValue, m_InterpEndValue, t);
             }

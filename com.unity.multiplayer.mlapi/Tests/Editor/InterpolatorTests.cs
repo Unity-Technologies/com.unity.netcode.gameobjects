@@ -111,19 +111,16 @@ namespace Unity.Netcode.EditorTests
 
             mockBufferedTime.BufferedServerTime = 2f;
             interpolator.Update(0.5f);
-            Assert.That(interpolator.GetInterpolatedValue(), Is.EqualTo(0f).Within(k_Precision));
+            Assert.That(interpolator.GetInterpolatedValue(), Is.EqualTo(1f).Within(k_Precision));
 
             mockBufferedTime.BufferedServerTime = 2.5;
             interpolator.Update(0.5f);
-            Assert.That(interpolator.GetInterpolatedValue(), Is.EqualTo(0.5f).Within(k_Precision));
-
-            mockBufferedTime.BufferedServerTime = 3.5;
-            interpolator.Update(1f);
             Assert.That(interpolator.GetInterpolatedValue(), Is.EqualTo(1.5f).Within(k_Precision));
 
             // makes sure that interpolation still continues in right direction
             interpolator.AddMeasurement(1, T(1f));
-            mockBufferedTime.BufferedServerTime = 4;
+
+            mockBufferedTime.BufferedServerTime = 3f;
             interpolator.Update(0.5f);
             Assert.That(interpolator.GetInterpolatedValue(), Is.EqualTo(2f).Within(k_Precision));
         }
@@ -179,6 +176,114 @@ namespace Unity.Netcode.EditorTests
             mockBufferedTime.BufferedServerTime = 5f;
             interpolator.Update(0.5f);
             Assert.That(interpolator.GetInterpolatedValue(), Is.EqualTo(4f));
+        }
+
+        [Test]
+        public void AddFirstMeasurement()
+        {
+            const int mockTickRate = 1;
+            float deltaTick = 1f / mockTickRate;
+
+            var interpolator = new BufferedLinearInterpolatorFloat();
+            var mockBufferedTime = new MockInterpolatorTime(0, mockTickRate);
+            interpolator.interpolatorTime = mockBufferedTime;
+
+            NetworkTime T(float time)
+            {
+                return new NetworkTime(mockTickRate, timeSec: time);
+            }
+
+            interpolator.AddMeasurement(2f, T(1f));
+            interpolator.AddMeasurement(3f, T(2f));
+            mockBufferedTime.BufferedServerTime = 1f;
+            var interpolatedValue = interpolator.Update(1f);
+            // when consuming only one measurement and it's the first one consumed, teleport to it
+            Assert.That(interpolatedValue, Is.EqualTo(2f));
+
+            // then interpolation should work as usual
+            mockBufferedTime.BufferedServerTime = 2f;
+            interpolatedValue = interpolator.Update(1f);
+            Assert.That(interpolatedValue, Is.EqualTo(2f));
+
+            mockBufferedTime.BufferedServerTime = 2.5f;
+            interpolatedValue = interpolator.Update(0.5f);
+            Assert.That(interpolatedValue, Is.EqualTo(2.5f));
+
+            mockBufferedTime.BufferedServerTime = 3f;
+            interpolatedValue = interpolator.Update(0.5f);
+            Assert.That(interpolatedValue, Is.EqualTo(3f));
+        }
+
+        [Test]
+        public void JumpToEachValueIfDeltaTimeTooBig()
+        {
+            const int mockTickRate = 1;
+            float deltaTick = 1f / mockTickRate;
+
+            var interpolator = new BufferedLinearInterpolatorFloat();
+            var mockBufferedTime = new MockInterpolatorTime(0, mockTickRate);
+            interpolator.interpolatorTime = mockBufferedTime;
+
+            NetworkTime T(float time)
+            {
+                return new NetworkTime(mockTickRate, timeSec: time);
+            }
+
+            interpolator.AddMeasurement(2f, T(1f));
+            interpolator.AddMeasurement(3f, T(2f));
+            mockBufferedTime.BufferedServerTime = 1f;
+            var interpolatedValue = interpolator.Update(1f);
+            Assert.That(interpolatedValue, Is.EqualTo(2f));
+
+            // big deltaTime, jumping to latest value
+            mockBufferedTime.BufferedServerTime = 10f;
+            interpolatedValue = interpolator.Update(8f);
+            Assert.That(interpolatedValue, Is.EqualTo(3));
+        }
+
+        [Test]
+        public void JumpToLastValueFromStart()
+        {
+            const int mockTickRate = 1;
+            float deltaTick = 1f / mockTickRate;
+
+            var interpolator = new BufferedLinearInterpolatorFloat();
+            var mockBufferedTime = new MockInterpolatorTime(0, mockTickRate);
+            interpolator.interpolatorTime = mockBufferedTime;
+
+            NetworkTime T(float time)
+            {
+                return new NetworkTime(mockTickRate, timeSec: time);
+            }
+
+            interpolator.AddMeasurement(1f, T(1f));
+            interpolator.AddMeasurement(2f, T(2f));
+            interpolator.AddMeasurement(3f, T(3f));
+
+            mockBufferedTime.BufferedServerTime = 10f;
+            var interpolatedValue = interpolator.Update(10f);
+            Assert.That(interpolatedValue, Is.EqualTo(3f));
+
+            // interpolation continues as normal
+            interpolator.AddMeasurement(11f, T(11f));
+            mockBufferedTime.BufferedServerTime = 10.5f;
+            interpolatedValue = interpolator.Update(0.5f);
+            Assert.That(interpolatedValue, Is.EqualTo(3f));
+            mockBufferedTime.BufferedServerTime = 11f;
+            interpolatedValue = interpolator.Update(0.5f);
+            Assert.That(interpolatedValue, Is.EqualTo(10f));
+            mockBufferedTime.BufferedServerTime = 11.5f;
+            interpolatedValue = interpolator.Update(0.5f);
+            Assert.That(interpolatedValue, Is.EqualTo(10.5f));
+            mockBufferedTime.BufferedServerTime = 12f;
+            interpolatedValue = interpolator.Update(0.5f);
+            Assert.That(interpolatedValue, Is.EqualTo(11f));
+        }
+
+        [Test]
+        public void TestBufferSizeLimit()
+        {
+
         }
     }
 }
