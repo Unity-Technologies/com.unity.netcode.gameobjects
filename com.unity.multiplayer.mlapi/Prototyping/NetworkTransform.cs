@@ -7,7 +7,7 @@ namespace Unity.Netcode.Prototyping
     /// A prototype component for syncing transforms
     /// </summary>
     [AddComponentMenu("Netcode/" + nameof(NetworkTransform))]
-    [DefaultExecutionOrder(1000000)]
+    [DefaultExecutionOrder(1000000)] // this is needed to catch the update time after the transform was updated by user scripts
     public class NetworkTransform : NetworkBehaviour
     {
         /// <summary>
@@ -270,9 +270,9 @@ namespace Unity.Netcode.Prototyping
         private void Awake()
         {
             m_Transform = transform;
-            PositionInterpolator = new BufferedLinearInterpolatorVector3();
-            RotationInterpolator = new BufferedLinearInterpolatorQuaternion();
-            ScaleInterpolator = new BufferedLinearInterpolatorVector3();
+            PositionInterpolator = new BufferedLinearInterpolatorVector3(TransformPosition);
+            RotationInterpolator = new BufferedLinearInterpolatorQuaternion(TransformRotation);
+            ScaleInterpolator = new BufferedLinearInterpolatorVector3(TransformScale);
 
             UpdateNetVarPerms();
 

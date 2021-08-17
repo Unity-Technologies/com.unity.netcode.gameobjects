@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using NUnit.Framework;
 using UnityEngine;
 
 namespace Unity.Netcode
@@ -164,6 +163,11 @@ namespace Unity.Netcode
         {
             return Vector3.Lerp(start, end, time);
         }
+
+        public BufferedLinearInterpolatorVector3(Vector3 startValue)
+        {
+            AddMeasurement(startValue, new NetworkTime(0, 0.0));
+        }
     }
 
     public class BufferedLinearInterpolatorQuaternion : BufferedLinearInterpolator<Quaternion>
@@ -171,6 +175,11 @@ namespace Unity.Netcode
         public override Quaternion Interpolate(Quaternion start, Quaternion end, float time)
         {
             return Quaternion.Slerp(start, end, time);
+        }
+
+        public BufferedLinearInterpolatorQuaternion(Quaternion startValue)
+        {
+            AddMeasurement(startValue, new NetworkTime(0, 0.0));
         }
     }
 
