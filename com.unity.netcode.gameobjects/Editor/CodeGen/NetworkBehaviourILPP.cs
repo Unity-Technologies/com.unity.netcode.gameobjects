@@ -12,7 +12,6 @@ using UnityEngine;
 using MethodAttributes = Mono.Cecil.MethodAttributes;
 using ParameterAttributes = Mono.Cecil.ParameterAttributes;
 using ILPPInterface = Unity.CompilationPipeline.Common.ILPostProcessing.ILPostProcessor;
-using PropertyAttributes = Mono.Cecil.PropertyAttributes;
 
 namespace Unity.Netcode.Editor.CodeGen
 {
