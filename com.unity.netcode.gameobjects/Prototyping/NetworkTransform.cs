@@ -450,6 +450,9 @@ namespace Unity.Netcode.Prototyping
             {
                 ReplNetworkState.SetDirty(UpdateNetworkState(ReplNetworkState.Value));
             }
+            // try to update previously consumed NetworkState
+            // if we have any changes, that means made some updates locally
+            // we apply the latest ReplNetworkState again to revert our changes
             else if (UpdateNetworkState(PrevNetworkState))
             {
                 ApplyNetworkState(ReplNetworkState.Value);
