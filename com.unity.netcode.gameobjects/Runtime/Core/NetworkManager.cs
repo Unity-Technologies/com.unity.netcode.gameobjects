@@ -265,7 +265,12 @@ namespace Unity.Netcode
         /// <param name="isTesting"></param>
         internal void PopulateScenesInBuild(bool isTesting = false)
         {
-            if ( (!EditorApplication.isPlayingOrWillChangePlaymode && !EditorApplication.isPlaying && !EditorApplication.isUpdating) || isTesting)
+            // If we are testing or we are playing (in editor) and ScenesInBuild is null then we want to initialize and populate the ScenesInBuild asset.
+            // Otherwise, there are special edge case scenarios where we might want to repopulate this list
+            // The scenario with EditorApplication.isPlaying and ScenesInBuild being null is where we loaded a scene that did not have a NetworkManager but
+            // we transition to a scene with a NetworkManager while playing in the editor.  Under this condition we have to assign and populate.
+            if ( (!EditorApplication.isPlayingOrWillChangePlaymode && !EditorApplication.isPlaying && !EditorApplication.isUpdating) || isTesting
+                || (ScenesInBuild == null && EditorApplication.isPlaying))
             {
                 if (ScenesInBuild == null)
                 {
