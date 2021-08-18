@@ -72,10 +72,12 @@ public class TestCoordinator : NetworkBehaviour
         switch (transport)
         {
             case UNetTransport unetTransport:
+			    Debug.Log("Setting ConnectPort and ServerListenPort");
                 unetTransport.ConnectPort = ushortport;
                 unetTransport.ServerListenPort = ushortport;
                 if (isClient)
                 {
+					Debug.Log($"Setting ConnectAddress to {connectAddress}");
                     unetTransport.ConnectAddress = connectAddress;
                 }
                 break;
