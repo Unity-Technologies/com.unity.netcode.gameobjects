@@ -500,7 +500,7 @@ namespace Unity.Netcode
 
             foreach (var sobj in spawnedObjects)
             {
-                if ((sobj.IsSceneObject != null && sobj.IsSceneObject == true))
+                if (sobj.IsSceneObject != null && sobj.IsSceneObject)
                 {
                     SpawnedObjectsList.Remove(sobj);
                     UnityEngine.Object.Destroy(sobj.gameObject);
