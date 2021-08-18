@@ -17,7 +17,6 @@ namespace TestProject.ManualTests
             m_Rigidbody = GetComponent<Rigidbody>();
             if (NetworkObject != null && m_Rigidbody != null)
             {
-                //m_Rigidbody.isKinematic = !NetworkObject.NetworkManager.IsServer;
                 if (NetworkObject.IsOwner)
                 {
                     ChangeDirection(true, true);
@@ -25,11 +24,10 @@ namespace TestProject.ManualTests
             }
         }
 
-        private void MovePlayer(Vector3 moveTowards)
-        {
-            m_MoveTowardsPosition = moveTowards;
-        }
-
+        /// <summary>
+        /// Notify the server of any client side change in direction or speed
+        /// </summary>
+        /// <param name="moveTowards"></param>
         [ServerRpc(RequireOwnership = false)]
         private void MovePlayerServerRpc(Vector3 moveTowards)
         {
@@ -40,17 +38,19 @@ namespace TestProject.ManualTests
 
         public void Move(int speed)
         {
-            var nextMoveToPositioin = (m_Direction * speed);
+            // Server sets this locally
             if (IsServer && IsOwner)
             {
-                MovePlayer(nextMoveToPositioin);
+                m_MoveTowardsPosition = (m_Direction * speed);
             }
             else if (!IsServer && IsOwner)
             {
-                MovePlayerServerRpc(nextMoveToPositioin);
+                // Client must sent Rpc
+                MovePlayerServerRpc(m_Direction * speed);
             }
         }
 
+        // We just apply our current direction with magnitude to our current position during fixed update
         private void FixedUpdate()
         {
             if (IsServer && NetworkObject && NetworkObject.NetworkManager && NetworkObject.NetworkManager.IsListening)
@@ -66,6 +66,10 @@ namespace TestProject.ManualTests
             }
         }
 
+        /// <summary>
+        /// Handles server notification to client that we need to change direction
+        /// </summary>
+        /// <param name="direction"></param>
         [ClientRpc]
         private void ChangeDirectionClientRpc(Vector3 direction)
         {
@@ -86,6 +90,8 @@ namespace TestProject.ManualTests
 
                 ChangeDirection(moveRight, moveDown);
 
+                // If we are not the owner then we need to notify the client that their direction
+                // must change
                 if (!IsOwner)
                 {
                     m_MoveTowardsPosition = m_Direction * m_MoveTowardsPosition.magnitude;
