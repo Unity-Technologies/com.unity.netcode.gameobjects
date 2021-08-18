@@ -42,7 +42,7 @@ namespace Unity.Netcode
                 .WithMetricEvents(m_ServerLogSentEvent, m_ServerLogReceivedEvent)
                 .Build();
 
-            Dispatcher.RegisterObserver(MLAPIObserver.Observer);
+            Dispatcher.RegisterObserver(NetcodeObserver.Observer);
         }
 
         internal IMetricDispatcher Dispatcher { get; }
@@ -234,7 +234,7 @@ namespace Unity.Netcode
         }
     }
 
-    public class MLAPIObserver
+    public class NetcodeObserver
     {
         public static IMetricObserver Observer { get; } = MetricObserverFactory.Construct();
     }
