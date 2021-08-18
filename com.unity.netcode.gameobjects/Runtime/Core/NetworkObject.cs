@@ -380,8 +380,20 @@ namespace Unity.Netcode
             }
         }
 
+        private bool m_ApplicationQuitting = false;
+
+        private void OnApplicationQuit()
+        {
+            m_ApplicationQuitting = true;
+        }
+
         private void OnDestroy()
         {
+            if (m_ApplicationQuitting)
+            {
+                return;
+            }
+            
             if (NetworkManager != null && NetworkManager.IsListening && NetworkManager.IsServer == false && IsSpawned
                 && (IsSceneObject == null || (IsSceneObject != null && IsSceneObject.Value != true)))
             {
