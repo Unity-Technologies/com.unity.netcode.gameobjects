@@ -1,12 +1,7 @@
 using NUnit.Framework;
-
-using MLAPI.Transports;
-using MLAPI.Transports.Tasks;
-using Unity.Networking.Transport;
 using UnityEngine;
-using UnityEngine.TestTools;
 
-namespace MLAPI.UTP.EditorTests
+namespace Unity.Netcode.UTP.EditorTests
 {
     public class UTPTransportTests
     {

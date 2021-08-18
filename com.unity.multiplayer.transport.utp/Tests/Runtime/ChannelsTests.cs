@@ -3,13 +3,9 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using MLAPI.UTP.RuntimeTests;
-using Unity.Netcode;
 using Unity.Networking.Transport;
 using UnityEngine;
 using UnityEngine.TestTools;
-
-using NetworkEvent = Unity.Netcode.NetworkEvent;
 using UTPNetworkEvent = Unity.Networking.Transport.NetworkEvent;
 
 namespace Unity.Netcode.UTP.RuntimeTests

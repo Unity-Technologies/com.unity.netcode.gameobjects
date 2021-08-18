@@ -374,9 +374,9 @@ namespace Unity.Netcode
             return *(ulong*)&utpConnectionId;
         }
 
-        private static unsafe NetworkConnection ParseClientId(ulong mlapiConnectionId)
+        private static unsafe NetworkConnection ParseClientId(ulong netcodeConnectionId)
         {
-            return *(NetworkConnection*)&mlapiConnectionId;
+            return *(NetworkConnection*)&netcodeConnectionId;
         }
 
         public override void DisconnectLocalClient()
@@ -411,7 +411,7 @@ namespace Unity.Netcode
 
         public override void Init()
         {
-            Debug.Assert(sizeof(ulong) == UnsafeUtility.SizeOf<NetworkConnection>(), "MLAPI connection id size does not match UTP connection id size");
+            Debug.Assert(sizeof(ulong) == UnsafeUtility.SizeOf<NetworkConnection>(), "Netcode connection id size does not match UTP connection id size");
             Debug.Assert(m_MessageBufferSize > 5, "Message buffer size must be greater than 5");
 
             m_NetworkParameters = new List<INetworkParameter>();
