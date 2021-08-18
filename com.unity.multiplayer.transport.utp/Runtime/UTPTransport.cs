@@ -34,6 +34,9 @@ namespace MLAPI.Transports
 
         [SerializeField] private ProtocolType m_ProtocolType;
         [SerializeField] private int m_MessageBufferSize = MaximumMessageLength;
+        [SerializeField] private int m_ReciveQueueSize = 128;
+        [SerializeField] private int m_SendQueueSize = 128;
+
         [SerializeField] private string m_ServerAddress = "127.0.0.1";
         [SerializeField] private ushort m_ServerPort = 7777;
 
@@ -240,7 +243,7 @@ namespace MLAPI.Transports
             var allocationId = ConvertFromAllocationIdBytes(allocationIdBytes);
             var key = ConvertFromHMAC(keyBytes);
             var connectionData = ConvertConnectionData(connectionDataBytes);
-            
+
             if (hostConnectionDataBytes != null)
             {
                 hostConnectionData = ConvertConnectionData(hostConnectionDataBytes);
@@ -417,6 +420,12 @@ namespace MLAPI.Transports
             // to account for headers and such. 128 bytes is plenty enough for such overhead.
             var maxFragmentationCapacity = MaximumMessageLength + 128;
             m_NetworkParameters.Add(new FragmentationUtility.Parameters(){PayloadCapacity = maxFragmentationCapacity});
+            m_NetworkParameters.Add(new BaselibNetworkParameter()
+            {
+                maximumPayloadSize = (uint)m_MessageBufferSize,
+                receiveQueueCapacity = m_ReciveQueueSize,
+                sendQueueCapacity = m_SendQueueSize
+            });
 
             m_MessageBuffer = new byte[m_MessageBufferSize];
         }
@@ -435,8 +444,8 @@ namespace MLAPI.Transports
             var size = data.Count + 5;
 
             var pipeline = SelectSendPipeline(networkChannel, size);
-
-            if (m_Driver.BeginSend(pipeline, ParseClientId(clientId), out var writer, size) == 0)
+            var result = m_Driver.BeginSend(pipeline, ParseClientId(clientId), out var writer, size);
+            if (result == 0)
             {
                 writer.WriteByte((byte)networkChannel);
                 writer.WriteInt(data.Count);
@@ -451,14 +460,14 @@ namespace MLAPI.Transports
                         }
                     }
                 }
-
-                if (m_Driver.EndSend(writer) == size)
+                result = m_Driver.EndSend(writer);
+                if (result == size)
                 {
                     return;
                 }
             }
 
-            Debug.LogError("Error sending the message");
+            Debug.LogError($"Error sending the message {result}");
         }
 
         public override SocketTasks StartClient()
