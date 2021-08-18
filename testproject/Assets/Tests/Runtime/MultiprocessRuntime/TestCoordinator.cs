@@ -57,21 +57,27 @@ public class TestCoordinator : NetworkBehaviour
         string[] args = Environment.GetCommandLineArgs();
         foreach (string arg in args)
         {
+            Debug.Log($"arg is {arg}");
             if (arg.StartsWith("-ip="))
             {
                 connectAddress = arg.Replace("-ip=", "");
+                Debug.Log($"connectAddress is {connectAddress}");
             }
         }
 
         string port = "3076";
         var ushortport = ushort.Parse(port);
         var transport = NetworkManager.Singleton.NetworkConfig.NetworkTransport;
+        Debug.Log($"Transport is {transport.ToString()}");
         switch (transport)
         {
             case UNetTransport unetTransport:
                 unetTransport.ConnectPort = ushortport;
                 unetTransport.ServerListenPort = ushortport;
-                unetTransport.ConnectAddress = connectAddress;
+                if (isClient)
+                {
+                    unetTransport.ConnectAddress = connectAddress;
+                }
                 break;
         }
 
