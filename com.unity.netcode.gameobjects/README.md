@@ -1,7 +1,7 @@
 [![](https://i.imgur.com/d0amtqs.png)](https://mlapi.network/)
 
-[![GitHub Release](https://img.shields.io/github/release/MidLevel/MLAPI.svg?logo=github)](https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi/releases/latest)
-[![Github All Releases](https://img.shields.io/github/downloads/MidLevel/MLAPI/total.svg?logo=github&color=informational)](https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi/releases)
+[![GitHub Release](https://img.shields.io/github/release/MidLevel/MLAPI.svg?logo=github)](https://github.com/Unity-Technologies/com.unity.netcode.gameobjects/releases/latest)
+[![Github All Releases](https://img.shields.io/github/downloads/MidLevel/MLAPI/total.svg?logo=github&color=informational)](https://github.com/Unity-Technologies/com.unity.netcode.gameobjects/releases)
 
 [![Forums](https://img.shields.io/badge/unity--forums-multiplayer-blue)](https://forum.unity.com/forums/multiplayer.26/)
 [![Discord](https://img.shields.io/discord/449263083769036810.svg?label=discord&logo=discord&color=informational)](https://discord.gg/FM8SE9E)
@@ -31,7 +31,7 @@ We follow the [Gitflow Workflow](https://www.atlassian.com/git/tutorials/compari
 This repository is broken into multiple components, each one implemented as a Unity Package.
 ```
     .
-    ├── com.unity.multiplayer.mlapi            # The core netcode SDK unity package (source + tests)
+    ├── com.unity.netcode.gameobjects          # The core netcode SDK unity package (source + tests)
     ├── com.unity.multiplayer.transport.utp    # Transport wrapper for com.unity.transport experimental package (not currently supported)
     └── testproject                            # A Unity project with various test implementations & scenes which exercise the features in the above package(s).
 ```
