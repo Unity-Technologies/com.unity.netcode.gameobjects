@@ -9,6 +9,54 @@ namespace Unity.Netcode.EditorTests
 {
     public class NetworkTimeTests
     {
+        [Test]
+        [TestCase(0d, 0)]
+        [TestCase(5d, 0)]
+        [TestCase(-5d, 0)]
+        [TestCase(0d, -20)]
+        [TestCase(5d, int.MinValue)]
+        [TestCase(-5d, -1)]
+        public void TestFailCreateInvalidTime(double time, int tickrate)
+        {
+            Assert.Throws<UnityEngine.Assertions.AssertionException>(() => new NetworkTime(tickrate, time));
+        }
+
+        [Test]
+        [TestCase(0d, 0f, 20)]
+        [TestCase(0d, 0f, 30)]
+        [TestCase(0d, 0f, 60)]
+
+        [TestCase(201d, 201f, 20)]
+        [TestCase(201d, 201f, 30)]
+        [TestCase(201d, 201f, 60)]
+
+        [TestCase(-4301d, -4301f, 20)]
+        [TestCase(-4301d, -4301f, 30)]
+        [TestCase(-4301d, -4301f, 60)]
+
+        [TestCase(float.MaxValue, float.MaxValue, 20)]
+        [TestCase(float.MaxValue, float.MaxValue, 30)]
+        [TestCase(float.MaxValue, float.MaxValue, 60)]
+        public void TestTimeAsFloat(double d, float f, int tickRate)
+        {
+            var networkTime = new NetworkTime(tickRate, d);
+            Assert.True(Mathf.Approximately(networkTime.TimeAsFloat, f));
+        }
+
+        [Test]
+        [TestCase(53.55d, 53.5d, 10)]
+        [TestCase(1013553.55d, 1013553.5d, 10)]
+        [TestCase(0d, 0d, 10)]
+        [TestCase(-27.41d, -27.5d, 10)]
+
+        [TestCase(53.55d, 53.54d, 50)]
+        [TestCase(1013553.55d, 1013553.54d, 50)]
+        [TestCase(0d, 0d, 50)]
+        [TestCase(-27.4133d, -27.42d, 50)]
+        public void TestToFixedTime(double time, double expectedFixedTime, int tickRate)
+        {
+            Assert.AreEqual(expectedFixedTime, new NetworkTime(tickRate, time).ToFixedTime().Time);
+        }
 
         [Test]
         public void NetworkTimeCreate()
@@ -104,7 +152,6 @@ namespace Unity.Netcode.EditorTests
             Assert.IsTrue(Approximately(floatResultE, timeE.Time));
         }
 
-
         [Test]
         public void NetworkTimeAddNetworkTimeTest()
         {
@@ -170,7 +217,6 @@ namespace Unity.Netcode.EditorTests
             NetworkTimeAdvanceTestInternal(randomSteps, 30, 0f);
             NetworkTimeAdvanceTestInternal(randomSteps, 144, 0f);
 
-
             NetworkTimeAdvanceTestInternal(randomSteps, 60, 23132.231f);
             NetworkTimeAdvanceTestInternal(randomSteps, 1, 23132.231f);
             NetworkTimeAdvanceTestInternal(randomSteps, 10, 23132.231f);
@@ -220,6 +266,5 @@ namespace Unity.Netcode.EditorTests
             var dif = Math.Abs(a - b);
             return dif <= epsilon;
         }
-
     }
 }
