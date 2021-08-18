@@ -3,12 +3,8 @@ using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
-using MLAPI;
-using MLAPI.RuntimeTests;
-using MLAPI.Serialization;
-using MLAPI.Messaging;
-using UnityEditorInternal;
-using Debug = UnityEngine.Debug;
+using Unity.Netcode;
+using Unity.Netcode.RuntimeTests;
 
 namespace TestProject.RuntimeTests
 {

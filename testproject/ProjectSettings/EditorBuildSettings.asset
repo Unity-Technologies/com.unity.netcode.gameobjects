@@ -50,4 +50,10 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/EmptyScene.unity
     guid: a2545a872c007404fbb6b0393ab74974
+  - enabled: 1
+    path: Assets/Samples/PrefabPool/PrefabPoolExample.unity
+    guid: e4732b28c18f52c4dbe06c8a37f7997f
+  - enabled: 1
+    path: Assets/Samples/PrefabPool/PrefabPoolOverrideExample.unity
+    guid: 8c9bee1332e0526429d8a2c929945d60
   m_configObjects: {}

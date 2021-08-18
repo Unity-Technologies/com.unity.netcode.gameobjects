@@ -2,9 +2,9 @@
     "name": "TestProject",
     "rootNamespace": "",
     "references": [
-        "Unity.Multiplayer.MLAPI.Runtime",
-        "Unity.Multiplayer.MLAPI.Editor",
-        "Unity.Multiplayer.MLAPI.Prototyping",
+        "Unity.Netcode.Runtime",
+        "Unity.Netcode.Editor",
+        "Unity.Netcode.Prototyping",
         "Unity.Multiplayer.Transport.UTP",
         "Unity.Services.Authentication",
         "Unity.Services.Core",

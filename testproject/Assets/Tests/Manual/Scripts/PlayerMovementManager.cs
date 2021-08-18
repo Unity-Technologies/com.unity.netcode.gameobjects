@@ -1,5 +1,5 @@
 using UnityEngine;
-using MLAPI;
+using Unity.Netcode;
 
 
 namespace TestProject.ManualTests
@@ -23,7 +23,7 @@ namespace TestProject.ManualTests
         {
             m_NetworkedObject = GetComponent<NetworkObject>();
             m_RandomMovement = GetComponent<RandomMovement>();
-         
+
         }
 
         public override void OnNetworkSpawn()
@@ -31,7 +31,7 @@ namespace TestProject.ManualTests
             m_Rigidbody = GetComponent<Rigidbody>();
             if (m_Rigidbody != null)
             {
-                m_Rigidbody.isKinematic = !NetworkObject.IsOwner;
+                m_Rigidbody.isKinematic = !NetworkObject.NetworkManager.IsServer;
             }
         }
 
@@ -44,18 +44,10 @@ namespace TestProject.ManualTests
                     m_RandomMovement.enabled = !m_RandomMovement.enabled;
                 }
             }
-        }
 
-        private void FixedUpdate()
-        {
             if (m_NetworkedObject && m_NetworkedObject.NetworkManager && m_NetworkedObject.NetworkManager.IsListening)
             {
-
-                if (!m_NetworkedObject.IsOwner)
-                {
-                    return;
-                }
-                else if (m_RandomMovement.enabled)
+                if (m_RandomMovement.enabled)
                 {
                     m_RandomMovement.Move(MoveSpeed);
                 }

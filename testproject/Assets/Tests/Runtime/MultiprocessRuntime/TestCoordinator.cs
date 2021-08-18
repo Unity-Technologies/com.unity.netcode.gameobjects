@@ -2,8 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using MLAPI;
-using MLAPI.Messaging;
+using Unity.Netcode;
 using NUnit.Framework;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
@@ -16,7 +15,7 @@ using Debug = UnityEngine.Debug;
 /// to coordinate test execution between client and server with that model.
 /// The only per tests communication already existing is to get the results per test as they are running
 /// With this test coordinator, it's not possible to start a main test node with the test runner and have that server start other worker nodes
-/// on which to execute client tests. We use MLAPI as both a test framework and as the target of our performance tests.
+/// on which to execute client tests. We use netcode as both a test framework and as the target of our performance tests.
 /// </summary>
 [RequireComponent(typeof(NetworkObject))]
 public class TestCoordinator : NetworkBehaviour
@@ -55,7 +54,7 @@ public class TestCoordinator : NetworkBehaviour
         bool isClient = Environment.GetCommandLineArgs().Any(value => value == MultiprocessOrchestration.IsWorkerArg);
         if (isClient)
         {
-            Debug.Log("starting MLAPI client");
+            Debug.Log("starting netcode client");
             NetworkManager.Singleton.StartClient();
         }
 

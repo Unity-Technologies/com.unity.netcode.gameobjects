@@ -1,15 +1,14 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-#if UNITY_EDITOR    
+#if UNITY_EDITOR
 using UnityEditor;
 #endif
 
 
-[CreateAssetMenu(fileName = "MenuReference", menuName = "MLAPI/MenuReference")]
-public class MenuReference: ScriptableObject, ISceneReference
+[CreateAssetMenu(fileName = nameof(MenuReference), menuName = "Netcode/" + nameof(MenuReference))]
+public class MenuReference : ScriptableObject, ISceneReference
 {
-#if UNITY_EDITOR    
+#if UNITY_EDITOR
     public SceneAsset MenuScene;
 #endif
     [SerializeField]
@@ -19,7 +18,7 @@ public class MenuReference: ScriptableObject, ISceneReference
     [SerializeField]
     private List<string> m_ReferencedScenes;
 
-#if UNITY_EDITOR    
+#if UNITY_EDITOR
     private void OnValidate()
     {
         if (m_ReferencedScenes == null)

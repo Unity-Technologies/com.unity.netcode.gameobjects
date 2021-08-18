@@ -1,10 +1,9 @@
 using UnityEngine;
-using MLAPI;
+using Unity.Netcode;
 #if ENABLE_RELAY_SERVICE
 using Unity.Services.Core;
 using Unity.Services.Authentication;
 #endif
-using MLAPI.Transports;
 
 public class UIController : MonoBehaviour
 {

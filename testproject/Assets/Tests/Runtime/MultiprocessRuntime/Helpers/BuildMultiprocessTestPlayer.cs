@@ -6,7 +6,7 @@ using UnityEditor.Build.Reporting;
 #endif
 using UnityEngine;
 
-namespace MLAPI.MultiprocessRuntimeTests
+namespace Unity.Netcode.MultiprocessRuntimeTests
 {
     /// <summary>
     /// This is needed as Unity throws "An abnormal situation has occurred: the PlayerLoop internal function has been called recursively. Please contact Customer Support with a sample project so that we can reproduce the problem and troubleshoot it."
@@ -14,7 +14,7 @@ namespace MLAPI.MultiprocessRuntimeTests
     /// </summary>
     public static class BuildMultiprocessTestPlayer
     {
-        public const string MultiprocessBaseMenuName = "MLAPI/Multiprocess Test";
+        public const string MultiprocessBaseMenuName = "Netcode/Multiprocess Test";
         public const string BuildAndExecuteMenuName = MultiprocessBaseMenuName + "/Build Test Player #t";
         public const string MainSceneName = "MultiprocessTestScene";
 

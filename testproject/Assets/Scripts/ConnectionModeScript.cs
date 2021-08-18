@@ -1,8 +1,6 @@
-using System;
 using System.Collections;
 using UnityEngine;
-using MLAPI;
-using MLAPI.Transports;
+using Unity.Netcode;
 
 #if ENABLE_RELAY_SERVICE
 using Unity.Services.Core;
@@ -39,7 +37,7 @@ public class ConnectionModeScript : MonoBehaviour
     internal void SetCommandLineHandler(CommandLineProcessor commandLineProcessor)
     {
         m_CommandLineProcessor = commandLineProcessor;
-        if(m_CommandLineProcessor.AutoConnectEnabled())
+        if (m_CommandLineProcessor.AutoConnectEnabled())
         {
             StartCoroutine(WaitForNetworkManager());
         }
@@ -53,7 +51,7 @@ public class ConnectionModeScript : MonoBehaviour
 
     private IEnumerator WaitForNetworkManager()
     {
-        while(true)
+        while (true)
         {
             yield return new WaitForSeconds(0.5f);
             try
@@ -108,7 +106,7 @@ public class ConnectionModeScript : MonoBehaviour
     }
 
     /// <summary>
-    /// Handles starting MLAPI in server mode
+    /// Handles starting netcode in server mode
     /// </summary>
     public void OnStartServerButton()
     {
@@ -160,7 +158,7 @@ public class ConnectionModeScript : MonoBehaviour
 #endif
 
     /// <summary>
-    /// Handles starting MLAPI in host mode
+    /// Handles starting netcode in host mode
     /// </summary>
     public void OnStartHostButton()
     {
@@ -182,7 +180,7 @@ public class ConnectionModeScript : MonoBehaviour
     }
 
     /// <summary>
-    /// Handles starting MLAPI in client mode
+    /// Handles starting netcode in client mode
     /// </summary>
     public void OnStartClientButton()
     {

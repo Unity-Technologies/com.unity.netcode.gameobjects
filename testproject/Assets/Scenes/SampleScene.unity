@@ -581,7 +581,7 @@ Transform:
   m_Children:
   - {fileID: 789733233}
   m_Father: {fileID: 0}
-  m_RootOrder: 7
+  m_RootOrder: 6
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &402668303
 MonoBehaviour:
@@ -624,17 +624,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e96cb6065543e43c4a752faaa1468eb1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  TransformAuthority: 0
-  FixedSendsPerSecond: 30
-  InterpolatePosition: 1
-  SnapDistance: 10
-  InterpolateServer: 1
-  MinMeters: 0.15
-  MinDegrees: 1.5
-  MinSize: 0.15
+  Authority: 0
   Channel: 10
-  m_UseLocal:
-    m_InternalValue: 1
+  InLocalSpace: 1
+  FixedSendsPerSecond: 30
 --- !u!1 &403665142
 GameObject:
   m_ObjectHideFlags: 0
@@ -1097,7 +1090,7 @@ GameObject:
   - component: {fileID: 620561610}
   - component: {fileID: 620561613}
   m_Layer: 0
-  m_Name: NetworkManager
+  m_Name: '[NetworkManager]'
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1124,9 +1117,9 @@ MonoBehaviour:
   ServerWebsocketListenPort: 8887
   SupportWebsocket: 0
   Channels: []
-  UseMLAPIRelay: 0
-  MLAPIRelayAddress: 184.72.104.138
-  MLAPIRelayPort: 8888
+  UseNetcodeRelay: 0
+  NetcodeRelayAddress: 127.0.0.1
+  NetcodeRelayPort: 8888
   MessageSendMode: 0
 --- !u!114 &620561611
 MonoBehaviour:
@@ -1175,7 +1168,6 @@ MonoBehaviour:
     NetworkIdRecycleDelay: 120
     RpcHashSize: 0
     LoadSceneTimeOut: 120
-    EnableMessageBuffering: 1
     MessageBufferTimeout: 20
     EnableNetworkLogs: 1
 --- !u!4 &620561612
@@ -2138,7 +2130,7 @@ Transform:
   m_LocalScale: {x: 0.42366, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 11
+  m_RootOrder: 10
   m_LocalEulerAnglesHint: {x: 0, y: 90, z: 0}
 --- !u!114 &963826004
 MonoBehaviour:
@@ -2164,17 +2156,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e96cb6065543e43c4a752faaa1468eb1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  TransformAuthority: 0
-  FixedSendsPerSecond: 30
-  InterpolatePosition: 1
-  SnapDistance: 10
-  InterpolateServer: 1
-  MinMeters: 0.15
-  MinDegrees: 1.5
-  MinSize: 0.15
+  Authority: 0
   Channel: 10
-  m_UseLocal:
-    m_InternalValue: 0
+  InLocalSpace: 0
+  FixedSendsPerSecond: 30
 --- !u!114 &963826006
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2608,7 +2593,7 @@ Transform:
   m_Children:
   - {fileID: 1475593094}
   m_Father: {fileID: 0}
-  m_RootOrder: 10
+  m_RootOrder: 9
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1397037315
 GameObject:
@@ -2658,17 +2643,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e96cb6065543e43c4a752faaa1468eb1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  TransformAuthority: 2
-  FixedSendsPerSecond: 30
-  InterpolatePosition: 1
-  SnapDistance: 10
-  InterpolateServer: 1
-  MinMeters: 0.15
-  MinDegrees: 1.5
-  MinSize: 0.15
+  Authority: 2
   Channel: 10
-  m_UseLocal:
-    m_InternalValue: 1
+  InLocalSpace: 1
+  FixedSendsPerSecond: 30
 --- !u!114 &1397037319
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2776,7 +2754,7 @@ Transform:
   m_Children:
   - {fileID: 772203958}
   m_Father: {fileID: 0}
-  m_RootOrder: 8
+  m_RootOrder: 7
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1398767341
 GameObject:
@@ -2922,17 +2900,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e96cb6065543e43c4a752faaa1468eb1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  TransformAuthority: 1
-  FixedSendsPerSecond: 30
-  InterpolatePosition: 1
-  SnapDistance: 10
-  InterpolateServer: 1
-  MinMeters: 0.15
-  MinDegrees: 1.5
-  MinSize: 0.15
+  Authority: 1
   Channel: 10
-  m_UseLocal:
-    m_InternalValue: 1
+  InLocalSpace: 1
+  FixedSendsPerSecond: 30
 --- !u!114 &1402467446
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3040,7 +3011,7 @@ Transform:
   m_Children:
   - {fileID: 1237561006}
   m_Father: {fileID: 0}
-  m_RootOrder: 9
+  m_RootOrder: 8
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1463459130
 GameObject:
@@ -3372,17 +3343,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e96cb6065543e43c4a752faaa1468eb1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  TransformAuthority: 0
-  FixedSendsPerSecond: 30
-  InterpolatePosition: 1
-  SnapDistance: 10
-  InterpolateServer: 1
-  MinMeters: 0.15
-  MinDegrees: 1.5
-  MinSize: 0.15
+  Authority: 0
   Channel: 10
-  m_UseLocal:
-    m_InternalValue: 0
+  InLocalSpace: 0
+  FixedSendsPerSecond: 30
 --- !u!224 &1536251758 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 6633621479308595792, guid: d725b5588e1b956458798319e6541d84,

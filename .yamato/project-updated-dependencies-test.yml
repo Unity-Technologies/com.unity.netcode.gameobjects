@@ -5,7 +5,7 @@
 # The idea is to only run validation once per package and not mix.
 # the results with package tests
 {% for package in projects.first.packages -%}
-{% for editor in test_editors -%}
+{% for editor in projects.first.test_editors -%}
 {% for platform in test_platforms -%}
 dependency_{{ projects.first.name }}_{{ package.name }}_{{ platform.name }}_{{ editor }}:
   name : Dependency Test of Project {{ projects.first.name }} - Package {{ package.name }} - {{ editor }} on {{ platform.name }}
@@ -51,7 +51,7 @@ dependency_test_trigger_{{ projects.first.name }}:
         frequency: 22 * * ?
   dependencies:
 {% for package in projects.first.packages -%}
-{% for editor in test_editors -%}
+{% for editor in projects.first.test_editors -%}
 {% for platform in test_platforms -%}
     - .yamato/project-updated-dependencies-test.yml#dependency_{{ projects.first.name }}_{{ package.name }}_{{ platform.name }}_{{ editor }}
 {% endfor -%}

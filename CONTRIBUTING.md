@@ -14,11 +14,11 @@ Here are our guidlines for contributing:
 
 ## <a name="coc"></a> Code of Conduct
 
-Please help us keep MLAPI open and inclusive. Read and follow our [Code of Conduct](CODE_OF_CONDUCT.md).
+Please help us keep Unity Netcode for GameObjects open and inclusive. Read and follow our [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## <a name="ways"></a> Ways to Contribute
 
-There are many ways in which you can contribute to the MLAPI.
+There are many ways in which you can contribute to Netcode for GameObjects.
 
 ### <a name="issue"></a> Issues and Bugs
 
@@ -46,7 +46,7 @@ When you open a pull request, you will be asked to enter into Unity's License Ag
 
 ## <a name="submit-pr"></a> Pull Request Submission Guidelines
 
-We use the [Gitflow Workflow](https://www.atlassian.com/git/tutorials/comparing-workflows/gitflow-workflow) for the development of MLAPI. This means development happens on the **develop branch** and Pull Requests should be submited to it.
+We use the [Gitflow Workflow](https://www.atlassian.com/git/tutorials/comparing-workflows/gitflow-workflow) for the development of the Netcode for GameObjects. This means development happens on the **develop branch** and Pull Requests should be submited to it.
 
 ### Commit Message Guidelines
 We have very precise rules over how our git commit messages can be formatted.  This leads to **more
