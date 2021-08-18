@@ -40,8 +40,7 @@ namespace Unity.Netcode
         /// The most common approach is to make the <see cref="NetworkObject"/> inactive by calling <see cref="GameObject.SetActive(bool)"/>.
         /// </summary>
         /// <param name="networkObject">The <see cref="NetworkObject"/> being destroyed</param>
-        /// <returns>(true) destroy the parent <see cref="GameObject"/> (false) do not destroy the parent <see cref="GameObject"/> </returns>
-        bool Destroy(NetworkObject networkObject);
+        void Destroy(NetworkObject networkObject);
     }
 
     /// <summary>
@@ -279,7 +278,7 @@ namespace Unity.Netcode
         /// Will invoke the <see cref="INetworkPrefabInstanceHandler"/> implementation's Destroy method
         /// </summary>
         /// <param name="networkObjectInstance"></param>
-        internal bool HandleNetworkPrefabDestroy(NetworkObject networkObjectInstance)
+        internal void HandleNetworkPrefabDestroy(NetworkObject networkObjectInstance)
         {
             var networkObjectInstanceHash = networkObjectInstance.GlobalObjectIdHash;
 
@@ -289,16 +288,14 @@ namespace Unity.Netcode
                 var networkPrefabAssetHash = m_PrefabInstanceToPrefabAsset[networkObjectInstanceHash];
                 if (m_PrefabAssetToPrefabHandler.ContainsKey(networkPrefabAssetHash))
                 {
-                    return m_PrefabAssetToPrefabHandler[networkPrefabAssetHash].Destroy(networkObjectInstance);
+                    m_PrefabAssetToPrefabHandler[networkPrefabAssetHash].Destroy(networkObjectInstance);
                 }
             }
             else // Otherwise the NetworkObject is the source NetworkPrefab
             if (m_PrefabAssetToPrefabHandler.ContainsKey(networkObjectInstanceHash))
             {
-                return m_PrefabAssetToPrefabHandler[networkObjectInstanceHash].Destroy(networkObjectInstance);
+                m_PrefabAssetToPrefabHandler[networkObjectInstanceHash].Destroy(networkObjectInstance);
             }
-
-            return true;
         }
     }
 }
