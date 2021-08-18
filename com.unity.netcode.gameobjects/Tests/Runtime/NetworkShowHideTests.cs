@@ -155,7 +155,7 @@ namespace Unity.Netcode.RuntimeTests
 
             for (int mode = 0; mode < 2; mode++)
             {
-                yield return new WaitForSeconds(0.1f);
+                yield return new WaitForSeconds(0.5f);
 
                 // get the NetworkObject on a client instance
                 yield return RefreshNetworkObjects();
@@ -165,14 +165,14 @@ namespace Unity.Netcode.RuntimeTests
 
                 // hide them on one client
                 Show(mode == 0, false);
-                yield return new WaitForSeconds(0.1f);
+                yield return new WaitForSeconds(0.5f);
 
                 // verify they got hidden
                 CheckVisible(false);
 
                 // show them to that client
                 Show(mode == 0, true);
-                yield return new WaitForSeconds(0.1f);
+                yield return new WaitForSeconds(0.5f);
                 yield return RefreshNetworkObjects();
 
                 // verify they become visible
