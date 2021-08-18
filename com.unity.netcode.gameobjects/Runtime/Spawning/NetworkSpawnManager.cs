@@ -675,7 +675,7 @@ namespace Unity.Netcode
                                     clientIds, NetworkUpdateStage.PostLateUpdate);
                                 if (context != null)
                                 {
-                                    using (var nonNullContext = (InternalCommandContext) context)
+                                    using (var nonNullContext = (InternalCommandContext)context)
                                     {
                                         var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
                                         bufferSizeCapture.StartMeasureSegment();

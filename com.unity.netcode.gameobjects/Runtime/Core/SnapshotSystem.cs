@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
-using Random = UnityEngine.Random;
 
 namespace Unity.Netcode
 {
@@ -69,8 +68,8 @@ namespace Unity.Netcode
     {
         // todo --M1-- functionality to grow these will be needed in a later milestone
         private const int k_MaxVariables = 2000;
-        private int k_MaxSpawns = 100;
-        private int k_MaxDespawns = 100;
+        private int m_MaxSpawns = 100;
+        private int m_MaxDespawns = 100;
 
         private const int k_BufferSize = 30000;
 
@@ -89,7 +88,7 @@ namespace Unity.Netcode
         internal int NumDespawns = 0;
 
         private MemoryStream m_BufferStream;
-        internal NetworkManager m_NetworkManager;
+        internal NetworkManager NetworkManager;
 
         // indexed by ObjectId
         internal Dictionary<ulong, ushort> TickAppliedSpawn = new Dictionary<ulong, ushort>();
@@ -106,8 +105,8 @@ namespace Unity.Netcode
             m_BufferStream = new MemoryStream(RecvBuffer, 0, k_BufferSize);
             // we ask for twice as many slots because there could end up being one free spot between each pair of slot used
             Allocator = new IndexAllocator(k_BufferSize, k_MaxVariables * 2);
-            Spawns = new SnapshotSpawnCommand[k_MaxSpawns];
-            Despawns = new SnapshotDespawnCommand[k_MaxDespawns];
+            Spawns = new SnapshotSpawnCommand[m_MaxSpawns];
+            Despawns = new SnapshotDespawnCommand[m_MaxDespawns];
         }
 
         internal void Clear()
@@ -158,15 +157,15 @@ namespace Unity.Netcode
             List<ulong> clientList;
             clientList = new List<ulong>();
 
-            if (!m_NetworkManager.IsServer)
+            if (!NetworkManager.IsServer)
             {
-                clientList.Add(m_NetworkManager.ServerClientId);
+                clientList.Add(NetworkManager.ServerClientId);
             }
             else
             {
-                foreach (var clientId in m_NetworkManager.ConnectedClientsIds)
+                foreach (var clientId in NetworkManager.ConnectedClientsIds)
                 {
-                    if (clientId != m_NetworkManager.ServerClientId)
+                    if (clientId != NetworkManager.ServerClientId)
                     {
                         clientList.Add(clientId);
                     }
@@ -178,14 +177,14 @@ namespace Unity.Netcode
 
         internal void AddSpawn(SnapshotSpawnCommand command)
         {
-            if (NumSpawns >= k_MaxSpawns)
+            if (NumSpawns >= m_MaxSpawns)
             {
-                Array.Resize(ref Spawns, 2 * k_MaxSpawns);
-                k_MaxSpawns = k_MaxSpawns * 2;
-                Debug.Log($"[JEFF] spawn size is now {k_MaxSpawns}");
+                Array.Resize(ref Spawns, 2 * m_MaxSpawns);
+                m_MaxSpawns = m_MaxSpawns * 2;
+                Debug.Log($"[JEFF] spawn size is now {m_MaxSpawns}");
             }
 
-            if (NumSpawns < k_MaxSpawns)
+            if (NumSpawns < m_MaxSpawns)
             {
                 if (command.TargetClientIds == default)
                 {
@@ -205,14 +204,14 @@ namespace Unity.Netcode
 
         internal void AddDespawn(SnapshotDespawnCommand command)
         {
-            if (NumDespawns >= k_MaxDespawns)
+            if (NumDespawns >= m_MaxDespawns)
             {
-                Array.Resize(ref Despawns, 2 * k_MaxDespawns);
-                k_MaxDespawns = k_MaxDespawns * 2;
-                Debug.Log($"[JEFF] despawn size is now {k_MaxDespawns}");
+                Array.Resize(ref Despawns, 2 * m_MaxDespawns);
+                m_MaxDespawns = m_MaxDespawns * 2;
+                Debug.Log($"[JEFF] despawn size is now {m_MaxDespawns}");
             }
 
-            if (NumDespawns < k_MaxDespawns)
+            if (NumDespawns < m_MaxDespawns)
             {
                 if (command.TargetClientIds == default)
                 {
@@ -443,13 +442,13 @@ namespace Unity.Netcode
 
                 if (spawnCommand.ParentNetworkId == spawnCommand.NetworkObjectId)
                 {
-                    var networkObject = m_NetworkManager.SpawnManager.CreateLocalNetworkObject(false, spawnCommand.GlobalObjectIdHash, spawnCommand.OwnerClientId, null, spawnCommand.ObjectPosition, spawnCommand.ObjectRotation);
-                    m_NetworkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, spawnCommand.NetworkObjectId, true, spawnCommand.IsPlayerObject, spawnCommand.OwnerClientId, null, false, false);
+                    var networkObject = NetworkManager.SpawnManager.CreateLocalNetworkObject(false, spawnCommand.GlobalObjectIdHash, spawnCommand.OwnerClientId, null, spawnCommand.ObjectPosition, spawnCommand.ObjectRotation);
+                    NetworkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, spawnCommand.NetworkObjectId, true, spawnCommand.IsPlayerObject, spawnCommand.OwnerClientId, null, false, false);
                 }
                 else
                 {
-                    var networkObject = m_NetworkManager.SpawnManager.CreateLocalNetworkObject(false, spawnCommand.GlobalObjectIdHash, spawnCommand.OwnerClientId, spawnCommand.ParentNetworkId, spawnCommand.ObjectPosition, spawnCommand.ObjectRotation);
-                    m_NetworkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, spawnCommand.NetworkObjectId, true, spawnCommand.IsPlayerObject, spawnCommand.OwnerClientId, null, false, false);
+                    var networkObject = NetworkManager.SpawnManager.CreateLocalNetworkObject(false, spawnCommand.GlobalObjectIdHash, spawnCommand.OwnerClientId, spawnCommand.ParentNetworkId, spawnCommand.ObjectPosition, spawnCommand.ObjectRotation);
+                    NetworkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, spawnCommand.NetworkObjectId, true, spawnCommand.IsPlayerObject, spawnCommand.OwnerClientId, null, false, false);
                 }
             }
             for (var i = 0; i < despawnCount; i++)
@@ -466,10 +465,10 @@ namespace Unity.Netcode
 
                 Debug.Log($"[DeSpawn] {despawnCommand.NetworkObjectId} {despawnCommand.TickWritten}");
 
-                m_NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(despawnCommand.NetworkObjectId,
+                NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(despawnCommand.NetworkObjectId,
                     out NetworkObject networkObject);
 
-                m_NetworkManager.SpawnManager.OnDespawnObject(networkObject, true);
+                NetworkManager.SpawnManager.OnDespawnObject(networkObject, true);
             }
         }
 
@@ -540,7 +539,7 @@ namespace Unity.Netcode
         /// <param name="key">The key to search for</param>
         private INetworkVariable FindNetworkVar(VariableKey key)
         {
-            var spawnedObjects = m_NetworkManager.SpawnManager.SpawnedObjects;
+            var spawnedObjects = NetworkManager.SpawnManager.SpawnedObjects;
 
             if (spawnedObjects.ContainsKey(key.NetworkObjectId))
             {
@@ -604,7 +603,7 @@ namespace Unity.Netcode
             m_Snapshot = new Snapshot();
 
             m_NetworkManager = networkManager;
-            m_Snapshot.m_NetworkManager = networkManager;
+            m_Snapshot.NetworkManager = networkManager;
 
             this.RegisterNetworkUpdate(NetworkUpdateStage.EarlyUpdate);
         }
