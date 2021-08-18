@@ -18,9 +18,21 @@ namespace Unity.Netcode
 
         void TrackUnnamedMessageReceived(ulong senderClientId, long bytesCount);
 
-        void TrackNetworkVariableDeltaSent(ulong receiverClientId, ulong networkObjectId, string gameObjectName, string variableName, long bytesCount);
+        void TrackNetworkVariableDeltaSent(
+            ulong receiverClientId,
+            ulong networkObjectId,
+            string gameObjectName,
+            string variableName,
+            string networkBehaviourName,
+            long bytesCount);
 
-        void TrackNetworkVariableDeltaReceived(ulong senderClientId, ulong networkObjectId, string gameObjectName, string variableName, long bytesCount);
+        void TrackNetworkVariableDeltaReceived(
+            ulong senderClientId,
+            ulong networkObjectId,
+            string gameObjectName,
+            string variableName,
+            string networkBehaviourName,
+            long bytesCount);
 
         void TrackOwnershipChangeSent(ulong receiverClientId, ulong networkObjectId, string gameObjectName, long bytesCount);
 
@@ -36,11 +48,26 @@ namespace Unity.Netcode
 
         void TrackObjectDestroyReceived(ulong senderClientId, ulong networkObjectId, string gameObjectName, long bytesCount);
 
-        void TrackRpcSent(ulong receiverClientId, ulong networkObjectId, string rpcName, long bytesCount);
+        void TrackRpcSent(
+            ulong receiverClientId,
+            ulong networkObjectId,
+            string rpcName,
+            string networkBehaviourName,
+            long bytesCount);
 
-        void TrackRpcSent(ulong[] receiverClientIds, ulong networkObjectId, string rpcName, long bytesCount);
+        void TrackRpcSent(
+            ulong[] receiverClientIds,
+            ulong networkObjectId,
+            string rpcName,
+            string networkBehaviourName,
+            long bytesCount);
 
-        void TrackRpcReceived(ulong senderClientId, ulong networkObjectId, string rpcName, long bytesCount);
+        void TrackRpcReceived(
+            ulong senderClientId,
+            ulong networkObjectId,
+            string rpcName,
+            string networkBehaviourName,
+            long bytesCount);
 
         void TrackServerLogSent(ulong receiverClientId, uint logType, long bytesCount);
 
