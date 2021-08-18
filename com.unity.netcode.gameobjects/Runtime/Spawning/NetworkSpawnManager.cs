@@ -269,7 +269,7 @@ namespace Unity.Netcode
             {
                 var networkObject = NetworkManager.SceneManager.GetSceneRelativeInSceneNetworkObject(globalObjectIdHash);
 
-                if(networkObject == null)
+                if (networkObject == null)
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
                     {
@@ -677,7 +677,7 @@ namespace Unity.Netcode
                     // If the custom prefab handler returns true then we destroy the parent GameObject
                     // otherwise the custom prefab handler handles how they want to deal with despawning
                     // the NetworkObject
-                    if(NetworkManager.PrefabHandler.HandleNetworkPrefabDestroy(networkObject))
+                    if (NetworkManager.PrefabHandler.HandleNetworkPrefabDestroy(networkObject))
                     {
                         if (SpawnedObjects.Remove(networkObject.NetworkObjectId))
                         {

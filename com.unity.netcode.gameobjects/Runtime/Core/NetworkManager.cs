@@ -264,9 +264,9 @@ namespace Unity.Netcode
 
             if (NetworkConfig.EnableSceneManagement)
             {
-                foreach(var sceneAsset in NetworkConfig.RegisteredSceneAssets)
+                foreach (var sceneAsset in NetworkConfig.RegisteredSceneAssets)
                 {
-                    if(!NetworkConfig.RegisteredScenes.Contains(sceneAsset.name))
+                    if (!NetworkConfig.RegisteredScenes.Contains(sceneAsset.name))
                     {
                         NetworkConfig.RegisteredScenes.Add(sceneAsset.name);
                     }
@@ -870,14 +870,7 @@ namespace Unity.Netcode
                 NetworkTickSystem.Tick -= OnNetworkManagerTick;
                 NetworkTickSystem = null;
             }
-            // This is required for handling the potential scenario where multiple NetworkManager instances are created.
-            // See MTT-860 for more information
-#if !UNITY_2020_2_OR_NEWER
-            if (IsListening)
-            {
-                NetworkProfiler.Stop();
-            }
-#endif
+
             IsServer = false;
             IsClient = false;
             NetworkConfig.NetworkTransport.OnTransportEvent -= HandleRawTransportPoll;
@@ -1225,7 +1218,12 @@ namespace Unity.Netcode
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                     if (__rpc_name_table.TryGetValue(networkMethodId, out var rpcMethodName))
                     {
-                        NetworkMetrics.TrackRpcReceived(item.NetworkId, networkObjectId, rpcMethodName, item.StreamSize);
+                        NetworkMetrics.TrackRpcReceived(
+                            item.NetworkId,
+                            networkObjectId,
+                            rpcMethodName,
+                            networkBehaviour.__getTypeName(),
+                            item.StreamSize);
                     }
 #endif
                 }
@@ -1352,12 +1350,12 @@ namespace Unity.Netcode
         /// <summary>
         /// Server Side: Handles the approval of a client
         /// </summary>
-        /// <param name="ownerClientId"></param>
-        /// <param name="createPlayerObject"></param>
-        /// <param name="playerPrefabHash"></param>
-        /// <param name="approved"></param>
-        /// <param name="position"></param>
-        /// <param name="rotation"></param>
+        /// <param name="ownerClientId">client being approved</param>
+        /// <param name="createPlayerObject">whether we want to create a player or not</param>
+        /// <param name="playerPrefabHash">the GlobalObjectIdHash value for the Network Prefab to create as the player</param>
+        /// <param name="approved">Is the player approved or not?</param>
+        /// <param name="position">Used when createPlayerObject is true, position of the player when spawned </param>
+        /// <param name="rotation">Used when createPlayerObject is true, rotation of the player when spawned</param>
         internal void HandleApproval(ulong ownerClientId, bool createPlayerObject, uint? playerPrefabHash, bool approved, Vector3? position, Quaternion? rotation)
         {
             if (approved)
@@ -1380,7 +1378,7 @@ namespace Unity.Netcode
                 // Don't send the CONNECTION_APPROVED message if this is the host that connected locally
                 if (ownerClientId != ServerClientId)
                 {
-                    var context = MessageQueueContainer.EnterInternalCommandContext( MessageQueueContainer.MessageType.ConnectionApproved, NetworkChannel.Internal, new ulong[]{ownerClientId},
+                    var context = MessageQueueContainer.EnterInternalCommandContext(MessageQueueContainer.MessageType.ConnectionApproved, NetworkChannel.Internal, new ulong[] { ownerClientId },
                         NetworkUpdateStage.EarlyUpdate);
 
                     if (context != null)
@@ -1433,8 +1431,8 @@ namespace Unity.Netcode
                     continue; //The new client.
                 }
 
-                var context = MessageQueueContainer.EnterInternalCommandContext( MessageQueueContainer.MessageType.CreateObject, NetworkChannel.Internal,
-                    new[] {clientPair.Key}, NetworkUpdateLoop.UpdateStage);
+                var context = MessageQueueContainer.EnterInternalCommandContext(MessageQueueContainer.MessageType.CreateObject, NetworkChannel.Internal,
+                    new[] { clientPair.Key }, NetworkUpdateLoop.UpdateStage);
                 if (context != null)
                 {
                     using (var nonNullContext = (InternalCommandContext)context)

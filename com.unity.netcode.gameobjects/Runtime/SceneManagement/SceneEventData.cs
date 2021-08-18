@@ -189,7 +189,7 @@ namespace Unity.Netcode
             {
                 return true;
             }
-            else if (ScenesToSynchronize.Count != SceneHandlesToSynchronize.Count )
+            else if (ScenesToSynchronize.Count != SceneHandlesToSynchronize.Count)
             {
                 // This should never happen, but in the event it does...
                 throw new Exception($"[{nameof(SceneEventData)}-Internal Mismatch Error] {nameof(ScenesToSynchronize)} count != {nameof(SceneHandlesToSynchronize)} count!");

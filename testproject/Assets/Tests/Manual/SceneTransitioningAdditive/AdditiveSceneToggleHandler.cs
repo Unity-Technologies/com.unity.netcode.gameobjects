@@ -52,11 +52,11 @@ namespace TestProject.ManualTests
         {
             while (!m_ExitingScene)
             {
-                if (NetworkManager.Singleton && NetworkManager.Singleton.IsListening )
+                if (NetworkManager.Singleton && NetworkManager.Singleton.IsListening)
                 {
                     if (m_ToggleObject)
                     {
-                        if(NetworkManager.Singleton.IsServer)
+                        if (NetworkManager.Singleton.IsServer)
                         {
                             m_ToggleObject.gameObject.SetActive(true);
                             if (m_ActivateOnLoad)
@@ -174,7 +174,7 @@ namespace TestProject.ManualTests
             var timeOutAfter = Time.realtimeSinceStartup + 10.0f;
             while (m_WaitForSceneLoadOrUnload)
             {
-                if(timeOutAfter < Time.realtimeSinceStartup)
+                if (timeOutAfter < Time.realtimeSinceStartup)
                 {
                     Debug.LogWarning("Timed out waiting for scene to load or unload!");
                     m_WaitForSceneLoadOrUnload = false;

@@ -397,7 +397,9 @@ namespace Unity.Netcode
             if (!m_NetworkManager.NetworkConfig.EnableSceneManagement)
             {
                 //Log message about enabling SceneManagement
-                throw new Exception($"{nameof(NetworkConfig.EnableSceneManagement)} flag is not enabled in the {nameof(NetworkManager)}'s {nameof(NetworkConfig)}. Please set {nameof(NetworkConfig.EnableSceneManagement)} flag to true before calling this method.");
+                throw new Exception($"{nameof(NetworkConfig.EnableSceneManagement)} flag is not enabled in the {nameof(NetworkManager)}'s {nameof(NetworkConfig)}. " +
+                    $"Please set {nameof(NetworkConfig.EnableSceneManagement)} flag to true before calling " +
+                    $"{nameof(NetworkSceneManager.LoadScene)} or {nameof(NetworkSceneManager.UnloadScene)}.");
             }
 
             if (!scene.isLoaded)
@@ -569,7 +571,7 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Client Side:
-        /// SceneManager.UnloadSceneAsync handler for clients
+        /// Handles <see cref="SceneEventData.SceneEventTypes.S2C_Unload"/> scene events.
         /// </summary>
         private void OnClientUnloadScene()
         {
@@ -587,7 +589,7 @@ namespace Unity.Netcode
 
             if (m_ScenesLoaded.ContainsKey(sceneName))
             {
-                if(!ServerSceneHandleToClientSceneHandle.ContainsKey(SceneEventData.SceneHandle))
+                if (!ServerSceneHandleToClientSceneHandle.ContainsKey(SceneEventData.SceneHandle))
                 {
                     throw new Exception("No server to scene handle exist!");
                 }
@@ -864,7 +866,7 @@ namespace Unity.Netcode
             else
             {
                 // For the client, we make a server scene handle to client scene handle look up table
-                if(!ServerSceneHandleToClientSceneHandle.ContainsKey(SceneEventData.SceneHandle))
+                if (!ServerSceneHandleToClientSceneHandle.ContainsKey(SceneEventData.SceneHandle))
                 {
                     ServerSceneHandleToClientSceneHandle.Add(SceneEventData.SceneHandle, nextScene.handle);
                 }
@@ -1454,7 +1456,7 @@ namespace Unity.Netcode
                         ScenePlacedObjects.Add(networkObjectInstance.GlobalObjectIdHash, new Dictionary<int, NetworkObject>());
                     }
 
-                    if(!ScenePlacedObjects[networkObjectInstance.GlobalObjectIdHash].ContainsKey(networkObjectInstance.gameObject.scene.handle))
+                    if (!ScenePlacedObjects[networkObjectInstance.GlobalObjectIdHash].ContainsKey(networkObjectInstance.gameObject.scene.handle))
                     {
                         ScenePlacedObjects[networkObjectInstance.GlobalObjectIdHash].Add(networkObjectInstance.gameObject.scene.handle, networkObjectInstance);
                     }

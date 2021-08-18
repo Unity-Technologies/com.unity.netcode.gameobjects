@@ -18,7 +18,6 @@ namespace Unity.Netcode
         [SerializeField]
         internal uint GlobalObjectIdHash;
 
-
 #if UNITY_EDITOR
         // HEAD: DO NOT USE! TEST ONLY TEMP IMPL, WILL BE REMOVED
         internal uint TempGlobalObjectIdHashOverride = 0;
@@ -384,7 +383,7 @@ namespace Unity.Netcode
         private void OnDestroy()
         {
             if (NetworkManager != null && NetworkManager.IsListening && NetworkManager.IsServer == false && IsSpawned
-                && (IsSceneObject == null || (IsSceneObject != null && IsSceneObject.Value != true) ))
+                && (IsSceneObject == null || (IsSceneObject != null && IsSceneObject.Value != true)))
             {
                 throw new NotServerException($"Destroy a spawned {nameof(NetworkObject)} on a non-host client is not valid. Call {nameof(Destroy)} or {nameof(Despawn)} on the server/host instead.");
             }
