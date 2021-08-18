@@ -19,10 +19,23 @@ namespace Unity.Multiplayer.Netcode
             public int Capacity;
             public int MaxCapacity;
             public Allocator Allocator;
+            public int BitPosition;
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             public int AllowedWriteMark;
+            public int AllowedBitwiseWriteMark;
             public bool InBitwiseContext;
 #endif
+
+
+            /// <summary>
+            /// Whether or not the current BitPosition is evenly divisible by 8. I.e. whether or not the BitPosition is at a byte boundary.
+            /// </summary>
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public bool BitAligned()
+            {
+                return (BitPosition & 7) == 0;
+            }
+            
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             internal void CommitBitwiseWrites(int amount)
             {
@@ -155,6 +168,36 @@ namespace Unity.Multiplayer.Netcode
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool VerifyCanWriteInternal(int bytes)
+        {
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            if (m_InternalData.InBitwiseContext)
+            {
+                throw new InvalidOperationException(
+                    "Cannot use BufferWriter in bytewise mode while in a bitwise context.");
+            }
+#endif
+            if (m_InternalData.Position + bytes > m_InternalData.Capacity)
+            {
+                if (m_InternalData.Capacity < m_InternalData.MaxCapacity)
+                {
+                    Grow();
+                }
+                else
+                {
+                    return false;
+                }
+            }
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            if (m_InternalData.Position + bytes > m_InternalData.AllowedWriteMark)
+            {
+                m_InternalData.AllowedWriteMark = m_InternalData.Position + bytes;
+            }
+#endif
+            return true;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe bool VerifyCanWriteValue<T>(in T value) where T : unmanaged
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
@@ -178,6 +221,40 @@ namespace Unity.Multiplayer.Netcode
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             m_InternalData.AllowedWriteMark = m_InternalData.Position + len;
+#endif
+            return true;
+        }
+        
+        public bool VerifyCanWriteBits(int bitCount)
+        {
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            if (!m_InternalData.InBitwiseContext)
+            {
+                throw new InvalidOperationException(
+                    "Cannot use BufferWriter in bitwise mode while not in a bitwise context.");
+            }
+#endif
+            var newBitPosition = m_InternalData.BitPosition + bitCount;
+            var totalBytesWrittenInBitwiseContext = newBitPosition >> 3;
+            if ((newBitPosition & 7) != 0)
+            {
+                // Accounting for the partial write
+                ++totalBytesWrittenInBitwiseContext;
+            }
+
+            if (m_InternalData.Position + totalBytesWrittenInBitwiseContext > m_InternalData.Capacity)
+            {
+                if (m_InternalData.Capacity < m_InternalData.MaxCapacity)
+                {
+                    Grow();
+                }
+                else
+                {
+                    return false;
+                }
+            }
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            m_InternalData.AllowedBitwiseWriteMark = newBitPosition;
 #endif
             return true;
         }
@@ -284,37 +361,16 @@ namespace Unity.Multiplayer.Netcode
             }
             if (value is GameObject)
             {
-                var networkObject = ((GameObject)value).GetComponent<NetworkObject>();
-                if (networkObject == null)
-                {
-                    throw new ArgumentException($"{nameof(NetworkWriter)} cannot write {nameof(GameObject)} types that does not has a {nameof(NetworkObject)} component attached. {nameof(GameObject)}: {((GameObject)value).name}");
-                }
-
-                if (!networkObject.IsSpawned)
-                {
-                    throw new ArgumentException($"{nameof(NetworkWriter)} cannot write {nameof(NetworkObject)} types that are not spawned. {nameof(GameObject)}: {((GameObject)value).name}");
-                }
-
-                WriteValueSafe(networkObject);
+                WriteValueSafe((GameObject)value);
                 return;
             }
             if (value is NetworkObject)
             {
-                if (!((NetworkObject)value).IsSpawned)
-                {
-                    throw new ArgumentException($"{nameof(NetworkWriter)} cannot write {nameof(NetworkObject)} types that are not spawned. {nameof(GameObject)}: {((NetworkObject)value).gameObject.name}");
-                }
-
                 WriteValueSafe((NetworkObject)value);
                 return;
             }
             if (value is NetworkBehaviour)
             {
-                if (!((NetworkBehaviour)value).HasNetworkObject || !((NetworkBehaviour)value).NetworkObject.IsSpawned)
-                {
-                    throw new ArgumentException($"{nameof(NetworkWriter)} cannot write {nameof(NetworkBehaviour)} types that are not spawned. {nameof(GameObject)}: {((NetworkBehaviour)value).gameObject.name}");
-                }
-                
                 WriteValueSafe((NetworkBehaviour)value);
                 return;
             }
@@ -324,7 +380,7 @@ namespace Unity.Multiplayer.Netcode
                 return;
             }
 
-            throw new ArgumentException($"{nameof(NetworkWriter)} cannot write type {value.GetType().Name} - it does not implement {nameof(INetworkSerializable)}");
+            throw new ArgumentException($"{nameof(FastBufferWriter)} cannot write type {value.GetType().Name} - it does not implement {nameof(INetworkSerializable)}");
         }
 
         public void WriteValue<T>(T value) where T : INetworkSerializable
@@ -337,12 +393,12 @@ namespace Unity.Multiplayer.Netcode
             var networkObject = ((GameObject)value).GetComponent<NetworkObject>();
             if (networkObject == null)
             {
-                throw new ArgumentException($"{nameof(NetworkWriter)} cannot write {nameof(GameObject)} types that does not has a {nameof(NetworkObject)} component attached. {nameof(GameObject)}: {((GameObject)value).name}");
+                throw new ArgumentException($"{nameof(FastBufferWriter)} cannot write {nameof(GameObject)} types that does not has a {nameof(NetworkObject)} component attached. {nameof(GameObject)}: {((GameObject)value).name}");
             }
 
             if (!networkObject.IsSpawned)
             {
-                throw new ArgumentException($"{nameof(NetworkWriter)} cannot write {nameof(NetworkObject)} types that are not spawned. {nameof(GameObject)}: {((GameObject)value).name}");
+                throw new ArgumentException($"{nameof(FastBufferWriter)} cannot write {nameof(NetworkObject)} types that are not spawned. {nameof(GameObject)}: {((GameObject)value).name}");
             }
 
             WriteValue(networkObject.NetworkObjectId);
@@ -353,12 +409,12 @@ namespace Unity.Multiplayer.Netcode
             var networkObject = ((GameObject)value).GetComponent<NetworkObject>();
             if (networkObject == null)
             {
-                throw new ArgumentException($"{nameof(NetworkWriter)} cannot write {nameof(GameObject)} types that does not has a {nameof(NetworkObject)} component attached. {nameof(GameObject)}: {((GameObject)value).name}");
+                throw new ArgumentException($"{nameof(FastBufferWriter)} cannot write {nameof(GameObject)} types that does not has a {nameof(NetworkObject)} component attached. {nameof(GameObject)}: {((GameObject)value).name}");
             }
 
             if (!networkObject.IsSpawned)
             {
-                throw new ArgumentException($"{nameof(NetworkWriter)} cannot write {nameof(NetworkObject)} types that are not spawned. {nameof(GameObject)}: {((GameObject)value).name}");
+                throw new ArgumentException($"{nameof(FastBufferWriter)} cannot write {nameof(NetworkObject)} types that are not spawned. {nameof(GameObject)}: {((GameObject)value).name}");
             }
 
             WriteValueSafe(networkObject.NetworkObjectId);
@@ -373,7 +429,7 @@ namespace Unity.Multiplayer.Netcode
         {
             if (!value.IsSpawned)
             {
-                throw new ArgumentException($"{nameof(NetworkWriter)} cannot write {nameof(NetworkObject)} types that are not spawned. {nameof(GameObject)}: {value.name}");
+                throw new ArgumentException($"{nameof(FastBufferWriter)} cannot write {nameof(NetworkObject)} types that are not spawned. {nameof(GameObject)}: {value.name}");
             }
 
             WriteValue(value.NetworkObjectId);
@@ -383,7 +439,7 @@ namespace Unity.Multiplayer.Netcode
         {
             if (!value.IsSpawned)
             {
-                throw new ArgumentException($"{nameof(NetworkWriter)} cannot write {nameof(NetworkObject)} types that are not spawned. {nameof(GameObject)}: {value.name}");
+                throw new ArgumentException($"{nameof(FastBufferWriter)} cannot write {nameof(NetworkObject)} types that are not spawned. {nameof(GameObject)}: {value.name}");
             }
             WriteValueSafe(value.NetworkObjectId);
         }
@@ -397,7 +453,7 @@ namespace Unity.Multiplayer.Netcode
         {
             if (!value.HasNetworkObject || !value.NetworkObject.IsSpawned)
             {
-                throw new ArgumentException($"{nameof(NetworkWriter)} cannot write {nameof(NetworkBehaviour)} types that are not spawned. {nameof(GameObject)}: {((NetworkBehaviour)value).gameObject.name}");
+                throw new ArgumentException($"{nameof(FastBufferWriter)} cannot write {nameof(NetworkBehaviour)} types that are not spawned. {nameof(GameObject)}: {((NetworkBehaviour)value).gameObject.name}");
             }
 
             WriteValue(value.NetworkObjectId);
@@ -408,10 +464,10 @@ namespace Unity.Multiplayer.Netcode
         {
             if (!value.HasNetworkObject || !value.NetworkObject.IsSpawned)
             {
-                throw new ArgumentException($"{nameof(NetworkWriter)} cannot write {nameof(NetworkBehaviour)} types that are not spawned. {nameof(GameObject)}: {((NetworkBehaviour)value).gameObject.name}");
+                throw new ArgumentException($"{nameof(FastBufferWriter)} cannot write {nameof(NetworkBehaviour)} types that are not spawned. {nameof(GameObject)}: {((NetworkBehaviour)value).gameObject.name}");
             }
 
-            if (!VerifyCanWrite(sizeof(ulong) + sizeof(ushort)))
+            if (!VerifyCanWriteInternal(sizeof(ulong) + sizeof(ushort)))
             {
                 throw new OverflowException("Writing past the end of the buffer");
             }
@@ -424,7 +480,6 @@ namespace Unity.Multiplayer.Netcode
             return sizeof(ulong) + sizeof(ushort);
         }
         
-        // As it turns out, strings cannot be treated as char arrays, since strings use pointers to store data rather than C# arrays
         /// <summary>
         /// Writes a string
         /// </summary>
@@ -453,7 +508,6 @@ namespace Unity.Multiplayer.Netcode
             }
         }
 
-        // As it turns out, strings cannot be treated as char arrays, since strings use pointers to store data rather than C# arrays
         /// <summary>
         /// Writes a string
         /// </summary>
@@ -471,7 +525,7 @@ namespace Unity.Multiplayer.Netcode
             
             int sizeInBytes = GetWriteSize(s, oneByteChars);
             
-            if (!VerifyCanWrite(sizeInBytes))
+            if (!VerifyCanWriteInternal(sizeInBytes))
             {
                 throw new OverflowException("Writing past the end of the buffer");
             }
@@ -542,7 +596,7 @@ namespace Unity.Multiplayer.Netcode
             int sizeInTs = count != -1 ? count : array.Length - offset;
             int sizeInBytes = sizeInTs * sizeof(T);
             
-            if (!VerifyCanWrite(sizeInBytes + sizeof(int)))
+            if (!VerifyCanWriteInternal(sizeInBytes + sizeof(int)))
             {
                 throw new OverflowException("Writing past the end of the buffer");
             }
@@ -658,7 +712,7 @@ namespace Unity.Multiplayer.Netcode
             }
 #endif
             
-            if (!VerifyCanWrite(1))
+            if (!VerifyCanWriteInternal(1))
             {
                 throw new OverflowException("Writing past the end of the buffer");
             }
@@ -704,7 +758,7 @@ namespace Unity.Multiplayer.Netcode
             }
 #endif
             
-            if (!VerifyCanWrite(size))
+            if (!VerifyCanWriteInternal(size))
             {
                 throw new OverflowException("Writing past the end of the buffer");
             }
@@ -811,7 +865,7 @@ namespace Unity.Multiplayer.Netcode
             }
 #endif
             
-            if (!VerifyCanWrite(len))
+            if (!VerifyCanWriteInternal(len))
             {
                 throw new OverflowException("Writing past the end of the buffer");
             }
@@ -825,6 +879,26 @@ namespace Unity.Multiplayer.Netcode
         public static unsafe int GetWriteSize<T>(in T value) where T : unmanaged
         {
             return sizeof(T);
+        }
+
+        public static unsafe int GetWriteSize<T>() where T : unmanaged
+        {
+            return sizeof(T);
+        }
+        
+        public static int GetNetworkObjectWriteSize()
+        {
+            return sizeof(ulong);
+        }
+        
+        public static int GetGameObjectWriteSize()
+        {
+            return sizeof(ulong);
+        }
+        
+        public static int GetNetworkBehaviourWriteSize()
+        {
+            return sizeof(ulong) + sizeof(ushort);
         }
     }
 }
