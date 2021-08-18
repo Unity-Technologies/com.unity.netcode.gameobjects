@@ -556,7 +556,7 @@ namespace Unity.Netcode
 
             if (m_ScenesLoaded.ContainsKey(sceneName))
             {
-                if(!ServerSceneHandleToClientSceneHandle.ContainsKey(SceneEventData.SceneHandle))
+                if (!ServerSceneHandleToClientSceneHandle.ContainsKey(SceneEventData.SceneHandle))
                 {
                     throw new Exception("No server to scene handle exist!");
                 }
@@ -810,7 +810,7 @@ namespace Unity.Netcode
             else
             {
                 // For the client, we make a server scene handle to client scene handle look up table
-                if(!ServerSceneHandleToClientSceneHandle.ContainsKey(SceneEventData.SceneHandle))
+                if (!ServerSceneHandleToClientSceneHandle.ContainsKey(SceneEventData.SceneHandle))
                 {
                     ServerSceneHandleToClientSceneHandle.Add(SceneEventData.SceneHandle, nextScene.handle);
                 }
@@ -1395,7 +1395,7 @@ namespace Unity.Netcode
                         ScenePlacedObjects.Add(networkObjectInstance.GlobalObjectIdHash, new Dictionary<int, NetworkObject>());
                     }
 
-                    if(!ScenePlacedObjects[networkObjectInstance.GlobalObjectIdHash].ContainsKey(networkObjectInstance.gameObject.scene.handle))
+                    if (!ScenePlacedObjects[networkObjectInstance.GlobalObjectIdHash].ContainsKey(networkObjectInstance.gameObject.scene.handle))
                     {
                         ScenePlacedObjects[networkObjectInstance.GlobalObjectIdHash].Add(networkObjectInstance.gameObject.scene.handle, networkObjectInstance);
                     }

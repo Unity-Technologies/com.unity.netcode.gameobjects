@@ -264,9 +264,9 @@ namespace Unity.Netcode
 
             if (NetworkConfig.EnableSceneManagement)
             {
-                foreach(var sceneAsset in NetworkConfig.RegisteredSceneAssets)
+                foreach (var sceneAsset in NetworkConfig.RegisteredSceneAssets)
                 {
-                    if(!NetworkConfig.RegisteredScenes.Contains(sceneAsset.name))
+                    if (!NetworkConfig.RegisteredScenes.Contains(sceneAsset.name))
                     {
                         NetworkConfig.RegisteredScenes.Add(sceneAsset.name);
                     }
@@ -1380,7 +1380,7 @@ namespace Unity.Netcode
                 // Don't send the CONNECTION_APPROVED message if this is the host that connected locally
                 if (ownerClientId != ServerClientId)
                 {
-                    var context = MessageQueueContainer.EnterInternalCommandContext( MessageQueueContainer.MessageType.ConnectionApproved, NetworkChannel.Internal, new ulong[]{ownerClientId},
+                    var context = MessageQueueContainer.EnterInternalCommandContext(MessageQueueContainer.MessageType.ConnectionApproved, NetworkChannel.Internal, new ulong[] { ownerClientId },
                         NetworkUpdateStage.EarlyUpdate);
 
                     if (context != null)
@@ -1433,8 +1433,8 @@ namespace Unity.Netcode
                     continue; //The new client.
                 }
 
-                var context = MessageQueueContainer.EnterInternalCommandContext( MessageQueueContainer.MessageType.CreateObject, NetworkChannel.Internal,
-                    new[] {clientPair.Key}, NetworkUpdateLoop.UpdateStage);
+                var context = MessageQueueContainer.EnterInternalCommandContext(MessageQueueContainer.MessageType.CreateObject, NetworkChannel.Internal,
+                    new[] { clientPair.Key }, NetworkUpdateLoop.UpdateStage);
                 if (context != null)
                 {
                     using (var nonNullContext = (InternalCommandContext)context)

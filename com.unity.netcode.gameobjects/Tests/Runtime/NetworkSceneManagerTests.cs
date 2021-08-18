@@ -13,7 +13,7 @@ namespace Unity.Netcode.RuntimeTests
             var threwException = false;
             try
             {
-                networkManager.SceneManager.LoadScene("SomeSceneNane",UnityEngine.SceneManagement.LoadSceneMode.Single);
+                networkManager.SceneManager.LoadScene("SomeSceneNane", UnityEngine.SceneManagement.LoadSceneMode.Single);
             }
             catch (Exception ex)
             {

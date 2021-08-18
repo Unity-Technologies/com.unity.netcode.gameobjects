@@ -36,7 +36,7 @@ namespace TestProject.ManualTests
 
         public void Move(int speed)
         {
-            if(m_Rigidbody == null)
+            if (m_Rigidbody == null)
             {
                 m_Rigidbody = GetComponent<Rigidbody>();
             }

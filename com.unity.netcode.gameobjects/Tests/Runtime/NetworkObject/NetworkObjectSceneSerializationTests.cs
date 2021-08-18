@@ -90,7 +90,7 @@ namespace Unity.Netcode.RuntimeTests
                         NetworkManagerHelper.NetworkManagerObject.SceneManager.ScenePlacedObjects.Add(networkObject.GlobalObjectIdHash, new Dictionary<int, NetworkObject>());
                     }
                     // Add this valid NetworkObject into the ScenePlacedObjects list
-                    NetworkManagerHelper.NetworkManagerObject.SceneManager.ScenePlacedObjects[networkObject.GlobalObjectIdHash].Add(SceneManager.GetActiveScene().handle,networkObject);
+                    NetworkManagerHelper.NetworkManagerObject.SceneManager.ScenePlacedObjects[networkObject.GlobalObjectIdHash].Add(SceneManager.GetActiveScene().handle, networkObject);
                 }
             }
 

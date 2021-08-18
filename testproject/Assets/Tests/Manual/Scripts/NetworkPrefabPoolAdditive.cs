@@ -120,21 +120,21 @@ namespace TestProject.ManualTests
             switch (sceneEvent.SceneEventType)
             {
                 case SceneEventData.SceneEventTypes.S2C_Unload:
-                {
-                    if (sceneEvent.LoadSceneMode == LoadSceneMode.Additive && (gameObject.scene.name == sceneEvent.SceneName))
                     {
-                        OnUnloadScene();
+                        if (sceneEvent.LoadSceneMode == LoadSceneMode.Additive && (gameObject.scene.name == sceneEvent.SceneName))
+                        {
+                            OnUnloadScene();
+                        }
+                        break;
                     }
-                    break;
-                }
                 case SceneEventData.SceneEventTypes.S2C_Load:
-                {
-                    if (sceneEvent.LoadSceneMode == LoadSceneMode.Single && ((gameObject.scene.name == sceneEvent.SceneName) || !SpawnInSourceScene))
                     {
-                        OnUnloadScene();
+                        if (sceneEvent.LoadSceneMode == LoadSceneMode.Single && ((gameObject.scene.name == sceneEvent.SceneName) || !SpawnInSourceScene))
+                        {
+                            OnUnloadScene();
+                        }
+                        break;
                     }
-                    break;
-                }
             }
         }
 
@@ -144,7 +144,7 @@ namespace TestProject.ManualTests
             {
                 foreach (var obj in m_ObjectPool)
                 {
-                    if(obj == null)
+                    if (obj == null)
                     {
                         continue;
                     }
@@ -291,7 +291,7 @@ namespace TestProject.ManualTests
             {
                 foreach (var obj in m_ObjectPool)
                 {
-                    if(obj == null)
+                    if (obj == null)
                     {
                         continue;
                     }
