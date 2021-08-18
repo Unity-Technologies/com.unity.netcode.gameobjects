@@ -5,7 +5,7 @@
         "Unity.Netcode.Runtime",
         "Unity.Netcode.Editor",
         "Unity.Netcode.Prototyping",
-        "Unity.Multiplayer.Transport.UTP",
+        "Unity.Netcode.Adapater.UTP",
         "Unity.Services.Authentication",
         "Unity.Services.Core",
         "Unity.Services.Relay"

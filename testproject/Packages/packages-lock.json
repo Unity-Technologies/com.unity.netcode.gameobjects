@@ -77,8 +77,8 @@
       "dependencies": {},
       "url": "https://packages.unity.com"
     },
-    "com.unity.multiplayer.transport.utp": {
-      "version": "file:../../com.unity.multiplayer.transport.utp",
+    "com.unity.netcode.adapter.utp": {
+      "version": "file:../../com.unity.netcode.adapter.utp",
       "depth": 0,
       "source": "local",
       "dependencies": {

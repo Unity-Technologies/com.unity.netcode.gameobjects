@@ -6,7 +6,7 @@
     "com.unity.ide.vscode": "1.2.3",
     "com.unity.netcode.gameobjects": "file:../../com.unity.netcode.gameobjects",
     "com.unity.mathematics": "1.2.1",
-    "com.unity.multiplayer.transport.utp": "file:../../com.unity.multiplayer.transport.utp",
+    "com.unity.netcode.adapter.utp": "file:../../com.unity.netcode.adapter.utp",
     "com.unity.package-validation-suite": "0.21.0-preview",
     "com.unity.services.authentication": "1.0.0-pre.4",
     "com.unity.services.core": "1.1.0-pre.8",
@@ -51,7 +51,7 @@
   },
   "testables": [
     "com.unity.netcode.gameobjects",
-    "com.unity.multiplayer.transport.utp"
+    "com.unity.netcode.adapter.utp"
   ],
   "scopedRegistries": [
     {

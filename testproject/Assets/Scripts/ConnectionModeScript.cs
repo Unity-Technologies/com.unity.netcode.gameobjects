@@ -3,6 +3,7 @@ using UnityEngine;
 using Unity.Netcode;
 
 #if ENABLE_RELAY_SERVICE
+using System;
 using Unity.Services.Core;
 using Unity.Services.Authentication;
 #endif
@@ -212,7 +213,7 @@ public class ConnectionModeScript : MonoBehaviour
 
         //assumes that RelayJoinCodeInput populated RelayJoinCode prior to this
         var clientRelayUtilityTask = RelayUtility.JoinRelayServerFromJoinCode(RelayJoinCode);
-        
+
         while (!clientRelayUtilityTask.IsCompleted)
         {
             yield return null;

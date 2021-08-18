@@ -1,5 +1,6 @@
 {
-    "name": "Unity.Multiplayer.Transport.UTP",
+    "name": "Unity.Netcode.Adapater.UTP",
+    "rootNamespace": "",
     "references": [
         "Unity.Collections",
         "Unity.Jobs",
