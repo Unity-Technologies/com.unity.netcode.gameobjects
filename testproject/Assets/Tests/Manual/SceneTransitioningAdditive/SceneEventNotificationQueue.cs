@@ -14,11 +14,11 @@ namespace TestProject.ManualTests
     /// Note: this should be added to the parent GameObject of your NetworkManager component
     /// and will only work if NetworkManager's "Don't Destroy" is true.
     /// </summary>
-    public class SceneEventNotificationQueue: MonoBehaviour
+    public class SceneEventNotificationQueue : MonoBehaviour
     {
         public bool LogToConsole;
 
-        [Range(1,30)]
+        [Range(1, 30)]
         public float TimeToLive = 10.0f;
 
         private bool m_IsInitialized;
@@ -53,7 +53,7 @@ namespace TestProject.ManualTests
             if (sceneEvent.SceneEventType == SceneEventData.SceneEventTypes.S2C_UnLoadComplete || sceneEvent.SceneEventType == SceneEventData.SceneEventTypes.S2C_LoadComplete)
             {
                 sceneEventMsg += $" | Loaded ({sceneEvent.ClientsThatCompleted.Count}) : (";
-                foreach(var clientId in sceneEvent.ClientsThatCompleted)
+                foreach (var clientId in sceneEvent.ClientsThatCompleted)
                 {
                     sceneEventMsg += $"{clientId}, ";
                 }
@@ -84,9 +84,9 @@ namespace TestProject.ManualTests
 
         private void Update()
         {
-            if(m_NetworkManager != null && m_NetworkManager.IsListening)
+            if (m_NetworkManager != null && m_NetworkManager.IsListening)
             {
-                if(!m_IsInitialized)
+                if (!m_IsInitialized)
                 {
                     m_NetworkManager.SceneManager.OnSceneEvent += OnSceneEvent;
                     m_IsInitialized = true;

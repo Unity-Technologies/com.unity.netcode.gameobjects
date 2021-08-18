@@ -26,7 +26,7 @@ namespace TestProject.ManualTests
         private void OnValidate()
         {
             m_SceneToSwitchTo = new List<string>();
-            foreach(var sceneAsset in m_SceneAssets)
+            foreach (var sceneAsset in m_SceneAssets)
             {
                 m_SceneToSwitchTo.Add(sceneAsset.name);
             }

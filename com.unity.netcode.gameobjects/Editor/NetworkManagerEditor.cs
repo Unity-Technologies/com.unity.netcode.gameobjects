@@ -141,7 +141,7 @@ namespace Unity.Netcode.Editor
                 var networkOverrideProp = networkPrefab.FindPropertyRelative(nameof(NetworkPrefab.Override));
                 var networkOverrideInt = networkOverrideProp.enumValueIndex;
 
-                return 10 + (networkOverrideInt == 0 ? EditorGUIUtility.singleLineHeight : (EditorGUIUtility.singleLineHeight * 2) + 5);
+                return 8 + (networkOverrideInt == 0 ? EditorGUIUtility.singleLineHeight : (EditorGUIUtility.singleLineHeight * 2) + 5);
             };
             m_NetworkPrefabsList.drawElementCallback = (rect, index, isActive, isFocused) =>
             {
