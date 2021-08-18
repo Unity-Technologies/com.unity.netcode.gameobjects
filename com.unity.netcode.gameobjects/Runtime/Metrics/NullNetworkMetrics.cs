@@ -32,11 +32,23 @@ namespace Unity.Netcode
         {
         }
 
-        public void TrackNetworkVariableDeltaSent(ulong receiverClientId, ulong networkObjectId, string gameObjectName, string variableName, long bytesCount)
+        public void TrackNetworkVariableDeltaSent(
+            ulong receiverClientId,
+            ulong networkObjectId,
+            string gameObjectName,
+            string variableName,
+            string networkBehaviourName,
+            long bytesCount)
         {
         }
 
-        public void TrackNetworkVariableDeltaReceived(ulong senderClientId, ulong networkObjectId, string gameObjectName, string variableName, long bytesCount)
+        public void TrackNetworkVariableDeltaReceived(
+            ulong senderClientId,
+            ulong networkObjectId,
+            string gameObjectName,
+            string variableName,
+            string networkBehaviourName,
+            long bytesCount)
         {
         }
 
@@ -68,15 +80,30 @@ namespace Unity.Netcode
         {
         }
 
-        public void TrackRpcSent(ulong receiverClientId, ulong networkObjectId, string rpcName, long bytesCount)
+        public void TrackRpcSent(
+            ulong receiverClientId,
+            ulong networkObjectId,
+            string rpcName,
+            string networkBehaviourName,
+            long bytesCount)
         {
         }
 
-        public void TrackRpcSent(ulong[] receiverClientIds, ulong networkObjectId, string rpcName, long bytesCount)
+        public void TrackRpcSent(
+            ulong[] receiverClientIds,
+            ulong networkObjectId,
+            string rpcName,
+            string networkBehaviourName,
+            long bytesCount)
         {
         }
 
-        public void TrackRpcReceived(ulong senderClientId, ulong networkObjectId, string rpcName, long bytesCount)
+        public void TrackRpcReceived(
+            ulong senderClientId,
+            ulong networkObjectId,
+            string rpcName,
+            string networkBehaviourName,
+            long bytesCount)
         {
         }
 
