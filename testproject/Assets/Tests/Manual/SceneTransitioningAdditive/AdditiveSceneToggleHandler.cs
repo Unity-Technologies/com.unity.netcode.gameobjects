@@ -91,7 +91,8 @@ namespace TestProject.ManualTests
             {
                 if (sceneEvent.SceneEventType == SceneEventData.SceneEventTypes.C2S_LoadComplete)
                 {
-                    if (sceneEvent.ClientId == NetworkManager.Singleton.ServerClientId && !m_SceneLoaded.IsValid() && sceneEvent.Scene.IsValid())
+                    if (sceneEvent.ClientId == NetworkManager.Singleton.ServerClientId && !m_SceneLoaded.IsValid()
+                        && sceneEvent.Scene.IsValid() && sceneEvent.Scene.name == m_SceneToLoad)
                     {
                         m_SceneLoaded = sceneEvent.Scene;
                         m_WaitForSceneLoadOrUnload = false;
