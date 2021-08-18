@@ -5,15 +5,16 @@ using System.Threading.Tasks;
 using Unity.Networking.Transport;
 using Unity.Networking.Transport.Relay;
 
-using MLAPI.Transports.Tasks;
+using Unity.Netcode;
 using UnityEngine;
 
 using UTPNetworkEvent = Unity.Networking.Transport.NetworkEvent;
 using Unity.Collections.LowLevel.Unsafe;
 using System.Linq;
 using Unity.Networking.Transport.Utilities;
+using NetworkEvent = Unity.Netcode.NetworkEvent;
 
-namespace MLAPI.Transports
+namespace Unity.Netcode
 {
     public class UTPTransport : NetworkTransport
     {
@@ -84,7 +85,7 @@ namespace MLAPI.Transports
 
         private NetworkPipeline SelectSendPipeline(NetworkChannel channel, int size)
         {
-            TransportChannel transportChannel = Array.Find(MLAPI_CHANNELS, tc => tc.Channel == channel);
+            TransportChannel transportChannel = Array.Find(NETCODE_CHANNELS, tc => tc.Channel == channel);
 
             switch (transportChannel.Delivery)
             {

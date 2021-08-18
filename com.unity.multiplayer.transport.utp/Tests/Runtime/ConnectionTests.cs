@@ -4,11 +4,12 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
-using MLAPI.Transports;
+using Unity.Netcode;
+using Unity.Netcode.UTP.RuntimeTests;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace MLAPI.UTP.RuntimeTests
+namespace Unity.Netcode.RuntimeTests
 {
     using static RuntimeTestsHelpers;
 

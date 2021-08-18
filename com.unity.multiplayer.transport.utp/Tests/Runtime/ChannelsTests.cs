@@ -3,16 +3,16 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-
-using MLAPI.Transports;
+using MLAPI.UTP.RuntimeTests;
+using Unity.Netcode;
 using Unity.Networking.Transport;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-using NetworkEvent = MLAPI.Transports.NetworkEvent;
+using NetworkEvent = Unity.Netcode.NetworkEvent;
 using UTPNetworkEvent = Unity.Networking.Transport.NetworkEvent;
 
-namespace MLAPI.UTP.RuntimeTests
+namespace Unity.Netcode.UTP.RuntimeTests
 {
     using static RuntimeTestsHelpers;
 
@@ -34,7 +34,7 @@ namespace MLAPI.UTP.RuntimeTests
             yield return WaitForNetworkEvent(NetworkEvent.Connect, serverEvents);
 
             int eventIndex = 1;
-            foreach (var transportChannel in server.MLAPI_CHANNELS)
+            foreach (var transportChannel in server.NETCODE_CHANNELS)
             {
                 server.Send(serverEvents[0].ClientID, default(ArraySegment<byte>), transportChannel.Channel);
 
@@ -66,15 +66,15 @@ namespace MLAPI.UTP.RuntimeTests
 
             yield return WaitForNetworkEvent(NetworkEvent.Connect, serverEvents);
 
-            foreach (var transportChannel in server.MLAPI_CHANNELS)
+            foreach (var transportChannel in server.NETCODE_CHANNELS)
                 client.Send(client.ServerClientId, default(ArraySegment<byte>), transportChannel.Channel);
 
             yield return WaitForNetworkEvent(NetworkEvent.Data, serverEvents);
 
-            Assert.AreEqual(server.MLAPI_CHANNELS.Length + 1, serverEvents.Count);
+            Assert.AreEqual(server.NETCODE_CHANNELS.Length + 1, serverEvents.Count);
 
             int eventIndex = 1;
-            foreach (var transportChannel in server.MLAPI_CHANNELS)
+            foreach (var transportChannel in server.NETCODE_CHANNELS)
             {
                 Assert.AreEqual(transportChannel.Channel, serverEvents[eventIndex].Channel);
                 eventIndex++;
@@ -101,7 +101,7 @@ namespace MLAPI.UTP.RuntimeTests
 
             yield return client.WaitForNetworkEvent(UTPNetworkEvent.Type.Connect);
 
-            foreach (var transportChannel in server.MLAPI_CHANNELS)
+            foreach (var transportChannel in server.NETCODE_CHANNELS)
             {
                 // Skip over fragmented channels (covered by different test).
                 if (transportChannel.Delivery == NetworkDelivery.ReliableFragmentedSequenced)
@@ -149,7 +149,7 @@ namespace MLAPI.UTP.RuntimeTests
 
             yield return client.WaitForNetworkEvent(UTPNetworkEvent.Type.Connect);
 
-            foreach (var transportChannel in server.MLAPI_CHANNELS)
+            foreach (var transportChannel in server.NETCODE_CHANNELS)
             {
                 // Skip over non-fragmented channels (covered by different test).
                 if (transportChannel.Delivery != NetworkDelivery.ReliableFragmentedSequenced)
@@ -194,7 +194,7 @@ namespace MLAPI.UTP.RuntimeTests
             yield return WaitForNetworkEvent(NetworkEvent.Connect, serverEvents);
 
             int eventIndex = 1;
-            foreach (var transportChannel in server.MLAPI_CHANNELS)
+            foreach (var transportChannel in server.NETCODE_CHANNELS)
             {
                 // Only want to test fragmentation-enabled channels.
                 if (transportChannel.Delivery != NetworkDelivery.ReliableFragmentedSequenced)
