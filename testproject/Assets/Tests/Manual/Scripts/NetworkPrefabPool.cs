@@ -411,7 +411,7 @@ namespace TestProject.ManualTests
             }
             return null;
         }
-        public bool Destroy(NetworkObject networkObject)
+        public void Destroy(NetworkObject networkObject)
         {
             var genericBehaviour = networkObject.gameObject.GetComponent<GenericNetworkObjectBehaviour>();
             if (genericBehaviour.IsRegisteredPoolObject)
@@ -420,9 +420,8 @@ namespace TestProject.ManualTests
             }
             else
             {
-                return true;
+                Object.Destroy(networkObject.gameObject);
             }
-            return false;
         }
 
         public MyCustomPrefabSpawnHandler(NetworkPrefabPool objectPool)
