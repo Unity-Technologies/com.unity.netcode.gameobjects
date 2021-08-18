@@ -18,7 +18,6 @@ namespace Unity.Netcode
         [SerializeField]
         internal uint GlobalObjectIdHash;
 
-
 #if UNITY_EDITOR
         // HEAD: DO NOT USE! TEST ONLY TEMP IMPL, WILL BE REMOVED
         internal uint TempGlobalObjectIdHashOverride = 0;

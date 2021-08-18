@@ -397,7 +397,9 @@ namespace Unity.Netcode
             if (!m_NetworkManager.NetworkConfig.EnableSceneManagement)
             {
                 //Log message about enabling SceneManagement
-                throw new Exception($"{nameof(NetworkConfig.EnableSceneManagement)} flag is not enabled in the {nameof(NetworkManager)}'s {nameof(NetworkConfig)}. Please set {nameof(NetworkConfig.EnableSceneManagement)} flag to true before calling this method.");
+                throw new Exception($"{nameof(NetworkConfig.EnableSceneManagement)} flag is not enabled in the {nameof(NetworkManager)}'s {nameof(NetworkConfig)}. " +
+                    $"Please set {nameof(NetworkConfig.EnableSceneManagement)} flag to true before calling " +
+                    $"{nameof(NetworkSceneManager.LoadScene)} or {nameof(NetworkSceneManager.UnloadScene)}.");
             }
 
             // Return scene event already in progress if one is already in progress... :)
@@ -538,7 +540,7 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Client Side:
-        /// SceneManager.UnloadSceneAsync handler for clients
+        /// Handles <see cref="SceneEventData.SceneEventTypes.S2C_Unload"/> scene events.
         /// </summary>
         private void OnClientUnloadScene()
         {
