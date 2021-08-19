@@ -65,7 +65,7 @@ namespace Unity.Netcode
                     {
                         var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
                         bufferSizeCapture.StartMeasureSegment();
-                        nonNullContext.NetworkWriter.WriteByte((byte) logType);
+                        nonNullContext.NetworkWriter.WriteByte((byte)logType);
                         nonNullContext.NetworkWriter.WriteStringPacked(message);
                         var size = bufferSizeCapture.StopMeasureSegment();
 
