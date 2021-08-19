@@ -418,7 +418,7 @@ namespace Unity.Netcode
                 SnapshotSystem = null;
             }
 
-            SnapshotSystem = new SnapshotSystem();
+            SnapshotSystem = new SnapshotSystem(this);
 
             if (server)
             {
