@@ -9,7 +9,7 @@ namespace Unity.Netcode.EditorTests
         [Test]
         public void TestBasicRtt()
         {
-            var snapshot = new SnapshotSystem(NetworkManager.Singleton);
+            var snapshot = new SnapshotSystem(default);
             var client1 = snapshot.GetConnectionRtt(0);
 
             client1.NotifySend(0, 0.0);

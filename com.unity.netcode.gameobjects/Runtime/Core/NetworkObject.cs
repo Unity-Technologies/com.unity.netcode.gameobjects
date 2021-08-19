@@ -421,7 +421,7 @@ namespace Unity.Netcode
         {
             SnapshotDespawnCommand command;
             command.NetworkObjectId = NetworkObjectId;
-            command.TickWritten = default; // will be reset in Despawn
+            command.TickWritten = default; // value will be set internally by SnapshotSystem
             command.TargetClientIds = default;
 
             return command;
@@ -451,7 +451,7 @@ namespace Unity.Netcode
             command.ObjectPosition = transform.position;
             command.ObjectRotation = transform.rotation;
             command.ObjectScale = transform.localScale;
-            command.TickWritten = default; // will be reset in Spawn
+            command.TickWritten = default; // value will be set internally by SnapshotSystem
             command.TargetClientIds = default;
 
             return command;
