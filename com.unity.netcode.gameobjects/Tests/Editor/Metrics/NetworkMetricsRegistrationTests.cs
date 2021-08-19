@@ -1,7 +1,6 @@
 ﻿#if MULTIPLAYER_TOOLS
 
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using NUnit.Framework;
@@ -13,15 +12,14 @@ namespace Unity.Netcode.EditorTests.Metrics
 {
     public class NetworkMetricsRegistrationTests
     {
-        [Test]
-        public void ValidateThatAllMetricTypesAreRegistered()
+        static Type[] s_MetricTypes = AppDomain.CurrentDomain.GetAssemblies()
+            .SelectMany(x => x.GetTypes())
+            .Where(x => x.GetInterfaces().Contains(typeof(INetworkMetricEvent)))
+            .ToArray();
+        
+        [TestCaseSource(nameof(s_MetricTypes))]
+        public void ValidateThatAllMetricTypesAreRegistered(Type metricType)
         {
-            var allMetricTypes = AppDomain.CurrentDomain.GetAssemblies()
-                .SelectMany(x => x.GetTypes())
-                .Where(x => x.GetInterfaces().Contains(typeof(INetworkMetricEvent)))
-                .ToList();
-            Assert.AreNotEqual(0, allMetricTypes.Count);
-
             var dispatcher = new NetworkMetrics().Dispatcher as MetricDispatcher;
             Assert.NotNull(dispatcher);
 
@@ -30,17 +28,14 @@ namespace Unity.Netcode.EditorTests.Metrics
                 .GetValue(dispatcher) as MetricCollection;
             Assert.NotNull(collection);
 
-            foreach (var metricType in allMetricTypes)
-            {
-                Assert.That(
-                    collection.Metrics,
-                    Has.Exactly(2).Matches<IEventMetric>(
-                        eventMetric =>
-                        {
-                            var eventType = eventMetric.GetType().GetGenericArguments()?.FirstOrDefault();
-                            return eventType == metricType;
-                        }));
-            }
+            Assert.That(
+                collection.Metrics,
+                Has.Exactly(2).Matches<IEventMetric>(
+                    eventMetric =>
+                    {
+                        var eventType = eventMetric.GetType().GetGenericArguments()?.FirstOrDefault();
+                        return eventType == metricType;
+                    }));
         }
     }
 }
