@@ -393,7 +393,7 @@ namespace Unity.Netcode
             {
                 return;
             }
-            
+
             if (NetworkManager != null && NetworkManager.IsListening && NetworkManager.IsServer == false && IsSpawned
                 && (IsSceneObject == null || (IsSceneObject != null && IsSceneObject.Value != true)))
             {
