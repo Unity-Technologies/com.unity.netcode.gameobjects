@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 
@@ -65,7 +66,7 @@ namespace Unity.Netcode.RuntimeTests
                 if (count > 20)
                 {
                     // timeout waiting for object to reach the expect visibility
-                    Debug.Assert(false);
+                    Assert.Fail("timeout waiting for object to reach the expect visibility");
                     break;
                 }
             } while (m_NetSpawnedObject1.IsNetworkVisibleTo(m_ClientId0) != target ||

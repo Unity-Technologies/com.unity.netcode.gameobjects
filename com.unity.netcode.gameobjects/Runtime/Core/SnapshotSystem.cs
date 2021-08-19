@@ -235,7 +235,7 @@ namespace Unity.Netcode
             //todo: major refactor.
             // use blittable types and copy variable in memory locally
             // only serialize when put on the wire for network transfer
-            writer.WriteUInt64(entry.Key.NetworkObjectId);
+            writer.WriteUInt64Packed(entry.Key.NetworkObjectId);
             writer.WriteUInt16(entry.Key.BehaviourIndex);
             writer.WriteUInt16(entry.Key.VariableIndex);
             writer.WriteInt32Packed(entry.Key.TickWritten);
@@ -253,13 +253,13 @@ namespace Unity.Netcode
             s.SequenceNumber = clientData.SequenceNumber;
             clientData.SentSpawns.Add(s);
 
-            writer.WriteUInt64(spawn.NetworkObjectId);
-            writer.WriteUInt64(spawn.GlobalObjectIdHash);
+            writer.WriteUInt64Packed(spawn.NetworkObjectId);
+            writer.WriteUInt64Packed(spawn.GlobalObjectIdHash);
             writer.WriteBool(spawn.IsSceneObject);
 
             writer.WriteBool(spawn.IsPlayerObject);
-            writer.WriteUInt64(spawn.OwnerClientId);
-            writer.WriteUInt64(spawn.ParentNetworkId);
+            writer.WriteUInt64Packed(spawn.OwnerClientId);
+            writer.WriteUInt64Packed(spawn.ParentNetworkId);
             writer.WriteVector3(spawn.ObjectPosition);
             writer.WriteRotation(spawn.ObjectRotation);
             writer.WriteVector3(spawn.ObjectScale);
@@ -277,7 +277,7 @@ namespace Unity.Netcode
             s.SequenceNumber = clientData.SequenceNumber;
             clientData.SentSpawns.Add(s);
 
-            writer.WriteUInt64(despawn.NetworkObjectId);
+            writer.WriteUInt64Packed(despawn.NetworkObjectId);
             writer.WriteUInt16(despawn.TickWritten);
         }
         /// <summary>
@@ -288,7 +288,7 @@ namespace Unity.Netcode
         internal Entry ReadEntry(NetworkReader reader)
         {
             Entry entry;
-            entry.Key.NetworkObjectId = reader.ReadUInt64();
+            entry.Key.NetworkObjectId = reader.ReadUInt64Packed();
             entry.Key.BehaviourIndex = reader.ReadUInt16();
             entry.Key.VariableIndex = reader.ReadUInt16();
             entry.Key.TickWritten = reader.ReadInt32Packed();
@@ -302,12 +302,12 @@ namespace Unity.Netcode
         {
             SnapshotSpawnCommand command;
 
-            command.NetworkObjectId = reader.ReadUInt64();
-            command.GlobalObjectIdHash = (uint)reader.ReadUInt64();
+            command.NetworkObjectId = reader.ReadUInt64Packed();
+            command.GlobalObjectIdHash = (uint)reader.ReadUInt64Packed();
             command.IsSceneObject = reader.ReadBool();
             command.IsPlayerObject = reader.ReadBool();
-            command.OwnerClientId = reader.ReadUInt64();
-            command.ParentNetworkId = reader.ReadUInt64();
+            command.OwnerClientId = reader.ReadUInt64Packed();
+            command.ParentNetworkId = reader.ReadUInt64Packed();
             command.ObjectPosition = reader.ReadVector3();
             command.ObjectRotation = reader.ReadRotation();
             command.ObjectScale = reader.ReadVector3();
@@ -322,7 +322,7 @@ namespace Unity.Netcode
         {
             SnapshotDespawnCommand command;
 
-            command.NetworkObjectId = reader.ReadUInt64();
+            command.NetworkObjectId = reader.ReadUInt64Packed();
             command.TickWritten = reader.ReadUInt16();
             command.TargetClientIds = default;
 
