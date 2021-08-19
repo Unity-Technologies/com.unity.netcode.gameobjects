@@ -107,7 +107,12 @@ namespace Unity.Netcode
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (NetworkManager.__rpc_name_table.TryGetValue(rpcMethodId, out var rpcMethodName))
             {
-                NetworkManager.NetworkMetrics.TrackRpcSent(NetworkManager.ServerClientId, NetworkObjectId, rpcMethodName, rpcMessageSize);
+                NetworkManager.NetworkMetrics.TrackRpcSent(
+                    NetworkManager.ServerClientId,
+                    NetworkObjectId,
+                    rpcMethodName,
+                    __getTypeName(),
+                    rpcMessageSize);
             }
 #endif
         }
@@ -217,7 +222,12 @@ namespace Unity.Netcode
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (NetworkManager.__rpc_name_table.TryGetValue(rpcMethodId, out var rpcMethodName))
             {
-                NetworkManager.NetworkMetrics.TrackRpcSent(NetworkManager.ConnectedClients.Select(x => x.Key).ToArray(), NetworkObjectId, rpcMethodName, messageSize);
+                NetworkManager.NetworkMetrics.TrackRpcSent(
+                    NetworkManager.ConnectedClients.Select(x => x.Key).ToArray(),
+                    NetworkObjectId,
+                    rpcMethodName,
+                    __getTypeName(),
+                    messageSize);
             }
 #endif
         }
@@ -575,7 +585,13 @@ namespace Unity.Netcode
                                         m_NetworkVariableIndexesToReset.Add(k);
                                     }
 
-                                    NetworkManager.NetworkMetrics.TrackNetworkVariableDeltaSent(clientId, NetworkObjectId, name, NetworkVariableFields[k].Name, bufferSizeCapture.Flush());
+                                    NetworkManager.NetworkMetrics.TrackNetworkVariableDeltaSent(
+                                        clientId,
+                                        NetworkObjectId,
+                                        name,
+                                        NetworkVariableFields[k].Name,
+                                        __getTypeName(),
+                                        bufferSizeCapture.Flush());
                                 }
                             }
 
@@ -671,7 +687,13 @@ namespace Unity.Netcode
                     long readStartPos = stream.Position;
 
                     networkVariableList[i].ReadDelta(stream, networkManager.IsServer);
-                    networkManager.NetworkMetrics.TrackNetworkVariableDeltaReceived(clientId, logInstance.NetworkObjectId, logInstance.name, networkVariableList[i].Name, stream.Length);
+                    networkManager.NetworkMetrics.TrackNetworkVariableDeltaReceived(
+                        clientId,
+                        logInstance.NetworkObjectId,
+                        logInstance.name,
+                        networkVariableList[i].Name,
+                        logInstance.__getTypeName(),
+                        stream.Length);
 
                     (stream as NetworkBuffer).SkipPadBits();
 
