@@ -57,7 +57,6 @@ public class TestCoordinator : NetworkBehaviour
         string[] args = Environment.GetCommandLineArgs();
         foreach (string arg in args)
         {
-            Debug.Log($"arg is {arg}");
             if (arg.StartsWith("-ip="))
             {
                 connectAddress = arg.Replace("-ip=", "");
