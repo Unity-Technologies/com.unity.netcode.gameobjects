@@ -36,47 +36,53 @@ namespace Unity.Netcode.EditorTests
                 
                 writer.WriteByte(0b11111111);
 
-                var reader = new FastBufferReader(writer.GetNativeArray());
-                Assert.IsTrue(reader.VerifyCanRead(3));
-                using (var bitReader = reader.EnterBitwiseContext())
+                var reader = new FastBufferReader(ref writer, Allocator.Temp);
+                using (reader)
                 {
-                    bool b;
-                    bitReader.ReadBit(out b);
-                    Assert.IsTrue(b);
-                    bitReader.ReadBit(out b);
-                    Assert.IsTrue(b);
-                    bitReader.ReadBit(out b);
-                    Assert.IsFalse(b);
-                    bitReader.ReadBit(out b);
-                    Assert.IsTrue(b);
-                    
-                    bitReader.ReadBit(out b);
-                    Assert.IsFalse(b);
-                    bitReader.ReadBit(out b);
-                    Assert.IsFalse(b);
-                    bitReader.ReadBit(out b);
-                    Assert.IsFalse(b);
-                    bitReader.ReadBit(out b);
-                    Assert.IsTrue(b);
-                    
-                    bitReader.ReadBit(out b);
-                    Assert.IsFalse(b);
-                    bitReader.ReadBit(out b);
-                    Assert.IsTrue(b);
-                    bitReader.ReadBit(out b);
-                    Assert.IsFalse(b);
-                    bitReader.ReadBit(out b);
-                    Assert.IsTrue(b);
+                    Assert.IsTrue(reader.VerifyCanRead(3));
+                    using (var bitReader = reader.EnterBitwiseContext())
+                    {
+                        bool b;
+                        bitReader.ReadBit(out b);
+                        Assert.IsTrue(b);
+                        bitReader.ReadBit(out b);
+                        Assert.IsTrue(b);
+                        bitReader.ReadBit(out b);
+                        Assert.IsFalse(b);
+                        bitReader.ReadBit(out b);
+                        Assert.IsTrue(b);
+
+                        bitReader.ReadBit(out b);
+                        Assert.IsFalse(b);
+                        bitReader.ReadBit(out b);
+                        Assert.IsFalse(b);
+                        bitReader.ReadBit(out b);
+                        Assert.IsFalse(b);
+                        bitReader.ReadBit(out b);
+                        Assert.IsTrue(b);
+
+                        bitReader.ReadBit(out b);
+                        Assert.IsFalse(b);
+                        bitReader.ReadBit(out b);
+                        Assert.IsTrue(b);
+                        bitReader.ReadBit(out b);
+                        Assert.IsFalse(b);
+                        bitReader.ReadBit(out b);
+                        Assert.IsTrue(b);
+                    }
+
+                    reader.ReadByte(out byte lastByte);
+                    Assert.AreEqual(0b11111111, lastByte);
                 }
-                reader.ReadByte(out byte lastByte);
-                Assert.AreEqual(0b11111111, lastByte);
             }
         }
         [Test]
         public unsafe void TestVerifyCanReadBits()
         {
-            FastBufferReader reader = new FastBufferReader(new NativeArray<byte>(4, Allocator.Temp));
-            using (reader.GetNativeArray())
+            var nativeArray = new NativeArray<byte>(4, Allocator.Temp);
+            FastBufferReader reader = new FastBufferReader(nativeArray, Allocator.Temp);
+            nativeArray.Dispose();
+            using (reader)
             {
                 int* asInt = (int*) reader.GetUnsafePtr();
                 *asInt = 0b11111111_00001010_10101011;
@@ -85,7 +91,7 @@ namespace Unity.Netcode.EditorTests
                 {
                     Assert.Throws<InvalidOperationException>(() => reader.VerifyCanRead(1));
                     Assert.Throws<InvalidOperationException>(() => reader.VerifyCanReadValue(1));
-                    Assert.IsTrue(reader.VerifyCanReadBits(1));
+                    Assert.IsTrue(bitReader.VerifyCanReadBits(1));
                     bitReader.ReadBit(out bool b);
                     Assert.IsTrue(b);
 
@@ -102,7 +108,7 @@ namespace Unity.Netcode.EditorTests
                     {
                         throw e;
                     }
-                    Assert.IsTrue(reader.VerifyCanReadBits(3));
+                    Assert.IsTrue(bitReader.VerifyCanReadBits(3));
                     bitReader.ReadBit(out b);
                     Assert.IsTrue(b);
                     bitReader.ReadBit(out b);
@@ -136,7 +142,7 @@ namespace Unity.Netcode.EditorTests
                     {
                         throw e;
                     }
-                    Assert.IsTrue(reader.VerifyCanReadBits(3));
+                    Assert.IsTrue(bitReader.VerifyCanReadBits(3));
                     
                     try
                     {
@@ -150,11 +156,11 @@ namespace Unity.Netcode.EditorTests
                     {
                         throw e;
                     }
-                    Assert.IsTrue(reader.VerifyCanReadBits(4));
+                    Assert.IsTrue(bitReader.VerifyCanReadBits(4));
                     bitReader.ReadBits(out byteVal, 3);
                     Assert.AreEqual(0b010, byteVal);
                     
-                    Assert.IsTrue(reader.VerifyCanReadBits(5));
+                    Assert.IsTrue(bitReader.VerifyCanReadBits(5));
                     
                     bitReader.ReadBits(out byteVal, 5);
                     Assert.AreEqual(0b10101, byteVal);
@@ -173,7 +179,7 @@ namespace Unity.Netcode.EditorTests
                 Assert.IsFalse(reader.VerifyCanRead(1));
                 using (var bitReader = reader.EnterBitwiseContext())
                 {
-                    Assert.IsFalse(reader.VerifyCanReadBits(1));
+                    Assert.IsFalse(bitReader.VerifyCanReadBits(1));
                 }
             }
         }
@@ -196,28 +202,32 @@ namespace Unity.Netcode.EditorTests
                 writer.WriteByte(0b11111111);
                 
 
-                var reader = new FastBufferReader(writer.GetNativeArray());
-                Assert.IsTrue(reader.VerifyCanRead(3));
-                using (var bitReader = reader.EnterBitwiseContext())
+                var reader = new FastBufferReader(ref writer, Allocator.Temp);
+                using (reader)
                 {
-                    byte b;
-                    bitReader.ReadBits(out b, 1);
-                    Assert.AreEqual(0b1, b);
-                    
-                    bitReader.ReadBits(out b, 1);
-                    Assert.AreEqual(0b1, b);
-                    
-                    bitReader.ReadBits(out b, 2);
-                    Assert.AreEqual(0b10, b);
-                    
-                    bitReader.ReadBits(out b, 4);
-                    Assert.AreEqual(0b1000, b);
-                    
-                    bitReader.ReadBits(out b, 4);
-                    Assert.AreEqual(0b1010, b);
+                    Assert.IsTrue(reader.VerifyCanRead(3));
+                    using (var bitReader = reader.EnterBitwiseContext())
+                    {
+                        byte b;
+                        bitReader.ReadBits(out b, 1);
+                        Assert.AreEqual(0b1, b);
+
+                        bitReader.ReadBits(out b, 1);
+                        Assert.AreEqual(0b1, b);
+
+                        bitReader.ReadBits(out b, 2);
+                        Assert.AreEqual(0b10, b);
+
+                        bitReader.ReadBits(out b, 4);
+                        Assert.AreEqual(0b1000, b);
+
+                        bitReader.ReadBits(out b, 4);
+                        Assert.AreEqual(0b1010, b);
+                    }
+
+                    reader.ReadByte(out byte lastByte);
+                    Assert.AreEqual(0b11111111, lastByte);
                 }
-                reader.ReadByte(out byte lastByte);
-                Assert.AreEqual(0b11111111, lastByte);
             }
         }
         
@@ -239,36 +249,42 @@ namespace Unity.Netcode.EditorTests
                 
                 writer.WriteByte(0b11111111);
                 
-                var reader = new FastBufferReader(writer.GetNativeArray());
-                Assert.IsTrue(reader.VerifyCanRead(3));
-                using (var bitReader = reader.EnterBitwiseContext())
+                var reader = new FastBufferReader(ref writer, Allocator.Temp);
+                using (reader)
                 {
-                    ulong ul;
-                    bitReader.ReadBits(out ul, 1);
-                    Assert.AreEqual(0b1, ul);
-                    
-                    bitReader.ReadBits(out ul, 1);
-                    Assert.AreEqual(0b1, ul);
-                    
-                    bitReader.ReadBits(out ul, 2);
-                    Assert.AreEqual(0b10, ul);
-                    
-                    bitReader.ReadBits(out ul, 4);
-                    Assert.AreEqual(0b1000, ul);
-                    
-                    bitReader.ReadBits(out ul, 4);
-                    Assert.AreEqual(0b1010, ul);
+                    Assert.IsTrue(reader.VerifyCanRead(3));
+                    using (var bitReader = reader.EnterBitwiseContext())
+                    {
+                        ulong ul;
+                        bitReader.ReadBits(out ul, 1);
+                        Assert.AreEqual(0b1, ul);
+
+                        bitReader.ReadBits(out ul, 1);
+                        Assert.AreEqual(0b1, ul);
+
+                        bitReader.ReadBits(out ul, 2);
+                        Assert.AreEqual(0b10, ul);
+
+                        bitReader.ReadBits(out ul, 4);
+                        Assert.AreEqual(0b1000, ul);
+
+                        bitReader.ReadBits(out ul, 4);
+                        Assert.AreEqual(0b1010, ul);
+                    }
+
+                    reader.ReadByte(out byte lastByte);
+                    Assert.AreEqual(0b11111111, lastByte);
                 }
-                reader.ReadByte(out byte lastByte);
-                Assert.AreEqual(0b11111111, lastByte);
             }
         }
         
         [Test]
         public unsafe void TestReadingBitsThrowsIfVerifyCanReadNotCalled()
         {
-            FastBufferReader reader = new FastBufferReader(new NativeArray<byte>(4, Allocator.Temp));
-            using (reader.GetNativeArray())
+            var nativeArray = new NativeArray<byte>(4, Allocator.Temp);
+            FastBufferReader reader = new FastBufferReader(nativeArray, Allocator.Temp);
+            nativeArray.Dispose();
+            using (reader)
             {
                 int* asInt = (int*) reader.GetUnsafePtr();
                 *asInt = 0b11111111_00001010_10101011;

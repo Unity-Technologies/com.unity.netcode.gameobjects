@@ -64,7 +64,7 @@ namespace Unity.Netcode.EditorTests
                 {
                     Assert.Throws<InvalidOperationException>(() => writer.VerifyCanWrite(1));
                     Assert.Throws<InvalidOperationException>(() => writer.VerifyCanWriteValue(1));
-                    Assert.IsTrue(writer.VerifyCanWriteBits(1));
+                    Assert.IsTrue(bitWriter.VerifyCanWriteBits(1));
                     bitWriter.WriteBit(true);
                     Assert.AreEqual(0b1, *asInt);
 
@@ -81,7 +81,7 @@ namespace Unity.Netcode.EditorTests
                     {
                         throw e;
                     }
-                    Assert.IsTrue(writer.VerifyCanWriteBits(3));
+                    Assert.IsTrue(bitWriter.VerifyCanWriteBits(3));
                     bitWriter.WriteBit(true);
                     Assert.AreEqual(0b11, *asInt);
                     
@@ -114,7 +114,7 @@ namespace Unity.Netcode.EditorTests
                     {
                         throw e;
                     }
-                    Assert.IsTrue(writer.VerifyCanWriteBits(3));
+                    Assert.IsTrue(bitWriter.VerifyCanWriteBits(3));
                     
                     try
                     {
@@ -128,13 +128,13 @@ namespace Unity.Netcode.EditorTests
                     {
                         throw e;
                     }
-                    Assert.IsTrue(writer.VerifyCanWriteBits(4));
+                    Assert.IsTrue(bitWriter.VerifyCanWriteBits(4));
                     
                     bitWriter.WriteBits(0b11111010, 3);
                     
                     Assert.AreEqual(0b00101011, *asInt);
 
-                    Assert.IsTrue(writer.VerifyCanWriteBits(5));
+                    Assert.IsTrue(bitWriter.VerifyCanWriteBits(5));
                     
                     bitWriter.WriteBits(0b11110101, 5);
                     Assert.AreEqual(0b1010_10101011, *asInt);
@@ -154,7 +154,7 @@ namespace Unity.Netcode.EditorTests
                 Assert.IsFalse(writer.VerifyCanWrite(1));
                 using (var bitWriter = writer.EnterBitwiseContext())
                 {
-                    Assert.IsFalse(writer.VerifyCanWriteBits(1));
+                    Assert.IsFalse(bitWriter.VerifyCanWriteBits(1));
                 }
             }
         }

@@ -8,37 +8,69 @@ namespace Unity.Multiplayer.Netcode
 {
     public ref struct BitReader
     {
-        private unsafe FastBufferReader.InternalData* m_InternalData;
+        private unsafe FastBufferReader* m_Reader;
         private unsafe byte* m_BufferPointer;
         private int m_Position;
         private const int BITS_PER_BYTE = 8;
+        private int m_BitPosition;
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+        private int m_AllowedBitwiseReadMark;
+#endif
 
-
-        internal unsafe BitReader(ref FastBufferReader.InternalData internalData)
+        /// <summary>
+        /// Whether or not the current BitPosition is evenly divisible by 8. I.e. whether or not the BitPosition is at a byte boundary.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool BitAligned()
         {
-            fixed (FastBufferReader.InternalData* internalDataPtr = &internalData)
+            return (m_BitPosition & 7) == 0;
+        }
+
+        internal unsafe BitReader(ref FastBufferReader reader)
+        {
+            fixed (FastBufferReader* readerPtr = &reader)
             {
-                m_InternalData = internalDataPtr;
+                m_Reader = readerPtr;
             }
 
-            m_BufferPointer = internalData.BufferPointer + internalData.Position;
-            m_Position = internalData.Position;
-            m_InternalData->BitPosition = 0;
+            m_BufferPointer = m_Reader->m_BufferPointer + m_Reader->Position;
+            m_Position = m_Reader->Position;
+            m_BitPosition = 0;
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            m_InternalData->AllowedBitwiseReadMark = (m_InternalData->AllowedReadMark - m_InternalData->Position) * BITS_PER_BYTE;
+            m_AllowedBitwiseReadMark = (m_Reader->m_AllowedReadMark - m_Position) * BITS_PER_BYTE;
 #endif
         }
 
         public unsafe void Dispose()
         {
-            var bytesWritten = m_InternalData->BitPosition >> 3;
-            if (!m_InternalData->BitAligned())
+            var bytesWritten = m_BitPosition >> 3;
+            if (!BitAligned())
             {
                 // Accounting for the partial read
                 ++bytesWritten;
             }
 
-            m_InternalData->CommitBitwiseReads(bytesWritten);
+            m_Reader->CommitBitwiseReads(bytesWritten);
+        }
+
+        public unsafe bool VerifyCanReadBits(int bitCount)
+        {
+            var newBitPosition = m_BitPosition + bitCount;
+            var totalBytesWrittenInBitwiseContext = newBitPosition >> 3;
+            if ((newBitPosition & 7) != 0)
+            {
+                // Accounting for the partial read
+                ++totalBytesWrittenInBitwiseContext;
+            }
+
+            if (m_Reader->m_Position + totalBytesWrittenInBitwiseContext > m_Reader->m_Length)
+            {
+                return false;
+            }
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            m_AllowedBitwiseReadMark = newBitPosition;
+#endif
+            return true;
         }
 
         /// <summary>
@@ -59,8 +91,8 @@ namespace Unity.Multiplayer.Netcode
                 throw new ArgumentOutOfRangeException(nameof(bitCount), "Cannot read fewer than 0 bits!");
             }
             
-            int checkPos = (m_InternalData->BitPosition + bitCount);
-            if (checkPos > m_InternalData->AllowedBitwiseReadMark)
+            int checkPos = (m_BitPosition + bitCount);
+            if (checkPos > m_AllowedBitwiseReadMark)
             {
                 throw new OverflowException("Attempted to read without first calling VerifyCanReadBits()");
             }
@@ -69,7 +101,7 @@ namespace Unity.Multiplayer.Netcode
 
             int wholeBytes = bitCount / BITS_PER_BYTE;
             byte* asBytes = (byte*) &val;
-            if (m_InternalData->BitAligned())
+            if (BitAligned())
             {
                 if (wholeBytes != 0)
                 {
@@ -96,8 +128,8 @@ namespace Unity.Multiplayer.Netcode
         public unsafe void ReadBits(out byte value, int bitCount)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            int checkPos = (m_InternalData->BitPosition + bitCount);
-            if (checkPos > m_InternalData->AllowedBitwiseReadMark)
+            int checkPos = (m_BitPosition + bitCount);
+            if (checkPos > m_AllowedBitwiseReadMark)
             {
                 throw new OverflowException("Attempted to read without first calling VerifyCanReadBits()");
             }
@@ -113,17 +145,17 @@ namespace Unity.Multiplayer.Netcode
         public unsafe void ReadBit(out bool bit)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            int checkPos = (m_InternalData->BitPosition + 1);
-            if (checkPos > m_InternalData->AllowedBitwiseReadMark)
+            int checkPos = (m_BitPosition + 1);
+            if (checkPos > m_AllowedBitwiseReadMark)
             {
                 throw new OverflowException("Attempted to read without first calling VerifyCanReadBits()");
             }
 #endif
             
-            int offset = m_InternalData->BitPosition & 7;
-            int pos = m_InternalData->BitPosition >> 3;
+            int offset = m_BitPosition & 7;
+            int pos = m_BitPosition >> 3;
             bit = (m_BufferPointer[pos] & (1 << offset)) != 0;
-            ++m_InternalData->BitPosition;
+            ++m_BitPosition;
         }
         
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -171,7 +203,7 @@ namespace Unity.Multiplayer.Netcode
                     break;
             }
 
-            m_InternalData->BitPosition += bytesToRead * BITS_PER_BYTE;
+            m_BitPosition += bytesToRead * BITS_PER_BYTE;
             value = val;
         }
         
@@ -206,11 +238,11 @@ namespace Unity.Multiplayer.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private unsafe void ReadMisaligned(out byte value)
         {
-            int off = (int)(m_InternalData->BitPosition & 7);
-            int pos = m_InternalData->BitPosition >> 3;
+            int off = (int)(m_BitPosition & 7);
+            int pos = m_BitPosition >> 3;
             int shift1 = 8 - off;
             
-            value = (byte)((m_BufferPointer[(int)pos] >> shift1) | (m_BufferPointer[(int)(m_InternalData->BitPosition += 8) >> 3] << shift1));
+            value = (byte)((m_BufferPointer[(int)pos] >> shift1) | (m_BufferPointer[(int)(m_BitPosition += 8) >> 3] << shift1));
         }
     }
 }

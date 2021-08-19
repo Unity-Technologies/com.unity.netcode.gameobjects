@@ -1,6 +1,5 @@
 using System;
 using System.Runtime.CompilerServices;
-using System.Text;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Netcode;
@@ -8,110 +7,160 @@ using UnityEngine;
 
 namespace Unity.Multiplayer.Netcode
 {
-    public struct FastBufferReader
+    public struct FastBufferReader : IDisposable
     {
-        private NativeArray<byte> m_buffer;
-
-        internal struct InternalData
+        internal unsafe byte* m_BufferPointer;
+        internal int m_Position;
+        internal int m_Length;
+        internal Allocator m_Allocator;
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+        internal int m_AllowedReadMark;
+        internal bool m_InBitwiseContext;
+#endif
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal void CommitBitwiseReads(int amount)
         {
-            public unsafe byte* BufferPointer;
-            public int Position;
-            public int Length;
-            public int BitPosition;
+            m_Position += amount;
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            public int AllowedReadMark;
-            public int AllowedBitwiseReadMark;
-            public bool InBitwiseContext;
+            m_InBitwiseContext = false;
 #endif
-            /// <summary>
-            /// Whether or not the current BitPosition is evenly divisible by 8. I.e. whether or not the BitPosition is at a byte boundary.
-            /// </summary>
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public bool BitAligned()
-            {
-                return (BitPosition & 7) == 0;
-            }
-            
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            internal void CommitBitwiseReads(int amount)
-            {
-                Position += amount;
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-                InBitwiseContext = false;
-#endif
-            }
         }
 
-        internal InternalData m_InternalData;
-
-        public unsafe FastBufferReader(NativeArray<byte> buffer, int offset = 0, int length = -1)
+        public unsafe FastBufferReader(NativeArray<byte> buffer, Allocator allocator, int length = -1, int offset = 0)
         {
-            m_buffer = buffer;
-            m_InternalData = new InternalData
-            {
-                BufferPointer = (byte*) m_buffer.GetUnsafePtr(),
-                Position = offset,
-                Length = length == -1 ? buffer.Length : length,
+            m_Length = Math.Max(1, length == -1 ? buffer.Length : length);
+            void* bufferPtr = UnsafeUtility.Malloc(m_Length, UnsafeUtility.AlignOf<byte>(), allocator);
+            UnsafeUtility.MemCpy(bufferPtr, (byte*)buffer.GetUnsafePtr()+offset, m_Length);
+            m_BufferPointer = (byte*)bufferPtr;
+            m_Position = offset;
+            m_Allocator = allocator;
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-                AllowedReadMark = 0,
-                InBitwiseContext = false,
+            m_AllowedReadMark = 0;
+            m_InBitwiseContext = false;
 #endif
-            };
+        }
+        
+        public unsafe FastBufferReader(ArraySegment<byte> buffer, Allocator allocator, int length = -1, int offset = 0)
+        {
+            m_Length = Math.Max(1, length == -1 ? buffer.Count : length);
+            void* bufferPtr = UnsafeUtility.Malloc(m_Length, UnsafeUtility.AlignOf<byte>(), allocator);
+            fixed (byte* data = buffer.Array)
+            {
+                UnsafeUtility.MemCpy(bufferPtr, data+offset, m_Length);
+            }
+            m_BufferPointer = (byte*) bufferPtr;
+            m_Position = 0;
+            m_Allocator = allocator;
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            m_AllowedReadMark = 0;
+            m_InBitwiseContext = false;
+#endif
+        }
+        
+        public unsafe FastBufferReader(byte[] buffer, Allocator allocator, int length = -1, int offset = 0)
+        {
+            m_Length = Math.Max(1, length == -1 ? buffer.Length : length);
+            void* bufferPtr = UnsafeUtility.Malloc(m_Length, UnsafeUtility.AlignOf<byte>(), allocator);
+            fixed (byte* data = buffer)
+            {
+                UnsafeUtility.MemCpy(bufferPtr, data+offset, m_Length);
+            }
+            m_BufferPointer = (byte*) bufferPtr;
+            m_Position = 0;
+            m_Allocator = allocator;
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            m_AllowedReadMark = 0;
+            m_InBitwiseContext = false;
+#endif
+        }
+        
+        public unsafe FastBufferReader(byte* buffer, Allocator allocator, int length, int offset = 0)
+        {
+            m_Length = Math.Max(1, length);
+            void* bufferPtr = UnsafeUtility.Malloc(m_Length, UnsafeUtility.AlignOf<byte>(), allocator); 
+            UnsafeUtility.MemCpy(bufferPtr, buffer + offset, m_Length);
+            m_BufferPointer = (byte*) bufferPtr;
+            m_Position = 0;
+            m_Allocator = allocator;
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            m_AllowedReadMark = 0;
+            m_InBitwiseContext = false;
+#endif
+        }
+        
+        public unsafe FastBufferReader(ref FastBufferWriter writer, Allocator allocator, int length = -1, int offset = 0)
+        {
+            m_Length = Math.Max(1, length == -1 ? writer.Length : length);
+            void* bufferPtr = UnsafeUtility.Malloc(m_Length, UnsafeUtility.AlignOf<byte>(), allocator); 
+            UnsafeUtility.MemCpy(bufferPtr, writer.GetUnsafePtr() + offset, m_Length);
+            m_BufferPointer = (byte*) bufferPtr;
+            m_Position = 0;
+            m_Allocator = allocator;
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            m_AllowedReadMark = 0;
+            m_InBitwiseContext = false;
+#endif
+        }
+
+        public unsafe void Dispose()
+        {
+            UnsafeUtility.Free(m_BufferPointer, m_Allocator);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Seek(int where)
         {
-            m_InternalData.Position = where;
+            m_Position = Math.Min(Length, where);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void MarkBytesRead(int amount)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (m_InternalData.InBitwiseContext)
+            if (m_InBitwiseContext)
             {
                 throw new InvalidOperationException(
                     "Cannot use BufferReader in bytewise mode while in a bitwise context.");
             }
-            if (m_InternalData.Position + amount > m_InternalData.AllowedReadMark)
+            if (m_Position + amount > m_AllowedReadMark)
             {
                 throw new OverflowException("Attempted to read without first calling VerifyCanRead()");
             }
 #endif
-            m_InternalData.Position += amount;
+            m_Position += amount;
         }
 
-        public unsafe BitReader EnterBitwiseContext()
+        public BitReader EnterBitwiseContext()
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            m_InternalData.InBitwiseContext = true;
+            m_InBitwiseContext = true;
 #endif
-            return new BitReader(ref m_InternalData);
+            return new BitReader(ref this);
         }
         
-        public int Position => m_InternalData.Position;
-        public int Length => m_InternalData.Length;
+        public int Position => m_Position;
+        public int Length => m_Length;
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal bool VerifyCanReadInternal(int bytes)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (m_InternalData.InBitwiseContext)
+            if (m_InBitwiseContext)
             {
                 throw new InvalidOperationException(
                     "Cannot use BufferReader in bytewise mode while in a bitwise context.");
             }
 #endif
-            if (m_InternalData.Position + bytes > m_InternalData.Length)
+            if (m_Position + bytes > m_Length)
             {
                 return false;
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (m_InternalData.Position + bytes > m_InternalData.AllowedReadMark)
+            if (m_Position + bytes > m_AllowedReadMark)
             {
-                m_InternalData.AllowedReadMark = m_InternalData.Position + bytes;
+                m_AllowedReadMark = m_Position + bytes;
             }
 #endif
             return true;
@@ -121,18 +170,18 @@ namespace Unity.Multiplayer.Netcode
         public bool VerifyCanRead(int bytes)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (m_InternalData.InBitwiseContext)
+            if (m_InBitwiseContext)
             {
                 throw new InvalidOperationException(
                     "Cannot use BufferReader in bytewise mode while in a bitwise context.");
             }
 #endif
-            if (m_InternalData.Position + bytes > m_InternalData.Length)
+            if (m_Position + bytes > m_Length)
             {
                 return false;
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            m_InternalData.AllowedReadMark = m_InternalData.Position + bytes;
+            m_AllowedReadMark = m_Position + bytes;
 #endif
             return true;
         }
@@ -141,71 +190,44 @@ namespace Unity.Multiplayer.Netcode
         public unsafe bool VerifyCanReadValue<T>(in T value) where T : unmanaged
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (m_InternalData.InBitwiseContext)
+            if (m_InBitwiseContext)
             {
                 throw new InvalidOperationException(
                     "Cannot use BufferReader in bytewise mode while in a bitwise context.");
             }
 #endif
             int len = sizeof(T);
-            if (m_InternalData.Position + len > m_InternalData.Length)
+            if (m_Position + len > m_Length)
             {
                 return false;
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            m_InternalData.AllowedReadMark = m_InternalData.Position + len;
-#endif
-            return true;
-        }
-        public bool VerifyCanReadBits(int bitCount)
-        {
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (!m_InternalData.InBitwiseContext)
-            {
-                throw new InvalidOperationException(
-                    "Cannot use BufferReader in bitwise mode while not in a bitwise context.");
-            }
-#endif
-            var newBitPosition = m_InternalData.BitPosition + bitCount;
-            var totalBytesWrittenInBitwiseContext = newBitPosition >> 3;
-            if ((newBitPosition & 7) != 0)
-            {
-                // Accounting for the partial read
-                ++totalBytesWrittenInBitwiseContext;
-            }
-
-            if (m_InternalData.Position + totalBytesWrittenInBitwiseContext > m_InternalData.Length)
-            {
-                return false;
-            }
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            m_InternalData.AllowedBitwiseReadMark = newBitPosition;
+            m_AllowedReadMark = m_Position + len;
 #endif
             return true;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public NativeArray<byte> GetNativeArray()
+        public unsafe byte[] ToArray()
         {
-            return m_buffer;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public byte[] ToArray()
-        {
-            return m_buffer.ToArray();
+            byte[] ret = new byte[Length];
+            fixed (byte* b = ret)
+            {
+                UnsafeUtility.MemCpy(b, m_BufferPointer, Length);
+            }
+            return ret;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe byte* GetUnsafePtr()
         {
-            return m_InternalData.BufferPointer;
+            return m_BufferPointer;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe byte* GetUnsafePtrAtCurrentPosition()
         {
-            return m_InternalData.BufferPointer + m_InternalData.Position;
+            return m_BufferPointer + m_Position;
         }
 
         /// <summary>
@@ -459,11 +481,8 @@ namespace Unity.Multiplayer.Netcode
                 {
                     for (int i = 0; i < target; ++i)
                     {
-                        if (oneByteChars)
-                        {
-                            ReadByte(out byte b); 
-                            native[i] = (char) b;
-                        }
+                        ReadByte(out byte b); 
+                        native[i] = (char) b;
                     }
                 }
                 else
@@ -485,7 +504,7 @@ namespace Unity.Multiplayer.Netcode
         public unsafe void ReadValueSafe(out string s, bool oneByteChars = false)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (m_InternalData.InBitwiseContext)
+            if (m_InBitwiseContext)
             {
                 throw new InvalidOperationException(
                     "Cannot use BufferReader in bytewise mode while in a bitwise context.");
@@ -511,11 +530,8 @@ namespace Unity.Multiplayer.Netcode
                 {
                     for (int i = 0; i < target; ++i)
                     {
-                        if (oneByteChars)
-                        {
-                            ReadByte(out byte b); 
-                            native[i] = (char) b;
-                        }
+                        ReadByte(out byte b); 
+                        native[i] = (char) b;
                     }
                 }
                 else
@@ -555,7 +571,7 @@ namespace Unity.Multiplayer.Netcode
         public unsafe void ReadValueSafe<T>(out T[] array) where T: unmanaged
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (m_InternalData.InBitwiseContext)
+            if (m_InBitwiseContext)
             {
                 throw new InvalidOperationException(
                     "Cannot use BufferReader in bytewise mode while in a bitwise context.");
@@ -588,12 +604,12 @@ namespace Unity.Multiplayer.Netcode
             // in all builds - editor, mono, and ILCPP
             
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (m_InternalData.InBitwiseContext)
+            if (m_InBitwiseContext)
             {
                 throw new InvalidOperationException(
                     "Cannot use BufferReader in bytewise mode while in a bitwise context.");
             }
-            if (m_InternalData.Position + bytesToRead > m_InternalData.AllowedReadMark)
+            if (m_Position + bytesToRead > m_AllowedReadMark)
             {
                 throw new OverflowException("Attempted to read without first calling VerifyCanRead()");
             }
@@ -601,7 +617,7 @@ namespace Unity.Multiplayer.Netcode
 
             T val = new T();
             byte* ptr = ((byte*) &val) + offsetBytes;
-            byte* bufferPointer = m_InternalData.BufferPointer + m_InternalData.Position;
+            byte* bufferPointer = m_BufferPointer + m_Position;
             switch (bytesToRead)
             {
                 case 1:
@@ -638,7 +654,7 @@ namespace Unity.Multiplayer.Netcode
                     break;
             }
 
-            m_InternalData.Position += bytesToRead;
+            m_Position += bytesToRead;
             value = val;
         }
 
@@ -650,17 +666,17 @@ namespace Unity.Multiplayer.Netcode
         public unsafe void ReadByte(out byte value)
         {      
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (m_InternalData.InBitwiseContext)
+            if (m_InBitwiseContext)
             {
                 throw new InvalidOperationException(
                     "Cannot use BufferReader in bytewise mode while in a bitwise context.");
             }
-            if (m_InternalData.Position + 1 > m_InternalData.AllowedReadMark)
+            if (m_Position + 1 > m_AllowedReadMark)
             {
                 throw new OverflowException("Attempted to read without first calling VerifyCanRead()");
             }
 #endif
-            value = m_InternalData.BufferPointer[m_InternalData.Position++];
+            value = m_BufferPointer[m_Position++];
         }
 
         /// <summary>
@@ -674,7 +690,7 @@ namespace Unity.Multiplayer.Netcode
         public unsafe void ReadByteSafe(out byte value)
         {      
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (m_InternalData.InBitwiseContext)
+            if (m_InBitwiseContext)
             {
                 throw new InvalidOperationException(
                     "Cannot use BufferReader in bytewise mode while in a bitwise context.");
@@ -685,7 +701,7 @@ namespace Unity.Multiplayer.Netcode
             {
                 throw new OverflowException("Reading past the end of the buffer");
             }
-            value = m_InternalData.BufferPointer[m_InternalData.Position++];
+            value = m_BufferPointer[m_Position++];
         }
         
         /// <summary>
@@ -698,18 +714,18 @@ namespace Unity.Multiplayer.Netcode
         public unsafe void ReadBytes(byte* value, int size, int offset = 0)
         {      
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (m_InternalData.InBitwiseContext)
+            if (m_InBitwiseContext)
             {
                 throw new InvalidOperationException(
                     "Cannot use BufferReader in bytewise mode while in a bitwise context.");
             }
-            if (m_InternalData.Position + size > m_InternalData.AllowedReadMark)
+            if (m_Position + size > m_AllowedReadMark)
             {
                 throw new OverflowException("Attempted to read without first calling VerifyCanRead()");
             }
 #endif
-            UnsafeUtility.MemCpy(value + offset, (m_InternalData.BufferPointer + m_InternalData.Position), size);
-            m_InternalData.Position += size;
+            UnsafeUtility.MemCpy(value + offset, (m_BufferPointer + m_Position), size);
+            m_Position += size;
         }
         
         /// <summary>
@@ -725,7 +741,7 @@ namespace Unity.Multiplayer.Netcode
         public unsafe void ReadBytesSafe(byte* value, int size, int offset = 0)
         {      
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (m_InternalData.InBitwiseContext)
+            if (m_InBitwiseContext)
             {
                 throw new InvalidOperationException(
                     "Cannot use BufferReader in bytewise mode while in a bitwise context.");
@@ -736,8 +752,8 @@ namespace Unity.Multiplayer.Netcode
             {
                 throw new OverflowException("Writing past the end of the buffer");
             }
-            UnsafeUtility.MemCpy(value + offset, (m_InternalData.BufferPointer + m_InternalData.Position), size);
-            m_InternalData.Position += size;
+            UnsafeUtility.MemCpy(value + offset, (m_BufferPointer + m_Position), size);
+            m_Position += size;
         }
         
         /// <summary>
@@ -785,20 +801,20 @@ namespace Unity.Multiplayer.Netcode
             int len = sizeof(T);
             
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (m_InternalData.InBitwiseContext)
+            if (m_InBitwiseContext)
             {
                 throw new InvalidOperationException(
                     "Cannot use BufferReader in bytewise mode while in a bitwise context.");
             }
-            if (m_InternalData.Position + len > m_InternalData.AllowedReadMark)
+            if (m_Position + len > m_AllowedReadMark)
             {
                 throw new OverflowException("Attempted to write without first calling VerifyCanWrite()");
             }
 #endif
             
-            T* pointer = (T*)(m_InternalData.BufferPointer+m_InternalData.Position);
+            T* pointer = (T*)(m_BufferPointer+m_Position);
             value = *pointer;
-            m_InternalData.Position += len;
+            m_Position += len;
         }
         
         /// <summary>
@@ -816,7 +832,7 @@ namespace Unity.Multiplayer.Netcode
             int len = sizeof(T);
             
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (m_InternalData.InBitwiseContext)
+            if (m_InBitwiseContext)
             {
                 throw new InvalidOperationException(
                     "Cannot use BufferReader in bytewise mode while in a bitwise context.");
@@ -828,9 +844,9 @@ namespace Unity.Multiplayer.Netcode
                 throw new OverflowException("Writing past the end of the buffer");
             }
             
-            T* pointer = (T*)(m_InternalData.BufferPointer+m_InternalData.Position);
+            T* pointer = (T*)(m_BufferPointer+m_Position);
             value = *pointer;
-            m_InternalData.Position += len;
+            m_Position += len;
         }
     }
 }

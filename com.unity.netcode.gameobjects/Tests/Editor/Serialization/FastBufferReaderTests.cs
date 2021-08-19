@@ -117,13 +117,11 @@ namespace Unity.Netcode.EditorTests
 
         private FastBufferReader CommonChecks<T>(ref FastBufferWriter writer, T valueToTest, int writeSize, string failMessage = "") where T: unmanaged
         {
-            NativeArray<byte> underlyingArray = writer.GetNativeArray();
-            
             WriteCheckBytes(ref writer, writeSize, failMessage);
             
-            FastBufferReader reader = new FastBufferReader(underlyingArray);
+            FastBufferReader reader = new FastBufferReader(ref writer, Allocator.Temp);
             
-            VerifyPositionAndLength(ref reader, writer.Capacity, failMessage);
+            VerifyPositionAndLength(ref reader, writer.Length, failMessage);
 
             VerifyCheckBytes(ref reader, writeSize, failMessage);
             
@@ -150,9 +148,12 @@ namespace Unity.Netcode.EditorTests
 
                 var reader = CommonChecks(ref writer, valueToTest, writeSize, failMessage);
 
-                Assert.IsTrue(reader.VerifyCanRead(FastBufferWriter.GetWriteSize<T>()));
-                reader.ReadValue(out T result);
-                Assert.AreEqual(valueToTest, result);
+                using (reader)
+                {
+                    Assert.IsTrue(reader.VerifyCanRead(FastBufferWriter.GetWriteSize<T>()));
+                    reader.ReadValue(out T result);
+                    Assert.AreEqual(valueToTest, result);
+                }
             }
         }
         private unsafe void RunTypeTestSafe<T>(T valueToTest) where T : unmanaged
@@ -170,9 +171,12 @@ namespace Unity.Netcode.EditorTests
 
 
                 var reader = CommonChecks(ref writer, valueToTest, writeSize, failMessage);
-                
-                reader.ReadValueSafe(out T result);
-                Assert.AreEqual(valueToTest, result);
+
+                using (reader)
+                {
+                    reader.ReadValueSafe(out T result);
+                    Assert.AreEqual(valueToTest, result);
+                }
             }
         }
         
@@ -189,9 +193,12 @@ namespace Unity.Netcode.EditorTests
                 writer.WriteObject(valueToTest);
 
                 var reader = CommonChecks(ref writer, valueToTest, writeSize, failMessage);
-                
-                reader.ReadObject(out object result, typeof(T));
-                Assert.AreEqual(valueToTest, result);
+
+                using (reader)
+                {
+                    reader.ReadObject(out object result, typeof(T));
+                    Assert.AreEqual(valueToTest, result);
+                }
             }
         }
 
@@ -211,8 +218,6 @@ namespace Unity.Netcode.EditorTests
             FastBufferWriter writer = new FastBufferWriter(writeSize + 2, Allocator.Temp);
             using (writer)
             {
-                NativeArray<byte> underlyingArray = writer.GetNativeArray();
-
                 Assert.AreEqual(sizeof(int) + sizeof(T) * valueToTest.Length, writeSize);
                 Assert.IsTrue(writer.VerifyCanWrite(writeSize + 2), "Writer denied write permission");
 
@@ -220,14 +225,17 @@ namespace Unity.Netcode.EditorTests
 
                 WriteCheckBytes(ref writer, writeSize);
 
-                var reader = new FastBufferReader(writer.GetNativeArray());
-                VerifyPositionAndLength(ref reader, writer.Capacity);
+                var reader = new FastBufferReader(ref writer, Allocator.Temp);
+                using (reader)
+                {
+                    VerifyPositionAndLength(ref reader, writer.Length);
 
-                Assert.IsTrue(reader.VerifyCanRead(writeSize));
-                reader.ReadValue(out T[] result);
-                VerifyArrayEquality(valueToTest, result, 0);
+                    Assert.IsTrue(reader.VerifyCanRead(writeSize));
+                    reader.ReadValue(out T[] result);
+                    VerifyArrayEquality(valueToTest, result, 0);
 
-                VerifyCheckBytes(ref reader, writeSize);
+                    VerifyCheckBytes(ref reader, writeSize);
+                }
             }
         }
 
@@ -237,21 +245,22 @@ namespace Unity.Netcode.EditorTests
             FastBufferWriter writer = new FastBufferWriter(writeSize + 2, Allocator.Temp);
             using (writer)
             {
-                NativeArray<byte> underlyingArray = writer.GetNativeArray();
-
                 Assert.AreEqual(sizeof(int) + sizeof(T) * valueToTest.Length, writeSize);
 
                 writer.WriteValueSafe(valueToTest);
 
                 WriteCheckBytes(ref writer, writeSize);
                 
-                var reader = new FastBufferReader(writer.GetNativeArray());
-                VerifyPositionAndLength(ref reader, writer.Capacity);
-                
-                reader.ReadValueSafe(out T[] result);
-                VerifyArrayEquality(valueToTest, result, 0);
+                var reader = new FastBufferReader(ref writer, Allocator.Temp);
+                using (reader)
+                {
+                    VerifyPositionAndLength(ref reader, writer.Length);
 
-                VerifyCheckBytes(ref reader, writeSize);
+                    reader.ReadValueSafe(out T[] result);
+                    VerifyArrayEquality(valueToTest, result, 0);
+
+                    VerifyCheckBytes(ref reader, writeSize);
+                }
             }
         }
 
@@ -262,21 +271,22 @@ namespace Unity.Netcode.EditorTests
             FastBufferWriter writer = new FastBufferWriter(writeSize + 3, Allocator.Temp);
             using(writer)
             {
-                NativeArray<byte> underlyingArray = writer.GetNativeArray();
-                
                 Assert.AreEqual(sizeof(int) + sizeof(T) * valueToTest.Length, writeSize);
 
                 writer.WriteObject(valueToTest);
 
                 WriteCheckBytes(ref writer, writeSize + 1);
                 
-                var reader = new FastBufferReader(writer.GetNativeArray());
-                VerifyPositionAndLength(ref reader, writer.Capacity);
-                
-                reader.ReadObject(out object result, typeof(T[]));
-                VerifyArrayEquality(valueToTest, (T[])result, 0);
+                var reader = new FastBufferReader(ref writer, Allocator.Temp);
+                using (reader)
+                {
+                    VerifyPositionAndLength(ref reader, writer.Length);
 
-                VerifyCheckBytes(ref reader, writeSize + 1);
+                    reader.ReadObject(out object result, typeof(T[]));
+                    VerifyArrayEquality(valueToTest, (T[]) result, 0);
+
+                    VerifyCheckBytes(ref reader, writeSize + 1);
+                }
             }
         }
         #endregion
@@ -1547,21 +1557,22 @@ namespace Unity.Netcode.EditorTests
             FastBufferWriter writer = new FastBufferWriter(serializedValueSize + 2, Allocator.Temp);
             using(writer)
             {
-                NativeArray<byte> underlyingArray = writer.GetNativeArray();
-
                 Assert.IsTrue(writer.VerifyCanWrite(serializedValueSize + 2), "Writer denied write permission");
                 writer.WriteValue(valueToTest);
 
                 WriteCheckBytes(ref writer, serializedValueSize);
 
-                var reader = new FastBufferReader(writer.GetNativeArray());
-                VerifyPositionAndLength(ref reader, writer.Capacity);
-                
-                Assert.IsTrue(reader.VerifyCanRead(serializedValueSize + 2), "Reader denied read permission");
-                reader.ReadValue(out string result);
-                Assert.AreEqual(valueToTest, result);
+                var reader = new FastBufferReader(ref writer, Allocator.Temp);
+                using (reader)
+                {
+                    VerifyPositionAndLength(ref reader, writer.Length);
 
-                VerifyCheckBytes(ref reader, serializedValueSize);
+                    Assert.IsTrue(reader.VerifyCanRead(serializedValueSize + 2), "Reader denied read permission");
+                    reader.ReadValue(out string result);
+                    Assert.AreEqual(valueToTest, result);
+
+                    VerifyCheckBytes(ref reader, serializedValueSize);
+                }
             }
         }
 
@@ -1575,19 +1586,20 @@ namespace Unity.Netcode.EditorTests
             FastBufferWriter writer = new FastBufferWriter(serializedValueSize + 2, Allocator.Temp);
             using(writer)
             {
-                NativeArray<byte> underlyingArray = writer.GetNativeArray();
-
                 writer.WriteValueSafe(valueToTest);
 
                 WriteCheckBytes(ref writer, serializedValueSize);
 
-                var reader = new FastBufferReader(writer.GetNativeArray());
-                VerifyPositionAndLength(ref reader, writer.Capacity);
-                
-                reader.ReadValueSafe(out string result);
-                Assert.AreEqual(valueToTest, result);
+                var reader = new FastBufferReader(ref writer, Allocator.Temp);
+                using (reader)
+                {
+                    VerifyPositionAndLength(ref reader, writer.Length);
 
-                VerifyCheckBytes(ref reader, serializedValueSize);
+                    reader.ReadValueSafe(out string result);
+                    Assert.AreEqual(valueToTest, result);
+
+                    VerifyCheckBytes(ref reader, serializedValueSize);
+                }
             }
         }
 
@@ -1601,19 +1613,20 @@ namespace Unity.Netcode.EditorTests
             FastBufferWriter writer = new FastBufferWriter(serializedValueSize + 3, Allocator.Temp);
             using(writer)
             {
-                NativeArray<byte> underlyingArray = writer.GetNativeArray();
-
                 writer.WriteObject(valueToTest);
 
                 WriteCheckBytes(ref writer, serializedValueSize+1);
 
-                var reader = new FastBufferReader(writer.GetNativeArray());
-                VerifyPositionAndLength(ref reader, writer.Capacity);
-                
-                reader.ReadObject(out object result, typeof(string));
-                Assert.AreEqual(valueToTest, result);
+                var reader = new FastBufferReader(ref writer, Allocator.Temp);
+                using (reader)
+                {
+                    VerifyPositionAndLength(ref reader, writer.Length);
 
-                VerifyCheckBytes(ref reader, serializedValueSize+1);
+                    reader.ReadObject(out object result, typeof(string));
+                    Assert.AreEqual(valueToTest, result);
+
+                    VerifyCheckBytes(ref reader, serializedValueSize + 1);
+                }
             }
         }
 
@@ -1626,21 +1639,22 @@ namespace Unity.Netcode.EditorTests
             FastBufferWriter writer = new FastBufferWriter(serializedValueSize + 2, Allocator.Temp);
             using(writer)
             {
-                NativeArray<byte> underlyingArray = writer.GetNativeArray();
-
                 Assert.IsTrue(writer.VerifyCanWrite(serializedValueSize + 2), "Writer denied write permission");
                 writer.WriteValue(valueToTest, true);
 
                 WriteCheckBytes(ref writer, serializedValueSize);
 
-                var reader = new FastBufferReader(writer.GetNativeArray());
-                VerifyPositionAndLength(ref reader, writer.Capacity);
-                
-                Assert.IsTrue(reader.VerifyCanRead(serializedValueSize + 2), "Reader denied read permission");
-                reader.ReadValue(out string result, true);
-                Assert.AreEqual(valueToTest, result);
+                var reader = new FastBufferReader(ref writer, Allocator.Temp);
+                using (reader)
+                {
+                    VerifyPositionAndLength(ref reader, writer.Length);
 
-                VerifyCheckBytes(ref reader, serializedValueSize);
+                    Assert.IsTrue(reader.VerifyCanRead(serializedValueSize + 2), "Reader denied read permission");
+                    reader.ReadValue(out string result, true);
+                    Assert.AreEqual(valueToTest, result);
+
+                    VerifyCheckBytes(ref reader, serializedValueSize);
+                }
             }
         }
 
@@ -1653,19 +1667,20 @@ namespace Unity.Netcode.EditorTests
             FastBufferWriter writer = new FastBufferWriter(serializedValueSize + 2, Allocator.Temp);
             using(writer)
             {
-                NativeArray<byte> underlyingArray = writer.GetNativeArray();
-
                 writer.WriteValueSafe(valueToTest, true);
 
                 WriteCheckBytes(ref writer, serializedValueSize);
 
-                var reader = new FastBufferReader(writer.GetNativeArray());
-                VerifyPositionAndLength(ref reader, writer.Capacity);
-                
-                reader.ReadValueSafe(out string result, true);
-                Assert.AreEqual(valueToTest, result);
+                var reader = new FastBufferReader(ref writer, Allocator.Temp);
+                using (reader)
+                {
+                    VerifyPositionAndLength(ref reader, writer.Length);
 
-                VerifyCheckBytes(ref reader, serializedValueSize);
+                    reader.ReadValueSafe(out string result, true);
+                    Assert.AreEqual(valueToTest, result);
+
+                    VerifyCheckBytes(ref reader, serializedValueSize);
+                }
             }
         }
 
@@ -1683,24 +1698,27 @@ namespace Unity.Netcode.EditorTests
                 var failMessage = $"TestReadingPartialValues failed with value {valueToTest}";
                 WriteCheckBytes(ref writer, count, failMessage);
 
-                var reader = new FastBufferReader(writer.GetNativeArray());
-                VerifyPositionAndLength(ref reader, writer.Capacity, failMessage);
-                Assert.IsTrue(reader.VerifyCanRead(count + 2), "Reader denied read permission");
-
-                ulong mask = 0;
-                for (var i = 0; i < count; ++i)
+                var reader = new FastBufferReader(ref writer, Allocator.Temp);
+                using (reader)
                 {
-                    mask = (mask << 8) | 0b11111111;
+                    VerifyPositionAndLength(ref reader, writer.Length, failMessage);
+                    Assert.IsTrue(reader.VerifyCanRead(count + 2), "Reader denied read permission");
+
+                    ulong mask = 0;
+                    for (var i = 0; i < count; ++i)
+                    {
+                        mask = (mask << 8) | 0b11111111;
+                    }
+
+                    reader.ReadPartialValue(out ulong result, count);
+                    Assert.AreEqual(valueToTest & mask, result & mask, failMessage);
+                    VerifyCheckBytes(ref reader, count, failMessage);
                 }
-                
-                reader.ReadPartialValue(out ulong result, count);
-                Assert.AreEqual(valueToTest & mask, result & mask, failMessage);
-                VerifyCheckBytes(ref reader, count, failMessage);
             }
         }
 
         [Test]
-        public unsafe void TestReadingPartialValuesWithOffsets([NUnit.Framework.Range(1, sizeof(ulong)-2)] int count)
+        public void TestReadingPartialValuesWithOffsets([NUnit.Framework.Range(1, sizeof(ulong)-2)] int count)
         {
             var random = new Random();
             var valueToTest = ((ulong) random.Next() << 32) + (ulong)random.Next();
@@ -1708,33 +1726,34 @@ namespace Unity.Netcode.EditorTests
             
             using (writer)
             {
-                NativeArray<byte> underlyingArray = writer.GetNativeArray();
-
                 Assert.IsTrue(writer.VerifyCanWrite(count + 2), "Writer denied write permission");
                 writer.WritePartialValue(valueToTest, count, 2);
                 var failMessage = $"TestReadingPartialValuesWithOffsets failed with value {valueToTest}";
                 WriteCheckBytes(ref writer, count, failMessage);
 
-                var reader = new FastBufferReader(writer.GetNativeArray());
-                VerifyPositionAndLength(ref reader, writer.Capacity, failMessage);
-                Assert.IsTrue(reader.VerifyCanRead(count + 2), "Reader denied read permission");
-
-                ulong mask = 0;
-                for (var i = 0; i < count; ++i)
+                var reader = new FastBufferReader(ref writer, Allocator.Temp);
+                using (reader)
                 {
-                    mask = (mask << 8) | 0b11111111;
-                }
+                    VerifyPositionAndLength(ref reader, writer.Length, failMessage);
+                    Assert.IsTrue(reader.VerifyCanRead(count + 2), "Reader denied read permission");
 
-                mask <<= 16;
-                
-                reader.ReadPartialValue(out ulong result, count, 2);
-                Assert.AreEqual(valueToTest & mask, result & mask, failMessage);
-                VerifyCheckBytes(ref reader, count, failMessage);
+                    ulong mask = 0;
+                    for (var i = 0; i < count; ++i)
+                    {
+                        mask = (mask << 8) | 0b11111111;
+                    }
+
+                    mask <<= 16;
+
+                    reader.ReadPartialValue(out ulong result, count, 2);
+                    Assert.AreEqual(valueToTest & mask, result & mask, failMessage);
+                    VerifyCheckBytes(ref reader, count, failMessage);
+                }
             }
         }
 
         [Test]
-        public void TestToArray()
+        public unsafe void TestToArray()
         {
             var testStruct = GetTestStruct();
             var requiredSize = FastBufferWriter.GetWriteSize(testStruct);
@@ -1745,34 +1764,16 @@ namespace Unity.Netcode.EditorTests
                 writer.VerifyCanWrite(requiredSize);
                 writer.WriteValue(testStruct);
 
-                var reader = new FastBufferReader(writer.GetNativeArray());
-                var array = reader.ToArray();
-                var underlyingArray = writer.GetNativeArray();
-                for(var i = 0; i < array.Length; ++i)
+                var reader = new FastBufferReader(ref writer, Allocator.Temp);
+                using (reader)
                 {
-                    Assert.AreEqual(array[i], underlyingArray[i]);
+                    var array = reader.ToArray();
+                    var underlyingArray = writer.GetUnsafePtr();
+                    for (var i = 0; i < array.Length; ++i)
+                    {
+                        Assert.AreEqual(array[i], underlyingArray[i]);
+                    }
                 }
-            }
-        }
-
-        [Test]
-        public unsafe void TestGetUnsafePtr()
-        {
-            var testStruct = GetTestStruct();
-            var requiredSize = FastBufferWriter.GetWriteSize(testStruct);
-            var writer = new FastBufferWriter(requiredSize, Allocator.Temp);
-
-            using (writer)
-            {
-                writer.VerifyCanWrite(requiredSize);
-                writer.WriteValue(testStruct);
-                var reader = new FastBufferReader(writer.GetNativeArray());
-                var ptr = reader.GetUnsafePtr();
-                var underlyingArrayPtr = writer.GetNativeArray().GetUnsafePtr();
-                Assert.IsTrue(underlyingArrayPtr == ptr);
-
-                var ptrAtPosition = writer.GetUnsafePtrAtCurrentPosition();
-                Assert.IsTrue((byte*)underlyingArrayPtr + writer.Position == ptrAtPosition);
             }
         }
 
@@ -1780,9 +1781,11 @@ namespace Unity.Netcode.EditorTests
         public void TestThrowingIfBoundsCheckingSkipped()
         {
             var writer = new FastBufferWriter(100, Allocator.Temp);
-            var emptyReader = new FastBufferReader(new NativeArray<byte>(100, Allocator.Temp), 0, 0);
+            var nativeArray = new NativeArray<byte>(100, Allocator.Temp);
+            var emptyReader = new FastBufferReader(nativeArray, Allocator.Temp, 0);
+            nativeArray.Dispose();
 
-            using (emptyReader.GetNativeArray())
+            using (emptyReader)
             using (writer)
             {
                 Assert.Throws<OverflowException>(() => { emptyReader.ReadByte(out byte b); });
@@ -1797,14 +1800,17 @@ namespace Unity.Netcode.EditorTests
                 writer.WriteByte(1);
                 writer.WriteByte(2);
                 writer.WriteByte(3);
-                var reader = new FastBufferReader(writer.GetNativeArray(), 0, writer.Length);
-                Assert.Throws<OverflowException>(() => { reader.ReadValue(out int i); });
-                Assert.Throws<OverflowException>(() => { reader.ReadValue(out byte b); });
-                Assert.IsTrue(reader.VerifyCanRead(3));
-                reader.ReadByte(out byte b);
-                reader.ReadByte(out b);
-                reader.ReadByte(out b);
-                Assert.Throws<OverflowException>(() => { reader.ReadValue(out byte b); });
+                var reader = new FastBufferReader(ref writer, Allocator.Temp);
+                using (reader)
+                {
+                    Assert.Throws<OverflowException>(() => { reader.ReadValue(out int i); });
+                    Assert.Throws<OverflowException>(() => { reader.ReadValue(out byte b); });
+                    Assert.IsTrue(reader.VerifyCanRead(3));
+                    reader.ReadByte(out byte b);
+                    reader.ReadByte(out b);
+                    reader.ReadByte(out b);
+                    Assert.Throws<OverflowException>(() => { reader.ReadValue(out byte b); });
+                }
             }
         }
 
@@ -1830,21 +1836,27 @@ namespace Unity.Netcode.EditorTests
                 writer.WriteValueSafe(bytes);
                 writer.WriteValueSafe("");
 
-                var reader = new FastBufferReader(writer.GetNativeArray(), 0, writer.Length);
-                Assert.IsTrue(reader.VerifyCanRead(writer.Length));
-                using (var context = reader.EnterBitwiseContext())
+                var reader = new FastBufferReader(ref writer, Allocator.Temp);
+                using (reader)
                 {
-                    Assert.Throws<InvalidOperationException>(() => { reader.ReadByte(out byte b); });
-                    Assert.Throws<InvalidOperationException>(() => { reader.ReadBytes(ref bytes, bytes.Length); });
-                    Assert.Throws<InvalidOperationException>(() => { reader.ReadValue(out i); });
-                    Assert.Throws<InvalidOperationException>(() => { reader.ReadValue(out bytes); });
-                    Assert.Throws<InvalidOperationException>(() => { reader.ReadValue(out string s); });
-                    
-                    Assert.Throws<InvalidOperationException>(() => { reader.ReadByteSafe(out byte b); });
-                    Assert.Throws<InvalidOperationException>(() => { reader.ReadBytesSafe(ref bytes, bytes.Length); });
-                    Assert.Throws<InvalidOperationException>(() => { reader.ReadValueSafe(out i); });
-                    Assert.Throws<InvalidOperationException>(() => { reader.ReadValueSafe(out bytes); });
-                    Assert.Throws<InvalidOperationException>(() => { reader.ReadValueSafe(out string s); });
+                    Assert.IsTrue(reader.VerifyCanRead(writer.Length));
+                    using (var context = reader.EnterBitwiseContext())
+                    {
+                        Assert.Throws<InvalidOperationException>(() => { reader.ReadByte(out byte b); });
+                        Assert.Throws<InvalidOperationException>(() => { reader.ReadBytes(ref bytes, bytes.Length); });
+                        Assert.Throws<InvalidOperationException>(() => { reader.ReadValue(out i); });
+                        Assert.Throws<InvalidOperationException>(() => { reader.ReadValue(out bytes); });
+                        Assert.Throws<InvalidOperationException>(() => { reader.ReadValue(out string s); });
+
+                        Assert.Throws<InvalidOperationException>(() => { reader.ReadByteSafe(out byte b); });
+                        Assert.Throws<InvalidOperationException>(() =>
+                        {
+                            reader.ReadBytesSafe(ref bytes, bytes.Length);
+                        });
+                        Assert.Throws<InvalidOperationException>(() => { reader.ReadValueSafe(out i); });
+                        Assert.Throws<InvalidOperationException>(() => { reader.ReadValueSafe(out bytes); });
+                        Assert.Throws<InvalidOperationException>(() => { reader.ReadValueSafe(out string s); });
+                    }
                 }
             }
         }
@@ -1852,8 +1864,10 @@ namespace Unity.Netcode.EditorTests
         [Test]
         public void TestVerifyCanReadIsRelativeToPositionAndNotAllowedReadPosition()
         {
-            var reader = new FastBufferReader(new NativeArray<byte>(100, Allocator.Temp));
-            using (reader.GetNativeArray())
+            var nativeArray = new NativeArray<byte>(100, Allocator.Temp);
+            var reader = new FastBufferReader(nativeArray, Allocator.Temp, 100);
+            nativeArray.Dispose();
+            using (reader)
             {
                 reader.VerifyCanRead(100);
                 reader.ReadByte(out byte b);
@@ -1876,41 +1890,44 @@ namespace Unity.Netcode.EditorTests
                 writer.WriteByteSafe(4);
                 writer.WriteByteSafe(0);
 
-                var reader = new FastBufferReader(writer.GetNativeArray());
-                reader.Seek(5);
-                reader.ReadByteSafe(out byte b);
-                Assert.AreEqual(reader.Position, 6);
-                Assert.AreEqual(reader.Length, 100);
-                Assert.AreEqual(0, b);
+                var reader = new FastBufferReader(ref writer, Allocator.Temp);
+                using (reader)
+                {
+                    reader.Seek(5);
+                    reader.ReadByteSafe(out byte b);
+                    Assert.AreEqual(reader.Position, 6);
+                    Assert.AreEqual(reader.Length, writer.Length);
+                    Assert.AreEqual(0, b);
 
-                reader.Seek(0);
-                reader.ReadByteSafe(out b);
-                Assert.AreEqual(reader.Position, 1);
-                Assert.AreEqual(reader.Length, 100);
-                Assert.AreEqual(1, b);
+                    reader.Seek(0);
+                    reader.ReadByteSafe(out b);
+                    Assert.AreEqual(reader.Position, 1);
+                    Assert.AreEqual(reader.Length, writer.Length);
+                    Assert.AreEqual(1, b);
 
-                reader.Seek(10);
-                Assert.AreEqual(reader.Position, 10);
-                Assert.AreEqual(reader.Length, 100);
+                    reader.Seek(10);
+                    Assert.AreEqual(reader.Position, writer.Length);
+                    Assert.AreEqual(reader.Length, writer.Length);
 
-                reader.Seek(2);
-                reader.ReadByteSafe(out b);
-                Assert.AreEqual(2, b);
+                    reader.Seek(2);
+                    reader.ReadByteSafe(out b);
+                    Assert.AreEqual(2, b);
 
-                reader.Seek(1);
-                reader.ReadByteSafe(out b);
-                Assert.AreEqual(3, b);
+                    reader.Seek(1);
+                    reader.ReadByteSafe(out b);
+                    Assert.AreEqual(3, b);
 
-                reader.Seek(4);
-                reader.ReadByteSafe(out b);
-                Assert.AreEqual(4, b);
+                    reader.Seek(4);
+                    reader.ReadByteSafe(out b);
+                    Assert.AreEqual(4, b);
 
-                reader.Seek(3);
-                reader.ReadByteSafe(out b);
-                Assert.AreEqual(5, b);
+                    reader.Seek(3);
+                    reader.ReadByteSafe(out b);
+                    Assert.AreEqual(5, b);
 
-                Assert.AreEqual(reader.Position, 4);
-                Assert.AreEqual(reader.Length, 100);
+                    Assert.AreEqual(reader.Position, 4);
+                    Assert.AreEqual(reader.Length, writer.Length);
+                }
             }
         }
 
@@ -1935,7 +1952,7 @@ namespace Unity.Netcode.EditorTests
                 NetworkTransport = obj.AddComponent<DummyTransport>()
             };
 
-            networkManager.StartHost();
+            networkManager.StartServer();
 
             try
             {
@@ -1944,7 +1961,7 @@ namespace Unity.Netcode.EditorTests
             finally
             {
                 GameObject.DestroyImmediate(obj);
-                networkManager.StopHost();
+                networkManager.StopServer();
             }
         }
         
@@ -1962,11 +1979,14 @@ namespace Unity.Netcode.EditorTests
 
                     Assert.AreEqual(FastBufferWriter.GetWriteSize(networkBehaviour), writer.Position);
 
-                    var reader = new FastBufferReader(writer.GetNativeArray());
-                    Assert.IsTrue(reader.VerifyCanRead(FastBufferWriter.GetNetworkBehaviourWriteSize()));
-                    reader.ReadValue(out NetworkBehaviour result);
-                    Assert.AreSame(result, networkBehaviour);
-                    
+                    var reader = new FastBufferReader(ref writer, Allocator.Temp);
+                    using (reader)
+                    {
+                        Assert.IsTrue(reader.VerifyCanRead(FastBufferWriter.GetNetworkBehaviourWriteSize()));
+                        reader.ReadValue(out NetworkBehaviour result);
+                        Assert.AreSame(result, networkBehaviour);
+                    }
+
                 }
             });
         }
@@ -1985,10 +2005,13 @@ namespace Unity.Netcode.EditorTests
 
                     Assert.AreEqual(FastBufferWriter.GetWriteSize(networkObject), writer.Position);
 
-                    var reader = new FastBufferReader(writer.GetNativeArray());
-                    Assert.IsTrue(reader.VerifyCanRead(FastBufferWriter.GetNetworkObjectWriteSize()));
-                    reader.ReadValue(out NetworkObject result);
-                    Assert.AreSame(result, networkObject);
+                    var reader = new FastBufferReader(ref writer, Allocator.Temp);
+                    using (reader)
+                    {
+                        Assert.IsTrue(reader.VerifyCanRead(FastBufferWriter.GetNetworkObjectWriteSize()));
+                        reader.ReadValue(out NetworkObject result);
+                        Assert.AreSame(result, networkObject);
+                    }
                 }
             });
         }
@@ -2007,10 +2030,13 @@ namespace Unity.Netcode.EditorTests
 
                     Assert.AreEqual(FastBufferWriter.GetWriteSize(obj), writer.Position);
 
-                    var reader = new FastBufferReader(writer.GetNativeArray());
-                    Assert.IsTrue(reader.VerifyCanRead(FastBufferWriter.GetGameObjectWriteSize()));
-                    reader.ReadValue(out GameObject result);
-                    Assert.AreSame(result, obj);
+                    var reader = new FastBufferReader(ref writer, Allocator.Temp);
+                    using (reader)
+                    {
+                        Assert.IsTrue(reader.VerifyCanRead(FastBufferWriter.GetGameObjectWriteSize()));
+                        reader.ReadValue(out GameObject result);
+                        Assert.AreSame(result, obj);
+                    }
                 }
             });
         }
@@ -2027,9 +2053,12 @@ namespace Unity.Netcode.EditorTests
 
                     Assert.AreEqual(FastBufferWriter.GetWriteSize(networkBehaviour), writer.Position);
 
-                    var reader = new FastBufferReader(writer.GetNativeArray());
-                    reader.ReadValueSafe(out NetworkBehaviour result);
-                    Assert.AreSame(result, networkBehaviour);
+                    var reader = new FastBufferReader(ref writer, Allocator.Temp);
+                    using (reader)
+                    {
+                        reader.ReadValueSafe(out NetworkBehaviour result);
+                        Assert.AreSame(result, networkBehaviour);
+                    }
                 }
             });
         }
@@ -2046,9 +2075,12 @@ namespace Unity.Netcode.EditorTests
 
                     Assert.AreEqual(FastBufferWriter.GetWriteSize(networkObject), writer.Position);
 
-                    var reader = new FastBufferReader(writer.GetNativeArray());
-                    reader.ReadValueSafe(out NetworkObject result);
-                    Assert.AreSame(result, networkObject);
+                    var reader = new FastBufferReader(ref writer, Allocator.Temp);
+                    using (reader)
+                    {
+                        reader.ReadValueSafe(out NetworkObject result);
+                        Assert.AreSame(result, networkObject);
+                    }
                 }
             });
         }
@@ -2065,9 +2097,12 @@ namespace Unity.Netcode.EditorTests
 
                     Assert.AreEqual(FastBufferWriter.GetWriteSize(obj), writer.Position);
 
-                    var reader = new FastBufferReader(writer.GetNativeArray());
-                    reader.ReadValueSafe(out GameObject result);
-                    Assert.AreSame(result, obj);
+                    var reader = new FastBufferReader(ref writer, Allocator.Temp);
+                    using (reader)
+                    {
+                        reader.ReadValueSafe(out GameObject result);
+                        Assert.AreSame(result, obj);
+                    }
                 }
             });
         }
@@ -2085,9 +2120,12 @@ namespace Unity.Netcode.EditorTests
 
                     Assert.AreEqual(FastBufferWriter.GetWriteSize(networkBehaviour) + 1, writer.Position);
 
-                    var reader = new FastBufferReader(writer.GetNativeArray());
-                    reader.ReadObject(out object result, typeof(NetworkBehaviour));
-                    Assert.AreSame(result, networkBehaviour);
+                    var reader = new FastBufferReader(ref writer, Allocator.Temp, writer.Length);
+                    using (reader)
+                    {
+                        reader.ReadObject(out object result, typeof(NetworkBehaviour));
+                        Assert.AreSame(result, networkBehaviour);
+                    }
                 }
             });
         }
@@ -2105,9 +2143,12 @@ namespace Unity.Netcode.EditorTests
 
                     Assert.AreEqual(FastBufferWriter.GetWriteSize(networkObject) + 1, writer.Position);
 
-                    var reader = new FastBufferReader(writer.GetNativeArray());
-                    reader.ReadObject(out object result, typeof(NetworkObject));
-                    Assert.AreSame(result, networkObject);
+                    var reader = new FastBufferReader(ref writer, Allocator.Temp, writer.Length);
+                    using (reader)
+                    {
+                        reader.ReadObject(out object result, typeof(NetworkObject));
+                        Assert.AreSame(result, networkObject);
+                    }
                 }
             });
         }
@@ -2125,9 +2166,12 @@ namespace Unity.Netcode.EditorTests
 
                     Assert.AreEqual(FastBufferWriter.GetWriteSize(obj) + 1, writer.Position);
 
-                    var reader = new FastBufferReader(writer.GetNativeArray());
-                    reader.ReadObject(out object result, typeof(GameObject));
-                    Assert.AreSame(result, obj);
+                    var reader = new FastBufferReader(ref writer, Allocator.Temp, writer.Length);
+                    using (reader)
+                    {
+                        reader.ReadObject(out object result, typeof(GameObject));
+                        Assert.AreSame(result, obj);
+                    }
                 }
             });
         }
@@ -2135,12 +2179,12 @@ namespace Unity.Netcode.EditorTests
         [Test]
         public void TestVerifyInternalDoesntReduceAllowedWritePoint()
         {
-            var reader = new FastBufferReader(new NativeArray<byte>(100, Allocator.Temp));
-            using (reader.GetNativeArray())
+            var reader = new FastBufferReader(new NativeArray<byte>(100, Allocator.Temp), Allocator.Temp);
+            using (reader)
             {
                 reader.VerifyCanRead(25);
                 reader.VerifyCanReadInternal(5);
-                Assert.AreEqual(reader.m_InternalData.AllowedReadMark, 25);
+                Assert.AreEqual(reader.m_AllowedReadMark, 25);
             }
         }
 
