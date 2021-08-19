@@ -33,7 +33,7 @@ namespace Unity.Netcode
         internal ulong NetworkObjectId;
 
         // snapshot internal
-        internal ushort TickWritten;
+        internal int TickWritten;
         internal List<ulong> TargetClientIds;
     }
 
@@ -55,7 +55,7 @@ namespace Unity.Netcode
         internal Vector3 ObjectScale;
 
         // snapshot internal
-        internal ushort TickWritten;
+        internal int TickWritten;
         internal List<ulong> TargetClientIds;
     }
 
@@ -91,8 +91,8 @@ namespace Unity.Netcode
         internal NetworkManager NetworkManager;
 
         // indexed by ObjectId
-        internal Dictionary<ulong, ushort> TickAppliedSpawn = new Dictionary<ulong, ushort>();
-        internal Dictionary<ulong, ushort> TickAppliedDespawn = new Dictionary<ulong, ushort>();
+        internal Dictionary<ulong, int> TickAppliedSpawn = new Dictionary<ulong, int>();
+        internal Dictionary<ulong, int> TickAppliedDespawn = new Dictionary<ulong, int>();
 
         /// <summary>
         /// Constructor
@@ -264,7 +264,7 @@ namespace Unity.Netcode
             writer.WriteRotation(spawn.ObjectRotation);
             writer.WriteVector3(spawn.ObjectScale);
 
-            writer.WriteUInt16(spawn.TickWritten);
+            writer.WriteInt32Packed(spawn.TickWritten);
         }
 
         internal void WriteDespawn(ClientData clientData, NetworkWriter writer, in SnapshotDespawnCommand despawn)
@@ -278,7 +278,7 @@ namespace Unity.Netcode
             clientData.SentSpawns.Add(s);
 
             writer.WriteUInt64Packed(despawn.NetworkObjectId);
-            writer.WriteUInt16(despawn.TickWritten);
+            writer.WriteInt32Packed(despawn.TickWritten);
         }
         /// <summary>
         /// Read a received Entry
@@ -312,7 +312,7 @@ namespace Unity.Netcode
             command.ObjectRotation = reader.ReadRotation();
             command.ObjectScale = reader.ReadVector3();
 
-            command.TickWritten = reader.ReadUInt16();
+            command.TickWritten = reader.ReadInt32Packed();
             command.TargetClientIds = default;
 
             return command;
@@ -323,7 +323,7 @@ namespace Unity.Netcode
             SnapshotDespawnCommand command;
 
             command.NetworkObjectId = reader.ReadUInt64Packed();
-            command.TickWritten = reader.ReadUInt16();
+            command.TickWritten = reader.ReadInt32Packed();
             command.TargetClientIds = default;
 
             return command;
@@ -555,7 +555,7 @@ namespace Unity.Netcode
 
     internal class ClientData
     {
-        internal struct SentSpawn // also despawns
+        internal struct SentSpawn // this struct also stores Despawns, not just Spawns
         {
             internal ulong SequenceNumber;
             internal ulong ObjectId;
@@ -569,12 +569,12 @@ namespace Unity.Netcode
         internal int NextDespawnIndex = 0; // same as above, but for despawns.
 
         // by objectId
-        // which spawns did this connection ack'ed ?
-        internal Dictionary<ulong, int> SpawnAck = new Dictionary<ulong, int>(); // also despawns
+        // which spawns and despawns did this connection ack'ed ?
+        internal Dictionary<ulong, int> SpawnAck = new Dictionary<ulong, int>();
 
-        // list of spawn commands we sent, with sequence number
+        // list of spawn and despawns commands we sent, with sequence number
         // need to manage acknowledgements
-        internal List<SentSpawn> SentSpawns = new List<SentSpawn>(); // also despawns
+        internal List<SentSpawn> SentSpawns = new List<SentSpawn>();
     }
 
     internal class SnapshotSystem : INetworkUpdateSystem, IDisposable
@@ -846,7 +846,7 @@ namespace Unity.Netcode
 
         internal void Spawn(SnapshotSpawnCommand command)
         {
-            command.TickWritten = (ushort)m_CurrentTick;
+            command.TickWritten = m_CurrentTick;
             m_Snapshot.AddSpawn(command);
 
             Debug.Log($"[Spawn] {command.NetworkObjectId} {command.TickWritten}");
@@ -854,7 +854,7 @@ namespace Unity.Netcode
 
         internal void Despawn(SnapshotDespawnCommand command)
         {
-            command.TickWritten = (ushort)m_CurrentTick;
+            command.TickWritten = m_CurrentTick;
             m_Snapshot.AddDespawn(command);
 
             Debug.Log($"[DeSpawn] {command.NetworkObjectId} {command.TickWritten}");
