@@ -141,7 +141,7 @@ namespace Unity.Multiplayer.Netcode
         public void WriteValuePacked<T>(ref FastBufferWriter writer, T value) where T: unmanaged => writer.WriteValueSafe(value);
 #else
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static unsafe void WriteValuePacked<TEnum>(ref FastBufferWriter writer, ref TEnum value) where TEnum : unmanaged, Enum
+        public static unsafe void WriteValuePacked<TEnum>(ref FastBufferWriter writer, TEnum value) where TEnum : unmanaged, Enum
         {
             TEnum enumValue = value;
             switch (sizeof(TEnum))
@@ -190,6 +190,16 @@ namespace Unity.Multiplayer.Netcode
         /// <param name="value">Value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void WriteValuePacked(ref FastBufferWriter writer, byte value) => writer.WriteByteSafe(value);
+        
+        /// <summary>
+        /// Write a signed short (Int16) as a ZigZag encoded varint to the stream.
+        /// WARNING: If the value you're writing is > 2287, this will use MORE space
+        /// (3 bytes instead of 2), and if your value is > 240 you'll get no savings at all.
+        /// Only use this if you're certain your value will be small.
+        /// </summary>
+        /// <param name="value">Value to write</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void WriteValuePacked(ref FastBufferWriter writer, sbyte value) => writer.WriteByteSafe((byte)value);
         
         /// <summary>
         /// Write a signed short (Int16) as a ZigZag encoded varint to the stream.
@@ -351,18 +361,10 @@ namespace Unity.Multiplayer.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void WriteValuePacked(ref FastBufferWriter writer, Quaternion rotation)
         {
-            if (Mathf.Sign(rotation.w) < 0)
-            {
-                WriteValuePacked(ref writer, -rotation.x);
-                WriteValuePacked(ref writer, -rotation.y);
-                WriteValuePacked(ref writer, -rotation.z);
-            }
-            else
-            {
-                WriteValuePacked(ref writer, rotation.x);
-                WriteValuePacked(ref writer, rotation.y);
-                WriteValuePacked(ref writer, rotation.z);
-            }
+            WriteValuePacked(ref writer, rotation.x);
+            WriteValuePacked(ref writer, rotation.y);
+            WriteValuePacked(ref writer, rotation.z);
+            WriteValuePacked(ref writer, rotation.w);
         }
 
         /// <summary>
@@ -393,16 +395,18 @@ namespace Unity.Multiplayer.Netcode
 
         public static void WriteValueBitPacked(ref FastBufferWriter writer, ushort value)
         {
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (value >= 0b1000_0000_0000_0000)
             {
                 throw new ArgumentException("BitPacked ushorts must be <= 15 bits");
             }
+#endif
             
             if (value <= 0b0111_1111)
             {
                 if (!writer.VerifyCanWriteInternal(1))
                 {
-                    throw new OverflowException("Reading past the end of the buffer");
+                    throw new OverflowException("Writing past the end of the buffer");
                 }
                 writer.WriteByte((byte)(value << 1));
                 return;
@@ -410,7 +414,7 @@ namespace Unity.Multiplayer.Netcode
             
             if (!writer.VerifyCanWriteInternal(2))
             {
-                throw new OverflowException("Reading past the end of the buffer");
+                throw new OverflowException("Writing past the end of the buffer");
             }
             writer.WriteValue((ushort)((value << 1) | 0b1));
         }
@@ -419,132 +423,38 @@ namespace Unity.Multiplayer.Netcode
 
         public static void WriteValueBitPacked(ref FastBufferWriter writer, uint value)
         {
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (value >= 0b0100_0000_0000_0000_0000_0000_0000_0000)
             {
                 throw new ArgumentException("BitPacked uints must be <= 30 bits");
             }
-            
-            if (value <= 0b0011_1111)
+#endif
+            value <<= 2;
+            var numBytes = BitCounter.GetUsedByteCount(value);
+            if (!writer.VerifyCanWriteInternal(numBytes))
             {
-                if (!writer.VerifyCanWriteInternal(1))
-                {
-                    throw new OverflowException("Reading past the end of the buffer");
-                }
-                writer.WriteByte((byte)(value << 2));
-                return;
+                throw new OverflowException("Writing past the end of the buffer");
             }
-
-            if (value <= 0b0011_1111_1111_1111)
-            {
-                if (!writer.VerifyCanWriteInternal(2))
-                {
-                    throw new OverflowException("Reading past the end of the buffer");
-                }
-                writer.WriteValue((ushort)((value << 2) | 0b01));
-                return;
-            }
-
-            if (value <= 0b0011_1111_1111_1111_1111_1111)
-            {
-                if (!writer.VerifyCanWriteInternal(3))
-                {
-                    throw new OverflowException("Reading past the end of the buffer");
-                }
-                writer.WritePartialValue(((value << 2) | 0b10), 3);
-                return;
-            }
-            
-            if (!writer.VerifyCanWriteInternal(4))
-            {
-                throw new OverflowException("Reading past the end of the buffer");
-            }
-            writer.WriteValue(((value << 2) | 0b11));
+            writer.WritePartialValue(value | (uint)(numBytes - 1), numBytes);
         }
 
         public static void WriteValueBitPacked(ref FastBufferWriter writer, long value) => WriteValueBitPacked(ref writer, (ulong) Arithmetic.ZigZagEncode(value));
 
         public static void WriteValueBitPacked(ref FastBufferWriter writer, ulong value)
         {
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (value >= 0b0010_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000)
             {
                 throw new ArgumentException("BitPacked ulongs must be <= 61 bits");
             }
-            
-            if (value <= 0b0001_1111)
+#endif
+            value <<= 3;
+            var numBytes = BitCounter.GetUsedByteCount(value);
+            if (!writer.VerifyCanWriteInternal(numBytes))
             {
-                if (!writer.VerifyCanWriteInternal(1))
-                {
-                    throw new OverflowException("Reading past the end of the buffer");
-                }
-                writer.WriteByte((byte)(value << 3));
-                return;
+                throw new OverflowException("Writing past the end of the buffer");
             }
-
-            if (value <= 0b0001_1111_1111_1111)
-            {
-                if (!writer.VerifyCanWriteInternal(2))
-                {
-                    throw new OverflowException("Reading past the end of the buffer");
-                }
-                writer.WriteValue((ushort)((value << 3) | 0b001));
-                return;
-            }
-
-            if (value <= 0b0001_1111_1111_1111_1111_1111)
-            {
-                if (!writer.VerifyCanWriteInternal(3))
-                {
-                    throw new OverflowException("Reading past the end of the buffer");
-                }
-                writer.WritePartialValue((value << 3) | 0b010, 3);
-                return;
-            }
-
-            if (value <= 0b0001_1111_1111_1111_1111_1111_1111_1111)
-            {
-                if (!writer.VerifyCanWriteInternal(4))
-                {
-                    throw new OverflowException("Reading past the end of the buffer");
-                }
-                writer.WriteValue((uint)((value << 3) | 0b011));
-                return;
-            }
-
-            if (value <= 0b0001_1111_1111_1111_1111_1111_1111_1111_1111_1111)
-            {
-                if (!writer.VerifyCanWriteInternal(5))
-                {
-                    throw new OverflowException("Reading past the end of the buffer");
-                }
-                writer.WritePartialValue((value << 3) | 0b100, 5);
-                return;
-            }
-
-            if (value <= 0b0001_1111_1111_1111_1111_1111_1111_1111_1111_1111_1111_1111)
-            {
-                if (!writer.VerifyCanWriteInternal(6))
-                {
-                    throw new OverflowException("Reading past the end of the buffer");
-                }
-                writer.WritePartialValue((value << 3) | 0b101, 6);
-                return;
-            }
-
-            if (value <= 0b0001_1111_1111_1111_1111_1111_1111_1111_1111_1111_1111_1111_1111_1111)
-            {
-                if (!writer.VerifyCanWriteInternal(7))
-                {
-                    throw new OverflowException("Reading past the end of the buffer");
-                }
-                writer.WritePartialValue((value << 3) | 0b110, 7);
-                return;
-            }
-            
-            if (!writer.VerifyCanWriteInternal(8))
-            {
-                throw new OverflowException("Reading past the end of the buffer");
-            }
-            writer.WriteValue((value << 3) | 0b111);
+            writer.WritePartialValue(value | (uint)(numBytes - 1), numBytes);
         }
 #endif
         #endregion
@@ -567,7 +477,7 @@ namespace Unity.Multiplayer.Netcode
             
             if (!writer.VerifyCanWriteInternal(writeBytes+1))
             {
-                throw new OverflowException("Reading past the end of the buffer");
+                throw new OverflowException("Writing past the end of the buffer");
             }
             writer.WriteByte((byte)(247 + writeBytes));
             writer.WritePartialValue(value, writeBytes);
@@ -593,7 +503,7 @@ namespace Unity.Multiplayer.Netcode
             
             if (!writer.VerifyCanWriteInternal(writeBytes+1))
             {
-                throw new OverflowException("Reading past the end of the buffer");
+                throw new OverflowException("Writing past the end of the buffer");
             }
             writer.WriteByte((byte)(247 + writeBytes));
             writer.WritePartialValue(value, writeBytes);

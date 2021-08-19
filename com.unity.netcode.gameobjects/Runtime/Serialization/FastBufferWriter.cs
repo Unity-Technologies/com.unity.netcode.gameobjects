@@ -46,7 +46,7 @@ namespace Unity.Multiplayer.Netcode
             }
         }
 
-        private InternalData m_InternalData;
+        internal InternalData m_InternalData;
 
         public unsafe FastBufferWriter(int size, Allocator allocator, int maxSize = -1)
         {

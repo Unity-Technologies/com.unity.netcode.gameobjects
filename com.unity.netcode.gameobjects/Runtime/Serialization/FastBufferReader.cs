@@ -42,7 +42,7 @@ namespace Unity.Multiplayer.Netcode
             }
         }
 
-        private InternalData m_InternalData;
+        internal InternalData m_InternalData;
 
         public unsafe FastBufferReader(NativeArray<byte> buffer, int offset = 0, int length = -1)
         {

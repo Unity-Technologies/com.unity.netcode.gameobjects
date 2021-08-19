@@ -2194,6 +2194,17 @@ namespace Unity.Netcode.EditorTests
             });
         }
 
+        [Test]
+        public void TestVerifyInternalDoesntReduceAllowedWritePoint()
+        {
+            var writer = new FastBufferWriter(100, Allocator.Temp);
+            using (writer)
+            {
+                writer.VerifyCanWrite(25);
+                writer.VerifyCanWriteInternal(5);
+                Assert.AreEqual(writer.m_InternalData.AllowedWriteMark, 25);
+            }
+        }
         #endregion
     }
 }

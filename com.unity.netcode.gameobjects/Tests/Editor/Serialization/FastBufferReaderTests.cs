@@ -2132,6 +2132,18 @@ namespace Unity.Netcode.EditorTests
             });
         }
 
+        [Test]
+        public void TestVerifyInternalDoesntReduceAllowedWritePoint()
+        {
+            var reader = new FastBufferReader(new NativeArray<byte>(100, Allocator.Temp));
+            using (reader.GetNativeArray())
+            {
+                reader.VerifyCanRead(25);
+                reader.VerifyCanReadInternal(5);
+                Assert.AreEqual(reader.m_InternalData.AllowedReadMark, 25);
+            }
+        }
+
         #endregion
     }
 }

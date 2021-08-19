@@ -193,8 +193,8 @@ namespace Unity.Multiplayer.Netcode
         /// </summary>
         /// <param name="value">Value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void ReadValuePacked(ref FastBufferReader reader, out byte value) => reader.ReadByte(out value);
-        
+        public static void ReadValuePacked(ref FastBufferReader reader, out byte value) => reader.ReadByteSafe(out value);
+
         /// <summary>
         /// Write a signed short (Int16) as a ZigZag encoded varint to the stream.
         /// WARNING: If the value you're writing is > 2287, this will use MORE space
@@ -203,7 +203,21 @@ namespace Unity.Multiplayer.Netcode
         /// </summary>
         /// <param name="value">Value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void ReadValuePacked(ref FastBufferReader reader, out bool value) => reader.ReadValue(out value);
+        public static void ReadValuePacked(ref FastBufferReader reader, out sbyte value)
+        {
+            reader.ReadByteSafe(out byte byteVal);
+            value = (sbyte) byteVal;
+        }
+
+        /// <summary>
+        /// Write a signed short (Int16) as a ZigZag encoded varint to the stream.
+        /// WARNING: If the value you're writing is > 2287, this will use MORE space
+        /// (3 bytes instead of 2), and if your value is > 240 you'll get no savings at all.
+        /// Only use this if you're certain your value will be small.
+        /// </summary>
+        /// <param name="value">Value to write</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void ReadValuePacked(ref FastBufferReader reader, out bool value) => reader.ReadValueSafe(out value);
 
 
         /// <summary>
@@ -386,11 +400,7 @@ namespace Unity.Multiplayer.Netcode
             ReadValuePacked(ref reader, out rotation.x);
             ReadValuePacked(ref reader, out rotation.y);
             ReadValuePacked(ref reader, out rotation.z);
-
-            // numerical precision issues can make the remainder very slightly negative.
-            // In this case, use 0 for w as, otherwise, w would be NaN.
-            float remainder = 1f - Mathf.Pow(rotation.x, 2) - Mathf.Pow(rotation.y, 2) - Mathf.Pow(rotation.z, 2);
-            rotation.w = (remainder > 0f) ? Mathf.Sqrt(remainder) : 0.0f;
+            ReadValuePacked(ref reader, out rotation.w);
         }
 
         /// <summary>
