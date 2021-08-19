@@ -181,7 +181,7 @@ namespace Unity.Netcode
             {
                 Array.Resize(ref Spawns, 2 * m_MaxSpawns);
                 m_MaxSpawns = m_MaxSpawns * 2;
-                Debug.Log($"[JEFF] spawn size is now {m_MaxSpawns}");
+                // Debug.Log($"[JEFF] spawn size is now {m_MaxSpawns}");
             }
 
             if (NumSpawns < m_MaxSpawns)
@@ -208,7 +208,7 @@ namespace Unity.Netcode
             {
                 Array.Resize(ref Despawns, 2 * m_MaxDespawns);
                 m_MaxDespawns = m_MaxDespawns * 2;
-                Debug.Log($"[JEFF] despawn size is now {m_MaxDespawns}");
+                // Debug.Log($"[JEFF] despawn size is now {m_MaxDespawns}");
             }
 
             if (NumDespawns < m_MaxDespawns)
@@ -438,7 +438,7 @@ namespace Unity.Netcode
 
                 TickAppliedSpawn[spawnCommand.NetworkObjectId] = spawnCommand.TickWritten;
 
-                Debug.Log($"[Spawn] {spawnCommand.NetworkObjectId} {spawnCommand.TickWritten}");
+                // Debug.Log($"[Spawn] {spawnCommand.NetworkObjectId} {spawnCommand.TickWritten}");
 
                 if (spawnCommand.ParentNetworkId == spawnCommand.NetworkObjectId)
                 {
@@ -463,7 +463,7 @@ namespace Unity.Netcode
 
                 TickAppliedDespawn[despawnCommand.NetworkObjectId] = despawnCommand.TickWritten;
 
-                Debug.Log($"[DeSpawn] {despawnCommand.NetworkObjectId} {despawnCommand.TickWritten}");
+                // Debug.Log($"[DeSpawn] {despawnCommand.NetworkObjectId} {despawnCommand.TickWritten}");
 
                 NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(despawnCommand.NetworkObjectId,
                     out NetworkObject networkObject);
@@ -849,7 +849,7 @@ namespace Unity.Netcode
             command.TickWritten = m_CurrentTick;
             m_Snapshot.AddSpawn(command);
 
-            Debug.Log($"[Spawn] {command.NetworkObjectId} {command.TickWritten}");
+            // Debug.Log($"[Spawn] {command.NetworkObjectId} {command.TickWritten}");
         }
 
         internal void Despawn(SnapshotDespawnCommand command)
@@ -857,7 +857,7 @@ namespace Unity.Netcode
             command.TickWritten = m_CurrentTick;
             m_Snapshot.AddDespawn(command);
 
-            Debug.Log($"[DeSpawn] {command.NetworkObjectId} {command.TickWritten}");
+            // Debug.Log($"[DeSpawn] {command.NetworkObjectId} {command.TickWritten}");
         }
 
         // todo: consider using a Key, instead of 3 ints, if it can be exposed
@@ -942,7 +942,7 @@ namespace Unity.Netcode
                 var sentinel = reader.ReadUInt16();
                 if (sentinel != SentinelBefore)
                 {
-                    Debug.Log("JEFF Critical : snapshot integrity (before)");
+                    Debug.Log("Critical : snapshot integrity (before)");
                 }
 
                 m_Snapshot.ReadBuffer(reader, snapshotStream);
@@ -956,7 +956,7 @@ namespace Unity.Netcode
                 sentinel = reader.ReadUInt16();
                 if (sentinel != SentinelAfter)
                 {
-                    Debug.Log("JEFF Critical : snapshot integrity (after)");
+                    Debug.Log("Critical : snapshot integrity (after)");
                 }
             }
         }
