@@ -437,7 +437,6 @@ namespace Unity.Netcode
                 }
 
                 TickAppliedSpawn[spawnCommand.NetworkObjectId] = spawnCommand.TickWritten;
-
                 // Debug.Log($"[Spawn] {spawnCommand.NetworkObjectId} {spawnCommand.TickWritten}");
 
                 if (spawnCommand.ParentNetworkId == spawnCommand.NetworkObjectId)
@@ -450,6 +449,25 @@ namespace Unity.Netcode
                     var networkObject = NetworkManager.SpawnManager.CreateLocalNetworkObject(false, spawnCommand.GlobalObjectIdHash, spawnCommand.OwnerClientId, spawnCommand.ParentNetworkId, spawnCommand.ObjectPosition, spawnCommand.ObjectRotation);
                     NetworkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, spawnCommand.NetworkObjectId, true, spawnCommand.IsPlayerObject, spawnCommand.OwnerClientId, null, false, false);
                 }
+            }
+            for (var i = 0; i < despawnCount; i++)
+            {
+                despawnCommand = ReadDespawn(reader);
+
+                if (TickAppliedDespawn.ContainsKey(despawnCommand.NetworkObjectId) &&
+                    despawnCommand.TickWritten <= TickAppliedDespawn[despawnCommand.NetworkObjectId])
+                {
+                    continue;
+                }
+
+                TickAppliedDespawn[despawnCommand.NetworkObjectId] = despawnCommand.TickWritten;
+
+                // Debug.Log($"[DeSpawn] {despawnCommand.NetworkObjectId} {despawnCommand.TickWritten}");
+
+                NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(despawnCommand.NetworkObjectId,
+                    out NetworkObject networkObject);
+
+                NetworkManager.SpawnManager.OnDespawnObject(networkObject, true);
             }
             for (var i = 0; i < despawnCount; i++)
             {
@@ -773,7 +791,6 @@ namespace Unity.Netcode
                     clientData.NextSpawnIndex = (clientData.NextSpawnIndex + 1) % m_Snapshot.NumSpawns;
                 }
 
-
                 for (var j = 0; j < m_Snapshot.NumDespawns && !overSize; j++)
                 {
                     var index = clientData.NextDespawnIndex;
@@ -914,6 +931,12 @@ namespace Unity.Netcode
         /// <param name="snapshotStream">The stream to read from</param>
         internal void ReadSnapshot(ulong clientId, Stream snapshotStream)
         {
+            // poor man packet loss simulation
+            //if (Random.Range(0, 10) > 5)
+            //{
+            //    return;
+            //}
+
             // todo: temporary hack around bug
             if (!m_NetworkManager.IsServer)
             {
