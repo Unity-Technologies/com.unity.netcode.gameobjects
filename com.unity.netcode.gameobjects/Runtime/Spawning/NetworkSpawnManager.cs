@@ -654,30 +654,37 @@ namespace Unity.Netcode
                     });
                 }
 
-                var messageQueueContainer = NetworkManager.MessageQueueContainer;
-                if (messageQueueContainer != null)
+                if (NetworkManager.NetworkConfig.UseSnapshotSpawn)
                 {
-                    if (networkObject != null)
+                    networkObject.SnapshotDespawn();
+                }
+                else
+                {
+                    var messageQueueContainer = NetworkManager.MessageQueueContainer;
+                    if (messageQueueContainer != null)
                     {
-                        // As long as we have any remaining clients, then notify of the object being destroy.
-                        if (NetworkManager.ConnectedClientsList.Count > 0)
+                        if (networkObject != null)
                         {
-
-                            ulong[] clientIds = NetworkManager.ConnectedClientsIds;
-                            var context = messageQueueContainer.EnterInternalCommandContext(
-                                MessageQueueContainer.MessageType.DestroyObject, NetworkChannel.Internal,
-                                clientIds, NetworkUpdateStage.PostLateUpdate);
-                            if (context != null)
+                            // As long as we have any remaining clients, then notify of the object being destroy.
+                            if (NetworkManager.ConnectedClientsList.Count > 0)
                             {
-                                using (var nonNullContext = (InternalCommandContext)context)
+
+                                ulong[] clientIds = NetworkManager.ConnectedClientsIds;
+                                var context = messageQueueContainer.EnterInternalCommandContext(
+                                    MessageQueueContainer.MessageType.DestroyObject, NetworkChannel.Internal,
+                                    clientIds, NetworkUpdateStage.PostLateUpdate);
+                                if (context != null)
                                 {
-                                    var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
-                                    bufferSizeCapture.StartMeasureSegment();
+                                    using (var nonNullContext = (InternalCommandContext)context)
+                                    {
+                                        var bufferSizeCapture = new CommandContextSizeCapture(nonNullContext);
+                                        bufferSizeCapture.StartMeasureSegment();
 
-                                    nonNullContext.NetworkWriter.WriteUInt64Packed(networkObject.NetworkObjectId);
+                                        nonNullContext.NetworkWriter.WriteUInt64Packed(networkObject.NetworkObjectId);
 
-                                    var size = bufferSizeCapture.StopMeasureSegment();
-                                    NetworkManager.NetworkMetrics.TrackObjectDestroySent(clientIds, networkObject.NetworkObjectId, networkObject.name, size);
+                                        var size = bufferSizeCapture.StopMeasureSegment();
+                                        NetworkManager.NetworkMetrics.TrackObjectDestroySent(clientIds, networkObject.NetworkObjectId, networkObject.name, size);
+                                    }
                                 }
                             }
                         }
@@ -685,8 +692,12 @@ namespace Unity.Netcode
                 }
             }
 
-            var gobj = networkObject.gameObject;
+            if (SpawnedObjects.Remove(networkObject.NetworkObjectId))
+            {
+                SpawnedObjectsList.Remove(networkObject);
+            }
 
+            var gobj = networkObject.gameObject;
             if (destroyGameObject && gobj != null)
             {
                 if (NetworkManager.PrefabHandler.ContainsHandler(networkObject))
@@ -697,14 +708,6 @@ namespace Unity.Netcode
                 {
                     UnityEngine.Object.Destroy(gobj);
                 }
-            }
-
-            // for some reason, we can get down here and SpawnedObjects for this
-            //  networkId will no longer be here, even as we check this at the start
-            //  of the function
-            if (SpawnedObjects.Remove(networkObject.NetworkObjectId))
-            {
-                SpawnedObjectsList.Remove(networkObject);
             }
         }
     }
