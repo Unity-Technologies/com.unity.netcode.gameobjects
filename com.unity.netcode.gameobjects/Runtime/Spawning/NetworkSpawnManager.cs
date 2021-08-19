@@ -692,8 +692,12 @@ namespace Unity.Netcode
                 }
             }
 
-            var gobj = networkObject.gameObject;
+            if (SpawnedObjects.Remove(networkObject.NetworkObjectId))
+            {
+                SpawnedObjectsList.Remove(networkObject);
+            }
 
+            var gobj = networkObject.gameObject;
             if (destroyGameObject && gobj != null)
             {
                 if (NetworkManager.PrefabHandler.ContainsHandler(networkObject))
@@ -704,14 +708,6 @@ namespace Unity.Netcode
                 {
                     UnityEngine.Object.Destroy(gobj);
                 }
-            }
-
-            // for some reason, we can get down here and SpawnedObjects for this
-            //  networkId will no longer be here, even as we check this at the start
-            //  of the function
-            if (SpawnedObjects.Remove(networkObject.NetworkObjectId))
-            {
-                SpawnedObjectsList.Remove(networkObject);
             }
         }
     }
