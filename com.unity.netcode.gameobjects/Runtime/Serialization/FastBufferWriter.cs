@@ -100,9 +100,24 @@ namespace Unity.Multiplayer.Netcode
             return new BitWriter(ref this);
         }
         
-        public int Position => m_Position;
-        public int Capacity => m_Capacity;
-        public int Length => m_Position > m_Length ? m_Position : m_Length;
+
+        public int Position
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => m_Position;
+        }
+
+        public int Capacity
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => m_Capacity;
+        }
+
+        public int Length
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => m_Position > m_Length ? m_Position : m_Length;
+        }
 
         internal unsafe void Grow()
         {

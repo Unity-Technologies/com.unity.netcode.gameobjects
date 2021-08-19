@@ -138,9 +138,18 @@ namespace Unity.Multiplayer.Netcode
 #endif
             return new BitReader(ref this);
         }
-        
-        public int Position => m_Position;
-        public int Length => m_Length;
+
+        public int Position
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => m_Position;
+        }
+
+        public int Length
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => m_Length;
+        }
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

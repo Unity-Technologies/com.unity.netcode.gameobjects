@@ -6,7 +6,7 @@ namespace Unity.Multiplayer.Netcode
 {
     public ref struct BitWriter
     {
-        private unsafe FastBufferWriter* m_Writer;
+        private Ref<FastBufferWriter> m_Writer;
         private unsafe byte* m_BufferPointer;
         private int m_Position;
         internal int m_BitPosition;
@@ -18,25 +18,21 @@ namespace Unity.Multiplayer.Netcode
         /// <summary>
         /// Whether or not the current BitPosition is evenly divisible by 8. I.e. whether or not the BitPosition is at a byte boundary.
         /// </summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool BitAligned()
+        public bool BitAligned
         {
-            return (m_BitPosition & 7) == 0;
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => (m_BitPosition & 7) == 0;
         }
 
 
         internal unsafe BitWriter(ref FastBufferWriter writer)
         {
-            fixed (FastBufferWriter* internalDataPtr = &writer)
-            {
-                m_Writer = internalDataPtr;
-            }
-
+            m_Writer = new Ref<FastBufferWriter>(ref writer);
             m_BufferPointer = writer.m_BufferPointer + writer.m_Position;
             m_Position = writer.m_Position;
             m_BitPosition = 0;
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            m_AllowedBitwiseWriteMark = (m_Writer->m_AllowedWriteMark - m_Writer->Position) * BITS_PER_BYTE;
+            m_AllowedBitwiseWriteMark = (m_Writer.Value.m_AllowedWriteMark - m_Writer.Value.Position) * BITS_PER_BYTE;
 #endif
         }
         
@@ -50,12 +46,12 @@ namespace Unity.Multiplayer.Netcode
                 ++totalBytesWrittenInBitwiseContext;
             }
 
-            if (m_Position + totalBytesWrittenInBitwiseContext > m_Writer->m_Capacity)
+            if (m_Position + totalBytesWrittenInBitwiseContext > m_Writer.Value.m_Capacity)
             {
-                if (m_Writer->m_Capacity < m_Writer->m_MaxCapacity)
+                if (m_Writer.Value.m_Capacity < m_Writer.Value.m_MaxCapacity)
                 {
-                    m_Writer->Grow();
-                    m_BufferPointer = m_Writer->m_BufferPointer;
+                    m_Writer.Value.Grow();
+                    m_BufferPointer = m_Writer.Value.m_BufferPointer + m_Writer.Value.m_Position;
                 }
                 else
                 {
@@ -71,13 +67,13 @@ namespace Unity.Multiplayer.Netcode
         public unsafe void Dispose()
         {
             var bytesWritten = m_BitPosition >> 3;
-            if (!BitAligned())
+            if (!BitAligned)
             {
                 // Accounting for the partial write
                 ++bytesWritten;
             }
 
-            m_Writer->CommitBitwiseWrites(bytesWritten);
+            m_Writer.Value.CommitBitwiseWrites(bytesWritten);
         }
 
         /// <summary>
@@ -107,7 +103,7 @@ namespace Unity.Multiplayer.Netcode
 
             int wholeBytes = bitCount / BITS_PER_BYTE;
             byte* asBytes = (byte*) &value;
-            if (BitAligned())
+            if (BitAligned)
             {
                 if (wholeBytes != 0)
                 {

@@ -8,7 +8,7 @@ namespace Unity.Multiplayer.Netcode
 {
     public ref struct BitReader
     {
-        private unsafe FastBufferReader* m_Reader;
+        private Ref<FastBufferReader> m_Reader;
         private unsafe byte* m_BufferPointer;
         private int m_Position;
         private const int BITS_PER_BYTE = 8;
@@ -20,37 +20,34 @@ namespace Unity.Multiplayer.Netcode
         /// <summary>
         /// Whether or not the current BitPosition is evenly divisible by 8. I.e. whether or not the BitPosition is at a byte boundary.
         /// </summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool BitAligned()
+        public bool BitAligned
         {
-            return (m_BitPosition & 7) == 0;
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => (m_BitPosition & 7) == 0;
         }
 
         internal unsafe BitReader(ref FastBufferReader reader)
         {
-            fixed (FastBufferReader* readerPtr = &reader)
-            {
-                m_Reader = readerPtr;
-            }
+            m_Reader = new Ref<FastBufferReader>(ref reader);
 
-            m_BufferPointer = m_Reader->m_BufferPointer + m_Reader->Position;
-            m_Position = m_Reader->Position;
+            m_BufferPointer = m_Reader.Value.m_BufferPointer + m_Reader.Value.Position;
+            m_Position = m_Reader.Value.Position;
             m_BitPosition = 0;
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            m_AllowedBitwiseReadMark = (m_Reader->m_AllowedReadMark - m_Position) * BITS_PER_BYTE;
+            m_AllowedBitwiseReadMark = (m_Reader.Value.m_AllowedReadMark - m_Position) * BITS_PER_BYTE;
 #endif
         }
 
         public unsafe void Dispose()
         {
             var bytesWritten = m_BitPosition >> 3;
-            if (!BitAligned())
+            if (!BitAligned)
             {
                 // Accounting for the partial read
                 ++bytesWritten;
             }
 
-            m_Reader->CommitBitwiseReads(bytesWritten);
+            m_Reader.Value.CommitBitwiseReads(bytesWritten);
         }
 
         public unsafe bool VerifyCanReadBits(int bitCount)
@@ -63,7 +60,7 @@ namespace Unity.Multiplayer.Netcode
                 ++totalBytesWrittenInBitwiseContext;
             }
 
-            if (m_Reader->m_Position + totalBytesWrittenInBitwiseContext > m_Reader->m_Length)
+            if (m_Reader.Value.m_Position + totalBytesWrittenInBitwiseContext > m_Reader.Value.m_Length)
             {
                 return false;
             }
@@ -101,7 +98,7 @@ namespace Unity.Multiplayer.Netcode
 
             int wholeBytes = bitCount / BITS_PER_BYTE;
             byte* asBytes = (byte*) &val;
-            if (BitAligned())
+            if (BitAligned)
             {
                 if (wholeBytes != 0)
                 {
