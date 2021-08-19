@@ -53,6 +53,20 @@ namespace TestProject.ManualTests
             }
         }
 
+        private bool m_IsQuitting;
+        private void OnApplicationQuit()
+        {
+            m_IsQuitting = true;
+        }
+
+        private void OnDisable()
+        {
+            if (!m_IsQuitting)
+            {
+                DeregisterCustomPrefabHandler();
+            }
+        }
+
         /// <summary>
         /// Handles registering the custom prefab handler
         /// </summary>
@@ -135,6 +149,7 @@ namespace TestProject.ManualTests
 
         public override void OnNetworkDespawn()
         {
+            DeregisterCustomPrefabHandler();
             if (NetworkManager != null)
             {
                 NetworkManager.SceneManager.OnSceneEvent -= OnSceneEvent;
