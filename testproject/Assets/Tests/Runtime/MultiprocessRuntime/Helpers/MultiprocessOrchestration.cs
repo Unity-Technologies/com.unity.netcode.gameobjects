@@ -24,11 +24,12 @@ public class MultiprocessOrchestration
             // That suggests sufficient information to determine that we can run remotely
             string rootdir = (File.ReadAllText(rootdir_fileinfo.FullName)).Trim();
             var workerProcess = new Process();
-            workerProcess.StartInfo.FileName = Path.Combine(rootdir, "BokkenCore31", "bin", "Debug", "netcoreapp3.1", "BokkenCore31.exe");
+            // workerProcess.StartInfo.FileName = Path.Combine(rootdir, "BokkenCore31", "bin", "Debug", "netcoreapp3.1", "BokkenCore31.exe");
+            workerProcess.StartInfo.FileName = Path.Combine("dotnet");
             workerProcess.StartInfo.UseShellExecute = false;
             workerProcess.StartInfo.RedirectStandardError = true;
             workerProcess.StartInfo.RedirectStandardOutput = true;
-            workerProcess.StartInfo.Arguments = $"launch";
+            workerProcess.StartInfo.Arguments = $"BokkenCore31/bin/Debug/netcoreapp3.1/BokkenCore31.dll launch";
             try
             {
                 var newProcessStarted = workerProcess.Start();
