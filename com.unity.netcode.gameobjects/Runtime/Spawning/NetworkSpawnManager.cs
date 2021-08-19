@@ -267,7 +267,9 @@ namespace Unity.Netcode
             }
             else
             {
-                if (!NetworkManager.SceneManager.ScenePlacedObjects.TryGetValue(globalObjectIdHash, out NetworkObject networkObject))
+                var networkObject = NetworkManager.SceneManager.GetSceneRelativeInSceneNetworkObject(globalObjectIdHash);
+
+                if (networkObject == null)
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
                     {
@@ -275,10 +277,6 @@ namespace Unity.Netcode
                     }
 
                     return null;
-                }
-                else
-                {
-                    NetworkManager.SceneManager.ScenePlacedObjects.Remove(globalObjectIdHash);
                 }
 
                 if (parentNetworkObject != null)
@@ -502,7 +500,7 @@ namespace Unity.Netcode
 
             foreach (var sobj in spawnedObjects)
             {
-                if ((sobj.IsSceneObject != null && sobj.IsSceneObject == true))
+                if (sobj.IsSceneObject != null && sobj.IsSceneObject.Value)
                 {
                     SpawnedObjectsList.Remove(sobj);
                     UnityEngine.Object.Destroy(sobj.gameObject);
@@ -670,37 +668,22 @@ namespace Unity.Netcode
                 }
             }
 
-            var gobj = networkObject.gameObject;
+            if (SpawnedObjects.Remove(networkObject.NetworkObjectId))
+            {
+                SpawnedObjectsList.Remove(networkObject);
+            }
 
+            var gobj = networkObject.gameObject;
             if (destroyGameObject && gobj != null)
             {
                 if (NetworkManager.PrefabHandler.ContainsHandler(networkObject))
                 {
-                    // If the custom prefab handler returns true then we destroy the parent GameObject
-                    // otherwise the custom prefab handler handles how they want to deal with despawning
-                    // the NetworkObject
-                    if(NetworkManager.PrefabHandler.HandleNetworkPrefabDestroy(networkObject))
-                    {
-                        if (SpawnedObjects.Remove(networkObject.NetworkObjectId))
-                        {
-                            SpawnedObjectsList.Remove(networkObject);
-                        }
-                        UnityEngine.Object.Destroy(gobj);
-                        return;
-                    }
+                    NetworkManager.PrefabHandler.HandleNetworkPrefabDestroy(networkObject);
                 }
                 else
                 {
                     UnityEngine.Object.Destroy(gobj);
                 }
-            }
-
-            // for some reason, we can get down here and SpawnedObjects for this
-            //  networkId will no longer be here, even as we check this at the start
-            //  of the function
-            if (SpawnedObjects.Remove(networkObject.NetworkObjectId))
-            {
-                SpawnedObjectsList.Remove(networkObject);
             }
         }
     }

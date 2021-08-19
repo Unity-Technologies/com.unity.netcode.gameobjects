@@ -1,4 +1,4 @@
-﻿#if MULTIPLAYER_TOOLS
+#if MULTIPLAYER_TOOLS
 using System;
 using System.Collections;
 using System.Linq;
@@ -17,6 +17,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         {
             var gameObject = new GameObject(Guid.NewGuid().ToString());
             var networkObject = gameObject.AddComponent<NetworkObject>();
+            MultiInstanceHelpers.MakeNetworkedObjectTestPrefab(networkObject, DefaultPayerGlobalObjectIdHashValue);
             networkObject.NetworkManagerOwner = Server;
             networkObject.Spawn();
 
@@ -41,6 +42,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         {
             var gameObject = new GameObject(Guid.NewGuid().ToString());
             var networkObject = gameObject.AddComponent<NetworkObject>();
+            MultiInstanceHelpers.MakeNetworkedObjectTestPrefab(networkObject, DefaultPayerGlobalObjectIdHashValue);
             networkObject.NetworkManagerOwner = Server;
             networkObject.Spawn();
 

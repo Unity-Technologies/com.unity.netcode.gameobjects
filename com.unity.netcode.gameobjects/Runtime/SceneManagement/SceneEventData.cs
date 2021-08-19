@@ -94,6 +94,11 @@ namespace Unity.Netcode
         internal Guid SceneEventGuid;
 
         internal uint SceneIndex;
+        internal int SceneHandle;
+
+        /// Only used for S2C_Synch scene events, this assures permissions when writing
+        /// NetworkVariable information.  If that process changes, then we need to update
+        /// this
         internal ulong TargetClientId;
 
         private Dictionary<uint, List<NetworkObject>> m_SceneNetworkObjects;
@@ -129,6 +134,30 @@ namespace Unity.Netcode
         internal List<ulong> ClientsCompleted;
         internal List<ulong> ClientsTimedOut;
 
+        internal Queue<uint> ScenesToSynchronize;
+        internal Queue<uint> SceneHandlesToSynchronize;
+
+
+        /// <summary>
+        /// Server Side:
+        /// Add a scene and its handle to the list of scenes the client should load before synchronizing
+        /// Since scene handles are not the same per instance, the client builds a server scene handle to
+        /// client scene handle lookup table.
+        /// Why include the scene handle? In order to support loading of the same additive scene more than once
+        /// we must distinguish which scene we are talking about when the server tells the client to unload a scene.
+        /// The server will always communicate its local relative scene's handle and the client will determine its
+        /// local relative handle from the table being built.
+        /// Look for <see cref="NetworkSceneManager.m_ServerSceneHandleToClientSceneHandle"/> usage to see where
+        /// entries are being added to or removed from the table
+        /// </summary>
+        /// <param name="sceneIndex"></param>
+        /// <param name="sceneHandle"></param>
+        internal void AddSceneToSynchronize(uint sceneIndex, int sceneHandle)
+        {
+            ScenesToSynchronize.Enqueue(sceneIndex);
+            SceneHandlesToSynchronize.Enqueue((uint)sceneHandle);
+        }
+
         /// <summary>
         /// Client Side:
         /// Gets the next scene index to be loaded for approval and/or late joining
@@ -136,11 +165,17 @@ namespace Unity.Netcode
         /// <returns></returns>
         internal uint GetNextSceneSynchronizationIndex()
         {
-            if (m_SceneNetworkObjectDataOffsets.ContainsKey(SceneIndex))
-            {
-                return SceneIndex;
-            }
-            return m_SceneNetworkObjectDataOffsets.First().Key;
+            return ScenesToSynchronize.Dequeue();
+        }
+
+        /// <summary>
+        /// Client Side:
+        /// Gets the next scene handle to be loaded for approval and/or late joining
+        /// </summary>
+        /// <returns></returns>
+        internal int GetNextSceneSynchronizationHandle()
+        {
+            return (int)SceneHandlesToSynchronize.Dequeue();
         }
 
         /// <summary>
@@ -150,7 +185,16 @@ namespace Unity.Netcode
         /// <returns>true/false</returns>
         internal bool IsDoneWithSynchronization()
         {
-            return (m_SceneNetworkObjectDataOffsets.Count == 0);
+            if (ScenesToSynchronize.Count == 0 && SceneHandlesToSynchronize.Count == 0)
+            {
+                return true;
+            }
+            else if (ScenesToSynchronize.Count != SceneHandlesToSynchronize.Count)
+            {
+                // This should never happen, but in the event it does...
+                throw new Exception($"[{nameof(SceneEventData)}-Internal Mismatch Error] {nameof(ScenesToSynchronize)} count != {nameof(SceneHandlesToSynchronize)} count!");
+            }
+            return false;
         }
 
         /// <summary>
@@ -167,6 +211,30 @@ namespace Unity.Netcode
             {
                 m_SceneNetworkObjects.Clear();
             }
+
+            if (ScenesToSynchronize == null)
+            {
+                ScenesToSynchronize = new Queue<uint>();
+            }
+            else
+            {
+                ScenesToSynchronize.Clear();
+            }
+
+            if (SceneHandlesToSynchronize == null)
+            {
+                SceneHandlesToSynchronize = new Queue<uint>();
+            }
+            else
+            {
+                SceneHandlesToSynchronize.Clear();
+            }
+        }
+
+        internal void AddSpawnedNetworkObjects()
+        {
+            m_NetworkObjectsSync = m_NetworkManager.SpawnManager.SpawnedObjectsList.ToList();
+            m_NetworkObjectsSync.Sort(SortNetworkObjects);
         }
 
         /// <summary>
@@ -209,8 +277,8 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Server Side:
-        /// Sorts the NetworkObjects to assure proper order of operations for custom Network Prefab handlers
-        /// that implement the INetworkPrefabInstanceHandler interface.
+        /// Sorts the NetworkObjects to assure proper instantiation order of operations for
+        /// registered INetworkPrefabInstanceHandler implementations
         /// </summary>
         /// <param name="first"></param>
         /// <param name="second"></param>
@@ -240,53 +308,56 @@ namespace Unity.Netcode
         /// <param name="writer"><see cref="NetworkWriter"/> to write the scene event data</param>
         internal void OnWrite(NetworkWriter writer)
         {
+            // Write the scene event type
             writer.WriteByte((byte)SceneEventType);
 
+            // Write the scene loading mode
             writer.WriteByte((byte)LoadSceneMode);
 
+            // Write the scene event progress Guid
             if (SceneEventType != SceneEventTypes.S2C_Sync)
             {
                 writer.WriteByteArray(SceneEventGuid.ToByteArray());
             }
 
+            // Write the scene index and handle
             writer.WriteUInt32Packed(SceneIndex);
+            writer.WriteInt32Packed(SceneHandle);
 
             if (SceneEventType == SceneEventTypes.S2C_Sync)
             {
-                writer.WriteInt32Packed(m_SceneNetworkObjects.Count());
+                // Write the scenes we want to load, in the order we want to load them
+                writer.WriteUIntArrayPacked(ScenesToSynchronize.ToArray());
+                writer.WriteUIntArrayPacked(SceneHandlesToSynchronize.ToArray());
 
-                if (m_SceneNetworkObjects.Count() > 0)
+                // Store our current position in the stream to come back and say how much data we have written
+                var positionStart = writer.GetStream().Position;
+
+                // Size Place Holder -- Start
+                // !!NOTE!!: Since this is a placeholder to be set after we know how much we have written,
+                // for stream offset purposes this MUST not be a packed value!
+                writer.WriteUInt32(0);
+                var totalBytes = 0;
+
+                // Write the number of NetworkObjects we are serializing
+                writer.WriteInt32Packed(m_NetworkObjectsSync.Count());
+
+                foreach (var networkObject in m_NetworkObjectsSync)
                 {
-                    foreach (var keypair in m_SceneNetworkObjects)
-                    {
-                        writer.WriteUInt32Packed(keypair.Key);
-                        writer.WriteInt32Packed(keypair.Value.Count);
-                        var positionStart = writer.GetStream().Position;
-                        // Size Place Holder (For offset purposes, needs to not be packed)
-                        writer.WriteUInt32(0);
-                        var totalBytes = 0;
-
-                        // Sort NetworkObjects so any NetworkObjects with a PrefabHandler are sorted to be after all other NetworkObjects
-                        // This will assure any INetworkPrefabInstanceHandler instance is registered before we try to spawn the NetworkObjects
-                        // on the client side.
-                        keypair.Value.Sort(SortNetworkObjects);
-
-                        foreach (var networkObject in keypair.Value)
-                        {
-                            var noStart = writer.GetStream().Position;
-
-                            networkObject.SerializeSceneObject(writer, TargetClientId);
-                            var noStop = writer.GetStream().Position;
-                            totalBytes += (int)(noStop - noStart);
-                        }
-                        var positionEnd = writer.GetStream().Position;
-                        var bytesWritten = (uint)(positionEnd - (positionStart + sizeof(uint)));
-                        writer.GetStream().Position = positionStart;
-                        // Write the total size written to the stream by NetworkObjects being serialized
-                        writer.WriteUInt32(bytesWritten);
-                        writer.GetStream().Position = positionEnd;
-                    }
+                    var noStart = writer.GetStream().Position;
+                    writer.WriteInt32Packed(networkObject.gameObject.scene.handle);
+                    networkObject.SerializeSceneObject(writer, TargetClientId);
+                    var noStop = writer.GetStream().Position;
+                    totalBytes += (int)(noStop - noStart);
                 }
+
+                // Size Place Holder -- End
+                var positionEnd = writer.GetStream().Position;
+                var bytesWritten = (uint)(positionEnd - (positionStart + sizeof(uint)));
+                writer.GetStream().Position = positionStart;
+                // Write the total size written to the stream by NetworkObjects being serialized
+                writer.WriteUInt32(bytesWritten);
+                writer.GetStream().Position = positionEnd;
             }
 
             if (SceneEventType == SceneEventTypes.C2S_SyncComplete)
@@ -340,38 +411,23 @@ namespace Unity.Netcode
             }
 
             SceneIndex = reader.ReadUInt32Packed();
+            SceneHandle = reader.ReadInt32Packed();
 
             if (SceneEventType == SceneEventTypes.S2C_Sync)
             {
                 m_NetworkObjectsSync.Clear();
-                var keyPairCount = reader.ReadInt32Packed();
 
-                if (m_SceneNetworkObjectDataOffsets == null)
+                ScenesToSynchronize = new Queue<uint>(reader.ReadUIntArrayPacked());
+                SceneHandlesToSynchronize = new Queue<uint>(reader.ReadUIntArrayPacked());
+
+                var sizeToCopy = reader.ReadUInt32();
+
+                using (var writer = PooledNetworkWriter.Get(InternalBuffer))
                 {
-                    m_SceneNetworkObjectDataOffsets = new Dictionary<uint, long>();
+                    writer.ReadAndWrite(reader, (long)sizeToCopy);
                 }
 
-                if (keyPairCount > 0)
-                {
-                    m_SceneNetworkObjectDataOffsets.Clear();
-
-                    InternalBuffer.Position = 0;
-
-                    using (var writer = PooledNetworkWriter.Get(InternalBuffer))
-                    {
-                        for (int i = 0; i < keyPairCount; i++)
-                        {
-                            var key = reader.ReadUInt32Packed();
-                            var count = reader.ReadInt32Packed();
-                            // how many bytes to read for this scene set
-                            var bytesToRead = (ulong)reader.ReadUInt32();
-                            // We store off the current position of the stream as it pertains to the scene relative NetworkObjects
-                            m_SceneNetworkObjectDataOffsets.Add(key, InternalBuffer.Position);
-                            writer.WriteInt32Packed(count);
-                            writer.ReadAndWrite(reader, (long)bytesToRead);
-                        }
-                    }
-                }
+                InternalBuffer.Position = 0;
             }
 
             if (SceneEventType == SceneEventTypes.C2S_SyncComplete)
@@ -386,7 +442,7 @@ namespace Unity.Netcode
 
             if (SceneEventType == SceneEventTypes.S2C_LoadComplete || SceneEventType == SceneEventTypes.S2C_UnLoadComplete)
             {
-               ReadSceneEventProgressDone(reader);
+                ReadSceneEventProgressDone(reader);
             }
         }
 
@@ -515,30 +571,26 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="sceneId"></param>
         /// <param name="networkManager"></param>
-        internal void SynchronizeSceneNetworkObjects(uint sceneId, NetworkManager networkManager)
+        internal void SynchronizeSceneNetworkObjects(NetworkManager networkManager)
         {
-            if (m_SceneNetworkObjectDataOffsets.ContainsKey(sceneId))
+            using (var reader = PooledNetworkReader.Get(InternalBuffer))
             {
-                // Point to the appropriate offset
-                InternalBuffer.Position = m_SceneNetworkObjectDataOffsets[sceneId];
+                // Process all NetworkObjects for this scene
+                var newObjectsCount = reader.ReadInt32Packed();
 
-                using (var reader = PooledNetworkReader.Get(InternalBuffer))
+                for (int i = 0; i < newObjectsCount; i++)
                 {
-                    // Process all NetworkObjects for this scene
-                    var newObjectsCount = reader.ReadInt32Packed();
+                    /// We want to make sure for each NetworkObject we have the appropriate scene selected as the scene that is
+                    /// currently being synchronized.  This assures in-scene placed NetworkObjects will use the right NetworkObject
+                    /// from the list of populated <see cref="NetworkSceneManager.ScenePlacedObjects"/>
+                    m_NetworkManager.SceneManager.SetTheSceneBeingSynchronized(reader.ReadInt32Packed());
 
-                    for (int i = 0; i < newObjectsCount; i++)
+                    var spawnedNetworkObject = NetworkObject.DeserializeSceneObject(InternalBuffer, reader, networkManager);
+                    if (!m_NetworkObjectsSync.Contains(spawnedNetworkObject))
                     {
-                        var spawnedNetworkObject = NetworkObject.DeserializeSceneObject(InternalBuffer, reader, networkManager);
-                        if (!m_NetworkObjectsSync.Contains(spawnedNetworkObject))
-                        {
-                            m_NetworkObjectsSync.Add(spawnedNetworkObject);
-                        }
+                        m_NetworkObjectsSync.Add(spawnedNetworkObject);
                     }
                 }
-
-                // Remove each entry after it is processed so we know when we are done
-                m_SceneNetworkObjectDataOffsets.Remove(sceneId);
             }
         }
 

@@ -139,14 +139,12 @@ public class NetworkPrefabHandlerObjectPoolOverride : NetworkBehaviour, INetwork
         return gameObject.GetComponent<NetworkObject>();
     }
 
-    public bool Destroy(NetworkObject networkObject)
+    public void Destroy(NetworkObject networkObject)
     {
         if (m_NameValidation.Contains(networkObject.gameObject.name))
         {
             networkObject.gameObject.SetActive(false);
         }
-
-        return false;
     }
 
     /// <summary>

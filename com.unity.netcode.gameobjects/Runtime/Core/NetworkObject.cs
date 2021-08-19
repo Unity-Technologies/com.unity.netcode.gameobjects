@@ -145,27 +145,6 @@ namespace Unity.Netcode
         public bool DestroyWithScene { get; internal set; }
 
         /// <summary>
-        /// Used for late-joining client synchronization purposes.
-        /// The scene that has dependencies to this NetworkObject
-        /// If not set then it is ignored.
-        /// <see cref="SetSceneAsDependency"/> for more information.
-        /// </summary>
-        public string DependentSceneName { get; internal set; }
-
-        /// <summary>
-        /// For late-joining client synchronization and additive scene(s) purposes
-        /// This provides the ability to associate a <see cref="NetworkObject"/> with a scene that is not
-        /// currently spawned in but may have dependencies within the dependent scene
-        /// Example: <see cref="NetworkObject"/> pool generator with custom Network Prefab override handler
-        /// needs to initialize before this <see cref="NetworkObject"/> is spawned.
-        /// </summary>
-        /// <param name="sceneName">scene that has dependencies to the NetworkObject</param>
-        public void SetSceneAsDependency(string sceneName)
-        {
-            DependentSceneName = sceneName;
-        }
-
-        /// <summary>
         /// Delegate type for checking visibility
         /// </summary>
         /// <param name="clientId">The clientId to check visibility for</param>
@@ -401,10 +380,22 @@ namespace Unity.Netcode
             }
         }
 
+        private bool m_ApplicationQuitting = false;
+
+        private void OnApplicationQuit()
+        {
+            m_ApplicationQuitting = true;
+        }
+
         private void OnDestroy()
         {
+            if (m_ApplicationQuitting)
+            {
+                return;
+            }
+            
             if (NetworkManager != null && NetworkManager.IsListening && NetworkManager.IsServer == false && IsSpawned
-                && (IsSceneObject == null || (IsSceneObject != null && IsSceneObject.Value != true) ))
+                && (IsSceneObject == null || (IsSceneObject != null && IsSceneObject.Value != true)))
             {
                 throw new NotServerException($"Destroy a spawned {nameof(NetworkObject)} on a non-host client is not valid. Call {nameof(Destroy)} or {nameof(Despawn)} on the server/host instead.");
             }
@@ -500,7 +491,7 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Despawns the parent <see cref="GameObject"/> of this <see cref="NetworkObject"/> and sends a destroy message for it to all connected clients.
+        /// Despawns the <see cref="GameObject"/> of this <see cref="NetworkObject"/> and sends a destroy message for it to all connected clients.
         /// </summary>
         /// <param name="destroy">(true) the <see cref="GameObject"/> will be destroyed (false) the <see cref="GameObject"/> will persist after being despawned</param>
         public void Despawn(bool destroy = false)

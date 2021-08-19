@@ -120,21 +120,21 @@ namespace TestProject.ManualTests
             switch (sceneEvent.SceneEventType)
             {
                 case SceneEventData.SceneEventTypes.S2C_Unload:
-                {
-                    if (sceneEvent.LoadSceneMode == LoadSceneMode.Additive && (gameObject.scene.name == sceneEvent.SceneName))
                     {
-                        OnUnloadScene();
+                        if (sceneEvent.LoadSceneMode == LoadSceneMode.Additive && (gameObject.scene.name == sceneEvent.SceneName))
+                        {
+                            OnUnloadScene();
+                        }
+                        break;
                     }
-                    break;
-                }
                 case SceneEventData.SceneEventTypes.S2C_Load:
-                {
-                    if (sceneEvent.LoadSceneMode == LoadSceneMode.Single && ((gameObject.scene.name == sceneEvent.SceneName) || !SpawnInSourceScene))
                     {
-                        OnUnloadScene();
+                        if (sceneEvent.LoadSceneMode == LoadSceneMode.Single && ((gameObject.scene.name == sceneEvent.SceneName) || !SpawnInSourceScene))
+                        {
+                            OnUnloadScene();
+                        }
+                        break;
                     }
-                    break;
-                }
             }
         }
 
@@ -144,7 +144,7 @@ namespace TestProject.ManualTests
             {
                 foreach (var obj in m_ObjectPool)
                 {
-                    if(obj == null)
+                    if (obj == null)
                     {
                         continue;
                     }
@@ -291,7 +291,7 @@ namespace TestProject.ManualTests
             {
                 foreach (var obj in m_ObjectPool)
                 {
-                    if(obj == null)
+                    if (obj == null)
                     {
                         continue;
                     }
@@ -329,17 +329,6 @@ namespace TestProject.ManualTests
                 // If you move your NetworkObject into the same scene as the spawn generator, then you do not need to worry
                 // about setting the NetworkObject's scene dependency.
                 SceneManager.MoveGameObjectToScene(obj, gameObject.scene);
-            }
-            else // Otherwise, instantiate in the currently active scene
-            {
-                // If your spawn generator is not in the target active scene, then to properly synchronize your NetworkObjects
-                // for late joining players you **must** set the scene that the NetworkObject depends on
-                // (i.e. NetworkObjet pool with custom Network Prefab Handler)
-                if (gameObject.scene != SceneManager.GetActiveScene())
-                {
-                    var networkObject = obj.GetComponent<NetworkObject>();
-                    networkObject.SetSceneAsDependency(gameObject.scene.name);
-                }
             }
 
             obj.SetActive(false);
@@ -456,7 +445,7 @@ namespace TestProject.ManualTests
             }
             return null;
         }
-        public bool Destroy(NetworkObject networkObject)
+        public void Destroy(NetworkObject networkObject)
         {
             var genericBehaviour = networkObject.gameObject.GetComponent<GenericNetworkObjectBehaviour>();
             if (genericBehaviour.IsRegisteredPoolObject)
@@ -466,9 +455,8 @@ namespace TestProject.ManualTests
             }
             else
             {
-                return true;
+                Object.Destroy(networkObject.gameObject);
             }
-            return false;
         }
 
         public MyAdditiveCustomPrefabSpawnHandler(NetworkPrefabPoolAdditive objectPool)

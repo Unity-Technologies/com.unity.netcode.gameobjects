@@ -145,7 +145,7 @@ namespace Unity.Netcode.Editor
                 var networkOverrideProp = networkPrefab.FindPropertyRelative(nameof(NetworkPrefab.Override));
                 var networkOverrideInt = networkOverrideProp.enumValueIndex;
 
-                return 10 + (networkOverrideInt == 0 ? EditorGUIUtility.singleLineHeight : (EditorGUIUtility.singleLineHeight * 2) + 5);
+                return 8 + (networkOverrideInt == 0 ? EditorGUIUtility.singleLineHeight : (EditorGUIUtility.singleLineHeight * 2) + 5);
             };
             m_NetworkPrefabsList.drawElementCallback = (rect, index, isActive, isFocused) =>
             {
@@ -202,17 +202,23 @@ namespace Unity.Netcode.Editor
             m_NetworkPrefabsList.drawHeaderCallback = rect => EditorGUI.LabelField(rect, "NetworkPrefabs");
 
             m_RegisteredSceneAssetsList = new ReorderableList(serializedObject, serializedObject.FindProperty(nameof(NetworkManager.NetworkConfig)).FindPropertyRelative(nameof(NetworkConfig.RegisteredSceneAssets)), true, true, true, true);
+            m_RegisteredSceneAssetsList.elementHeightCallback = index =>
+            {
+                return EditorGUIUtility.singleLineHeight + 8;
+            };
             m_RegisteredSceneAssetsList.drawElementCallback = (rect, index, isActive, isFocused) =>
             {
+                rect.y += 5;
+
                 var sceneAsset = m_RegisteredSceneAssetsList.serializedProperty.GetArrayElementAtIndex(index);
-                int firstLabelWidth = 38;
+                int firstLabelWidth = 24;
                 int padding = 2;
 
-                EditorGUI.LabelField(new Rect(rect.x, rect.y, firstLabelWidth, EditorGUIUtility.singleLineHeight), $"{index}");
+                EditorGUI.LabelField(new Rect(rect.x, rect.y, firstLabelWidth, EditorGUIUtility.singleLineHeight), index.ToString());
                 EditorGUI.PropertyField(new Rect(rect.x + firstLabelWidth, rect.y, rect.width - firstLabelWidth - padding, EditorGUIUtility.singleLineHeight), sceneAsset, GUIContent.none);
             };
 
-            m_RegisteredSceneAssetsList.drawHeaderCallback = rect => EditorGUI.LabelField(rect, "Registered Scene Entries");
+            m_RegisteredSceneAssetsList.drawHeaderCallback = rect => EditorGUI.LabelField(rect, "NetworkScenes");
 
             m_RegisteredSceneAssetsList.onAddCallback = (registeredList) =>
             {

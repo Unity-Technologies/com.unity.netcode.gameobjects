@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
 using NUnit.Framework;
@@ -48,12 +49,13 @@ namespace Unity.Netcode.RuntimeTests
             Assert.False(exceptionOccurred);
         }
 
+        private const string k_PrefabObjectName = "NetworkPrefabHandlerTestObject";
 
         [Test]
         public void NetworkPrefabHandlerClass()
         {
             Assert.IsTrue(NetworkManagerHelper.StartNetworkManager(out _));
-            var testPrefabObjectName = "NetworkPrefabHandlerTestObject";
+            var testPrefabObjectName = k_PrefabObjectName;
 
             Guid baseObjectID = NetworkManagerHelper.AddGameNetworkObject(testPrefabObjectName);
             NetworkObject baseObject = NetworkManagerHelper.InstantiatedNetworkObjects[baseObjectID];
@@ -150,6 +152,13 @@ namespace Unity.Netcode.RuntimeTests
         {
             //Stop, shutdown, and destroy
             NetworkManagerHelper.ShutdownNetworkManager();
+
+            var networkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>().ToList();
+            var networkObjectsList = networkObjects.Where(c => c.name.Contains(k_PrefabObjectName));
+            foreach (var networkObject in networkObjectsList)
+            {
+                UnityEngine.Object.DestroyImmediate(networkObject);
+            }
         }
     }
 
@@ -171,12 +180,12 @@ namespace Unity.Netcode.RuntimeTests
             return networkObjectInstance;
         }
 
-        public bool Destroy(NetworkObject networkObject)
+        public void Destroy(NetworkObject networkObject)
         {
             var instancesContainsNetworkObject = m_Instances.Contains(networkObject);
             Assert.True(instancesContainsNetworkObject);
             m_Instances.Remove(networkObject);
-            return true;
+            UnityEngine.Object.Destroy(networkObject.gameObject);
         }
 
         public bool StillHasInstances()

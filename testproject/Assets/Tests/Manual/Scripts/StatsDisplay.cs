@@ -179,24 +179,7 @@ namespace TestProject.ManualTests
                     {
                         m_LastStatsDump = m_IsServer ? "Server Stats" : "Client Stats";
                         m_LastStatsDump += "\ndeltaTime: [" + Time.deltaTime.ToString() + "]";
-                        var profileData = NetworkObject.NetworkManager.Transport.GetTransportProfilerData();
-
-                        if (profileData.Count > 0)
-                        {
-                            foreach (var entry in profileData)
-                            {
-                                if (m_LastStatsDump != string.Empty)
-                                {
-                                    m_LastStatsDump += "\n";
-                                }
-                                m_LastStatsDump += entry.Key + ": " + entry.Value.ToString("0.0");
-                            }
-                        }
-                        else
-                        {
-                            m_LastStatsDump += "\n";
-                        }
-
+                        m_LastStatsDump += "\n";
                         m_LastStatsDump += $"Active Scene: {SceneManager.GetActiveScene().name}\n";
                         if (m_SceneEventNotificationQueue != null)
                         {

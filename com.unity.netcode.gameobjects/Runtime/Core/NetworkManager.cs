@@ -15,21 +15,18 @@ namespace Unity.Netcode
     /// The main component of the library
     /// </summary>
     [AddComponentMenu("Netcode/" + nameof(NetworkManager), -100)]
-    public class NetworkManager : MonoBehaviour, INetworkUpdateSystem, IProfilableTransportProvider
+    public class NetworkManager : MonoBehaviour, INetworkUpdateSystem
     {
 #pragma warning disable IDE1006 // disable naming rule violation check
 
         // RuntimeAccessModifiersILPP will make this `public`
         internal static readonly Dictionary<uint, Action<NetworkBehaviour, NetworkSerializer, __RpcParams>> __rpc_func_table = new Dictionary<uint, Action<NetworkBehaviour, NetworkSerializer, __RpcParams>>();
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
         // RuntimeAccessModifiersILPP will make this `public`
         internal static readonly Dictionary<uint, string> __rpc_name_table = new Dictionary<uint, string>();
-#else // !(UNITY_EDITOR || DEVELOPMENT_BUILD)
-        // RuntimeAccessModifiersILPP will make this `public`
-        internal static readonly Dictionary<uint, string> __rpc_name_table = null; // not needed on release builds
-#endif // UNITY_EDITOR || DEVELOPMENT_BUILD
+#endif
+
 #pragma warning restore IDE1006 // restore naming rule violation check
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
@@ -38,7 +35,6 @@ namespace Unity.Netcode
         private static ProfilerMarker s_TransportConnect = new ProfilerMarker($"{nameof(NetworkManager)}.TransportConnect");
         private static ProfilerMarker s_HandleIncomingData = new ProfilerMarker($"{nameof(NetworkManager)}.{nameof(HandleIncomingData)}");
         private static ProfilerMarker s_TransportDisconnect = new ProfilerMarker($"{nameof(NetworkManager)}.TransportDisconnect");
-
         private static ProfilerMarker s_InvokeRpc = new ProfilerMarker($"{nameof(NetworkManager)}.{nameof(InvokeRpc)}");
 #endif
 
@@ -268,9 +264,9 @@ namespace Unity.Netcode
 
             if (NetworkConfig.EnableSceneManagement)
             {
-                foreach(var sceneAsset in NetworkConfig.RegisteredSceneAssets)
+                foreach (var sceneAsset in NetworkConfig.RegisteredSceneAssets)
                 {
-                    if(!NetworkConfig.RegisteredScenes.Contains(sceneAsset.name))
+                    if (!NetworkConfig.RegisteredScenes.Contains(sceneAsset.name))
                     {
                         NetworkConfig.RegisteredScenes.Add(sceneAsset.name);
                     }
@@ -573,8 +569,6 @@ namespace Unity.Netcode
             NetworkConfig.NetworkTransport.ResetChannelCache();
 
             NetworkConfig.NetworkTransport.Init();
-
-            ProfilerNotifier.Initialize(this);
         }
 
         /// <summary>
@@ -876,14 +870,7 @@ namespace Unity.Netcode
                 NetworkTickSystem.Tick -= OnNetworkManagerTick;
                 NetworkTickSystem = null;
             }
-            // This is required for handling the potential scenario where multiple NetworkManager instances are created.
-            // See MTT-860 for more information
-#if !UNITY_2020_2_OR_NEWER
-            if (IsListening)
-            {
-                NetworkProfiler.Stop();
-            }
-#endif
+
             IsServer = false;
             IsClient = false;
             NetworkConfig.NetworkTransport.OnTransportEvent -= HandleRawTransportPoll;
@@ -945,22 +932,14 @@ namespace Unity.Netcode
 
         private void OnNetworkEarlyUpdate()
         {
-            NotifyProfilerListeners();
-            ProfilerBeginTick();
+            NetworkMetrics.DispatchFrame();
 
             if (IsListening)
             {
-                PerformanceDataManager.Increment(ProfilerConstants.ReceiveTickRate);
-                ProfilerStatManager.RcvTickRate.Record();
-
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                 s_TransportPoll.Begin();
 #endif
                 var isLoopBack = false;
-
-#if !UNITY_2020_2_OR_NEWER
-                    NetworkProfiler.StartTick(TickType.Receive);
-#endif
 
                 //If we are in loopback mode, we don't need to touch the transport
                 if (!isLoopBack)
@@ -975,10 +954,6 @@ namespace Unity.Netcode
                         // Only do another iteration if: there are no more messages AND (there is no limit to max events or we have processed less than the maximum)
                     } while (IsListening && networkEvent != NetworkEvent.Nothing);
                 }
-
-#if !UNITY_2020_2_OR_NEWER
-                    NetworkProfiler.EndTick();
-#endif
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                 s_TransportPoll.End();
@@ -1066,17 +1041,11 @@ namespace Unity.Netcode
         private void HandleRawTransportPoll(NetworkEvent networkEvent, ulong clientId, NetworkChannel networkChannel,
             ArraySegment<byte> payload, float receiveTime)
         {
-            PerformanceDataManager.Increment(ProfilerConstants.ByteReceived, payload.Count);
-            ProfilerStatManager.BytesRcvd.Record(payload.Count);
-
             switch (networkEvent)
             {
                 case NetworkEvent.Connect:
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                     s_TransportConnect.Begin();
-#endif
-#if !UNITY_2020_2_OR_NEWER
-                    NetworkProfiler.StartEvent(TickType.Receive, (uint)payload.Count, networkChannel, "TRANSPORT_CONNECT");
 #endif
                     if (IsServer)
                     {
@@ -1104,9 +1073,6 @@ namespace Unity.Netcode
                         StartCoroutine(ApprovalTimeout(clientId));
                     }
 
-#if !UNITY_2020_2_OR_NEWER
-                    NetworkProfiler.EndEvent();
-#endif
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                     s_TransportConnect.End();
 #endif
@@ -1124,9 +1090,6 @@ namespace Unity.Netcode
                 case NetworkEvent.Disconnect:
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                     s_TransportDisconnect.Begin();
-#endif
-#if !UNITY_2020_2_OR_NEWER
-                    NetworkProfiler.StartEvent(TickType.Receive, 0, NetworkChannel.Internal, "TRANSPORT_DISCONNECT");
 #endif
 
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
@@ -1146,9 +1109,6 @@ namespace Unity.Netcode
 
                     OnClientDisconnectCallback?.Invoke(clientId);
 
-#if !UNITY_2020_2_OR_NEWER
-                    NetworkProfiler.EndEvent();
-#endif
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                     s_TransportDisconnect.End();
 #endif
@@ -1186,10 +1146,6 @@ namespace Unity.Netcode
                     var messageType = (MessageQueueContainer.MessageType)messageStream.ReadByte();
                     MessageHandler.MessageReceiveQueueItem(clientId, messageStream, receiveTime, messageType, networkChannel);
                 }
-
-#if !UNITY_2020_2_OR_NEWER
-                NetworkProfiler.EndEvent();
-#endif
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleIncomingData.End();
@@ -1259,10 +1215,17 @@ namespace Unity.Netcode
 
                     __rpc_func_table[networkMethodId](networkBehaviour, new NetworkSerializer(item.NetworkReader), rpcParams);
 
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
                     if (__rpc_name_table.TryGetValue(networkMethodId, out var rpcMethodName))
                     {
-                        NetworkMetrics.TrackRpcReceived(item.NetworkId, networkObjectId, rpcMethodName, item.StreamSize);
+                        NetworkMetrics.TrackRpcReceived(
+                            item.NetworkId,
+                            networkObjectId,
+                            rpcMethodName,
+                            networkBehaviour.__getTypeName(),
+                            item.StreamSize);
                     }
+#endif
                 }
             }
         }
@@ -1286,8 +1249,6 @@ namespace Unity.Netcode
                 if (ConnectedClientsList[i].ClientId == clientId)
                 {
                     ConnectedClientsList.RemoveAt(i);
-                    PerformanceDataManager.Increment(ProfilerConstants.Connections, -1);
-                    ProfilerStatManager.Connections.Record(-1);
                 }
             }
 
@@ -1352,8 +1313,6 @@ namespace Unity.Netcode
                     if (ConnectedClientsList[i].ClientId == clientId)
                     {
                         ConnectedClientsList.RemoveAt(i);
-                        PerformanceDataManager.Increment(ProfilerConstants.Connections, -1);
-                        ProfilerStatManager.Connections.Record(-1);
                         break;
                     }
                 }
@@ -1391,12 +1350,12 @@ namespace Unity.Netcode
         /// <summary>
         /// Server Side: Handles the approval of a client
         /// </summary>
-        /// <param name="ownerClientId"></param>
-        /// <param name="createPlayerObject"></param>
-        /// <param name="playerPrefabHash"></param>
-        /// <param name="approved"></param>
-        /// <param name="position"></param>
-        /// <param name="rotation"></param>
+        /// <param name="ownerClientId">client being approved</param>
+        /// <param name="createPlayerObject">whether we want to create a player or not</param>
+        /// <param name="playerPrefabHash">the GlobalObjectIdHash value for the Network Prefab to create as the player</param>
+        /// <param name="approved">Is the player approved or not?</param>
+        /// <param name="position">Used when createPlayerObject is true, position of the player when spawned </param>
+        /// <param name="rotation">Used when createPlayerObject is true, rotation of the player when spawned</param>
         internal void HandleApproval(ulong ownerClientId, bool createPlayerObject, uint? playerPrefabHash, bool approved, Vector3? position, Quaternion? rotation)
         {
             if (approved)
@@ -1407,9 +1366,6 @@ namespace Unity.Netcode
                 var client = new NetworkClient { ClientId = ownerClientId, };
                 ConnectedClients.Add(ownerClientId, client);
                 ConnectedClientsList.Add(client);
-
-                PerformanceDataManager.Increment(ProfilerConstants.Connections);
-                ProfilerStatManager.Connections.Record();
 
                 if (createPlayerObject)
                 {
@@ -1422,7 +1378,7 @@ namespace Unity.Netcode
                 // Don't send the CONNECTION_APPROVED message if this is the host that connected locally
                 if (ownerClientId != ServerClientId)
                 {
-                    var context = MessageQueueContainer.EnterInternalCommandContext( MessageQueueContainer.MessageType.ConnectionApproved, NetworkChannel.Internal, new ulong[]{ownerClientId},
+                    var context = MessageQueueContainer.EnterInternalCommandContext(MessageQueueContainer.MessageType.ConnectionApproved, NetworkChannel.Internal, new ulong[] { ownerClientId },
                         NetworkUpdateStage.EarlyUpdate);
 
                     if (context != null)
@@ -1449,7 +1405,7 @@ namespace Unity.Netcode
                 }
 
                 // Separating this into a contained function call for potential further future separation of when this notification is sent.
-                NotifyPlayerConnected(ownerClientId, playerPrefabHash ?? NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash);
+                ApprovedPlayerSpawn(ownerClientId, playerPrefabHash ?? NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash);
             }
             else
             {
@@ -1459,11 +1415,11 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Notifies all existing clients that a new player has joined
+        /// Spawns the newly approved player
         /// </summary>
         /// <param name="clientId">new player client identifier</param>
         /// <param name="playerPrefabHash">the prefab GlobalObjectIdHash value for this player</param>
-        internal void NotifyPlayerConnected(ulong clientId, uint playerPrefabHash)
+        internal void ApprovedPlayerSpawn(ulong clientId, uint playerPrefabHash)
         {
             foreach (KeyValuePair<ulong, NetworkClient> clientPair in ConnectedClients)
             {
@@ -1475,8 +1431,8 @@ namespace Unity.Netcode
                     continue; //The new client.
                 }
 
-                var context = MessageQueueContainer.EnterInternalCommandContext( MessageQueueContainer.MessageType.CreateObject, NetworkChannel.Internal,
-                    new[] {clientPair.Key}, NetworkUpdateLoop.UpdateStage);
+                var context = MessageQueueContainer.EnterInternalCommandContext(MessageQueueContainer.MessageType.CreateObject, NetworkChannel.Internal,
+                    new[] { clientPair.Key }, NetworkUpdateLoop.UpdateStage);
                 if (context != null)
                 {
                     using (var nonNullContext = (InternalCommandContext)context)
@@ -1529,22 +1485,6 @@ namespace Unity.Netcode
 #endif
 
             return messageHandler;
-        }
-
-        private void ProfilerBeginTick()
-        {
-            ProfilerNotifier.ProfilerBeginTick();
-        }
-
-        private void NotifyProfilerListeners()
-        {
-            ProfilerNotifier.NotifyProfilerListeners();
-            NetworkMetrics.DispatchFrame();
-        }
-
-        public ITransportProfilerData Transport
-        {
-            get { return NetworkConfig.NetworkTransport as ITransportProfilerData; }
         }
     }
 }

@@ -55,7 +55,7 @@ namespace TestProject.RuntimeTests.Support
             return networkObject;
         }
 
-        public bool Destroy(NetworkObject networkObject)
+        public void Destroy(NetworkObject networkObject)
         {
             WasDestroyed = true;
             if (networkObject.NetworkManager.IsClient)
@@ -63,7 +63,7 @@ namespace TestProject.RuntimeTests.Support
                 Assert.AreEqual(NetworkUpdateStage.PostLateUpdate, NetworkUpdateLoop.UpdateStage);
             }
 
-            return true;
+            Object.Destroy(networkObject.gameObject);
         }
     }
 }
