@@ -860,9 +860,12 @@ namespace Unity.Netcode
             OnDestroy();
         }
 
+        // Note that this gets also called manually by OnSceneUnloaded and OnApplicationQuit
         private void OnDestroy()
         {
             Shutdown();
+
+            UnityEngine.SceneManagement.SceneManager.sceneUnloaded -= OnSceneUnloaded;
 
             if (Singleton == this)
             {
