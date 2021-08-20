@@ -75,14 +75,7 @@ namespace Unity.Netcode
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                 s_Tick.Begin();
 #endif
-#if UNITY_EDITOR && !UNITY_2020_2_OR_NEWER
-            NetworkProfiler.StartTick(TickType.Event);
-#endif
                 Tick?.Invoke();
-
-#if UNITY_EDITOR && !UNITY_2020_2_OR_NEWER
-            NetworkProfiler.EndTick();
-#endif
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                 s_Tick.End();
 #endif
