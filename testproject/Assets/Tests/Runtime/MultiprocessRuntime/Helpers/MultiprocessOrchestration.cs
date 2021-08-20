@@ -2,6 +2,7 @@ using System;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.InteropServices;
 using Unity.Netcode.MultiprocessRuntimeTests;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
@@ -12,7 +13,16 @@ public class MultiprocessOrchestration
 
     public static void StartWorkersOnRemoteNodes()
     {
-        string userprofile = Environment.GetEnvironmentVariable("USERPROFILE");
+        string userprofile = "";
+        
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            userprofile = Environment.GetEnvironmentVariable("USERPROFILE");
+        }
+        else
+        {
+            userprofile = Environment.GetEnvironmentVariable("HOME");
+        }
         var userprofile_di = new DirectoryInfo(userprofile);
         var multiprocess_di = new DirectoryInfo(Path.Combine(userprofile, ".multiprocess"));
         var jobid_fileinfo = new FileInfo(Path.Combine(multiprocess_di.FullName, "jobid"));
