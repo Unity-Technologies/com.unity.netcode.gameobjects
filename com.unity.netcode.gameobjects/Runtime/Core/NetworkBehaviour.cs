@@ -415,7 +415,7 @@ namespace Unity.Netcode
             {
                 Type fieldType = sortedFields[i].FieldType;
 
-                if (fieldType.HasInterface(typeof(INetworkVariable)))
+                if (fieldType.IsSubclassOf(typeof(INetworkVariable)))
                 {
                     var instance = (INetworkVariable)sortedFields[i].GetValue(this);
 

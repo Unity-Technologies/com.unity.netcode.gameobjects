@@ -10,7 +10,7 @@ namespace Unity.Netcode
     /// </summary>
     /// <typeparam name="TKey">The type for the dictionary keys</typeparam>
     /// <typeparam name="TValue">The type for the dictionary values</typeparam>
-    public class NetworkDictionary<TKey, TValue> : NetworkVariable<TValue>, IDictionary<TKey, TValue> where TKey : unmanaged where TValue : unmanaged
+    public class NetworkDictionary<TKey, TValue> : INetworkVariable, IDictionary<TKey, TValue> where TKey : unmanaged where TValue : unmanaged
     {
         /// <summary>
         /// Gets the last time the variable was synced

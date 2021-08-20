@@ -4,6 +4,7 @@ namespace Unity.Netcode
 {
     internal static class TypeExtensions
     {
+        //??
         internal static bool HasInterface(this Type type, Type interfaceType)
         {
             var ifaces = type.GetInterfaces();

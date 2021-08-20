@@ -10,7 +10,7 @@ namespace Unity.Netcode
     /// Event based NetworkVariable container for syncing Sets
     /// </summary>
     /// <typeparam name="T">The type for the set</typeparam>
-    public class NetworkSet<T> : NetworkVariable<T>, ISet<T> where T: unmanaged
+    public class NetworkSet<T> : INetworkVariable, ISet<T> where T: unmanaged
     {
         private readonly ISet<T> m_Set = new HashSet<T>();
         private readonly List<NetworkSetEvent<T>> m_DirtyEvents = new List<NetworkSetEvent<T>>();

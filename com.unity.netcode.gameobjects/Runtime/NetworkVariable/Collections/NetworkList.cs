@@ -10,7 +10,7 @@ namespace Unity.Netcode
     /// Event based NetworkVariable container for syncing Lists
     /// </summary>
     /// <typeparam name="T">The type for the list</typeparam>
-    public class NetworkList<T> : NetworkVariable<T>, IList<T> where T : unmanaged
+    public class NetworkList<T> : INetworkVariable, IList<T> where T : unmanaged
     {
         private readonly IList<T> m_List = new List<T>();
         private readonly List<NetworkListEvent<T>> m_DirtyEvents = new List<NetworkListEvent<T>>();

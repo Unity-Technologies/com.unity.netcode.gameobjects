@@ -14,41 +14,13 @@ namespace Unity.Netcode.RuntimeTests
             public bool FieldWritten;
             public bool DeltaRead;
             public bool FieldRead;
-            public bool Dirty = true;
 
-            public string Name { get; internal set; }
+//hrm            public override NetworkChannel GetChannel()
+//hrm            {
+//hrm                return NetworkChannel.NetworkVariable;
+//hrm            }
 
-            public NetworkChannel GetChannel()
-            {
-                return NetworkChannel.NetworkVariable;
-            }
-
-            public void ResetDirty()
-            {
-                Dirty = false;
-            }
-
-            public bool IsDirty()
-            {
-                return Dirty;
-            }
-
-            public bool ShouldWrite(ulong clientId, bool isServer)
-            {
-                return Dirty && isServer && CanClientRead(clientId);
-            }
-
-            public bool CanClientRead(ulong clientId)
-            {
-                return true;
-            }
-
-            public bool CanClientWrite(ulong clientId)
-            {
-                return false;
-            }
-
-            public void WriteDelta(Stream stream)
+            public override void WriteDelta(Stream stream)
             {
                 using (var writer = PooledNetworkWriter.Get(stream))
                 {
@@ -59,7 +31,7 @@ namespace Unity.Netcode.RuntimeTests
                 DeltaWritten = true;
             }
 
-            public void WriteField(Stream stream)
+            public override void WriteField(Stream stream)
             {
                 using (var writer = PooledNetworkWriter.Get(stream))
                 {
@@ -70,7 +42,7 @@ namespace Unity.Netcode.RuntimeTests
                 FieldWritten = true;
             }
 
-            public void ReadField(Stream stream)
+            public override void ReadField(Stream stream)
             {
                 using (var reader = PooledNetworkReader.Get(stream))
                 {
@@ -81,7 +53,7 @@ namespace Unity.Netcode.RuntimeTests
                 FieldRead = true;
             }
 
-            public void ReadDelta(Stream stream, bool keepDirtyDelta)
+            public override void ReadDelta(Stream stream, bool keepDirtyDelta)
             {
                 using (var reader = PooledNetworkReader.Get(stream))
                 {
@@ -90,11 +62,6 @@ namespace Unity.Netcode.RuntimeTests
                 }
 
                 DeltaRead = true;
-            }
-
-            public void SetNetworkBehaviour(NetworkBehaviour behaviour)
-            {
-                // nop
             }
         }
 
