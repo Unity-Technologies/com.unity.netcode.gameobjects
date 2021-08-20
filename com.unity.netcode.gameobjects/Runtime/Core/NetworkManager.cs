@@ -474,7 +474,7 @@ namespace Unity.Netcode
                 var sourcePrefabGlobalObjectIdHash = (uint)0;
                 var targetPrefabGlobalObjectIdHash = (uint)0;
                 var networkObject = (NetworkObject)null;
-                if ((NetworkConfig.NetworkPrefabs[i] == null || NetworkConfig.NetworkPrefabs[i].Prefab == null) && NetworkConfig.NetworkPrefabs[i].Override == NetworkPrefabOverride.None)
+                if (NetworkConfig.NetworkPrefabs[i] == null || (NetworkConfig.NetworkPrefabs[i].Prefab == null && NetworkConfig.NetworkPrefabs[i].Override == NetworkPrefabOverride.None))
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
                     {
