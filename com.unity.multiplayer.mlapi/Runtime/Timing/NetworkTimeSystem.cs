@@ -30,25 +30,9 @@ namespace Unity.Netcode
         /// <summary>
         /// Gets or sets the amount of the time in seconds the client should buffer incoming messages from the server. This increases server time.
         /// A higher value increases latency but makes the game look more smooth in bad networking conditions.
-        /// This value must be higher than the tick length.
+        /// This value must be higher than the tick length client side.
         /// </summary>
-        public double ServerBufferSec
-        {
-            get
-            {
-                return m_ServerBufferSec;
-            }
-            set
-            {
-                if (value < 0f || value < 1f / NetworkManager.Singleton.NetworkConfig.TickRate)
-                {
-                    Debug.LogError($"Error setting buffer size to {value}, buffer time needs to be bigger than the tick length and bigger than zero. Setting value to minimum buffer size: {MinBufferSizeSec}");
-                    value = MinBufferSizeSec;
-                }
-
-                m_ServerBufferSec = value;
-            }
-        }
+        public double ServerBufferSec { get; set; }
 
         /// <summary>
         /// Gets or sets a threshold in seconds used to force a hard catchup of network time.
@@ -68,8 +52,6 @@ namespace Unity.Netcode
 
         internal double LastSyncedRttSec { get; private set; }
 
-        public static double MinBufferSizeSec => 1f / NetworkManager.Singleton.NetworkConfig.TickRate;
-
         public NetworkTimeSystem(double localBufferSec, double serverBufferSec, double hardResetThresholdSec, double adjustmentRatio = 0.01d)
         {
             LocalBufferSec = localBufferSec;
@@ -85,7 +67,7 @@ namespace Unity.Netcode
         /// <returns>The instance.</returns>
         public static NetworkTimeSystem ServerTimeSystem()
         {
-            return new NetworkTimeSystem(0, MinBufferSizeSec, double.MaxValue);
+            return new NetworkTimeSystem(0, 0, double.MaxValue);
         }
 
         /// <summary>
