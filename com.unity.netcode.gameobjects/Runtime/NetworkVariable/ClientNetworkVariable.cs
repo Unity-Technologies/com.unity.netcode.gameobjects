@@ -6,44 +6,14 @@ using System;
 namespace Unity.Netcode
 {
     /// <summary>
-    /// A variable that can be synchronized over the network.
+    /// A Client NetworkVariable is special in that
+    ///  - only the owner of the variable can write to it
+    ///  - not even the server can write to it
+    ///  - it is not snapshotted
     /// </summary>
     [Serializable]
     public class ClientNetworkVariable<T> : NetworkVariable<T> where T : unmanaged
     {
-        /// <summary>
-        /// The value of the ClientNetworkVariable container
-        /// </summary>
-        public new T Value
-        {
-            get => m_InternalValue;
-            set
-            {
-                if (EqualityComparer<T>.Default.Equals(m_InternalValue, value))
-                {
-                    return;
-                }
-
-                m_IsDirty = true;
-                T previousValue = m_InternalValue;
-                m_InternalValue = value;
-                OnValueChanged?.Invoke(previousValue, m_InternalValue);
-            }
-        }
-
-        /// <inheritdoc />
-        public bool CanClientRead(ulong clientId)
-        {
-            switch (Settings.ReadPermission)
-            {
-                case NetworkVariableReadPermission.Everyone:
-                    return true;
-                case NetworkVariableReadPermission.OwnerOnly:
-                    return m_NetworkBehaviour.OwnerClientId == clientId;
-            }
-            return true;
-        }
-
         public override bool CanClientWrite(ulong clientId)
         {
             return m_NetworkBehaviour.OwnerClientId == clientId;
