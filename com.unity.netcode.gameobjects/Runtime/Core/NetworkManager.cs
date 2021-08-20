@@ -7,6 +7,7 @@ using UnityEngine;
 using UnityEditor;
 #endif
 using Unity.Profiling;
+using UnityEngine.SceneManagement;
 using Debug = UnityEngine.Debug;
 
 namespace Unity.Netcode
@@ -412,7 +413,7 @@ namespace Unity.Netcode
                 SnapshotSystem = null;
             }
 
-            SnapshotSystem = new SnapshotSystem();
+            SnapshotSystem = new SnapshotSystem(this);
 
             if (server)
             {
@@ -833,9 +834,32 @@ namespace Unity.Netcode
             }
         }
 
+        private void Awake()
+        {
+            UnityEngine.SceneManagement.SceneManager.sceneUnloaded += OnSceneUnloaded;
+        }
+
+        // Ensures that the NetworkManager is cleaned up before OnDestroy is run on NetworkObjects and NetworkBehaviours when unloading a scene with a NetworkManager
+        private void OnSceneUnloaded(Scene scene)
+        {
+            if (scene == gameObject.scene)
+            {
+                OnDestroy();
+            }
+        }
+
+        // Ensures that the NetworkManager is cleaned up before OnDestroy is run on NetworkObjects and NetworkBehaviours when quitting the application.
+        private void OnApplicationQuit()
+        {
+            OnDestroy();
+        }
+
+        // Note that this gets also called manually by OnSceneUnloaded and OnApplicationQuit
         private void OnDestroy()
         {
             Shutdown();
+
+            UnityEngine.SceneManagement.SceneManager.sceneUnloaded -= OnSceneUnloaded;
 
             if (Singleton == this)
             {
