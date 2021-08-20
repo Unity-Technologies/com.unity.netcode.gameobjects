@@ -112,18 +112,18 @@ namespace Unity.Netcode
         }
 
         /// <inheritdoc />
-        public bool IsDirty()
+        public virtual bool IsDirty()
         {
             return m_IsDirty;
         }
 
         public virtual bool ShouldWrite(ulong clientId, bool isServer)
         {
-            return m_IsDirty && isServer && CanClientRead(clientId);
+            return IsDirty() && isServer && CanClientRead(clientId);
         }
 
         /// <inheritdoc />
-        public void ResetDirty()
+        public virtual void ResetDirty()
         {
             m_IsDirty = false;
         }
@@ -150,7 +150,7 @@ namespace Unity.Netcode
         /// Writes the variable to the writer
         /// </summary>
         /// <param name="stream">The stream to write the value to</param>
-        public void WriteDelta(Stream stream)
+        public virtual void WriteDelta(Stream stream)
         {
             WriteField(stream);
         }
@@ -160,7 +160,7 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="stream">The stream to read the value from</param>
         /// <param name="keepDirtyDelta">Whether or not the container should keep the dirty delta, or mark the delta as consumed</param>
-        public void ReadDelta(Stream stream, bool keepDirtyDelta)
+        public virtual void ReadDelta(Stream stream, bool keepDirtyDelta)
         {
             using (var reader = PooledNetworkReader.Get(stream))
             {
@@ -183,13 +183,13 @@ namespace Unity.Netcode
         }
 
         /// <inheritdoc />
-        public void ReadField(Stream stream)
+        public virtual void ReadField(Stream stream)
         {
             ReadDelta(stream, false);
         }
 
         /// <inheritdoc />
-        public void WriteField(Stream stream)
+        public virtual void WriteField(Stream stream)
         {
             using (var writer = PooledNetworkWriter.Get(stream))
             {

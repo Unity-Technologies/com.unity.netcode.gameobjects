@@ -539,10 +539,6 @@ namespace Unity.Netcode
                                     continue;
                                 }
 
-                                bool isDirty =
-                                    NetworkVariableFields[k]
-                                        .IsDirty(); // cache this here. You never know what operations users will do in the dirty methods
-
                                 //   if I'm dirty AND a client, write (server always has all permissions)
                                 //   if I'm dirty AND the server AND the client can read me, send.
                                 bool shouldWrite = NetworkVariableFields[k].ShouldWrite(clientId, IsServer);
