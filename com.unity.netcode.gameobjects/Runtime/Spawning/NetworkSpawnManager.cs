@@ -686,5 +686,70 @@ namespace Unity.Netcode
                 }
             }
         }
+
+        /// <summary>
+        /// This will write all client observable NetworkObjects to the <see cref="NetworkWriter"/>'s stream while also
+        /// adding the client to each <see cref="NetworkObject">'s <see cref="NetworkObject.Observers"/> list only if
+        /// observable to the client.
+        /// Maximum number of objects that could theoretically be serialized is 65536 for now
+        /// </summary>
+        /// <param name="clientId"> the client identifier used to determine if a spawned NetworkObject is observable</param>
+        /// <param name="internalCommandContext"> contains the writer used for serialization </param>
+        internal void SerializeObservedNetworkObjects(ulong clientId, NetworkWriter writer)
+        {
+            var stream = writer.GetStream();
+            var headPosition = stream.Position;
+            var numberOfObjects = (ushort)0;
+
+            // Write our count place holder(must not be packed!)
+            writer.WriteUInt16(0);
+
+            foreach (var sobj in SpawnedObjectsList)
+            {
+                if (sobj.CheckObjectVisibility == null || sobj.CheckObjectVisibility(clientId))
+                {
+                    sobj.Observers.Add(clientId);
+                    sobj.SerializeSceneObject(writer, clientId);
+                    numberOfObjects++;
+                }
+            }
+
+            var tailPosition = stream.Position;
+            // Reposition to our count position to the head before we wrote our object count
+            stream.Position = headPosition;
+            // Write number of NetworkObjects serialized (must not be packed!)
+            writer.WriteUInt16(numberOfObjects);
+            // Set our position back to the tail
+            stream.Position = tailPosition;
+        }
+
+        /// <summary>
+        /// Updates all spawned <see cref="NetworkObject.Observers"/> for the specified client
+        /// Note: if the clientId is the server then it is observable to all spawned <see cref="NetworkObject"/>'s
+        /// </summary>
+        internal void UpdateObservedNetworkObjects(ulong clientId)
+        {
+            foreach (var sobj in SpawnedObjectsList)
+            {
+                if (sobj.CheckObjectVisibility == null || NetworkManager.IsServer)
+                {
+                    if(!sobj.Observers.Contains(clientId))
+                    {
+                        sobj.Observers.Add(clientId);
+                    }
+                }
+                else
+                {
+                    if (sobj.CheckObjectVisibility(clientId))
+                    {
+                        sobj.Observers.Add(clientId);
+                    }
+                    else if (sobj.Observers.Contains(clientId))
+                    {
+                        sobj.Observers.Remove(clientId);
+                    }
+                }
+            }
+        }
     }
 }

@@ -510,9 +510,6 @@ namespace Unity.Netcode
             // This will be the message we send to everyone when this scene event sceneEventProgress is complete
             sceneEventProgress.SceneEventType = SceneEventData.SceneEventTypes.S2C_UnLoadComplete;
 
-            // Sends the unload scene notification
-            SendSceneEventData(m_NetworkManager.ConnectedClientsIds.Where(c => c != m_NetworkManager.ServerClientId).ToArray());
-
             m_ScenesLoaded[sceneName].Remove(scene.handle);
 
             if (m_ScenesLoaded[sceneName].Count == 0)
@@ -604,13 +601,29 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Server and Client:
-        /// Invoked when the additively loaded scene is unloaded
+        /// Invoked when an additively loaded scene is unloaded
         /// </summary>
         private void OnSceneUnloaded()
         {
+            // First thing we do, if we are a server, is to send the unload scene event.
+            if (m_NetworkManager.IsServer)
+            {
+                // Server sends the unload scene notification after unloading because it will despawn all scene relative in-scene NetworkObjects
+                // If we send this event to all clients before the server is finished unloading they will get warning about an object being
+                // despawned that no longer exists
+                SendSceneEventData(m_NetworkManager.ConnectedClientsIds.Where(c => c != m_NetworkManager.ServerClientId).ToArray());
+
+                //Second, server sets itself as having finished unloading
+                if (SceneEventProgressTracking.ContainsKey(SceneEventData.SceneEventGuid))
+                {
+                    SceneEventProgressTracking[SceneEventData.SceneEventGuid].AddClientAsDone(m_NetworkManager.ServerClientId);
+                }
+            }
+
+            // Next we prepare to send local notifications for unload complete
             SceneEventData.SceneEventType = SceneEventData.SceneEventTypes.C2S_UnloadComplete;
 
-            //First, notify the client or server that a scene was unloaded
+            //Notify the client or server that a scene was unloaded
             OnSceneEvent?.Invoke(new SceneEvent()
             {
                 SceneEventType = SceneEventData.SceneEventType,
@@ -619,18 +632,13 @@ namespace Unity.Netcode
                 ClientId = m_NetworkManager.IsServer ? m_NetworkManager.ServerClientId : m_NetworkManager.LocalClientId
             });
 
+            // Clients send a notification back to the server they have completed the unload scene event
             if (!m_NetworkManager.IsServer)
             {
                 SendSceneEventData(new ulong[] { m_NetworkManager.ServerClientId });
             }
-            else //Second, server sets itself as having finished loading
-            {
-                if (SceneEventProgressTracking.ContainsKey(SceneEventData.SceneEventGuid))
-                {
-                    SceneEventProgressTracking[SceneEventData.SceneEventGuid].AddClientAsDone(m_NetworkManager.ServerClientId);
-                }
-            }
 
+            // This scene event is now considered "complete"
             s_IsSceneEventActive = false;
         }
 
@@ -667,7 +675,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Server side:
         /// Loads the scene name in either additive or single loading mode.
-        /// When applicable, the <see cref="AsyncOperation"/> is delivered within the <see cref="SceneEvent"/> via the <see cref="OnSceneEvent"/>
+        /// When applicable, the <see cref="AsyncOperation"/> is delivered within the <see cref="SceneEvent"/> via <see cref="OnSceneEvent"/>
         /// </summary>
         /// <param name="sceneName">the name of the scene to be loaded</param>
         /// <returns><see cref="SceneEventProgressStatus"/> (<see cref="SceneEventProgressStatus.Started"/> means it was successful)</returns>
@@ -832,7 +840,7 @@ namespace Unity.Netcode
         /// </summary>
         private void OnServerLoadedScene(Scene scene)
         {
-            // Register in-scene placed NetworkObjects with the netcode
+            // Register in-scene placed NetworkObjects with spawn manager
             foreach (var keyValuePairByGlobalObjectIdHash in ScenePlacedObjects)
             {
                 foreach (var keyValuePairBySceneHandle in keyValuePairByGlobalObjectIdHash.Value)
@@ -853,42 +861,15 @@ namespace Unity.Netcode
                 var clientId = m_NetworkManager.ConnectedClientsList[j].ClientId;
                 if (clientId != m_NetworkManager.ServerClientId)
                 {
-
-                    uint sceneObjectsToSpawn = 0;
-
-                    foreach (var keyValuePairByGlobalObjectIdHash in ScenePlacedObjects)
-                    {
-                        foreach (var keyValuePairBySceneHandle in keyValuePairByGlobalObjectIdHash.Value)
-                        {
-                            if (keyValuePairBySceneHandle.Value.Observers.Contains(clientId))
-                            {
-                                sceneObjectsToSpawn++;
-                            }
-                        }
-                    }
-
                     var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(k_MessageType, k_ChannelType, new ulong[] { clientId }, k_NetworkUpdateStage);
                     if (context != null)
                     {
+                        // Set the target client id that will be used during in scene NetworkObject serialization
+                        SceneEventData.TargetClientId = clientId;
+
                         using (var nonNullContext = (InternalCommandContext)context)
                         {
                             SceneEventData.OnWrite(nonNullContext.NetworkWriter);
-                            // Write number of scene objects to spawn
-                            nonNullContext.NetworkWriter.WriteUInt32Packed(sceneObjectsToSpawn);
-
-                            foreach (var keyValuePairByGlobalObjectIdHash in ScenePlacedObjects)
-                            {
-                                foreach (var keyValuePairBySceneHandle in keyValuePairByGlobalObjectIdHash.Value)
-                                {
-                                    if (keyValuePairBySceneHandle.Value.Observers.Contains(clientId))
-                                    {
-                                        // Write our server relative scene handle for the NetworkObject being serialized
-                                        nonNullContext.NetworkWriter.WriteInt32Packed(keyValuePairBySceneHandle.Key);
-                                        // Serialize the NetworkObject
-                                        keyValuePairBySceneHandle.Value.SerializeSceneObject(nonNullContext.NetworkWriter, clientId);
-                                    }
-                                }
-                            }
                         }
                     }
                     else
@@ -923,19 +904,7 @@ namespace Unity.Netcode
         /// </summary>
         private void OnClientLoadedScene(Scene scene)
         {
-            using (var reader = PooledNetworkReader.Get(SceneEventData.InternalBuffer))
-            {
-                var newObjectsCount = reader.ReadUInt32Packed();
-
-                for (int i = 0; i < newObjectsCount; i++)
-                {
-                    // Set our relative scene to the NetworkObject
-                    SetTheSceneBeingSynchronized(reader.ReadInt32Packed());
-
-                    // Deserialize the NetworkObject
-                    NetworkObject.DeserializeSceneObject(SceneEventData.InternalBuffer as NetworkBuffer, reader, m_NetworkManager);
-                }
-            }
+            SceneEventData.DeserializeScenePlacedObjects();
 
             SceneEventData.SceneEventType = SceneEventData.SceneEventTypes.C2S_LoadComplete;
             SendSceneEventData(new ulong[] { m_NetworkManager.ServerClientId });
@@ -959,19 +928,14 @@ namespace Unity.Netcode
         /// Note: We write out all of the scenes to be loaded first and then all of the NetworkObjects that need to be
         /// synchronized.
         /// </summary>
-        /// <param name="ownerClientId">newly joined client identifier</param>
-        internal void SynchronizeNetworkObjects(ulong ownerClientId)
+        /// <param name="clientId">newly joined client identifier</param>
+        internal void SynchronizeNetworkObjects(ulong clientId)
         {
-            foreach (var sobj in m_NetworkManager.SpawnManager.SpawnedObjectsList)
-            {
-                if (sobj.CheckObjectVisibility == null || sobj.CheckObjectVisibility(ownerClientId))
-                {
-                    sobj.Observers.Add(ownerClientId);
-                }
-            }
+            // Update the clients
+            m_NetworkManager.SpawnManager.UpdateObservedNetworkObjects(clientId);
 
             ClientSynchEventData.InitializeForSynch();
-            ClientSynchEventData.TargetClientId = ownerClientId;
+            ClientSynchEventData.TargetClientId = clientId;
             ClientSynchEventData.LoadSceneMode = LoadSceneMode.Single;
             var activeScene = SceneManager.GetActiveScene();
             ClientSynchEventData.SceneEventType = SceneEventData.SceneEventTypes.S2C_Sync;
@@ -1000,7 +964,7 @@ namespace Unity.Netcode
 
             ClientSynchEventData.AddSpawnedNetworkObjects();
 
-            var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(k_MessageType, k_ChannelType, new ulong[] { ownerClientId }, k_NetworkUpdateStage);
+            var context = m_NetworkManager.MessageQueueContainer.EnterInternalCommandContext(k_MessageType, k_ChannelType, new ulong[] { clientId }, k_NetworkUpdateStage);
             if (context != null)
             {
                 using (var nonNullContext = (InternalCommandContext)context)
@@ -1013,7 +977,7 @@ namespace Unity.Netcode
             OnSceneEvent?.Invoke(new SceneEvent()
             {
                 SceneEventType = SceneEventData.SceneEventType,
-                ClientId = ownerClientId
+                ClientId = clientId
             });
         }
 

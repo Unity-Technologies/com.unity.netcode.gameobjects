@@ -53,9 +53,9 @@ namespace Unity.Netcode
         /// <summary>
         /// Client Side: handles the connection approved message
         /// </summary>
-        /// <param name="clientId"></param>
-        /// <param name="stream"></param>
-        /// <param name="receiveTime"></param>
+        /// <param name="clientId">transport derived client identifier (currently not used)</param>
+        /// <param name="stream">incoming stream</param>
+        /// <param name="receiveTime">time this message was received (currently not used)</param>
         public void HandleConnectionApproved(ulong clientId, Stream stream, float receiveTime)
         {
             using (var reader = PooledNetworkReader.Get(stream))
@@ -67,6 +67,19 @@ namespace Unity.Netcode
                 NetworkManager.NetworkTimeSystem.Reset(time.Time, 0.15f); // Start with a constant RTT of 150 until we receive values from the transport.
 
                 NetworkManager.ConnectedClients.Add(NetworkManager.LocalClientId, new NetworkClient { ClientId = NetworkManager.LocalClientId });
+
+                // Only if scene management is disabled do we handle NetworkObject synchronization at this point
+                if (!NetworkManager.NetworkConfig.EnableSceneManagement)
+                {
+                    NetworkManager.SpawnManager.DestroySceneObjects();
+
+                    // is not packed!
+                    var objectCount = reader.ReadUInt16();
+                    for (ushort i = 0; i < objectCount; i++)
+                    {
+                        NetworkObject.DeserializeSceneObject(reader.GetStream() as NetworkBuffer, reader, m_NetworkManager);
+                    }
+                }
             }
         }
 
