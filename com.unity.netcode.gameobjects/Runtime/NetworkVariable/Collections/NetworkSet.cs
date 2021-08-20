@@ -10,21 +10,15 @@ namespace Unity.Netcode
     /// Event based NetworkVariable container for syncing Sets
     /// </summary>
     /// <typeparam name="T">The type for the set</typeparam>
-    public class NetworkSet<T> : ISet<T>, INetworkVariable where T: unmanaged
+    public class NetworkSet<T> : NetworkVariable<T>, ISet<T> where T: unmanaged
     {
         private readonly ISet<T> m_Set = new HashSet<T>();
         private readonly List<NetworkSetEvent<T>> m_DirtyEvents = new List<NetworkSetEvent<T>>();
-        private NetworkBehaviour m_NetworkBehaviour;
 
         /// <summary>
         /// Gets the last time the variable was synced
         /// </summary>
         public NetworkTime LastSyncedTime { get; internal set; }
-
-        /// <summary>
-        /// The settings for this container
-        /// </summary>
-        public readonly NetworkVariableSettings Settings = new NetworkVariableSettings();
 
         /// <summary>
         /// Delegate type for set changed event
@@ -46,19 +40,15 @@ namespace Unity.Netcode
         /// Creates a NetworkSet with the default value and custom settings
         /// </summary>
         /// <param name="settings">The settings to use for the NetworkList</param>
-        public NetworkSet(NetworkVariableSettings settings)
-        {
-            Settings = settings;
-        }
+        public NetworkSet(NetworkVariableSettings settings) : base(settings) { }
 
         /// <summary>
         /// Creates a NetworkSet with a custom value and custom settings
         /// </summary>
         /// <param name="settings">The settings to use for the NetworkSet</param>
         /// <param name="value">The initial value to use for the NetworkSet</param>
-        public NetworkSet(NetworkVariableSettings settings, ISet<T> value)
+        public NetworkSet(NetworkVariableSettings settings, ISet<T> value) : base(settings)
         {
-            Settings = settings;
             m_Set = value;
         }
 
@@ -71,56 +61,22 @@ namespace Unity.Netcode
             m_Set = value;
         }
 
-        /// <summary>
-        /// Gets or sets the name of the network variable's instance
-        /// (MemberInfo) where it was declared.
-        /// </summary>
-        public string Name { get; internal set; }
-
         /// <inheritdoc />
-        public void ResetDirty()
+        public override void ResetDirty()
         {
+            base.ResetDirty();
             m_DirtyEvents.Clear();
             LastSyncedTime = m_NetworkBehaviour.NetworkManager.LocalTime;
         }
 
         /// <inheritdoc />
-        public bool IsDirty()
+        public override bool IsDirty()
         {
-            return m_DirtyEvents.Count > 0;
-        }
-
-        public bool ShouldWrite(ulong clientId, bool isServer)
-        {
-            return IsDirty() && isServer && CanClientRead(clientId);
+            return base.IsDirty() || m_DirtyEvents.Count > 0;
         }
 
         /// <inheritdoc />
-        public NetworkChannel GetChannel()
-        {
-            return Settings.SendNetworkChannel;
-        }
-
-        /// <inheritdoc />
-        public bool CanClientRead(ulong clientId)
-        {
-            switch (Settings.ReadPermission)
-            {
-                case NetworkVariableReadPermission.Everyone:
-                    return true;
-                case NetworkVariableReadPermission.OwnerOnly:
-                    return m_NetworkBehaviour.OwnerClientId == clientId;
-            }
-
-            return true;
-        }
-        public bool CanClientWrite(ulong clientId)
-        {
-            return false;
-        }
-
-        /// <inheritdoc />
-        public void WriteDelta(Stream stream)
+        public override void WriteDelta(Stream stream)
         {
             using (var writer = PooledNetworkWriter.Get(stream))
             {
@@ -152,7 +108,7 @@ namespace Unity.Netcode
         }
 
         /// <inheritdoc />
-        public void WriteField(Stream stream)
+        public override void WriteField(Stream stream)
         {
             using (var writer = PooledNetworkWriter.Get(stream))
             {
@@ -166,7 +122,7 @@ namespace Unity.Netcode
         }
 
         /// <inheritdoc />
-        public void ReadField(Stream stream)
+        public override void ReadField(Stream stream)
         {
             using (var reader = PooledNetworkReader.Get(stream))
             {
@@ -181,7 +137,7 @@ namespace Unity.Netcode
         }
 
         /// <inheritdoc />
-        public void ReadDelta(Stream stream, bool keepDirtyDelta)
+        public override void ReadDelta(Stream stream, bool keepDirtyDelta)
         {
             using (var reader = PooledNetworkReader.Get(stream))
             {
@@ -264,12 +220,6 @@ namespace Unity.Netcode
                     }
                 }
             }
-        }
-
-        /// <inheritdoc />
-        public void SetNetworkBehaviour(NetworkBehaviour behaviour)
-        {
-            m_NetworkBehaviour = behaviour;
         }
 
         /// <inheritdoc />
