@@ -9,7 +9,7 @@ namespace Unity.Netcode
     /// A variable that can be synchronized over the network.
     /// </summary>
     [Serializable]
-    public class NetworkVariable<T> : INetworkVariable where T : unmanaged  /** SEAL ?? **/
+    public class NetworkVariable<T> : INetworkVariable where T : unmanaged
     {
         /// <summary>
         /// Delegate type for value changed event
