@@ -92,7 +92,7 @@ namespace TestProject.RuntimeTests
         public IEnumerator SpawnRpcDespawn([Values] NetworkUpdateStage testStage)
         {
             // Neither of these is supported for sending RPCs.
-            if (testStage == NetworkUpdateStage.Unset || testStage == NetworkUpdateStage.Initialization)
+            if (testStage == NetworkUpdateStage.Unset || testStage == NetworkUpdateStage.Initialization || testStage == NetworkUpdateStage.FixedUpdate)
             {
                 yield break;
             }

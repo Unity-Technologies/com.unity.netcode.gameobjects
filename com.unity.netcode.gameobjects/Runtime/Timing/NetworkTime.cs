@@ -60,6 +60,8 @@ namespace Unity.Netcode
         /// <param name="tickRate">The tickrate.</param>
         public NetworkTime(int tickRate)
         {
+            Assert.IsTrue(tickRate > 0, "Tickrate must be a positive value.");
+
             m_TickRate = tickRate;
             m_TickInterval = 1f / m_TickRate; // potential floating point precision issue, could result in different interval on different machines
             m_CachedTickOffset = 0;

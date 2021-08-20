@@ -196,9 +196,41 @@ Note that performance tests should be run from external processes (not from edit
 
 ## How it's done
 ### Multiple processes orchestration
-The test runner executes the main node's tests. The tests are in charge of launching their needed workers.
+
+Test code and host code execute in the same process: When writing play mode tests, Unity will start a unity environment for that test, including game loop, scene, object hierarchy, all that fun stuff. This means the test itself has access to everything other unity scripts would have access to. At test startup, the test will ask unity to switch scene to MultiprocessTestScene containing a GameObject already placed in that scene called TestCoordinator . The test will callStartHost that will listen for connections, still all in the same process.
+Once that’s done, that same test will then spawn new client processes. These clients will also start with that MultiprocessTestScene  loaded at startup, also containing a TestCoordinator . These client side TestCoordinators will detect they are clients (using command line arg) and instead of calling StartHost  will call StartClient . This is where new code to specify the IP to connect to would stand (the lines I sent you).
+A good way I could have clarified that code is to separate TestCoordinator into TestCoordinatorClient and TestCoordinatorServer thinking of it. Right now TestCoordinator code does both.
+Once the connection is established (tests yield wait for connection in  Setup code), then the tests can start sending RPCs to each other.
+The test (that’s server side) will call multiple TriggerActionIdClientRpc . This will trigger these actions on all clients. The clients execute their test code, then answer back with ClientFinishedServerRpc.
+Once all the tests are done exchanging commands, a final RPC CloseRemoteClientRpc is called to tell the clients they are done.
+If that RPC fails to send for some reason, clients also have a keep alive that tells them to self destroy when it expires.
+If you look at the “how it’s done” section in the multiprocess readme.md testproject/Assets/Tests/Runtime/MultiprocessRuntime/readme.md there’s a few drawings to explain that flow.
+
+So:
+Editor
+- Run tests
+- Run host code
+- Launches builds
+Separate build
+- Runs client RPCs that execute test code, not the tests themselves
+
+
+Now just to bake your noodles a bit more, Unity will take an additional step before launching these steps. The above is true if you launch these tests from the editor. If you launch these tests in a separate player, Unity in the background will create a separate process for that player. That player will then connect using a plain tcp connection to the editor to report back on its test results. This is important to know if you want to have the test/host part launch on different platforms like mobile.
+
+So the above would become
+Editor
+- Launches test player on platform
+Test player
+- Run tests
+- Run host code
+- Launches builds
+Separate build
+- Runs client RPCs …
+
 With the bokken integration, we'll need to be careful about ressource contention at Unity, these tests could be heavy on ressources.
 Tests when launched locally will simply create new OS processes for each worker players.
+
+
 
 ![](readme-ressources/OrchestrationOverview.jpg)
 *Note that this diagram is still WIP for the CI part*

@@ -46,6 +46,15 @@ namespace Unity.Netcode.EditorTests
             Object.DestroyImmediate(gameObject);
         }
 
+        [Test]
+        public void GetNetworkBehaviourNameTest()
+        {
+            var gameObject = new GameObject(nameof(GetNetworkBehaviourNameTest));
+            var networkBehaviour = gameObject.AddComponent<EmptyNetworkBehaviour>();
+
+            Assert.AreEqual(nameof(EmptyNetworkBehaviour), networkBehaviour.__getTypeName());
+        }
+
         public class EmptyNetworkBehaviour : NetworkBehaviour
         {
 
