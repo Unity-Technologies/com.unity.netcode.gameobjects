@@ -107,10 +107,7 @@ namespace Unity.Netcode
                         InternalMessageHandler.HandleSnapshot(item.NetworkId, item.NetworkBuffer);
                         break;
                     case MessageQueueContainer.MessageType.NetworkVariableDelta:
-                        if (m_NetworkManager.IsClient)
-                        {
                             m_NetworkManager.MessageHandler.HandleNetworkVariableDelta(item.NetworkId, item.NetworkBuffer);
-                        }
                         break;
                     case MessageQueueContainer.MessageType.SwitchScene:
                         if (m_NetworkManager.IsClient)

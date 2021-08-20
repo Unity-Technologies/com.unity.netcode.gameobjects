@@ -33,14 +33,19 @@ namespace Unity.Netcode.RuntimeTests
                 return Dirty;
             }
 
-            public bool CanClientWrite(ulong clientId)
+            public bool ShouldWrite(ulong clientId, bool isServer)
             {
-                return true;
+                return Dirty && isServer && CanClientRead(clientId);
             }
 
             public bool CanClientRead(ulong clientId)
             {
                 return true;
+            }
+
+            public bool CanClientWrite(ulong clientId)
+            {
+                return false;
             }
 
             public void WriteDelta(Stream stream)

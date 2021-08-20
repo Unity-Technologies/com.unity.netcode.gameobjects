@@ -30,12 +30,21 @@ namespace Unity.Netcode
         /// <returns>Whether or not the container is dirty</returns>
         bool IsDirty();
 
+        bool ShouldWrite(ulong clientId, bool isServer);
+
         /// <summary>
         /// Gets Whether or not a specific client can read to the varaible
         /// </summary>
         /// <param name="clientId">The clientId of the remote client</param>
         /// <returns>Whether or not the client can read to the variable</returns>
         bool CanClientRead(ulong clientId);
+
+        /// <summary>
+        /// Gets Whether or not a specific client can read to the varaible
+        /// </summary>
+        /// <param name="clientId">The clientId of the remote client</param>
+        /// <returns>Whether or not the client can read to the variable</returns>
+        bool CanClientWrite(ulong clientId);
 
         /// <summary>
         /// Writes the dirty changes, that is, the changes since the variable was last dirty, to the writer

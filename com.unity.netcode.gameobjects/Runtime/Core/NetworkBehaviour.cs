@@ -514,6 +514,7 @@ namespace Unity.Netcode
                     {
                         using (var writer = PooledNetworkWriter.Get(buffer))
                         {
+                            // could skip this if no variables dirty
                             writer.WriteUInt64Packed(NetworkObjectId);
                             writer.WriteUInt16Packed(NetworkObject.GetNetworkBehaviourOrderIndex(this));
 
@@ -522,6 +523,7 @@ namespace Unity.Netcode
                             var writtenAny = false;
                             for (int k = 0; k < NetworkVariableFields.Count; k++)
                             {
+                            // could skip up here if not client, etc
                                 if (!m_ChannelMappedNetworkVariableIndexes[j].Contains(k))
                                 {
                                     // This var does not belong to the currently iterating channel group.
@@ -543,7 +545,7 @@ namespace Unity.Netcode
 
                                 //   if I'm dirty AND a client, write (server always has all permissions)
                                 //   if I'm dirty AND the server AND the client can read me, send.
-                                bool shouldWrite = isDirty && IsServer && NetworkVariableFields[k].CanClientRead(clientId);
+                                bool shouldWrite = NetworkVariableFields[k].ShouldWrite(clientId, IsServer);
 
                                 if (NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                                 {
@@ -618,7 +620,7 @@ namespace Unity.Netcode
             // TODO: There should be a better way by reading one dirty variable vs. 'n'
             for (int i = 0; i < NetworkVariableFields.Count; i++)
             {
-                if (NetworkVariableFields[i].IsDirty())
+                if (NetworkVariableFields[i].IsDirty()) // needs to bifurcate!
                 {
                     return true;
                 }
@@ -652,7 +654,7 @@ namespace Unity.Netcode
                         }
                     }
 
-                    if (networkManager.IsServer)// ?? && !networkVariableList[i].CanClientWrite(clientId))
+                    if (networkManager.IsServer && !networkVariableList[i].CanClientWrite(clientId))
                     {
                         if (networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                         {
@@ -682,7 +684,6 @@ namespace Unity.Netcode
 
                         return;
                     }
-
                     long readStartPos = stream.Position;
 
                     networkVariableList[i].ReadDelta(stream, networkManager.IsServer);

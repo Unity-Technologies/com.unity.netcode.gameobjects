@@ -9,7 +9,7 @@ namespace Unity.Netcode
     /// A variable that can be synchronized over the network.
     /// </summary>
     [Serializable]
-    public class NetworkVariable<T> : INetworkVariable where T : unmanaged
+    public class NetworkVariable<T> : INetworkVariable where T : unmanaged  /** SEAL ?? **/
     {
         /// <summary>
         /// The settings for this var
@@ -27,7 +27,8 @@ namespace Unity.Netcode
         /// </summary>
         public OnValueChangedDelegate OnValueChanged;
 
-        private NetworkBehaviour m_NetworkBehaviour;
+        // demolish me
+        private protected NetworkBehaviour m_NetworkBehaviour;
 
         /// <summary>
         /// Creates a NetworkVariable with the default value and settings
@@ -64,7 +65,7 @@ namespace Unity.Netcode
         }
 
         [SerializeField]
-        private T m_InternalValue;
+        private protected T m_InternalValue;
 
         /// <summary>
         /// The temporary accessor to enable struct element access until [MTT-1020] complete
@@ -94,7 +95,7 @@ namespace Unity.Netcode
             }
         }
 
-        private bool m_IsDirty = false;
+        private protected bool m_IsDirty = false;
 
         /// <summary>
         /// Gets or sets the name of the network variable's instance
@@ -116,6 +117,11 @@ namespace Unity.Netcode
             return m_IsDirty;
         }
 
+        public virtual bool ShouldWrite(ulong clientId, bool isServer)
+        {
+            return m_IsDirty && isServer && CanClientRead(clientId);
+        }
+
         /// <inheritdoc />
         public void ResetDirty()
         {
@@ -133,6 +139,11 @@ namespace Unity.Netcode
                     return m_NetworkBehaviour.OwnerClientId == clientId;
             }
             return true;
+        }
+
+        public virtual bool CanClientWrite(ulong clientId)
+        {
+            return false;
         }
 
         /// <summary>

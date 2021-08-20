@@ -89,6 +89,11 @@ namespace Unity.Netcode
             return m_DirtyEvents.Count > 0;
         }
 
+        public bool ShouldWrite(ulong clientId, bool isServer)
+        {
+            return IsDirty() && isServer && CanClientRead(clientId);
+        }
+
         /// <inheritdoc />
         public NetworkChannel GetChannel()
         {
@@ -107,6 +112,11 @@ namespace Unity.Netcode
             }
 
             return true;
+        }
+
+        public bool CanClientWrite(ulong clientId)
+        {
+            return false;
         }
 
         /// <inheritdoc />
