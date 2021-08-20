@@ -96,11 +96,6 @@ namespace Unity.Netcode
         private static bool s_IsSceneEventActive = false;
 
         /// <summary>
-        /// For multi-instance unit tests, set this to true if you are use the <see cref="NetworkSceneManager"/>
-        /// </summary>
-        internal static bool IsTesting;
-
-        /// <summary>
         /// The delegate callback definition for scene event notifications
         /// For more details review over <see cref="SceneEvent"/> and <see cref="SceneEventData"/>
         /// </summary>
@@ -169,6 +164,14 @@ namespace Unity.Netcode
         private const NetworkChannel k_ChannelType = NetworkChannel.Internal;
         private const NetworkUpdateStage k_NetworkUpdateStage = NetworkUpdateStage.EarlyUpdate;
 
+
+#if UNITY_EDITOR
+        internal static bool IsNUnitTestRunning()
+        {
+            return AppDomain.CurrentDomain.GetAssemblies().Any(assembly => assembly.FullName.ToLowerInvariant().StartsWith("nunit.framework"));
+        }
+#endif
+
         /// <summary>
         /// Constructor
         /// </summary>
@@ -231,7 +234,8 @@ namespace Unity.Netcode
         /// <param name="serverSceneHandle"></param>
         internal void SetTheSceneBeingSynchronized(int serverSceneHandle)
         {
-            if (IsTesting)
+#if UNITY_EDITOR
+            if (IsNUnitTestRunning())
             {
                 // If we were already set, then ignore
                 if (SceneBeingSynchronized.IsValid() && SceneBeingSynchronized.isLoaded)
@@ -241,6 +245,8 @@ namespace Unity.Netcode
                 SceneBeingSynchronized = SceneManager.GetActiveScene();
                 return;
             }
+#endif
+
 
             var clientSceneHandle = serverSceneHandle;
             if (m_NetworkManager.SceneManager.ServerSceneHandleToClientSceneHandle.ContainsKey(serverSceneHandle))
