@@ -539,11 +539,7 @@ namespace Unity.Netcode
         /// <param name="destroy">(true) the <see cref="GameObject"/> will be destroyed (false) the <see cref="GameObject"/> will persist after being despawned</param>
         public void Despawn(bool destroy = false)
         {
-            // An edge case scenario can occur that will throw an exception due to the fact that SpawnManager is null.
-            if (NetworkManager.SpawnManager != null)
-            {
-                NetworkManager.SpawnManager.DespawnObject(this, destroy);
-            }
+            NetworkManager.SpawnManager.DespawnObject(this, destroy);
         }
 
         /// <summary>
