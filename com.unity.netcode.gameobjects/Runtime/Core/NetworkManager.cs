@@ -7,6 +7,7 @@ using UnityEngine;
 using UnityEditor;
 #endif
 using Unity.Profiling;
+using UnityEngine.SceneManagement;
 using Debug = UnityEngine.Debug;
 
 namespace Unity.Netcode
@@ -412,7 +413,7 @@ namespace Unity.Netcode
                 SnapshotSystem = null;
             }
 
-            SnapshotSystem = new SnapshotSystem();
+            SnapshotSystem = new SnapshotSystem(this);
 
             if (server)
             {
@@ -460,6 +461,7 @@ namespace Unity.Netcode
             // Always clear our prefab override links before building
             NetworkConfig.NetworkPrefabOverrideLinks.Clear();
 
+            // Build the NetworkPrefabOverrideLinks dictionary
             // Build the NetworkPrefabOverrideLinks dictionary
             for (int i = 0; i < NetworkConfig.NetworkPrefabs.Count; i++)
             {
@@ -832,9 +834,32 @@ namespace Unity.Netcode
             }
         }
 
+        private void Awake()
+        {
+            UnityEngine.SceneManagement.SceneManager.sceneUnloaded += OnSceneUnloaded;
+        }
+
+        // Ensures that the NetworkManager is cleaned up before OnDestroy is run on NetworkObjects and NetworkBehaviours when unloading a scene with a NetworkManager
+        private void OnSceneUnloaded(Scene scene)
+        {
+            if (scene == gameObject.scene)
+            {
+                OnDestroy();
+            }
+        }
+
+        // Ensures that the NetworkManager is cleaned up before OnDestroy is run on NetworkObjects and NetworkBehaviours when quitting the application.
+        private void OnApplicationQuit()
+        {
+            OnDestroy();
+        }
+
+        // Note that this gets also called manually by OnSceneUnloaded and OnApplicationQuit
         private void OnDestroy()
         {
             Shutdown();
+
+            UnityEngine.SceneManagement.SceneManager.sceneUnloaded -= OnSceneUnloaded;
 
             if (Singleton == this)
             {
@@ -1375,11 +1400,11 @@ namespace Unity.Netcode
                     ConnectedClients[ownerClientId].PlayerObject = networkObject;
                 }
 
-                // Don't send the CONNECTION_APPROVED message if this is the host that connected locally
+                // Server doesn't send itself the connection approved message
                 if (ownerClientId != ServerClientId)
                 {
-                    var context = MessageQueueContainer.EnterInternalCommandContext(MessageQueueContainer.MessageType.ConnectionApproved, NetworkChannel.Internal, new ulong[] { ownerClientId },
-                        NetworkUpdateStage.EarlyUpdate);
+                    var context = MessageQueueContainer.EnterInternalCommandContext(MessageQueueContainer.MessageType.ConnectionApproved, NetworkChannel.Internal,
+                        new ulong[] { ownerClientId }, NetworkUpdateStage.EarlyUpdate);
 
                     if (context != null)
                     {
@@ -1387,14 +1412,24 @@ namespace Unity.Netcode
                         {
                             nonNullContext.NetworkWriter.WriteUInt64Packed(ownerClientId);
                             nonNullContext.NetworkWriter.WriteInt32Packed(LocalTime.Tick);
+
+                            // If scene management is disabled, then just serialize all client relative (observed) NetworkObjects
+                            if (!NetworkConfig.EnableSceneManagement)
+                            {
+                                SpawnManager.SerializeObservedNetworkObjects(ownerClientId, nonNullContext.NetworkWriter);
+                            }
                         }
                     }
 
-                    // Now inform the newly joined client of the scenes to be loaded as well as synchronize it with all relevant in-scene and dynamically spawned NetworkObjects
+                    // If scene management is enabled, then let NetworkSceneManager handle the initial scene and NetworkObject synchronization
                     if (NetworkConfig.EnableSceneManagement)
                     {
                         SceneManager.SynchronizeNetworkObjects(ownerClientId);
                     }
+                }
+                else // Server just adds itself as an observer to all spawned NetworkObjects
+                {
+                    SpawnManager.UpdateObservedNetworkObjects(ownerClientId);
                 }
 
                 OnClientConnectedCallback?.Invoke(ownerClientId);
@@ -1413,6 +1448,8 @@ namespace Unity.Netcode
                 NetworkConfig.NetworkTransport.DisconnectRemoteClient(ownerClientId);
             }
         }
+
+
 
         /// <summary>
         /// Spawns the newly approved player
