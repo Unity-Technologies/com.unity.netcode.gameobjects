@@ -96,6 +96,10 @@ namespace Unity.Netcode
         /// </summary>
         private static bool s_IsSceneEventActive = false;
 
+#if UNITY_EDITOR
+        private bool m_IsRunningUnitTest = SceneManager.GetActiveScene().name.StartsWith("InitTestScene");
+#endif
+
         /// <summary>
         /// The delegate callback definition for scene event notifications
         /// For more details review over <see cref="SceneEvent"/> and <see cref="SceneEventData"/>
@@ -538,11 +542,21 @@ namespace Unity.Netcode
                     $"because the client scene handle {sceneHandle} was not found in ScenesLoaded!");
             }
             s_IsSceneEventActive = true;
-
-            var sceneUnload = SceneManager.UnloadSceneAsync(ScenesLoaded[sceneHandle]);
-
+            var sceneUnload = (AsyncOperation)null;
+#if UNITY_EDITOR
+            if (m_IsRunningUnitTest)
+            {
+                sceneUnload = new AsyncOperation();
+            }
+            else
+            {
+                sceneUnload = SceneManager.UnloadSceneAsync(ScenesLoaded[sceneHandle]);
+                sceneUnload.completed += asyncOp2 => OnSceneUnloaded();
+            }
+#else
+            sceneUnload = SceneManager.UnloadSceneAsync(ScenesLoaded[sceneHandle]);
             sceneUnload.completed += asyncOp2 => OnSceneUnloaded();
-
+#endif
             ScenesLoaded.Remove(sceneHandle);
 
             // Remove our server to scene handle lookup
@@ -557,6 +571,11 @@ namespace Unity.Netcode
                 SceneName = sceneName,
                 ClientId = m_NetworkManager.LocalClientId   // Server sent this message to the client, but client is executing it
             });
+
+
+#if UNITY_EDITOR
+            OnSceneUnloaded();
+#endif
 
 
         }
@@ -703,6 +722,34 @@ namespace Unity.Netcode
 
                 return;
             }
+
+#if UNITY_EDITOR
+            // During multiInstance testing, we bypass clients loading and just use the scene the server loaded
+            // (i.e. clients share the server's scene)
+            if(m_IsRunningUnitTest)
+            {
+                // Send the loading message
+                OnSceneEvent?.Invoke(new SceneEvent()
+                {
+                    AsyncOperation = new AsyncOperation(),
+                    SceneEventType = SceneEventData.SceneEventType,
+                    LoadSceneMode = SceneEventData.LoadSceneMode,
+                    SceneName = sceneName,
+                    ClientId = m_NetworkManager.LocalClientId
+                });
+
+                if (ScenesLoaded.ContainsKey(SceneEventData.SceneHandle))
+                {
+                    OnClientLoadedScene(ScenesLoaded[SceneEventData.SceneHandle]);
+                }
+                else
+                {
+                    throw new Exception($"Could not find the scene handle {SceneEventData.SceneHandle} for scene {GetSceneNameFromNetcodeSceneIndex(SceneEventData.SceneIndex)} " +
+                        $"during unit test.  Did you forget to register this in the unit test?");
+                }
+                return;
+            }
+#endif
 
             if (SceneEventData.LoadSceneMode == LoadSceneMode.Single)
             {
@@ -973,25 +1020,43 @@ namespace Unity.Netcode
                 ScenePlacedObjects.Clear();
             }
 
+            var shouldPassThrough = false;
+            var sceneLoad = (AsyncOperation)null;
+
             // Check to see if the client already has loaded the scene to be loaded
-            if (sceneName != activeScene.name)
+            if (sceneName == activeScene.name)
+            {
+                shouldPassThrough = true;
+            }
+
+#if UNITY_EDITOR
+            if (m_IsRunningUnitTest)
+            {
+                shouldPassThrough = loadSceneMode == LoadSceneMode.Single; // We can load additional additive scenes for clients
+                if (shouldPassThrough)
+                {
+                    sceneLoad = new AsyncOperation();
+                }
+            }
+#endif
+            if (!shouldPassThrough)
             {
                 // If not, then load the scene
-                var sceneLoad = SceneManager.LoadSceneAsync(sceneName, loadSceneMode);
-
-                // Notify local client that a scene load has begun
-                OnSceneEvent?.Invoke(new SceneEvent()
-                {
-                    AsyncOperation = sceneLoad,
-                    SceneEventType = SceneEventData.SceneEventTypes.S2C_Load,
-                    LoadSceneMode = loadSceneMode,
-                    SceneName = sceneName,
-                    ClientId = m_NetworkManager.LocalClientId,
-                });
-
+                sceneLoad = SceneManager.LoadSceneAsync(sceneName, loadSceneMode);
                 sceneLoad.completed += asyncOp2 => ClientLoadedSynchronization(sceneIndex, sceneHandle);
             }
-            else
+
+            // Notify local client that a scene load has begun
+            OnSceneEvent?.Invoke(new SceneEvent()
+            {
+                AsyncOperation = sceneLoad,
+                SceneEventType = SceneEventData.SceneEventTypes.S2C_Load,
+                LoadSceneMode = loadSceneMode,
+                SceneName = sceneName,
+                ClientId = m_NetworkManager.LocalClientId,
+            });
+
+            if(shouldPassThrough)
             {
                 // If so, then pass through
                 ClientLoadedSynchronization(sceneIndex, sceneHandle);

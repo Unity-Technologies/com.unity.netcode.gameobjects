@@ -19,14 +19,12 @@ namespace TestProject.RuntimeTests
         public override IEnumerator Setup()
         {
             m_ShouldWaitList = new List<SceneTestInfo>();
-            NetworkSceneManager.IsUnitTesting = true;
             return base.Setup();
         }
 
         [UnityTearDown]
         public override IEnumerator Teardown()
         {
-            NetworkSceneManager.IsUnitTesting = false;
             return base.Teardown();
         }
 
@@ -55,11 +53,13 @@ namespace TestProject.RuntimeTests
             try
             {
                 m_ServerNetworkManager.NetworkConfig.EnableSceneManagement = false;
-                m_ServerNetworkManager.SceneManager.LoadScene("SomeSceneNane", LoadSceneMode.Single);
+                m_ServerNetworkManager.SceneManager.LoadScene(m_CurrentSceneName, LoadSceneMode.Single);
             }
             catch (Exception ex)
             {
-                if (ex.Message.Contains($"{nameof(NetworkConfig.EnableSceneManagement)} flag is not enabled in the {nameof(NetworkManager)}'s {nameof(NetworkConfig)}. Please set {nameof(NetworkConfig.EnableSceneManagement)} flag to true before calling this method."))
+                if (ex.Message.Contains($"{nameof(NetworkConfig.EnableSceneManagement)} flag is not enabled in the {nameof(NetworkManager)}'s {nameof(NetworkConfig)}. " +
+                    $"Please set {nameof(NetworkConfig.EnableSceneManagement)} flag to true before calling " +
+                    $"{nameof(NetworkSceneManager.LoadScene)} or {nameof(NetworkSceneManager.UnloadScene)}."))
                 {
                     threwException = true;
                 }
@@ -72,7 +72,7 @@ namespace TestProject.RuntimeTests
             threwException = false;
             try
             {
-                m_ClientNetworkManagers[0].SceneManager.LoadScene("SomeSceneNane", LoadSceneMode.Single);
+                m_ClientNetworkManagers[0].SceneManager.LoadScene(m_CurrentSceneName, LoadSceneMode.Single);
             }
             catch (Exception ex)
             {
@@ -259,13 +259,31 @@ namespace TestProject.RuntimeTests
                         break;
                     }
                 case SceneEventData.SceneEventTypes.C2S_LoadComplete:
-                case SceneEventData.SceneEventTypes.C2S_UnloadComplete:
                     {
-                        if (sceneEvent.ClientId == m_ServerNetworkManager.ServerClientId &&
-                            sceneEvent.SceneEventType == SceneEventData.SceneEventTypes.C2S_LoadComplete)
+                        if (sceneEvent.ClientId == m_ServerNetworkManager.ServerClientId)
                         {
                             m_CurrentScene = sceneEvent.Scene;
+                            var sceneHandle = m_CurrentScene.handle;
+                            foreach (var manager in m_ClientNetworkManagers)
+                            {
+                                if (!manager.SceneManager.ScenesLoaded.ContainsKey(sceneHandle))
+                                {
+                                    manager.SceneManager.ScenesLoaded.Add(sceneHandle, m_CurrentScene);
+                                }
+
+                                if (!manager.SceneManager.ServerSceneHandleToClientSceneHandle.ContainsKey(m_CurrentScene.handle))
+                                {
+                                    manager.SceneManager.ServerSceneHandleToClientSceneHandle.Add(m_CurrentScene.handle, m_CurrentScene.handle);
+                                }
+                            }
                         }
+                        Assert.AreEqual(sceneEvent.SceneName, m_CurrentSceneName);
+                        Assert.IsTrue(ContainsClient(sceneEvent.ClientId));
+                        SetClientProcessedEvent(sceneEvent.ClientId);
+                        break;
+                    }
+                case SceneEventData.SceneEventTypes.C2S_UnloadComplete:
+                    {
                         Assert.AreEqual(sceneEvent.SceneName, m_CurrentSceneName);
                         Assert.IsTrue(ContainsClient(sceneEvent.ClientId));
                         SetClientProcessedEvent(sceneEvent.ClientId);
