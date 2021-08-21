@@ -484,7 +484,15 @@ namespace Unity.Netcode
                         CheckClientSynchronizationResults(reader);
                         break;
                     }
-
+                case SceneEventTypes.S2C_Load:
+                    {
+                        // We store off the trailing in-scene placed serialized NetworkObject data to
+                        // be processed once we are done loading.
+                        InternalBuffer.Position = 0;
+                        InternalBuffer.CopyUnreadFrom(reader.GetStream());
+                        InternalBuffer.Position = 0;
+                        break;
+                    }
                 case SceneEventTypes.S2C_ReSync:
                     {
                         ReadClientReSynchronizationData(reader);
@@ -733,17 +741,6 @@ namespace Unity.Netcode
             {
                 ClientsTimedOut.Add(reader.ReadUInt64Packed());
             }
-        }
-
-        /// <summary>
-        /// Used to store data during an asynchronous scene loading event
-        /// </summary>
-        /// <param name="stream"></param>
-        internal void CopyUnreadFromStream(Stream stream)
-        {
-            InternalBuffer.Position = 0;
-            InternalBuffer.CopyUnreadFrom(stream);
-            InternalBuffer.Position = 0;
         }
 
         /// <summary>

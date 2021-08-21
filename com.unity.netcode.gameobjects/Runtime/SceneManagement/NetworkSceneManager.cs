@@ -694,8 +694,6 @@ namespace Unity.Netcode
         /// <param name="objectStream">Stream data associated with the event</param>
         private void OnClientSceneLoadingEvent(Stream objectStream)
         {
-            SceneEventData.CopyUnreadFromStream(objectStream);
-
             if (!SceneIndexToString.TryGetValue(SceneEventData.SceneIndex, out string sceneName) || !RegisteredSceneNames.Contains(sceneName))
             {
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
