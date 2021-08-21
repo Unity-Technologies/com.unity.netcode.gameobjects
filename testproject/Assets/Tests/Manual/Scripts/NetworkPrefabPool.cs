@@ -130,8 +130,6 @@ namespace TestProject.ManualTests
             DeregisterCustomPrefabHandler();
 
             CleanNetworkObjects();
-
-            NetworkManager.SceneManager.OnSceneEvent -= OnSceneEvent;
         }
 
 

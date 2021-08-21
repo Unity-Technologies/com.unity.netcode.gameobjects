@@ -82,6 +82,24 @@ namespace Unity.Netcode.RuntimeTests
                     networkObjectsToTest.Add(gameObject);
 
                     writer.WriteInt32Packed(networkObject.gameObject.scene.handle);
+
+                    // Handle populating the scenes loaded list
+                    var scene = networkObject.gameObject.scene;
+                    if (!NetworkManagerHelper.NetworkManagerObject.SceneManager.ScenesLoaded.ContainsKey(scene.name))
+                    {
+                        NetworkManagerHelper.NetworkManagerObject.SceneManager.ScenesLoaded.Add(scene.name, new Dictionary<int, Scene>());
+                        if (!NetworkManagerHelper.NetworkManagerObject.SceneManager.ScenesLoaded[scene.name].ContainsKey(scene.handle))
+                        {
+                            NetworkManagerHelper.NetworkManagerObject.SceneManager.ScenesLoaded[scene.name].Add(scene.handle, scene);
+                        }
+                    }
+
+                    // Since this is a unit test, we will fake the server to client handle lookup by just adding the same handle key and value
+                    if (!NetworkManagerHelper.NetworkManagerObject.SceneManager.ServerSceneHandleToClientSceneHandle.ContainsKey(networkObject.gameObject.scene.handle))
+                    {
+                        NetworkManagerHelper.NetworkManagerObject.SceneManager.ServerSceneHandleToClientSceneHandle.Add(networkObject.gameObject.scene.handle, networkObject.gameObject.scene.handle);
+                    }
+
                     // Serialize the valid NetworkObject
                     networkObject.SerializeSceneObject(writer, 0);
 
@@ -116,6 +134,7 @@ namespace Unity.Netcode.RuntimeTests
 
                     invalidNetworkObjectCount++;
                 }
+
 
                 NetworkManagerHelper.NetworkManagerObject.SceneManager.SetTheSceneBeingSynchronized(reader.ReadInt32Packed());
 
