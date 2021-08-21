@@ -85,13 +85,10 @@ namespace Unity.Netcode.RuntimeTests
 
                     // Handle populating the scenes loaded list
                     var scene = networkObject.gameObject.scene;
-                    if (!NetworkManagerHelper.NetworkManagerObject.SceneManager.ScenesLoaded.ContainsKey(scene.name))
+
+                    if (!NetworkManagerHelper.NetworkManagerObject.SceneManager.ScenesLoaded.ContainsKey(scene.handle))
                     {
-                        NetworkManagerHelper.NetworkManagerObject.SceneManager.ScenesLoaded.Add(scene.name, new Dictionary<int, Scene>());
-                        if (!NetworkManagerHelper.NetworkManagerObject.SceneManager.ScenesLoaded[scene.name].ContainsKey(scene.handle))
-                        {
-                            NetworkManagerHelper.NetworkManagerObject.SceneManager.ScenesLoaded[scene.name].Add(scene.handle, scene);
-                        }
+                        NetworkManagerHelper.NetworkManagerObject.SceneManager.ScenesLoaded.Add(scene.handle, scene);
                     }
 
                     // Since this is a unit test, we will fake the server to client handle lookup by just adding the same handle key and value

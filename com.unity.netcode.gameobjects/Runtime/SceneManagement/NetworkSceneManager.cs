@@ -129,12 +129,19 @@ namespace Unity.Netcode
         /// </summary>
         internal Scene SceneBeingSynchronized;
 
-        // Used to track which scenes are currently loaded
-        // We store scenes as follows: [SceneName][SceneHandle][Scene]
-        internal Dictionary<string, Dictionary<int, Scene>> ScenesLoaded = new Dictionary<string, Dictionary<int, Scene>>();
+        /// <summary>
+        /// Used to track which scenes are currently loaded
+        /// We store the scenes as [SceneHandle][Scene] in order to handle the loading and unloading of the same scene additively
+        /// Scene handle is only unique locally.  So, clients depend upon the <see cref="ServerSceneHandleToClientSceneHandle"/> in order
+        /// to be able to know which specific scene instance the server is instructing the client to unload.
+        /// The client links the server scene handle to the client local scene handle upon a scene being loaded
+        /// <see cref="GetAndAddNewlyLoadedSceneByName"/>
+        /// </summary>
+        internal Dictionary<int, Scene> ScenesLoaded = new Dictionary<int, Scene>();
 
         /// <summary>
-        /// Since Scene.handle is unique per client, we create a look-up table between the client and server
+        /// Since Scene.handle is unique per client, we create a look-up table between the client and server to associate server unique scene
+        /// instances with client unique scene instances
         /// </summary>
         internal Dictionary<int, int> ServerSceneHandleToClientSceneHandle = new Dictionary<int, int>();
 
@@ -187,31 +194,20 @@ namespace Unity.Netcode
         /// <returns></returns>
         internal Scene GetAndAddNewlyLoadedSceneByName(string sceneName)
         {
-
             for (int i = 0; i < SceneManager.sceneCount; i++)
             {
                 var sceneLoaded = SceneManager.GetSceneAt(i);
                 if (sceneLoaded.name == sceneName)
                 {
-                    if (ScenesLoaded.ContainsKey(sceneName))
+                    if (!ScenesLoaded.ContainsKey(sceneLoaded.handle))
                     {
-                        if (!ScenesLoaded[sceneName].ContainsKey(sceneLoaded.handle))
-                        {
-                            ScenesLoaded[sceneName].Add(sceneLoaded.handle, sceneLoaded);
-                            return sceneLoaded;
-                        }
-                    }
-                    else
-                    {
-                        // On a new entry we add the entry and scene then we are done.
-                        ScenesLoaded.Add(sceneName, new Dictionary<int, Scene>());
-                        ScenesLoaded[sceneName].Add(sceneLoaded.handle, sceneLoaded);
+                        ScenesLoaded.Add(sceneLoaded.handle, sceneLoaded);
                         return sceneLoaded;
                     }
                 }
             }
 
-            throw new Exception("Failed to find scene that was loaded!");
+            throw new Exception($"Failed to find any loaded scene named {sceneName}!");
         }
 
         /// <summary>
@@ -237,16 +233,10 @@ namespace Unity.Netcode
                     return;
                 }
 
-                // Find and set the scene currently being synchronized
-                SceneBeingSynchronized = new Scene();
-                foreach (var keyValuePairBySceneName in ScenesLoaded)
-                {
-                    if (keyValuePairBySceneName.Value.ContainsKey(clientSceneHandle))
-                    {
-                        SceneBeingSynchronized = keyValuePairBySceneName.Value[clientSceneHandle];
-                    }
-                }
+                // Get the scene currently being synchronized
+                SceneBeingSynchronized = ScenesLoaded.ContainsKey(clientSceneHandle) ? ScenesLoaded[clientSceneHandle] : new Scene();
 
+                // If the scene was not found (invalid) or was not loaded then throw an exception
                 if (!SceneBeingSynchronized.IsValid() || !SceneBeingSynchronized.isLoaded)
                 {
                     throw new Exception($"[{nameof(NetworkSceneManager)}- {nameof(ScenesLoaded)}] Could not find the appropriate scene to set as being synchronized!");
@@ -469,6 +459,7 @@ namespace Unity.Netcode
         public SceneEventProgressStatus UnloadScene(Scene scene)
         {
             var sceneName = scene.name;
+            var sceneHandle = scene.handle;
             if (!scene.isLoaded)
             {
                 Debug.LogWarning($"{nameof(UnloadScene)} was called, but the scene {scene.name} is not currently loaded!");
@@ -481,7 +472,7 @@ namespace Unity.Netcode
                 return sceneEventProgress.Status;
             }
 
-            if (!ScenesLoaded.ContainsKey(sceneName) || !ScenesLoaded[sceneName].ContainsKey(scene.handle))
+            if (!ScenesLoaded.ContainsKey(sceneHandle))
             {
                 Debug.LogError($"{nameof(UnloadScene)} internal error! {sceneName} with handle {scene.handle} is not within the internal scenes loaded dictionary!");
                 return SceneEventProgressStatus.InternalNetcodeError;
@@ -490,17 +481,12 @@ namespace Unity.Netcode
             SceneEventData.SceneEventGuid = sceneEventProgress.Guid;
             SceneEventData.SceneEventType = SceneEventData.SceneEventTypes.S2C_Unload;
             SceneEventData.SceneIndex = SceneNameToIndex[sceneName];
-            SceneEventData.SceneHandle = ScenesLoaded[sceneName][scene.handle].handle;
+            SceneEventData.SceneHandle = sceneHandle;
 
             // This will be the message we send to everyone when this scene event sceneEventProgress is complete
             sceneEventProgress.SceneEventType = SceneEventData.SceneEventTypes.S2C_UnLoadComplete;
 
-            ScenesLoaded[sceneName].Remove(scene.handle);
-
-            if (ScenesLoaded[sceneName].Count == 0)
-            {
-                ScenesLoaded.Remove(sceneName);
-            }
+            ScenesLoaded.Remove(scene.handle);
 
             AsyncOperation sceneUnload = SceneManager.UnloadSceneAsync(scene);
             sceneUnload.completed += (AsyncOperation asyncOp2) => { OnSceneUnloaded(); };
@@ -536,53 +522,43 @@ namespace Unity.Netcode
 
                 return;
             }
+
+            if (!ServerSceneHandleToClientSceneHandle.ContainsKey(SceneEventData.SceneHandle))
+            {
+                throw new Exception($"Client failed to unload scene {GetSceneNameFromNetcodeSceneIndex(SceneEventData.SceneIndex)} " +
+                    $"because we are missing the client scene handle due to the server scene handle {SceneEventData.SceneHandle} not being found!");
+            }
+
+            var sceneHandle = ServerSceneHandleToClientSceneHandle[SceneEventData.SceneHandle];
+
+            if (!ScenesLoaded.ContainsKey(sceneHandle))
+            {
+                // Error scene handle not found!
+                throw new Exception($"Client failed to unload scene {GetSceneNameFromNetcodeSceneIndex(SceneEventData.SceneIndex)} " +
+                    $"because the client scene handle {sceneHandle} was not found in ScenesLoaded!");
+            }
             s_IsSceneEventActive = true;
 
-            if (ScenesLoaded.ContainsKey(sceneName))
+            var sceneUnload = SceneManager.UnloadSceneAsync(ScenesLoaded[sceneHandle]);
+
+            sceneUnload.completed += asyncOp2 => OnSceneUnloaded();
+
+            ScenesLoaded.Remove(sceneHandle);
+
+            // Remove our server to scene handle lookup
+            ServerSceneHandleToClientSceneHandle.Remove(SceneEventData.SceneHandle);
+
+            // Notify the local client that a scene is going to be unloaded
+            OnSceneEvent?.Invoke(new SceneEvent()
             {
-                if (!ServerSceneHandleToClientSceneHandle.ContainsKey(SceneEventData.SceneHandle))
-                {
-                    throw new Exception("No server to scene handle exist!");
-                }
-                var sceneHandle = ServerSceneHandleToClientSceneHandle[SceneEventData.SceneHandle];
-                if (ScenesLoaded[sceneName].ContainsKey(sceneHandle))
-                {
+                AsyncOperation = sceneUnload,
+                SceneEventType = SceneEventData.SceneEventType,
+                LoadSceneMode = SceneEventData.LoadSceneMode,
+                SceneName = sceneName,
+                ClientId = m_NetworkManager.LocalClientId   // Server sent this message to the client, but client is executing it
+            });
 
-                    var sceneUnload = SceneManager.UnloadSceneAsync(ScenesLoaded[sceneName][sceneHandle]);
 
-                    sceneUnload.completed += asyncOp2 => OnSceneUnloaded();
-
-                    ScenesLoaded[sceneName].Remove(sceneHandle);
-
-                    // Remove our server to scene handle lookup
-                    ServerSceneHandleToClientSceneHandle.Remove(SceneEventData.SceneHandle);
-                    if (ScenesLoaded[sceneName].Count == 0)
-                    {
-                        ScenesLoaded.Remove(sceneName);
-                    }
-
-                    // Notify the local client that a scene is going to be unloaded
-                    OnSceneEvent?.Invoke(new SceneEvent()
-                    {
-                        AsyncOperation = sceneUnload,
-                        SceneEventType = SceneEventData.SceneEventType,
-                        LoadSceneMode = SceneEventData.LoadSceneMode,
-                        SceneName = sceneName,
-                        ClientId = m_NetworkManager.LocalClientId   // Server sent this message to the client, but client is executing it
-                    });
-                }
-                else
-                {
-                    // Error scene handle not found!
-                    Debug.LogError("Server Scene Handle Not Found!");
-                }
-            }
-            else
-            {
-
-                // Error scene not loaded!
-                Debug.LogError("Server Scene Handle Not Loaded!");
-            }
         }
 
         /// <summary>
@@ -637,21 +613,18 @@ namespace Unity.Netcode
         {
             // Unload all additive scenes while making sure we don't try to unload the base scene ( loaded in single mode ).
             var currentActiveScene = SceneManager.GetActiveScene();
-            foreach (var keyRootSceneEntry in ScenesLoaded)
+            foreach (var keyHandleEntry in ScenesLoaded)
             {
-                foreach (var keyHandleEntry in keyRootSceneEntry.Value)
+                if (currentActiveScene.name != keyHandleEntry.Value.name)
                 {
-                    if (currentActiveScene.name != keyHandleEntry.Value.name)
+                    OnSceneEvent?.Invoke(new SceneEvent()
                     {
-                        OnSceneEvent?.Invoke(new SceneEvent()
-                        {
-                            AsyncOperation = SceneManager.UnloadSceneAsync(keyHandleEntry.Value),
-                            SceneEventType = SceneEventData.SceneEventTypes.S2C_Unload,
-                            LoadSceneMode = LoadSceneMode.Additive,
-                            SceneName = keyHandleEntry.Value.name,
-                            ClientId = m_NetworkManager.ServerClientId
-                        });
-                    }
+                        AsyncOperation = SceneManager.UnloadSceneAsync(keyHandleEntry.Value),
+                        SceneEventType = SceneEventData.SceneEventTypes.S2C_Unload,
+                        LoadSceneMode = LoadSceneMode.Additive,
+                        SceneName = keyHandleEntry.Value.name,
+                        ClientId = m_NetworkManager.ServerClientId
+                    });
                 }
             }
             // clear out our scenes loaded list
