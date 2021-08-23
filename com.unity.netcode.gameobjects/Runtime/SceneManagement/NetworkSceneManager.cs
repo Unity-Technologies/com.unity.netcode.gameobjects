@@ -96,8 +96,10 @@ namespace Unity.Netcode
         /// </summary>
         private static bool s_IsSceneEventActive = false;
 
+        // TODO: Remove `m_IsRunningUnitTest` entirely after we switch to multi-process testing
+        // In MultiInstance tests, we cannot allow clients to load additional scenes as they're sharing the same scene space / Unity instance.
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        private bool m_IsRunningUnitTest = SceneManager.GetActiveScene().name.StartsWith("InitTestScene");
+        private readonly bool m_IsRunningUnitTest = SceneManager.GetActiveScene().name.StartsWith("InitTestScene");
 #endif
 
         /// <summary>
@@ -544,8 +546,6 @@ namespace Unity.Netcode
             s_IsSceneEventActive = true;
             var sceneUnload = (AsyncOperation)null;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            // In unit tests, we don't allow clients to unload scenes since
-            // MultiInstance unit tests share the same scene space.
             if (m_IsRunningUnitTest)
             {
                 sceneUnload = new AsyncOperation();
@@ -726,8 +726,6 @@ namespace Unity.Netcode
             }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            // In unit tests, we don't allow clients to load additional scenes since
-            // MultiInstance unit tests share the same scene space.
             if (m_IsRunningUnitTest)
             {
                 // Send the loading message
@@ -1060,7 +1058,7 @@ namespace Unity.Netcode
                 ClientId = m_NetworkManager.LocalClientId,
             });
 
-            if(shouldPassThrough)
+            if (shouldPassThrough)
             {
                 // If so, then pass through
                 ClientLoadedSynchronization(sceneIndex, sceneHandle);
