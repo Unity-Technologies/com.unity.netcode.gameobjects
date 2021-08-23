@@ -69,9 +69,9 @@ namespace Unity.Netcode.Prototyping
         [SerializeField, Range(0, 120), Tooltip("The base amount of sends per seconds to use when range is disabled")]
         public float FixedSendsPerSecond = 30f;
 
-        protected virtual IInterpolator<Vector3> PositionInterpolator { get; set; }
-        protected virtual IInterpolator<Quaternion> RotationInterpolator { get; set; }
-        protected virtual IInterpolator<Vector3> ScaleInterpolator { get; set; }
+        public virtual IInterpolator<Vector3> PositionInterpolator { get; set; }
+        public virtual IInterpolator<Quaternion> RotationInterpolator { get; set; }
+        public virtual IInterpolator<Vector3> ScaleInterpolator { get; set; }
 
         private Transform m_Transform; // cache the transform component to reduce unnecessary bounce between managed and native
 

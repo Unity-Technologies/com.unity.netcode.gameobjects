@@ -56,9 +56,15 @@ namespace Unity.Netcode.RuntimeTests
 
             var networkTransform = (authorityToTest == NetworkAuthority.Client ? m_ClientSideClientPlayer : m_ServerSideClientPlayer).GetComponent<NetworkTransform>();
             networkTransform.SetAuthority(authorityToTest);
+            networkTransform.PositionInterpolator = new NoInterpolator<Vector3>();
+            networkTransform.RotationInterpolator = new NoInterpolator<Quaternion>();
+            networkTransform.ScaleInterpolator = new NoInterpolator<Vector3>();
 
             var otherSideNetworkTransform = (authorityToTest == NetworkAuthority.Client ? m_ServerSideClientPlayer : m_ClientSideClientPlayer).GetComponent<NetworkTransform>();
             otherSideNetworkTransform.SetAuthority(authorityToTest);
+            otherSideNetworkTransform.PositionInterpolator = new NoInterpolator<Vector3>();
+            otherSideNetworkTransform.RotationInterpolator = new NoInterpolator<Quaternion>();
+            otherSideNetworkTransform.ScaleInterpolator = new NoInterpolator<Vector3>();
 
             static bool HasAuthorityFunc(NetworkTransform transform)
             {
@@ -128,9 +134,15 @@ namespace Unity.Netcode.RuntimeTests
             // test server can't change client authoritative transform
             var networkTransform = (authorityToTest == NetworkAuthority.Client ? m_ClientSideClientPlayer : m_ServerSideClientPlayer).GetComponent<NetworkTransform>();
             networkTransform.SetAuthority(authorityToTest);
+            networkTransform.PositionInterpolator = new NoInterpolator<Vector3>();
+            networkTransform.RotationInterpolator = new NoInterpolator<Quaternion>();
+            networkTransform.ScaleInterpolator = new NoInterpolator<Vector3>();
 
             var otherSideNetworkTransform = (authorityToTest == NetworkAuthority.Client ? m_ServerSideClientPlayer : m_ClientSideClientPlayer).GetComponent<NetworkTransform>();
             otherSideNetworkTransform.SetAuthority(authorityToTest);
+            otherSideNetworkTransform.PositionInterpolator = new NoInterpolator<Vector3>();
+            otherSideNetworkTransform.RotationInterpolator = new NoInterpolator<Quaternion>();
+            otherSideNetworkTransform.ScaleInterpolator = new NoInterpolator<Vector3>();
 
             Assert.AreEqual(Vector3.zero, otherSideNetworkTransform.transform.position, "other side pos should be zero at first"); // sanity check
             otherSideNetworkTransform.transform.position = new Vector3(4, 5, 6);
