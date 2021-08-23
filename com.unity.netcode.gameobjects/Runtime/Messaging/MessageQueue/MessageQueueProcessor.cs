@@ -109,30 +109,8 @@ namespace Unity.Netcode
                     case MessageQueueContainer.MessageType.NetworkVariableDelta:
                         m_NetworkManager.MessageHandler.HandleNetworkVariableDelta(item.NetworkId, item.NetworkBuffer);
                         break;
-                    case MessageQueueContainer.MessageType.SwitchScene:
-                        if (m_NetworkManager.IsClient)
-                        {
-                            m_NetworkManager.MessageHandler.HandleSwitchScene(item.NetworkId, item.NetworkBuffer);
-                        }
-
-                        break;
-                    case MessageQueueContainer.MessageType.ClientSwitchSceneCompleted:
-                        if (m_NetworkManager.IsServer && m_NetworkManager.NetworkConfig.EnableSceneManagement)
-                        {
-                            m_NetworkManager.MessageHandler.HandleClientSwitchSceneCompleted(item.NetworkId, item.NetworkBuffer);
-                        }
-                        else if (!m_NetworkManager.NetworkConfig.EnableSceneManagement)
-                        {
-                            NetworkLog.LogWarning($"Server received {MessageQueueContainer.MessageType.ClientSwitchSceneCompleted} from client id {item.NetworkId.ToString()}");
-                        }
-
-                        break;
-                    case MessageQueueContainer.MessageType.AllClientsLoadedScene:
-                        if (m_NetworkManager.IsClient)
-                        {
-                            m_NetworkManager.MessageHandler.HandleAllClientsSwitchSceneCompleted(item.NetworkId, item.NetworkBuffer);
-                        }
-
+                    case MessageQueueContainer.MessageType.SceneEvent:
+                        m_NetworkManager.MessageHandler.HandleSceneEvent(item.NetworkId, item.NetworkBuffer);
                         break;
                     case MessageQueueContainer.MessageType.ParentSync:
                         if (m_NetworkManager.IsClient)

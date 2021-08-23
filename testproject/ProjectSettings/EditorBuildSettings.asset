@@ -45,18 +45,36 @@ EditorBuildSettings:
     path: Assets/Tests/Manual/NetworkSceneManagerCallbacks/SceneWeAreSwitchingFrom.unity
     guid: 073bd2111475c0643be45b7abe6a97ad
   - enabled: 1
-    path: Assets/Tests/Manual/NetworkAnimatorTests/NetworkAnimatorEnhancement.unity
-    guid: f88da8bb8d07e11418eaad6524d5cc12
-  - enabled: 1
     path: Assets/Scenes/MultiprocessTestScene.unity
     guid: 76743cb7b342c49279327834918a9c6e
   - enabled: 1
     path: Assets/Scenes/EmptyScene.unity
     guid: a2545a872c007404fbb6b0393ab74974
   - enabled: 1
+    path: Assets/Tests/Manual/SceneTransitioningAdditive/SceneTransitioningBase1.unity
+    guid: 780f96a61e8ac8e41b638ae8ec3a3236
+  - enabled: 1
+    path: Assets/Tests/Manual/SceneTransitioningAdditive/SceneTransitioningBase2.unity
+    guid: 9e437cc704801bc47add735d743985f5
+  - enabled: 1
+    path: Assets/Tests/Manual/SceneTransitioningAdditive/AdditiveScene1.unity
+    guid: 41a0239b0c49e2047b7063c822f0df8a
+  - enabled: 1
+    path: Assets/Tests/Manual/SceneTransitioningAdditive/AdditiveScene2.unity
+    guid: c6a3d883c8253ee43bca4f2b03797d7b
+  - enabled: 1
+    path: Assets/Tests/Manual/SceneTransitioningAdditive/AdditiveScene3.unity
+    guid: 7da3dd618f5b5a34db1f6d3c9511e221
+  - enabled: 1
+    path: Assets/Tests/Manual/SceneTransitioningAdditive/AdditiveScene4.unity
+    guid: dc7e17c86f5ca81478043be306027c13
+  - enabled: 1
     path: Assets/Samples/PrefabPool/PrefabPoolExample.unity
     guid: e4732b28c18f52c4dbe06c8a37f7997f
   - enabled: 1
     path: Assets/Samples/PrefabPool/PrefabPoolOverrideExample.unity
     guid: 8c9bee1332e0526429d8a2c929945d60
+  - enabled: 1
+    path: Assets/Tests/Manual/SceneTransitioningAdditive/AdditiveSceneMultiInstance.unity
+    guid: 0ae94f636016d3b40bfbecad57d99553
   m_configObjects: {}
