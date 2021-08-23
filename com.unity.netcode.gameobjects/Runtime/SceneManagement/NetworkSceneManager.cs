@@ -87,9 +87,6 @@ namespace Unity.Netcode
     /// </summary>
     public class NetworkSceneManager
     {
-        // Used to be able to turn re-synchronization off for future snapshot development purposes.
-        internal static bool DisableReSynchronization;
-
         /// <summary>
         /// Used to detect if a scene event is underway
         /// Only 1 scene event can occur on the server at a time for now.
@@ -1198,17 +1195,22 @@ namespace Unity.Netcode
                             ClientId = clientId
                         });
 
-                        if (SceneEventData.ClientNeedsReSynchronization() && !DisableReSynchronization)
+                        // If snapshot system is handling adding and destroying NetworkObjects
+                        // then we do not need the resynchronization step
+                        if (!m_NetworkManager.NetworkConfig.UseSnapshotSpawn)
                         {
-                            SceneEventData.SceneEventType = SceneEventData.SceneEventTypes.S2C_ReSync;
-                            SendSceneEventData(new ulong[] { clientId });
-
-                            OnSceneEvent?.Invoke(new SceneEvent()
+                            if (SceneEventData.ClientNeedsReSynchronization())
                             {
-                                SceneEventType = SceneEventData.SceneEventType,
-                                SceneName = string.Empty,
-                                ClientId = clientId
-                            });
+                                SceneEventData.SceneEventType = SceneEventData.SceneEventTypes.S2C_ReSync;
+                                SendSceneEventData(new ulong[] { clientId });
+
+                                OnSceneEvent?.Invoke(new SceneEvent()
+                                {
+                                    SceneEventType = SceneEventData.SceneEventType,
+                                    SceneName = string.Empty,
+                                    ClientId = clientId
+                                });
+                            }
                         }
 
                         break;
