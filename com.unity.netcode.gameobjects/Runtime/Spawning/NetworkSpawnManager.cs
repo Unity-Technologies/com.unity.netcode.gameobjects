@@ -741,7 +741,7 @@ namespace Unity.Netcode
             {
                 if (sobj.CheckObjectVisibility == null || NetworkManager.IsServer)
                 {
-                    if(!sobj.Observers.Contains(clientId))
+                    if (!sobj.Observers.Contains(clientId))
                     {
                         sobj.Observers.Add(clientId);
                     }

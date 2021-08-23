@@ -323,7 +323,7 @@ namespace Unity.Netcode
             writer.WriteUInt32Packed(SceneIndex);
             writer.WriteInt32Packed(SceneHandle);
 
-            switch(SceneEventType)
+            switch (SceneEventType)
             {
                 case SceneEventTypes.S2C_Sync:
                     {
@@ -471,7 +471,7 @@ namespace Unity.Netcode
             SceneIndex = reader.ReadUInt32Packed();
             SceneHandle = reader.ReadInt32Packed();
 
-            switch(SceneEventType)
+            switch (SceneEventType)
             {
                 case SceneEventTypes.S2C_Sync:
                     {
