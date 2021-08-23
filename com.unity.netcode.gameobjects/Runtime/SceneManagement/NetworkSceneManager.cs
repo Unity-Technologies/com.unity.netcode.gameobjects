@@ -575,11 +575,12 @@ namespace Unity.Netcode
             });
 
 
-#if UNITY_EDITOR
-            OnSceneUnloaded();
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (m_IsRunningUnitTest)
+            {
+                OnSceneUnloaded();
+            }
 #endif
-
-
         }
 
         /// <summary>
