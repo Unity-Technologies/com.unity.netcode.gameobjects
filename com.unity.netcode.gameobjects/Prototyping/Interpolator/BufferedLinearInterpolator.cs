@@ -50,6 +50,10 @@ namespace Unity.Netcode
 
         private int m_LifetimeConsumedCount;
 
+        public BufferedLinearInterpolator()
+        {
+        }
+
         public void Start()
         {
         }
@@ -157,37 +161,15 @@ namespace Unity.Netcode
         public abstract T Interpolate(T start, T end, float time);
     }
 
-    public class BufferedLinearInterpolatorVector3 : BufferedLinearInterpolator<Vector3>
-    {
-        public override Vector3 Interpolate(Vector3 start, Vector3 end, float time)
-        {
-            return Vector3.Lerp(start, end, time);
-        }
-
-        public BufferedLinearInterpolatorVector3(Vector3 startValue)
-        {
-            AddMeasurement(startValue, new NetworkTime(0, 0.0));
-        }
-    }
-
-    public class BufferedLinearInterpolatorQuaternion : BufferedLinearInterpolator<Quaternion>
-    {
-        public override Quaternion Interpolate(Quaternion start, Quaternion end, float time)
-        {
-            return Quaternion.Slerp(start, end, time);
-        }
-
-        public BufferedLinearInterpolatorQuaternion(Quaternion startValue)
-        {
-            AddMeasurement(startValue, new NetworkTime(0, 0.0));
-        }
-    }
-
     public class BufferedLinearInterpolatorFloat : BufferedLinearInterpolator<float>
     {
         public override float Interpolate(float start, float end, float time)
         {
             return Mathf.Lerp(start, end, time);
+        }
+
+        public BufferedLinearInterpolatorFloat()
+        {
         }
     }
 }

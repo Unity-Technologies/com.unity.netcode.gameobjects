@@ -1,4 +1,6 @@
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Unity.Netcode.Prototyping
@@ -82,7 +84,49 @@ namespace Unity.Netcode.Prototyping
             public float PositionX, PositionY, PositionZ;
             public float RotAngleX, RotAngleY, RotAngleZ;
             public float ScaleX, ScaleY, ScaleZ;
-			public double SentTime;
+            public double SentTime;
+
+            public Vector3 Position
+            {
+                get
+                {
+                    return new Vector3(PositionX, PositionY, PositionZ);
+                }
+                set
+                {
+                    PositionX = value.x;
+                    PositionY = value.y;
+                    PositionZ = value.z;
+                }
+            }
+
+            public Vector3 Rotation
+            {
+                get
+                {
+                    return new Vector3(RotAngleX, RotAngleY, RotAngleZ);
+                }
+                set
+                {
+                    RotAngleX = value.x;
+                    RotAngleY = value.y;
+                    RotAngleZ = value.z;
+                }
+            }
+
+            public Vector3 Scale
+            {
+                get
+                {
+                    return new Vector3(ScaleX, ScaleY, ScaleZ);
+                }
+                set
+                {
+                    ScaleX = value.x;
+                    ScaleY = value.y;
+                    ScaleZ = value.z;
+                }
+            }
 
             public void NetworkSerialize(NetworkSerializer serializer)
             {
@@ -158,9 +202,52 @@ namespace Unity.Netcode.Prototyping
         [SerializeField, Range(0, 120), Tooltip("The base amount of sends per seconds to use when range is disabled")]
         public float FixedSendsPerSecond = 30f;
 
-        public virtual IInterpolator<Vector3> PositionInterpolator { get; set; }
-        public virtual IInterpolator<Quaternion> RotationInterpolator { get; set; }
-        public virtual IInterpolator<Vector3> ScaleInterpolator { get; set; }
+        public virtual IInterpolator<float> PositionXInterpolator { get; set; }
+        public virtual IInterpolator<float> PositionYInterpolator { get; set; }
+        public virtual IInterpolator<float> PositionZInterpolator { get; set; }
+
+        public virtual IInterpolator<float> RotationXInterpolator { get; set; }
+        public virtual IInterpolator<float> RotationYInterpolator { get; set; }
+        public virtual IInterpolator<float> RotationZInterpolator { get; set; }
+        public virtual IInterpolator<float> ScaleXInterpolator { get; set; }
+        public virtual IInterpolator<float> ScaleYInterpolator { get; set; }
+        public virtual IInterpolator<float> ScaleZInterpolator { get; set; }
+
+        public void SetInterpolator<T>() where T : IInterpolator<float>, new()
+        {
+            var tickRate = NetworkManager.Singleton.NetworkConfig.TickRate;
+            PositionXInterpolator = new T();
+            PositionXInterpolator.AddMeasurement(TransformPosition.x, new NetworkTime(tickRate, 0.0));
+            PositionYInterpolator = new T();
+            PositionYInterpolator.AddMeasurement(TransformPosition.y, new NetworkTime(tickRate, 0.0));
+            PositionZInterpolator = new T();
+            PositionZInterpolator.AddMeasurement(TransformPosition.z, new NetworkTime(tickRate, 0.0));
+            RotationXInterpolator = new T();
+            RotationXInterpolator.AddMeasurement(TransformRotation.eulerAngles.x, new NetworkTime(tickRate, 0.0));
+            RotationYInterpolator = new T();
+            RotationYInterpolator.AddMeasurement(TransformRotation.eulerAngles.y, new NetworkTime(tickRate, 0.0));
+            RotationZInterpolator = new T();
+            RotationZInterpolator.AddMeasurement(TransformRotation.eulerAngles.z, new NetworkTime(tickRate, 0.0));
+            ScaleXInterpolator = new T();
+            ScaleXInterpolator.AddMeasurement(TransformScale.x, new NetworkTime(tickRate, 0.0));
+            ScaleYInterpolator = new T();
+            ScaleYInterpolator.AddMeasurement(TransformScale.y, new NetworkTime(tickRate, 0.0));
+            ScaleZInterpolator = new T();
+            ScaleZInterpolator.AddMeasurement(TransformScale.z, new NetworkTime(tickRate, 0.0));
+        }
+
+        public IEnumerable<IInterpolator<float>> AllInterpolators()
+        {
+            yield return PositionXInterpolator;
+            yield return PositionYInterpolator;
+            yield return PositionZInterpolator;
+            yield return RotationXInterpolator;
+            yield return RotationYInterpolator;
+            yield return RotationZInterpolator;
+            yield return ScaleXInterpolator;
+            yield return ScaleYInterpolator;
+            yield return ScaleZInterpolator;
+        }
 
         private Transform m_Transform; // cache the transform component to reduce unnecessary bounce between managed and native
 
@@ -214,7 +301,7 @@ namespace Unity.Netcode.Prototyping
 
         // updates `NetworkState` properties if they need to and returns a `bool` indicating whether or not there was any changes made
         // returned boolean would be useful to change encapsulating `NetworkVariable<NetworkState>`'s dirty state, e.g. ReplNetworkState.SetDirty(isDirty);
-        internal bool UpdateNetworkState(ref NetworkState networkState)
+        internal bool UpdateNetworkStateCheckDirty(ref NetworkState networkState, double dirtyTime)
         {
             var position = InLocalSpace ? m_Transform.localPosition : m_Transform.position;
             var rotAngles = InLocalSpace ? m_Transform.localEulerAngles : m_Transform.eulerAngles;
@@ -309,90 +396,109 @@ namespace Unity.Netcode.Prototyping
                 isDirty |= true;
             }
 
+            if (isDirty)
+            {
+                networkState.SentTime = dirtyTime;
+            }
+
             return isDirty;
         }
 
-        // TODO: temporary! the function body below probably needs to be rewritten later with interpolation in mind
-        internal void ApplyNetworkState(NetworkState networkState)
+        internal void ApplyNetworkStateFromAuthority(NetworkState networkState)
         {
             PrevNetworkState = networkState;
 
-            var position = InLocalSpace ? m_Transform.localPosition : m_Transform.position;
-            var rotAngles = InLocalSpace ? m_Transform.localEulerAngles : m_Transform.eulerAngles;
-            var scale = InLocalSpace ? m_Transform.localScale : m_Transform.lossyScale;
+            var interpolatedPosition = InLocalSpace ? m_Transform.localPosition : m_Transform.position;
+            var interpolatedRotAngles = InLocalSpace ? m_Transform.localEulerAngles : m_Transform.eulerAngles;
+            var interpolatedScale = InLocalSpace ? m_Transform.localScale : m_Transform.lossyScale;
 
             // InLocalSpace Read
             InLocalSpace = networkState.InLocalSpace;
             // Position Read
             if (networkState.HasPositionX)
             {
-                position.x = networkState.PositionX;
+                interpolatedPosition.x = PositionXInterpolator.GetInterpolatedValue();
             }
+
             if (networkState.HasPositionY)
             {
-                position.y = networkState.PositionY;
+                interpolatedPosition.y = PositionYInterpolator.GetInterpolatedValue();
             }
+
             if (networkState.HasPositionZ)
             {
-                position.z = networkState.PositionZ;
+                interpolatedPosition.z = PositionZInterpolator.GetInterpolatedValue();
             }
+
             // RotAngles Read
             if (networkState.HasRotAngleX)
             {
-                rotAngles.x = networkState.RotAngleX;
+                interpolatedRotAngles.x = RotationXInterpolator.GetInterpolatedValue();
             }
+
             if (networkState.HasRotAngleY)
             {
-                rotAngles.y = networkState.RotAngleY;
+                interpolatedRotAngles.y = RotationYInterpolator.GetInterpolatedValue();
             }
+
             if (networkState.HasRotAngleZ)
             {
-                rotAngles.z = networkState.RotAngleZ;
+                interpolatedRotAngles.z = RotationZInterpolator.GetInterpolatedValue();
             }
+
             // Scale Read
             if (networkState.HasScaleX)
             {
-                scale.x = networkState.ScaleX;
-            }
-            if (networkState.HasScaleY)
-            {
-                scale.y = networkState.ScaleY;
-            }
-            if (networkState.HasScaleZ)
-            {
-                scale.z = networkState.ScaleZ;
+                interpolatedScale.x = ScaleXInterpolator.GetInterpolatedValue();
             }
 
+            if (networkState.HasScaleY)
+            {
+                interpolatedScale.y = ScaleYInterpolator.GetInterpolatedValue();
+            }
+
+            if (networkState.HasScaleZ)
+            {
+                interpolatedScale.z = ScaleZInterpolator.GetInterpolatedValue();
+            }
+
+            PrevNetworkState = networkState;
             // Position Apply
             if (networkState.HasPositionX || networkState.HasPositionY || networkState.HasPositionZ)
             {
                 if (InLocalSpace)
                 {
-                    m_Transform.localPosition = position;
+                    m_Transform.localPosition = interpolatedPosition;
                 }
                 else
                 {
-                    m_Transform.position = position;
+                    m_Transform.position = interpolatedPosition;
                 }
+
+                PrevNetworkState.Position = interpolatedPosition;
             }
+
             // RotAngles Apply
             if (networkState.HasRotAngleX || networkState.HasRotAngleY || networkState.HasRotAngleZ)
             {
                 if (InLocalSpace)
                 {
-                    m_Transform.localEulerAngles = rotAngles;
+                    m_Transform.localEulerAngles = interpolatedRotAngles;
                 }
                 else
                 {
-                    m_Transform.eulerAngles = rotAngles;
+                    m_Transform.eulerAngles = interpolatedRotAngles;
                 }
+
+                PrevNetworkState.Rotation = interpolatedRotAngles;
             }
+
             // Scale Apply
             if (networkState.HasScaleX || networkState.HasScaleY || networkState.HasScaleZ)
             {
                 if (InLocalSpace)
                 {
-                    m_Transform.localScale = scale;
+                    m_Transform.localScale = interpolatedScale;
                 }
                 else
                 {
@@ -400,99 +506,33 @@ namespace Unity.Netcode.Prototyping
                     var lossyScale = m_Transform.lossyScale;
                     m_Transform.localScale = new Vector3(networkState.ScaleX / lossyScale.x, networkState.ScaleY / lossyScale.y, networkState.ScaleZ / lossyScale.z);
                 }
-            }
-        }
-        private bool IsGhostStateDirty(NetworkState networkState)
-        {
-            if (networkState == null)
-            {
-                return false;
-            }
 
-            bool isDirty = false;
-
-            isDirty |= networkState.InLocalSpace != InLocalSpace;
-            if (InLocalSpace)
-            {
-                isDirty |= networkState.Position != PositionInterpolator.GetInterpolatedValue();
-                isDirty |= networkState.Rotation != RotationInterpolator.GetInterpolatedValue();
-                isDirty |= networkState.Scale != ScaleInterpolator.GetInterpolatedValue();
+                PrevNetworkState.Scale = interpolatedScale;
             }
-            else
-            {
-                isDirty |= networkState.Position != PositionInterpolator.GetInterpolatedValue();
-                isDirty |= networkState.Rotation != RotationInterpolator.GetInterpolatedValue();
-                isDirty |= networkState.Scale != ScaleInterpolator.GetInterpolatedValue();
-            }
-
-            return isDirty;
         }
 
         // Is the non-interpolated authoritative state dirty?
         private bool IsAuthoritativeTransformDirty()
         {
             bool isDirty = false;
-            var networkState = m_NetworkState.Value;
+            var networkState = ReplNetworkState.Value;
             isDirty |= networkState.InLocalSpace != InLocalSpace;
             if (InLocalSpace)
             {
                 isDirty |= networkState.Position != m_Transform.localPosition;
-                isDirty |= networkState.Rotation != m_Transform.localRotation;
+                isDirty |= networkState.Rotation != m_Transform.localEulerAngles;
                 isDirty |= networkState.Scale != m_Transform.localScale;
             }
             else
             {
                 isDirty |= networkState.Position != m_Transform.position;
-                isDirty |= networkState.Rotation != m_Transform.rotation;
+                isDirty |= networkState.Rotation != m_Transform.eulerAngles;
                 isDirty |= networkState.Scale != m_Transform.lossyScale;
             }
 
             return isDirty;
         }
 
-        private void SetNetworkStateDirtyToGhosts(double dirtyTime)
-        {
-            m_NetworkState.Value.InLocalSpace = InLocalSpace;
-            m_NetworkState.Value.SentTime = dirtyTime;
-            if (InLocalSpace)
-            {
-                m_NetworkState.Value.Position = m_Transform.localPosition;
-                m_NetworkState.Value.Rotation = m_Transform.localRotation;
-                m_NetworkState.Value.Scale = m_Transform.localScale;
-            }
-            else
-            {
-                m_NetworkState.Value.Position = m_Transform.position;
-                m_NetworkState.Value.Rotation = m_Transform.rotation;
-                m_NetworkState.Value.Scale = m_Transform.lossyScale;
-            }
-
-            m_NetworkState.SetDirty(true);
-        }
-
-        private void ApplyInterpolatedStateFromAuthority(NetworkState netState)
-        {
-            InLocalSpace = netState.InLocalSpace;
-            if (InLocalSpace)
-            {
-                m_Transform.localPosition = PositionInterpolator.GetInterpolatedValue();
-                m_Transform.localRotation = RotationInterpolator.GetInterpolatedValue();
-                m_Transform.localScale = ScaleInterpolator.GetInterpolatedValue();
-            }
-            else
-            {
-                m_Transform.position = PositionInterpolator.GetInterpolatedValue();
-                m_Transform.rotation = RotationInterpolator.GetInterpolatedValue();
-                m_Transform.localScale = Vector3.one;
-                var lossyScale = m_Transform.lossyScale;
-                m_Transform.localScale = new Vector3(ScaleInterpolator.GetInterpolatedValue().x / lossyScale.x, ScaleInterpolator.GetInterpolatedValue().y / lossyScale.y, ScaleInterpolator.GetInterpolatedValue().z / lossyScale.z);
-            }
-
-            m_PrevNetworkState = netState;
-            m_PrevNetworkState.Position = PositionInterpolator.GetInterpolatedValue();
-            m_PrevNetworkState.Rotation = RotationInterpolator.GetInterpolatedValue();
-            m_PrevNetworkState.Scale = ScaleInterpolator.GetInterpolatedValue();
-        }
         private void OnNetworkStateChanged(NetworkState oldState, NetworkState newState)
         {
             if (!NetworkObject.IsSpawned)
@@ -508,17 +548,57 @@ namespace Unity.Netcode.Prototyping
             // }
 
             var sentTime = new NetworkTime(NetworkManager.Singleton.ServerTime.TickRate, newState.SentTime);
-            PositionInterpolator.AddMeasurement(newState.Position, sentTime);
-            RotationInterpolator.AddMeasurement(newState.Rotation, sentTime);
-            ScaleInterpolator.AddMeasurement(newState.Scale, sentTime);
+
+            if (newState.HasPositionX)
+            {
+                PositionXInterpolator.AddMeasurement(newState.Position.x, sentTime);
+            }
+
+            if (newState.HasPositionY)
+            {
+                PositionYInterpolator.AddMeasurement(newState.Position.y, sentTime);
+            }
+
+            if (newState.HasPositionZ)
+            {
+                PositionZInterpolator.AddMeasurement(newState.Position.z, sentTime);
+            }
+
+            if (newState.HasRotAngleX)
+            {
+                RotationXInterpolator.AddMeasurement(newState.RotAngleX, sentTime);
+            }
+
+            if (newState.HasRotAngleY)
+            {
+                RotationYInterpolator.AddMeasurement(newState.RotAngleY, sentTime);
+            }
+
+            if (newState.HasRotAngleZ)
+            {
+                RotationZInterpolator.AddMeasurement(newState.RotAngleZ, sentTime);
+            }
+
+            if (newState.HasScaleX)
+            {
+                ScaleXInterpolator.AddMeasurement(newState.ScaleX, sentTime);
+            }
+
+            if (newState.HasScaleY)
+            {
+                ScaleYInterpolator.AddMeasurement(newState.ScaleY, sentTime);
+            }
+
+            if (newState.HasScaleZ)
+            {
+                ScaleZInterpolator.AddMeasurement(newState.ScaleZ, sentTime);
+            }
         }
 
         private void Awake()
         {
             m_Transform = transform;
-            PositionInterpolator = new BufferedLinearInterpolatorVector3(TransformPosition);
-            RotationInterpolator = new BufferedLinearInterpolatorQuaternion(TransformRotation);
-            ScaleInterpolator = new BufferedLinearInterpolatorVector3(TransformScale);
+            SetInterpolator<BufferedLinearInterpolatorFloat>();
 
             ReplNetworkState.Settings.SendNetworkChannel = Channel;
             ReplNetworkState.Settings.SendTickrate = FixedSendsPerSecond;
@@ -528,37 +608,40 @@ namespace Unity.Netcode.Prototyping
 
         public void Start()
         {
-            PositionInterpolator.Start();
-            RotationInterpolator.Start();
-            ScaleInterpolator.Start();
+            foreach (var interpolator in AllInterpolators())
+            {
+                interpolator.Start();
+            }
         }
 
         public void OnEnable()
         {
-            PositionInterpolator.OnEnable();
-            RotationInterpolator.OnEnable();
-            ScaleInterpolator.OnEnable();
+            foreach (var interpolator in AllInterpolators())
+            {
+                interpolator.OnEnable();
+            }
         }
 
         public override void OnNetworkSpawn()
         {
-            m_PrevNetworkState = null;
+            var currentTime = new NetworkTime(NetworkManager.Singleton.ServerTime.TickRate, ReplNetworkState.Value.SentTime);
 
-            var currentTime = new NetworkTime(NetworkManager.Singleton.ServerTime.TickRate, m_NetworkState.Value.SentTime);
-
-            PositionInterpolator.OnNetworkSpawn();
-            RotationInterpolator.OnNetworkSpawn();
-            ScaleInterpolator.OnNetworkSpawn();
+            foreach (var interpolator in AllInterpolators())
+            {
+                interpolator.OnNetworkSpawn();
+            }
         }
+
         private void OnDestroy()
         {
             ReplNetworkState.OnValueChanged -= OnNetworkStateChanged;
 
-            PositionInterpolator.OnDestroy();
-            RotationInterpolator.OnDestroy();
-            ScaleInterpolator.OnDestroy();
+            foreach (var interpolator in AllInterpolators())
+            {
+                interpolator.OnDestroy();
+            }
         }
-		
+
         private void FixedUpdate()
         {
             if (!NetworkObject.IsSpawned)
@@ -566,37 +649,21 @@ namespace Unity.Netcode.Prototyping
                 return;
             }
 
-            if (IsServer)
-            {
-                ReplNetworkState.SetDirty(UpdateNetworkState(ref ReplNetworkState.ValueRef));
-            }
             // try to update previously consumed NetworkState
             // if we have any changes, that means made some updates locally
             // we apply the latest ReplNetworkState again to revert our changes
-            else if (UpdateNetworkState(ref PrevNetworkState))
+            if (!IsServer)
             {
-                ApplyNetworkState(ReplNetworkState.Value);
-            }
-        }
-
-        private void FixedUpdate()
-        {
-            if (!NetworkObject.IsSpawned)
-            {
-                return;
-            }
-
-            if (!CanUpdateTransform)
-            {
-                if (IsGhostStateDirty(m_PrevNetworkState))
+                if (UpdateNetworkStateCheckDirty(ref PrevNetworkState, 0)) // todo figure what time should be here
                 {
-                    Debug.LogWarning("A local change without authority detected, revert back to latest network state!", this);
-                    ApplyInterpolatedStateFromAuthority(m_NetworkState.Value);
+                    Debug.LogWarning("A local change without authority detected, reverting back to latest network state!", this);
+                    ApplyNetworkStateFromAuthority(ReplNetworkState.Value);
                 }
 
-                PositionInterpolator.FixedUpdate(NetworkManager.ServerTime.FixedDeltaTime);
-                RotationInterpolator.FixedUpdate(NetworkManager.ServerTime.FixedDeltaTime);
-                ScaleInterpolator.FixedUpdate(NetworkManager.ServerTime.FixedDeltaTime);
+                foreach (var interpolator in AllInterpolators())
+                {
+                    interpolator.FixedUpdate(NetworkManager.ServerTime.FixedDeltaTime);
+                }
             }
         }
 
@@ -607,21 +674,23 @@ namespace Unity.Netcode.Prototyping
                 return;
             }
 
-            if (CanUpdateTransform)
+            if (IsServer)
             {
                 if (IsAuthoritativeTransformDirty())
                 {
                     // check for time there was a change to the transform
                     // this needs to be done in Update to catch that time change as soon as it happens.
-                    SetNetworkStateDirtyToGhosts(NetworkManager.LocalTime.Time);
+                    ReplNetworkState.SetDirty(UpdateNetworkStateCheckDirty(ref ReplNetworkState.ValueRef, NetworkManager.LocalTime.Time));
                 }
             }
             else if (NetworkManager.Singleton.IsConnectedClient || NetworkManager.Singleton.IsListening)
             {
-                PositionInterpolator.Update(Time.deltaTime);
-                RotationInterpolator.Update(Time.deltaTime);
-                ScaleInterpolator.Update(Time.deltaTime);
-                ApplyInterpolatedStateFromAuthority(m_NetworkState.Value);
+                foreach (var interpolator in AllInterpolators())
+                {
+                    interpolator.Update(Time.deltaTime);
+                }
+
+                ApplyNetworkStateFromAuthority(ReplNetworkState.Value);
             }
         }
 

@@ -6159,8 +6159,6 @@ MonoBehaviour:
     LoadSceneTimeOut: 120
     MessageBufferTimeout: 20
     EnableNetworkLogs: 1
-    UseSnapshotDelta: 0
-    UseSnapshotSpawn: 0
 --- !u!4 &620561612
 Transform:
   m_ObjectHideFlags: 0
@@ -6196,8 +6194,8 @@ MonoBehaviour:
   channels: []
   MessageBufferSize: 5120
   SimulatePacketLossChance: 0
-  SimulateMinLatency: 70
-  SimulateMaxLatency: 130
+  SimulateMinLatency: 0
+  SimulateMaxLatency: 0
 --- !u!1001 &627808638
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -7402,7 +7400,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_MoveSpeed: 5
   m_RotationSpeed: 30
-  m_RunServerOnly: 0
+  m_RunServerOnly: 1
   m_RunInUpdate: 1
 --- !u!114 &678326394
 MonoBehaviour:
@@ -7432,8 +7430,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e96cb6065543e43c4a752faaa1468eb1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Authority: 0
   InLocalSpace: 0
+  SyncPositionX: 0
+  SyncPositionY: 1
+  SyncPositionZ: 1
+  SyncRotAngleX: 1
+  SyncRotAngleY: 0
+  SyncRotAngleZ: 1
+  SyncScaleX: 1
+  SyncScaleY: 1
+  SyncScaleZ: 1
+  PositionThreshold: 0
+  RotAngleThreshold: 0
+  ScaleThreshold: 0
   FixedSendsPerSecond: 30
 --- !u!65 &678326396
 BoxCollider:
