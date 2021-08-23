@@ -96,7 +96,7 @@ namespace Unity.Netcode
         /// </summary>
         private static bool s_IsSceneEventActive = false;
 
-#if UNITY_EDITOR
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
         private bool m_IsRunningUnitTest = SceneManager.GetActiveScene().name.StartsWith("InitTestScene");
 #endif
 
@@ -543,7 +543,9 @@ namespace Unity.Netcode
             }
             s_IsSceneEventActive = true;
             var sceneUnload = (AsyncOperation)null;
-#if UNITY_EDITOR
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            // In unit tests, we don't allow clients to unload scenes since
+            // MultiInstance unit tests share the same scene space.
             if (m_IsRunningUnitTest)
             {
                 sceneUnload = new AsyncOperation();
@@ -723,10 +725,10 @@ namespace Unity.Netcode
                 return;
             }
 
-#if UNITY_EDITOR
-            // During multiInstance testing, we bypass clients loading and just use the scene the server loaded
-            // (i.e. clients share the server's scene)
-            if(m_IsRunningUnitTest)
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            // In unit tests, we don't allow clients to load additional scenes since
+            // MultiInstance unit tests share the same scene space.
+            if (m_IsRunningUnitTest)
             {
                 // Send the loading message
                 OnSceneEvent?.Invoke(new SceneEvent()
@@ -738,6 +740,7 @@ namespace Unity.Netcode
                     ClientId = m_NetworkManager.LocalClientId
                 });
 
+                // Unit tests must mirror the server's scenes loaded dictionary, otherwise this portion will fail
                 if (ScenesLoaded.ContainsKey(SceneEventData.SceneHandle))
                 {
                     OnClientLoadedScene(ScenesLoaded[SceneEventData.SceneHandle]);
@@ -1026,17 +1029,18 @@ namespace Unity.Netcode
             // Check to see if the client already has loaded the scene to be loaded
             if (sceneName == activeScene.name)
             {
+                // If the client is already in the same scene, then pass through and
+                // don't try to reload it.
                 shouldPassThrough = true;
             }
 
-#if UNITY_EDITOR
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (m_IsRunningUnitTest)
             {
-                shouldPassThrough = loadSceneMode == LoadSceneMode.Single; // We can load additional additive scenes for clients
-                if (shouldPassThrough)
-                {
-                    sceneLoad = new AsyncOperation();
-                }
+                // In unit tests, we don't allow clients to load additional scenes since
+                // MultiInstance unit tests share the same scene space.
+                shouldPassThrough = true;
+                sceneLoad = new AsyncOperation();
             }
 #endif
             if (!shouldPassThrough)
