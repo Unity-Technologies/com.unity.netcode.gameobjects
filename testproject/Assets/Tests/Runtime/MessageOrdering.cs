@@ -12,6 +12,14 @@ namespace TestProject.RuntimeTests
     {
         private GameObject m_Prefab;
 
+        [UnitySetUp]
+        public IEnumerator SetUp()
+        {
+            // Make sure these static values are reset
+            Support.SpawnRpcDespawn.ClientUpdateCount = 0;
+            Support.SpawnRpcDespawn.ServerUpdateCount = 0;
+            yield break;
+        }
 
         [UnityTearDown]
         public IEnumerator Teardown()
@@ -70,7 +78,7 @@ namespace TestProject.RuntimeTests
             // Wait until all objects have spawned.
             const int expectedNetworkObjects = numClients + 2; // +2 = one for prefab, one for server.
             const int maxFrames = 240;
-            var doubleCheckTime = Time.realtimeSinceStartup + 10.0f;
+            var doubleCheckTime = Time.realtimeSinceStartup + 5.0f;
             while (Object.FindObjectsOfType<NetworkObject>().Length != expectedNetworkObjects)
             {
                 if (Time.frameCount > maxFrames)
@@ -143,7 +151,7 @@ namespace TestProject.RuntimeTests
             // Wait until all objects have spawned.
             int expectedCount = Support.SpawnRpcDespawn.ClientUpdateCount + 1;
             const int maxFrames = 240;
-            var doubleCheckTime = Time.realtimeSinceStartup + 1.0f;
+            var doubleCheckTime = Time.realtimeSinceStartup + 5.0f;
             while (Support.SpawnRpcDespawn.ClientUpdateCount < expectedCount)
             {
                 if (Time.frameCount > maxFrames)
