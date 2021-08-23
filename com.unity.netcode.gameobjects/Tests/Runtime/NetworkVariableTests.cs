@@ -61,12 +61,13 @@ namespace Unity.Netcode.RuntimeTests
         private const int k_TestVal1 = 111;
         private const int k_TestVal2 = 222;
         private const int k_TestVal3 = 333;
+        private const int k_TestVal4 = 444;
 
         private const int k_TestKey1 = 0x0f0f;
         private const int k_TestKey2 = 0xf0f0;
 
-        private NetworkVariableTest m_ServerVersionPlayer1Comp;
-        private NetworkVariableTest m_ServerVersionPlayer2Comp;
+        private NetworkVariableTest m_ServersPlayer1Comp;
+        private NetworkVariableTest m_ServersPlayer2Comp;
         private NetworkVariableTest m_ClientComp;
         private NetworkVariableTest m_ClientComp2;
 
@@ -88,12 +89,12 @@ namespace Unity.Netcode.RuntimeTests
             yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation(
                 x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId,
                 m_ServerNetworkManager, result1));
-            m_ServerVersionPlayer1Comp = result1.Result.GetComponent<NetworkVariableTest>();
+            m_ServersPlayer1Comp = result1.Result.GetComponent<NetworkVariableTest>();
 
             yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation(
                 x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[1].LocalClientId,
                 m_ServerNetworkManager, result2));
-            m_ServerVersionPlayer2Comp = result2.Result.GetComponent<NetworkVariableTest>();
+            m_ServersPlayer2Comp = result2.Result.GetComponent<NetworkVariableTest>();
 
             // This is the *CLIENT VERSION* of the *CLIENT PLAYER 1*
             var clientClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
@@ -112,11 +113,11 @@ namespace Unity.Netcode.RuntimeTests
             var clientSideClientPlayer2 = clientClientPlayerResult2.Result;
             m_ClientComp2 = clientSideClientPlayer2.GetComponent<NetworkVariableTest>();
 
-            m_ServerVersionPlayer1Comp.TheList.Clear();
-            m_ServerVersionPlayer1Comp.TheSet.Clear();
-            m_ServerVersionPlayer1Comp.TheDictionary.Clear();
+            m_ServersPlayer1Comp.TheList.Clear();
+            m_ServersPlayer1Comp.TheSet.Clear();
+            m_ServersPlayer1Comp.TheDictionary.Clear();
 
-            if (m_ServerVersionPlayer1Comp.TheList.Count > 0 || m_ServerVersionPlayer1Comp.TheSet.Count > 0 || m_ServerVersionPlayer1Comp.TheDictionary.Count > 0)
+            if (m_ServersPlayer1Comp.TheList.Count > 0 || m_ServersPlayer1Comp.TheSet.Count > 0 || m_ServersPlayer1Comp.TheDictionary.Count > 0)
             {
                 throw new Exception("at least one server network container not empty at start");
             }
@@ -172,37 +173,26 @@ namespace Unity.Netcode.RuntimeTests
             NetworkManagerHelper.ShutdownNetworkManager();
         }
 
-        [UnityTest]
-        public IEnumerator ServerPermissionTest()
+        [Test]
+        public void ClientWritePermissionTest()
         {
-            yield return MultiInstanceHelpers.RunAndWaitForCondition(
-                () =>
-                {
-                    m_ServerVersionPlayer1Comp.TheScalar.Value = k_TestVal1;
-                    m_ServerVersionPlayer2Comp.TheScalar.Value = k_TestVal2;
-                    m_ClientComp.TheScalar.Value = k_TestVal2;
-                    m_ClientComp2.TheScalar.Value = k_TestVal3;
-                },
-                () =>
-                {
-            // the client should not have overwritten the server, and the server's
-            //  write will stomp the client's value
-                    return m_ServerVersionPlayer1Comp.TheScalar.Value == k_TestVal1 &&
-                        m_ServerVersionPlayer2Comp.TheScalar.Value == k_TestVal2 &&
-                        m_ClientComp.TheScalar.Value == k_TestVal1 &&
-                        m_ClientComp2.TheScalar.Value == k_TestVal2;
-                }
-            );
+            // server must not be allowed to write to a client auth variable
+            Assert.Throws<InvalidOperationException>(() =>  m_ClientComp.TheScalar.Value = k_TestVal1);
+        }
+
+        [Test]
+        public void ServerWritePermissionTest()
+        {
+            // server must not be allowed to write to a client auth variable
+            Assert.Throws<InvalidOperationException>(() =>  m_ServersPlayer1Comp.ClientVar.Value = k_TestVal1);
         }
 
         [UnityTest]
-        public IEnumerator ClientPermissionTest()
+        public IEnumerator ClientNetvarTest()
         {
             yield return MultiInstanceHelpers.RunAndWaitForCondition(
                 () =>
                 {
-                    m_ServerVersionPlayer1Comp.ClientVar.Value = k_TestVal1;
-                    m_ServerVersionPlayer2Comp.ClientVar.Value = k_TestVal1;
                     m_ClientComp.ClientVar.Value = k_TestVal2;
                     m_ClientComp2.ClientVar.Value = k_TestVal3;
                 },
@@ -210,8 +200,8 @@ namespace Unity.Netcode.RuntimeTests
                 {
             // the client's values should win on the objects it owns
                     return
-                        m_ServerVersionPlayer1Comp.ClientVar.Value == k_TestVal2 &&
-                        m_ServerVersionPlayer2Comp.ClientVar.Value == k_TestVal3 &&
+                        m_ServersPlayer1Comp.ClientVar.Value == k_TestVal2 &&
+                        m_ServersPlayer2Comp.ClientVar.Value == k_TestVal3 &&
                         m_ClientComp.ClientVar.Value == k_TestVal2 &&
                         m_ClientComp2.ClientVar.Value == k_TestVal3;
                 }
@@ -224,18 +214,18 @@ namespace Unity.Netcode.RuntimeTests
             yield return MultiInstanceHelpers.RunAndWaitForCondition(
                 () =>
                 {
-                    m_ServerVersionPlayer1Comp.TheList.Add(k_TestVal1);
-                    m_ServerVersionPlayer1Comp.TheList.Add(k_TestVal2);
+                    m_ServersPlayer1Comp.TheList.Add(k_TestVal1);
+                    m_ServersPlayer1Comp.TheList.Add(k_TestVal2);
                 },
                 () =>
                 {
-                    return m_ServerVersionPlayer1Comp.TheList.Count == 2 &&
+                    return m_ServersPlayer1Comp.TheList.Count == 2 &&
                         m_ClientComp.TheList.Count == 2 &&
-                        m_ServerVersionPlayer1Comp.ListDelegateTriggered &&
+                        m_ServersPlayer1Comp.ListDelegateTriggered &&
                         m_ClientComp.ListDelegateTriggered &&
-                        m_ServerVersionPlayer1Comp.TheList[0] == k_TestVal1 &&
+                        m_ServersPlayer1Comp.TheList[0] == k_TestVal1 &&
                         m_ClientComp.TheList[0] == k_TestVal1 &&
-                        m_ServerVersionPlayer1Comp.TheList[1] == k_TestVal2 &&
+                        m_ServersPlayer1Comp.TheList[1] == k_TestVal2 &&
                         m_ClientComp.TheList[1] == k_TestVal2;
                 }
             );
@@ -248,14 +238,14 @@ namespace Unity.Netcode.RuntimeTests
             yield return NetworkListAdd();
 
             yield return MultiInstanceHelpers.RunAndWaitForCondition(
-                () => m_ServerVersionPlayer1Comp.TheList.RemoveAt(0),
+                () => m_ServersPlayer1Comp.TheList.RemoveAt(0),
                 () =>
                 {
-                    return m_ServerVersionPlayer1Comp.TheList.Count == 1 &&
+                    return m_ServersPlayer1Comp.TheList.Count == 1 &&
                            m_ClientComp.TheList.Count == 1 &&
-                           m_ServerVersionPlayer1Comp.ListDelegateTriggered &&
+                           m_ServersPlayer1Comp.ListDelegateTriggered &&
                            m_ClientComp.ListDelegateTriggered &&
-                           m_ServerVersionPlayer1Comp.TheList[0] == k_TestVal2 &&
+                           m_ServersPlayer1Comp.TheList[0] == k_TestVal2 &&
                            m_ClientComp.TheList[0] == k_TestVal2;
                 }
             );
@@ -268,13 +258,13 @@ namespace Unity.Netcode.RuntimeTests
             yield return NetworkListAdd();
 
             yield return MultiInstanceHelpers.RunAndWaitForCondition(
-                () => m_ServerVersionPlayer1Comp.TheList.Clear(),
+                () => m_ServersPlayer1Comp.TheList.Clear(),
                 () =>
                 {
                     return
-                        m_ServerVersionPlayer1Comp.ListDelegateTriggered &&
+                        m_ServersPlayer1Comp.ListDelegateTriggered &&
                         m_ClientComp.ListDelegateTriggered &&
-                        m_ServerVersionPlayer1Comp.TheList.Count == 0 &&
+                        m_ServersPlayer1Comp.TheList.Count == 0 &&
                         m_ClientComp.TheList.Count == 0;
                 }
             );
@@ -286,18 +276,18 @@ namespace Unity.Netcode.RuntimeTests
             yield return MultiInstanceHelpers.RunAndWaitForCondition(
                 () =>
                 {
-                    m_ServerVersionPlayer1Comp.TheSet.Add(k_TestVal1);
-                    m_ServerVersionPlayer1Comp.TheSet.Add(k_TestVal2);
+                    m_ServersPlayer1Comp.TheSet.Add(k_TestVal1);
+                    m_ServersPlayer1Comp.TheSet.Add(k_TestVal2);
                 },
                 () =>
                 {
-                    return m_ServerVersionPlayer1Comp.TheSet.Count == 2 &&
+                    return m_ServersPlayer1Comp.TheSet.Count == 2 &&
                            m_ClientComp.TheSet.Count == 2 &&
-                           m_ServerVersionPlayer1Comp.SetDelegateTriggered &&
+                           m_ServersPlayer1Comp.SetDelegateTriggered &&
                            m_ClientComp.SetDelegateTriggered &&
-                           m_ServerVersionPlayer1Comp.TheSet.Contains(k_TestVal1) &&
+                           m_ServersPlayer1Comp.TheSet.Contains(k_TestVal1) &&
                            m_ClientComp.TheSet.Contains(k_TestVal1) &&
-                           m_ServerVersionPlayer1Comp.TheSet.Contains(k_TestVal2) &&
+                           m_ServersPlayer1Comp.TheSet.Contains(k_TestVal2) &&
                            m_ClientComp.TheSet.Contains(k_TestVal2);
                 }
             );
@@ -312,15 +302,15 @@ namespace Unity.Netcode.RuntimeTests
             yield return MultiInstanceHelpers.RunAndWaitForCondition(
                 () =>
                 {
-                    m_ServerVersionPlayer1Comp.TheSet.Remove(k_TestVal1);
+                    m_ServersPlayer1Comp.TheSet.Remove(k_TestVal1);
                 },
                 () =>
                 {
-                    return m_ServerVersionPlayer1Comp.TheSet.Count == 1 &&
+                    return m_ServersPlayer1Comp.TheSet.Count == 1 &&
                            m_ClientComp.TheSet.Count == 1 &&
-                           m_ServerVersionPlayer1Comp.SetDelegateTriggered &&
+                           m_ServersPlayer1Comp.SetDelegateTriggered &&
                            m_ClientComp.SetDelegateTriggered &&
-                           m_ServerVersionPlayer1Comp.TheSet.Contains(k_TestVal2) &&
+                           m_ServersPlayer1Comp.TheSet.Contains(k_TestVal2) &&
                            m_ClientComp.TheSet.Contains(k_TestVal2);
                 }
             );
@@ -335,13 +325,13 @@ namespace Unity.Netcode.RuntimeTests
             yield return MultiInstanceHelpers.RunAndWaitForCondition(
                 () =>
                 {
-                    m_ServerVersionPlayer1Comp.TheSet.Clear();
+                    m_ServersPlayer1Comp.TheSet.Clear();
                 },
                 () =>
                 {
-                    return m_ServerVersionPlayer1Comp.TheSet.Count == 0 &&
+                    return m_ServersPlayer1Comp.TheSet.Count == 0 &&
                            m_ClientComp.TheSet.Count == 0 &&
-                           m_ServerVersionPlayer1Comp.SetDelegateTriggered &&
+                           m_ServersPlayer1Comp.SetDelegateTriggered &&
                            m_ClientComp.SetDelegateTriggered;
                 }
             );
@@ -353,18 +343,18 @@ namespace Unity.Netcode.RuntimeTests
             yield return MultiInstanceHelpers.RunAndWaitForCondition(
                 () =>
                 {
-                    m_ServerVersionPlayer1Comp.TheDictionary.Add(k_TestKey1, k_TestVal1);
-                    m_ServerVersionPlayer1Comp.TheDictionary.Add(k_TestKey2, k_TestVal2);
+                    m_ServersPlayer1Comp.TheDictionary.Add(k_TestKey1, k_TestVal1);
+                    m_ServersPlayer1Comp.TheDictionary.Add(k_TestKey2, k_TestVal2);
                 },
                 () =>
                 {
-                    return m_ServerVersionPlayer1Comp.TheDictionary.Count == 2 &&
+                    return m_ServersPlayer1Comp.TheDictionary.Count == 2 &&
                            m_ClientComp.TheDictionary.Count == 2 &&
-                           m_ServerVersionPlayer1Comp.DictionaryDelegateTriggered &&
+                           m_ServersPlayer1Comp.DictionaryDelegateTriggered &&
                            m_ClientComp.DictionaryDelegateTriggered &&
-                           m_ServerVersionPlayer1Comp.TheDictionary[k_TestKey1] == k_TestVal1 &&
+                           m_ServersPlayer1Comp.TheDictionary[k_TestKey1] == k_TestVal1 &&
                            m_ClientComp.TheDictionary[k_TestKey1] == k_TestVal1 &&
-                           m_ServerVersionPlayer1Comp.TheDictionary[k_TestKey2] == k_TestVal2 &&
+                           m_ServersPlayer1Comp.TheDictionary[k_TestKey2] == k_TestVal2 &&
                            m_ClientComp.TheDictionary[k_TestKey2] == k_TestVal2;
                 }
             );
@@ -382,15 +372,15 @@ namespace Unity.Netcode.RuntimeTests
             yield return MultiInstanceHelpers.RunAndWaitForCondition(
                 () =>
                 {
-                    m_ServerVersionPlayer1Comp.TheDictionary.Remove(k_TestKey2);
+                    m_ServersPlayer1Comp.TheDictionary.Remove(k_TestKey2);
                 },
                 () =>
                 {
-                    return m_ServerVersionPlayer1Comp.TheDictionary.Count == 1 &&
+                    return m_ServersPlayer1Comp.TheDictionary.Count == 1 &&
                            m_ClientComp.TheDictionary.Count == 1 &&
-                           m_ServerVersionPlayer1Comp.DictionaryDelegateTriggered &&
+                           m_ServersPlayer1Comp.DictionaryDelegateTriggered &&
                            m_ClientComp.DictionaryDelegateTriggered &&
-                           m_ServerVersionPlayer1Comp.TheDictionary[k_TestKey1] == k_TestVal1 &&
+                           m_ServersPlayer1Comp.TheDictionary[k_TestKey1] == k_TestVal1 &&
                            m_ClientComp.TheDictionary[k_TestKey1] == k_TestVal1;
                 }
             );
@@ -405,15 +395,15 @@ namespace Unity.Netcode.RuntimeTests
             yield return MultiInstanceHelpers.RunAndWaitForCondition(
                 () =>
                 {
-                    m_ServerVersionPlayer1Comp.TheDictionary[k_TestKey1] = k_TestVal3;
+                    m_ServersPlayer1Comp.TheDictionary[k_TestKey1] = k_TestVal3;
                 },
                 () =>
                 {
-                    return m_ServerVersionPlayer1Comp.TheDictionary.Count == 2 &&
+                    return m_ServersPlayer1Comp.TheDictionary.Count == 2 &&
                            m_ClientComp.TheDictionary.Count == 2 &&
-                           m_ServerVersionPlayer1Comp.DictionaryDelegateTriggered &&
+                           m_ServersPlayer1Comp.DictionaryDelegateTriggered &&
                            m_ClientComp.DictionaryDelegateTriggered &&
-                           m_ServerVersionPlayer1Comp.TheDictionary[k_TestKey1] == k_TestVal3 &&
+                           m_ServersPlayer1Comp.TheDictionary[k_TestKey1] == k_TestVal3 &&
                            m_ClientComp.TheDictionary[k_TestKey1] == k_TestVal3;
                 }
             );
@@ -428,13 +418,13 @@ namespace Unity.Netcode.RuntimeTests
             yield return MultiInstanceHelpers.RunAndWaitForCondition(
                 () =>
                 {
-                    m_ServerVersionPlayer1Comp.TheDictionary.Clear();
+                    m_ServersPlayer1Comp.TheDictionary.Clear();
                 },
                 () =>
                 {
-                    return m_ServerVersionPlayer1Comp.TheDictionary.Count == 0 &&
+                    return m_ServersPlayer1Comp.TheDictionary.Count == 0 &&
                            m_ClientComp.TheDictionary.Count == 0 &&
-                           m_ServerVersionPlayer1Comp.DictionaryDelegateTriggered &&
+                           m_ServersPlayer1Comp.DictionaryDelegateTriggered &&
                            m_ClientComp.DictionaryDelegateTriggered;
                 }
             );
@@ -446,9 +436,9 @@ namespace Unity.Netcode.RuntimeTests
             yield return MultiInstanceHelpers.RunAndWaitForCondition(
                 () =>
                 {
-                    m_ServerVersionPlayer1Comp.TheStruct.Value =
+                    m_ServersPlayer1Comp.TheStruct.Value =
                         new TestStruct() { SomeInt = k_TestUInt, SomeBool = false };
-                    m_ServerVersionPlayer1Comp.TheStruct.SetDirty(true);
+                    m_ServersPlayer1Comp.TheStruct.SetDirty(true);
                 },
                 () =>
                 {

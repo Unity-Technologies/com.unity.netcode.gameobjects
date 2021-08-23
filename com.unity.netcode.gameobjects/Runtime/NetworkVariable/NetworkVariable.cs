@@ -56,33 +56,35 @@ namespace Unity.Netcode
         private protected T m_InternalValue;
 
         /// <summary>
-        /// The temporary accessor to enable struct element access until [MTT-1020] complete
-        /// </summary>
-        public ref T ValueRef
-        {
-            get => ref m_InternalValue;
-        }
-
-        /// <summary>
         /// The value of the NetworkVariable container
         /// </summary>
-        public T Value
+        public virtual T Value
         {
             get => m_InternalValue;
             set
             {
-                if (EqualityComparer<T>.Default.Equals(m_InternalValue, value))
+                // this could be improved. The Networking Manager is not always initialized here
+                //  Good place to decouple network manager from the network variable
+                if (m_NetworkBehaviour && m_NetworkBehaviour.NetworkManager.IsClient)
                 {
-                    return;
+                    throw new InvalidOperationException("Client can't write to NetworkVariables");
                 }
-
-                m_IsDirty = true;
-                T previousValue = m_InternalValue;
-                m_InternalValue = value;
-                OnValueChanged?.Invoke(previousValue, m_InternalValue);
+                Set(value);
             }
         }
 
+        private protected void Set(T value)
+        {
+            if (EqualityComparer<T>.Default.Equals(m_InternalValue, value))
+            {
+                return;
+            }
+
+            m_IsDirty = true;
+            T previousValue = m_InternalValue;
+            m_InternalValue = value;
+            OnValueChanged?.Invoke(previousValue, m_InternalValue);
+        }
 
         /// <summary>
         /// Writes the variable to the writer

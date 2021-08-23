@@ -385,7 +385,14 @@ namespace Unity.Netcode.Prototyping
 
             if (IsServer)
             {
-                ReplNetworkState.SetDirty(UpdateNetworkState(ref ReplNetworkState.ValueRef));
+                // save off current value
+                var tmp = ReplNetworkState.Value;
+
+                // mutate the tmp value, set dirty if we mutated it
+                ReplNetworkState.SetDirty(UpdateNetworkState(ref tmp));
+
+                // commit the value
+                ReplNetworkState.Value = tmp;
             }
             // try to update previously consumed NetworkState
             // if we have any changes, that means made some updates locally

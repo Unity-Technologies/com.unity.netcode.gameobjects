@@ -652,6 +652,8 @@ namespace Unity.Netcode
 
                     if (networkManager.IsServer && !networkVariableList[i].CanClientWrite(clientId))
                     {
+                        // we are choosing not to fire an exception here, because otherwise a malicious client could use
+                        //  this to crash the server
                         if (networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                         {
                             if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
@@ -671,7 +673,6 @@ namespace Unity.Netcode
                         //A dummy read COULD be added to the interface for this situation, but it's just being too nice.
                         //This is after all a developer fault. A critical error should be fine.
                         // - TwoTen
-
                         if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
                         {
                             NetworkLog.LogError($"Client wrote to {typeof(NetworkVariable<>).Name} without permission. No more variables can be read. This is critical. => {(logInstance != null ? ($"{nameof(NetworkObjectId)}: {logInstance.NetworkObjectId} - {nameof(NetworkObject.GetNetworkBehaviourOrderIndex)}(): {logInstance.NetworkObject.GetNetworkBehaviourOrderIndex(logInstance)} - VariableIndex: {i}") : string.Empty)}");

@@ -1,5 +1,6 @@
 using NUnit.Framework;
 using Unity.Netcode.Prototyping;
+using UnityEditor.AssetImporters;
 using UnityEngine;
 
 namespace Unity.Netcode.RuntimeTests
@@ -66,7 +67,9 @@ namespace Unity.Netcode.RuntimeTests
                 networkTransform.transform.eulerAngles = new Vector3(30, 45, 90);
                 networkTransform.transform.localScale = new Vector3(1.1f, 0.5f, 2.5f);
 
-                bool isDirty = networkTransform.UpdateNetworkState(ref networkTransform.ReplNetworkState.ValueRef);
+                var tmp = networkTransform.ReplNetworkState.Value;
+                bool isDirty = networkTransform.UpdateNetworkState(ref tmp);
+                networkTransform.ReplNetworkState.Value = tmp;
                 networkTransform.ReplNetworkState.SetDirty(isDirty);
                 Assert.IsTrue(isDirty);
             }
@@ -75,7 +78,9 @@ namespace Unity.Netcode.RuntimeTests
             {
                 networkTransform.ApplyNetworkState(networkTransform.ReplNetworkState.Value);
 
-                bool isDirty = networkTransform.UpdateNetworkState(ref networkTransform.ReplNetworkState.ValueRef);
+                var tmp = networkTransform.ReplNetworkState.Value;
+                bool isDirty = networkTransform.UpdateNetworkState(ref tmp);
+                networkTransform.ReplNetworkState.Value = tmp;
                 Assert.IsFalse(isDirty);
             }
 
@@ -92,7 +97,9 @@ namespace Unity.Netcode.RuntimeTests
                     position.x++;
                     networkTransform.transform.position = position;
 
-                    Assert.IsFalse(networkTransform.UpdateNetworkState(ref networkTransform.ReplNetworkState.ValueRef));
+                    var tmp = networkTransform.ReplNetworkState.Value;
+                    Assert.IsFalse(networkTransform.UpdateNetworkState(ref tmp));
+                    networkTransform.ReplNetworkState.Value = tmp;
                 }
                 // SyncPositionY
                 {
@@ -101,7 +108,9 @@ namespace Unity.Netcode.RuntimeTests
                     position.y++;
                     networkTransform.transform.position = position;
 
-                    Assert.IsFalse(networkTransform.UpdateNetworkState(ref networkTransform.ReplNetworkState.ValueRef));
+                    var tmp = networkTransform.ReplNetworkState.Value;
+                    Assert.IsFalse(networkTransform.UpdateNetworkState(ref tmp));
+                    networkTransform.ReplNetworkState.Value = tmp;
                 }
                 // SyncPositionZ
                 {
@@ -110,7 +119,9 @@ namespace Unity.Netcode.RuntimeTests
                     position.z++;
                     networkTransform.transform.position = position;
 
-                    Assert.IsFalse(networkTransform.UpdateNetworkState(ref networkTransform.ReplNetworkState.ValueRef));
+                    var tmp = networkTransform.ReplNetworkState.Value;
+                    Assert.IsFalse(networkTransform.UpdateNetworkState(ref tmp));
+                    networkTransform.ReplNetworkState.Value = tmp;
                 }
 
                 // SyncRotAngleX
@@ -120,7 +131,9 @@ namespace Unity.Netcode.RuntimeTests
                     rotAngles.x++;
                     networkTransform.transform.eulerAngles = rotAngles;
 
-                    Assert.IsFalse(networkTransform.UpdateNetworkState(ref networkTransform.ReplNetworkState.ValueRef));
+                    var tmp = networkTransform.ReplNetworkState.Value;
+                    Assert.IsFalse(networkTransform.UpdateNetworkState(ref tmp));
+                    networkTransform.ReplNetworkState.Value = tmp;
                 }
                 // SyncRotAngleY
                 {
@@ -129,7 +142,9 @@ namespace Unity.Netcode.RuntimeTests
                     rotAngles.y++;
                     networkTransform.transform.eulerAngles = rotAngles;
 
-                    Assert.IsFalse(networkTransform.UpdateNetworkState(ref networkTransform.ReplNetworkState.ValueRef));
+                    var tmp = networkTransform.ReplNetworkState.Value;
+                    Assert.IsFalse(networkTransform.UpdateNetworkState(ref tmp));
+                    networkTransform.ReplNetworkState.Value = tmp;
                 }
                 // SyncRotAngleZ
                 {
@@ -138,7 +153,9 @@ namespace Unity.Netcode.RuntimeTests
                     rotAngles.z++;
                     networkTransform.transform.eulerAngles = rotAngles;
 
-                    Assert.IsFalse(networkTransform.UpdateNetworkState(ref networkTransform.ReplNetworkState.ValueRef));
+                    var tmp = networkTransform.ReplNetworkState.Value;
+                    Assert.IsFalse(networkTransform.UpdateNetworkState(ref tmp));
+                    networkTransform.ReplNetworkState.Value = tmp;
                 }
 
                 // SyncScaleX
@@ -148,7 +165,9 @@ namespace Unity.Netcode.RuntimeTests
                     scale.x++;
                     networkTransform.transform.localScale = scale;
 
-                    Assert.IsFalse(networkTransform.UpdateNetworkState(ref networkTransform.ReplNetworkState.ValueRef));
+                    var tmp = networkTransform.ReplNetworkState.Value;
+                    Assert.IsFalse(networkTransform.UpdateNetworkState(ref tmp));
+                    networkTransform.ReplNetworkState.Value = tmp;
                 }
                 // SyncScaleY
                 {
@@ -157,7 +176,9 @@ namespace Unity.Netcode.RuntimeTests
                     scale.y++;
                     networkTransform.transform.localScale = scale;
 
-                    Assert.IsFalse(networkTransform.UpdateNetworkState(ref networkTransform.ReplNetworkState.ValueRef));
+                    var tmp = networkTransform.ReplNetworkState.Value;
+                    Assert.IsFalse(networkTransform.UpdateNetworkState(ref tmp));
+                    networkTransform.ReplNetworkState.Value = tmp;
                 }
                 // SyncScaleZ
                 {
@@ -166,7 +187,9 @@ namespace Unity.Netcode.RuntimeTests
                     scale.z++;
                     networkTransform.transform.localScale = scale;
 
-                    Assert.IsFalse(networkTransform.UpdateNetworkState(ref networkTransform.ReplNetworkState.ValueRef));
+                    var tmp = networkTransform.ReplNetworkState.Value;
+                    Assert.IsFalse(networkTransform.UpdateNetworkState(ref tmp));
+                    networkTransform.ReplNetworkState.Value = tmp;
                 }
             }
 
@@ -227,7 +250,9 @@ namespace Unity.Netcode.RuntimeTests
                 networkTransform.transform.eulerAngles = new Vector3(30, 45, 90);
                 networkTransform.transform.localScale = new Vector3(1.1f, 0.5f, 2.5f);
 
-                bool isDirty = networkTransform.UpdateNetworkState(ref networkTransform.ReplNetworkState.ValueRef);
+                var tmp = networkTransform.ReplNetworkState.Value;
+                bool isDirty = networkTransform.UpdateNetworkState(ref tmp);
+                networkTransform.ReplNetworkState.Value = tmp;
                 networkTransform.ReplNetworkState.SetDirty(isDirty);
                 Assert.IsTrue(isDirty);
             }
@@ -236,7 +261,10 @@ namespace Unity.Netcode.RuntimeTests
             {
                 networkTransform.ApplyNetworkState(networkTransform.ReplNetworkState.Value);
 
-                bool isDirty = networkTransform.UpdateNetworkState(ref networkTransform.ReplNetworkState.ValueRef);
+                var tmp = networkTransform.ReplNetworkState.Value;
+                bool isDirty = networkTransform.UpdateNetworkState(ref tmp);
+                networkTransform.ReplNetworkState.Value = tmp;
+                networkTransform.ReplNetworkState.SetDirty(isDirty);
                 Assert.IsFalse(isDirty);
             }
 
@@ -253,42 +281,61 @@ namespace Unity.Netcode.RuntimeTests
                     {
                         position.x += positionThreshold / 2;
                         networkTransform.transform.position = position;
-                        Assert.IsFalse(networkTransform.UpdateNetworkState(ref networkTransform.ReplNetworkState.ValueRef));
+                        var tmp = networkTransform.ReplNetworkState.Value;
+                        Assert.IsFalse(networkTransform.UpdateNetworkState(ref tmp));
+                        networkTransform.ReplNetworkState.Value = tmp;
 
                         position.x += positionThreshold * 2;
                         networkTransform.transform.position = position;
-                        Assert.IsTrue(networkTransform.UpdateNetworkState(ref networkTransform.ReplNetworkState.ValueRef));
+
+                        tmp = networkTransform.ReplNetworkState.Value;
+                        Assert.IsTrue(networkTransform.UpdateNetworkState(ref tmp));
+                        networkTransform.ReplNetworkState.Value = tmp;
 
                         networkTransform.ApplyNetworkState(networkTransform.ReplNetworkState.Value);
-                        Assert.IsFalse(networkTransform.UpdateNetworkState(ref networkTransform.ReplNetworkState.ValueRef));
+                        tmp = networkTransform.ReplNetworkState.Value;
+                        Assert.IsFalse(networkTransform.UpdateNetworkState(ref tmp));
+                        networkTransform.ReplNetworkState.Value = tmp;
                     }
 
                     // PositionY
                     {
                         position.y += positionThreshold / 2;
                         networkTransform.transform.position = position;
-                        Assert.IsFalse(networkTransform.UpdateNetworkState(ref networkTransform.ReplNetworkState.ValueRef));
+                        var tmp = networkTransform.ReplNetworkState.Value;
+                        Assert.IsFalse(networkTransform.UpdateNetworkState(ref tmp));
+                        networkTransform.ReplNetworkState.Value = tmp;
 
                         position.y += positionThreshold * 2;
                         networkTransform.transform.position = position;
-                        Assert.IsTrue(networkTransform.UpdateNetworkState(ref networkTransform.ReplNetworkState.ValueRef));
+                        tmp = networkTransform.ReplNetworkState.Value;
+                        Assert.IsTrue(networkTransform.UpdateNetworkState(ref tmp));
+                        networkTransform.ReplNetworkState.Value = tmp;
 
                         networkTransform.ApplyNetworkState(networkTransform.ReplNetworkState.Value);
-                        Assert.IsFalse(networkTransform.UpdateNetworkState(ref networkTransform.ReplNetworkState.ValueRef));
+                        tmp = networkTransform.ReplNetworkState.Value;
+                        Assert.IsFalse(networkTransform.UpdateNetworkState(ref tmp));
+                        networkTransform.ReplNetworkState.Value = tmp;
                     }
 
                     // PositionZ
                     {
                         position.z += positionThreshold / 2;
                         networkTransform.transform.position = position;
-                        Assert.IsFalse(networkTransform.UpdateNetworkState(ref networkTransform.ReplNetworkState.ValueRef));
+                        var tmp = networkTransform.ReplNetworkState.Value;
+                        Assert.IsFalse(networkTransform.UpdateNetworkState(ref tmp));
+                        networkTransform.ReplNetworkState.Value = tmp;
 
                         position.z += positionThreshold * 2;
                         networkTransform.transform.position = position;
-                        Assert.IsTrue(networkTransform.UpdateNetworkState(ref networkTransform.ReplNetworkState.ValueRef));
+                        tmp = networkTransform.ReplNetworkState.Value;
+                        Assert.IsTrue(networkTransform.UpdateNetworkState(ref tmp));
+                        networkTransform.ReplNetworkState.Value = tmp;
 
                         networkTransform.ApplyNetworkState(networkTransform.ReplNetworkState.Value);
-                        Assert.IsFalse(networkTransform.UpdateNetworkState(ref networkTransform.ReplNetworkState.ValueRef));
+                        tmp = networkTransform.ReplNetworkState.Value;
+                        Assert.IsFalse(networkTransform.UpdateNetworkState(ref tmp));
+                        networkTransform.ReplNetworkState.Value = tmp;
                     }
                 }
 
@@ -301,42 +348,60 @@ namespace Unity.Netcode.RuntimeTests
                     {
                         rotAngles.x += rotAngleThreshold / 2;
                         networkTransform.transform.eulerAngles = rotAngles;
-                        Assert.IsFalse(networkTransform.UpdateNetworkState(ref networkTransform.ReplNetworkState.ValueRef));
+                        var tmp = networkTransform.ReplNetworkState.Value;
+                        Assert.IsFalse(networkTransform.UpdateNetworkState(ref tmp));
+                        networkTransform.ReplNetworkState.Value = tmp;
 
                         rotAngles.x += rotAngleThreshold * 2;
                         networkTransform.transform.eulerAngles = rotAngles;
-                        Assert.IsTrue(networkTransform.UpdateNetworkState(ref networkTransform.ReplNetworkState.ValueRef));
+                        tmp = networkTransform.ReplNetworkState.Value;
+                        Assert.IsTrue(networkTransform.UpdateNetworkState(ref tmp));
+                        networkTransform.ReplNetworkState.Value = tmp;
 
                         networkTransform.ApplyNetworkState(networkTransform.ReplNetworkState.Value);
-                        Assert.IsFalse(networkTransform.UpdateNetworkState(ref networkTransform.ReplNetworkState.ValueRef));
+                        tmp = networkTransform.ReplNetworkState.Value;
+                        Assert.IsFalse(networkTransform.UpdateNetworkState(ref tmp));
+                        networkTransform.ReplNetworkState.Value = tmp;
                     }
 
                     // RotAngleY
                     {
                         rotAngles.y += rotAngleThreshold / 2;
                         networkTransform.transform.eulerAngles = rotAngles;
-                        Assert.IsFalse(networkTransform.UpdateNetworkState(ref networkTransform.ReplNetworkState.ValueRef));
+                        var tmp = networkTransform.ReplNetworkState.Value;
+                        Assert.IsFalse(networkTransform.UpdateNetworkState(ref tmp));
+                        networkTransform.ReplNetworkState.Value = tmp;
 
                         rotAngles.y += rotAngleThreshold * 2;
                         networkTransform.transform.eulerAngles = rotAngles;
-                        Assert.IsTrue(networkTransform.UpdateNetworkState(ref networkTransform.ReplNetworkState.ValueRef));
+                        tmp = networkTransform.ReplNetworkState.Value;
+                        Assert.IsTrue(networkTransform.UpdateNetworkState(ref tmp));
+                        networkTransform.ReplNetworkState.Value = tmp;
 
                         networkTransform.ApplyNetworkState(networkTransform.ReplNetworkState.Value);
-                        Assert.IsFalse(networkTransform.UpdateNetworkState(ref networkTransform.ReplNetworkState.ValueRef));
+                        tmp = networkTransform.ReplNetworkState.Value;
+                        Assert.IsFalse(networkTransform.UpdateNetworkState(ref tmp));
+                        networkTransform.ReplNetworkState.Value = tmp;
                     }
 
                     // RotAngleZ
                     {
                         rotAngles.z += rotAngleThreshold / 2;
                         networkTransform.transform.eulerAngles = rotAngles;
-                        Assert.IsFalse(networkTransform.UpdateNetworkState(ref networkTransform.ReplNetworkState.ValueRef));
+                        var tmp = networkTransform.ReplNetworkState.Value;
+                        Assert.IsFalse(networkTransform.UpdateNetworkState(ref tmp));
+                        networkTransform.ReplNetworkState.Value = tmp;
 
                         rotAngles.z += rotAngleThreshold * 2;
                         networkTransform.transform.eulerAngles = rotAngles;
-                        Assert.IsTrue(networkTransform.UpdateNetworkState(ref networkTransform.ReplNetworkState.ValueRef));
+                        tmp = networkTransform.ReplNetworkState.Value;
+                        Assert.IsTrue(networkTransform.UpdateNetworkState(ref tmp));
+                        networkTransform.ReplNetworkState.Value = tmp;
 
                         networkTransform.ApplyNetworkState(networkTransform.ReplNetworkState.Value);
-                        Assert.IsFalse(networkTransform.UpdateNetworkState(ref networkTransform.ReplNetworkState.ValueRef));
+                        tmp = networkTransform.ReplNetworkState.Value;
+                        Assert.IsFalse(networkTransform.UpdateNetworkState(ref tmp));
+                        networkTransform.ReplNetworkState.Value = tmp;
                     }
                 }
 
@@ -349,42 +414,60 @@ namespace Unity.Netcode.RuntimeTests
                     {
                         scale.x += scaleThreshold / 2;
                         networkTransform.transform.localScale = scale;
-                        Assert.IsFalse(networkTransform.UpdateNetworkState(ref networkTransform.ReplNetworkState.ValueRef));
+                        var tmp = networkTransform.ReplNetworkState.Value;
+                        Assert.IsFalse(networkTransform.UpdateNetworkState(ref tmp));
+                        networkTransform.ReplNetworkState.Value = tmp;
 
                         scale.x += scaleThreshold * 2;
                         networkTransform.transform.localScale = scale;
-                        Assert.IsTrue(networkTransform.UpdateNetworkState(ref networkTransform.ReplNetworkState.ValueRef));
+                        tmp = networkTransform.ReplNetworkState.Value;
+                        Assert.IsTrue(networkTransform.UpdateNetworkState(ref tmp));
+                        networkTransform.ReplNetworkState.Value = tmp;
 
                         networkTransform.ApplyNetworkState(networkTransform.ReplNetworkState.Value);
-                        Assert.IsFalse(networkTransform.UpdateNetworkState(ref networkTransform.ReplNetworkState.ValueRef));
+                        tmp = networkTransform.ReplNetworkState.Value;
+                        Assert.IsFalse(networkTransform.UpdateNetworkState(ref tmp));
+                        networkTransform.ReplNetworkState.Value = tmp;
                     }
 
                     // ScaleY
                     {
                         scale.y += scaleThreshold / 2;
                         networkTransform.transform.localScale = scale;
-                        Assert.IsFalse(networkTransform.UpdateNetworkState(ref networkTransform.ReplNetworkState.ValueRef));
+                        var tmp = networkTransform.ReplNetworkState.Value;
+                        Assert.IsFalse(networkTransform.UpdateNetworkState(ref tmp));
+                        networkTransform.ReplNetworkState.Value = tmp;
 
                         scale.y += scaleThreshold * 2;
                         networkTransform.transform.localScale = scale;
-                        Assert.IsTrue(networkTransform.UpdateNetworkState(ref networkTransform.ReplNetworkState.ValueRef));
+                        tmp = networkTransform.ReplNetworkState.Value;
+                        Assert.IsTrue(networkTransform.UpdateNetworkState(ref tmp));
+                        networkTransform.ReplNetworkState.Value = tmp;
 
                         networkTransform.ApplyNetworkState(networkTransform.ReplNetworkState.Value);
-                        Assert.IsFalse(networkTransform.UpdateNetworkState(ref networkTransform.ReplNetworkState.ValueRef));
+                        tmp = networkTransform.ReplNetworkState.Value;
+                        Assert.IsFalse(networkTransform.UpdateNetworkState(ref tmp));
+                        networkTransform.ReplNetworkState.Value = tmp;
                     }
 
                     // ScaleZ
                     {
                         scale.z += scaleThreshold / 2;
                         networkTransform.transform.localScale = scale;
-                        Assert.IsFalse(networkTransform.UpdateNetworkState(ref networkTransform.ReplNetworkState.ValueRef));
+                        var tmp = networkTransform.ReplNetworkState.Value;
+                        Assert.IsFalse(networkTransform.UpdateNetworkState(ref tmp));
+                        networkTransform.ReplNetworkState.Value = tmp;
 
                         scale.z += scaleThreshold * 2;
                         networkTransform.transform.localScale = scale;
-                        Assert.IsTrue(networkTransform.UpdateNetworkState(ref networkTransform.ReplNetworkState.ValueRef));
+                        tmp = networkTransform.ReplNetworkState.Value;
+                        Assert.IsTrue(networkTransform.UpdateNetworkState(ref tmp));
+                        networkTransform.ReplNetworkState.Value = tmp;
 
                         networkTransform.ApplyNetworkState(networkTransform.ReplNetworkState.Value);
-                        Assert.IsFalse(networkTransform.UpdateNetworkState(ref networkTransform.ReplNetworkState.ValueRef));
+                        tmp = networkTransform.ReplNetworkState.Value;
+                        Assert.IsFalse(networkTransform.UpdateNetworkState(ref tmp));
+                        networkTransform.ReplNetworkState.Value = tmp;
                     }
                 }
             }
