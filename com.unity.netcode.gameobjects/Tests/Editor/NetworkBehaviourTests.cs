@@ -65,7 +65,7 @@ namespace Unity.Netcode.EditorTests
         }
 
         // Note: in order to repro https://github.com/Unity-Technologies/com.unity.netcode.gameobjects/issues/1078
-        // this class must be defined first in the file so that the most-derived definition is processed first by ILPP
+        // this child class must be defined before its parent to assure it is processed first by ILPP
         public class DerivedNetworkBehaviour : EmptyNetworkBehaviour
         {
 
