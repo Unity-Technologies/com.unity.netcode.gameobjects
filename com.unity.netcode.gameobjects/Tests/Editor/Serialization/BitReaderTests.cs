@@ -279,6 +279,33 @@ namespace Unity.Netcode.EditorTests
         }
         
         [Test]
+        public unsafe void TestReadingMultipleBytesToLongs([Range(1, 64)] int numBits)
+        {
+            ulong value = 0xFFFFFFFFFFFFFFFF;
+            FastBufferReader reader = new FastBufferReader((byte*)&value, Allocator.Temp, sizeof(ulong));
+            using (reader)
+            {
+                ulong* asUlong = (ulong*) reader.GetUnsafePtr();
+                
+                Assert.AreEqual(value, *asUlong);
+                var mask = 0UL;
+                for (var i = 0; i < numBits; ++i)
+                {
+                    mask |= (1UL << i);
+                }
+
+                ulong readValue;
+
+                Assert.IsTrue(reader.VerifyCanRead(sizeof(ulong)));
+                using (var bitReader = reader.EnterBitwiseContext())
+                {
+                    bitReader.ReadBits(out readValue, numBits);
+                }
+                Assert.AreEqual(value & mask, readValue);
+            }
+        }
+        
+        [Test]
         public unsafe void TestReadingBitsThrowsIfVerifyCanReadNotCalled()
         {
             var nativeArray = new NativeArray<byte>(4, Allocator.Temp);

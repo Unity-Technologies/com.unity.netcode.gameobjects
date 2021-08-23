@@ -2,7 +2,7 @@
 
 namespace Unity.Multiplayer.Netcode
 {
-    public ref struct Ref<T> where T: unmanaged
+    public struct Ref<T> where T: unmanaged
     {
         private unsafe T* m_Value;
 
@@ -13,6 +13,8 @@ namespace Unity.Multiplayer.Netcode
                 m_Value = ptr;
             }
         }
+
+        public unsafe bool IsSet => m_Value != null;
 
         public unsafe ref T Value
         {

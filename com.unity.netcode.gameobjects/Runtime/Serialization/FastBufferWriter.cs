@@ -340,7 +340,7 @@ namespace Unity.Multiplayer.Netcode
             throw new ArgumentException($"{nameof(FastBufferWriter)} cannot write type {value.GetType().Name} - it does not implement {nameof(INetworkSerializable)}");
         }
 
-        public void WriteValue<T>(T value) where T : INetworkSerializable
+        public void WriteNetworkSerializable<T>(in T value) where T : INetworkSerializable
         {
             // TODO
         }

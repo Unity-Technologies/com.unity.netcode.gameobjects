@@ -358,10 +358,10 @@ namespace Unity.Multiplayer.Netcode
             throw new ArgumentException($"{nameof(FastBufferReader)} cannot read type {type.Name} - it does not implement {nameof(INetworkSerializable)}");
         }
 
-        /*public void ReadValue<T>(ref T value) where T : INetworkSerializable
+        public void ReadNetworkSerializable<T>(out T value) where T : INetworkSerializable
         {
-            // TODO
-        }*/
+            throw new NotImplementedException();
+        }
 
         public void ReadValue(out GameObject value)
         {

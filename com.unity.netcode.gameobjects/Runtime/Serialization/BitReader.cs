@@ -188,7 +188,7 @@ namespace Unity.Multiplayer.Netcode
                     *(ushort*) (ptr+4) = *(ushort*)(bufferPointer+4);
                     break;
                 case 7:
-                    *(uint*) ptr = *(uint*)ptr;
+                    *(uint*) ptr = *(uint*)bufferPointer;
                     *(ushort*) (ptr+4) = *(ushort*)(bufferPointer+4);
                     *(ptr+6) = *(bufferPointer+6);
                     break;
