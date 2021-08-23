@@ -16,7 +16,7 @@ namespace Unity.Netcode
         /// <summary>
         /// The different types of scene events communicated between a server and client.
         /// Scene event types can be:
-        /// A Server To Client Event (S2C)
+        /// A Server to Client Event (S2C)
         /// A Client to Server Event (C2S)
         /// </summary>
         public enum SceneEventTypes
@@ -337,12 +337,21 @@ namespace Unity.Netcode
                     }
                 case SceneEventTypes.C2S_SyncComplete:
                     {
-                        WriteClientSynchronizationResults(writer);
+                        // If snapshot system is handling adding and destroying NetworkObjects
+                        // then we do not need the resynchronization step
+                        if (!m_NetworkManager.NetworkConfig.UseSnapshotSpawn)
+                        {
+                            WriteClientSynchronizationResults(writer);
+                        }
+
                         break;
                     }
                 case SceneEventTypes.S2C_ReSync:
                     {
-                        WriteClientReSynchronizationData(writer);
+                        if (!m_NetworkManager.NetworkConfig.UseSnapshotSpawn)
+                        {
+                            WriteClientReSynchronizationData(writer);
+                        }
                         break;
                     }
                 case SceneEventTypes.S2C_LoadComplete:
@@ -480,7 +489,12 @@ namespace Unity.Netcode
                     }
                 case SceneEventTypes.C2S_SyncComplete:
                     {
-                        CheckClientSynchronizationResults(reader);
+                        // If snapshot system is handling adding and destroying NetworkObjects
+                        // then we do not need the resynchronization step
+                        if (!m_NetworkManager.NetworkConfig.UseSnapshotSpawn)
+                        {
+                            CheckClientSynchronizationResults(reader);
+                        }
                         break;
                     }
                 case SceneEventTypes.S2C_Load:
@@ -494,7 +508,12 @@ namespace Unity.Netcode
                     }
                 case SceneEventTypes.S2C_ReSync:
                     {
-                        ReadClientReSynchronizationData(reader);
+                        // If snapshot system is handling adding and destroying NetworkObjects
+                        // then we do not need the resynchronization step
+                        if (!m_NetworkManager.NetworkConfig.UseSnapshotSpawn)
+                        {
+                            ReadClientReSynchronizationData(reader);
+                        }
                         break;
                     }
                 case SceneEventTypes.S2C_LoadComplete:
