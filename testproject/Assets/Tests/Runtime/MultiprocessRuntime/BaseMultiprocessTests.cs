@@ -61,7 +61,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             NetworkManager.Singleton.StartHost();
             for (int i = 0; i < WorkerCount; i++)
             {
-                MultiprocessOrchestration.StartWorkersOnRemoteNodes(); // will automatically start built player as clients
+                MultiprocessOrchestration.StartWorkerOnNodes(); // will automatically start built player as clients remotely, if available, otherwise locally
             }
 
             m_SceneHasLoaded = true;

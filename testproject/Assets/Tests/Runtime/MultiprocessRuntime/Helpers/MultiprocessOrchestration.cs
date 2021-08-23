@@ -11,10 +11,11 @@ public class MultiprocessOrchestration
 {
     public const string IsWorkerArg = "-isWorker";
 
-    public static void StartWorkersOnRemoteNodes()
+    public static void StartWorkerOnNodes()
     {
+        Debug.Log("Determine whether to start on local or remote nodes");
         string userprofile = "";
-        
+
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
             userprofile = Environment.GetEnvironmentVariable("USERPROFILE");
@@ -28,40 +29,45 @@ public class MultiprocessOrchestration
         var jobid_fileinfo = new FileInfo(Path.Combine(multiprocess_di.FullName, "jobid"));
         var resources_fileinfo = new FileInfo(Path.Combine(multiprocess_di.FullName, "resources"));
         var rootdir_fileinfo = new FileInfo(Path.Combine(multiprocess_di.FullName, "rootdir"));
-        
+
         if (jobid_fileinfo.Exists && resources_fileinfo.Exists && rootdir_fileinfo.Exists)
         {
-            // That suggests sufficient information to determine that we can run remotely
-            string rootdir = (File.ReadAllText(rootdir_fileinfo.FullName)).Trim();
-
-            var fileName = Path.Combine(rootdir, "BokkenCore31", "bin", "Debug", "netcoreapp3.1", "BokkenCore31.dll");
-
-            var workerProcess = new Process();
-            // workerProcess.StartInfo.FileName = Path.Combine(rootdir, "BokkenCore31", "bin", "Debug", "netcoreapp3.1", "BokkenCore31.exe");
-            workerProcess.StartInfo.FileName = Path.Combine("dotnet");
-            workerProcess.StartInfo.UseShellExecute = false;
-            workerProcess.StartInfo.RedirectStandardError = true;
-            workerProcess.StartInfo.RedirectStandardOutput = true;
-            workerProcess.StartInfo.Arguments = $"{fileName} launch";
-            try
-            {
-                var newProcessStarted = workerProcess.Start();
-                if (!newProcessStarted)
-                {
-                    throw new Exception("Failed to start worker process!");
-                }
-            }
-            catch (Win32Exception e)
-            {
-                Debug.LogError($"Error starting bokken process, {e.Message} {e.Data} {e.ErrorCode}");
-                throw;
-            }
+            Debug.Log("Run on remote nodes");
+            StartWorkersOnRemoteNodes(rootdir_fileinfo);
         }
         else
         {
-            throw new FileNotFoundException($"multiprocess files not found: {jobid_fileinfo.FullName} {jobid_fileinfo.Exists} {resources_fileinfo.FullName} {resources_fileinfo.Exists} {rootdir_fileinfo.FullName} {rootdir_fileinfo.Exists}");
+            Debug.Log("Run on local nodes");
+            StartWorkerNode();
         }
-        
+    }
+
+    public static void StartWorkersOnRemoteNodes(FileInfo rootdir_fileinfo)
+    {
+        // That suggests sufficient information to determine that we can run remotely
+        string rootdir = (File.ReadAllText(rootdir_fileinfo.FullName)).Trim();
+        var fileName = Path.Combine(rootdir, "BokkenCore31", "bin", "Debug", "netcoreapp3.1", "BokkenCore31.dll");
+
+        var workerProcess = new Process();
+        // workerProcess.StartInfo.FileName = Path.Combine(rootdir, "BokkenCore31", "bin", "Debug", "netcoreapp3.1", "BokkenCore31.exe");
+        workerProcess.StartInfo.FileName = Path.Combine("dotnet");
+        workerProcess.StartInfo.UseShellExecute = false;
+        workerProcess.StartInfo.RedirectStandardError = true;
+        workerProcess.StartInfo.RedirectStandardOutput = true;
+        workerProcess.StartInfo.Arguments = $"{fileName} launch";
+        try
+        {
+            var newProcessStarted = workerProcess.Start();
+            if (!newProcessStarted)
+            {
+                throw new Exception("Failed to start worker process!");
+            }
+        }
+        catch (Win32Exception e)
+        {
+            Debug.LogError($"Error starting bokken process, {e.Message} {e.Data} {e.ErrorCode}");
+              throw;
+        }    
     }
 
     public static void StartWorkerNode()
