@@ -490,10 +490,27 @@ namespace Unity.Netcode
             }
         }
 
-        internal ushort ReadAcks(ulong clientId, ClientData clientData, NetworkReader reader)
+        internal void ReadAcks(ulong clientId, ClientData clientData, NetworkReader reader, ConnectionRtt connection)
         {
             ushort ackSequence = reader.ReadUInt16();
+            ushort seqMask = reader.ReadUInt16();
 
+            ProcessSingleAck(ackSequence, clientId, clientData, connection);
+
+            while (seqMask != 0)
+            {
+                ackSequence--;
+                if (seqMask % 2 == 1)
+                {
+                    ProcessSingleAck(ackSequence, clientId, clientData, connection);
+                }
+
+                seqMask /= 2;
+            }
+        }
+
+        internal void ProcessSingleAck(ushort ackSequence, ulong clientId, ClientData clientData, ConnectionRtt connection)
+        {
             // look through the spawns sent
             foreach (var sent in clientData.SentSpawns)
             {
@@ -547,7 +564,8 @@ namespace Unity.Netcode
                 }
             }
 
-            return ackSequence;
+            // keep track of RTTs, using the sequence number acknowledgement as a marker
+            connection.NotifyAck(ackSequence, Time.unscaledTime);
         }
 
         /// <summary>
@@ -732,6 +750,9 @@ namespace Unity.Netcode
                         writer.WriteUInt16(SentinelAfter);
 
                         m_ClientData[clientId].LastReceivedSequence = 0;
+
+                        // todo: this is incorrect (well, sub-optimal)
+                        // we should still continue ack'ing past messages, in case this one is dropped
                         m_ClientData[clientId].ReceivedSequenceMask = 0;
                         m_ClientData[clientId].SequenceNumber++;
                     }
@@ -826,7 +847,9 @@ namespace Unity.Netcode
         {
             using (var writer = PooledNetworkWriter.Get(buffer))
             {
+                // todo: revisit whether 16-bit is enough for LastReceivedSequence
                 writer.WriteUInt16(m_ClientData[clientId].LastReceivedSequence);
+                writer.WriteUInt16(m_ClientData[clientId].ReceivedSequenceMask);
             }
         }
 
@@ -985,10 +1008,7 @@ namespace Unity.Netcode
                 m_Snapshot.ReadBuffer(reader, snapshotStream);
                 m_Snapshot.ReadIndex(reader);
                 m_Snapshot.ReadSpawns(reader);
-                var ackSequence = m_Snapshot.ReadAcks(clientId, m_ClientData[clientId], reader);
-
-                // keep track of RTTs, using the sequence number acknowledgement as a marker
-                GetConnectionRtt(clientId).NotifyAck(ackSequence, Time.unscaledTime);
+                m_Snapshot.ReadAcks(clientId, m_ClientData[clientId], reader, GetConnectionRtt(clientId));
 
                 sentinel = reader.ReadUInt16();
                 if (sentinel != SentinelAfter)
