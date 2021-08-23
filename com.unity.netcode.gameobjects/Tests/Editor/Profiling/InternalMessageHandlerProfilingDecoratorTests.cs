@@ -47,19 +47,11 @@ namespace Unity.Netcode.EditorTests
         }
 
         [Test]
-        public void HandleSwitchSceneCallsUnderlyingHandler()
+        public void HandleSceneEventCallsUnderlyingHandler()
         {
-            m_Decorator.HandleSwitchScene(0, null);
+            m_Decorator.HandleSceneEvent(0, null);
 
-            LogAssert.Expect(LogType.Log, nameof(m_Decorator.HandleSwitchScene));
-        }
-
-        [Test]
-        public void HandleClientSwitchSceneCompletedCallsUnderlyingHandler()
-        {
-            m_Decorator.HandleClientSwitchSceneCompleted(0, null);
-
-            LogAssert.Expect(LogType.Log, nameof(m_Decorator.HandleClientSwitchSceneCompleted));
+            LogAssert.Expect(LogType.Log, nameof(m_Decorator.HandleSceneEvent));
         }
 
         [Test]
@@ -108,14 +100,6 @@ namespace Unity.Netcode.EditorTests
             m_Decorator.MessageReceiveQueueItem(0, null, 0.0f, MessageQueueContainer.MessageType.None, NetworkChannel.Internal);
 
             LogAssert.Expect(LogType.Log, nameof(m_Decorator.MessageReceiveQueueItem));
-        }
-
-        [Test]
-        public void HandleAllClientsSwitchSceneCompleted()
-        {
-            m_Decorator.HandleAllClientsSwitchSceneCompleted(0, null);
-
-            LogAssert.Expect(LogType.Log, nameof(m_Decorator.HandleAllClientsSwitchSceneCompleted));
         }
     }
 }

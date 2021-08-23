@@ -13,11 +13,13 @@ namespace Unity.Netcode.RuntimeTests
             var threwException = false;
             try
             {
-                networkManager.SceneManager.SwitchScene("SomeSceneNane");
+                networkManager.SceneManager.LoadScene("SomeSceneNane", UnityEngine.SceneManagement.LoadSceneMode.Single);
             }
             catch (Exception ex)
             {
-                if (ex.Message.Contains($"{nameof(NetworkConfig.EnableSceneManagement)} flag is not enabled in the {nameof(NetworkManager)}'s {nameof(NetworkConfig)}. Please set {nameof(NetworkConfig.EnableSceneManagement)} flag to true before calling this method."))
+                if (ex.Message.Contains($"{nameof(NetworkConfig.EnableSceneManagement)} flag is not enabled in the {nameof(NetworkManager)}'s {nameof(NetworkConfig)}. " +
+                    $"Please set {nameof(NetworkConfig.EnableSceneManagement)} flag to true before " +
+                    $"calling {nameof(NetworkSceneManager.LoadScene)} or {nameof(NetworkSceneManager.UnloadScene)}."))
                 {
                     threwException = true;
                 }

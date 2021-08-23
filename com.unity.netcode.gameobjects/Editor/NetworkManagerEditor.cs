@@ -37,7 +37,7 @@ namespace Unity.Netcode.Editor
         private SerializedProperty m_LoadSceneTimeOutProperty;
 
         private ReorderableList m_NetworkPrefabsList;
-        private ReorderableList m_RegisteredScenesList;
+        private ReorderableList m_RegisteredSceneAssetsList;
 
         private NetworkManager m_NetworkManager;
         private bool m_Initialized;
@@ -145,7 +145,7 @@ namespace Unity.Netcode.Editor
                 var networkOverrideProp = networkPrefab.FindPropertyRelative(nameof(NetworkPrefab.Override));
                 var networkOverrideInt = networkOverrideProp.enumValueIndex;
 
-                return 10 + (networkOverrideInt == 0 ? EditorGUIUtility.singleLineHeight : (EditorGUIUtility.singleLineHeight * 2) + 5);
+                return 8 + (networkOverrideInt == 0 ? EditorGUIUtility.singleLineHeight : (EditorGUIUtility.singleLineHeight * 2) + 5);
             };
             m_NetworkPrefabsList.drawElementCallback = (rect, index, isActive, isFocused) =>
             {
@@ -201,17 +201,29 @@ namespace Unity.Netcode.Editor
             };
             m_NetworkPrefabsList.drawHeaderCallback = rect => EditorGUI.LabelField(rect, "NetworkPrefabs");
 
-            m_RegisteredScenesList = new ReorderableList(serializedObject, serializedObject.FindProperty(nameof(NetworkManager.NetworkConfig)).FindPropertyRelative(nameof(NetworkConfig.RegisteredScenes)), true, true, true, true);
-            m_RegisteredScenesList.drawElementCallback = (rect, index, isActive, isFocused) =>
+            m_RegisteredSceneAssetsList = new ReorderableList(serializedObject, serializedObject.FindProperty(nameof(NetworkManager.NetworkConfig)).FindPropertyRelative(nameof(NetworkConfig.RegisteredSceneAssets)), true, true, true, true);
+            m_RegisteredSceneAssetsList.elementHeightCallback = index =>
             {
-                var element = m_RegisteredScenesList.serializedProperty.GetArrayElementAtIndex(index);
-                int firstLabelWidth = 50;
-                int padding = 20;
-
-                EditorGUI.LabelField(new Rect(rect.x, rect.y, firstLabelWidth, EditorGUIUtility.singleLineHeight), "Name");
-                EditorGUI.PropertyField(new Rect(rect.x + firstLabelWidth, rect.y, rect.width - firstLabelWidth - padding, EditorGUIUtility.singleLineHeight), element, GUIContent.none);
+                return EditorGUIUtility.singleLineHeight + 8;
             };
-            m_RegisteredScenesList.drawHeaderCallback = rect => EditorGUI.LabelField(rect, "Registered Scene Names");
+            m_RegisteredSceneAssetsList.drawElementCallback = (rect, index, isActive, isFocused) =>
+            {
+                rect.y += 5;
+
+                var sceneAsset = m_RegisteredSceneAssetsList.serializedProperty.GetArrayElementAtIndex(index);
+                int firstLabelWidth = 24;
+                int padding = 2;
+
+                EditorGUI.LabelField(new Rect(rect.x, rect.y, firstLabelWidth, EditorGUIUtility.singleLineHeight), index.ToString());
+                EditorGUI.PropertyField(new Rect(rect.x + firstLabelWidth, rect.y, rect.width - firstLabelWidth - padding, EditorGUIUtility.singleLineHeight), sceneAsset, GUIContent.none);
+            };
+
+            m_RegisteredSceneAssetsList.drawHeaderCallback = rect => EditorGUI.LabelField(rect, "NetworkScenes");
+
+            m_RegisteredSceneAssetsList.onAddCallback = (registeredList) =>
+            {
+                m_NetworkManager.NetworkConfig.RegisteredSceneAssets.Add(null);
+            };
         }
 
         public override void OnInspectorGUI()
@@ -231,7 +243,6 @@ namespace Unity.Netcode.Editor
                 }
             }
 
-
             if (!m_NetworkManager.IsServer && !m_NetworkManager.IsClient)
             {
                 serializedObject.Update();
@@ -248,7 +259,7 @@ namespace Unity.Netcode.Editor
 
                 using (new EditorGUI.DisabledScope(!m_NetworkManager.NetworkConfig.EnableSceneManagement))
                 {
-                    m_RegisteredScenesList.DoLayoutList();
+                    m_RegisteredSceneAssetsList.DoLayoutList();
                     EditorGUILayout.Space();
                 }
 
