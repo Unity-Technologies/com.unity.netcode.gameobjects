@@ -60,7 +60,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 83e085235981b734bad565d9a60de47a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_ObjectToPool: {fileID: 6137946741893414299, guid: d2bccc96d1636264fa43b546a1b617c3,
+  m_ObjectToPool: {fileID: 672869341006996560, guid: 23a6a208dc8f7b946a001fbfe1968aa9,
     type: 3}
   m_ObjectPoolSize: 15
   m_SpawnsPerSecond: 2
