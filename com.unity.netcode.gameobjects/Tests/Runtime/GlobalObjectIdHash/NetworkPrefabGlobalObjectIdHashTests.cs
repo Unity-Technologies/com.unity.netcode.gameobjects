@@ -25,6 +25,7 @@ namespace Unity.Netcode.RuntimeTests
         [UnitySetUp]
         public IEnumerator Setup()
         {
+            ScenesInBuild.IsTesting = true;
             SceneManager.sceneLoaded += OnSceneLoaded;
 
             var execAssembly = Assembly.GetExecutingAssembly();
@@ -37,6 +38,7 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTearDown]
         public IEnumerator Teardown()
         {
+            ScenesInBuild.IsTesting = false;
             SceneManager.sceneLoaded -= OnSceneLoaded;
 
             if (m_TestScene.isLoaded)

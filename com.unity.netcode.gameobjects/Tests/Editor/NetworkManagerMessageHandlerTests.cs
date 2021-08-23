@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using NUnit.Framework;
 using Unity.Netcode.Editor;
 using UnityEngine;
@@ -14,18 +13,15 @@ namespace Unity.Netcode.EditorTests
         [Test]
         public void MessageHandlerReceivedMessageServerClient()
         {
+            ScenesInBuild.IsTesting = true;
             // Init
             var gameObject = new GameObject(nameof(MessageHandlerReceivedMessageServerClient));
             var networkManager = gameObject.AddComponent<NetworkManager>();
             var transport = gameObject.AddComponent<DummyTransport>();
 
-            // Netcode sets this in validate
-            networkManager.NetworkConfig = new NetworkConfig()
-            {
-                // Set the current scene to prevent unexpected log messages which would trigger a failure
-                RegisteredScenes = new List<string>() { SceneManager.GetActiveScene().name }
-            };
-
+            networkManager.PopulateScenesInBuild(true);
+            networkManager.ScenesInBuild.Scenes.Add(SceneManager.GetActiveScene().name);
+            networkManager.NetworkConfig = new NetworkConfig();
             // Set dummy transport that does nothing
             networkManager.NetworkConfig.NetworkTransport = transport;
 
@@ -250,6 +246,8 @@ namespace Unity.Netcode.EditorTests
 
                 // Full cleanup
                 networkManager.StopClient();
+
+                ScenesInBuild.IsTesting = false;
             }
 
             // Ensure no missmatches with expectations

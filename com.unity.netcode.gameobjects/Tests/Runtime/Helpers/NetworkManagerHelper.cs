@@ -51,6 +51,7 @@ namespace Unity.Netcode.RuntimeTests
         /// <returns>true if it was instantiated or is already instantiate otherwise false means it failed to instantiate</returns>
         public static bool StartNetworkManager(out NetworkManager networkManager, NetworkManagerOperatingMode managerMode = NetworkManagerOperatingMode.Host, NetworkConfig networkConfig = null)
         {
+            ScenesInBuild.IsTesting = true;
             // If we are changing the current manager mode and the current manager mode is not "None", then stop the NetworkManager mode
             if (CurrentNetworkManagerMode != managerMode && CurrentNetworkManagerMode != NetworkManagerOperatingMode.None)
             {
@@ -71,19 +72,16 @@ namespace Unity.Netcode.RuntimeTests
                 Debug.Log($"{nameof(NetworkManager)} Instantiated.");
 
                 var unetTransport = NetworkManagerGameObject.AddComponent<UNetTransport>();
-
                 if (networkConfig == null)
                 {
                     networkConfig = new NetworkConfig
                     {
                         EnableSceneManagement = false,
-                        RegisteredScenes = new List<string>() { SceneManager.GetActiveScene().name }
                     };
                 }
-                else
-                {
-                    networkConfig.RegisteredScenes.Add(SceneManager.GetActiveScene().name);
-                }
+
+                NetworkManagerObject.PopulateScenesInBuild(true);
+                NetworkManagerObject.ScenesInBuild.Scenes.Add(SceneManager.GetActiveScene().name);
 
                 NetworkManagerObject.NetworkConfig = networkConfig;
 
@@ -234,6 +232,7 @@ namespace Unity.Netcode.RuntimeTests
         // This is called, even if we assert and exit early from a test
         public static void ShutdownNetworkManager()
         {
+            ScenesInBuild.IsTesting = false;
             // clean up any game objects created with custom unit testing components
             foreach (var entry in InstantiatedGameObjects)
             {

@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -13,20 +12,15 @@ namespace Unity.Netcode.EditorTests
             var gameObject = new GameObject(nameof(SceneManagerAssigned));
             var networkManager = gameObject.AddComponent<NetworkManager>();
             var transport = gameObject.AddComponent<DummyTransport>();
-
-            // Netcode sets this in validate
-            networkManager.NetworkConfig = new NetworkConfig()
-            {
-                // Set the current scene to prevent unexpected log messages which would trigger a failure
-                RegisteredScenes = new List<string>() { SceneManager.GetActiveScene().name }
-            };
-
+            networkManager.PopulateScenesInBuild(true);
+            networkManager.ScenesInBuild.Scenes.Add(SceneManager.GetActiveScene().name);
+            networkManager.NetworkConfig = new NetworkConfig();
             // Set dummy transport that does nothing
             networkManager.NetworkConfig.NetworkTransport = transport;
 
             NetworkSceneManager preManager = networkManager.SceneManager;
 
-            // Start server to cause init
+            // Start server to cause initialization process
             networkManager.StartServer();
 
             Debug.Assert(preManager == null);

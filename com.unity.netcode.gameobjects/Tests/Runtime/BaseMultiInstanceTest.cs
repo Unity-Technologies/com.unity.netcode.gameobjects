@@ -45,8 +45,7 @@ namespace Unity.Netcode.RuntimeTests
             // Make sure any NetworkObject with a GlobalObjectIdHash value of 0 is destroyed
             // If we are tearing down, we don't want to leave NetworkObjects hanging around
             var networkObjects = Object.FindObjectsOfType<NetworkObject>().ToList();
-            var networkObjectsList = networkObjects.Where(c => c.GlobalObjectIdHash == 0);
-            foreach (var networkObject in networkObjectsList)
+            foreach (var networkObject in networkObjects)
             {
                 Object.DestroyImmediate(networkObject);
             }

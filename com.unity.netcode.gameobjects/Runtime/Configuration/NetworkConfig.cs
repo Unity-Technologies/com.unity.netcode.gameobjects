@@ -27,25 +27,6 @@ namespace Unity.Netcode
         public NetworkTransport NetworkTransport = null;
 
         /// <summary>
-        /// The list of SceneNames built from the RegisteredSceneAssets list
-        /// </summary>
-        [HideInInspector]
-        public List<string> RegisteredScenes = new List<string>();
-
-#if UNITY_EDITOR
-        [Tooltip("The Scenes that can be switched to by the server")]
-        public List<SceneAsset> RegisteredSceneAssets = new List<SceneAsset>();
-#endif
-
-        /// <summary>
-        /// Whether or not runtime scene changes should be allowed and expected.
-        /// If this is true, clients with different initial configurations will not work together.
-        /// </summary>
-        [Tooltip("Whether or not runtime scene changes should be allowed and expected.\n " +
-                 "If this is true, clients with different initial configurations will not work together.")]
-        public bool AllowRuntimeSceneChanges = false;
-
-        /// <summary>
         /// The default player prefab
         /// </summary>
         [Tooltip("When set, NetworkManager will automatically create and spawn the assigned player prefab. This can be overridden by adding it to the NetworkPrefabs list and selecting override.")]
@@ -173,12 +154,6 @@ namespace Unity.Netcode
 
         public const int RttAverageSamples = 5; // number of RTT to keep an average of (plus one)
         public const int RttWindowSize = 64; // number of slots to use for RTT computations (max number of in-flight packets)
-
-        private void Sort()
-        {
-            RegisteredScenes.Sort(StringComparer.Ordinal);
-        }
-
         /// <summary>
         /// Returns a base64 encoded version of the configuration
         /// </summary>
@@ -190,13 +165,6 @@ namespace Unity.Netcode
             using (var writer = PooledNetworkWriter.Get(buffer))
             {
                 writer.WriteUInt16Packed(config.ProtocolVersion);
-                writer.WriteUInt16Packed((ushort)config.RegisteredScenes.Count);
-
-                for (int i = 0; i < config.RegisteredScenes.Count; i++)
-                {
-                    writer.WriteString(config.RegisteredScenes[i]);
-                }
-
                 writer.WriteInt32Packed(config.TickRate);
                 writer.WriteInt32Packed(config.ClientConnectionBufferTimeout);
                 writer.WriteBool(config.ConnectionApproval);
@@ -209,7 +177,6 @@ namespace Unity.Netcode
                 writer.WriteBool(RecycleNetworkIds);
                 writer.WriteSinglePacked(NetworkIdRecycleDelay);
                 writer.WriteBool(EnableNetworkVariable);
-                writer.WriteBool(AllowRuntimeSceneChanges);
                 writer.WriteBool(EnableNetworkLogs);
                 buffer.PadBuffer();
 
@@ -231,12 +198,6 @@ namespace Unity.Netcode
                 config.ProtocolVersion = reader.ReadUInt16Packed();
 
                 ushort sceneCount = reader.ReadUInt16Packed();
-                config.RegisteredScenes.Clear();
-
-                for (int i = 0; i < sceneCount; i++)
-                {
-                    config.RegisteredScenes.Add(reader.ReadString().ToString());
-                }
 
                 config.TickRate = reader.ReadInt32Packed();
                 config.ClientConnectionBufferTimeout = reader.ReadInt32Packed();
@@ -250,7 +211,6 @@ namespace Unity.Netcode
                 config.RecycleNetworkIds = reader.ReadBool();
                 config.NetworkIdRecycleDelay = reader.ReadSinglePacked();
                 config.EnableNetworkVariable = reader.ReadBool();
-                config.AllowRuntimeSceneChanges = reader.ReadBool();
                 config.EnableNetworkLogs = reader.ReadBool();
             }
         }
@@ -270,21 +230,11 @@ namespace Unity.Netcode
                 return m_ConfigHash.Value;
             }
 
-            Sort();
-
             using (var buffer = PooledNetworkBuffer.Get())
             using (var writer = PooledNetworkWriter.Get(buffer))
             {
                 writer.WriteUInt16Packed(ProtocolVersion);
                 writer.WriteString(NetworkConstants.PROTOCOL_VERSION);
-
-                if (EnableSceneManagement && !AllowRuntimeSceneChanges)
-                {
-                    for (int i = 0; i < RegisteredScenes.Count; i++)
-                    {
-                        writer.WriteString(RegisteredScenes[i]);
-                    }
-                }
 
                 if (ForceSamePrefabs)
                 {

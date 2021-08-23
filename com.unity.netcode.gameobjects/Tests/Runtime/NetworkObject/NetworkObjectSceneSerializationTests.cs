@@ -132,7 +132,6 @@ namespace Unity.Netcode.RuntimeTests
                     invalidNetworkObjectCount++;
                 }
 
-
                 NetworkManagerHelper.NetworkManagerObject.SceneManager.SetTheSceneBeingSynchronized(reader.ReadInt32Packed());
 
                 var deserializedNetworkObject = NetworkObject.DeserializeSceneObject(pooledBuffer, reader, NetworkManagerHelper.NetworkManagerObject);
@@ -172,6 +171,7 @@ namespace Unity.Netcode.RuntimeTests
         [SetUp]
         public void Setup()
         {
+            NetworkSceneManager.IsUnitTesting = true;
             // Create, instantiate, and host
             NetworkManagerHelper.StartNetworkManager(out NetworkManager networkManager, NetworkManagerHelper.NetworkManagerOperatingMode.None);
             networkManager.NetworkConfig.EnableSceneManagement = true;
@@ -182,6 +182,7 @@ namespace Unity.Netcode.RuntimeTests
         [TearDown]
         public void TearDown()
         {
+            NetworkSceneManager.IsUnitTesting = false;
             // Stop, shutdown, and destroy
             NetworkManagerHelper.ShutdownNetworkManager();
         }

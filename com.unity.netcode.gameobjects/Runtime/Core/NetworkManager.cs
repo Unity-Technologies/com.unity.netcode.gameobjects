@@ -239,6 +239,16 @@ namespace Unity.Netcode
         [HideInInspector] public NetworkConfig NetworkConfig;
 
         /// <summary>
+        /// Reference to the ScenesInBuild asset that contains a list of the scenes in the build list
+        /// </summary>
+        [HideInInspector]
+        [SerializeField]
+        internal ScenesInBuild ScenesInBuild;
+
+        [HideInInspector]
+        [SerializeField]
+        internal string DefaultScenesInBuildAssetNameAndPath = "Assets/ScenesInBuildList.asset";
+        /// <summary>
         /// The current host name we are connected to, used to validate certificate
         /// </summary>
         public string ConnectedHostname { get; private set; }
@@ -247,7 +257,34 @@ namespace Unity.Netcode
 
         internal static event Action OnSingletonReady;
 
+
+
 #if UNITY_EDITOR
+        /// <summary>
+        /// Assures the ScenesInBuild asset exists and that it is always up to date
+        /// </summary>
+        /// <param name="isTesting"></param>
+        internal void PopulateScenesInBuild(bool isTesting = false)
+        {
+            // If we are testing or we are playing (in editor) and ScenesInBuild is null then we want to initialize and populate the ScenesInBuild asset.
+            // Otherwise, there are special edge case scenarios where we might want to repopulate this list
+            // The scenario with EditorApplication.isPlaying and ScenesInBuild being null is where we loaded a scene that did not have a NetworkManager but
+            // we transition to a scene with a NetworkManager while playing in the editor.  Under this condition we have to assign and populate.
+            if ( (!EditorApplication.isPlayingOrWillChangePlaymode && !EditorApplication.isPlaying && !EditorApplication.isUpdating) || isTesting
+                || ( (ScenesInBuild == null || ScenesInBuild != null && ScenesInBuild.Scenes.Count == 0) && EditorApplication.isPlaying))
+            {
+                if (ScenesInBuild == null)
+                {
+                    ScenesInBuild = ScenesInBuild.InitializeScenesInBuild(this);
+                    ScenesInBuild.PopulateScenesInBuild();
+                }
+                else
+                {
+                    ScenesInBuild.PopulateScenesInBuild();
+                }
+            }
+        }
+
         private void OnValidate()
         {
             if (NetworkConfig == null)
@@ -255,22 +292,13 @@ namespace Unity.Netcode
                 return; // May occur when the component is added
             }
 
+            PopulateScenesInBuild();
+
             if (GetComponentInChildren<NetworkObject>() != null)
             {
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                 {
                     NetworkLog.LogWarning($"{nameof(NetworkManager)} cannot be a {nameof(NetworkObject)}.");
-                }
-            }
-
-            if (NetworkConfig.EnableSceneManagement)
-            {
-                foreach (var sceneAsset in NetworkConfig.RegisteredSceneAssets)
-                {
-                    if (!NetworkConfig.RegisteredScenes.Contains(sceneAsset.name))
-                    {
-                        NetworkConfig.RegisteredScenes.Add(sceneAsset.name);
-                    }
                 }
             }
 
@@ -442,18 +470,6 @@ namespace Unity.Netcode
 
             // Register INetworkUpdateSystem (always register this after messageQueueContainer has been instantiated)
             this.RegisterNetworkUpdate(NetworkUpdateStage.PreUpdate);
-
-            if (NetworkConfig.EnableSceneManagement)
-            {
-                NetworkConfig.RegisteredScenes.Sort(StringComparer.Ordinal);
-
-                for (int i = 0; i < NetworkConfig.RegisteredScenes.Count; i++)
-                {
-                    SceneManager.RegisteredSceneNames.Add(NetworkConfig.RegisteredScenes[i]);
-                    SceneManager.SceneIndexToString.Add((uint)i, NetworkConfig.RegisteredScenes[i]);
-                    SceneManager.SceneNameToIndex.Add(NetworkConfig.RegisteredScenes[i], (uint)i);
-                }
-            }
 
             // This is used to remove entries not needed or invalid
             var removeEmptyPrefabs = new List<int>();
@@ -1448,8 +1464,6 @@ namespace Unity.Netcode
                 NetworkConfig.NetworkTransport.DisconnectRemoteClient(ownerClientId);
             }
         }
-
-
 
         /// <summary>
         /// Spawns the newly approved player
