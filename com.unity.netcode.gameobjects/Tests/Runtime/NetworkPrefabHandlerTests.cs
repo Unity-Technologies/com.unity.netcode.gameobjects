@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
 using NUnit.Framework;
@@ -80,12 +81,13 @@ namespace Unity.Netcode.RuntimeTests
             Assert.True(NetworkManagerHelper.NetworkManagerObject.NetworkConfig.NetworkPrefabOverrideLinks.Count == 3);
         }
 
+        private const string k_PrefabObjectName = "NetworkPrefabHandlerTestObject";
 
         [Test]
         public void NetworkPrefabHandlerClass()
         {
             Assert.IsTrue(NetworkManagerHelper.StartNetworkManager(out _));
-            var testPrefabObjectName = "NetworkPrefabHandlerTestObject";
+            var testPrefabObjectName = k_PrefabObjectName;
 
             Guid baseObjectID = NetworkManagerHelper.AddGameNetworkObject(testPrefabObjectName);
             NetworkObject baseObject = NetworkManagerHelper.InstantiatedNetworkObjects[baseObjectID];
@@ -182,6 +184,13 @@ namespace Unity.Netcode.RuntimeTests
         {
             //Stop, shutdown, and destroy
             NetworkManagerHelper.ShutdownNetworkManager();
+
+            var networkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>().ToList();
+            var networkObjectsList = networkObjects.Where(c => c.name.Contains(k_PrefabObjectName));
+            foreach (var networkObject in networkObjectsList)
+            {
+                UnityEngine.Object.DestroyImmediate(networkObject);
+            }
         }
     }
 

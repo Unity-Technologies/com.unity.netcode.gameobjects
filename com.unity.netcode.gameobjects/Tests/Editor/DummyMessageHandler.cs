@@ -20,9 +20,7 @@ namespace Unity.Netcode.EditorTests
 
         public void HandleDestroyObject(ulong clientId, Stream stream) => VerifyCalled(nameof(HandleDestroyObject));
 
-        public void HandleSwitchScene(ulong clientId, Stream stream) => VerifyCalled(nameof(HandleSwitchScene));
-
-        public void HandleClientSwitchSceneCompleted(ulong clientId, Stream stream) => VerifyCalled(nameof(HandleClientSwitchSceneCompleted));
+        public void HandleSceneEvent(ulong clientId, Stream stream) => VerifyCalled(nameof(HandleSceneEvent));
 
         public void HandleChangeOwner(ulong clientId, Stream stream) => VerifyCalled(nameof(HandleChangeOwner));
 
