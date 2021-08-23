@@ -390,18 +390,6 @@ namespace Unity.Netcode.EditorTests
                 }
             }
         }
-        /*
-        public void SerializeValue(ref object value, Type type, bool isNullable = false);
-        public void SerializeValue(ref INetworkSerializable value);
-        public void SerializeValue(ref GameObject value);
-        public void SerializeValue(ref NetworkObject value);
-        public void SerializeValue(ref NetworkBehaviour value);
-
-        public bool PreCheck(int amount);
-        public void SerializeValuePreChecked(ref GameObject value);
-        public void SerializeValuePreChecked(ref NetworkObject value);
-        public void SerializeValuePreChecked(ref NetworkBehaviour value);*/
-        
         
         private delegate void GameObjectTestDelegate(GameObject obj, NetworkBehaviour networkBehaviour,
             NetworkObject networkObject);
