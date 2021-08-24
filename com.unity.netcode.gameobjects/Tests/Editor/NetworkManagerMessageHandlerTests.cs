@@ -13,7 +13,6 @@ namespace Unity.Netcode.EditorTests
         [Test]
         public void MessageHandlerReceivedMessageServerClient()
         {
-            ScenesInBuild.IsTesting = true;
             // Init
             var gameObject = new GameObject(nameof(MessageHandlerReceivedMessageServerClient));
             var networkManager = gameObject.AddComponent<NetworkManager>();
@@ -246,8 +245,6 @@ namespace Unity.Netcode.EditorTests
 
                 // Full cleanup
                 networkManager.StopClient();
-
-                ScenesInBuild.IsTesting = false;
             }
 
             // Ensure no missmatches with expectations

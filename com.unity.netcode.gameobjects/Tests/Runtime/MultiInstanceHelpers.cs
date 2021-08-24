@@ -31,7 +31,6 @@ namespace Unity.Netcode.RuntimeTests
         public static bool Create(int clientCount, out NetworkManager server, out NetworkManager[] clients, int targetFrameRate = 60)
         {
             s_NetworkManagerInstances = new List<NetworkManager>();
-            ScenesInBuild.IsTesting = true;
             CreateNewClients(clientCount, out clients);
 
             // Create gameObject

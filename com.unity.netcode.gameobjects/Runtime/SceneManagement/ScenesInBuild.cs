@@ -18,13 +18,28 @@ namespace Unity.Netcode
     /// </summary>
     public class ScenesInBuild : ScriptableObject
     {
-        static internal bool IsTesting;
+
 
         [HideInInspector]
         [SerializeField]
         internal List<string> Scenes;
 
+
+        private bool IsRunningUnitTest()
+        {
 #if UNITY_EDITOR
+            if (!EditorApplication.isPlaying)
+            {
+                return false;
+            }
+#endif
+            // For scenes in build, we have to check whether we are running a unit test or not each time
+            return SceneManager.GetActiveScene().name.StartsWith("InitTestScene");
+        }
+
+
+#if UNITY_EDITOR
+
         /// <summary>
         /// This will create a new ScenesInBuildList asset if one does not exist and will adjust the path to the ScenesInBuildList
         /// asset if the asset is moved.  This will also notify the user if more than one ScenesInBuildList asset exists.
@@ -50,7 +65,7 @@ namespace Unity.Netcode
                 networkManager.DefaultScenesInBuildAssetNameAndPath = AssetDatabase.GUIDToAssetPath(foundScenesInBuildList[0]);
             }
             var scenesInBuild = (ScenesInBuild)AssetDatabase.LoadAssetAtPath(networkManager.DefaultScenesInBuildAssetNameAndPath, typeof(ScenesInBuild));
-            if(scenesInBuild == null)
+            if (scenesInBuild == null)
             {
                 scenesInBuild = CreateInstance<ScenesInBuild>();
                 AssetDatabase.CreateAsset(scenesInBuild, networkManager.DefaultScenesInBuildAssetNameAndPath);
@@ -64,30 +79,35 @@ namespace Unity.Netcode
         /// </summary>
         internal void PopulateScenesInBuild()
         {
-            if(Scenes != null && Scenes.Count > 0 && IsTesting)
+            var isRunningUnitTest = IsRunningUnitTest();
+            if (Scenes != null && Scenes.Count > 0 && isRunningUnitTest)
             {
                 return;
             }
             Scenes = new List<string>();
             for (int i = 0; i < SceneManager.sceneCountInBuildSettings; i++)
             {
-                if(IsTesting && i >= EditorBuildSettings.scenes.Length)
+
+                if (isRunningUnitTest && i >= EditorBuildSettings.scenes.Length)
                 {
-                    continue;
+                    break;
                 }
                 var scene = EditorBuildSettings.scenes[i];
                 var sceneAsset = AssetDatabase.LoadAssetAtPath<SceneAsset>(scene.path);
                 Scenes.Add(sceneAsset.name);
             }
-            AssetDatabase.SaveAssets();
+            if (!isRunningUnitTest)
+            {
+                AssetDatabase.SaveAssets();
+            }
         }
 
         /// <summary>
-        /// Depending upon the current editor state, this will refresh the Scenes in Build list
+        /// Depending upon the current editor state or if we are running a unit test or not, this will refresh the Scenes in Build list
         /// </summary>
         private void OnValidate()
         {
-            if (!EditorApplication.isPlayingOrWillChangePlaymode && !EditorApplication.isPlaying && !EditorApplication.isUpdating || IsTesting)
+            if (!EditorApplication.isPlayingOrWillChangePlaymode && !EditorApplication.isPlaying && !EditorApplication.isUpdating || IsRunningUnitTest())
             {
                 PopulateScenesInBuild();
             }

@@ -52,8 +52,11 @@ namespace Unity.Netcode.RuntimeTests
         [UnitySetUp]
         public IEnumerator Setup()
         {
-            ScenesInBuild.IsTesting = true;
             SceneManager.sceneLoaded += OnSceneLoaded;
+
+            // We need NetworkManager to be instantiated first before you load scenes externally in order to be able to determine if
+            // we are running a unit test or not. (it is this or manually setting a property)
+            Assert.That(MultiInstanceHelpers.Create(k_ClientInstanceCount, out m_ServerNetworkManager, out m_ClientNetworkManagers));
 
             var execAssembly = Assembly.GetExecutingAssembly();
             var packagePath = PackageInfo.FindForAssembly(execAssembly).assetPath;
@@ -66,7 +69,6 @@ namespace Unity.Netcode.RuntimeTests
 
             const int setCount = k_ClientInstanceCount + 1;
 
-            Assert.That(MultiInstanceHelpers.Create(k_ClientInstanceCount, out m_ServerNetworkManager, out m_ClientNetworkManagers));
             Assert.That(m_ServerNetworkManager, Is.Not.Null);
             Assert.That(m_ClientNetworkManagers, Is.Not.Null);
             Assert.That(m_ClientNetworkManagers.Length, Is.EqualTo(k_ClientInstanceCount));
@@ -214,7 +216,6 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTearDown]
         public IEnumerator Teardown()
         {
-            ScenesInBuild.IsTesting = false;
             SceneManager.sceneLoaded -= OnSceneLoaded;
 
             MultiInstanceHelpers.Destroy();
