@@ -156,6 +156,7 @@ namespace Unity.Netcode.Prototyping
         public float FixedSendsPerSecond = 30f;
 
         private Transform m_Transform; // cache the transform component to reduce unnecessary bounce between managed and native
+        internal NetworkState LocalNetworkState;
         internal readonly NetworkVariable<NetworkState> ReplNetworkState = new NetworkVariable<NetworkState>(new NetworkState());
         internal NetworkState PrevNetworkState;
 
@@ -385,14 +386,13 @@ namespace Unity.Netcode.Prototyping
 
             if (IsServer)
             {
-                // save off current value
-                var tmp = ReplNetworkState.Value;
-
-                // mutate the tmp value, set dirty if we mutated it
-                ReplNetworkState.SetDirty(UpdateNetworkState(ref tmp));
-
-                // commit the value
-                ReplNetworkState.Value = tmp;
+                // try to update local NetworkState
+                if (UpdateNetworkState(ref LocalNetworkState))
+                {
+                    // if updated (dirty), change NetVar, mark it dirty
+                    ReplNetworkState.Value = LocalNetworkState;
+                    ReplNetworkState.SetDirty(true);
+                }
             }
             // try to update previously consumed NetworkState
             // if we have any changes, that means made some updates locally
