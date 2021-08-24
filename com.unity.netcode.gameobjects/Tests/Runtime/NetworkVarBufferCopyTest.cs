@@ -1,6 +1,7 @@
 using System.Collections;
 using System.IO;
 using NUnit.Framework;
+using UnityEngine;
 using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
@@ -14,7 +15,17 @@ namespace Unity.Netcode.RuntimeTests
             public bool FieldWritten;
             public bool DeltaRead;
             public bool FieldRead;
+            public bool Dirty = true;
 
+            public override void ResetDirty()
+            {
+                Dirty = false;
+            }
+
+            public override bool IsDirty()
+            {
+                return Dirty;
+            }
             public override NetworkChannel GetChannel()
             {
                 return NetworkChannel.NetworkVariable;

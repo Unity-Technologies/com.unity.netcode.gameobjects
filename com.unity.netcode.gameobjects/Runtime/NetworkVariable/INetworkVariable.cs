@@ -43,7 +43,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Sets whether or not the variable needs to be delta synced
         /// </summary>
-        public void SetDirty(bool isDirty)
+        public virtual void SetDirty(bool isDirty)
         {
             m_IsDirty = isDirty;
         }
