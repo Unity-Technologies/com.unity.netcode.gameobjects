@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
-using Random = UnityEngine.Random;
 
 namespace Unity.Netcode
 {
@@ -650,16 +649,6 @@ namespace Unity.Netcode
             this.UnregisterNetworkUpdate(NetworkUpdateStage.EarlyUpdate);
         }
 
-        internal bool SkipSend()
-        {
-            return Random.Range(0, 10) > 5;
-        }
-
-        internal bool SkipReceive()
-        {
-            return Random.Range(0, 10) > 5;
-        }
-
         public void NetworkUpdate(NetworkUpdateStage updateStage)
         {
             if (!m_NetworkManager.NetworkConfig.UseSnapshotDelta && !m_NetworkManager.NetworkConfig.UseSnapshotSpawn)
@@ -674,11 +663,6 @@ namespace Unity.Netcode
                 if (tick != m_CurrentTick)
                 {
                     m_CurrentTick = tick;
-
-                    if (SkipSend())
-                    {
-                        return;
-                    }
 
                     if (m_NetworkManager.IsServer)
                     {
@@ -957,11 +941,6 @@ namespace Unity.Netcode
         /// <param name="snapshotStream">The stream to read from</param>
         internal void ReadSnapshot(ulong clientId, Stream snapshotStream)
         {
-            if (SkipReceive())
-            {
-                return;
-            }
-
             // todo: temporary hack around bug
             if (!m_NetworkManager.IsServer)
             {
