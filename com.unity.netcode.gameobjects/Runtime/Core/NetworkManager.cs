@@ -479,8 +479,7 @@ namespace Unity.Netcode
                     removeEmptyPrefabs.Add(i);
                     continue;
                 }
-                else
-                if (NetworkConfig.NetworkPrefabs[i].Override == NetworkPrefabOverride.None)
+                else if (NetworkConfig.NetworkPrefabs[i].Override == NetworkPrefabOverride.None)
                 {
                     networkObject = NetworkConfig.NetworkPrefabs[i].Prefab.GetComponent<NetworkObject>();
                     if (networkObject == null)
