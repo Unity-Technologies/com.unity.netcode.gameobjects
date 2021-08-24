@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Netcode;
 
 namespace Unity.Multiplayer.Netcode
@@ -175,7 +176,7 @@ namespace Unity.Multiplayer.Netcode
             T val = new T();
             byte* ptr = ((byte*) &val) + offsetBytes;
             byte* bufferPointer = m_BufferPointer + m_Position;
-            BytewiseUtility.FastCopyBytes(ptr, bufferPointer, bytesToRead);
+            UnsafeUtility.MemCpy(ptr, bufferPointer, bytesToRead);
 
             m_BitPosition += bytesToRead * BITS_PER_BYTE;
             value = val;

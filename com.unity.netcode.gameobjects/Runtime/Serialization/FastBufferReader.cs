@@ -782,7 +782,7 @@ namespace Unity.Multiplayer.Netcode
             T val = new T();
             byte* ptr = ((byte*) &val) + offsetBytes;
             byte* bufferPointer = m_BufferPointer + m_Position;
-            BytewiseUtility.FastCopyBytes(ptr, bufferPointer, bytesToRead);
+            UnsafeUtility.MemCpy(ptr, bufferPointer, bytesToRead);
 
             m_Position += bytesToRead;
             value = val;
@@ -942,8 +942,10 @@ namespace Unity.Multiplayer.Netcode
             }
 #endif
             
-            T* pointer = (T*)(m_BufferPointer+m_Position);
-            value = *pointer;
+            fixed (T* ptr = &value)
+            {
+                UnsafeUtility.MemCpy(ptr, m_BufferPointer+m_Position, len);
+            }
             m_Position += len;
         }
         
@@ -974,8 +976,11 @@ namespace Unity.Multiplayer.Netcode
                 throw new OverflowException("Writing past the end of the buffer");
             }
             
-            T* pointer = (T*)(m_BufferPointer+m_Position);
-            value = *pointer;
+
+            fixed (T* ptr = &value)
+            {
+                UnsafeUtility.MemCpy(ptr, m_BufferPointer+m_Position, len);
+            }
             m_Position += len;
         }
     }
