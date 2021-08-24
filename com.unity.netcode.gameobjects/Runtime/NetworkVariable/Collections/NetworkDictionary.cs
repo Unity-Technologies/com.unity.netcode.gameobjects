@@ -328,7 +328,8 @@ namespace Unity.Netcode
         public int Count => m_Dictionary.Count;
 
         /// <inheritdoc />
-        public bool IsReadOnly => m_Dictionary.IsReadOnly; // hrm
+        // TODO: remove w/ native containers
+        public bool IsReadOnly => m_Dictionary.IsReadOnly;
 
         /// <inheritdoc />
         public void Add(TKey key, TValue value)
