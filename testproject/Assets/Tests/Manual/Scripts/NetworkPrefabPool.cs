@@ -121,17 +121,18 @@ namespace TestProject.ManualTests
         /// </summary>
         private void OnUnloadScene()
         {
-            if (IsServer)
+            if (NetworkObject != null && NetworkManager != null)
             {
-                StopCoroutine(SpawnObjects());
+                if (IsServer)
+                {
+                    StopCoroutine(SpawnObjects());
+                }
+
+                // De-register the custom prefab handler
+                DeregisterCustomPrefabHandler();
+
+                CleanNetworkObjects();
             }
-
-            // De-register the custom prefab handler
-            DeregisterCustomPrefabHandler();
-
-            CleanNetworkObjects();
-
-            NetworkManager.SceneManager.OnSceneEvent -= OnSceneEvent;
         }
 
 

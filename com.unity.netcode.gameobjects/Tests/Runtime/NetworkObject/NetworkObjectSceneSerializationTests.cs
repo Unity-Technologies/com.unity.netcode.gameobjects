@@ -82,6 +82,21 @@ namespace Unity.Netcode.RuntimeTests
                     networkObjectsToTest.Add(gameObject);
 
                     writer.WriteInt32Packed(networkObject.gameObject.scene.handle);
+
+                    // Handle populating the scenes loaded list
+                    var scene = networkObject.gameObject.scene;
+
+                    if (!NetworkManagerHelper.NetworkManagerObject.SceneManager.ScenesLoaded.ContainsKey(scene.handle))
+                    {
+                        NetworkManagerHelper.NetworkManagerObject.SceneManager.ScenesLoaded.Add(scene.handle, scene);
+                    }
+
+                    // Since this is a unit test, we will fake the server to client handle lookup by just adding the same handle key and value
+                    if (!NetworkManagerHelper.NetworkManagerObject.SceneManager.ServerSceneHandleToClientSceneHandle.ContainsKey(networkObject.gameObject.scene.handle))
+                    {
+                        NetworkManagerHelper.NetworkManagerObject.SceneManager.ServerSceneHandleToClientSceneHandle.Add(networkObject.gameObject.scene.handle, networkObject.gameObject.scene.handle);
+                    }
+
                     // Serialize the valid NetworkObject
                     networkObject.SerializeSceneObject(writer, 0);
 
@@ -116,6 +131,7 @@ namespace Unity.Netcode.RuntimeTests
 
                     invalidNetworkObjectCount++;
                 }
+
 
                 NetworkManagerHelper.NetworkManagerObject.SceneManager.SetTheSceneBeingSynchronized(reader.ReadInt32Packed());
 
@@ -156,7 +172,6 @@ namespace Unity.Netcode.RuntimeTests
         [SetUp]
         public void Setup()
         {
-            NetworkSceneManager.IsTesting = true;
             // Create, instantiate, and host
             NetworkManagerHelper.StartNetworkManager(out NetworkManager networkManager, NetworkManagerHelper.NetworkManagerOperatingMode.None);
             networkManager.NetworkConfig.EnableSceneManagement = true;
@@ -167,7 +182,6 @@ namespace Unity.Netcode.RuntimeTests
         [TearDown]
         public void TearDown()
         {
-            NetworkSceneManager.IsTesting = false;
             // Stop, shutdown, and destroy
             NetworkManagerHelper.ShutdownNetworkManager();
         }

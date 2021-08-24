@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 
@@ -54,8 +55,28 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         // Check that the first client see them, or not, as expected
-        private void CheckVisible(bool target)
+        private IEnumerator CheckVisible(bool target)
         {
+            int count = 0;
+            do
+            {
+                yield return new WaitForSeconds(0.1f);
+                count++;
+
+                if (count > 20)
+                {
+                    // timeout waiting for object to reach the expect visibility
+                    Assert.Fail("timeout waiting for object to reach the expect visibility");
+                    break;
+                }
+            } while (m_NetSpawnedObject1.IsNetworkVisibleTo(m_ClientId0) != target ||
+                     m_NetSpawnedObject2.IsNetworkVisibleTo(m_ClientId0) != target ||
+                     m_NetSpawnedObject3.IsNetworkVisibleTo(m_ClientId0) != target ||
+                     m_Object1OnClient0.IsSpawned != target ||
+                     m_Object2OnClient0.IsSpawned != target ||
+                     m_Object3OnClient0.IsSpawned != target
+                     );
+
             Debug.Assert(m_NetSpawnedObject1.IsNetworkVisibleTo(m_ClientId0) == target);
             Debug.Assert(m_NetSpawnedObject2.IsNetworkVisibleTo(m_ClientId0) == target);
             Debug.Assert(m_NetSpawnedObject3.IsNetworkVisibleTo(m_ClientId0) == target);
@@ -66,20 +87,38 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         // Set the 3 objects visibility
-        private void Show(bool visibility)
+        private void Show(bool individually, bool visibility)
         {
-            var list = new List<NetworkObject>();
-            list.Add(m_NetSpawnedObject1);
-            list.Add(m_NetSpawnedObject2);
-            list.Add(m_NetSpawnedObject3);
-
-            if (!visibility)
+            if (individually)
             {
-                NetworkObject.NetworkHide(list, m_ClientId0);
+                if (!visibility)
+                {
+                    m_NetSpawnedObject1.NetworkHide(m_ClientId0);
+                    m_NetSpawnedObject2.NetworkHide(m_ClientId0);
+                    m_NetSpawnedObject3.NetworkHide(m_ClientId0);
+                }
+                else
+                {
+                    m_NetSpawnedObject1.NetworkShow(m_ClientId0);
+                    m_NetSpawnedObject2.NetworkShow(m_ClientId0);
+                    m_NetSpawnedObject3.NetworkShow(m_ClientId0);
+                }
             }
             else
             {
-                NetworkObject.NetworkShow(list, m_ClientId0);
+                var list = new List<NetworkObject>();
+                list.Add(m_NetSpawnedObject1);
+                list.Add(m_NetSpawnedObject2);
+                list.Add(m_NetSpawnedObject3);
+
+                if (!visibility)
+                {
+                    NetworkObject.NetworkHide(list, m_ClientId0);
+                }
+                else
+                {
+                    NetworkObject.NetworkShow(list, m_ClientId0);
+                }
             }
         }
 
@@ -134,33 +173,28 @@ namespace Unity.Netcode.RuntimeTests
             m_NetSpawnedObject2.Spawn();
             m_NetSpawnedObject3.Spawn();
 
-            // Using frame count as opposed to time to avoid random failures
-            var waitUntilFrameNumber = Time.frameCount + 10;
-            yield return new WaitUntil(() => Time.frameCount >= waitUntilFrameNumber);
 
-            // get the NetworkObject on a client instance
-            yield return RefreshNetworkObjects();
+            for (int mode = 0; mode < 2; mode++)
+            {
+                // get the NetworkObject on a client instance
+                yield return RefreshNetworkObjects();
 
-            // check object start visible
-            CheckVisible(true);
+                // check object start visible
+                yield return CheckVisible(true);
 
-            // hide them on one client
-            Show(false);
-            waitUntilFrameNumber = Time.frameCount + 10;
-            yield return new WaitUntil(() => Time.frameCount >= waitUntilFrameNumber);
+                // hide them on one client
+                Show(mode == 0, false);
 
-            // verify they got hidden
-            CheckVisible(false);
+                // verify they got hidden
+                yield return CheckVisible(false);
 
-            // show them to that client
-            Show(true);
-            waitUntilFrameNumber = Time.frameCount + 10;
-            yield return new WaitUntil(() => Time.frameCount >= waitUntilFrameNumber);
+                // show them to that client
+                Show(mode == 0, true);
+                yield return RefreshNetworkObjects();
 
-            yield return RefreshNetworkObjects();
-
-            // verify they become visible
-            CheckVisible(true);
+                // verify they become visible
+                yield return CheckVisible(true);
+            }
         }
     }
 }

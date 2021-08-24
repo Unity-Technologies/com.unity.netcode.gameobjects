@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System;
-using System.IO;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -324,56 +323,115 @@ namespace Unity.Netcode
             writer.WriteUInt32Packed(SceneIndex);
             writer.WriteInt32Packed(SceneHandle);
 
-            if (SceneEventType == SceneEventTypes.S2C_Sync)
+            switch (SceneEventType)
             {
-                // Write the scenes we want to load, in the order we want to load them
-                writer.WriteUIntArrayPacked(ScenesToSynchronize.ToArray());
-                writer.WriteUIntArrayPacked(SceneHandlesToSynchronize.ToArray());
+                case SceneEventTypes.S2C_Sync:
+                    {
+                        WriteSceneSynchronizationData(writer);
+                        break;
+                    }
+                case SceneEventTypes.S2C_Load:
+                    {
+                        SerializeScenePlacedObjects(writer);
+                        break;
+                    }
+                case SceneEventTypes.C2S_SyncComplete:
+                    {
+                        WriteClientSynchronizationResults(writer);
+                        break;
+                    }
+                case SceneEventTypes.S2C_ReSync:
+                    {
+                        WriteClientReSynchronizationData(writer);
+                        break;
+                    }
+                case SceneEventTypes.S2C_LoadComplete:
+                case SceneEventTypes.S2C_UnLoadComplete:
+                    {
+                        WriteSceneEventProgressDone(writer);
+                        break;
+                    }
+            }
+        }
 
-                // Store our current position in the stream to come back and say how much data we have written
-                var positionStart = writer.GetStream().Position;
+        /// <summary>
+        /// Server Side:
+        /// Called at the end of an S2C_Load event once the scene is loaded and scene placed NetworkObjects
+        /// have been locally spawned
+        /// </summary>
+        internal void WriteSceneSynchronizationData(NetworkWriter writer)
+        {
+            // Write the scenes we want to load, in the order we want to load them
+            writer.WriteUIntArrayPacked(ScenesToSynchronize.ToArray());
+            writer.WriteUIntArrayPacked(SceneHandlesToSynchronize.ToArray());
 
-                // Size Place Holder -- Start
-                // !!NOTE!!: Since this is a placeholder to be set after we know how much we have written,
-                // for stream offset purposes this MUST not be a packed value!
-                writer.WriteUInt32(0);
-                var totalBytes = 0;
+            // Store our current position in the stream to come back and say how much data we have written
+            var positionStart = writer.GetStream().Position;
 
-                // Write the number of NetworkObjects we are serializing
-                writer.WriteInt32Packed(m_NetworkObjectsSync.Count());
+            // Size Place Holder -- Start
+            // !!NOTE!!: Since this is a placeholder to be set after we know how much we have written,
+            // for stream offset purposes this MUST not be a packed value!
+            writer.WriteUInt32(0);
+            var totalBytes = 0;
 
-                foreach (var networkObject in m_NetworkObjectsSync)
+            // Write the number of NetworkObjects we are serializing
+            writer.WriteInt32Packed(m_NetworkObjectsSync.Count());
+
+            foreach (var networkObject in m_NetworkObjectsSync)
+            {
+                var noStart = writer.GetStream().Position;
+                writer.WriteInt32Packed(networkObject.gameObject.scene.handle);
+                networkObject.SerializeSceneObject(writer, TargetClientId);
+                var noStop = writer.GetStream().Position;
+                totalBytes += (int)(noStop - noStart);
+            }
+
+            // Size Place Holder -- End
+            var positionEnd = writer.GetStream().Position;
+            var bytesWritten = (uint)(positionEnd - (positionStart + sizeof(uint)));
+            writer.GetStream().Position = positionStart;
+            // Write the total size written to the stream by NetworkObjects being serialized
+            writer.WriteUInt32(bytesWritten);
+            writer.GetStream().Position = positionEnd;
+        }
+
+        /// <summary>
+        /// Server Side:
+        /// Called at the end of an S2C_Load event once the scene is loaded and scene placed NetworkObjects
+        /// have been locally spawned
+        /// Maximum number of objects that could theoretically be synchronized is 65536
+        /// </summary>
+        internal void SerializeScenePlacedObjects(NetworkWriter writer)
+        {
+            var numberOfObjects = (ushort)0;
+            var stream = writer.GetStream();
+            var headPosition = stream.Position;
+
+            // Write our count place holder (must not be packed!)
+            writer.WriteUInt16(0);
+
+            foreach (var keyValuePairByGlobalObjectIdHash in m_NetworkManager.SceneManager.ScenePlacedObjects)
+            {
+                foreach (var keyValuePairBySceneHandle in keyValuePairByGlobalObjectIdHash.Value)
                 {
-                    var noStart = writer.GetStream().Position;
-                    writer.WriteInt32Packed(networkObject.gameObject.scene.handle);
-                    networkObject.SerializeSceneObject(writer, TargetClientId);
-                    var noStop = writer.GetStream().Position;
-                    totalBytes += (int)(noStop - noStart);
+                    if (keyValuePairBySceneHandle.Value.Observers.Contains(TargetClientId))
+                    {
+                        // Write our server relative scene handle for the NetworkObject being serialized
+                        writer.WriteInt32Packed(keyValuePairBySceneHandle.Key);
+                        // Serialize the NetworkObject
+                        keyValuePairBySceneHandle.Value.SerializeSceneObject(writer, TargetClientId);
+                        numberOfObjects++;
+                    }
                 }
-
-                // Size Place Holder -- End
-                var positionEnd = writer.GetStream().Position;
-                var bytesWritten = (uint)(positionEnd - (positionStart + sizeof(uint)));
-                writer.GetStream().Position = positionStart;
-                // Write the total size written to the stream by NetworkObjects being serialized
-                writer.WriteUInt32(bytesWritten);
-                writer.GetStream().Position = positionEnd;
             }
 
-            if (SceneEventType == SceneEventTypes.C2S_SyncComplete)
-            {
-                WriteClientSynchronizationResults(writer);
-            }
-
-            if (SceneEventType == SceneEventTypes.S2C_ReSync)
-            {
-                WriteClientReSynchronizationData(writer);
-            }
-
-            if (SceneEventType == SceneEventTypes.S2C_LoadComplete || SceneEventType == SceneEventTypes.S2C_UnLoadComplete)
-            {
-                WriteSceneEventProgressDone(writer);
-            }
+            var tailPosition = stream.Position;
+            // Reposition to our count position to the head before we wrote our object count
+            stream.Position = headPosition;
+            // Write number of NetworkObjects serialized (must not be packed!)
+            writer.WriteUInt16(numberOfObjects);
+            // Set our position back to the tail
+            stream.Position = tailPosition;
         }
 
         /// <summary>
@@ -413,36 +471,86 @@ namespace Unity.Netcode
             SceneIndex = reader.ReadUInt32Packed();
             SceneHandle = reader.ReadInt32Packed();
 
-            if (SceneEventType == SceneEventTypes.S2C_Sync)
+            switch (SceneEventType)
             {
-                m_NetworkObjectsSync.Clear();
+                case SceneEventTypes.S2C_Sync:
+                    {
+                        CopySceneSyncrhonizationData(reader);
+                        break;
+                    }
+                case SceneEventTypes.C2S_SyncComplete:
+                    {
+                        CheckClientSynchronizationResults(reader);
+                        break;
+                    }
+                case SceneEventTypes.S2C_Load:
+                    {
+                        // We store off the trailing in-scene placed serialized NetworkObject data to
+                        // be processed once we are done loading.
+                        InternalBuffer.Position = 0;
+                        InternalBuffer.CopyUnreadFrom(reader.GetStream());
+                        InternalBuffer.Position = 0;
+                        break;
+                    }
+                case SceneEventTypes.S2C_ReSync:
+                    {
+                        ReadClientReSynchronizationData(reader);
+                        break;
+                    }
+                case SceneEventTypes.S2C_LoadComplete:
+                case SceneEventTypes.S2C_UnLoadComplete:
+                    {
+                        ReadSceneEventProgressDone(reader);
+                        break;
+                    }
+            }
+        }
 
-                ScenesToSynchronize = new Queue<uint>(reader.ReadUIntArrayPacked());
-                SceneHandlesToSynchronize = new Queue<uint>(reader.ReadUIntArrayPacked());
+        /// <summary>
+        /// Client Side:
+        /// Prepares for a scene synchronization event and copies the scene synchronization data
+        /// into the internal buffer to be used throughout the synchronization process.
+        /// </summary>
+        /// <param name="reader"></param>
+        internal void CopySceneSyncrhonizationData(NetworkReader reader)
+        {
+            m_NetworkObjectsSync.Clear();
 
-                var sizeToCopy = reader.ReadUInt32();
+            ScenesToSynchronize = new Queue<uint>(reader.ReadUIntArrayPacked());
+            SceneHandlesToSynchronize = new Queue<uint>(reader.ReadUIntArrayPacked());
+            InternalBuffer.Position = 0;
 
-                using (var writer = PooledNetworkWriter.Get(InternalBuffer))
+            // is not packed!
+            var sizeToCopy = reader.ReadUInt32();
+
+            using (var writer = PooledNetworkWriter.Get(InternalBuffer))
+            {
+                writer.ReadAndWrite(reader, (long)sizeToCopy);
+            }
+
+            InternalBuffer.Position = 0;
+        }
+
+        /// <summary>
+        /// Client Side:
+        /// This needs to occur at the end of a S2C_Load event when the scene has finished loading
+        /// Maximum number of objects that could theoretically be synchronized is 65536
+        /// </summary>
+        internal void DeserializeScenePlacedObjects()
+        {
+            using (var reader = PooledNetworkReader.Get(InternalBuffer))
+            {
+                // is not packed!
+                var newObjectsCount = reader.ReadUInt16();
+
+                for (ushort i = 0; i < newObjectsCount; i++)
                 {
-                    writer.ReadAndWrite(reader, (long)sizeToCopy);
+                    // Set our relative scene to the NetworkObject
+                    m_NetworkManager.SceneManager.SetTheSceneBeingSynchronized(reader.ReadInt32Packed());
+
+                    // Deserialize the NetworkObject
+                    NetworkObject.DeserializeSceneObject(InternalBuffer as NetworkBuffer, reader, m_NetworkManager);
                 }
-
-                InternalBuffer.Position = 0;
-            }
-
-            if (SceneEventType == SceneEventTypes.C2S_SyncComplete)
-            {
-                CheckClientSynchronizationResults(reader);
-            }
-
-            if (SceneEventType == SceneEventTypes.S2C_ReSync)
-            {
-                ReadClientReSynchronizationData(reader);
-            }
-
-            if (SceneEventType == SceneEventTypes.S2C_LoadComplete || SceneEventType == SceneEventTypes.S2C_UnLoadComplete)
-            {
-                ReadSceneEventProgressDone(reader);
             }
         }
 
@@ -632,17 +740,6 @@ namespace Unity.Netcode
             {
                 ClientsTimedOut.Add(reader.ReadUInt64Packed());
             }
-        }
-
-        /// <summary>
-        /// Used to store data during an asynchronous scene loading event
-        /// </summary>
-        /// <param name="stream"></param>
-        internal void CopyUnreadFromStream(Stream stream)
-        {
-            InternalBuffer.Position = 0;
-            InternalBuffer.CopyUnreadFrom(stream);
-            InternalBuffer.Position = 0;
         }
 
         /// <summary>
