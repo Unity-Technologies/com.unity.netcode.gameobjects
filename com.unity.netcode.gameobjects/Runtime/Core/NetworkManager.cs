@@ -534,7 +534,7 @@ namespace Unity.Netcode
                                     {
                                         if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
                                         {
-                                            NetworkLog.LogWarning($"{nameof(NetworkPrefab)} (\"{NetworkConfig.NetworkPrefabs[i].SourcePrefabToOverride.name}\") " +
+                                            NetworkLog.LogWarning($"{nameof(NetworkPrefab)} ({NetworkConfig.NetworkPrefabs[i].SourcePrefabToOverride.name}) " +
                                                 $"is missing a {nameof(NetworkObject)} component (entry will be ignored).");
                                         }
                                         Debug.LogWarning($"{nameof(NetworkPrefab)} override entry (\"{NetworkConfig.NetworkPrefabs[i].SourcePrefabToOverride.name}\") will be removed and ignored.");
