@@ -4,12 +4,21 @@
     "references": [
         "Unity.Netcode.Runtime",
         "Unity.Netcode.Editor",
-        "Unity.Netcode.Prototyping"
+        "Unity.Netcode.Prototyping",
+        "Unity.Multiplayer.MetricTypes",
+        "Unity.Multiplayer.NetStats"
     ],
     "optionalUnityReferences": [
         "TestAssemblies"
     ],
     "includePlatforms": [
         "Editor"
+    ],
+    "versionDefines": [
+        {
+            "name": "com.unity.multiplayer.tools",
+            "expression": "",
+            "define": "MULTIPLAYER_TOOLS"
+        }
     ]
 }
