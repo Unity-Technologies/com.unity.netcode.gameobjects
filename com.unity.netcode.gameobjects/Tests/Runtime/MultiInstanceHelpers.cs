@@ -204,6 +204,7 @@ namespace Unity.Netcode.RuntimeTests
             public T Result;
         }
 
+
         /// <summary>
         /// Normally we would only allow player prefabs to be set to a prefab. Not runtime created objects.
         /// In order to prevent having a Resource folder full of a TON of prefabs that we have to maintain,
@@ -471,7 +472,9 @@ namespace Unity.Netcode.RuntimeTests
 
             while (Time.frameCount - startFrameNumber <= maxFrames && !predicate())
             {
-                var nextFrameNumber = Time.frameCount + 1;
+                // Changed to 2 frames to avoid the scenario where it would take 1+ frames to
+                // see a value change (i.e. discovered in the NetworkTransformTests)
+                var nextFrameNumber = Time.frameCount + 2;
                 yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
             }
 

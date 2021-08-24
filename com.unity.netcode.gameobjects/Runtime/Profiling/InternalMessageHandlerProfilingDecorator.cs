@@ -9,8 +9,7 @@ namespace Unity.Netcode
         private readonly ProfilerMarker m_HandleConnectionApproved = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleConnectionApproved)}");
         private readonly ProfilerMarker m_HandleAddObject = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleAddObject)}");
         private readonly ProfilerMarker m_HandleDestroyObject = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleDestroyObject)}");
-        private readonly ProfilerMarker m_HandleSwitchScene = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleSwitchScene)}");
-        private readonly ProfilerMarker m_HandleClientSwitchSceneCompleted = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleClientSwitchSceneCompleted)}");
+        private readonly ProfilerMarker m_HandleSceneEvent = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleSceneEvent)}");
         private readonly ProfilerMarker m_HandleChangeOwner = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleChangeOwner)}");
         private readonly ProfilerMarker m_HandleTimeSync = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleTimeSync)}");
         private readonly ProfilerMarker m_HandleNetworkVariableDelta = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleNetworkVariableDelta)}");
@@ -20,7 +19,6 @@ namespace Unity.Netcode
         private readonly ProfilerMarker m_MessageReceiveQueueItemServerRpc = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(MessageReceiveQueueItem)}.{nameof(MessageQueueContainer.MessageType.ServerRpc)}");
         private readonly ProfilerMarker m_MessageReceiveQueueItemClientRpc = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(MessageReceiveQueueItem)}.{nameof(MessageQueueContainer.MessageType.ClientRpc)}");
         private readonly ProfilerMarker m_MessageReceiveQueueItemInternalMessage = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(MessageReceiveQueueItem)}.InternalMessage");
-        private readonly ProfilerMarker m_HandleAllClientsSwitchSceneCompleted = new ProfilerMarker($"{nameof(InternalMessageHandler)}.{nameof(HandleAllClientsSwitchSceneCompleted)}");
 
         private readonly IInternalMessageHandler m_MessageHandler;
 
@@ -67,23 +65,6 @@ namespace Unity.Netcode
             m_HandleDestroyObject.End();
         }
 
-        public void HandleSwitchScene(ulong clientId, Stream stream)
-        {
-            m_HandleSwitchScene.Begin();
-
-            m_MessageHandler.HandleSwitchScene(clientId, stream);
-
-            m_HandleSwitchScene.End();
-        }
-
-        public void HandleClientSwitchSceneCompleted(ulong clientId, Stream stream)
-        {
-            m_HandleClientSwitchSceneCompleted.Begin();
-
-            m_MessageHandler.HandleClientSwitchSceneCompleted(clientId, stream);
-
-            m_HandleClientSwitchSceneCompleted.End();
-        }
 
         public void HandleChangeOwner(ulong clientId, Stream stream)
         {
@@ -170,13 +151,13 @@ namespace Unity.Netcode
             m_HandleNetworkLog.End();
         }
 
-        public void HandleAllClientsSwitchSceneCompleted(ulong clientId, Stream stream)
+        public void HandleSceneEvent(ulong clientId, Stream stream)
         {
-            m_HandleAllClientsSwitchSceneCompleted.Begin();
+            m_HandleSceneEvent.Begin();
 
-            m_MessageHandler.HandleAllClientsSwitchSceneCompleted(clientId, stream);
+            m_MessageHandler.HandleSceneEvent(clientId, stream);
 
-            m_HandleAllClientsSwitchSceneCompleted.End();
+            m_HandleSceneEvent.End();
         }
     }
 }
